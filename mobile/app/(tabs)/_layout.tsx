@@ -14,6 +14,9 @@ import { ReelEyeIcon } from '@/src/components/ReelEyeIcon';
 import { HapticTab } from '@/src/components/HapticTab';
 import { colors } from '@/src/theme/theme';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
+import InitiationModal from '@/src/components/InitiationModal';
+import { useInitiation } from '@/src/hooks/useInitiation';
+import { nav } from '@/src/utils/typedRouter';
 
 // ════════════════════════════════════════════════════════════════
 //  TAB ICON — Icons only. No labels. Pure cinema.
@@ -179,7 +182,21 @@ const renderProfileIcon = ({ focused }: { focused: boolean }) => <TabIcon IconCo
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
+  // THE INITIATION — the Society's once-ever induction for newborn accounts.
+  // Triple-locked against ever repeating (see useInitiation). Beat IV's
+  // "LOG YOUR FIRST FILM" opens the log modal directly — the ceremony ends in
+  // the action, not a Done button.
+  const initiation = useInitiation();
+  const handleInitiationComplete = React.useCallback((action: 'log' | 'quiet') => {
+    initiation.dismiss();
+    if (action === 'log') {
+      setTimeout(() => nav.push('/log-modal'), 250);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initiation.dismiss]);
+
   return (
+    <>
     <Tabs
       screenOptions={{
         header: renderHeader,
@@ -246,6 +263,14 @@ export default function TabLayout() {
 
       <Tabs.Screen name="lounge" options={{ href: null }} />
     </Tabs>
+
+    <InitiationModal
+      visible={initiation.visible}
+      username={initiation.username}
+      memberNo={initiation.memberNo}
+      onComplete={handleInitiationComplete}
+    />
+    </>
   );
 }
 

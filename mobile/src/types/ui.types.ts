@@ -9,6 +9,5 @@ export interface UIState {
     paywallFeature: string
     handbookOpen: boolean
     handbookSection: string | null
-    onboardingOpen: boolean
 }
 

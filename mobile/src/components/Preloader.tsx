@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -102,26 +102,34 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 
   const { width } = useWindowDimensions();
 
-  useEffect(() => {
-    // #18 — First-launch ceremony detection (MMKV: synchronous, sub-ms)
-    const hasLaunched = storage.getBoolean('reelhouse_has_launched');
-    const isFirstLaunch = !hasLaunched;
-    if (isFirstLaunch) {
-      storage.set('reelhouse_has_launched', true);
-      // Bass-rumble haptic pattern: Heavy → Medium → Light
-      TactileEngine.destroy();
-      hapticT1.current = setTimeout(() => TactileEngine.mutate(), D1);
-      hapticT2.current = setTimeout(() => TactileEngine.navigate(), D1 + D2);
-    }
+  // ── The ceremony decision, made SYNCHRONOUSLY before first paint ──────────
+  // (MMKV reads are sub-millisecond.) This is what makes the "3"-flash
+  // structurally impossible: the digits/label/haptics only ever MOUNT in
+  // ceremony mode, so an ordinary open can never leak the start of a countdown
+  // under its 400ms fade. Reduced-motion/throttled devices take the fast path
+  // WITHOUT burning the once-ever flag — their ceremony stays banked until a
+  // launch where they can actually see it.
+  const [isCeremony] = useState(() => !storage.getBoolean('reelhouse_has_launched'));
+  const playCeremony = isCeremony && !reduceMotion && !throttleDevice;
 
-    const FAST_PATH = !isFirstLaunch || reduceMotion || throttleDevice;
-    if (FAST_PATH) {
-      // ── Fast Path: Instant fade out for returning users or low-end devices ──
+  useEffect(() => {
+    if (!playCeremony) {
+      // ── Fast Path: quick aperture blink for returning users / low-end devices.
+      // No digits, no label flicker, no haptics — and the first-launch flag is
+      // NOT consumed here (only a played ceremony burns it).
       fadeOut.value = withTiming(0, { duration: 400 }, (finished) => {
         if (finished) runOnJS(onComplete)();
       });
       return;
     }
+
+    // ── THE CEREMONY — plays exactly once, and only when it actually plays
+    // does the flag burn.
+    storage.set('reelhouse_has_launched', true);
+    // Bass-rumble haptic pattern: Heavy → Medium → Light
+    TactileEngine.destroy();
+    hapticT1.current = setTimeout(() => TactileEngine.mutate(), D1);
+    hapticT2.current = setTimeout(() => TactileEngine.navigate(), D1 + D2);
 
       // ── Breathe Animation (Continuous) ──
       breathe.value = withRepeat(
@@ -151,9 +159,9 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
       // ── Background Warmth ──
       warmthOpacity.value = withTiming(0.35, { duration: CD, easing: Easing.in(Easing.quad) });
 
-      // ── Iris Bloom — wider on first launch ──
-      const bloomTarget = isFirstLaunch ? 1.5 : 1.06;
-      const bloomDuration = isFirstLaunch ? BLOOM * 1.5 : BLOOM;
+      // ── Iris Bloom — the ceremony path IS the first launch, full width ──
+      const bloomTarget = 1.5;
+      const bloomDuration = BLOOM * 1.5;
       irisScale.value = withDelay(CD, withTiming(bloomTarget, { duration: bloomDuration, easing: Easing.out(Easing.quad) }));
       bloomOpacity.value = withDelay(CD, withSequence(
         withTiming(0.30, { duration: bloomDuration * 0.5 }),
@@ -255,18 +263,23 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
           );
         })}
 
-        {/* DIGITS */}
-        <View style={styles.digitsWrapper}>
-          {DIGITS.map((d) => (
-            <Digit key={d.char} d={d} />
-          ))}
-        </View>
+        {/* DIGITS — mounted ONLY in ceremony mode, so an ordinary open can
+            never flash the start of a countdown under its fade. */}
+        {playCeremony && (
+          <View style={styles.digitsWrapper}>
+            {DIGITS.map((d) => (
+              <Digit key={d.char} d={d} />
+            ))}
+          </View>
+        )}
       </Animated.View>
 
-      {/* ── Status Label ── */}
-      <Animated.Text style={[styles.statusLabel, flickerStyle]}>
-        THREADING PROJECTOR…
-      </Animated.Text>
+      {/* ── Status Label — the projector is only "threading" during the ceremony ── */}
+      {playCeremony && (
+        <Animated.Text style={[styles.statusLabel, flickerStyle]}>
+          THREADING PROJECTOR…
+        </Animated.Text>
+      )}
 
       {/* ── Warm Bloom ── */}
       <Animated.View style={[styles.bloom, bloomStyle]} />
