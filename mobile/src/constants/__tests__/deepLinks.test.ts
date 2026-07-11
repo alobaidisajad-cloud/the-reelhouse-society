@@ -12,7 +12,7 @@ describe('deepLinks', () => {
     it('accepts all allowed screens', () => {
       const allowedScreens = [
         'film', 'user', 'lounge', 'notifications', 'log',
-        'search', 'list-modal', 'membership', 'vault', 'oracle', 'social',
+        'search', 'list-modal', 'membership', 'vault', 'social',
       ];
       for (const screen of allowedScreens) {
         expect(isValidDeepLink(screen)).toBe(true);

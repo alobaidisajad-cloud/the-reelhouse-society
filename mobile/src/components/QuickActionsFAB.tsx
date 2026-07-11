@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { colors, fonts } from '@/src/theme/theme';
 import { BlurView } from 'expo-blur';
-import { Plus, Film, ListPlus, Sparkles } from 'lucide-react-native';
+import { Plus, Film, ListPlus } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -85,23 +85,13 @@ export default function QuickActionsFAB() {
                         </View>
                     </PressableScale>
 
-                    <PressableScale style={s.actionRow} onPress={() => handleAction('/list-modal')} accessibilityRole="button" accessibilityLabel="Create a curated list">
+                    <PressableScale style={[s.actionRow, s.actionRowLast]} onPress={() => handleAction('/list-modal')} accessibilityRole="button" accessibilityLabel="Create a curated list">
                         <View style={[s.actionIconWrap, s.actionIconList]}>
                             <ListPlus size={20} color={colors.bone} />
                         </View>
                         <View>
                             <Text style={s.actionTitle}>Create Curated List</Text>
                             <Text style={s.actionDesc}>Compile your thematic favourites.</Text>
-                        </View>
-                    </PressableScale>
-
-                    <PressableScale style={[s.actionRow, s.actionRowLast]} onPress={() => handleAction('/oracle')} accessibilityRole="button" accessibilityLabel="Consult the Oracle">
-                        <View style={[s.actionIconWrap, s.actionIconOracle]}>
-                            <Sparkles size={20} color={colors.bloodReel} />
-                        </View>
-                        <View>
-                            <Text style={s.actionTitle}>Consult the Oracle</Text>
-                            <Text style={s.actionDesc}>Find esoteric cinema based on feelings.</Text>
                         </View>
                     </PressableScale>
 
@@ -166,7 +156,6 @@ const s = StyleSheet.create({
     },
     actionIconLog: { backgroundColor: colors.sepiaFaint },
     actionIconList: { backgroundColor: 'rgba(232,223,200,0.1)' },
-    actionIconOracle: { backgroundColor: 'rgba(107,26,10,0.15)' },
     actionRowLast: { borderBottomWidth: 0 },
     actionTitle: {
         fontFamily: fonts.display, fontSize: 16, color: colors.parchment, marginBottom: 4,

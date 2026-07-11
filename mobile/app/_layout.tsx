@@ -207,7 +207,6 @@ export default function RootLayout() {
             <Stack.Screen name="reset-password" options={{ animation: 'none' }} />
             <Stack.Screen name="auth-callback" options={{ animation: 'none' }} />
             <Stack.Screen name="(modals)/membership" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-            <Stack.Screen name="(modals)/oracle" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
             <Stack.Screen name="(admin)" options={{ headerShown: false, animation: 'none' }} />
             <Stack.Screen name="year-in-cinema" options={{ animation: 'none' }} />
             <Stack.Screen name="stacks/[id]" options={{ animation: 'none' }} />

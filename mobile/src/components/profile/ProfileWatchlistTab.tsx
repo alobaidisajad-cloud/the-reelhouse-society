@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
-import { Bookmark, Search, X, Dice5 } from 'lucide-react-native';
+import { Bookmark, Search, X, Disc3, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
@@ -139,10 +139,18 @@ export default function ProfileWatchlistTab({
     return (
       <>
         {isSelf && watchlist.length > 1 && (
-          <PressableScale style={s.ctaBtn} onPress={() => setRouletteOpen(true)} haptic>
-            <View style={s.ctaBtnRow}>
-              <Dice5 size={12} color={colors.sepia} strokeWidth={1.5} />
-              <Text style={s.ctaBtnText}>SPIN WATCHLIST ROULETTE</Text>
+          <PressableScale style={s.oracleCta} onPress={() => setRouletteOpen(true)} haptic accessibilityRole="button" accessibilityLabel="Consult the Oracle's Choice">
+            <View style={s.oracleCtaPerf}>
+              {[0, 1, 2].map(i => <View key={i} style={s.oracleCtaHole} />)}
+            </View>
+            <Disc3 size={18} color={colors.sepia} strokeWidth={1.5} />
+            <View style={s.oracleCtaText}>
+              <Text style={s.oracleCtaTitle}>THE ORACLE&apos;S CHOICE</Text>
+              <Text style={s.oracleCtaSub}>Let the Archive pick tonight&apos;s reel</Text>
+            </View>
+            <Sparkles size={13} color={colors.sepia} strokeWidth={1.5} />
+            <View style={s.oracleCtaPerf}>
+              {[0, 1, 2].map(i => <View key={i} style={s.oracleCtaHole} />)}
             </View>
           </PressableScale>
         )}
@@ -252,9 +260,12 @@ const s = StyleSheet.create({
   emptyDesc: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone, opacity: 0.6, textAlign: 'center', lineHeight: 20 },
   ctaBtnSelf: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 2, backgroundColor: colors.sepiaFaint },
   ctaBtnTextSelf: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia },
-  ctaBtn: { backgroundColor: 'rgba(8,6,4,0.95)', borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', paddingVertical: 14, alignItems: 'center', marginBottom: 24 },
-  ctaBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  ctaBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia },
+  oracleCta: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.sepiaFaint, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)', paddingVertical: 14, paddingHorizontal: 14, marginBottom: 24, overflow: 'hidden' },
+  oracleCtaText: { flex: 1 },
+  oracleCtaTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia },
+  oracleCtaSub: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, marginTop: 2 },
+  oracleCtaPerf: { alignSelf: 'stretch', justifyContent: 'space-around', paddingVertical: 2 },
+  oracleCtaHole: { width: 5, height: 6, borderRadius: 1, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)' },
   watchlistControlRow: { gap: 12, marginBottom: 24 },
   searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, paddingHorizontal: 16, height: 44 },
   searchWrapFlex: { flex: 1 },

@@ -17,7 +17,6 @@ const VALID_DEEP_LINK_SCREENS = [
   'list-modal',
   'membership',
   'vault',
-  'oracle',
   'social',
   // Added missing routable screens to prevent
   // push notification deep links from being silently rejected.
