@@ -295,7 +295,9 @@ export default function TribunalScreen() {
   const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
 
   // ── Priority queue pagination state ────────────────────────────────────
-  const [priorityCursor, setPriorityCursor] = useState<PriorityCursor | undefined>(undefined);
+  // No cursor state: the load-more cursor is derived from the last loaded
+  // item, and page 1 mirrors the live query (see the sync effect below) so a
+  // verdict's refetch always rebuilds a fresh docket — same pattern as pending.
   const [priorityItems, setPriorityItems] = useState<TribunalReport[]>([]);
   const [hasMorePriority, setHasMorePriority] = useState(true);
 
@@ -374,13 +376,17 @@ export default function TribunalScreen() {
     enabled: user?.role === 'admin' && activeView === 'priority',
   });
 
-  // Sync priority data to local state for cursor pagination accumulation
+  // Page 1 is the live query: whenever priorityData changes (initial load, a
+  // verdict's invalidation, manual refresh) it rebuilds the docket. Load-more
+  // appends via a mutation that never touches priorityData, so accumulated
+  // pages survive — but a refetch (including resolving the last case → []) is
+  // always reflected, never stale.
   React.useEffect(() => {
-    if (priorityData && priorityData.length > 0 && !priorityCursor) {
+    if (priorityData) {
       setPriorityItems(priorityData as unknown as TribunalReport[]);
       setHasMorePriority(priorityData.length >= 20);
     }
-  }, [priorityData, priorityCursor]);
+  }, [priorityData]);
 
   // ── Load More for priority queue (compound keyset — matches RPC order) ──
   const loadMoreMutation = useMutation({
@@ -393,12 +399,6 @@ export default function TribunalScreen() {
           return [...prev, ...rows.filter(r => !seen.has(r.id))];
         });
         setHasMorePriority(rows.length >= 20);
-        const last = rows[rows.length - 1];
-        setPriorityCursor({
-          report_count: Number(last.report_count ?? 1),
-          created_at: last.created_at,
-          id: last.id,
-        });
       } else {
         setHasMorePriority(false);
       }
@@ -518,7 +518,6 @@ export default function TribunalScreen() {
     setMultiSelectMode(false);
     setSelectedReports(new Set());
     if (view === 'priority') {
-      setPriorityCursor(undefined);
       setPriorityItems([]);
       setHasMorePriority(true);
     }
@@ -529,7 +528,6 @@ export default function TribunalScreen() {
     if (activeView === 'pending') {
       refetch();
     } else {
-      setPriorityCursor(undefined);
       setPriorityItems([]);
       setHasMorePriority(true);
       refetchPriority();

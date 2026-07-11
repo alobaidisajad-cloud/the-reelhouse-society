@@ -33,7 +33,9 @@ export const ModerationService = {
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(REPORTS_PAGE_SIZE);
-    if (cursor) query = query.lt('created_at', cursor);
+    // `lte` (not `lt`) so reports sharing the boundary's exact timestamp are
+    // never skipped; the load-more path dedupes the one overlapping row by id.
+    if (cursor) query = query.lte('created_at', cursor);
 
     const { data, error, count } = await query;
     if (error) throw error;
