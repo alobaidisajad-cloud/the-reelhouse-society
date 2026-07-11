@@ -119,11 +119,12 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
       haptic
     >
       {posterUri ? (
-        <Image 
-          source={{ uri: posterUri }} 
-          style={s.posterImg} 
-          cachePolicy="memory-disk" 
-          placeholder={{ blurhash: SEPIA_HASH }} 
+        <Image
+          source={{ uri: posterUri }}
+          style={s.posterImg}
+          recyclingKey={posterUri}
+          cachePolicy="memory-disk"
+          placeholder={{ blurhash: SEPIA_HASH }}
           transition={200} 
         />
       ) : (

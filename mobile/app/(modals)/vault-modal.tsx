@@ -34,7 +34,7 @@ const VaultSearchResultRow = React.memo(({
   return (
     <PressableScale style={s.resultRow} onPress={() => onSelect(item)} accessibilityRole="button" accessibilityLabel={item.title ? `Select ${item.title}` : 'Select film'}>
       {posterUri ? (
-        <Image source={{ uri: posterUri }} style={s.poster} contentFit="cover" />
+        <Image source={{ uri: posterUri }} style={s.poster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={posterUri} />
       ) : (
         <View style={[s.poster, s.posterEmpty]}>
           <FilmIcon size={16} color={colors.fog} strokeWidth={1} />

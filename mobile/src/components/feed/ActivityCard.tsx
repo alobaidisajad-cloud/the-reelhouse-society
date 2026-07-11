@@ -77,6 +77,7 @@ const ActivityEditorialHeader = React.memo(({ backdropUri }: { backdropUri: stri
         <Image
           source={{ uri: backdropUri }}
           style={StyleSheet.absoluteFillObject}
+          recyclingKey={backdropUri}
           cachePolicy="memory-disk"
           placeholder={{ blurhash: SEPIA_HASH }}
           contentFit="cover"
