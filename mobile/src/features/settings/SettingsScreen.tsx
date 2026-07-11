@@ -9,7 +9,7 @@ import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withTiming, Eas
 import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { ChevronLeft, LogOut, Trash2, Shield, FileText, Download, Sparkles } from 'lucide-react-native';
+import { ChevronLeft, LogOut, Trash2, Scale, Shield, FileText, Download, Sparkles } from 'lucide-react-native';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useSettingsStore } from '@/src/stores/settings';
@@ -19,6 +19,7 @@ import { safeOpenURL } from '@/src/utils/linking';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useUpdateUser } from '@/src/hooks/useUpdateUser';
 import { AuthService } from '@/src/services/AuthService';
+import { ModerationService } from '@/src/services/ModerationService';
 import { useAmbientGlow } from '@/src/hooks/useAmbientGlow';
 import { colors } from '@/src/theme/theme';
 import DataVault from '@/src/features/settings/DataVault';
@@ -56,6 +57,19 @@ export function SettingsScreen() {
 
   // ── General ──
   const userRole = resolveTier(user);
+
+  // ── The Tribunal door (proprietor only) ──
+  // role === 'admin' comes from the profiles row; members never render this.
+  const isAdmin = user?.role === 'admin';
+  const [tribunalWaiting, setTribunalWaiting] = useState<number | null>(null);
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    ModerationService.getPendingCount()
+      .then((n) => { if (!cancelled) setTribunalWaiting(n); })
+      .catch(() => { /* the door still opens without its number */ });
+    return () => { cancelled = true; };
+  }, [isAdmin]);
   
   const [otpModalVisible, setOtpModalVisible] = useState(false);
   const [otpAction, setOtpAction] = useState<'signOut' | 'deleteAccount' | 'toggleBiometric' | null>(null);
@@ -441,6 +455,21 @@ export function SettingsScreen() {
               </View>
             </SectionCard>
           </AnimatedView>
+
+          {isAdmin && (
+            <AnimatedView entering={FadeInDown.duration(500).delay(375)}>
+              <SectionCard>
+                <SectionHead icon={Scale} label="ADMINISTRATION" />
+                <View style={st.legalActions}>
+                  <ActionBtn
+                    icon={Scale}
+                    label={tribunalWaiting ? `ENTER THE TRIBUNAL · ${tribunalWaiting} WAITING` : 'ENTER THE TRIBUNAL'}
+                    onPress={() => nav.push('/tribunal' as any)}
+                  />
+                </View>
+              </SectionCard>
+            </AnimatedView>
+          )}
 
           <AnimatedView entering={FadeInDown.duration(500).delay(400)}>
             <SectionCard danger>

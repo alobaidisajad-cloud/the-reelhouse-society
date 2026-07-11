@@ -51,7 +51,10 @@ export const UserSchema = z.object({
   bio: z.string().optional(),
   avatar: z.string().optional(),
   avatar_url: z.string().optional(),
-  role: z.enum(['free', 'cinephile', 'archivist', 'auteur']),
+  // 'admin' is the proprietor's key to the Tribunal — it is a duty, not a rank.
+  // Membership entitlements ride the separate `tier` column, so an admin's
+  // paid tier survives (resolveTier treats unknown roles as weight 0).
+  role: z.enum(['free', 'cinephile', 'archivist', 'auteur', 'admin']),
   tier: z.string().optional(),
   is_founding: z.boolean().optional(),
   // Canonical snake_case — matches DB columns. Removed camelCase duplicates

@@ -15,6 +15,7 @@
     "get_following_feed_auth_cursor",
     "get_priority_reports",
     "get_profile_counts",
+    "get_report_evidence",
     "get_public_profile_analytics",
     "get_user_analytics",
     "get_user_blocks",

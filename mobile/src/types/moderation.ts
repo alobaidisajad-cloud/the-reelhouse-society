@@ -20,6 +20,7 @@ export const ReportableContentType = z.enum([
   'dossier',
   'dossier_comment',
   'lounge_message',
+  'lounge',
   'profile',
 ]);
 /** Union type of all reportable content surfaces. */

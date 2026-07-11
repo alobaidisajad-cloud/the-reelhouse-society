@@ -16,7 +16,7 @@ import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
 
-export const PublicLoungeCard = React.memo(({ lounge, index: _index }: { lounge: LoungeRoom; index: number }) => {
+export const PublicLoungeCard = React.memo(({ lounge, index: _index, onReport }: { lounge: LoungeRoom; index: number; onReport?: (lounge: LoungeRoom) => void }) => {
   const coverUrl = lounge.cover_image
     ? tmdb.backdrop(lounge.cover_image, 'w500')
     : null;
@@ -26,9 +26,11 @@ export const PublicLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
       <PressableScale
         style={s.publicCard}
         onPress={() => nav.push(`/lounge/${lounge.id}`)}
+        onLongPress={onReport ? () => onReport(lounge) : undefined}
         haptic="light"
         accessibilityRole="button"
         accessibilityLabel={`Enter salon ${lounge.name}${lounge.is_private ? ', approval required' : ''}`}
+        accessibilityHint={onReport ? 'Long press to report this salon' : undefined}
       >
         <LinearGradient
           colors={[colors.sepia, 'rgba(107,79,15,0.6)']}

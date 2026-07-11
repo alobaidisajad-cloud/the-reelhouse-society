@@ -25,6 +25,8 @@ jest.mock('@/src/services/ModerationService', () => ({
     getPriorityQueue: (...args: any[]) => mockGetPriorityQueue(...args),
     getPendingReports: (...args: any[]) => mockGetPendingReports(...args),
     getUserModerationHistory: (...args: any[]) => mockGetUserModerationHistory(...args),
+    getReportEvidence: jest.fn().mockResolvedValue({ found: false }),
+    getPendingCount: jest.fn().mockResolvedValue(0),
   },
 }));
 
@@ -91,8 +93,10 @@ jest.mock('lucide-react-native', () => {
     Check: icon('Check'),
     CheckSquare: icon('CheckSquare'),
     Clock: icon('Clock'),
+    FileSearch: icon('FileSearch'),
     Layers: icon('Layers'),
     List: icon('List'),
+    Scale: icon('Scale'),
     ShieldAlert: icon('ShieldAlert'),
     Skull: icon('Skull'),
     Square: icon('Square'),
@@ -190,7 +194,7 @@ describe('TribunalScreen Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    mockGetPendingReports.mockResolvedValue([]);
+    mockGetPendingReports.mockResolvedValue({ rows: [], total: 0 });
     mockGetPriorityQueue.mockResolvedValue([]);
     mockGetUserModerationHistory.mockResolvedValue([]);
     mockResolveReportV2.mockResolvedValue(undefined);
@@ -223,14 +227,14 @@ describe('TribunalScreen Integration', () => {
   describe('Admin sees pending reports', () => {
     beforeEach(() => {
       mockAuthStore.user = ADMIN_USER;
-      mockGetPendingReports.mockResolvedValue(MOCK_REPORTS);
+      mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
     });
 
     it('renders report cards with correct content', async () => {
       const { getByText } = renderTribunal();
 
       await waitFor(() => {
-        expect(getByText('Hate speech in film review')).toBeTruthy();
+        expect(getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy();
       });
 
       // Verify content type badge
@@ -248,7 +252,7 @@ describe('TribunalScreen Integration', () => {
   describe('Warn action modal', () => {
     beforeEach(() => {
       mockAuthStore.user = ADMIN_USER;
-      mockGetPendingReports.mockResolvedValue(MOCK_REPORTS);
+      mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
     });
 
     it('opens modal with ISSUE WARNING title when pressing warn button', async () => {
@@ -276,7 +280,7 @@ describe('TribunalScreen Integration', () => {
   describe('Warn submission', () => {
     beforeEach(() => {
       mockAuthStore.user = ADMIN_USER;
-      mockGetPendingReports.mockResolvedValue(MOCK_REPORTS);
+      mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
     });
 
     it('calls resolveReportV2 with correct params when submitting warn', async () => {
@@ -328,7 +332,7 @@ describe('TribunalScreen Integration', () => {
   describe('Suspend modal with duration field', () => {
     beforeEach(() => {
       mockAuthStore.user = ADMIN_USER;
-      mockGetPendingReports.mockResolvedValue(MOCK_REPORTS);
+      mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
     });
 
     it('shows duration input and reason input when pressing suspend', async () => {
@@ -356,7 +360,7 @@ describe('TribunalScreen Integration', () => {
   describe('Suspend submission with duration', () => {
     beforeEach(() => {
       mockAuthStore.user = ADMIN_USER;
-      mockGetPendingReports.mockResolvedValue(MOCK_REPORTS);
+      mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
     });
 
     it('calls resolveReportV2 with duration_hours when submitting suspend', async () => {
@@ -413,7 +417,7 @@ describe('TribunalScreen Integration', () => {
   describe('Dismiss action', () => {
     beforeEach(() => {
       mockAuthStore.user = ADMIN_USER;
-      mockGetPendingReports.mockResolvedValue(MOCK_REPORTS);
+      mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
     });
 
     it('calls resolveReportV2 (not the legacy unguarded RPC) when confirming dismiss', async () => {
@@ -459,7 +463,7 @@ describe('TribunalScreen Integration', () => {
   describe('Multi-select and bulk dismiss', () => {
     beforeEach(() => {
       mockAuthStore.user = ADMIN_USER;
-      mockGetPendingReports.mockResolvedValue(MOCK_REPORTS);
+      mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
     });
 
     it('enters multi-select, selects reports, and bulk dismisses via Alert', async () => {
@@ -533,7 +537,7 @@ describe('TribunalScreen Integration', () => {
   describe('Priority view toggle', () => {
     beforeEach(() => {
       mockAuthStore.user = ADMIN_USER;
-      mockGetPendingReports.mockResolvedValue(MOCK_REPORTS);
+      mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
       mockGetPriorityQueue.mockResolvedValue(PRIORITY_REPORTS);
     });
 
@@ -542,7 +546,7 @@ describe('TribunalScreen Integration', () => {
 
       // Wait for initial pending load
       await waitFor(() => {
-        expect(getByText('Hate speech in film review')).toBeTruthy();
+        expect(getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy();
       });
 
       // Press PRIORITY tab
@@ -556,7 +560,7 @@ describe('TribunalScreen Integration', () => {
 
       // Report count badge should appear for items with count > 1
       await waitFor(() => {
-        expect(getByText('5')).toBeTruthy(); // report_count badge for priority-001
+        expect(getByText('×5 REPORTS')).toBeTruthy(); // report_count badge for priority-001
       });
     });
   });
@@ -566,7 +570,7 @@ describe('TribunalScreen Integration', () => {
   describe('Load More pagination', () => {
     beforeEach(() => {
       mockAuthStore.user = ADMIN_USER;
-      mockGetPendingReports.mockResolvedValue([]);
+      mockGetPendingReports.mockResolvedValue({ rows: [], total: 0 });
       // Return exactly 20 items so hasMorePriority = true
       const twentyItems = Array.from({ length: 20 }, (_, i) => ({
         id: `priority-${String(i).padStart(3, '0')}`,
@@ -583,7 +587,7 @@ describe('TribunalScreen Integration', () => {
       mockGetPriorityQueue.mockResolvedValue(twentyItems);
     });
 
-    it('calls getPriorityQueue with last item ID as cursor when pressing LOAD MORE', async () => {
+    it('calls getPriorityQueue with the compound keyset cursor when pressing LOAD MORE', async () => {
       const { getByLabelText, getByText } = renderTribunal();
 
       // Switch to priority view
@@ -593,7 +597,7 @@ describe('TribunalScreen Integration', () => {
 
       // Wait for data to load
       await waitFor(() => {
-        expect(getByText('Reason 0')).toBeTruthy();
+        expect(getByText('REASON 0')).toBeTruthy();
       });
 
       // The load more button should be visible (20 items = full page = hasMore)
@@ -609,9 +613,15 @@ describe('TribunalScreen Integration', () => {
         fireEvent.press(getByLabelText('Load more priority reports'));
       });
 
-      // Verify getPriorityQueue was called with cursor (last item's ID)
+      // Verify getPriorityQueue was called with the compound cursor —
+      // (report_count, created_at, id) matches the RPC's own ordering,
+      // never a bare id (the old broken contract).
       await waitFor(() => {
-        expect(mockGetPriorityQueue).toHaveBeenCalledWith(20, 'priority-019');
+        expect(mockGetPriorityQueue).toHaveBeenCalledWith(20, {
+          report_count: 1,
+          created_at: '2024-06-16T10:00:00Z',
+          id: 'priority-019',
+        });
       });
     });
   });
@@ -621,7 +631,7 @@ describe('TribunalScreen Integration', () => {
   describe('Warning count badge', () => {
     beforeEach(() => {
       mockAuthStore.user = ADMIN_USER;
-      mockGetPendingReports.mockResolvedValue(MOCK_REPORTS);
+      mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
     });
 
     it('shows warning badge for users with warning_count > 0', async () => {
@@ -629,12 +639,12 @@ describe('TribunalScreen Integration', () => {
 
       // MOCK_REPORTS[1] has target_user.warning_count = 3
       await waitFor(() => {
-        expect(getByText('Spam dispatch flooding')).toBeTruthy();
+        expect(getByText('SPAM DISPATCH FLOODING')).toBeTruthy();
       });
 
       // The WarningBadge renders the count as text
       await waitFor(() => {
-        expect(getByText('3')).toBeTruthy();
+        expect(getByText('3 WARNINGS')).toBeTruthy();
       });
     });
   });

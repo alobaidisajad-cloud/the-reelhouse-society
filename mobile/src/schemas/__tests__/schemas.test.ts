@@ -94,13 +94,13 @@ describe('UserSchema', () => {
   it('should reject invalid role', () => {
     const result = UserSchema.safeParse({
       ...validUser,
-      role: 'admin',
+      role: 'overlord',
     });
     expect(result.success).toBe(false);
   });
 
-  it('should accept all valid roles', () => {
-    const roles = ['free', 'cinephile', 'archivist', 'auteur'];
+  it('should accept all valid roles (admin is the Tribunal key)', () => {
+    const roles = ['free', 'cinephile', 'archivist', 'auteur', 'admin'];
     for (const role of roles) {
       const result = UserSchema.safeParse({ ...validUser, role });
       expect(result.success).toBe(true);

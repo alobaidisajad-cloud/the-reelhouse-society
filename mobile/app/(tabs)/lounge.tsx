@@ -28,6 +28,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ── Extracted components ──
 import { LoungeGate } from '@/src/components/lounge/LoungeGate';
+import ReportSheet from '@/src/components/moderation/ReportSheet';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { CreateLoungeSheet } from '@/src/components/lounge/CreateLoungeSheet';
 import { JoinedLoungeCard } from '@/src/components/lounge/JoinedLoungeCard';
 import { PublicLoungeCard } from '@/src/components/lounge/PublicLoungeCard';
@@ -157,10 +159,19 @@ export default function LoungeScreen() {
     }
   });
 
+  // A vile door plaque must be reportable — long-press any salon that
+  // isn't yours to summon the report sheet (contentType 'lounge').
+  const [reportLounge, setReportLounge] = useState<LoungeRoom | null>(null);
+  const handleReportLounge = useCallback((lounge: LoungeRoom) => {
+    if (lounge.creator_id === user?.id) return;
+    TactileEngine.destroy();
+    setReportLounge(lounge);
+  }, [user?.id]);
+
   // Memoized renderItem for FlashList
   const renderPublicCard = useCallback(({ item, index: i }: { item: LoungeRoom; index: number }) => (
-    <PublicLoungeCard lounge={item} index={i} />
-  ), []);
+    <PublicLoungeCard lounge={item} index={i} onReport={handleReportLounge} />
+  ), [handleReportLounge]);
 
   if (!isAuthenticated || !isArchivist) {
     return <LoungeGate />;
@@ -283,6 +294,18 @@ export default function LoungeScreen() {
 
       {/* ── Create Sheet ── */}
       <CreateLoungeSheet visible={showCreate} onClose={() => setShowCreate(false)} />
+
+      {/* ── Report a salon (long-press a door plaque) ── */}
+      {reportLounge && (
+        <ReportSheet
+          visible={!!reportLounge}
+          contentType="lounge"
+          contentId={reportLounge.id}
+          targetUserId={reportLounge.creator_id}
+          targetUsername="the proprietor"
+          onDismiss={() => setReportLounge(null)}
+        />
+      )}
       </View>
     </FrozenTab>
   );

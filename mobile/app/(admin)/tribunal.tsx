@@ -7,13 +7,15 @@ import {
     Check,
     CheckSquare,
     Clock,
+    FileSearch,
     Layers,
     List,
-    ShieldAlert,
+    Scale,
     Skull,
     Square,
     X,
 } from 'lucide-react-native';
+import { Image } from 'expo-image';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
@@ -31,14 +33,21 @@ import {
 import Animated, { FadeInDown, FadeInUp, SlideOutRight } from 'react-native-reanimated';
 
 import PressableScale from '@/src/components/PressableScale';
-import { ModerationService } from '@/src/services/ModerationService';
+import { ModerationService, PriorityCursor, ReportEvidence } from '@/src/services/ModerationService';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts, radii, spacing } from '@/src/theme/theme';
-import type { ModAction, ModActionRecord } from '@/src/types/moderation';
+import { REPORT_REASON_LABELS, type ModAction, type ModActionRecord, type ReportReason } from '@/src/types/moderation';
 import reelToast from '@/src/utils/reelToast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+interface TribunalTarget {
+  id: string;
+  username: string;
+  warning_count?: number;
+  avatar_url?: string | null;
+}
 
 interface TribunalReport {
   id: string;
@@ -50,8 +59,13 @@ interface TribunalReport {
   created_at: string;
   reporter?: { id: string; username: string } | { id: string; username: string }[];
   target_user_id?: string;
-  target_user?: { id: string; username: string; warning_count?: number } | { id: string; username: string; warning_count?: number }[];
+  target_user?: TribunalTarget | TribunalTarget[];
   report_count?: number;
+}
+
+/** The charge, in the house's voice — falls back to the raw reason slug. */
+function chargeLabel(reason: string): string {
+  return REPORT_REASON_LABELS[reason as ReportReason]?.label ?? reason.toUpperCase();
 }
 
 type EnforcementAction = 'warn' | 'suspend' | 'ban' | 'permanent_exile';
@@ -112,8 +126,8 @@ function WarningBadge({ count }: { count?: number }) {
   if (!count || count === 0) return null;
   return (
     <View style={s.warningBadge}>
-      <AlertTriangle size={10} color={colors.parchment} />
-      <Text style={s.warningBadgeText}>{count}</Text>
+      <AlertTriangle size={10} color={colors.sepia} />
+      <Text style={s.warningBadgeText}>{count} {count === 1 ? 'WARNING' : 'WARNINGS'}</Text>
     </View>
   );
 }
@@ -124,8 +138,8 @@ function ReportCountBadge({ count }: { count?: number }) {
   if (!count || count <= 1) return null;
   return (
     <View style={s.reportCountBadge}>
-      <Layers size={10} color={colors.parchment} />
-      <Text style={s.reportCountBadgeText}>{count}</Text>
+      <Layers size={10} color={colors.crimson} />
+      <Text style={s.reportCountBadgeText}>×{count} REPORTS</Text>
     </View>
   );
 }
@@ -174,17 +188,17 @@ function ActionModal({
     },
     suspend: {
       title: 'SUSPEND MEMBER',
-      color: colors.danger,
+      color: colors.crimson,
       description: 'Temporarily restrict access for the specified duration.',
     },
     ban: {
       title: 'BAN MEMBER',
-      color: colors.bloodReel,
+      color: colors.crimson,
       description: 'Permanently revoke access. This can be reversed by another admin.',
     },
     permanent_exile: {
       title: 'PERMANENT EXILE',
-      color: colors.bloodReel,
+      color: colors.crimson,
       description: 'Irrevocable expulsion from the Society. Cannot be undone.',
     },
   };
@@ -251,7 +265,7 @@ function ActionModal({
             accessibilityRole="button"
             accessibilityLabel={`Execute ${config.title}`}
           >
-            <Text style={s.submitBtnText}>EXECUTE DIRECTIVE</Text>
+            <Text style={s.submitBtnText}>RENDER VERDICT</Text>
           </PressableScale>
         </View>
       </KeyboardAvoidingView>
@@ -281,20 +295,72 @@ export default function TribunalScreen() {
   const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
 
   // ── Priority queue pagination state ────────────────────────────────────
-  const [priorityCursor, setPriorityCursor] = useState<string | undefined>(undefined);
+  const [priorityCursor, setPriorityCursor] = useState<PriorityCursor | undefined>(undefined);
   const [priorityItems, setPriorityItems] = useState<TribunalReport[]>([]);
   const [hasMorePriority, setHasMorePriority] = useState(true);
 
+  // ── Pending docket pagination state ────────────────────────────────────
+  const [pendingItems, setPendingItems] = useState<TribunalReport[]>([]);
+  const [pendingTotal, setPendingTotal] = useState(0);
+
+  // ── Summoned evidence, per case ─────────────────────────────────────────
+  const [evidence, setEvidence] = useState<Record<string, { loading: boolean; data?: ReportEvidence }>>({});
+
   const {
-    data: reports = [],
+    data: pendingPage,
     isLoading,
     isRefetching: refreshing,
     refetch,
   } = useQuery({
     queryKey: ['admin', 'reports', 'pending'],
-    queryFn: ModerationService.getPendingReports,
-    enabled: (user as any)?.role === 'admin',
+    queryFn: () => ModerationService.getPendingReports(),
+    enabled: user?.role === 'admin',
   });
+
+  // First page (and every refetch after a verdict) resets the docket.
+  React.useEffect(() => {
+    if (pendingPage) {
+      setPendingItems(pendingPage.rows as unknown as TribunalReport[]);
+      setPendingTotal(pendingPage.total ?? pendingPage.rows.length);
+    }
+  }, [pendingPage]);
+
+  // ── Load more for the pending docket (keyset on created_at) ────────────
+  const loadMorePendingMutation = useMutation({
+    mutationFn: (cursor: string) => ModerationService.getPendingReports(cursor),
+    onSuccess: (page) => {
+      const rows = page.rows as unknown as TribunalReport[];
+      if (rows.length > 0) {
+        setPendingItems(prev => {
+          const seen = new Set(prev.map(r => r.id));
+          return [...prev, ...rows.filter(r => !seen.has(r.id))];
+        });
+      }
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Could not retrieve earlier cases.';
+      reelToast.error(msg);
+    },
+  });
+
+  const handleLoadMorePending = useCallback(() => {
+    if (pendingItems.length === 0 || loadMorePendingMutation.isPending) return;
+    loadMorePendingMutation.mutate(pendingItems[pendingItems.length - 1].created_at);
+  }, [pendingItems, loadMorePendingMutation]);
+
+  // ── Summon the evidence for one case ────────────────────────────────────
+  const summonEvidence = useCallback(async (reportId: string) => {
+    TactileEngine.selection();
+    setEvidence(prev => ({ ...prev, [reportId]: { loading: true, data: prev[reportId]?.data } }));
+    try {
+      const data = await ModerationService.getReportEvidence(reportId);
+      setEvidence(prev => ({ ...prev, [reportId]: { loading: false, data } }));
+    } catch (err: unknown) {
+      setEvidence(prev => ({ ...prev, [reportId]: { loading: false } }));
+      const msg = err instanceof Error ? err.message : 'The clerk could not retrieve the exhibit.';
+      reelToast.error(msg);
+    }
+  }, []);
 
   // ── Priority Queue query ───────────────────────────────────────────────
   const {
@@ -305,25 +371,34 @@ export default function TribunalScreen() {
   } = useQuery({
     queryKey: ['admin', 'reports', 'priority'],
     queryFn: () => ModerationService.getPriorityQueue(20),
-    enabled: (user as any)?.role === 'admin' && activeView === 'priority',
+    enabled: user?.role === 'admin' && activeView === 'priority',
   });
 
   // Sync priority data to local state for cursor pagination accumulation
   React.useEffect(() => {
     if (priorityData && priorityData.length > 0 && !priorityCursor) {
-      setPriorityItems(priorityData);
+      setPriorityItems(priorityData as unknown as TribunalReport[]);
       setHasMorePriority(priorityData.length >= 20);
     }
   }, [priorityData, priorityCursor]);
 
-  // ── Load More for priority queue ───────────────────────────────────────
+  // ── Load More for priority queue (compound keyset — matches RPC order) ──
   const loadMoreMutation = useMutation({
-    mutationFn: (cursor: string) => ModerationService.getPriorityQueue(20, cursor),
+    mutationFn: (cursor: PriorityCursor) => ModerationService.getPriorityQueue(20, cursor),
     onSuccess: (data) => {
-      if (data && data.length > 0) {
-        setPriorityItems((prev) => [...prev, ...data]);
-        setHasMorePriority(data.length >= 20);
-        setPriorityCursor(data[data.length - 1].id);
+      const rows = data as unknown as TribunalReport[];
+      if (rows.length > 0) {
+        setPriorityItems((prev) => {
+          const seen = new Set(prev.map(r => r.id));
+          return [...prev, ...rows.filter(r => !seen.has(r.id))];
+        });
+        setHasMorePriority(rows.length >= 20);
+        const last = rows[rows.length - 1];
+        setPriorityCursor({
+          report_count: Number(last.report_count ?? 1),
+          created_at: last.created_at,
+          id: last.id,
+        });
       } else {
         setHasMorePriority(false);
       }
@@ -336,8 +411,12 @@ export default function TribunalScreen() {
 
   const handleLoadMore = useCallback(() => {
     if (priorityItems.length === 0 || loadMoreMutation.isPending) return;
-    const lastItem = priorityItems[priorityItems.length - 1];
-    loadMoreMutation.mutate(lastItem.id);
+    const last = priorityItems[priorityItems.length - 1];
+    loadMoreMutation.mutate({
+      report_count: Number(last.report_count ?? 1),
+      created_at: last.created_at,
+      id: last.id,
+    });
   }, [priorityItems, loadMoreMutation]);
 
   // ── Resolve V2 Mutation (for graduated actions) ────────────────────────
@@ -527,18 +606,19 @@ export default function TribunalScreen() {
 
   // ── Guard: admin only ──────────────────────────────────────────────────
 
-  if ((user as any)?.role !== 'admin') return <View style={s.container} />;
+  if (user?.role !== 'admin') return <View style={s.container} />;
 
   // ── Determine which data to show ──────────────────────────────────────
 
-  const displayData: TribunalReport[] = (activeView === 'pending' ? reports : priorityItems) as TribunalReport[];
+  const displayData: TribunalReport[] = activeView === 'pending' ? pendingItems : priorityItems;
   const isLoadingData = activeView === 'pending' ? isLoading : priorityLoading;
   const isRefreshingData = activeView === 'pending' ? refreshing : priorityRefreshing;
+  const pendingRemaining = Math.max(pendingTotal - pendingItems.length, 0);
 
   return (
     <View style={s.container}>
       <LinearGradient
-        colors={['rgba(231,76,60,0.1)', colors.ink]}
+        colors={['rgba(180,45,45,0.10)', colors.ink]}
         style={StyleSheet.absoluteFillObject}
       />
 
@@ -554,10 +634,12 @@ export default function TribunalScreen() {
         >
           <ArrowLeft size={20} color={colors.bone} />
         </PressableScale>
-        <ShieldAlert size={28} color={colors.danger} style={{ marginBottom: 16 }} />
-        <Text style={s.eyebrow}>ADMINISTRATION</Text>
+        <Scale size={28} color={colors.crimson} style={{ marginBottom: 16 }} />
+        <Text style={s.eyebrow}>THE HOUSE CONVENES</Text>
         <Text style={s.title}>The Tribunal</Text>
-        <Text style={s.subtitle}>{reports.length} pending infractions</Text>
+        <Text style={s.subtitle}>
+          {pendingTotal === 1 ? '1 matter awaits judgment' : `${pendingTotal} matters await judgment`}
+        </Text>
 
         {/* ── View Toggle Tabs ─────────────────────────────────────────── */}
         <View style={s.viewToggleRow}>
@@ -572,7 +654,7 @@ export default function TribunalScreen() {
           >
             <List size={14} color={activeView === 'pending' ? colors.parchment : colors.fog} />
             <Text style={[s.viewTabText, activeView === 'pending' && s.viewTabTextActive]}>
-              PENDING
+              THE DOCKET
             </Text>
           </PressableScale>
 
@@ -587,7 +669,7 @@ export default function TribunalScreen() {
           >
             <Layers size={14} color={activeView === 'priority' ? colors.parchment : colors.fog} />
             <Text style={[s.viewTabText, activeView === 'priority' && s.viewTabTextActive]}>
-              PRIORITY
+              URGENT
             </Text>
           </PressableScale>
         </View>
@@ -642,17 +724,17 @@ export default function TribunalScreen() {
       <ScrollView
         contentContainerStyle={s.listContent}
         refreshControl={
-          <RefreshControl refreshing={isRefreshingData} onRefresh={onRefresh} tintColor={colors.danger} />
+          <RefreshControl refreshing={isRefreshingData} onRefresh={onRefresh} tintColor={colors.crimson} />
         }
       >
         {isLoadingData ? (
           <View style={s.emptyState}>
-            <Text style={s.emptyText}>Loading records...</Text>
+            <Text style={s.emptyText}>Gathering the docket…</Text>
           </View>
         ) : displayData.length === 0 ? (
           <View style={s.emptyState}>
-            <ShieldAlert size={48} color={colors.ash} style={{ opacity: 0.5, marginBottom: 16 }} />
-            <Text style={s.emptyText}>The archives are secure.</Text>
+            <Scale size={48} color={colors.ash} style={{ opacity: 0.5, marginBottom: 16 }} />
+            <Text style={s.emptyText}>The docket is clear. The house rests.</Text>
           </View>
         ) : (
           <>
@@ -663,9 +745,10 @@ export default function TribunalScreen() {
                   ? (item.reporter as any).username
                   : 'unknown';
 
-              const targetUserId = item.target_user_id || item.content_id;
-              const warningCount = (item.target_user as any)?.warning_count ?? 0;
+              const accused = Array.isArray(item.target_user) ? item.target_user[0] : item.target_user;
+              const warningCount = accused?.warning_count ?? 0;
               const isSelected = selectedReports.has(item.id);
+              const ev = evidence[item.id];
 
               return (
                 <Animated.View
@@ -694,28 +777,89 @@ export default function TribunalScreen() {
 
                     <View style={s.cardHeader}>
                       <Text style={s.reportMeta}>
-                        REPORTED {new Date(item.created_at).toLocaleDateString()}
+                        CASE FILED {new Date(item.created_at).toLocaleDateString()}
                       </Text>
                       <View style={s.badgeRow}>
                         <ReportCountBadge count={item.report_count} />
-                        <WarningBadge count={warningCount} />
                         <View style={s.typeBadge}>
-                          <Text style={s.typeBadgeText}>{item.content_type.toUpperCase()}</Text>
+                          <Text style={s.typeBadgeText}>{item.content_type.replace('_', ' ').toUpperCase()}</Text>
                         </View>
                       </View>
                     </View>
 
-                    <Text style={s.reasonTitle}>{item.reason}</Text>
+                    <Text style={s.reasonTitle}>{chargeLabel(item.reason)}</Text>
 
+                    {/* The Accused */}
+                    {accused?.username ? (
+                      <PressableScale
+                        style={s.accusedRow}
+                        onPress={() => (router.push as any)(`/user/${accused.username}`)}
+                        haptic="selection"
+                        pressedScale={0.98}
+                        accessibilityRole="button"
+                        accessibilityLabel={`View the accused, ${accused.username}`}
+                      >
+                        <View style={s.accusedAvatar}>
+                          {accused.avatar_url
+                            ? <Image source={{ uri: accused.avatar_url }} style={s.accusedAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
+                            : <Text style={s.accusedAvatarLetter}>{accused.username[0]?.toUpperCase()}</Text>}
+                        </View>
+                        <View style={s.accusedInfo}>
+                          <Text style={s.accusedLabel}>THE ACCUSED</Text>
+                          <Text style={s.accusedName} numberOfLines={1}>@{accused.username}</Text>
+                        </View>
+                        <WarningBadge count={warningCount} />
+                      </PressableScale>
+                    ) : (
+                      <View style={s.accusedRow}>
+                        <View style={s.accusedInfo}>
+                          <Text style={s.accusedLabel}>THE ACCUSED</Text>
+                          <Text style={s.accusedUnknown}>No member named — this case can only be dismissed.</Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* The Evidence */}
                     <View style={s.detailsBox}>
-                      <Text style={s.contextLabel}>TARGET IDENTIFIER</Text>
-                      <Text style={s.contextValue} selectable>
-                        {item.content_id}
-                      </Text>
+                      <Text style={s.contextLabel}>THE EVIDENCE</Text>
+                      {ev?.data ? (
+                        ev.data.found ? (
+                          <>
+                            {!!ev.data.title && <Text style={s.evidenceTitle} numberOfLines={2}>{ev.data.title}</Text>}
+                            <Text style={s.contextValue} selectable>“{ev.data.body}”</Text>
+                            {!!ev.data.route && (
+                              <PressableScale
+                                onPress={() => (router.push as any)(ev.data!.route!)}
+                                haptic="selection"
+                                pressedScale={0.97}
+                                accessibilityRole="button"
+                                accessibilityLabel="Open the reported page"
+                              >
+                                <Text style={s.evidenceOpen}>OPEN THE PAGE →</Text>
+                              </PressableScale>
+                            )}
+                          </>
+                        ) : (
+                          <Text style={s.evidenceDestroyed}>The evidence has been destroyed — the page no longer exists.</Text>
+                        )
+                      ) : (
+                        <PressableScale
+                          style={s.summonBtn}
+                          onPress={() => summonEvidence(item.id)}
+                          disabled={!!ev?.loading}
+                          haptic="selection"
+                          pressedScale={0.97}
+                          accessibilityRole="button"
+                          accessibilityLabel="Summon the evidence"
+                        >
+                          <FileSearch size={12} color={colors.sepia} />
+                          <Text style={s.summonText}>{ev?.loading ? 'RETRIEVING…' : 'SUMMON THE EVIDENCE'}</Text>
+                        </PressableScale>
+                      )}
 
                       {item.details && (
                         <>
-                          <Text style={[s.contextLabel, { marginTop: 12 }]}>INCIDENT DETAILS</Text>
+                          <Text style={[s.contextLabel, { marginTop: 12 }]}>THE COMPLAINT</Text>
                           <Text style={s.contextValue}>{item.details}</Text>
                         </>
                       )}
@@ -724,15 +868,15 @@ export default function TribunalScreen() {
                       <Text style={s.contextValue}>@{reporterName}</Text>
                     </View>
 
-                    {/* Enforcement History */}
-                    <EnforcementHistory userId={targetUserId} />
+                    {/* Enforcement History — only a real member has a record */}
+                    {!!item.target_user_id && <EnforcementHistory userId={item.target_user_id} />}
 
                     {/* Action Row — hidden in multi-select mode */}
                     {!multiSelectMode && (
                       <View style={s.actionGrid}>
                         <View style={s.actionRow}>
                           <PressableScale
-                            style={[s.actionBtn, { borderColor: colors.ash }]}
+                            style={[s.actionBtn, { borderColor: colors.ash }, !item.target_user_id && { flex: 1 }]}
                             onPress={() => handleDismiss(item)}
                             haptic="selection"
                             pressedScale={0.95}
@@ -743,62 +887,87 @@ export default function TribunalScreen() {
                             <Text style={[s.actionText, { color: colors.fog }]}>DISMISS</Text>
                           </PressableScale>
 
-                          <PressableScale
-                            style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
-                            onPress={() => openActionModal('warn', item)}
-                            haptic="selection"
-                            pressedScale={0.95}
-                            accessibilityRole="button"
-                            accessibilityLabel="Issue warning"
-                          >
-                            <AlertTriangle size={14} color={colors.sepia} />
-                            <Text style={[s.actionText, { color: colors.sepia }]}>WARN</Text>
-                          </PressableScale>
+                          {!!item.target_user_id && (
+                            <PressableScale
+                              style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
+                              onPress={() => openActionModal('warn', item)}
+                              haptic="selection"
+                              pressedScale={0.95}
+                              accessibilityRole="button"
+                              accessibilityLabel="Issue warning"
+                            >
+                              <AlertTriangle size={14} color={colors.sepia} />
+                              <Text style={[s.actionText, { color: colors.sepia }]}>WARN</Text>
+                            </PressableScale>
+                          )}
                         </View>
 
-                        <View style={s.actionRow}>
-                          <PressableScale
-                            style={[s.actionBtn, { borderColor: colors.danger, backgroundColor: 'rgba(231,76,60,0.08)' }]}
-                            onPress={() => openActionModal('suspend', item)}
-                            haptic="medium"
-                            pressedScale={0.95}
-                            accessibilityRole="button"
-                            accessibilityLabel="Suspend member"
-                          >
-                            <Clock size={14} color={colors.danger} />
-                            <Text style={[s.actionText, { color: colors.danger }]}>SUSPEND</Text>
-                          </PressableScale>
+                        {!!item.target_user_id && (
+                          <>
+                            <View style={s.actionRow}>
+                              <PressableScale
+                                style={[s.actionBtn, { borderColor: colors.crimson, backgroundColor: 'rgba(180,45,45,0.08)' }]}
+                                onPress={() => openActionModal('suspend', item)}
+                                haptic="medium"
+                                pressedScale={0.95}
+                                accessibilityRole="button"
+                                accessibilityLabel="Suspend member"
+                              >
+                                <Clock size={14} color={colors.crimson} />
+                                <Text style={[s.actionText, { color: colors.crimson }]}>SUSPEND</Text>
+                              </PressableScale>
 
-                          <PressableScale
-                            style={[s.actionBtn, { borderColor: colors.bloodReel, backgroundColor: 'rgba(107,26,10,0.12)' }]}
-                            onPress={() => handleBanOrExile('ban', item)}
-                            haptic="medium"
-                            pressedScale={0.95}
-                            accessibilityRole="button"
-                            accessibilityLabel="Ban member"
-                          >
-                            <Ban size={14} color={colors.bloodReel} />
-                            <Text style={[s.actionText, { color: colors.bloodReel }]}>BAN</Text>
-                          </PressableScale>
-                        </View>
+                              <PressableScale
+                                style={[s.actionBtn, { borderColor: colors.bloodReel, backgroundColor: 'rgba(107,26,10,0.12)' }]}
+                                onPress={() => handleBanOrExile('ban', item)}
+                                haptic="medium"
+                                pressedScale={0.95}
+                                accessibilityRole="button"
+                                accessibilityLabel="Ban member"
+                              >
+                                <Ban size={14} color={colors.crimson} />
+                                <Text style={[s.actionText, { color: colors.crimson }]}>BAN</Text>
+                              </PressableScale>
+                            </View>
 
-                        <PressableScale
-                          style={[s.actionBtn, s.exileBtn]}
-                          onPress={() => handleBanOrExile('permanent_exile', item)}
-                          haptic="heavy"
-                          pressedScale={0.95}
-                          accessibilityRole="button"
-                          accessibilityLabel="Permanently exile member"
-                        >
-                          <Skull size={14} color={colors.bloodReel} />
-                          <Text style={[s.actionText, { color: colors.bloodReel }]}>PERMANENT EXILE</Text>
-                        </PressableScale>
+                            <PressableScale
+                              style={[s.actionBtn, s.exileBtn]}
+                              onPress={() => handleBanOrExile('permanent_exile', item)}
+                              haptic="heavy"
+                              pressedScale={0.95}
+                              accessibilityRole="button"
+                              accessibilityLabel="Permanently exile member"
+                            >
+                              <Skull size={14} color={colors.crimson} />
+                              <Text style={[s.actionText, { color: colors.crimson }]}>PERMANENT EXILE</Text>
+                            </PressableScale>
+                          </>
+                        )}
                       </View>
                     )}
                   </PressableScale>
                 </Animated.View>
               );
             })}
+
+            {/* ── Load More (pending docket — exact remainder) ──────────── */}
+            {activeView === 'pending' && pendingRemaining > 0 && (
+              <PressableScale
+                style={s.loadMoreBtn}
+                onPress={handleLoadMorePending}
+                haptic="selection"
+                pressedScale={0.97}
+                disabled={loadMorePendingMutation.isPending}
+                accessibilityRole="button"
+                accessibilityLabel={`Load ${pendingRemaining} earlier cases`}
+              >
+                {loadMorePendingMutation.isPending ? (
+                  <ActivityIndicator size="small" color={colors.sepia} />
+                ) : (
+                  <Text style={s.loadMoreText}>✦ LOAD EARLIER · {pendingRemaining} MORE</Text>
+                )}
+              </PressableScale>
+            )}
 
             {/* ── Load More (priority queue cursor pagination) ─────────── */}
             {activeView === 'priority' && hasMorePriority && priorityItems.length > 0 && (
@@ -814,7 +983,7 @@ export default function TribunalScreen() {
                 {loadMoreMutation.isPending ? (
                   <ActivityIndicator size="small" color={colors.sepia} />
                 ) : (
-                  <Text style={s.loadMoreText}>LOAD MORE</Text>
+                  <Text style={s.loadMoreText}>✦ LOAD MORE CASES</Text>
                 )}
               </PressableScale>
             )}
@@ -841,14 +1010,14 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(231,76,60,0.2)',
+    borderBottomColor: 'rgba(180,45,45,0.25)',
   },
   backBtn: { alignSelf: 'flex-start', padding: 8, marginLeft: -8, marginBottom: 16 },
   eyebrow: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 4,
-    color: colors.danger,
+    color: colors.crimson,
     marginBottom: 6,
   },
   title: { fontFamily: fonts.display, fontSize: 32, color: colors.parchment, marginBottom: 4 },
@@ -869,20 +1038,45 @@ const s = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  reportMeta: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+  reportMeta: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   typeBadge: {
-    backgroundColor: 'rgba(231,76,60,0.15)',
+    backgroundColor: 'rgba(180,45,45,0.12)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 2,
     borderWidth: 1,
-    borderColor: 'rgba(231,76,60,0.3)',
+    borderColor: 'rgba(180,45,45,0.35)',
   },
-  typeBadgeText: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 2, color: colors.danger },
+  typeBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimson },
 
-  reasonTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 16 },
+  reasonTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 14 },
 
+  // ── The Accused ────────────────────────────────────────────────────────
+  accusedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.ash,
+    borderRadius: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  accusedAvatar: {
+    width: 26, height: 26, borderRadius: 13, overflow: 'hidden',
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.35)', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
+  },
+  accusedAvatarImg: { width: '100%', height: '100%' },
+  accusedAvatarLetter: { fontFamily: fonts.sub, fontSize: 11, color: colors.sepia, includeFontPadding: false },
+  accusedInfo: { flex: 1 },
+  accusedLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog },
+  accusedName: { fontFamily: fonts.sub, fontSize: 13, color: colors.sepia, marginTop: 1 },
+  accusedUnknown: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog, marginTop: 2 },
+
+  // ── The Evidence ───────────────────────────────────────────────────────
   detailsBox: {
     backgroundColor: 'rgba(0,0,0,0.3)',
     padding: 12,
@@ -892,13 +1086,22 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   contextLabel: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 2,
     color: colors.ash,
     marginBottom: 4,
   },
-  contextValue: { fontFamily: fonts.body, fontSize: 13, color: colors.bone },
+  contextValue: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 19 },
+  evidenceTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, marginBottom: 4 },
+  evidenceOpen: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginTop: 8 },
+  evidenceDestroyed: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog },
+  summonBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderStyle: 'dashed',
+    borderRadius: 3, paddingVertical: 10,
+  },
+  summonText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia },
 
   // ── Action Grid ────────────────────────────────────────────────────────
   actionGrid: { gap: 8 },
@@ -913,7 +1116,7 @@ const s = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1,
   },
-  actionText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2 },
+  actionText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2 },
   exileBtn: {
     borderColor: colors.bloodReel,
     backgroundColor: 'rgba(107,26,10,0.08)',
@@ -933,8 +1136,8 @@ const s = StyleSheet.create({
     borderColor: colors.sepia,
   },
   warningBadgeText: {
-    fontFamily: fonts.uiBold,
-    fontSize: 9,
+    fontFamily: fonts.sub,
+    fontSize: 8,
     letterSpacing: 1,
     color: colors.sepia,
   },
@@ -944,18 +1147,18 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(231,76,60,0.2)',
+    backgroundColor: 'rgba(180,45,45,0.14)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 2,
     borderWidth: 1,
-    borderColor: colors.danger,
+    borderColor: colors.crimson,
   },
   reportCountBadgeText: {
-    fontFamily: fonts.uiBold,
-    fontSize: 9,
+    fontFamily: fonts.sub,
+    fontSize: 8,
     letterSpacing: 1,
-    color: colors.danger,
+    color: colors.crimson,
   },
 
   // ── Enforcement History ────────────────────────────────────────────────
@@ -966,7 +1169,7 @@ const s = StyleSheet.create({
     borderTopColor: colors.ash,
   },
   historyLabel: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 2,
     color: colors.fog,
@@ -983,13 +1186,13 @@ const s = StyleSheet.create({
   },
   historyContent: { flex: 1 },
   historyAction: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 1.5,
     color: colors.bone,
   },
   historyReason: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, marginTop: 2 },
-  historyDate: { fontFamily: fonts.ui, fontSize: 9, color: colors.ash, marginTop: 2 },
+  historyDate: { fontFamily: fonts.sub, fontSize: 9, color: colors.ash, marginTop: 2 },
 
   // ── Modal ──────────────────────────────────────────────────────────────
   modalOverlay: {
@@ -1035,7 +1238,7 @@ const s = StyleSheet.create({
   // ── Inputs ─────────────────────────────────────────────────────────────
   inputGroup: { marginBottom: spacing.md },
   inputLabel: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 2,
     color: colors.fog,
@@ -1063,7 +1266,7 @@ const s = StyleSheet.create({
     marginTop: spacing.md,
   },
   submitBtnText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 12,
     letterSpacing: 3,
     color: colors.parchment,
@@ -1096,7 +1299,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(184,137,26,0.08)',
   },
   viewTabText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 2,
     color: colors.fog,
@@ -1127,7 +1330,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(184,137,26,0.08)',
   },
   toolbarBtnText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 2,
     color: colors.fog,
@@ -1145,7 +1348,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.bloodReel,
   },
   bulkDismissBtnText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 2,
     color: colors.parchment,
@@ -1173,7 +1376,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(184,137,26,0.05)',
   },
   loadMoreText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 3,
     color: colors.sepia,
