@@ -603,19 +603,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           <ScrollView contentContainerStyle={[s.tabScrollContent, { paddingBottom: Math.max(insets.bottom + 80, 80) }]} showsVerticalScrollIndicator={false}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}>
             {/* ═══ PASSPORT TAB ═══ */}
+            {/* Passport is a base feature (see the tiers page) — open to every member. */}
             {activeTab === 'passport' && (
-              isAuteurPlus ? (
                 <View style={s.tabContentPad}><NoirPassport {...{user: targetUser, logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics} as any} /></View>
-              ) : (
-                <View style={s.tabContentPad}>
-                  <VelvetGate
-                    title="The Cinematic Passport"
-                    line={isSelf ? 'Stamps of a lifetime await the Auteur rank.' : "This member's passport has not been issued."}
-                    isSelf={isSelf}
-                    onAscend={navToMembership}
-                  />
-                </View>
-              )
             )}
 
             {/* ═══ PROJECTOR / ANALYTICS TAB ═══ */}

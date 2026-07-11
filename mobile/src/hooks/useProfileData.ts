@@ -5,7 +5,7 @@ import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList } 
 import { ProfileDataService } from '@/src/services/ProfileDataService';
 import type { ValidatedProfileUser } from '@/src/schemas/profile.schema';
 import { useSocialStore } from '@/src/stores/followStore';
-import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
+import { isArchivistPlusTier } from '@/src/utils/tier';
 
 export type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
 
@@ -236,7 +236,9 @@ export function useProfileData({
     
     if (tab === 'physical' && !isArchivistPlusTier(state.targetUser)) return false;
     if (tab === 'calendar' && !isArchivistPlusTier(state.targetUser)) return false;
-    if ((tab === 'projector' || tab === 'passport') && !isAuteurPlusTier(state.targetUser)) return false;
+    // Analytics (projector) + passport are base features (see the tiers page) — no tier
+    // gate. Your own full analytics load regardless of tier; the heavy fetch for OTHERS
+    // stays guarded inside fetchAnalyticsLogs (self + auteur-others) to protect bandwidth.
     return true;
   }, [state.targetUser]);
 
