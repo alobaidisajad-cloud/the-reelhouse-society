@@ -17,6 +17,7 @@ import Animated, {
 import { Search, Plus, Globe, X } from 'lucide-react-native';
 import { MasterLogo } from '@/src/components/MasterLogo';
 import { useFocusEffect } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
@@ -57,6 +58,9 @@ export default function LoungeScreen() {
 
   const isArchivist = isArchivistPlusTier(user);
   const isPollingRef = useRef(false);
+  // Re-tap the active tab icon → smoothly scroll the corridor to the top.
+  const listRef = useRef<any>(null);
+  useScrollToTop(listRef);
 
   // The search ember — glows brass while a query burns.
   const searchEmberOpacity = useSharedValue(0.5);
@@ -227,11 +231,12 @@ export default function LoungeScreen() {
 
       {/* ── Body ── */}
       <CinematicFlashList
+        ref={listRef}
         data={browsableLounges}
         keyExtractor={(item: any) => item.id}
         estimatedItemSize={190}
         renderItem={renderPublicCard as any}
-        keyboardDismissMode="on-drag"
+        keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={s.scrollContent}
         scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}

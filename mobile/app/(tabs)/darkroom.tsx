@@ -4,6 +4,7 @@ import Animated, { FadeInDown, useSharedValue, withTiming, withRepeat, Easing, c
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useFocusEffect } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 import { storage } from '@/src/stores/mmkv-storage';
 
 import { colors, fonts, spacing, effects } from '@/src/theme/theme';
@@ -26,6 +27,9 @@ export default function DarkRoomScreen() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const loadingRef = useRef(false);
+  // Re-tap the active tab icon → smoothly scroll this feed to the top (iOS-standard).
+  const listRef = useRef<any>(null);
+  useScrollToTop(listRef);
 
   const fetchRequestId = useRef(0);
   const totalPagesRef = useRef(1000);
@@ -320,6 +324,7 @@ export default function DarkRoomScreen() {
     <FrozenTab>
       <View style={s.container}>
         <CinematicFlashList
+          ref={listRef}
           data={displayData}
           keyExtractor={(item: any) => `${item.media_type || 'movie'}-${item.id}`}
           estimatedItemSize={190}
@@ -343,7 +348,7 @@ export default function DarkRoomScreen() {
           scrollMetrics={{ scrollY: localScrollY, scrollHeight, viewHeight, isScrolling }}
           bottomInset={insets.bottom}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
+          keyboardDismissMode="interactive"
         />
       </View>
     </FrozenTab>

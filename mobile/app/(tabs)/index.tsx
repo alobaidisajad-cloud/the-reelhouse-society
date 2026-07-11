@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, RefreshControl, useWindowDimensions
 } from 'react-native';
@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
@@ -57,6 +58,9 @@ function getProgrammeWhisper(): string {
 // ════════════════════════════════════════════════════════════════
 export default function LobbyScreen() {
   const insets = useSafeAreaInsets();
+  // Re-tap the active tab icon → smoothly scroll the Lobby to the top.
+  const scrollRef = useRef<any>(null);
+  useScrollToTop(scrollRef);
   const { height: windowHeight } = useWindowDimensions();
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const fetchLogs = useFilmStore(s => s.fetchLogs);
@@ -288,6 +292,7 @@ export default function LobbyScreen() {
       )}
 
       <CinematicScrollView
+        ref={scrollRef}
         scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
         topInset={topPad}
         bottomInset={insets.bottom + 49}

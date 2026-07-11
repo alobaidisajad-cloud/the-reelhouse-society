@@ -11,6 +11,7 @@ import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 import { FileText, Pen, Radio } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -96,6 +97,9 @@ export default function DispatchScreen() {
   }, []);
 
   const isMounted = useRef(true);
+  // Re-tap the active tab icon → smoothly scroll the Dispatch to the top.
+  const listRef = useRef<any>(null);
+  useScrollToTop(listRef);
   useEffect(() => {
     isMounted.current = true;
     return () => { isMounted.current = false; };
@@ -300,6 +304,7 @@ export default function DispatchScreen() {
       />
 
       <CinematicFlashList
+        ref={listRef}
         data={dossiers}
         keyExtractor={(item: any) => item.id}
         estimatedItemSize={200}
