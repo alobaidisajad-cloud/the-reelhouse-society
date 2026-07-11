@@ -52,10 +52,12 @@ export const fonts = {
   serif: 'Spectral_400Regular',         // Humanist screen serif — long-read transcript (the Lounge)
   serifMedium: 'Spectral_500Medium',
   serifItalic: 'Spectral_400Regular_Italic',
-  ui: 'Inter_400Regular',           // Clean sans — UI elements
-  uiMedium: 'Inter_500Medium',
-  uiBold: 'Inter_700Bold',
-  mono: 'Courier',                   // System monospace — decorative eyebrows, tab pills
+  // ── The endgame lock ─────────────────────────────────────────────────────
+  // ui / uiMedium / uiBold / mono (Inter + system Courier) are GONE. The whole
+  // app speaks the house voice — Rye, Special Elite, Courier Prime, Spectral —
+  // and any future `fonts.ui` is now a COMPILE ERROR, not a silent design
+  // regression. That is the point: the drift the marathon swept out can never
+  // return through this door.
 } as const;
 
 export const spacing = {
@@ -148,8 +150,8 @@ export const typography = {
   body: { fontSize: 14, lineHeight: 24, fontFamily: fonts.body },
   bodyBold: { fontSize: 14, lineHeight: 24, fontFamily: fonts.bodyBold },
   caption: { fontSize: 10, lineHeight: 15, fontFamily: fonts.body },
-  micro: { fontSize: 8, lineHeight: 12, fontFamily: fonts.ui, letterSpacing: 2 },
-  label: { fontSize: 9, lineHeight: 12, fontFamily: fonts.uiMedium, letterSpacing: 3, textTransform: 'uppercase' as const },
+  micro: { fontSize: 8, lineHeight: 12, fontFamily: fonts.sub, letterSpacing: 2 },
+  label: { fontSize: 9, lineHeight: 12, fontFamily: fonts.sub, letterSpacing: 3, textTransform: 'uppercase' as const },
 } as const;
 
 export const metrics = {
