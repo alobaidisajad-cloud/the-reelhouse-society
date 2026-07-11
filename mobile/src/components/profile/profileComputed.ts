@@ -279,8 +279,8 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     { id: 'watchlist' as ProfileTab, label: 'WATCHLIST', desc: 'TO SEE', count: String(counts.watchlist || displayWatchlist.length), Icon: Bookmark, disabled: false, highlight: false, locked: false },
     { id: 'lists' as ProfileTab, label: 'STACKS', desc: 'LISTS', count: String(counts.lists || displayLists.length), Icon: LayoutList, disabled: false, highlight: false, locked: false },
     { id: 'physical' as ProfileTab, label: 'VAULT', desc: 'PHYSICAL', count: isArchivistPlus ? String(counts.vault || displayVault.length) : '✦', Icon: Disc, disabled: false, highlight: false, locked: !isArchivistPlus },
-    { id: 'projector' as ProfileTab, label: 'PROJECTOR', desc: 'ANALYTICS', count: '★', Icon: Projector, disabled: false, highlight: true, locked: !isAuteurPlus },
-  ], [counts, displayLogs, displayWatchlist.length, displayLists.length, displayVault.length, isArchivistPlus, isAuteurPlus, totalFilms]);
+    { id: 'projector' as ProfileTab, label: 'PROJECTOR', desc: 'ANALYTICS', count: '★', Icon: Projector, disabled: false, highlight: true, locked: false },
+  ], [counts, displayLogs, displayWatchlist.length, displayLists.length, displayVault.length, isArchivistPlus, totalFilms]);
 
   return {
     displayLogs, displayWatchlist, displayVault, displayLists,

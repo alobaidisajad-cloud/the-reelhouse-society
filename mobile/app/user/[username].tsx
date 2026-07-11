@@ -619,8 +619,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             )}
 
             {/* ═══ PROJECTOR / ANALYTICS TAB ═══ */}
+            {/* Analytics is a base feature (see the tiers page) — open to every member. */}
             {activeTab === 'projector' && (
-              isAuteurPlus ? (
                 <View style={s.projectorGap}>
                   {/* Header */}
                   <View style={s.projectorHeader}>
@@ -638,6 +638,18 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       </View>
                     </PressableScale>
                   </View>
+
+                  {/* Your Year in Cinema — your own annual retrospective */}
+                  {isSelf && (
+                    <View style={s.tabContentPad}>
+                      <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/year-in-cinema')} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic accessibilityRole="button" accessibilityLabel="Your Year in Cinema">
+                        <View style={s.ctaBtnRow}>
+                          <CalendarDays size={12} color={colors.sepia} strokeWidth={1.5} />
+                          <Text style={s.ctaBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>YOUR YEAR IN CINEMA</Text>
+                        </View>
+                      </PressableScale>
+                    </View>
+                  )}
 
                   {/* Projector Room */}
                   <ProjectorRoom stats={{ count: totalFilms, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} />
@@ -699,16 +711,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     <ProgrammesSection programmes={(targetUser?.preferences as any)?.programmes ?? []} user={targetUser as any} uniqueFilms={uniqueFilms as any} isOwnProfile={isSelf} />
                   </View>
                 </View>
-              ) : (
-                <View style={s.tabContentPad}>
-                  <VelvetGate
-                    title="The Projector Room"
-                    line={isSelf ? 'Lifetime analytics await the Auteur rank.' : "This member's projector room is dark."}
-                    isSelf={isSelf}
-                    onAscend={navToMembership}
-                  />
-                </View>
-              )
             )}
 
             {/* ═══ CALENDAR TAB ═══ */}
