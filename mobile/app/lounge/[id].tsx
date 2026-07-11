@@ -77,7 +77,7 @@ function renderBody(content: string) {
 // ════════════════════════════════════════════════════════════
 const SHARE_LABELS: Record<string, string> = {
   film_share: 'FILM',
-  log_share: 'RECORD',
+  log_share: 'LOG',
   list_share: 'STACK',
   dossier_share: 'DOSSIER',
 };
