@@ -5,6 +5,7 @@ import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList } 
 import { ProfileDataService } from '@/src/services/ProfileDataService';
 import type { ValidatedProfileUser } from '@/src/schemas/profile.schema';
 import { useSocialStore } from '@/src/stores/followStore';
+import { useAuthStore } from '@/src/stores/auth';
 import { isArchivistPlusTier } from '@/src/utils/tier';
 
 export type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
@@ -532,11 +533,36 @@ export function useProfileData({
     // Instantly wipe existing data when navigating to a new user profile
     // This mathematically guarantees zero state contamination between Profile A and Profile B.
     dispatch({ type: 'RESET_STATE' });
-    dispatch({ type: 'SET_LOADING', payload: true });
-    fetchUserData().finally(() => dispatch({ type: 'SET_LOADING', payload: false }));
+
+    // CACHE-FIRST (own dossier only): the signed-in user is already persisted in
+    // the auth store (MMKV) and their logs in the film store — there is nothing to
+    // wait for. Seed the screen from that cache and drop the spinner immediately,
+    // then let fetchUserData() refresh silently in the background. This mirrors the
+    // existing silent stale-while-revalidate on focus (useProfileController) and
+    // removes the ONE remaining spinner path: the first open of your own profile.
+    // Gated to isSelf, which is provably true only when the viewed username IS the
+    // auth user (controller compares lowercased usernames), so we can never seed
+    // one member's dossier with another's data.
+    const cachedSelf = isSelf ? useAuthStore.getState().user : null;
+    if (cachedSelf) {
+      dispatch({ type: 'SET_USER', payload: cachedSelf as unknown as ProfileUser });
+      // Seed the visible counts from the auth user's denormalized columns. The film
+      // count reads Math.max(counts.logs, cached-logs), so logs:0 here still shows the
+      // accurate cached count; the background refresh heals any follower/following drift.
+      dispatch({ type: 'SET_COUNTS', payload: {
+        logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0,
+        followers: cachedSelf.followers_count ?? 0,
+        following: cachedSelf.following_count ?? 0,
+      } });
+      dispatch({ type: 'SET_LOADING', payload: false });
+      fetchUserData(); // silent background refresh — no spinner; errors don't render
+    } else {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      fetchUserData().finally(() => dispatch({ type: 'SET_LOADING', payload: false }));
+    }
     // P0-A: Abort in-flight queries when effect re-fires or component unmounts
     return () => { _fetchAbortRef.current?.abort(); };
-  }, [fetchUserData]);
+  }, [fetchUserData, isSelf]);
 
   return {
     targetUser: state.targetUser, setTargetUser: (u: ProfileUser | null | ((prev: ProfileUser | null) => ProfileUser | null)) => {
