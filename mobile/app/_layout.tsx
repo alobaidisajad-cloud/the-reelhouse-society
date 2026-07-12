@@ -30,13 +30,6 @@ import { InteractionManager, StyleSheet } from 'react-native';
 import OfflineBanner from '@/src/components/OfflineBanner';
 import { initSentry } from '@/src/lib/sentry';
 import '@/src/providers/AccessibilityProvider';
-import Animated, {
-    Easing,
-    useSharedValue,
-    withTiming,
-    useAnimatedStyle,
-    runOnJS,
-} from 'react-native-reanimated';
 
 // Font scaling lock removed temporarily to prevent React Native Hermes segfault.
 // Prevent splash from hiding until fonts + auth are ready

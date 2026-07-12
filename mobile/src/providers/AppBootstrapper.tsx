@@ -7,7 +7,7 @@ import * as Updates from 'expo-updates';
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { registerForPushNotifications, setupNotificationResponseHandler } from '../lib/pushNotifications';
-import { identifyUser as identifyRevenueCatUser, initRevenueCat } from '../lib/revenueCat';
+import { initRevenueCat } from '../lib/revenueCat';
 import { addBreadcrumb, captureError, Sentry, setSentryUser } from '../lib/sentry';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/auth';

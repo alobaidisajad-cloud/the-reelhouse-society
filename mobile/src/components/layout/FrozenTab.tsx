@@ -1,6 +1,4 @@
 import React from 'react';
-import { useIsFocused } from '@react-navigation/native';
-import { Freeze } from 'react-freeze';
 
 interface FrozenTabProps {
   children: React.ReactNode;
