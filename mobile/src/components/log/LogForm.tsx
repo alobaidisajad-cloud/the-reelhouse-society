@@ -91,7 +91,9 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 )}
                 <View style={st.filmInfoCol}>
                     <Text style={st.filmTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.8}>{film.title ?? film.name}</Text>
-                    <Text style={st.filmYear}>{film.release_date?.slice(0, 4) || '—'}</Text>
+                    {film.release_date ? (
+                        <Text style={st.filmYear}>{film.release_date.slice(0, 4)}</Text>
+                    ) : null}
                 </View>
             </View>
 

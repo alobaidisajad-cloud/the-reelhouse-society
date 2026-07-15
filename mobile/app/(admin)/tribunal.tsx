@@ -90,7 +90,7 @@ function EnforcementHistory({ userId }: { userId: string }) {
     return (
       <View style={s.historyContainer}>
         <Text style={s.historyLabel}>ENFORCEMENT RECORD</Text>
-        <Text style={s.historyEmpty}>Loading...</Text>
+        <Text style={s.historyEmpty}>Retrieving the record…</Text>
       </View>
     );
   }
