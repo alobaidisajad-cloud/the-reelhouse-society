@@ -67,7 +67,7 @@ export default function QuickActionsFAB() {
                 </AnimatedBlurView>
 
                 <Animated.View 
-                    entering={SlideInDown.springify().damping(26).stiffness(200)}
+                    entering={SlideInDown.duration(200)}
                     exiting={SlideOutDown.duration(200)} 
                     style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 24) }]}
                 >
