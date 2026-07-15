@@ -15,6 +15,7 @@ export interface LogSearchResult {
     title?: string;
     name?: string;
     poster_path?: string | null;
+    backdrop_path?: string | null;
     release_date?: string;
     media_type?: string;
     vote_average?: number;

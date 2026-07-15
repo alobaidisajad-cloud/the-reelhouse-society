@@ -26,6 +26,7 @@
     "request_account_deletion",
     "request_lounge_membership",
     "resolve_moderation_report_v2",
+    "set_lounge_cover",
     "set_lounge_member_status",
     "submit_report",
     "toggle_dossier_certify",

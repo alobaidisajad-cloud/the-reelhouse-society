@@ -102,6 +102,8 @@ export interface LoungeState {
   sendMessage: (loungeId: string, content: string, type?: string, meta?: LoungeMessageMeta) => Promise<boolean>;
   deleteMessage: (messageId: string) => Promise<void>;
   createLounge: (name: string, description: string, isPrivate: boolean) => Promise<string | null>;
+  /** Host-only: set (or clear with null) the salon cover — a TMDB backdrop path. */
+  setLoungeCover: (loungeId: string, cover: string | null) => Promise<boolean>;
   /** Public lounge: instant join via the SECURITY DEFINER RPC. */
   joinPublicLounge: (loungeId: string) => Promise<boolean>;
   /** Private lounge: ask the host to admit you. Returns the resulting standing. */
@@ -779,6 +781,23 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       logger.error('[LoungeStore.createLounge] Unhandled error:', e);
       reelToast.error('Could not create lounge. Check your connection and try again.');
       return null;
+    }
+  },
+
+  setLoungeCover: async (loungeId, cover) => {
+    const prev = get().lounges.find(l => l.id === loungeId)?.cover_image ?? null;
+    // Optimistic: patch the single lounges collection so the card updates instantly.
+    set(s => ({ lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: cover } : l) }));
+    try {
+      const { error } = await supabase.rpc('set_lounge_cover', { p_lounge_id: loungeId, p_cover_image: cover });
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      logger.warn('[LoungeStore.setLoungeCover] failed:', e);
+      // Revert the optimistic patch on failure — the host sees the truth.
+      set(s => ({ lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: prev } : l) }));
+      reelToast.error('Could not update the salon cover.');
+      return false;
     }
   },
 

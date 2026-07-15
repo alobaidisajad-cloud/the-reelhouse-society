@@ -7,7 +7,8 @@ import { FlashList } from '@shopify/flash-list';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Ban, Crown, DoorClosed, LogOut, MoreHorizontal, Trash2, Users, Volume2, VolumeX, X } from 'lucide-react-native';
+import { Ban, Crown, DoorClosed, Image as ImageIcon, LogOut, MoreHorizontal, Trash2, Users, Volume2, VolumeX, X } from 'lucide-react-native';
+import { tmdb } from '@/src/lib/tmdb';
 import React, { useCallback, useState } from 'react';
 import { Alert, InteractionManager, Modal, StyleSheet, Text, View } from 'react-native';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
@@ -28,7 +29,7 @@ export interface LoungeSettingsPanelProps {
 export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator, onMembersChanged }: LoungeSettingsPanelProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { leaveLounge, deleteLounge, setMemberStatus, removeMember } = useLoungeStore();
+  const { leaveLounge, deleteLounge, setMemberStatus, removeMember, setLoungeCover } = useLoungeStore();
   const [expanded, setExpanded] = useState<string | null>(null);
 
   // Only approved/muted/banned are "members"; pending live in the At-the-Door panel.
@@ -57,6 +58,22 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
       }},
     ]);
   };
+
+  // ── Salon cover (host-only) ──
+  // Hand off from this Modal to the route-modal picker AFTER it dismisses — the
+  // same proven InteractionManager sequence used for leave/delete above, so we
+  // never stack a Modal on a Modal (the Android-hostile pattern).
+  const handleChangeCover = useCallback(() => {
+    onClose();
+    InteractionManager.runAfterInteractions(() => {
+      (router.push as any)({ pathname: '/cover-picker', params: { loungeId: lounge.id } });
+    });
+  }, [onClose, router, lounge.id]);
+
+  const handleRemoveCover = useCallback(() => {
+    TactileEngine.selection();
+    setLoungeCover(lounge.id, null);
+  }, [setLoungeCover, lounge.id]);
 
   const confirmAction = useCallback((title: string, message: string, label: string, run: () => Promise<unknown>) => {
     Alert.alert(title, message, [
@@ -156,7 +173,30 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
           keyExtractor={item => item.user_id}
           showsVerticalScrollIndicator={false}
           estimatedItemSize={56}
-          ListHeaderComponent={<Text style={s.label}>MEMBERS ({roster.length})</Text>}
+          ListHeaderComponent={
+            <View>
+              {isCreator && (
+                <View style={s.coverBlock}>
+                  <Text style={s.label}>SALON COVER</Text>
+                  {lounge.cover_image ? (
+                    <View style={s.coverRow}>
+                      <Image source={{ uri: tmdb.backdrop(lounge.cover_image, 'w500') }} style={s.coverThumb} contentFit="cover" cachePolicy="memory-disk" />
+                      <View style={s.coverActions}>
+                        <PressableScale style={s.coverBtn} onPress={handleChangeCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Change salon cover"><Text style={s.coverBtnText}>CHANGE</Text></PressableScale>
+                        <PressableScale style={[s.coverBtn, s.coverBtnRemove]} onPress={handleRemoveCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Remove salon cover"><Text style={[s.coverBtnText, s.coverBtnTextRemove]}>REMOVE</Text></PressableScale>
+                      </View>
+                    </View>
+                  ) : (
+                    <PressableScale style={s.coverEmpty} onPress={handleChangeCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Choose a salon cover">
+                      <ImageIcon size={15} color={colors.sepia} strokeWidth={1.5} />
+                      <Text style={s.coverEmptyText}>CHOOSE A FILM FOR THE COVER</Text>
+                    </PressableScale>
+                  )}
+                </View>
+              )}
+              <Text style={s.label}>MEMBERS ({roster.length})</Text>
+            </View>
+          }
           renderItem={renderMember}
           ListFooterComponent={
             <View style={s.footer}>
@@ -219,4 +259,15 @@ const s = StyleSheet.create({
   footer: { marginTop: 28, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash, paddingTop: 20 },
   leaveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, gap: 10 },
   leaveText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+
+  coverBlock: { marginBottom: 22 },
+  coverRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+  coverThumb: { width: 96, height: 54, borderRadius: 3, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.25)' },
+  coverActions: { flex: 1, flexDirection: 'row', gap: 8 },
+  coverBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.25)' },
+  coverBtnRemove: { borderColor: colors.crimsonBorder },
+  coverBtnText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.5, color: colors.parchment, includeFontPadding: false },
+  coverBtnTextRemove: { color: colors.crimson },
+  coverEmpty: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 3, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(184,137,26,0.25)', backgroundColor: 'rgba(184,137,26,0.06)' },
+  coverEmptyText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
 });
