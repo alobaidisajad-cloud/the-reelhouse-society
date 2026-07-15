@@ -141,10 +141,12 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     return displayArchiveLogs.filter(l => l.status === archiveSieve);
   }, [displayArchiveLogs, archiveSieve]);
 
-  // Ledger filtering (rated/reviewed only)
+  // Ledger filtering (rated/reviewed only). Posterless logs are NOT excluded —
+  // a member's review must never vanish because TMDB lacks art; the grid's
+  // ProfilePosterCard already renders a designed placeholder for them, and the
+  // ledger COUNT (get_profile_counts v3) counts them. Door = room, exactly.
   const ledgerFiltered = useMemo(() => {
     return displayLedgerLogs.filter(log => {
-      if (!log.poster && !log.altPoster) return false;
       if (!log.rating && !log.review) return false;
       if (ledgerRatingFilter !== 'all' && log.rating !== ledgerRatingFilter) return false;
       if (ledgerSearch.trim() && !(log.title || '').toLowerCase().includes(ledgerSearch.toLowerCase())) return false;
