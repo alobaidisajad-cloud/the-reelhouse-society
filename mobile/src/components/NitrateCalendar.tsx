@@ -78,7 +78,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
         <View style={s.container}>
             {/* Header: Month navigator */}
             <View style={s.header}>
-                <PressableScale onPress={prevMonth} style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection">
+                <PressableScale onPress={prevMonth} style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Previous month">
                     <ChevronLeft size={16} color={colors.sepia} />
                 </PressableScale>
 
@@ -87,7 +87,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
                     <Text style={s.yearLabel}>{viewYear}</Text>
                 </View>
 
-                <PressableScale onPress={nextMonth} style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection">
+                <PressableScale onPress={nextMonth} style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Next month">
                     <ChevronRight size={16} color={colors.sepia} />
                 </PressableScale>
             </View>

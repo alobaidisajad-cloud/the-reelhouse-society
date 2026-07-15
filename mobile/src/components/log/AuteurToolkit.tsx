@@ -42,7 +42,7 @@ export default React.memo(function AuteurToolkit({
             <Text style={[st.pDefault, altPoster === null && st.pDefaultActive]}>DEFAULT</Text>
         </PressableScale>
     ) : (
-        <PressableScale onPress={() => { setAltPoster(p.file_path); }} haptic="selection" pressedScale={0.96}>
+        <PressableScale onPress={() => { setAltPoster(p.file_path); }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Select this alternate poster">
             <Image source={{ uri: tmdb.poster(p.file_path, 'w92') }} style={[st.pImg, altPoster === p.file_path && st.pImgActive, altPoster && altPoster !== p.file_path && st.pImgFaded]} contentFit="cover" cachePolicy="memory-disk" />
         </PressableScale>
     ), [altPoster, setAltPoster]);
