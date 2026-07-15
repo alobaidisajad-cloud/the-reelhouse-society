@@ -166,7 +166,7 @@ export default function ShareToLoungeModal({
     if (!shouldRender) return null;
 
     return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+        <Modal statusBarTranslucent visible={visible} transparent animationType="slide" onRequestClose={onClose}>
             <Animated.View style={[s.overlay, animatedSheetStyle]} accessibilityViewIsModal={true}>
                 <View style={s.card}>
                     <View style={s.header}>

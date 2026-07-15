@@ -74,7 +74,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
   const showSearch = items.length > 0 || search.length > 0;
 
   return (
-    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+    <Modal statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <View style={s.host}>
         <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
         <Pressable style={s.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />

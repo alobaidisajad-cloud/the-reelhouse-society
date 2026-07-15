@@ -335,7 +335,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
             </View>
 
             {/* Selection Modal */}
-            <Modal visible={isEditing} transparent animationType="slide">
+            <Modal statusBarTranslucent visible={isEditing} transparent animationType="slide">
                 <View style={[s.modalOverlay, { paddingBottom: insets.bottom }]}>
                     <Pressable style={StyleSheet.absoluteFillObject} onPress={() => { TactileEngine.selection(); setIsEditing(false); }} />
                     <View style={s.modalContent}>

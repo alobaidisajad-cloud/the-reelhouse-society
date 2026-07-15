@@ -1,8 +1,9 @@
 # Android Launch Runbook
 
-> Written 2026-07-13 from a full Android-readiness audit. **Status: the app is
-> iOS-first; Android is NOT launch-ready by configuration** (payments + push
-> have no Android wiring) and has never been run on an Android device.
+> Written 2026-07-13 from a full Android-readiness audit. **DECISION: iOS and
+> Android launch TOGETHER** — §1 (accounts/keys) and the §4 device pass are
+> therefore PRE-LAUNCH requirements, not a later milestone. Android has never
+> been run on a device; payments + push have no Android wiring until §1 is done.
 > The codebase itself is Android-aware (24 Platform branches, `elevation`
 > fallbacks in 35 files, `includeFontPadding: false` throughout, adaptive +
 > monochrome icons, `edgeToEdgeEnabled`, `dimezisBlurView` on the nav bars) —
@@ -33,10 +34,11 @@ ones they fix. Verify each on the first Android build:
   `profile/AvatarCropSheet.tsx` (1) · `profile/profileStyles.ts` (5).
   CAUTION: `elevation` changes Android z-order and needs opaque backgrounds —
   add per-view with eyes on the screen, not in bulk.
-- **Transparent full-screen `<Modal>`s without `statusBarTranslucent`** — with
-  `edgeToEdgeEnabled` the dim/blur backdrop may stop at a status-bar-height
-  strip. Precedent: `dispatch/ArticleReaderModal.tsx` already sets it. ~20
-  files (see `grep -rln "<Modal" | xargs grep -L statusBarTranslucent`).
+- ~~Transparent `<Modal>`s without `statusBarTranslucent`~~ — **DONE 2026-07-13.**
+  All 20 transparent overlay modals now set it (each triaged first: all are
+  bottom-sheets / centered cards, so only the backdrop gains top coverage; the
+  prop is iOS-inert). On the device pass just confirm backdrops reach the top
+  edge and no modal content sits under the status bar.
 - **BlurView degradation** — 19 files use BlurView; only the two nav bars set
   `experimentalBlurMethod="dimezisBlurView"`. The other 17 render as a plain
   tint on Android (acceptable — most pair the blur with an rgba overlay), but

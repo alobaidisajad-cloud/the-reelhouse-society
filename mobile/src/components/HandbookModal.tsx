@@ -16,7 +16,7 @@ const SECTIONS = [
 
 export default function HandbookModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
     return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+        <Modal statusBarTranslucent visible={visible} transparent animationType="slide" onRequestClose={onClose}>
             <View style={s.overlay} accessibilityViewIsModal={true}>
                 <View style={s.card}>
                     <View style={s.header}>

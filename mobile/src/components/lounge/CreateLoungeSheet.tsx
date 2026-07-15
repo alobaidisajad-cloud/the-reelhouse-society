@@ -94,7 +94,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   if (!isRendered) return null;
 
   return (
-    <Modal transparent visible={isRendered} animationType="none" onRequestClose={handleClose}>
+    <Modal statusBarTranslucent transparent visible={isRendered} animationType="none" onRequestClose={handleClose}>
       <GestureHandlerRootView style={{ flex: 1 }}>
       <Animated.View style={[s.sheetKeyboard, animatedContainerStyle]}>
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>

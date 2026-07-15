@@ -152,7 +152,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
   if (!visible) return null;
 
   return (
-    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+    <Modal statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
         <PressableScale style={s.backdrop} onPress={onClose} accessibilityRole="button"><View /></PressableScale>
       </BlurView>

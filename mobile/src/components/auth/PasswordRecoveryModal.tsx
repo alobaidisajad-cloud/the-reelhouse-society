@@ -27,6 +27,7 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
 
   return (
     <Modal
+      statusBarTranslucent
       visible={visible}
       transparent
       animationType="fade"

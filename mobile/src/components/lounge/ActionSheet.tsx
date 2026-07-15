@@ -85,7 +85,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose
   };
 
   return (
-    <Modal transparent visible animationType="none" onRequestClose={onClose}>
+    <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
       <GestureHandlerRootView style={StyleSheet.absoluteFill}>
       <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
         <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>

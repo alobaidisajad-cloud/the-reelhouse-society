@@ -227,7 +227,7 @@ function ReportSheet({
   if (!isRendered) return null;
 
   return (
-    <Modal transparent visible animationType="none" onRequestClose={handleDismiss}>
+    <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={handleDismiss}>
       <GestureHandlerRootView style={StyleSheet.absoluteFill}>
         {/* Backdrop */}
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>

@@ -113,7 +113,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
   const canShare = !sharing && (forceReady || isPosterReady);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={s.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 

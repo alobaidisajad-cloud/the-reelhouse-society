@@ -497,7 +497,7 @@ export function SettingsScreen() {
           </AnimatedView>
         </ScrollView>
 
-        <Modal visible={otpModalVisible} animationType="fade" transparent onRequestClose={() => { if (!otpVerifying) setOtpModalVisible(false); }}>
+        <Modal statusBarTranslucent visible={otpModalVisible} animationType="fade" transparent onRequestClose={() => { if (!otpVerifying) setOtpModalVisible(false); }}>
           <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={st.modalOverlay}>
             <View style={st.modalContent}>

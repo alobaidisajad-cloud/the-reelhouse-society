@@ -193,7 +193,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     };
 
     return (
-        <Modal visible transparent animationType="fade" onRequestClose={() => { TactileEngine.selection(); onClose?.(); }}>
+        <Modal statusBarTranslucent visible transparent animationType="fade" onRequestClose={() => { TactileEngine.selection(); onClose?.(); }}>
             <Pressable style={s.overlay} onPress={() => { TactileEngine.selection(); onClose?.(); }}>
                 <Pressable style={s.card} onPress={() => {}}>
 

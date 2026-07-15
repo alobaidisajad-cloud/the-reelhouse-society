@@ -55,7 +55,7 @@ export default function QuickActionsFAB() {
             </PressableScale>
 
             {/* The Bottom Sheet Modal */}
-            <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
+            <Modal statusBarTranslucent visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
                 <AnimatedBlurView 
                     entering={FadeIn.duration(200)} 
                     exiting={FadeOut.duration(200)}

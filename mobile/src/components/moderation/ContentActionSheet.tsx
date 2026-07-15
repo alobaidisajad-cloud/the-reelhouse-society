@@ -175,7 +175,7 @@ export function ContentActionSheet({
   };
 
   return (
-    <Modal transparent visible animationType="none" onRequestClose={onClose}>
+    <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
       <GestureHandlerRootView style={StyleSheet.absoluteFill}>
         {/* Backdrop */}
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>

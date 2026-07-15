@@ -116,7 +116,7 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
     }, [data, onClose]);
 
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+        <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay}>
                 <Animated.View entering={FadeIn.duration(300)} style={s.modalContent}>
                     <View style={s.header}>

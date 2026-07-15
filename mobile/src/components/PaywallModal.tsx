@@ -44,7 +44,7 @@ export default function PaywallModal({ visible, onClose, recommendedTier }: Payw
         });
     };
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+        <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay} accessibilityViewIsModal={true}>
                 <View style={s.card}>
                     <PressableScale style={s.closeBtn} onPress={onClose} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" pressedScale={0.96}>

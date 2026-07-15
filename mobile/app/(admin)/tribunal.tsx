@@ -207,7 +207,7 @@ function ActionModal({
   const config = actionLabels[state.action];
 
   return (
-    <Modal visible={state.visible} transparent animationType="fade" onRequestClose={handleClose}>
+    <Modal statusBarTranslucent visible={state.visible} transparent animationType="fade" onRequestClose={handleClose}>
       <KeyboardAvoidingView
         style={s.modalOverlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
