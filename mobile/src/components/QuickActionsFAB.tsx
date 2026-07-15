@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, InteractionManager } from 'react-native';
-import Animated, { Easing, FadeIn, FadeOut, SlideInDown, SlideOutDown, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,8 +28,8 @@ export default function QuickActionsFAB() {
 
     const handlePress = () => {
         TactileEngine.mutate();
-        // No-bounce house curve — the ＋ rotates firmly into place, never wobbles.
-        rotation.value = withTiming(open ? 0 : 45, { duration: 260, easing: Easing.bezier(0.33, 0, 0.15, 1) });
+        // The ＋ keeps its subtle spring — that gentle rotate is the good part.
+        rotation.value = withSpring(open ? 0 : 45, { damping: 14, stiffness: 200 });
         setOpen(!open);
     };
 
@@ -67,7 +67,7 @@ export default function QuickActionsFAB() {
                 </AnimatedBlurView>
 
                 <Animated.View 
-                    entering={SlideInDown.duration(280)}
+                    entering={SlideInDown.springify().damping(26).stiffness(200)}
                     exiting={SlideOutDown.duration(200)} 
                     style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 24) }]}
                 >
