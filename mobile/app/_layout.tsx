@@ -101,12 +101,17 @@ export default function RootLayout() {
       const path = parsed.path || '';
       const queryParams = parsed.queryParams || {};
 
-      // Handle: reelhouse://auth/callback?token_hash=xxx&type=signup|recovery
+      // Handle: reelhouse://auth/callback?token_hash=…  (legacy OTP links)
+      //         reelhouse://auth-callback?code=…        (PKCE — current flow)
+      //         reelhouse://auth-callback?error=…       (expired/denied links)
+      // Route on ANY meaningful auth payload; a payload-less hit is ignored.
       if (path.includes('auth/callback') || path.includes('auth-callback')) {
         const tokenHash = queryParams.token_hash as string;
+        const code = queryParams.code as string;
+        const errorParam = (queryParams.error_description || queryParams.error || queryParams.error_code) as string;
         const type = queryParams.type as string;
 
-        if (tokenHash && type) {
+        if (tokenHash || code || errorParam) {
           // Route EVERYTHING to auth-callback so it can handle success, error, and recovery flows
           InteractionManager.runAfterInteractions(() => {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -115,7 +120,11 @@ export default function RootLayout() {
             router.dismissAll();
             router.replace({
               pathname: '/auth-callback',
-              params: { token_hash: tokenHash, type },
+              params: {
+                ...(tokenHash ? { token_hash: tokenHash } : {}),
+                ...(code ? { code } : {}),
+                ...(type ? { type } : {}),
+              },
             });
           });
         }
