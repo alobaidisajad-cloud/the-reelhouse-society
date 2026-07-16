@@ -1,7 +1,7 @@
 import React, { useCallback, memo } from 'react';
 import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Search, Plus, Bell, MessageSquareText } from 'lucide-react-native';
+import { Search, Plus, Bell, MessageSquareText, KeyRound } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, withSpring, useSharedValue, useAnimatedProps } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Href } from 'expo-router';
@@ -125,12 +125,24 @@ export const TopNavBar = memo(function TopNavBar() {
               accent
               accessibilityLabel="Add Log"
             />
-            {hasLoungeAccess && (
+            {hasLoungeAccess ? (
               <NavIconButton
                 icon={MessageSquareText}
                 onPress={onLoungePress}
                 size={19}
                 accessibilityLabel="Lounge"
+              />
+            ) : (
+              // The velvet rope, not a hidden door — cinephiles see the brass
+              // key; tapping it opens /lounge where the LoungeGate makes the
+              // invitation (CLEARANCE REQUIRED → ASCEND THE RANKS). Same
+              // pattern as ActionDeck's lounge share.
+              <NavIconButton
+                icon={KeyRound}
+                onPress={onLoungePress}
+                size={19}
+                accent
+                accessibilityLabel="The Lounge — clearance required. Opens membership details."
               />
             )}
           </View>
