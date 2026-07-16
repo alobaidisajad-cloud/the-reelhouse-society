@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, cancelAnimation } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, effects } from '../theme/theme';
+import TactileEngine from '../utils/TactileEngine';
 
 /**
  * MarqueeLights — A row of golden dots mimicking theater marquee bulbs.
@@ -104,13 +105,13 @@ export const ReelRating = memo(function ReelRating({ rating, size = 16, onChange
                 <View key={reel} style={[s.reelTouchWrap, { width: size, height: size }]}>
                     {reelImage}
                     <View style={s.reelSplitRow}>
-                        <Pressable 
-                            onPress={() => onChange(rating === halfVal ? 0 : halfVal)}
+                        <Pressable
+                            onPress={() => { TactileEngine.selection(); onChange(rating === halfVal ? 0 : halfVal); }}
                             style={s.reelHalf}
                             hitSlop={{ top: 4, bottom: 4, left: 2, right: 0 }}
                         />
-                        <Pressable 
-                            onPress={() => onChange(rating === fullVal ? 0 : fullVal)}
+                        <Pressable
+                            onPress={() => { TactileEngine.selection(); onChange(rating === fullVal ? 0 : fullVal); }}
                             style={s.reelHalf}
                             hitSlop={{ top: 4, bottom: 4, left: 0, right: 2 }}
                         />
