@@ -18,6 +18,7 @@
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { logger } from '../utils/logger';
+import { colors } from '../theme/theme';
 
 // ── Type Definitions ──
 
@@ -92,7 +93,7 @@ export async function registerForPushNotifications(userId: string): Promise<stri
         name: 'ReelHouse',
         importance: Notifications.AndroidImportance?.MAX ?? 5,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#C4961A', // Nitrate Noir sepia
+        lightColor: colors.champagne, // Nitrate Noir sepia
       });
     }
 

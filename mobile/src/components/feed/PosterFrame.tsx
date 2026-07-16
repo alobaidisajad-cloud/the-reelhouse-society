@@ -32,7 +32,7 @@ export const PosterFrame = React.memo(function PosterFrame({ itemId, filmId, pos
         <AnimatedExpoImage
           {...{
             source: { uri: posterUri },
-            style: [s.poster, s.premiumShadow, { tintColor: isAuteur ? '#521010' : '#8B6914' }],
+            style: [s.poster, s.premiumShadow, { tintColor: isAuteur ? '#521010' : colors.tarnish }],
             blurRadius: 15,
             cachePolicy: "memory-disk",
             recyclingKey: `blur-${filmId}`,

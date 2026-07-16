@@ -122,7 +122,7 @@ const s = StyleSheet.create({
   heroTitle: {
     fontFamily: fonts.display,
     fontSize: 34,
-    color: '#F2ECD8',
+    color: colors.silverScreen,
     marginBottom: 8,
     textAlign: 'center',
     lineHeight: 38,
@@ -172,7 +172,7 @@ const s = StyleSheet.create({
     paddingVertical: 16,
     paddingLeft: 46,
     paddingRight: 40,
-    color: '#F2ECD8',
+    color: colors.silverScreen,
     fontFamily: fonts.body,
     fontSize: 13,
     letterSpacing: 0.5,

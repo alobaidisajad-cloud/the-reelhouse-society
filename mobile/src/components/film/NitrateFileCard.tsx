@@ -328,7 +328,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 2,
-    color: '#C4961A',
+    color: colors.champagne,
     includeFontPadding: false,
   },
   stampTextAbandoned: {

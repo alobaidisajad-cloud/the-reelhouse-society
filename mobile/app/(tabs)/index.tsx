@@ -413,7 +413,7 @@ const s = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6,
   },
   heroWelcome: {
-    fontFamily: fonts.display, fontSize: 34, color: '#F2ECD8', letterSpacing: 2,
+    fontFamily: fonts.display, fontSize: 34, color: colors.silverScreen, letterSpacing: 2,
     // Dark shadow (not a sepia glow) so "The Lobby" reads over any feature backdrop.
     textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 12,
   },

@@ -63,7 +63,7 @@ export default function ProfileArchiveTab({
   }, []);
   const pulseStyle = useAnimatedStyle(() => ({
     borderColor: `rgba(184,137,26,${breatheAnim.value})`,
-    shadowColor: '#8b6914',
+    shadowColor: colors.tarnish,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: breatheAnim.value * 0.5,
     shadowRadius: 20,

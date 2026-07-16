@@ -67,7 +67,7 @@ export const st = StyleSheet.create({
     opacity: 0.6,
   },
   mastheadTitle: {
-    fontFamily: fonts.display, fontSize: 36, color: '#F2ECD8',
+    fontFamily: fonts.display, fontSize: 36, color: colors.silverScreen,
     textAlign: 'center', lineHeight: 42, marginBottom: 16,
     letterSpacing: 2,
     ...effects.textGlowSepia,

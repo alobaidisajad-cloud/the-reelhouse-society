@@ -292,9 +292,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // mark + stats panel). Cinephile = house brass (understated); Archivist =
   // champagne; Auteur = ruby. The avatar ring/badge stay the primary signal.
   const tierLine = isAuteurPlus ? 'rgba(180,45,45,0.45)' : isArchivistPlus ? 'rgba(196,150,26,0.5)' : 'rgba(184,137,26,0.3)';
-  const tierText = isAuteurPlus ? '#B42D2D' : isArchivistPlus ? '#C4961A' : 'rgba(184,137,26,0.7)';
+  const tierText = isAuteurPlus ? '#B42D2D' : isArchivistPlus ? colors.champagne : 'rgba(184,137,26,0.7)';
   const tierStatsBorder = isAuteurPlus ? 'rgba(180,45,45,0.5)' : isArchivistPlus ? 'rgba(196,150,26,0.6)' : 'rgba(184,137,26,0.3)';
-  const tierSpot = isAuteurPlus ? '#B42D2D' : isArchivistPlus ? '#C4961A' : '#B8891A';
+  const tierSpot = isAuteurPlus ? '#B42D2D' : isArchivistPlus ? colors.champagne : '#B8891A';
   const tierSpotOpacity = isAuteurPlus ? 0.2 : isArchivistPlus ? 0.26 : 0.18;
 
   // MEMBER Nº — the real serial, padded to four while small, growing
@@ -818,7 +818,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               )}
               {(!isAuteurPlus && isArchivistPlus) && (
                 <View style={s.archivistBadge}>
-                  <Archive size={8} color={'#F2ECD8'} strokeWidth={1.5} />
+                  <Archive size={8} color={colors.silverScreen} strokeWidth={1.5} />
                   <Text style={s.archivistBadgeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>ARCHIVIST</Text>
                 </View>
               )}

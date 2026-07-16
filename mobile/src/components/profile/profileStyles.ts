@@ -55,12 +55,12 @@ export const s = StyleSheet.create({
     backgroundColor: '#050402',
   },
   avatarRingAuteur: {
-    borderWidth: 3, borderColor: '#8B1A1A', // Auteur Ruby
-    ...effects.shadowPrimary, shadowColor: '#8B1A1A', shadowRadius: 15,
+    borderWidth: 3, borderColor: colors.bloodAged, // Auteur Ruby
+    ...effects.shadowPrimary, shadowColor: colors.bloodAged, shadowRadius: 15,
   },
   avatarRingArchivist: {
-    borderWidth: 3, borderColor: '#C4961A', // Archivist Champagne Gold
-    ...effects.shadowSurface, shadowColor: '#C4961A', shadowRadius: 10,
+    borderWidth: 3, borderColor: colors.champagne, // Archivist Champagne Gold
+    ...effects.shadowSurface, shadowColor: colors.champagne, shadowRadius: 10,
   },
   avatarRingCinephile: {
     borderWidth: 2, borderColor: colors.soot,
@@ -71,7 +71,7 @@ export const s = StyleSheet.create({
   avatarHaloAuteur: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 58,
-    backgroundColor: '#8B1A1A',
+    backgroundColor: colors.bloodAged,
     shadowColor: '#B42D2D',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.42,
@@ -89,7 +89,7 @@ export const s = StyleSheet.create({
 
   // ── Display Name ──
   displayName: {
-    fontFamily: fonts.display, fontSize: 26, color: '#F2ECD8', textAlign: 'center' as const,
+    fontFamily: fonts.display, fontSize: 26, color: colors.silverScreen, textAlign: 'center' as const,
     letterSpacing: 2, ...effects.textGlowSepia, textShadowRadius: 12,
   },
 
@@ -97,17 +97,17 @@ export const s = StyleSheet.create({
   auteurBadge: {
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
     backgroundColor: '#2A0505', paddingHorizontal: 10, paddingVertical: 4, 
-    borderRadius: 4, borderWidth: 1.5, borderColor: '#8B1A1A',
-    ...effects.shadowPrimary, shadowColor: '#8B1A1A',
+    borderRadius: 4, borderWidth: 1.5, borderColor: colors.bloodAged,
+    ...effects.shadowPrimary, shadowColor: colors.bloodAged,
   },
-  auteurBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: '#E8B4B4', ...effects.textGlowSepia, textShadowColor: '#8B1A1A' },
+  auteurBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: '#E8B4B4', ...effects.textGlowSepia, textShadowColor: colors.bloodAged },
   archivistBadge: {
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
-    backgroundColor: 'rgba(20,15,10,0.95)', borderWidth: 1.5, borderColor: '#C4961A',
+    backgroundColor: 'rgba(20,15,10,0.95)', borderWidth: 1.5, borderColor: colors.champagne,
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4,
-    ...effects.shadowSurface, shadowColor: '#C4961A',
+    ...effects.shadowSurface, shadowColor: colors.champagne,
   },
-  archivistBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: '#F2ECD8' },
+  archivistBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.silverScreen },
 
   // ── Bio ──
   bio: {
@@ -139,14 +139,14 @@ export const s = StyleSheet.create({
     borderRadius: 4, paddingVertical: 14, paddingHorizontal: 32, ...effects.shadowSurface,
   },
   followingBtn: { backgroundColor: 'rgba(5,3,2,0.95)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.2)' },
-  followBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: '#F2ECD8', textAlign: 'center' as const, ...effects.textGlowSepia },
+  followBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.silverScreen, textAlign: 'center' as const, ...effects.textGlowSepia },
   followingBtnText: { color: colors.fog, textShadowRadius: 0 },
   ghostBtn: { paddingVertical: 14, paddingHorizontal: 28, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4, backgroundColor: 'rgba(10,8,5,0.8)' },
-  ghostBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: '#F2ECD8' },
+  ghostBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen },
   primaryBtn: { backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 4, ...effects.shadowSurface },
-  primaryBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: '#F2ECD8', ...effects.textGlowSepia },
+  primaryBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen, ...effects.textGlowSepia },
   ctaBtn: { borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: 'rgba(14,11,8,0.9)', paddingVertical: 14, alignItems: 'center' as const, borderRadius: 4, marginBottom: 16, ...effects.shadowSurface },
-  ctaBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: '#F2ECD8', ...effects.textGlowSepia },
+  ctaBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen, ...effects.textGlowSepia },
 
   // ── Stats ──
   statsGrid: { 
@@ -158,7 +158,7 @@ export const s = StyleSheet.create({
     ...effects.shadowSurface,
   },
   statCard: { flex: 1, paddingVertical: 16, paddingHorizontal: 4, alignItems: 'center' as const },
-  statValue: { fontFamily: fonts.display, fontSize: 18, color: '#F2ECD8', lineHeight: 22, ...effects.textGlowSepia },
+  statValue: { fontFamily: fonts.display, fontSize: 18, color: colors.silverScreen, lineHeight: 22, ...effects.textGlowSepia },
   statLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fog, marginTop: 4, opacity: 0.8 },
   statDivider: { width: 1.5, height: 32, backgroundColor: 'rgba(184,137,26,0.15)' },
 
@@ -222,7 +222,7 @@ export const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center' as const, justifyContent: 'center' as const,
     ...effects.shadowSurface,
   },
-  collectionCardLabel: { fontFamily: fonts.sub, fontSize: 10, color: '#F2ECD8', textAlign: 'center' as const, letterSpacing: 1.5 },
+  collectionCardLabel: { fontFamily: fonts.sub, fontSize: 10, color: colors.silverScreen, textAlign: 'center' as const, letterSpacing: 1.5 },
   collectionCardDesc: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fog },
   collectionCardCount: { fontFamily: fonts.display, fontSize: 22, color: colors.sepia, ...effects.textGlowSepia },
   collectionCardWide: {

@@ -78,7 +78,7 @@ export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: {
         )}
         {screened && (
           <View style={st.screenedTick}>
-            <Check size={10} color="#DCA63A" strokeWidth={2.5} />
+            <Check size={10} color={colors.marqueeGold} strokeWidth={2.5} />
           </View>
         )}
       </View>

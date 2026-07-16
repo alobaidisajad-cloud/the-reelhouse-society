@@ -15,7 +15,7 @@ const s = StyleSheet.create({
     // Rye numerals — engraved on the plate, not typed on a form
     fontFamily: fonts.display,
     fontSize: 18,
-    color: '#F2ECD8',
+    color: colors.silverScreen,
     lineHeight: 22,
     ...effects.textGlowSepia,
   },

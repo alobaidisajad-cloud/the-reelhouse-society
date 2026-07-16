@@ -95,7 +95,7 @@ const s = StyleSheet.create({
     textTransform: 'uppercase',
   },
   moodLabelActive: {
-    color: '#F2ECD8',
+    color: colors.silverScreen,
     ...effects.textGlowSepia, textShadowRadius: 8
   },
   moodSub: {

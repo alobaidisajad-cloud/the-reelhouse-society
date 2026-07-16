@@ -391,7 +391,7 @@ const s = StyleSheet.create({
     borderRadius: 2.25,
     // Warm tungsten core with an amber halo — deliberately hotter than brass.
     backgroundColor: '#FCEBB8',
-    shadowColor: '#DCA63A',
+    shadowColor: colors.marqueeGold,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.85,
     shadowRadius: 4,

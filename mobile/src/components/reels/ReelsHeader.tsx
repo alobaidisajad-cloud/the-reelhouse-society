@@ -31,10 +31,10 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch }: { activeTa
     <View style={st.tabsContainer}>
       <Animated.View style={[StyleSheet.absoluteFillObject, st.tabsActiveBg, pillStyle]} />
       <PressableScale style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
-        <Text style={[st.tabText, { color: activeTab === 'logs' ? '#E4DFCC' : colors.fog, opacity: activeTab === 'logs' ? 1 : 0.6 }]}>LOGS</Text>
+        <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fog, opacity: activeTab === 'logs' ? 1 : 0.6 }]}>LOGS</Text>
       </PressableScale>
       <PressableScale style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
-        <Text style={[st.tabText, { color: activeTab === 'stacks' ? '#E4DFCC' : colors.fog, opacity: activeTab === 'stacks' ? 1 : 0.6 }]}>STACKS</Text>
+        <Text style={[st.tabText, { color: activeTab === 'stacks' ? colors.parchmentDim : colors.fog, opacity: activeTab === 'stacks' ? 1 : 0.6 }]}>STACKS</Text>
       </PressableScale>
     </View>
   );
@@ -130,7 +130,7 @@ const st = StyleSheet.create({
 
   sectionHeaderWrap: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14 },
   headerTitle: {
-    fontFamily: fonts.display, fontSize: 36, color: '#F2ECD8', marginBottom: 4,
+    fontFamily: fonts.display, fontSize: 36, color: colors.silverScreen, marginBottom: 4,
     ...effects.textGlowSepia, textShadowRadius: 25, textShadowColor: 'rgba(184,137,26, 0.4)', letterSpacing: 2
   },
   headerEstRow: {

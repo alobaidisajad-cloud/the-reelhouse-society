@@ -12,6 +12,7 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { colors } from '@/src/theme/theme';
 import { storage } from '@/src/stores/mmkv-storage';
 import { fonts } from '@/src/theme/theme';
 import { useReducedMotion } from '@/src/hooks/useReducedMotion';
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
     top: '50%',
     left: '50%',
     width: 2,
-    backgroundColor: '#C4961A',
+    backgroundColor: colors.champagne,
     transformOrigin: 'left center',
   },
   digitsWrapper: {

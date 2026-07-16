@@ -166,7 +166,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 11,
     letterSpacing: 7,
-    color: '#E4DFCC',
+    color: colors.parchmentDim,
     textTransform: 'uppercase',
     ...effects.textGlowSepia,
     textShadowRadius: 10,

@@ -360,7 +360,7 @@ const s = StyleSheet.create({
   cardTitle: {
     fontFamily: fonts.display,
     fontSize: 19,
-    color: '#F2ECD8',
+    color: colors.silverScreen,
     lineHeight: 24,
     textShadowColor: 'rgba(184,137,26, 0.35)',
     textShadowOffset: { width: 0, height: 0 },

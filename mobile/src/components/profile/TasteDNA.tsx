@@ -148,7 +148,7 @@ export const TasteDNA = memo(function TasteDNA({ logs, username, memberNo }: Tas
     const maxCount = computedGenres[0][1];
 
     // Generate "DNA" color from genre position
-    const dnaColors = ['#8B6914', '#A67B17', '#C4921E', '#D4A825', '#E0BC3A', '#F0D050'];
+    const dnaColors = [colors.tarnish, '#A67B17', '#C4921E', '#D4A825', '#E0BC3A', '#F0D050'];
 
     const handleShare = async () => {
         if (isSharing || !viewShotRef.current) return;

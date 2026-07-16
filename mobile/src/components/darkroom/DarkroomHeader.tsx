@@ -336,7 +336,7 @@ const s = StyleSheet.create({
     color: colors.fog,
   },
   filterToggleTextActive: {
-    color: '#F2ECD8',
+    color: colors.silverScreen,
     ...effects.textGlowSepia, textShadowRadius: 8
   },
   filterBadge: {

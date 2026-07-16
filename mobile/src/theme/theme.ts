@@ -41,6 +41,19 @@ export const colors = {
   validation: '#5B8C3E', // Archive-approved green — form validation only
   errorBackground: 'rgba(139,26,26,0.1)',
   errorBorder: 'rgba(139,26,26,0.5)',
+
+  // ── The Shade Ledger ──────────────────────────────────────────────────
+  // Six shades the app kept mixing by hand across ~15 files — now named.
+  // Values are EXACTLY what was already shipping (zero visual change); the
+  // color lock (__tests__/colorLock.test.ts) ratchets raw hexes so new
+  // drift outside this file fails the suite. Artwork files (logo, Buster,
+  // the Darkroom mood table, share-card canvases) are exempt — art is art.
+  silverScreen: '#F2ECD8',  // projection-screen cream — display titles on dark chrome
+  parchmentDim: '#E4DFCC',  // parchment half a stop down — secondary display text
+  champagne: '#C4961A',     // polished brass highlight — glows, active accents
+  marqueeGold: '#DCA63A',   // marquee-bulb gold — the brightest brass, sparing use
+  tarnish: '#8B6914',       // aged dark brass — tints, muted gold accents
+  bloodAged: '#8B1A1A',     // dried blood — legacy deep-red accents (prefer crimson/bloodReel)
 } as const;
 
 export const fonts = {
@@ -77,6 +90,15 @@ export const radii = {
   lg: 12,
   pill: 9999,
 } as const;
+
+// ── THE BOOTH LAW ────────────────────────────────────────────────────────
+// All light in the house falls from the projection booth: overhead, warm,
+// slightly behind the viewer. Therefore every drop shadow falls DOWNWARD
+// (shadowOffset height >= 0) and glows radiate evenly (offset 0,0).
+// Blessed exceptions: surfaces that RISE FROM THE FLOOR — bottom sheets and
+// the tab bar (logDetailStyles.contentCard, AvatarCropSheet, (tabs)/_layout)
+// — lift with a soft UPWARD shadow to separate from the content beneath.
+// Any other upward or sideways shadow is drift, not design.
 
 // ── Ultra-Premium Nitrate Effects ──
 export const effects = {

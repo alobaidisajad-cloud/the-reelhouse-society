@@ -732,11 +732,11 @@ const s = StyleSheet.create({
   metaPrivate: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
   // THE HOUSE PULSE — a true brass ember, lit only when others are present.
   presenceEmber: {
-    width: 5, height: 5, borderRadius: 3, backgroundColor: '#DCA63A',
-    shadowColor: '#DCA63A', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4, elevation: 3,
+    width: 5, height: 5, borderRadius: 3, backgroundColor: colors.marqueeGold,
+    shadowColor: colors.marqueeGold, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4, elevation: 3,
     marginRight: 1,
   },
-  presenceText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: '#DCA63A', includeFontPadding: false },
+  presenceText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.marqueeGold, includeFontPadding: false },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   doorBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.sepia,
