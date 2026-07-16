@@ -32,6 +32,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // PKCE: email links (confirm/recovery) redirect back with ?code=, which
+    // auth-callback's Attempt 1 (exchangeCodeForSession) consumes. The callback
+    // was WRITTEN for this flow but the client was never switched — under the
+    // default implicit flow, tokens arrive in a #fragment nothing parses, and
+    // password recovery dead-ends at "link may have expired".
+    flowType: 'pkce',
   },
 });
 
