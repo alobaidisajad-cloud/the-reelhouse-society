@@ -35,6 +35,9 @@ export interface AuthState {
 // ── Action throttle: prevents spam-clicking social buttons ──
 const _actionThrottles = new Map<string, number>();
 const _prefTimers = new Map<string, ReturnType<typeof setTimeout>>();
+// F-3: per-user snapshot of preferences taken at the START of a debounce window, so a
+// failed sync rolls back EVERY key changed during the window (multiple keys share one timer).
+const _prefBaselines = new Map<string, Record<string, unknown>>();
 const _THROTTLE_MAX = 200;
 const _THROTTLE_TTL = 30000;
 function pruneThrottles() {
@@ -283,6 +286,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     _actionThrottles.clear();
     _prefTimers.forEach(t => clearTimeout(t));
     _prefTimers.clear();
+    _prefBaselines.clear();
 
     // 10. Report partial cleanup failures
     if (cleanupErrors.length > 0) {
@@ -359,18 +363,26 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   setPreference: async (key, value) => {
     const user = get().user;
     if (!user) return;
-    // Capture the previous value so a failed sync can roll back cleanly.
-    const prevValue = user.preferences?.[key];
+
+    const timerKey = `pref:${user.id}`;
+
+    // F-3: snapshot the pre-window preferences ONCE, at the start of a debounce window.
+    // Because rapid changes to different keys share this single timer, a failed sync must
+    // revert EVERY key changed during the window — not just the last one. Capturing per-call
+    // (the old `prevValue`) rolled back only the final key and left earlier keys diverged.
+    if (!_prefTimers.has(timerKey)) {
+      _prefBaselines.set(user.id, { ...(user.preferences ?? {}) });
+    }
+
     const prefs = { ...(user.preferences ?? {}), [key]: value };
-    
+
     // 1. Optimistic update (Memory)
     set((state) => ({ user: state.user ? { ...state.user, preferences: prefs } : null }));
-    
+
     // 2. Optimistic update (Cache) - guarantees state persists even if app closes during debounce
     storage.set(`ironvault_user_cache_${user.id}`, JSON.stringify({ ...get().user, preferences: prefs }));
     storage.set(`dirty_prefs_${user.id}`, 'true');
 
-    const timerKey = `pref:${user.id}`;
     if (_prefTimers.has(timerKey)) {
       clearTimeout(_prefTimers.get(timerKey)!);
     }
@@ -380,18 +392,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       _prefTimers.delete(timerKey);
       try {
         const currentPrefs = get().user?.preferences;
-        if (!currentPrefs) return;
+        if (!currentPrefs) { _prefBaselines.delete(user.id); return; }
         // Server-side JSONB merge (COMP-7 cross-device): keys set on other
         // devices are preserved instead of being overwritten by this blob.
         const { error } = await supabase.rpc('update_my_preferences', { p_preferences: currentPrefs });
         if (error) throw error;
         storage.delete(`dirty_prefs_${user.id}`);
+        _prefBaselines.delete(user.id);
       } catch {
-        // DB write failed — roll back local state to prevent cache/server divergence.
-        const rollbackPrefs = { ...(get().user?.preferences ?? {}), [key]: prevValue };
-        set((state) => ({ user: state.user ? { ...state.user, preferences: rollbackPrefs } : null }));
+        // DB write failed — restore the FULL pre-window snapshot so every key changed during
+        // this debounce window reverts together, preventing cache/server divergence. dirty_prefs
+        // stays set so restoreSession re-pushes the (now-consistent) baseline on next launch.
+        const baseline = _prefBaselines.get(user.id) ?? {};
+        _prefBaselines.delete(user.id);
+        set((state) => ({ user: state.user ? { ...state.user, preferences: { ...baseline } } : null }));
         storage.set(`ironvault_user_cache_${user.id}`, JSON.stringify(get().user));
-        if (__DEV__) console.warn('[setPreference] DB sync failed, rolled back locally');
+        if (__DEV__) console.warn('[setPreference] DB sync failed, rolled back window locally');
       }
     }, 1000));
   },

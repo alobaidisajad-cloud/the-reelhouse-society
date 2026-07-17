@@ -26,7 +26,6 @@
         "EXPO_PUBLIC_SENTRY_DSN": "https://8d558f1ffdfbe2c8cd29a195d120ad3b@o4511019614208000.ingest.us.sentry.io/4511645947002880",
         "EXPO_PUBLIC_SUPABASE_URL": "https://wihyqkpoymwcvbprslyz.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_y1kmD0C9P9lrOChVkg8AgA_vH-Ab98u",
-        "EXPO_PUBLIC_TMDB_API_KEY": "d1e75fde43599fbf24103e2fa5072996",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_aUCBfrJsZyFoozeOyrCTJtNTogw"
       },
       "channel": "production"

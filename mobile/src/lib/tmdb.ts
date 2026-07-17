@@ -6,7 +6,8 @@
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 const PROXY_URL = `${SUPABASE_URL}/functions/v1/tmdb-proxy`;
-const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY || '';
+// F-1: the TMDB API key is NOT read on the client — it lives only in the tmdb-proxy
+// edge function's server-side secret, so it can never be extracted from the JS bundle.
 const TMDB_IMG = 'https://image.tmdb.org/t/p';
 
 // ── Response interfaces ──
@@ -184,16 +185,9 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
           continue;
         }
         if (!res.ok) {
-          // CIRCUIT BREAKER FALLBACK: If proxy fails (e.g. 404, 500), try direct TMDB API
-          if (TMDB_API_KEY) {
-            const separator = path.includes('?') ? '&' : '?';
-            const directUrl = `https://api.themoviedb.org/3${path}${separator}api_key=${TMDB_API_KEY}`;
-            const directRes = await fetch(directUrl);
-            if (!directRes.ok) return fallback;
-            const data = await directRes.json();
-            if (!path.includes('/search/')) cacheSet(path, data);
-            return data as T;
-          }
+          // F-1: no direct-to-TMDB fallback — that path required shipping the API key
+          // in the bundle. The tmdb-proxy (own server-side key + internal retry/backoff
+          // above) is the sole path; on proxy failure we degrade gracefully to `fallback`.
           return fallback;
         }
         const data = await res.json();

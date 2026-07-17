@@ -21,6 +21,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, content-type, x-client-info, apikey',
 };
 
+// F-11: per-IP rate limit (best-effort, per-isolate) + a feed-host allowlist, so this
+// endpoint can't be used as an open relay (previously it would proxy ANY URL through
+// rss2json). The app only ever requests the hosts below. Add new feed hosts here.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 30;
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const e = rateLimitMap.get(ip);
+  if (!e || now > e.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  e.count++;
+  return e.count > RATE_LIMIT_MAX;
+}
+const ALLOWED_FEED_HOSTS = new Set(['www.theguardian.com', 'theguardian.com']);
+
 serve(async (req: Request) => {
   // CORS preflight
   if (req.method === 'OPTIONS') {
@@ -35,6 +53,17 @@ serve(async (req: Request) => {
     });
   }
 
+  // F-11: rate limit by client IP
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || req.headers.get('cf-connecting-ip')
+    || 'unknown';
+  if (isRateLimited(clientIp)) {
+    return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try again shortly.' }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' },
+    });
+  }
+
   try {
     const body = await req.json().catch(() => null);
     const url = body?.url;
@@ -46,10 +75,19 @@ serve(async (req: Request) => {
       });
     }
 
-    // Validate URL is a reasonable RSS feed URL (basic sanitization)
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      return new Response(JSON.stringify({ error: 'Invalid URL scheme' }), {
+    // F-11: only proxy allowlisted feed hosts over https (blocks open-relay abuse & non-http schemes)
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid URL' }), {
         status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (parsedUrl.protocol !== 'https:' || !ALLOWED_FEED_HOSTS.has(parsedUrl.hostname)) {
+      return new Response(JSON.stringify({ error: 'Feed host not allowed' }), {
+        status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

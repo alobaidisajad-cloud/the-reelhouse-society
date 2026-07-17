@@ -16,7 +16,7 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 
 // ── AUTH CALLBACK SCREEN ──
 // Handles deep links from Supabase email verification & password recovery.
-// URL: reelhouse://auth/callback?token_hash=xxx&type=signup|recovery
+// URL: reelhouse://auth-callback?token_hash=xxx&type=signup|recovery  (scheme from Linking.createURL('auth-callback'))
 export default function AuthCallbackScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ token_hash?: string; type?: string; url?: string; code?: string }>();
