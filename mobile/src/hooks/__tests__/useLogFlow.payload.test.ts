@@ -6,7 +6,7 @@
  * This tests the real exported `buildLogPayload`, `validateLogSubmission`,
  * and `getLocalDateString` functions directly.
  */
-import { buildLogPayload, validateLogSubmission, getLocalDateString, LogPayloadInput, AUTOPSY_INIT } from '../useLogFlow';
+import { buildLogPayload, validateLogSubmission, getLocalDateString, loadAutopsyForEdit, LogPayloadInput, AUTOPSY_INIT } from '../useLogFlow';
 
 function basePayloadInput(overrides: Partial<LogPayloadInput> = {}): LogPayloadInput {
   return {
@@ -22,7 +22,6 @@ function basePayloadInput(overrides: Partial<LogPayloadInput> = {}): LogPayloadI
     abandonedReason: '',
     isAuteur: false,
     isPremium: false,
-    isAutopsied: false,
     autopsy: { ...AUTOPSY_INIT },
     altPoster: null,
     editorialHeader: null,
@@ -109,12 +108,36 @@ describe('buildLogPayload', () => {
     expect(buildLogPayload(basePayloadInput({ isPremium: false, physicalMedia: 'Blu-Ray' })).physicalMedia).toBeNull();
   });
 
-  it('gates autopsy/isAutopsied behind isAuteur', () => {
+  it('gates autopsy behind isAuteur and saves rated axes with the _v marker', () => {
     const autopsy = { story: 4, script: 3, acting: 5, cinematography: 4, editing: 3, sound: 2 };
-    expect(buildLogPayload(basePayloadInput({ isAuteur: true, isAutopsied: true, autopsy })).autopsy).toEqual(autopsy);
-    expect(buildLogPayload(basePayloadInput({ isAuteur: true, isAutopsied: true, autopsy })).isAutopsied).toBe(true);
-    expect(buildLogPayload(basePayloadInput({ isAuteur: false, isAutopsied: true, autopsy })).autopsy).toBeNull();
-    expect(buildLogPayload(basePayloadInput({ isAuteur: true, isAutopsied: false, autopsy })).autopsy).toBeNull();
+    expect(buildLogPayload(basePayloadInput({ isAuteur: true, autopsy })).autopsy).toEqual({ _v: 2, ...autopsy });
+    expect(buildLogPayload(basePayloadInput({ isAuteur: true, autopsy })).isAutopsied).toBe(true);
+    expect(buildLogPayload(basePayloadInput({ isAuteur: false, autopsy })).autopsy).toBeNull();
+    expect(buildLogPayload(basePayloadInput({ isAuteur: false, autopsy })).isAutopsied).toBe(false);
+  });
+
+  it('never phantom-saves an untouched autopsy (all axes null)', () => {
+    const result = buildLogPayload(basePayloadInput({ isAuteur: true, autopsy: { ...AUTOPSY_INIT } }));
+    expect(result.autopsy).toBeNull();
+    expect(result.isAutopsied).toBe(false);
+  });
+
+  it('saves partial autopsies with only the rated axes present', () => {
+    const result = buildLogPayload(basePayloadInput({ isAuteur: true, autopsy: { ...AUTOPSY_INIT, story: 7 } }));
+    expect(result.autopsy).toEqual({ _v: 2, story: 7 });
+    expect(result.isAutopsied).toBe(true);
+  });
+
+  it('preserves a deliberate 0 as a genuinely filed score', () => {
+    const result = buildLogPayload(basePayloadInput({ isAuteur: true, autopsy: { ...AUTOPSY_INIT, sound: 0 } }));
+    expect(result.autopsy).toEqual({ _v: 2, sound: 0 });
+    expect(result.isAutopsied).toBe(true);
+  });
+
+  it('strips a stray _v key from editor state instead of counting it as a score', () => {
+    const result = buildLogPayload(basePayloadInput({ isAuteur: true, autopsy: { ...AUTOPSY_INIT, _v: 2 } }));
+    expect(result.autopsy).toBeNull();
+    expect(result.isAutopsied).toBe(false);
   });
 
   it('gates altPoster, editorialHeader, dropCap, pullQuote behind their respective tiers', () => {
@@ -129,6 +152,24 @@ describe('buildLogPayload', () => {
 
     expect(buildLogPayload(basePayloadInput({ isPremium: false, pullQuote: 'Quote' })).pullQuote).toBe('');
     expect(buildLogPayload(basePayloadInput({ isPremium: true, pullQuote: '  Quote  ' })).pullQuote).toBe('Quote');
+  });
+});
+
+describe('loadAutopsyForEdit', () => {
+  it('treats legacy zeros as unrated (the old editor could not express a deliberate 0)', () => {
+    const legacy = { story: 7, script: 0, acting: 0, cinematography: 4, editing: 0, sound: 0 };
+    expect(loadAutopsyForEdit(legacy)).toEqual({ story: 7, script: null, acting: null, cinematography: 4, editing: null, sound: null });
+  });
+
+  it('treats v2 zeros as genuinely filed scores', () => {
+    const v2 = { _v: 2, story: 7, sound: 0 };
+    expect(loadAutopsyForEdit(v2)).toEqual({ story: 7, script: null, acting: null, cinematography: null, editing: null, sound: 0 });
+  });
+
+  it('returns all-unrated for null, non-object, or empty payloads', () => {
+    expect(loadAutopsyForEdit(null)).toEqual(AUTOPSY_INIT);
+    expect(loadAutopsyForEdit('garbage')).toEqual(AUTOPSY_INIT);
+    expect(loadAutopsyForEdit({})).toEqual(AUTOPSY_INIT);
   });
 });
 

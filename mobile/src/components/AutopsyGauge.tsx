@@ -14,32 +14,38 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts } from '@/src/theme/theme';
 
 interface AutopsyGaugeProps {
-    autopsy: Record<string, number> | null;
+    autopsy: Record<string, number | null> | null;
 }
 
 const AXES = [
-    { key: 'story', label: 'STORY' },
-    { key: 'script', label: 'SCRIPT / DIALOGUE' },
-    { key: 'acting', label: 'ACTING & CHARACTER' },
-    { key: 'cinematography', label: 'CINEMATOGRAPHY' },
-    { key: 'editing', label: 'EDITING & PACING' },
-    { key: 'sound', label: 'SOUND DESIGN & SCORE' },
+    { key: 'story', label: 'STORY', alts: ['screenplay'] },
+    { key: 'script', label: 'SCRIPT / DIALOGUE', alts: ['screenplay'] },
+    { key: 'acting', label: 'ACTING & CHARACTER', alts: ['direction'] },
+    { key: 'cinematography', label: 'CINEMATOGRAPHY', alts: [] as string[] },
+    { key: 'editing', label: 'EDITING & PACING', alts: ['pacing'] },
+    { key: 'sound', label: 'SOUND DESIGN & SCORE', alts: ['score'] },
 ];
 
 export default function AutopsyGauge({ autopsy }: AutopsyGaugeProps) {
     if (!autopsy) return null;
 
-    // Backwards-compatible data mapping (matches web exactly)
+    // AUTOPSY LAW: render only genuinely filed scores. v2 payloads (`_v >= 2`)
+    // and live editor state carry rated axes as numbers (a deliberate 0 is a
+    // real verdict and renders as a 0.0 bar); untouched axes are null/absent.
+    // Legacy payloads wrote 0 for untouched axes — legacy zeros are dropped.
+    const isV2 = typeof autopsy._v === 'number' && (autopsy._v as number) >= 2;
+    const isLegacy = !isV2 && Object.values(autopsy).every(v => typeof v === 'number');
     const data = AXES.map(axis => {
-        let value = 0;
-        if (axis.key === 'story') value = autopsy.story ?? autopsy.screenplay ?? 0;
-        else if (axis.key === 'script') value = autopsy.script ?? autopsy.screenplay ?? 0;
-        else if (axis.key === 'acting') value = autopsy.acting ?? autopsy.direction ?? 0;
-        else if (axis.key === 'cinematography') value = autopsy.cinematography ?? 0;
-        else if (axis.key === 'editing') value = autopsy.editing ?? autopsy.pacing ?? 0;
-        else if (axis.key === 'sound') value = autopsy.sound ?? 0;
-        return { ...axis, value };
-    });
+        let value: number | null = null;
+        const candidates = [autopsy[axis.key], ...axis.alts.map(a => autopsy[a])];
+        for (const c of candidates) {
+            if (typeof c === 'number' && !isNaN(c)) { value = Math.min(10, Math.max(0, c)); break; }
+        }
+        if (value !== null && isLegacy && value === 0) value = null;
+        return { key: axis.key, label: axis.label, value };
+    }).filter((a): a is { key: string; label: string; value: number } => a.value !== null);
+
+    if (data.length === 0) return null;
 
     return (
         <View style={s.container}>

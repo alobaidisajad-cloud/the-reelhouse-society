@@ -28,7 +28,25 @@ export interface SelectedFilm {
 }
 
 export const DRAFT_KEY = 'reelhouse_log_draft';
-export const AUTOPSY_INIT: Record<string, number> = { story: 0, script: 0, acting: 0, cinematography: 0, editing: 0, sound: 0 };
+// AUTOPSY LAW: `null` means UNRATED; a number — including a deliberate 0 —
+// means the user filed that score. The saved JSONB carries only rated axes
+// plus a `_v: 2` marker so genuine zeros are forever distinguishable from
+// legacy phantom rows (the old editor wrote 0 for untouched axes).
+export const AUTOPSY_INIT: Record<string, number | null> = { story: null, script: null, acting: null, cinematography: null, editing: null, sound: null };
+
+/** Normalize a stored autopsy JSONB into editor state. Legacy rows (no _v)
+ *  treat 0 as unrated — the old editor could not express a deliberate zero. */
+export function loadAutopsyForEdit(raw: unknown): Record<string, number | null> {
+    const out: Record<string, number | null> = { ...AUTOPSY_INIT };
+    if (!raw || typeof raw !== 'object') return out;
+    const obj = raw as Record<string, unknown>;
+    const isV2 = typeof obj._v === 'number' && obj._v >= 2;
+    for (const key of Object.keys(AUTOPSY_INIT)) {
+        const v = obj[key];
+        if (typeof v === 'number' && (isV2 || v > 0)) out[key] = v;
+    }
+    return out;
+}
 export const ABANDONED_REASONS = ['Too Slow', 'Too Upsetting', 'Life Got in the Way', "I'll Return Someday", 'Lost the Plot', 'Wrong Mood'];
 export const AUTOPSY_LABELS: Record<string, string> = {
     story: 'STORY', script: 'SCRIPT/DIALOGUE', acting: 'ACTING/CHAR',
@@ -79,8 +97,7 @@ export interface LogPayloadInput {
     abandonedReason: string;
     isAuteur: boolean;
     isPremium: boolean;
-    isAutopsied: boolean;
-    autopsy: Record<string, number>;
+    autopsy: Record<string, number | null>;
     altPoster: string | null;
     editorialHeader: string | null;
     dropCap: boolean;
@@ -93,9 +110,17 @@ export interface LogPayloadInput {
 export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
     const {
         film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
-        physicalMedia, abandonedReason, isAuteur, isPremium, isAutopsied, autopsy,
+        physicalMedia, abandonedReason, isAuteur, isPremium, autopsy,
         altPoster, editorialHeader, dropCap, pullQuote,
     } = input;
+    // An autopsy exists if and only if the user filed at least one score.
+    // Derived purely from data — no UI open/close state can phantom-save an
+    // untouched autopsy or silently discard a filled one. A deliberate 0 is a
+    // rated axis; null (untouched) axes are simply absent from the payload.
+    const ratedAxes = Object.fromEntries(
+        Object.entries(autopsy ?? {}).filter(([key, v]) => key !== '_v' && typeof v === 'number')
+    ) as Record<string, number>;
+    const hasAutopsy = isAuteur && Object.keys(ratedAxes).length > 0;
     return {
         filmId: film.id, title: film.title ?? film.name ?? 'Untitled',
         poster: altPoster ?? film.poster_path ?? null,
@@ -105,8 +130,8 @@ export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
         privateNotes: isPremium ? (privateNotes.trim() || null) : null,
         abandonedReason: status === 'abandoned' ? abandonedReason : null,
         physicalMedia: isPremium && physicalMedia !== 'None' ? physicalMedia : null,
-        isAutopsied: isAuteur && isAutopsied,
-        autopsy: isAuteur && isAutopsied ? autopsy : null,
+        isAutopsied: hasAutopsy,
+        autopsy: hasAutopsy ? { _v: 2, ...ratedAxes } : null,
         altPoster: isAuteur ? altPoster : null,
         editorialHeader: isPremium ? editorialHeader : null,
         dropCap: isPremium ? dropCap : false,
@@ -152,13 +177,12 @@ export function useLogFlow() {
     const [watchedWith, setWatchedWith] = useState('');
     const [privateNotes, setPrivateNotes] = useState('');
     const [physicalMedia, setPhysicalMedia] = useState('None');
-    const [autopsy, setAutopsy] = useState<Record<string, number>>({ ...AUTOPSY_INIT });
+    const [autopsy, setAutopsy] = useState<Record<string, number | null>>({ ...AUTOPSY_INIT });
     const [altPoster, setAltPoster] = useState<string | null>(null);
     const [editorialHeader, setEditorialHeader] = useState<string | null>(null);
     const [dropCap, setDropCap] = useState(false);
     const [pullQuote, setPullQuote] = useState('');
     const [autopsyOpen, setAutopsyOpen] = useState(false);
-    const [isAutopsied, setIsAutopsied] = useState(false);
     // The LOGISTICS drawer starts closed so a fresh log's fast path is
     // pick → status → rate → write → seal. Edit mode re-opens it below
     // whenever there's already logistics content to reveal.
@@ -206,7 +230,6 @@ export function useLogFlow() {
         setEditorialHeader(null);
         setDropCap(false);
         setPullQuote('');
-        setIsAutopsied(false);
         setAutopsyOpen(false);
         setMoreOpen(false);
 
@@ -222,17 +245,18 @@ export function useLogFlow() {
         setPrivateNotes(log.privateNotes ?? '');
         setPhysicalMedia(log.physicalMedia ?? 'None');
         setAbandonedReason(log.abandonedReason ?? '');
+        let loadedAutopsy: Record<string, number | null> = { ...AUTOPSY_INIT };
         if (log.autopsy) {
-            try { setAutopsy(typeof log.autopsy === 'string' ? JSON.parse(log.autopsy) : log.autopsy); }
-             
-            catch (err: unknown) { setAutopsy({ ...AUTOPSY_INIT }); }
+            try { loadedAutopsy = loadAutopsyForEdit(typeof log.autopsy === 'string' ? JSON.parse(log.autopsy) : log.autopsy); }
+            catch (err: unknown) { loadedAutopsy = { ...AUTOPSY_INIT }; }
         }
+        setAutopsy(loadedAutopsy);
         setAltPoster(log.altPoster ?? null);
         setEditorialHeader(log.editorialHeader ?? null);
         setDropCap(log.dropCap ?? false);
         setPullQuote(log.pullQuote ?? '');
-        setIsAutopsied(log.isAutopsied ?? false);
-        setAutopsyOpen(log.isAutopsied ?? false);
+        // Open the autopsy section when the log actually carries rated scores.
+        setAutopsyOpen(Object.values(loadedAutopsy).some(v => typeof v === 'number'));
         // Never hide populated data: open the LOGISTICS drawer when the log
         // already carries a companion, private notes, or physical media.
         setMoreOpen(!!(log.watchedWith || log.privateNotes || (log.physicalMedia && log.physicalMedia !== 'None')));
@@ -317,7 +341,7 @@ export function useLogFlow() {
         try {
             const logData = buildLogPayload({
                 film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
-                physicalMedia, abandonedReason, isAuteur, isPremium, isAutopsied, autopsy,
+                physicalMedia, abandonedReason, isAuteur, isPremium, autopsy,
                 altPoster, editorialHeader, dropCap, pullQuote,
             });
             if (isEditing && editLogId) { await updateLog(editLogId, logData); }
@@ -368,7 +392,6 @@ export function useLogFlow() {
         setEditorialHeader(null);
         setDropCap(false);
         setPullQuote('');
-        setIsAutopsied(false);
         setAutopsyOpen(false);
         setFilm(null);
         setStep(0);
@@ -406,7 +429,6 @@ export function useLogFlow() {
         dropCap, setDropCap,
         pullQuote, setPullQuote,
         autopsyOpen, setAutopsyOpen,
-        isAutopsied, setIsAutopsied,
         moreOpen, setMoreOpen,
         calendarOpen, setCalendarOpen,
         showDeleteConfirm, setShowDeleteConfirm,

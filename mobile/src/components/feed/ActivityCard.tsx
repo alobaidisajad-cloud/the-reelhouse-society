@@ -28,7 +28,7 @@ import Animated, {
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ActionDeck } from './ActionDeck';
-import { AutopsyStrip, AutopsyBack } from './AutopsyView';
+import { AutopsyStrip, AutopsyBack, hasRatedAutopsy } from './AutopsyView';
 import { ReviewContent, VerdictBlock } from './ReviewContent';
 import { UserAttributionRow } from './UserAttributionRow';
 import { PosterFrame } from './PosterFrame';
@@ -104,7 +104,9 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
   const isPremium = isArchivist || isAuteur || !!item.editorial_header || !!item.pull_quote;
 
   const autopsyStats = (item.autopsy ?? undefined) as Record<string, number> | undefined;
-  const hasAutopsy = !!item.is_autopsied && !!autopsyStats && Object.keys(autopsyStats).length > 0;
+  // Rated-axes-only gate: a phantom all-zero legacy autopsy (or an object with
+  // no genuinely filed scores) must not present the card as autopsied.
+  const hasAutopsy = !!item.is_autopsied && hasRatedAutopsy(autopsyStats);
 
   const editorialUri = item.editorial_header ? `${TMDB_IMG_W500}${item.editorial_header}` : null;
 

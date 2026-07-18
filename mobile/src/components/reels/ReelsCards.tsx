@@ -29,13 +29,16 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
         withTiming(0.1, { duration: 12000, easing: Easing.inOut(Easing.sin) })
       ), -1, true
     );
+    // Calmed flicker: the old 0.70–1.00 swing strobed on device and read as a
+    // rendering glitch, not atmosphere. A 0.92–1.00 breath keeps the projector
+    // alive without ever reading as jank.
     flicker.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 150 }),
-        withTiming(0.85, { duration: 100 }),
-        withTiming(0.95, { duration: 250 }),
-        withTiming(0.7, { duration: 50 }),
-        withTiming(0.9, { duration: 1200 }),
+        withTiming(1, { duration: 400 }),
+        withTiming(0.95, { duration: 300 }),
+        withTiming(0.98, { duration: 500 }),
+        withTiming(0.92, { duration: 200 }),
+        withTiming(0.97, { duration: 1600 }),
       ), -1, false
     );
     return () => { cancelAnimation(beamSwing); cancelAnimation(flicker); };

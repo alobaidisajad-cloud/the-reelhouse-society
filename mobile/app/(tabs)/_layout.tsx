@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import Animated, {
@@ -147,15 +147,20 @@ function LobbyTabIcon({ focused }: { focused: boolean }) {
 const TAB_BAR_BORDER_COLORS = ['rgba(196,150,26,0)', 'rgba(196,150,26,0.1)', 'rgba(196,150,26,0)'] as const;
 
 function TabBarBackground() {
+  // ANDROID BLUR LAW: dimezisBlurView re-captures the window on every frame —
+  // during scroll it strobed and destabilized sibling compositing (the FAB).
+  // iOS keeps true native blur; Android gets near-opaque smoked glass, which
+  // is what the blur + tint combination visually resolved to anyway.
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <BlurView
-        intensity={65}
-        tint="dark"
-        experimentalBlurMethod="dimezisBlurView"
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={[StyleSheet.absoluteFill, s.tabBarTint]} />
+      {Platform.OS === 'ios' ? (
+        <>
+          <BlurView intensity={65} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, s.tabBarTint]} />
+        </>
+      ) : (
+        <View style={[StyleSheet.absoluteFill, s.tabBarTintAndroid]} />
+      )}
       {/* Sepia gradient border at top */}
       <LinearGradient
         colors={TAB_BAR_BORDER_COLORS}
@@ -330,6 +335,9 @@ const s = StyleSheet.create({
 
   tabBarTint: {
     backgroundColor: 'rgba(8, 6, 4, 0.45)', // Smoked Obsidian tint overlaying the blur
+  },
+  tabBarTintAndroid: {
+    backgroundColor: 'rgba(8, 6, 4, 0.94)', // No blur beneath — carry legibility alone
   },
 
   centerGlow: {

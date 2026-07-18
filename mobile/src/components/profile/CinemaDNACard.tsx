@@ -74,12 +74,31 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
         avgRatingStr = rated.length ? avgRatingNum.toFixed(1) : '—';
         
         const autopsies = logs.filter((l) => l.isAutopsied && l.autopsy).map((l) => l.autopsy!);
+        // Rated-axes-only averaging. v2 payloads carry only filed scores (a
+        // deliberate 0 counts and drags the average — that's the verdict's
+        // job); legacy zeros meant "untouched" and are excluded so they can't
+        // deflate the craft profile.
+        let ratedSamples = 0;
+        const axisAvg = (keys: string[]) => {
+            let sum = 0, n = 0;
+            for (const a of autopsies) {
+                const rec = a as Record<string, unknown>;
+                const isV2 = typeof rec._v === 'number' && (rec._v as number) >= 2;
+                let v: number | undefined;
+                for (const k of keys) { const c = rec[k]; if (typeof c === 'number') { v = c; break; } }
+                if (v === undefined || (!isV2 && v === 0)) continue;
+                sum += v; n += 1;
+            }
+            ratedSamples += n;
+            return n > 0 ? Math.round(sum / n) : 0;
+        };
         if (autopsies.length > 0) {
-            avgAutopsy = {
-                story: Math.round(autopsies.reduce((s, a) => s + (a.story ?? a.screenplay ?? a.script ?? 0), 0) / autopsies.length),
-                cinematography: Math.round(autopsies.reduce((s, a) => s + (a.cinematography ?? a.visuals ?? a.acting ?? 0), 0) / autopsies.length),
-                sound: Math.round(autopsies.reduce((s, a) => s + (a.sound ?? a.score ?? a.editing ?? 0), 0) / autopsies.length),
+            const computed = {
+                story: axisAvg(['story', 'screenplay', 'script']),
+                cinematography: axisAvg(['cinematography', 'visuals', 'acting']),
+                sound: axisAvg(['sound', 'score', 'editing']),
             };
+            if (ratedSamples > 0) avgAutopsy = computed;
         }
     }
 

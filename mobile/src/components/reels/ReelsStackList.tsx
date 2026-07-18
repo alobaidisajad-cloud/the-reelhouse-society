@@ -101,7 +101,7 @@ export function ReelsStackList({
         keyboardDismissMode="on-drag"
         overScrollMode="never"
         scrollEventThrottle={16}
-        drawDistance={250}
+        drawDistance={500}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

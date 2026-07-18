@@ -136,7 +136,7 @@ export function ReelsFeedList({
         overScrollMode="never"
         bounces={true}
         scrollEventThrottle={16}
-        drawDistance={250}
+        drawDistance={500}
         viewabilityConfig={viewabilityConfig}
         onViewableItemsChanged={onViewableItemsChanged}
         onEndReached={onEndReached}

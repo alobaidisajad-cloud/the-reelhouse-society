@@ -22,22 +22,41 @@ export interface AutopsyStats {
   [key: string]: number;
 }
 
-/** Normalize the JSONB payload into the six canonical craft axes, clamped 0–10. */
-export function getAutopsyStats(autopsy?: Record<string, number>) {
-  if (!autopsy) return [];
-  const clamp = (v: unknown) => {
-    const n = parseFloat(String(v ?? 0));
-    if (isNaN(n)) return 0;
-    return Math.min(10, Math.max(0, n));
+/**
+ * Normalize the JSONB payload into RATED craft axes only, clamped 0–10.
+ *
+ * AUTOPSY LAW: v2 payloads (`_v >= 2`) contain only axes the user actually
+ * filed — a stored 0 there is a deliberate verdict and renders as a real 0.0
+ * bar. Legacy payloads wrote 0 for every untouched axis (and the old editor
+ * couldn't express a deliberate zero at all), so legacy zeros are UNRATED and
+ * are dropped. An empty result means "no autopsy was filed" — hide the section.
+ */
+export function getAutopsyStats(autopsy?: Record<string, number> | null) {
+  if (!autopsy || typeof autopsy !== 'object') return [];
+  const isV2 = typeof autopsy._v === 'number' && autopsy._v >= 2;
+  const pick = (...candidates: unknown[]) => {
+    for (const c of candidates) {
+      const n = typeof c === 'number' ? c : c != null ? parseFloat(String(c)) : NaN;
+      if (!isNaN(n)) return Math.min(10, Math.max(0, n));
+    }
+    return null;
   };
-  return [
-    { key: 'story', label: 'STORY', value: clamp(autopsy.story !== undefined ? autopsy.story : autopsy.screenplay) },
-    { key: 'script', label: 'SCRIPT', value: clamp(autopsy.script !== undefined ? autopsy.script : autopsy.screenplay) },
-    { key: 'acting', label: 'ACTING', value: clamp(autopsy.acting ?? autopsy.direction) },
-    { key: 'cinematography', label: 'CINEMATOGRAPHY', value: clamp(autopsy.cinematography) },
-    { key: 'editing', label: 'EDITING', value: clamp(autopsy.editing !== undefined ? autopsy.editing : autopsy.pacing) },
-    { key: 'sound', label: 'SOUND', value: clamp(autopsy.sound) },
+  const axes: { key: string; label: string; value: number | null }[] = [
+    { key: 'story', label: 'STORY', value: pick(autopsy.story, autopsy.screenplay) },
+    { key: 'script', label: 'SCRIPT', value: pick(autopsy.script, autopsy.screenplay) },
+    { key: 'acting', label: 'ACTING', value: pick(autopsy.acting, autopsy.direction) },
+    { key: 'cinematography', label: 'CINEMATOGRAPHY', value: pick(autopsy.cinematography) },
+    { key: 'editing', label: 'EDITING', value: pick(autopsy.editing, autopsy.pacing) },
+    { key: 'sound', label: 'SOUND', value: pick(autopsy.sound) },
   ];
+  return axes.filter((a): a is { key: string; label: string; value: number } =>
+    a.value !== null && (isV2 || a.value > 0)
+  );
+}
+
+/** True when the payload carries at least one genuinely filed score. */
+export function hasRatedAutopsy(autopsy?: Record<string, number> | null): boolean {
+  return getAutopsyStats(autopsy).length > 0;
 }
 
 /** Front-side strip: the invitation to turn the card over. */

@@ -119,11 +119,11 @@ export const FilmActionRow = memo(function FilmActionRow({
           onPress={handleToggleWatchlist} pressedScale={0.95} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           accessibilityRole="button" accessibilityLabel={isWatchlisted ? 'Remove from watchlist' : 'Add to watchlist'}
         >
-          <View style={s.ctaIconRow}>
+          <View style={s.ctaStampInner}>
             <Animated.View style={bookmarkAnimStyle}>
-              <BookIcon size={11} color={isWatchlisted ? colors.sepia : colors.bone} fill={isWatchlisted ? colors.sepia : 'transparent'} strokeWidth={1.5} />
+              <BookIcon size={15} color={isWatchlisted ? colors.sepia : colors.bone} fill={isWatchlisted ? colors.sepia : 'transparent'} strokeWidth={1.5} />
             </Animated.View>
-            <Text style={[s.ctaStampText, isWatchlisted && s.ctaStampTextSaved]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            <Text style={[s.ctaStampText, isWatchlisted && s.ctaStampTextSaved]} numberOfLines={1}>
               {isWatchlisted ? 'SAVED' : 'WATCHLIST'}
             </Text>
           </View>
@@ -136,9 +136,9 @@ export const FilmActionRow = memo(function FilmActionRow({
             pressedScale={0.95} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             accessibilityRole="button" accessibilityLabel="Watch trailer"
           >
-            <View style={s.ctaIconRow}>
-              <Play size={10} color={colors.bone} fill={colors.bone} strokeWidth={1.5} />
-              <Text style={s.ctaStampText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>TRAILER</Text>
+            <View style={s.ctaStampInner}>
+              <Play size={14} color={colors.bone} fill={colors.bone} strokeWidth={1.5} />
+              <Text style={s.ctaStampText} numberOfLines={1}>TRAILER</Text>
             </View>
           </PressableScale>
         )}
@@ -148,9 +148,9 @@ export const FilmActionRow = memo(function FilmActionRow({
           onPress={handleOpenShare} pressedScale={0.95} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           accessibilityRole="button" accessibilityLabel="Share this film"
         >
-          <View style={s.ctaIconRow}>
-            <Share2 size={11} color={colors.bone} strokeWidth={1.5} />
-            <Text style={s.ctaStampText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>SHARE</Text>
+          <View style={s.ctaStampInner}>
+            <Share2 size={15} color={colors.bone} strokeWidth={1.5} />
+            <Text style={s.ctaStampText} numberOfLines={1}>SHARE</Text>
           </View>
         </PressableScale>
 
@@ -161,13 +161,13 @@ export const FilmActionRow = memo(function FilmActionRow({
           accessibilityRole="button"
           accessibilityLabel={isArchivist ? 'Open film lounge' : 'Lounge — requires a higher rank'}
         >
-          <View style={s.ctaIconRow}>
+          <View style={s.ctaStampInner}>
             {isArchivist ? (
-              <MessageCircle size={11} color={colors.sepia} strokeWidth={1.5} />
+              <MessageCircle size={15} color={colors.sepia} strokeWidth={1.5} />
             ) : (
-              <KeyRound size={11} color={colors.sepia} strokeWidth={1.5} />
+              <KeyRound size={15} color={colors.sepia} strokeWidth={1.5} />
             )}
-            <Text style={[s.ctaStampText, s.ctaStampTextLounge]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>LOUNGE</Text>
+            <Text style={[s.ctaStampText, s.ctaStampTextLounge]} numberOfLines={1}>LOUNGE</Text>
           </View>
         </PressableScale>
       </View>
@@ -183,8 +183,12 @@ const s = StyleSheet.create({
   ctaPrimaryText: { fontFamily: fonts.sub, fontSize: 12, color: colors.ink, letterSpacing: 2, includeFontPadding: false },
   ctaRewatch: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2, paddingVertical: 11, alignItems: 'center' },
   ctaRewatchText: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 1.5, includeFontPadding: false },
-  ctaStamp: { flex: 1, backgroundColor: 'rgba(25,23,20,0.8)', borderWidth: 1, borderColor: 'rgba(215,205,190,0.1)', borderRadius: 2, paddingVertical: 12, paddingHorizontal: 4, alignItems: 'center' },
-  ctaStampText: { fontFamily: fonts.sub, fontSize: 8, color: colors.bone, letterSpacing: 1, includeFontPadding: false },
+  // STACKED STAMPS: icon over label, deterministic type — the old single-row
+  // layout crammed icon+label into ~66px and leaned on adjustsFontSizeToFit
+  // (unreliable, produced microtype and overlap on narrow screens).
+  ctaStamp: { flex: 1, backgroundColor: 'rgba(25,23,20,0.8)', borderWidth: 1, borderColor: 'rgba(215,205,190,0.12)', borderRadius: 2, paddingVertical: 10, paddingHorizontal: 2, alignItems: 'center' },
+  ctaStampInner: { alignItems: 'center', justifyContent: 'center', gap: 5 },
+  ctaStampText: { fontFamily: fonts.sub, fontSize: 8, color: colors.bone, letterSpacing: 0.5, includeFontPadding: false },
   ctaStampSaved: { backgroundColor: colors.sepiaSubtle, borderColor: colors.sepiaBorder },
   ctaStampTextSaved: { color: colors.sepia },
   ctaStampLounge: { backgroundColor: 'rgba(184,137,26,0.08)', borderColor: colors.sepiaBorder },

@@ -80,18 +80,23 @@ export const TopNavBar = memo(function TopNavBar() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
+  // iOS: native blur intensity animates with scroll (UIViewPropertyAnimator
+  // under the hood — the platform-sanctioned technique).
   const animatedProps = useAnimatedProps(() => {
     const scrollProgress = Math.min(1, Math.max(0, globalScrollY.value / 100));
-    const blurIntensity = Platform.OS === 'ios'
-      ? Math.round(scrollProgress * 45)
-      : Math.round(scrollProgress * 100);
-    return { intensity: blurIntensity };
+    return { intensity: Math.round(scrollProgress * 45) };
   });
 
+  // ANDROID BLUR LAW: no dimezisBlurView here. It re-captures the window every
+  // frame and animating its intensity during scroll strobed the whole top
+  // region (ANDROID_LAUNCH.md already flags it as a perf risk). Android gets a
+  // pure alpha scrim instead — UI-thread opacity math that cannot flicker —
+  // tinted stronger since there's no blur underneath to carry legibility.
   const animatedBlurStyle = useAnimatedStyle(() => {
     const scrollProgress = Math.min(1, Math.max(0, globalScrollY.value / 100));
+    const maxAlpha = Platform.OS === 'ios' ? 0.7 : 0.92;
     return {
-      backgroundColor: `rgba(11,10,8,${scrollProgress * 0.7})`
+      backgroundColor: `rgba(11,10,8,${scrollProgress * maxAlpha})`
     };
   });
 
@@ -104,18 +109,8 @@ export const TopNavBar = memo(function TopNavBar() {
   const onSearchPress = useCallback(() => router.navigate('/search-modal' as Href), [router]);
   const onNotifPress = useCallback(() => router.navigate('/notifications-modal' as Href), [router]);
 
-  return (
-    <View style={styles.container}>
-      <AnimatedBlurView
-        experimentalBlurMethod="dimezisBlurView"
-        animatedProps={animatedProps}
-        tint="dark"
-        style={[
-          styles.blur,
-          { paddingTop: Math.max(insets.top, 20) },
-          animatedBlurStyle
-        ]}
-      >
+  const navInner = (
+    <>
         <View style={styles.navContent}>
           {/* ── LEFT CLUSTER: Log + Lounge ── */}
           <View style={styles.sideCluster}>
@@ -182,7 +177,22 @@ export const TopNavBar = memo(function TopNavBar() {
           end={{ x: 1, y: 0 }}
           style={styles.bottomBorder}
         />
-      </AnimatedBlurView>
+    </>
+  );
+
+  const shellStyle = [styles.blur, { paddingTop: Math.max(insets.top, 20) }, animatedBlurStyle];
+
+  return (
+    <View style={styles.container}>
+      {Platform.OS === 'ios' ? (
+        <AnimatedBlurView animatedProps={animatedProps} tint="dark" style={shellStyle}>
+          {navInner}
+        </AnimatedBlurView>
+      ) : (
+        <Animated.View style={shellStyle}>
+          {navInner}
+        </Animated.View>
+      )}
     </View>
   );
 });

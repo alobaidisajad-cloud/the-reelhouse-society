@@ -133,19 +133,18 @@ export default function ReelScreen() {
     }, [activeScrollY])
   );
 
-  const logsOpacityStyle = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(activeTabSV.value === 'logs' ? 1 : 0, { duration: 300, easing: Easing.out(Easing.quad) }),
-      zIndex: activeTabSV.value === 'logs' ? 10 : 1,
-    };
-  });
+  // STACKING LAW: never animate zIndex here. On Fabric, Reanimated writing
+  // zIndex from the UI thread races FlashList's per-scroll React commits over
+  // native stacking order — transient re-sorts made the FAB and background
+  // layers blink during scroll on both platforms. The crossfade needs only
+  // opacity (an invisible list's stacking position is irrelevant), and
+  // pointerEvents already gates touches. Sibling order is static: FAB last.
+  const logsProgress = useDerivedValue(() =>
+    withTiming(activeTabSV.value === 'logs' ? 1 : 0, { duration: 300, easing: Easing.out(Easing.quad) })
+  );
 
-  const stacksOpacityStyle = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(activeTabSV.value === 'stacks' ? 1 : 0, { duration: 300, easing: Easing.out(Easing.quad) }),
-      zIndex: activeTabSV.value === 'stacks' ? 10 : 1,
-    };
-  });
+  const logsOpacityStyle = useAnimatedStyle(() => ({ opacity: logsProgress.value }));
+  const stacksOpacityStyle = useAnimatedStyle(() => ({ opacity: 1 - logsProgress.value }));
 
   const logsFlatListRef = useRef<any>(null);
   const stacksFlatListRef = useRef<any>(null);

@@ -33,7 +33,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
         isPremium,
         film,
         status, rating, review, isSpoiler, abandonedReason, date, watchedWith, privateNotes, physicalMedia,
-        autopsy, altPoster, editorialHeader, dropCap, pullQuote, autopsyOpen, isAutopsied, moreOpen, calendarOpen, showDeleteConfirm, submitting, sealed,
+        autopsy, altPoster, editorialHeader, dropCap, pullQuote, autopsyOpen, moreOpen, calendarOpen, showDeleteConfirm, submitting, sealed,
         // Typed field setters from useLogFlow — these replace the removed
         // `dispatch` compatibility shim (which silently dropped every field
         // except the 6 premium ones). Using the setters directly restores the
@@ -42,7 +42,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
         setDate, setWatchedWith, setPrivateNotes, setPhysicalMedia,
         setMoreOpen, setCalendarOpen, setShowDeleteConfirm,
         setDropCap, setPullQuote, setEditorialHeader,
-        setAutopsyOpen, setIsAutopsied, setAutopsy, setAltPoster,
+        setAutopsyOpen, setAutopsy, setAltPoster,
         isRewatchMode, previousLog,
         availablePosters, availableBackdrops,
         isEditing,
@@ -199,8 +199,11 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 </View>
             </View>
 
-            {/* Editorial Desk (Archivist+) — always visible for premium, like the Auteur toolkit below */}
-            {isPremium && (
+            {/* Editorial Desk (Archivist+). Non-premium members see a LOCKED
+                teaser — the velvet-rope law: every premium feature is visible
+                behind glass (like Physical Archive and Private Notes below),
+                never an invisible door. */}
+            {isPremium ? (
                 <Animated.View entering={FadeInDown.duration(200)}>
                     <EditorialDesk
                         dropCap={dropCap}
@@ -212,6 +215,22 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         availableBackdrops={availableBackdrops}
                     />
                 </Animated.View>
+            ) : (
+                <View style={st.sec}>
+                    <View style={st.secLabelRow}>
+                        <Feather size={10} color={colors.sepia} />
+                        <Text style={st.secLabel}>THE EDITORIAL DESK</Text>
+                    </View>
+                    <View style={[st.lockedBox, st.editorialTeaser]}>
+                        <Lock size={20} color={colors.sepia} />
+                        <Text style={st.editorialTeaserText}>
+                            Drop caps, pull quotes, and article headers{'\n'}for published critiques.
+                        </Text>
+                        <PressableScale onPress={handleUpgradePress} hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }} haptic="light" accessibilityRole="button" accessibilityLabel="Unlock the Editorial Desk with Archivist">
+                            <Text style={st.lockedText}>UNLOCK WITH ARCHIVIST</Text>
+                        </PressableScale>
+                    </View>
+                </View>
             )}
 
             {/* Auteur Toolkit — the deep craft autopsy */}
@@ -219,8 +238,6 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 isAuteur={isAuteur}
                 autopsyOpen={autopsyOpen}
                 setAutopsyOpen={setAutopsyOpen}
-                isAutopsied={isAutopsied}
-                setIsAutopsied={setIsAutopsied}
                 autopsy={autopsy}
                 setAutopsy={setAutopsy}
                 availablePosters={availablePosters}

@@ -164,6 +164,8 @@ export const st = StyleSheet.create({
     upgradeRowText: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, letterSpacing: 1, textDecorationLine: 'underline' },
     lockedBox: { height: 80, backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, alignItems: 'center', justifyContent: 'center', gap: 8 },
     lockedText: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, letterSpacing: 1, textDecorationLine: 'underline' },
+    editorialTeaser: { height: undefined, paddingVertical: 16 },
+    editorialTeaserText: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, textAlign: 'center', lineHeight: 15 },
 
     // Stacks
     listChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },

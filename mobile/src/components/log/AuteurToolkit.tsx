@@ -21,10 +21,8 @@ interface Props {
     isAuteur: boolean;
     autopsyOpen: boolean;
     setAutopsyOpen: (v: boolean) => void;
-    isAutopsied: boolean;
-    setIsAutopsied: (v: boolean) => void;
-    autopsy: Record<string, number>;
-    setAutopsy: (v: Record<string, number>) => void;
+    autopsy: Record<string, number | null>;
+    setAutopsy: (v: Record<string, number | null>) => void;
     availablePosters: { file_path: string }[];
     altPoster: string | null;
     setAltPoster: (v: string | null) => void;
@@ -34,7 +32,7 @@ interface Props {
 const posterKeyExtractor = (p: { file_path: string }) => p.file_path;
 
 export default React.memo(function AuteurToolkit({
-    isAuteur, autopsyOpen, setAutopsyOpen, isAutopsied, setIsAutopsied,
+    isAuteur, autopsyOpen, setAutopsyOpen,
     autopsy, setAutopsy, availablePosters, altPoster, setAltPoster, onUpgradePress
 }: Props) {
     const renderPosterItem = React.useCallback(({ item: p }: { item: { file_path: string } }) => p.file_path === '__default__' ? (
@@ -49,29 +47,45 @@ export default React.memo(function AuteurToolkit({
 
     return (
         <View style={[st.auteurBox, !isAuteur && st.auteurLocked]} pointerEvents={isAuteur ? 'auto' : 'box-none'}>
-            <PressableScale style={st.auteurHead} onPress={() => { if (!isAuteur) { onUpgradePress(); return; } setAutopsyOpen(!autopsyOpen); setIsAutopsied(!autopsyOpen); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.96}>
+            {/* Pure UI toggle — opening or closing this section NEVER touches the
+                data. Only tapped scores exist; the payload derives "autopsied"
+                from rated axes alone (see buildLogPayload). */}
+            <PressableScale style={st.auteurHead} onPress={() => { if (!isAuteur) { onUpgradePress(); return; } setAutopsyOpen(!autopsyOpen); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.96}>
                 <Text style={st.auteurHeadText}>{autopsyOpen ? '[-] HIDE DEEP AUTOPSY' : '[+] PERFORM DEEP AUTOPSY'}</Text>
                 {!isAuteur && <View style={st.upgradeLockRow}><Lock size={10} color={colors.bloodReel} /><Text style={st.upgradeLink}>UPGRADE</Text></View>}
             </PressableScale>
-            
+
             {autopsyOpen && isAuteur && (
                 <Animated.View entering={FadeInDown.duration(200)} style={st.autopContent}>
                     <View>
-                        <Text style={st.editLabel}>THE AUTOPSY ENGINE (1-10)</Text>
-                        {Object.keys(AUTOPSY_INIT).map(axis => (
-                            <View key={axis} style={st.sliderRow}>
-                                <Text style={st.sliderLabel}>{AUTOPSY_LABELS[axis] || axis.toUpperCase()}</Text>
-                                <View style={st.sliderTrack}>
-                                    {[0,1,2,3,4,5,6,7,8,9,10].map(v => (
-                                        <PressableScale key={v} onPress={() => { setAutopsy({ ...autopsy, [axis]: v }); }} style={[st.sliderSeg, v <= (autopsy[axis] || 0) && st.sliderSegOn]} hitSlop={{top: 10, bottom: 10}} haptic="light" pressedScale={0.9} />
-                                    ))}
+                        <Text style={st.editLabel}>THE AUTOPSY ENGINE (0-10)</Text>
+                        <Text style={st.editHint}>TAP A NOTCH TO FILE A SCORE — A DELIBERATE 0 COUNTS. TAP IT AGAIN TO WITHDRAW.</Text>
+                        {Object.keys(AUTOPSY_INIT).map(axis => {
+                            const rated = typeof autopsy[axis] === 'number';
+                            const val = autopsy[axis];
+                            return (
+                                <View key={axis} style={st.sliderRow}>
+                                    <Text style={st.sliderLabel}>{AUTOPSY_LABELS[axis] || axis.toUpperCase()}</Text>
+                                    <View style={st.sliderTrack}>
+                                        {[0,1,2,3,4,5,6,7,8,9,10].map(v => (
+                                            <PressableScale
+                                                key={v}
+                                                onPress={() => { setAutopsy({ ...autopsy, [axis]: val === v ? null : v }); }}
+                                                style={[st.sliderSeg, rated && v <= (val as number) && st.sliderSegOn]}
+                                                hitSlop={{top: 10, bottom: 10}} haptic="light" pressedScale={0.9}
+                                                accessibilityLabel={`${AUTOPSY_LABELS[axis] || axis} score ${v}${val === v ? ' — tap to withdraw' : ''}`}
+                                            />
+                                        ))}
+                                    </View>
+                                    <Text style={[st.sliderVal, !rated && st.sliderValUnrated]}>{rated ? String(val) : '—'}</Text>
                                 </View>
-                                <Text style={st.sliderVal}>{autopsy[axis] || '-'}</Text>
-                            </View>
-                        ))}
+                            );
+                        })}
                     </View>
                     
-                    <AutopsyGauge autopsy={autopsy} />
+                    {/* Live preview of exactly what readers will see — the _v marker
+                        tells the gauge these zeros are deliberate verdicts. */}
+                    <AutopsyGauge autopsy={{ _v: 2, ...autopsy }} />
                     
                     <View>
                         <Text style={st.editLabel}>CURATORIAL CONTROL (ALT POSTER)</Text>
@@ -100,6 +114,8 @@ const st = StyleSheet.create({
     upgradeLink: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.bloodReel, textDecorationLine: 'underline' },
     autopContent: { gap: 20, marginTop: 16 },
     editLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.bone, marginBottom: 8, includeFontPadding: false },
+    editHint: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1, color: colors.fog, opacity: 0.8, marginBottom: 10, lineHeight: 11, includeFontPadding: false },
+    sliderValUnrated: { color: colors.fog, opacity: 0.6 },
     sliderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
     sliderLabel: { width: 90, fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 0.5, color: colors.fog, includeFontPadding: false },
     sliderTrack: { flex: 1, flexDirection: 'row', gap: 2, height: 20 },
