@@ -8,7 +8,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Heart, MessageCircle, MoreHorizontal, Send } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -66,8 +66,11 @@ export default function DossierReaderScreen() {
     const insets = useSafeAreaInsets();
     
     const keyboard = useAnimatedKeyboard();
+    // KEYBOARD LAW (router screen): iOS pads by keyboard height; Android's
+    // window resize lifts the composer natively — padding both would
+    // double-shift. Resting padding (insets.bottom) is identical on both.
     const animatedContainerStyle = useAnimatedStyle(() => ({
-        paddingBottom: Math.max(keyboard.height.value, insets.bottom),
+        paddingBottom: Platform.OS === 'ios' ? Math.max(keyboard.height.value, insets.bottom) : insets.bottom,
     }));
     
     const [dossier, setDossier] = useState<DossierDetail | null>(null);

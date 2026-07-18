@@ -138,13 +138,17 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
     AccessibilityInfo.announceForAccessibility('Returned to the log');
   }, [flip, reducedMotion]);
 
+  // STACKING LAW: no animated zIndex (Fabric + FlashList commits race it — the
+  // reel-page FAB glitch class). It was redundant here anyway: visibility is
+  // decided purely by the binary opacity below, and touch routing purely by
+  // the state-driven pointerEvents props. Static sibling order (back rendered
+  // after front) needs no z help.
   const frontStyle = useAnimatedStyle(() => {
     if (reducedMotion) {
-      return { opacity: 1 - flip.value, transform: [], zIndex: flip.value < 0.5 ? 2 : 1 };
+      return { opacity: 1 - flip.value, transform: [] };
     }
     return {
       opacity: flip.value < 0.5 ? 1 : 0,
-      zIndex: flip.value < 0.5 ? 2 : 1,
       transform: [
         { perspective: 1000 },
         { rotateY: `${interpolate(flip.value, [0, 1], [0, 180])}deg` },
@@ -154,11 +158,10 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 
   const backStyle = useAnimatedStyle(() => {
     if (reducedMotion) {
-      return { opacity: flip.value, transform: [], zIndex: flip.value >= 0.5 ? 2 : 1 };
+      return { opacity: flip.value, transform: [] };
     }
     return {
       opacity: flip.value >= 0.5 ? 1 : 0,
-      zIndex: flip.value >= 0.5 ? 2 : 1,
       transform: [
         { perspective: 1000 },
         { rotateY: `${interpolate(flip.value, [0, 1], [-180, 0])}deg` },
