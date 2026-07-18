@@ -22,6 +22,9 @@ export default function AuthCallbackScreen() {
   const params = useLocalSearchParams<{ token_hash?: string; type?: string; url?: string; code?: string }>();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMsg, setErrorMsg] = useState('');
+  // The flow type actually confirmed by verification (params.type may be absent
+  // when the type only arrives inside the deep-link url's query string).
+  const [resolvedType, setResolvedType] = useState<string | undefined>(undefined);
   
   // Extract type from params to use in rescue UI
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -33,9 +36,15 @@ export default function AuthCallbackScreen() {
   }, []);
 
   async function handleSuccessfulVerification(session: Session, type: string) {
+    setResolvedType(type);
     if (type === 'recovery') {
+      // SECURITY: the recovery link just minted a full session. Flag the reset
+      // as pending so nothing hydrates the app as signed-in until a new
+      // password is set (reset-password clears the flag; restoreSession
+      // destroys the session if the flow is abandoned).
+      try { storage.set('recovery_pending', 'true'); } catch {}
       setStatus('success');
-      setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} (router.replace as any)('/reset-password'); }), 1500);
+      setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} (router.replace as any)('/reset-password'); }), 800);
       return;
     }
 
@@ -53,7 +62,7 @@ export default function AuthCallbackScreen() {
 
     hydrateFollowing();
     setStatus('success');
-    setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} (router.replace as any)('/(tabs)'); }), 2000);
+    setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} (router.replace as any)('/(tabs)'); }), 1200);
 
     AuthService.getSessionProfile(session.user.id).then((profile) => {
       if (!profile) return;
@@ -82,7 +91,11 @@ export default function AuthCallbackScreen() {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
           if (data?.session) {
-            const inferredType = (url ? Linking.parse(url).queryParams?.type as string : params.type) || 'signup';
+            // Prefer the redirectType auth-js stored alongside the PKCE code
+            // verifier — it is authoritative for which email flow this was.
+            const urlType = url ? (Linking.parse(url).queryParams?.type as string) : undefined;
+            const libType = (data as { redirectType?: string | null }).redirectType === 'recovery' ? 'recovery' : undefined;
+            const inferredType = libType || params.type || urlType || 'signup';
             await handleSuccessfulVerification(data.session, inferredType);
             return;
           }
@@ -111,6 +124,9 @@ export default function AuthCallbackScreen() {
 
       throw new Error('No valid authentication token found. The link may have expired.');
     } catch (err: unknown) {
+      // A failed link must not leave the recovery flag armed — it would sign
+      // the user out of a legitimate session on next launch.
+      try { storage.delete('recovery_pending'); } catch {}
       const msg = err instanceof Error ? err.message : 'Verification failed. The link may have expired.';
       setErrorMsg(msg);
       setStatus('error');
@@ -124,8 +140,9 @@ export default function AuthCallbackScreen() {
         {status === 'verifying' && (
           <AnimatedView entering={FadeIn.duration(500).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
             <ActivityIndicator size="large" color={colors.sepia} style={{ marginBottom: 24 }} />
-            <Text style={s.eyebrow}>VERIFYING CLEARANCE</Text>
-            <Text style={s.title} adjustsFontSizeToFit numberOfLines={2} minimumFontScale={0.7}>Decrypting your{'\n'}dossier...</Text>
+            <Text style={s.eyebrow}>ONE MOMENT</Text>
+            <Text style={s.title}>Verifying your link</Text>
+            <Text style={s.body}>This should only take a few seconds.</Text>
           </AnimatedView>
         )}
 
@@ -135,13 +152,15 @@ export default function AuthCallbackScreen() {
             <View style={s.successIconWrap}>
               <Text style={s.successIcon}>✓</Text>
             </View>
-            <Text style={[s.eyebrow, { color: colors.sepia }]}>CLEARANCE GRANTED</Text>
-            <Text style={s.title} adjustsFontSizeToFit numberOfLines={2} minimumFontScale={0.7}>
-              {params.type === 'recovery' ? 'Session Restored.' : 'Welcome to\nThe Society.'}
+            <Text style={[s.eyebrow, { color: colors.sepia }]}>
+              {resolvedType === 'recovery' ? 'LINK VERIFIED' : 'CLEARANCE GRANTED'}
+            </Text>
+            <Text style={s.title}>
+              {resolvedType === 'recovery' ? 'Link verified.' : 'Welcome to\nThe Society.'}
             </Text>
             <Text style={s.body}>
-              {params.type === 'recovery'
-                ? 'Redirecting you to set your new password...'
+              {resolvedType === 'recovery'
+                ? 'Taking you to set a new password...'
                 : 'Your identity has been verified. Initiating access...'}
             </Text>
           </AnimatedView>
@@ -154,7 +173,7 @@ export default function AuthCallbackScreen() {
               <Text style={s.errorIcon}>✕</Text>
             </View>
             <Text style={[s.eyebrow, { color: colors.bloodReel }]}>VERIFICATION FAILED</Text>
-            <Text style={s.title} adjustsFontSizeToFit numberOfLines={2} minimumFontScale={0.7}>Link Expired{'\n'}or Invalid</Text>
+            <Text style={s.title}>Link Expired{'\n'}or Invalid</Text>
             <Text style={s.body}>{errorMsg}</Text>
             
             {/* Dynamic Rescue Options based on type */}

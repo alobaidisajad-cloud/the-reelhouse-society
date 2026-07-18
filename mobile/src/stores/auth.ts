@@ -40,6 +40,18 @@ const _prefTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const _prefBaselines = new Map<string, Record<string, unknown>>();
 const _THROTTLE_MAX = 200;
 const _THROTTLE_TTL = 30000;
+
+// Single-flight guard for logout (see logout() re-entrancy note).
+let _logoutInFlight: Promise<void> | null = null;
+
+// Race a promise against a deadline so a hung network call or SDK lock can
+// never strand the caller. The underlying operation continues in background.
+function _withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`timeout after ${ms}ms`)), ms)),
+  ]);
+}
 function pruneThrottles() {
   if (_actionThrottles.size < _THROTTLE_MAX) return;
   const now = Date.now();
@@ -60,6 +72,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   restoreSession: async () => {
     try {
+      // SECURITY: a recovery link mints a full session before the user sets a
+      // new password. If the app is (re)launched with the reset still pending,
+      // the user abandoned the flow — destroy the session instead of silently
+      // signing them in with an unchanged password.
+      if (storage.getString('recovery_pending') === 'true') {
+        storage.delete('recovery_pending');
+        try { await _withTimeout(supabase.auth.signOut({ scope: 'local' }), 5000); } catch {}
+        set({ user: null, isAuthenticated: false, loading: false });
+        return;
+      }
+
       // Restore the locally cached user first for instant startup, before the network session check.
       let cachedFollowing: string[] = [];
       const lastUserId = storage.getString('last_user_id');
@@ -226,21 +249,23 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   logout: async () => {
+    // Re-entrancy guard: signOut() emits SIGNED_OUT, whose (deferred) handler
+    // calls logout() again if state still looks authenticated. One pass only.
+    if (_logoutInFlight) return _logoutInFlight;
+    _logoutInFlight = (async () => {
     // 0. Capture user ID before we clear state (needed for push token removal)
     const previousUserId = get().user?.id ?? null;
     const cleanupErrors: string[] = [];
 
-    // 0.5. Clean up Realtime WebSocket immediately to stop background heartbeat
+    // 1. Clear zustand auth state FIRST — sign-out must be visually instant and
+    //    can never be blocked by network or SDK behavior.
+    set({ user: null, isAuthenticated: false });
+
+    // 2. Clean up Realtime WebSocket immediately to stop background heartbeat
     try {
       const { teardownNotificationRealtime } = await import('./notificationStore');
       teardownNotificationRealtime();
     } catch { cleanupErrors.push('realtime'); }
-
-    // 1. Sign out from Supabase
-    try { await supabase.auth.signOut(); } catch { cleanupErrors.push('auth'); }
-
-    // 2. Clear zustand auth state
-    set({ user: null, isAuthenticated: false });
 
     // 3. Clear all dependent stores to prevent cross-user data leakage.
     //    Uses the centralized resetAllStores(); each store self-registers its reset handler.
@@ -264,31 +289,42 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       queryClient.clear();
     } catch { cleanupErrors.push('query-cache'); }
 
-    // 7. Remove push token — stops notifications being sent to this device for the old user
+    // 7. Remove push token BEFORE revoking the session — the delete on
+    //    push_tokens is RLS-protected, so it must run while still authenticated
+    //    (running it after signOut silently left stale tokens and kept
+    //    delivering the old user's notifications to this device).
     try {
       if (previousUserId) {
-        await removePushToken(previousUserId);
+        await _withTimeout(removePushToken(previousUserId), 4000);
       }
-    } catch { /* push module may not be installed */ }
+    } catch { /* push module may not be installed / slow network */ }
 
-    // 8. Clear user cache + persisted query cache + feed cache from storage.
+    // 8. Revoke the Supabase session LAST among network ops. scope 'local'
+    //    ends only this device's session (web/other devices stay signed in).
+    //    Timeout-raced so no SDK or network behavior can ever strand logout.
+    try {
+      await _withTimeout(supabase.auth.signOut({ scope: 'local' }), 5000);
+    } catch { cleanupErrors.push('auth'); }
+
+    // 9. Clear user cache + persisted query cache + feed cache from storage.
     // STORE-1: run on ALL platforms. The previous `Platform.OS !== 'web'` guard
     // left stale auth / cross-user data in a shared browser after logout. Mobile
     // behavior is unchanged (the block already ran there); this also clears on web.
     if (previousUserId) storage.delete(`ironvault_user_cache_${previousUserId}`);
     storage.delete('last_user_id');
     storage.delete('ironvault_user_cache'); // clean up legacy
+    storage.delete('recovery_pending');
     clearOfflineQueue();
     storage.delete('REELHOUSE_QUERY_CACHE');
     storage.delete('nitrate_memory_feed');
 
-    // 9. Clear module-level caches
+    // 10. Clear module-level caches
     _actionThrottles.clear();
     _prefTimers.forEach(t => clearTimeout(t));
     _prefTimers.clear();
     _prefBaselines.clear();
 
-    // 10. Report partial cleanup failures
+    // 11. Report partial cleanup failures
     if (cleanupErrors.length > 0) {
       if (__DEV__) {
         console.warn('[logout] Partial cleanup failure:', cleanupErrors.join(', '));
@@ -296,6 +332,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         captureError(new Error(`[logout] Partial cleanup failure: ${cleanupErrors.join(', ')}`));
       }
     }
+    })().finally(() => { _logoutInFlight = null; });
+    return _logoutInFlight;
   },
 
   updateUser: async (updates) => {

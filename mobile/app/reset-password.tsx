@@ -11,7 +11,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useRouter } from 'expo-router';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
-import { useAuthStore } from '@/src/stores/auth';
+import { useAuthStore, storage } from '@/src/stores/auth';
 import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -68,6 +68,8 @@ export default function ResetPasswordScreen() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
+      // No session means the recovery link was expired/used — nothing to guard.
+      if (!data?.session) storage.delete('recovery_pending');
       setHasSession(!!data?.session);
     })();
   }, []);
@@ -89,6 +91,11 @@ export default function ResetPasswordScreen() {
       if (error) throw error;
       setSuccess(true);
       TactileEngine.success();
+
+      // The new password is set — the recovery session is now legitimate.
+      // Clear the pending flag BEFORE hydrating, or restoreSession would
+      // treat this as an abandoned recovery and destroy the session.
+      storage.delete('recovery_pending');
 
       // IMP #3: Re-trigger auth + fully hydrate the auth store
       const { data: { session } } = await supabase.auth.getSession();
@@ -186,15 +193,21 @@ export default function ResetPasswordScreen() {
   return (
     <ScrollView 
       style={s.container} 
-      contentContainerStyle={[s.scroll, { paddingTop: Math.max(insets.top + 10, 60) }]} 
+      contentContainerStyle={[s.scroll, { paddingTop: Math.max(insets.top + 64, 96) }]}
       showsVerticalScrollIndicator={false} 
       keyboardShouldPersistTaps="handled"
       automaticallyAdjustKeyboardInsets={true}
     >
-        {/* Close / Back */}
+        {/* Close / Back — abandoning a pending recovery destroys the session:
+            a recovery link alone must never leave the user signed in with an
+            unchanged password. */}
         <PressableScale
           style={[s.backBtn, { top: Math.max(insets.top + 16, 56) }]}
-          onPress={() => {
+          onPress={async () => {
+            if (storage.getString('recovery_pending') === 'true') {
+              storage.delete('recovery_pending');
+              try { await supabase.auth.signOut({ scope: 'local' }); } catch {}
+            }
             if (router.canGoBack()) {
               router.back();
             } else {

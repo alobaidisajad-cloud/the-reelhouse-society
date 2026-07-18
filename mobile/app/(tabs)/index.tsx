@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import {
-  View, Text, StyleSheet, RefreshControl, useWindowDimensions
+  View, Text, StyleSheet, RefreshControl, ScrollView, useWindowDimensions
 } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
@@ -61,7 +61,11 @@ export default function LobbyScreen() {
   // Re-tap the active tab icon → smoothly scroll the Lobby to the top.
   const scrollRef = useRef<any>(null);
   useScrollToTop(scrollRef);
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  // Deterministic title sizing — adjustsFontSizeToFit is unreliable with
+  // explicit line breaks (wraps "REELHOUSE" mid-word on narrow screens instead
+  // of shrinking). Rye glyphs run ~0.75em wide; "REELHOUSE" is 9 chars.
+  const welcomeTitleSize = Math.min(38, Math.floor((windowWidth - 64) / (9 * 0.75)));
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const fetchLogs = useFilmStore(s => s.fetchLogs);
   const fetchEndorsements = useFilmStore(s => s.fetchEndorsements);
@@ -199,19 +203,27 @@ export default function LobbyScreen() {
         <ProjectorBeam scrollY={scrollY} />
         <Vignette />
 
-        {/* 0-Overlap Strict Layout Constraints */}
-        <View style={s.welcomeRootFlex}>
+        {/* 0-Overlap layout: a scroll container can never push content off the
+            top of the screen — small displays scroll instead of clipping the
+            seal into the status bar. */}
+        <ScrollView
+          style={s.welcomeRootFlex}
+          contentContainerStyle={s.welcomeScrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          overScrollMode="never"
+        >
 
-          {/* Top Half: Cinematic Typography */}
+          {/* Top: Cinematic Typography */}
           <View style={s.welcomeTopHalf}>
             <Animated.View entering={FadeInDown.duration(1200)} style={s.welcomeHeader}>
               {/* The Society's mark ignites at the front door — clamped so
-                  small screens never crowd (title/tagline shrink-to-fit). */}
+                  small screens never crowd. */}
               <View style={s.welcomeSealWrap}>
                 <SocietySeal size={Math.min(104, Math.round(windowHeight * 0.15))} />
               </View>
               <Text style={s.welcomeEyebrow}>WELCOME TO</Text>
-              <Text style={s.welcomeTitle} accessibilityRole="header" adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.5}>
+              <Text style={[s.welcomeTitle, { fontSize: welcomeTitleSize, lineHeight: Math.round(welcomeTitleSize * 1.21) }]} accessibilityRole="header">
                 {'THE\nREELHOUSE\nSOCIETY'}
               </Text>
 
@@ -233,7 +245,7 @@ export default function LobbyScreen() {
             </Animated.View>
           </View>
 
-          {/* Bottom Half: Tactile CTAs */}
+          {/* Bottom: Tactile CTAs */}
           <View style={s.welcomeBottomHalf}>
             <View style={s.welcomeCtaContainer}>
               <PressableScale
@@ -250,14 +262,14 @@ export default function LobbyScreen() {
                 {/* Glowing edge rule */}
                 <LinearGradient colors={['rgba(218,165,32,0.8)', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.ctaGlowLine} />
               </PressableScale>
-              
+
               <View>
                 <VelvetRopeCTA />
               </View>
             </View>
           </View>
 
-        </View>
+        </ScrollView>
       </View>
       </FrozenTab>
     );
@@ -366,10 +378,13 @@ const s = StyleSheet.create({
   scrollContent: { paddingBottom: 150 }, // More breathing room at end of scroll
 
   // ── Welcome (Unauthenticated) strict layout ──
-  welcomeRootFlex: { flex: 1, zIndex: 10, paddingHorizontal: 32 },
-  welcomeTopHalf: { flex: 0.55, justifyContent: 'flex-end', alignItems: 'center' },
-  welcomeBottomHalf: { flex: 0.45, justifyContent: 'center', alignItems: 'center' },
-  
+  welcomeRootFlex: { flex: 1, zIndex: 10 },
+  // flexGrow (not fixed flex halves) + scroll: content can compress spacing on
+  // small screens or scroll, but can never overflow off the top of the screen.
+  welcomeScrollContent: { flexGrow: 1, paddingHorizontal: 32, paddingVertical: 12, justifyContent: 'space-evenly' },
+  welcomeTopHalf: { justifyContent: 'center', alignItems: 'center' },
+  welcomeBottomHalf: { justifyContent: 'center', alignItems: 'center', paddingTop: 24 },
+
   welcomeHeader: { alignItems: 'center' },
   welcomeSealWrap: { alignItems: 'center', marginBottom: 14 },
   welcomeEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 7, color: colors.sepia, marginBottom: 12, opacity: 0.75 },

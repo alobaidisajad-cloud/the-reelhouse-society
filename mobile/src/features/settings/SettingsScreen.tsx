@@ -85,7 +85,9 @@ export function SettingsScreen() {
     setOtpModalVisible(true);
     setOtpSending(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email: user.email });
+      // shouldCreateUser: false — this is a re-auth challenge for an existing
+      // account; the OTP endpoint must never be able to mint a new user.
+      const { error } = await supabase.auth.signInWithOtp({ email: user.email, options: { shouldCreateUser: false } });
       if (error) throw error;
       reelToast.success(`Security code sent to ${user.email}`);
     } catch (e: unknown) {
@@ -97,7 +99,9 @@ export function SettingsScreen() {
 
   const executePendingOtpAction = async () => {
     if (otpAction === 'signOut') {
-      try { await logout(); } catch (e) {}
+      // Sign-out is instant: logout() clears auth state synchronously up front;
+      // network cleanup continues in the background. Navigate immediately.
+      logout().catch(() => {});
       TactileEngine.destroy();
       nav.replace('/login');
     } else if (otpAction === 'deleteAccount') {
@@ -303,7 +307,9 @@ export function SettingsScreen() {
             return;
           }
         }
-        try { await logout(); } catch (e) {}
+        // Instant sign-out: state clears synchronously inside logout(); the
+        // network cleanup finishes in the background.
+        logout().catch(() => {});
         TactileEngine.destroy();
         nav.replace('/login');
       }},

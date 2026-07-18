@@ -189,7 +189,9 @@ export default function LoginScreen() {
       {/* IMP #2: Native keyboard handling — no KeyboardAvoidingView jank */}
       <ScrollView
         style={{ flex: 1 }}
-          contentContainerStyle={s.scroll}
+          // The pinned blur header is 56px tall and absolutely positioned —
+          // content must clear it or the seal slides underneath and clips.
+          contentContainerStyle={[s.scroll, { paddingTop: 56 + 16 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"

@@ -10,7 +10,7 @@ import { registerForPushNotifications, setupNotificationResponseHandler } from '
 import { initRevenueCat } from '../lib/revenueCat';
 import { addBreadcrumb, captureError, Sentry, setSentryUser } from '../lib/sentry';
 import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../stores/auth';
+import { storage, useAuthStore } from '../stores/auth';
 import { hydrateFollowing } from '../stores/domain/socialSlice';
 import { useNotificationStore } from '../stores/notificationStore';
 import MemoryManager from '../utils/memoryManager';
@@ -158,20 +158,40 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
     );
 
     // ── Global Auth State Listener ──
+    // DEADLOCK GUARD: auth-js emits events while holding its internal client
+    // lock and awaits every subscriber callback before releasing it. Awaiting
+    // any other supabase.auth.* call inside the callback re-enters that lock
+    // and hangs the client forever (signOut froze mid-logout; recovery links
+    // froze on "Decrypting"). The callback must stay synchronous: each event
+    // is deferred to a macrotask and appended to a serial chain, so handlers
+    // run one at a time, in emission order, after the lock is released, and
+    // re-read store state at execution time (not capture time).
+    let authEventChain: Promise<void> = Promise.resolve();
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         logger.debug('[AppBootstrapper] Auth state changed:', event);
-        if (event === 'SIGNED_OUT') {
-          // If the session was signed out remotely or via token expiration
-          if (useAuthStore.getState().isAuthenticated) {
-            await useAuthStore.getState().logout();
-          }
-        } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY') {
-          // If we received a new session but the store doesn't have it (or we just reset password), hydrate it
-          if (session?.user && !useAuthStore.getState().isAuthenticated) {
-            await useAuthStore.getState().restoreSession();
-          }
-        }
+        const hasSessionUser = !!session?.user;
+        setTimeout(() => {
+          authEventChain = authEventChain
+            .then(async () => {
+              if (event === 'SIGNED_OUT') {
+                // Session ended remotely or via token expiration
+                if (useAuthStore.getState().isAuthenticated) {
+                  await useAuthStore.getState().logout();
+                }
+              } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY') {
+                // A recovery link mints a full session before the user has set a
+                // new password — don't hydrate the app as signed-in until the
+                // reset screen clears the pending flag (or the abandon path
+                // destroys the session).
+                const recoveryPending = storage.getString('recovery_pending') === 'true';
+                if (hasSessionUser && !recoveryPending && !useAuthStore.getState().isAuthenticated) {
+                  await useAuthStore.getState().restoreSession();
+                }
+              }
+            })
+            .catch((e) => logger.warn('[AppBootstrapper] Auth event handler failed:', e));
+        }, 0);
       }
     );
 
