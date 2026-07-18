@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
+import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, Plus, X } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';
@@ -151,6 +152,10 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
     }).filter(Boolean) as TriptychFilm[];
     const slots: (TriptychFilm | null)[] = [validFavorites[0] ?? null, validFavorites[1] ?? null, validFavorites[2] ?? null];
     const insets = useSafeAreaInsets();
+
+    // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
+    // platform — the film-search field rises with the keyboard on BOTH.
+    const kbPad = useModalKeyboardPadding(insets.bottom);
 
     const [isEditing, setIsEditing] = useState(false);
     const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
@@ -336,7 +341,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
             {/* Selection Modal */}
             <Modal statusBarTranslucent visible={isEditing} transparent animationType="slide">
-                <View style={[s.modalOverlay, { paddingBottom: insets.bottom }]}>
+                <Animated.View style={[s.modalOverlay, kbPad]}>
                     <Pressable style={StyleSheet.absoluteFillObject} onPress={() => { TactileEngine.selection(); setIsEditing(false); }} />
                     <View style={s.modalContent}>
                         <View style={s.modalHeader}>
@@ -370,7 +375,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                             ) : null}
                         </ScrollView>
                     </View>
-                </View>
+                </Animated.View>
             </Modal>
         </View>
     );

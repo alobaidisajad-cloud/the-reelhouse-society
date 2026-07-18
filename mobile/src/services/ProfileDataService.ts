@@ -45,13 +45,13 @@ function parseRowsSafely<T extends z.ZodTypeAny>(schema: T, data: unknown[]): z.
  * @see {@link ../profileService.ts#PROFILE_SELECT_COLUMNS} for the auth-bootstrap column set.
  * When adding a new profile column, check if it also needs to be in PROFILE_SELECT_COLUMNS.
  */
-const SELF_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio, role, tier, is_founding, persona, is_social_private, followers_count, following_count, favorite_films, preferences, created_at, social_links' as const;
+const SELF_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio, role, tier, is_founding, persona, is_social_private, followers_count, following_count, favorite_films, preferences, created_at, social_links, member_no' as const;
 
 /** Public profile columns — excludes `preferences` to prevent
  *  leaking user settings (oracle_persona, notification prefs, etc.) to other users.
  *  @see {@link ../profileService.ts#PROFILE_SELECT_COLUMNS} for the auth-bootstrap column set.
  */
-const PUBLIC_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio, role, tier, is_founding, persona, is_social_private, followers_count, following_count, favorite_films, created_at, social_links, programmes:preferences->programmes, favorites:preferences->favorites, hide_stats:preferences->hide_stats' as const;
+const PUBLIC_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio, role, tier, is_founding, persona, is_social_private, followers_count, following_count, favorite_films, created_at, social_links, member_no, programmes:preferences->programmes, favorites:preferences->favorites, hide_stats:preferences->hide_stats' as const;
 
 // ── Zod Schemas ────────────────────────────────────────────────────────
 

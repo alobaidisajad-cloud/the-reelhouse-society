@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  ActivityIndicator, InteractionManager, Platform
+  ActivityIndicator, InteractionManager
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeIn, useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FormProvider } from 'react-hook-form';
 import { ControlledInput, ControlledBioInput, ControlledUsernameInput } from '@/src/components/ControlledInput';
@@ -50,14 +50,16 @@ export function EditProfileScreen() {
 
   const glowStyle = useAmbientGlow(0.04, 0.08, 3000);
 
-  const keyboard = useAnimatedKeyboard();
-  const animatedKeyboardStyle = useAnimatedStyle(() => ({ paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0 }));
+  // KEYBOARD LAW (router-screen form): automaticallyAdjustKeyboardInsets on
+  // the ScrollView scrolls the focused field above the keyboard on iOS;
+  // Android's window resize handles it natively. Container padding removed —
+  // it made room without scrolling to the field.
 
   if (!user) return null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.ink }}>
-      <Animated.View style={[st.container, animatedKeyboardStyle]}>
+      <View style={st.container}>
         <Animated.View style={[st.ambientGlow, glowStyle]}>
           <LinearGradient
             colors={['rgba(184,137,26,0.15)', 'transparent', 'transparent']}
@@ -78,7 +80,7 @@ export function EditProfileScreen() {
       </View>
 
       <FormProvider {...form}>
-        <ScrollView contentContainerStyle={[st.scrollContent, { paddingBottom: Math.max(insets.bottom, 100) }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[st.scrollContent, { paddingBottom: Math.max(insets.bottom, 100) }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
 
         {!!submitError && (
           <Animated.View entering={FadeInDown} style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder, borderRadius: 4, marginBottom: 16, marginHorizontal: 16 }}>
@@ -228,7 +230,7 @@ export function EditProfileScreen() {
 
           </ScrollView>
         </FormProvider>
-      </Animated.View>
+      </View>
 
       {/* The save-seal ceremony — one stamped beat before returning to the dossier. */}
       {sealed && (

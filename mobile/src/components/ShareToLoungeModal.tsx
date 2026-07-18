@@ -3,8 +3,9 @@
  */
 import { FlashList } from '@shopify/flash-list';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import { ActivityIndicator, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 
 import PressableScale from '@/src/components/PressableScale';
 import { useAuthStore } from '@/src/stores/auth';
@@ -156,12 +157,10 @@ export default function ShareToLoungeModal({
         />
     ), [handleSelectLounge]);
 
-    // Keyboard-aware sheet — the message input and SHARE button rise with the
-    // keyboard instead of hiding beneath it (same fix as PasswordRecoveryModal).
-    const keyboard = useAnimatedKeyboard();
-    const animatedSheetStyle = useAnimatedStyle(() => ({
-        paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
-    }));
+    // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
+    // platform — the message input and SHARE button rise with the keyboard
+    // on BOTH (Android's resize mode can't reach Modal windows).
+    const animatedSheetStyle = useModalKeyboardPadding();
 
     if (!shouldRender) return null;
 

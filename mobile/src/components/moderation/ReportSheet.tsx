@@ -22,6 +22,7 @@ import {
     View,
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import Animated, {
     Easing,
     FadeInDown,
@@ -169,6 +170,9 @@ function ReportSheet({
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
+  // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
+  // platform — the context field rises with the keyboard on BOTH.
+  const kbPad = useModalKeyboardPadding(Math.max(insets.bottom + 20, 24));
 
   // ── Gesture Dismiss ─────────────────────────────────────────────────────
   const pan = Gesture.Pan()
@@ -248,7 +252,7 @@ function ReportSheet({
             style={[
               styles.sheet,
               sheetStyle,
-              { paddingBottom: Math.max(insets.bottom + 20, 24) },
+              kbPad,
             ]}
           >
             {/* Handle Bar */}

@@ -274,7 +274,9 @@ export default function LogDetailScreen() {
 
   const keyboard = useAnimatedKeyboard();
   const animatedContainerStyle = useAnimatedStyle(() => ({
-    paddingBottom: keyboard.height.value,
+    // iOS only: Android's window resize (softwareKeyboardLayoutMode) already
+    // lifts the composer; padding both would double-shift the content.
+    paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
   }));
 
   // The cache is the single source of truth; no local useEffect sync required.
@@ -512,7 +514,7 @@ export default function LogDetailScreen() {
 
           {/* Absolutely centered — never shifts owner↔visitor */}
           <View style={s.eyebrowWrap} pointerEvents="none">
-            <Text style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>◈  FROM THE PERMANENT RECORD  ◈</Text>
+            <Text style={s.eyebrow} numberOfLines={1} allowFontScaling={false}>FROM THE PERMANENT RECORD</Text>
           </View>
 
           <View style={s.headerRight}>

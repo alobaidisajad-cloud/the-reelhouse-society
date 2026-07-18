@@ -129,7 +129,8 @@ export default function SearchModal() {
   }, [router]);
 
   const animatedContainerStyle = useAnimatedStyle(() => ({
-    paddingBottom: keyboard.height.value,
+    // iOS only: Android's window resize handles the keyboard natively.
+    paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
   }));
 
   const animatedSearchStyle = useAnimatedStyle(() => ({

@@ -32,8 +32,12 @@ export const s = StyleSheet.create({
   backBtn: { width: 60, zIndex: 2 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 14, zIndex: 2 },
   // The eyebrow is absolutely centered so it never shifts owner↔visitor.
-  eyebrowWrap: { position: 'absolute', top: 0, bottom: 0, left: 80, right: 80, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5, color: colors.sepia, opacity: 0.72, includeFontPadding: false },
+  // Gutters sized past the measured worst case: visitor view's right cluster
+  // (SHARE + ⋯) is ~84px — the old 80px insets guaranteed overlap. 104px
+  // clears it with margin, and the un-ornamented text fits deterministically
+  // at 360dp and up without any font auto-shrink.
+  eyebrowWrap: { position: 'absolute', top: 0, bottom: 0, left: 104, right: 104, alignItems: 'center', justifyContent: 'center' },
+  eyebrow: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.sepia, opacity: 0.72, includeFontPadding: false },
   shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   shareBtnText: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 1.5, includeFontPadding: false },
   moreBtn: { paddingHorizontal: 2, paddingVertical: 8 },

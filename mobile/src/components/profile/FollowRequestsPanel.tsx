@@ -13,6 +13,7 @@ import { FlashList } from '@shopify/flash-list';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyRound, X, Check, Search, User } from 'lucide-react-native';
 
@@ -69,6 +70,11 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
     setSearch, loadMore, accept, decline, declineAll,
   } = useFollowRequests(visible);
 
+  // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
+  // platform — the search field rises with the keyboard on BOTH.
+  // (Hook must run before the early return — rules of hooks.)
+  const kbPad = useModalKeyboardPadding(Math.max(insets.bottom + 8, 24));
+
   if (!visible) return null;
 
   const showSearch = items.length > 0 || search.length > 0;
@@ -78,7 +84,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
       <View style={s.host}>
         <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
         <Pressable style={s.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
-        <AnimatedView entering={SlideInDown.springify().damping(18)} exiting={SlideOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 8, 24) }]}>
+        <AnimatedView entering={SlideInDown.springify().damping(18)} exiting={SlideOutDown} style={[s.sheet, kbPad]}>
           <View style={s.handle} />
 
           <View style={s.headerRow}>

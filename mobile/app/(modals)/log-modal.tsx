@@ -6,7 +6,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import Animated, { FadeInDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import LogForm from '@/src/components/log/LogForm';
@@ -24,8 +24,11 @@ export default function LogModalScreen() {
     const flow = useLogFlow();
     const { isAuthenticated, step, film, isEditing, selectFilm, submitting, setStep } = flow;
 
-    const keyboard = useAnimatedKeyboard();
-    const animatedKeyboardStyle = useAnimatedStyle(() => ({ paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0 }));
+    // KEYBOARD LAW (router-screen form): the ScrollView's
+    // automaticallyAdjustKeyboardInsets scrolls the FOCUSED field above the
+    // keyboard on iOS (the login/reset-password proven mechanism) — blind
+    // container padding only made room without scrolling to it. Android's
+    // window resize handles everything natively.
     const insets = useSafeAreaInsets();
 
     // ── Not authenticated ──
@@ -46,7 +49,7 @@ export default function LogModalScreen() {
     return (
         <View style={st.root} accessibilityViewIsModal={true}>
             <StatusBar style="light" backgroundColor="transparent" translucent />
-            <Animated.View style={[st.kavFlex, animatedKeyboardStyle]}>
+            <View style={st.kavFlex}>
                 {/* Drag handle */}
                 <View style={st.dragHandleWrap}><View style={st.dragHandle} /></View>
 
@@ -74,11 +77,11 @@ export default function LogModalScreen() {
 
                 {/* ════ STEP 1: LOG FORM ════ */}
                 {step === 1 && film && (
-                    <Animated.ScrollView style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: insets.bottom + 20 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+                    <Animated.ScrollView style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: insets.bottom + 20 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
                         <LogForm flow={flow} user={user} />
                     </Animated.ScrollView>
                 )}
-            </Animated.View>
+            </View>
         </View>
     );
 }

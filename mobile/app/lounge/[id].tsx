@@ -38,6 +38,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     AppState,
+    Platform,
     StyleSheet,
     Text,
     TextInput,
@@ -275,7 +276,8 @@ export default function LoungeRoomScreen() {
   const { isOffline } = useOfflineAware();
 
   const keyboard = useAnimatedKeyboard();
-  const animatedContainerStyle = useAnimatedStyle(() => ({ paddingBottom: keyboard.height.value }));
+  // iOS only: Android's window resize already lifts the chat composer.
+  const animatedContainerStyle = useAnimatedStyle(() => ({ paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0 }));
 
   const {
     lounges, currentMessages, fetchMessages, sendMessage,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, TextInputSelectionChangeEventData } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -30,7 +30,8 @@ export default function ComposeDossierScreen() {
 
     const keyboard = useAnimatedKeyboard();
     const animatedContainerStyle = useAnimatedStyle(() => ({
-        paddingBottom: keyboard.height.value,
+        // iOS only: Android's window resize handles the keyboard natively.
+        paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
     }));
 
     const [title, setTitle] = useState(initialTitle || '');

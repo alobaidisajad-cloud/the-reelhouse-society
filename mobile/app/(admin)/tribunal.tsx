@@ -210,7 +210,9 @@ function ActionModal({
     <Modal statusBarTranslucent visible={state.visible} transparent animationType="fade" onRequestClose={handleClose}>
       <KeyboardAvoidingView
         style={s.modalOverlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // 'padding' on BOTH platforms: RN Modal windows never resize for the
+        // keyboard (Android's resize mode can't reach them).
+        behavior="padding"
       >
         <View style={[s.modalSheet, { paddingBottom: insets.bottom + 20 }]}>
           <View style={s.modalHandle} />

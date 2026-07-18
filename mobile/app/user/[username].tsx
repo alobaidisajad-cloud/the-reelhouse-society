@@ -601,6 +601,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           </View>
         ) : (
           <ScrollView contentContainerStyle={[s.tabScrollContent, { paddingBottom: Math.max(insets.bottom + 80, 80) }]} showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}>
             {/* ═══ PASSPORT TAB ═══ */}
             {/* Passport is a base feature (see the tiers page) — open to every member. */}
@@ -824,14 +825,18 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               )}
             </View>
 
-            {/* ── The Member Plate — real serial, stamps down last ── */}
-            <AnimatedView style={[s.founderMark, stampDevelop]}>
-              <View style={[s.founderLine, { backgroundColor: tierLine }]} />
-              <Text style={[s.founderText, { color: tierText }]} numberOfLines={1}>
-                {memberNo ? `MEMBER Nº ${memberNo} · EST. 1924` : 'EST. 1924'}
-              </Text>
-              <View style={[s.founderLine, { backgroundColor: tierLine }]} />
-            </AnimatedView>
+            {/* ── The Member Plate — the member's own serial, nothing else.
+                EST. 1924 is brand chrome (welcome, login, concierge) and has
+                no business posing as user data. Plate hides without a serial. ── */}
+            {memberNo && (
+              <AnimatedView style={[s.founderMark, stampDevelop]}>
+                <View style={[s.founderLine, { backgroundColor: tierLine }]} />
+                <Text style={[s.founderText, { color: tierText }]} numberOfLines={1}>
+                  {`MEMBER Nº ${memberNo}`}
+                </Text>
+                <View style={[s.founderLine, { backgroundColor: tierLine }]} />
+              </AnimatedView>
+            )}
 
             {/* ── Member Since ── */}
             {targetUser.created_at && (

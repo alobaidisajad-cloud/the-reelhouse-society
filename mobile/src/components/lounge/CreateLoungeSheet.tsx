@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, Modal, Platform, Switch, Keyboard, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Modal, Switch, Keyboard, ActivityIndicator } from 'react-native';
 import { nav } from '@/src/utils/typedRouter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS, useAnimatedKeyboard
+  useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS
 } from 'react-native-reanimated';
+import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -40,10 +41,9 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   const translateY = useSharedValue(800);
   const opacity = useSharedValue(0);
 
-  const keyboard = useAnimatedKeyboard();
-  const animatedContainerStyle = useAnimatedStyle(() => ({
-    paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
-  }));
+  // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
+  // platform (Android's resize mode can't reach them) — pad on BOTH.
+  const animatedContainerStyle = useModalKeyboardPadding();
 
   const handleClose = () => {
     Keyboard.dismiss();

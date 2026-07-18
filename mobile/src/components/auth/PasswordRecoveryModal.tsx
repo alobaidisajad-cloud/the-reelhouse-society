@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator, Modal, TextInput, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { KeyRound, X } from 'lucide-react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
-import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { SocietyEyebrow, HaloIcon, RegistrationBrackets } from './AuthChrome';
 
 interface Props {
@@ -18,10 +19,9 @@ interface Props {
 }
 
 export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgotLoading, onClose, onEmailChange, onSubmit, onBackToSignIn }: Props) {
-  const keyboard = useAnimatedKeyboard();
-  const animatedOverlayStyle = useAnimatedStyle(() => ({
-    paddingBottom: Platform.OS === 'ios' ? keyboard.height.value + 24 : 24,
-  }));
+  // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
+  // platform — pad by the reported keyboard height on BOTH.
+  const animatedOverlayStyle = useModalKeyboardPadding(24);
   // Ledger line warms to brass while the field is active
   const [emailFocused, setEmailFocused] = useState(false);
 

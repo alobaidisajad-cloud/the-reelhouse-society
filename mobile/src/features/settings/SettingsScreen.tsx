@@ -505,7 +505,9 @@ export function SettingsScreen() {
 
         <Modal statusBarTranslucent visible={otpModalVisible} animationType="fade" transparent onRequestClose={() => { if (!otpVerifying) setOtpModalVisible(false); }}>
           <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={st.modalOverlay}>
+          {/* 'padding' on BOTH platforms: RN Modal windows never resize for
+              the keyboard (Android's resize mode can't reach them). */}
+          <KeyboardAvoidingView behavior="padding" style={st.modalOverlay}>
             <View style={st.modalContent}>
               <View style={st.modalHeader}>
                 <Shield color={colors.bloodReel} size={16} />
