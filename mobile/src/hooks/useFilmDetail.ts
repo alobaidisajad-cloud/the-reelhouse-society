@@ -34,6 +34,18 @@ export function useFilmDetail(filmId: number, validFilmId: boolean) {
         similar, 
       };
     },
+    // INSTANT HERO: if the film's detail is already warm in the tmdb LRU
+    // (the feed prefetches details for every card you scroll past), paint the
+    // hero immediately as placeholder data while the real query — same key,
+    // same shape, untouched — completes underneath. Reviews/similar sections
+    // render conditionally, so they simply appear when the query settles.
+    // Cold cache (deep link, cold start) returns undefined → identical
+    // behavior to before. This can never make any path slower.
+    placeholderData: () => {
+      const cached = tmdb.peekDetail(filmId);
+      if (!cached) return undefined;
+      return { detail: cached, reviews: [], reviewsError: null, similar: [] };
+    },
     staleTime: 30 * 60 * 1000,  // 30 min
     enabled: validFilmId,
   });

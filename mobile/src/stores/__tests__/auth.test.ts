@@ -136,6 +136,64 @@ describe('AuthStore', () => {
     });
   });
 
+  describe('hydrateFromCache (cold-start fast path)', () => {
+    const { storage } = jest.requireMock('../mmkv-storage');
+
+    it('hydrates the cached user synchronously and clears loading', () => {
+      useAuthStore.setState({ loading: true });
+      storage.getString.mockImplementation((key: string) => {
+        if (key === 'recovery_pending') return undefined;
+        if (key === 'last_user_id') return 'u1';
+        if (key === 'ironvault_user_cache_u1') return JSON.stringify({ id: 'u1', username: 'sajad' });
+        return undefined;
+      });
+      useAuthStore.getState().hydrateFromCache();
+      const state = useAuthStore.getState();
+      expect(state.isAuthenticated).toBe(true);
+      expect((state.user as any)?.id).toBe('u1');
+      expect(state.loading).toBe(false);
+    });
+
+    it('NEVER hydrates while a recovery reset is pending, and leaves the flag armed', () => {
+      useAuthStore.setState({ loading: true });
+      storage.getString.mockImplementation((key: string) => {
+        if (key === 'recovery_pending') return 'true';
+        if (key === 'last_user_id') return 'u1';
+        if (key === 'ironvault_user_cache_u1') return JSON.stringify({ id: 'u1' });
+        return undefined;
+      });
+      useAuthStore.getState().hydrateFromCache();
+      const state = useAuthStore.getState();
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.user).toBeNull();
+      expect(state.loading).toBe(false);
+      // The background restoreSession owns flag cleanup — hydrate must not touch it.
+      expect(storage.delete).not.toHaveBeenCalledWith('recovery_pending');
+    });
+
+    it('clears loading without auth when there is no cache', () => {
+      useAuthStore.setState({ loading: true });
+      storage.getString.mockReturnValue(undefined);
+      useAuthStore.getState().hydrateFromCache();
+      const state = useAuthStore.getState();
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.loading).toBe(false);
+    });
+
+    it('survives a corrupted cache blob', () => {
+      useAuthStore.setState({ loading: true });
+      storage.getString.mockImplementation((key: string) => {
+        if (key === 'last_user_id') return 'u1';
+        if (key === 'ironvault_user_cache_u1') return '{not json';
+        return undefined;
+      });
+      useAuthStore.getState().hydrateFromCache();
+      const state = useAuthStore.getState();
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.loading).toBe(false);
+    });
+  });
+
   describe('login', () => {
     it('sets user on successful login', async () => {
       const mockUser = { id: 'u1', email: 'test@reel.app' };

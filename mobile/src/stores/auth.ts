@@ -28,6 +28,7 @@ export interface AuthState {
   setPreference: (key: string, value: unknown) => Promise<void>;
   getPreference: (key: string, fallback?: unknown) => unknown;
   restoreSession: () => Promise<void>;
+  hydrateFromCache: () => void;
 }
 
 
@@ -69,6 +70,32 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   isAuthenticated: false,
   loading: true,
+
+  // COLD-START LAW: this is the ONLY thing the splash screen waits for — pure
+  // local MMKV reads (~1ms). The full restoreSession() (network reconcile:
+  // getSession, dirty prefs, profile fetch) runs in the background right after
+  // and corrects anything stale. It is idempotent over this hydration.
+  hydrateFromCache: () => {
+    // SECURITY: an armed recovery flag means a password reset was abandoned —
+    // never hydrate that session's cached user. Leave the flag for the
+    // background restoreSession, which destroys the session and clears it.
+    if (storage.getString('recovery_pending') === 'true') {
+      set({ user: null, isAuthenticated: false, loading: false });
+      return;
+    }
+    const lastUserId = storage.getString('last_user_id');
+    if (lastUserId) {
+      const vaultData = storage.getString(`ironvault_user_cache_${lastUserId}`);
+      if (vaultData) {
+        try {
+          const parsedUser = JSON.parse(vaultData);
+          set({ user: parsedUser, isAuthenticated: true, loading: false });
+          return;
+        } catch {}
+      }
+    }
+    set({ loading: false });
+  },
 
   restoreSession: async () => {
     try {

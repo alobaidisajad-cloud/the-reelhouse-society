@@ -152,6 +152,10 @@ function cacheSet(key: string, data: unknown) {
 // ── Inflight dedup ──
 const _inflight = new Map<string, Promise<unknown>>();
 
+// Single source of truth for the movie-detail cache key (detail + peekDetail).
+const detailPath = (id: number) =>
+  `/movie/${id}?append_to_response=credits,videos,similar,watch/providers,release_dates`;
+
 async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): Promise<T | null> {
   const cached = cacheGet(path);
   if (cached !== undefined) return cached as T;
@@ -398,10 +402,15 @@ export const tmdb = {
   },
 
   // ── Film Details ──
-  detail: async (id: number) => fetchTMDB<TMDBMovieDetail>(
-    `/movie/${id}?append_to_response=credits,videos,similar,watch/providers,release_dates`,
-    null
-  ),
+  detail: async (id: number) => fetchTMDB<TMDBMovieDetail>(detailPath(id), null),
+
+  /**
+   * Synchronous LRU peek for the film page's instant placeholder — returns the
+   * cached detail (warm from the feed's viewability prefetch) without a promise
+   * or network. Shares detailPath() with detail() so the key can never drift.
+   */
+  peekDetail: (id: number): TMDBMovieDetail | undefined =>
+    cacheGet(detailPath(id)) as TMDBMovieDetail | undefined,
 
   // ── Trending ──
   trending: async (timeWindow = 'week') => fetchTMDB<TMDBMovieListResponse>(

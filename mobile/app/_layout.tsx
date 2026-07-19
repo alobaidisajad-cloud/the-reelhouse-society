@@ -40,7 +40,7 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const { restoreSession } = useAuthStore();
+  const { restoreSession, hydrateFromCache } = useAuthStore();
   const [appReady, setAppReady] = useState(false);
   const [showPreloader, setShowPreloader] = useState(true);
 
@@ -74,14 +74,28 @@ export default function RootLayout() {
           rehydrateDiscoverStore(),
           rehydrateNotificationStore(),
         ]);
-        await restoreSession();
+        // COLD-START LAW: boot from the local cache (~1ms) and render NOW.
+        // The network reconcile (restoreSession) runs in the background and
+        // corrects anything stale — the splash never waits for a round trip.
+        hydrateFromCache();
         // Hydrate BlockStore from MMKV cache (synchronous, before first render)
         const userId = useAuthStore.getState().user?.id;
         if (userId) {
           useBlockStore.getState().hydrateFromCache(userId);
-          // Trigger non-blocking background sync after hydration
-          useBlockStore.getState().syncFromServer(userId).catch(() => {});
         }
+        restoreSession()
+          .then(() => {
+            // Same ordering as the old blocking path, just off the launch path:
+            // block protection re-hydrates and syncs once the session settles.
+            const uid = useAuthStore.getState().user?.id;
+            if (uid) {
+              useBlockStore.getState().hydrateFromCache(uid);
+              useBlockStore.getState().syncFromServer(uid).catch(() => {});
+            }
+          })
+          .catch((err) => {
+            if (__DEV__) console.warn('[Layout] background restoreSession failed:', err);
+          });
       } catch (err) {
         if (__DEV__) console.warn('[Layout] prepare() error:', err);
       } finally {
@@ -89,7 +103,7 @@ export default function RootLayout() {
       }
     }
     prepare();
-  }, [restoreSession]);
+  }, [restoreSession, hydrateFromCache]);
 
   // ── Deep link handler for auth callbacks ──
   // Intercepts reelhouse://auth/callback and reelhouse://reset-password deep links
