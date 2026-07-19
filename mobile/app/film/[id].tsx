@@ -5,6 +5,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useFilmDetail } from '@/src/hooks/useFilmDetail';
+import { filterUnseenFilms } from '@/src/utils/recommendations';
 import { obscurityScore } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
@@ -32,6 +33,9 @@ export default function FilmDetailScreen() {
   const currentUsername = user?.username ?? 'you';
 
   const existingLog = useFilmStore(state => validFilmId ? (state._loggedIndex[filmId] ?? null) : null);
+  // Subscribe to the whole logged index so "YOU MAY ALSO LIKE" drops a film
+  // the instant it's logged (render-time filter, never baked into the cache).
+  const loggedIndex = useFilmStore(state => state._loggedIndex);
 
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [trailerModalVisible, setTrailerModalVisible] = useState(false);
@@ -134,10 +138,13 @@ export default function FilmDetailScreen() {
     const providers = film?.['watch/providers']?.results ? (film['watch/providers'].results as Record<string, unknown>) : EMPTY_OBJECT;
     const studios = film?.production_companies ?? EMPTY_ARRAY;
     const reviews = data?.reviews ?? EMPTY_ARRAY;
-    const similarFilms = data?.similar ? (data.similar as any[]) : EMPTY_ARRAY;
+    // Render-time personal filter: hide films already logged. Falls back to
+    // EMPTY_ARRAY (stable ref) when nothing remains so the section self-hides.
+    const filtered = filterUnseenFilms(data?.similar as any[] | undefined, loggedIndex);
+    const similarFilms = filtered.length > 0 ? filtered : EMPTY_ARRAY;
 
     return { film, videos, directors, cast, score, providers, studios, reviews, similarFilms };
-  }, [data]);
+  }, [data, loggedIndex]);
 
   const providerValue = useMemo<FilmDetailContextValue>(() => {
     return {

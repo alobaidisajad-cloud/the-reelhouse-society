@@ -153,8 +153,11 @@ function cacheSet(key: string, data: unknown) {
 const _inflight = new Map<string, Promise<unknown>>();
 
 // Single source of truth for the movie-detail cache key (detail + peekDetail).
+// `recommendations` = TMDB's behaviour-based engine (the real "you may also
+// like"); `similar` stays as the genre/keyword fallback for obscure titles.
+// Both ride the one detail call — no extra round trip.
 const detailPath = (id: number) =>
-  `/movie/${id}?append_to_response=credits,videos,similar,watch/providers,release_dates`;
+  `/movie/${id}?append_to_response=credits,videos,recommendations,similar,watch/providers,release_dates`;
 
 async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): Promise<T | null> {
   const cached = cacheGet(path);
