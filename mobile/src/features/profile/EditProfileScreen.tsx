@@ -116,7 +116,7 @@ export function EditProfileScreen() {
                 accessibilityLabel="Change profile picture"
               >
                 {avatarPreview ? (
-                    <Image source={{ uri: avatarPreview }} style={st.avatarImg} contentFit="cover" />
+                    <Image source={{ uri: avatarPreview }} style={st.avatarImg} contentFit="cover" transition={150} />
                 ) : (
                     <Buster size={72} mood="smiling" />
                 )}

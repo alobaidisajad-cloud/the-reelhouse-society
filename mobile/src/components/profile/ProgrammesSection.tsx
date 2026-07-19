@@ -217,7 +217,7 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
                                 {selected ? (
                                     <PressableScale style={s.selectedFilm} onPress={() => { TactileEngine.selection(); setSelectingFor(slot); setSearchText(''); }}>
                                         {posterUri(selected.poster_path ?? selected.poster) && (
-                                            <Image source={{ uri: posterUri(selected.poster_path ?? selected.poster)! }} style={s.selectedPoster} contentFit="cover" />
+                                            <Image source={{ uri: posterUri(selected.poster_path ?? selected.poster)! }} style={s.selectedPoster} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                                         )}
                                         <Text style={s.selectedTitle} numberOfLines={2}>{selected.title ?? selected.name}</Text>
                                     </PressableScale>
@@ -291,7 +291,7 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
                                 const id = prog.films![0].id ?? prog.films![0].filmId;
                                 if (id) router.push(`/film/${id}` as never);
                             }} style={s.progPoster1}>
-                                <Image source={{ uri: posterUri(prog.films[0].poster_path)! }} style={s.progPosterImg} contentFit="cover" cachePolicy="memory-disk" />
+                                <Image source={{ uri: posterUri(prog.films[0].poster_path)! }} style={s.progPosterImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                             </PressableScale>
                         )}
                         {prog.films?.[1]?.poster_path && (
@@ -299,7 +299,7 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
                                 const id = prog.films![1].id ?? prog.films![1].filmId;
                                 if (id) router.push(`/film/${id}` as never);
                             }} style={s.progPoster2}>
-                                <Image source={{ uri: posterUri(prog.films[1].poster_path)! }} style={s.progPosterImg} contentFit="cover" cachePolicy="memory-disk" />
+                                <Image source={{ uri: posterUri(prog.films[1].poster_path)! }} style={s.progPosterImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                             </PressableScale>
                         )}
                     </View>

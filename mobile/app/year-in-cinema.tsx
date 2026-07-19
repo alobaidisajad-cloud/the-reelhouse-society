@@ -156,7 +156,7 @@ export default function YearInCinemaScreen() {
                 {stats.topFilms.map((f, i) => (
                   <Animated.View key={f.id} entering={FadeInDown.duration(600).delay(i * 140)} style={s.topCard}>
                     {f.poster ? (
-                      <Image source={{ uri: tmdb.poster(f.poster, 'w342') }} style={s.topPoster} cachePolicy="memory-disk" />
+                      <Image source={{ uri: tmdb.poster(f.poster, 'w342') }} style={s.topPoster} cachePolicy="memory-disk" transition={150} />
                     ) : (
                       <View style={[s.topPoster, s.topPosterBlank]}>
                         <Film size={18} color={colors.sepia} />

@@ -32,7 +32,7 @@ const RequestRow = React.memo(function RequestRow({
     <View style={s.row}>
       <View style={s.avatar}>
         {item.avatarUrl
-          ? <Image source={{ uri: item.avatarUrl }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" recyclingKey={item.requesterId} />
+          ? <Image source={{ uri: item.avatarUrl }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} recyclingKey={item.requesterId} />
           : <User size={15} color={colors.fog} strokeWidth={1.5} />}
       </View>
       <Text style={s.name} numberOfLines={1}>@{item.username?.toUpperCase()}</Text>

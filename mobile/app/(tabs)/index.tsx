@@ -288,7 +288,7 @@ export default function LobbyScreen() {
             source={{ uri: `${TMDB_IMG_W780}${heroFilm.backdrop_path}` }}
             style={s.heroBackdrop}
             contentFit="cover"
-            cachePolicy="memory-disk"
+            cachePolicy="memory-disk" transition={150}
           />
           <LinearGradient
             colors={['rgba(10,7,3,0.28)', 'rgba(10,7,3,0.7)', colors.ink]}

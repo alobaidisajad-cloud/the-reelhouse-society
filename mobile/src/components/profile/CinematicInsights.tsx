@@ -269,7 +269,7 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
                             {/* Photo */}
                             <View style={[s.avatar, i === 0 && { borderColor: colors.sepia, borderWidth: 2 }]}>
                                 {actor.profile_path ? (
-                                <Image source={{ uri: `https://image.tmdb.org/t/p/w185${actor.profile_path}` }} style={s.avatarImg} cachePolicy="memory-disk" />
+                                <Image source={{ uri: `https://image.tmdb.org/t/p/w185${actor.profile_path}` }} style={s.avatarImg} cachePolicy="memory-disk" transition={150} />
                                 ) : (
                                     <Text style={s.avatarFallback}>✦</Text>
                                 )}
@@ -299,7 +299,7 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
                             </View>
                             <View style={[s.avatar, i === 0 && { borderColor: colors.sepia, borderWidth: 2 }]}>
                                 {director.profile_path ? (
-                                <Image source={{ uri: `https://image.tmdb.org/t/p/w185${director.profile_path}` }} style={s.avatarImg} cachePolicy="memory-disk" />
+                                <Image source={{ uri: `https://image.tmdb.org/t/p/w185${director.profile_path}` }} style={s.avatarImg} cachePolicy="memory-disk" transition={150} />
                                 ) : (
                                     <Text style={s.avatarFallback}>✦</Text>
                                 )}

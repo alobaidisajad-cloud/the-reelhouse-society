@@ -15,6 +15,7 @@ import { useAuthStore, storage } from '@/src/stores/auth';
 import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Lock } from 'lucide-react-native';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -225,7 +226,7 @@ export default function ResetPasswordScreen() {
         {/* Header */}
         <AnimatedView entering={FadeInDown.duration(800).reduceMotion(ReduceMotion.Never)} style={s.header}>
           <View style={s.iconWrap}>
-            <Text style={s.iconEmoji}>🔒</Text>
+            <Lock size={24} color={colors.sepia} strokeWidth={1.5} />
           </View>
           <Text style={s.eyebrow}>CREDENTIAL RESET</Text>
           <Text style={s.title}>Set New Password</Text>
@@ -377,7 +378,7 @@ const s = StyleSheet.create({
     marginBottom: 16,
     ...effects.glowSepia,
   },
-  iconEmoji: { fontSize: 24 },
+
   eyebrow: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 5, color: colors.sepia, marginBottom: 10 },
   title: {
     fontFamily: fonts.display, fontSize: 28, color: colors.parchment,

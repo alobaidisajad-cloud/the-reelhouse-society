@@ -260,7 +260,7 @@ export default function SocialModal() {
             <PressableScale onPress={() => handleProfilePress(item.username)} accessibilityRole="button" accessibilityLabel={`View ${item.username}'s profile`}>
                 <View style={styles.userRow}>
                     {item.avatar_url && item.avatar_url.startsWith('http') ? (
-                        <Image source={{ uri: item.avatar_url }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" />
+                        <Image source={{ uri: item.avatar_url }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                     ) : (
                         <View style={styles.avatarPlaceholder}><User size={20} color={colors.parchment} /></View>
                     )}

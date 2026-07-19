@@ -21,8 +21,18 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
   const { width, height } = useWindowDimensions();
   const beamSwing = useSharedValue(0.1);
   const flicker = useSharedValue(0.8);
+  // Tabs stay mounted forever — without this gate, every visited tab's beam
+  // keeps compositing a full-screen animated layer while invisible. Loops run
+  // only while this tab is on screen; on refocus they resume from the frozen
+  // values, so there is never a visual jump.
+  const isFocused = useIsFocused();
 
   useEffect(() => {
+    if (!isFocused) {
+      cancelAnimation(beamSwing);
+      cancelAnimation(flicker);
+      return;
+    }
     beamSwing.value = withRepeat(
       withSequence(
         withTiming(-0.1, { duration: 12000, easing: Easing.inOut(Easing.sin) }),
@@ -43,7 +53,7 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
     );
     return () => { cancelAnimation(beamSwing); cancelAnimation(flicker); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isFocused]);
 
   const style = useAnimatedStyle(() => {
     // Mathematical GPU Culling: Disable beam layer opacity entirely when scrolled far down

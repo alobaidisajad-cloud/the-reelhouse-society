@@ -98,7 +98,7 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, onRemove }: { it
                     </Text>
                 </View>
                 {item.poster_path ? (
-                    <Image source={{ uri: tmdb.poster(item.poster_path, 'w92') }} style={s.filmPoster} cachePolicy="memory-disk" recyclingKey={item.poster_path} />
+                    <Image source={{ uri: tmdb.poster(item.poster_path, 'w92') }} style={s.filmPoster} cachePolicy="memory-disk" transition={150} recyclingKey={item.poster_path} />
                 ) : (
                     <View style={[s.filmPoster, s.filmPosterEmpty]} />
                 )}
@@ -116,7 +116,7 @@ const DropdownResultRow = React.memo(({ r, onAdd }: { r: SearchResult, onAdd: (r
     return (
         <PressableScale style={s.dropRow} onPress={() => onAdd(r)} accessibilityRole="button" accessibilityLabel={`Add ${r.title ?? r.name}`}>
             {r.poster_path ? (
-                <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={s.dropPoster} cachePolicy="memory-disk" />
+                <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={s.dropPoster} cachePolicy="memory-disk" transition={150} />
             ) : (
                 <View style={[s.dropPoster, s.filmPosterEmpty]} />
             )}

@@ -78,7 +78,9 @@ export default function DispatchScreen() {
   const router = useRouter();
 
   const NAV_HEIGHT = 44 + 12;
-  const topPad = insets.top + NAV_HEIGHT + 8;
+  // Mirror the TopNavBar's Math.max(insets.top, 20) floor — the formulas must
+  // never disagree (see reels.tsx) or zero-inset devices tuck under the blur.
+  const topPad = Math.max(insets.top, 20) + NAV_HEIGHT + 8;
 
   const canWrite = isAuteurPlusTier(user);
 

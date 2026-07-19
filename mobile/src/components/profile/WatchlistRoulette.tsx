@@ -242,7 +242,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                 <Perforations />
                                 <Animated.View style={[s.gateWindow, s.resultPosterWrap, plateStyle]}>
                                     {posterUri(result) ? (
-                                        <Image source={{ uri: posterUri(result)! }} style={s.poster} cachePolicy="memory-disk" />
+                                        <Image source={{ uri: posterUri(result)! }} style={s.poster} cachePolicy="memory-disk" transition={150} />
                                     ) : (
                                         <View style={[s.posterBlank, s.posterBlankResult]}>
                                             <Text style={s.posterBlankTitle} numberOfLines={3}>{result.title ?? result.name}</Text>

@@ -523,7 +523,7 @@ export default function DossierReaderScreen() {
                         <PressableScale style={styles.commAuthorRow} onPress={() => (router.push as any)(`/user/${c.username}`)} haptic="selection" pressedScale={0.98}>
                             <View style={styles.commAvatar}>
                                 {c.avatar_url
-                                    ? <Image source={{ uri: c.avatar_url }} style={styles.commAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
+                                    ? <Image source={{ uri: c.avatar_url }} style={styles.commAvatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                                     : <Text style={styles.commAvatarLetter}>{c.username?.[0]?.toUpperCase()}</Text>}
                             </View>
                             <Text style={styles.commUsername} numberOfLines={1}>@{c.username}</Text>

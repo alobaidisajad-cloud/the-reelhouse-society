@@ -93,7 +93,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         <View style={s.memberRow}>
           <View style={s.memberAvatar}>
             {item.avatar_url
-              ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
+              ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
               : <Users size={13} color={colors.fog} strokeWidth={1.5} />}
           </View>
           <Text style={s.memberName} numberOfLines={1}>@{uname}</Text>
@@ -180,7 +180,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
                   <Text style={s.label}>SALON COVER</Text>
                   {lounge.cover_image ? (
                     <View style={s.coverRow}>
-                      <Image source={{ uri: tmdb.backdrop(lounge.cover_image, 'w500') }} style={s.coverThumb} contentFit="cover" cachePolicy="memory-disk" />
+                      <Image source={{ uri: tmdb.backdrop(lounge.cover_image, 'w500') }} style={s.coverThumb} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                       <View style={s.coverActions}>
                         <PressableScale style={s.coverBtn} onPress={handleChangeCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Change salon cover"><Text style={s.coverBtnText}>CHANGE</Text></PressableScale>
                         <PressableScale style={[s.coverBtn, s.coverBtnRemove]} onPress={handleRemoveCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Remove salon cover"><Text style={[s.coverBtnText, s.coverBtnTextRemove]}>REMOVE</Text></PressableScale>

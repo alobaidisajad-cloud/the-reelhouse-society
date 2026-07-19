@@ -17,7 +17,7 @@
  * get a plain crossfade.
  */
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, DeviceEventEmitter, AccessibilityInfo } from 'react-native';
+import { View, Text, StyleSheet, AccessibilityInfo } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -173,7 +173,6 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
     // Host screens already standing on the film (the archive page) override
     // this so the poster never stacks a duplicate film page.
     if (onFilmPress) return onFilmPress();
-    DeviceEventEmitter.emit('reelhouse:projection-mark');
     (router.push as any)(`/film/${item.film_id}` as any);
   }, [router, item.film_id, onFilmPress]);
 
@@ -187,7 +186,10 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 
   return (
     <View style={{ zIndex: index }}>
-      <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]} shouldRasterizeIOS>
+      {/* Rasterize ONLY at rest: the flattened bitmap makes the heavy card
+          shadow cheap during scroll, but re-rasterizing every frame of the
+          flip is a per-frame bitmap redraw — release it while animating. */}
+      <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]} shouldRasterizeIOS={!flipped}>
         {/* ── FRONT of the card ── */}
         <Animated.View
           style={backMounted ? frontStyle : undefined}

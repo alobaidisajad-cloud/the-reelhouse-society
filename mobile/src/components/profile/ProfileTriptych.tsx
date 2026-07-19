@@ -120,7 +120,7 @@ const TriptychResultRow = React.memo(({ film, handleSetFilm }: { film: TriptychS
         haptic
     >
         {film.poster_path ? (
-            <Image source={{ uri: tmdb.poster(film.poster_path, 'w92') }} style={s.resultPoster} contentFit="cover" cachePolicy="memory-disk" />
+            <Image source={{ uri: tmdb.poster(film.poster_path, 'w92') }} style={s.resultPoster} contentFit="cover" cachePolicy="memory-disk" transition={150} />
         ) : (
             <View style={[s.resultPoster, s.resultPosterPlaceholder]}>
                 <Search size={16} color={colors.ash} />
@@ -314,7 +314,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                         source={{ uri: tmdb.poster(film.poster_path, 'w342') }} 
                                         style={s.poster}
                                         contentFit="cover"
-                                        cachePolicy="memory-disk"
+                                        cachePolicy="memory-disk" transition={150}
                                     />
                                     {isOwnProfile && (
                                         <PressableScale style={s.clearBtn} onPress={() => handleClearSlot(i)} haptic="medium" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>

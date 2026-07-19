@@ -486,11 +486,11 @@ export default function LogDetailScreen() {
           <View style={[StyleSheet.absoluteFillObject, s.backdropContainer]}>
              <View style={s.fullSize}>
                 <Image 
-                   source={{ uri: log.editorial_header ? tmdb.backdrop(log.editorial_header, 'w1280') : (backdropPosterUri || '') }} 
+                   source={{ uri: log.editorial_header ? tmdb.backdrop(log.editorial_header, 'w780') : (backdropPosterUri || '') }} 
                    style={[StyleSheet.absoluteFillObject, log.editorial_header ? s.opacity30 : s.opacity20]}
                    contentFit="cover"
                    blurRadius={4}
-                   cachePolicy="memory-disk"
+                   cachePolicy="memory-disk" transition={150}
                 />
                 <LinearGradient colors={['rgba(10,7,3,0)', 'rgba(10,7,3,0.4)', 'rgba(10,7,3,0.95)', colors.ink]} style={StyleSheet.absoluteFillObject} />
                 {/* Scan lines texture — Web: repeating-linear-gradient for film grain */}

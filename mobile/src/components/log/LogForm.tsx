@@ -85,7 +85,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
             <View style={st.filmHeader}>
                 {film.poster_path && (
                     <View>
-                        <Image source={{ uri: tmdb.poster(altPoster ?? film.poster_path, 'w185') }} style={st.poster} contentFit="cover" cachePolicy="memory-disk" />
+                        <Image source={{ uri: tmdb.poster(altPoster ?? film.poster_path, 'w185') }} style={st.poster} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                         {altPoster && <View style={st.altBadge}><Text style={st.altBadgeText}>ALT</Text></View>}
                     </View>
                 )}

@@ -65,7 +65,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
               <View key={m.user_id} style={s.row}>
                 <View style={s.avatar}>
                   {m.avatar_url
-                    ? <Image source={{ uri: m.avatar_url }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" />
+                    ? <Image source={{ uri: m.avatar_url }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                     : <Users size={14} color={colors.fog} strokeWidth={1.5} />}
                 </View>
                 <Text style={s.name} numberOfLines={1}>@{m.username?.toUpperCase()}</Text>

@@ -124,7 +124,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
                     {/* The member's real portrait on their own file; Buster is the fallback */}
                     <View style={s.avatarWrap}>
                         {user?.avatar_url ? (
-                            <Image source={{ uri: user.avatar_url }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" />
+                            <Image source={{ uri: user.avatar_url }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                         ) : (
                             <Buster size={24} mood="smiling" />
                         )}

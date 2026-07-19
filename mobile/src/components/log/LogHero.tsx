@@ -69,7 +69,7 @@ export default function LogHero({
         )}
         <PressableScale onPress={onPressFilm} style={[s.posterBounds, isAuteur && s.posterBoundsAuteur]} pressedScale={0.95} haptic="selection">
           {posterUri ? (
-            <Image source={{ uri: posterUri }} style={s.posterCentered} contentFit="cover" cachePolicy="memory-disk" onLoadEnd={onPosterLoaded} />
+            <Image source={{ uri: posterUri }} style={s.posterCentered} contentFit="cover" cachePolicy="memory-disk" transition={150} onLoadEnd={onPosterLoaded} />
           ) : (
             <View style={[s.posterCentered, s.posterPlaceholder]}>
               <FilmIcon size={20} color={colors.sepia} strokeWidth={1} />

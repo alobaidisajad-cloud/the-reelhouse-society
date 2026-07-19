@@ -117,7 +117,7 @@ const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
       accessibilityLabel={`Open shared ${typeLabel.toLowerCase()}${title ? `: ${title}` : ''}`}
     >
       {posterUrl ? (
-        <Image source={{ uri: posterUrl }} style={s.sharedPoster} contentFit="cover" cachePolicy="memory-disk" />
+        <Image source={{ uri: posterUrl }} style={s.sharedPoster} contentFit="cover" cachePolicy="memory-disk" transition={150} />
       ) : msg.type === 'dossier_share' ? (
         <View style={s.sharedGlyphSlot}>
           <Text style={s.sharedGlyph}>§</Text>
@@ -200,7 +200,7 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
             {!isSelf && (
               <View style={s.authorAvatar}>
                 {msg.avatar_url
-                  ? <Image source={{ uri: msg.avatar_url }} style={s.authorAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
+                  ? <Image source={{ uri: msg.avatar_url }} style={s.authorAvatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                   : <Text style={s.authorAvatarLetter}>{msg.username?.[0]?.toUpperCase()}</Text>}
               </View>
             )}

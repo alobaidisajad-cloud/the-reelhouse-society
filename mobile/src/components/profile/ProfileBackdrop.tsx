@@ -43,6 +43,8 @@ export function ProfileBackdrop({ user, logs }: { user: BackdropUser; logs: Back
                 source={{ uri: posterSrc }}
                 style={s.image}
                 contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={150}
             />
             
             {/* Dark wash to simulate CSS brightness(0.4) */}
