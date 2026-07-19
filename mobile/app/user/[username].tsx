@@ -75,7 +75,7 @@ import ReportSheet from '@/src/components/moderation/ReportSheet';
 import FollowRequestsPanel from '@/src/components/profile/FollowRequestsPanel';
 import { useSocialStore } from '@/src/stores/followStore';
 import { refreshFollowRequestCount } from '@/src/hooks/useFollowRequests';
-import { GoldDivider, SectionLabel, StatCard } from '@/src/components/profile/ProfileHelpers';
+import { StatCard } from '@/src/components/profile/ProfileHelpers';
 import { ProfilePosterCard } from '@/src/components/profile/ProfilePosterCard';
 import { useBlockStore } from '@/src/stores/blockStore';
  
@@ -646,26 +646,26 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   <View style={s.projectorSectionsWrap}>
                     {/* Taste DNA */}
                     <View>
-                      <SectionLabel text="TASTE FINGERPRINT" />
+                      <SectionDivider label="TASTE FINGERPRINT" />
                       <TasteDNA logs={(analyticsLogs.length > 0 ? analyticsLogs : displayLogs) as any} username={targetUser?.username || username} memberNo={memberNo} />
                     </View>
 
                     {/* Cinematic Insights */}
                     <View>
-                      <SectionLabel text="REAL ANALYTICS" />
+                      <SectionDivider label="REAL ANALYTICS" />
                       <CinematicInsights {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs} as any} />
                     </View>
 
                     {/* Society Honors */}
                     <View>
-                      <SectionLabel text="SOCIETY HONORS" />
+                      <SectionDivider label="SOCIETY HONORS" />
                       <Achievements {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics} as any} />
                     </View>
 
                     {/* Your Favourites */}
                     {displayLogs.filter((l: ProfileLog) => l.rating >= 4).length > 0 && (
                       <View>
-                        <SectionLabel text="HIGHEST RATED" />
+                        <SectionDivider label="HIGHEST RATED" />
                         <View style={s.card}>
                           {displayLogs.filter((l: ProfileLog) => l.rating >= 4).slice(0, 6).map((log: ProfileLog) => {
                             const posterUri = tmdb.poster(log.poster, 'w185');
@@ -687,7 +687,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
                     {/* Passport */}
                     <View>
-                      <SectionLabel text="CINEMATIC PASSPORT" />
+                      <SectionDivider label="CINEMATIC PASSPORT" />
                       <NoirPassport {...{user: targetUser, logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics} as any} />
                     </View>
 
@@ -704,7 +704,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               <View style={s.tabContentPad}>
                 {isArchivistPlus ? (
                   <View>
-                    <SectionLabel text="VIEWING HISTORY" />
+                    <SectionDivider label="VIEWING HISTORY" />
                     <NitrateCalendarGrid {...{logs: calendarData.length > 0 ? calendarData : (analyticsLogs.length > 0 ? analyticsLogs : displayLogs), isSelf} as any} />
                   </View>
                 ) : (
@@ -918,7 +918,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           {(hasFavorites || isSelf) && (
             <View style={s.plateSections}>
               <View style={s.triptychWrap}>
-                <SectionLabel text="FAVORITE FILMS" />
+                <SectionDivider label="FAVORITE FILMS" />
                 <ProfileTriptych
                   user={{
                     id: targetUser.id,
@@ -935,8 +935,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           {recentLogs.length > 0 && (
             <View style={s.plateSections}>
               <View style={s.triptychWrapRecent}>
-                <GoldDivider />
-                <SectionLabel text="RECENTLY WATCHED" />
+                <SectionDivider label="RECENTLY WATCHED" />
                 <View style={s.recentRow}>
                   {recentLogs.map((log: ProfileLog) => (
                     <View key={log.id} style={s.recentItem}>
