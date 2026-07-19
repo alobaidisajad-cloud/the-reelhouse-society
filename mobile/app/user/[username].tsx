@@ -22,7 +22,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
  
 import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import { CinematicInsights } from '@/src/components/profile/CinematicInsights';
-import { ProgrammesSection } from '@/src/components/profile/ProgrammesSection';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors } from '@/src/theme/theme';
 // CinematicMap is missing from workspace, commenting out to avoid compilation errors
@@ -328,7 +327,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     physicalFiltered,
     physicalFormatCounts,
     recentLogs,
-    uniqueFilms,
     socialLinks,
     COLLECTION_CARDS
   } = useProfileComputed({
@@ -697,9 +695,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     {!isSelf && myLogs.length >= 5 && (
                       <TasteMatch {...{myLogs, theirLogs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, theirUsername: targetUser.username} as any} />
                     )}
-
-                    {/* Programmes */}
-                    <ProgrammesSection programmes={(targetUser?.preferences as any)?.programmes ?? []} user={targetUser as any} uniqueFilms={uniqueFilms as any} isOwnProfile={isSelf} />
                   </View>
                 </View>
             )}

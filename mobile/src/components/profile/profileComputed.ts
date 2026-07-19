@@ -241,22 +241,6 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     [displayLogs]
   );
 
-  // Memory Optimization: Deduplicate films strictly once per logs change.
-  // This prevents React from throwing duplicate key errors in the UI, and avoids
-  // massive array reallocation / filtering when the Nightly Programme tab is opened.
-  const uniqueFilms = useMemo(() => {
-    const sourceLogs = analyticsLogs.length > 0 ? analyticsLogs : displayLogs;
-    const map = new Map<number, { id: number; title: string; poster_path: string }>();
-    for (const log of sourceLogs) {
-      const id = log.filmId || (log as any).film_id;
-      if (!id) continue;
-      if (!map.has(id)) {
-        map.set(id, { id, title: log.title || '', poster_path: log.poster || (log as any).poster_path || '' });
-      }
-    }
-    return Array.from(map.values());
-  }, [displayLogs, analyticsLogs]);
-
   // Social links parsing (matches web exactly)
   const socialLinks = useMemo(() => {
     const raw = targetUser?.social_links ?? [];
@@ -289,6 +273,6 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     totalFilms, statsLevel, statsColor, statsProgress,
     streak, archiveFiltered, ledgerFiltered, halfLifeMap,
     watchlistFiltered, physicalFiltered, physicalFormatCounts,
-    recentLogs, uniqueFilms, socialLinks, COLLECTION_CARDS,
+    recentLogs, socialLinks, COLLECTION_CARDS,
   };
 }

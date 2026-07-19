@@ -142,14 +142,3 @@ export interface TicketStub {
     createdAt?: string
     created_at?: string
 }
-
-// ── Programme (Nightly Programme) ──
-export interface Programme {
-    id: string
-    title: string
-    description?: string
-    films: { id: number; title?: string; poster_path?: string | null }[]
-    date?: string
-    user_id?: string
-    created_at?: string
-}
