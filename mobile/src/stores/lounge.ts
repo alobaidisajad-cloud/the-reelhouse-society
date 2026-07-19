@@ -33,6 +33,9 @@ export interface LoungeRoom {
   membership_status?: 'approved' | 'pending' | 'muted' | 'banned';
   /** For lounges you host: how many requests are at the door. */
   pending_count?: number;
+  /** Up to 3 member faces for the salon card avatar stack (your salons only;
+   *  fetched via get_salon_member_faces). Absent/empty → card shows the count. */
+  memberFaces?: { username: string; avatar_url: string | null }[];
 }
 
 /**
@@ -389,6 +392,23 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         if (pendingRows) for (const r of pendingRows) pendingCounts[r.lounge_id] = (pendingCounts[r.lounge_id] || 0) + 1;
       }
 
+      // Member faces (avatar stack) — ONLY for salons you host or joined, where
+      // the roster is readable. Bounded to 3 per salon by the RPC's window, so a
+      // 200-member salon costs the same as a 2-member one. Best-effort: any
+      // failure leaves the map empty and every card falls back to its count.
+      const facesMap: Record<string, { username: string; avatar_url: string | null }[]> = {};
+      const facesIds = Array.from(ownedOrJoinedIds);
+      if (facesIds.length > 0) {
+        try {
+          const { data: faceRows } = await supabase.rpc('get_salon_member_faces', { p_lounge_ids: facesIds });
+          if (Array.isArray(faceRows)) {
+            for (const r of faceRows as { lounge_id: string; username: string; avatar_url: string | null }[]) {
+              (facesMap[r.lounge_id] ??= []).push({ username: r.username, avatar_url: r.avatar_url });
+            }
+          }
+        } catch { /* faces are decorative; the card degrades to the plain count */ }
+      }
+
       // Sort by recent activity
       const loungesList = Array.from(allLoungesMap.values());
       loungesList.sort((a, b) => {
@@ -411,6 +431,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         last_message_at: lastMessageTimestamps[l.id],
         membership_status: statusMap.get(l.id) as LoungeRoom['membership_status'],
         pending_count: pendingCounts[l.id] || 0,
+        memberFaces: facesMap[l.id],
       }));
 
       set({ lounges: enriched, loading: false });

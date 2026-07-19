@@ -17,6 +17,7 @@
     "get_profile_counts",
     "get_report_evidence",
     "get_public_profile_analytics",
+    "get_salon_member_faces",
     "get_user_analytics",
     "get_user_blocks",
     "increment_dossier_views",

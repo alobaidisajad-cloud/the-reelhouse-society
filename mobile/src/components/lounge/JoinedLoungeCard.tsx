@@ -9,11 +9,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { nav } from '@/src/utils/typedRouter';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Users, Lock, Film as FilmIcon, DoorOpen, Hourglass } from 'lucide-react-native';
+import { Film as FilmIcon, DoorOpen, Hourglass } from 'lucide-react-native';
 import { LoungeRoom } from '@/src/stores/lounge';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
+import { MemberFaceStack } from '@/src/components/lounge/MemberFaceStack';
 
 export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge: LoungeRoom; index: number }) => {
   const coverUrl = lounge.cover_image
@@ -73,18 +74,13 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
 
           <View style={s.joinedNameOverlay}>
             <Text style={s.joinedNameText} numberOfLines={2}>{lounge.name}</Text>
-            <View style={s.joinedMetaRow}>
-              <Users size={10} color={colors.fog} strokeWidth={1.5} />
-              <Text style={s.joinedMetaText} numberOfLines={1}>
-                {lounge.member_count || 0}
-              </Text>
-              {lounge.is_private && (
-                <>
-                  <View style={s.joinedMetaLine} />
-                  <Lock size={10} color={colors.sepia} strokeWidth={1.5} />
-                </>
-              )}
-            </View>
+            {/* Bounded avatar stack — up to 3 faces + "+N" from member_count,
+                or the plain count if faces aren't available. Fixed footprint. */}
+            <MemberFaceStack
+              faces={lounge.memberFaces}
+              totalCount={lounge.member_count || 0}
+              isPrivate={lounge.is_private}
+            />
           </View>
         </View>
       </PressableScale>
@@ -203,22 +199,5 @@ const s = StyleSheet.create({
     color: colors.parchment,
     marginBottom: 6,
     lineHeight: 16,
-  },
-  joinedMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  joinedMetaText: {
-    fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 1.5,
-    color: colors.fog,
-    includeFontPadding: false,
-  },
-  joinedMetaLine: {
-    height: 10,
-    width: 1,
-    backgroundColor: colors.ash,
   },
 });
