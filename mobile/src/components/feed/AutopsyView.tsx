@@ -107,6 +107,13 @@ export const AutopsyBack = React.memo(function AutopsyBack({
           Craft examination · filed by @{username.toUpperCase()}
         </Text>
 
+        {/* Center the examination in the space between the file label and the
+            footer. The card height tracks the (variable) front log, so on a
+            tall card the scores float centered instead of stranding a void
+            below them; on a short card this is a no-op (same-size content,
+            just centered — never clips). Robust to any axis count (1–6),
+            since we render rated axes only. */}
+        <View style={s.gridWrap}>
         <View style={s.grid}>
           {stats.map(stat => (
             <View key={stat.key} style={s.cell}>
@@ -122,6 +129,7 @@ export const AutopsyBack = React.memo(function AutopsyBack({
               </View>
             </View>
           ))}
+        </View>
         </View>
       </View>
 
@@ -240,6 +248,14 @@ const s = StyleSheet.create({
     opacity: 0.7,
     marginBottom: 14,
     includeFontPadding: false,
+  },
+  // Takes all the space below the file label and centers the examination in
+  // it. justifyContent only re-positions same-size content, so it can never
+  // cause the grid to clip on a short card — it just balances the void on tall ones.
+  gridWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: 8,
   },
   grid: {
     flexDirection: 'row',
