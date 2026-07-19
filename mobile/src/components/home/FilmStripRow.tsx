@@ -91,7 +91,7 @@ export const FilmStripRow = memo(function FilmStripRow({ title, label, films, lo
           snapToAlignment="start"
           disableIntervalMomentum={false}
           estimatedItemSize={posterWidth + 16}
-          drawDistance={200}
+          drawDistance={350}
           ItemSeparatorComponent={MemoizedBox16}
         />
       </View>

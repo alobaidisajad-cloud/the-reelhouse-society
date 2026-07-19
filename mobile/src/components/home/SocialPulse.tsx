@@ -227,7 +227,7 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
             onScroll={onScrollPulse}
             scrollEventThrottle={16}
             estimatedItemSize={PULSE_ITEM_SIZE}
-            drawDistance={200}
+            drawDistance={350}
             ItemSeparatorComponent={MemoizedBox16}
         />
       </View>

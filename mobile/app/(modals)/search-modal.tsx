@@ -30,7 +30,7 @@ import {
     Users,
     X,
 } from 'lucide-react-native';
-import Animated, { FadeIn, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -133,8 +133,15 @@ export default function SearchModal() {
     paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
   }));
 
+  // Derived value instead of withTiming-inside-useAnimatedStyle: the animation
+  // restarts only when `searching` actually changes, never on incidental
+  // re-renders. Identical timing and target.
+  const searchDim = useDerivedValue(
+    () => withTiming(searching ? 0.4 : 1, { duration: 250 }),
+    [searching]
+  );
   const animatedSearchStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(searching ? 0.4 : 1, { duration: 250 }),
+    opacity: searchDim.value,
   }));
   const animatedSearchProps = useAnimatedProps(() => ({
     color: searching ? colors.fog : colors.sepia,
