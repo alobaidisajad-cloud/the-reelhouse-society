@@ -140,6 +140,25 @@ export default function ProfileArchiveTab({
           <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
             <Text style={s.ctaBtnText}>RECORD A SCREENING</Text>
           </PressableScale>
+
+          {/* The import signpost — the feature already lives in Settings; this
+              points a switcher to it at the moment they face an empty shelf.
+              Own-profile empty-archive only, so it shares a screen with nothing. */}
+          <View style={s.importDividerRow}>
+            <View style={s.importDividerLine} />
+            <Text style={s.importDividerMark}>✦</Text>
+            <View style={s.importDividerLine} />
+          </View>
+          <Text style={s.importLine}>Your viewing history can travel with you.</Text>
+          <PressableScale
+            style={s.importBtn}
+            onPress={() => (router.push as any)('/settings' as never)}
+            haptic="light"
+            accessibilityRole="button"
+            accessibilityLabel="Import your archive from another service"
+          >
+            <Text style={s.importBtnText}>✦  IMPORT YOUR ARCHIVE</Text>
+          </PressableScale>
         </Animated.View>
       );
     }
@@ -197,6 +216,12 @@ const s = StyleSheet.create({
   emptyDesc: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone, opacity: 0.6, textAlign: 'center', lineHeight: 20 },
   ctaBtn: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 2, backgroundColor: 'rgba(184,137,26,0.05)' },
   ctaBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia },
+  importDividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'stretch', marginTop: 20, marginBottom: 12, paddingHorizontal: 10 },
+  importDividerLine: { flex: 1, height: 1, backgroundColor: colors.sepia, opacity: 0.2 },
+  importDividerMark: { fontFamily: fonts.sub, fontSize: 7, color: colors.sepia, opacity: 0.7 },
+  importLine: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone, opacity: 0.6, textAlign: 'center', lineHeight: 18, marginBottom: 12 },
+  importBtn: { paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(184,137,26,0.45)', borderRadius: 2 },
+  importBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
   monthHeader: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, opacity: 0.8, marginBottom: 16, marginTop: 24 },
   grid4: { flexDirection: 'row', gap: 8, marginBottom: 12 },
 });

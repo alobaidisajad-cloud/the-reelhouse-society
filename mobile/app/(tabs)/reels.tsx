@@ -40,6 +40,7 @@ import {
 import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/useFeeds';
 import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
 import { ReelsStackList } from '@/src/components/reels/ReelsStackList';
+import { MemberRegistry } from '@/src/components/reels/MemberRegistry';
 
 // Removed LayoutAnimation — conflicts with Reanimated layout transitions.
 // Reanimated's entering/exiting animations handle all transitions in this screen.
@@ -324,6 +325,12 @@ export default function ReelScreen() {
             <Text style={st.emptyBtnText}>LOG A FILM</Text>
           </PressableScale>
         )}
+
+        {/* The Member Registry — only in the empty FOLLOWING feed. Introduces
+            notable members so the orbit is never a dead end; retires itself
+            once a follow lands and the feed re-develops. Renders nothing when
+            there's no one notable to show. */}
+        <MemberRegistry visible={feedFilter === 'following'} />
       </Animated.View>
     );
   }, [feedLoading, feedFilter, router, switchFeedFilter]);
