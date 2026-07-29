@@ -22,7 +22,6 @@ import {
     Alert,
     KeyboardAvoidingView,
     Modal,
-    Platform,
     RefreshControl,
     ScrollView,
     StyleSheet,

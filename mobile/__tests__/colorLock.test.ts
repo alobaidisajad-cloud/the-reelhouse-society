@@ -14,7 +14,7 @@
  * and the share-card canvas keep their own pigments.
  */
 import { readdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, relative } from 'path';
+import { join } from 'path';
 
 const ROOT = join(__dirname, '..');
 const SCAN_DIRS = ['src', 'app'];

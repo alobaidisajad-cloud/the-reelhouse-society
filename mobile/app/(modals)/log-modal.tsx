@@ -2,7 +2,6 @@ import { nav } from '@/src/utils/typedRouter';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import {
-    Platform,
     Text,
     View,
 } from 'react-native';

@@ -12,9 +12,8 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { colors } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import { storage } from '@/src/stores/mmkv-storage';
-import { fonts } from '@/src/theme/theme';
 import { useReducedMotion } from '@/src/hooks/useReducedMotion';
 import { useDeviceThrottling } from '@/src/hooks/useDeviceThrottling';
 

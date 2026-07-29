@@ -1,7 +1,6 @@
 import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack, ErrorBoundary as RouterErrorBoundary } from 'expo-router';
-export { RouterErrorBoundary as ErrorBoundary };
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -30,6 +29,7 @@ import { InteractionManager, StyleSheet } from 'react-native';
 import OfflineBanner from '@/src/components/OfflineBanner';
 import { initSentry } from '@/src/lib/sentry';
 import '@/src/providers/AccessibilityProvider';
+export { RouterErrorBoundary as ErrorBoundary };
 
 // Font scaling lock removed temporarily to prevent React Native Hermes segfault.
 // Prevent splash from hiding until fonts + auth are ready

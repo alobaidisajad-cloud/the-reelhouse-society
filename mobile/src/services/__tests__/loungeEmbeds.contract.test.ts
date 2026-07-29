@@ -16,7 +16,7 @@
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-const EMBEDS: Array<{ table: string; select: string }> = [
+const EMBEDS: { table: string; select: string }[] = [
   { table: 'lounge_messages', select: 'id,profiles!lounge_messages_user_id_fkey(username,avatar_url)' },
   { table: 'lounge_members', select: 'user_id,profiles!lounge_members_user_id_fkey(username,avatar_url)' },
   { table: 'lounge_message_reactions', select: 'id,profiles!lounge_message_reactions_user_id_fkey(username)' },
