@@ -112,8 +112,26 @@ WHERE l.private_notes IS NOT NULL AND l.private_notes <> ''
 ON CONFLICT (log_id) DO NOTHING;
 ```
 
-**Verify:** `SELECT count(*) FROM public.log_private_notes;` → **1**.
-Then, as anon: `GET /rest/v1/log_private_notes?select=log_id` → must be **401/403/404, never 200**.
+### Phase 1 was executed on a replica — every property proven
+
+Built with a stub `auth.uid()`, real `anon`/`authenticated` roles, an archivist, a
+cinephile, one real note, one empty string and one NULL:
+
+| Test | Result |
+|---|---|
+| backfill row count | **1** — the empty string and the NULL correctly skipped |
+| tier gate: archivist / cinephile / founding-via-`is_founding` | **true / false / true** |
+| owner reads own note | **"REAL NOTE"** |
+| **another member reads it** | **0 rows** |
+| **anonymous reads it** | **permission denied for table log_private_notes** |
+| non-archivist writes own note | **blocked — RLS violation** |
+| member forges a row owned by someone else | **blocked — RLS violation** |
+| 1001-character note | **blocked — CHECK constraint** |
+| deleting a log | **its note is cascade-deleted** |
+
+**Verify the same on production after applying:**
+`SELECT count(*) FROM public.log_private_notes;` → **1**, and as anon
+`GET /rest/v1/log_private_notes?select=log_id` → must be **401/403/404, never 200**.
 
 **Rollback:**
 ```sql
@@ -127,11 +145,74 @@ DROP FUNCTION IF EXISTS public.is_archivist_plus(uuid);
 
 I previously said "6 mobile, 4 web". That counted **files**, not edits. Accurately:
 
+### The design — one query, not two. Proven.
+
+The note rides in the **same request** as an embed, so no extra round trip and no
+loading race. RLS on `log_private_notes` means a non-owner's embed simply comes back
+empty — the server, not the client, decides.
+
+**Proven live** that PostgREST does child-table embeds when the FK exists:
+`GET /lists?select=id,list_items(film_id)` → **200 with data**. (The `logs → log_comments`
+equivalent fails `PGRST200` only because that FK is missing — which is finding #43,
+unrelated.) Phase 1 creates `log_private_notes.log_id` as a real FK to `logs(id)`, so the
+relationship PostgREST needs will exist.
+
+Because `log_id` is the **primary key**, PostgREST treats it as to-one and returns an
+object; older versions return a one-element array. Handle both — the codebase already
+uses that idiom for `profiles` in `FeaturedCritique.tsx:51`.
+
+**One shared helper, added to `utils/mappers.ts`, used by every read site:**
+
+```ts
+/** log_private_notes rides along as an embed; PostgREST may hand back an
+ *  object (to-one) or a one-element array. RLS guarantees it is only ever
+ *  the caller's own note — a non-owner receives nothing at all. */
+export function extractPrivateNotes(embed: unknown): string | null {
+  if (!embed) return null;
+  const row = Array.isArray(embed) ? embed[0] : embed;
+  return (row as { notes?: string | null } | undefined)?.notes ?? null;
+}
+```
+
+**And one shared writer** (mobile `services/LogService.ts`, web `stores/films.ts`):
+
+```ts
+/** Upsert on content, delete on empty — an empty note must not leave a row behind. */
+export async function savePrivateNotes(logId: string, userId: string, notes: string | null) {
+  const trimmed = notes?.trim() || null;
+  if (!trimmed) {
+    await supabase.from('log_private_notes').delete().eq('log_id', logId);
+    return;
+  }
+  await supabase.from('log_private_notes')
+    .upsert({ log_id: logId, user_id: userId, notes: trimmed, updated_at: new Date().toISOString() },
+            { onConflict: 'log_id' });
+}
+```
+
+The premium gate is now enforced server-side by `lpn_insert`/`lpn_update`, so a
+non-archivist's write is rejected by the database rather than by a client `if`.
+
+### Tests that must FAIL before any of these edits
+
+Per the batch rule, each is written first and must fail against today's code:
+
+1. `mapLogRow` returns `privateNotes` from the **embed**, not from `private_notes`.
+2. `extractPrivateNotes` handles object, one-element array, `[]`, `null`, `undefined`.
+3. `savePrivateNotes` **deletes** when the note is empty or whitespace, upserts otherwise.
+4. `LOG_SELECT_COLUMNS` no longer contains the string `private_notes`.
+5. A non-owner's mapped log has `privateNotes === null` given an empty embed.
+
+Then mutation-verify: break `extractPrivateNotes` to always return `null` and confirm
+test 1 fails; make `savePrivateNotes` skip the delete and confirm test 3 fails.
+
+
 ### Mobile (6 files, 11 edits)
 | File | Edit |
 |---|---|
-| `utils/mappers.ts:183` | drop `private_notes` from `LOG_SELECT_COLUMNS` — it then equals `PUBLIC_LOG_COLUMNS`; consolidate |
-| `utils/mappers.ts:204` | remove `privateNotes: dbLog.private_notes` |
+| `utils/mappers.ts:183` | `…, private_notes, …` → `…, log_private_notes(notes), …` in `LOG_SELECT_COLUMNS`. **Do not touch `PUBLIC_LOG_COLUMNS`** — it must stay embed-free so a non-owner's query never even asks. |
+| `utils/mappers.ts:204` | `privateNotes: dbLog.private_notes ?? null` → `privateNotes: extractPrivateNotes((dbLog as { log_private_notes?: unknown }).log_private_notes)` |
+| `utils/mappers.ts:153` | `LogRow`: replace `private_notes?: string \| null` with `log_private_notes?: { notes: string \| null } \| { notes: string \| null }[] \| null` |
 | `stores/domain/logSlice/helpers/logOperations.ts:255` | remove from the insert payload; upsert to `log_private_notes` after the log insert returns its id |
 | `…/logOperations.ts:401` | remove `private_notes: null` |
 | `utils/mutationExecutor.ts:75` | archived-entry read → from the new table |
@@ -221,6 +302,25 @@ the `NULL::text` at position 15. Without this the Lead Story disappears.
 ```sql
 ALTER TABLE public.logs DROP COLUMN private_notes;   -- never CASCADE
 ```
+
+### ⚠️ 4.1–4.3 must run inside ONE transaction — proven
+
+`refresh_global_feed()` is on a **pg_cron schedule firing every minute**
+(`REFRESH MATERIALIZED VIEW CONCURRENTLY`). Between dropping the view and recreating its
+unique index, that job would error — and `CONCURRENTLY` is impossible without the unique
+index. Wrapping all three steps in `BEGIN … COMMIT` means cron simply waits on the lock
+and never observes a missing or index-less view.
+
+**The whole sequence was executed on a replica** carrying the real view, its unique index
+`idx_global_feed_mat_id`, `refresh_global_feed()`, and the 1A function:
+
+| After the transaction | Result |
+|---|---|
+| feed row count (semantics preserved) | **unchanged** — the log with a note is still excluded, now via `NOT EXISTS` |
+| `refresh_global_feed()` — `REFRESH … CONCURRENTLY` | **OK** |
+| `get_featured_critique()` at 26 columns | **works** |
+| `private_notes` column | **gone** |
+| the note itself | **preserved in `log_private_notes`** |
 
 **Verify after 4.3:**
 1. `POST /rpc/get_featured_critique?select=id,user_id,profiles!logs_user_id_fkey(username,role)` → profile present.
