@@ -142,6 +142,26 @@ export interface LoungeState {
 let _lastSendAt = 0;
 const SEND_THROTTLE = 800;
 
+/**
+ * Ceiling on messages held in memory for an open lounge — four pages of the
+ * 100 loadOlderMessages fetches, so ordinary scroll-back never reaches it.
+ *
+ * Without a ceiling the array grows for the entire session: the initial page,
+ * every page scrolled back, every realtime arrival, every message sent. Each
+ * reaction event then maps over the whole array, so a long evening in a busy
+ * lounge degrades steadily.
+ *
+ * Trimming the OLDEST is safe, and the earlier note claiming it would break
+ * scroll-back was wrong: loadOlderMessages pages with
+ * `.lt('created_at', currentMessages[0].created_at)` — a cursor taken from
+ * whatever is oldest at that moment. Dropped history is simply re-fetched on
+ * the next scroll up. Applied ONLY when appending; the prepend path must stay
+ * free to grow or scrolling back would fight the cap.
+ */
+export const MESSAGE_WINDOW = 400;
+export const capMessages = (msgs: LoungeMessage[]): LoungeMessage[] =>
+  msgs.length > MESSAGE_WINDOW ? msgs.slice(msgs.length - MESSAGE_WINDOW) : msgs;
+
 // ── Create lounge cooldown — prevents spam-creation ──
 let _lastCreateAt = 0;
 const CREATE_COOLDOWN = 30000; // 30s between lounge creations
@@ -648,7 +668,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     set(s => {
       if (s.currentLoungeId === loungeId) {
         return {
-          currentMessages: [...s.currentMessages, optimisticMsg],
+          currentMessages: capMessages([...s.currentMessages, optimisticMsg]),
           sending: false,
         };
       }
@@ -1139,7 +1159,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             const messagesWithoutOpt = s.currentMessages.filter(m => m.id !== newMsg.id);
             
             return {
-              currentMessages: [...messagesWithoutOpt, newMsg].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
+              currentMessages: capMessages([...messagesWithoutOpt, newMsg].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())),
             };
           });
         }

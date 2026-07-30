@@ -5,7 +5,7 @@
  * sending throttle, and send guard behavior.
  */
 
-import { useLoungeStore } from '../lounge';
+import { useLoungeStore, capMessages, MESSAGE_WINDOW } from '../lounge';
 
 const mockFrom = jest.fn();
 const mockChannel = jest.fn();
@@ -178,4 +178,39 @@ describe('LoungeStore', () => {
     });
   });
 
+});
+
+// The message window — added after the audit found currentMessages growing for
+// an entire session, with every reaction event mapping over the whole array.
+describe('capMessages — the in-memory window', () => {
+  const msg = (i: number) => ({
+    id: `m${i}`, lounge_id: 'l1', user_id: 'u1', username: 'x',
+    content: `#${i}`, type: 'text', created_at: `2026-01-01T00:${String(i % 60).padStart(2, '0')}:00Z`,
+  }) as never;
+
+  it('leaves a normal conversation completely untouched', () => {
+    const few = Array.from({ length: 50 }, (_, i) => msg(i));
+    expect(capMessages(few)).toBe(few);          // same reference — no copying
+  });
+
+  it('does not trim at exactly the window size', () => {
+    const exact = Array.from({ length: MESSAGE_WINDOW }, (_, i) => msg(i));
+    expect(capMessages(exact)).toHaveLength(MESSAGE_WINDOW);
+  });
+
+  it('trims the OLDEST once past the window, keeping the newest', () => {
+    // Oldest-first is what makes this safe: loadOlderMessages pages with
+    // .lt('created_at', currentMessages[0].created_at), so dropped history is
+    // simply re-fetched on the next scroll up.
+    const over = Array.from({ length: MESSAGE_WINDOW + 25 }, (_, i) => msg(i));
+    const capped = capMessages(over);
+    expect(capped).toHaveLength(MESSAGE_WINDOW);
+    expect(capped[capped.length - 1].content).toBe(`#${MESSAGE_WINDOW + 24}`);  // newest kept
+    expect(capped[0].content).toBe(`#${25}`);                                    // oldest 25 dropped
+  });
+
+  it('the window is generous enough that ordinary scroll-back never hits it', () => {
+    // loadOlderMessages fetches 100 at a time, so this is four full pages.
+    expect(MESSAGE_WINDOW).toBeGreaterThanOrEqual(400);
+  });
 });
