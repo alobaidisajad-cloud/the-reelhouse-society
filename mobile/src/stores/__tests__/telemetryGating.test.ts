@@ -22,6 +22,8 @@ import { enqueueMutation } from '@/src/utils/offlineQueue';
 
 /** Flipped per-test; the supabase mock returns whatever this holds. */
 let mockDbError: unknown = null;
+/** Flipped per-test; InteractionService rejects with whatever this holds. */
+let mockEndorseError: unknown = null;
 
 jest.mock('react-native', () => ({
     InteractionManager: { runAfterInteractions: jest.fn((cb: () => void) => cb()) },
@@ -79,6 +81,12 @@ jest.mock('@/src/utils/offlineQueue', () => ({
 jest.mock('@/src/lib/sentry', () => ({ addBreadcrumb: jest.fn(), captureError: jest.fn(), Sentry: { captureException: jest.fn() } }));
 jest.mock('@/src/utils/imagePrefetcher', () => ({ ImagePrefetcher: { preloadFilmBatch: jest.fn() } }));
 jest.mock('@/src/lib/tmdb', () => ({ tmdb: { trending: jest.fn().mockResolvedValue({ results: [] }) } }));
+jest.mock('@/src/services/InteractionService', () => ({
+    InteractionService: {
+        addEndorsement: jest.fn(() => Promise.reject(mockEndorseError)),
+        removeEndorsement: jest.fn(() => Promise.reject(mockEndorseError)),
+    },
+}));
 jest.mock('expo-image', () => ({ Image: { prefetch: jest.fn(() => Promise.resolve()) } }));
 
 // NOTE: networkError is deliberately NOT mocked. The real classifier runs.
@@ -96,6 +104,7 @@ const settle = async (filmId: number) => {
 beforeEach(() => {
     jest.clearAllMocks();
     mockDbError = null;
+    mockEndorseError = null;
     useFilmStore.setState({ watchlist: [], _watchlistIndex: {}, _watchlistPromises: {} });
 });
 
@@ -185,5 +194,41 @@ describe('a clean write reports nothing at all', () => {
         expect(captureError).not.toHaveBeenCalled();
         expect(enqueueMutation).not.toHaveBeenCalled();
         expect(useFilmStore.getState().watchlist).toHaveLength(1);
+    });
+});
+
+describe('endorsements — the 23505 rule batch 2 claimed but never proved', () => {
+    const DUPLICATE = { code: '23505', message: 'duplicate key value violates unique constraint' };
+
+    beforeEach(() => {
+        useFilmStore.setState({ interactions: [], _endorsedIndex: {} });
+    });
+
+    it('a duplicate row is NOT reported — it is idempotent success, not a defect', async () => {
+        mockEndorseError = DUPLICATE;
+        await useFilmStore.getState().toggleEndorse('log-1');
+        expect(captureError).not.toHaveBeenCalled();
+    });
+
+    it('and the certification STAYS applied, because the row does exist', async () => {
+        mockEndorseError = DUPLICATE;
+        await useFilmStore.getState().toggleEndorse('log-1');
+        expect(useFilmStore.getState().hasEndorsed('log-1')).toBe(true);
+    });
+
+    it('a genuine failure IS reported with the endorsement scope', async () => {
+        mockEndorseError = { code: '42501', message: 'permission denied' };
+        await expect(useFilmStore.getState().toggleEndorse('log-2')).rejects.toBeDefined();
+        expect(captureError).toHaveBeenCalledWith(
+            expect.objectContaining({ code: '42501' }),
+            expect.objectContaining({ scope: 'interactionSlice.toggleEndorsement' }),
+        );
+    });
+
+    it('an offline endorsement is silent and rolls nothing back', async () => {
+        mockEndorseError = { message: 'Network request failed' };
+        await useFilmStore.getState().toggleEndorse('log-3');
+        expect(captureError).not.toHaveBeenCalled();
+        expect(useFilmStore.getState().hasEndorsed('log-3')).toBe(true);
     });
 });

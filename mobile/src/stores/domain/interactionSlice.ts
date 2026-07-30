@@ -20,11 +20,16 @@ async function runWithMutex(targetId: string, task: () => Promise<void>): Promis
     
     // Active Garbage Collection: remove the promise from the map once it resolves,
     // ONLY if it's still the latest promise for this target.
+    // The .catch is not optional: this cleanup chain is discarded, so when
+    // `current` rejects — toggleEndorse rethrows genuine failures so callers can
+    // roll back — the derived promise would reject with nobody listening and
+    // raise an unhandled rejection. The real rejection still reaches the caller
+    // through `return current` below.
     current.finally(() => {
         if (_endorseMutexes.get(targetId) === current) {
             _endorseMutexes.delete(targetId);
         }
-    });
+    }).catch(() => { /* delivered via `current`; see above */ });
     
     return current;
 }
