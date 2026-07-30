@@ -662,3 +662,45 @@ was in clever new code, and twice in code written to fix an earlier defect.**
 Audit the fix as hard as the bug.
 
 **FINAL: 1071 tests · tsc 0 · eslint 0 · coverage 0 · ratchet 0 · 55 commits**
+
+---
+
+## HOLLOW TESTS: FULLY CLOSED (2026-07-30)
+
+I had listed these as open while calling batch 1 finished — the same premature
+"done" this whole session kept catching. **12 -> 0.**
+
+| file | was | now |
+|---|---|---|
+| useBanCheck | re-implemented `is_banned === true` | imports the hook |
+| useLogFlow.validation | mirrored handleLog's conditions | imports validateLogSubmission |
+| useBiometricLock | **tested a hook that does not exist** | DELETED |
+| cursorPagination | round-tripped strings it built | imports FeedService.parseCursor |
+| offlineQueue | asserted on invented objects | imports the real queue |
+| useAuthThrottle | re-declared the constants | imports evaluateAuthThrottle |
+| ProfileDataService | re-declared the column lists | imports the real sets |
+| queryClient | described persister rules | imports mmkvPersister |
+| useOfflineAware | re-derived the offline rule | imports isOfflineState |
+| ControlledInput | rendered a bare TextInput | renders the real components |
+| films | re-implemented every rule | drives the real store |
+| loungeEmbeds.contract | — | **FALSE POSITIVE**: a live DB contract test; importing no app code is correct |
+
+### What closing them FOUND
+- **auth throttle**: a non-finite timestamp survived every window comparison, so
+  one corrupt entry would have locked a member out of their own account
+  **permanently**. Now pruned.
+- **profile privacy**: the test could not have caught the public column set
+  being widened to include the raw `preferences` blob — exactly backwards for a
+  privacy control. Real constants now asserted, and the set fetchProfile
+  ACTUALLY sends is observed.
+- **offline detection**: made the three-valued `isInternetReachable` explicit —
+  unknown-while-probing must read as ONLINE or every cold start flashes a false
+  offline banner.
+- **my own fixture bug**: DomainLog is camelCase while the DB is snake_case; a
+  snake_case fixture tied every sortLogs comparison on the 1970 fallback.
+
+### Three pure functions extracted, each now the one the app runs
+`evaluateAuthThrottle` · `isOfflineState` · (plus `shouldRequestReview` earlier)
+— the useInitiation pattern, because renderHook is async in this environment.
+
+**FINAL: 1101 tests · tsc 0 · eslint 0 · coverage 0 · ratchet 0 · 61 commits**
