@@ -260,3 +260,37 @@ All three were caught in seconds by building. None were findable by re-reading.
   would break scroll-back.
 - ⚠️ **The App Store review prompt shows NOTHING on TestFlight.** Apple no-ops it
   in test builds. Correct behaviour, not a bug.
+
+---
+
+## IMPORT: COMPLETE (2026-07-30)
+
+All five import safeguards shipped. **1029 tests**, all four gates green.
+
+| # | was | now |
+|---|---|---|
+| A-3 | rating scale guessed from the max value → an IMDb export from a cautious critic had **every rating doubled, permanently** (upsert ignoreDuplicates meant re-importing could not repair it) | `detectSource()` reads the header fingerprint; Letterboxd = /5, IMDb & Trakt = /10. Fractional-value proof rung below it. |
+| A-2 | DD/MM vs MM/DD decided **per row** → a European member had ~half their dates transposed, invisibly | `detectDateFormat()` scans the whole column once; one row with a first number >12 proves day-first |
+| A-1 | importing a same-named list **published an existing private stack** and renumbered its ranks | settings round-tripped; new items append past the current max rank |
+| A-4 | a film with no genuine match got the closest popular result — reviews filed against films never watched | confidence gate: `semantic`/`person`/`failed` declined; a year mismatch needs an exact title |
+| A-5 | nothing could be taken back | **undo** — a receipt of exactly what was created, deletable in one tap |
+
+**Why undo is the right answer to the last one:** a hand-made file with no
+source, no half-values and nothing above 5 is *information-theoretically*
+identical between out-of-5 and out-of-10. No algorithm separates them. Asking
+does not scale to 3,000 reviews. Reversibility does.
+
+**The receipt's safety rule:** it records only rows the import genuinely
+created. `logs`/`watchlists`/`physical_archive` use `ignoreDuplicates: true`, so
+a returned id is proof the row is new. `list_items` does not, so both list
+importers read existing `film_id`s first and record only real additions —
+undo empties what the transfer added and leaves the member's own curation.
+Deletes run items-before-lists, chunked at 200, each scoped by `user_id` on top
+of RLS. A stored receipt is validated (version, account, shape) before anything
+is deleted; on partial failure it is kept for retry.
+
+### STILL OPEN (nothing import-related)
+- `lounge.ts` ~5% covered — the store behind chat
+- 10 hollow test files — assert on hand-written copies of logic, not the code
+- unbounded `currentMessages` growth — needs a windowed cap (a tail slice would
+  break scroll-back)
