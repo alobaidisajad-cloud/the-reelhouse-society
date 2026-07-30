@@ -389,3 +389,44 @@ asserting the broken behaviour, so the suite locked bugs in rather than
 catching them.
 
 Final: **1047 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
+
+---
+
+## THIRD POST-EXECUTION AUDIT (2026-07-30) — 3 more, still all in the new code
+
+**c9b24b8 · the date fix was only HALF applied.** 0017d75 gave the diary a
+file-wide DD/MM verdict and left `parseWatchlistCSV` on the raw string, so
+watchlist dates still fell through to the MM/DD default. A European member's
+logs came in correct while their watchlist stayed half-transposed — two halves
+of one import disagreeing, worse than either being wrong consistently.
+Verified no other parser carries a date (reviews and lists have none).
+
+**c9b24b8 · a column MENTIONING a service was treated as that service.**
+`detectSource` matched 'letterboxd' as a substring of any header, so a
+hand-made sheet with "Imported from Letterboxd" had its rating scale forced.
+Now matched as a whole header, which is what the real export emits.
+
+**c9b24b8 · two fingerprints at once picked whichever was checked first.**
+A merged file carrying both a Letterboxd column and IMDb's `Const` chose a
+rating scale by declaration order. Now returns 'unknown' and lets the numeric
+ladder decide.
+
+### Verified clean this pass
+- `fetchAllListItems` paging is exact at every boundary (0, 1, 999, **1000**,
+  1001, 2000, 2500) — no lost or duplicated rows
+- a 3,000-film / 250-stack receipt serialises to **181 KB**, lossless round
+  trip — comfortably inside MMKV
+- `isRealDate` correctly rejects 2-digit years (JS maps them to 1900+), so
+  they fall to the today-fallback rather than storing a wrong date
+
+### Running total across three audits
+**11 bugs. Every single one in code written to fix something — none in the
+deletions, none in the plan's own edits, across all three passes.**
+
+Seven are one error wearing different clothes: **treating one signal as proof,
+or one path as the only path.** A fraction. One date row. A source
+fingerprint. A substring. The first matching branch. Screen state. The happy
+return. Twice I wrote tests asserting the broken behaviour, so the suite held
+the bug in place instead of catching it.
+
+Final: **1049 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
