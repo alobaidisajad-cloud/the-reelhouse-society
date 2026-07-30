@@ -922,6 +922,37 @@ async function upsertCounted(
   }
 }
 
+/**
+ * Every existing item of one stack, paginated.
+ *
+ * A bare .select() is capped by PostgREST's max-rows (1000 on a default
+ * Supabase project), and a SILENT truncation here is dangerous in two ways:
+ * the rank offset would be computed from a partial set and collide with real
+ * placements, and — far worse — films the member already owned would be absent
+ * from preExistingFilmIds and therefore look like rows this import created,
+ * which would let UNDO delete their own films. Paginate rather than trust the
+ * default. Returns null if any page errors, so callers can fail safe instead of
+ * acting on a partial answer.
+ */
+const ITEM_PAGE = 1000;
+async function fetchAllListItems(
+  listId: string,
+): Promise<{ film_id: unknown; rank_position: unknown }[] | null> {
+  const all: { film_id: unknown; rank_position: unknown }[] = [];
+  for (let from = 0; ; from += ITEM_PAGE) {
+    const { data, error } = await supabase
+      .from('list_items')
+      .select('film_id, rank_position')
+      .eq('list_id', listId)
+      .order('film_id', { ascending: true })
+      .range(from, from + ITEM_PAGE - 1);
+    if (error) return null;
+    const page = data ?? [];
+    all.push(...page);
+    if (page.length < ITEM_PAGE) return all;
+  }
+}
+
 async function importLogs(
   diary: ParsedDiaryEntry[],
   reviewMap: Map<string, string>,
@@ -1142,21 +1173,26 @@ async function importLists(
       // scramble the order of a ranked stack they had curated by hand.
       let rankOffset = 0;
       let preExistingFilmIds = new Set<number>();
+      // Only safe to record undo entries for this stack if we know EXACTLY what
+      // was in it beforehand. A failed probe means we don't, and guessing could
+      // let undo delete the member's own films.
+      let priorItemsKnown = true;
       if (existing?.id) {
-        const { data: priorItems } = await supabase
-          .from('list_items')
-          .select('film_id, rank_position')
-          .eq('list_id', listId);
         // list_items is upserted with ignoreDuplicates: false, so its .select()
         // returns updated rows as well as inserted ones and cannot be trusted to
         // say what is new. Establish that here instead: anything already present
         // is the member's and must survive an undo.
-        preExistingFilmIds = new Set((priorItems ?? []).map(r => Number(r.film_id)));
-        const maxRank = (priorItems ?? []).reduce(
-          (m, r) => (typeof r.rank_position === 'number' && r.rank_position > m ? r.rank_position : m),
-          -1,
-        );
-        rankOffset = maxRank + 1;
+        const priorItems = await fetchAllListItems(listId);
+        if (priorItems === null) {
+          priorItemsKnown = false;
+        } else {
+          preExistingFilmIds = new Set(priorItems.map(r => Number(r.film_id)));
+          const maxRank = priorItems.reduce(
+            (m, r) => (typeof r.rank_position === 'number' && r.rank_position > m ? r.rank_position : m),
+            -1,
+          );
+          rankOffset = maxRank + 1;
+        }
       }
 
       // Resolve and insert list items in order — rank_position is the app's
@@ -1189,7 +1225,10 @@ async function importLists(
         // stack we created the whole list is on the receipt already, so its items
         // would be removed by the FK cascade — recording them again would be
         // redundant, not wrong, but we keep the receipt minimal and honest.
-        if (existing?.id) {
+        // priorItemsKnown gates this: if the probe failed we cannot tell our
+        // films from theirs, so we record NOTHING. A smaller undo is a fair
+        // price; deleting a film the member added themselves is not.
+        if (existing?.id && priorItemsKnown) {
           const addedFilmIds = items
             .map(it => Number(it.film_id))
             .filter(id => Number.isFinite(id) && !preExistingFilmIds.has(id));
@@ -1421,12 +1460,15 @@ export async function importArchiveJSON(
         // existed is the member's, so only the films we add to it are.
         if (!existing?.id) receipt.listsCreated.push(listId);
         let priorFilmIds = new Set<number>();
+        // Same rule as the CSV path: without a complete picture of what was
+        // already in this stack we record no undo entries for it, because a
+        // truncated or failed probe would make the member's own films look
+        // like ours to delete.
+        let priorKnown = true;
         if (existing?.id) {
-          const { data: priorItems } = await supabase
-            .from('list_items')
-            .select('film_id')
-            .eq('list_id', listId);
-          priorFilmIds = new Set((priorItems ?? []).map(r => Number(r.film_id)));
+          const priorItems = await fetchAllListItems(listId);
+          if (priorItems === null) priorKnown = false;
+          else priorFilmIds = new Set(priorItems.map(r => Number(r.film_id)));
         }
 
         // Order films by rank_position (ReelHouse exports) / legacy position /
@@ -1450,7 +1492,7 @@ export async function importArchiveJSON(
             await upsertCounted('list_items', batch, 'list_id,film_id', false, `List items "${listTitle}"`, errors);
           }
 
-          if (existing?.id) {
+          if (existing?.id && priorKnown) {
             const addedFilmIds = items
               .map(it => Number(it.film_id))
               .filter(id => Number.isFinite(id) && !priorFilmIds.has(id));
