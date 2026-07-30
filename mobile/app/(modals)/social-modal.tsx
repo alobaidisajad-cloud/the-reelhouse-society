@@ -11,7 +11,7 @@ import { LoungeService } from '@/src/services/LoungeService';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { useAuthStore } from '@/src/stores/auth';
 import { useLoungeStore } from '@/src/stores/lounge';
-import { captureError } from '@/src/lib/sentry';
+import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
 import { logger } from '@/src/utils/logger';
 import { isNetworkError } from '@/src/utils/networkError';
@@ -188,6 +188,7 @@ export default function SocialModal() {
             // warning for an expected failure. Console in development, and a
             // single error-severity event only for a genuine defect.
             logger.debug('[SocialModal] Fetch failed:', err);
+            addBreadcrumb('socialModal.fetchData failed', 'telemetry');
             if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.fetchData', mode });
             reelToast.error('The telegraph to the archive is disrupted.');
         } finally {
@@ -258,6 +259,7 @@ export default function SocialModal() {
         } catch (err) {
             // Same treatment as fetchData above, so the file is consistent.
             logger.debug('[SocialModal] Share failed:', err);
+            addBreadcrumb('socialModal.share failed', 'telemetry');
             if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.share', mode, loungeId });
             reelToast.error('Failed to share. Try again.');
         } finally {

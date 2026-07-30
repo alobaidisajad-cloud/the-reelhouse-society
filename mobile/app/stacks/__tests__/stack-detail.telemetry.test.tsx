@@ -11,7 +11,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 
 import StackDetailScreen from '../[id]';
-import { captureError } from '@/src/lib/sentry';
+import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 
 /** handleCertify pre-flight-validates the id as a UUID; anything else returns early. */
 const STACK_ID = '11111111-1111-4111-8111-111111111111';
@@ -74,7 +74,7 @@ jest.mock('@/src/stores/auth', () => ({
 jest.mock('@/src/services/StackService', () => ({
     StackService: { getStackFullPayload: jest.fn(), getStackComments: jest.fn() },
 }));
-jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
+jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 jest.mock('@/src/lib/tmdb', () => ({ tmdb: { poster: () => 'https://x/p.jpg' } }));
 jest.mock('@/src/components/layout/CinematicFlashList', () => {
     const React = require('react');
@@ -175,6 +175,21 @@ describe('delete — finding 117', () => {
     it('stays silent when the member is offline', async () => {
         mockDeleteList.mockRejectedValue(OFFLINE);
         await confirmDelete();
+        expect(captureError).not.toHaveBeenCalled();
+    });
+});
+
+describe('the breadcrumb trail — a trace even when nothing is reported', () => {
+    it('an offline delete leaves a breadcrumb though it raises no event', async () => {
+        mockDeleteList.mockRejectedValue(OFFLINE);
+        const spy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+        const screen = render(<StackDetailScreen />);
+        fireEvent.press(await screen.findByLabelText('Delete stack'));
+        const buttons = spy.mock.calls[0][2] as { text: string; onPress?: () => void }[];
+        await buttons.find((b) => b.text === 'Incinerate')!.onPress!();
+        spy.mockRestore();
+
+        expect(addBreadcrumb).toHaveBeenCalledWith('stacks.deleteStack failed', 'telemetry');
         expect(captureError).not.toHaveBeenCalled();
     });
 });

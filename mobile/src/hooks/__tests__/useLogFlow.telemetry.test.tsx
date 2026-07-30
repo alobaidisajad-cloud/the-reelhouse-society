@@ -63,9 +63,19 @@ const fileALog = async () => {
 };
 
 beforeEach(() => {
+    // Fake timers are not optional here. The success path holds "RECORD SEALED"
+    // on a 650ms timer and then touches InteractionManager. With real timers that
+    // callback fires AFTER this file is torn down, where react-native no longer
+    // exists — which surfaces as a TypeError inside whatever suite runs next.
+    jest.useFakeTimers();
     jest.clearAllMocks();
     api = null;
     mockAddLog = jest.fn();
+});
+
+afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
 });
 
 describe('filing a log — the core write', () => {

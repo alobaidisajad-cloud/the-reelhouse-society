@@ -20,7 +20,7 @@ import { StackService } from '@/src/services/StackService';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useListStore } from '@/src/stores/films';
-import { captureError } from '@/src/lib/sentry';
+import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
 import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
@@ -354,6 +354,7 @@ export default function StackDetailScreen() {
       // which would raise a warning for an ordinary offline failure on top of
       // the gated error below. One event for a real defect, none when offline.
       logger.debug('[Stack] Certification toggle failed:', err);
+      addBreadcrumb('stacks.toggleCertification failed', 'telemetry');
       if (!isNetworkError(err)) captureError(err, { scope: 'stacks.toggleCertification', stackId: id });
       // Atomic rollback on failure
       const revertDelta = wasCertified ? 1 : -1;
@@ -396,6 +397,7 @@ export default function StackDetailScreen() {
         // Finding 116: this logged ONLY under __DEV__, so a real member's failure
         // left no trace. Sentry now gets genuine defects — and only those.
         logger.debug('[Stack] Comments fetch failed:', error);
+        addBreadcrumb('stacks.fetchComments failed', 'telemetry');
         if (!isNetworkError(error)) captureError(error, { scope: 'stacks.fetchComments', stackId: id });
         
         // Keep offline comments even if fetch fails
@@ -522,6 +524,7 @@ export default function StackDetailScreen() {
             } catch (err: unknown) {
               // Finding 117: deleting a stack failed with a toast and no record of why.
               logger.debug('[Stack] Delete failed:', err);
+              addBreadcrumb('stacks.deleteStack failed', 'telemetry');
               if (!isNetworkError(err)) captureError(err, { scope: 'stacks.deleteStack', stackId: id });
               reelToast.error('The collection resists destruction.');
             }

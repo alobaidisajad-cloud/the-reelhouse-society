@@ -122,7 +122,9 @@ export function captureWarning(message: string, context?: Record<string, unknown
  */
 export function addBreadcrumb(message: string, category: string = 'navigation') {
   if (!SENTRY_DSN) return;
-  Sentry.addBreadcrumb({ message, category, level: 'info' });
+  try {
+    Sentry.addBreadcrumb({ message, category, level: 'info' });
+  } catch { /* telemetry must never break the caller — see captureError */ }
 }
 
 // Re-export Sentry's ErrorBoundary wrapper for use in _layout.tsx

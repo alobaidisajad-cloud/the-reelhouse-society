@@ -11,7 +11,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import SocialModal from '../social-modal';
-import { captureError } from '@/src/lib/sentry';
+import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { LoungeService } from '@/src/services/LoungeService';
 import { useLoungeStore } from '@/src/stores/lounge';
@@ -36,7 +36,7 @@ jest.mock('@/src/stores/lounge', () => ({
 jest.mock('@/src/stores/auth', () => ({
     useAuthStore: () => ({ user: { id: 'u1', username: 'cinephile' } }),
 }));
-jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
+jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 jest.mock('expo-blur', () => {
     const React = require('react');
     const { View } = require('react-native');
@@ -127,6 +127,19 @@ describe('SocialModal share — the handler brought in line with it', () => {
         await waitFor(() => {
             expect(useLoungeStore.getState).toHaveBeenCalled();
         });
+        expect(captureError).not.toHaveBeenCalled();
+    });
+});
+
+describe('the breadcrumb trail — a trace even when nothing is reported', () => {
+    it('an offline fetch leaves a breadcrumb though it raises no event', async () => {
+        mockParams = { type: 'followers', userId: 'target-1' };
+        (ProfileService.getSocialConnections as jest.Mock).mockRejectedValue(OFFLINE);
+        render(<SocialModal />);
+        await waitFor(() => {
+            expect(addBreadcrumb).toHaveBeenCalledWith('socialModal.fetchData failed', 'telemetry');
+        });
+        // The whole point: a trace exists, but no Sentry event was spent on it.
         expect(captureError).not.toHaveBeenCalled();
     });
 });

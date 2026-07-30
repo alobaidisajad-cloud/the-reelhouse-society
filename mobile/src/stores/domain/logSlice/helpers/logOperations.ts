@@ -349,6 +349,11 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 try {
                     await get().addToPhysicalArchive({ id: log.filmId, title: log.title ?? '', poster_path: log.poster, release_date: log.year?.toString() }, [fmt]);
                 } catch (e) {
+                    // CONTRACT GUARD, not a live path: addToPhysicalArchive handles
+                    // every error itself and never rethrows, so this cannot fire
+                    // today and is deliberately untested. It exists so that if that
+                    // contract is ever broken, the breakage is reported instead of
+                    // silently swallowed here. Do not count it as covered.
                     if (__DEV__) console.error('Failed to auto-sync physical archive', e);
 
                     if (!isNetworkError(e)) captureError(e, { scope: 'addLogOp.autoSyncPhysicalArchive' });
@@ -667,6 +672,7 @@ export const updateLogOp = async (set: SetState, get: GetState, id: string, upda
                     try {
                         await get().addToPhysicalArchive({ id: logToUpdate.filmId, title: logToUpdate.title ?? '', poster_path: logToUpdate.poster, release_date: logToUpdate.year?.toString() }, [fmt]);
                     } catch (e) {
+                        // CONTRACT GUARD — see the identical note in addLogOp above.
                         if (__DEV__) console.error('Failed to auto-sync physical archive on update', e);
 
                         if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp.autoSyncPhysicalArchive' });
