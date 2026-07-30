@@ -34,6 +34,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
 import { ToastOverlay } from '@/src/components/ToastOverlay';
+import { useBanCheck } from '@/src/hooks/useBanCheck';
 import { tmdb } from '@/src/lib/tmdb';
 import { useListStore } from '@/src/stores/films';
 import { colors, fonts } from '@/src/theme/theme';
@@ -135,6 +136,7 @@ export default function ListModal() {
     const lists = useListStore((s: any) => s.lists);
     const createList = useListStore((s: any) => s.createList);
     const updateList = useListStore((s: any) => s.updateList);
+    const { checkBan } = useBanCheck();
     const insets = useSafeAreaInsets();
     const queryClient = useQueryClient();
     
@@ -232,6 +234,10 @@ export default function ListModal() {
     // ── Save handler ──
     const handleSave = async () => {
         Keyboard.dismiss();
+        // Before setSaving: an early return after it would strand the button
+        // spinning, since setSaving(false) only runs in the catch. Covers BOTH
+        // branches below — a silenced member may not create OR edit a stack.
+        if (checkBan()) return;
         if (!title.trim()) {
             reelToast.error('Every stack requires a title. Name your thesis.');
             return;
