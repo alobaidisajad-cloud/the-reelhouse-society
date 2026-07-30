@@ -12,7 +12,7 @@ export function useBanCheck() {
 
     const checkBan = (): boolean => {
         if (isBanned) {
-            reelToast('Your account has been silenced by The Society.')
+            reelToast.error('Your account has been silenced by The Society.')
             return true
         }
         return false

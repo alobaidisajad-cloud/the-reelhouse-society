@@ -334,10 +334,10 @@ export function useLogFlow() {
 
     // ── SUBMIT LOG ──
     const handleLog = async () => {
-        if (!user) { reelToast('Identification required to file a record.'); return; }
-        if (!film) { reelToast('No film selected.'); return; }
+        if (!user) { reelToast.error('Identification required to file a record.'); return; }
+        if (!film) { reelToast.error('No film selected.'); return; }
         const blockReason = validateLogSubmission(status, rating, review, abandonedReason);
-        if (blockReason) { reelToast(blockReason); return; }
+        if (blockReason) { reelToast.error(blockReason); return; }
         setSubmitting(true);
         try {
             const logData = buildLogPayload({
