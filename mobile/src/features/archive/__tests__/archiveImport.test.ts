@@ -535,3 +535,42 @@ describe('parseCSVRows — a stray quote must not swallow the rest of the file',
     expect(rows[1][0]).toBe('x,y\nz');
   });
 });
+
+describe('aggregateDiaryEntries — sourceWatches is the truth for reporting', () => {
+  const w = (over: Partial<{ rating: number; review: string; watchedDate: string }>) => ({
+    title: 'Solaris', year: '1972', rating: 0, review: '',
+    watchedDate: '2020-01-01', isRewatch: false, uri: '', tags: '', ...over,
+  });
+
+  it('an unrated rewatch INHERITS the earlier review — so latest+earlier double-counts it', () => {
+    const [agg] = aggregateDiaryEntries([
+      w({ watchedDate: '2020-01-01', review: 'Devastating.', rating: 5 }),
+      w({ watchedDate: '2022-06-01' }), // rewatched, wrote nothing
+    ]);
+    // The merge copies the earlier review onto the current row...
+    expect(agg.latest.review).toBe('Devastating.');
+    // ...and the earlier watch keeps it too, for viewing_history.
+    expect(agg.earlier[0].review).toBe('Devastating.');
+    // Counting latest + earlier would report 2 reviews for ONE the member wrote.
+    expect(agg.sourceWatches.filter(x => x.review.length > 0).length).toBe(1);
+  });
+
+  it('sourceWatches counts every watch that genuinely carried a review', () => {
+    const [agg] = aggregateDiaryEntries([
+      w({ watchedDate: '2020-01-01', review: 'first' }),
+      w({ watchedDate: '2021-01-01', review: 'second' }),
+      w({ watchedDate: '2022-01-01', review: 'third' }),
+    ]);
+    expect(agg.sourceWatches).toHaveLength(3);
+    expect(agg.sourceWatches.filter(x => x.review.length > 0).length).toBe(3);
+  });
+
+  it('sourceWatches is ordered oldest to newest, like earlier + latest', () => {
+    const [agg] = aggregateDiaryEntries([
+      w({ watchedDate: '2022-01-01', review: 'late' }),
+      w({ watchedDate: '2020-01-01', review: 'early' }),
+    ]);
+    expect(agg.sourceWatches.map(x => x.review)).toEqual(['early', 'late']);
+    expect(agg.sourceWatches[agg.sourceWatches.length - 1].watchedDate).toBe(agg.latest.watchedDate);
+  });
+});

@@ -905,6 +905,16 @@ export interface AggregatedDiaryFilm {
   latest: ParsedDiaryEntry;
   /** Earlier watches, oldest→newest — archived into viewing_history. */
   earlier: ParsedDiaryEntry[];
+  /**
+   * Every watch of this film as it appeared in the FILE, oldest→newest.
+   *
+   * `latest` carries a merged rating/review (an unrated rewatch inherits the
+   * previous one), so counting reviews from `latest` + `earlier` double-counts
+   * an inherited review — the same text lives on the log row and in
+   * viewing_history. Anything reporting on what the member actually wrote must
+   * count from here instead.
+   */
+  sourceWatches: ParsedDiaryEntry[];
   viewCount: number;
   isRewatch: boolean;
 }
@@ -949,6 +959,7 @@ export function aggregateDiaryEntries(diary: ParsedDiaryEntry[]): AggregatedDiar
       year: latest.year,
       latest: { ...latest, rating, review },
       earlier,
+      sourceWatches: sorted,
       viewCount: sorted.length,
       isRewatch: sorted.length > 1 || sorted.some(w => w.isRewatch),
     });
@@ -1163,13 +1174,18 @@ async function importLogs(
       review = reviewFromFile;
     }
     review = sanitizeInput(review, 'review'); // FEAT-1
-    // Counted AFTER sanitising: a review made only of stripped characters is
-    // reported as imported but nothing is stored.
-    if (review.length > 0) reviewCount++;
-    // Earlier watches keep their own reviews in viewing_history, and those are
-    // written too — so counting only the latest under-reports the transfer.
-    // A member with 500 films and 200 reviewed rewatches was told "500".
-    reviewCount += agg.earlier.filter(w => sanitizeInput(w.review, 'review').length > 0).length;
+    // Counted from the SOURCE watches, after sanitising. Two traps here:
+    //   • counting only the latest under-reports — earlier watches keep their
+    //     own reviews in viewing_history and those are written too;
+    //   • counting latest + earlier OVER-reports, because an unrated rewatch
+    //     inherits the previous review, so the same text sits on the log row
+    //     AND in viewing_history and would be counted twice.
+    // The file is the truth: how many watches the member actually wrote about.
+    const reviewedWatches = agg.sourceWatches.filter(w => sanitizeInput(w.review, 'review').length > 0).length;
+    // reviews.csv can also supply a review for a film whose diary rows carried
+    // none — that is a real review the member wrote, and counting only the
+    // diary would miss it entirely.
+    reviewCount += reviewedWatches > 0 ? reviewedWatches : (review.length > 0 ? 1 : 0);
 
     // Native-parity timeline: the row was created at the FIRST watch and last
     // touched at the LATEST — exactly as if logged + rewatched in the app.
