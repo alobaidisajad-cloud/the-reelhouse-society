@@ -704,3 +704,61 @@ I had listed these as open while calling batch 1 finished — the same premature
 — the useInitiation pattern, because renderHook is async in this environment.
 
 **FINAL: 1101 tests · tsc 0 · eslint 0 · coverage 0 · ratchet 0 · 61 commits**
+
+---
+
+## FULL RE-VERIFICATION OF BATCH 1 (2026-07-30) — everything, literally
+
+Not a targeted pass. The complete 82-file change surface, re-checked from
+scratch, plus mutation testing of every safety mechanism.
+
+### 1 · Every deleted file, searched REPO-WIDE
+All 37 deletions swept across the whole repo — source, configs, scripts, docs,
+Android, Maestro flows — not just `src/` and `app/`. **Zero live references.**
+Three hits looked real and were resolved:
+- `safeParse` in three screens = Zod's own `.safeParse()`, not the deleted util
+- `debounce` = local variable names (`debouncedQuery`) and a comment
+- `DossierService` = two stale COMMENTS → **fixed** (e570c14), the only
+  inaccuracies found in the entire surface
+
+### 2 · Every production diff read line by line
+`useBanCheck` · `useAuthFlow` · `offlineQueue` · `tsconfig.eslint.json` ·
+`jest.config.js` · `list-modal` · `useLogFlow` · `useOfflineAware` — each diff
+is exactly the intended change, nothing more. The offline extraction preserves
+the expression **byte-for-byte** (`isInternetReachable !== false`).
+`DataVault`'s new `TactileEngine.error()/.success()` calls are the same methods
+already used at six pre-existing sites in that file — confirmed by usage.
+
+### 3 · Every added file is reachable
+`importReceipt` ← archiveImport, undoImport, DataVault.
+`undoImport` ← archiveImport, DataVault. No orphans.
+
+### 4 · MUTATION TESTING — 12 safety mechanisms, one at a time
+Each guarantee deliberately broken, its suite run, then restored:
+
+| broken | result |
+|---|---|
+| date format: day/month vote swapped | KILLED |
+| source: ambiguous file picks first match | KILLED |
+| tokenizer: no recovery from a stray quote | KILLED |
+| csv: duplicate header overwrites | KILLED |
+| rating: source ceiling ignored | KILLED |
+| date: impossible dates not validated | KILLED |
+| receipt: cross-account check removed | KILLED |
+| undo: chunking removed | KILLED |
+| undo: user_id scope dropped | KILLED |
+| lounge: message window disabled | KILLED |
+| review: lifetime cap removed | KILLED |
+| review: cooldown removed | KILLED |
+
+**12/12 killed.** Every safety mechanism has a test that genuinely fails when
+it breaks. All five source files verified restored byte-for-byte afterwards.
+
+*(The earlier round of this found a real gap — `max > 5` → `max > 6` survived
+83 tests. Pinned in 586833c. This round: no survivors.)*
+
+### 5 · Gates
+tsc 0 · eslint 0 · jest+coverage 0 · ratchet 0 · **1105 tests**
+
+**VERDICT: batch 1 executed as intended. Two stale comments found and fixed;
+no functional gap, no regression, no broken reference.**
