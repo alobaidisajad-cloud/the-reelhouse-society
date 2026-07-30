@@ -470,3 +470,45 @@ fingerprint · a substring · the first matching branch · screen state · the
 happy return · the latest watch · a failed request treated as an answer.
 
 Final: **1049 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
+
+---
+
+## FIFTH POST-EXECUTION AUDIT (2026-07-30) — import engine. 1 bug, the worst one.
+
+**d271c86 · a list named after a film could REPLACE the member's whole diary.**
+PRE-EXISTING, not introduced — but the import work is what makes it matter.
+
+Classification matched filenames by SUBSTRING and assigned unconditionally:
+`baseName.includes('diary') -> diaryText = text`. Members name lists after
+films: *Bridget Jones's Diary*, *Diary of a Country Priest*, *The Diary of
+Anne Frank*. Whichever file the ZIP yielded last won, so a 12-film list
+silently replaced a diary.csv holding ten years of history — the app imported
+12 films and reported success. "Overrating the 80s" was absorbed as
+ratings.csv the same way. History AND list lost, silently.
+
+Fixed with exact-match-first, then a substring fallback that only fills an
+UNCLAIMED slot and only when the HEADER ROW supports it. `csvLooksLike()`
+requires a rating/watched-date column for a diary, a review column for
+reviews, no placement/blurb for a watchlist — none of which a list export
+satisfies. The classifier's own comment had always promised header-based
+classification; it had never been written.
+
+### Verified clean this pass
+- JSON path clamps without converting; `buildViewingHistory` shares the parent
+  scale; review map and film resolution share a key
+- `imdb rating` is not a rating synonym — IMDb's PUBLIC average can never be
+  imported as the member's own score
+- prefixed exports, `watched.csv` fallback and ratings-only exports all still
+  classify correctly after the change
+
+### Running total across five audits
+**14 bugs.** 13 in code written to fix something; 1 pre-existing and severe.
+**Still zero in the deletions and zero in the plan's own edits.**
+
+Ten of the fourteen are one error: **treating one signal as proof, or one
+path as the only path** — a fraction · one date row · a source fingerprint ·
+a substring in a header · a substring in a FILENAME · the first matching
+branch · screen state · the happy return · the latest watch · a failed
+request mistaken for an answer.
+
+Final: **1054 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
