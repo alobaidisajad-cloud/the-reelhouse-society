@@ -350,3 +350,42 @@ them. Green tests prove the code does what the test says — not that the test
 says the right thing.
 
 Final: **1034 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
+
+---
+
+## SECOND POST-EXECUTION AUDIT (2026-07-30) — 3 more, same shape
+
+Applied the previous audit's lesson (stress-test, don't reason) to what had
+not yet been hammered. Deletions and plan edits stayed clean again; **all
+three were in the new code.**
+
+**63d5fab · impossible dates could reach a DATE column.** normalizeDate
+assembled YYYY-MM-DD and only clamped against today — it never checked the
+date EXISTS. `31/02`, `31/04`, `29/02` in a common year, month 13 all emerged
+as well-formed strings that fail their INSERT, killing the batch until the
+row-by-row fallback isolates them and costing the member that film. Mostly
+pre-existing; 45cb291's file-wide verdict widened it. Now validated, and the
+OTHER reading is tried first — in a day-first file `05/13` is meaningless as
+day 5 of month 13 but is a good 13 May, so the film is kept.
+
+**63d5fab · undo vanished the moment the member left the screen.** The state
+was only set after an import and the control was nested inside the result
+card, which also only exists while the screen holds the result. The real
+sequence is transfer → go look at the films → notice → come back, and by then
+the button was gone though the receipt was still in MMKV. Now read on mount
+and rendered outside the card.
+
+**16b6af3 · a thrown import left rows with no receipt.** saveReceipt was a
+trailing statement. Collected errors were covered, an unexpected throw was
+not — rows already written, function unwinds past the save, archive
+half-imported and irreversible. Now try/finally on both paths.
+
+### Running lesson
+Two audits, eight bugs, **every one in code written to fix something** — none
+in the deletions. Five were literally the same error: treating one signal as
+proof (a fraction, one date row, a source fingerprint) or one code path as
+the only path (screen state, the happy return). And twice I had written tests
+asserting the broken behaviour, so the suite locked bugs in rather than
+catching them.
+
+Final: **1047 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
