@@ -540,11 +540,6 @@ export default function MembershipScreen() {
         <Animated.View entering={FadeInDown.duration(600).delay(500)} layout={LinearTransition} style={st.restoreSection}>
           <PressableScale
             style={st.restoreBtn}
-            // ~37pt tall, under the 44pt minimum. The growth is all upward:
-            // the 12pt gap below belongs to MANAGE SUBSCRIPTION, which is the
-            // smaller target and needs it more. 14 fits inside this section's
-            // 24pt of top padding, so nothing above is encroached on.
-            hitSlop={{ top: 14, bottom: 0, left: 12, right: 12 }}
             disabled={isRestoring || isRedirecting}
             onPress={async () => {
               if (purchaseMutex.current) return;
@@ -583,10 +578,6 @@ export default function MembershipScreen() {
           {Platform.OS === 'ios' && (
             <PressableScale
               style={st.manageBtn}
-              // manageBtn is ~27pt tall, under the 44pt minimum. top is 12 —
-              // exactly the margin above — so the target never reaches into
-              // the restore button's frame.
-              hitSlop={{ top: 12, bottom: 15, left: 15, right: 15 }}
               onPress={() => safeOpenURL('https://apps.apple.com/account/subscriptions')}
               haptic="light"
               accessibilityRole="link"
@@ -598,7 +589,6 @@ export default function MembershipScreen() {
           {Platform.OS === 'android' && (
             <PressableScale
               style={st.manageBtn}
-              hitSlop={{ top: 12, bottom: 15, left: 15, right: 15 }}
               onPress={() => safeOpenURL('https://play.google.com/store/account/subscriptions')}
               haptic="light"
               accessibilityRole="link"

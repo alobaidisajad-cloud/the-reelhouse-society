@@ -28,7 +28,10 @@ const circular = () => {
     return o;
 };
 
-beforeEach(() => { jest.clearAllMocks(); });
+// resetAllMocks, not clearAllMocks: clear wipes recorded calls but LEAVES the
+// implementation, so the "Sentry throws" case below would leak into every test
+// after it and they would pass under a broken mock.
+beforeEach(() => { jest.resetAllMocks(); });
 
 describe('logger — telemetry can never throw into the caller', () => {
     it('warn survives a circular argument in production', () => {
