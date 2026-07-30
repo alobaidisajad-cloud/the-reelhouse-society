@@ -1328,8 +1328,22 @@ export async function importArchiveJSON(
   userId: string,
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<ImportResult> {
-  // Same undo guarantee as the CSV path — see importReceipt.ts.
+  // Same undo guarantee as the CSV path, including the try/finally: rows
+  // already written must stay reversible even if the import throws.
   const receipt = emptyReceipt(userId, 'your archive');
+  try {
+    return await runJSONImport(archive, userId, receipt, onProgress);
+  } finally {
+    saveReceipt(receipt);
+  }
+}
+
+async function runJSONImport(
+  archive: ReelHouseArchive,
+  userId: string,
+  receipt: ImportReceipt,
+  onProgress?: (progress: ImportProgress) => void,
+): Promise<ImportResult> {
   const errors: string[] = [];
   let logCount = 0;
   let reviewCount = 0;
@@ -1578,8 +1592,6 @@ export async function importArchiveJSON(
     }
   }
 
-  saveReceipt(receipt);
-
   return { logs: logCount, reviews: reviewCount, watchlist: watchlistCount, vault: vaultCount, lists: listCount, skipped, errors };
 }
 
@@ -1695,7 +1707,26 @@ async function importCSVArchive(
   // Accumulates exactly what this import creates, so it can be taken back.
   // See importReceipt.ts for why undo is the answer to the one rating case
   // that is genuinely undecidable.
+  //
+  // try/finally, not a trailing call: if anything throws after the first rows
+  // land — a dropped connection mid-resolve, an unexpected error in a list —
+  // those rows are already in the database. A half-imported archive with no
+  // receipt is the one situation where undo matters most, so the receipt is
+  // persisted on the way out whether we succeeded, failed, or threw.
   const receipt = emptyReceipt(userId, 'your archive');
+  try {
+    return await runCSVImport(zip, userId, receipt, onProgress);
+  } finally {
+    saveReceipt(receipt);
+  }
+}
+
+async function runCSVImport(
+  zip: JSZip,
+  userId: string,
+  receipt: ImportReceipt,
+  onProgress?: (progress: ImportProgress) => void,
+): Promise<ImportResult> {
   const allErrors: string[] = [];
   const csvFiles = Object.entries(zip.files)
     .filter(([name]) => name.endsWith('.csv') && !name.startsWith('__MACOSX'));
@@ -1792,10 +1823,6 @@ async function importCSVArchive(
   allErrors.push(...listResult.errors);
 
   const totalSkipped = logResult.skipped + wlResult.skipped;
-
-  // Written even when there were errors: a partial import is exactly the case
-  // where being able to take it back matters most.
-  saveReceipt(receipt);
 
   return {
     logs: logResult.imported,
