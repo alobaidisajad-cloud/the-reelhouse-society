@@ -142,7 +142,6 @@ export interface LoungeState {
 // ── Throttle ── (800ms between sends, matching web)
 let _lastSendAt = 0;
 const SEND_THROTTLE = 800;
-const MESSAGE_DEDUP_CAP = 100;
 
 // ── Create lounge cooldown — prevents spam-creation ──
 let _lastCreateAt = 0;
@@ -650,7 +649,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     set(s => {
       if (s.currentLoungeId === loungeId) {
         return {
-          currentMessages: [...s.currentMessages, optimisticMsg].slice(0, Math.max(MESSAGE_DEDUP_CAP, s.currentMessages.length + 1)),
+          currentMessages: [...s.currentMessages, optimisticMsg],
           sending: false,
         };
       }
@@ -1209,10 +1208,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           // Own reaction is already applied optimistically in toggleReaction —
           // ignore the realtime echo of it so the count can't double.
           if (r.user_id === myId) return;
-          const mine = r.user_id === myId;
           set(s => ({
             currentMessages: s.currentMessages.map(m =>
-              m.id === r.message_id ? { ...m, reactions: applyReactionDelta(m.reactions, r.reaction, 1, mine) } : m
+              m.id === r.message_id ? { ...m, reactions: applyReactionDelta(m.reactions, r.reaction, 1, false) } : m
             ),
           }));
         }
@@ -1227,10 +1225,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           // Own un-react is already applied optimistically — ignore the echo so
           // it can't double-decrement.
           if (r.user_id === myId) return;
-          const mine = r.user_id === myId;
           set(s => ({
             currentMessages: s.currentMessages.map(m =>
-              m.id === r.message_id ? { ...m, reactions: applyReactionDelta(m.reactions, r.reaction, -1, mine) } : m
+              m.id === r.message_id ? { ...m, reactions: applyReactionDelta(m.reactions, r.reaction, -1, false) } : m
             ),
           }));
         }
