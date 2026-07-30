@@ -153,9 +153,6 @@ jest.mock('expo-crypto', () => {
 jest.mock('../../src/stores/resetAllStores', () => ({
     registerStoreReset: jest.fn(),
 }));
-jest.mock('../../src/utils/concurrencyScope', () => ({
-    storeFetchScope: { signal: new AbortController().signal, cancel: jest.fn() },
-}));
 
 // ── Test Suite ──
 describe('FilmStore Integration Tests (T2-4)', () => {
