@@ -19,6 +19,22 @@ export interface OfflineState {
   secondsOffline: number;
 }
 
+/**
+ * Is this NetInfo state genuinely offline?
+ *
+ * Subtler than it looks, because `isInternetReachable` is THREE-valued:
+ * true (verified), false (verified unreachable), and null/undefined while
+ * NetInfo is still probing. Treating "probing" as offline would flash a false
+ * offline banner on every cold start, before the first reachability check
+ * returns — so an unknown reachability is trusted while `isConnected` holds.
+ *
+ * Extracted so this can be tested directly; the surrounding hook is timers and
+ * subscription plumbing around this one decision.
+ */
+export function isOfflineState(state: Pick<NetInfoState, 'isConnected' | 'isInternetReachable'>): boolean {
+  return !(state.isConnected && state.isInternetReachable !== false);
+}
+
 export function useOfflineAware(): OfflineState {
   const [isOffline, setIsOffline] = useState(false);
   const [wasOffline, setWasOffline] = useState(false);
@@ -30,7 +46,7 @@ export function useOfflineAware(): OfflineState {
     let timeout: ReturnType<typeof setTimeout> | null = null;
 
     const handleStateChange = (state: NetInfoState) => {
-      const offline = !(state.isConnected && state.isInternetReachable !== false);
+      const offline = isOfflineState(state);
 
       if (offline && !offlineSinceRef.current) {
         // Just went offline
