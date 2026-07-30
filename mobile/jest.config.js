@@ -58,4 +58,11 @@ module.exports = {
     '!src/**/__tests__/**',
     '!src/providers/AccessibilityProvider.ts',
   ],
+  // Jest's defaults are ['clover','json','lcov','text'] — none of which emit
+  // coverage/coverage-summary.json, the file scripts/coverage-ratchet.js reads.
+  // Without 'json-summary' the ratchet step in CI could never work: on a fresh
+  // checkout coverage/ is gitignored, so the file is simply absent and the
+  // script exits 1 on its own "No coverage report found" guard. Listed
+  // additively (defaults + json-summary) so nothing that already works is lost.
+  coverageReporters: ['clover', 'json', 'lcov', 'text', 'json-summary'],
 };
