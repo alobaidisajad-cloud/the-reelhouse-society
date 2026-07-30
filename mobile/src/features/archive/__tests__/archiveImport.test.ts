@@ -254,6 +254,20 @@ describe('detectSource — the export fingerprint', () => {
     expect(detectSource(['const', 'title type'])).toBe('imdb');
   });
 
+  it('a column that merely MENTIONS a service is not that service', () => {
+    // Substring matching would call this a Letterboxd export and force its
+    // rating scale onto a hand-made sheet.
+    expect(detectSource(['Film', 'Score', 'Imported from Letterboxd'])).toBe('unknown');
+    expect(detectSource(['Title', 'Notes about my IMDb ratings'])).toBe('unknown');
+  });
+
+  it('two different fingerprints mean UNKNOWN, not whichever is checked first', () => {
+    // A merged or hand-assembled file. Taking the first match would pick a
+    // rating scale by declaration order; contradictory evidence is not evidence.
+    expect(detectSource(['Letterboxd URI', 'Const', 'Your Rating'])).toBe('unknown');
+    expect(detectSource(['Letterboxd URI', 'rated_at'])).toBe('unknown');
+  });
+
   it('says unknown for a hand-made spreadsheet rather than guessing', () => {
     expect(detectSource(['Film', 'Score', 'Watched'])).toBe('unknown');
     expect(detectSource([])).toBe('unknown');

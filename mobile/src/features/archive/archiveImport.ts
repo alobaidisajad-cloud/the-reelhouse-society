@@ -270,13 +270,23 @@ export function detectSource(headers: string[]): ImportSource {
   const h = headers.map(x => x.trim().toLowerCase());
   const has = (name: string) => h.includes(name);
 
-  // Letterboxd stamps its own URI column into every export it produces.
-  if (h.some(x => x.includes('letterboxd'))) return 'letterboxd';
-  // IMDb: 'Const' is its title id, and it ships with 'Title Type'.
-  if (has('const') && (has('title type') || has('your rating') || has('imdb rating'))) return 'imdb';
+  const matches: Exclude<ImportSource, 'unknown'>[] = [];
+
+  // Letterboxd stamps this exact column into every export it produces. Matched
+  // as a whole header, not a substring: a hand-made sheet with a note column
+  // like "Imported from Letterboxd" is not a Letterboxd export, and treating
+  // it as one would force its rating scale.
+  if (has('letterboxd uri') || has('letterboxd url')) matches.push('letterboxd');
+  // IMDb: 'Const' is its title id, and it never ships alone.
+  if (has('const') && (has('title type') || has('your rating') || has('imdb rating'))) matches.push('imdb');
   // Trakt uses snake_case timestamps no other exporter emits.
-  if (has('rated_at') || has('watched_at') || has('trakt_rating')) return 'trakt';
-  return 'unknown';
+  if (has('rated_at') || has('watched_at') || has('trakt_rating')) matches.push('trakt');
+
+  // Exactly one fingerprint is evidence. Two different ones is a merged or
+  // hand-assembled file, where taking the first match would be picking a
+  // rating scale by declaration order. Contradictory evidence means we do not
+  // know, and the numeric ladder decides instead.
+  return matches.length === 1 ? matches[0] : 'unknown';
 }
 
 /**
@@ -716,11 +726,22 @@ function parseWatchlistCSV(text: string): ParsedWatchlistEntry[] {
   const mapping = resolveHeaders(headers);
   if (!mapping) return [];
 
-  return rows.map(row => ({
-    title:     getField(row, mapping, 'title'),
-    year:      getField(row, mapping, 'year'),
-    addedDate: getField(row, mapping, 'watchedDate'),
-  })).filter(e => e.title.length > 0);
+  // The watchlist gets the same file-wide date verdict as the diary. Without
+  // it a European member's "added" dates were still half-transposed — the fix
+  // applied to one parser and not the other, which is worse than either
+  // consistently, because two exports from the same account disagree.
+  const dateFormat = detectDateFormat(rows.map(r => getField(r, mapping, 'watchedDate')));
+
+  return rows.map(row => {
+    const raw = getField(row, mapping, 'watchedDate');
+    return {
+      title:     getField(row, mapping, 'title'),
+      year:      getField(row, mapping, 'year'),
+      // Resolved here, where the whole file is visible. Empty stays empty so
+      // the caller can still tell "no date given" from "dated today".
+      addedDate: raw ? normalizeDate(raw, dateFormat) : '',
+    };
+  }).filter(e => e.title.length > 0);
 }
 
 /**
