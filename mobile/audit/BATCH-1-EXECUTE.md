@@ -512,3 +512,61 @@ branch · screen state · the happy return · the latest watch · a failed
 request mistaken for an answer.
 
 Final: **1054 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
+
+---
+
+## SIXTH POST-EXECUTION AUDIT (2026-07-30) — swept by PATTERN, not by instance
+
+Pass 5's lesson: I fixed the substring bug in the header matcher while the same
+bug sat in the FILENAME matcher doing far more damage. So this pass swept
+whole patterns across the engine.
+
+**Pattern A — every substring/prefix match (13 sites).** All clean except the
+two already fixed. Array `.includes()` and `.indexOf()` are exact-element and
+safe; the `__MACOSX` and extension filters are correct.
+
+**Pattern B — every fail-open default `?? 0 / || 0 / ?? []` (29 sites).** Found
+the zip-bomb guard. The rest are benign optional-field defaults.
+
+**Pattern C — every unconditional assignment.** Found the duplicate-header
+overwrite in both record builders.
+
+### Fixed
+**ec6eee5 · #12, the zip-bomb guard failed OPEN.** The 50 MB cap read a JSZip
+INTERNAL with `?? 0`. One dependency bump renaming that field and every entry
+scores 0, the total never grows, and the cap silently stops existing —
+precisely when a bomb gets through. Now fails closed: unmeasurable archives are
+refused, directory entries skipped.
+
+**ec6eee5 · NEW-2, unguarded `JSON.parse` on a ZIP-embedded archive.** A
+malformed archive threw a raw SyntaxError with nothing telling the member the
+FILE was at fault. Also added a shape check — `null`, `42` and `[]` are all
+valid JSON, and any of them reached the importer as an archive with every
+section empty and reported a cheerful, entirely empty success.
+
+**78b6863 · a repeated CSV column silently discarded the first.** `Name,Year,Name`
+made the film title become the third column's value, so the importer searched
+TMDB for a director's name and matched, rated and reviewed whatever came back.
+First occurrence now wins.
+
+### CORRECTION TO MY OWN WORK — 9baed61 was justified on a false premise
+That commit claimed a cached TMDB failure "froze the film as unmatched for the
+rest of the app session" with "no escape but force-quitting". **Both halves are
+false**: `resolutionCache.clear()` runs at the start of every import, and
+callers dedupe by cacheKey before resolving, so no key is looked up twice in a
+run. The change is kept (not caching a failure as an answer is right, and
+matters if either assumption changes) but the comment now states the truth.
+
+### Verified clean, no change needed
+- `existing?.is_private ?? false` matches the schema (`DEFAULT FALSE`) and how
+  the rest of the app reads that column — the import invents no private/public
+  rule of its own
+- `parseFloat(...) || 0` treats an unparseable rating as "unrated", correct
+- optional-field defaults across the JSON path are all benign
+
+### Running total across six audits
+**17 bugs + 1 correction to my own reasoning.** 15 in code written to fix
+something, 2 pre-existing and severe. **Still zero in the deletions, zero in
+the plan's own edits.**
+
+Final: **1056 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
