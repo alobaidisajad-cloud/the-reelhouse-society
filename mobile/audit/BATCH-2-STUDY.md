@@ -1,81 +1,79 @@
-# BATCH 2 — DEEP STUDY. Verified against the LIVE database and current code.
+# BATCH 2 — THE LIVE SECURITY ITEMS. Deep study.
 
-Every item below was proven by probing the live backend or reading the shipped
-code — not taken from the register. Register severities were wrong in both
-directions before, so nothing here is trusted on its note alone.
+**Scope (from DEEP-VERIFY-131.md:85):** #26 · DESYNC · #84 · #48 · #36 · #67 · #78
+(+ #32, which the master plan binds to #26: *"either alone leaves private notes reachable"*)
 
----
-
-## 🔴 LAUNCH BLOCKERS — verified live, today
-
-### B-1 · Private notes are readable by ANYONE. No login.
-`curl` with only the public anon key, HTTP 200:
-```json
-{"film_title":"The Shawshank Redemption","private_notes":"watched it in my darkest day "}
-```
-**Why it happens:** `logs_select_authorized` uses `can_view_user_data(user_id)`, which
-returns TRUE for any public profile — including to `anon`. RLS is ROW-level, so once the
-row is visible every column comes with it. `private_notes` was never column-revoked
-(`profiles.email` WAS — proving the team knows the technique).
-
-**Proven NOT intentional** — three independent client-side layers try to hide it:
-`mappers.ts` omits it from `PUBLIC_LOG_COLUMNS`; `LogReviewBody.tsx` renders it only
-`{isOwner && …}`; `LogForm.tsx` labels it *"Notes only you can see…"*.
-
-### B-2 · A SECOND, independent leak — and it ignores RLS entirely
-`get_featured_critique()` is `SECURITY DEFINER RETURNS SETOF public.logs`. Probed
-anonymously it returns **30 columns including `private_notes`**. Because it is
-SECURITY DEFINER, **B-1's column revoke does NOT close this one.** Both are needed.
-
-### B-3 · The LOGS tab in search can never return a result
-Live: `logs.username` → `42703 column does not exist`. Same for `logs.role`.
-A whole search tab is dead on arrival.
-
-### B-4 · Your own admin account resolves to the LOWEST tier
-Live profile: `role=admin, tier=projectionist`. `normalizeTier` recognises only
-`archivist | auteur | founding` — everything else silently returns `cinephile`
-(weight 0). You have no Vault, autopsy, or premium access **on your own app**, and
-any future tier name fails the same silent way.
-
-### B-5 · Editing your bio silently RENAMES you — 5 live members affected
-`buildProfileUpdates` always sends `username: sanitizedUsername`, even when only the
-bio changed. The sanitiser strips `.` and `@`. Live handles that would change:
-```
-sajad.s.alobaidi          -> sajadsalobaidi
-saleel.house              -> saleelhouse      *** COLLIDES with the existing @saleelhouse ***
-saleel.sjs                -> saleelsjs
-saleelsaleel555@gmail.com -> saleelsaleel555gmailcom
-ug.mb                     -> ugmb
-```
-One rename lands on a username that already exists — a unique-constraint collision on
-a live account.
+Every item below re-proven against the LIVE backend and shipped code this session.
+Nothing trusted on its register note — that register has been wrong in both directions.
 
 ---
 
-## 🟠 HIGH — verified in shipped code
+## 1 · ARE THEY REAL / INTENTIONAL?
 
-- **#74/#40 · Every date is the UTC calendar date.** `new Date().toISOString().slice(0,10)`
-  at `useLogFlow.ts:177,225,244,398`. West of UTC, an evening log records TOMORROW.
-- **#51 · One notification destroys up to 450 loaded ones.** `notificationStore.ts:179`
-  keeps `slice(0,500)` on fetch; `:371` applies `slice(0, MAX_NOTIFICATIONS=50)` on every
-  new push.
-- **#103 · Markdown links bypass the URL allowlist.** THREE `<Markdown>` render sites
-  (ArticleReaderModal, compose, dossier/[id]) and **zero `onLinkPress` handlers**, so
-  links skip `safeOpenURL`'s scheme check — on third-party RSS content.
-  ⚠️ The fix must `return false`: the library calls `Linking.openURL` when the callback
-  returns TRUE.
-- **#106/#112/#114 · Block filtering is systematically missing on comments.**
-  `filterContentByBlocks` is correctly applied to FEEDS (useFeeds, SocialPulse,
-  FeaturedCritique, FilmService) but NOT to log comments, stack comments, or
-  notifications. `log/[id].tsx` imports the block store and never filters with it.
-- **#126/#88 · Zero error telemetry in the domain store layer.** `src/stores/domain`:
-  **0 of 6 files** call `captureError` — that is where filing a log happens.
-- **#123/#125 · Tier gates are client-side only.** `compose.tsx:29`
-  `canWrite = isAuteurPlusTier(user)` with no server-side equivalent.
+**All 7 real. None intentional. Two are worse than filed.**
 
----
+| # | verdict | proof |
+|---|---|---|
+| #26 | REAL · BLOCKING | anon `curl`, HTTP 200: `{"film_title":"The Shawshank Redemption","private_notes":"watched it in my darkest day "}` |
+| #32 | REAL · BLOCKING | `get_featured_critique()` returns **30 columns incl. `private_notes`** to anon. SECURITY DEFINER → **ignores RLS, so #26's revoke does NOT close it** |
+| DESYNC | REAL · **worse than filed** | a member has `preferences.social_visibility="private"`; `is_social_private=eq.true` returns **`[]`** — the enforcing column says public for EVERY account |
+| #84 | REAL | live: `logs?select=username` → `42703 column does not exist`; same for `role` |
+| #48 | REAL | live: `role=admin, tier=projectionist`; `normalizeTier` knows only archivist/auteur/founding → falls through to `cinephile`, weight **0** |
+| #36 | REAL · **worse than filed** | `buildProfileUpdates:80` always sends `username`. Sanitiser strips `[^a-z0-9_]`. 5 live handles change — and `saleel.house → saleelhouse` **collides with the existing @saleelhouse** |
+| #67 | REAL | `socialSlice.ts:61` guard `/^[a-zA-Z0-9_]{1,30}$/` → `null` → throw → permanent, unretryable failure. **Same 5 members** |
+| #78 | REAL | `unfollowUser` contains **0** calls to `removeRequested`; `useProfileController.ts:249` routes cancel-request through it |
 
-## METHOD NOTE
-Register severities have been wrong in BOTH directions (#77 was a false positive; #26
-was understated). Everything above was re-proven from scratch. Items not yet re-verified
-are NOT included, and must not be actioned on their register note alone.
+**Not intentional — proven, not assumed:**
+- #26: three client layers try to hide `private_notes` (`PUBLIC_LOG_COLUMNS` omits it,
+  `LogReviewBody` renders it `{isOwner && …}`, `LogForm` labels it *"Notes only you can see"*).
+  And `profiles.email` IS column-revoked on the same DB — the technique is deployed, just not here.
+- #48: `projectionist` is a **first-class legacy tier** — created by
+  `20260325_projectionist_tier.sql`, granted lounge access at 4 RLS sites in
+  `20260401_the_lounge.sql`. The DB knows the value; the client does not.
+- #36/#67: `validateUsername` returns `valid:true` while silently rewriting the input —
+  there is no "I changed this" signal in its return type at all.
+
+## 2 · THE KEY STRUCTURAL FINDING
+
+**#36 and #67 are ONE bug, not two.** The app holds three different opinions about
+what a username may contain:
+```
+the DB              accepts  .  and  @      (5 live rows prove it)
+validateUsername    STRIPS   .  and  @      -> silent rename on any profile save
+socialSlice guard   REJECTS  .  and  @      -> those members cannot be followed
+```
+Fixing either alone leaves the contradiction. This is why the master plan groups them
+(cluster 7 · Identity) — **one decision about what a handle may be**, applied at all
+three sites plus a back-fill for the 5 stranded rows.
+
+Same shape for #26+#32: two doors to one room. Either alone leaves it reachable.
+
+## 3 · ZERO-SIDE-EFFECT ANALYSIS
+
+- **#26 Stage 1** (`REVOKE SELECT (private_notes) ON public.logs FROM anon`) — confirmed
+  zero-risk across BOTH clients: every anon-reachable read in mobile and web uses an
+  explicit column list omitting `private_notes`. The one `select('*')` that would break
+  (`ProjectorRoom.tsx:28`) is already leaking and must be fixed first regardless.
+  `src/api/supabase.ts:59 getUserLogs` also selects `*` but has **zero callers**.
+- **#32** — must change the RPC's projection, not just grants; SECURITY DEFINER ignores them.
+- **#48** — `normalizeTier` learning `projectionist` is additive. ⚠️ **Ordering constraint:**
+  29 of 32 rows have `tier: NULL`, so the `tier` back-fill must land BEFORE anything starts
+  reading `tier` in preference to `role`, or badges blank for 29 members.
+- **#36** — the fix must NOT retroactively rename. Send `username` only when it changed,
+  and resolve the `saleelhouse` collision by hand before any back-fill.
+- **#67** — widening the guard to match the DB is strictly permissive: it can only allow
+  follows that currently fail.
+- **#78** — adding the missing `removeRequested` call to `unfollowUser` mirrors what
+  `followUser` already does at `:135`/`:179`.
+
+## 4 · ARE WE DOING THE RIGHT THING?
+
+Yes — and the ORDER is the decision, not the fixes:
+1. **#26 + #32 together** (SQL + RPC). Private data is leaking *right now*.
+2. **DESYNC** — one member is publicly visible against their stated setting.
+3. **#84** — SQL/client, a dead search tab.
+4. **#48** — back-fill FIRST, then the client change.
+5. **#36 + #67 + the back-fill** — one identity decision, applied at three sites.
+6. **#78** — smallest, purely additive.
+
+**Two are pure SQL (no app build). The rest ship in one build.**
