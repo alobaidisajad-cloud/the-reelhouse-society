@@ -3,6 +3,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import reelToast from '@/src/utils/reelToast';
+import { maybeRequestReview } from '@/src/utils/requestReview';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -344,6 +345,7 @@ export function useLogFlow() {
                 physicalMedia, abandonedReason, isAuteur, isPremium, autopsy,
                 altPoster, editorialHeader, dropCap, pullQuote,
             });
+            const isNewEntry = !(isEditing && editLogId);
             if (isEditing && editLogId) { await updateLog(editLogId, logData); }
             else { await addLog(logData); }
             storage.delete(DRAFT_KEY);
@@ -353,6 +355,16 @@ export function useLogFlow() {
             setTimeout(() => {
                 InteractionManager.runAfterInteractions(() => {
                     router.back();
+                    // Only a NEW entry counts — an edit adds no film. The nested wait
+                    // lets the dismissal finish before an OS modal can appear over it;
+                    // router.back() isn't awaitable, so the outer pass isn't enough.
+                    // `logs` is the pre-await snapshot, hence +1. maybeRequestReview
+                    // gates itself (>=5 logs, 90-day cooldown, 6 lifetime) and never throws.
+                    if (isNewEntry) {
+                        InteractionManager.runAfterInteractions(() => {
+                            void maybeRequestReview(logs.length + 1);
+                        });
+                    }
                 });
             }, 650);
             return;
