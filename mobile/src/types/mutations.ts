@@ -75,6 +75,10 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   // refuses anyone who is neither the author nor the lounge creator, so there is
   // nothing for a queued payload to assert (or spoof).
   withdraw_lounge_message: z.object({ message_id: z.string() }).passthrough(),
+  // Legacy shape from pre-tombstone builds; user_id is accepted but unused
+  // (the RPC derives the caller). Kept so a queue persisted by an older
+  // install still validates and flushes instead of dead-lettering.
+  delete_lounge_message: z.object({ message_id: z.string() }).passthrough(),
 
   // ── Entitlement ──
   // No .passthrough() — sync_entitlement has no extra fields by design.

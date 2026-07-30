@@ -625,6 +625,20 @@ describe('Lounge', () => {
 
             await expect(runMutation('withdraw_lounge_message', { message_id: 'msg-1' })).rejects.toBeTruthy();
         });
+
+        it('LEGACY: a delete queued by a pre-tombstone build completes as a withdrawal', async () => {
+            // A member who deleted a message offline and then updated the app
+            // still has this in their queue. Without the alias the executor
+            // throws UnknownMutationError, the queue dead-letters it, and their
+            // deletion is silently lost — the message reappears.
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: null, error: null });
+
+            await runMutation('delete_lounge_message', { message_id: 'msg-1', user_id: 'u1' });
+
+            // Honoured with CURRENT semantics: tombstone, never a hard delete.
+            expect(supabase.rpc).toHaveBeenCalledWith('withdraw_lounge_message', { p_message_id: 'msg-1' });
+            expect(mockChain.delete).not.toHaveBeenCalled();
+        });
     });
 
 });

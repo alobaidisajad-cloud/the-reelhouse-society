@@ -549,6 +549,28 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         return {};
     },
 
+    /**
+     * LEGACY ALIAS — do not remove until well past the release that drops it.
+     *
+     * Builds before the tombstone migration queued 'delete_lounge_message' when
+     * a member deleted their own message offline. Those entries can still be
+     * sitting in a live member's MMKV queue at the moment they update. Without a
+     * handler the executor throws UnknownMutationError, the queue dead-letters
+     * it and moves on — no jam, but the member's deletion is silently lost and
+     * the message they took down reappears.
+     *
+     * Completing it as a WITHDRAWAL honours the intent using the current
+     * semantics: the row is tombstoned, never hard-deleted. The old payload
+     * carried { message_id, user_id }; the RPC needs only the id and derives the
+     * caller from auth.uid(), so user_id is simply ignored.
+     */
+    delete_lounge_message: async (p: any) => {
+        const { message_id } = p;
+        const { error } = await supabase.rpc('withdraw_lounge_message', { p_message_id: message_id as string });
+        if (error) throw error;
+        return {};
+    },
+
     withdraw_lounge_message: async (p: any) => {
         // Flush handler for a withdrawal queued while offline. Goes through the
         // RPC, never a hard delete — the row must survive as a tombstone so the
