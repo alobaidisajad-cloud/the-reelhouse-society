@@ -602,11 +602,15 @@ async function resolveFilm(title: string, year: string): Promise<TMDBMatch | nul
   } catch (err: unknown) {
     logger.warn('[archiveImport] TMDB resolve failed for', title, err);
     // Deliberately NOT cached. The nulls above are answers — TMDB was asked and
-    // had no confident match — and caching them saves a repeat lookup. This one
-    // is a FAILURE to ask: a dropped connection, a rate limit, a timeout.
-    // Caching it would freeze that film as unmatched for the rest of the app
-    // session, so a member retrying after a blip would get the same misses back
-    // instantly with no request made, and no way out but force-quitting.
+    // had no confident match. This one is a FAILURE to ask: a dropped
+    // connection, a rate limit, a timeout, which is not an answer about the film.
+    //
+    // Today this is belt-and-braces rather than a live bug: the cache is cleared
+    // per import (importArchiveZip) and callers dedupe by cacheKey before
+    // resolving, so no key is looked up twice in one run. It matters the moment
+    // either of those stops being true — and a cached failure is the kind of
+    // thing that then goes unnoticed, because it looks exactly like a real
+    // "no such film".
     return null;
   }
 }
@@ -1718,7 +1722,15 @@ export async function importArchiveZip(
   if (isJSON) {
     // Raw JSON file — ReelHouse export
     const rawText = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.UTF8 });
-    const parsed = JSON.parse(rawText) as ReelHouseArchive;
+    let parsed: ReelHouseArchive;
+    try {
+      parsed = JSON.parse(rawText) as ReelHouseArchive;
+    } catch {
+      throw new Error('Invalid JSON format.');
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('This file is not a ReelHouse archive.');
+    }
     return importArchiveJSON(parsed, user.id, onProgress);
   }
 
@@ -1735,13 +1747,25 @@ export async function importArchiveZip(
     throw new Error('This archive contains too many files to import.');
   }
   let totalUncompressed = 0;
+  let unmeasurable = 0;
   for (const name of entryNames) {
-    // JSZip exposes the uncompressed size on the internal _data; if unavailable
-    // it's treated as 0 (the entry-count cap still bounds the work).
-    totalUncompressed += (zip.files[name] as unknown as { _data?: { uncompressedSize?: number } })?._data?.uncompressedSize ?? 0;
+    if (zip.files[name].dir) continue; // directory entries carry no payload
+    // JSZip exposes the uncompressed size on an INTERNAL field. Reading it with
+    // `?? 0` made this guard fail OPEN: if that internal is ever renamed by a
+    // JSZip upgrade, every entry scores 0, the total never grows, and the cap
+    // silently stops existing — which is precisely when a zip bomb gets through.
+    const size = (zip.files[name] as unknown as { _data?: { uncompressedSize?: unknown } })?._data?.uncompressedSize;
+    if (typeof size === 'number' && Number.isFinite(size)) totalUncompressed += size;
+    else unmeasurable++;
     if (totalUncompressed > MAX_UNCOMPRESSED_BYTES) {
       throw new Error('This archive is too large to import.');
     }
+  }
+  // Fail CLOSED. If the sizes could not be read at all we have no bound on what
+  // decompressing would cost, so refuse rather than assume it is safe. A real
+  // export always reports its sizes, so this cannot reject a legitimate archive.
+  if (unmeasurable > 0 && totalUncompressed === 0) {
+    throw new Error('This archive could not be inspected safely. Try exporting it again.');
   }
 
   const format = detectArchiveFormat(zip);
@@ -1752,7 +1776,21 @@ export async function importArchiveZip(
     if (!jsonFile) throw new Error('No valid archive file found in ZIP.');
 
     const jsonText = await zip.files[jsonFile].async('string');
-    const parsed = JSON.parse(jsonText) as ReelHouseArchive;
+    let parsed: ReelHouseArchive;
+    try {
+      parsed = JSON.parse(jsonText) as ReelHouseArchive;
+    } catch {
+      // Unguarded, a malformed archive surfaced as a raw SyntaxError — the
+      // member saw a generic failure with nothing telling them the FILE is the
+      // problem. Mirrors the message DataVault already gives for a loose .json.
+      throw new Error('Invalid JSON format.');
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      // Valid JSON is not automatically an archive: "null", "42" and "[]" all
+      // parse. Reaching the importer with one of those would read every section
+      // as empty and report a cheerful, entirely empty success.
+      throw new Error('This file is not a ReelHouse archive.');
+    }
     return importArchiveJSON(parsed, user.id, onProgress);
   }
 
