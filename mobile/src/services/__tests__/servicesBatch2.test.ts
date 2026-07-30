@@ -216,15 +216,6 @@ describe('LoungeService', () => {
     let LoungeService: typeof import('@/src/services/LoungeService').LoungeService;
     beforeAll(() => { LoungeService = require('@/src/services/LoungeService').LoungeService; });
 
-    describe('getLoungeDetails', () => {
-        it('fetches lounge by ID', async () => {
-            const lounge = { id: 'l1', name: 'Film Club', description: 'A group', created_at: '2024-01-01', created_by: 'u1', member_count: 5, is_public: true, cover_image: null };
-            (supabase.from as jest.Mock).mockReturnValue(chain({ data: lounge, error: null }));
-            const result = await LoungeService.getLoungeDetails('l1');
-            expect(result).toEqual(lounge);
-        });
-    });
-
     describe('checkMembership', () => {
         it('returns true when member exists', async () => {
             (supabase.from as jest.Mock).mockReturnValue(chain({ data: { id: 'm1' }, error: null }));

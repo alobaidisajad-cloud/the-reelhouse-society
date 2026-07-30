@@ -23,18 +23,6 @@ export const LoungeMessagePayloadSchema = z.object({
 
 // ── Zod schemas for read-path boundary validation ──────────────────
 
-const LoungeDetailSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().nullable().optional(),
-  cover_image: z.string().nullable().optional(),
-  created_at: z.string(),
-  creator_id: z.string(),
-  member_count: z.number().nullable().optional(),
-  is_private: z.boolean().nullable().optional(),
-  invite_code: z.string().nullable().optional(),
-});
-
 const LoungeMemberSchema = z.object({
   user_id: z.string(),
   profiles: z.union([
@@ -52,25 +40,6 @@ const UserLoungeSchema = z.object({
 });
 
 export const LoungeService = {
-  async getLoungeDetails(loungeId: string) {
-    const { data, error } = await supabase
-      .from('lounges')
-      .select('id, name, description, cover_image, created_at, creator_id, member_count, is_private, invite_code')
-      .eq('id', loungeId)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!data) throw new Error('Lounge not found');
-    // Validate response shape
-    // Production observability via Sentry on schema drift
-    const parsed = LoungeDetailSchema.safeParse(data);
-    if (!parsed.success) {
-      logger.warn('[LoungeService.getLoungeDetails] Schema mismatch:', parsed.error.message);
-      if (!__DEV__) captureError(new Error(`[LoungeService] Schema drift: ${parsed.error.issues[0]?.path.join('.')}`));
-    }
-    return data;
-  },
-
   async checkMembership(loungeId: string, userId: string) {
     const { data, error } = await supabase
       .from('lounge_members')
