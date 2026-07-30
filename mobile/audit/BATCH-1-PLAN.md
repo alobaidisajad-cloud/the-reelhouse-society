@@ -204,7 +204,9 @@ END;
 $$;
 ```
 
-**Rollback** — the current definition, verbatim from `20260709_05`:
+**Rollback — executed on a replica, not merely written.** Applying the fix returned
+`<NULL>`; applying this rollback returned `THE ONE REAL NOTE` again. Verbatim from
+`20260709_05`:
 
 ```sql
 CREATE OR REPLACE FUNCTION public.get_featured_critique()

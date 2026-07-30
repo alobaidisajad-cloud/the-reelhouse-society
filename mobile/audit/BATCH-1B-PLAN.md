@@ -83,7 +83,9 @@ $$;
 CREATE TABLE public.log_private_notes (
   log_id     uuid PRIMARY KEY REFERENCES public.logs(id)     ON DELETE CASCADE,
   user_id    uuid NOT NULL    REFERENCES public.profiles(id) ON DELETE CASCADE,
-  notes      text NOT NULL CHECK (length(notes) <= 1000),   -- mirrors LogForm maxLength={1000}
+  notes      text NOT NULL CHECK (length(notes) BETWEEN 1 AND 1000), -- upper bound mirrors LogForm maxLength={1000};
+  --                                                        lower bound makes a blank row impossible,
+  --                                                        matching savePrivateNotes' delete-on-empty
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX log_private_notes_user_idx ON public.log_private_notes (user_id);
@@ -133,11 +135,25 @@ cinephile, one real note, one empty string and one NULL:
 `SELECT count(*) FROM public.log_private_notes;` → **1**, and as anon
 `GET /rest/v1/log_private_notes?select=log_id` → must be **401/403/404, never 200**.
 
-**Rollback:**
+**⛔ GATE before Phase 2 begins.** The embed is proven by analogy (`lists → list_items`),
+not on this table — it cannot be until the table exists. So the moment Phase 1 lands, as
+an authenticated owner:
+```
+GET /rest/v1/logs?select=id,log_private_notes(notes)&limit=1   -> must return the note
+GET /rest/v1/logs?select=id,log_private_notes(notes)&limit=1   (as anon) -> must return no note
+```
+**If that fails, stop.** The whole Phase 2 design assumes it, and the fallback is a second
+owner-scoped query rather than an embed. Do not write a line of client code first.
+
+**Rollback — executed on a replica, not just written:**
 ```sql
 DROP TABLE IF EXISTS public.log_private_notes;
 DROP FUNCTION IF EXISTS public.is_archivist_plus(uuid);
 ```
+| | Result |
+|---|---|
+| after rollback, table exists | **0 — gone** |
+| `logs.private_notes` | **untouched, note intact** |
 
 ---
 
@@ -203,8 +219,24 @@ Per the batch rule, each is written first and must fail against today's code:
 4. `LOG_SELECT_COLUMNS` no longer contains the string `private_notes`.
 5. A non-owner's mapped log has `privateNotes === null` given an empty embed.
 
-Then mutation-verify: break `extractPrivateNotes` to always return `null` and confirm
-test 1 fails; make `savePrivateNotes` skip the delete and confirm test 3 fails.
+### Both helpers are already written and proven — 13 tests, 2 mutations
+
+Run standalone before any integration:
+
+| `extractPrivateNotes` | |
+|---|---|
+| to-one object `{notes:'x'}` | `'x'` ✓ |
+| one-element array `[{notes:'x'}]` | `'x'` ✓ |
+| **empty array (non-owner)** | `null` ✓ |
+| `null` / `undefined` / `{notes:null}` | `null` ✓ |
+
+| `savePrivateNotes` | |
+|---|---|
+| content | **upsert**, and trimmed ✓ |
+| empty string / whitespace / `null` / `undefined` | **delete — never a blank row** ✓ |
+
+**Mutation-verified:** making `extractPrivateNotes` always return `null` fails the to-one
+test; making `savePrivateNotes` skip the delete fails the empty test. Neither test is hollow.
 
 
 ### Mobile (6 files, 11 edits)
@@ -331,10 +363,25 @@ and never observes a missing or index-less view.
 
 ---
 
+## 6.5 · Every rollback executed on a replica — not merely written
+
+I had written four rollbacks and tested none. All four now run:
+
+| Rollback | Result |
+|---|---|
+| **1A** — restore `SELECT l.*` | note returns from `<NULL>` to `THE ONE REAL NOTE` ✓ |
+| **Phase 1** — drop table + function | table gone; `logs.private_notes` untouched ✓ |
+| **Phase 3** — repopulate from the new table | `0` exposed rows → note fully restored ✓ |
+| **Phase 4** — re-add column, repopulate, restore the 27-col function | note restored; `refresh_global_feed()` still **OK** ✓ |
+
+---
+
 ## 7 · Risks, stated
 
-- **Phase 4.3 is irreversible for the column.** The data lives in `log_private_notes`
-  first, verified in Phase 1 and again before 4.3. Take a snapshot regardless.
+- **Correction: Phase 4.3 is NOT irreversible.** I previously wrote that it was. Re-adding
+  the column and repopulating from `log_private_notes` restored the note exactly, with the
+  feed still refreshing — proven above. Take a snapshot anyway, but the column drop is
+  recoverable as long as `log_private_notes` is intact.
 - **A stale mobile build writing to `logs.private_notes`** would silently lose notes after
   4.3. Not a risk today — mobile has not shipped. It becomes one the day it does, which is
   the argument for doing this before launch, not after.
