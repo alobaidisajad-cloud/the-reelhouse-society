@@ -20,6 +20,7 @@ import {
   buildViewingHistory,
   detectSource,
   detectDateFormat,
+  csvLooksLike,
 } from '../archiveImport';
 
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
@@ -445,5 +446,42 @@ describe('normalizeDate — an impossible date must never reach a DATE column', 
     expect(normalizeDate('03/25/2024')).toBe('2024-03-25');
     expect(normalizeDate('05/03/2024', 'DMY')).toBe('2024-03-05');
     expect(normalizeDate('12/31/2023')).toBe('2023-12-31');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  ARCHIVE CLASSIFICATION — the most damaging failure found.
+//  A list named after a film used to REPLACE the member's diary.
+// ═══════════════════════════════════════════════════════════════
+
+describe('csvLooksLike — content must back the filename', () => {
+  const DIARY    = 'Date,Name,Year,Letterboxd URI,Rating,Rewatch,Watched Date\n2024-01-01,Heat,1995,http://x,4,No,2024-01-01';
+  const LIST     = 'Position,Name,Year,URL,Description\n1,Heat,1995,http://x,';
+  const REVIEWS  = 'Date,Name,Year,Review\n2024-01-01,Heat,1995,"A masterpiece."';
+  const WATCHLIST= 'Date,Name,Year,Letterboxd URI\n2024-01-01,Heat,1995,http://x';
+
+  it('a diary is recognised by its rating / watched-date columns', () => {
+    expect(csvLooksLike(DIARY, 'diary')).toBe(true);
+  });
+
+  it('a LIST export is never mistaken for a diary — it has neither', () => {
+    // This is what let "Overrating the 80s" claim the ratings slot.
+    expect(csvLooksLike(LIST, 'diary')).toBe(false);
+  });
+
+  it('a list is never mistaken for reviews — Description is not a review column', () => {
+    expect(csvLooksLike(REVIEWS, 'reviews')).toBe(true);
+    expect(csvLooksLike(LIST, 'reviews')).toBe(false);
+  });
+
+  it('a watchlist is distinguished from a list by having no placement or blurb', () => {
+    expect(csvLooksLike(WATCHLIST, 'watchlist')).toBe(true);
+    expect(csvLooksLike(LIST, 'watchlist')).toBe(false);
+  });
+
+  it('refuses an empty or headerless file rather than guessing', () => {
+    expect(csvLooksLike('', 'diary')).toBe(false);
+    expect(csvLooksLike('Name,Year', 'diary')).toBe(false);          // header only, no rows
+    expect(csvLooksLike('a,b,c\n1,2,3', 'diary')).toBe(false);       // no title column
   });
 });

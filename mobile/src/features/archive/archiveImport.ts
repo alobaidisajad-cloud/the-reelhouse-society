@@ -1020,6 +1020,42 @@ async function upsertCounted(
 }
 
 /**
+ * Does this CSV's HEADER ROW actually look like the kind of file we are about
+ * to treat it as?
+ *
+ * The filename fallback alone is not enough. A member's list named after a
+ * film ("Overrating the 80s") matches the 'rating' substring, and claiming an
+ * unfilled slot on that basis both loses the list and imports it as something
+ * it is not. Content is the honest discriminator, and the classifier's own
+ * comment always promised it ("Classify by filename first, then by header
+ * content") — it simply was never written.
+ *
+ * Deliberately permissive: it only has to reject a LIST export, whose columns
+ * are Position / Name / Year / URL / Description.
+ */
+export function csvLooksLike(text: string, kind: 'diary' | 'reviews' | 'watchlist'): boolean {
+  const rows = parseCSVRows(text);
+  if (rows.length < 2) return false;
+  const mapping = resolveHeaders(rows[0]);
+  if (!mapping) return false;
+
+  switch (kind) {
+    // A diary or ratings export carries the member's own scores, or when they
+    // watched something. A list carries neither.
+    case 'diary':
+      return Boolean(mapping.rating || mapping.watchedDate);
+    // 'description' is a list's blurb and is NOT a review synonym, so this
+    // cannot be satisfied by a list export.
+    case 'reviews':
+      return Boolean(mapping.review);
+    // A watchlist is titles plus when they were added. A list export is
+    // distinguished by its placement column and its blurb.
+    case 'watchlist':
+      return !mapping.position && !mapping.description;
+  }
+}
+
+/**
  * Every existing item of one stack, paginated.
  *
  * A bare .select() is capped by PostgREST's max-rows (1000 on a default
@@ -1772,27 +1808,60 @@ async function runCSVImport(
   let ratingsText = '';
   const listTexts: { name: string; text: string }[] = [];
 
+  // Read every CSV once, then classify in two passes.
+  //
+  // A single substring pass is catastrophic here. Members name lists after
+  // films, and "Bridget Jones's Diary", "Diary of a Country Priest" and "The
+  // Diary of Anne Frank" all contain "diary" — so a 12-film list silently
+  // REPLACED the member's real diary.csv and their entire history vanished
+  // from the import. "Overrating the 80s" was absorbed as ratings.csv the same
+  // way. Both the history and the list were lost, with nothing to show it.
+  const loaded: { base: string; text: string }[] = [];
   for (const [name, file] of csvFiles) {
-    const text = await file.async('string');
-    const baseName = name.split('/').pop()?.toLowerCase() ?? '';
-
-    // Classify by filename first, then by header content
-    if (baseName === 'diary.csv' || baseName.includes('diary')) {
-      diaryText = text;
-    } else if (baseName === 'reviews.csv' || baseName.includes('review')) {
-      reviewsText = text;
-    } else if (baseName === 'watchlist.csv' || baseName.includes('watchlist')) {
-      watchlistText = text;
-    } else if (baseName === 'ratings.csv' || baseName.includes('rating')) {
-      ratingsText = text;
-    } else if (baseName === 'watched.csv') {
-      // Some exports have watched.csv — use as diary fallback
-      if (!diaryText) diaryText = text;
-    } else {
-      // Anything else could be a list CSV
-      listTexts.push({ name: baseName, text });
-    }
+    loaded.push({ base: name.split('/').pop()?.toLowerCase() ?? '', text: await file.async('string') });
   }
+
+  const EXACT: Record<string, 'diary' | 'reviews' | 'watchlist' | 'ratings' | 'watched'> = {
+    'diary.csv': 'diary',
+    'reviews.csv': 'reviews',
+    'watchlist.csv': 'watchlist',
+    'ratings.csv': 'ratings',
+    'watched.csv': 'watched',
+  };
+  const slot: Partial<Record<'diary' | 'reviews' | 'watchlist' | 'ratings' | 'watched', string>> = {};
+  const unclaimed: { base: string; text: string }[] = [];
+
+  // Pass 1 — EXACT filenames. These are what the real exporters emit, and a
+  // list named after a film can never displace one.
+  for (const f of loaded) {
+    const kind = EXACT[f.base];
+    if (kind && slot[kind] === undefined) slot[kind] = f.text;
+    else unclaimed.push(f);
+  }
+
+  // Pass 2 — substring fallback, for exporters that prefix their filenames
+  // ("letterboxd-diary.csv"). Only ever fills a slot nothing has claimed, so it
+  // can add information but never overwrite a genuine file.
+  // The name must match AND the header row must support it — otherwise a list
+  // called "Overrating the 80s" claims the empty ratings slot, and is both
+  // lost as a list and imported as ratings it never contained.
+  for (const f of unclaimed.splice(0, unclaimed.length)) {
+    if (f.base.includes('diary') && slot.diary === undefined && csvLooksLike(f.text, 'diary')) slot.diary = f.text;
+    else if (f.base.includes('review') && slot.reviews === undefined && csvLooksLike(f.text, 'reviews')) slot.reviews = f.text;
+    else if (f.base.includes('watchlist') && slot.watchlist === undefined && csvLooksLike(f.text, 'watchlist')) slot.watchlist = f.text;
+    else if (f.base.includes('rating') && slot.ratings === undefined && csvLooksLike(f.text, 'diary')) slot.ratings = f.text;
+    else unclaimed.push(f);
+  }
+
+  diaryText = slot.diary ?? '';
+  reviewsText = slot.reviews ?? '';
+  watchlistText = slot.watchlist ?? '';
+  ratingsText = slot.ratings ?? '';
+  // Some exports ship watched.csv instead of a diary.
+  if (!diaryText && slot.watched) diaryText = slot.watched;
+  // Everything still unclaimed is a list — including the ones that used to be
+  // swallowed by the substring pass.
+  for (const f of unclaimed) listTexts.push({ name: f.base, text: f.text });
 
   // If no diary but we have ratings, use ratings as the diary source
   if (!diaryText && ratingsText) {
