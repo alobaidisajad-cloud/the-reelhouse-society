@@ -163,26 +163,6 @@ describe('FilmService', () => {
     let FilmService: typeof import('@/src/services/FilmService').FilmService;
     beforeAll(() => { FilmService = require('@/src/services/FilmService').FilmService; });
 
-    describe('getFilmReviewCount', () => {
-        it('returns count from Supabase', async () => {
-            const c = chain({ data: null, error: null, count: 42 });
-            // Make it resolve with count at top level
-            c.then = jest.fn().mockImplementation((resolve) => resolve({ count: 42, error: null }));
-            (supabase.from as jest.Mock).mockReturnValue(c);
-            const result = await FilmService.getFilmReviewCount(550);
-            expect(supabase.from).toHaveBeenCalledWith('logs');
-            expect(result).toBe(42);
-        });
-
-        it('returns 0 when count is null', async () => {
-            const c = chain({ data: null, error: null });
-            c.then = jest.fn().mockImplementation((resolve) => resolve({ count: null, error: null }));
-            (supabase.from as jest.Mock).mockReturnValue(c);
-            const result = await FilmService.getFilmReviewCount(999);
-            expect(result).toBe(0);
-        });
-    });
-
     describe('getFilmReviews', () => {
         it('returns empty page when no reviews', async () => {
             const c = chain({ data: [], error: null });

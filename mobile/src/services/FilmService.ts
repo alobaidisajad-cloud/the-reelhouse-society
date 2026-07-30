@@ -35,20 +35,6 @@ export interface FilmReviewsPage {
 }
 
 export const FilmService = {
-  async getFilmReviewCount(filmId: number, signal?: AbortSignal): Promise<number> {
-    let query = supabase
-      .from('logs')
-      .select('id', { count: 'exact', head: true })
-      .eq('film_id', filmId);
-      
-    query = withAbortSignal(query, signal);
-    
-    const { count, error } = await query;
-      
-    if (error) throw error;
-    return count ?? 0;
-  },
-
   /**
    * Migrated from offset .range() to compound cursor pagination.
    * - Eliminates O(N²) deep-page scans
