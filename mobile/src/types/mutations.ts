@@ -71,6 +71,10 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
 
   // ── Lounge ──
   send_lounge_message: z.object({ lounge_id: z.string(), user_id: z.string(), content: z.string() }).passthrough(),
+  // No user_id: withdraw_lounge_message derives the caller from auth.uid() and
+  // refuses anyone who is neither the author nor the lounge creator, so there is
+  // nothing for a queued payload to assert (or spoof).
+  withdraw_lounge_message: z.object({ message_id: z.string() }).passthrough(),
 
   // ── Entitlement ──
   // No .passthrough() — sync_entitlement has no extra fields by design.

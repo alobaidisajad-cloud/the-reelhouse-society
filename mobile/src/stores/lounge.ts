@@ -945,6 +945,16 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const { error } = await supabase.rpc('withdraw_lounge_message', { p_message_id: messageId });
       if (error) throw error;
     } catch (e) {
+      // Offline is not a refusal — keep the tombstone and finish the withdrawal
+      // when the connection returns. Snapping the message back would resurrect
+      // something the member deliberately took down, on a dropped bar of signal.
+      if (isNetworkError(e)) {
+        enqueueMutation({ type: 'withdraw_lounge_message', payload: { message_id: messageId } });
+        flushOfflineQueue();
+        reelToast('Withdrawal queued — it will complete when you reconnect.');
+        return;
+      }
+      // A real refusal (not yours to withdraw, row gone) — restore it intact.
       logger.error('[LoungeStore.withdrawMessage] failed, reverting:', e);
       set(s => ({
         currentMessages: s.currentMessages.map(m => m.id === messageId ? target : m),

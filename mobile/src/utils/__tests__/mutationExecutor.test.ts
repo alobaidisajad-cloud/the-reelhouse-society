@@ -608,6 +608,25 @@ describe('Lounge', () => {
         });
     });
 
+    describe('withdraw_lounge_message', () => {
+        it('goes through the RPC — never a hard delete', async () => {
+            // The row must survive as a tombstone. A .delete() here would
+            // resurrect the hole-in-the-transcript problem the RPC exists to fix.
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: null, error: null });
+
+            await runMutation('withdraw_lounge_message', { message_id: 'msg-1' });
+
+            expect(supabase.rpc).toHaveBeenCalledWith('withdraw_lounge_message', { p_message_id: 'msg-1' });
+            expect(mockChain.delete).not.toHaveBeenCalled();
+        });
+
+        it('throws so the queue retries rather than silently dropping it', async () => {
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: null, error: { message: 'boom' } });
+
+            await expect(runMutation('withdraw_lounge_message', { message_id: 'msg-1' })).rejects.toBeTruthy();
+        });
+    });
+
 });
 
 // ════════════════════════════════════════════════════════════════════

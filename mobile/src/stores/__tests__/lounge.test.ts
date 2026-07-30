@@ -31,6 +31,14 @@ jest.mock('../resetAllStores', () => ({
   registerStoreReset: jest.fn(),
 }));
 
+const mockEnqueue = jest.fn();
+const mockFlush = jest.fn();
+jest.mock('../../utils/offlineQueue', () => ({
+  enqueueMutation: (...args: unknown[]) => mockEnqueue(...args),
+  flushOfflineQueue: (...args: unknown[]) => mockFlush(...args),
+  getOfflineQueue: jest.fn().mockReturnValue([]),
+}));
+
 jest.mock('../../utils/reelToast', () => {
   const fn = jest.fn();
   fn.error = jest.fn();
@@ -138,6 +146,34 @@ describe('LoungeStore', () => {
       seed();
       await useLoungeStore.getState().withdrawMessage('does-not-exist');
       expect(mockRpc).not.toHaveBeenCalled();
+      expect(useLoungeStore.getState().currentMessages[0].content).toBe('Regrettable take');
+    });
+
+    // Offline is not a refusal. Reverting here would resurrect a message the
+    // member deliberately took down, because one bar of signal dropped.
+    it('KEEPS the tombstone offline and queues the withdrawal', async () => {
+      seed();
+      mockRpc.mockRejectedValue(new TypeError('Network request failed'));
+
+      await useLoungeStore.getState().withdrawMessage('m1');
+
+      const msg = useLoungeStore.getState().currentMessages[0];
+      expect(msg.content).toBe('');
+      expect(msg.deleted_at).toBeTruthy();
+      expect(mockEnqueue).toHaveBeenCalledWith({
+        type: 'withdraw_lounge_message',
+        payload: { message_id: 'm1' },
+      });
+      expect(mockFlush).toHaveBeenCalled();
+    });
+
+    it('does NOT queue a genuine refusal — that one reverts', async () => {
+      seed();
+      mockRpc.mockResolvedValue({ error: { message: 'You can only withdraw your own dispatch' } });
+
+      await useLoungeStore.getState().withdrawMessage('m1');
+
+      expect(mockEnqueue).not.toHaveBeenCalled();
       expect(useLoungeStore.getState().currentMessages[0].content).toBe('Regrettable take');
     });
   });

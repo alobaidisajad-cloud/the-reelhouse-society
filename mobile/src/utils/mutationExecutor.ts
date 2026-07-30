@@ -549,6 +549,19 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         return {};
     },
 
+    withdraw_lounge_message: async (p: any) => {
+        // Flush handler for a withdrawal queued while offline. Goes through the
+        // RPC, never a hard delete — the row must survive as a tombstone so the
+        // transcript doesn't grow a hole where a reply's parent used to be.
+        // The RPC enforces authorship itself (auth.uid() must be the author or
+        // the lounge creator) and returns silently if the row is already gone,
+        // so a duplicate flush is harmless.
+        const { message_id } = p;
+        const { error } = await supabase.rpc('withdraw_lounge_message', { p_message_id: message_id as string });
+        if (error) throw error;
+        return {};
+    },
+
     // ── Entitlements ──
     sync_entitlement: async (p: any) => {
         // Entitlement tier sync queued when Edge Function was unreachable.
