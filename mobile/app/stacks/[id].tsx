@@ -20,7 +20,9 @@ import { StackService } from '@/src/services/StackService';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useListStore } from '@/src/stores/films';
+import { captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
+import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -346,7 +348,10 @@ export default function StackDetailScreen() {
     try {
       await toggleListEndorse(id);
       if (!wasCertified) reelToast.success('Certified!');
-    } catch {
+    } catch (err: unknown) {
+      // Was a bare `catch {` with no binding — it could not log even in principle.
+      logger.warn('[Stack] Certification toggle failed:', err);
+      if (!isNetworkError(err)) captureError(err, { scope: 'stacks.toggleCertification', stackId: id });
       // Atomic rollback on failure
       const revertDelta = wasCertified ? 1 : -1;
       queryClient.setQueryData(['stack', id], (old: any) => {
@@ -385,7 +390,10 @@ export default function StackDetailScreen() {
         }
         return finalComments;
       } catch (error) {
-        if (__DEV__) console.error('[Stack] Comments fetch failed:', error);
+        // Finding 116: this logged ONLY under __DEV__, so a real member's failure was
+        // invisible. logger reaches production; Sentry gets genuine defects only.
+        logger.warn('[Stack] Comments fetch failed:', error);
+        if (!isNetworkError(error)) captureError(error, { scope: 'stacks.fetchComments', stackId: id });
         
         // Keep offline comments even if fetch fails
         const queue = getOfflineQueue();
@@ -509,6 +517,9 @@ export default function StackDetailScreen() {
               router.back();
              
             } catch (err: unknown) {
+              // Finding 117: deleting a stack failed with a toast and no record of why.
+              logger.warn('[Stack] Delete failed:', err);
+              if (!isNetworkError(err)) captureError(err, { scope: 'stacks.deleteStack', stackId: id });
               reelToast.error('The collection resists destruction.');
             }
           },

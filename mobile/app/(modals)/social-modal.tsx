@@ -180,6 +180,9 @@ export default function SocialModal() {
             }
          
         } catch (err) {
+            // Finding 115: this was the one catch in this file that toasted without
+            // logging, while the share handler below does both.
+            logger.warn('[SocialModal] Fetch failed:', err);
             reelToast.error('The telegraph to the archive is disrupted.');
         } finally {
             if (isMounted.current) setLoading(false);
