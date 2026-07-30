@@ -1,87 +1,52 @@
-# BATCH 2 — ALL 16 IN-PLACE EDITS · FINAL PLAN
+# BATCH 2 — FINAL PLAN. All 16. Every gap closed, every decision made.
 
-**Identification:** Tier A = 29 clean. Batch 1 took the 13 deletions
-(#5 #37 #38 #43 #53 #59 #71 #72 #76 #79 #81 #130 C2). **29 − 13 = 16.**
+**Identification — PROVEN, not derived.** Tier A = 29 clean; batch 1 took the 13 deletions.
+Verified against the tree: every batch-1 deletion is **gone**, every item below is **still
+open in the code**.
 
 **Scope: #4 #25 #33 #56 #69 #88 #102 #108 #110 #115 #116 #117 #119 #120 #124 #126**
 
-Every one opened, read, and measured this session. **4 are not actionable. 3 would break
-the app if executed as filed. 9 are real. 1 new finding surfaced.**
+**Verdict: 13 actionable · 3 NO ACTION · 0 unresolved.**
+Gate after every commit: `npx tsc --noEmit && npx eslint . --ext .ts,.tsx && npx jest --ci --coverage`
 
 ---
 
-# ❌ NOT ACTIONABLE (4)
+# ❌ NO ACTION — 3, each decided, not deferred
 
-### #25 — FALSE POSITIVE. The system already works.
-Filed: *"contract checker (script, zero callers)."*
-- `scripts/check-backend-live.mjs` is a **deliberately manual deploy-time tool**. Its own
-  header documents the invocation: `SUPABASE_DB_URL=postgres://… node scripts/check-backend-live.mjs`
-- Its CI companion **exists and passes**: `__tests__/backendContract.test.ts` — 2 tests,
-  green — re-derives every `.rpc()` and edge-function call the app makes and asserts the
-  contract matches.
-- Wiring the script into CI requires a **postgres connection string in GitHub secrets** — a
-  materially worse attack surface than the anon key.
-- And it *"skips with a warning if config/tool is unavailable"*, so wiring it WITHOUT
-  secrets produces a job that always passes and checks nothing.
-**→ NO ACTION.** Automated code-side guard in CI + manual live probe at deploy is correct.
+### #25 · FALSE POSITIVE
+`scripts/check-backend-live.mjs` is a **manual deploy-time tool** (its own header documents
+`SUPABASE_DB_URL=postgres://… node scripts/…`). Its CI counterpart **exists and passes**:
+`__tests__/backendContract.test.ts`, 2 tests green, re-deriving every `.rpc()` and edge
+function the app calls. Wiring the script into CI needs a **postgres connection string in
+GitHub secrets** — a materially worse attack surface — and it self-skips without config, so
+it would become a job that always passes and checks nothing. **The design is correct.**
 
-### #33 — RECOMMEND NO ACTION. The fix is more dangerous than the defect.
-**Supabase tracks applied migrations BY FILENAME.** Renaming one already applied makes the
-tooling treat it as new and re-run DDL against production.
-Under-counted too: **three** colliding dates — `20260526` (2), `20260620` (3), `20260621` (2).
-`20260626_*` (01–11) and `20260701_*` are already correctly sequenced; do not touch them.
-**Verified harmless:** within each colliding date the files are mutually independent
-(founding_members / profile_counts_rpc · claim_founding_seat / drop_legacy_resolve /
-feed_block_filtering · atomic_delete_list_cascade / ban_enforcement_rls). Lexicographic order
-is deterministic, so ordering is implicit but not ambiguous in effect.
-**→ Adopt `_NN_` for NEW migrations. Leave applied ones alone.**
+### #33 · THE FIX IS MORE DANGEROUS THAN THE DEFECT
+Supabase tracks applied migrations **by filename**; renaming one already applied re-runs DDL
+against production. Under-counted too: **three** colliding dates (`20260526` ×2, `20260620`
+×3, `20260621` ×2); `20260626_*` and `20260701_*` are already sequenced.
+Within each colliding date the files are **mutually independent**, and lexicographic order is
+deterministic — ordering is implicit but not ambiguous in effect.
+**→ Use `_NN_` for NEW migrations. Never rename an applied one.**
 
-### #119 — FALSE POSITIVE. The control already has hitSlop.
-Filed: *"critique send button is a ~30px tap target with no hitSlop."*
-Found it: `src/components/log/LogComments.tsx`, `onPress={onPostComment}` / "FILE CRITIQUE".
-It carries `hitSlop={HITSLOP}` where `HITSLOP = {top:15,bottom:15,left:15,right:15}` (`:23`) —
-+30pt in both dimensions, clearing 44pt from any realistic base size.
-**→ NO ACTION.**
+### #119 · FALSE POSITIVE — already has hitSlop
+The control is `LogComments.tsx` → `onPress={onPostComment}` / "FILE CRITIQUE". It carries
+`hitSlop={HITSLOP}` where `HITSLOP = {top:15,bottom:15,left:15,right:15}` (`:23`).
 
-### #69 — real, but purely cosmetic (exactly as filed: "zero runtime")
-Live probe: `list_items?select=position` → **`42703` column does not exist.**
-`ListItemRow` (`mappers.ts:356`) declares `position: number`; the comment (`:383`) claims
-`.order('position', …)`.
-**But both real queries are correct** — `listSlice.ts:53` and `ProfileDataService.ts:454`
-both `.order('rank_position', { foreignTable: 'list_items' })`. And `mapListRow` never reads
-`i.position` (it maps `film_id`, `film_title`, `poster_path` only).
-**Fix:** rename the type field to `rank_position`; correct the comment.
-**Contained:** `ListItemRow` has no consumer outside `mappers.ts`.
+### (withdrawn) the eslint "missing dep" I raised last pass
+`compose.tsx:77` — `edit` comes from `useLocalSearchParams()` (`:26`). **Route params cannot
+change for a mounted screen**, so `[]` + the suppression correctly express "run once on
+mount". My own false positive; withdrawn.
 
 ---
 
-# 🔴 EXECUTION TRAPS — the filed instruction breaks the app (3)
+# 🔴 COMMIT 1 · #110 — the only user-facing bug. Do it first.
 
-### #120 — "delete 4 dead symbols in reels.tsx"
-**Count verified correct** by `eslint --no-inline-config` (suppressions ignored). Exactly 4:
-```
-:9    useAnimatedScrollHandler
-:175  isCommunityRefetching
-:177  isFollowingRefetching
-:179  isStacksRefetching
-```
-**But every one sits INSIDE a live declaration.** Lines 175/177/179 are
-`useCommunityFeed()` / `useFollowingFeed()` / `useStacksFeed()` — **the reels screen's entire
-data source**, consumed at `:183 :184 :187 :202`. Line 9 is the Reanimated import also
-carrying `FadeInDown`, `useDerivedValue`, `Easing`, `withTiming` — all in use.
-**Deleting the suppressed LINE empties the reels tab.**
-**→ Remove the four NAMES, then their now-redundant suppression comments.**
+**The handler is REACHABLE.** `log/[id].tsx:648` opens the sheet; `onBlock` beside it works;
+`onMute` (`:720`) only closes it. Identical pair in `dossier/[id].tsx` (author mute `:601`
+works, comment mute `:649` is the no-op). **A member taps Mute and nothing happens.**
 
-### #124 — same trap
-Genuinely unused: `TactileEngine` (`:10`) and `spacing` (`:18`).
-`spacing` is destructured beside `colors` (used ×35) and `fonts` (×16).
-**→ Remove `spacing` from the import list. Do not delete the line.**
-
-### #110 — "delete unreachable onMute (2 sites)" — **IT IS REACHABLE**
-`log/[id].tsx:648` calls `setCommentActionSheetVisible(true)` — the sheet opens. Inside it
-`onBlock` correctly calls `blockUser(...)`. `onMute` (`:720`) only closes the sheet.
-Identical pair in `dossier/[id].tsx` (author mute `:601` works; comment mute `:649` no-op).
-**A member taps Mute on a comment and nothing happens. The button lies.**
+`app/log/[id].tsx:720`
 ```ts
 onMute={() => {
   muteUser(selectedComment.user_id);
@@ -89,95 +54,153 @@ onMute={() => {
   setSelectedComment(null);
 }}
 ```
-`muteUser` already in scope (`log/[id].tsx:115`, used at `:682`). Zero new imports.
+`app/dossier/[id].tsx:649` — same shape, using that file's comment variable.
+
+**Zero-side-effect proof:** `muteUser` is already in scope (`log/[id].tsx:115`, used at
+`:682`) and comes from the same `useBlockStore` the adjacent `blockUser` uses. No new import,
+no new state, no new render path. The only change is that a button that did nothing now does
+what its label says.
 
 ---
 
-# ✅ REAL — fix as filed (9)
+# 🟠 COMMIT 2 · #126 + #88 + #115 + #116 + #117 — one telemetry pass
 
-### #126 + #88 — THE SUBSTANTIAL ITEM. One change, not two.
-Measured surface — **30 catch blocks, zero Sentry:**
+**Measured surface — 30 catch blocks, ZERO Sentry:**
 ```
 archiveSlice 3 · interactionSlice 4 · listSlice 5 · watchlistSlice 4
 socialSlice 5 (12 logger, 0 Sentry) · logOperations 9 (#88) · logSlice 0 catches
 ```
-This is where filing a log, adding to a watchlist and editing a stack happen.
+**Not intentional:** `captureError` is used in **11 files**, including `auth.ts`,
+`blockStore.ts`, `content.ts` and `LogService.ts`. The six domain slices are the outlier.
 
-**⚠️ Do NOT blanket-add.** Most of those catches handle EXPECTED offline failures; reporting
-them all floods Sentry and buries real defects.
-
-**The premium fix — gate on the discriminator already present in the file:**
+### The pattern — do NOT blanket-add
 ```ts
 catch (e) {
   if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.createList' });
-  // ...existing handling unchanged
+  // ...existing handling UNCHANGED
 }
 ```
+**Why gated:** most of these catches handle EXPECTED offline failures. Reporting them all
+floods Sentry and buries real defects — the opposite of observability.
+
 **Zero-side-effect proof:**
-- `isNetworkError` is **already imported in 6 of 7 files** (logSlice has none — and 0 catches)
+- `isNetworkError` is **already imported in 6 of 7 files** (logSlice has none, and 0 catches)
 - `captureError` opens `if (!SENTRY_DSN) return;` — **inert without a DSN, cannot throw**
-- added INSIDE existing catches — no new control flow, no new failure path
+- inserted INSIDE existing `catch` blocks — no new control flow, no new failure path
 
-### #115 — social-modal, one silent catch (confirmed exactly)
-`:182` → `reelToast.error(...)` only, **no logger**. `:249` in the SAME file → `logger.warn` +
-toast. Make `:182` match `:249`.
+### Same commit, the three named screens
+- **#115** `social-modal.tsx:182` → toast only, **no logger**. `:249` in the SAME file does it
+  right (`logger.warn` + toast). Make `:182` match `:249`.
+- **#116** `stacks/[id].tsx:387` → `if (__DEV__) console.error(...)` — **invisible in
+  production**. Use `logger.warn` + gated `captureError`.
+- **#117** `stacks/[id].tsx:511` → `reelToast.error('The collection resists destruction.')`,
+  no logging.
+- **Also in that file:** `:349` is a bare `catch {` with **no error binding** — it physically
+  cannot log. Bind it. `:216` (offline fallback) and `:461` (`isNetworkError` → enqueue) are
+  correct; add telemetry only, change no logic. `isNetworkError` already imported here.
 
-### #116 — stacks comments fetch, invisible in production
-`stacks/[id].tsx:387` → `if (__DEV__) console.error(...)`. Real members' failures vanish.
+---
 
-### #117 — stack deletion, toast only
-`stacks/[id].tsx:511` → `reelToast.error('The collection resists destruction.')`, no logging.
+# 🟡 COMMIT 3 · #120 #124 #108 — remove NAMES, never lines
 
-**Bonus in the same file:** `:349` uses bare `catch {` with **no error binding** — it
-physically cannot log. `:216` (offline fallback) and `:461` (`isNetworkError` → enqueue) are
-correct and need only telemetry, not logic changes. `isNetworkError` is already imported here.
+**Ground truth from `eslint --no-inline-config`** (suppressions ignored):
 
-### #56 — the comment contradicts the code, and that is a regression risk
-`lounge.ts:498-501`:
+### #120 · reels.tsx — exactly 4, all inside LIVE declarations
+```
+:9    useAnimatedScrollHandler   <- import also carries FadeInDown, useDerivedValue,
+                                    Easing, withTiming — ALL USED
+:175  isCommunityRefetching      <- inside useCommunityFeed()  ┐ the reels screen's
+:177  isFollowingRefetching      <- inside useFollowingFeed()  │ ENTIRE data source,
+:179  isStacksRefetching         <- inside useStacksFeed()     ┘ consumed :183 :184 :187 :202
+```
+**Deleting the suppressed LINE empties the reels tab.** Remove the four names, then their
+now-redundant `eslint-disable-next-line` comments.
+
+### #124 · compose.tsx — exactly 2
+`TactileEngine` (`:10`) — whole import, safe to delete.
+`spacing` (`:18`) — sits beside `colors` (used ×35) and `fonts` (×16). **Remove the name
+only.**
+
+### #108 · log/[id].tsx:316 — captured, never used, suppression on it
+**`:389`'s `previousData` IS used at `:390`.** Delete `:316` and its suppression only.
+
+**Verification for this commit:** after the edits, `npx eslint . --ext .ts,.tsx` must report
+**0 problems** with suppressions removed — proving the names were the only dead ones.
+
+---
+
+# 🟢 COMMIT 4 · #69 + #56 — one type field, one comment
+
+### #69 · mappers.ts
+Live probe: `list_items?select=position` → **`42703` — column does not exist.**
+Both real queries are correct (`listSlice.ts:53`, `ProfileDataService.ts:454` order by
+`rank_position`), and `mapListRow` never reads the field.
+```ts
+export interface ListItemRow {
+  id: string; film_id: number; film_title: string;
+  poster_path: string | null;
+  rank_position: number;      // was: position — that column does not exist
+}
+```
+and `:383` → `// Items arrive pre-sorted via .order('rank_position', { foreignTable: 'list_items' })`
+**Contained:** `ListItemRow` has no consumer outside `mappers.ts`.
+
+### #56 · lounge.ts:498-501 — the comment says the OPPOSITE of the code
 > `// Prepend offline messages …` `// Wait, fetchMessages maps and reverses them. Let's see.`
-> `// … So we need to append offline messages to the end.`
 
-The code does `.push()` — append. A reader skimming line one sees **"Prepend"** and could
-"fix" the code to match, breaking message order.
-**Replace with the invariant:** *fetch is `created_at` DESC then `.reverse()` → oldest-first;
-the UI renders bottom-up; queued messages are the newest, so they append.*
-
-### #102 — MEASURED, confirmed
-`membership.tsx:579` and `:590`, both `st.manageBtn`:
-`paddingVertical: 8` + `fontSize: 8` ≈ **26pt tall** vs Apple's 44pt minimum.
-Mutually exclusive `Platform.OS` branches — 2 sites, 1 visible per device. iOS-only launch
-makes `:579` the reachable one; fix both.
-
-### #108 — one dead line, one live one
-`log/[id].tsx:316` — captured, never used, suppression sitting on it. **`:389`'s `previousData`
-IS used at `:390`.** Delete `:316` and its suppression only.
-
-### #4 — commit `eas.json`
-Diff adds `submit.production.ios.ascAppId: "6773105964"`. That ID appears in every App Store
-URL — **public, not a secret**. No `appleId` / `appleTeamId` / `ascApiKey` in the file.
-Touches `eas submit` only — never builds, never runtime. Without it, submission prompts or
-fails in CI.
-**⚠️ The "gitignore artifacts" half:** the untracked files are `generate_*.cjs` (8),
-`carousel.html`, `post.html`, `frames/` — **your marketing scripts, not junk.** Only
-`mobile/real.tmp` is genuinely disposable. **Decide before ignoring: these are work.**
+The code does `.push()` — append. A reader skimming line one reads **"Prepend"** and could
+"fix" the code to match, breaking message order. Replace with the invariant:
+```ts
+// currentMessages is oldest→newest: the fetch is created_at DESC, then reversed, and the
+// UI renders bottom-up. Queued offline messages are the newest, so they append.
+```
 
 ---
 
-# 🆕 NEW — found by running eslint without suppressions
-`app/dispatch/compose.tsx:77` — `react-hooks/exhaustive-deps`: `useEffect` missing dependency
-`edit`. A stale-closure risk on the dossier editor. **Not in the register.** Flagged
-separately, not silently folded into #124.
+# 🔵 COMMIT 5 · #102 — hitSlop ×2
+
+**MEASURED:** `membership.tsx` `st.manageBtn` = `paddingVertical: 8` + `fontSize: 8`
+≈ **26pt tall** against Apple's 44pt minimum.
+`:579` (iOS) and `:590` (Android) are mutually exclusive `Platform.OS` branches — 2 code
+sites, 1 visible control per device. iOS-only launch makes `:579` the reachable one; **fix
+both** so Android is correct when it ships.
+```ts
+hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+```
+Matches the value already used across the app (`log/[id].tsx`, `LogComments.tsx:23`).
+`hitSlop` expands the touch area only — it **cannot affect layout**.
 
 ---
 
-# ORDER
-1. **#110** ×2 — the only user-facing bug in this batch. A visible control that does nothing.
-2. **#126 + #88 + #115 + #116 + #117** — one telemetry pass, gated on `isNetworkError`.
-3. **#120 #124 #108** — remove the NAMES, never the lines.
-4. **#69 #56** — one type field, two comments.
-5. **#102** — hitSlop ×2.
-6. **#4** — commit eas.json; decide on the marketing scripts.
-7. **#25 #33 #119** — **NO ACTION** (documented above).
-8. **NEW** — the compose `useEffect` dependency, separately.
+# ⚪ COMMIT 6 · #4 — eas.json + artifacts
 
-All of batch 2 is ONE build. Nothing here touches the database.
+**Commit `eas.json`.** The diff adds `submit.production.ios.ascAppId: "6773105964"`. That ID
+appears in every App Store URL — **public, not a secret**. No `appleId` / `appleTeamId` /
+`ascApiKey` in the file. It touches `eas submit` only — never builds, never runtime. Without
+it, submission prompts or fails in CI.
+
+**Artifacts — decided, so nothing of yours is lost:**
+```gitignore
+frames/          # 360 generated video frames
+*.tmp
+```
+**Do NOT ignore `generate_*.cjs`** — those are Playwright SOURCE scripts (12.9KB), your work,
+not output. `carousel.html` / `post.html` are small and yours to keep or commit; the ignore
+rules above do not touch them.
+
+---
+
+# ORDER & RATIONALE
+1. **#110** — user-facing bug, smallest change, highest value.
+2. **Telemetry** — largest and most valuable; do it while the tree is otherwise quiet.
+3. **Dead names** — mechanical, but the highest blast radius if done wrong. Own commit.
+4. **Type + comment** — zero runtime.
+5. **hitSlop** — zero runtime.
+6. **eas.json + ignores** — no code.
+
+All six commits are ONE build. **Nothing in batch 2 touches the database.**
+
+# THE ONE THING THIS PLAN CANNOT PROVE
+It has not been executed. Batch 1's record: eight audits, nineteen bugs, **twice in my own
+fixes** — and the pattern was always the same, that building finds what reading cannot.
+Every claim above is measured. None is yet proven by a green gate.
