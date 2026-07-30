@@ -1,206 +1,118 @@
-# BATCH 2 — THE LIVE SECURITY ITEMS · FLAWLESS PLAN
+# BATCH 2 — THE IN-PLACE EDITS (16) · FLAWLESS PLAN
 
-**Scope (DEEP-VERIFY-131.md:85):** #26 · #32 · DESYNC · #84 · #48 · #36 · #67 · #78
+**Identification (arithmetic, not guesswork):** Tier A = 29 clean. Batch 1 took the 13
+deletions (#5 #37 #38 #43 #53 #59 #71 #72 #76 #79 #81 #130 C2). **29 − 13 = 16.**
 
-Every item re-proven against the LIVE backend this session. Every fix below is the exact
-change, with its zero-side-effect proof and its ordering constraint.
+**Batch 2 = #4 #25 #33 #56 #69 #88 #102 #108 #110 #115 #116 #117 #119 #120 #124 #126**
 
----
-
-## STEP 1 · SQL ONLY — no app build. Do this first; data is leaking now.
-
-### 1a · #26 — close the direct read
-
-```sql
-REVOKE SELECT (private_notes) ON public.logs FROM anon;
-```
-
-**Zero-side-effect proof (covers BOTH clients, not one):**
-- every anon-reachable read in mobile AND web uses an explicit column list omitting `private_notes`
-- `LogService.ts:153` DOES select it — but is guarded by `if (currentUserId && logData.user_id === currentUserId)`: owner-only, authenticated
-- `src/api/supabase.ts:59 getUserLogs` selects `*` — **zero callers, dead code**
-- ⚠️ `ProjectorRoom.tsx:28` (web) selects `*` and IS reachable. It is already leaking today. It breaks only under a Stage-2 revoke (from `authenticated`), which is NOT in this plan.
-
-### 1b · #32 — close the second door
-
-`get_featured_critique()` is `SECURITY DEFINER RETURNS SETOF public.logs` doing `SELECT l.*`.
-**It ignores grants, so 1a does NOT close it.**
-
-⚠️ **DO NOT change the return type to a column list.** The client chains
-`.select(... profiles!logs_user_id_fkey(username, role, avatar_url))` — PostgREST resolves that
-embed through the TABLE's FK. A `RETURNS TABLE(...)` breaks the embed and kills the component.
-The return type must stay `SETOF public.logs`.
-
-```sql
-CREATE OR REPLACE FUNCTION public.get_featured_critique()
-RETURNS SETOF public.logs
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $func$
-DECLARE r public.logs;
-BEGIN
-  FOR r IN
-    SELECT l.*
-    FROM public.logs l
-    JOIN public.profiles p ON p.id = l.user_id
-    WHERE l.review IS NOT NULL
-      AND l.review <> ''
-      AND LENGTH(l.review) > 100
-      AND l.rating >= 4
-      AND COALESCE(p.is_social_private, false) = false
-    ORDER BY l.created_at DESC
-    LIMIT 1
-  LOOP
-    r.private_notes := NULL;   -- never leaves the server, whatever the caller selects
-    RETURN NEXT r;
-  END LOOP;
-END;
-$func$;
-```
-
-**Proof:** `private_notes` is `text` (nullable) so the assignment is legal. Selection logic is
-byte-identical to `20260709_05`. No positional column list, so a future column added to `logs`
-cannot silently break it. The mobile client never selects `private_notes` anyway — this closes
-the hole for any OTHER caller, including raw REST.
-
-### 1c · DESYNC — **the code is already correct; the DATA is stale**
-
-`SettingsScreen.tsx:132-135` writes BOTH keys atomically from one value:
-`is_social_private: data.socialVisibility === 'private'` **and** `preferences.social_visibility`.
-This is NOT an ongoing write-path bug — the offending row predates that code.
-
-```sql
-UPDATE public.profiles
-SET is_social_private = true
-WHERE COALESCE(preferences->>'social_visibility','public') = 'private'
-  AND COALESCE(is_social_private,false) = false;
-```
-
-**Proof:** narrowed to rows that actively disagree. Only ever sets private = TRUE (more
-restrictive, never less). `is_social_private=eq.true` currently returns `[]`, so this can only
-ADD privacy, never remove it.
+Every item below re-verified against the CURRENT code this session.
 
 ---
 
-## STEP 2 · #48 — tier. **ORDERING IS THE WHOLE RISK.**
+## 🔴 TWO FILED FIXES ARE WRONG. Do not execute them as written.
 
-29 of 32 rows have `tier: NULL`. Anything that reads `tier` in preference to `role` BEFORE the
-back-fill blanks badges for 29 members.
+### #110 — "delete unreachable onMute (2 sites)" · **THE HANDLER IS REACHABLE**
+Filed as dead code. It is not.
 
-**2a — back-fill FIRST (SQL):**
+- `app/log/[id].tsx:648` calls `setCommentActionSheetVisible(true)` — the sheet **opens**.
+- Inside it, `onBlock` correctly calls `blockUser(selectedComment.user_id)`.
+- `onMute` (`:720`) only closes the sheet. **It never mutes anyone.**
+- Identical pair in `app/dossier/[id].tsx`: author mute at `:601` works; comment mute at
+  `:649` is the same no-op.
 
-```sql
-UPDATE public.profiles SET tier = role
-WHERE tier IS NULL AND role IN ('cinephile','archivist','auteur','projectionist');
-```
+So a member opens a comment's action sheet, taps **Mute**, the sheet closes, and nothing
+happens. **The button lies.** Deleting the handler removes a control members can see and
+expect to work.
 
-**2b — THEN the client learns the legacy tier** (`src/utils/tier.ts`):
-
+**Correct fix — make it mute, mirroring the `onBlock` directly above it:**
 ```ts
-const t = tierStr.toLowerCase();
-if (t === 'archivist' || t === 'auteur' || t === 'founding') return t as ReelHouseTier;
-if (t === 'projectionist') return 'archivist';  // legacy tier — the DB already grants it
-                                                // lounge access at 4 RLS sites
-return 'cinephile';
+onMute={() => {
+  muteUser(selectedComment.user_id);
+  setCommentActionSheetVisible(false);
+  setSelectedComment(null);
+}}
 ```
+`muteUser` is already in scope (`log/[id].tsx:115`, already used at `:682`). Zero new
+imports, zero new state. Two sites.
 
-**Proof it is not a guess:** `projectionist` is a first-class tier created by
-`20260325_projectionist_tier.sql`; `20260401_the_lounge.sql` grants
-`role IN ('archivist','auteur','projectionist')`. Mapping it to `archivist` matches what the
-DATABASE already grants — the client is being taught what the server already believes.
+### #33 — "rename the colliding migration file" · **RENAMING AN APPLIED MIGRATION IS DANGEROUS**
+Supabase tracks applied migrations **by filename**. Renaming one that is already applied
+makes the tooling treat it as NEW and unapplied — a re-run of DDL against production.
 
-⚠️ Do NOT add telemetry to the fall-through branch: `normalizeTier` runs at ~60 call sites per
-render and 30 of 32 members are `cinephile`, so it would emit per-member-per-row-per-render.
+Also, the finding understates it: there are **three** colliding dates, not one pair —
+`20260526` (2 files), `20260620` (3), `20260621` (2). Seven files. The `20260626_*` and
+`20260701_*` families are already correctly sequenced (`_01_`…`_11_`) and must not be touched.
+
+**Verified harmless today:** within each colliding date the files are mutually independent
+(founding_members / profile_counts_rpc; claim_founding_seat / drop_legacy_resolve / feed_block;
+atomic_delete_list_cascade / ban_enforcement_rls), and lexicographic order is deterministic.
+So ordering is implicit but not actually ambiguous in effect.
+
+**Recommendation: DO NOT RENAME.** House rule is "SQL applied MANUALLY via the SQL editor,
+never `db push`" — the risk is asymmetric and the benefit is cosmetic. Document the ordering
+instead, and adopt the `_NN_` convention for all NEW migrations.
 
 ---
 
-## STEP 3 · #36 + #67 — ONE identity decision, three sites
+## ✅ CONFIRMED, AND THE FILED FIX IS RIGHT
 
-The same bug. The app holds three views of a legal username:
-
-```
-DB                accepts  .  @      (5 live rows)
-validateUsername  STRIPS   .  @      -> silent rename on ANY profile save
-socialSlice:61    REJECTS  .  @      -> those 5 cannot be followed, permanently
-```
-
-**3a — stop the silent rename** (`useEditProfile.ts`, `buildProfileUpdates:80` always sends
-`username`). Send it only when it actually changed:
-
-```ts
-const updates: Record<string, any> = { display_name, bio, social_links };
-if (input.sanitizedUsername !== input.currentUsername) {
-  updates.username = input.sanitizedUsername;
-}
-```
-
-**Proof:** the availability check at `:155` already gates on `sanitizedUsername !== user.username`,
-so the "changed" signal exists and is trusted. A member editing only their bio then sends no
-`username` at all — the rename becomes impossible rather than merely unlikely.
-
-**3b — let the 5 be followed** (`socialSlice.ts:61`). Widen the guard to match what the DB stores:
-
-```ts
-if (!/^[a-zA-Z0-9._@-]{1,64}$/.test(username)) return null;
-```
-
-**Proof it is strictly permissive:** it can only ADMIT usernames currently rejected; every
-username passing today still passes. It is defence-in-depth against malformed input, not a
-security boundary — the value goes to `.eq()`, which is parameterised, never interpolated.
-
-**3c — the collision must be resolved BY HAND before any back-fill.**
-`saleel.house` sanitises to `saleelhouse`, **which already exists as a different member.** Any
-bulk normalisation hits a unique constraint. Decide per-account; do not automate.
+| # | verified state | fix |
+|---|---|---|
+| **#4** | `eas.json` still shows `M` — uncommitted | commit it; `ascAppId` is public, not a secret |
+| **#25** | `scripts/check-backend-live.mjs` exists; **zero callers** in package.json or any workflow | wire it into CI, or delete it — a checker nothing runs is worse than none |
+| **#56** | `lounge.ts:500`: *"// Wait, fetchMessages maps and reverses them. Let's see."* | replace with a statement of the invariant |
+| **#88** | `logOperations.ts` — **0** `captureError` calls | add telemetry to the log write |
+| **#108** | `log/[id].tsx:316` — captured, never used, with an eslint suppression sitting on it | delete the line + its suppression (`:389` IS used at `:390` — leave it) |
+| **#120** | `reels.tsx` — 4 unused symbols behind suppressions (`:8 :174 :176 :178`) | delete symbol + suppression together |
+| **#124** | `compose.tsx` — 2 unused imports behind suppressions (`:9 :17`) | same |
+| **#102** | `membership.tsx` — 4 `hitSlop` across 15 pressables | add `hitSlop` to the 2 sub-44pt controls |
+| **#119** | critique send button | add `hitSlop` |
 
 ---
 
-## STEP 4 · #84 — the dead search tab
+## ⚠️ BROADER THAN FILED
 
-`useUniversalSearch.ts:62` selects `username, role` FROM `logs`. Live: `42703`, both absent.
-Use the embed the codebase already uses at `LogService.ts:108`:
+### #115 / #116 / #117 — silent failures
+Filed as three specific spots. Measured:
+- `app/(modals)/social-modal.tsx` — 2 `catch` blocks, **1** logger call
+- `app/stacks/[id].tsx` — **5** `catch` blocks, **ZERO** logger calls
 
-```ts
-.select('id, user_id, film_title, review, rating, poster_path, status, abandoned_reason, created_at, profiles!logs_user_id_fkey(username, role)')
+Every failure on the stacks screen is silent. Fix the whole file, not the two named lines.
+
+### #126 + #88 — the substantial item in this batch
+**All six domain slices have ZERO error telemetry:**
 ```
+archiveSlice 0 · interactionSlice 0 · listSlice 0
+logSlice 0 · socialSlice 0 · watchlistSlice 0
+```
+This is where filing a log, adding to a watchlist, and editing a stack happen. If any of it
+breaks for a real member, **nothing reports it**. #88 is a subset of #126 — do them as one
+change, not two.
 
-**Proof:** identical shape to a query already working in production. Line 54 is a DIFFERENT query
-against `profiles`, where those columns DO exist — leave it alone.
+**Zero-side-effect proof:** `captureError` opens with `if (!SENTRY_DSN) return`, so it is
+inert without a DSN and cannot throw into a catch block. It is added INSIDE existing
+`catch` blocks — no new control flow, no new failure path.
 
 ---
 
-## STEP 5 · #78 — cancel-request leaves the button stuck
-
-`unfollowUser` optimistically calls `removeFollowing` but never `removeRequested`, and
-`useProfileController.ts:249` routes cancel-request through it. The **DB delete is already
-correct** — `.in('type', ['follow','follow_request'])` removes both. Only the local store goes stale.
-
-```ts
-useSocialStore.getState().removeFollowing(targetUsername);
-useSocialStore.getState().removeRequested(targetUsername);   // ADD
-```
-
-**Proof:** exactly what `followUser`'s rollback does at `:178-179`. `removeRequested` on a
-username that was never requested is a no-op.
+## #69 — needs one more read before I state a fix
+`mappers.ts:10` claims *"Every function is TYPED — no `any`"*. The finding says the type and
+the comment disagree. I have not yet located the contradicting `any`, so I am not writing a
+fix I cannot justify. **Not included in the execute list until read.**
 
 ---
 
-## ORDER (safe to stop after any step)
+## ORDER
+1. **#4** — one commit, no code.
+2. **#110** ×2 — the only user-facing bug in this batch. A visible control that does nothing.
+3. **#126 + #88 + #115/#116/#117** — one telemetry pass across the store layer and the two
+   screens. The largest and most valuable piece.
+4. **#108 #120 #124** — dead symbols, each with its eslint suppression.
+5. **#102 #119** — hitSlop.
+6. **#56** — the comment.
+7. **#25** — wire the checker into CI or delete it (your call: it is a product decision
+   about whether the contract is enforced).
+8. **#33** — **recommend NO ACTION**; document instead.
+9. **#69** — after I read it.
 
-1. **1a + 1b + 1c** — SQL only, no build. Leak closed.
-2. **2a** SQL back-fill → **2b** code.
-3. **3a + 3b** code (3c by hand first if you want the back-fill).
-4. **4** code.
-5. **5** code.
-
-Steps 2b, 3, 4, 5 ship in ONE build. Steps 1 and 2a are SQL you paste.
-
-## GAPS I AM NOT CLOSING (stated, not hidden)
-
-- **Stage 2 of #26** (revoke from `authenticated`) is NOT in this plan. It needs
-  `ProjectorRoom.tsx`'s `select('*')` fixed first and reroutes the owner read through a
-  SECURITY DEFINER accessor — touching `mutationExecutor`'s offline merge, the most
-  failure-sensitive code in the app. It deserves its own pass.
-- **ProjectorRoom (web)** is leaking today and is NOT in this repo.
-- The username **policy** decision (what a handle may legally contain) is yours; 3a and 3b stop
-  the damage either way.
+All of batch 2 is one build. Nothing here is SQL, and nothing here touches the database.
