@@ -1,8 +1,13 @@
 /**
  * dossier.schema.ts — Zod Boundary Schemas for Dispatch Dossiers
  * ───────────────────────────────────────────────────────────────
- * DossierService was the only service layer without
- * Zod validation on read paths. These schemas close that gap.
+ * Read-path validation for dossier rows. Consumed by src/stores/content.ts
+ * (DossierRowSchema, ValidatedDossierRow), which backs the dispatch tab, the
+ * article reader and compose.
+ *
+ * NOTE: these schemas outlived DossierService, which was deleted for having no
+ * consumer. The schemas are NOT dead — an audit briefly listed them as such and
+ * the compiler proved otherwise.
  */
 import { z } from 'zod';
 

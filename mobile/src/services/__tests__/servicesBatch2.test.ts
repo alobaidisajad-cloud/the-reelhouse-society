@@ -1,6 +1,7 @@
 /**
  * Service Layer Tests — Batch 2: Data Services
- * StackService, FilmService, LoungeService, DossierService
+ * StackService, FilmService, LoungeService.
+ * (DossierService was deleted — it had no consumer outside its own tests.)
  */
 import { supabase } from '@/src/lib/supabase';
 
