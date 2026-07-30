@@ -103,7 +103,6 @@ export interface LoungeState {
   fetchMessages: (loungeId: string) => Promise<void>;
   loadMoreMessages: (loungeId: string) => Promise<void>;
   sendMessage: (loungeId: string, content: string, type?: string, meta?: LoungeMessageMeta) => Promise<boolean>;
-  deleteMessage: (messageId: string) => Promise<void>;
   createLounge: (name: string, description: string, isPrivate: boolean) => Promise<string | null>;
   /** Host-only: set (or clear with null) the salon cover — a TMDB backdrop path. */
   setLoungeCover: (loungeId: string, cover: string | null) => Promise<boolean>;
@@ -704,42 +703,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       });
       reelToast.error('Failed to send message.');
       return false;
-    }
-  },
-
-  deleteMessage: async (messageId) => {
-    const user = useAuthStore.getState().user;
-    if (!user) return;
-    
-    const targetMessage = get().currentMessages.find(m => m.id === messageId);
-    set(s => ({ currentMessages: s.currentMessages.filter(m => m.id !== messageId) }));
-    
-    try {
-      const { error } = await supabase.from('lounge_messages').delete()
-        .eq('id', messageId)
-        .eq('user_id', user.id);
-        
-      if (error) throw error;
-    } catch (e) {
-      if (isNetworkError(e)) {
-        enqueueMutation({
-          type: 'delete_lounge_message',
-          payload: { message_id: messageId, user_id: user.id },
-        });
-        flushOfflineQueue();
-        return;
-      }
-      if (targetMessage) {
-        set(s => ({ 
-          currentMessages: [...s.currentMessages, targetMessage].sort(
-            (a, b) => {
-              const diff = (new Date(a.created_at).getTime() || 0) - (new Date(b.created_at).getTime() || 0);
-              return diff !== 0 ? diff : a.id.localeCompare(b.id);
-            }
-          )
-        }));
-      }
-      reelToast.error('Failed to delete message.');
     }
   },
 

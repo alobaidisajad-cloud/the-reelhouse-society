@@ -71,7 +71,6 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
 
   // ── Lounge ──
   send_lounge_message: z.object({ lounge_id: z.string(), user_id: z.string(), content: z.string() }).passthrough(),
-  delete_lounge_message: z.object({ message_id: z.string(), user_id: z.string() }).passthrough(),
 
   // ── Entitlement ──
   // No .passthrough() — sync_entitlement has no extra fields by design.

@@ -549,15 +549,6 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         return {};
     },
 
-    delete_lounge_message: async (p: any) => {
-        // Flush handler for lounge message deletions queued while offline.
-        const { message_id, user_id } = p;
-        throwIfError(await supabase.from('lounge_messages').delete()
-            .eq('id', message_id as string)
-            .eq('user_id', user_id as string));
-        return {};
-    },
-
     // ── Entitlements ──
     sync_entitlement: async (p: any) => {
         // Entitlement tier sync queued when Edge Function was unreachable.

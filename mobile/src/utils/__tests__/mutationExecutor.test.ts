@@ -608,16 +608,6 @@ describe('Lounge', () => {
         });
     });
 
-    describe('delete_lounge_message', () => {
-        it('deletes by id + user_id', async () => {
-            makeChainResolveTo(mockChain, { error: null });
-            await runMutation('delete_lounge_message', { message_id: 'msg-1', user_id: 'u1' });
-            expect(supabase.from).toHaveBeenCalledWith('lounge_messages');
-            expect(mockChain.delete).toHaveBeenCalled();
-            expect(mockChain.eq).toHaveBeenCalledWith('id', 'msg-1');
-            expect(mockChain.eq).toHaveBeenCalledWith('user_id', 'u1');
-        });
-    });
 });
 
 // ════════════════════════════════════════════════════════════════════

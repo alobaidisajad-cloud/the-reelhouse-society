@@ -84,28 +84,4 @@ describe('LoungeStore', () => {
     });
   });
 
-  describe('deleteMessage', () => {
-    it('removes message optimistically', async () => {
-      useLoungeStore.setState({
-        currentMessages: [
-          { id: 'msg-1', lounge_id: 'l1', user_id: 'u1', username: 'test', content: 'Hi', type: 'text', created_at: '2024-01-01' },
-          { id: 'msg-2', lounge_id: 'l1', user_id: 'u1', username: 'test', content: 'Bye', type: 'text', created_at: '2024-01-02' },
-        ],
-      });
-
-      mockFrom.mockReturnValue({
-        delete: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ error: null }),
-          }),
-        }),
-      });
-
-      await useLoungeStore.getState().deleteMessage('msg-1');
-
-      const state = useLoungeStore.getState();
-      expect(state.currentMessages.length).toBe(1);
-      expect(state.currentMessages[0].id).toBe('msg-2');
-    });
-  });
 });
