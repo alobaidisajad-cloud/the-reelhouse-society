@@ -474,6 +474,19 @@ async function resolveFilm(title: string, year: string): Promise<TMDBMatch | nul
       return null;
     }
 
+    // CONFIDENCE GATE. tmdb.search already reports HOW it found a result, and
+    // this resolver used to ignore it and take movies[0] regardless. 'semantic'
+    // is keyword discovery — it will happily return *a* film for a title that
+    // has no genuine match, and the member's review is then filed against a
+    // film they have never seen. 'person' matched an actor or director, not a
+    // title. Neither is evidence of the right film, so neither is accepted.
+    // A rejected row is reported as unmatched; a wrong match is invisible forever.
+    const st = searchResult.searchType;
+    if (st === 'semantic' || st === 'person' || st === 'failed') {
+      resolutionCache.set(key, null);
+      return null;
+    }
+
     // Find best movie match
     const yearNum = year ? parseInt(year) : null;
     const movies = searchResult.results.filter(r =>
@@ -485,7 +498,10 @@ async function resolveFilm(title: string, year: string): Promise<TMDBMatch | nul
       ? movies.find(m => m.release_date?.startsWith(String(yearNum)))
       : null;
 
-    if (!best) best = movies[0] ?? null;
+    // No year agreement. The title alone has to carry it, so accept the top
+    // result only for an exact title match — a typo correction with a year that
+    // also disagrees has nothing corroborating it and is declined.
+    if (!best && (!yearNum || st === 'exact' || st === undefined)) best = movies[0] ?? null;
 
     if (!best) {
       resolutionCache.set(key, null);
