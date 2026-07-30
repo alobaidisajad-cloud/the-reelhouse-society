@@ -16,33 +16,66 @@ import { logger } from '@/src/utils/logger';
 
 const MMKV_KEY = 'review_last_prompt_at';
 const MMKV_COUNT_KEY = 'review_prompt_count';
-const MIN_LOGS_FOR_REVIEW = 5;
-const MIN_DAYS_BETWEEN_PROMPTS = 90;
+export const MIN_LOGS_FOR_REVIEW = 5;
+export const MIN_DAYS_BETWEEN_PROMPTS = 90;
+export const MAX_LIFETIME_PROMPTS = 6;
+
+/**
+ * The whole decision, as a pure function — no React, no MMKV, no StoreReview.
+ * Extracted so the gates are directly testable; renderHook is async in this
+ * environment (see useAuthThrottle.pbt.test.ts) and the same extraction is
+ * how useInitiation's shouldInitiate is tested.
+ *
+ * Platform support is deliberately NOT part of this — it needs an await, and
+ * it is a capability check rather than a policy decision.
+ */
+export function shouldRequestReview(input: {
+  logCount: number;
+  /** epoch ms of the last prompt; 0 when never prompted */
+  lastPrompt: number;
+  totalPrompts: number;
+  /** epoch ms 'now', injected so the cooldown is deterministic in tests */
+  now: number;
+}): boolean {
+  const { logCount, lastPrompt, totalPrompts, now } = input;
+
+  // Gate 1: Minimum engagement
+  if (!Number.isFinite(logCount) || logCount < MIN_LOGS_FOR_REVIEW) return false;
+
+  // Gate 2: Lifetime cap — respect the member over the funnel
+  if (totalPrompts >= MAX_LIFETIME_PROMPTS) return false;
+
+  // Gate 3: Cooldown. lastPrompt === 0 means never prompted, which must pass
+  // rather than be treated as "prompted at the epoch".
+  if (lastPrompt > 0) {
+    const daysSince = (now - lastPrompt) / (1000 * 60 * 60 * 24);
+    if (daysSince < MIN_DAYS_BETWEEN_PROMPTS) return false;
+  }
+
+  return true;
+}
 
 /**
  * Attempt to show the native in-app review dialog.
  * Call this after high-delight moments (logging a film, completing a stack).
  * The function is a no-op if conditions aren't met.
- * 
+ *
+ * NOTE: Apple's review sheet is a no-op in TestFlight builds — it presents
+ * nothing there. That is expected, not a failure.
+ *
  * @param logCount - current user's total film log count
  */
 export async function maybeRequestReview(logCount: number): Promise<void> {
   try {
-    // Gate 1: Minimum engagement
-    if (logCount < MIN_LOGS_FOR_REVIEW) return;
+    const lastPrompt = storage.getNumber(MMKV_KEY) ?? 0;
+    const totalPrompts = storage.getNumber(MMKV_COUNT_KEY) ?? 0;
 
-    // Gate 2: Platform support
+    // Policy gates (pure, tested in requestReview.test.ts)
+    if (!shouldRequestReview({ logCount, lastPrompt, totalPrompts, now: Date.now() })) return;
+
+    // Capability gate — needs an await, so it stays here
     const isAvailable = await StoreReview.isAvailableAsync();
     if (!isAvailable) return;
-
-    // Gate 3: Cooldown (90 days between prompts)
-    const lastPrompt = storage.getNumber(MMKV_KEY) ?? 0;
-    const daysSinceLastPrompt = (Date.now() - lastPrompt) / (1000 * 60 * 60 * 24);
-    if (daysSinceLastPrompt < MIN_DAYS_BETWEEN_PROMPTS) return;
-
-    // Gate 4: Total lifetime cap (max 6 prompts ever to respect the user)
-    const totalPrompts = storage.getNumber(MMKV_COUNT_KEY) ?? 0;
-    if (totalPrompts >= 6) return;
 
     // All gates passed — request review
     await StoreReview.requestReview();
