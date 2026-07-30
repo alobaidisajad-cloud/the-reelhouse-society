@@ -15,11 +15,23 @@ in plaintext by the web app. **No member's note content was printed or stored.**
 |---|---|
 | `GET /logs?select=id` as anon | **200** — anon can read logs |
 | `GET /logs?select=private_notes` as anon | **200, field present** |
-| count of `private_notes IS NOT NULL` visible to anon | **34 rows** |
+| logs visible to anon, total | **255** |
+| `private_notes IS NOT NULL` | **34** |
+| **`private_notes` non-null AND non-empty** | **1** |
 | `POST /rpc/get_featured_critique` as anon | **200, 27 columns** |
 | `POST /rpc/get_featured_critique?select=private_notes` | **200** |
 
-**#26 — 34 logs carrying real private notes are readable by anyone on the internet.**
+**#26 — a real member's real private note is readable by anyone on the internet.**
+
+⚠️ **Correction to my own earlier report.** Passes 1 and 2 of this plan said "34 logs
+carrying real private notes". That was wrong and overstated the exposure by 34×: 33 of
+those 34 rows hold an **empty string**, not a note. Measured in pass 3 by splitting
+`not.is.null` from `neq.`. **Exactly one row carries actual content** — and it is the
+note the original finding quoted, about a member's darkest day.
+
+The severity is unchanged in kind. A written privacy promise, on a paid feature, is
+broken, and one real person's private words are on the open internet. The *scale* is
+one, and saying otherwise was inaccurate.
 
 **#32 — the RPC returns all 27 columns to anonymous callers**, and leaks more than the
 finding recorded: **`viewing_history`, `watched_with` and `autopsy`** as well.
@@ -51,6 +63,22 @@ this plan proposes.*
 Writes are properly gated (proven): INSERT by anon returns `42501 — new row violates
 row-level security policy`; UPDATE/DELETE policies are `USING (auth.uid() = user_id)`.
 **Only the SELECT policy leaks.**
+
+**Edge functions swept — clean.** Eleven functions across both trees. Only
+`supabase/functions/send-email/index.ts` touches `logs`, and it selects **`rating` only**,
+scoped `.eq('user_id', userId)`. It runs with the service-role key (bypasses RLS), so this
+mattered — it is not a leak.
+
+**The feed-cache migration resolved.** `supabase/migrations/20260415_hyper_viral_feed_cache.sql`
+was the remaining file mentioning `private_notes`. It creates `global_feed_materialized` —
+the same object already proven safe above. No third path.
+
+**The premium gate has no server-side backing.** `private_notes` appears exactly twice in
+the entire production schema: the column definition and the materialized-view filter. There
+is **no trigger, no constraint and no policy referencing tier**, so `useLogFlow.ts:133`
+(`isPremium ? notes : null`) is the only thing stopping a non-paying member from writing
+notes. Not exploitable for *reading* others' data, so not a batch-1 blocker — but it is the
+second reason the dedicated table in §4 is the right architecture.
 
 ---
 
@@ -97,6 +125,25 @@ definition**, including all three CHECK constraints, then torn down.
 | Adding a column to `logs` afterwards | **ERROR: Number of returned columns (27) does not match expected column count (28)** |
 
 The `watched_date` result was an assumption in the first pass. It is now a fact.
+
+### The embed provably cannot break
+
+PostgREST resolves a function embed from exactly two things: the function's **return type**
+and the **foreign key** on that type's table. Both were compared across the replace on a
+replica carrying the real `logs_user_id_fkey`:
+
+| | before | after |
+|---|---|---|
+| `prorettype` | `logs` | `logs` |
+| `proretset` | `true` | `true` |
+| `proargtypes` | `[]` | `[]` |
+| `prosecdef` | `true` | `true` |
+| `logs_user_id_fkey -> profiles` | intact | **untouched — the fix does not alter the table** |
+
+Byte-identical inputs mean PostgREST cannot resolve the relationship differently. This is
+the strongest proof obtainable without running PostgREST itself, and it is what makes this
+fix categorically safer than the filed `RETURNS TABLE` version, which changes `prorettype`
+to `record` — precisely the value that produced `PGRST200` in the live test above.
 
 ### The client cannot notice — proven
 
