@@ -574,3 +574,87 @@ describe('aggregateDiaryEntries — sourceWatches is the truth for reporting', (
     expect(agg.sourceWatches[agg.sourceWatches.length - 1].watchedDate).toBe(agg.latest.watchedDate);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  INVARIANTS — properties that must hold for ANY input, not just
+//  the cases someone thought to write down.
+// ═══════════════════════════════════════════════════════════════
+
+describe('import invariants', () => {
+  it('every scale/rating pair yields a value the DB will accept', () => {
+    // logs.rating is CHECK [0,5] and the app renders in half-reels. A value
+    // outside that, or off the half-step grid, fails its INSERT and takes the
+    // whole batch down until the row-by-row fallback isolates it.
+    for (const scale of ['half-five', 'ten', 'hundred'] as const) {
+      for (const raw of [0.5, 1, 2.5, 5, 7.5, 10, 55, 100, 200, -3, NaN]) {
+        const v = normalizeRatingWithScale(raw, scale);
+        expect(Number.isFinite(v)).toBe(true);
+        expect(v).toBeGreaterThanOrEqual(0);
+        expect(v).toBeLessThanOrEqual(5);
+        expect(v % 0.5).toBe(0);
+      }
+    }
+  });
+
+  it('any file, read with its own detected format, yields storable dates', () => {
+    const isReal = (s: string) => {
+      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return false;
+      const p = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+      return p.getUTCFullYear() === +m[1] && p.getUTCMonth() === +m[2] - 1 && p.getUTCDate() === +m[3];
+    };
+    const files = [
+      ['05/03/2024', '25/03/2024'],   // European
+      ['03/25/2024', '01/02/2024'],   // US
+      ['31/02/2024', '25/12/2024'],   // contains an impossible date
+      ['13/13/2024', '01/01/2024'],   // impossible either way
+    ];
+    for (const f of files) {
+      const fmt = detectDateFormat(f);
+      for (const d of f) expect(isReal(normalizeDate(d, fmt))).toBe(true);
+    }
+  });
+
+  it('a spreadsheet-formula payload is carried as data, never interpreted', () => {
+    // Imported text is written to the DB and later re-exported to CSV. The
+    // export escaper is what defuses this; the importer must not mangle it.
+    const r = parseCSV('Name,Year\n"=cmd|\' /c calc\'!A1",2000');
+    expect(r[0].Name).toContain('=cmd');
+  });
+
+  it('unicode, emoji and RTL titles survive parsing intact', () => {
+    expect(parseCSV('Name,Year\n"Amélie 🎬 مرحبا",2001')[0].Name).toBe('Amélie 🎬 مرحبا');
+  });
+
+  it('a large archive parses without pathological slowdown', () => {
+    const rows = Array.from({ length: 20_000 }, (_, i) => `Film ${i},2000,4`).join('\n');
+    const started = Date.now();
+    expect(parseCSV(`Name,Year,Rating\n${rows}`)).toHaveLength(20_000);
+    expect(Date.now() - started).toBeLessThan(5000);
+  });
+
+  it('hundreds of rewatches collapse to one row with a complete history', () => {
+    const w = (d: string) => ({ title: 'A', year: '2000', rating: 0, review: '', watchedDate: d, isRewatch: false, uri: '', tags: '' });
+    const many = Array.from({ length: 500 }, (_, i) => w(`2020-${String((i % 12) + 1).padStart(2, '0')}-01`));
+    const [agg] = aggregateDiaryEntries(many);
+    expect(agg.viewCount).toBe(500);
+    expect(agg.earlier).toHaveLength(499);
+    expect(agg.sourceWatches).toHaveLength(500);
+  });
+
+  it('viewing_history is newest-first, matching the native rewatch shape', () => {
+    const w = (d: string, review: string) => ({ title: 'A', year: '2000', rating: 0, review, watchedDate: d, isRewatch: false, uri: '', tags: '' });
+    const [agg] = aggregateDiaryEntries([w('2020-01-01', 'oldest'), w('2021-01-01', 'middle'), w('2022-01-01', 'newest')]);
+    const history = buildViewingHistory(agg.earlier, 'half-five');
+    expect(history[0].review).toBe('middle');
+    expect(history[1].review).toBe('oldest');
+  });
+
+  it('a corrupt rating becomes UNRATED rather than a top score', () => {
+    // Failing open here would silently award five reels to junk data.
+    expect(clampRating(Infinity)).toBe(0);
+    expect(clampRating(NaN)).toBe(0);
+    expect(clampRating(null)).toBe(0);
+    expect(clampRating(undefined)).toBe(0);
+  });
+});
