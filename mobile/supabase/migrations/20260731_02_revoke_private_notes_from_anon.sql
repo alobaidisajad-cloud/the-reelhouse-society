@@ -1,6 +1,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- BATCH 1B (interim) · finding #26 — take private_notes away from the ANON key
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- ✅ APPLIED TO PRODUCTION 2026-07-30T23:13Z — verified live (see Verify block).
 -- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
 -- ⚠️ THE WEB APP MUST BE DEPLOYED FIRST (commit 4d274c2). See "Prerequisite".
 --
