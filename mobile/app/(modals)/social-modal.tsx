@@ -11,8 +11,10 @@ import { LoungeService } from '@/src/services/LoungeService';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { useAuthStore } from '@/src/stores/auth';
 import { useLoungeStore } from '@/src/stores/lounge';
+import { captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
 import { logger } from '@/src/utils/logger';
+import { isNetworkError } from '@/src/utils/networkError';
 import reelToast from '@/src/utils/reelToast';
 import { BlurView } from 'expo-blur';
 import { Check, Film as FilmIcon, Send, User, UserCircle2, Users, X } from 'lucide-react-native';
@@ -180,9 +182,13 @@ export default function SocialModal() {
             }
          
         } catch (err) {
-            // Finding 115: this was the one catch in this file that toasted without
-            // logging, while the share handler below does both.
-            logger.warn('[SocialModal] Fetch failed:', err);
+            // Finding 115: this catch toasted the member and recorded nothing.
+            // logger.debug is deliberate over logger.warn — warn forwards to
+            // Sentry in production UNGATED, so an offline member would raise a
+            // warning for an expected failure. Console in development, and a
+            // single error-severity event only for a genuine defect.
+            logger.debug('[SocialModal] Fetch failed:', err);
+            if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.fetchData', mode });
             reelToast.error('The telegraph to the archive is disrupted.');
         } finally {
             if (isMounted.current) setLoading(false);
@@ -250,7 +256,9 @@ export default function SocialModal() {
                 }
             }
         } catch (err) {
-            logger.warn('[SocialModal] Share failed:', err);
+            // Same treatment as fetchData above, so the file is consistent.
+            logger.debug('[SocialModal] Share failed:', err);
+            if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.share', mode, loungeId });
             reelToast.error('Failed to share. Try again.');
         } finally {
             if (isMounted.current) setSharingTo(null);
