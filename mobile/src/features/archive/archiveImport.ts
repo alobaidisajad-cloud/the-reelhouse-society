@@ -941,7 +941,10 @@ async function importLogs(
     const key = cacheKey(agg.title, agg.year);
     const film = resolvedFilms.get(key);
     if (!film) {
-      skipped += agg.viewCount;
+      // One unidentified FILM, not one per viewing. The UI labels this
+      // "films could not be matched", so a film watched six times used to
+      // report six unmatched films and inflate the number the member sees.
+      skipped += 1;
       continue;
     }
 
