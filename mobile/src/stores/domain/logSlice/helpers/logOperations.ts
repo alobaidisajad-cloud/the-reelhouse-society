@@ -5,6 +5,7 @@ import { supabase } from '../../../../lib/supabase';
 import { colors } from '../../../../theme/theme';
 import type { DomainLog } from '../../../../types';
 import { LOG_SELECT_COLUMNS, mapLogRow, mapLogToDbPayload } from '../../../../utils/mappers';
+import { captureError } from '../../../../lib/sentry';
 import { isNetworkError } from '../../../../utils/networkError';
 import { enqueueMutation, getOfflineQueue } from '../../../../utils/offlineQueue';
 import reelToast from '../../../../utils/reelToast';
@@ -349,6 +350,8 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                     await get().addToPhysicalArchive({ id: log.filmId, title: log.title ?? '', poster_path: log.poster, release_date: log.year?.toString() }, [fmt]);
                 } catch (e) {
                     if (__DEV__) console.error('Failed to auto-sync physical archive', e);
+
+                    if (!isNetworkError(e)) captureError(e, { scope: 'addLogOp.autoSyncPhysicalArchive' });
                 }
             }
         } finally {
@@ -665,10 +668,13 @@ export const updateLogOp = async (set: SetState, get: GetState, id: string, upda
                         await get().addToPhysicalArchive({ id: logToUpdate.filmId, title: logToUpdate.title ?? '', poster_path: logToUpdate.poster, release_date: logToUpdate.year?.toString() }, [fmt]);
                     } catch (e) {
                         if (__DEV__) console.error('Failed to auto-sync physical archive on update', e);
+
+                        if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp.autoSyncPhysicalArchive' });
                     }
                 }
             }
         } catch (e: unknown) {
+            if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp', logId: id });
             if (originalLog) {
                 set((state) => {
                     const revertedLogs = sortLogs(state.logs.map(l => l.id === id ? originalLog : l));
@@ -776,7 +782,9 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             }
             reelToast(`"${logToRemove.title}" removed.`);
         } catch (e: unknown) {
-            if (__DEV__) console.warn(`[removeLog] Failed for log ${id}:`, e);
+            if (__DEV__) console.warn(`[removeLog] Failed for log :`, e);
+
+            if (!isNetworkError(e)) captureError(e, { scope: 'removeLogOp', logId: id });
             set((state) => {
                 const newLogs = sortLogs([logToRemove, ...state.logs]);
                 const nextIdx = { ...state._loggedIndex };

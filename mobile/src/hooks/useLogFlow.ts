@@ -2,7 +2,9 @@
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
+import { captureError } from '@/src/lib/sentry';
 import reelToast from '@/src/utils/reelToast';
+import { isNetworkError } from '@/src/utils/networkError';
 import { maybeRequestReview } from '@/src/utils/requestReview';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -369,6 +371,13 @@ export function useLogFlow() {
             }, 650);
             return;
         } catch (err: unknown) {
+            // #88 — filing a log is the app's core write and had zero telemetry.
+            // addLogOp/updateLogOp have no top-level catch, so this is where a
+            // failed write actually surfaces. Network failures are expected and
+            // already queued offline, so only genuine defects are reported.
+            if (!isNetworkError(err)) {
+                captureError(err, { scope: 'useLogFlow.handleLog', isEditing, filmId: film?.id });
+            }
             reelToast.error('The record could not be sealed. Try again.');
             setSubmitting(false);
         }
