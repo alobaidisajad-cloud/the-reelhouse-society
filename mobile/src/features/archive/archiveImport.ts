@@ -407,6 +407,23 @@ export function normalizeRatingWithScale(raw: number, scale: 'half-five' | 'ten'
  * Future dates are clamped to today — a native log can't be created in the
  * future, so imports must not be either. Exported for tests.
  */
+/**
+ * True only for a calendar date that actually exists. `2024-02-31` and
+ * `2024-13-01` are well-formed strings and pass a naive comparison, but both
+ * fail an INSERT against a DATE column — taking their whole batch with them
+ * until the row-by-row fallback isolates them, and costing the member that film.
+ */
+function isRealDate(iso: string): boolean {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (mo < 1 || mo > 12 || d < 1) return false;
+  const probe = new Date(Date.UTC(y, mo - 1, d));
+  // Date rolls overflow forward (Feb 31 -> Mar 2), so a real date is one that
+  // survives the round trip unchanged.
+  return probe.getUTCFullYear() === y && probe.getUTCMonth() === mo - 1 && probe.getUTCDate() === d;
+}
+
 export function normalizeDate(raw: string, format: 'MDY' | 'DMY' = 'MDY'): string {
   const today = new Date().toISOString().slice(0, 10);
   if (!raw) return today;
@@ -426,13 +443,29 @@ export function normalizeDate(raw: string, format: 'MDY' | 'DMY' = 'MDY'): strin
     const [, a, b, yr] = slashMatch;
     const numA = parseInt(a, 10);
     const numB = parseInt(b, 10);
-    const day   = (n: number) => String(n).padStart(2, '0');
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const build = (mo: number, dy: number) => `${yr}-${pad(mo)}-${pad(dy)}`;
+
     // A first number above 12 is proof on its own — no month exceeds 12.
     // Otherwise defer to the FILE-level verdict from detectDateFormat, which
     // saw every row. Deciding per row is what makes a European export
     // half-correct: 25/03 survives, 05/03 silently becomes 3 May.
-    if (numA > 12 || format === 'DMY') return clamp(`${yr}-${day(numB)}-${day(numA)}`);
-    return clamp(`${yr}-${day(numA)}-${day(numB)}`);
+    const dayFirst = numA > 12 || format === 'DMY';
+    const preferred = dayFirst ? build(numB, numA) : build(numA, numB);
+    if (isRealDate(preferred)) return clamp(preferred);
+
+    // The preferred reading is not a real date (month 13, 31 April, 29 Feb in a
+    // common year). Try the other reading before giving up: in a day-first file
+    // a stray 05/13 is meaningless as day 5 of month 13, but is a perfectly good
+    // 13 May read the other way. Rescuing it keeps a film the member would
+    // otherwise lose — an impossible date fails its INSERT against a DATE column.
+    const alternate = dayFirst ? build(numA, numB) : build(numB, numA);
+    if (isRealDate(alternate)) return clamp(alternate);
+
+    // Neither reading is a real date, so the row is simply corrupt. Fall through
+    // to the same today-fallback the parser already uses for unparseable input,
+    // rather than emitting something that cannot be stored.
+    return today;
   }
 
   // Fallback — try native Date parsing

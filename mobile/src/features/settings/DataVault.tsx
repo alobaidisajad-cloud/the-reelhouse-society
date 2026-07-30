@@ -113,6 +113,15 @@ export default function DataVault() {
     return () => { isMounted.current = false; };
   }, []);
 
+  // Undo must survive leaving this screen. The natural sequence is: transfer,
+  // go and look at the films, notice something is wrong, come back. The receipt
+  // lives in MMKV, so read it on mount rather than only after an import —
+  // otherwise the control vanishes at exactly the moment it is wanted.
+  useEffect(() => {
+    const receipt = loadReceipt(user?.id);
+    setUndoableRows(receipt ? receiptSize(receipt) : 0);
+  }, [user?.id]);
+
   // ══════════════════════════════════════
   //  IMPORT HANDLER
   // ══════════════════════════════════════
@@ -455,27 +464,29 @@ export default function DataVault() {
               <Upload size={12} color={colors.fog} />
               <Text style={s.importAnotherText}>IMPORT ANOTHER FILE</Text>
             </PressableScale>
-
-            {/* Undo — shown only while the last transfer can still be taken
-                back. Removes what the transfer added and nothing else. */}
-            {undoableRows > 0 && (
-              <PressableScale
-                style={[s.undoBtn, undoing && { opacity: 0.5 }]}
-                onPress={handleUndoImport}
-                disabled={undoing}
-                accessibilityLabel={`Undo this transfer, removing ${undoableRows} entries`}
-                accessibilityRole="button"
-                haptic="heavy"
-                pressedScale={0.97}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Undo2 size={12} color={colors.crimson} />
-                <Text style={s.undoText}>
-                  {undoing ? 'UNDOING…' : `UNDO THIS TRANSFER (${undoableRows})`}
-                </Text>
-              </PressableScale>
-            )}
           </View>
+        )}
+
+        {/* Undo sits OUTSIDE the result card deliberately: that card only exists
+            while this screen holds the result in state, and the member's real
+            path is to leave, look at their films, and come back. The receipt
+            outlives the screen, so the control must too. */}
+        {undoableRows > 0 && (
+          <PressableScale
+            style={[s.undoBtn, undoing && { opacity: 0.5 }]}
+            onPress={handleUndoImport}
+            disabled={undoing}
+            accessibilityLabel={`Undo the last transfer, removing ${undoableRows} entries`}
+            accessibilityRole="button"
+            haptic="heavy"
+            pressedScale={0.97}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Undo2 size={12} color={colors.crimson} />
+            <Text style={s.undoText}>
+              {undoing ? 'UNDOING…' : `UNDO LAST TRANSFER (${undoableRows})`}
+            </Text>
+          </PressableScale>
         )}
       </View>
 

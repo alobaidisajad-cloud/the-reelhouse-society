@@ -390,3 +390,46 @@ describe('normalizeDate — the file verdict fixes the half-wrong European impor
     expect(normalizeDate(iso, 'DMY')).toBe(iso);
   });
 });
+
+describe('normalizeDate — an impossible date must never reach a DATE column', () => {
+  const isReal = (s: string) => {
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return false;
+    const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+    const p = new Date(Date.UTC(y, mo - 1, d));
+    return p.getUTCFullYear() === y && p.getUTCMonth() === mo - 1 && p.getUTCDate() === d;
+  };
+
+  it.each([
+    ['31/02/2024', 'DMY'], ['02/31/2024', 'DMY'], ['29/02/2023', 'DMY'],
+    ['31/04/2024', 'DMY'], ['02/30/2024', 'MDY'], ['13/13/2024', 'MDY'],
+    ['00/05/2024', 'DMY'], ['05/00/2024', 'DMY'], ['31/11/2024', 'DMY'],
+  ])('never emits an unstorable date for %s (%s)', (raw, fmt) => {
+    // An impossible date fails its INSERT and takes the batch down with it
+    // until the row-by-row fallback isolates it — costing the member that film.
+    expect(isReal(normalizeDate(raw, fmt as 'MDY' | 'DMY'))).toBe(true);
+  });
+
+  it('rescues a row by reading it the other way when the preferred way is impossible', () => {
+    // In a day-first file, 05/13 is meaningless as day 5 of month 13 — but it
+    // is a perfectly good 13 May the other way round. Keep the film.
+    expect(normalizeDate('05/13/2024', 'DMY')).toBe('2024-05-13');
+    // Mirror: in a month-first file, 25/03 is month 25 — but 25 March reads fine.
+    expect(normalizeDate('25/03/2024', 'MDY')).toBe('2024-03-25');
+  });
+
+  it('falls back to today only when NEITHER reading is a real date', () => {
+    expect(normalizeDate('31/04/2024', 'DMY')).toBe(TODAY);   // no month has 31 Apr either way
+    expect(normalizeDate('29/02/2023', 'DMY')).toBe(TODAY);   // 2023 is not a leap year
+  });
+
+  it('a leap day in a real leap year still imports', () => {
+    expect(normalizeDate('29/02/2024', 'DMY')).toBe('2024-02-29');
+  });
+
+  it('valid dates are completely unaffected', () => {
+    expect(normalizeDate('03/25/2024')).toBe('2024-03-25');
+    expect(normalizeDate('05/03/2024', 'DMY')).toBe('2024-03-05');
+    expect(normalizeDate('12/31/2023')).toBe('2023-12-31');
+  });
+});
