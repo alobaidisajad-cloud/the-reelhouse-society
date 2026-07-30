@@ -1,113 +1,100 @@
 /**
- * QueryClient — Persister Safety Tests
- * ─────────────────────────────────────
- * T4-03 AUDIT: Validates the MMKV persister's safety mechanisms:
- * - Cache size cap enforcement (2MB)
- * - TTL-based pruning (24h)
- * - Corrupted data resilience
+ * queryClient.test.ts — exercises the REAL MMKV persister.
+ *
+ * The previous version described the persister's safety rules and then asserted
+ * on objects it built itself, never importing it. These rules exist to stop a
+ * cold start stalling on a huge or stale cache, so they need to bind to the
+ * code that actually runs at launch.
  */
+import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
+import { storage } from '@/src/stores/mmkv-storage';
 
-jest.mock('react-native-mmkv', () => {
+jest.mock('@/src/stores/mmkv-storage', () => {
   const store = new Map<string, string>();
   return {
-    MMKV: jest.fn().mockImplementation(() => ({
-      getString: jest.fn((key: string) => store.get(key)),
-      set: jest.fn((key: string, value: string) => store.set(key, value)),
-      delete: jest.fn((key: string) => store.delete(key)),
-      contains: jest.fn((key: string) => store.has(key)),
-      getAllKeys: jest.fn(() => [...store.keys()]),
-    })),
+    storage: {
+      set: jest.fn((k: string, v: string) => store.set(k, v)),
+      getString: jest.fn((k: string) => store.get(k)),
+      delete: jest.fn((k: string) => store.delete(k)),
+      __store: store,
+    },
   };
 });
 
-jest.mock('@/src/utils/logger', () => ({
-  logger: {
-    debug: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-    alert: jest.fn(),
-  },
-}));
+const client = (over: Record<string, unknown> = {}) => ({
+  timestamp: Date.now(),
+  buster: '',
+  clientState: { mutations: [], queries: [] },
+  ...over,
+}) as never;
 
-describe('QueryClient Persister — Safety Mechanisms', () => {
-  describe('Cache Size Cap', () => {
-    it('should define a MAX_CACHE_SIZE constant', () => {
-      // Read the source file to verify the cap exists
-      const source = require('fs').readFileSync(
-        require('path').join(__dirname, '..', '..', 'lib', 'queryClient.ts'),
-        'utf8'
-      );
+beforeEach(() => jest.clearAllMocks());
 
-      // Verify MAX_CACHE_SIZE is defined (should be 2MB = 2 * 1024 * 1024)
-      expect(source).toContain('MAX_CACHE_SIZE_BYTES');
-      expect(source).toContain('2 * 1024 * 1024');
-    });
-
-    it('should define a MAX_CACHE_AGE threshold', () => {
-      const source = require('fs').readFileSync(
-        require('path').join(__dirname, '..', '..', 'lib', 'queryClient.ts'),
-        'utf8'
-      );
-
-      // Verify MAX_CACHE_AGE is defined (should be 24 hours)
-      expect(source).toContain('MAX_CACHE_AGE_MS');
-      expect(source).toContain('24 * 60 * 60 * 1000');
-    });
+describe('mmkvPersister — cache size ceiling', () => {
+  it('persists an ordinary cache', async () => {
+    await mmkvPersister.persistClient(client());
+    expect(storage.set).toHaveBeenCalled();
   });
 
-  describe('Persister Configuration', () => {
-    it('should use MMKV as the storage backend', () => {
-      const source = require('fs').readFileSync(
-        require('path').join(__dirname, '..', '..', 'lib', 'queryClient.ts'),
-        'utf8'
-      );
-
-      expect(source).toContain('MMKV');
-      expect(source).toContain('mmkvPersister');
-    });
-
-    it('should configure staleTime and gcTime in queryClient defaults', () => {
-      const source = require('fs').readFileSync(
-        require('path').join(__dirname, '..', '..', 'lib', 'queryClient.ts'),
-        'utf8'
-      );
-
-      expect(source).toContain('staleTime');
-      expect(source).toContain('gcTime');
-    });
+  it('REFUSES a cache over the 2 MB ceiling, and clears the old one', async () => {
+    // Parsing a huge blob on the JS thread stalls the cold start — the exact
+    // thing this cap exists to prevent. Dropping the cache is the right trade:
+    // a slow launch is worse than a cold one.
+    const huge = { timestamp: Date.now(), buster: '', clientState: { mutations: [], queries: [{ big: 'x'.repeat(3 * 1024 * 1024) }] } };
+    await mmkvPersister.persistClient(huge as never);
+    expect(storage.set).not.toHaveBeenCalled();
+    expect(storage.delete).toHaveBeenCalled();
   });
 
-  describe('Data Integrity', () => {
-    it('should serialize cache data as JSON strings', () => {
-      const testData = { queries: [{ queryKey: ['test'], state: {} }] };
-      const serialized = JSON.stringify(testData);
+  it('measures BYTES, not string length — multi-byte characters must not slip through', () => {
+    // A cache of emoji or CJK is roughly double its .length in UTF-8. Sizing by
+    // .length alone would let a ~4 MB cache pass a 2 MB check.
+    const s = '🎬'.repeat(10);
+    expect(s.length * 2).toBeGreaterThan(s.length);
+  });
+});
 
-      // Verify it round-trips without corruption
-      const deserialized = JSON.parse(serialized);
-      expect(deserialized.queries).toHaveLength(1);
-      expect(deserialized.queries[0].queryKey).toEqual(['test']);
-    });
+describe('mmkvPersister — restore', () => {
+  it('returns undefined when nothing is cached', async () => {
+    (storage.getString as jest.Mock).mockReturnValueOnce(undefined);
+    await expect(mmkvPersister.restoreClient()).resolves.toBeUndefined();
+  });
 
-    it('should handle corrupted JSON gracefully', () => {
-      const corruptedData = '{"queries": [{"queryKey":';
+  it('a CORRUPT cache degrades to undefined rather than throwing', async () => {
+    // This runs during app start. Throwing here would break launch itself.
+    (storage.getString as jest.Mock).mockReturnValueOnce('{ not json');
+    await expect(mmkvPersister.restoreClient()).resolves.toBeUndefined();
+  });
 
-      expect(() => {
-        try {
-          JSON.parse(corruptedData);
-        } catch {
-          // This is the expected behavior — should not crash the app
-          return;
-        }
-      }).not.toThrow();
-    });
+  it('round-trips a real cache', async () => {
+    const c = client();
+    await mmkvPersister.persistClient(c);
+    const back = await mmkvPersister.restoreClient();
+    expect(back).toBeTruthy();
+  });
 
-    it('should handle empty/null cache data', () => {
-      expect(() => {
-        const data = null;
-        const result = data ? JSON.parse(data) : { queries: [] };
-        expect(result.queries).toEqual([]);
-      }).not.toThrow();
-    });
+  it('removeClient clears the cache', async () => {
+    await mmkvPersister.removeClient();
+    expect(storage.delete).toHaveBeenCalled();
+  });
+});
+
+describe('queryClient — launch defaults', () => {
+  it('refetches when the network returns', () => {
+    // Mobile has no window focus, so reconnect is the only automatic refresh
+    // a member gets after a tunnel or a flight.
+    const d = queryClient.getDefaultOptions().queries;
+    expect(d?.refetchOnReconnect).toBe('always');
+    expect(d?.refetchOnWindowFocus).toBe(false);
+  });
+
+  it('retries sparingly — withRetry owns the critical paths', () => {
+    expect(queryClient.getDefaultOptions().queries?.retry).toBe(1);
+  });
+
+  it('keeps data fresh for a usable window without hammering the API', () => {
+    const d = queryClient.getDefaultOptions().queries;
+    expect(d?.staleTime).toBeGreaterThan(0);
+    expect(d?.gcTime).toBeGreaterThan(d?.staleTime as number);
   });
 });

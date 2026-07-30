@@ -1,158 +1,93 @@
 /**
- * ProfileDataService — Privacy & Validation Tests
- * ────────────────────────────────────────────────────
- * T4-03 AUDIT: Validates column-level privacy enforcement,
- * ensuring public profiles never expose private fields.
+ * ProfileDataService — column-level privacy, asserted against the REAL sets.
+ *
+ * The previous version re-declared the column lists locally and checked its own
+ * copies, so the actual query could have started leaking `preferences` and this
+ * suite would still have passed. That is the wrong way round for a privacy
+ * control: the point is to catch the day someone widens the public select.
+ *
+ * The constants are now exported and asserted directly, and fetchProfile is
+ * driven so the set it ACTUALLY sends is observed rather than assumed.
  */
+import { ProfileDataService, SELF_PROFILE_COLUMNS, PUBLIC_PROFILE_COLUMNS } from '../ProfileDataService';
+import { supabase } from '@/src/lib/supabase';
 
-jest.mock('@/src/lib/supabase', () => ({
-  supabase: {
-    from: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      range: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: null, error: null }),
-      maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-    })),
-    rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
-  },
-}));
-
+jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn() } }));
 jest.mock('@/src/utils/logger', () => ({
-  logger: {
-    error: jest.fn(),
-    warn: jest.fn(),
-    debug: jest.fn(),
-    info: jest.fn(),
-    alert: jest.fn(),
-  },
+  logger: { debug: jest.fn(), warn: jest.fn(), error: jest.fn(), info: jest.fn() },
 }));
+jest.mock('@/src/utils/withAbortSignal', () => ({ withAbortSignal: (q: unknown) => q }));
 
-jest.mock('@/src/utils/withAbortSignal', () => ({
-  withAbortSignal: jest.fn((query: unknown) => query),
-}));
+/** Captures the exact column string handed to .select(). */
+let selected: string | undefined;
+const mockChain = (data: unknown) => {
+  const chain = {
+    select: jest.fn((cols: string) => { selected = cols; return chain; }),
+    eq: jest.fn(() => chain),
+    maybeSingle: jest.fn(() => Promise.resolve({ data, error: null })),
+  };
+  return chain;
+};
 
-jest.mock('@/src/utils/mappers', () => ({
-  mapLogRow: jest.fn((row: Record<string, unknown>) => ({
-    id: row.id,
-    filmId: row.film_id,
-    title: row.film_title,
-    poster: row.poster_path,
-    rating: row.rating,
-    status: row.status,
-  })),
-}));
+beforeEach(() => { jest.clearAllMocks(); selected = undefined; });
 
-describe('ProfileDataService — Column-Level Privacy', () => {
-  it('PUBLIC_PROFILE_COLUMNS should not include preferences', () => {
-    // Verify at the source level that the constant doesn't leak private fields
-    const source = require('fs').readFileSync(
-      require('path').join(__dirname, '..', 'ProfileDataService.ts'),
-      'utf8'
-    );
+/** Fields that must never leave the server for someone else's profile. */
+const PRIVATE_FIELDS = ['email', 'is_banned', 'push_token', 'stripe', 'apple_id', 'phone'];
 
-    // Extract the PUBLIC_PROFILE_COLUMNS constant
-    const publicMatch = source.match(/PUBLIC_PROFILE_COLUMNS\s*=\s*'([^']+)'/);
-    expect(publicMatch).toBeTruthy();
-
-    const publicColumns = publicMatch![1];
-    // Check that the full 'preferences' column (JSONB blob) isn't exposed
-    // (computed sub-fields like 'preferences->programmes' are fine)
-    const publicCols = publicColumns.split(',').map((s: string) => s.trim());
-    expect(publicCols).not.toContain('preferences');
-    expect(publicColumns).toContain('username');
-    expect(publicColumns).toContain('avatar_url');
-    expect(publicColumns).toContain('display_name');
-    expect(publicColumns).toContain('bio');
+describe('column sets — the privacy boundary itself', () => {
+  it('the PUBLIC set never selects the raw preferences blob', () => {
+    // preferences carries private settings. The public set may extract named
+    // sub-keys (programmes, favorites, hide_stats) but must never take the
+    // whole object — that is the exact leak this boundary exists to prevent.
+    const cols = PUBLIC_PROFILE_COLUMNS.split(',').map(c => c.trim());
+    expect(cols).not.toContain('preferences');
+    expect(PUBLIC_PROFILE_COLUMNS).toContain('programmes:preferences->programmes');
   });
 
-  it('SELF_PROFILE_COLUMNS should include preferences', () => {
-    const source = require('fs').readFileSync(
-      require('path').join(__dirname, '..', 'ProfileDataService.ts'),
-      'utf8'
-    );
-
-    const selfMatch = source.match(/SELF_PROFILE_COLUMNS\s*=\s*'([^']+)'/);
-    expect(selfMatch).toBeTruthy();
-
-    const selfColumns = selfMatch![1];
-    expect(selfColumns).toContain('preferences');
-    expect(selfColumns).toContain('username');
+  it('the SELF set may take preferences whole — it is the member’s own data', () => {
+    expect(SELF_PROFILE_COLUMNS.split(',').map(c => c.trim())).toContain('preferences');
   });
 
-  it('PUBLIC columns should be a strict subset of SELF columns (by base column names)', () => {
-    const source = require('fs').readFileSync(
-      require('path').join(__dirname, '..', 'ProfileDataService.ts'),
-      'utf8'
-    );
+  it('NEITHER set selects a sensitive account field', () => {
+    for (const field of PRIVATE_FIELDS) {
+      expect(PUBLIC_PROFILE_COLUMNS).not.toContain(field);
+      expect(SELF_PROFILE_COLUMNS).not.toContain(field);
+    }
+  });
 
-    const publicMatch = source.match(/PUBLIC_PROFILE_COLUMNS\s*=\s*'([^']+)'/);
-    const selfMatch = source.match(/SELF_PROFILE_COLUMNS\s*=\s*'([^']+)'/);
-
-    const publicCols = publicMatch![1].split(',').map((s: string) => s.trim());
-    const selfCols = selfMatch![1].split(',').map((s: string) => s.trim());
-
-    // Every public column should exist in self columns (excluding computed/nested columns)
-    publicCols.forEach((col: string) => {
-      // Computed columns like 'programmes:preferences->programmes' won't match directly
-      if (col.includes(':') || col.includes('->')) return;
-      expect(selfCols).toContain(col);
-    });
-
-    // Self should have the 'preferences' column which public lacks (it uses computed sub-fields instead)
-    expect(selfCols).toContain('preferences');
-    // Public columns that are NOT computed should be fewer than self
-    const publicBaseCols = publicCols.filter((col: string) => !col.includes(':') && !col.includes('->'));
-    expect(selfCols.length).toBeGreaterThanOrEqual(publicBaseCols.length);
+  it('the public set is not accidentally wider than the self set', () => {
+    // Any bare column public can read, self must be able to read too. A public
+    // column absent from self means someone widened the wrong list.
+    const bare = (s: string) => s.split(',').map(c => c.trim()).filter(c => !c.includes(':'));
+    for (const col of bare(PUBLIC_PROFILE_COLUMNS)) {
+      expect(bare(SELF_PROFILE_COLUMNS)).toContain(col);
+    }
   });
 });
 
-describe('ProfileDataService — Zod Schema Validation', () => {
-  it('WatchlistRowSchema should accept valid rows', () => {
-    const { z } = require('zod');
-    const WatchlistRowSchema = z.object({
-      film_id: z.number(),
-      film_title: z.string(),
-      poster_path: z.string().nullable().optional(),
-      year: z.number().nullable().optional(),
-    });
-
-    const validRow = {
-      film_id: 550,
-      film_title: 'Fight Club',
-      poster_path: '/poster.jpg',
-      year: 1999,
-    };
-
-    expect(WatchlistRowSchema.safeParse(validRow).success).toBe(true);
+describe('fetchProfile — the set it actually sends', () => {
+  it('sends the PUBLIC set for someone else', async () => {
+    (supabase.from as jest.Mock).mockReturnValue(mockChain(null));
+    await ProfileDataService.fetchProfile('someone', false);
+    expect(selected).toBe(PUBLIC_PROFILE_COLUMNS);
   });
 
-  it('WatchlistRowSchema should reject rows with missing film_id', () => {
-    const { z } = require('zod');
-    const WatchlistRowSchema = z.object({
-      film_id: z.number(),
-      film_title: z.string(),
-      poster_path: z.string().nullable().optional(),
-      year: z.number().nullable().optional(),
-    });
-
-    const invalidRow = {
-      film_title: 'No ID Film',
-    };
-
-    expect(WatchlistRowSchema.safeParse(invalidRow).success).toBe(false);
+  it('sends the SELF set for the member’s own profile', async () => {
+    (supabase.from as jest.Mock).mockReturnValue(mockChain(null));
+    await ProfileDataService.fetchProfile('me', true);
+    expect(selected).toBe(SELF_PROFILE_COLUMNS);
   });
 
-  it('CountResultSchema should accept nullable counts', () => {
-    const { z } = require('zod');
-    const CountResultSchema = z.object({
-      count: z.number().nullable(),
-    });
+  it('a missing profile is null, not an error', async () => {
+    (supabase.from as jest.Mock).mockReturnValue(mockChain(null));
+    await expect(ProfileDataService.fetchProfile('ghost', false)).resolves.toBeNull();
+  });
 
-    expect(CountResultSchema.safeParse({ count: 42 }).success).toBe(true);
-    expect(CountResultSchema.safeParse({ count: null }).success).toBe(true);
-    expect(CountResultSchema.safeParse({ count: 'not-a-number' }).success).toBe(false);
+  it('queries the profiles table by username', async () => {
+    const chain = mockChain(null);
+    (supabase.from as jest.Mock).mockReturnValue(chain);
+    await ProfileDataService.fetchProfile('someone', false);
+    expect(supabase.from).toHaveBeenCalledWith('profiles');
+    expect(chain.eq).toHaveBeenCalledWith('username', 'someone');
   });
 });
