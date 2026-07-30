@@ -502,3 +502,36 @@ describe('parseCSV — a repeated column name must not discard the first', () =>
     expect(records[0]).toEqual({ Name: 'Heat', Year: '1995', Rating: '4' });
   });
 });
+
+describe('parseCSVRows — a stray quote must not swallow the rest of the file', () => {
+  it('recovers every row when quoting is malformed', () => {
+    // One unescaped quote used to put the tokenizer inside a quoted field for
+    // the remainder of the file, merging every later line into a single cell.
+    // A stray quote on row 2 of a 3,000-film history silently discarded the
+    // other 2,998 and the import still reported success.
+    const rows = parseCSVRows('Name,Year\n"Heat,1995\nRan,1985\nSolaris,1972');
+    expect(rows.length).toBe(4);
+    expect(rows[2][0]).toBe('Ran');
+    expect(rows[3][0]).toBe('Solaris');
+  });
+
+  it('an unescaped quote inside a review does not lose the films after it', () => {
+    const rows = parseCSVRows('Name,Review\nHeat,He said "hello\nRan,Fine\nSolaris,Good');
+    expect(rows.length).toBe(4);
+    expect(rows[2]).toEqual(['Ran', 'Fine']);
+  });
+
+  it('WELL-FORMED quoting is completely unaffected', () => {
+    // The recovery must never trigger on a legitimate file — multi-line
+    // reviews and escaped quotes are normal and must still parse as quoting.
+    const rows = parseCSVRows('Title,Review\n"The Godfather, Part II","A ""masterpiece"".\nMulti-line."');
+    expect(rows[1][0]).toBe('The Godfather, Part II');
+    expect(rows[1][1]).toBe('A "masterpiece".\nMulti-line.');
+  });
+
+  it('a quoted field containing commas and newlines still survives', () => {
+    const rows = parseCSVRows('a,b\n"x,y\nz",2');
+    expect(rows.length).toBe(2);
+    expect(rows[1][0]).toBe('x,y\nz');
+  });
+});

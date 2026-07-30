@@ -122,6 +122,25 @@ const HEADER_MAP: Record<string, string[]> = {
  * Exported for tests.
  */
 export function parseCSVRows(text: string): string[][] {
+  const rows = tokenize(text, true);
+  // If the file ended INSIDE a quoted field, the quoting is malformed — an
+  // exporter that failed to double a quote, or a hand-edited file. Quote-aware
+  // tokenizing then swallows every remaining line into one field, so a stray
+  // quote on row 3 of a 3,000-film history silently discards the other 2,997
+  // and the import reports success.
+  //
+  // Re-read it treating quotes as ordinary characters. That costs a few visible
+  // stray quote marks inside titles or reviews — obvious, and fixable by the
+  // member — instead of losing almost everything with nothing to show for it.
+  if (rows.unterminated) return tokenize(text, false).cells;
+  return rows.cells;
+}
+
+/**
+ * @param quoteAware false treats `"` as an ordinary character, used only to
+ *   recover a file whose quoting is broken.
+ */
+function tokenize(text: string, quoteAware: boolean): { cells: string[][]; unterminated: boolean } {
   // Strip BOM if present
   const cleaned = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
   const rows: string[][] = [];
@@ -149,7 +168,7 @@ export function parseCSVRows(text: string): string[][] {
       field += char;
       i++;
     } else {
-      if (char === '"') {
+      if (char === '"' && quoteAware) {
         inQuotes = true;
         i++;
       } else if (char === ',') {
@@ -183,7 +202,7 @@ export function parseCSVRows(text: string): string[][] {
     rows.push(current);
   }
 
-  return rows;
+  return { cells: rows, unterminated: inQuotes };
 }
 
 /**
