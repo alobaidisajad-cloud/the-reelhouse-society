@@ -540,6 +540,11 @@ export default function MembershipScreen() {
         <Animated.View entering={FadeInDown.duration(600).delay(500)} layout={LinearTransition} style={st.restoreSection}>
           <PressableScale
             style={st.restoreBtn}
+            // ~37pt tall, under the 44pt minimum. The growth is all upward:
+            // the 12pt gap below belongs to MANAGE SUBSCRIPTION, which is the
+            // smaller target and needs it more. 14 fits inside this section's
+            // 24pt of top padding, so nothing above is encroached on.
+            hitSlop={{ top: 14, bottom: 0, left: 12, right: 12 }}
             disabled={isRestoring || isRedirecting}
             onPress={async () => {
               if (purchaseMutex.current) return;

@@ -91,3 +91,56 @@ describe('fetchProfile — the set it actually sends', () => {
     expect(chain.eq).toHaveBeenCalledWith('username', 'someone');
   });
 });
+
+/**
+ * A query chain that accepts every builder call and resolves to `data`.
+ * fetchOtherUserLists awaits the builder directly, so it must be thenable.
+ */
+const mockListChain = (data: unknown) => {
+  const chain: Record<string, unknown> = {
+    then: (res: (v: unknown) => unknown) => Promise.resolve({ data, error: null }).then(res),
+  };
+  for (const m of ['select', 'eq', 'order', 'limit', 'or']) chain[m] = jest.fn(() => chain);
+  return chain;
+};
+
+describe('fetchOtherUserLists — one bad item must never erase a whole list', () => {
+  const goodItem = { list_id: 'l1', film_id: 42, film_title: 'Solaris', poster_path: '/p.jpg' };
+  const row = (list_items: unknown) => ({
+    id: 'l1', title: 'My List', description: null,
+    is_ranked: true, is_private: false,
+    created_at: '2026-01-01T00:00:00Z', list_items,
+  });
+
+  const run = async (list_items: unknown) => {
+    (supabase.from as jest.Mock).mockReturnValue(mockListChain([row(list_items)]));
+    return ProfileDataService.fetchOtherUserLists('u1');
+  };
+
+  it('keeps the list and drops only the malformed item', async () => {
+    // parseRowsSafely discards a row whose schema fails, so a naive
+    // z.array(ListItemRowSchema) would delete this member's list outright.
+    const { items } = await run([goodItem, { film_id: 'not-a-film' }, null]);
+    expect(items).toHaveLength(1);
+    expect(items[0].films).toEqual([{ id: 42, title: 'Solaris', poster: '/p.jpg' }]);
+  });
+
+  it('survives list_items being null, absent, or not an array at all', async () => {
+    for (const bad of [null, undefined, { oops: true }]) {
+      const { items } = await run(bad);
+      expect(items).toHaveLength(1);
+      expect(items[0].films).toEqual([]);
+    }
+  });
+
+  it('coerces a film_id that arrives as a string', async () => {
+    const { items } = await run([{ ...goodItem, film_id: '42' }]);
+    expect(items[0].films[0].id).toBe(42);
+  });
+
+  it('a list with no films is still returned, not hidden', async () => {
+    const { items } = await run([]);
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe('My List');
+  });
+});

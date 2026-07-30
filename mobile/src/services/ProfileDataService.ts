@@ -75,6 +75,31 @@ const VaultRowSchema = z.object({
   created_at: z.string(),
 });
 
+const ListItemRowSchema = z.object({
+  list_id: z.string(),
+  film_id: z.coerce.number(),
+  film_title: z.string(),
+  poster_path: z.string().nullable().optional(),
+});
+type ListItemRow = z.infer<typeof ListItemRowSchema>;
+
+/**
+ * Embedded list items, validated WITHOUT ever risking the parent list.
+ *
+ * parseRowsSafely drops a whole row when its schema fails, so a plain
+ * `z.array(ListItemRowSchema)` would erase an entire list from a member's
+ * public profile because of one bad item. Instead each item is caught
+ * individually and a bad one becomes null, then the nulls are filtered out.
+ * A missing, null, or non-array value collapses to []. The list itself
+ * always survives.
+ */
+const ListItemsField = z
+  .array(ListItemRowSchema.nullable().catch(null))
+  .nullable()
+  .optional()
+  .catch(null)
+  .transform((items) => (items ?? []).filter((i): i is ListItemRow => i !== null));
+
 const ListRowSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -82,6 +107,7 @@ const ListRowSchema = z.object({
   is_ranked: z.boolean().nullable().optional(),
   is_private: z.boolean().nullable().optional(),
   created_at: z.string(),
+  list_items: ListItemsField,
 }).passthrough();
 
 const AnalyticsRowSchema = z.object({
@@ -97,14 +123,6 @@ const AnalyticsRowSchema = z.object({
   physical_media: z.string().nullable().optional(),
   is_autopsied: z.boolean().nullable().optional(),
   autopsy: z.any().nullable().optional(),
-});
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ListItemRowSchema = z.object({
-  list_id: z.string(),
-  film_id: z.coerce.number(),
-  film_title: z.string(),
-  poster_path: z.string().nullable().optional(),
 });
 
 // ── Service ────────────────────────────────────────────────────────────
@@ -474,20 +492,17 @@ export const ProfileDataService = {
     const paginatedRaw = hasMore ? rawRows.slice(0, limit) : rawRows;
     const validLists = parseRowsSafely(ListRowSchema, paginatedRaw);
 
-    const items = validLists.map(l => {
-      const listItems = (l as any).list_items || [];
-      return {
-        id: l.id,
-        title: l.title,
-        description: l.description ?? '',
-        isRanked: l.is_ranked ?? false,
-        isPrivate: l.is_private ?? false,
-        createdAt: l.created_at,
-        films: listItems.map((i: any) => ({
-          id: i.film_id, title: i.film_title, poster: i.poster_path ?? null,
-        })),
-      };
-    });
+    const items = validLists.map(l => ({
+      id: l.id,
+      title: l.title,
+      description: l.description ?? '',
+      isRanked: l.is_ranked ?? false,
+      isPrivate: l.is_private ?? false,
+      createdAt: l.created_at,
+      films: l.list_items.map((i) => ({
+        id: i.film_id, title: i.film_title, poster: i.poster_path ?? null,
+      })),
+    }));
     const lastRow = paginatedRaw.length > 0 ? (paginatedRaw[paginatedRaw.length - 1] as any) : null;
     const nextCursor = hasMore && lastRow ? `${lastRow.created_at || ''}|${lastRow.id}` : null;
     return { items, nextCursor };
