@@ -72,8 +72,6 @@ src/
 | Request timeout | withTimeout.ts | AbortSignal.timeout(15s) |
 | Request cancellation | withAbortSignal.ts | Screen-scoped AbortController |
 | Write circuit breaker | offlineQueue.ts | 5 failures OPEN 30s cooldown |
-| Read circuit breaker | apiCircuitBreaker.ts | 5 failures OPEN 30s cooldown |
-| QoS composition | qos.ts | timeout + circuit breaker combined |
 | Memory pressure | memoryManager.ts | Hermes GC hooks + cache eviction |
 | Unhandled rejections | AppBootstrapper.tsx | Global handler to Sentry |
 | Crash recovery | ErrorBoundary.tsx | SafeMode: 3 retries then data wipe |
@@ -110,7 +108,7 @@ src/
 |--------|-----------|---------|
 | Components | PascalCase | ProfileTriptych.tsx |
 | Hooks | camelCase with use | useLogFlow.ts |
-| Services | PascalCase + Service | DossierService.ts |
+| Services | PascalCase + Service | LoungeService.ts |
 | Stores | camelCase + Store | followStore.ts |
 | Schemas | camelCase + .schema.ts | dossier.schema.ts |
 | Utils | camelCase | withTimeout.ts |
