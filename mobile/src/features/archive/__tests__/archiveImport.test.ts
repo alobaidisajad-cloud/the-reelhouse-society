@@ -658,3 +658,33 @@ describe('import invariants', () => {
     expect(clampRating(undefined)).toBe(0);
   });
 });
+
+describe('detectRatingScale — the exact boundaries', () => {
+  // Added after mutation testing: changing `max > 5` to `max > 6` left all 83
+  // existing tests passing. The ladder's thresholds were described but never
+  // pinned, so the one number that decides whether ratings get clamped could
+  // drift silently.
+  it('5 is the last half-five value; 6 is already a ten-scale', () => {
+    expect(detectRatingScale([1, 2, 5])).toBe('half-five');
+    expect(detectRatingScale([1, 2, 6])).toBe('ten');   // the boundary the mutant slipped through
+  });
+
+  it('10 is the last ten value; 11 is already a hundred-scale', () => {
+    expect(detectRatingScale([4, 10])).toBe('ten');
+    expect(detectRatingScale([4, 11])).toBe('hundred');
+  });
+
+  it('a member who never scored above 6 still keeps their resolution', () => {
+    // Misread as half-five, a 6 clamps to 5 reels instead of converting to 3.
+    const scale = detectRatingScale([2, 4, 6]);
+    expect(normalizeRatingWithScale(6, scale)).toBe(3);
+    expect(normalizeRatingWithScale(2, scale)).toBe(1);
+  });
+
+  it('the source ceilings sit exactly where the services do', () => {
+    expect(detectRatingScale([5], 'letterboxd')).toBe('half-five');   // at ceiling
+    expect(detectRatingScale([6], 'letterboxd')).toBe('ten');         // over it — data wins
+    expect(detectRatingScale([10], 'imdb')).toBe('ten');              // at ceiling
+    expect(detectRatingScale([11], 'imdb')).toBe('hundred');          // over it — data wins
+  });
+});
