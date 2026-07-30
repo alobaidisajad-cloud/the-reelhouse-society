@@ -22,6 +22,7 @@ import { enqueueMutation } from '@/src/utils/offlineQueue';
 
 /** Flipped per-test; the supabase mock returns whatever this holds. */
 let mockDbError: unknown = null;
+let mockDbData: unknown = null;
 /** Flipped per-test; InteractionService rejects with whatever this holds. */
 let mockEndorseError: unknown = null;
 
@@ -47,27 +48,38 @@ jest.mock('../mmkv-storage', () => ({
     getSecureStorage: jest.fn().mockResolvedValue({ getString: jest.fn(), set: jest.fn(), delete: jest.fn(), contains: jest.fn(() => false) }),
 }));
 
-/** insert/delete resolve with mockDbError; everything else is inert. */
+/**
+ * Every builder method returns the same thenable chain, so ANY call shape the
+ * slices use — .insert(), .delete().eq().eq(), .update().eq(), .upsert().select(),
+ * .rpc() — resolves to { data: mockDbData, error: mockDbError }.
+ */
 jest.mock('@/src/lib/supabase', () => {
-    const result = () => Promise.resolve({ error: mockDbError, data: null });
-    const chain: Record<string, unknown> = {};
-    ['select', 'eq', 'order', 'limit', 'or', 'in'].forEach((m) => { chain[m] = jest.fn(() => chain); });
-    chain.then = (res: (v: unknown) => unknown) => result().then(res);
+    const make = () => {
+        const chain: Record<string, unknown> = {};
+        ['select', 'eq', 'neq', 'order', 'limit', 'or', 'in', 'insert', 'delete',
+            'update', 'upsert', 'single', 'maybeSingle'].forEach((m) => { chain[m] = jest.fn(() => chain); });
+        chain.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
+            Promise.resolve({ data: mockDbData, error: mockDbError }).then(res, rej);
+        return chain;
+    };
     return {
         supabase: {
-            from: jest.fn(() => ({
-                ...chain,
-                insert: jest.fn(() => result()),
-                delete: jest.fn(() => chain),
-                update: jest.fn(() => chain),
-                upsert: jest.fn(() => result()),
-            })),
+            from: jest.fn(() => make()),
+            rpc: jest.fn(() => make()),
             auth: { getUser: jest.fn().mockResolvedValue({ data: { user: null } }) },
         },
     };
 });
+jest.mock('@/src/lib/queryClient', () => ({
+    queryClient: {
+        invalidateQueries: jest.fn(), setQueryData: jest.fn(),
+        getQueryData: jest.fn(() => undefined), cancelQueries: jest.fn(() => Promise.resolve()),
+    },
+}));
+// tier matters: the physical-archive writes are gated on isArchivistPlusTier,
+// so a plain member never reaches supabase and would fake a passing test.
 jest.mock('../auth', () => ({
-    useAuthStore: { getState: jest.fn(() => ({ user: { id: 'u1', username: 'cinephile', role: 'member' } })) },
+    useAuthStore: { getState: jest.fn(() => ({ user: { id: 'u1', username: 'cinephile', role: 'member', tier: 'auteur' } })) },
 }));
 jest.mock('@/src/utils/reelToast', () => {
     const fn = jest.fn();
@@ -94,6 +106,15 @@ jest.mock('expo-image', () => ({ Image: { prefetch: jest.fn(() => Promise.resolv
 const FILM = { id: 550, title: 'Fight Club', poster_path: '/p.jpg', release_date: '1999-01-01' };
 const GENUINE_DEFECT = { message: 'permission denied for table watchlists', code: '42501' };
 const OFFLINE = { message: 'Network request failed' };
+
+/**
+ * deleteList and removeLog RETHROW after rolling back, by design, so the caller
+ * can react. We are asserting on telemetry and rollback, not on the throw, so
+ * swallow it here rather than let it fail the test as an unhandled rejection.
+ */
+const attempt = async (fn: () => Promise<unknown>) => {
+    try { await fn(); } catch { /* rethrown by design — see above */ }
+};
 
 /** addToWatchlist returns before its write settles; the chain is parked here. */
 const settle = async (filmId: number) => {
@@ -230,5 +251,145 @@ describe('endorsements — the 23505 rule batch 2 claimed but never proved', () 
         await useFilmStore.getState().toggleEndorse('log-3');
         expect(captureError).not.toHaveBeenCalled();
         expect(useFilmStore.getState().hasEndorsed('log-3')).toBe(true);
+    });
+});
+
+// ── The remaining sites, driven the same way ────────────────────────────────
+
+describe('physical archive — all three write paths', () => {
+    const FILM_IN = { id: 550, title: 'Fight Club', poster_path: '/p.jpg', release_date: '1999-01-01' };
+
+    // Seeded, NOT empty: removeFromPhysicalArchive early-returns when the item
+    // is absent, so an empty archive makes the "stays silent" assertions pass
+    // for the wrong reason — nothing runs at all.
+    beforeEach(() => {
+        useFilmStore.setState({
+            physicalArchive: [{ id: 'pa-1', filmId: 550, title: 'Fight Club', poster: '/p.jpg', formats: ['4K'] }],
+        } as never);
+    });
+
+    it('addToPhysicalArchive reports a genuine defect', async () => {
+        mockDbError = GENUINE_DEFECT;
+        await useFilmStore.getState().addToPhysicalArchive(FILM_IN, ['4K']);
+        expect(captureError).toHaveBeenCalledWith(
+            GENUINE_DEFECT, expect.objectContaining({ scope: 'archiveSlice.addToPhysicalArchive' }),
+        );
+    });
+
+    it('addToPhysicalArchive stays silent and queues when offline', async () => {
+        mockDbError = OFFLINE;
+        await useFilmStore.getState().addToPhysicalArchive(FILM_IN, ['4K']);
+        expect(captureError).not.toHaveBeenCalled();
+        expect(enqueueMutation).toHaveBeenCalledWith(expect.objectContaining({ type: 'add_archive' }));
+    });
+
+    it('removeFromPhysicalArchive reports a genuine defect', async () => {
+        mockDbError = GENUINE_DEFECT;
+        await useFilmStore.getState().removeFromPhysicalArchive(550);
+        expect(captureError).toHaveBeenCalledWith(
+            GENUINE_DEFECT, expect.objectContaining({ scope: 'archiveSlice.removeFromPhysicalArchive' }),
+        );
+    });
+
+    it('removeFromPhysicalArchive stays silent when offline', async () => {
+        mockDbError = OFFLINE;
+        await useFilmStore.getState().removeFromPhysicalArchive(550);
+        expect(captureError).not.toHaveBeenCalled();
+    });
+
+    it('updatePhysicalArchiveItem reports a genuine defect', async () => {
+        mockDbError = GENUINE_DEFECT;
+        await useFilmStore.getState().updatePhysicalArchiveItem(550, { condition: 'Mint' });
+        expect(captureError).toHaveBeenCalledWith(
+            GENUINE_DEFECT, expect.objectContaining({ scope: 'archiveSlice.updatePhysicalArchiveItem' }),
+        );
+    });
+
+    it('updatePhysicalArchiveItem stays silent when offline', async () => {
+        mockDbError = OFFLINE;
+        await useFilmStore.getState().updatePhysicalArchiveItem(550, { condition: 'Mint' });
+        expect(captureError).not.toHaveBeenCalled();
+    });
+});
+
+describe('lists — the RPC path and the item path', () => {
+    const LIST = {
+        id: 'list-1', title: 'Noir', description: '', isRanked: false, isPrivate: false,
+        createdAt: '2026-01-01T00:00:00Z', userId: 'u1', films: [],
+    };
+
+    beforeEach(() => { useFilmStore.setState({ lists: [LIST] } as never); });
+
+    it('deleteList reports a genuine defect from the cascade RPC', async () => {
+        mockDbError = GENUINE_DEFECT;
+        await attempt(() => useFilmStore.getState().deleteList('list-1'));
+        expect(captureError).toHaveBeenCalledWith(
+            GENUINE_DEFECT, expect.objectContaining({ scope: 'listSlice.deleteList' }),
+        );
+    });
+
+    it('deleteList stays silent and queues when offline', async () => {
+        mockDbError = OFFLINE;
+        await attempt(() => useFilmStore.getState().deleteList('list-1'));
+        expect(captureError).not.toHaveBeenCalled();
+        expect(enqueueMutation).toHaveBeenCalledWith(expect.objectContaining({ type: 'delete_list' }));
+    });
+
+    it('addFilmToList reports a genuine defect', async () => {
+        mockDbError = GENUINE_DEFECT;
+        await useFilmStore.getState().addFilmToList('list-1', { id: 550, title: 'Fight Club' });
+        expect(captureError).toHaveBeenCalledWith(
+            GENUINE_DEFECT, expect.objectContaining({ scope: 'listSlice.addFilmToList' }),
+        );
+    });
+
+    it('addFilmToList stays silent when offline', async () => {
+        mockDbError = OFFLINE;
+        await useFilmStore.getState().addFilmToList('list-1', { id: 550, title: 'Fight Club' });
+        expect(captureError).not.toHaveBeenCalled();
+    });
+
+    it('removeFilmFromList reports a genuine defect', async () => {
+        useFilmStore.setState({
+            lists: [{ ...LIST, films: [{ id: 550, title: 'Fight Club', poster: null }] }],
+        } as never);
+        mockDbError = GENUINE_DEFECT;
+        await useFilmStore.getState().removeFilmFromList('list-1', 550);
+        expect(captureError).toHaveBeenCalledWith(
+            GENUINE_DEFECT, expect.objectContaining({ scope: 'listSlice.removeFilmFromList' }),
+        );
+    });
+});
+
+describe('log delete — the core write path', () => {
+    const LOG = {
+        id: 'log-1', filmId: 550, title: 'Fight Club', poster: '/p.jpg', year: 1999,
+        rating: 8, review: '', status: 'watched', viewCount: 1, viewingHistory: [],
+        createdAt: '2026-01-01T00:00:00Z',
+    };
+
+    beforeEach(() => {
+        useFilmStore.setState({ logs: [LOG], _loggedIndex: { 550: LOG } } as never);
+    });
+
+    it('reports a genuine defect with the log id attached', async () => {
+        mockDbError = GENUINE_DEFECT;
+        await attempt(() => useFilmStore.getState().removeLog('log-1'));
+        expect(captureError).toHaveBeenCalledWith(
+            GENUINE_DEFECT, expect.objectContaining({ scope: 'removeLogOp', logId: 'log-1' }),
+        );
+    });
+
+    it('restores the log after a genuine defect — rollback runs below the report', async () => {
+        mockDbError = GENUINE_DEFECT;
+        await attempt(() => useFilmStore.getState().removeLog('log-1'));
+        expect(useFilmStore.getState().logs.some((l) => l.id === 'log-1')).toBe(true);
+    });
+
+    it('stays silent and queues when offline', async () => {
+        mockDbError = OFFLINE;
+        await attempt(() => useFilmStore.getState().removeLog('log-1'));
+        expect(captureError).not.toHaveBeenCalled();
+        expect(enqueueMutation).toHaveBeenCalledWith(expect.objectContaining({ type: 'remove_log' }));
     });
 });
