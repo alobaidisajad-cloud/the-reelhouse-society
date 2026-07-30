@@ -1,4 +1,5 @@
 import { StateCreator } from 'zustand';
+import { captureError } from '../../lib/sentry';
 import { supabase } from '../../lib/supabase';
 import { InteractionService } from '../../services/InteractionService';
 import { Interaction } from '../../types';
@@ -83,6 +84,12 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                     try { require('react-native').AccessibilityInfo.announceForAccessibility('Entry certified'); } catch { /* test env */ }
                 }
             } catch (e: any) {
+                // Two EXPECTED failures are excluded: 23505 is a duplicate row
+                // (idempotent success, handled just below) and a network error is
+                // queued offline. Anything else is a genuine defect.
+                if (e?.code !== '23505' && !isNetworkError(e)) {
+                    captureError(e, { scope: 'interactionSlice.toggleEndorsement' });
+                }
                 // Idempotent: silently succeed if the row already exists
                 if (e?.code === '23505') {
                     return;
@@ -179,6 +186,12 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                     });
                 }
             } catch (e: any) {
+                // Two EXPECTED failures are excluded: 23505 is a duplicate row
+                // (idempotent success, handled just below) and a network error is
+                // queued offline. Anything else is a genuine defect.
+                if (e?.code !== '23505' && !isNetworkError(e)) {
+                    captureError(e, { scope: 'interactionSlice.toggleEndorsement' });
+                }
                 // Idempotent: silently succeed if the row already exists
                 if (e?.code === '23505') {
                     return;

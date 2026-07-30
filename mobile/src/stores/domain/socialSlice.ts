@@ -11,6 +11,7 @@
  *   • MMKV cache persistence for instant cold-start hydration
  */
 import { z } from 'zod';
+import { captureError } from '../../lib/sentry';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../auth';
 import { useSocialStore } from '../followStore';
@@ -159,6 +160,11 @@ export async function followUser(targetUsername: string): Promise<boolean> {
     return true;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as any).message) : String(err);
+    // Mirrors the network check below exactly (both msg and err) so an offline
+    // failure — which is queued, not lost — is never reported as a defect.
+    if (!isNetworkError(msg) && !isNetworkError(err)) {
+      captureError(err, { scope: 'socialSlice', targetUsername });
+    }
     if (isNetworkError(msg) || isNetworkError(err)) {
       const cached = _usernameProfileCache.get(targetUsername);
       const interactionType = cached?.isPrivate ? 'follow_request' : 'follow';
@@ -224,6 +230,11 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
     return true;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as any).message) : String(err);
+    // Mirrors the network check below exactly (both msg and err) so an offline
+    // failure — which is queued, not lost — is never reported as a defect.
+    if (!isNetworkError(msg) && !isNetworkError(err)) {
+      captureError(err, { scope: 'socialSlice', targetUsername });
+    }
     // Route network failures to the offline queue — keep optimistic state
     // (user sees the unfollow immediately), queue for background sync.
     if (isNetworkError(msg) || isNetworkError(err)) {
@@ -350,6 +361,8 @@ export async function hydrateFollowing(): Promise<void> {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.warn('[socialSlice.hydrateFollowing] Unexpected error:', msg);
+    // Labelled "Unexpected" by its own author — exactly what belongs in Sentry.
+    if (!isNetworkError(err)) captureError(err, { scope: 'socialSlice.hydrateFollowing' });
   }
 }
 

@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { StateCreator } from 'zustand';
+import { captureError } from '../../lib/sentry';
 import { supabase } from '../../lib/supabase';
 import { WatchlistItem } from '../../types';
 import { isNetworkError } from '../../utils/networkError';
@@ -131,6 +132,8 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
                         year: film.release_date ? (parseInt(film.release_date.slice(0, 4)) || null) : null,
                     } });
                 } else {
+                    // Not a network failure — the offline branch above owns those.
+                    captureError(error, { scope: 'watchlistSlice.addToWatchlist', filmId: film.id });
                     set((state) => {
                         const nextIdx = { ...state._watchlistIndex };
                         delete nextIdx[film.id];
@@ -176,6 +179,8 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
                     // Queue removal for offline sync
                     enqueueMutation({ type: 'remove_watchlist', payload: { user_id: user.id, film_id: filmId } });
                 } else {
+                    // Not a network failure — the offline branch above owns those.
+                    captureError(error, { scope: 'watchlistSlice.removeFromWatchlist', filmId });
                     set((state) => ({
                         watchlist: previousWatchlist,
                         _watchlistIndex: { ...state._watchlistIndex, [filmId]: true }

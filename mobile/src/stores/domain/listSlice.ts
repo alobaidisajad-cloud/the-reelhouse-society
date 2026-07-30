@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { tmdb } from '../../lib/tmdb';
 import { CustomList } from '../../types';
 import { ListRow, mapListRow } from '../../utils/mappers';
+import { captureError } from '../../lib/sentry';
 import { isNetworkError } from '../../utils/networkError';
 import { enqueueMutation } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
@@ -283,6 +284,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             }
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
         } catch (e: unknown) {
+            if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.updateList' });
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 let removedIds: number[] = [];
@@ -336,6 +338,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                 throw error;
             }
         } catch (e: unknown) {
+            if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.deleteList' });
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 enqueueMutation({ type: 'delete_list', payload: { list_id: listId, user_id: user.id } });
@@ -378,6 +381,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             if (error) throw error;
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
         } catch (e: unknown) {
+            if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.addFilmToList' });
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 enqueueMutation({ 
@@ -448,6 +452,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             }
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
         } catch (e: unknown) {
+            if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.removeFilmFromList' });
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 enqueueMutation({ type: 'remove_film_from_list', payload: { list_id: listId, film_id: filmId, trailing_films } });

@@ -6,6 +6,7 @@ import reelToast from '../../utils/reelToast';
 import { isArchivistPlusTier } from '../../utils/tier';
 import { useAuthStore } from '../auth';
 
+import { captureError } from '../../lib/sentry';
 import { isNetworkError } from '../../utils/networkError';
 
 export interface ArchiveSlice {
@@ -144,6 +145,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             }
          
         } catch (e: unknown) {
+            if (!isNetworkError(e)) captureError(e, { scope: 'archiveSlice.addToPhysicalArchive' });
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 enqueueMutation({ type: 'add_archive', payload: {
@@ -184,6 +186,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             if (error) throw error;
          
         } catch (e: unknown) {
+            if (!isNetworkError(e)) captureError(e, { scope: 'archiveSlice.removeFromPhysicalArchive' });
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 enqueueMutation({ type: 'remove_archive', payload: { user_id: user.id, film_id: filmId } });
@@ -214,6 +217,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             if (error) throw error;
          
         } catch (e: unknown) {
+            if (!isNetworkError(e)) captureError(e, { scope: 'archiveSlice.updatePhysicalArchiveItem' });
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 const dbUpdates: Record<string, any> = {};
