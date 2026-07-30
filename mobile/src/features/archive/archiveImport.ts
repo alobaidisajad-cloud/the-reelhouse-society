@@ -601,7 +601,12 @@ async function resolveFilm(title: string, year: string): Promise<TMDBMatch | nul
     return match;
   } catch (err: unknown) {
     logger.warn('[archiveImport] TMDB resolve failed for', title, err);
-    resolutionCache.set(key, null);
+    // Deliberately NOT cached. The nulls above are answers — TMDB was asked and
+    // had no confident match — and caching them saves a repeat lookup. This one
+    // is a FAILURE to ask: a dropped connection, a rate limit, a timeout.
+    // Caching it would freeze that film as unmatched for the rest of the app
+    // session, so a member retrying after a blip would get the same misses back
+    // instantly with no request made, and no way out but force-quitting.
     return null;
   }
 }
