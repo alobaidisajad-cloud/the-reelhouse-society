@@ -312,9 +312,10 @@ export default function LogDetailScreen() {
     };
     
     await queryClient.cancelQueries({ queryKey: ['log', id] });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const previousData = queryClient.getQueryData<any>(['log', id]);
-    
+
+    // No snapshot is taken on purpose: the failure path below rolls back by
+    // filtering out this one optimistic comment, which preserves any comment
+    // that arrived while the write was in flight.
     queryClient.setQueryData(['log', id], (old: any) => {
         if (!old) return old;
         return {

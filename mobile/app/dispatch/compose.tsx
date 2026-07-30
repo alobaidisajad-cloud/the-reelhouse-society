@@ -6,16 +6,13 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bold, Italic, Type, Quote, Minus, Link2 } from 'lucide-react-native';
 import Markdown from 'react-native-markdown-display';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import TactileEngine from '@/src/utils/TactileEngine';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatchStore } from '@/src/stores/content';
 import { storage } from '@/src/stores/mmkv-storage';
 import { isAuteurPlusTier } from '@/src/utils/tier';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { colors, fonts, spacing } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 

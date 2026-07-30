@@ -5,8 +5,7 @@ import {
 } from 'react-native';
 
 import Animated, {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  FadeInDown, useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, withTiming, useDerivedValue, Easing
+  FadeInDown, useSharedValue, useAnimatedStyle, withTiming, useDerivedValue, Easing
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -171,12 +170,11 @@ export default function ReelScreen() {
   const [stackSearch, setStackSearch] = useState('');
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: communityData, isLoading: communityLoading, refetch: refetchCommunity, isRefetching: isCommunityRefetching, fetchNextPage: fetchNextCommunity, hasNextPage: hasNextCommunity, isFetchingNextPage: isFetchingNextCommunity } = useCommunityFeed();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: followingData, isLoading: followingLoading, refetch: refetchFollowing, isRefetching: isFollowingRefetching, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing } = useFollowingFeed();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: stacksData, isLoading: stacksLoading, refetch: refetchStacks, isRefetching: isStacksRefetching, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks } = useStacksFeed(stackFilter, stackSearch);
+  // isRefetching is deliberately not taken: the pull gesture drives
+  // isManualRefreshing above, so the screen owns its own spinner.
+  const { data: communityData, isLoading: communityLoading, refetch: refetchCommunity, fetchNextPage: fetchNextCommunity, hasNextPage: hasNextCommunity, isFetchingNextPage: isFetchingNextCommunity } = useCommunityFeed();
+  const { data: followingData, isLoading: followingLoading, refetch: refetchFollowing, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing } = useFollowingFeed();
+  const { data: stacksData, isLoading: stacksLoading, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks } = useStacksFeed(stackFilter, stackSearch);
 
   const followingCount = useSocialStore((s) => s.following.length);
 
