@@ -331,16 +331,28 @@ export function detectRatingScale(
  * 25/03/2024 parses correctly (25 cannot be a month) while 05/03/2024 silently
  * becomes 3 May. Half the dates are wrong and nothing looks broken.
  *
- * A single row with a first number above 12 proves the whole file is
- * day-first — no month exceeds 12. That is arithmetic, not a guess.
- * Absent that proof we keep today's MM/DD default (the common export format).
+ * BOTH formats leave proof, and both sides must be counted:
+ *   first  number > 12  ->  day-first  (25/03 — no month exceeds 12)
+ *   second number > 12  ->  month-first (03/25 — likewise)
+ *
+ * Taking the first day-first row as decisive would let ONE malformed or
+ * hand-typed row flip an entire month-first file, transposing every ambiguous
+ * date in it. So the side with more evidence wins, and a file with no proof
+ * either way keeps today's MM/DD default (the common export format).
  */
 export function detectDateFormat(dates: string[]): 'MDY' | 'DMY' {
+  let dayFirst = 0;
+  let monthFirst = 0;
   for (const d of dates) {
     const m = String(d ?? '').trim().match(/^(\d{1,2})\/(\d{1,2})\/\d{4}$/);
-    if (m && parseInt(m[1], 10) > 12) return 'DMY';
+    if (!m) continue;
+    const a = parseInt(m[1], 10);
+    const b = parseInt(m[2], 10);
+    if (a > 12 && b <= 12) dayFirst++;
+    else if (b > 12 && a <= 12) monthFirst++;
+    // a > 12 && b > 12 is not a date in either reading — it proves nothing.
   }
-  return 'MDY';
+  return dayFirst > monthFirst ? 'DMY' : 'MDY';
 }
 
 /**

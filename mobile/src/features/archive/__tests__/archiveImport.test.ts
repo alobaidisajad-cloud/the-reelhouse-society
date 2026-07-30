@@ -318,8 +318,8 @@ describe('detectRatingScale — source outranks the max value', () => {
   });
 });
 
-describe('detectDateFormat — decided once for the whole file', () => {
-  it('one unambiguous row settles every other row', () => {
+describe('detectDateFormat — decided once for the whole file, by weight of evidence', () => {
+  it('a day-first row settles the ambiguous ones around it', () => {
     // 05/03 is ambiguous alone; 25/03 in the same file proves day-first.
     expect(detectDateFormat(['05/03/2024', '25/03/2024', '01/02/2024'])).toBe('DMY');
   });
@@ -328,9 +328,27 @@ describe('detectDateFormat — decided once for the whole file', () => {
     expect(detectDateFormat(['03/25/2024', '12/31/2023', '01/02/2024'])).toBe('MDY');
   });
 
+  it('ONE odd row cannot flip a file that overwhelmingly proves the other way', () => {
+    // Four rows prove month-first (25, 31, 15, 30 in second position); one row
+    // reads day-first. Treating the first day-first row as decisive would
+    // transpose every ambiguous date in an otherwise clean US export.
+    expect(detectDateFormat([
+      '03/25/2024', '12/31/2023', '01/15/2024', '06/30/2024', '25/03/2024',
+    ])).toBe('MDY');
+    // And the mirror image: a European file with one stray US-looking row.
+    expect(detectDateFormat([
+      '25/03/2024', '31/12/2023', '15/01/2024', '30/06/2024', '03/25/2024',
+    ])).toBe('DMY');
+  });
+
   it('keeps the MM/DD default when a file is genuinely ambiguous', () => {
     expect(detectDateFormat(['01/02/2024', '03/04/2024'])).toBe('MDY');
     expect(detectDateFormat([])).toBe('MDY');
+  });
+
+  it('a row that is impossible either way proves nothing', () => {
+    // 25/25 is not a date in either reading — it must not cast a vote.
+    expect(detectDateFormat(['25/25/2024', '03/25/2024'])).toBe('MDY');
   });
 
   it('ignores ISO dates and junk without being thrown off', () => {
