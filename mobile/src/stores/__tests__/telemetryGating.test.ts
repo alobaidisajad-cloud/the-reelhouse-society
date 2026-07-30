@@ -19,10 +19,12 @@
 import { useFilmStore } from '../films';
 import { captureError } from '@/src/lib/sentry';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
+import { followUser, unfollowUser, hydrateFollowing } from '../domain/socialSlice';
 
 /** Flipped per-test; the supabase mock returns whatever this holds. */
 let mockDbError: unknown = null;
 let mockDbData: unknown = null;
+let mockDbQueue: { data: unknown; error: unknown }[] = [];
 /** Flipped per-test; InteractionService rejects with whatever this holds. */
 let mockEndorseError: unknown = null;
 
@@ -58,8 +60,12 @@ jest.mock('@/src/lib/supabase', () => {
         const chain: Record<string, unknown> = {};
         ['select', 'eq', 'neq', 'order', 'limit', 'or', 'in', 'insert', 'delete',
             'update', 'upsert', 'single', 'maybeSingle'].forEach((m) => { chain[m] = jest.fn(() => chain); });
-        chain.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
-            Promise.resolve({ data: mockDbData, error: mockDbError }).then(res, rej);
+        chain.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) => {
+            // A queued response wins, so multi-step flows (resolve profile →
+            // check existing → write) can be steered call by call.
+            const next = mockDbQueue.length ? mockDbQueue.shift() : { data: mockDbData, error: mockDbError };
+            return Promise.resolve(next).then(res, rej);
+        };
         return chain;
     };
     return {
@@ -99,6 +105,22 @@ jest.mock('@/src/services/InteractionService', () => ({
         removeEndorsement: jest.fn(() => Promise.reject(mockEndorseError)),
     },
 }));
+jest.mock('../followStore', () => ({
+    useSocialStore: {
+        getState: jest.fn(() => ({
+            isFollowing: () => false,
+            isRequested: () => false,
+            addFollowing: jest.fn(),
+            addRequested: jest.fn(),
+            removeFollowing: jest.fn(),
+            removeRequested: jest.fn(),
+            persistFollowing: jest.fn(),
+            following: [],
+            requested: [],
+            setFollowing: jest.fn(),
+        })),
+    },
+}));
 jest.mock('expo-image', () => ({ Image: { prefetch: jest.fn(() => Promise.resolve()) } }));
 
 // NOTE: networkError is deliberately NOT mocked. The real classifier runs.
@@ -125,7 +147,9 @@ const settle = async (filmId: number) => {
 beforeEach(() => {
     jest.clearAllMocks();
     mockDbError = null;
+    mockDbData = null;
     mockEndorseError = null;
+    mockDbQueue = [];
     useFilmStore.setState({ watchlist: [], _watchlistIndex: {}, _watchlistPromises: {} });
 });
 
@@ -391,5 +415,120 @@ describe('log delete — the core write path', () => {
         await attempt(() => useFilmStore.getState().removeLog('log-1'));
         expect(captureError).not.toHaveBeenCalled();
         expect(enqueueMutation).toHaveBeenCalledWith(expect.objectContaining({ type: 'remove_log' }));
+    });
+});
+
+describe('lists — updateList', () => {
+    beforeEach(() => {
+        useFilmStore.setState({
+            lists: [{
+                id: 'list-9', title: 'Noir', description: '', isRanked: false, isPrivate: false,
+                createdAt: '2026-01-01T00:00:00Z', userId: 'u1', films: [],
+            }],
+        } as never);
+    });
+
+    it('reports a genuine defect', async () => {
+        mockDbError = GENUINE_DEFECT;
+        await attempt(() => useFilmStore.getState().updateList('list-9', { title: 'Neo-Noir' }));
+        expect(captureError).toHaveBeenCalledWith(
+            GENUINE_DEFECT, expect.objectContaining({ scope: 'listSlice.updateList' }),
+        );
+    });
+
+    it('stays silent when offline', async () => {
+        mockDbError = OFFLINE;
+        await attempt(() => useFilmStore.getState().updateList('list-9', { title: 'Neo-Noir' }));
+        expect(captureError).not.toHaveBeenCalled();
+    });
+});
+
+describe('log update — the other half of the core write path', () => {
+    const LOG = {
+        id: 'log-9', filmId: 551, title: 'Se7en', poster: '/s.jpg', year: 1995,
+        rating: 9, review: '', status: 'watched', viewCount: 1, viewingHistory: [],
+        createdAt: '2026-01-01T00:00:00Z',
+    };
+
+    beforeEach(() => {
+        useFilmStore.setState({ logs: [LOG], _loggedIndex: { 551: LOG } } as never);
+    });
+
+    it('reports a genuine defect with the log id', async () => {
+        mockDbError = GENUINE_DEFECT;
+        await attempt(() => useFilmStore.getState().updateLog('log-9', { rating: 10 }));
+        expect(captureError).toHaveBeenCalledWith(
+            GENUINE_DEFECT, expect.objectContaining({ scope: 'updateLogOp', logId: 'log-9' }),
+        );
+    });
+
+    it('stays silent when offline', async () => {
+        mockDbError = OFFLINE;
+        await attempt(() => useFilmStore.getState().updateLog('log-9', { rating: 10 }));
+        expect(captureError).not.toHaveBeenCalled();
+    });
+});
+
+describe('follows — the last uncovered store paths', () => {
+    const profileRow = { data: { id: 't1', is_social_private: false }, error: null };
+    const empty = { data: null, error: null };
+
+    it('followUser reports a genuine defect', async () => {
+        mockDbQueue = [profileRow, empty, { data: null, error: GENUINE_DEFECT }];
+        await followUser('alpha');
+        expect(captureError).toHaveBeenCalledWith(
+            expect.anything(), expect.objectContaining({ scope: 'socialSlice', targetUsername: 'alpha' }),
+        );
+    });
+
+    it('followUser stays silent and queues when offline', async () => {
+        mockDbQueue = [profileRow, empty, { data: null, error: OFFLINE }];
+        await followUser('bravo');
+        expect(captureError).not.toHaveBeenCalled();
+        expect(enqueueMutation).toHaveBeenCalled();
+    });
+
+    it('unfollowUser reports a genuine defect', async () => {
+        mockDbQueue = [profileRow, { data: null, error: GENUINE_DEFECT }];
+        await unfollowUser('charlie');
+        expect(captureError).toHaveBeenCalledWith(
+            expect.anything(), expect.objectContaining({ scope: 'socialSlice', targetUsername: 'charlie' }),
+        );
+    });
+
+    it('unfollowUser stays silent when offline', async () => {
+        mockDbQueue = [profileRow, { data: null, error: OFFLINE }];
+        await unfollowUser('delta');
+        expect(captureError).not.toHaveBeenCalled();
+    });
+});
+
+describe('the last two store paths', () => {
+    it('toggleListEndorse excludes 23505 exactly like toggleEndorse', async () => {
+        useFilmStore.setState({ interactions: [], _listEndorsedIndex: {} } as never);
+        mockEndorseError = { code: '23505', message: 'duplicate key value' };
+        await useFilmStore.getState().toggleListEndorse('list-x');
+        expect(captureError).not.toHaveBeenCalled();
+        expect(useFilmStore.getState().hasListEndorsed('list-x')).toBe(true);
+    });
+
+    it('toggleListEndorse reports a genuine failure', async () => {
+        useFilmStore.setState({ interactions: [], _listEndorsedIndex: {} } as never);
+        mockEndorseError = { code: '42501', message: 'permission denied' };
+        await attempt(() => useFilmStore.getState().toggleListEndorse('list-y'));
+        expect(captureError).toHaveBeenCalledWith(
+            expect.objectContaining({ code: '42501' }),
+            expect.objectContaining({ scope: 'interactionSlice.toggleEndorsement' }),
+        );
+    });
+
+    it('hydrateFollowing reports an unexpected shape from the server', async () => {
+        // Malformed payload => a TypeError inside the try, which is precisely
+        // the "Unexpected error" this catch was labelled for.
+        mockDbData = 'not-an-array';
+        await hydrateFollowing();
+        expect(captureError).toHaveBeenCalledWith(
+            expect.anything(), expect.objectContaining({ scope: 'socialSlice.hydrateFollowing' }),
+        );
     });
 });
