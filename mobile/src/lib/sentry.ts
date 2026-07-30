@@ -83,14 +83,19 @@ export function setSentryUser(user: { id: string; username: string; role: string
  */
 export function captureError(error: unknown, context?: Record<string, unknown>) {
   if (!SENTRY_DSN) return;
-  if (context) {
-    Sentry.withScope((scope) => {
-      scope.setExtras(context);
+  // Reporting must never throw into the caller. These calls sit at the top of
+  // catch blocks whose rollback and offline-queue recovery run underneath them,
+  // so a failure here would cost the member their data, not just the report.
+  try {
+    if (context) {
+      Sentry.withScope((scope) => {
+        scope.setExtras(context);
+        Sentry.captureException(error);
+      });
+    } else {
       Sentry.captureException(error);
-    });
-  } else {
-    Sentry.captureException(error);
-  }
+    }
+  } catch { /* swallowed on purpose — see above */ }
 }
 
 /**
@@ -103,11 +108,13 @@ export function captureError(error: unknown, context?: Record<string, unknown>) 
  */
 export function captureWarning(message: string, context?: Record<string, unknown>) {
   if (!SENTRY_DSN) return;
-  Sentry.withScope((scope) => {
-    scope.setLevel('warning');
-    if (context) scope.setExtras(context);
-    Sentry.captureMessage(message);
-  });
+  try {
+    Sentry.withScope((scope) => {
+      scope.setLevel('warning');
+      if (context) scope.setExtras(context);
+      Sentry.captureMessage(message);
+    });
+  } catch { /* telemetry must never break the caller — see captureError */ }
 }
 
 /**

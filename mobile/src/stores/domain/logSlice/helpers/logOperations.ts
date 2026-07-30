@@ -782,7 +782,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             }
             reelToast(`"${logToRemove.title}" removed.`);
         } catch (e: unknown) {
-            if (__DEV__) console.warn(`[removeLog] Failed for log :`, e);
+            if (__DEV__) console.warn(`[removeLog] Failed for log ${id}:`, e);
 
             if (!isNetworkError(e)) captureError(e, { scope: 'removeLogOp', logId: id });
             set((state) => {

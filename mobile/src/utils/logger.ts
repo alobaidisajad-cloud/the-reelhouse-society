@@ -10,6 +10,24 @@
 
 import { captureError, captureWarning } from '../lib/sentry';
 
+/**
+ * Stringify an argument for a production log line WITHOUT ever throwing.
+ *
+ * The previous inline JSON.stringify threw a TypeError on any object holding a
+ * circular reference — and because logger calls sit at the top of catch blocks,
+ * that throw would skip the rollback or offline-queue recovery underneath it.
+ * A logger must never be able to break the code that is reporting to it.
+ */
+const safeString = (a: unknown): string => {
+    if (a instanceof Error) return a.message;
+    if (typeof a !== 'object' || a === null) return String(a);
+    try {
+        return JSON.stringify(a) ?? String(a);
+    } catch {
+        return '[unserializable]';
+    }
+};
+
 export const logger = {
     debug: (...args: unknown[]) => {
         if (__DEV__) {
@@ -26,10 +44,12 @@ export const logger = {
             console.warn(...args);
         } else {
             // Forward warnings to Sentry in production
-            const msg = args.map(a => (a instanceof Error ? a.message : typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
-            const context: Record<string, unknown> = {};
-            args.forEach((arg, i) => { context[`arg_${i}`] = arg; });
-            captureWarning(msg, Object.keys(context).length > 0 ? context : undefined);
+            try {
+                const msg = args.map(safeString).join(' ');
+                const context: Record<string, unknown> = {};
+                args.forEach((arg, i) => { context[`arg_${i}`] = arg; });
+                captureWarning(msg, Object.keys(context).length > 0 ? context : undefined);
+            } catch { /* telemetry must never break the caller's recovery path */ }
         }
     },
     error: (...args: unknown[]) => {
@@ -37,23 +57,25 @@ export const logger = {
             console.error(...args);
         } else {
             // Forward actual Error objects to Sentry in production to preserve stack traces
-            let err: Error | undefined;
-            const context: Record<string, unknown> = {};
-            
-            for (let i = 0; i < args.length; i++) {
-                const arg = args[i];
-                if (!err && arg instanceof Error) {
-                    err = arg;
-                } else {
-                    context[`arg_${i}`] = arg;
+            try {
+                let err: Error | undefined;
+                const context: Record<string, unknown> = {};
+
+                for (let i = 0; i < args.length; i++) {
+                    const arg = args[i];
+                    if (!err && arg instanceof Error) {
+                        err = arg;
+                    } else {
+                        context[`arg_${i}`] = arg;
+                    }
                 }
-            }
-            
-            if (!err) {
-                err = new Error(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
-            }
-            
-            captureError(err, Object.keys(context).length > 0 ? context : undefined);
+
+                if (!err) {
+                    err = new Error(args.map(safeString).join(' '));
+                }
+
+                captureError(err, Object.keys(context).length > 0 ? context : undefined);
+            } catch { /* telemetry must never break the caller's recovery path */ }
         }
     }
 };
