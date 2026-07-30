@@ -570,3 +570,54 @@ something, 2 pre-existing and severe. **Still zero in the deletions, zero in
 the plan's own edits.**
 
 Final: **1056 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
+
+---
+
+## SEVENTH POST-EXECUTION AUDIT (2026-07-30) — new patterns + the foundation
+
+Pass 6 exhausted the substring / fail-open / unconditional-assignment sweeps,
+so this pass opened NEW patterns and finally stress-tested the two pieces I had
+three times excused as "already tested".
+
+**Pattern D — floating promises / missing await:** none. Every async call is
+awaited.
+**Pattern E — swallowed errors:** no empty catch blocks anywhere in the feature.
+
+### Fixed
+**02bf0c4 · ONE STRAY QUOTE SWALLOWED THE REST OF THE ARCHIVE.** The CSV
+tokenizer, which everything else stands on. A single unescaped quote put it
+inside a quoted field for the REMAINDER OF THE FILE, merging every later line
+into one cell — so a stray quote on row 2 of a 3,000-film history silently
+discarded the other 2,998 and the import reported success. Entirely realistic:
+an exporter that fails to double a quote, or a review reading `He said "hello`.
+The tokenizer now reports ending inside a quote — proof of malformed quoting,
+since well-formed CSV always closes — and re-reads treating quotes literally.
+A few visible stray quote marks the member can see and fix, instead of losing
+almost everything invisibly. Well-formed files never take that path.
+
+**280ff0c · MY OWN review-count fix over-counted.** 6502a60 corrected an
+under-count by adding earlier watches; that introduced the opposite error.
+aggregateDiaryEntries merges with "empty keeps previous", so an unreviewed
+rewatch INHERITS the earlier review — the same text then sits on the log row
+AND in viewing_history, and was counted twice. The aggregate now exposes
+`sourceWatches` (every watch as it appeared in the FILE, pre-merge) and the
+count comes from there. reviews.csv supplying a review for a film whose diary
+rows had none is handled too.
+
+### Verified clean
+- rewatch aggregation: grouping, stable same-day ordering, latest/earlier split
+  and the inheritance merge are all correct — and the merge IS consumed
+  (`latest: { ...latest, rating, review }`), not computed and discarded
+- tokenizer: trailing newline, trailing comma, escaped `""`, quoted commas,
+  multi-line quoted fields, BOM, CRLF, empty file — all correct
+
+### Running total across seven audits
+**19 bugs + 2 corrections to my own work.** 17 in code written to fix
+something, 2 pre-existing and severe. **Still zero in the deletions, zero in
+the plan's own edits.**
+
+Twice now a fix of mine has needed fixing (a false premise in 9baed61, an
+over-count in 6502a60). Both were caught by auditing my own corrections rather
+than only the original code.
+
+Final: **1063 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
