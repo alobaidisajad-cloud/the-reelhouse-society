@@ -621,3 +621,44 @@ over-count in 6502a60). Both were caught by auditing my own corrections rather
 than only the original code.
 
 Final: **1063 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
+
+---
+
+## EIGHTH AUDIT — WHOLE SURFACE IN ONE SWEEP. CLEAN. **BATCH 1 IS CLOSED.**
+
+Previous rounds tackled one area each, which cost days. This pass probed the
+ENTIRE remaining surface at once — 39 adversarial checks against the real
+functions, not mirrors — to find everything left in a single take.
+
+**Result: nothing found.** The one probe failure was MY expectation being
+wrong (`clampRating(Infinity)` returns 0 — unrated — which is safer and
+correct).
+
+### Swept clean, no change needed
+- **list parser** — slugified names, header-only files, empty/whitespace
+  titles, duplicate films, non-numeric and negative positions
+- **header resolver** — whitespace, UPPERCASE, missing title column
+- **aggregation** — empty diary, undated watches, year-distinct films,
+  case/whitespace grouping, 500 rewatches, newest-first history, stable
+  same-date ordering
+- **numeric/date** — Infinity, NaN, null, 2-digit years, empty dates
+- **receipt** — 20,000 ids round-tripping, NaN film ids rejected
+- **adversarial** — unicode/emoji/RTL, 200k-char fields, 20k rows in ~14ms,
+  spreadsheet-formula payloads carried as data, control characters
+
+The best probes were kept as permanent INVARIANTS (67c0abd) — properties that
+must hold for ANY input, not just remembered cases. That is what stops the
+next regression without another eight rounds.
+
+## FINAL TALLY — batch 1, eight audits
+**19 bugs + 2 corrections to my own fixes.** 17 in code written to fix
+something; 2 pre-existing and severe (the classifier replacing a diary, the
+tokenizer swallowing a file). **Zero in the deletions. Zero in the plan's own
+edits. In all eight passes.**
+
+The lesson worth carrying to the remaining batches: **the deletions — the
+boring work — were right the first time and never moved. Every single defect
+was in clever new code, and twice in code written to fix an earlier defect.**
+Audit the fix as hard as the bug.
+
+**FINAL: 1071 tests · tsc 0 · eslint 0 · coverage 0 · ratchet 0 · 55 commits**
