@@ -294,3 +294,59 @@ is deleted; on partial failure it is kept for retry.
 - 10 hollow test files — assert on hand-written copies of logic, not the code
 - unbounded `currentMessages` growth — needs a windowed cap (a tail slice would
   break scroll-back)
+
+---
+
+## POST-EXECUTION AUDIT (2026-07-30) — 5 real bugs found, all in MY OWN new code
+
+Auditing the executed plan, not the plan. Deletions and plan edits came back
+clean; **every bug was in the code written to fix things.**
+
+### Verified clean
+- **All 30 planned commits landed**; tree clean; HEAD == origin/main
+- **No reference anywhere to deleted code** — searched the WHOLE repo this time,
+  including the root `__tests__/` blind spot. Two `src/` hits, both comments.
+- **#79 revert is byte-identical** to pre-batch; `content.ts` still imports it
+- **#53a** the removed slice was provably a no-op at every array length (0→500)
+- **#53b** `mine` could never be true — the early return precedes it
+- **#59** no UI consumer of `deleteMessage` remained
+- **#129 refactor** — the extracted gate matches the original on every case
+- **Dates now ISO at parse time**: every consumer re-normalises (idempotent) or
+  normalises internally. The rewatch sort at `:804` was previously WRONG for
+  European files and is fixed as a side effect.
+- **Test count reconciles exactly**: 102 suites − 3 + 2 = 101
+- No debug residue introduced
+
+### The 5 bugs — four are ONE mistake repeated
+**3723bd0 · undo could have deleted the member's own films.** The
+pre-existing-items probe was unbounded; PostgREST caps at 1000 rows. A stack
+with more than 1000 films truncated silently, so films past row 1000 looked
+like rows the import created. Now paginated; a failed probe records no undo
+entries at all rather than guessing.
+
+**12d0d2f · live users would silently lose a queued deletion.** Removing the
+`delete_lounge_message` handler orphaned entries already sitting in members'
+offline queues. The queue itself behaves correctly (dead-letters, no jam —
+verified), but the member's deletion vanished. Restored as a legacy alias that
+completes it as a *withdrawal*.
+
+**dd655c8 · "a fraction proves a 5-star scale" — wrong above a max of 5.**
+A tracker on 0.5–10 in half steps has fractions AND a max above 5; the rung
+clamped 7, 7.5 and 9 all to 5 reels.
+
+**2b94865 · one odd row could flip a whole file's date format.** Only
+day-first evidence was counted; month-first files leave their own proof
+(`03/25`). Both sides are now weighed.
+
+**304f275 · a source fingerprint overrode contradictory data.** A file
+fingerprinted Letterboxd carrying a 10 was forced to half-five, clamping
+everything above 5.
+
+### The lesson
+The last three are literally the same error: **treating one signal as proof
+without checking for evidence against it.** I wrote tests asserting the broken
+behaviour in two of them, so the suite locked the bugs in rather than catching
+them. Green tests prove the code does what the test says — not that the test
+says the right thing.
+
+Final: **1034 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
