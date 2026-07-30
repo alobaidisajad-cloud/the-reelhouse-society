@@ -7,11 +7,11 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet,
+  View, Text, StyleSheet, Alert,
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import {
-  Upload, Download, CheckCircle, AlertCircle,
+  Upload, Download, CheckCircle, AlertCircle, Undo2,
 } from 'lucide-react-native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import * as DocumentPicker from 'expo-document-picker';
@@ -22,6 +22,8 @@ import { useFilmStore , useWatchlistStore, useArchiveStore, useListStore } from 
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { importArchiveZip, importArchiveJSON, ImportProgress, ImportResult } from '@/src/features/archive/archiveImport';
+import { loadReceipt, undoImport } from '@/src/features/archive/undoImport';
+import { receiptSize } from '@/src/features/archive/importReceipt';
 import { supabase } from '@/src/lib/supabase';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
@@ -38,9 +40,73 @@ export default function DataVault() {
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  // How many rows the last import created, if it can still be taken back.
+  // 0 means there is nothing to undo and the control stays hidden.
+  const [undoableRows, setUndoableRows] = useState(0);
+  const [undoing, setUndoing] = useState(false);
 
   // ── Export State ──
   const [exporting, setExporting] = useState(false);
+
+  /**
+   * Reverses the last import. Confirmed first — it deletes — and worded so the
+   * member knows the scope: only what THIS import added, never anything they
+   * already had.
+   */
+  const handleUndoImport = () => {
+    const userId = useAuthStore.getState().user?.id;
+    const receipt = loadReceipt(userId);
+    if (!userId || !receipt) { setUndoableRows(0); return; }
+
+    Alert.alert(
+      'Undo this transfer?',
+      `This removes the ${receiptSize(receipt)} entries the transfer added. Anything you logged yourself, and any stack you already had, stays exactly as it is.`,
+      [
+        { text: 'Keep it', style: 'cancel' },
+        {
+          text: 'Undo transfer',
+          style: 'destructive',
+          onPress: async () => {
+            setUndoing(true);
+            try {
+              const { removed, errors } = await undoImport(receipt, userId);
+              if (!isMounted.current) return;
+
+              // Pull the stores back in line with the database.
+              const filmStore = useFilmStore.getState();
+              const archiveStore = useArchiveStore.getState();
+              await Promise.all([
+                filmStore.fetchLogs?.(),
+                filmStore.fetchWatchlist?.(),
+                filmStore.fetchLists?.(),
+                archiveStore.fetchPhysicalArchive?.(),
+              ].filter(Boolean));
+              if (!isMounted.current) return;
+
+              if (errors.length > 0) {
+                // Partial: the receipt is deliberately kept so this can be
+                // retried once the connection is stable.
+                setUndoableRows(receiptSize(receipt));
+                TactileEngine.error();
+                reelToast.error(`Removed ${removed}. Some entries could not be reached — try again.`);
+              } else {
+                setUndoableRows(0);
+                setImportResult(null);
+                TactileEngine.success();
+                reelToast.success(`Transfer undone. ${removed} entries removed.`);
+              }
+            } catch (e: unknown) {
+              if (!isMounted.current) return;
+              TactileEngine.error();
+              reelToast.error(e instanceof Error ? e.message : 'Could not undo the transfer.');
+            } finally {
+              if (isMounted.current) setUndoing(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const isMounted = useRef(true);
   useEffect(() => {
@@ -98,6 +164,10 @@ export default function DataVault() {
 
       if (!isMounted.current) return;
       setImportResult(res);
+
+      // Surface the undo only when this import actually created something.
+      const receipt = loadReceipt(useAuthStore.getState().user?.id);
+      setUndoableRows(receipt ? receiptSize(receipt) : 0);
 
       // Refresh stores
       const filmStore = useFilmStore.getState();
@@ -385,6 +455,26 @@ export default function DataVault() {
               <Upload size={12} color={colors.fog} />
               <Text style={s.importAnotherText}>IMPORT ANOTHER FILE</Text>
             </PressableScale>
+
+            {/* Undo — shown only while the last transfer can still be taken
+                back. Removes what the transfer added and nothing else. */}
+            {undoableRows > 0 && (
+              <PressableScale
+                style={[s.undoBtn, undoing && { opacity: 0.5 }]}
+                onPress={handleUndoImport}
+                disabled={undoing}
+                accessibilityLabel={`Undo this transfer, removing ${undoableRows} entries`}
+                accessibilityRole="button"
+                haptic="heavy"
+                pressedScale={0.97}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Undo2 size={12} color={colors.crimson} />
+                <Text style={s.undoText}>
+                  {undoing ? 'UNDOING…' : `UNDO THIS TRANSFER (${undoableRows})`}
+                </Text>
+              </PressableScale>
+            )}
           </View>
         )}
       </View>
@@ -516,6 +606,16 @@ const s = StyleSheet.create({
   },
   importAnotherText: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog,
+  },
+  // Reads as a quiet destructive option: crimson hairline, no fill. It sits
+  // under the primary action, never competing with it.
+  undoBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    paddingVertical: 10, paddingHorizontal: 14, marginTop: 8,
+    borderWidth: 1, borderColor: 'rgba(125,31,31,0.28)',
+  },
+  undoText: {
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.crimson,
   },
 
   // ── Export Action ──

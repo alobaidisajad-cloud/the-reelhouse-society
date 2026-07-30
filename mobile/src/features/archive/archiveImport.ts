@@ -19,6 +19,8 @@ import { logger } from '@/src/utils/logger';
 // FEAT-1: imported review/notes text is untrusted (from arbitrary third-party
 // exports) — run it through the same sanitizer as in-app writes.
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
+import { ImportReceipt, emptyReceipt } from './importReceipt';
+import { saveReceipt } from './undoImport';
 
 // ═══════════════════════════════════════════════════════════════
 //  PUBLIC TYPES
@@ -865,8 +867,17 @@ export function buildViewingHistory(
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Upserts a batch and returns the number of rows ACTUALLY written (with
- * ignoreDuplicates, .select('id') returns only real inserts — honest counts).
+ * Upserts a batch and returns the ids of the rows ACTUALLY written.
+ *
+ * With ignoreDuplicates: true, .select('id') returns ONLY genuine inserts —
+ * conflicting rows are skipped and never come back. That is what makes both the
+ * honest count (.length) and a safe undo possible: an id here is a row that did
+ * not exist before, so deleting it cannot touch anything the member already had.
+ *
+ * With ignoreDuplicates: false the result also includes UPDATED rows, so a
+ * caller in that mode must establish for itself which keys are new
+ * (see the pre-existing-film_ids probe in the list importer).
+ *
  * If the whole batch fails (e.g. one row violates a CHECK constraint), retries
  * row-by-row so a single bad row can't sink its 49 neighbors; per-row errors
  * are collected, capped so a filthy file can't flood the report.
@@ -879,16 +890,18 @@ async function upsertCounted(
   ignoreDuplicates: boolean,
   label: string,
   errors: string[],
-): Promise<number> {
+): Promise<string[]> {
+  const idsOf = (rows: { id?: unknown }[] | null) =>
+    (rows ?? []).map(r => String(r.id)).filter(id => id && id !== 'undefined');
   try {
     const { data, error } = await supabase
       .from(table)
       .upsert(batch, { onConflict, ignoreDuplicates })
       .select('id');
-    if (!error) return data?.length ?? 0;
+    if (!error) return idsOf(data);
 
     // Batch rejected — isolate the poison row(s) instead of losing the batch.
-    let ok = 0;
+    const ok: string[] = [];
     for (const row of batch) {
       const { data: single, error: rowErr } = await supabase
         .from(table)
@@ -897,7 +910,7 @@ async function upsertCounted(
       if (rowErr) {
         if (errors.length < MAX_COLLECTED_ERRORS) errors.push(`${label}: ${rowErr.message}`);
       } else {
-        ok += single?.length ?? 0;
+        ok.push(...idsOf(single));
       }
     }
     return ok;
@@ -905,7 +918,7 @@ async function upsertCounted(
     if (errors.length < MAX_COLLECTED_ERRORS) {
       errors.push(`${label}: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
-    return 0;
+    return [];
   }
 }
 
@@ -914,6 +927,7 @@ async function importLogs(
   reviewMap: Map<string, string>,
   resolvedFilms: Map<string, TMDBMatch>,
   userId: string,
+  receipt: ImportReceipt,
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<{ imported: number; reviewCount: number; skipped: number; errors: string[] }> {
   const errors: string[] = [];
@@ -1004,7 +1018,11 @@ async function importLogs(
       current: Math.min(i + BATCH_SIZE, total),
       total,
     });
-    imported += await upsertCounted('logs', batch, 'user_id,film_id', true, 'Film log', errors);
+    const newLogIds = await upsertCounted('logs', batch, 'user_id,film_id', true, 'Film log', errors);
+    imported += newLogIds.length;
+    // ignoreDuplicates: true — these ids are rows that did NOT exist before,
+    // so undo can delete them without touching anything the member already had.
+    receipt.logIds.push(...newLogIds);
   }
 
   return { imported, reviewCount, skipped, errors };
@@ -1014,6 +1032,7 @@ async function importWatchlist(
   entries: ParsedWatchlistEntry[],
   resolvedFilms: Map<string, TMDBMatch>,
   userId: string,
+  receipt: ImportReceipt,
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<{ imported: number; skipped: number; errors: string[] }> {
   const errors: string[] = [];
@@ -1050,7 +1069,9 @@ async function importWatchlist(
       current: Math.min(i + BATCH_SIZE, total),
       total,
     });
-    imported += await upsertCounted('watchlists', batch, 'user_id,film_id', true, 'Watchlist', errors);
+    const newWatchIds = await upsertCounted('watchlists', batch, 'user_id,film_id', true, 'Watchlist', errors);
+    imported += newWatchIds.length;
+    receipt.watchlistIds.push(...newWatchIds);
   }
 
   return { imported, skipped, errors };
@@ -1060,6 +1081,7 @@ async function importLists(
   lists: ParsedListFile[],
   resolvedFilms: Map<string, TMDBMatch>,
   userId: string,
+  receipt: ImportReceipt,
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<{ imported: number; errors: string[] }> {
   const errors: string[] = [];
@@ -1109,20 +1131,32 @@ async function importLists(
         continue;
       }
 
+      // A stack we created is ours to remove entirely on undo. A stack that
+      // already existed is the member's — only the films we add to it may be
+      // taken back, never the stack itself.
+      if (!existing?.id) receipt.listsCreated.push(listId);
+
       // Appending to a stack the member already has must not renumber what is
       // already in it. Start after their last film instead of restarting at 0,
       // which would collide every imported film onto an existing rank and
       // scramble the order of a ranked stack they had curated by hand.
       let rankOffset = 0;
+      let preExistingFilmIds = new Set<number>();
       if (existing?.id) {
-        const { data: last } = await supabase
+        const { data: priorItems } = await supabase
           .from('list_items')
-          .select('rank_position')
-          .eq('list_id', listId)
-          .order('rank_position', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        rankOffset = typeof last?.rank_position === 'number' ? last.rank_position + 1 : 0;
+          .select('film_id, rank_position')
+          .eq('list_id', listId);
+        // list_items is upserted with ignoreDuplicates: false, so its .select()
+        // returns updated rows as well as inserted ones and cannot be trusted to
+        // say what is new. Establish that here instead: anything already present
+        // is the member's and must survive an undo.
+        preExistingFilmIds = new Set((priorItems ?? []).map(r => Number(r.film_id)));
+        const maxRank = (priorItems ?? []).reduce(
+          (m, r) => (typeof r.rank_position === 'number' && r.rank_position > m ? r.rank_position : m),
+          -1,
+        );
+        rankOffset = maxRank + 1;
       }
 
       // Resolve and insert list items in order — rank_position is the app's
@@ -1150,6 +1184,19 @@ async function importLists(
           const batch = items.slice(j, j + BATCH_SIZE);
           await upsertCounted('list_items', batch, 'list_id,film_id', false, `List items "${safeTitle}"`, errors);
         }
+
+        // Only films that were NOT already in this stack are ours to undo. For a
+        // stack we created the whole list is on the receipt already, so its items
+        // would be removed by the FK cascade — recording them again would be
+        // redundant, not wrong, but we keep the receipt minimal and honest.
+        if (existing?.id) {
+          const addedFilmIds = items
+            .map(it => Number(it.film_id))
+            .filter(id => Number.isFinite(id) && !preExistingFilmIds.has(id));
+          if (addedFilmIds.length > 0) {
+            receipt.listItemsAdded.push({ listId, filmIds: addedFilmIds });
+          }
+        }
       }
 
       imported++;
@@ -1171,6 +1218,8 @@ export async function importArchiveJSON(
   userId: string,
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<ImportResult> {
+  // Same undo guarantee as the CSV path — see importReceipt.ts.
+  const receipt = emptyReceipt(userId, 'your archive');
   const errors: string[] = [];
   let logCount = 0;
   let reviewCount = 0;
@@ -1241,7 +1290,9 @@ export async function importArchiveJSON(
         current: Math.min(i + BATCH_SIZE, payloads.length),
         total: payloads.length,
       });
-      logCount += await upsertCounted('logs', batch, 'user_id,film_id', true, 'Film log', errors);
+      const newLogIds = await upsertCounted('logs', batch, 'user_id,film_id', true, 'Film log', errors);
+      logCount += newLogIds.length;
+      receipt.logIds.push(...newLogIds);
     }
   }
 
@@ -1275,7 +1326,9 @@ export async function importArchiveJSON(
         current: Math.min(i + BATCH_SIZE, payloads.length),
         total: payloads.length,
       });
-      watchlistCount += await upsertCounted('watchlists', batch, 'user_id,film_id', true, 'Watchlist', errors);
+      const newWatchIds = await upsertCounted('watchlists', batch, 'user_id,film_id', true, 'Watchlist', errors);
+      watchlistCount += newWatchIds.length;
+      receipt.watchlistIds.push(...newWatchIds);
     }
   }
 
@@ -1315,7 +1368,9 @@ export async function importArchiveJSON(
         current: Math.min(i + BATCH_SIZE, payloads.length),
         total: payloads.length,
       });
-      vaultCount += await upsertCounted('physical_archive', batch, 'user_id,film_id', true, 'Vault', errors);
+      const newVaultIds = await upsertCounted('physical_archive', batch, 'user_id,film_id', true, 'Vault', errors);
+      vaultCount += newVaultIds.length;
+      receipt.physicalArchiveIds.push(...newVaultIds);
     }
   }
 
@@ -1362,6 +1417,18 @@ export async function importArchiveJSON(
           continue;
         }
 
+        // A stack we created is ours to remove on undo; one that already
+        // existed is the member's, so only the films we add to it are.
+        if (!existing?.id) receipt.listsCreated.push(listId);
+        let priorFilmIds = new Set<number>();
+        if (existing?.id) {
+          const { data: priorItems } = await supabase
+            .from('list_items')
+            .select('film_id')
+            .eq('list_id', listId);
+          priorFilmIds = new Set((priorItems ?? []).map(r => Number(r.film_id)));
+        }
+
         // Order films by rank_position (ReelHouse exports) / legacy position /
         // array order, then write the app's real ordering column (0-based) —
         // every film in its right placement, even from old bloated exports.
@@ -1382,6 +1449,13 @@ export async function importArchiveJSON(
             const batch = items.slice(j, j + BATCH_SIZE);
             await upsertCounted('list_items', batch, 'list_id,film_id', false, `List items "${listTitle}"`, errors);
           }
+
+          if (existing?.id) {
+            const addedFilmIds = items
+              .map(it => Number(it.film_id))
+              .filter(id => Number.isFinite(id) && !priorFilmIds.has(id));
+            if (addedFilmIds.length > 0) receipt.listItemsAdded.push({ listId, filmIds: addedFilmIds });
+          }
         }
 
         listCount++;
@@ -1390,6 +1464,8 @@ export async function importArchiveJSON(
       }
     }
   }
+
+  saveReceipt(receipt);
 
   return { logs: logCount, reviews: reviewCount, watchlist: watchlistCount, vault: vaultCount, lists: listCount, skipped, errors };
 }
@@ -1503,6 +1579,10 @@ async function importCSVArchive(
   userId: string,
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<ImportResult> {
+  // Accumulates exactly what this import creates, so it can be taken back.
+  // See importReceipt.ts for why undo is the answer to the one rating case
+  // that is genuinely undecidable.
+  const receipt = emptyReceipt(userId, 'your archive');
   const allErrors: string[] = [];
   const csvFiles = Object.entries(zip.files)
     .filter(([name]) => name.endsWith('.csv') && !name.startsWith('__MACOSX'));
@@ -1582,23 +1662,27 @@ async function importCSVArchive(
 
   // ── Import logs ──
   const logResult = diary.length > 0
-    ? await importLogs(diary, reviewMap, resolvedFilms, userId, onProgress)
+    ? await importLogs(diary, reviewMap, resolvedFilms, userId, receipt, onProgress)
     : { imported: 0, reviewCount: 0, skipped: 0, errors: [] };
   allErrors.push(...logResult.errors);
 
   // ── Import watchlist ──
   const wlResult = watchlistEntries.length > 0
-    ? await importWatchlist(watchlistEntries, resolvedFilms, userId, onProgress)
+    ? await importWatchlist(watchlistEntries, resolvedFilms, userId, receipt, onProgress)
     : { imported: 0, skipped: 0, errors: [] };
   allErrors.push(...wlResult.errors);
 
   // ── Import lists ──
   const listResult = parsedLists.length > 0
-    ? await importLists(parsedLists, resolvedFilms, userId, onProgress)
+    ? await importLists(parsedLists, resolvedFilms, userId, receipt, onProgress)
     : { imported: 0, errors: [] };
   allErrors.push(...listResult.errors);
 
   const totalSkipped = logResult.skipped + wlResult.skipped;
+
+  // Written even when there were errors: a partial import is exactly the case
+  // where being able to take it back matters most.
+  saveReceipt(receipt);
 
   return {
     logs: logResult.imported,
