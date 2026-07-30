@@ -200,7 +200,12 @@ export function parseCSV(text: string): Record<string, string>[] {
     .map(row => {
       const obj: Record<string, string> = {};
       headers.forEach((h, idx) => {
-        obj[h] = row[idx] ?? '';
+        // FIRST occurrence wins. Assigning unconditionally meant a file with a
+        // repeated column name silently lost the earlier one — and since the
+        // title column is the one everything keys on, a second "Name" column
+        // (a director, a note) replaced the film title and every lookup after
+        // it resolved the wrong film.
+        if (!(h in obj)) obj[h] = row[idx] ?? '';
       });
       return obj;
     });
@@ -820,7 +825,9 @@ export function parseListCSV(text: string, fileName: string): ParsedListFile {
 
   const toRecord = (row: string[]): Record<string, string> => {
     const obj: Record<string, string> = {};
-    headers.forEach((h, idx) => { obj[h] = row[idx] ?? ''; });
+    // First occurrence wins, as in parseCSV — a repeated column name must not
+    // silently discard the earlier one.
+    headers.forEach((h, idx) => { if (!(h in obj)) obj[h] = row[idx] ?? ''; });
     return obj;
   };
 

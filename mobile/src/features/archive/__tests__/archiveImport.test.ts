@@ -485,3 +485,20 @@ describe('csvLooksLike — content must back the filename', () => {
     expect(csvLooksLike('a,b,c\n1,2,3', 'diary')).toBe(false);       // no title column
   });
 });
+
+describe('parseCSV — a repeated column name must not discard the first', () => {
+  it('keeps the FIRST occurrence, so the film title survives', () => {
+    // Assigning unconditionally let a later duplicate overwrite the earlier
+    // column. Since everything keys on the title, a second "Name" column (a
+    // director, a note) replaced the film and every lookup after it resolved
+    // the wrong film entirely.
+    const records = parseCSV('Name,Year,Name\nHeat,1995,Michael Mann');
+    expect(records[0].Name).toBe('Heat');
+    expect(records[0].Year).toBe('1995');
+  });
+
+  it('normal files are completely unaffected', () => {
+    const records = parseCSV('Name,Year,Rating\nHeat,1995,4');
+    expect(records[0]).toEqual({ Name: 'Heat', Year: '1995', Rating: '4' });
+  });
+});
