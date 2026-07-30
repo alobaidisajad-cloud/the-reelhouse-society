@@ -88,6 +88,22 @@ floods Sentry and buries real defects — the opposite of observability.
 - `captureError` opens `if (!SENTRY_DSN) return;` — **inert without a DSN, cannot throw**
 - inserted INSIDE existing `catch` blocks — no new control flow, no new failure path
 
+**⚠️ CORRECTION to an earlier draft of this plan.** I wrote "no new imports." That was wrong
+— I verified `isNetworkError` and assumed the rest. Measured:
+```
+captureError imported in: archiveSlice 0 · interactionSlice 0 · listSlice 0
+                          socialSlice 0 · watchlistSlice 0 · logOperations 0
+logger       imported in: stacks/[id].tsx 0   (social-modal.tsx HAS it)
+```
+So **7 new import lines are required** — 6 for `captureError`, 1 for `logger` in
+`stacks/[id].tsx`.
+
+**They are still free, and here is the proof rather than the assertion:** `lib/sentry` is
+already imported by three sibling stores in the same layer — `auth.ts:6`, `blockStore.ts:21`,
+`content.ts:9`. The module is already in the store layer's graph, so these imports add **no
+new dependency and no bundle weight**. `logOperations.ts` already imports from `lib/`
+(`queryClient`, `supabase`), so the path shape exists too.
+
 ### Same commit, the three named screens
 - **#115** `social-modal.tsx:182` → toast only, **no logger**. `:249` in the SAME file does it
   right (`logger.warn` + toast). Make `:182` match `:249`.
