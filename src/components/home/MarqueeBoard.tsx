@@ -16,7 +16,7 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
         queryKey: ['local-reviews-marquee', film?.id],
         queryFn: async () => {
             if (!film?.id) return 0
-            const { count } = await supabase.from('logs').select('*', { count: 'exact', head: true }).eq('film_id', film.id)
+            const { count } = await supabase.from('logs').select('id', { count: 'exact', head: true }).eq('film_id', film.id)
             return count || 0
         },
         enabled: !!film?.id
