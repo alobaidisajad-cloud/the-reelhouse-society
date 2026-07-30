@@ -353,7 +353,8 @@ export interface ListItemRow {
   film_id: number;
   film_title: string;
   poster_path: string | null;
-  position: number;
+  /** The ordering column is rank_position; there is no `position` column. */
+  rank_position: number;
 }
 
 export interface ListRow {
@@ -380,7 +381,8 @@ export interface MappedList {
 
 /** Single source of truth for Supabase list row → domain mapping. */
 export function mapListRow(d: ListRow): MappedList {
-  // Items arrive pre-sorted from server via .order('position', { referencedTable: 'list_items' })
+  // Items arrive pre-sorted from the server via
+  // .order('rank_position', { foreignTable: 'list_items', ascending: true })
   const items = d.list_items || [];
   return {
     id: d.id,

@@ -496,10 +496,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         let finalMessages = [...messages];
         for (const pa of pendingMessages) {
             const p = pa.payload;
-            // Prepend offline messages (at the end of the array, since UI likely renders from end)
-            // Wait, fetchMessages maps and reverses them. Let's see. The fetch order is 'created_at' descending, so newest first.
-            // Then it does `.reverse()`, so oldest first. UI renders from bottom.
-            // So we need to append offline messages to the end of finalMessages.
+            // Append, don't prepend. The fetch above orders created_at
+            // descending and then reverses, so `messages` is oldest-first and
+            // the newest message is last. A queued message is newer than
+            // anything fetched, so its place is the end of the array.
             finalMessages.push({
                 id: p._tempId || `offline-${Date.now()}-${Math.random()}`,
                 lounge_id: p.lounge_id,
