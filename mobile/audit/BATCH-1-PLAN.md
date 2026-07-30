@@ -294,7 +294,7 @@ Touch points traced — **6 mobile, 4 web, plus a backfill**:
 | mobile | `archiveImport.ts:1499` — import writes |
 | web | `stores/films.ts:315,562,676` · `useFilmMutations.ts:138,165,198,266` |
 | web | `ProjectorRoom.tsx:51` — CSV export |
-| data | backfill **34 rows**, then `ALTER TABLE logs DROP COLUMN private_notes` |
+| data | backfill **34 rows — only 1 non-empty**, then `ALTER TABLE logs DROP COLUMN private_notes` |
 
 Note the client discipline is already correct: `LOG_SELECT_COLUMNS` (which includes the
 column) is used only on owner-scoped queries; other members' logs go through
