@@ -578,6 +578,10 @@ export default function MembershipScreen() {
           {Platform.OS === 'ios' && (
             <PressableScale
               style={st.manageBtn}
+              // manageBtn is ~27pt tall, under the 44pt minimum. top is 12 —
+              // exactly the margin above — so the target never reaches into
+              // the restore button's frame.
+              hitSlop={{ top: 12, bottom: 15, left: 15, right: 15 }}
               onPress={() => safeOpenURL('https://apps.apple.com/account/subscriptions')}
               haptic="light"
               accessibilityRole="link"
@@ -589,6 +593,7 @@ export default function MembershipScreen() {
           {Platform.OS === 'android' && (
             <PressableScale
               style={st.manageBtn}
+              hitSlop={{ top: 12, bottom: 15, left: 15, right: 15 }}
               onPress={() => safeOpenURL('https://play.google.com/store/account/subscriptions')}
               haptic="light"
               accessibilityRole="link"
