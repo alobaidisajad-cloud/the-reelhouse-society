@@ -1,6 +1,4 @@
-import { captureError } from '@/src/lib/sentry';
 import { supabase } from '@/src/lib/supabase';
-import { logger } from '@/src/utils/logger';
 import { validateWithTelemetry } from '@/src/utils/validateWithTelemetry';
 import { z } from 'zod';
 
