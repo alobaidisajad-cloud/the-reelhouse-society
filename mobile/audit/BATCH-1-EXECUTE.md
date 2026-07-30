@@ -430,3 +430,43 @@ return. Twice I wrote tests asserting the broken behaviour, so the suite held
 the bug in place instead of catching it.
 
 Final: **1049 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
+
+---
+
+## FOURTH POST-EXECUTION AUDIT (2026-07-30) — import engine only. 2 more.
+
+**6502a60 · the review count lied in both directions.** Same class as #11, in
+the same panel. It counted only the LATEST watch, so a member with 500 films
+and 200 reviewed rewatches was told "500 REVIEWS" after importing 700. And it
+counted BEFORE sanitising, so a review made only of stripped characters was
+reported as imported while nothing was stored. Now counted after sanitising,
+with earlier watches included on the same terms.
+
+**9baed61 · a failed TMDB lookup was cached as "no such film".** resolveFilm
+cached null on every exit including the catch. The search-path nulls are
+answers worth caching; the catch is a failure to ask — a dropped connection,
+a rate limit, a timeout. Caching it froze that film as unmatched for the whole
+app session, so a member retrying after a blip got the same misses back
+INSTANTLY with no request made, and no escape but force-quitting.
+resolutionCache is module-level and never cleared. The catch no longer writes
+to it; legitimate no-match nulls still do.
+
+### Verified clean this pass
+- JSON path clamps ratings without converting — correct, a ReelHouse export is
+  already in our scale; no double conversion
+- `buildViewingHistory` applies the same scale as the parent log
+- review map and film resolution key on the SAME cacheKey — no silent mismatch
+- `imdb rating` is deliberately not a rating synonym, so IMDb's PUBLIC average
+  can never be imported as the member's own score
+- header synonym resolution prefers the specific over the generic
+
+### Running total across four audits
+**13 bugs. Every one in code written to fix something. Zero in the deletions,
+zero in the plan's own edits, across all four passes.**
+
+The recurring error, now nine of the thirteen: **treating one signal as proof,
+or one path as the only path.** A fraction · one date row · a source
+fingerprint · a substring · the first matching branch · screen state · the
+happy return · the latest watch · a failed request treated as an answer.
+
+Final: **1049 tests** · tsc 0 · eslint 0 · coverage 0 · ratchet 0
