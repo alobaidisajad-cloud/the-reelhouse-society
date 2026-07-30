@@ -279,21 +279,34 @@ export function detectSource(headers: string[]): ImportSource {
   return 'unknown';
 }
 
-/** The scale each service publishes ratings on. Fixed by the service, not guessed. */
-const SOURCE_SCALE: Record<Exclude<ImportSource, 'unknown'>, 'half-five' | 'ten'> = {
-  letterboxd: 'half-five',  // 0.5–5 in half steps
-  imdb: 'ten',              // 1–10 integers
-  trakt: 'ten',             // 1–10 integers
+/**
+ * The scale each service publishes ratings on, with the highest value that
+ * service can actually emit. The ceiling matters: a value above it is proof
+ * the fingerprint does not hold for this data (a merged export, a hand-edited
+ * sheet, a column that only looks like a known one), and forcing the source's
+ * scale anyway would clamp every value above the ceiling to a flat 5.
+ */
+const SOURCE_SCALE: Record<Exclude<ImportSource, 'unknown'>, { scale: 'half-five' | 'ten'; ceiling: number }> = {
+  letterboxd: { scale: 'half-five', ceiling: 5 },  // 0.5–5 in half steps
+  imdb:       { scale: 'ten',       ceiling: 10 }, // 1–10 integers
+  trakt:      { scale: 'ten',       ceiling: 10 }, // 1–10 integers
 };
 
 /**
  * Decides the rating scale of an export. A decision ladder, strongest evidence
  * first — every rung is a fact, not a heuristic:
  *
- *   1. a recognised source  -> that service's published scale
+ *   1. a recognised source, and the data fits what that service can emit
+ *                           -> that service's published scale
  *   2. max > 10             -> hundred
  *   3. max > 5              -> ten
  *   4. otherwise            -> half-five
+ *
+ * Rung 1 is checked against the source's CEILING rather than trusted blindly.
+ * A file fingerprinted Letterboxd but carrying a 9 cannot really be Letterboxd
+ * data, and forcing half-five onto it would clamp 7, 9 and 10 all to 5 reels.
+ * When the data contradicts the fingerprint, the data wins and we fall to the
+ * numeric ladder.
  *
  * WHY THERE IS NO "a fractional value proves a 5-star scale" RUNG:
  * it reads as compelling — an integer 1–10 scale cannot emit 3.5 — but it is
@@ -313,9 +326,16 @@ export function detectRatingScale(
   ratings: number[],
   source: ImportSource = 'unknown',
 ): 'half-five' | 'ten' | 'hundred' {
-  if (source !== 'unknown') return SOURCE_SCALE[source];
-
   const positive = ratings.filter(r => r > 0);
+
+  if (source !== 'unknown') {
+    const { scale, ceiling } = SOURCE_SCALE[source];
+    // No ratings at all: nothing can contradict the fingerprint, so trust it.
+    if (positive.length === 0) return scale;
+    if (Math.max(...positive) <= ceiling) return scale;
+    // Data exceeds what this service can emit — the fingerprint does not hold.
+  }
+
   if (positive.length === 0) return 'half-five';
 
   const max = Math.max(...positive);

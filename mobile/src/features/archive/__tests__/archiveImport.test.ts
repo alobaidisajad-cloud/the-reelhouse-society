@@ -279,10 +279,19 @@ describe('detectRatingScale — source outranks the max value', () => {
     expect(detectRatingScale([1, 2, 3, 4, 5], 'letterboxd')).toBe('half-five');
   });
 
-  it('trusts the source over the numbers, both directions', () => {
-    // 10s present, but Letterboxd cannot emit a 10 — trust the fingerprint.
-    expect(detectRatingScale([8, 9, 10], 'letterboxd')).toBe('half-five');
+  it('the data WINS when it exceeds what the named source can emit', () => {
+    // Letterboxd tops out at 5. A file fingerprinted Letterboxd but carrying a
+    // 10 is not really Letterboxd data (merged export, edited sheet, a column
+    // that only looks familiar). Forcing half-five would clamp 7, 9 and 10 all
+    // to a flat 5 — so the fingerprint yields to the evidence.
+    expect(detectRatingScale([4, 7, 9, 10], 'letterboxd')).toBe('ten');
+    expect(detectRatingScale([20, 55, 90], 'imdb')).toBe('hundred');
+  });
+
+  it('but a source still wins whenever the data is consistent with it', () => {
+    expect(detectRatingScale([0.5, 1.5, 5], 'letterboxd')).toBe('half-five');
     expect(detectRatingScale([0.5, 1.5], 'imdb')).toBe('ten');
+    expect(detectRatingScale([1, 2, 3, 4, 5], 'imdb')).toBe('ten');
   });
 
   it('a fractional value does NOT override the maximum', () => {
