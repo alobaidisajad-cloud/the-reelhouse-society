@@ -1091,8 +1091,14 @@ async function importLogs(
     if (reviewFromFile && reviewFromFile.length > review.length) {
       review = reviewFromFile;
     }
-    if (review.length > 0) reviewCount++;
     review = sanitizeInput(review, 'review'); // FEAT-1
+    // Counted AFTER sanitising: a review made only of stripped characters is
+    // reported as imported but nothing is stored.
+    if (review.length > 0) reviewCount++;
+    // Earlier watches keep their own reviews in viewing_history, and those are
+    // written too — so counting only the latest under-reports the transfer.
+    // A member with 500 films and 200 reviewed rewatches was told "500".
+    reviewCount += agg.earlier.filter(w => sanitizeInput(w.review, 'review').length > 0).length;
 
     // Native-parity timeline: the row was created at the FIRST watch and last
     // touched at the LATEST — exactly as if logged + rewatched in the app.
