@@ -1,107 +1,105 @@
 /**
- * Offline Queue — Resilience Tests
+ * offlineQueue.test.ts — exercises the REAL queue.
  *
- * Tests the offline mutation queue that stores failed mutations
- * when the device is offline and flushes them when reconnected.
+ * The previous version mocked Supabase and then asserted on objects it had
+ * built itself, never importing the queue. This is the buffer that holds a
+ * member's writes when the network drops — if it loses or reorders them, work
+ * they believe is saved is gone — so it deserves tests that touch it.
  */
+import {
+  enqueueMutation,
+  getOfflineQueue,
+  getQueueLength,
+  clearOfflineQueue,
+} from '../offlineQueue';
 
-jest.mock('@/src/lib/supabase', () => ({
-  supabase: {
-    from: jest.fn(() => ({
-      insert: jest.fn().mockReturnThis(),
-      update: jest.fn().mockReturnThis(),
-      upsert: jest.fn().mockReturnThis(),
-      delete: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      select: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: null, error: null }),
-    })),
-  },
+jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
+jest.mock('@/src/utils/logger', () => ({
+  logger: { debug: jest.fn(), warn: jest.fn(), error: jest.fn(), info: jest.fn() },
 }));
+jest.mock('../reelToast', () => {
+  const fn = jest.fn();
+  (fn as unknown as { error: jest.Mock }).error = jest.fn();
+  (fn as unknown as { success: jest.Mock }).success = jest.fn();
+  return { __esModule: true, default: fn };
+});
+jest.mock('expo-crypto', () => {
+  let n = 0;
+  return { randomUUID: jest.fn(() => `uuid-${++n}`) };
+});
+jest.mock('@/src/stores/mmkv-storage', () => {
+  const store = new Map<string, string>();
+  return {
+    storage: {
+      set: jest.fn((k: string, v: string) => store.set(k, v)),
+      getString: jest.fn((k: string) => store.get(k)),
+      delete: jest.fn((k: string) => store.delete(k)),
+    },
+  };
+});
 
-describe('Offline Queue — Resilience Logic', () => {
-  describe('Queue Capacity', () => {
-    it('should enforce a maximum queue size of 100', () => {
-      const MAX_QUEUE = 100;
-      const queue: any[] = [];
+const mutation = (type: string) => ({ type, payload: { n: type } } as never);
 
-      // Fill the queue
-      for (let i = 0; i < 120; i++) {
-        queue.push({ type: 'log', filmId: i, timestamp: Date.now() });
-      }
+beforeEach(() => clearOfflineQueue());
 
-      // Trim to max
-      const trimmed = queue.slice(-MAX_QUEUE);
-      expect(trimmed).toHaveLength(MAX_QUEUE);
-      expect(trimmed[0].filmId).toBe(20); // oldest kept
-      expect(trimmed[99].filmId).toBe(119); // newest
-    });
+describe('offlineQueue — holding a write until the network returns', () => {
+  it('starts empty', () => {
+    expect(getQueueLength()).toBe(0);
+    expect(getOfflineQueue()).toEqual([]);
   });
 
-  describe('Stale Mutation Pruning', () => {
-    it('should prune mutations older than 24 hours', () => {
-      const now = Date.now();
-      const STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24h in ms
-
-      const queue = [
-        { type: 'log', timestamp: now - (STALE_THRESHOLD + 1000) }, // 24h1s ago — stale
-        { type: 'log', timestamp: now - (STALE_THRESHOLD - 1000) }, // 23h59s ago — fresh
-        { type: 'log', timestamp: now - 3600000 }, // 1h ago — fresh
-        { type: 'log', timestamp: now }, // just now — fresh
-      ];
-
-      const fresh = queue.filter(m => now - m.timestamp < STALE_THRESHOLD);
-      expect(fresh).toHaveLength(3);
-    });
+  it('keeps a queued mutation, with its payload intact', () => {
+    enqueueMutation(mutation('add_log'));
+    const [q] = getOfflineQueue();
+    expect(q.type).toBe('add_log');
+    expect(q.payload).toEqual({ n: 'add_log' });
   });
 
-  describe('Mutation Deduplication', () => {
-    it('should deduplicate mutations for the same resource', () => {
-      const queue = [
-        { type: 'endorse', filmId: 123, timestamp: 1000 },
-        { type: 'endorse', filmId: 456, timestamp: 2000 },
-        { type: 'endorse', filmId: 123, timestamp: 3000 }, // duplicate — newer
-      ];
-
-      const seen = new Map<string, any>();
-      for (const m of queue) {
-        const key = `${m.type}-${m.filmId}`;
-        if (!seen.has(key) || m.timestamp > seen.get(key).timestamp) {
-          seen.set(key, m);
-        }
-      }
-
-      const deduped = Array.from(seen.values());
-      expect(deduped).toHaveLength(2);
-      expect(deduped.find(m => m.filmId === 123)!.timestamp).toBe(3000); // kept the newer one
-    });
+  it('stamps an id and a timestamp the caller does not supply', () => {
+    // The flush loop dedupes on id and ages entries out by timestamp, so a
+    // mutation without either would be flushed repeatedly or never expire.
+    enqueueMutation(mutation('add_log'));
+    const [q] = getOfflineQueue();
+    expect(q.id).toBeTruthy();
+    expect(typeof q.timestamp).toBe('number');
   });
 
-  describe('Error Classification', () => {
-    it('should retry on network errors', () => {
-      const isRetryable = (error: any) => {
-        const msg = error?.message ?? '';
-        return (
-          msg.includes('Network request failed') ||
-          msg.includes('fetch failed') ||
-          msg.includes('AbortError') ||
-          msg.includes('ECONNREFUSED')
-        );
-      };
+  it('PRESERVES ORDER — causal consistency depends on it', () => {
+    // A child mutation can depend on its parent's real id. Reordering here
+    // would flush the child first and orphan it.
+    ['a', 'b', 'c', 'd'].forEach(t => enqueueMutation(mutation(t)));
+    expect(getOfflineQueue().map(m => m.type)).toEqual(['a', 'b', 'c', 'd']);
+  });
 
-      expect(isRetryable({ message: 'Network request failed' })).toBe(true);
-      expect(isRetryable({ message: 'fetch failed' })).toBe(true);
-      expect(isRetryable({ message: 'AbortError' })).toBe(true);
-    });
+  it('survives a round trip through storage', () => {
+    enqueueMutation(mutation('send_lounge_message'));
+    // A second read re-parses from MMKV rather than returning a cached array.
+    expect(getOfflineQueue()).toHaveLength(1);
+    expect(getOfflineQueue()[0].type).toBe('send_lounge_message');
+  });
 
-    it('should discard on constraint errors (409/23505)', () => {
-      const isConstraintError = (error: any) => {
-        return error?.code === '23505' || error?.status === 409;
-      };
+  it('gives every mutation a distinct id', () => {
+    ['a', 'b', 'c'].forEach(t => enqueueMutation(mutation(t)));
+    const ids = getOfflineQueue().map(m => m.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 
-      expect(isConstraintError({ code: '23505' })).toBe(true);
-      expect(isConstraintError({ status: 409 })).toBe(true);
-      expect(isConstraintError({ code: '42P01' })).toBe(false);
-    });
+  it('clearOfflineQueue empties it', () => {
+    enqueueMutation(mutation('a'));
+    clearOfflineQueue();
+    expect(getQueueLength()).toBe(0);
+  });
+
+  it('getQueueLength agrees with the queue itself', () => {
+    ['a', 'b'].forEach(t => enqueueMutation(mutation(t)));
+    expect(getQueueLength()).toBe(getOfflineQueue().length);
+  });
+
+  it('a corrupt store degrades to empty instead of throwing', () => {
+    // MMKV contents are not a trusted input. Throwing here would break every
+    // write path that enqueues, not just the read.
+    const { storage } = require('@/src/stores/mmkv-storage');
+    (storage.getString as jest.Mock).mockReturnValueOnce('{ not json');
+    expect(() => getOfflineQueue()).not.toThrow();
   });
 });

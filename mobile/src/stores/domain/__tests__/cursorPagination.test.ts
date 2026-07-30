@@ -1,197 +1,87 @@
+/**
+ * cursorPagination.test.ts — property tests against the REAL cursor parser.
+ *
+ * The previous version described cursor behaviour with fast-check but never
+ * imported anything: it round-tripped strings it built itself, so it proved
+ * only that JSON.parse undoes JSON.stringify. FeedService.parseCursor is the
+ * function the feed actually pages with, and it is exported.
+ *
+ * That parser is a trust boundary — a cursor arrives as an opaque string from
+ * a previous page and is interpolated into query filters — so the properties
+ * that matter are about what it REFUSES, not what it round-trips.
+ */
 import * as fc from 'fast-check';
+import { parseCursor } from '@/src/services/FeedService';
 
-// Feature: cursor-pagination-migration, Property 1: JSON cursor round-trip
-// Feature: cursor-pagination-migration, Property 2: Pipe cursor round-trip
-// Feature: cursor-pagination-migration, Property 3: hasMore derivation from data length
-// Feature: cursor-pagination-migration, Property 9: Malformed cursor resilience
+jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
+jest.mock('@/src/utils/logger', () => ({
+  logger: { debug: jest.fn(), warn: jest.fn(), error: jest.fn(), info: jest.fn() },
+}));
 
-describe('Cursor Pagination — Property-Based Tests', () => {
-  // Feature: cursor-pagination-migration, Property 1: JSON cursor round-trip
-  // **Validates: Requirements 1.4**
-  describe('Property 1: JSON cursor round-trip', () => {
-    it('serializing and parsing a JSON cursor preserves all fields', () => {
-      fc.assert(
-        fc.property(
-          fc.record({
-            watched_date: fc.oneof(
-              fc.integer({ min: 946684800000, max: 4102444800000 }).map(ts => new Date(ts).toISOString()),
-              fc.constant(null)
-            ),
-            id: fc.uuid(),
-          }),
-          (row) => {
-            // Serialize
-            const serialized = JSON.stringify({
-              lastDate: row.watched_date,
-              lastId: row.id,
-              wasDateNull: row.watched_date === null,
-            });
+const ISO = '2026-07-30T12:00:00.000Z';
+const UUID = '3f7c1a2b-9d4e-4f60-b1c8-0a5e7d2f9b31';
 
-            // Parse
-            const parsed = JSON.parse(serialized);
-
-            // Assert round-trip identity
-            expect(parsed.lastDate).toBe(row.watched_date);
-            expect(parsed.lastId).toBe(row.id);
-            expect(parsed.wasDateNull).toBe(row.watched_date === null);
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+describe('parseCursor — a well-formed cursor round-trips', () => {
+  it('splits a date|id pair', () => {
+    expect(parseCursor(`${ISO}|${UUID}`)).toEqual({ cursorDate: ISO, cursorId: UUID });
   });
 
-  // Feature: cursor-pagination-migration, Property 2: Pipe cursor round-trip
-  // **Validates: Requirements 2.2**
-  describe('Property 2: Pipe cursor round-trip', () => {
-    it('serializing and splitting a pipe cursor preserves both parts', () => {
-      fc.assert(
-        fc.property(
-          fc.record({
-            // ISO date string without pipe characters (constrained to valid date range)
-            created_at: fc.integer({ min: 946684800000, max: 4102444800000 }).map(ts => new Date(ts).toISOString()),
-            // UUID without pipe characters
-            id: fc.uuid(),
-          }),
-          (row) => {
-            // Precondition: neither field contains a pipe
-            fc.pre(!row.created_at.includes('|') && !row.id.includes('|'));
+  it('an absent cursor means "start from the beginning", not an error', () => {
+    expect(parseCursor(undefined)).toEqual({ cursorDate: null, cursorId: null });
+    expect(parseCursor('')).toEqual({ cursorDate: null, cursorId: null });
+  });
+});
 
-            // Serialize
-            const cursor = `${row.created_at}|${row.id}`;
-
-            // Parse
-            const parts = cursor.split('|');
-
-            // Assert round-trip identity
-            expect(parts.length).toBe(2);
-            expect(parts[0]).toBe(row.created_at);
-            expect(parts[1]).toBe(row.id);
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+describe('parseCursor — REFUSES anything malformed', () => {
+  it('rejects a non-ISO date', () => {
+    expect(parseCursor(`2026-07-30|${UUID}`).cursorDate).toBeNull();
+    expect(parseCursor(`yesterday|${UUID}`).cursorDate).toBeNull();
   });
 
-  // Feature: cursor-pagination-migration, Property 3: hasMore derivation from data length
-  // **Validates: Requirements 1.6, 2.4, 3.3, 3.4**
-  describe('Property 3: hasMore derivation from data length', () => {
-    const LOG_PAGE_SIZE = 50;
-    const LIST_PAGE_SIZE = 20;
-
-    function computeHasMoreAndCursor(data: unknown[], pageSize: number) {
-      const hasMore = data.length === pageSize;
-      const nextCursor = hasMore && data.length > 0 ? 'some-cursor-value' : null;
-      return { hasMore, nextCursor };
-    }
-
-    it('hasMore is true iff data.length === PAGE_SIZE (logs, PAGE_SIZE=50)', () => {
-      fc.assert(
-        fc.property(
-          fc.integer({ min: 0, max: LOG_PAGE_SIZE + 5 }),
-          (length) => {
-            const data = Array.from({ length }, (_, i) => ({ id: `item-${i}` }));
-            const { hasMore, nextCursor } = computeHasMoreAndCursor(data, LOG_PAGE_SIZE);
-
-            expect(hasMore).toBe(data.length === LOG_PAGE_SIZE);
-            if (!hasMore) {
-              expect(nextCursor).toBeNull();
-            }
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
-
-    it('hasMore is true iff data.length === PAGE_SIZE (lists, PAGE_SIZE=20)', () => {
-      fc.assert(
-        fc.property(
-          fc.integer({ min: 0, max: LIST_PAGE_SIZE + 5 }),
-          (length) => {
-            const data = Array.from({ length }, (_, i) => ({ id: `item-${i}` }));
-            const { hasMore, nextCursor } = computeHasMoreAndCursor(data, LIST_PAGE_SIZE);
-
-            expect(hasMore).toBe(data.length === LIST_PAGE_SIZE);
-            if (!hasMore) {
-              expect(nextCursor).toBeNull();
-            }
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+  it('rejects a non-UUID id', () => {
+    expect(parseCursor(`${ISO}|123`).cursorId).toBeNull();
+    expect(parseCursor(`${ISO}|' OR 1=1 --`).cursorId).toBeNull();
   });
 
-  // Feature: cursor-pagination-migration, Property 9: Malformed cursor resilience
-  // **Validates: Requirements 8.3**
-  describe('Property 9: Malformed cursor resilience', () => {
-    /**
-     * Parse a JSON cursor (logs). Returns the parsed object or null if malformed.
-     * Replicates the inline logic from fetchLogsOp.
-     */
-    function parseLogsCursor(cursor: string): { lastDate: string | null; lastId: string; wasDateNull: boolean } | null {
-      try {
-        const parsed = JSON.parse(cursor);
-        if (!parsed || typeof parsed.lastId !== 'string') {
-          return null;
-        }
-        return parsed;
-      } catch {
-        return null;
-      }
-    }
+  it('rejects each half independently — one bad part does not poison the other', () => {
+    expect(parseCursor(`${ISO}|garbage`)).toEqual({ cursorDate: ISO, cursorId: null });
+    expect(parseCursor(`garbage|${UUID}`)).toEqual({ cursorDate: null, cursorId: UUID });
+  });
 
-    /**
-     * Parse a pipe cursor (lists). Returns the parts or null if malformed.
-     * Replicates the inline logic from fetchLists.
-     */
-    function parseListsCursor(cursor: string): [string, string] | null {
-      const parts = cursor.split('|');
-      if (parts.length === 2 && parts[0] && parts[1]) {
-        return [parts[0], parts[1]];
-      }
-      return null;
-    }
+  it('tolerates a missing separator or extra segments', () => {
+    expect(parseCursor(ISO)).toEqual({ cursorDate: ISO, cursorId: null });
+    expect(parseCursor(`${ISO}|${UUID}|extra`)).toEqual({ cursorDate: ISO, cursorId: UUID });
+  });
 
-    it('logs cursor parser never throws on arbitrary non-JSON strings', () => {
-      fc.assert(
-        fc.property(
-          // Generate strings that are NOT valid JSON
-          fc.string().filter((s) => {
-            try {
-              JSON.parse(s);
-              return false; // valid JSON, skip
-            } catch {
-              return true; // not valid JSON, keep
-            }
-          }),
-          (malformed) => {
-            // Must not throw
-            const result = parseLogsCursor(malformed);
-            expect(result).toBeNull();
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+  it('PROPERTY: no arbitrary string can ever produce a non-null value that is not exactly what was supplied', () => {
+    // The parser must be a filter, never a transformer. Anything it hands back
+    // is interpolated into query filters, so it must be a verbatim substring of
+    // the input — never something it constructed or coerced.
+    fc.assert(
+      fc.property(fc.string(), (raw) => {
+        const { cursorDate, cursorId } = parseCursor(raw);
+        if (cursorDate !== null) expect(raw.split('|')[0]).toBe(cursorDate);
+        if (cursorId !== null) expect(raw.split('|')[1]).toBe(cursorId);
+      }),
+      { numRuns: 500 },
+    );
+  });
 
-    it('lists cursor parser never throws on strings without exactly 2 pipe-separated non-empty parts', () => {
-      fc.assert(
-        fc.property(
-          // Generate strings that don't split into exactly 2 non-empty parts on '|'
-          fc.string().filter((s) => {
-            const parts = s.split('|');
-            return !(parts.length === 2 && parts[0] !== '' && parts[1] !== '');
-          }),
-          (malformed) => {
-            // Must not throw
-            const result = parseListsCursor(malformed);
-            expect(result).toBeNull();
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+  it('PROPERTY: never throws, whatever it is handed', () => {
+    // A crash here would break paging entirely rather than degrading to page 1.
+    fc.assert(
+      fc.property(fc.string(), (raw) => { expect(() => parseCursor(raw)).not.toThrow(); }),
+      { numRuns: 500 },
+    );
+  });
+
+  it('PROPERTY: an injection-shaped id is never accepted', () => {
+    fc.assert(
+      fc.property(
+        fc.stringMatching(/[';"()\-\s]/),
+        (evil) => { expect(parseCursor(`${ISO}|${evil}`).cursorId).toBeNull(); },
+      ),
+      { numRuns: 300 },
+    );
   });
 });
