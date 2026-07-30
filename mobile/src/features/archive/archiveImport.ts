@@ -59,6 +59,10 @@ interface ParsedDiaryEntry {
   isRewatch: boolean;
   uri: string;
   tags: string;
+  /** Which service this row came from — fixes the rating scale exactly.
+   *  Identical for every row of a file; carried per-entry so the import
+   *  stage can read it without re-threading the parse result. */
+  source?: ImportSource;
 }
 
 interface ParsedWatchlistEntry {
@@ -248,11 +252,87 @@ function getField(row: Record<string, string>, mapping: HeaderMapping, field: st
  * Detects if a set of ratings is on a 1–10 scale by checking the max value.
  * If detected, forces the 1–10 conversion path.
  */
-export function detectRatingScale(ratings: number[]): 'half-five' | 'ten' | 'hundred' {
-  const max = Math.max(...ratings.filter(r => r > 0));
+export type ImportSource = 'letterboxd' | 'imdb' | 'trakt' | 'unknown';
+
+/**
+ * Identifies the exporting service from the header row. Every service uses a
+ * FIXED rating scale, so knowing the source removes the guess entirely.
+ *
+ * This is the fix for the worst silent corruption in import: an IMDb export
+ * from someone whose highest score was a 5 looks identical, by max value, to a
+ * 5-star export. Read by max alone it is misread as half-five and EVERY rating
+ * is doubled — permanently, because logs upserts with ignoreDuplicates.
+ * Exported for tests.
+ */
+export function detectSource(headers: string[]): ImportSource {
+  const h = headers.map(x => x.trim().toLowerCase());
+  const has = (name: string) => h.includes(name);
+
+  // Letterboxd stamps its own URI column into every export it produces.
+  if (h.some(x => x.includes('letterboxd'))) return 'letterboxd';
+  // IMDb: 'Const' is its title id, and it ships with 'Title Type'.
+  if (has('const') && (has('title type') || has('your rating') || has('imdb rating'))) return 'imdb';
+  // Trakt uses snake_case timestamps no other exporter emits.
+  if (has('rated_at') || has('watched_at') || has('trakt_rating')) return 'trakt';
+  return 'unknown';
+}
+
+/** The scale each service publishes ratings on. Fixed by the service, not guessed. */
+const SOURCE_SCALE: Record<Exclude<ImportSource, 'unknown'>, 'half-five' | 'ten'> = {
+  letterboxd: 'half-five',  // 0.5–5 in half steps
+  imdb: 'ten',              // 1–10 integers
+  trakt: 'ten',             // 1–10 integers
+};
+
+/**
+ * Decides the rating scale of an export. A decision ladder, strongest evidence
+ * first — every rung is a fact, not a heuristic:
+ *
+ *   1. a recognised source  -> that service's published scale
+ *   2. any half value       -> half-five (a 1–10 integer scale cannot make .5)
+ *   3. max > 10             -> hundred
+ *   4. max > 5              -> ten
+ *   5. otherwise            -> half-five
+ *
+ * Rung 5 is the only genuinely undecidable case (a hand-made file, no
+ * recognisable source, no halves, nothing above 5) — out-of-5 and out-of-10
+ * produce byte-identical data there, so no algorithm can separate them.
+ */
+export function detectRatingScale(
+  ratings: number[],
+  source: ImportSource = 'unknown',
+): 'half-five' | 'ten' | 'hundred' {
+  if (source !== 'unknown') return SOURCE_SCALE[source];
+
+  const positive = ratings.filter(r => r > 0);
+  if (positive.length === 0) return 'half-five';
+
+  // A fractional score proves a half-star scale: integer 1–10 cannot produce it.
+  if (positive.some(r => !Number.isInteger(r))) return 'half-five';
+
+  const max = Math.max(...positive);
   if (max > 10) return 'hundred';
   if (max > 5) return 'ten';
   return 'half-five';
+}
+
+/**
+ * Decides DD/MM vs MM/DD for an ENTIRE file, in one pass.
+ *
+ * Deciding this per row is why a European export half-imports today:
+ * 25/03/2024 parses correctly (25 cannot be a month) while 05/03/2024 silently
+ * becomes 3 May. Half the dates are wrong and nothing looks broken.
+ *
+ * A single row with a first number above 12 proves the whole file is
+ * day-first — no month exceeds 12. That is arithmetic, not a guess.
+ * Absent that proof we keep today's MM/DD default (the common export format).
+ */
+export function detectDateFormat(dates: string[]): 'MDY' | 'DMY' {
+  for (const d of dates) {
+    const m = String(d ?? '').trim().match(/^(\d{1,2})\/(\d{1,2})\/\d{4}$/);
+    if (m && parseInt(m[1], 10) > 12) return 'DMY';
+  }
+  return 'MDY';
 }
 
 /**
@@ -287,7 +367,7 @@ export function normalizeRatingWithScale(raw: number, scale: 'half-five' | 'ten'
  * Future dates are clamped to today — a native log can't be created in the
  * future, so imports must not be either. Exported for tests.
  */
-export function normalizeDate(raw: string): string {
+export function normalizeDate(raw: string, format: 'MDY' | 'DMY' = 'MDY'): string {
   const today = new Date().toISOString().slice(0, 10);
   if (!raw) return today;
 
@@ -306,10 +386,13 @@ export function normalizeDate(raw: string): string {
     const [, a, b, yr] = slashMatch;
     const numA = parseInt(a, 10);
     const numB = parseInt(b, 10);
-    // If first number > 12, it must be DD/MM/YYYY
-    if (numA > 12) return clamp(`${yr}-${String(numB).padStart(2, '0')}-${String(numA).padStart(2, '0')}`);
-    // Default to MM/DD/YYYY (US format, most common in exports)
-    return clamp(`${yr}-${String(numA).padStart(2, '0')}-${String(numB).padStart(2, '0')}`);
+    const day   = (n: number) => String(n).padStart(2, '0');
+    // A first number above 12 is proof on its own — no month exceeds 12.
+    // Otherwise defer to the FILE-level verdict from detectDateFormat, which
+    // saw every row. Deciding per row is what makes a European export
+    // half-correct: 25/03 survives, 05/03 silently becomes 3 May.
+    if (numA > 12 || format === 'DMY') return clamp(`${yr}-${day(numB)}-${day(numA)}`);
+    return clamp(`${yr}-${day(numA)}-${day(numB)}`);
   }
 
   // Fallback — try native Date parsing
@@ -489,12 +572,22 @@ function parseDiaryCSV(text: string): ParsedDiaryEntry[] {
   const mapping = resolveHeaders(headers);
   if (!mapping) return [];
 
+  // Two decisions that belong to the FILE, not to a row. Made once, here,
+  // where every row is in hand — the parse boundary is the only place that
+  // sees the whole export.
+  const source = detectSource(headers);
+  const dateFormat = detectDateFormat(rows.map(r => getField(r, mapping, 'watchedDate')));
+
   return rows.map(row => ({
     title:       getField(row, mapping, 'title'),
     year:        getField(row, mapping, 'year'),
     rating:      parseFloat(getField(row, mapping, 'rating')) || 0,
     review:      getField(row, mapping, 'review'),
-    watchedDate: getField(row, mapping, 'watchedDate'),
+    // Resolved to YYYY-MM-DD here using the file-wide verdict. Downstream
+    // normalizeDate calls then pass it straight through (it is idempotent on
+    // ISO dates), so no call site needs to know about the format.
+    watchedDate: normalizeDate(getField(row, mapping, 'watchedDate'), dateFormat),
+    source,
     isRewatch:   /yes|true|1/i.test(getField(row, mapping, 'rewatch')),
     uri:         getField(row, mapping, 'uri'),
     tags:        getField(row, mapping, 'tags'),
@@ -812,9 +905,15 @@ async function importLogs(
   let reviewCount = 0;
   let skipped = 0;
 
-  // Detect rating scale from the full dataset
+  // Rating scale for the whole dataset. The source (from the export's header
+  // fingerprint) settles it outright when known — Letterboxd is always out of
+  // 5, IMDb and Trakt always out of 10 — so a 1–10 export from someone who
+  // never scored above 5 can no longer be misread as out-of-5 and doubled.
+  const source = diary.find(e => e.source)?.source ?? 'unknown';
   const allRatings = diary.map(e => e.rating).filter(r => r > 0);
-  const ratingScale = allRatings.length > 0 ? detectRatingScale(allRatings) : 'half-five';
+  const ratingScale = allRatings.length > 0 || source !== 'unknown'
+    ? detectRatingScale(allRatings, source)
+    : 'half-five';
 
   // Native rewatch semantics: one row per film, latest watch current, earlier
   // watches archived into viewing_history (see aggregateDiaryEntries).

@@ -18,6 +18,8 @@ import {
   importableTimestamp,
   aggregateDiaryEntries,
   buildViewingHistory,
+  detectSource,
+  detectDateFormat,
 } from '../archiveImport';
 
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
@@ -225,5 +227,126 @@ describe('native rewatch aggregation', () => {
       altPoster: null, editorialHeader: null, dropCap: false, pullQuote: '',
       videoUrl: null, format: 'digital',
     });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  SOURCE FINGERPRINT + FILE-LEVEL DECISIONS
+//  These close the two silent corruptions in import: every rating
+//  doubled forever, and half of a European member's dates transposed.
+// ═══════════════════════════════════════════════════════════════
+
+describe('detectSource — the export fingerprint', () => {
+  it('identifies a Letterboxd diary export', () => {
+    expect(detectSource(['Date', 'Name', 'Year', 'Letterboxd URI', 'Rating', 'Rewatch', 'Tags', 'Watched Date'])).toBe('letterboxd');
+  });
+
+  it('identifies an IMDb ratings export', () => {
+    expect(detectSource(['Const', 'Your Rating', 'Date Rated', 'Title', 'Title Type', 'IMDb Rating'])).toBe('imdb');
+  });
+
+  it('identifies a Trakt export', () => {
+    expect(detectSource(['title', 'year', 'rated_at', 'rating'])).toBe('trakt');
+  });
+
+  it('is case- and whitespace-insensitive', () => {
+    expect(detectSource(['  LETTERBOXD URI ', 'Name'])).toBe('letterboxd');
+    expect(detectSource(['const', 'title type'])).toBe('imdb');
+  });
+
+  it('says unknown for a hand-made spreadsheet rather than guessing', () => {
+    expect(detectSource(['Film', 'Score', 'Watched'])).toBe('unknown');
+    expect(detectSource([])).toBe('unknown');
+  });
+
+  it('does not mistake a bare "Rating" column for IMDb', () => {
+    // 'Const' is the discriminator; without it this is just a generic CSV.
+    expect(detectSource(['Title', 'Rating', 'Year'])).toBe('unknown');
+  });
+});
+
+describe('detectRatingScale — source outranks the max value', () => {
+  it('THE BUG: a 1-10 export where nobody scored above 5 is no longer read as out-of-5', () => {
+    const cautiousCritic = [1, 2, 3, 4, 5, 3, 2];
+    // By max alone this is indistinguishable from a 5-star file — which is
+    // exactly how every rating used to get doubled, permanently.
+    expect(detectRatingScale(cautiousCritic)).toBe('half-five');
+    expect(detectRatingScale(cautiousCritic, 'imdb')).toBe('ten');
+    expect(detectRatingScale(cautiousCritic, 'trakt')).toBe('ten');
+  });
+
+  it('a Letterboxd file is out of 5 even if every score is a whole number', () => {
+    expect(detectRatingScale([1, 2, 3, 4, 5], 'letterboxd')).toBe('half-five');
+  });
+
+  it('trusts the source over the numbers, both directions', () => {
+    // 10s present, but Letterboxd cannot emit a 10 — trust the fingerprint.
+    expect(detectRatingScale([8, 9, 10], 'letterboxd')).toBe('half-five');
+    expect(detectRatingScale([0.5, 1.5], 'imdb')).toBe('ten');
+  });
+
+  it('a half value proves a 5-star scale when the source is unknown', () => {
+    // An integer 1-10 scale cannot produce .5 — this is proof, not a heuristic.
+    expect(detectRatingScale([3.5, 4, 2])).toBe('half-five');
+    expect(detectRatingScale([1, 2, 3, 4, 5, 6, 7.5])).toBe('half-five');
+  });
+
+  it('falls back to the max ladder for an unknown source', () => {
+    expect(detectRatingScale([20, 55, 90])).toBe('hundred');
+    expect(detectRatingScale([6, 8, 10])).toBe('ten');
+    expect(detectRatingScale([1, 2, 3])).toBe('half-five');
+  });
+
+  it('survives an empty or all-zero rating set', () => {
+    expect(detectRatingScale([])).toBe('half-five');
+    expect(detectRatingScale([0, 0])).toBe('half-five');
+    // Previously Math.max(...[]) === -Infinity, which fell through by accident.
+    expect(detectRatingScale([], 'imdb')).toBe('ten');
+  });
+});
+
+describe('detectDateFormat — decided once for the whole file', () => {
+  it('one unambiguous row settles every other row', () => {
+    // 05/03 is ambiguous alone; 25/03 in the same file proves day-first.
+    expect(detectDateFormat(['05/03/2024', '25/03/2024', '01/02/2024'])).toBe('DMY');
+  });
+
+  it('a US export stays MM/DD — nothing changes for it', () => {
+    expect(detectDateFormat(['03/25/2024', '12/31/2023', '01/02/2024'])).toBe('MDY');
+  });
+
+  it('keeps the MM/DD default when a file is genuinely ambiguous', () => {
+    expect(detectDateFormat(['01/02/2024', '03/04/2024'])).toBe('MDY');
+    expect(detectDateFormat([])).toBe('MDY');
+  });
+
+  it('ignores ISO dates and junk without being thrown off', () => {
+    expect(detectDateFormat(['2024-03-05', '', 'not a date', '25/03/2024'])).toBe('DMY');
+  });
+});
+
+describe('normalizeDate — the file verdict fixes the half-wrong European import', () => {
+  it('THE BUG: an ambiguous day is transposed without the file verdict', () => {
+    // 5 March 2024 in a European export.
+    expect(normalizeDate('05/03/2024')).toBe('2024-05-03');          // wrong: 3 May
+    expect(normalizeDate('05/03/2024', 'DMY')).toBe('2024-03-05');   // right: 5 March
+  });
+
+  it('an unambiguous day was always right, and still is', () => {
+    expect(normalizeDate('25/03/2024')).toBe('2024-03-25');
+    expect(normalizeDate('25/03/2024', 'DMY')).toBe('2024-03-25');
+  });
+
+  it('US dates are untouched by the default', () => {
+    expect(normalizeDate('03/25/2024')).toBe('2024-03-25');
+    expect(normalizeDate('12/31/2023')).toBe('2023-12-31');
+  });
+
+  it('is idempotent on ISO dates, so downstream calls pass them straight through', () => {
+    // This is what lets the parse boundary normalize once without touching
+    // any of the six existing normalizeDate call sites.
+    const iso = normalizeDate('05/03/2024', 'DMY');
+    expect(normalizeDate(iso)).toBe(iso);
+    expect(normalizeDate(iso, 'DMY')).toBe(iso);
   });
 });
