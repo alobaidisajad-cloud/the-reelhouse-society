@@ -1,0 +1,124 @@
+#1 :: HIGH — Make CI green: eliminate all 32 lint warnings.
+#2 :: LOW — Cap dossier markdown render length (mitigates the unfixable linkify-it advisory): in the two render sit
+#3 :: LOW — Index the notable-members query (paste in SQL editor, per house law):
+#4 :: LOW — Repo hygiene: commit the pending `eas.json` (`ascAppId` is public, not a secret) per the ship-to-main l
+#5 :: LOW — Remove dead artifacts: `git rm -r test-app/ test_db.js test_schema.js`. *Regression analysis:* zero ref
+#6 :: LOW — Jest teardown warning: run `npx jest --detectOpenHandles` once to identify the leaked timer and `.unref
+#7 :: LOW | F-14 (`preferences` JSONB readable via raw REST) — deferred, non-sensitive | Optional fast-follow | By
+#8 :: LOW | Android launch wiring (FCM, RC android key, Play IAPs) — iOS-only launch per plan | ANDROID_LAUNCH.md
+#9 :: Jest teardown leak | ❌ UNSUBSTANTIATED — `--detectOpenHandles` reports nothing; 989 pass clean. Wo
+#11 :: `skipped` mislabeled | ✅ Confirmed — logs path does `skipped += agg.viewCount` (watches); UI says *
+#12 :: Zip-bomb guard
+#13 :: `FilmHero`
+#14 :: Offline queue
+#15 :: `notify-push` fail-open | ⚠️ INTENTIONAL — documented as *
+#23 :: HIGH · Live privacy leak in the block system
+#24 :: HIGH · The Tribunal's Priority Queue is completely broken, live
+#25 :: why this was invisible
+#26 :: BLOCKING · "Notes only you can see" are readable by anyone on the internet
+#27 :: Low — anonymous access is inconsistent with the app's own rule
+#28 :: Low (hardening only) — 24 `SECURITY DEFINER` functions lack `SET search_path`
+#29 :: Low (scale) — 9 exactly-duplicated indexes in production
+#30 :: Launch-critical verification gap — push may be silently dead
+#31 :: Medium (process) — nothing records which migrations are actually live
+#32 :: HIGH · A second, independent leak of private notes — and this one ignores RLS entirely
+#33 :: Low (hygiene) — two migrations share one ordering key
+#34 :: Low — the profiles grant list is a point-in-time snapshot
+#35 :: Low (scale) — At-the-Door search returns arbitrary results past 500 matching members
+#36 :: HIGH · Editing your bio silently renames you — 5 of 32 live members affected
+#37 :: Low — `FilmService.getFilmReviewCount` is dead, and would be wrong if wired up
+#38 :: Low — `DossierService` is 116 lines of dead code with a passing test suite
+#39 :: Low (latent) — the stack endorsement count is viewer-dependent
+#40 :: High · Log dates default to the UTC calendar date, not the member's local date
+#41 :: Low — the news feed fabricates two articles with faked recent dates and dead links
+#42 :: BLOCKING · "Delete Account" deletes nothing
+#43 :: Low — `0005_log_comments_fk.sql` cannot be applied as written
+#44 :: Low (scale) — `getLogComments` has no limit
+#45 :: Low (performance — measured) — the stacks feed ships ~7× the data it renders
+#46 :: High · Every member's stacks show "4 FILMS" to everyone except themselves
+#47 :: High · "Restore Purchases" silently strips admin privileges, permanently
+#48 :: High · The admin account resolves to the *lowest* tier — and unknown tier values downgrade silently
+#49 :: Low (with a High-value sub-fix) — encryption-at-rest can silently fail, and the justifying comment is factually wrong
+#50 :: High · Signup can silently assign you a different username than you chose
+#51 :: High · Receiving one notification silently deletes up to 450 already-loaded ones
+#52 :: Low — `_hasMore` is computed from the salvaged array, so one bad row ends pagination
+#53 :: Low — two provably dead expressions in `lounge.ts`
+#54 :: High · The lounge list recomputes unread counts client-side with unbounded queries, duplicating a deployed RPC
+#55 :: High · Lounge message loading swallows every backend error — silently
+#56 :: Low — stream-of-consciousness reasoning left in shipped code
+#57 :: Low — `loadMoreMessages` pages on a bare `created_at` cursor
+#58 :: Low — a failed lounge creation still burns the 30-second cooldown
+#59 :: Low — `deleteMessage` is a dead path spanning three files, implementing the rejected semantic
+#60 :: High · An offline-composed dossier appears twice in the Dispatch feed
+#61 :: Low — an entire dead feature subsystem is still live in the database
+#62 :: Low — `_watchlistPromises` is never garbage-collected
+#63 :: Low — the endorsement index is capped at 500, so old certifications render as un-certified
+#64 :: Low — the film-store logout reset leaves the previous user's pagination state
+#65 :: High — the TMDB API key is committed to git and shipped in the web bundle.
+#67 :: High · Five of 32 live members cannot be followed at all
+#68 :: High · List titles and descriptions are the only user input that bypasses the sanitizer
+#69 :: Low — an ignored `position` key that reads as if it works
+#70 :: Low — the entire Cinephile rank ladder is dead code
+#71 :: High · The abort-on-logout mechanism is dead, leaving a cross-user data race
+#72 :: Low — nine more dead util files (596 lines)
+#73 :: High · Notification grouping is completely inert — a copy change broke the parser
+#74 :: High · Every logged date renders one day early for users west of UTC
+#75 :: Low — three `timeAgo` implementations, two of which were supposed to be deleted
+#76 :: High · The entire resilience layer is built but never wired — 466 lines inert
+#77 :: "Following someone while offline is silently discarded"
+#78 :: Low — an offline unfollow leaves a pending follow request standing
+#79 :: Low — three dead dossier schemas encoding a table shape that never existed
+#80 :: High · Ban enforcement is incomplete in both layers, and the client gate is dead code
+#81 :: Low — 813 lines of dead hooks, and the barrel that hides them
+#82 :: High · Following someone doesn't refresh the feed — their content stays invisible
+#83 :: Low — `CACHE_KEYS` was created to standardize MMKV keys and is used once out of 21 sites
+#84 :: Blocking · The LOGS tab in search can never return a result — `logs.username` and `logs.role` do not exist
+#85 :: High · `escapeSearchPattern`'s wildcard escaping is a no-op at 5 of 6 call sites, and its quote escaping enables filter breakout
+#86 :: High · Your own profile shows "WATCHLIST 0" while the tab beside it shows the real count
+#87 :: High · Renaming your handle strands you on "Member Not Found" — for your own profile
+#88 :: High · The app's core write — filing a log — has zero error telemetry
+#89 :: High · Screen readers announce "Film logged to your archive" when the log failed
+#90 :: Low · Two stacked error toasts for one failed log
+#91 :: Low · `handleLog`'s dismissal timer has no unmount cleanup
+#92 :: High · Blocking someone doesn't hide their comments on three detail screens
+#93 :: Low · No server-side length cap on any comment column
+#94 :: Low · N+1 on the Tribunal: one query per report card
+#95 :: Low · `p_admin_id` is a dead parameter on both moderation RPCs
+#96 :: Low · Three RPC branches silently no-op
+#98 :: High · The founding banner shows a hardcoded `$49` to every storefront
+#99 :: High · Tapping "Restore Purchases" offline locally demotes a paying member
+#100 :: High · Buying a founding seat after the cap fills says "Welcome to the Founding Board!"
+#101 :: Low · The restore handler uses the one function the codebase warns against for `tier`
+#102 :: Low · Two sub-44pt tap targets on the payment screen, both without `hitSlop`
+#103 :: High · Markdown links bypass the app's URL scheme allowlist — including on third-party RSS content
+#104 :: High · Dossier comments skip sanitisation on the online path — the offline path sanitises
+#105 :: High · Blocking someone inside a salon leaves their messages on screen, while the toast says they're hidden
+#106 :: High · Log comments are the one UGC surface with no block filtering at any layer
+#107 :: Low — blank screen as the loading state. [log/[id].tsx:461](app/log/[id].tsx:461): `if (loading) return <View
+#108 :: Low — dead `previousData` capture. [log/[id].tsx:315-316](app/log/[id].tsx:315) captures `previousData` behin
+#109 :: Low — local `timeAgo` duplicates the shared util. [log/[id].tsx:42-53](app/log/[id].tsx:42) reimplements what
+#110 :: Low — unreachable no-op mute handler. [log/[id].tsx:720-723](app/log/[id].tsx:720): the comment sheet's `onMu
+#111 :: Low — magic-number coupling. [log/[id].tsx:645](app/log/[id].tsx:645): `critiquesSectionY.current = 80 + y` h
+#112 :: High · Notifications ignore block and mute entirely
+#113 :: High · Blocking is one-directional — the blocked member can still see and reach the blocker
+#114 :: High · Stack comments have no block filtering at any layer
+#115 :: Low · `social-modal` swallows its fetch error while the same file logs its other one
+#116 :: Low · A failed stack-comments fetch silently renders as "no comments"
+#117 :: Low · Stack deletion failure has no telemetry
+#118 :: Low · The stack action sheet stays open after Block or Mute
+#119 :: Low · The critique send button is a ~30px tap target with no `hitSlop`
+#120 :: Low · Four dead symbols behind eslint suppressions in `reels.tsx`
+#121 :: Low · `ReportSheet` freezes the screen height at module load — the only file in the app that does
+#122 :: High · Essays over ~4,200 words are silently truncated on publish, and the draft is deleted
+#123 :: High · The Auteur gate on publishing a dossier is client-side only
+#124 :: Low · Two dead imports behind eslint suppressions in `compose.tsx`
+#125 :: High · Paid-tier features are gated in the client only — two proven bypasses
+#126 :: High · Error telemetry is absent across 25 files, including the entire domain store layer
+#127 :: High · `DossierService.ts` is dead code — and its tests give false confidence in logic that never ships
+#128 :: Low · Log and dossier comment fetches are unbounded; the stack equivalent is capped
+#129 :: High · The App Store review prompt is fully built and never invoked
+#130 :: Low · 1,957 lines of dead code across 28 modules
+#131 :: High · Test files are excluded from type-checking
+#132 :: High · Coverage thresholds are set at 7–29%, so the ratchet cannot catch regressions
+#133 :: Low · No secrets leaked — but stating what I checked
+#196 :: 43,661 |
