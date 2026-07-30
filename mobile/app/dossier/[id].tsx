@@ -646,10 +646,6 @@ export default function DossierReaderScreen() {
                     setCommentActionSheetVisible(false);
                     setSelectedComment(null);
                   }}
-                  onMute={() => {
-                    setCommentActionSheetVisible(false);
-                    setSelectedComment(null);
-                  }}
                 />
                 <ReportSheet
                   visible={commentReportSheetVisible}

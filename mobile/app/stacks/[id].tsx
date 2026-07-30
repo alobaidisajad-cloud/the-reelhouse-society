@@ -824,10 +824,6 @@ export default function StackDetailScreen() {
               setCommentActionSheetVisible(false);
               setSelectedComment(null);
             }}
-            onMute={() => {
-              setCommentActionSheetVisible(false);
-              setSelectedComment(null);
-            }}
           />
           <ReportSheet
             visible={commentReportSheetVisible}

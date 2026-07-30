@@ -37,7 +37,9 @@ export interface ContentActionSheetProps {
   onClose: () => void;
   onReport: () => void;
   onBlock: () => void;
-  onMute: () => void;
+  /** Optional: callers that pass `hideMute` never render the Mute row, so they
+   *  have no handler to give. Mirrors onUnblock/onUnmute below. */
+  onMute?: () => void;
   onUnblock?: () => void;
   onUnmute?: () => void;
   showUnblock?: boolean;
@@ -163,7 +165,7 @@ export function ContentActionSheet({
       label: `MUTE @${targetUsername.toUpperCase()}`,
       icon: <VolumeX size={18} color={colors.fog} strokeWidth={1.5} />,
       destructive: false,
-      onPress: onMute,
+      onPress: onMute ?? onClose,
       accessibilityLabel: `Mute ${targetUsername}`,
     });
   }
