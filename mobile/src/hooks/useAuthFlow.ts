@@ -200,7 +200,7 @@ export function useAuthFlow() {
           emailRedirectTo: Linking.createURL('auth-callback') + '?type=signup',
         }
       });
-      reelToast('A new cipher has been wired to your inbox.');
+      reelToast.success('A new cipher has been wired to your inbox.');
       setResendCooldown(60);
       cooldownRef.current = setInterval(() => {
         setResendCooldown(prev => {
@@ -226,7 +226,7 @@ export function useAuthFlow() {
     const blockReason = validateLoginSubmission({
       isLogin, emailOrUsername, password, username, canAttempt, secondsRemaining, pwStrong, usernameStatus, usernameCheck,
     });
-    if (blockReason) { reelToast(blockReason); return; }
+    if (blockReason) { reelToast.error(blockReason); return; }
     if (submitting) return;
     setSubmitting(true);
     TactileEngine.mutate();
@@ -259,7 +259,7 @@ export function useAuthFlow() {
 
   const handleForgotPassword = async () => {
     if (!forgotEmail.trim()) {
-      reelToast('Please enter your email to request a credential reset.');
+      reelToast.error('Please enter your email to request a credential reset.');
       return;
     }
     setForgotLoading(true);
