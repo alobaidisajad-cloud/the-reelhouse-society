@@ -1061,10 +1061,12 @@ async function importLists(
       const safeTitle = sanitizeInput(list.name, 'listTitle') || 'Imported Stack';
       const safeDescription = sanitizeInput(list.description, 'listDescription');
 
-      // Idempotency: reuse list ID if one with the same title exists for this user
+      // Idempotency: reuse list ID if one with the same title exists for this
+      // user. Read the member's OWN settings too — merging into a stack they
+      // already have must never silently rewrite how it is configured.
       const { data: existing } = await supabase
         .from('lists')
-        .select('id')
+        .select('id, is_private, is_ranked, description')
         .eq('user_id', userId)
         .eq('title', safeTitle)
         .maybeSingle();
@@ -1074,14 +1076,34 @@ async function importLists(
         id:          listId,
         user_id:     userId,
         title:       safeTitle,
-        description: safeDescription,
-        is_private:  false,
-        is_ranked:   false,
+        // Round-trip the member's settings instead of overwriting them. The
+        // hardcoded `false` here meant importing a file that happened to share
+        // a title with an existing PRIVATE stack published it — no warning, no
+        // trace. Their own description wins; the imported one only fills a gap.
+        description: existing ? (existing.description || safeDescription) : safeDescription,
+        is_private:  existing?.is_private ?? false,
+        is_ranked:   existing?.is_ranked ?? false,
       }], { onConflict: 'id' });
 
       if (listErr) {
         errors.push(`List "${safeTitle}": ${listErr.message}`);
         continue;
+      }
+
+      // Appending to a stack the member already has must not renumber what is
+      // already in it. Start after their last film instead of restarting at 0,
+      // which would collide every imported film onto an existing rank and
+      // scramble the order of a ranked stack they had curated by hand.
+      let rankOffset = 0;
+      if (existing?.id) {
+        const { data: last } = await supabase
+          .from('list_items')
+          .select('rank_position')
+          .eq('list_id', listId)
+          .order('rank_position', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        rankOffset = typeof last?.rank_position === 'number' ? last.rank_position + 1 : 0;
       }
 
       // Resolve and insert list items in order — rank_position is the app's
@@ -1098,7 +1120,7 @@ async function importLists(
           film_id:       film.id,
           film_title:    film.title,
           poster_path:   film.poster_path,
-          rank_position: items.length,
+          rank_position: rankOffset + items.length,
         });
       }
 
