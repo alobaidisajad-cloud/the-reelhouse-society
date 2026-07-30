@@ -285,10 +285,23 @@ describe('detectRatingScale — source outranks the max value', () => {
     expect(detectRatingScale([0.5, 1.5], 'imdb')).toBe('ten');
   });
 
-  it('a half value proves a 5-star scale when the source is unknown', () => {
-    // An integer 1-10 scale cannot produce .5 — this is proof, not a heuristic.
+  it('a fractional value does NOT override the maximum', () => {
+    // Tempting rule: ".5 exists, so it must be a 5-star scale." It is wrong.
+    // A tracker on 0.5-10 in HALF steps emits both fractions and a max above 5,
+    // and calling that half-five clamps 7, 7.5 and 9 all to a flat 5 reels —
+    // the exact flattening this whole detector exists to prevent.
+    expect(detectRatingScale([1, 2, 3, 4, 5, 6, 7.5])).toBe('ten');
+    expect(detectRatingScale([3.5, 7, 7.5, 9])).toBe('ten');
+    // Below 5 the answer is half-five anyway, so the fraction adds nothing.
     expect(detectRatingScale([3.5, 4, 2])).toBe('half-five');
-    expect(detectRatingScale([1, 2, 3, 4, 5, 6, 7.5])).toBe('half-five');
+  });
+
+  it('a half-step 10-scale keeps its resolution instead of being clamped', () => {
+    const scale = detectRatingScale([3.5, 7, 7.5, 9]);
+    expect(normalizeRatingWithScale(7, scale)).toBe(3.5);
+    expect(normalizeRatingWithScale(9, scale)).toBe(4.5);
+    // Misread as half-five these would all have collapsed to 5.
+    expect(normalizeRatingWithScale(7.5, scale)).toBe(4);
   });
 
   it('falls back to the max ladder for an unknown source', () => {

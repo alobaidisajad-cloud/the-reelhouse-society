@@ -291,14 +291,23 @@ const SOURCE_SCALE: Record<Exclude<ImportSource, 'unknown'>, 'half-five' | 'ten'
  * first — every rung is a fact, not a heuristic:
  *
  *   1. a recognised source  -> that service's published scale
- *   2. any half value       -> half-five (a 1–10 integer scale cannot make .5)
- *   3. max > 10             -> hundred
- *   4. max > 5              -> ten
- *   5. otherwise            -> half-five
+ *   2. max > 10             -> hundred
+ *   3. max > 5              -> ten
+ *   4. otherwise            -> half-five
  *
- * Rung 5 is the only genuinely undecidable case (a hand-made file, no
- * recognisable source, no halves, nothing above 5) — out-of-5 and out-of-10
- * produce byte-identical data there, so no algorithm can separate them.
+ * WHY THERE IS NO "a fractional value proves a 5-star scale" RUNG:
+ * it reads as compelling — an integer 1–10 scale cannot emit 3.5 — but it is
+ * only sound when the maximum is already at or below 5, where the answer is
+ * half-five regardless. Above that it is actively wrong: a tracker using
+ * 0.5–10 in half steps emits BOTH fractional values and a max above 5, and
+ * treating it as half-five clamps 7, 7.5 and 9 all to a flat 5 reels. So the
+ * check would be redundant where it is right and destructive where it is not.
+ * Max alone is the honest signal once the source is unknown.
+ *
+ * Rung 4 is the only genuinely undecidable case (a hand-made file, no
+ * recognisable source, nothing above 5) — out-of-5 and out-of-10 produce
+ * byte-identical data there, so no algorithm can separate them. That case is
+ * covered by making the import reversible, not by guessing harder.
  */
 export function detectRatingScale(
   ratings: number[],
@@ -308,9 +317,6 @@ export function detectRatingScale(
 
   const positive = ratings.filter(r => r > 0);
   if (positive.length === 0) return 'half-five';
-
-  // A fractional score proves a half-star scale: integer 1–10 cannot produce it.
-  if (positive.some(r => !Number.isInteger(r))) return 'half-five';
 
   const max = Math.max(...positive);
   if (max > 10) return 'hundred';
