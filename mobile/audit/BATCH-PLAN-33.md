@@ -112,17 +112,39 @@ held its rows is empty of them.
 ---
 
 ## BATCH 5 · The REST exposure surface
-`Tier C` · `3 findings` · `no dependency` · **NOT STARTED**
+`Tier C` · `3 findings` · `no dependency` · **✅ STUDIED + SQL READY 2026-07-31**
 
 - **#7** — `preferences` JSONB readable via raw REST.
+  **CONFIRMED, and MISFILED in the register as "non-sensitive".** Anon reads the raw
+  JSONB: 8 keys beyond the 3 the app exposes, including the member's own
+  `privacy_annotations` / `privacy_endorsements` / `social_visibility`.
+  **NOT closable with SQL** — `preferences->programmes` needs SELECT on the column,
+  and web reads other members' `privacy_*` keys. **Scheduled for the launch build.**
 - **#27** — Anonymous access is inconsistent with the app's own rule.
+  **LARGELY INTENTIONAL — the finding overstated it.** RLS on logs/lists/watchlists is
+  already `can_view_user_data`-based; anon sees a lot only because **all 32 members are
+  public** (`is_social_private` = true on ZERO profiles). Proven on a replica that a
+  private member IS correctly hidden. Real residue: `can_view_user_data` **fails open**
+  on a nonexistent uuid (confirmed live → `true`). Fixed here.
 - **#34** — The profiles grant list is a point-in-time snapshot.
+  **CONFIRMED, has NOT sprung** (only `email` is denied). Mechanism is worse than
+  filed: under column grants `SELECT *` fails entirely with 42501. Recorded as a
+  batch-32 invariant; nothing to repair today.
 
-**Together because** they are one grants audit over the same surface; splitting them
-means three separate probes of the same tables.
+**FOUND BY THIS BATCH, not in the register:** 13 columns sat outside the app's own
+curated public list, including the whole moderation surface (`ban_reason`,
+`banned_at`, `suspended_until`, `suspension_reason`, `warning_count`). All zero
+today — the first ban would have published its own reason worldwide. **Nine columns
+revoked from `anon`;** `authenticated` untouched, so no client path changes.
+
+**Migration:** `supabase/migrations/20260731_07_batch5_rest_exposure.sql`
+(verified end-to-end on a PostgreSQL 18.4 replica: production grant shape reproduced,
+migration applied, anon loses exactly the nine, `is_banned` filtering still works,
+`authenticated` unchanged, rollback exact.)
 
 **DONE WHEN** an anonymous REST call returns only what the app's own rule permits,
-proven per table.
+proven per table. — **Met for `profiles` except `preferences` (launch build);
+`logs`/`lists`/`watchlists` already correct by design.**
 
 ---
 
