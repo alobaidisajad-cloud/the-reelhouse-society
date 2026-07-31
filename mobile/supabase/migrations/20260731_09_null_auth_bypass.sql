@@ -1,6 +1,13 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- BATCH 5 · CRITICAL — "only the host" checks let ANONYMOUS callers through
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- ✅ APPLIED TO PRODUCTION 2026-07-31 — re-ran the exact attack afterwards as anon:
+--    remove_lounge_member, decline_lounge_member, approve_lounge_member,
+--    set_lounge_member_status, withdraw_lounge_message, get_user_analytics
+--      -> 401 every one (all six returned 204 before).
+--    Still working, logged out: browse lounges 200, community feed 200,
+--    profiles 200. join_public_lounge / request_lounge_membership correctly
+--    raise "Not authenticated" against a REAL lounge id, and no member_count moved.
 -- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
 -- ⚠️ NOT IN THE 124-FINDING REGISTER. Found 2026-07-31 by the SECURITY DEFINER
 --    sweep that batch 2 started and never finished.

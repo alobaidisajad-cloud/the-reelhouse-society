@@ -145,6 +145,19 @@ curated public list, including the whole moderation surface (`ban_reason`,
 today — the first ban would have published its own reason worldwide. **Nine columns
 revoked from `anon`;** `authenticated` untouched, so no client path changes.
 
+**ALSO FOUND — CRITICAL, and worse than the three findings this batch was about.**
+Finishing the SECURITY DEFINER sweep batch 2 started uncovered a NULL-comparison
+auth bypass in six functions: `IF auth.uid() <> v_creator THEN RAISE` never fires
+for a caller with no session, because `NULL <> x` is NULL, not TRUE. All six are
+SECURITY DEFINER (RLS cannot catch it) and all six were still callable by `anon`
+via the default PUBLIC grant. Confirmed live: a stranger holding only the public
+API key could remove any member from any lounge, ban or mute anyone, admit
+themselves into any PRIVATE lounge, delete any member's messages, and read any
+member's analytics. Fixed and **verified live — all six now 401**.
+Migration: `supabase/migrations/20260731_09_null_auth_bypass.sql`.
+`get_user_analytics`'s 109-line body was deliberately left untouched; the revoke
+closes it, and an earlier draft that rebuilt it had silently zeroed both streaks.
+
 **Migration:** `supabase/migrations/20260731_07_batch5_rest_exposure.sql`
 (verified end-to-end on a PostgreSQL 18.4 replica: production grant shape reproduced,
 migration applied, anon loses exactly the nine, `is_banned` filtering still works,
