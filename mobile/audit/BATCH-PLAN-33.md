@@ -79,7 +79,7 @@ either path, the probe output is in the commit, and a rollback is written.
 ---
 
 ## BATCH 2 · Block-system privacy leak
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-07-31**
 
 - **#23** — High · The function trusts a caller-supplied `viewer_id`. All 8 call sites already pass `auth.uid()`, so it can ignore the parameter and use `auth.uid()` internally.
 
