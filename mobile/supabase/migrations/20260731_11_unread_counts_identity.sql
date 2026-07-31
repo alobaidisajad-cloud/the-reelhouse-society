@@ -1,6 +1,10 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- BATCH 5 · the last two functions, settled from their LIVE definitions
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- ✅ APPLIED TO PRODUCTION 2026-07-31 — verified live as anon:
+--    get_lounge_unread_counts 401, process_secure_tip 401.
+--    Logged-out paths all still 200: public profile, member discovery, community
+--    feed, browse lounges, read a dossier, browse lists.
 -- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
 --
 -- The live catalogue was read rather than guessed. Results:

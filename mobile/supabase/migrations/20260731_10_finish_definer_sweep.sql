@@ -1,6 +1,9 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- BATCH 5 · finishing the SECURITY DEFINER sweep (the other nine functions)
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- ✅ APPLIED TO PRODUCTION 2026-07-31 — verified live as anon: get_profile_counts
+--    gate in place, toggle_dossier_certify 401, increment_dossier_views 204 (kept
+--    open on purpose so logged-out readers are still counted).
 -- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
 --
 -- Batch 2 started this sweep and stopped after three functions. Batch 5 finished it.
