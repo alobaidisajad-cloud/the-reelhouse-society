@@ -65,7 +65,7 @@ audit passes.
 ---
 
 ## BATCH 1 · The private-notes leak
-`Tier C` · `2 findings` · `no dependency` · **NOT STARTED**
+`Tier C` · `2 findings` · `no dependency` · **✅ DONE 2026-07-31**
 
 - **#26** — BLOCKING · "Notes only you can see" are readable by anyone on the internet.
 - **#32** — High · A second, independent leak of the same private notes that ignores RLS entirely.
