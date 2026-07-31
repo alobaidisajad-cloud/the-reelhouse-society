@@ -103,7 +103,7 @@ held its rows is empty of them.
 ---
 
 ## BATCH 4 · Blocking is one-directional
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-07-31**
 
 - **#113** — High · The blocked member can still see and reach the blocker.
 

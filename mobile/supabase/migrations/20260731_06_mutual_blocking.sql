@@ -1,6 +1,10 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- BATCH 4 · finding #113 — make a block mutual, and sever the follow graph
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- ✅ APPLIED TO PRODUCTION 2026-07-31T02:54Z. Pre-flight confirmed idx_user_blocks_blocker
+--    exists live (5 indexes total, including a UNIQUE (blocker_id, blocked_id) the
+--    schema dump did not have — which is why a mute upgraded to a block arrives as
+--    an UPDATE, already covered by the trigger).
 -- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
 -- ⚠️ PRE-FLIGHT: confirm the index exists live (query at the bottom). The schema
 --    dump has been stale three times in this audit; do not trust it here either.
