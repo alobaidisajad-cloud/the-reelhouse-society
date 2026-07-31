@@ -28,8 +28,10 @@ function mapLogsToFeed(data: any[]) {
             id: l.id,
             user: prof?.username || 'anonymous',
             userRole: prof?.role || 'cinephile',
-            privacyEndorsements: prof?.preferences?.privacy_endorsements || 'everyone',
-            privacyAnnotations: prof?.preferences?.privacy_annotations || 'everyone',
+            // `public_prefs` is the whitelist projection of `preferences`; the feed
+            // shows other members, so it must never read the raw column.
+            privacyEndorsements: prof?.public_prefs?.privacy_endorsements || 'everyone',
+            privacyAnnotations: prof?.public_prefs?.privacy_annotations || 'everyone',
             film: {
                 id: l.film_id,
                 title: l.film_title,
@@ -125,7 +127,7 @@ export default function FeedPage() {
             .from('logs')
             .select(`
                 id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, pull_quote, drop_cap, alt_poster, editorial_header, is_autopsied, autopsy, video_url, created_at,
-                profiles ( id, username, role, preferences )
+                profiles ( id, username, role, public_prefs )
             `)
             .order('created_at', { ascending: false })
             .limit(20)

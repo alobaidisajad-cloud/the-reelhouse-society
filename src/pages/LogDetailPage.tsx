@@ -29,7 +29,7 @@ export default function LogDetailPage() {
                 .select(`
                     id, rating, review, pull_quote, drop_cap, editorial_header, is_spoiler, is_autopsied, autopsy, created_at,
                     user_id, film_id, film_title, poster_path, year, status, viewing_history, view_count, watched_date, watched_with,
-                    profiles!logs_user_id_fkey ( username, role, preferences )
+                    profiles!logs_user_id_fkey ( username, role, public_prefs )
                 `)
                 .eq('id', logId)
                 .single()
@@ -47,8 +47,10 @@ export default function LogDetailPage() {
                 id: data.id,
                 user: profileData?.username || 'anonymous',
                 userRole: profileData?.role || 'cinephile',
-                privacyEndorsements: profileData?.preferences?.privacy_endorsements || 'everyone',
-                privacyAnnotations: profileData?.preferences?.privacy_annotations || 'everyone',
+                // `public_prefs` is the whitelist projection of `preferences`; this is
+                // another member's log, so it must never read the raw column.
+                privacyEndorsements: profileData?.public_prefs?.privacy_endorsements || 'everyone',
+                privacyAnnotations: profileData?.public_prefs?.privacy_annotations || 'everyone',
                 film: {
                     id: data.film_id,
                     title: data.film_title,

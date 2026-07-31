@@ -117,9 +117,17 @@ held its rows is empty of them.
 - **#7** — `preferences` JSONB readable via raw REST.
   **CONFIRMED, and MISFILED in the register as "non-sensitive".** Anon reads the raw
   JSONB: 8 keys beyond the 3 the app exposes, including the member's own
-  `privacy_annotations` / `privacy_endorsements` / `social_visibility`.
-  **NOT closable with SQL** — `preferences->programmes` needs SELECT on the column,
-  and web reads other members' `privacy_*` keys. **Scheduled for the launch build.**
+  notification settings and privacy configuration.
+  **FIXED — SQL + both clients.** `public.public_prefs(jsonb)` (IMMUTABLE, whitelist)
+  + a STORED generated column `profiles.public_prefs`, granted to anon/authenticated.
+  Web now reads it (`UserProfilePage`, `FeedPage`, `LogDetailPage` — deployable now);
+  mobile `PUBLIC_PROFILE_COLUMNS` reads it in the launch build. Whitelist, so any
+  future preference key is **private by default** — proven on a replica.
+  **The revoke is sequenced, not skipped:** `REVOKE SELECT (preferences) FROM anon`
+  is STEP 4 in the migration and must wait for the launch build, because the mobile
+  app is **browsable logged out** (no auth guard on the tabs; login is a modal) and
+  a JSONB path read still needs column-level SELECT — so revoking today would fail
+  the entire profile fetch for logged-out visitors on the frozen build.
 - **#27** — Anonymous access is inconsistent with the app's own rule.
   **LARGELY INTENTIONAL — the finding overstated it.** RLS on logs/lists/watchlists is
   already `can_view_user_data`-based; anon sees a lot only because **all 32 members are

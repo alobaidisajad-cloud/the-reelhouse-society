@@ -49,9 +49,17 @@ export const SELF_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio
 
 /** Public profile columns — excludes `preferences` to prevent
  *  leaking user settings (oracle_persona, notification prefs, etc.) to other users.
+ *
+ *  Reads `public_prefs`, a database-side WHITELIST projection of `preferences`
+ *  (see supabase/migrations/20260731_08_public_prefs_projection.sql). This used to
+ *  select `programmes:preferences->programmes` and friends, but a JSONB path read
+ *  still requires column-level SELECT on `preferences` — so the old form kept the
+ *  raw settings blob readable by anyone, including logged-out visitors. The
+ *  projection is enforced by the database, not by this string.
+ *
  *  @see {@link ../profileService.ts#PROFILE_SELECT_COLUMNS} for the auth-bootstrap column set.
  */
-export const PUBLIC_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio, role, tier, is_founding, persona, is_social_private, followers_count, following_count, favorite_films, created_at, social_links, member_no, programmes:preferences->programmes, favorites:preferences->favorites, hide_stats:preferences->hide_stats' as const;
+export const PUBLIC_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio, role, tier, is_founding, persona, is_social_private, followers_count, following_count, favorite_films, created_at, social_links, member_no, public_prefs' as const;
 
 // ── Zod Schemas ────────────────────────────────────────────────────────
 
@@ -144,22 +152,23 @@ export const ProfileDataService = {
     }
     if (!data) return null;
 
-    // Map securely extracted public programmes back to preferences for Zod
+    // Map the database's whitelist projection back onto `preferences` for Zod.
+    // `public_prefs` can only ever contain whitelisted keys, so nothing private
+    // can arrive here even if this mapping is later widened by mistake.
     const rawData = data as any;
     if (!isSelf) {
+      const publicPrefs = rawData.public_prefs ?? {};
+      delete rawData.public_prefs;
       rawData.preferences = {};
-      if (rawData.programmes !== undefined) {
-        rawData.preferences.programmes = rawData.programmes;
-        delete rawData.programmes;
+      if (publicPrefs.programmes !== undefined) {
+        rawData.preferences.programmes = publicPrefs.programmes;
       }
-      if (rawData.favorites !== undefined) {
-        rawData.preferences.favorites = rawData.favorites;
-        delete rawData.favorites;
+      if (publicPrefs.favorites !== undefined) {
+        rawData.preferences.favorites = publicPrefs.favorites;
       }
-      if (rawData.hide_stats !== undefined) {
+      if (publicPrefs.hide_stats !== undefined) {
         // Ensure a true boolean mapping from postgres JSON scaler
-        rawData.preferences.hide_stats = rawData.hide_stats === true || rawData.hide_stats === 'true';
-        delete rawData.hide_stats;
+        rawData.preferences.hide_stats = publicPrefs.hide_stats === true || publicPrefs.hide_stats === 'true';
       }
     }
 

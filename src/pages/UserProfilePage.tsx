@@ -44,10 +44,15 @@ export default function UserProfilePage() {
         queryFn: async () => {
             const { data } = await supabase
                 .from('profiles')
-                .select('id, username, role, bio, avatar_url, followers_count, following_count, is_social_private, preferences, created_at, tier, social_links')
+                // `public_prefs` is a whitelist projection of `preferences` (see
+                // supabase/migrations/20260731_08). This query only ever runs for
+                // OTHER members (`enabled: !isOwnProfile`), so it must never read the
+                // raw column — that leaks notification settings to anyone.
+                .select('id, username, role, bio, avatar_url, followers_count, following_count, is_social_private, public_prefs, created_at, tier, social_links')
                 .eq('username', routeUsername)
                 .single()
             if (!data) return null
+            const publicPrefs = (data as any).public_prefs || {}
             return {
                 id: data.id,
                 username: data.username,
@@ -58,10 +63,10 @@ export default function UserProfilePage() {
                 followersCount: data.followers_count || 0,
                 followingCount: data.following_count || 0,
                 isSocialPrivate: data.is_social_private || false,
-                socialVisibility: (data as any).preferences?.social_visibility || (data.is_social_private ? 'private' : 'public'),
-                privacyEndorsements: (data as any).preferences?.privacy_endorsements || 'everyone',
-                privacyAnnotations: (data as any).preferences?.privacy_annotations || 'everyone',
-                preferences: data.preferences || {},
+                socialVisibility: publicPrefs.social_visibility || (data.is_social_private ? 'private' : 'public'),
+                privacyEndorsements: publicPrefs.privacy_endorsements || 'everyone',
+                privacyAnnotations: publicPrefs.privacy_annotations || 'everyone',
+                preferences: publicPrefs,
                 createdAt: data.created_at,
                 socialLinks: (data as any).social_links || {},
             }

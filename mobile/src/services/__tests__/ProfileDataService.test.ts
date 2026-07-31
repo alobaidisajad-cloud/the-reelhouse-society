@@ -36,12 +36,20 @@ const PRIVATE_FIELDS = ['email', 'is_banned', 'push_token', 'stripe', 'apple_id'
 
 describe('column sets — the privacy boundary itself', () => {
   it('the PUBLIC set never selects the raw preferences blob', () => {
-    // preferences carries private settings. The public set may extract named
-    // sub-keys (programmes, favorites, hide_stats) but must never take the
-    // whole object — that is the exact leak this boundary exists to prevent.
+    // preferences carries private settings. The public set reads `public_prefs`,
+    // the database-side whitelist projection — that is the exact leak this
+    // boundary exists to prevent.
     const cols = PUBLIC_PROFILE_COLUMNS.split(',').map(c => c.trim());
     expect(cols).not.toContain('preferences');
-    expect(PUBLIC_PROFILE_COLUMNS).toContain('programmes:preferences->programmes');
+    expect(cols).toContain('public_prefs');
+  });
+
+  it('the PUBLIC set never reaches INTO preferences with a JSONB path', () => {
+    // A `preferences->key` path still requires column-level SELECT on
+    // `preferences`, so it keeps the raw settings blob readable by anyone the
+    // column is granted to — including logged-out visitors. The projection must
+    // happen in the database, never in this string.
+    expect(PUBLIC_PROFILE_COLUMNS).not.toContain('preferences->');
   });
 
   it('the SELF set may take preferences whole — it is the member’s own data', () => {
@@ -58,9 +66,16 @@ describe('column sets — the privacy boundary itself', () => {
   it('the public set is not accidentally wider than the self set', () => {
     // Any bare column public can read, self must be able to read too. A public
     // column absent from self means someone widened the wrong list.
+    //
+    // `public_prefs` is the one sanctioned exception: it is the whitelist
+    // projection OF `preferences`, which the self set already reads whole. It is
+    // strictly narrower than what self gets, not wider.
     const bare = (s: string) => s.split(',').map(c => c.trim()).filter(c => !c.includes(':'));
+    const selfCols = bare(SELF_PROFILE_COLUMNS);
+    expect(selfCols).toContain('preferences');
     for (const col of bare(PUBLIC_PROFILE_COLUMNS)) {
-      expect(bare(SELF_PROFILE_COLUMNS)).toContain(col);
+      if (col === 'public_prefs') continue;
+      expect(selfCols).toContain(col);
     }
   });
 });
