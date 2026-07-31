@@ -1,6 +1,10 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- BATCH 5 · #7, #27, #34 — the anonymous REST exposure surface
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- ✅ APPLIED TO PRODUCTION 2026-07-31 — verified live as anon:
+--    all nine columns -> 401; the full public profile set -> 200;
+--    member discovery (`is_banned=eq.false`) -> 200;
+--    can_view_user_data(<nonexistent uuid>) -> false (was true).
 -- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
 -- Safe to run inside a transaction. Fully reversible (rollback at the bottom).
 --

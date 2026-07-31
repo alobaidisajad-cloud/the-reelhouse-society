@@ -112,7 +112,7 @@ held its rows is empty of them.
 ---
 
 ## BATCH 5 · The REST exposure surface
-`Tier C` · `3 findings` · `no dependency` · **✅ STUDIED + SQL READY 2026-07-31**
+`Tier C` · `3 findings` · `no dependency` · **✅ DONE 2026-07-31** (web deploy pending)
 
 - **#7** — `preferences` JSONB readable via raw REST.
   **CONFIRMED, and MISFILED in the register as "non-sensitive".** Anon reads the raw

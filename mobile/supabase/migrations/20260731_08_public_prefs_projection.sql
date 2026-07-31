@@ -1,6 +1,15 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- BATCH 5 · #7 — close the `preferences` leak properly (SQL + both clients)
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- ✅ APPLIED TO PRODUCTION 2026-07-31 — verified live as anon:
+--    public_prefs across all 32 members exposes ONLY whitelisted keys
+--    (favorites, social_visibility, privacy_annotations, privacy_endorsements,
+--    programmes). Zero off-whitelist keys; no notif_*, no onboarded.
+--    All five real query shapes return 200:
+--      frozen TestFlight profile query (preferences-> paths)  -> 200
+--      launch-build profile query (public_prefs)              -> 200
+--      web UserProfilePage / FeedPage join / LogDetailPage    -> 200
+--    STEP 4 (the revoke) has NOT been run — it waits for the launch build.
 -- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
 -- ⚠️ Run this AFTER 20260731_07. This migration is PURELY ADDITIVE — it creates a
 --    function and a column and grants them. NOTHING loses access here. The revoke
