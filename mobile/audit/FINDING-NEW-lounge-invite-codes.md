@@ -1,117 +1,98 @@
-# NEW FINDING — Private lounge invite codes are readable by anyone
+# CORRECTED — lounge exposure via `get_user_lounges`
 
-**Not in the 124-finding register.** Found 2026-07-31 while sweeping for the same
-flaw class as #23 (SECURITY DEFINER functions trusting a caller-supplied identity).
-Verified live against production.
+**Status: the security claim in the first version of this document was WRONG.**
+Found 2026-07-31; corrected the same day after the user pointed out that the invite
+feature had been removed. Correcting rather than quietly editing, because the first
+version called something a credential leak that is not one.
 
 ---
 
-## What an invite code is
+## What I claimed, and why it was wrong
 
-`src/stores/lounge.ts:246` joins a private lounge by matching one:
+I wrote that `invite_code` is *"the credential that bypasses the join-approval
+flow"*, based on `src/stores/lounge.ts:246` matching on it.
 
-```ts
-.eq('invite_code', code.toUpperCase())
-```
+**It confers nothing.** Traced properly:
 
-It is generated only for private lounges (`lounge.ts:194`,
-`invite_code = isPrivate ? generateInviteCode() : null`). **It is the credential
-that bypasses the join-approval flow.** Anyone holding it can enter a private room.
-
-## The exposure, measured live as an anonymous caller
-
-| | |
+| Step | Reality |
 |---|---|
-| Lounges returned | **5** |
-| **Private lounges included** | **2** |
-| **Rows with a non-null `invite_code`** | **3** |
-| Lounges the named member is not in | 5 |
+| `joinByInviteCode(code)` exists in the web store | **No UI calls it** — the feature was removed |
+| It looks up a lounge id by code | That id is already public — lounge metadata is discoverable **by design** |
+| It then calls `joinLounge(id)` | Which cannot self-insert (below) |
+| Mobile | Has **no invite feature at all** — it carries the column through the store and displays it nowhere |
 
-Reproduced through **two independent paths**. Values were never printed.
+**Joining is gated independently of any code.** `20260627_01_lounge_overhaul.sql:84`
+removed the open client INSERT with the comment *"Joins/requests go through SECURITY
+DEFINER RPCs only (prevents self-inserting as 'approved' into a private room)."*
+There is **no replacement INSERT policy on `lounge_members` anywhere**, and RLS is
+enabled on it, so a client cannot insert a membership row at all. Mobile joins
+through `join_public_lounge` / `request_lounge_membership`, which enforce approval.
+
+So an exposed `invite_code` is **a dead string from a deleted feature**, not a key.
 
 ---
 
-## PATH A — the table itself
+## What was actually true, and is now fixed
 
-`supabase/migrations/20260627_01_lounge_overhaul.sql:70-71`:
-
-```sql
--- lounges: metadata discoverable (so private rooms can be found + requested).
-DROP POLICY IF EXISTS "Anyone can view lounges" ON public.lounges;
-CREATE POLICY "Lounges are discoverable" ON public.lounges FOR SELECT USING (true);
-```
-
-The previous policy correctly hid private lounges from non-members. It was dropped
-and replaced with `USING (true)`.
-
-**The visibility itself is intentional** — the comment says so, and the product
-wants private rooms to be findable so they can be requested. **The defect is that
-`invite_code` lives in the same table and therefore rides along.** RLS is
-row-level; it cannot hide one column. Same shape as `private_notes` in batch 1.
-
-`GRANT ALL ON TABLE public.lounges TO anon` is in the baseline, so anon reads every
-column.
-
-## PATH B — `get_user_lounges(p_user_id)`
-
-`SECURITY DEFINER`, so it bypasses RLS entirely, and it contains a dead filter:
+`get_user_lounges(p_user_id)` is `SECURITY DEFINER` (bypasses RLS) and contains a
+dead filter:
 
 ```sql
 WHERE TRUE OR mm.lounge_id IS NOT NULL OR l.creator_id = p_user_id
 ```
 
-`TRUE OR …` is unconditionally true. The function returns **every** lounge —
-private ones and their invite codes — for any caller-supplied id, to `anon`.
+`TRUE OR …` is unconditionally true, so it returned **every** lounge for any
+caller-supplied id, to `anon`. Measured live: 5 lounges, 2 private, 3 with a
+non-null `invite_code`.
 
-**It has ZERO callers.** No client (`rpc('get_user_lounges')` appears nowhere in
-mobile or web), no SQL, no policy. `LoungeService.getUserLounges` has a similar
-name but queries `lounge_members` directly and never touches this function.
-`20260609_security_definer_hardening.sql:82` even contains
-`DROP FUNCTION IF EXISTS get_user_lounges(uuid)` — yet it is live today.
+**Severity, corrected:** this exposed *private lounge metadata* to anonymous
+callers — names and descriptions of rooms — plus a vestigial string. Not a
+credential leak. Still wrong, still worth closing, but not the severity I gave it.
 
----
-
-## Who actually needs `invite_code`
-
-| Consumer | Needs it? |
-|---|---|
-| **Mobile** | **No.** `stores/lounge.ts` selects it into the store, but it is displayed **nowhere** — no hit in any screen or component. |
-| **Web** | **Yes**, for members: `LoungeRoomPage.tsx:301-315` shows it when `isPrivate && lounge.invite_code`, with copy-to-clipboard at `:224`. |
-| **Web queries** | Use `select('*')` (`stores/lounge.ts:115,168,280`), and `/lounge` has **no auth guard**. |
+**It also had ZERO callers** — no client, no SQL, no policy. `20260609_security_definer_hardening.sql:82`
+even tried to drop it. Revoking `EXECUTE` from `PUBLIC` and `anon` therefore closed
+it with no possible breakage. **Applied 2026-07-31, verified: 42501 permission denied.**
 
 ---
 
-## The fix, staged by what each step costs
+## The remaining table exposure — now LOW, not urgent
 
-### STEP 1 — now, pure SQL, zero client impact
-Revoke `EXECUTE` on `get_user_lounges` from `PUBLIC` **and** `anon`. It is dead
-code; nothing can break. **Closes Path B completely, for everyone.**
+`20260627_01_lounge_overhaul.sql:70-71` replaced the lounge SELECT policy with
+`USING (true)`, so `public.lounges` is fully readable, `invite_code` included.
 
-⚠️ Both revokes are required — Postgres grants `EXECUTE` to `PUBLIC` by default, so
-revoking from `anon` alone is silently useless. Proven on a replica in batch 2.
+The visibility is **intentional** (its own comment: *"metadata discoverable so
+private rooms can be found + requested"*). And since the code confers nothing, what
+leaks is a dead string.
 
-### STEP 2 — needs a web deploy first
-Revoking the `invite_code` **column** from `anon` closes Path A's internet-facing
-half. But the web's `select('*')` would then 403 for logged-out visitors — exactly
-the trap batch 1 hit with the film pages. So first: change the web's lounge list
-queries to explicit columns that omit `invite_code`, keeping it only where the
-member is in the room. Web deploys instantly.
-
-### STEP 3 — launch build
-Revoke the column from `authenticated` too, so one member cannot read another's
-code. Mobile must first stop selecting `invite_code` — which costs nothing,
-because it never displays it. Cannot ship before the launch build
-(see the TestFlight freeze).
-
-**After steps 1 and 2 the public key can no longer harvest invite codes. Step 3
-closes member-to-member.**
+**Recommendation, downgraded:** do not spend a web deploy and a column revoke on
+this. Instead, at the launch build, **drop the `invite_code` column entirely** —
+it belongs to a removed feature. That is cleaner than protecting data nobody should
+be storing. It cannot be dropped before then: `mobile/src/stores/lounge.ts:317,323,328`
+name the column explicitly, so dropping it would break the lounge list for every
+TestFlight tester.
 
 ---
 
-## Not yet examined
+## Separate finding uncovered here — WEB JOIN IS BROKEN
 
-`get_user_analytics(p_user_id)` also answers anonymously with data and is
-`SECURITY DEFINER`. It returns log counts, average rating and a rating
-distribution — plausibly public profile data, but **I have not finished checking
-what else it exposes.** It is not part of this finding and must not be assumed
-safe.
+`src/stores/lounge.ts:227-234` joins by inserting straight into `lounge_members`:
+
+```ts
+await supabase.from('lounge_members').insert([{ lounge_id: loungeId, user_id: user.id }])
+```
+
+RLS is enabled on that table and the overhaul **removed the only INSERT policy**, so
+this insert is denied. The result is not awaited for an error, so it fails silently.
+
+**Joining a lounge from the web app does not work.** Mobile is unaffected — it uses
+the proper RPCs. This is a functional bug, not a security one, and it is not in the
+124-finding register. Belongs to a web batch.
+
+---
+
+## Lesson
+
+I called something a credential without tracing whether anything consumed it. The
+grep showed a function matching on `invite_code`; I did not check that **no UI calls
+that function**, nor that the join path is gated independently. Severity claims need
+the same execution standard as fixes.
