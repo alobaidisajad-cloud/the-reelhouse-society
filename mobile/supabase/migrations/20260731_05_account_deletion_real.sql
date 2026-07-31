@@ -1,6 +1,10 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- BATCH 3 · finding #42 — make "Delete Account" actually delete the account
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- ✅ APPLIED TO PRODUCTION 2026-07-31 — verified on the LIVE database inside a
+--    rolled-back transaction: a throwaway member with a log and an inbound follow
+--    was deleted through the real function; auth user, profile, logs and follows
+--    all 0 afterwards, and all 32 real members untouched.
 -- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
 -- ⚠️ TAKE A DATABASE SNAPSHOT FIRST. Deleted rows do not come back.
 --

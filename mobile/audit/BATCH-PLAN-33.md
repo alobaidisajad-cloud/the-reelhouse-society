@@ -89,7 +89,7 @@ block state, and all 8 call sites are confirmed unaffected.
 ---
 
 ## BATCH 3 · Account deletion
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-07-31**
 
 - **#42** — BLOCKING · "Delete Account" deletes nothing.
 
