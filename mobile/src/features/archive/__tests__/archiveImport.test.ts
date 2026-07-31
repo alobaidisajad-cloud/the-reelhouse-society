@@ -239,20 +239,20 @@ describe('native rewatch aggregation', () => {
 
 describe('detectSource — the export fingerprint', () => {
   it('identifies a Letterboxd diary export', () => {
-    expect(detectSource(['Date', 'Name', 'Year', 'Letterboxd URI', 'Rating', 'Rewatch', 'Tags', 'Watched Date'])).toBe('letterboxd');
+    expect(detectSource(['Date', 'Name', 'Year', 'Letterboxd URI', 'Rating', 'Rewatch', 'Tags', 'Watched Date'])).toBe('uri_diary');
   });
 
   it('identifies an IMDb ratings export', () => {
-    expect(detectSource(['Const', 'Your Rating', 'Date Rated', 'Title', 'Title Type', 'IMDb Rating'])).toBe('imdb');
+    expect(detectSource(['Const', 'Your Rating', 'Date Rated', 'Title', 'Title Type', 'IMDb Rating'])).toBe('const_titles');
   });
 
   it('identifies a Trakt export', () => {
-    expect(detectSource(['title', 'year', 'rated_at', 'rating'])).toBe('trakt');
+    expect(detectSource(['title', 'year', 'rated_at', 'rating'])).toBe('snake_timestamps');
   });
 
   it('is case- and whitespace-insensitive', () => {
-    expect(detectSource(['  LETTERBOXD URI ', 'Name'])).toBe('letterboxd');
-    expect(detectSource(['const', 'title type'])).toBe('imdb');
+    expect(detectSource(['  LETTERBOXD URI ', 'Name'])).toBe('uri_diary');
+    expect(detectSource(['const', 'title type'])).toBe('const_titles');
   });
 
   it('a column that merely MENTIONS a service is not that service', () => {
@@ -286,12 +286,12 @@ describe('detectRatingScale — source outranks the max value', () => {
     // By max alone this is indistinguishable from a 5-star file — which is
     // exactly how every rating used to get doubled, permanently.
     expect(detectRatingScale(cautiousCritic)).toBe('half-five');
-    expect(detectRatingScale(cautiousCritic, 'imdb')).toBe('ten');
-    expect(detectRatingScale(cautiousCritic, 'trakt')).toBe('ten');
+    expect(detectRatingScale(cautiousCritic, 'const_titles')).toBe('ten');
+    expect(detectRatingScale(cautiousCritic, 'snake_timestamps')).toBe('ten');
   });
 
   it('a Letterboxd file is out of 5 even if every score is a whole number', () => {
-    expect(detectRatingScale([1, 2, 3, 4, 5], 'letterboxd')).toBe('half-five');
+    expect(detectRatingScale([1, 2, 3, 4, 5], 'uri_diary')).toBe('half-five');
   });
 
   it('the data WINS when it exceeds what the named source can emit', () => {
@@ -299,14 +299,14 @@ describe('detectRatingScale — source outranks the max value', () => {
     // 10 is not really Letterboxd data (merged export, edited sheet, a column
     // that only looks familiar). Forcing half-five would clamp 7, 9 and 10 all
     // to a flat 5 — so the fingerprint yields to the evidence.
-    expect(detectRatingScale([4, 7, 9, 10], 'letterboxd')).toBe('ten');
-    expect(detectRatingScale([20, 55, 90], 'imdb')).toBe('hundred');
+    expect(detectRatingScale([4, 7, 9, 10], 'uri_diary')).toBe('ten');
+    expect(detectRatingScale([20, 55, 90], 'const_titles')).toBe('hundred');
   });
 
   it('but a source still wins whenever the data is consistent with it', () => {
-    expect(detectRatingScale([0.5, 1.5, 5], 'letterboxd')).toBe('half-five');
-    expect(detectRatingScale([0.5, 1.5], 'imdb')).toBe('ten');
-    expect(detectRatingScale([1, 2, 3, 4, 5], 'imdb')).toBe('ten');
+    expect(detectRatingScale([0.5, 1.5, 5], 'uri_diary')).toBe('half-five');
+    expect(detectRatingScale([0.5, 1.5], 'const_titles')).toBe('ten');
+    expect(detectRatingScale([1, 2, 3, 4, 5], 'const_titles')).toBe('ten');
   });
 
   it('a fractional value does NOT override the maximum', () => {
@@ -338,7 +338,7 @@ describe('detectRatingScale — source outranks the max value', () => {
     expect(detectRatingScale([])).toBe('half-five');
     expect(detectRatingScale([0, 0])).toBe('half-five');
     // Previously Math.max(...[]) === -Infinity, which fell through by accident.
-    expect(detectRatingScale([], 'imdb')).toBe('ten');
+    expect(detectRatingScale([], 'const_titles')).toBe('ten');
   });
 });
 
@@ -682,9 +682,9 @@ describe('detectRatingScale — the exact boundaries', () => {
   });
 
   it('the source ceilings sit exactly where the services do', () => {
-    expect(detectRatingScale([5], 'letterboxd')).toBe('half-five');   // at ceiling
-    expect(detectRatingScale([6], 'letterboxd')).toBe('ten');         // over it — data wins
-    expect(detectRatingScale([10], 'imdb')).toBe('ten');              // at ceiling
-    expect(detectRatingScale([11], 'imdb')).toBe('hundred');          // over it — data wins
+    expect(detectRatingScale([5], 'uri_diary')).toBe('half-five');   // at ceiling
+    expect(detectRatingScale([6], 'uri_diary')).toBe('ten');         // over it — data wins
+    expect(detectRatingScale([10], 'const_titles')).toBe('ten');              // at ceiling
+    expect(detectRatingScale([11], 'const_titles')).toBe('hundred');          // over it — data wins
   });
 });

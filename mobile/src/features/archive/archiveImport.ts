@@ -278,7 +278,7 @@ function getField(row: Record<string, string>, mapping: HeaderMapping, field: st
  * Detects if a set of ratings is on a 1–10 scale by checking the max value.
  * If detected, forces the 1–10 conversion path.
  */
-export type ImportSource = 'letterboxd' | 'imdb' | 'trakt' | 'unknown';
+export type ImportSource = 'uri_diary' | 'const_titles' | 'snake_timestamps' | 'unknown';
 
 /**
  * Identifies the exporting service from the header row. Every service uses a
@@ -300,11 +300,11 @@ export function detectSource(headers: string[]): ImportSource {
   // Matched as a WHOLE header, never a substring: a hand-made sheet with a note
   // column that merely mentions the service is not an export from it, and
   // treating it as one would force the wrong rating scale.
-  if (has('letterboxd uri') || has('letterboxd url')) matches.push('letterboxd');
-  // IMDb: 'Const' is its title id, and it never ships alone.
-  if (has('const') && (has('title type') || has('your rating') || has('imdb rating'))) matches.push('imdb');
-  // Trakt uses snake_case timestamps no other exporter emits.
-  if (has('rated_at') || has('watched_at') || has('trakt_rating')) matches.push('trakt');
+  if (has('letterboxd uri') || has('letterboxd url')) matches.push('uri_diary');
+  // A title-id column that never ships alone.
+  if (has('const') && (has('title type') || has('your rating') || has('imdb rating'))) matches.push('const_titles');
+  // snake_case timestamps no other exporter emits.
+  if (has('rated_at') || has('watched_at') || has('trakt_rating')) matches.push('snake_timestamps');
 
   // Exactly one fingerprint is evidence. Two different ones is a merged or
   // hand-assembled file, where taking the first match would be picking a
@@ -321,9 +321,9 @@ export function detectSource(headers: string[]): ImportSource {
  * scale anyway would clamp every value above the ceiling to a flat 5.
  */
 const SOURCE_SCALE: Record<Exclude<ImportSource, 'unknown'>, { scale: 'half-five' | 'ten'; ceiling: number }> = {
-  letterboxd: { scale: 'half-five', ceiling: 5 },  // 0.5–5 in half steps
-  imdb:       { scale: 'ten',       ceiling: 10 }, // 1–10 integers
-  trakt:      { scale: 'ten',       ceiling: 10 }, // 1–10 integers
+  uri_diary:        { scale: 'half-five', ceiling: 5 },  // 0.5–5 in half steps
+  const_titles:     { scale: 'ten',       ceiling: 10 }, // 1–10 integers
+  snake_timestamps: { scale: 'ten',       ceiling: 10 }, // 1–10 integers
 };
 
 /**
