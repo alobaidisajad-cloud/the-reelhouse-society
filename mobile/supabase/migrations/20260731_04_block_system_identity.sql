@@ -1,6 +1,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- BATCH 2 · finding #23 — the block system must not trust a caller-supplied identity
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- ✅ APPLIED TO PRODUCTION 2026-07-31T02:01Z — verified live (see Verify block).
 -- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
 --
 -- THE LEAK. Three SECURITY DEFINER functions take the *viewer* as a PARAMETER
