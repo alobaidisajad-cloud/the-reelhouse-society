@@ -141,3 +141,36 @@ REVOKE EXECUTE ON FUNCTION public.is_blocked_by(uuid, uuid) FROM anon;
 --   WHERE ub.blocker_id = p_user_id ORDER BY ub.created_at DESC; $$;
 -- GRANT EXECUTE ON FUNCTION public.get_user_blocks(uuid) TO anon, PUBLIC;
 -- GRANT EXECUTE ON FUNCTION public.is_blocked_by(uuid, uuid) TO anon, PUBLIC;
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- ADDENDUM · a second leak found by the same sweep — private lounge invite codes
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- NOT in the 124-finding register. Full write-up:
+--   mobile/audit/FINDING-NEW-lounge-invite-codes.md
+--
+-- get_user_lounges(p_user_id) is SECURITY DEFINER (bypasses RLS) and contains a
+-- dead filter:  WHERE TRUE OR mm.lounge_id IS NOT NULL OR l.creator_id = p_user_id
+-- `TRUE OR ...` is unconditionally true, so it returns EVERY lounge — private ones
+-- and their invite_code — for any caller-supplied id, to anon. Verified live:
+--   5 lounges returned, 2 private, 3 with a non-null invite_code (values never printed).
+--
+-- An invite code is the credential that bypasses the join-approval flow
+-- (src/stores/lounge.ts:246 joins by matching it), so this is not metadata.
+--
+-- The function has ZERO callers — no client, no SQL, no policy. LoungeService
+-- .getUserLounges only shares the name; it queries lounge_members directly.
+-- 20260609_security_definer_hardening.sql:82 even tried to drop it, yet it is live.
+--
+-- Revoking EXECUTE therefore closes the path with no possible breakage. The
+-- function is left in place rather than dropped — "it looked dead" has already
+-- been wrong once in this audit, and a revoke is reversible in one line.
+--
+-- This does NOT close the direct-table path: `Lounges are discoverable` uses
+-- USING (true) and anon holds GRANT ALL, so invite_code is still readable from
+-- public.lounges. That needs a web change first (web uses select('*')) and is
+-- staged as STEP 2 in the write-up.
+REVOKE EXECUTE ON FUNCTION public.get_user_lounges(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_user_lounges(uuid) FROM anon;
+
+-- Rollback for this addendum:
+--   GRANT EXECUTE ON FUNCTION public.get_user_lounges(uuid) TO anon, PUBLIC;
