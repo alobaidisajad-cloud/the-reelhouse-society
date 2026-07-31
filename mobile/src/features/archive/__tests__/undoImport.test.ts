@@ -66,7 +66,7 @@ beforeEach(() => {
 
 describe('receipt shape', () => {
   it('a fresh receipt is empty and knows it', () => {
-    const r = emptyReceipt(USER, 'letterboxd.zip');
+    const r = emptyReceipt(USER, 'archive.zip');
     expect(receiptIsEmpty(r)).toBe(true);
     expect(receiptSize(r)).toBe(0);
     expect(r.v).toBe(1);
@@ -120,7 +120,7 @@ describe('parseReceipt — an untrusted stored receipt must never reach the dele
 
 describe('saveReceipt / loadReceipt', () => {
   it('round-trips a real receipt', () => {
-    const r = emptyReceipt(USER, 'letterboxd.zip');
+    const r = emptyReceipt(USER, 'archive.zip');
     r.logIds = ['log-1', 'log-2'];
     saveReceipt(r);
     const back = loadReceipt(USER);

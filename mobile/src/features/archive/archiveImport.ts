@@ -296,10 +296,10 @@ export function detectSource(headers: string[]): ImportSource {
 
   const matches: Exclude<ImportSource, 'unknown'>[] = [];
 
-  // Letterboxd stamps this exact column into every export it produces. Matched
-  // as a whole header, not a substring: a hand-made sheet with a note column
-  // like "Imported from Letterboxd" is not a Letterboxd export, and treating
-  // it as one would force its rating scale.
+  // The exporting service stamps this exact column into every export it makes.
+  // Matched as a WHOLE header, never a substring: a hand-made sheet with a note
+  // column that merely mentions the service is not an export from it, and
+  // treating it as one would force the wrong rating scale.
   if (has('letterboxd uri') || has('letterboxd url')) matches.push('letterboxd');
   // IMDb: 'Const' is its title id, and it never ships alone.
   if (has('const') && (has('title type') || has('your rating') || has('imdb rating'))) matches.push('imdb');
@@ -337,7 +337,7 @@ const SOURCE_SCALE: Record<Exclude<ImportSource, 'unknown'>, { scale: 'half-five
  *   4. otherwise            -> half-five
  *
  * Rung 1 is checked against the source's CEILING rather than trusted blindly.
- * A file fingerprinted Letterboxd but carrying a 9 cannot really be Letterboxd
+ * A file fingerprinted as a five-star export but carrying a 9 cannot really be
  * data, and forcing half-five onto it would clamp 7, 9 and 10 all to 5 reels.
  * When the data contradicts the fingerprint, the data wins and we fall to the
  * numeric ladder.
@@ -1141,7 +1141,7 @@ async function importLogs(
   let skipped = 0;
 
   // Rating scale for the whole dataset. The source (from the export's header
-  // fingerprint) settles it outright when known — Letterboxd is always out of
+  // fingerprint) settles it outright when known — a five-star export is always
   // 5, IMDb and Trakt always out of 10 — so a 1–10 export from someone who
   // never scored above 5 can no longer be misread as out-of-5 and doubled.
   const source = diary.find(e => e.source)?.source ?? 'unknown';
@@ -1920,7 +1920,7 @@ async function runCSVImport(
   }
 
   // Pass 2 — substring fallback, for exporters that prefix their filenames
-  // ("letterboxd-diary.csv"). Only ever fills a slot nothing has claimed, so it
+  // ("archive-diary.csv"). Only ever fills a slot nothing has claimed, so it
   // can add information but never overwrite a genuine file.
   // The name must match AND the header row must support it — otherwise a list
   // called "Overrating the 80s" claims the empty ratings slot, and is both

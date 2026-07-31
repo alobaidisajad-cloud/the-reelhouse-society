@@ -32,7 +32,7 @@ export interface ImportReceipt {
   /** Whose import this was. Guards against a receipt surviving a sign-out and
    *  being applied to a different account on the same device. */
   userId: string;
-  /** Human label for the confirmation prompt, e.g. "letterboxd.zip". */
+  /** Human label for the confirmation prompt, e.g. "archive.zip". */
   sourceLabel: string;
 
   /** logs rows INSERTED (ignoreDuplicates: true, so never a pre-existing row). */

@@ -12,7 +12,7 @@ import PageSEO from '../components/PageSEO'
 import reelToast from '../utils/reelToast'
 import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User, ArrowLeft, Upload, CheckCircle, AlertCircle, Crown } from 'lucide-react'
 import { subscribeToWebPush } from '../utils/push'
-import { importLetterboxdZip } from '../utils/letterboxdImport'
+import { importArchiveZip } from '../utils/archiveImport'
 import { useFilmStore } from '../store'
 import exportLogsCSV from '../components/profile/exportLogsCSV'
 import '../styles/settings.css'
@@ -86,7 +86,7 @@ export default function SettingsPage() {
         setImporting(true)
         setImportResult(null)
         try {
-            const result = await importLetterboxdZip(file, (progress) => {
+            const result = await importArchiveZip(file, (progress) => {
                 setImportProgress(progress)
             })
             setImportResult(result)

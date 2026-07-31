@@ -1,7 +1,7 @@
 /**
- * Letterboxd Import Engine — "THE TRANSFER PROTOCOL" v5 (Final)
+ * Archive Import Engine — "THE TRANSFER PROTOCOL" v5 (Final)
  * 
- * Parses a Letterboxd ZIP export and imports all data into ReelHouse:
+ * Parses an archive ZIP export and imports all data into ReelHouse:
  * - diary.csv → Film Logs (with dates, ratings, rewatch status)
  * - reviews.csv → Review text merged into matching logs
  * - ratings.csv → Gap-fill logs for rated-but-not-diaried films
@@ -10,7 +10,7 @@
  * - lists/*.csv → Stacks (film lists)
  * 
  * v5 fixes:
- *  - Handles nested ZIP folders (e.g. letterboxd-user-2026-04-01/diary.csv)
+ *  - Handles nested ZIP folders (e.g. archive-export-2026-04-01/diary.csv)
  *  - Proper date handling — NEVER uses today's date as fallback
  *  - Lists populated via batch_insert_list_items RPC
  *  - created_at set from watched_date for correct chronological ordering
@@ -46,7 +46,7 @@ interface ImportResult {
     errors: string[]
 }
 
-// ── CSV PARSER (handles multiline quoted fields like Letterboxd reviews) ──
+// ── CSV PARSER (handles multiline quoted fields like imported reviews) ──
 function parseCSV(text: string): Record<string, string>[] {
     const normalized = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
     
@@ -122,7 +122,7 @@ function getFilmYear(row: Record<string, string>): string {
     return row.Year || row.year || ''
 }
 function getWatchedDate(row: Record<string, string>): string {
-    // Letterboxd diary: 'Watched Date' or 'WatchedDate'
+    // Imported diary: 'Watched Date' or 'WatchedDate'
     // Other CSVs: 'Date' or 'date'
     return row['Watched Date'] || row.WatchedDate || row.Date || row.date || ''
 }
@@ -182,7 +182,7 @@ function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// ── Convert Letterboxd rating (0-5 with halves) to ReelHouse rating (0-5) ──
+// ── Convert imported rating (0-5 with halves) to ReelHouse rating (0-5) ──
 function convertRating(lbRating: string): number {
     if (!lbRating || lbRating.trim() === '') return 0
     const val = parseFloat(lbRating)
@@ -191,7 +191,7 @@ function convertRating(lbRating: string): number {
 }
 
 // ── MAIN IMPORT FUNCTION ──
-export async function importLetterboxdZip(
+export async function importArchiveZip(
     file: File,
     onProgress: (progress: ImportProgress) => void
 ): Promise<ImportResult> {
@@ -205,8 +205,8 @@ export async function importLetterboxdZip(
     const zip = await JSZip.loadAsync(file)
     
     // ── Step 2: Smart CSV reader — handles nested folders ──
-    // Letterboxd ZIPs may have files at root OR inside a folder like:
-    //   diary.csv  OR  letterboxd-user-2026-04-01/diary.csv
+    // Archive ZIPs may have files at root OR inside a folder like:
+    //   diary.csv  OR  archive-export-2026-04-01/diary.csv
     const findFile = (name: string): any => {
         // Try exact path first
         let entry = zip.file(name)
@@ -237,7 +237,7 @@ export async function importLetterboxdZip(
     result.errors.push(`[INFO] Found: ${diary.length} diary, ${ratings.length} ratings, ${watched.length} watched, ${reviews.length} reviews, ${watchlist.length} watchlist`)
     
     // ── Find list CSVs — handles nested folders ──
-    // Letterboxd list CSVs can have metadata rows at the top like:
+    // Imported list CSVs can have metadata rows at the top like:
     //   Name,My List
     //   Date,2024-01-15
     //   URL,https://...
@@ -494,7 +494,7 @@ export async function importLetterboxdZip(
         
         const reviewText = reviewMap.get(key) || ''
         
-        // Use Letterboxd Date column (when rating was added), then release date
+        // Use the imported Date column (when rating was added), then release date
         let ratingDate = entry.Date || entry.date || ''
         if (!ratingDate && film.release_date) ratingDate = film.release_date
         if (!ratingDate) ratingDate = '2025-01-01'
@@ -534,7 +534,7 @@ export async function importLetterboxdZip(
         const film = filmMap.get(`${name}::${year}`)
         if (!film || existingFilmIds.has(film.id)) continue
         
-        // Use Date column from Letterboxd, then film release date
+        // Use the Date column from the import, then film release date
         let watchedFilmDate = entry.Date || entry.date || ''
         if (!watchedFilmDate && film.release_date) watchedFilmDate = film.release_date
         if (!watchedFilmDate) watchedFilmDate = '2025-01-01'

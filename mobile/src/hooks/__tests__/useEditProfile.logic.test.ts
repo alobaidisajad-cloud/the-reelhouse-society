@@ -22,9 +22,9 @@ describe('parseLinks', () => {
   });
 
   it('normalizes a legacy Record structure, capitalizing the key as the title', () => {
-    expect(parseLinks({ twitter: 'x.com/me', letterboxd: 'lb.com/me' })).toEqual([
+    expect(parseLinks({ twitter: 'x.com/me', cinemaclub: 'cc.com/me' })).toEqual([
       { title: 'Twitter', url: 'x.com/me' },
-      { title: 'Letterboxd', url: 'lb.com/me' },
+      { title: 'Cinemaclub', url: 'cc.com/me' },
     ]);
   });
 

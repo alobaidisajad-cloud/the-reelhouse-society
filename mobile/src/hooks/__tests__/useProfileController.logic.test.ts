@@ -31,8 +31,8 @@ describe('normalizeSocialHash', () => {
   });
 
   it('hashes a Record<string,string>, filtering out falsy values', () => {
-    const result = normalizeSocialHash({ twitter: 'x.com/me', instagram: '', letterboxd: 'lb.com/me' });
-    expect(result).toBe('letterboxd:lb.com/me,twitter:x.com/me');
+    const result = normalizeSocialHash({ twitter: 'x.com/me', instagram: '', cinemaclub: 'cc.com/me' });
+    expect(result).toBe('cinemaclub:cc.com/me,twitter:x.com/me');
   });
 
   it('is order-independent for objects (sorted output)', () => {
