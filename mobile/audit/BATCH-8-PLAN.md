@@ -60,6 +60,51 @@ patterns (`sb_secret_`, inline assignment), the result genuinely is clean.
 
 ---
 
+## 2b · The full secret sweep — every service, tracked files AND history
+
+Because the repo is public, one leaked key is a reason to check them all. Every
+integration this app uses, searched in tracked files and in every commit:
+
+| service | result |
+|---|---|
+| Supabase **service role** | **0, ever** — all hits are `Deno.env.get()` in edge functions |
+| **PayTabs** (payments) | 22 hits, **all in audit markdown discussing the function**. No credential. |
+| **RevenueCat** | `appl_…` in `mobile/eas.json` — the **public SDK key**, designed to ship. Secret keys start `sk_`; none present. |
+| **Expo / EAS** | `${{ secrets.EXPO_TOKEN }}` — a GitHub Actions reference, not a value |
+| PostHog · Resend · Stripe | 0 |
+| Private key blocks (`BEGIN … PRIVATE KEY`) | **0 tracked, 0 in history** |
+| `VERCEL_OIDC_TOKEN` | expired 2026-04-05 |
+| **TMDB v3 key** | 🔴 **leaked — bundle, 6 commits, and a tracked file** |
+
+Then the same class of mistake, checked exhaustively: **every** `VITE_*` and
+`EXPO_PUBLIC_*` variable, since those are public by definition.
+
+`VITE_SUPABASE_*`, `EXPO_PUBLIC_SUPABASE_*`, `EXPO_PUBLIC_SENTRY_DSN`,
+`EXPO_PUBLIC_REVENUECAT_*`, `VITE_POSTHOG_*`, `VITE_VAPID_PUBLIC_KEY` — all
+genuinely public by design. `EXPO_PUBLIC_TMDB_API_KEY` survives only in
+documentation and one comment; **no live mobile code reads it.**
+
+### One latent trap found — not leaked, but one import away
+
+`VITE_TMDB_READ_URL` is, despite the name, a **TMDB v4 Bearer token**
+(`api/og.js:23`: `const token = process.env.VITE_TMDB_READ_URL`).
+
+It is **not leaked today** — verified: no `eyJ…` Bearer token in the live bundle, and
+it is not in `.env.vercel.pull`. It is read as `process.env` inside a Vercel
+serverless function, which is server-side, and Vite only inlines `VITE_*` variables
+that client code actually references.
+
+But it carries a `VITE_` prefix, which is the project's own marker for *"safe to ship
+to the browser"*. The day anyone writes `import.meta.env.VITE_TMDB_READ_URL` in a
+component, it is inlined into the bundle — silently, with no error — exactly as the
+v3 key was.
+
+**Fix: rename it to `TMDB_READ_TOKEN`** (no prefix). Server-side code reading
+`process.env` is unaffected; the name then makes the mistake impossible instead of
+merely unlikely. Cheap, and it removes a whole class of future leak.
+
+---
+
 ## 3 · Real severity, stated honestly
 
 This is **not** a data breach. A TMDB v3 key grants read-only access to TMDB's public
