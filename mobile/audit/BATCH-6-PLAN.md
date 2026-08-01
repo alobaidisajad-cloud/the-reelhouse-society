@@ -270,7 +270,62 @@ rate-limit concern not in the register at all. Settled by one column:
 
 ---
 
-## 6 · The shape of the fix, once the query settles the unknowns
+## 5d · TRIGGERS READ — the gap both findings named is now CLOSED
+
+Live trigger read, 2026-08-01, across all six tables:
+
+| table | triggers |
+|---|---|
+| `dispatch_dossiers` | **none** |
+| `lounges` | **none** |
+| `physical_archive` | **none** |
+| `log_private_notes` | **none** |
+| `logs` | `set_logs_updated_at` (timestamps), `trg_divert_private_notes` (batch 1) |
+| `lounge_members` | `tr_protect_lounge_member_status` (host check), `tr_recount_lounge_members` (counter) |
+
+**Not one of them enforces tier.** Both #123 and #125 ended by saying this had to be
+settled before they could be called confirmed. It is settled: **nothing already
+enforces this, so neither finding is a false positive.**
+
+### But one of those triggers changes how The Vault must be fixed
+
+`trg_divert_private_notes` is mine, from batch 1. It is `SECURITY DEFINER`, so when
+it writes to `log_private_notes` it **bypasses that table's RLS entirely**. The real
+path for a private note is:
+
+```
+client writes logs.private_notes
+  -> trg_divert_private_notes (SECURITY DEFINER)
+    -> INSERT INTO log_private_notes     <-- RLS not consulted
+```
+
+So a tier policy on `log_private_notes` would only stop a *direct* REST insert, not
+the path the app actually uses. **The Vault's tier check must live inside
+`divert_private_notes()`.** A policy alone would be theatre — the same trap as §5c,
+by a different route.
+
+### Existing policy kinds — checked in the migrations that created them
+
+- `ban_block_logs_insert` / `_update`, `ban_block_dossiers_insert` / `_update` were
+  all created **`AS RESTRICTIVE`** (`20260621_ban_enforcement_rls.sql`). Ban
+  enforcement therefore works. Good news for batch 7 (#80).
+- `logs_insert_rate_limit` was created **without** `AS RESTRICTIVE`
+  (`20260325_rate_limiting.sql:50`). It is permissive, so it is OR'd with
+  `Users can insert their own logs` (`auth.uid() = user_id`) and reduces to:
+
+  ```
+  ((uid = user_id) OR (uid = user_id) OR (uid = user_id AND rate_ok)) AND (not_banned)
+  = (uid = user_id) AND (not_banned)
+  ```
+
+  **The 200-logs-per-day rate limit is inert. It has never blocked anything.**
+  Not in the register. Filed as a new finding; fixing it is a one-word change
+  (`AS RESTRICTIVE`) but belongs to its own batch, since it changes throttling
+  behaviour for real members and deserves its own before/after.
+
+---
+
+## 6 · The fix — complete, with every mechanism settled
 
 **Design rules, each with a reason:**
 
@@ -292,3 +347,88 @@ paying member and a *lapsed* member both still do everything they should.
 
 **DONE WHEN** all seven bypasses are re-run against the live backend and refused,
 and a lapsed member is proven to retain access to work they already created.
+
+---
+
+## 7 · The exact fix, surface by surface
+
+Three mechanisms, because three different things are being protected. Each was
+forced by evidence, not chosen for elegance.
+
+### 7.1 · The predicate (shared by everything)
+
+```sql
+tier_weight(t)            -- IMMUTABLE. archivist 1, auteur 2, founding 3, else 0, lower()
+profile_tier_weight(...)  -- IMMUTABLE. GREATEST(weight(tier), weight(founding?'founding':role))
+has_tier_at_least(n int)  -- STABLE SECURITY DEFINER, search_path pinned.
+                          -- reads auth.uid()'s profile row, returns weight >= n
+```
+
+`has_tier_at_least` must be `SECURITY DEFINER` because a policy on `logs` that reads
+`profiles` would otherwise recurse into `profiles`' own RLS. `STABLE` (not
+`IMMUTABLE`) because it reads a table. The two weight helpers stay `IMMUTABLE` — they
+read nothing — so they can be indexed later if needed.
+
+### 7.2 · RESTRICTIVE policies — 3 surfaces
+
+Restrictive, never permissive, per §5c. Insert-only, so lapsed members keep their work.
+
+| surface | policy |
+|---|---|
+| `dispatch_dossiers` | `AS RESTRICTIVE FOR INSERT WITH CHECK (has_tier_at_least(2))` |
+| `lounges` | `AS RESTRICTIVE FOR INSERT WITH CHECK (has_tier_at_least(1))` |
+| `physical_archive` | `AS RESTRICTIVE FOR INSERT WITH CHECK (has_tier_at_least(1))` |
+
+Nothing is added to SELECT, UPDATE or DELETE anywhere. A lapsed Auteur keeps editing
+and deleting essays; a lapsed Archivist keeps reading and pruning their archive.
+
+### 7.3 · Inside the two join RPCs — 1 surface
+
+`lounge_members` has no INSERT policy, and both join paths are `SECURITY DEFINER`,
+so RLS cannot reach them (§5c). The check goes in the function body:
+
+```sql
+IF NOT public.has_tier_at_least(1) THEN
+  RAISE EXCEPTION 'The Lounge is an Archivist feature';
+END IF;
+```
+
+added to `join_public_lounge` and `request_lounge_membership`, after their existing
+`auth.uid() IS NULL` guard. **Not** added to `approve_lounge_member` — a host
+admitting someone must still work, and the person being admitted already had to
+request, which is now gated.
+
+### 7.4 · Inside `divert_private_notes()` — 1 surface
+
+The Vault. Per §5d, the trigger bypasses RLS, so the check belongs in the trigger.
+It **strips rather than raises** — an unentitled write saves the log without the
+note, instead of failing the whole log write.
+
+### 7.5 · A BEFORE trigger on `logs` — 2 surfaces, 6 columns
+
+RLS cannot gate a column (§3). A `BEFORE INSERT OR UPDATE` trigger reverts paid
+fields written by an unentitled member:
+
+| column | required |
+|---|---|
+| `autopsy`, `is_autopsied` | auteur (2) |
+| `alt_poster` | auteur (2) |
+| `editorial_header`, `pull_quote`, `drop_cap` | archivist (1) |
+
+**Revert to OLD, never blank to NULL.** The rule is
+`IF NEW.col IS DISTINCT FROM OLD.col AND NOT entitled THEN NEW.col := OLD.col`.
+On INSERT `OLD` is NULL, so the field is stripped. On UPDATE, a lapsed Auteur editing
+the *text* of an essay that already carries an autopsy keeps that autopsy — only an
+attempt to *change* it is reverted. Blanking to NULL would destroy work a member
+made while they were paying, which is the outcome §6 exists to prevent.
+
+Strip rather than raise, because the offline queue replays writes it cannot re-gate;
+a raise there would wedge the queue.
+
+### 7.6 · Deliberately NOT done here
+
+- `logs_insert_rate_limit` being inert (§5d) — real, but it changes throttling for
+  every member and deserves its own before/after. Filed, not bundled.
+- The cosmetic perks (Gilded Frame, Poster Glow, Gold Foil badge) — client-render
+  only, nothing to enforce.
+- The owner's own tier — settled in §5b, deliberately unchanged.
