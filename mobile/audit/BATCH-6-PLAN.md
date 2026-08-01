@@ -146,7 +146,30 @@ was not deployed.
 
 ---
 
-## 5b · BLOCKER — server enforcement would lock the OWNER out of his own app
+## 5b · NOT a blocker — corrected. One question to confirm, then it is settled.
+
+**I first wrote this section as a blocker. That was wrong, and the owner corrected
+it.** The intended state is: every member is a cinephile except `@morpho`, who is an
+auteur. The table below shows the app produces exactly that. Nothing is broken.
+
+What the stored values do is *display* correctly by accident rather than by design —
+`tier = 'projectionist'` is a word neither client recognises, so it falls through
+`normalizeTier` to `cinephile`. The rank shown in the app is CINEPHILE, which is
+right. The value in the column is misleading, which is worth cleaning up but changes
+no behaviour.
+
+**The single remaining question, and it is a product choice, not a defect:** once
+tier is enforced in the database, the owner's account will be refused the paid
+features in the *database* as well as the UI — no publishing essays, no opening
+lounges, no physical archive, no vault, no autopsy, no editorial fields. That is
+CORRECT if the owner is a cinephile. It only needs action if the owner wants to use
+those features on his own account. One row of SQL either way.
+
+`role = 'admin'` carrying no entitlement is likewise correct-by-default: admin is a
+moderation role, not a subscription. Worth stating explicitly in the ledger so a
+future reader does not "fix" it.
+
+
 
 Read live from production, 2026-08-01:
 
