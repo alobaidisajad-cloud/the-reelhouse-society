@@ -337,8 +337,32 @@ COMMIT;
 --   SELECT NOT EXISTS (SELECT 1 FROM public.profiles
 --                       WHERE id = auth.uid() AND is_banned = true); $$;
 --
+-- ── CHECKED AND CLEARED BEFORE APPLYING ────────────────────────────────────
+-- • is_user_not_banned() has exactly 12 call sites, all of them the ban_block_*
+--   policies in 20260621. Nothing else uses it, so widening its meaning to include
+--   suspension cannot change behaviour anywhere unintended.
+-- • THE OFFLINE QUEUE. offlineQueue.ts:198 purges a BANNED member's queue to
+--   dead-letter before flushing — but it reads `is_banned` only, so a SUSPENDED
+--   member's queue is not purged and each queued write now raises 42501.
+--   Traced the failure path: 42501 is NOT in TRANSIENT_PG_CODES
+--   ('40001','40P01','55P03','53300','53400','57P03'), so it falls to the
+--   "unknown failure" branch — dead-lettered once, with `_failReason` carrying the
+--   suspension message, and removed from the queue. Bounded, no retry storm, no
+--   silent loss. Correct, if less tidy than the ban path.
+--   ⚠️ A one-line client improvement belongs with the launch build: make that
+--   check read suspended_until too, so a suspended queue is purged cleanly
+--   up front instead of failing item by item.
+-- • COST. 2000-log import on a replica: 12ms -> 58ms with this trigger. With
+--   batch 6's tier trigger also active the total stays well under 150ms for a
+--   2000-film import. The profile lookup rides profiles_pkey.
+--
 -- ── NOT DONE HERE ──────────────────────────────────────────────────────────
 -- The client half: checkBan() is wired in list-modal only. Adding it to the other
 -- ~5 choke points turns a generic failure into an honest message. Cosmetic once
 -- this migration lands — the server refuses regardless — and it is a client change,
 -- so it belongs to the launch build. Recorded, not bundled.
+--
+-- A banned member's EXISTING content stays publicly visible: can_view_user_data
+-- gates on privacy and the follow graph, never on is_banned. Whether a silenced
+-- member's back catalogue should disappear is a product decision, not a bug, and it
+-- is a different change from refusing writes. Noted, deliberately out of scope.
