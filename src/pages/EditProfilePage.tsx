@@ -148,10 +148,14 @@ export default function EditProfilePage() {
         const check = validateUsernameRules(newUsername)
         if (!check.valid) { setUsernameError(check.error || 'Invalid username'); return false }
 
+        // .neq on your own id: a handle that sanitizes to what you already hold
+        // (typing `Sajad` when you are `sajad`) would otherwise match your own
+        // row and report your own name as taken.
         const { data } = await supabase
             .from('profiles')
             .select('id')
             .eq('username', check.sanitized)
+            .neq('id', user!.id)
             .maybeSingle()
 
         if (data) { setUsernameError('Username already taken'); return false }

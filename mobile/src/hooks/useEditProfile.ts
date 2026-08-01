@@ -177,7 +177,7 @@ export function useEditProfile() {
         }
         sanitizedUsername = validation.sanitized;
 
-        const isAvailable = await ProfileService.checkUsernameAvailable(sanitizedUsername);
+        const isAvailable = await ProfileService.checkUsernameAvailable(sanitizedUsername, user.id);
         if (!isAvailable) {
           form.setError('username', { type: 'manual', message: 'This username is already taken.' });
           setSaving(false);

@@ -75,13 +75,23 @@ export const ProfileService = {
   /**
    * Checks if a username is available.
    * Returns true if available, false if taken.
+   *
+   * `excludeUserId` is the member doing the asking. Without it, someone whose
+   * handle sanitizes to what they already hold — typing `Sajad` when they are
+   * `sajad`, or adding a stray space — matches their OWN row and is told their
+   * own name is taken. Signup passes nothing, because there is no row yet.
    */
-  async checkUsernameAvailable(username: string): Promise<boolean> {
-    const { data, error } = await supabase
+  async checkUsernameAvailable(username: string, excludeUserId?: string): Promise<boolean> {
+    let query = supabase
       .from('profiles')
       .select('id')
-      .eq('username', username)
-      .maybeSingle();
+      .eq('username', username);
+
+    if (excludeUserId) {
+      query = query.neq('id', excludeUserId);
+    }
+
+    const { data, error } = await query.maybeSingle();
 
     if (error) {
       throw error;
