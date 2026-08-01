@@ -158,12 +158,15 @@ What the stored values do is *display* correctly by accident rather than by desi
 right. The value in the column is misleading, which is worth cleaning up but changes
 no behaviour.
 
-**The single remaining question, and it is a product choice, not a defect:** once
-tier is enforced in the database, the owner's account will be refused the paid
-features in the *database* as well as the UI — no publishing essays, no opening
-lounges, no physical archive, no vault, no autopsy, no editorial fields. That is
-CORRECT if the owner is a cinephile. It only needs action if the owner wants to use
-those features on his own account. One row of SQL either way.
+**SETTLED 2026-08-01 — the owner stays on the lowest tier, deliberately.** He runs
+the free tier on purpose so he experiences what a free member experiences, and will
+ask for a temporary upgrade when he wants to exercise a paid tier. So enforcement
+refusing his account the paid features is the CORRECT and INTENDED outcome, not a
+regression. **No change to his row. Do not "fix" it.**
+
+The consequence to remember when testing: after this lands, verifying a paid feature
+end-to-end requires temporarily raising a test account's tier — the owner's own
+account will correctly be refused.
 
 `role = 'admin'` carrying no entitlement is likewise correct-by-default: admin is a
 moderation role, not a subscription. Worth stating explicitly in the ledger so a
