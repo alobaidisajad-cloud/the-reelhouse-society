@@ -1,7 +1,16 @@
 // TMDB API utilities
-// Uses VITE_TMDB_API_KEY env var — set in Vercel dashboard, .env.local for dev
-const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || ''
-const TMDB_BASE = 'https://api.themoviedb.org/3'
+//
+// The TMDB API key is NOT read here. Vite inlines `import.meta.env.VITE_*` at build
+// time, so a key referenced from client code is baked into the shipped bundle and
+// can be lifted straight out of view-source — which is exactly what was happening.
+// Every request now goes through the `tmdb-proxy` edge function, whose key lives in
+// a server-side Supabase secret. Mobile has worked this way since F-1
+// (mobile/src/lib/tmdb.ts:9); this brings the web in line.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || ''
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+const PROXY_URL = `${SUPABASE_URL}/functions/v1/tmdb-proxy`
+
+// image.tmdb.org is an unauthenticated public CDN — no key, nothing to leak.
 const TMDB_IMG = 'https://image.tmdb.org/t/p'
 
 import { LRUCache, dedup } from './utils/retry'
@@ -21,11 +30,20 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
         let lastError: unknown
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
-                const separator = path.includes('?') ? '&' : '?'
-                const url = `${TMDB_BASE}${path}${separator}api_key=${TMDB_API_KEY}`
                 const controller = new AbortController()
                 const timer = setTimeout(() => controller.abort(), 10000)
-                const res = await fetch(url, { signal: controller.signal })
+                // The proxy takes the TMDB path in the body and appends the key
+                // server-side. Its allow-list covers every path this file requests.
+                const res = await fetch(PROXY_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    },
+                    body: JSON.stringify({ path }),
+                    signal: controller.signal,
+                })
                 clearTimeout(timer)
 
                 if (res.status === 429 || res.status === 503) {

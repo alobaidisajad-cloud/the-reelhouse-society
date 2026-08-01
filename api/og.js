@@ -19,9 +19,22 @@ export default async function handler(req, res) {
     const type = (req.query.type === 'film' || req.query.type === 'person') ? req.query.type : null;
     const id = /^\d+$/.test(String(req.query.id ?? '')) ? String(req.query.id) : null;
 
-    // Automatically pick up Vercel environment variables injected during the build
-    const token = process.env.VITE_TMDB_READ_URL; // Using Bearer if present
-    const apiKey = process.env.VITE_TMDB_API_KEY;
+    // This file runs as a Vercel serverless function, so `process.env` is read at
+    // request time on the server — nothing here is inlined into any browser bundle.
+    // Using the TMDB credentials directly is therefore correct here, unlike in
+    // src/, which must go through the tmdb-proxy edge function.
+    //
+    // ⚠️ Both names below carry the `VITE_` prefix, which is this project's marker
+    // for "safe to ship to the browser" — and VITE_TMDB_READ_URL is not a URL, it is
+    // a TMDB v4 Bearer token. The day anyone writes `import.meta.env.VITE_TMDB_READ_URL`
+    // in a component, Vite inlines it into the bundle silently, with no error. That is
+    // exactly how the v3 key got published.
+    //
+    // Each is read under an unprefixed name FIRST, so the Vercel dashboard variables
+    // can be renamed to TMDB_READ_TOKEN / TMDB_API_KEY whenever convenient. Until
+    // then the old names keep working, so the rename can never half-break this.
+    const token = process.env.TMDB_READ_TOKEN || process.env.VITE_TMDB_READ_URL;
+    const apiKey = process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
 
     const options = {
         method: 'GET',

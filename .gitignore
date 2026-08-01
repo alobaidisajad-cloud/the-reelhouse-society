@@ -101,3 +101,7 @@ dist-ssr
 
 # Scratch files
 *.tmp
+
+# Vercel env pull output — contains real values, never commit
+.env.vercel.pull
+.env*.pull

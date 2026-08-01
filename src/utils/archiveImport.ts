@@ -20,8 +20,12 @@ import { supabase } from '../supabaseClient'
 import { useAuthStore } from '../store'
 
 // ── TMDB API for film matching ──
-const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || ''
-const TMDB_BASE = 'https://api.themoviedb.org/3'
+// Routed through the tmdb-proxy edge function so the key is never in the bundle.
+// See the note at the top of src/tmdb.ts. `/search/movie` is on the proxy's
+// allow-list. One proxy call per film, same as the direct call it replaces.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || ''
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+const PROXY_URL = `${SUPABASE_URL}/functions/v1/tmdb-proxy`
 
 interface TMDBMatch {
     id: number
@@ -136,9 +140,17 @@ async function matchFilmToTMDB(title: string, year?: string): Promise<TMDBMatch 
     
     try {
         const yearParam = year ? `&year=${year}` : ''
-        const res = await fetch(
-            `${TMDB_BASE}/search/movie?query=${encodeURIComponent(title)}${yearParam}&page=1&api_key=${TMDB_API_KEY}`
-        )
+        const res = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+                path: `/search/movie?query=${encodeURIComponent(title)}${yearParam}&page=1`,
+            }),
+        })
         
         if (res.status === 429) {
             await sleep(2000)
