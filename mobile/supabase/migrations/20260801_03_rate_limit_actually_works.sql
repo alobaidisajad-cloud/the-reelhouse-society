@@ -164,3 +164,28 @@ COMMIT;
 --   WITH CHECK (auth.uid() = user_id
 --               AND rate_limit_check('logs', 'user_id', 200, 1440));
 -- (that restores the inert version — it blocks nothing)
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- ADDENDUM · take rate_limit_check away from anonymous callers
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- Found by re-checking after the migration was applied: rate_limit_check is
+-- SECURITY DEFINER, takes an ARBITRARY TABLE NAME as an argument, and anon can call
+-- it over REST (live probe returned 200).
+--
+-- It leaks nothing today. auth.uid() is NULL for an anonymous caller, so every count
+-- is 0 and the answer is always TRUE regardless of the table asked about. The
+-- identifier is passed through %I, so there is no injection either.
+--
+-- But a SECURITY DEFINER function that will run `SELECT COUNT(*) FROM <any table>`
+-- for anyone who asks is not something to leave reachable. Closing it costs nothing.
+--
+-- ⚠️ authenticated MUST keep EXECUTE. An RLS policy expression is evaluated with the
+-- querying role's privileges, so revoking it from `authenticated` would make
+-- logs_insert_rate_limit fail for every member — i.e. nobody could log a film.
+-- Proven on a replica: with anon revoked and authenticated granted, a 3,000-film
+-- import still succeeds, a single log still succeeds, a 50,000 bulk write is still
+-- refused, and anon gets "permission denied".
+REVOKE EXECUTE ON FUNCTION public.rate_limit_check(text, text, integer, integer)
+  FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.rate_limit_check(text, text, integer, integer)
+  TO authenticated;
