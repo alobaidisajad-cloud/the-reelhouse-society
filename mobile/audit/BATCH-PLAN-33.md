@@ -184,7 +184,7 @@ server stays open only moves the bypass.
 ---
 
 ## BATCH 7 · Ban enforcement
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** (TMDB revocation requested)
 
 - **#80** — High · Incomplete in both layers, and the client gate is dead code.
 
@@ -194,7 +194,7 @@ dead client gate is either wired or removed — decided, not left ambiguous.
 ---
 
 ## BATCH 8 · Committed API key
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** (TMDB revocation requested)
 
 - **#65** — High · The TMDB API key is committed to git and shipped in the web bundle.
 
@@ -207,7 +207,7 @@ app still fetches.
 ---
 
 ## BATCH 9 · The bio-rename trigger
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** (TMDB revocation requested)
 
 - **#36** — High · Editing your bio silently renames you. **5 of 32 live members are already affected.**
 
@@ -455,7 +455,7 @@ any single item needs its own reasoning.
 ---
 
 ## BATCH 26 · Tribunal priority queue
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** (TMDB revocation requested)
 
 - **#24** — High · Completely broken live. Non-trivial: the RPC orders by `report_count DESC, created_at ASC`, and `report_count` is a window function, so it cannot appear in a `WHERE`.
 
@@ -486,7 +486,7 @@ applies cleanly.
 ---
 
 ## BATCH 29 · `search_path` hardening
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** (TMDB revocation requested)
 
 - **#28** — 24 `SECURITY DEFINER` functions lack `SET search_path`.
 
@@ -507,7 +507,7 @@ recorded before and after.
 ---
 
 ## BATCH 31 · Drop the dead subsystem
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** (TMDB revocation requested)
 
 - **#61** — An entire dead feature subsystem is still live in the database.
 
