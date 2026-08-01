@@ -186,6 +186,52 @@ is a brief window — seconds to a minute — where TMDB calls fail for everyone
 the only user-visible risk in this batch, it is short, and it affects film metadata
 only. Stated rather than guessed.
 
+## 5b · A SECOND CONSUMER — rotation breaks social share cards unless it is included
+
+Found by re-checking rather than re-answering. `api/og.js` is **live**:
+
+```
+https://www.thereelhousesociety.com/api/og?title=test   ->  HTTP 200
+vercel.json:64   /film/:id    -> /api/og?type=film&id=:id
+vercel.json:71   /person/:id  -> /api/og?type=person&id=:id
+```
+
+Those are the Open Graph cards that render when a member shares a film or a person
+link. And `api/og.js:23-24` reads **both** TMDB credentials:
+
+```js
+const token  = process.env.VITE_TMDB_READ_URL;   // v4 Bearer, optional
+const apiKey = process.env.VITE_TMDB_API_KEY;    // the key being rotated
+```
+
+**This is a legitimate use.** `api/` is a Vercel serverless function — `process.env`
+there is server-side and is *not* inlined into any bundle. It does not need the
+proxy; it is not a leak. But it *does* consume the key.
+
+**Therefore rotation has two destinations, not one:**
+
+| consumer | where the new key must go |
+|---|---|
+| `tmdb-proxy` (mobile + web after the fix) | `supabase secrets set TMDB_API_KEY=…` |
+| `api/og.js` (share cards) | **Vercel dashboard env var `VITE_TMDB_API_KEY`** |
+
+Update the Supabase secret and forget Vercel, and every shared film link silently
+loses its preview image. Nothing errors; the cards just go generic. That is exactly
+the kind of quiet breakage that gets noticed weeks later.
+
+**The rename fails safe.** If `VITE_TMDB_READ_URL` is renamed in code but not in the
+Vercel dashboard, `token` becomes `undefined`, the `Authorization` header is simply
+omitted, and og.js falls back to the `api_key` path. Degraded, not broken —
+verified by reading the conditional at `api/og.js:26-31`.
+
+**One honest note on the import path.** `archiveImport.ts` issues one
+`/search/movie` per film. Routed through the proxy that becomes one edge-function
+invocation per film instead of one direct TMDB call. It will work — the path is
+allow-listed and the 429 handling stays — but a large import will be somewhat
+slower. Worth knowing; not a reason to leave the key in the bundle.
+
+---
+
 ## 6 · Git history — deliberately NOT rewritten
 
 The key sits in 6 public commits. Rewriting history (`filter-repo`, force-push) would
