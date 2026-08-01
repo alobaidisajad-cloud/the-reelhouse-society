@@ -122,8 +122,13 @@ BEGIN
 
   -- Mirror of the sanitize step in validateUsername.ts:
   --   trim -> lowercase -> whitespace to underscore -> strip everything else
+  -- Deliberately backslash-free. '\s' and LIKE's '\_' only mean what they look
+  -- like when standard_conforming_strings is on. It is on by default and is
+  -- almost certainly on here — but a rule that silently stops working if a server
+  -- setting changes is not a rule. [[:space:]] and the position/left/right checks
+  -- below depend on nothing.
   v_clean := regexp_replace(
-               regexp_replace(lower(btrim(v_raw)), '\s+', '_', 'g'),
+               regexp_replace(lower(btrim(v_raw)), '[[:space:]]+', '_', 'g'),
                '[^a-z0-9_]', '', 'g');
 
   -- ── CHANGING AN EXISTING HANDLE: refuse, never rewrite ──────────────────────
@@ -138,10 +143,10 @@ BEGIN
     IF length(v_clean) > 30 THEN
       RAISE EXCEPTION 'Username must be 30 characters or less.' USING ERRCODE = '23514';
     END IF;
-    IF v_clean LIKE '\_%' OR v_clean LIKE '%\_' THEN
+    IF left(v_clean, 1) = '_' OR right(v_clean, 1) = '_' THEN
       RAISE EXCEPTION 'Username cannot start or end with an underscore.' USING ERRCODE = '23514';
     END IF;
-    IF v_clean LIKE '%\_\_%' THEN
+    IF position('__' in v_clean) > 0 THEN
       RAISE EXCEPTION 'Username cannot have consecutive underscores.' USING ERRCODE = '23514';
     END IF;
     IF v_clean = ANY(reserved) THEN
