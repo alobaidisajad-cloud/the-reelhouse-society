@@ -118,6 +118,31 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- ⚠️ TEMPORARY — this exists because of the build already on TestFlight.
+  --
+  -- That build sends the SANITIZED handle on every profile save. For a member
+  -- whose stored handle predates the charset rules, an unrelated bio edit pushes
+  -- a handle at them that is perfectly LEGAL — 'ug.mb' arrives as 'ugmb' — so
+  -- every rule below accepts it and the member is renamed anyway. The backstop
+  -- stops invalid names; it cannot tell that a valid one was never chosen.
+  --
+  -- The signature is exact: the incoming handle is precisely the sanitized form
+  -- of the stored one. Nobody types that by coincidence when their own handle
+  -- contains characters the form would strip. Treat it as the no-op it was meant
+  -- to be, so the bio still saves and the handle survives.
+  --
+  -- This can only fire when the stored handle is NOT already clean — for every
+  -- normal member, sanitized(OLD) = OLD and the shortcut above already returned.
+  --
+  -- DELETE THIS BLOCK once the launch build is the only one in the wild.
+  IF TG_OP = 'UPDATE'
+     AND NEW.username = regexp_replace(
+           regexp_replace(lower(btrim(coalesce(OLD.username, ''))), '[[:space:]]+', '_', 'g'),
+           '[^a-z0-9_]', '', 'g') THEN
+    NEW.username := OLD.username;
+    RETURN NEW;
+  END IF;
+
   v_raw := coalesce(NEW.username, '');
 
   -- Mirror of the sanitize step in validateUsername.ts:
