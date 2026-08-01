@@ -127,10 +127,45 @@ CREATE POLICY tier_gate_dossiers_insert ON public.dispatch_dossiers
   WITH CHECK (public.has_tier_at_least(2));
 
 -- The Lounge, creation side — Archivist (weight 1)
+--
+-- ⚠️ THE POLICY ALONE IS NOT ENOUGH HERE, and this was nearly shipped that way.
+-- The app does NOT insert into `lounges` directly — src/stores/lounge.ts:754 calls
+-- rpc('create_lounge'), and create_lounge is SECURITY DEFINER
+-- (20260627_01_lounge_overhaul.sql:216), so it BYPASSES RLS. An older
+-- create_lounge_with_member exists in three earlier migrations and is also
+-- SECURITY DEFINER. A policy would therefore have blocked only a direct REST
+-- insert — not the path the app uses, and not the path an attacker with the public
+-- key would use. Exactly the mistake this migration criticises #125 for.
+--
+-- Verified by grep across both migration trees: `lounges` has TWO SECURITY DEFINER
+-- writers; `dispatch_dossiers` and `physical_archive` have NONE, so their policies
+-- are sufficient on their own.
+--
+-- The trigger below is the real gate — it fires for every writer, RLS-bound or not,
+-- including any RPC added later. The policy is kept as defence in depth for the
+-- direct-REST path and because it is visible in the Supabase dashboard.
 DROP POLICY IF EXISTS tier_gate_lounges_insert ON public.lounges;
 CREATE POLICY tier_gate_lounges_insert ON public.lounges
   AS RESTRICTIVE FOR INSERT TO authenticated
   WITH CHECK (public.has_tier_at_least(1));
+
+CREATE OR REPLACE FUNCTION public.enforce_lounge_create_tier()
+RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL AND NOT public.has_tier_at_least(1) THEN
+    RAISE EXCEPTION 'The Lounge is an Archivist feature'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS tr_enforce_lounge_create_tier ON public.lounges;
+CREATE TRIGGER tr_enforce_lounge_create_tier
+  BEFORE INSERT ON public.lounges
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_lounge_create_tier();
 
 -- The Physical Archive — Archivist (weight 1)
 DROP POLICY IF EXISTS tier_gate_archive_insert ON public.physical_archive;
