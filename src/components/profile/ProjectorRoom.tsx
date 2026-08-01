@@ -1,19 +1,34 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Lock } from 'lucide-react'
-import { useFilmStore, useUIStore } from '../../store'
+import { useFilmStore, useUIStore, useAuthStore } from '../../store'
 import reelToast from '../../utils/reelToast'
 
 export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
     const isMaster = stats.total_logs > 50
-    const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
+
+    // `user` is the profile being LOOKED AT, not the person looking. Gating the
+    // export on `user.role` therefore asked "is the owner of this page an
+    // Archivist?" — so opening any Archivist's profile and pressing Export
+    // downloaded THEIR entire film history, to anyone, at any tier.
+    //
+    // Two things are required now, and they are separate questions:
+    //   1. is the viewer looking at their OWN archive?  — exporting someone
+    //      else's history is not a paid feature, it is not a feature at all
+    //   2. is the VIEWER an Archivist?                  — the actual paywall
+    const viewer = useAuthStore(s => s.user)
+    const isOwnArchive = !!viewer?.id && !!user?.id && viewer.id === user.id
+    const isPremium = viewer?.role === 'archivist' || viewer?.role === 'auteur'
 
     const downloadCsv = async () => {
+        if (!isOwnArchive) {
+            return reelToast("You can only export your own archive.", { icon: <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
+        }
         if (!isPremium) {
             window.location.href = '/join'
             return reelToast("CSV Export is restricted to Archivists.", { icon: <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
         }
-        
+
         // Fetch logs JUST-IN-TIME rather than keeping 100,000 in memory
         const loadingToast = reelToast.loading('Compiling Archive...')
         
@@ -26,7 +41,12 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
             const { data, error } = await supabase
                 .from('logs')
                 .select('*')
-                .eq('user_id', user.id)
+                // viewer.id, not user.id — the guard above already proves they are
+                // the same person, and reading it from the session means a future
+                // change to that guard cannot turn this back into someone else's
+                // archive. `select('*')` is safe here: `logs` is under column-level
+                // grants for anon only, and this path is always authenticated.
+                .eq('user_id', viewer!.id)
                 .order('created_at', { ascending: false })
                 .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
             

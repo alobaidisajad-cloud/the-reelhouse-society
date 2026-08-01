@@ -12,7 +12,7 @@
  * v5 fixes:
  *  - Handles nested ZIP folders (e.g. archive-export-2026-04-01/diary.csv)
  *  - Proper date handling — NEVER uses today's date as fallback
- *  - Lists populated via batch_insert_list_items RPC
+ *  - Lists populated by a direct batched insert into list_items
  *  - created_at set from watched_date for correct chronological ordering
  */
 import JSZip from 'jszip'
@@ -657,28 +657,37 @@ export async function importArchiveZip(
                 result.errors.push(`List "${listFile.name}": ${listFile.data.length} rows, 0 matched. Name="${getFilmName(sampleRow) || '?'}"`)
             }
             
-            // Insert via RPC (SECURITY DEFINER), fallback to direct insert
+            // This used to call a `batch_insert_list_items` RPC first and fall back
+            // to direct inserts when it failed. That RPC DOES NOT EXIST on the
+            // database — verified live under every signature, including the exact
+            // parameter names used here. So every list paid for a guaranteed-failing
+            // round trip, then silently took the fallback, and the member was shown
+            // a raw `[DEBUG] RPC error:` line for their trouble.
+            //
+            // The fallback was the only thing ever doing the work, and it works:
+            // list_items carries an owner INSERT policy, and 247 rows across 9 lists
+            // were written by exactly this path. So the RPC is gone and the direct
+            // insert is now the only path — batched, rather than one row at a time.
+            //
+            // Note the RPC also took an owner id as a PARAMETER. Inserting directly
+            // means RLS derives the owner from the session instead, which is the
+            // correct shape and one less caller-supplied identity in the codebase.
             let itemsInserted = 0
             if (listItems.length > 0) {
-                const { data: rpcResult, error: rpcError } = await supabase.rpc('batch_insert_list_items', {
-                    p_list_id: listId,
-                    p_owner_id: user.id,
-                    p_items: listItems,
-                })
-                
-                if (!rpcError && typeof rpcResult === 'number') {
-                    itemsInserted = rpcResult
+                const rows = listItems.map(item => ({ list_id: listId, ...item }))
+                const { error } = await supabase.from('list_items').insert(rows)
+
+                if (!error) {
+                    itemsInserted = rows.length
                 } else {
-                    if (rpcError && li === 0) {
-                        result.errors.push(`[DEBUG] RPC error: ${rpcError.message}`)
+                    // A single bad row fails the whole batch, so fall back to
+                    // per-row inserts and keep whatever succeeds.
+                    for (const row of rows) {
+                        const { error: rowError } = await supabase.from('list_items').insert([row])
+                        if (!rowError) itemsInserted++
                     }
-                    // Fallback: direct insert one at a time
-                    for (const item of listItems) {
-                        const { error } = await supabase.from('list_items').insert([{ list_id: listId, ...item }])
-                        if (!error) itemsInserted++
-                        else if (li === 0 && itemsInserted === 0) {
-                            result.errors.push(`[DEBUG] Insert error: ${error.message}`)
-                        }
+                    if (itemsInserted === 0 && li === 0) {
+                        result.errors.push(`List "${listFile.name}" could not be saved: ${error.message}`)
                     }
                 }
             }
