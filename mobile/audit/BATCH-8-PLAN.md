@@ -243,3 +243,42 @@ would be a still-valid secret that cannot be rotated, which is not this case.
 
 **DONE WHEN** the live web bundle contains no key literal, the old key returns 401
 from TMDB, `.env.vercel.pull` is untracked, and both apps still fetch film data.
+
+---
+
+## 7 · CLOSED — the leaked key is dead, 2026-08-01
+
+No TMDB support request was needed. The revoke-request draft was written and then
+deleted, because it turned out to be unnecessary.
+
+**TMDB does revoke old keys on regenerate — it just propagates slowly.** Mid-session
+all three keys issued from this account returned HTTP 200 simultaneously, which is
+what made rotation look impossible. Re-checked later, five spaced requests each:
+
+| key | result |
+|---|---|
+| the originally leaked key (`d1e75fde…`, in 7 public commits) | **401 × 5 — DEAD** |
+| the second key (`46f9f4df…`) | **401 × 5 — DEAD** |
+| the current key (`55c9f4be…`) | 200 × 5 — active |
+
+The copy in public git history is now a dead string. History was never rewritten, and
+did not need to be — which is exactly what §6 predicted.
+
+### Final verified state
+
+| | |
+|---|---|
+| app + website film data | working, via `tmdb-proxy` |
+| share cards (`api/og.js`) | working — "Fight Club (1999) — ReelHouse" |
+| any key in the live web bundle | **0 occurrences** |
+| any key in a tracked file | **0** |
+| Vercel env vars | 2, both named `TMDB_API_KEY` — no `VITE_` prefix survives |
+
+**DONE WHEN** — met in full: the live bundle contains no key literal, the old key
+returns 401, `.env.vercel.pull` is untracked, and both apps still fetch film data.
+
+### The one lesson worth carrying forward
+
+A rotation that *looks* to have failed may simply not have propagated. Three keys
+answering 200 at once was real, and it nearly drove a support request that was never
+required. **Re-test a revocation after a delay before concluding it did not work.**
