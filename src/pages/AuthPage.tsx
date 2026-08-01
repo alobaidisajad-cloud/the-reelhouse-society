@@ -6,6 +6,7 @@ import { supabase } from '../supabaseClient'
 import { useAuthStore } from '../store'
 import reelToast from '../utils/reelToast'
 import { isDisposableEmail, isValidEmailFormat } from '../utils/disposableEmails'
+import { validateUsername } from '../utils/validateUsername'
 import { useViewport } from '../hooks/useViewport'
 import PageSEO from '../components/PageSEO'
 
@@ -173,8 +174,15 @@ export default function AuthPage({ mode }: { mode: 'join' | 'login' | 'verify' |
                 if (!isValidEmailFormat(signupEmail)) { reelToast.error('Please enter a valid email.'); return }
                 if (isDisposableEmail(signupEmail)) { reelToast.error('Disposable emails are not permitted.'); return }
                 if (!passwordStrong) { reelToast.error('Password does not meet security requirements.'); return }
-                const formattedUsername = username.trim().toLowerCase().replace(/\\s+/g, '_')
-                if (formattedUsername.length < 3) { reelToast.error('Username must be at least 3 characters.'); return }
+                // The handle rules live in validateUsername — the same file the mobile
+                // app uses — and signup now actually runs them. What was here before
+                // was the only cleaning the web ever did, and it did almost nothing:
+                // `/\\s+/g` matches a literal backslash followed by "s", not
+                // whitespace, so spaces were never replaced; nothing checked the
+                // charset at all. That is how an email address became a username.
+                const usernameCheck = validateUsername(username)
+                if (!usernameCheck.valid) { reelToast.error(usernameCheck.error || 'Please choose a different username.'); return }
+                const formattedUsername = usernameCheck.sanitized
 
                 const result = await signup(signupEmail, password, formattedUsername, 'cinephile', persona)
 

@@ -9,6 +9,9 @@ import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import reelToast from '../utils/reelToast'
+// Aliased because the local helper below is also called validateUsername — it owns
+// the availability lookup, this owns the rules.
+import { validateUsername as validateUsernameRules } from '../utils/validateUsername'
 import { ArrowLeft, Camera, Link2, Plus, X, GripVertical, Film } from 'lucide-react'
 import Buster from '../components/Buster'
 import AvatarCropModal from '../components/AvatarCropModal'
@@ -130,16 +133,25 @@ export default function EditProfilePage() {
     }
 
     // ── Username Validation ──
+    // The rules used to be written out again here, and they disagreed with the
+    // real ones in three ways: they allowed CAPITALS (then stored the handle
+    // untouched, so `Sajad` and `sajad` were two different people), capped length
+    // at 20 instead of 30, and checked neither reserved words nor profanity.
+    // Deferring to the shared validator is the whole fix — one set of rules,
+    // identical to the mobile app's.
+    //
+    // The unchanged-handle shortcut stays first on purpose: a member whose handle
+    // predates these rules must always be able to save the rest of their profile.
     const validateUsername = async (newUsername: string) => {
         if (newUsername === user?.username) { setUsernameError(''); return true }
-        if (newUsername.length < 3) { setUsernameError('Must be at least 3 characters'); return false }
-        if (newUsername.length > 20) { setUsernameError('Must be 20 characters or fewer'); return false }
-        if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) { setUsernameError('Only letters, numbers, and underscores'); return false }
+
+        const check = validateUsernameRules(newUsername)
+        if (!check.valid) { setUsernameError(check.error || 'Invalid username'); return false }
 
         const { data } = await supabase
             .from('profiles')
             .select('id')
-            .eq('username', newUsername)
+            .eq('username', check.sanitized)
             .maybeSingle()
 
         if (data) { setUsernameError('Username already taken'); return false }
@@ -192,8 +204,11 @@ export default function EditProfilePage() {
                 social_links: cleanedLinks,
             }
 
+            // Store the SANITIZED handle, not the raw text. The availability check
+            // above looked up the sanitized form, so writing the raw one could store
+            // a handle that was never checked for collisions.
             if (username !== user.username) {
-                updateData.username = username.trim()
+                updateData.username = validateUsernameRules(username).sanitized
             }
 
             const { error } = await supabase

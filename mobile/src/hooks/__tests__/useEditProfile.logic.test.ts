@@ -78,6 +78,7 @@ describe('buildProfileUpdates', () => {
   function baseInput(overrides: Partial<ProfileUpdateInput> = {}): ProfileUpdateInput {
     return {
       sanitizedUsername: 'cinephile1',
+      usernameChanged: true,
       displayName: 'Cine Phile',
       bio: 'I love film.',
       links: [{ title: 'Twitter', url: 'x.com/me' }],
@@ -91,6 +92,37 @@ describe('buildProfileUpdates', () => {
     expect(updates.username).toBe('cinephile1');
     expect(updates.display_name).toBe('Cine Phile');
     expect(updates.bio).toBe('I love film.');
+  });
+
+  // ── the silent-rename bug ──────────────────────────────────────────────────
+  // The form is seeded with the STORED handle. Several live handles predate the
+  // current charset rules (they contain a dot), so sanitizing the untouched form
+  // value produced a DIFFERENT string — and it was written on every save. Editing
+  // only a bio renamed the member.
+  it('omits username entirely when the handle was not touched', () => {
+    const updates = buildProfileUpdates(baseInput({ usernameChanged: false }));
+    expect('username' in updates).toBe(false);
+  });
+
+  it('still saves the rest of the profile when the handle was not touched', () => {
+    const updates = buildProfileUpdates(baseInput({ usernameChanged: false, bio: 'New bio.' }));
+    expect(updates.bio).toBe('New bio.');
+    expect(updates.display_name).toBe('Cine Phile');
+    expect(updates.social_links).toEqual([{ title: 'Twitter', url: 'x.com/me' }]);
+  });
+
+  it('cannot rename a legacy dotted handle through an unrelated edit', () => {
+    const updates = buildProfileUpdates(baseInput({
+      usernameChanged: false,
+      sanitizedUsername: 'ugmb',   // what 'ug.mb' sanitizes to — must never be written
+      bio: 'Just changing my bio.',
+    }));
+    expect('username' in updates).toBe(false);
+  });
+
+  it('includes username when the member deliberately changed it', () => {
+    const updates = buildProfileUpdates(baseInput({ usernameChanged: true, sanitizedUsername: 'new_handle' }));
+    expect(updates.username).toBe('new_handle');
   });
 
   it('sanitizes links into social_links', () => {

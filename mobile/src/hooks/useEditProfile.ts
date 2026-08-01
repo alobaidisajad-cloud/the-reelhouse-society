@@ -66,6 +66,7 @@ export function computeHasNewAvatar(
 
 export interface ProfileUpdateInput {
   sanitizedUsername: string;
+  usernameChanged: boolean;
   displayName: string;
   bio: string;
   links: { title: string; url: string }[];
@@ -75,13 +76,22 @@ export interface ProfileUpdateInput {
 // Assembles the DB update payload sent to ProfileService.updateProfile.
 // finalAvatarUrl is `undefined` when the avatar wasn't touched, so avatar_url
 // is only included in the update when it actually changed.
+//
+// username follows the same rule, and for a sharper reason. The form is seeded
+// with the STORED handle, and this used to write the SANITIZED form value on
+// every save. A handle that predates the current charset rules — several live
+// ones contain a dot — sanitizes to something different, so editing only a bio
+// silently renamed the member. username is now included only when they actually
+// changed it, which is what the web app has always done correctly.
 export function buildProfileUpdates(input: ProfileUpdateInput): Record<string, any> {
   const updates: Record<string, any> = {
-    username: input.sanitizedUsername,
     display_name: input.displayName,
     bio: input.bio,
     social_links: sanitizeLinks(input.links),
   };
+  if (input.usernameChanged) {
+    updates.username = input.sanitizedUsername;
+  }
   if (input.finalAvatarUrl !== undefined) {
     updates.avatar_url = input.finalAvatarUrl;
   }
@@ -143,16 +153,30 @@ export function useEditProfile() {
     setSaving(true);
     
     try {
-      const validation = validateUsername(data.username);
-      if (!validation.valid) {
-        form.setError('username', { type: 'manual', message: validation.error || 'Invalid username' });
-        setSaving(false);
-        return;
-      }
-      
-      const sanitizedUsername = validation.sanitized;
-      
-      if (sanitizedUsername !== user.username) {
+      // Did they actually touch the handle? Compare what they were SHOWN against
+      // what is stored — never the sanitized form of it. Sanitizing first made a
+      // legacy handle look changed when nobody had typed anything, which is how
+      // an unrelated bio edit ended up renaming people.
+      const storedUsername = user.username ?? '';
+      const typedUsername = (data.username ?? '').trim();
+      const usernameChanged = typedUsername !== storedUsername;
+
+      // `sanitizedUsername` is the handle that will be in the database after this
+      // save — the stored one when untouched. Used below for the optimistic feed
+      // sync, which matches on username and would otherwise miss legacy handles.
+      let sanitizedUsername = storedUsername;
+
+      // Only a handle the member is deliberately choosing gets validated. Holding a
+      // legacy handle to today's rules would lock them out of editing their own bio.
+      if (usernameChanged) {
+        const validation = validateUsername(typedUsername);
+        if (!validation.valid) {
+          form.setError('username', { type: 'manual', message: validation.error || 'Invalid username' });
+          setSaving(false);
+          return;
+        }
+        sanitizedUsername = validation.sanitized;
+
         const isAvailable = await ProfileService.checkUsernameAvailable(sanitizedUsername);
         if (!isAvailable) {
           form.setError('username', { type: 'manual', message: 'This username is already taken.' });
@@ -171,6 +195,7 @@ export function useEditProfile() {
 
       const updates = buildProfileUpdates({
         sanitizedUsername,
+        usernameChanged,
         displayName: data.displayName,
         bio: data.bio,
         links: data.links,
