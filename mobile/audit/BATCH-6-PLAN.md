@@ -227,6 +227,49 @@ meaning. Leaving an unrecognised value in the column is what made this invisible
 
 ---
 
+## 5c · THE DECISIVE MECHANISM — both findings' fix would have done NOTHING
+
+Live policy read, 2026-08-01, confirms the shape on `dispatch_dossiers`:
+
+```
+Users can manage their dossiers.   ALL     USING (auth.uid() = user_id)   WITH CHECK: null
+ban_block_dossiers_insert          INSERT                                 WITH CHECK: is_user_not_banned()
+```
+
+A `FOR ALL` policy with no `WITH CHECK` uses its `USING` expression as the insert
+check — so `auth.uid() = user_id` already permits every insert.
+
+**Permissive policies combine with OR.** Both findings propose *adding a new INSERT
+policy* carrying a tier predicate. A new policy is PERMISSIVE by default, so it
+would be OR'd with `auth.uid() = user_id` — which is always true for the attacker,
+since they insert their own row. **The tier check would never block anything.**
+
+Proven on a replica by reproducing the exact production shape and adding a second
+INSERT policy of `WITH CHECK (false)` — a gate that can only ever say no:
+
+```
+permissive  WITH CHECK (false)  ->  INSERT 0 1     the gate is ignored entirely
+restrictive WITH CHECK (false)  ->  ERROR: new row violates row-level security
+```
+
+So the fix must be **`AS RESTRICTIVE`**, or it must modify the existing policy.
+Adding a permissive policy would leave the bypass fully open while appearing fixed —
+the worst possible outcome, because it would close the finding on paper.
+
+### The same mechanism casts doubt on two policies that already exist
+
+If `ban_block_dossiers_insert`, `ban_block_logs_insert` and `logs_insert_rate_limit`
+are PERMISSIVE, they are being OR'd with plain ownership checks
+(`Users can manage their logs.` / `Users can insert their own logs`) and are
+therefore **inert** — a banned member could still insert, and the 200-logs-per-day
+rate limit would never trigger.
+
+That is finding **#80** (batch 7, ban enforcement) arriving early, plus a
+rate-limit concern not in the register at all. Settled by one column:
+`pg_policy.polpermissive`, which the first query did not select.
+
+---
+
 ## 6 · The shape of the fix, once the query settles the unknowns
 
 **Design rules, each with a reason:**
