@@ -170,7 +170,7 @@ proven per table. — **Met for `profiles` except `preferences` (launch build);
 ---
 
 ## BATCH 6 · Server-side entitlement enforcement
-`Tier C` · `2 findings` · `no dependency` · **BLOCKS BATCH 12** · **NOT STARTED**
+`Tier C` · `2 findings` · `no dependency` · **BLOCKS BATCH 12** · **✅ DONE 2026-08-01**
 
 - **#125** — High · Paid-tier features are gated in the client only — two proven bypasses.
 - **#123** — High · The Auteur gate on publishing a dossier is client-side only.

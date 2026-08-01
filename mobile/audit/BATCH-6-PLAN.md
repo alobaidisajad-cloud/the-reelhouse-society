@@ -432,3 +432,33 @@ a raise there would wedge the queue.
 - The cosmetic perks (Gilded Frame, Poster Glow, Gold Foil badge) — client-render
   only, nothing to enforce.
 - The owner's own tier — settled in §5b, deliberately unchanged.
+
+---
+
+## 8 · CLOSED — verified on the LIVE database, 2026-08-01
+
+The DONE WHEN was *"both proven bypasses are re-run against the live backend and
+rejected."* Met, and widened to all seven surfaces. Each test ran inside a
+transaction that ended in `ROLLBACK`, as the real member id, with
+`SET LOCAL ROLE authenticated` so RLS applied exactly as it does for PostgREST.
+
+| test | result |
+|---|---|
+| free member publishes an essay | `42501 The Dispatch is an Auteur feature` — from `enforce_tier_gate()` |
+| free member writes the physical archive | `42501 The Physical Archive is an Archivist feature` |
+| **@morpho (Auteur) publishes an essay** | **succeeded, 1 row** |
+| free member's log with all six paid fields | log saved; autopsy, pull_quote, alt_poster, editorial_header all NULL; is_autopsied and drop_cap both false |
+
+The third row is the one that matters most: the gate refuses free members **without**
+touching a paying one.
+
+Also confirmed live afterwards: logged-out visitors still read logs, profiles,
+lounges, the dispatch and the archive (all 200), and all 24 existing breakdowns are
+untouched.
+
+**Four of my own SQL verification scripts failed before these ran** — a subquery
+`INSERT ... RETURNING`, then three separate NOT NULL columns I had not supplied
+(`author_username`, `film_id`, `watched_date`). Every one was my test being wrong,
+never the migration. Worth recording: the schema has more required columns than any
+of the app's insert paths reveal, so a future verification should read the NOT NULL
+set first rather than guess it.
