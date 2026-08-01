@@ -184,7 +184,7 @@ server stays open only moves the bypass.
 ---
 
 ## BATCH 7 · Ban enforcement
-`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** — leaked key confirmed DEAD (401)
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** — ban + suspension now enforced
 
 - **#80** — High · Incomplete in both layers, and the client gate is dead code.
 
@@ -207,7 +207,7 @@ app still fetches.
 ---
 
 ## BATCH 9 · The bio-rename trigger
-`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** — leaked key confirmed DEAD (401)
+`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-02** — 7/7 live checks PASS
 
 - **#36** — High · Editing your bio silently renames you. **5 of 32 live members are already affected.**
 
@@ -215,6 +215,35 @@ app still fetches.
 
 **DONE WHEN** the trigger no longer touches the username, and the 5 affected members
 are repaired — each one named in the commit.
+
+**WHAT ACTUALLY HAPPENED.** The finding named one bug and one cause; both were partly
+wrong, and the fix is four things, not one.
+
+- The cause was never the trigger. `enforce_username_policy` has never touched the
+  charset — the live body only ever checked reserved words and collisions. The rename
+  came from the mobile client writing the SANITIZED handle unconditionally on every save.
+- The finding blamed `handle_new_user`'s `split_part(email, '@', 1)` for the
+  email-as-username row. It cannot have produced it: split_part returns the part BEFORE
+  the '@'. It arrived through `raw_user_meta_data` from the WEBSITE, where signup never
+  ran the validator, and its one cleaning step — `.replace(/\\s+/g, '_')` — matched a
+  literal backslash followed by "s", not whitespace. It did nothing at all.
+- Web edit-profile re-implemented the rules and disagreed: allowed CAPITALS and stored
+  the handle untouched, capped length at 20 not 30, no reserved words, no profanity.
+- `handle_new_user` was SECURITY DEFINER with no `search_path` pinned, despite running
+  on every signup. Missed by the batch 5–8 sweep.
+
+**THE DATA REPAIR WAS NOT DONE, DELIBERATELY.** The owner's call, and the right one:
+renaming members without asking is the exact harm this batch exists to stop. All five
+keep their handles. They can rename themselves whenever they like. One consequence is
+accepted and open: `saleelsaleel555@gmail.com` remains a publicly readable email
+address until that member chooses a new handle.
+
+**⚠️ TEMPORARY CODE IN THE MIGRATION — REMOVE AT LAUNCH.** The backstop alone does NOT
+protect the shipped TestFlight build. That build sends the sanitized handle on every
+save, and `ug.mb` → `ugmb` is a perfectly LEGAL name, so every rule accepts it and the
+member is renamed anyway. Measured: without the guard 0/5 handles survive a bio-only
+edit, with it 5/5. `20260802_01_username_charset_backstop.sql` carries a guard keyed on
+that exact signature. **Delete it once the launch build is the only one in the wild.**
 
 ---
 
@@ -455,7 +484,7 @@ any single item needs its own reasoning.
 ---
 
 ## BATCH 26 · Tribunal priority queue
-`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** — leaked key confirmed DEAD (401)
+`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
 
 - **#24** — High · Completely broken live. Non-trivial: the RPC orders by `report_count DESC, created_at ASC`, and `report_count` is a window function, so it cannot appear in a `WHERE`.
 
@@ -486,7 +515,7 @@ applies cleanly.
 ---
 
 ## BATCH 29 · `search_path` hardening
-`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** — leaked key confirmed DEAD (401)
+`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
 
 - **#28** — 24 `SECURITY DEFINER` functions lack `SET search_path`.
 
@@ -507,7 +536,7 @@ recorded before and after.
 ---
 
 ## BATCH 31 · Drop the dead subsystem
-`Tier C` · `1 finding` · `no dependency` · **✅ DONE 2026-08-01** — leaked key confirmed DEAD (401)
+`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
 
 - **#61** — An entire dead feature subsystem is still live in the database.
 
