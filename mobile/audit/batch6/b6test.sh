@@ -45,6 +45,7 @@ row "files an autopsy"                 "$([ "$(val "SELECT count(*) FROM logs WH
 wipe
 act $FREE "INSERT INTO logs(user_id,film_title,private_notes) VALUES ('$FREE','Heat','secret')" >/dev/null
 row "uses the Vault"                   "$([ "$(val "SELECT count(*) FROM log_private_notes")" = "1" ] && echo 'ALLOWED (note saved)' || echo REFUSED)"
+row "writes a private note DIRECTLY (REST)" "$(act $FREE "INSERT INTO log_private_notes(log_id,user_id,notes) VALUES (gen_random_uuid(),'$FREE','direct')")"
 
 echo ""
 echo "════════ applying the migration ════════"
@@ -74,6 +75,7 @@ printf "  %-38s saved=%s autopsy=%s quote=%s poster=%s dropcap=%s\n" "files an a
 $ADMIN -q -c "DELETE FROM logs; DELETE FROM log_private_notes;"
 act $FREE "INSERT INTO logs(user_id,film_title,private_notes) VALUES ('$FREE','Heat','secret')" >/dev/null
 printf "  %-38s log saved=%s  notes stored=%s\n" "uses the Vault" "$(val "SELECT count(*) FROM logs")" "$(val "SELECT count(*) FROM log_private_notes")"
+row "writes a private note DIRECTLY (REST)" "$(act $FREE "INSERT INTO log_private_notes(log_id,user_id,notes) VALUES (gen_random_uuid(),'$FREE','direct')")"
 
 echo ""
 echo "════════ AFTER · PAYING members — every one must still work ════════"

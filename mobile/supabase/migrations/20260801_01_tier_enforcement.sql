@@ -3,58 +3,71 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
 -- ⚠️ NO APP CHANGE. The frozen TestFlight build is unaffected — every client gate
---    already refuses these actions; this stops the REST bypass behind them.
+--    already refuses these actions; this closes the REST bypass behind them.
 --
--- ── WHAT WAS VERIFIED, NOT ASSUMED ────────────────────────────────────────────
--- Read live from production 2026-08-01: every RLS policy, its permissive/restrictive
--- kind, and every trigger on all six paid tables.
+-- ── EVERYTHING BELOW WAS READ LIVE OR EXECUTED, NOT REASONED ABOUT ────────────
+-- Read from production 2026-08-01: every RLS policy on all six paid tables, its
+-- permissive/restrictive kind, every trigger on those tables, the real nullability
+-- and type of all six paid columns, the tier/role values actually in use, and every
+-- Edge Function.  NO policy and NO trigger enforces tier anywhere, so both findings
+-- are CONFIRMED and nothing here is fixed twice.
 --
---   NO policy and NO trigger anywhere enforces tier.  Both findings CONFIRMED —
---   neither is a false positive, and nothing here fixes something twice.
+-- ── THE FILED FIX WOULD HAVE FAILED. So did two of my own drafts. ─────────────
 --
--- ── WHY THE FILED FIX WOULD HAVE FAILED, THREE WAYS ───────────────────────────
---
--- 1. THE PREDICATE WAS WRONG. Both findings proposed some form of
+-- A. THE PREDICATE WAS WRONG (both findings). They proposed some form of
 --       p.role IN ('auteur','admin') OR p.tier = 'auteur' OR p.is_founding
 --    Diffed against a verbatim transcription of src/utils/tier.ts across ALL 432
 --    combinations of tier x role x is_founding:
 --       role='admin'     app DENIES, their SQL GRANTS  -> admins handed a paid feature
 --       tier='founding'  app GRANTS, their SQL DENIES  -> a founding member locked out
 --       tier='AUTEUR'    app GRANTS, their SQL DENIES  -> the app lowercases; they don't
---    normalizeTier maps anything outside archivist|auteur|founding to cinephile
---    (weight 0), and ReelHouseTier has no 'admin' member.
---    The predicate below agrees with the client 432/432. Zero disagreements.
+--    The predicate below agrees with the client 432/432, zero disagreements.
 --
--- 2. A NEW POLICY WOULD HAVE DONE NOTHING. dispatch_dossiers carries
---       "Users can manage their dossiers."  FOR ALL  USING (auth.uid() = user_id)
---    with no WITH CHECK — and Postgres then uses USING as the insert check. Live
---    read confirms it is PERMISSIVE. Permissive policies combine with OR, so a new
---    permissive tier policy is OR'd with "it's your own row", which is always true
---    for the attacker. Proven on a replica with a policy that can only say no:
+-- B. A NEW POLICY ALONE DOES NOTHING (both findings). dispatch_dossiers carries
+--    "Users can manage their dossiers." FOR ALL USING (auth.uid() = user_id) with no
+--    WITH CHECK — Postgres then uses USING as the insert check — and it is
+--    PERMISSIVE. Permissive policies OR together, so a new permissive tier policy is
+--    OR'd with "it's your own row", always true for the attacker. Proven:
 --       permissive  WITH CHECK (false) -> INSERT 0 1   ignored entirely
---       restrictive WITH CHECK (false) -> ERROR: violates row-level security
---    Hence AS RESTRICTIVE everywhere below. A permissive policy would have left the
---    bypass fully open while closing the finding on paper.
+--       restrictive WITH CHECK (false) -> ERROR        blocks
 --
--- 3. RLS CANNOT REACH TWO OF THE SEVEN SURFACES.
---    • lounge_members has NO INSERT POLICY AT ALL (live-confirmed; the policy #125
---      quotes was deleted by 20260627_01). Joining happens only through
---      join_public_lounge / request_lounge_membership, both SECURITY DEFINER, which
---      bypass RLS. A policy there is unreachable — but a TRIGGER is not, so the gate
---      goes on the table as a trigger and catches every path, including any RPC
---      added later.
---    • log_private_notes is written by trg_divert_private_notes (mine, batch 1),
---      which is SECURITY DEFINER and therefore bypasses that table's RLS. The check
---      must live inside the trigger function.
+-- C. MY FIRST DRAFT WOULD HAVE BROKEN LOG SAVING ENTIRELY. It used one rule for
+--    insert and update — "put OLD back" — but on INSERT OLD is NULL, so it wrote
+--    NULL into every gated column. Verified against production data (255 logs):
+--    is_autopsied and drop_cap are BOOLEANS that are never null. Reproduced:
+--       ERROR: null value in column "is_autopsied" violates not-null constraint
+--    Every free member would have been unable to save ANY log. (drop_cap is a
+--    boolean FLAG; that draft also treated it as text.)
 --
--- ── THE FINDINGS COVER 2 OF 7 PAID SURFACES ───────────────────────────────────
+-- D. MY SECOND DRAFT GATED LOUNGES WITH A POLICY THAT THE APP NEVER TOUCHES.
+--    src/stores/lounge.ts:754 calls rpc('create_lounge'), which is SECURITY DEFINER
+--    (20260627_01:216) and bypasses RLS. An older create_lounge_with_member exists
+--    in three earlier migrations and is also SECURITY DEFINER. The policy guarded a
+--    door nobody uses.
+--
+-- E. PATCHING divert_private_notes ALONE LEFT THE VAULT OPEN. log_private_notes'
+--    own lpn_insert policy is `WITH CHECK (user_id = auth.uid())` with no tier
+--    condition, so a direct POST to /rest/v1/log_private_notes skips the diverter.
+--
+-- ── SO THE GATE IS A TRIGGER ON EVERY GATED TABLE ────────────────────────────
+-- Rather than audit every write path and hope the list is complete — an approach
+-- that has now been wrong three times — the gate goes on the TABLES. A BEFORE
+-- INSERT trigger fires for every writer: direct REST, a SECURITY DEFINER RPC,
+-- another trigger, an Edge Function using a user's JWT, or anything added later.
+-- The RESTRICTIVE policies are kept as a second, independent layer.
+--
+-- Edge Functions were checked: none writes to any gated table (send-email only
+-- READS logs.rating for the weekly digest). Service-role paths are deliberately not
+-- gated — the triggers skip when auth.uid() IS NULL — because a system job acting
+-- with no member session must not be blocked.
+--
+-- ── THE FINDINGS COVER 2 OF 7 PAID SURFACES ──────────────────────────────────
 -- src/constants/membership.ts sells seven server-enforceable things. #123/#125 name
--- two. The other five — physical archive, the Vault, the Breakdown Engine, the
--- Editorial Desk, alternate posters — were never filed. The Vault gap is MINE:
--- log_private_notes was created in batch 1 with owner-only policies and no tier
--- predicate.
+-- two. Also gated here: the Physical Archive, the Vault, the Breakdown Engine, the
+-- Editorial Desk and alternate posters. The Vault gap is MINE — log_private_notes
+-- was created in batch 1 with owner-only policies and no tier predicate.
 --
--- ── LAPSED MEMBERS KEEP THEIR WORK. This is the rule the whole design serves. ──
+-- ── LAPSED MEMBERS KEEP THEIR WORK. The rule the whole design serves. ─────────
 -- Every gate is INSERT-only, or reverts a change rather than erasing a value.
 --   a lapsed Auteur    still reads, edits and DELETES essays they published
 --   a lapsed Archivist still reads and prunes their physical archive
@@ -65,10 +78,10 @@
 
 BEGIN;
 
--- ── 1 · the predicate, mirroring src/utils/tier.ts exactly ────────────────────
+-- ── 1 · the predicate, mirroring src/utils/tier.ts exactly ───────────────────
 --
 -- normalizeTier: null/''/'free' -> cinephile(0); lowercased; archivist(1),
--- auteur(2), founding(3); ANYTHING ELSE -> cinephile(0), which includes 'admin'
+-- auteur(2), founding(3); ANYTHING ELSE -> cinephile(0) — which includes 'admin'
 -- and the orphan value 'projectionist' currently in production.
 CREATE OR REPLACE FUNCTION public.tier_weight(t text)
 RETURNS integer
@@ -99,8 +112,8 @@ AS $$
   );
 $$;
 
--- SECURITY DEFINER because a policy on logs that reads profiles would otherwise
--- recurse into profiles' own RLS. STABLE (not IMMUTABLE) because it reads a table.
+-- SECURITY DEFINER because a policy or trigger that reads `profiles` would
+-- otherwise recurse into profiles' own RLS. STABLE because it reads a table.
 CREATE OR REPLACE FUNCTION public.has_tier_at_least(min_weight integer)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER
@@ -116,105 +129,81 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.has_tier_at_least(integer) FROM PUBLIC, anon;
 GRANT  EXECUTE ON FUNCTION public.has_tier_at_least(integer) TO authenticated;
 
--- ── 2 · RESTRICTIVE insert gates — 3 surfaces ────────────────────────────────
--- RESTRICTIVE, never permissive; see note 2 in the header. INSERT only, so the
--- lapsed-member rule holds.
+-- ── 2 · one gate, used by every gated table ──────────────────────────────────
+--
+-- TG_ARGV[0] = required weight, TG_ARGV[1] = the message the member sees.
+-- Skips when auth.uid() IS NULL so service-role and system paths still work.
+CREATE OR REPLACE FUNCTION public.enforce_tier_gate()
+RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL
+     AND NOT public.has_tier_at_least(TG_ARGV[0]::integer) THEN
+    RAISE EXCEPTION '%', TG_ARGV[1] USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END $$;
 
--- Publish Essays to The Dispatch — Auteur (weight 2)
+-- Publish Essays to The Dispatch — Auteur
+DROP TRIGGER IF EXISTS tr_tier_gate_dossiers ON public.dispatch_dossiers;
+CREATE TRIGGER tr_tier_gate_dossiers BEFORE INSERT ON public.dispatch_dossiers
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate(2, 'The Dispatch is an Auteur feature');
+
+-- The Lounge, creating one — Archivist
+DROP TRIGGER IF EXISTS tr_tier_gate_lounges ON public.lounges;
+CREATE TRIGGER tr_tier_gate_lounges BEFORE INSERT ON public.lounges
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate(1, 'The Lounge is an Archivist feature');
+
+-- The Lounge, joining one — Archivist. Only INSERT: a host approving a pending
+-- member is an UPDATE and stays untouched, and a member whose tier lapses is
+-- never ejected.
+DROP TRIGGER IF EXISTS tr_tier_gate_lounge_members ON public.lounge_members;
+CREATE TRIGGER tr_tier_gate_lounge_members BEFORE INSERT ON public.lounge_members
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate(1, 'The Lounge is an Archivist feature');
+
+-- The Physical Archive — Archivist
+DROP TRIGGER IF EXISTS tr_tier_gate_archive ON public.physical_archive;
+CREATE TRIGGER tr_tier_gate_archive BEFORE INSERT ON public.physical_archive
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate(1, 'The Physical Archive is an Archivist feature');
+
+-- The Vault — Archivist. Closes the direct-REST path that the diverter cannot see.
+DROP TRIGGER IF EXISTS tr_tier_gate_private_notes ON public.log_private_notes;
+CREATE TRIGGER tr_tier_gate_private_notes BEFORE INSERT ON public.log_private_notes
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate(1, 'The Vault is an Archivist feature');
+
+-- ── 3 · RESTRICTIVE policies — a second, independent layer ──────────────────
+--
+-- These cannot reach a SECURITY DEFINER writer (which is why §2 exists), but they
+-- do block direct REST, they are visible in the Supabase dashboard, and they mean
+-- a dropped trigger does not silently reopen everything.
 DROP POLICY IF EXISTS tier_gate_dossiers_insert ON public.dispatch_dossiers;
 CREATE POLICY tier_gate_dossiers_insert ON public.dispatch_dossiers
-  AS RESTRICTIVE FOR INSERT TO authenticated
-  WITH CHECK (public.has_tier_at_least(2));
+  AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.has_tier_at_least(2));
 
--- The Lounge, creation side — Archivist (weight 1)
---
--- ⚠️ THE POLICY ALONE IS NOT ENOUGH HERE, and this was nearly shipped that way.
--- The app does NOT insert into `lounges` directly — src/stores/lounge.ts:754 calls
--- rpc('create_lounge'), and create_lounge is SECURITY DEFINER
--- (20260627_01_lounge_overhaul.sql:216), so it BYPASSES RLS. An older
--- create_lounge_with_member exists in three earlier migrations and is also
--- SECURITY DEFINER. A policy would therefore have blocked only a direct REST
--- insert — not the path the app uses, and not the path an attacker with the public
--- key would use. Exactly the mistake this migration criticises #125 for.
---
--- Verified by grep across both migration trees: `lounges` has TWO SECURITY DEFINER
--- writers; `dispatch_dossiers` and `physical_archive` have NONE, so their policies
--- are sufficient on their own.
---
--- The trigger below is the real gate — it fires for every writer, RLS-bound or not,
--- including any RPC added later. The policy is kept as defence in depth for the
--- direct-REST path and because it is visible in the Supabase dashboard.
 DROP POLICY IF EXISTS tier_gate_lounges_insert ON public.lounges;
 CREATE POLICY tier_gate_lounges_insert ON public.lounges
-  AS RESTRICTIVE FOR INSERT TO authenticated
-  WITH CHECK (public.has_tier_at_least(1));
+  AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.has_tier_at_least(1));
 
-CREATE OR REPLACE FUNCTION public.enforce_lounge_create_tier()
-RETURNS trigger
-LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF auth.uid() IS NOT NULL AND NOT public.has_tier_at_least(1) THEN
-    RAISE EXCEPTION 'The Lounge is an Archivist feature'
-      USING ERRCODE = '42501';
-  END IF;
-  RETURN NEW;
-END $$;
-
-DROP TRIGGER IF EXISTS tr_enforce_lounge_create_tier ON public.lounges;
-CREATE TRIGGER tr_enforce_lounge_create_tier
-  BEFORE INSERT ON public.lounges
-  FOR EACH ROW EXECUTE FUNCTION public.enforce_lounge_create_tier();
-
--- The Physical Archive — Archivist (weight 1)
 DROP POLICY IF EXISTS tier_gate_archive_insert ON public.physical_archive;
 CREATE POLICY tier_gate_archive_insert ON public.physical_archive
-  AS RESTRICTIVE FOR INSERT TO authenticated
-  WITH CHECK (public.has_tier_at_least(1));
+  AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.has_tier_at_least(1));
 
--- ── 3 · The Lounge, joining side — a TRIGGER, because RLS cannot reach it ────
---
--- lounge_members has no INSERT policy and both join paths are SECURITY DEFINER,
--- which bypasses RLS but NOT triggers. A trigger therefore covers every path that
--- exists today and any RPC added later — strictly better than editing two function
--- bodies, and it needs no knowledge of those bodies.
---
--- Only INSERT is gated. A host approving a pending member is an UPDATE and is
--- untouched, so admission still works. An existing member whose tier lapses is
--- never ejected.
-CREATE OR REPLACE FUNCTION public.enforce_lounge_tier()
-RETURNS trigger
-LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  -- service_role and other sessions with no auth.uid() are not gated here; RLS and
-  -- the RPCs' own 'Not authenticated' guards already cover the anonymous case.
-  IF auth.uid() IS NOT NULL AND NOT public.has_tier_at_least(1) THEN
-    RAISE EXCEPTION 'The Lounge is an Archivist feature'
-      USING ERRCODE = '42501';
-  END IF;
-  RETURN NEW;
-END $$;
+DROP POLICY IF EXISTS tier_gate_private_notes_insert ON public.log_private_notes;
+CREATE POLICY tier_gate_private_notes_insert ON public.log_private_notes
+  AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.has_tier_at_least(1));
 
-DROP TRIGGER IF EXISTS tr_enforce_lounge_tier ON public.lounge_members;
-CREATE TRIGGER tr_enforce_lounge_tier
-  BEFORE INSERT ON public.lounge_members
-  FOR EACH ROW EXECUTE FUNCTION public.enforce_lounge_tier();
-
--- ── 4 · The Vault — inside the diverter, because it bypasses RLS ─────────────
+-- ── 4 · The Vault, through the app's real path ──────────────────────────────
 --
--- Body is otherwise IDENTICAL to the live version read from pg_proc today. The only
--- change is the entitlement branch at the top.
---
--- An unentitled write is DISCARDED, not raised: raising would fail the whole log
--- write and wedge the offline queue, which replays writes it cannot re-gate.
+-- Body is otherwise IDENTICAL to the live version read from pg_proc today; only the
+-- entitlement branch is new. An unentitled write is DISCARDED, not raised: raising
+-- here would fail the whole log write and wedge the offline queue, which replays
+-- writes it cannot re-gate. The trigger in §2 is what stops the direct path.
 --
 -- ⚠️ It discards WITHOUT deleting an existing note. logs.private_notes is always
--- NULL at rest (this trigger nulls it), so a "revert to OLD" rule would read as
--- NULL and delete a note the member wrote while they were paying. Discarding the
--- incoming value and leaving log_private_notes untouched is the only safe form.
+-- NULL at rest (this trigger nulls it), so a "revert to OLD" rule would read NULL
+-- and delete a note the member wrote while they were paying.
 CREATE OR REPLACE FUNCTION public.divert_private_notes()
 RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER
@@ -222,7 +211,6 @@ SET search_path = 'public'
 AS $$
 DECLARE v text := NULLIF(btrim(NEW.private_notes), '');
 BEGIN
-  -- The Vault is an Archivist feature. Discard the write, keep any existing note.
   IF NOT public.has_tier_at_least(1) THEN
     UPDATE public.logs SET private_notes = NULL WHERE id = NEW.id;
     RETURN NULL;
@@ -239,39 +227,25 @@ BEGIN
   RETURN NULL;
 END $$;
 
--- ── 5 · The paid fields ON a free row — a BEFORE trigger, not a policy ──────
+-- ── 5 · The paid fields ON a free row — strip, never refuse ─────────────────
 --
 -- RLS is row-level and cannot gate a column. Any member may write a log; only a
 -- paying one may attach these. So the gate reverts the field instead of refusing
--- the row.
+-- the row — refusing would break logging for everyone who tried.
 --
 --   autopsy, is_autopsied, alt_poster            Auteur    (weight 2)
 --   editorial_header, pull_quote, drop_cap       Archivist (weight 1)
 --
--- ⚠️ INSERT AND UPDATE ARE HANDLED SEPARATELY, and this is not cosmetic.
+-- INSERT and UPDATE are handled separately, and that is not cosmetic — see note C.
+-- Verified against production (255 logs) which of these can be empty:
+--   autopsy 231 NULL · alt_poster 226 · editorial_header 187 · pull_quote 103
+--   is_autopsied 0 NULL -> boolean, never null
+--   drop_cap     0 NULL -> boolean, never null (true x2, false x248)
 --
--- An earlier draft used a single rule — "if the value changed and you are not
--- entitled, put OLD back". On UPDATE that is right. On INSERT `OLD` is NULL, so it
--- wrote NULL into every gated column. Proven on a replica against the real column
--- types: with `is_autopsied` NOT NULL, a free member's log insert failed outright —
---     ERROR: null value in column "is_autopsied" violates not-null constraint
--- Free members would have been unable to save ANY log. That draft is not shipped.
---
--- Verified against production data (255 logs) which of these can be empty:
---     autopsy          231 rows NULL   -> nullable
---     alt_poster       226 rows NULL   -> nullable
---     editorial_header 187 rows NULL   -> nullable
---     pull_quote       103 rows NULL   -> nullable
---     is_autopsied       0 rows NULL   -> BOOLEAN, never null
---     drop_cap           0 rows NULL   -> BOOLEAN, never null (true x2, false x248)
--- `drop_cap` is a boolean FLAG, not the letter — an earlier draft treated it as text.
---
--- So: on INSERT the gated columns are set to their unentitled value explicitly
--- (NULL for the nullable ones, `false` for the two booleans). On UPDATE they are
--- reverted to OLD, so a lapsed Auteur editing the TEXT of a log keeps the autopsy
--- they filed while paying — only an attempt to CHANGE it is undone. Blanking on
--- update would destroy work made while the member was paying, which is the outcome
--- this batch exists to prevent.
+-- On INSERT each gated column is set to its unentitled value explicitly (NULL for
+-- the four nullable ones, false for the two booleans). On UPDATE it is reverted to
+-- OLD, so a lapsed Auteur editing the TEXT of a log keeps the autopsy they filed
+-- while paying — only an attempt to CHANGE it is undone.
 --
 -- private_notes is deliberately NOT handled here — see note 4.
 CREATE OR REPLACE FUNCTION public.enforce_log_tier_fields()
@@ -317,8 +291,8 @@ BEGIN
   RETURN NEW;
 END $$;
 
--- Named with a leading 'a_' so it sorts before set_logs_updated_at; Postgres fires
--- BEFORE triggers in name order and this one must run on the values as submitted.
+-- Named 'a_' so it sorts before set_logs_updated_at; Postgres fires BEFORE triggers
+-- in name order and this one must see the values as submitted.
 DROP TRIGGER IF EXISTS a_enforce_log_tier_fields ON public.logs;
 CREATE TRIGGER a_enforce_log_tier_fields
   BEFORE INSERT OR UPDATE ON public.logs
@@ -326,41 +300,43 @@ CREATE TRIGGER a_enforce_log_tier_fields
 
 COMMIT;
 
--- ── Verify (run after) ───────────────────────────────────────────────────────
+-- ── Verify (run after) ──────────────────────────────────────────────────────
 -- Needs a FREE test account and a PAID one. The owner's own account is
--- deliberately free (see audit/BATCH-6-PLAN.md §5b), so it will be refused — that
--- is correct, not a regression.
+-- deliberately free (audit/BATCH-6-PLAN.md §5b), so it will be refused — correct.
 --
 --   as a FREE member, all must be refused:
---     POST /rest/v1/dispatch_dossiers  {"user_id":"<self>","title":"x", ...}
---     POST /rest/v1/lounges            {"creator_id":"<self>","name":"x"}
---     POST /rest/v1/physical_archive   {"user_id":"<self>","film_id":1, ...}
---     POST /rest/v1/rpc/join_public_lounge {"p_lounge_id":"<real>"}
---     PATCH a log setting autopsy / pull_quote  -> saved, but the field stays NULL
---     PATCH a log setting private_notes         -> saved, but no note appears
---   as a PAID member, all must still work, and:
---     an Archivist joins a lounge, writes the archive and a private note
---     an Auteur publishes a dossier and files an autopsy
---   as a LAPSED member (tier removed after creating things):
---     still edits AND DELETES their own dossier
---     still reads and deletes their own archive rows
---     still appears in every lounge they had joined
---     editing an old log's REVIEW TEXT leaves its existing autopsy intact
+--     POST /rest/v1/dispatch_dossiers
+--     POST /rest/v1/rpc/create_lounge          (the app's real path)
+--     POST /rest/v1/lounges                    (direct)
+--     POST /rest/v1/rpc/join_public_lounge
+--     POST /rest/v1/physical_archive
+--     POST /rest/v1/log_private_notes          (direct — the path the diverter cannot see)
+--     PATCH a log setting autopsy / pull_quote -> saved, fields come back NULL/false
+--     PATCH a log setting private_notes        -> saved, no note appears
+--   as a PAID member everything above must still work.
+--   as a LAPSED member: still edits AND DELETES their dossier, still in their
+--     lounge, editing a log's review text leaves its autopsy intact, their old
+--     private note survives.
 --
--- ── Rollback ────────────────────────────────────────────────────────────────
--- DROP POLICY  IF EXISTS tier_gate_dossiers_insert ON public.dispatch_dossiers;
--- DROP POLICY  IF EXISTS tier_gate_lounges_insert  ON public.lounges;
--- DROP POLICY  IF EXISTS tier_gate_archive_insert  ON public.physical_archive;
--- DROP TRIGGER IF EXISTS tr_enforce_lounge_tier    ON public.lounge_members;
--- DROP TRIGGER IF EXISTS a_enforce_log_tier_fields ON public.logs;
--- DROP FUNCTION IF EXISTS public.enforce_lounge_tier();
+-- ── Rollback ───────────────────────────────────────────────────────────────
+-- DROP TRIGGER IF EXISTS tr_tier_gate_dossiers       ON public.dispatch_dossiers;
+-- DROP TRIGGER IF EXISTS tr_tier_gate_lounges        ON public.lounges;
+-- DROP TRIGGER IF EXISTS tr_tier_gate_lounge_members ON public.lounge_members;
+-- DROP TRIGGER IF EXISTS tr_tier_gate_archive        ON public.physical_archive;
+-- DROP TRIGGER IF EXISTS tr_tier_gate_private_notes  ON public.log_private_notes;
+-- DROP TRIGGER IF EXISTS a_enforce_log_tier_fields   ON public.logs;
+-- DROP POLICY  IF EXISTS tier_gate_dossiers_insert      ON public.dispatch_dossiers;
+-- DROP POLICY  IF EXISTS tier_gate_lounges_insert       ON public.lounges;
+-- DROP POLICY  IF EXISTS tier_gate_archive_insert       ON public.physical_archive;
+-- DROP POLICY  IF EXISTS tier_gate_private_notes_insert ON public.log_private_notes;
+-- DROP FUNCTION IF EXISTS public.enforce_tier_gate();
 -- DROP FUNCTION IF EXISTS public.enforce_log_tier_fields();
 -- -- and restore divert_private_notes() from
 -- --   supabase/migrations/20260731_03_private_notes_full_closure.sql
 --
--- ── NOT DONE HERE, deliberately ─────────────────────────────────────────────
+-- ── NOT DONE HERE, deliberately ────────────────────────────────────────────
 -- logs_insert_rate_limit is PERMISSIVE (live-confirmed), so it is OR'd with
 -- "Users can insert their own logs" and reduces to plain ownership. The
 -- 200-logs-per-day limit is INERT and has never blocked anything. Real, not in the
--- register, and a one-word fix (AS RESTRICTIVE) — but it changes throttling for
--- every real member and deserves its own batch with its own before/after.
+-- register, a one-word fix (AS RESTRICTIVE) — but it changes throttling for every
+-- real member and deserves its own batch with its own before/after.
