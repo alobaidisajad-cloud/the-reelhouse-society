@@ -146,6 +146,61 @@ was not deployed.
 
 ---
 
+## 5b · BLOCKER — server enforcement would lock the OWNER out of his own app
+
+Read live from production, 2026-08-01:
+
+| account | `tier` | `role` | `is_founding` | what the app's own rule grants |
+|---|---|---|---|---|
+| `@morpho` | `null` | `auteur` | false | **auteur** |
+| `@sajjadobaidi` | `projectionist` | `admin` | false | **FREE** |
+| `@malal`, `@malal1` | `free` | `cinephile` | false | free |
+
+`@sajjadobaidi` is the owner. `normalizeTier('projectionist')` → not in
+`archivist|auteur|founding` → `cinephile`, weight 0. `role = 'admin'` → also
+weight 0, because `ReelHouseTier` has no admin member. **The app already treats the
+owner as a free member**, so the Lounge icon is hidden from him and
+`compose.tsx` bounces him today. That is a live product bug, independent of this batch.
+
+Right now it only costs him the UI. **The moment tier is enforced in the database,
+it costs him the features themselves** — no dossiers, no lounges, no physical
+archive, no vault, no autopsy, no editorial fields. It would read as "the fix broke
+the app."
+
+`'projectionist'` appears nowhere in either client except flavour text. It is an
+orphan value — precisely finding **#48** ("unknown tier values downgrade silently"),
+which lives in **batch 12**. So batch 6 and batch 12 are entangled in the opposite
+direction to what the plan assumed: batch 12 is listed as *requiring* batch 6, but
+enforcing tier before the admin/unknown-value question is settled would lock out the
+one account that must never be locked out.
+
+**This must be decided before any policy is written, and decided in BOTH places at
+once** — the SQL predicate and `src/utils/tier.ts` — or they diverge, which is the
+exact failure §1 proves the filed fix would have caused.
+
+Three options, and this is a product decision, not a technical one:
+
+1. **Admin means full access.** Add `admin` to the client's weight map at the top
+   (weight 3) and mirror it in SQL. Most platforms work this way, and it makes the
+   owner's account behave as expected everywhere. One client change, shipped in the
+   launch build; the SQL matches it from day one.
+2. **Give the owner a real tier.** Set `is_founding = true` (or `tier = 'auteur'`)
+   on that one row. Zero code change, works immediately, and `is_founding` already
+   maps to weight 3. But it leaves `role = 'admin'` meaningless for entitlement and
+   the next admin hits the same wall.
+3. **Keep admin as free.** Defensible — admin is a moderation role, not a
+   subscription — but then the owner needs a paid tier by some other route, and
+   option 2 is that route anyway.
+
+**Recommendation: 1 and 2 together.** Option 2 unblocks batch 6 today with a
+one-row update; option 1 fixes the class so the next admin is not surprised. They do
+not conflict.
+
+**Also to settle:** `tier = 'projectionist'` should be cleaned up or given a
+meaning. Leaving an unrecognised value in the column is what made this invisible.
+
+---
+
 ## 6 · The shape of the fix, once the query settles the unknowns
 
 **Design rules, each with a reason:**
