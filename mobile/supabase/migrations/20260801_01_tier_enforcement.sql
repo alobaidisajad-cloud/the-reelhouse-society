@@ -213,12 +213,30 @@ END $$;
 --   autopsy, is_autopsied, alt_poster            Auteur    (weight 2)
 --   editorial_header, pull_quote, drop_cap       Archivist (weight 1)
 --
--- ⚠️ REVERT TO OLD, NEVER BLANK TO NULL. The rule is
---       IF NEW.col IS DISTINCT FROM OLD.col AND NOT entitled THEN NEW.col := OLD.col
--- On INSERT, OLD is NULL, so the field is stripped. On UPDATE, a lapsed Auteur
--- editing the TEXT of an essay that already carries an autopsy keeps that autopsy —
--- only an attempt to CHANGE it is reverted. Blanking to NULL would destroy work made
--- while the member was paying, which is the outcome this batch exists to prevent.
+-- ⚠️ INSERT AND UPDATE ARE HANDLED SEPARATELY, and this is not cosmetic.
+--
+-- An earlier draft used a single rule — "if the value changed and you are not
+-- entitled, put OLD back". On UPDATE that is right. On INSERT `OLD` is NULL, so it
+-- wrote NULL into every gated column. Proven on a replica against the real column
+-- types: with `is_autopsied` NOT NULL, a free member's log insert failed outright —
+--     ERROR: null value in column "is_autopsied" violates not-null constraint
+-- Free members would have been unable to save ANY log. That draft is not shipped.
+--
+-- Verified against production data (255 logs) which of these can be empty:
+--     autopsy          231 rows NULL   -> nullable
+--     alt_poster       226 rows NULL   -> nullable
+--     editorial_header 187 rows NULL   -> nullable
+--     pull_quote       103 rows NULL   -> nullable
+--     is_autopsied       0 rows NULL   -> BOOLEAN, never null
+--     drop_cap           0 rows NULL   -> BOOLEAN, never null (true x2, false x248)
+-- `drop_cap` is a boolean FLAG, not the letter — an earlier draft treated it as text.
+--
+-- So: on INSERT the gated columns are set to their unentitled value explicitly
+-- (NULL for the nullable ones, `false` for the two booleans). On UPDATE they are
+-- reverted to OLD, so a lapsed Auteur editing the TEXT of a log keeps the autopsy
+-- they filed while paying — only an attempt to CHANGE it is undone. Blanking on
+-- update would destroy work made while the member was paying, which is the outcome
+-- this batch exists to prevent.
 --
 -- private_notes is deliberately NOT handled here — see note 4.
 CREATE OR REPLACE FUNCTION public.enforce_log_tier_fields()
@@ -237,16 +255,28 @@ BEGIN
   v_auteur    := public.has_tier_at_least(2);
   v_archivist := public.has_tier_at_least(1);
 
-  IF NOT v_auteur THEN
-    IF NEW.autopsy      IS DISTINCT FROM OLD.autopsy      THEN NEW.autopsy      := OLD.autopsy;      END IF;
-    IF NEW.is_autopsied IS DISTINCT FROM OLD.is_autopsied THEN NEW.is_autopsied := OLD.is_autopsied; END IF;
-    IF NEW.alt_poster   IS DISTINCT FROM OLD.alt_poster   THEN NEW.alt_poster   := OLD.alt_poster;   END IF;
-  END IF;
-
-  IF NOT v_archivist THEN
-    IF NEW.editorial_header IS DISTINCT FROM OLD.editorial_header THEN NEW.editorial_header := OLD.editorial_header; END IF;
-    IF NEW.pull_quote       IS DISTINCT FROM OLD.pull_quote       THEN NEW.pull_quote       := OLD.pull_quote;       END IF;
-    IF NEW.drop_cap         IS DISTINCT FROM OLD.drop_cap         THEN NEW.drop_cap         := OLD.drop_cap;         END IF;
+  IF TG_OP = 'INSERT' THEN
+    IF NOT v_auteur THEN
+      NEW.autopsy      := NULL;
+      NEW.is_autopsied := false;       -- NOT NULL boolean; never write NULL here
+      NEW.alt_poster   := NULL;
+    END IF;
+    IF NOT v_archivist THEN
+      NEW.editorial_header := NULL;
+      NEW.pull_quote       := NULL;
+      NEW.drop_cap         := false;   -- NOT NULL boolean; never write NULL here
+    END IF;
+  ELSE  -- UPDATE: put back exactly what was there, so nothing paid-for is lost
+    IF NOT v_auteur THEN
+      NEW.autopsy      := OLD.autopsy;
+      NEW.is_autopsied := OLD.is_autopsied;
+      NEW.alt_poster   := OLD.alt_poster;
+    END IF;
+    IF NOT v_archivist THEN
+      NEW.editorial_header := OLD.editorial_header;
+      NEW.pull_quote       := OLD.pull_quote;
+      NEW.drop_cap         := OLD.drop_cap;
+    END IF;
   END IF;
 
   RETURN NEW;

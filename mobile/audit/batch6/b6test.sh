@@ -60,7 +60,7 @@ printf "  creates a lounge                    %s\n" "$(act $FREE "INSERT INTO lo
 printf "  joins a lounge                      %s\n" "$(act $FREE "SELECT public.join_public_lounge((SELECT id FROM lounges LIMIT 1))")"
 printf "  writes the physical archive         %s\n" "$(act $FREE "INSERT INTO physical_archive(user_id,film_id,film_title) VALUES ('$FREE',1,'x')")"
 $ADMIN -q -c "DELETE FROM logs; DELETE FROM log_private_notes;"
-act $FREE "INSERT INTO logs(user_id,film_title,autopsy,is_autopsied,pull_quote,editorial_header,alt_poster) VALUES ('$FREE','Heat','{\"story\":5}',true,'stolen','hdr','/alt.jpg')" >/dev/null
+act $FREE "INSERT INTO logs(user_id,film_title,autopsy,is_autopsied,pull_quote,editorial_header,alt_poster,drop_cap) VALUES ('$FREE','Heat','{\"story\":5}',true,'stolen','hdr','/alt.jpg',true)" >/dev/null
 printf "  files an autopsy                    log saved=%s  autopsy=%s  pull_quote=%s  alt_poster=%s\n" \
   "$(val "SELECT count(*) FROM logs")" \
   "$(val "SELECT coalesce(autopsy::text,'NULL') FROM logs LIMIT 1")" \
