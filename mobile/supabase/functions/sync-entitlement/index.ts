@@ -153,8 +153,16 @@ serve(async (req: Request) => {
     // everyone else (the web has 27 gates reading `role` and zero reading `tier` —
     // stop writing it and web purchasers get nothing), validates the tier, and
     // raises if no profile matched instead of silently succeeding.
-    const { error: updateError } = await adminClient
-      .rpc('apply_entitlement', { p_user_id: user.id, p_tier: tier });
+    // ⚠️ p_source MUST be 'revenuecat' here. RevenueCat only knows about App Store /
+    // Play purchases. A member who bought on the WEBSITE through PayTabs and then taps
+    // "Restore Purchases" in the app gets a truthful "this Apple ID never bought
+    // anything" — and before the source rule existed, that answer overwrote their paid
+    // tier with cinephile, destroying the purchase on BOTH surfaces (same account).
+    // apply_entitlement now refuses a downgrade from a provider that did not grant the
+    // current tier. A genuinely lapsed App Store subscription still downgrades, because
+    // that IS a revenuecat-granted tier. See 20260803_01_entitlement_source.sql.
+    const { data: applyRows, error: updateError } = await adminClient
+      .rpc('apply_entitlement', { p_user_id: user.id, p_tier: tier, p_source: 'revenuecat' });
 
     if (updateError) {
       return new Response(JSON.stringify({ error: 'Failed to update profile' }), {
@@ -163,8 +171,21 @@ serve(async (req: Request) => {
       });
     }
 
+    // A refusal is NOT an error — it is the rule working. But we must not report the
+    // requested tier back as though it had been applied, or the client would show a
+    // demotion that never happened to the account.
+    const applied = Array.isArray(applyRows) ? applyRows[0] : applyRows;
+    const wasApplied = applied?.out_applied !== false;
+    const effectiveTier = wasApplied ? tier : (applied?.out_tier ?? tier);
+
     // 5. Success
-    return new Response(JSON.stringify({ tier, userId: user.id, seatClaimed }), {
+    return new Response(JSON.stringify({
+      tier: effectiveTier,
+      userId: user.id,
+      seatClaimed,
+      applied: wasApplied,
+      reason: applied?.out_reason ?? null,
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

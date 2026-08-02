@@ -178,9 +178,16 @@ serve(async (req) => {
                     // none), rejects an unknown tier instead of storing it, and raises if no
                     // profile matched rather than reporting success for a payment that
                     // touched nobody.
-                    const { error } = await supabaseAdmin
-                        .rpc('apply_entitlement', { p_user_id: userId, p_tier: resolvedTier })
+                    // p_source = 'paytabs' marks this tier as granted by the WEBSITE.
+                    // RevenueCat can no longer overwrite it: a member who buys here and
+                    // then taps "Restore Purchases" in the app used to have this purchase
+                    // destroyed, because Apple truthfully reports no purchase for an Apple
+                    // ID that never made one. See 20260803_01_entitlement_source.sql.
+                    const { data: applyRows, error } = await supabaseAdmin
+                        .rpc('apply_entitlement', { p_user_id: userId, p_tier: resolvedTier, p_source: 'paytabs' })
+                    const applied = Array.isArray(applyRows) ? applyRows[0] : applyRows
                     if (error) console.error('Error auto-upgrading user role:', error)
+                    else if (applied?.out_applied === false) console.warn(`IPN: entitlement NOT applied for ${userId} — ${applied?.out_reason}`)
                     else console.log(`✅ IPN Success: User ${userId} upgraded to ${resolvedTier}`)
 
                     // BACKEND-PAY-2 / FOUND-1: claim the founding seat ATOMICALLY via the
