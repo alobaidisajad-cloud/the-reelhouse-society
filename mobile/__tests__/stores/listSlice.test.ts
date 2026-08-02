@@ -29,7 +29,7 @@ jest.mock('../../src/utils/offlineQueue', () => ({
     __esModule: true,
     enqueueMutation: (...args: unknown[]) => mockEnqueue(...args),
     flushOfflineQueue: jest.fn(),
-    getOfflineQueue: (...args: unknown[]) => mockGetOfflineQueue(...args),
+    getOfflineQueue: () => mockGetOfflineQueue(),
 }));
 
 jest.mock('../../src/utils/networkError', () => ({

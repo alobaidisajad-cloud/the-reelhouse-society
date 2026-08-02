@@ -18,8 +18,6 @@
     "expo-env.d.ts"
   ],
   "exclude": [
-    "**/__tests__/**",
-    "jest.setup.ts",
     "jest.config.js",
     "supabase/**"
   ]

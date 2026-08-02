@@ -58,7 +58,10 @@ const mockApplyIdMapToPayload = jest.fn((payload: Record<string, unknown>, idMap
 
 jest.mock('../mutationExecutor', () => ({
   executeMutation: (...args: unknown[]) => mockExecuteMutation(...args),
-  applyIdMapToPayload: (...args: unknown[]) => mockApplyIdMapToPayload(...args),
+  // Matches the real signature (mutationExecutor.ts) instead of swallowing rest
+  // args — a rest proxy cannot be spread into a two-parameter mock.
+  applyIdMapToPayload: (payload: Record<string, unknown>, idMap: Record<string, string>) =>
+    mockApplyIdMapToPayload(payload, idMap),
 }));
 
 jest.mock('../networkError', () => ({

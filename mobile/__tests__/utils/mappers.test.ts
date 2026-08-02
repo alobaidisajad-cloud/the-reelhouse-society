@@ -28,8 +28,10 @@ import {
     type DossierRow,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     type LoungeMessageRow,
-    type MappedLog,
 } from '../../src/utils/mappers';
+// `MappedLog` was imported from mappers and has never existed there. mapLogRow
+// returns DomainLog, which is what the two `keyof` uses below actually want.
+import type { DomainLog } from '../../src/types/film.types';
 
 // ── fast-check Arbitraries (random row generators) ──
 
@@ -243,14 +245,15 @@ describe('mappers', () => {
         it('should correctly map list with items', () => {
             const input: ListRow = {
                 id: 'list-1',
+                user_id: 'user-1',
                 title: 'Best Films',
                 description: 'My top picks',
                 is_ranked: true,
                 is_private: false,
                 created_at: '2024-01-01T00:00:00Z',
                 list_items: [
-                    { id: 'li-1', film_id: 550, film_title: 'Fight Club', poster_path: '/fc.jpg', position: 0 },
-                    { id: 'li-2', film_id: 680, film_title: 'Pulp Fiction', poster_path: null, position: 1 },
+                    { id: 'li-1', film_id: 550, film_title: 'Fight Club', poster_path: '/fc.jpg', rank_position: 0 },
+                    { id: 'li-2', film_id: 680, film_title: 'Pulp Fiction', poster_path: null, rank_position: 1 },
                 ],
             };
 
@@ -273,6 +276,7 @@ describe('mappers', () => {
                 is_ranked: false,
                 is_private: true,
                 created_at: '2024-01-01T00:00:00Z',
+                user_id: 'user-1',
                 list_items: [],
             };
 
@@ -308,7 +312,7 @@ describe('mappers', () => {
 
     describe('mapLogToDbPayload', () => {
         it('should reverse-map domain fields to DB columns', () => {
-            const updates: Partial<Record<keyof MappedLog, unknown>> = {
+            const updates: Partial<Record<keyof DomainLog, unknown>> = {
                 rating: 8,
                 review: 'Updated review',
                 isSpoiler: true,
@@ -322,7 +326,7 @@ describe('mappers', () => {
         });
 
         it('should only include provided fields', () => {
-            const updates: Partial<Record<keyof MappedLog, unknown>> = {
+            const updates: Partial<Record<keyof DomainLog, unknown>> = {
                 rating: 7,
             };
 

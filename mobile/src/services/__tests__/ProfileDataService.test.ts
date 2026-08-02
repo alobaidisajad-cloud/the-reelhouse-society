@@ -21,7 +21,10 @@ jest.mock('@/src/utils/withAbortSignal', () => ({ withAbortSignal: (q: unknown) 
 /** Captures the exact column string handed to .select(). */
 let selected: string | undefined;
 const mockChain = (data: unknown) => {
-  const chain = {
+  // Annotated because the object is self-referential — select() and eq() return
+  // `chain` — so without a declared type TypeScript would have to infer it from an
+  // expression that already mentions it.
+  const chain: Record<string, jest.Mock> = {
     select: jest.fn((cols: string) => { selected = cols; return chain; }),
     eq: jest.fn(() => chain),
     maybeSingle: jest.fn(() => Promise.resolve({ data, error: null })),

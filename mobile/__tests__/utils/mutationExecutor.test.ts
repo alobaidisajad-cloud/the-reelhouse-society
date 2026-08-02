@@ -21,11 +21,15 @@ const mockChain: Record<string, jest.Mock> = {};
 mockChain.single = jest.fn().mockResolvedValue({ data: { id: 'server-id-001' }, error: null });
 mockChain.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
 
-const mockFrom = jest.fn(() => ({ ...mockChain }));
+// Typed with the table argument supabase.from actually receives. Declared as
+// `() =>` it inferred a zero-parameter mock, which made `mockFrom(...args)`
+// unspreadable AND typed mock.calls as an empty tuple, so `calls[0][0]` was an
+// out-of-range index on a tuple of length 0.
+const mockFrom = jest.fn((_table: string) => ({ ...mockChain }));
 
 jest.mock('../../src/lib/supabase', () => ({
     supabase: {
-        from: (...args: unknown[]) => mockFrom(...args),
+        from: (table: string) => mockFrom(table),
         auth: {
             getSession: jest.fn().mockResolvedValue({
                 data: { session: { access_token: 'test-token' } },
@@ -39,9 +43,9 @@ jest.mock('../../src/services/InteractionService', () => ({
     InteractionService: { addEndorsement: (...args: unknown[]) => mockAddEndorsement(...args) },
 }));
 
-const mockSanitize = jest.fn((input: string) => input);
+const mockSanitize = jest.fn((input: string, _fieldType: string) => input);
 jest.mock('../../src/utils/sanitizeInput', () => ({
-    sanitizeInput: (...args: unknown[]) => mockSanitize(...args),
+    sanitizeInput: (text: string, fieldType: string) => mockSanitize(text, fieldType),
 }));
 
 jest.mock('../../src/utils/logger', () => ({

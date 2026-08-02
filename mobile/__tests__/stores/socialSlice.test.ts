@@ -35,9 +35,9 @@ jest.mock('../../src/utils/offlineQueue', () => ({
     flushOfflineQueue: jest.fn(),
 }));
 
-const mockIsNetworkError = jest.fn(() => false);
+const mockIsNetworkError = jest.fn((_e: unknown) => false);
 jest.mock('../../src/utils/networkError', () => ({
-    isNetworkError: (...args: unknown[]) => mockIsNetworkError(...args),
+    isNetworkError: (e: unknown) => mockIsNetworkError(e),
 }));
 
 jest.mock('../../src/utils/reelToast', () => {

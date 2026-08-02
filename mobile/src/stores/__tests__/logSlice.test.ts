@@ -376,7 +376,10 @@ describe('logSlice', () => {
                 rating: 4,
             });
 
-            const updateFn = jest.fn(() => ({
+            // Typed with the payload it receives. Declared as `() =>` it inferred a
+            // zero-parameter mock, which made mock.calls an empty tuple and
+            // calls[0][0] an out-of-range index.
+            const updateFn = jest.fn((_payload: Record<string, unknown>) => ({
                 eq: jest.fn().mockResolvedValue({ error: null }),
             }));
 

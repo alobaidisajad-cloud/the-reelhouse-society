@@ -5,7 +5,9 @@
 import { z } from 'zod';
 
 // Mock __DEV__ for testing both modes
-const originalDev = global.__DEV__;
+// Same cast the restore on the line below already uses — __DEV__ is a React
+// Native global that is not declared on typeof globalThis.
+const originalDev = (global as Record<string, unknown>).__DEV__;
 
 describe('defensiveParse', () => {
   let defensiveParse: typeof import('../../lib/defensiveParse').defensiveParse;

@@ -53,8 +53,11 @@ export function createMockSupabase(options?: {
   data?: unknown;
   error?: unknown;
 }): MockedSupabaseChain {
-  let resolvedData = options?.data ?? null;
-  let resolvedError = options?.error ?? null;
+  // Annotated explicitly: inferred from options these narrowed to `{} | null`, so the
+  // _setData/_setError helpers below — whose whole purpose is to swap in a different
+  // response mid-test — could not assign to them.
+  let resolvedData: unknown = options?.data ?? null;
+  let resolvedError: unknown = options?.error ?? null;
 
   const chainable = {} as MockedSupabaseChain;
 

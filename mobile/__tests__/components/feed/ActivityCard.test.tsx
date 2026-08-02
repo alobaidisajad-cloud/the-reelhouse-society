@@ -52,7 +52,7 @@ jest.mock('@/src/lib/supabase', () => ({
 
 describe('ActivityCard Component', () => {
   beforeEach(() => {
-    useAuthStore.setState({ user: { id: 'test-user', username: 'tester', email: 'test@example.com' }, isAuthenticated: true });
+    useAuthStore.setState({ user: { id: 'test-user', username: 'tester', email: 'test@example.com', role: 'cinephile' }, isAuthenticated: true });
     useFilmStore.setState({ _loggedIndex: {} });
   });
 

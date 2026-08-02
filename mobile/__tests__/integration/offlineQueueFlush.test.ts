@@ -154,7 +154,10 @@ describe('Offline Queue Flush Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     executionLog.length = 0;
-    mockIdCounter = 0;
+    // `mockIdCounter = 0;` was here. No such variable is declared anywhere — the
+    // real one is `_mockIdCounter`, scoped inside the jest.mock factory below and
+    // unreachable from here. The assignment silently created a global and reset
+    // nothing. __resetIdCounter() on the next line is what actually does it.
     supabaseMock.__resetExecutionLog();
     supabaseMock.__resetIdCounter();
     clearOfflineQueue();

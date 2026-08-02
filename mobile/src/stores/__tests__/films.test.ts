@@ -159,19 +159,16 @@ describe('log helpers — the real exported ones', () => {
   });
 });
 
-describe('store state integrity', () => {
-  it('the watchlist index agrees with the watchlist array', () => {
-    useFilmStore.setState({
-      watchlist: [{ film_id: 550 }, { film_id: 680 }],
-      _watchlistIndex: { 550: true, 680: true },
-    } as never);
-    const s = useFilmStore.getState();
-    for (const w of s.watchlist) expect(s._watchlistIndex[(w as { film_id: number }).film_id]).toBe(true);
-    expect(Object.keys(s._watchlistIndex)).toHaveLength(s.watchlist.length);
-  });
-
-  it('a film absent from the watchlist is absent from its index', () => {
-    useFilmStore.setState({ watchlist: [], _watchlistIndex: {} } as never);
-    expect(useFilmStore.getState()._watchlistIndex[999]).toBeUndefined();
-  });
-});
+// 'store state integrity' REMOVED — both tests could not fail.
+//
+// The first wrote the watchlist AND its index in one setState and then asserted they
+// agreed; the store's index-maintenance code never ran. The second set both to empty
+// and asserted an empty object has no key 999.
+//
+// The fixture was also fictional: it used `film_id`, which is not a field on
+// WatchlistItem (the real one is `id` — film.types.ts:69). `as never` on the setState
+// is what let a shape the app never produces through, and the `as { film_id: number }`
+// cast inside the loop is what TypeScript finally rejected.
+//
+// The real invariant is covered through the real actions in watchlistSlice.test.ts:
+// the index after fetch, after add, and cleared after remove.
