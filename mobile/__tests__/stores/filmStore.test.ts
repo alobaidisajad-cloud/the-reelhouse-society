@@ -103,9 +103,7 @@ jest.mock('../../src/stores/auth', () => ({
 
 // Mock secondary dependencies
 jest.mock('../../src/utils/reelToast', () => {
-    const fn = jest.fn();
-    fn.error = jest.fn();
-    fn.success = jest.fn();
+    const fn = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn() });
     return { __esModule: true, default: fn };
 });
 jest.mock('../../src/utils/offlineQueue', () => ({

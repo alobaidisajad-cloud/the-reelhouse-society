@@ -40,9 +40,7 @@ jest.mock('../../utils/offlineQueue', () => ({
 }));
 
 jest.mock('../../utils/reelToast', () => {
-  const fn = jest.fn();
-  fn.error = jest.fn();
-  fn.success = jest.fn();
+  const fn = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn() });
   return { __esModule: true, default: fn };
 });
 

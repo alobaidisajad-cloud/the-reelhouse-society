@@ -5,6 +5,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@testing-library/react-native": [
+        "./test-utils/react-native-testing-library.d.ts"
       ]
     }
   },

@@ -117,9 +117,7 @@ jest.mock('@/src/utils/TactileEngine', () => ({
 
 // Mock reelToast
 jest.mock('@/src/utils/reelToast', () => {
-  const toast = jest.fn();
-  toast.error = jest.fn();
-  toast.success = jest.fn();
+  const toast = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn() });
   return { __esModule: true, default: toast };
 });
 
