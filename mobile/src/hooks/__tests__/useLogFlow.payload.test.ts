@@ -27,8 +27,6 @@ function basePayloadInput(overrides: Partial<LogPayloadInput> = {}): LogPayloadI
     editorialHeader: null,
     dropCap: false,
     pullQuote: '',
-    // Default to CREATE — every pre-existing test in this file describes a new log.
-    isEditing: false,
     ...overrides,
   };
 }
@@ -94,7 +92,9 @@ describe('buildLogPayload', () => {
   });
 
   it('gates privateNotes behind isPremium and nullifies blank notes', () => {
-    expect(buildLogPayload(basePayloadInput({ isPremium: false, privateNotes: 'secret' })).privateNotes).toBeNull();
+    // Below the gate the key is ABSENT, not null — null was written through and
+    // erased the stored note on edit and on rewatch.
+    expect('privateNotes' in buildLogPayload(basePayloadInput({ isPremium: false, privateNotes: 'secret' }))).toBe(false);
     expect(buildLogPayload(basePayloadInput({ isPremium: true, privateNotes: 'secret' })).privateNotes).toBe('secret');
     expect(buildLogPayload(basePayloadInput({ isPremium: true, privateNotes: '   ' })).privateNotes).toBeNull();
   });
@@ -107,15 +107,15 @@ describe('buildLogPayload', () => {
   it('gates physicalMedia behind isPremium and "None"', () => {
     expect(buildLogPayload(basePayloadInput({ isPremium: true, physicalMedia: 'Blu-Ray' })).physicalMedia).toBe('Blu-Ray');
     expect(buildLogPayload(basePayloadInput({ isPremium: true, physicalMedia: 'None' })).physicalMedia).toBeNull();
-    expect(buildLogPayload(basePayloadInput({ isPremium: false, physicalMedia: 'Blu-Ray' })).physicalMedia).toBeNull();
+    expect('physicalMedia' in buildLogPayload(basePayloadInput({ isPremium: false, physicalMedia: 'Blu-Ray' }))).toBe(false);
   });
 
   it('gates autopsy behind isAuteur and saves rated axes with the _v marker', () => {
     const autopsy = { story: 4, script: 3, acting: 5, cinematography: 4, editing: 3, sound: 2 };
     expect(buildLogPayload(basePayloadInput({ isAuteur: true, autopsy })).autopsy).toEqual({ _v: 2, ...autopsy });
     expect(buildLogPayload(basePayloadInput({ isAuteur: true, autopsy })).isAutopsied).toBe(true);
-    expect(buildLogPayload(basePayloadInput({ isAuteur: false, autopsy })).autopsy).toBeNull();
-    expect(buildLogPayload(basePayloadInput({ isAuteur: false, autopsy })).isAutopsied).toBe(false);
+    expect('autopsy' in buildLogPayload(basePayloadInput({ isAuteur: false, autopsy }))).toBe(false);
+    expect('isAutopsied' in buildLogPayload(basePayloadInput({ isAuteur: false, autopsy }))).toBe(false);
   });
 
   it('never phantom-saves an untouched autopsy (all axes null)', () => {
@@ -143,16 +143,19 @@ describe('buildLogPayload', () => {
   });
 
   it('gates altPoster, editorialHeader, dropCap, pullQuote behind their respective tiers', () => {
-    expect(buildLogPayload(basePayloadInput({ isAuteur: false, altPoster: '/alt.jpg' })).altPoster).toBeNull();
+    // Below the gate: the key is ABSENT. dropCap and pullQuote used to be sent as
+    // `false` / `''`, which the rewatch merge writes through — those two are not
+    // wrapped in safeOverride (logOperations.ts:179-205).
+    expect('altPoster' in buildLogPayload(basePayloadInput({ isAuteur: false, altPoster: '/alt.jpg' }))).toBe(false);
     expect(buildLogPayload(basePayloadInput({ isAuteur: true, altPoster: '/alt.jpg' })).altPoster).toBe('/alt.jpg');
 
-    expect(buildLogPayload(basePayloadInput({ isPremium: false, editorialHeader: 'Header' })).editorialHeader).toBeNull();
+    expect('editorialHeader' in buildLogPayload(basePayloadInput({ isPremium: false, editorialHeader: 'Header' }))).toBe(false);
     expect(buildLogPayload(basePayloadInput({ isPremium: true, editorialHeader: 'Header' })).editorialHeader).toBe('Header');
 
-    expect(buildLogPayload(basePayloadInput({ isPremium: false, dropCap: true })).dropCap).toBe(false);
+    expect('dropCap' in buildLogPayload(basePayloadInput({ isPremium: false, dropCap: true }))).toBe(false);
     expect(buildLogPayload(basePayloadInput({ isPremium: true, dropCap: true })).dropCap).toBe(true);
 
-    expect(buildLogPayload(basePayloadInput({ isPremium: false, pullQuote: 'Quote' })).pullQuote).toBe('');
+    expect('pullQuote' in buildLogPayload(basePayloadInput({ isPremium: false, pullQuote: 'Quote' }))).toBe(false);
     expect(buildLogPayload(basePayloadInput({ isPremium: true, pullQuote: '  Quote  ' })).pullQuote).toBe('Quote');
   });
 });
@@ -209,23 +212,23 @@ describe('premium fields are omitted on edit, never nulled', () => {
   const AUTEUR_KEYS = ['altPoster', 'isAutopsied', 'autopsy'];
 
   it('EDIT · a non-premium member sends no premium keys at all', () => {
-    const p = buildLogPayload(basePayloadInput({ isPremium: false, isEditing: true }));
+    const p = buildLogPayload(basePayloadInput({ isPremium: false }));
     for (const k of PREMIUM_KEYS) expect(k in p).toBe(false);
   });
 
   it('EDIT · a non-auteur sends no auteur keys at all', () => {
-    const p = buildLogPayload(basePayloadInput({ isAuteur: false, isEditing: true }));
+    const p = buildLogPayload(basePayloadInput({ isAuteur: false }));
     for (const k of AUTEUR_KEYS) expect(k in p).toBe(false);
   });
 
   it('EDIT · none of the omitted keys is null (null would be written through)', () => {
-    const p = buildLogPayload(basePayloadInput({ isPremium: false, isAuteur: false, isEditing: true }));
+    const p = buildLogPayload(basePayloadInput({ isPremium: false, isAuteur: false }));
     for (const k of [...PREMIUM_KEYS, ...AUTEUR_KEYS]) expect(p[k]).toBeUndefined();
   });
 
   it('EDIT · a premium member still writes a DELIBERATE clear', () => {
     const p = buildLogPayload(basePayloadInput({
-      isPremium: true, isEditing: true, privateNotes: '   ', pullQuote: '', editorialHeader: null,
+      isPremium: true, privateNotes: '   ', pullQuote: '', editorialHeader: null,
     }));
     expect(p.privateNotes).toBeNull();
     expect(p.pullQuote).toBe('');
@@ -234,18 +237,21 @@ describe('premium fields are omitted on edit, never nulled', () => {
 
   it('EDIT · a premium member still writes real values', () => {
     const p = buildLogPayload(basePayloadInput({
-      isPremium: true, isEditing: true, privateNotes: 'secret', physicalMedia: 'Blu-Ray',
+      isPremium: true, privateNotes: 'secret', physicalMedia: 'Blu-Ray',
     }));
     expect(p.privateNotes).toBe('secret');
     expect(p.physicalMedia).toBe('Blu-Ray');
   });
 
-  it('CREATE · unchanged — the keys are present so NOT NULL columns get a value', () => {
-    const p = buildLogPayload(basePayloadInput({ isPremium: false, isAuteur: false, isEditing: false }));
-    expect(p.dropCap).toBe(false);
-    expect(p.isAutopsied).toBe(false);
-    expect(p.privateNotes).toBeNull();
-    expect(p.altPoster).toBeNull();
+  // This test first read "the keys must be PRESENT on create, because is_autopsied
+  // and drop_cap are NOT NULL columns". The live schema says otherwise: both are
+  // NULLABLE with DEFAULT false, and the five text columns are nullable too. So
+  // omitting is safe on create as well, and one rule covers create, edit AND the
+  // rewatch merge — which an edit-only rule missed entirely.
+  it('CREATE · below the gate the keys are omitted; column defaults supply the value', () => {
+    const p = buildLogPayload(basePayloadInput({ isPremium: false, isAuteur: false }));
+    for (const k of PREMIUM_KEYS) expect(k in p).toBe(false);
+    for (const k of AUTEUR_KEYS) expect(k in p).toBe(false);
   });
 });
 
@@ -270,18 +276,17 @@ describe('a non-premium edit sends no premium COLUMNS to the database', () => {
   }
 
   it('EDIT · none of the premium columns appears at all', () => {
-    const db = toDbPayload({ isPremium: false, isAuteur: false, isEditing: true });
+    const db = toDbPayload({ isPremium: false, isAuteur: false });
     for (const col of PREMIUM_COLUMNS) expect(col in db).toBe(false);
   });
 
   it('EDIT · a premium member still sends them', () => {
-    const db = toDbPayload({ isPremium: true, isAuteur: true, isEditing: true, privateNotes: 'x' });
+    const db = toDbPayload({ isPremium: true, isAuteur: true, privateNotes: 'x' });
     expect(db.private_notes).toBe('x');
   });
 
-  it('CREATE · unchanged — the columns are still sent', () => {
-    const db = toDbPayload({ isPremium: false, isAuteur: false, isEditing: false });
-    expect('private_notes' in db).toBe(true);
-    expect('drop_cap' in db).toBe(true);
+  it('CREATE · below the gate the columns are omitted too', () => {
+    const db = toDbPayload({ isPremium: false, isAuteur: false });
+    for (const col of PREMIUM_COLUMNS) expect(col in db).toBe(false);
   });
 });

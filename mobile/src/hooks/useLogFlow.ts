@@ -105,8 +105,6 @@ export interface LogPayloadInput {
     editorialHeader: string | null;
     dropCap: boolean;
     pullQuote: string;
-    /** True when updating an existing log. Drives the omit-never-null rule above. */
-    isEditing: boolean;
 }
 
 // Pure transform from form state -> the log record sent to the store.
@@ -116,7 +114,7 @@ export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
     const {
         film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
         physicalMedia, abandonedReason, isAuteur, isPremium, autopsy,
-        altPoster, editorialHeader, dropCap, pullQuote, isEditing,
+        altPoster, editorialHeader, dropCap, pullQuote,
     } = input;
     // An autopsy exists if and only if the user filed at least one score.
     // Derived purely from data — no UI open/close state can phantom-save an
@@ -137,16 +135,25 @@ export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
     // quote, alt poster and autopsy every time they edited an existing log.
     // Not hidden. Destroyed.
     //
-    // The rule is CAPABILITY, and only on edit:
-    //   • can edit  -> always present, on both paths. A premium member clearing a
-    //                  field still writes the clear, exactly as before.
-    //   • cannot edit, EDITING  -> key omitted, so the stored value survives.
-    //   • cannot edit, CREATING -> unchanged from before. There is nothing to
-    //                  preserve on a new row, and `is_autopsied` / `drop_cap` are
-    //                  NOT NULL booleans — omitting them on INSERT would depend on
-    //                  a column default this fix has no need to assume.
-    // Write the key unless the member cannot edit that field AND this is an edit.
-    const keep = (canEdit: boolean) => canEdit || !isEditing;
+    // The rule is CAPABILITY, on every path:
+    //   • can edit    -> key present. A premium member clearing a field still
+    //                    writes the clear (null), exactly as before.
+    //   • cannot edit -> key OMITTED, so nothing can be overwritten.
+    //
+    // Omitting on CREATE is safe, and that is a live-schema fact rather than an
+    // assumption: drop_cap and is_autopsied are nullable with DEFAULT false, and
+    // private_notes / editorial_header / pull_quote / alt_poster / physical_media
+    // are all nullable. An omitted key therefore lands on exactly the value the old
+    // code wrote explicitly. (pull_quote becomes NULL instead of '', which mapLogRow
+    // already normalises back to '' on read.)
+    //
+    // Omitting is also what makes the REWATCH path safe, which an edit-only rule
+    // missed entirely. applyRewatchMerge guards every field with `!== undefined`
+    // (logOperations.ts:179-205) — but a non-premium payload sent null/false/''
+    // for physicalMedia, dropCap and pullQuote, and those three are NOT wrapped in
+    // safeOverride, so they overwrote the stored values. Sending nothing at all is
+    // the only signal that path reads as "leave it alone".
+    const keep = (canEdit: boolean) => canEdit;
 
     return {
         filmId: film.id, title: film.title ?? film.name ?? 'Untitled',
@@ -376,7 +383,6 @@ export function useLogFlow() {
                 film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
                 physicalMedia, abandonedReason, isAuteur, isPremium, autopsy,
                 altPoster, editorialHeader, dropCap, pullQuote,
-                isEditing: Boolean(isEditing && editLogId),
             });
             const isNewEntry = !(isEditing && editLogId);
             if (isEditing && editLogId) { await updateLog(editLogId, logData); }
