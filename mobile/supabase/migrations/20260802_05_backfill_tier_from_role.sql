@@ -1,0 +1,84 @@
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- Batch 12 · Stage 2 — put the paid tier in the column that will own it
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- ⚠️ APPLY MANUALLY in the Supabase SQL editor (do NOT `supabase db push`).
+-- ⚠️ NO APP CHANGE. Changes nothing a member can see today — see "why this is inert".
+--
+-- ── WHY ───────────────────────────────────────────────────────────────────────
+-- Stage 3 stops both entitlement writers touching `profiles.role`, and Stage 4
+-- makes tier resolution read `tier` + `is_founding` and ignore `role` entirely —
+-- which is the design documented at src/schemas/user.ts:54-57 ("'admin' is the
+-- proprietor's key to the Tribunal — it is a duty, not a rank. Membership
+-- entitlements ride the separate `tier` column").
+--
+-- That only works if the paid tier is actually IN `tier`. Today it is not.
+--
+-- ── THE AUDIT SAID 29 ROWS. IT IS ONE. ───────────────────────────────────────
+-- ALL-FINDINGS/DEEP-VERIFY state: "tier is NULL on 29 of 32 rows … without the
+-- backfill, moving the gates to tier demotes 30 of 32 members."
+--
+-- That is wrong, and the live distribution shows why — tier_weight(NULL) and
+-- tier_weight('cinephile') are BOTH 0:
+--
+--     28 x  role=cinephile  tier=NULL           -> weight 0  correct already
+--      2 x  role=cinephile  tier='free'         -> weight 0  correct already
+--      1 x  role=auteur     tier=NULL           -> weight 0  WRONG, demoted
+--      1 x  role=admin      tier='projectionist'-> weight 0  correct (and intended)
+--
+-- Exactly one row is wrong. Updating the other 31 would be blast radius for
+-- nothing, so this touches only what must change.
+--
+-- ── WHY IT IS INERT TODAY ────────────────────────────────────────────────────
+-- Both layers currently resolve tier as the GREATEST of `tier` and `role`
+-- (profile_tier_weight in 20260801_01, resolveTier in src/utils/tier.ts). The one
+-- affected member already resolves to auteur via `role`. After this they resolve to
+-- auteur via BOTH. No access changes, in either direction, for anyone.
+--
+-- It is Stage 4 that would demote them — which is exactly why this runs first.
+--
+-- ── FIVE TRIGGERS ON profiles, CHECKED BEFORE WRITING ────────────────────────
+-- A BEFORE UPDATE trigger that quietly reverts the write would make this report
+-- success and change nothing. All five were read live:
+--
+--   protect_privileged_profile_fields — `IF current_user IN ('authenticated','anon')
+--       THEN NEW.tier := OLD.tier` … the SQL editor runs as `postgres`, so it is
+--       skipped. ⚠️ Run this AS postgres. From the app it would silently no-op.
+--   enforce_profile_identity_freeze  — returns early when auth.uid() IS NULL.
+--   enforce_username_policy          — returns early when username is unchanged.
+--   handle_privacy_switch            — only acts when is_social_private changes.
+--   set_profiles_updated_at          — bumps updated_at. Expected and harmless.
+--
+-- There is NO CHECK constraint on `tier` (only username_not_empty,
+-- social_visibility_check and role_check exist), so no value is rejected.
+--
+-- ── SCOPE ────────────────────────────────────────────────────────────────────
+-- 'archivist' and 'auteur' only — the two roles that are also paid tiers.
+-- 'founding' is deliberately absent: it is not a permitted role (the role_check
+-- array is free|cinephile|archivist|auteur|projectionist|admin), which is why both
+-- entitlement writers map founding -> auteur and carry it in `is_founding`.
+-- 'admin' and 'projectionist' are not paid tiers and are left alone.
+--
+-- Idempotent: `IS DISTINCT FROM` means re-running it is a no-op.
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+UPDATE public.profiles
+   SET tier = role
+ WHERE role IN ('archivist', 'auteur')
+   AND tier IS DISTINCT FROM role;
+
+-- ── Verify (run after) ────────────────────────────────────────────────────────
+--   -- must return 0 rows: no paid role left without a matching tier
+--   SELECT id, username, role, tier FROM public.profiles
+--    WHERE role IN ('archivist','auteur') AND tier IS DISTINCT FROM role;
+--
+--   -- and the distribution, which should now show auteur/auteur:
+--   SELECT role, tier, is_founding, count(*) FROM public.profiles
+--    GROUP BY role, tier, is_founding ORDER BY count(*) DESC;
+--
+-- ── Rollback ──────────────────────────────────────────────────────────────────
+-- Only if Stage 4 is abandoned; while resolution still reads GREATEST(tier, role)
+-- this is inert either way.
+--   UPDATE public.profiles SET tier = NULL
+--    WHERE role = 'auteur' AND tier = 'auteur';
+-- ⚠️ Do NOT roll this back after Stage 4 ships — Stage 4 stops reading `role`, so
+-- clearing `tier` would demote a paying member.
