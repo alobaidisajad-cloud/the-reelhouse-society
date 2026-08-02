@@ -24,30 +24,49 @@ module.exports = {
   // under current measured coverage (Batch B, 2026-06-22) — enforced by the
   // CI Jest job (Batch A). Ratchet these up as more hooks/stores/lib logic
   // gets extracted and tested.
+  // Re-based 2026-08-02. The previous floors sat 4-11 POINTS under measured
+  // coverage (global statements 16 against an actual 26.8), so coverage could have
+  // fallen by a third without CI noticing. They were also measured over src/ alone,
+  // because app/ was missing from collectCoverageFrom entirely.
+  //
+  // These are 1 point under what is measured today, which is the convention this
+  // file already stated but had drifted from. Raise them as coverage rises; the
+  // ratchet in scripts/coverage-ratchet.js is what catches the small slides in
+  // between.
+  //
+  // ⚠️ app/ is at ~10% — every screen in the product. That number is low because it
+  // is TRUE, not because the floor is lenient. It is the honest starting point for
+  // real screen tests, not a target to feel comfortable about.
   coverageThreshold: {
     global: {
-      branches: 12,
-      functions: 14,
+      branches: 18,
+      functions: 18,
+      lines: 23,
+      statements: 22,
+    },
+    './src/hooks/': {
+      branches: 18,
+      functions: 17,
       lines: 17,
       statements: 16,
     },
-    './src/hooks/': {
-      branches: 13,
-      functions: 10,
-      lines: 7,
-      statements: 7,
-    },
     './src/stores/': {
-      branches: 23,
-      functions: 29,
-      lines: 34,
-      statements: 32,
+      branches: 29,
+      functions: 34,
+      lines: 41,
+      statements: 39,
     },
     './src/lib/': {
-      branches: 31,
-      functions: 29,
-      lines: 39,
-      statements: 37,
+      branches: 34,
+      functions: 37,
+      lines: 41,
+      statements: 40,
+    },
+    './app/': {
+      branches: 7,
+      functions: 7,
+      lines: 9,
+      statements: 9,
     },
   },
   collectCoverageFrom: [

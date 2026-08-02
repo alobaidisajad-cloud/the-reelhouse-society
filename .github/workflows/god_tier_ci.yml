@@ -89,6 +89,22 @@ jobs:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: npx jest --coverage --ci --maxWorkers=2
 
+      # The ratchet has existed, calibrated, since June and NOTHING has ever run it —
+      # not this workflow, not a package.json script. jest.config.js enforces absolute
+      # floors; this catches the slow slide between them, failing on any drop of more
+      # than 0.5% against .coverage-baseline.json.
+      #
+      # It reads coverage/coverage-summary.json, which the step above produces, so it
+      # must stay in this job and after it.
+      #
+      # ⚠️ On an improvement the script rewrites the baseline file. In CI that write is
+      # discarded — nothing commits it — so the baseline only ever RISES when someone
+      # runs it locally and commits the result. That is a deliberate property: CI can
+      # block a regression but cannot quietly move the goalposts on its own.
+      - name: Coverage ratchet (no regression against baseline)
+        working-directory: ./mobile
+        run: node scripts/coverage-ratchet.js
+
   web-unit-tests:
     name: 🧪 Web Vitest Unit Tests
     runs-on: ubuntu-latest
