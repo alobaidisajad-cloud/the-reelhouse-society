@@ -105,6 +105,8 @@ export interface LogPayloadInput {
     editorialHeader: string | null;
     dropCap: boolean;
     pullQuote: string;
+    /** True when updating an existing log. Drives the omit-never-null rule above. */
+    isEditing: boolean;
 }
 
 // Pure transform from form state -> the log record sent to the store.
@@ -114,7 +116,7 @@ export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
     const {
         film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
         physicalMedia, abandonedReason, isAuteur, isPremium, autopsy,
-        altPoster, editorialHeader, dropCap, pullQuote,
+        altPoster, editorialHeader, dropCap, pullQuote, isEditing,
     } = input;
     // An autopsy exists if and only if the user filed at least one score.
     // Derived purely from data — no UI open/close state can phantom-save an
@@ -124,21 +126,49 @@ export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
         Object.entries(autopsy ?? {}).filter(([key, v]) => key !== '_v' && typeof v === 'number')
     ) as Record<string, number>;
     const hasAutopsy = isAuteur && Object.keys(ratedAxes).length > 0;
+    // ── Tier-gated fields: OMITTED on edit, never nulled ──────────────────────
+    //
+    // This payload feeds BOTH addLog and updateLog (:351-352), and updateLogOp
+    // strips only `undefined` (logOperations.ts:574-577) — so a `null` here was
+    // written straight through to the row. The edit form pre-loads the real
+    // values first (:248-258). The result: a member whose tier resolves below the
+    // gate — the admin, or anyone whose subscription lapsed — silently ERASED
+    // their own private notes, physical media, editorial header, drop cap, pull
+    // quote, alt poster and autopsy every time they edited an existing log.
+    // Not hidden. Destroyed.
+    //
+    // The rule is CAPABILITY, and only on edit:
+    //   • can edit  -> always present, on both paths. A premium member clearing a
+    //                  field still writes the clear, exactly as before.
+    //   • cannot edit, EDITING  -> key omitted, so the stored value survives.
+    //   • cannot edit, CREATING -> unchanged from before. There is nothing to
+    //                  preserve on a new row, and `is_autopsied` / `drop_cap` are
+    //                  NOT NULL booleans — omitting them on INSERT would depend on
+    //                  a column default this fix has no need to assume.
+    // Write the key unless the member cannot edit that field AND this is an edit.
+    const keep = (canEdit: boolean) => canEdit || !isEditing;
+
     return {
         filmId: film.id, title: film.title ?? film.name ?? 'Untitled',
         poster: altPoster ?? film.poster_path ?? null,
         year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
         rating: status === 'abandoned' ? 0 : rating, review: review.trim(), status, isSpoiler,
         watchedDate: date, watchedWith: watchedWith.trim() || null,  // intentional || — empty string should be null
-        privateNotes: isPremium ? (privateNotes.trim() || null) : null,
         abandonedReason: status === 'abandoned' ? abandonedReason : null,
-        physicalMedia: isPremium && physicalMedia !== 'None' ? physicalMedia : null,
-        isAutopsied: hasAutopsy,
-        autopsy: hasAutopsy ? { _v: 2, ...ratedAxes } : null,
-        altPoster: isAuteur ? altPoster : null,
-        editorialHeader: isPremium ? editorialHeader : null,
-        dropCap: isPremium ? dropCap : false,
-        pullQuote: isPremium ? pullQuote.trim() : '',
+
+        ...(keep(isPremium) ? {
+            privateNotes: isPremium ? (privateNotes.trim() || null) : null,
+            physicalMedia: isPremium && physicalMedia !== 'None' ? physicalMedia : null,
+            editorialHeader: isPremium ? editorialHeader : null,
+            dropCap: isPremium ? dropCap : false,
+            pullQuote: isPremium ? pullQuote.trim() : '',
+        } : {}),
+
+        ...(keep(isAuteur) ? {
+            isAutopsied: hasAutopsy,
+            autopsy: hasAutopsy ? { _v: 2, ...ratedAxes } : null,
+            altPoster: isAuteur ? altPoster : null,
+        } : {}),
     };
 }
 
@@ -346,6 +376,7 @@ export function useLogFlow() {
                 film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
                 physicalMedia, abandonedReason, isAuteur, isPremium, autopsy,
                 altPoster, editorialHeader, dropCap, pullQuote,
+                isEditing: Boolean(isEditing && editLogId),
             });
             const isNewEntry = !(isEditing && editLogId);
             if (isEditing && editLogId) { await updateLog(editLogId, logData); }

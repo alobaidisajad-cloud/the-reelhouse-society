@@ -27,6 +27,8 @@ function basePayloadInput(overrides: Partial<LogPayloadInput> = {}): LogPayloadI
     editorialHeader: null,
     dropCap: false,
     pullQuote: '',
+    // Default to CREATE — every pre-existing test in this file describes a new log.
+    isEditing: false,
     ...overrides,
   };
 }
@@ -193,5 +195,56 @@ describe('getLocalDateString', () => {
     past.setDate(past.getDate() - 3);
     const expected = `${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, '0')}-${String(past.getDate()).padStart(2, '0')}`;
     expect(getLocalDateString(-3)).toBe(expected);
+  });
+});
+
+
+// ── The data loss that was not in the register ────────────────────────────────
+// buildLogPayload feeds BOTH addLog and updateLog, and updateLogOp strips only
+//  — so a  here was written straight through. The edit form
+// pre-loads the real values, so anyone whose tier resolves below the gate (the
+// admin, or a lapsed subscriber) ERASED their own premium fields on every edit.
+describe('premium fields are omitted on edit, never nulled', () => {
+  const PREMIUM_KEYS = ['privateNotes', 'physicalMedia', 'editorialHeader', 'dropCap', 'pullQuote'];
+  const AUTEUR_KEYS = ['altPoster', 'isAutopsied', 'autopsy'];
+
+  it('EDIT · a non-premium member sends no premium keys at all', () => {
+    const p = buildLogPayload(basePayloadInput({ isPremium: false, isEditing: true }));
+    for (const k of PREMIUM_KEYS) expect(k in p).toBe(false);
+  });
+
+  it('EDIT · a non-auteur sends no auteur keys at all', () => {
+    const p = buildLogPayload(basePayloadInput({ isAuteur: false, isEditing: true }));
+    for (const k of AUTEUR_KEYS) expect(k in p).toBe(false);
+  });
+
+  it('EDIT · none of the omitted keys is null (null would be written through)', () => {
+    const p = buildLogPayload(basePayloadInput({ isPremium: false, isAuteur: false, isEditing: true }));
+    for (const k of [...PREMIUM_KEYS, ...AUTEUR_KEYS]) expect(p[k]).toBeUndefined();
+  });
+
+  it('EDIT · a premium member still writes a DELIBERATE clear', () => {
+    const p = buildLogPayload(basePayloadInput({
+      isPremium: true, isEditing: true, privateNotes: '   ', pullQuote: '', editorialHeader: null,
+    }));
+    expect(p.privateNotes).toBeNull();
+    expect(p.pullQuote).toBe('');
+    expect(p.editorialHeader).toBeNull();
+  });
+
+  it('EDIT · a premium member still writes real values', () => {
+    const p = buildLogPayload(basePayloadInput({
+      isPremium: true, isEditing: true, privateNotes: 'secret', physicalMedia: 'Blu-Ray',
+    }));
+    expect(p.privateNotes).toBe('secret');
+    expect(p.physicalMedia).toBe('Blu-Ray');
+  });
+
+  it('CREATE · unchanged — the keys are present so NOT NULL columns get a value', () => {
+    const p = buildLogPayload(basePayloadInput({ isPremium: false, isAuteur: false, isEditing: false }));
+    expect(p.dropCap).toBe(false);
+    expect(p.isAutopsied).toBe(false);
+    expect(p.privateNotes).toBeNull();
+    expect(p.altPoster).toBeNull();
   });
 });
