@@ -93,6 +93,16 @@ BEGIN
          tier = v_db_value
    WHERE p.id = p_user_id
   RETURNING p.role, p.tier;
+
+  -- A purchase applied to a profile that does not exist must FAIL, not return
+  -- quietly. Without this the UPDATE matches zero rows, RETURN QUERY yields
+  -- nothing, no error is raised, and the caller reports success for a payment
+  -- that changed nobody. That is the exact "looks like it worked" failure this
+  -- function exists to eliminate, so it must not introduce one.
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'apply_entitlement: no profile with id %', p_user_id
+      USING ERRCODE = 'P0002';   -- no_data_found
+  END IF;
 END;
 $$;
 
