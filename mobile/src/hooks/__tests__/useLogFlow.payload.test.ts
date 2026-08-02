@@ -248,3 +248,40 @@ describe('premium fields are omitted on edit, never nulled', () => {
     expect(p.altPoster).toBeNull();
   });
 });
+
+// ── End-to-end: the columns must never reach the UPDATE statement ─────────────
+// Omitting a key only helps if every layer below preserves the omission.
+// buildLogPayload -> (updateLogOp deletes undefined) -> mapLogToDbPayload
+// (mappers.ts:258 `if (value !== undefined)`) -> the SQL column list.
+// This asserts the whole chain, so a future change to any link fails here.
+describe('a non-premium edit sends no premium COLUMNS to the database', () => {
+  const { mapLogToDbPayload } = require('../../utils/mappers');
+  const PREMIUM_COLUMNS = [
+    'private_notes', 'physical_media', 'editorial_header',
+    'drop_cap', 'pull_quote', 'alt_poster', 'is_autopsied', 'autopsy',
+  ];
+
+  function toDbPayload(input: Partial<LogPayloadInput>) {
+    const payload = buildLogPayload(basePayloadInput(input));
+    // Mirror updateLogOp's undefined-strip (logOperations.ts:574-577).
+    const clean: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(payload)) if (v !== undefined) clean[k] = v;
+    return mapLogToDbPayload(clean);
+  }
+
+  it('EDIT · none of the premium columns appears at all', () => {
+    const db = toDbPayload({ isPremium: false, isAuteur: false, isEditing: true });
+    for (const col of PREMIUM_COLUMNS) expect(col in db).toBe(false);
+  });
+
+  it('EDIT · a premium member still sends them', () => {
+    const db = toDbPayload({ isPremium: true, isAuteur: true, isEditing: true, privateNotes: 'x' });
+    expect(db.private_notes).toBe('x');
+  });
+
+  it('CREATE · unchanged — the columns are still sent', () => {
+    const db = toDbPayload({ isPremium: false, isAuteur: false, isEditing: false });
+    expect('private_notes' in db).toBe(true);
+    expect('drop_cap' in db).toBe(true);
+  });
+});
