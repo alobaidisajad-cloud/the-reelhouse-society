@@ -46,8 +46,14 @@ describe('Core Flows Integration', () => {
     // Setup mock store values
     const mockAddLog = vi.fn().mockResolvedValue(true)
     vi.mocked(useAuthStore).mockReturnValue({ isAuthenticated: true, user: { id: 'test-user', username: 'tester' } } as never)
+    // _loggedIndex is the film->log lookup LogForm uses to decide rewatch mode.
+    // The real store always initialises it to {} (stores/films.ts), but this fake
+    // omitted it, so the selector handed back `undefined` and LogForm threw on
+    // `_loggedIndex[film.id]`. The test has been red since LogForm gained that
+    // dependency — unnoticed, because this suite's workflow only ever triggered
+    // on pull requests and this project ships straight to main.
     vi.mocked(useFilmStore).mockImplementation(((selector?: (s: Record<string, unknown>) => unknown) => {
-        const state = { addLog: mockAddLog, logs: [], lists: [], updateLog: vi.fn() }
+        const state = { addLog: mockAddLog, logs: [], lists: [], updateLog: vi.fn(), _loggedIndex: {} }
         if (selector) return selector(state)
         return state
     }) as never)
