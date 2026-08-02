@@ -248,18 +248,53 @@ that exact signature. **Delete it once the launch build is the only one in the w
 ---
 
 ## BATCH 10 · Test integrity
-`Tier B` · `4 findings` · `no dependency` · **DO BEFORE 11–25** · **NOT STARTED**
+`Tier B` · `4 findings` · `no dependency` · **DO BEFORE 11–25** · **✅ CLOSED 2026-08-02** — 3/4 fixed, #6 open by decision
 
-- **#131** — High · Test files are excluded from type-checking.
-- **#132** — High · Coverage thresholds sit at 7–29%, so the ratchet cannot catch regressions.
-- **#1** — High · 32 lint warnings, which hide real ones.
-- **#6** — Low · Jest teardown warning.
+- **#131** — High · Test files are excluded from type-checking. — ✅ **174 errors → 0**
+- **#132** — High · Coverage thresholds sit at 7–29%, so the ratchet cannot catch regressions. — ✅ **re-based + ratchet wired**
+- **#1** — High · 32 lint warnings, which hide real ones. — ✅ **already 0; now ENFORCED at 0**
+- **#6** — Low · Jest teardown warning. — ⚠️ **OPEN, see below**
 
 **First because** this is the gate that guards batches 11–25. Every later batch is
 verified by a gate that currently does not type-check its own tests.
 
 **DONE WHEN** tests are type-checked, the ratchet fails on a deliberate coverage
 drop, and the warning count is zero.
+
+**WHAT THE GATE ACTUALLY WAS.** Three gates existed on paper and had never run once:
+the web Vitest suite (its workflow triggers only on pull_request, and this project
+pushes straight to main), eslint (no workflow ran it at all), and the lounge-embed
+contract test (skips itself without Supabase env, and the CI job had no env block).
+The web suite was also RED — a stale mock in core-flows.test.tsx — so it was fixed
+first and only then switched on.
+
+**COVERAGE WAS MEASURING HALF THE APP.** `collectCoverageFrom` listed only `src/**`,
+so all 36 files and ~15k lines of `app/` — every screen — were invisible to every
+floor and gate. The honest global number is 23.53% (was reported as 26.79%), and
+`app/` alone is ~10%.
+
+**⚠️ FOUR SETS OF TESTS COULD NOT FAIL.** filmStore.test.ts (7), ActionDeck.test.tsx
+(5 of 6), films.test.ts (2). Each wrote a value and then asserted the value it had
+just written; the store's own code never ran. ActionDeck's file never even imported
+ActionDeck, and one test invented its own tier rule that contradicts src/utils/tier.ts
+(a founding member passes there and would have failed the fake check). 14 deleted —
+after verifying real coverage exists elsewhere, not assumed. ActionDeck now has NO
+behavioural coverage, which is the truth and is recorded in the file.
+
+**30 UNAWAITED fireEvent CALLS** across 7 files. fireEvent is async in RNTL v14, so
+assertions were running before the press had settled — "overlapping act() calls",
+3 per run, now 0.
+
+**#6 IS OPEN, DELIBERATELY.** The Jest worker warning is isolated to
+`app/(admin)/__tests__/tribunal.test.tsx` and only when it runs in a worker (which is
+why `--detectOpenHandles` shows nothing — that flag forces serial mode). The worker's
+live handles are Pipe x1 + Socket x2 with a pending write: Jest's own IPC and stdio,
+not app handles. Ruled out BY TESTING: fake timers (pending and removed entirely —
+the suite still passes 24/24 without them), QueryClient teardown, Reanimated,
+expo-image, PressableScale, React Query generally, heavy rendering generally, console
+volume, and the act overlap. Cause not found. `--forceExit` deliberately NOT added —
+it hides this and can truncate coverage output. It is a warning after a passing suite;
+it blocks nothing and ships nothing. Revisit if it ever turns into a hang or a flake.
 
 ---
 
