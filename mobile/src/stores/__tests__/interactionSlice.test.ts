@@ -31,6 +31,17 @@ jest.mock('../../services/InteractionService', () => ({
     },
 }));
 
+// _endorsedIndex / _listEndorsedIndex are Record<string, Interaction>, not
+// Record<string, true> (interactionSlice.ts:39-40). The fixtures below used `true`,
+// so these tests — which DO drive the real toggleEndorse/hasEndorsed — were doing it
+// against an index shape the store never builds. hasEndorsed only checks truthiness,
+// which is why it passed either way.
+const endorsement = (targetId: string, type: 'endorse' | 'endorse_list' = 'endorse') => ({
+  type,
+  targetId,
+  timestamp: '2024-01-01T00:00:00Z',
+});
+
 describe('interactionSlice', () => {
     beforeEach(() => {
         useLogStore.setState({
@@ -69,7 +80,7 @@ describe('interactionSlice', () => {
             // Pre-populate as endorsed
             useLogStore.setState({
                 interactions: [{ type: 'endorse' as const, targetId: 'log-xyz', timestamp: '2024-01-01T00:00:00Z' }],
-                _endorsedIndex: { 'log-xyz': true },
+                _endorsedIndex: { 'log-xyz': endorsement('log-xyz') },
             });
 
             (supabase.from as jest.Mock) = jest.fn(() => ({
@@ -95,7 +106,7 @@ describe('interactionSlice', () => {
 
     describe('hasEndorsed', () => {
         it('should return true for endorsed targets (O(1) lookup)', () => {
-            useLogStore.setState({ _endorsedIndex: { 'log-a': true, 'log-b': true } });
+            useLogStore.setState({ _endorsedIndex: { 'log-a': endorsement('log-a'), 'log-b': endorsement('log-b') } });
 
             expect(useLogStore.getState().hasEndorsed('log-a')).toBe(true);
             expect(useLogStore.getState().hasEndorsed('log-b')).toBe(true);
@@ -107,7 +118,7 @@ describe('interactionSlice', () => {
 
     describe('hasListEndorsed', () => {
         it('should return true for endorsed lists (O(1) lookup)', () => {
-            useLogStore.setState({ _listEndorsedIndex: { 'list-1': true } });
+            useLogStore.setState({ _listEndorsedIndex: { 'list-1': endorsement('list-1', 'endorse_list') } });
 
             expect(useLogStore.getState().hasListEndorsed('list-1')).toBe(true);
             expect(useLogStore.getState().hasListEndorsed('list-2')).toBe(false);
@@ -144,7 +155,7 @@ describe('interactionSlice', () => {
         it('should handle fetch error gracefully without clearing existing state', async () => {
             useLogStore.setState({
                 interactions: [{ type: 'endorse' as const, targetId: 'existing', timestamp: '2024-01-01' }],
-                _endorsedIndex: { 'existing': true },
+                _endorsedIndex: { 'existing': endorsement('existing') },
             });
 
             const mockResult = { data: null, error: { message: 'timeout' } };
@@ -181,7 +192,7 @@ describe('interactionSlice', () => {
         it('should remove listId from _listEndorsedIndex on un-endorse', async () => {
             useLogStore.setState({
                 interactions: [{ type: 'endorse_list' as any, targetId: 'list-002', timestamp: '2024-01-01' }],
-                _listEndorsedIndex: { 'list-002': true },
+                _listEndorsedIndex: { 'list-002': endorsement('list-002', 'endorse_list') },
             });
 
             (supabase.from as jest.Mock) = jest.fn(() => ({

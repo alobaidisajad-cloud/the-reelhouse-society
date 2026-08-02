@@ -167,7 +167,10 @@ describe('FilmStore Integration Tests (T2-4)', () => {
             _watchlistIndex: {},
             _endorsedIndex: {},
             _listEndorsedIndex: {},
-            _archiveIndex: {},
+            // _archiveIndex was here. No such field exists on the store — it appears
+            // nowhere in src/ or app/. This beforeEach was inventing it, and the
+            // "Partialize Allowlist" test below then asserted it existed, which
+            // passed only because this line had just created it.
             _addLogMutex: false,
             _fetchingLogs: false,
             _fetchingWatchlist: false,
@@ -175,53 +178,41 @@ describe('FilmStore Integration Tests (T2-4)', () => {
             logsHasMore: true,
             watchlistHasMore: true,
             listsHasMore: true,
-            logsCursor: null,
-            watchlistCursor: null,
-            listsCursor: null,
+            // These were logsCursor / watchlistCursor / listsCursor — names the store
+            // does not have. The real fields are underscore-prefixed
+            // (logSlice.ts:17, watchlistSlice.ts:18, listSlice.ts:18), so this
+            // beforeEach believed it was resetting pagination between tests and was
+            // resetting nothing, leaving real cursor state to leak from one test to
+            // the next. Zustand accepts unknown keys at runtime, so it looked fine.
+            _logsCursor: null,
+            _watchlistCursor: null,
+            _listsCursor: null,
         });
     });
 
     // ─────────────────────────────────────────────────────
     // INVARIANT 1: Indexes always reflect the array contents
+    //
+    // REMOVED — these two tests could not fail.
+    //
+    // Each one built the logs array by hand, built the index by hand FROM THAT SAME
+    // ARRAY, wrote both into the store with setState, and then asserted that the
+    // index contained what it had just put there. The store's index-maintenance code
+    // was never executed. It could have been deleted entirely and both tests would
+    // still have passed.
+    //
+    // Type-checking the tests is what exposed them: the fixture typed _loggedIndex as
+    // Record<number, true>, but the real field is Record<number, DomainLog>
+    // (src/stores/domain/logSlice.ts:18). The tests were green against a shape the
+    // app cannot produce.
+    //
+    // No coverage is lost. The real invariant is genuinely tested, through the real
+    // store actions, against the real shapes:
+    //   • logSlice.test.ts       — populates _loggedIndex via fetchLogs() and asserts
+    //                              the DomainLog objects inside it
+    //   • watchlistSlice.test.ts — _watchlistIndex after fetch, after add, and
+    //                              cleared after remove
     // ─────────────────────────────────────────────────────
-
-    describe('CQRS Index Invariant: Index mirrors array', () => {
-        it('_loggedIndex is consistent with logs array after direct state set', () => {
-            const logs = [
-                { id: 101, filmId: 1, title: 'Blade Runner', poster: null, rating: 5, watchedDate: '2024-01-01', review: '', tags: [], rewatched: false, createdAt: '2024-01-01' },
-                { id: 102, filmId: 2, title: 'Stalker', poster: null, rating: 4, watchedDate: '2024-01-02', review: '', tags: [], rewatched: false, createdAt: '2024-01-02' },
-            ];
-            const index: Record<number, true> = {};
-            logs.forEach(l => { index[l.filmId] = true; });
-
-            useFilmStore.setState({ logs, _loggedIndex: index });
-
-            const state = useFilmStore.getState();
-            // Every log's filmId should be in the index
-            for (const log of state.logs) {
-                expect(state._loggedIndex[log.filmId]).toBe(true);
-            }
-            // Index size should match unique filmIds
-            const uniqueIds = new Set(state.logs.map(l => l.filmId));
-            expect(Object.keys(state._loggedIndex).length).toBe(uniqueIds.size);
-        });
-
-        it('_watchlistIndex is consistent with watchlist array', () => {
-            const watchlist = [
-                { id: 10, title: 'Dune', poster: null, releaseDate: '2021', createdAt: '2024-01-01' },
-                { id: 20, title: 'Arrival', poster: null, releaseDate: '2016', createdAt: '2024-01-02' },
-            ];
-            const index: Record<number, true> = {};
-            watchlist.forEach(w => { index[w.id] = true; });
-
-            useFilmStore.setState({ watchlist, _watchlistIndex: index });
-
-            const state = useFilmStore.getState();
-            for (const item of state.watchlist) {
-                expect(state._watchlistIndex[item.id]).toBe(true);
-            }
-        });
-    });
 
     // ─────────────────────────────────────────────────────
     // INVARIANT 2: Partialize includes all required fields
@@ -231,7 +222,9 @@ describe('FilmStore Integration Tests (T2-4)', () => {
         it('includes all pre-computed indexes in persistence', () => {
             // The partialize function should include all index fields
             const state = useFilmStore.getState();
-            const indexKeys = ['_loggedIndex', '_watchlistIndex', '_endorsedIndex', '_listEndorsedIndex', '_archiveIndex'];
+            // '_archiveIndex' was in this list and is not a field on the store.
+            // It only ever "existed" because the beforeEach above created it.
+            const indexKeys = ['_loggedIndex', '_watchlistIndex', '_endorsedIndex', '_listEndorsedIndex'];
 
             for (const key of indexKeys) {
                 expect(state).toHaveProperty(key);
@@ -251,36 +244,19 @@ describe('FilmStore Integration Tests (T2-4)', () => {
     // INVARIANT 3: isLogged/isWatchlisted use O(1) index, not O(N) scan
     // ─────────────────────────────────────────────────────
 
-    describe('O(1) Lookup Functions', () => {
-        it('_loggedIndex provides O(1) lookup for indexed film', () => {
-            useFilmStore.setState({
-                logs: [{ id: 1, filmId: 42, title: 'Test', poster: null, rating: 5, watchedDate: '2024-01-01', review: '', tags: [], rewatched: false, createdAt: '2024-01-01' }],
-                _loggedIndex: { 42: true },
-            });
-            expect(!!useFilmStore.getState()._loggedIndex[42]).toBe(true);
-        });
-
-        it('_loggedIndex returns falsy for non-indexed film', () => {
-            useFilmStore.setState({
-                logs: [],
-                _loggedIndex: {},
-            });
-            expect(!!useFilmStore.getState()._loggedIndex[999]).toBe(false);
-        });
-
-        it('_watchlistIndex provides O(1) lookup for indexed film', () => {
-            useFilmStore.setState({
-                watchlist: [{ id: 7, title: 'Test', poster: null, releaseDate: '2024', createdAt: '2024-01-01' }],
-                _watchlistIndex: { 7: true },
-            });
-            expect(!!useFilmStore.getState()._watchlistIndex[7]).toBe(true);
-        });
-
-        it('_watchlistIndex returns falsy for non-indexed film', () => {
-            useFilmStore.setState({ watchlist: [], _watchlistIndex: {} });
-            expect(!!useFilmStore.getState()._watchlistIndex[404]).toBe(false);
-        });
-    });
+    // REMOVED — all four were the same tautology as INVARIANT 1.
+    //
+    // Each wrote a value into the index with setState and then asserted the index
+    // contained the value it had just written. `setState({_loggedIndex:{42:true}})`
+    // followed by `expect(getState()._loggedIndex[42]).toBe(true)` asserts that
+    // object assignment works, not that lookup is O(1) or that the store maintains
+    // the index. The two "returns falsy" cases asserted that an empty object has no
+    // keys.
+    //
+    // The O(1) lookup this section claimed to cover is exercised for real in
+    // logSlice.test.ts ("should populate _loggedIndex as O(1) lookup after fetch",
+    // which calls fetchLogs() and asserts on the objects the STORE indexed) and in
+    // watchlistSlice.test.ts on add and remove.
 
     // ─────────────────────────────────────────────────────
     // INVARIANT 4: Store composition doesn't break domain boundaries
@@ -310,23 +286,19 @@ describe('FilmStore Integration Tests (T2-4)', () => {
             expect(typeof state.addToPhysicalArchive).toBe('function');
         });
 
-        it('modifying log state does not affect watchlist state', () => {
-            useFilmStore.setState({
-                logs: [{ id: 1, filmId: 99, title: 'Test', poster: null, rating: 3, watchedDate: '2024-01-01', review: '', tags: [], rewatched: false, createdAt: '2024-01-01' }],
-                _loggedIndex: { 99: true },
-                watchlist: [{ id: 50, title: 'Other', poster: null, releaseDate: '2024', createdAt: '2024-01-01' }],
-                _watchlistIndex: { 50: true },
-            });
-
-            // Verify isolation — log state change doesn't touch watchlist
-            const state = useFilmStore.getState();
-            expect(state.logs.length).toBe(1);
-            expect(state.watchlist.length).toBe(1);
-            expect(state._loggedIndex[99]).toBe(true);
-            expect(state._watchlistIndex[50]).toBe(true);
-            // Cross-domain: film 99 should NOT be in watchlist index
-            expect(state._watchlistIndex[99]).toBeUndefined();
-        });
+        // REMOVED — 'modifying log state does not affect watchlist state'.
+        //
+        // It set logs, _loggedIndex, watchlist and _watchlistIndex in a SINGLE
+        // setState call and then asserted each one held what that same call had just
+        // put there. Nothing modified log state independently, so no isolation was
+        // ever exercised. Its one non-trivial-looking assertion — that film 99 is
+        // absent from the watchlist index — was true because nothing had ever added
+        // it, not because the domains are isolated.
+        //
+        // Real cross-slice isolation is covered by the slice suites, which drive one
+        // domain through its actual actions and assert the others are untouched:
+        // logSlice.test.ts, watchlistSlice.test.ts, listSlice.test.ts,
+        // interactionSlice.test.ts.
     });
 
     // ─────────────────────────────────────────────────────

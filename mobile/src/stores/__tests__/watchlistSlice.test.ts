@@ -58,7 +58,10 @@ describe('watchlistSlice', () => {
             _addLogMutex: false,
             _fetchingWatchlist: false,
             watchlistHasMore: true,
-            watchlistCursor: null,
+            // was `watchlistCursor` — no such field. The real one is
+            // _watchlistCursor (watchlistSlice.ts:18), so the pagination cursor was
+            // never actually reset between tests in this file either.
+            _watchlistCursor: null,
         });
     });
 

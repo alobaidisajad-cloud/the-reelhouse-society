@@ -217,9 +217,12 @@ describe('reportValidationTelemetry', () => {
   // 7. invalidCount > 0 — reports ratio and samples
   // ─────────────────────────────────────────────────────────────────
   it('reports ratio and sample errors when invalidCount > 0', () => {
+    // `received` was dropped from invalid_type issues in Zod 4 (this project is on
+    // 4.3.6). These fixtures were Zod 3 shapes, so the telemetry function was being
+    // handed issue objects Zod can no longer produce.
     const sampleErrors: z.ZodIssue[] = [
-      { code: 'invalid_type', expected: 'string', received: 'number', path: ['id'], message: 'Expected string, received number' },
-      { code: 'invalid_type', expected: 'string', received: 'undefined', path: ['name'], message: 'Required' },
+      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'Expected string, received number' },
+      { code: 'invalid_type', expected: 'string', path: ['name'], message: 'Required' },
     ];
 
     reportValidationTelemetry({
@@ -259,11 +262,11 @@ describe('reportValidationTelemetry', () => {
   // ─────────────────────────────────────────────────────────────────
   it('caps sampleIssues at 3 even when more sampleErrors are provided', () => {
     const sampleErrors: z.ZodIssue[] = [
-      { code: 'invalid_type', expected: 'string', received: 'number', path: ['id'], message: 'err1' },
-      { code: 'invalid_type', expected: 'string', received: 'number', path: ['id'], message: 'err2' },
-      { code: 'invalid_type', expected: 'string', received: 'number', path: ['id'], message: 'err3' },
-      { code: 'invalid_type', expected: 'string', received: 'number', path: ['id'], message: 'err4' },
-      { code: 'invalid_type', expected: 'string', received: 'number', path: ['id'], message: 'err5' },
+      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'err1' },
+      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'err2' },
+      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'err3' },
+      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'err4' },
+      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'err5' },
     ];
 
     reportValidationTelemetry({
