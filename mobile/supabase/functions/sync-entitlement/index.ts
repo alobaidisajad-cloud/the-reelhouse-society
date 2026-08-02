@@ -112,11 +112,11 @@ serve(async (req: Request) => {
     else if (isActive('archivist')) tier = 'archivist';
     else if (isActive('cinephile')) tier = 'cinephile';
 
-    // 3. Map purchase type to DB role.
-    // 'founding' is a one-time purchase type that grants Auteur-tier access for life.
-    // The DB column only stores actual tier roles, not purchase types.
-    // This mirrors the paytabs-handler webhook (L151) which does the same mapping.
-    const dbRole = tier === 'founding' ? 'auteur' : tier;
+    // 3. The founding -> auteur mapping used to live here AND, copy-pasted, in
+    //    paytabs-handler. It now lives once, inside public.apply_entitlement.
+    //    'founding' is a purchase type, not a storable value: profiles_role_check
+    //    permits free|cinephile|archivist|auteur|projectionist|admin and not
+    //    'founding'. The seat itself is recorded by claim_founding_seat below.
 
     // 4. Write with service-role key (bypasses RLS)
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -141,10 +141,20 @@ serve(async (req: Request) => {
       seatClaimed = claimed === true;
     }
 
+    // ⚠️ #47 — this used to be `.update({ role: dbRole, tier: dbRole })`, which
+    // overwrote `role` unconditionally. `role` is BOTH the subscription tier and the
+    // admin permission flag, so an admin tapping "Restore Purchases" — a button
+    // Apple requires — had role rewritten to 'cinephile' and permanently lost the
+    // Tribunal. Every RLS policy that reads `role` gates on role='admin' (reports,
+    // mod_actions, warnings, dossier comment moderation), so one button destroyed
+    // the entire moderation system with no in-app way back.
+    //
+    // apply_entitlement preserves 'admin', still writes the tier into `role` for
+    // everyone else (the web has 27 gates reading `role` and zero reading `tier` —
+    // stop writing it and web purchasers get nothing), validates the tier, and
+    // raises if no profile matched instead of silently succeeding.
     const { error: updateError } = await adminClient
-      .from('profiles')
-      .update({ role: dbRole, tier: dbRole })
-      .eq('id', user.id);
+      .rpc('apply_entitlement', { p_user_id: user.id, p_tier: tier });
 
     if (updateError) {
       return new Response(JSON.stringify({ error: 'Failed to update profile' }), {

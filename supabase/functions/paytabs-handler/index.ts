@@ -155,17 +155,33 @@ serve(async (req) => {
                 if (type === 'MEMBERSHIP') {
                     const userId = parts[1]
                     const tier = parts[2]
-                    const newRole = tier === 'founding' ? 'auteur' : (amount >= 4.99 ? 'auteur' : 'archivist')
 
-                    // BACKEND-PAY-2: write BOTH role and tier so premium_rls (which gates
-                    // on profiles.tier) recognizes the upgrade — RevenueCat's sync-entitlement
-                    // does the same; PayTabs previously set only role, locking web payers out.
+                    // The tier that was actually PAID FOR is decided by the amount, not by
+                    // this metadata string — `tier` arrives in the IPN payload and is not
+                    // trusted for anything but detecting a founding purchase. That logic is
+                    // unchanged; only the founding branch now passes 'founding' through so
+                    // apply_entitlement performs the founding -> auteur mapping in the one
+                    // place it lives.
+                    const resolvedTier = tier === 'founding'
+                        ? 'founding'
+                        : (amount >= 4.99 ? 'auteur' : 'archivist')
+
+                    // ⚠️ #47 — this used to be `.update({ role: newRole, tier: newRole })`,
+                    // the same unconditional overwrite as sync-entitlement (it was
+                    // copy-pasted between them, which is exactly why the bug existed twice).
+                    // `role` is BOTH the subscription tier and the admin permission flag, so
+                    // an admin who paid through the WEBSITE was demoted out of the Tribunal —
+                    // and fixing only the mobile side would have left this door open.
+                    //
+                    // apply_entitlement preserves 'admin', still writes the tier into `role`
+                    // for everyone else (the web reads `role` in 27 places and `tier` in
+                    // none), rejects an unknown tier instead of storing it, and raises if no
+                    // profile matched rather than reporting success for a payment that
+                    // touched nobody.
                     const { error } = await supabaseAdmin
-                        .from('profiles')
-                        .update({ role: newRole, tier: newRole })
-                        .eq('id', userId)
+                        .rpc('apply_entitlement', { p_user_id: userId, p_tier: resolvedTier })
                     if (error) console.error('Error auto-upgrading user role:', error)
-                    else console.log(`✅ IPN Success: User ${userId} upgraded to ${newRole}`)
+                    else console.log(`✅ IPN Success: User ${userId} upgraded to ${resolvedTier}`)
 
                     // BACKEND-PAY-2 / FOUND-1: claim the founding seat ATOMICALLY via the
                     // row-locked counter RPC instead of setting is_founding directly — this
