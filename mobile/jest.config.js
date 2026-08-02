@@ -52,11 +52,19 @@ module.exports = {
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/index.ts',
+    // app/ is every screen in the product — 36 files, ~15k lines — and it was
+    // absent from this list, so no floor, ratchet or gate had ever looked at a
+    // single one. The old "26.8% coverage" was 26.8% of src/ alone. Including it
+    // makes the number smaller and true, which is the only kind worth gating on.
+    'app/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+    '!**/index.ts',
     '!src/types/**',
-    '!src/**/__tests__/**',
+    '!**/__tests__/**',
     '!src/providers/AccessibilityProvider.ts',
+    // Expo Router treats these as framework wiring, not product code.
+    '!app/**/_layout.tsx',
+    '!app/+*.tsx',
   ],
   // Jest's defaults are ['clover','json','lcov','text'] — none of which emit
   // coverage/coverage-summary.json, the file scripts/coverage-ratchet.js reads.
