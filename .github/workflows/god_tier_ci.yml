@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# Two pushes 11 minutes apart were observed each holding an Android EAS build, the
+# older already obsolete. A superseded run now gets cancelled instead of finishing
+# work nobody will read.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   strict-analysis:
     name: 🔬 Strict Architecture Analysis
@@ -146,23 +153,77 @@ jobs:
     needs: strict-analysis
     # Real device runs cost EAS build minutes + Maestro Cloud minutes, so this
     # only fires post-merge on main, not on every PR push.
+    #
+    # ⚠️ THIS JOB IS NOT OPTIONAL. There is no Android device on this project, so a
+    # hosted real-device run is the ONLY Android coverage that exists before launch.
+    # It is being made cheaper, never weaker.
+    #
+    # WHAT IT WAS DOING: `eas build:list` showed the last 40 Android builds were ALL
+    # this job — eight in one day — because it fired on every push to main. Batches
+    # 5-9 were largely SQL migrations under mobile/supabase/, and each one built an
+    # Android APK that could not possibly have been affected by it.
+    #
+    # Two changes, both preserving per-push feedback on code that can actually break
+    # the app:
+    #   • only build when something that ends up IN the app changes. Migrations,
+    #     audit notes and workflow edits no longer trigger a device run.
+    #   • cancel a run that a newer push has already superseded. Two builds were
+    #     observed running at once from pushes 11 minutes apart; the older one was
+    #     obsolete before it finished.
     if: github.event_name == 'push'
     steps:
+      # fetch-depth: 0 so the scope check below can diff against the previous SHA.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Does this push contain anything that ends up inside the Android app?
+      # Migrations, audit notes, workflow edits and web-only changes cannot alter
+      # the APK, so building one for them buys nothing. Deliberately fail-open:
+      # anything unexpected (first push on a branch, missing base SHA, a git error)
+      # runs the build, because a wasted build is cheaper than missed Android
+      # coverage on a project with no Android device.
+      - name: Does this push touch the app?
+        id: scope
+        run: |
+          BASE="${{ github.event.before }}"
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            echo "No usable base commit — running the device suite."
+            exit 0
+          fi
+          if ! CHANGED=$(git diff --name-only "$BASE" "${{ github.sha }}"); then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            echo "git diff failed — running the device suite rather than skipping it."
+            exit 0
+          fi
+          echo "Changed files:"; echo "$CHANGED" | sed 's/^/  /'
+          if echo "$CHANGED" | grep -qE '^mobile/(app|src|assets|components|constants|hooks)/|^mobile/\.maestro/|^mobile/(package|package-lock|app|eas)\.json$|^\.github/workflows/god_tier_ci\.yml$'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            echo "-> touches the app; building."
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "-> nothing in this push can change the APK; skipping the build."
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.scope.outputs.relevant == 'true'
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: mobile/package-lock.json
 
       - name: Install Mobile Dependencies
+        if: steps.scope.outputs.relevant == 'true'
         working-directory: ./mobile
         run: npm ci
 
       - name: Install EAS CLI
+        if: steps.scope.outputs.relevant == 'true'
         run: npm install -g eas-cli
 
       - name: Build Android APK (EAS, e2e profile)
+        if: steps.scope.outputs.relevant == 'true'
         working-directory: ./mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -170,6 +231,7 @@ jobs:
         run: eas build --platform android --profile e2e --non-interactive --wait --json > eas-build-output.json
 
       - name: Download build artifact
+        if: steps.scope.outputs.relevant == 'true'
         working-directory: ./mobile
         run: |
           BUILD_URL=$(node -e "console.log(JSON.parse(require('fs').readFileSync('eas-build-output.json','utf8'))[0].artifacts.buildUrl)")
@@ -178,6 +240,7 @@ jobs:
       # Official Maestro Cloud action: uploads the APK and runs every flow in
       # mobile/.maestro/ against a real hosted device.
       - name: Run Full Flow Suite on Maestro Cloud
+        if: steps.scope.outputs.relevant == 'true'
         uses: mobile-dev-inc/action-maestro-cloud@v2.0.2
         with:
           api-key: ${{ secrets.MAESTRO_CLOUD_API_KEY }}
