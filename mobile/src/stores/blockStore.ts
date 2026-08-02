@@ -253,7 +253,12 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       queryClient.invalidateQueries({ queryKey: ['universalSearch'] });
 
       TactileEngine.success();
-      reelToast.info('User muted. Their content will be hidden from your feeds.');
+      // Was "hidden from your feeds". Muting hides the same things a block does —
+      // feeds, search, comments on logs, stacks and dossiers, notifications, salon
+      // messages and member faces — because isHidden() treats mute and block alike
+      // everywhere, and the server's is_hidden_by() does too. The copy now says what
+      // actually happens rather than promising less.
+      reelToast.info('User muted. Their content is now hidden from you.');
     } catch (err) {
       // Rollback
       set({

@@ -372,7 +372,15 @@ export default function LoungeRoomScreen() {
   const handleReport = useCallback((msg: LoungeMessage) => {
     setSelectedMessage(msg); setActionSheetMsg(null); setReportSheetVisible(true);
   }, []);
-  const handleBlock = useCallback((userId: string) => { setActionSheetMsg(null); blockStore.blockUser(userId); }, [blockStore]);
+  // blockUser applies its optimistic update synchronously before it awaits the
+  // server, so by the time it returns the promise the block is already in the store
+  // and the purge below sees it. Without the purge the toast said "their content is
+  // now hidden" while their messages stayed on screen until you left the salon.
+  const handleBlock = useCallback((userId: string) => {
+    setActionSheetMsg(null);
+    blockStore.blockUser(userId);
+    useLoungeStore.getState().purgeHiddenMessages();
+  }, [blockStore]);
 
   // ── Re-fetch on foreground ──
   useEffect(() => {

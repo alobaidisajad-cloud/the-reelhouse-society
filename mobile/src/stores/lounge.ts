@@ -132,6 +132,15 @@ export interface LoungeState {
   withdrawMessage: (messageId: string) => Promise<void>;
   retryMessage: (messageId: string) => Promise<void>;
   clearMessages: (loungeId?: string) => void;
+  /**
+   * Drops messages from anyone the viewer now hides, in place.
+   *
+   * The lounge already filters on load, on pagination, on realtime insert and on
+   * the typing indicator — but nothing re-examined what was ALREADY on screen. So
+   * blocking someone mid-conversation showed "User blocked. Their content is now
+   * hidden." while their messages sat there until you left the salon and came back.
+   */
+  purgeHiddenMessages: () => void;
   canSendMessage: (loungeId?: string) => boolean;
   syncGlobalAvatar: (userId: string, avatarUrl: string | null) => void;
   _pendingLeaveLoungeIds: Set<string>;
@@ -588,6 +597,15 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   },
 
   clearMessages: () => set({ currentMessages: [] }),
+
+  // Uses the same isHidden() check as fetchMessages, loadMoreMessages, the realtime
+  // insert handler and the typing indicator — so a message that survives here is
+  // exactly one that would survive a fresh load. No second definition of "hidden".
+  purgeHiddenMessages: () => set(state => ({
+    currentMessages: state.currentMessages.filter(
+      m => !useBlockStore.getState().isHidden(m.user_id)
+    ),
+  })),
 
   canSendMessage: (loungeId) => {
     const s = get();

@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './auth';
+import { useBlockStore } from './blockStore';
 import { zustandMMKVStorage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 
@@ -26,6 +27,9 @@ const RealtimeNotifSchema = z.object({
   // accept both, then `.transform(v => v ?? undefined)` to normalize to the
   // `T | undefined` type expected by AppNotification — zero downstream ripple.
   from_username: z.string().nullish().transform(v => v ?? undefined),
+  // Required for block filtering: without it the client has no way to tell WHO a
+  // notification is from, only what they are called. The column has always existed.
+  from_user_id: z.string().nullish().transform(v => v ?? undefined),
   film_id: z.number().nullish().transform(v => v ?? undefined),
   poster_path: z.string().nullish().transform(v => v ?? undefined),
   // DB column is `is_read` — transform to `read` for JS interface compat
@@ -39,6 +43,7 @@ export interface AppNotification {
     type: string;
     message: string;
     from_username?: string;
+  from_user_id?: string;
     film_id?: number;
     poster_path?: string;
     read: boolean;
@@ -91,7 +96,7 @@ export const useNotificationStore = create<NotificationState>()(
             const PAGE_SIZE = 30;
             const { data, error } = await supabase
                 .from('notifications')
-                .select('id, user_id, type, from_username, message, is_read, created_at, film_id, poster_path')
+                .select('id, user_id, type, from_username, from_user_id, message, is_read, created_at, film_id, poster_path')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
                 .limit(PAGE_SIZE);
@@ -146,7 +151,7 @@ export const useNotificationStore = create<NotificationState>()(
             const [cursorDate, cursorId] = _cursor.split('|');
             let query = supabase
                 .from('notifications')
-                .select('id, user_id, type, from_username, message, is_read, created_at, film_id, poster_path')
+                .select('id, user_id, type, from_username, from_user_id, message, is_read, created_at, film_id, poster_path')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
                 .order('id', { ascending: false })
@@ -365,6 +370,22 @@ export const useNotificationStore = create<NotificationState>()(
                       return;
                     }
                     const newNotif: AppNotification = parsed.data;
+
+                    // Blocked and muted actors are dropped here and ONLY here.
+                    //
+                    // fetchNotifications and loadMoreNotifications are already filtered
+                    // by the notifications_hide_blocked RLS policy, and both compute
+                    // their pagination cursor from the rows they keep — so filtering
+                    // them client-side would risk skipping pages, the exact defect that
+                    // made the dossier's LOAD EARLIER button unreachable. The socket is
+                    // the one path where row-level security may not apply, so it is the
+                    // one path that needs this.
+                    //
+                    // from_user_id is undefined for system notices, which must arrive.
+                    if (newNotif.from_user_id && useBlockStore.getState().isHidden(newNotif.from_user_id)) {
+                        return;
+                    }
+
                     set((state) => {
                         // Prevent duplicate injects
                         if (state.notifications.some(n => n.id === newNotif.id)) return state;

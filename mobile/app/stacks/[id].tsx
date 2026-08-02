@@ -794,7 +794,10 @@ export default function StackDetailScreen() {
         listTopPosters={list.films.map((f: FilmItem) => f.poster_path).filter(Boolean).slice(0, 4) as string[]}
       />
 
-      {/* ── MODERATION: ACTION SHEET & REPORT SHEET ── */}
+      {/* ── MODERATION: ACTION SHEET & REPORT SHEET ──
+          onBlock/onMute below also close the sheet. They did not, and every other
+          sheet in the app does (log, dossier, lounge, profile, and all three comment
+          sheets) — this one was simply missed. */}
       <ContentActionSheet
         visible={actionSheetVisible}
         contentType="list"
@@ -806,8 +809,14 @@ export default function StackDetailScreen() {
           setActionSheetVisible(false);
           setReportSheetVisible(true);
         }}
-        onBlock={() => blockUser(list.userId)}
-        onMute={() => muteUser(list.userId)}
+        onBlock={() => {
+          blockUser(list.userId);
+          setActionSheetVisible(false);
+        }}
+        onMute={() => {
+          muteUser(list.userId);
+          setActionSheetVisible(false);
+        }}
       />
       <ReportSheet
         visible={reportSheetVisible}
