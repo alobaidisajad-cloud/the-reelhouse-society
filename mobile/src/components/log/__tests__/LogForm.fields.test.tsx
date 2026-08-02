@@ -67,7 +67,7 @@ describe('LogForm core-field wiring (COMP-LOG-1 regression)', () => {
     const input = view.getByTestId('review-input');
     expect(input.props.value).toBe('');
 
-    fireEvent.changeText(input, 'A masterpiece of cinema.');
+    await fireEvent.changeText(input, 'A masterpiece of cinema.');
 
     // The committed value must reflect the input — proves onChangeText →
     // setReview → re-render fires (the broken path left this at '').
@@ -80,7 +80,7 @@ describe('LogForm core-field wiring (COMP-LOG-1 regression)', () => {
     const view = render(<Harness />);
 
     // No rating + no review ⇒ submit is blocked (validateLogSubmission).
-    fireEvent.press(view.getByTestId('reel-rating'));
+    await fireEvent.press(view.getByTestId('reel-rating'));
 
     // The "/5" rating label appears once rating > 0 — proves setRating fired.
     await waitFor(() => expect(view.queryByText('/5')).toBeTruthy());

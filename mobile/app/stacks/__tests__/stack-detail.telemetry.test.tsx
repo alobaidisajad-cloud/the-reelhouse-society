@@ -107,7 +107,7 @@ beforeEach(() => {
 describe('certify toggle — the bare catch that could not log', () => {
     const certify = async () => {
         const screen = render(<StackDetailScreen />);
-        fireEvent.press(await screen.findByLabelText('Certify stack'));
+        await fireEvent.press(await screen.findByLabelText('Certify stack'));
     };
 
     it('reports a genuine defect', async () => {
@@ -157,7 +157,7 @@ describe('delete — finding 117', () => {
     const confirmDelete = async () => {
         const spy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
         const screen = render(<StackDetailScreen />);
-        fireEvent.press(await screen.findByLabelText('Delete stack'));
+        await fireEvent.press(await screen.findByLabelText('Delete stack'));
         const buttons = spy.mock.calls[0][2] as { text: string; onPress?: () => void }[];
         const destructive = buttons.find((b) => b.text === 'Incinerate');
         await destructive!.onPress!();
@@ -184,7 +184,7 @@ describe('the breadcrumb trail — a trace even when nothing is reported', () =>
         mockDeleteList.mockRejectedValue(OFFLINE);
         const spy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
         const screen = render(<StackDetailScreen />);
-        fireEvent.press(await screen.findByLabelText('Delete stack'));
+        await fireEvent.press(await screen.findByLabelText('Delete stack'));
         const buttons = spy.mock.calls[0][2] as { text: string; onPress?: () => void }[];
         await buttons.find((b) => b.text === 'Incinerate')!.onPress!();
         spy.mockRestore();

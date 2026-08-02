@@ -261,7 +261,7 @@ describe('TribunalScreen Integration', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getAllByLabelText('Issue warning')[0]);
+        await fireEvent.press(getAllByLabelText('Issue warning')[0]);
       });
 
       await waitFor(() => {
@@ -291,7 +291,7 @@ describe('TribunalScreen Integration', () => {
 
       // Open warn modal on first report
       await act(async () => {
-        fireEvent.press(getAllByLabelText('Issue warning')[0]);
+        await fireEvent.press(getAllByLabelText('Issue warning')[0]);
       });
 
       // Type reason
@@ -300,7 +300,7 @@ describe('TribunalScreen Integration', () => {
       });
 
       await act(async () => {
-        fireEvent.changeText(
+        await fireEvent.changeText(
           getByPlaceholderText('Describe the reason for this action...'),
           'Repeated harassment of other members',
         );
@@ -308,7 +308,7 @@ describe('TribunalScreen Integration', () => {
 
       // Submit
       await act(async () => {
-        fireEvent.press(getByLabelText('Execute ISSUE WARNING'));
+        await fireEvent.press(getByLabelText('Execute ISSUE WARNING'));
       });
 
       await waitFor(() => {
@@ -341,7 +341,7 @@ describe('TribunalScreen Integration', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getAllByLabelText('Suspend member')[0]);
+        await fireEvent.press(getAllByLabelText('Suspend member')[0]);
       });
 
       await waitFor(() => {
@@ -370,7 +370,7 @@ describe('TribunalScreen Integration', () => {
 
       // Open suspend modal
       await act(async () => {
-        fireEvent.press(getAllByLabelText('Suspend member')[0]);
+        await fireEvent.press(getAllByLabelText('Suspend member')[0]);
       });
 
       // Fill duration
@@ -379,12 +379,12 @@ describe('TribunalScreen Integration', () => {
       });
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('e.g. 24, 48, 72'), '48');
+        await fireEvent.changeText(getByPlaceholderText('e.g. 24, 48, 72'), '48');
       });
 
       // Fill reason
       await act(async () => {
-        fireEvent.changeText(
+        await fireEvent.changeText(
           getByPlaceholderText('Describe the reason for this action...'),
           'Spamming lounge messages',
         );
@@ -392,7 +392,7 @@ describe('TribunalScreen Integration', () => {
 
       // Submit
       await act(async () => {
-        fireEvent.press(getByLabelText('Execute SUSPEND MEMBER'));
+        await fireEvent.press(getByLabelText('Execute SUSPEND MEMBER'));
       });
 
       await waitFor(() => {
@@ -427,7 +427,7 @@ describe('TribunalScreen Integration', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getAllByLabelText('Dismiss report')[0]);
+        await fireEvent.press(getAllByLabelText('Dismiss report')[0]);
       });
 
       expect(alertSpy).toHaveBeenCalledWith(
@@ -477,7 +477,7 @@ describe('TribunalScreen Integration', () => {
 
       // Enter multi-select mode
       await act(async () => {
-        fireEvent.press(getByLabelText('Enter multi-select mode'));
+        await fireEvent.press(getByLabelText('Enter multi-select mode'));
       });
 
       // Now cards become checkboxes — select them
@@ -489,8 +489,8 @@ describe('TribunalScreen Integration', () => {
       const checkboxes = getAllByRole('checkbox');
 
       await act(async () => {
-        fireEvent.press(checkboxes[0]);
-        fireEvent.press(checkboxes[1]);
+        await fireEvent.press(checkboxes[0]);
+        await fireEvent.press(checkboxes[1]);
       });
 
       // Press bulk dismiss button
@@ -499,7 +499,7 @@ describe('TribunalScreen Integration', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByLabelText('Bulk dismiss 2 reports'));
+        await fireEvent.press(getByLabelText('Bulk dismiss 2 reports'));
       });
 
       // Alert should have been called
@@ -549,7 +549,7 @@ describe('TribunalScreen Integration', () => {
 
       // Press PRIORITY tab
       await act(async () => {
-        fireEvent.press(getByLabelText('Priority queue view'));
+        await fireEvent.press(getByLabelText('Priority queue view'));
       });
 
       await waitFor(() => {
@@ -590,7 +590,7 @@ describe('TribunalScreen Integration', () => {
 
       // Switch to priority view
       await act(async () => {
-        fireEvent.press(getByLabelText('Priority queue view'));
+        await fireEvent.press(getByLabelText('Priority queue view'));
       });
 
       // Wait for data to load
@@ -608,7 +608,7 @@ describe('TribunalScreen Integration', () => {
 
       // Press load more
       await act(async () => {
-        fireEvent.press(getByLabelText('Load more priority reports'));
+        await fireEvent.press(getByLabelText('Load more priority reports'));
       });
 
       // Verify getPriorityQueue was called with the compound cursor —

@@ -103,7 +103,7 @@ describe('SocialModal share — the handler brought in line with it', () => {
     const pressShare = async () => {
         const screen = render(<SocialModal />);
         const btn = await screen.findByLabelText('Share to The Booth');
-        fireEvent.press(btn);
+        await fireEvent.press(btn);
         return screen;
     };
 

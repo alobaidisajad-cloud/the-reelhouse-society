@@ -31,7 +31,7 @@ describe('SpoilerVeil', () => {
     const { getByLabelText, queryByText } = render(
       <SpoilerVeil isSpoiler><Text>{CONTENT}</Text></SpoilerVeil>,
     );
-    fireEvent.press(getByLabelText(/contains spoilers/i));
+    await fireEvent.press(getByLabelText(/contains spoilers/i));
     await waitFor(() => expect(queryByText(CONTENT)).toBeTruthy());
     expect(queryByText('CONTAINS SPOILERS')).toBeNull();
   });
@@ -48,7 +48,7 @@ describe('SpoilerVeil', () => {
     const { getByLabelText, queryByText, rerender } = render(
       <SpoilerVeil isSpoiler revealKey="log-1"><Text>{CONTENT}</Text></SpoilerVeil>,
     );
-    fireEvent.press(getByLabelText(/contains spoilers/i));
+    await fireEvent.press(getByLabelText(/contains spoilers/i));
     await waitFor(() => expect(queryByText(CONTENT)).toBeTruthy());
 
     // The component instance is recycled for a different log → must re-veil.

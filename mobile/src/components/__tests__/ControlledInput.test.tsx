@@ -39,7 +39,7 @@ describe('ControlledInput', () => {
         <ControlledInput name="displayName" testID="f" />
       </Harness>,
     );
-    fireEvent.changeText(getByTestId('f'), 'Kurosawa');
+    await fireEvent.changeText(getByTestId('f'), 'Kurosawa');
     await waitFor(() => expect(getByDisplayValue('Kurosawa')).toBeTruthy());
   });
 
@@ -78,7 +78,7 @@ describe('ControlledBioInput', () => {
         <ControlledBioInput name="bio" testID="bio" />
       </Harness>,
     );
-    fireEvent.changeText(getByTestId('bio'), 'Twelve chars');
+    await fireEvent.changeText(getByTestId('bio'), 'Twelve chars');
     await waitFor(() => expect(getByText('12/300')).toBeTruthy());
   });
 });
@@ -91,7 +91,7 @@ describe('ControlledUsernameInput — sanitises as you type', () => {
         <ControlledUsernameInput name="username" testID="u" />
       </Harness>,
     );
-    fireEvent.changeText(r.getByTestId('u'), raw);
+    await fireEvent.changeText(r.getByTestId('u'), raw);
     // react-hook-form commits the change on a later tick, so the re-render has
     // to be awaited — asserting immediately reads the pre-update value.
     await waitFor(() => expect(r.getByTestId('u').props.value).not.toBe(''));

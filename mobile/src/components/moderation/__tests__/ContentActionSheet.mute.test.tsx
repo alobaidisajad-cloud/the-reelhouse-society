@@ -118,10 +118,10 @@ describe('ContentActionSheet — hideMute is what made three handlers dead code'
         expect(queryByLabelText('Block alice')).not.toBeNull();
     });
 
-    it('renders Mute and calls the handler when NOT hidden — the author sheets', () => {
+    it('renders Mute and calls the handler when NOT hidden — the author sheets', async () => {
         const onMute = jest.fn();
         const { getByLabelText } = render(<ContentActionSheet {...base} onMute={onMute} />);
-        fireEvent.press(getByLabelText('Mute alice'));
+        await fireEvent.press(getByLabelText('Mute alice'));
         expect(onMute).toHaveBeenCalledTimes(1);
     });
 
@@ -130,13 +130,13 @@ describe('ContentActionSheet — hideMute is what made three handlers dead code'
         expect(queryByLabelText('Mute alice')).toBeNull();
     });
 
-    it('offers Unmute instead of Mute for an already-muted member', () => {
+    it('offers Unmute instead of Mute for an already-muted member', async () => {
         const onUnmute = jest.fn();
         const { queryByLabelText, getByLabelText } = render(
             <ContentActionSheet {...base} showUnmute onUnmute={onUnmute} />,
         );
         expect(queryByLabelText('Mute alice')).toBeNull();
-        fireEvent.press(getByLabelText('Unmute alice'));
+        await fireEvent.press(getByLabelText('Unmute alice'));
         expect(onUnmute).toHaveBeenCalledTimes(1);
     });
 
