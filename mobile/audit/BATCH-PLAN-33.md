@@ -299,20 +299,73 @@ it blocks nothing and ships nothing. Revisit if it ever turns into a hang or a f
 ---
 
 ## BATCH 11 · Block & mute enforcement in the client
-`Tier B` · `6 findings` · `after batch 4` · **NOT STARTED**
+`Tier B` · `6 findings` · `after batch 4` · **✅ CLOSED 2026-08-02** — 6/6 + 2 not in the register
 
-- **#92** — Blocking someone doesn't hide their comments on three detail screens.
-- **#105** — Blocking inside a salon leaves their messages on screen while the toast says they're hidden.
-- **#106** — Log comments have no block filtering at any layer.
-- **#114** — Stack comments have no block filtering at any layer.
-- **#112** — Notifications ignore block and mute entirely.
-- **#118** — The stack action sheet stays open after Block or Mute.
+- **#92** — Blocking someone doesn't hide their comments on three detail screens. — ✅ **server-side, LIVE**
+- **#105** — Blocking inside a salon leaves their messages on screen while the toast says they're hidden. — ✅ **faces LIVE, message purge ships at launch**
+- **#106** — Log comments have no block filtering at any layer. — ✅ **LIVE**
+- **#114** — Stack comments have no block filtering at any layer. — ✅ **LIVE**
+- **#112** — Notifications ignore block and mute entirely. — ✅ **in-app + push LIVE, socket filter ships at launch**
+- **#118** — The stack action sheet stays open after Block or Mute. — ✅ **ships at launch**
+- **⭐ NOT IN THE REGISTER** — a blocked member's face stayed on your salon cards. — ✅ **LIVE**
+- **⭐ NOT IN THE REGISTER** — a blocked member could still buzz your lock screen. — ✅ **LIVE**
 
 **Together because** this is one defect in six places. One test harness proves all
 six; six separate batches would rebuild it six times.
 
 **DONE WHEN** one blocked account is invisible across all six surfaces, each proven
 by a rendering test.
+
+**THE FIX IS SERVER-SIDE, AND THAT WAS MEASURED.** A client-only fix BREAKS the
+dossier: it takes its comment count from `{ count: 'exact' }` — unfiltered — and
+drives "LOAD EARLIER · N MORE" from `commentTotal > comments.length`, with a keyset
+cursor set to the oldest VISIBLE comment. Filter client-side and that button never
+disappears, and once a blocked author owns the true oldest row the next page
+re-fetches rows already seen, dedupes to nothing, and the list is stuck. Filtering at
+the query layer makes count and content agree for free. It is also the pattern
+20260620_feed_block_filtering already chose, for the same pagination reason — and it
+protects everyone TODAY, on the current TestFlight build and the live website,
+instead of at launch.
+
+Migrations: `20260802_02` (RESTRICTIVE SELECT policies on log_comments,
+list_comments, dossier_comments, notifications), `20260802_03` (salon faces),
+`20260802_04` (push trigger). All verified live after applying.
+
+**⚠️ TWO TRAPS, BOTH PROVEN ON A REPLICA RATHER THAN ARGUED.**
+
+1. RESTRICTIVE, never permissive. Every existing SELECT policy on those tables is
+   permissive, and permissive policies combine with OR — a permissive "restriction"
+   is silently ignored (learned in batch 5).
+
+2. `is_hidden_by()` IS WRONG INSIDE THE PUSH TRIGGER. It ignores its viewer_id
+   argument and reads `auth.uid()`, which inside that trigger is the ACTOR, not the
+   recipient — so it asks "does this person hide themselves?", answers no, and
+   filters nothing while reading as correct code. Measured, same data, blocked actor:
+   `is_hidden_by(NEW.user_id, ...)` → **1 push sent**; explicit recipient/actor
+   EXISTS check → **0**. The trigger uses the explicit check.
+
+**ALSO CHECKED BEFORE APPLYING:** RLS is actually ENABLED on all four tables (a
+table can carry policies with RLS off, making them inert); `is_hidden_by` is STABLE,
+DEFINER and EXECUTE-granted to authenticated and anon (an RLS expression runs with
+the QUERYING role's privileges — the batch 6 trap); `notifications.from_user_id`
+exists and is NULLABLE, so the NULL branch is required or every system notice would
+vanish; `get_report_evidence` is SECURITY DEFINER so the tribunal still sees reported
+comments; no denormalised comment counters exist; comments are not threaded so
+hiding one cannot orphan replies; and `tg_notify_push`'s live body, security,
+search_path and owner were all read before being replaced.
+
+**Salon faces detail:** the filter sits INSIDE the CTE, before `row_number()`.
+Filtering after `rn <= 3` would have been the obvious one-liner and the wrong one —
+a salon whose three earliest members you had all blocked would render an EMPTY
+avatar stack while the salon was full. Proven one line apart: `ava,ben,cleo` →
+`ava,cleo,dane`.
+
+**Client half (ships with the launch build):** `purgeHiddenMessages()` re-filters
+lounge messages already on screen; the stack sheet closes; `from_user_id` added to
+the notification query/schema/type; the realtime socket filters — and ONLY the
+socket, because fetch and loadMore compute their pagination cursor from the rows they
+keep and are already covered by RLS. The mute toast now says what mute actually does
+rather than promising only "your feeds".
 
 ---
 
