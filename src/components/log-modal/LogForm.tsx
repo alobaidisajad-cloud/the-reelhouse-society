@@ -178,12 +178,27 @@ export default function LogForm({ film }: { film: any }) {
             watchedWith,
             privateNotes,
             physicalMedia,
-            isAutopsied: isPremium && isAutopsied,
-            autopsy: isPremium && isAutopsied ? autopsy : null,
-            editorialHeader: isPremium ? editorialHeader : null,
-            dropCap: isPremium ? dropCap : false,
-            pullQuote: isPremium ? pullQuote : undefined,
-
+            // Below the gate these are OMITTED, never written as null/false.
+            //
+            // This payload feeds both addLog and updateLog (:191-196), and
+            // films.ts:679-683 adds a column only `if (updates.X !== undefined)`.
+            // So a `null` or `false` here went straight through — and the form
+            // pre-loads the real values first (:106) — meaning a member whose tier
+            // sits below the gate (a lapsed subscriber, or the admin, whose tier
+            // resolves to cinephile) ERASED their own autopsy, editorial header and
+            // drop cap every time they edited a log. Not hidden. Destroyed.
+            //
+            // pullQuote already did this correctly; the other four did not.
+            // `undefined` is the only value films.ts reads as "leave it alone", and
+            // it is equally safe on insert: drop_cap and is_autopsied are nullable
+            // with DEFAULT false, and editorial_header/pull_quote are nullable.
+            ...(isPremium ? {
+                isAutopsied,
+                autopsy: isAutopsied ? autopsy : null,
+                editorialHeader,
+                dropCap,
+                pullQuote,
+            } : {}),
         }
 
         setSubmitting(true)
