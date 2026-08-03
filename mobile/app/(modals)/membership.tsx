@@ -80,14 +80,25 @@ export default function MembershipScreen() {
   // never carries one.
   const foundingPriceLabel = pricing.founding?.lifetime;
   const foundingSeatPrice = pricing.founding?.lifetimePrice;
-  const compareAnnualLabel = pricing.archivist?.annual;
-  const compareAnnualPrice = pricing.archivist?.annualPrice;
+  // Compare against AUTEUR, because that is precisely what the seat grants — Auteur
+  // access for life. The shipped copy quotes "$19.99/yr", which matches no tier the
+  // app sells, so it is kept ONLY as the offline fallback rather than propagated.
+  const compareAnnualLabel = pricing.auteur?.annual;
+  const compareAnnualPrice = pricing.auteur?.annualPrice;
   // Only make the payback claim when BOTH real numbers are known. Deriving "pays for
   // itself in under N years" from one live price and one hardcoded one would state a
   // number that is simply false in any store where the prices differ.
+  const paybackYears =
+    foundingSeatPrice && compareAnnualPrice && compareAnnualPrice > 0
+      ? Math.ceil(foundingSeatPrice / compareAnnualPrice)
+      : null;
   const foundingCompareLine =
-    compareAnnualLabel && foundingSeatPrice && compareAnnualPrice && compareAnnualPrice > 0
-      ? `Compare to ${compareAnnualLabel}/yr recurring — this pays for itself in under ${Math.ceil(foundingSeatPrice / compareAnnualPrice)} years and never charges again.`
+    compareAnnualLabel && paybackYears
+      // "in under 1 years" is what naive pluralisation produces here, and a seat priced
+      // near one year of Auteur makes that the LIKELIEST branch, not an edge case.
+      ? `Compare to ${compareAnnualLabel}/yr recurring — this pays for itself ${
+          paybackYears <= 1 ? 'within the first year' : `in under ${paybackYears} years`
+        } and never charges again.`
       : 'Compare to $19.99/yr recurring — this pays for itself in under 3 years and never charges again.';
   const scrollRef = useRef<ScrollView>(null);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -266,14 +277,30 @@ export default function MembershipScreen() {
                 return;   // seat secured — nothing to explain
               }
             }
-            // The seat never landed. If the RANK did, they were capped out: say so
-            // plainly rather than letting them believe they hold a seat they do not.
-            // If neither landed the webhook is merely slow — stay quiet, the optimistic
-            // tier hint is already applied and the next session restore will reconcile.
-            if (last && getTierWeight(resolveTier(last)) >= getTierWeight('auteur')) {
-              await supabase.auth.refreshSession();
-              await useAuthStore.getState().restoreSession?.();
-              reelToast.info('The final Founding seat was claimed just before your purchase. You have been granted the Auteur rank — please contact support about your seat.');
+            // The seat never landed inside the window. Telling someone their seat was
+            // taken is alarming and irreversible-feeling, so it needs POSITIVE evidence
+            // — not the absence of evidence.
+            //
+            // "The rank arrived, so they must have been capped out" is NOT evidence: an
+            // existing AUTEUR already had the rank before they bought, so a merely slow
+            // webhook would look identical and they would be told the seat was taken
+            // when it was not. Ask the cap directly instead.
+            if (last?.is_founding !== true) {
+              const { count } = await supabase
+                .from('profiles')
+                .select('id', { count: 'exact', head: true })
+                .eq('is_founding', true);
+
+              if (count !== null && count >= 100) {
+                // The seats really are gone. Retire the certificate on screen too.
+                setFoundingCount(count);
+                await supabase.auth.refreshSession();
+                await useAuthStore.getState().restoreSession?.();
+                reelToast.info('The final Founding seat was claimed just before your purchase. You have been granted the Auteur rank — please contact support about your seat.');
+              }
+              // Seats still available -> the webhook is simply slow. Stay quiet: the
+              // optimistic tier hint is already applied and the next session restore
+              // reconciles it. Never invent bad news from a timeout.
             }
           } catch {
             // Background polling failed, ignore
