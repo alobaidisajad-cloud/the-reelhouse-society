@@ -206,6 +206,46 @@ REVOKE ALL ON FUNCTION public.apply_entitlement(uuid, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.apply_entitlement(uuid, text) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.apply_entitlement(uuid, text) TO service_role;
 
+-- ── 4. Protect the new column from the members it judges ─────────────────────
+-- ⚠️ WITHOUT THIS, THIS MIGRATION OPENS A HOLE.
+--
+-- tr_protect_privileged_profile_fields is what stops a client from editing its own
+-- role, tier, ban state and trust score. entitlement_source is a NEW column and was
+-- not in that list — and a client CAN update its own profile row (that trigger exists
+-- precisely because it can).
+--
+-- The exploit: subscribe through the App Store (source becomes 'revenuecat'), cancel,
+-- then set your own entitlement_source to 'paytabs'. RevenueCat is now forbidden from
+-- ever lowering your tier. Premium forever, free — using the rule added above as the
+-- lock. The column that decides who may demote you must not be writable by you.
+--
+-- Reproduced verbatim from the live definition (pg_get_functiondef) with ONE line
+-- added, so nothing else about it changes. It is LANGUAGE plpgsql with no SECURITY or
+-- SET search_path clause; both are left exactly as they were. search_path is
+-- irrelevant here because the function touches no tables — it only assigns NEW fields.
+CREATE OR REPLACE FUNCTION public.protect_privileged_profile_fields()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF current_user IN ('authenticated', 'anon') THEN
+    NEW.role := OLD.role;
+    NEW.tier := OLD.tier;
+    NEW.is_founding := OLD.is_founding;
+    NEW.member_no := OLD.member_no;
+    NEW.is_banned := OLD.is_banned;
+    NEW.ban_reason := OLD.ban_reason;
+    NEW.banned_at := OLD.banned_at;
+    NEW.suspended_until := OLD.suspended_until;
+    NEW.suspension_reason := OLD.suspension_reason;
+    NEW.warning_count := OLD.warning_count;
+    NEW.trust_score := OLD.trust_score;
+    NEW.entitlement_source := OLD.entitlement_source;   -- ← the one added line
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
 NOTIFY pgrst, 'reload schema';
 
 -- ── Rollback ──────────────────────────────────────────────────────────────────
