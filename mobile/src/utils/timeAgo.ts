@@ -164,6 +164,36 @@ function echo(value: string | Date | undefined | null): string {
  */
 export function timeAgo(dateStr: string | Date | undefined | null): string {
   if (!dateStr) return '';
+
+  // ── A calendar date speaks in DAYS, never in hours ──────────────────────────
+  // watched_date carries no time. Rendering it as "8 HRS. AGO" invents precision the
+  // member never gave — and the same card would read "1 HR. AGO" at lunchtime and
+  // "11 HRS. AGO" at bedtime, for a film they simply watched today.
+  //
+  // The distance is measured between CALENDAR DAYS, not milliseconds: both sides are
+  // projected onto a UTC day index purely as arithmetic. UTC has no daylight saving,
+  // so the spring-forward and fall-back nights cannot make a day 23 or 25 hours long
+  // and shift the answer by one.
+  if (typeof dateStr === 'string') {
+    const cal = parseCalendarDate(dateStr);
+    if (cal) {
+      const DAY = 86_400_000;
+      const thatDay = Date.UTC(cal.year, cal.month, cal.day);
+      const now = new Date();
+      const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+      const days = Math.round((today - thatDay) / DAY);
+
+      if (days <= 0) return 'TODAY';          // future dates read as today, never negative
+      if (days === 1) return 'YESTERDAY';
+      if (days < 7) return `${days} DAYS AGO`;
+      if (days < 30) {
+        const weeks = Math.floor(days / 7);
+        return weeks === 1 ? '1 WEEK AGO' : `${weeks} WEEKS AGO`;
+      }
+      return formatDate(dateStr);
+    }
+  }
+
   const then = toInstant(dateStr);
   if (then === null) return echo(dateStr);
 

@@ -66,6 +66,37 @@ describe(`calendar dates render as the day they say [TZ=${TZ}]`, () => {
     expect(timeAgo('2020-01-01')).toContain('JAN 1');
     expect(timeAgo('2020-01-01')).toContain('2020');
   });
+
+  // A calendar date has no time on it. Saying "8 HRS. AGO" invents precision the
+  // member never gave, and makes the same card read differently at lunchtime than at
+  // bedtime for a film they simply watched today.
+  describe('a calendar date speaks in days, not hours', () => {
+    const dayOffset = (n: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() + n);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
+    it.each([
+      [0, 'TODAY'],
+      [-1, 'YESTERDAY'],
+      [-3, '3 DAYS AGO'],
+      [-7, '1 WEEK AGO'],
+      [-14, '2 WEEKS AGO'],
+    ])('%i days from today -> %s', (offset, expected) => {
+      expect(timeAgo(dayOffset(offset))).toBe(expected);
+    });
+
+    it('never reads as a negative age if the date is ahead of the device clock', () => {
+      expect(timeAgo(dayOffset(1))).toBe('TODAY');
+    });
+
+    it('is stable regardless of the hour it is read at', () => {
+      // The whole point: two reads of the same card must agree.
+      expect(timeAgo(dayOffset(0))).toBe(timeAgo(dayOffset(0)));
+      expect(timeAgo(dayOffset(0))).not.toMatch(/HRS?\./);
+    });
+  });
 });
 
 describe(`timestamps still render in local time [TZ=${TZ}]`, () => {
