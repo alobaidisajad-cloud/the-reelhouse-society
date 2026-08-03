@@ -18,6 +18,7 @@ import { ReportPayloadSchema, type ReportPayload, type ReportResult } from '@/sr
 import { logger } from '@/src/utils/logger';
 import { isNetworkError } from '@/src/utils/networkError';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
+import { sanitizeInput } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
 import NetInfo from '@react-native-community/netinfo';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -51,6 +52,16 @@ export const useReportStore = create<ReportState>()((set, get) => ({
 
     set({ isSubmitting: true });
 
+    // NOT in the register. `details` is free text one member writes ABOUT another,
+    // stored in `reports` and rendered to moderators in the Tribunal — the one screen
+    // guaranteed by its purpose to be shown hostile input. It was raw on BOTH the
+    // online and offline paths, so unlike the dossier critique there was not even an
+    // accidental half-protection.
+    //
+    // Sanitised once here, above the branch, so the queued payload carries the same
+    // clean text the direct call sends.
+    const cleanDetails = payload.details ? sanitizeInput(payload.details, 'reportDetails') : null;
+
     try {
       const netState = await NetInfo.fetch();
 
@@ -61,7 +72,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
           p_content_id: payload.content_id,
           p_content_type: payload.content_type,
           p_reason: payload.reason,
-          p_details: payload.details ?? null,
+          p_details: cleanDetails,
           p_target_user_id: payload.target_user_id,
         });
 
@@ -72,7 +83,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
           }
           if (isNetworkError(error)) {
             // Fall back to offline queue
-            enqueueMutation({ type: 'submit_report', payload: payload as unknown as Record<string, unknown> });
+            enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
             set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
             TactileEngine.success();
             reelToast('Report queued. Will be filed when connected.');
@@ -94,7 +105,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
         return { status: 'submitted' };
       } else {
         // Offline: enqueue
-        enqueueMutation({ type: 'submit_report', payload: payload as unknown as Record<string, unknown> });
+        enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
         set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
         TactileEngine.success();
         reelToast('Report queued. Will be filed when connected.');

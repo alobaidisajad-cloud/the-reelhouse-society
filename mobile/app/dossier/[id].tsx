@@ -9,6 +9,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Heart, MessageCircle, MoreHorizontal, Send } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { onMarkdownLinkPress, capMarkdownForRender } from '@/src/utils/markdownSafety';
 import Markdown from 'react-native-markdown-display';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +21,7 @@ import { useDispatchStore } from '@/src/stores/content';
 import { colors, effects, fonts } from '@/src/theme/theme';
 import { DossierComment, DossierDetail } from '@/src/types';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
+import { sanitizeInput } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
 import * as Crypto from 'expo-crypto';
@@ -272,12 +274,33 @@ export default function DossierReaderScreen() {
 
         setPosting(true);
         const tempId = Crypto.randomUUID();
+
+        // finding 104 — sanitise HERE, before the optimistic row is built, so the words shown
+        // on screen are the words that get stored. Sanitising at the insert instead
+        // would leave the author reading a version of their critique that no longer
+        // exists in the database.
+        //
+        // This was the ONLY comment surface writing raw: log comments (LogService:217),
+        // list comments (StackService:151) and lounge messages (lounge.ts:595) all
+        // sanitise on the online path, and the OFFLINE path for this very field already
+        // did (mutationExecutor.ts:678). So the protection ran only when a critique was
+        // filed without a network — the exceptional path — and never on the normal one.
+        //
+        // Length is not the exposure (the composer caps at 500, under the 2000 limit);
+        // the bidi controls and isolates are. Those are the Trojan-Source class: a
+        // critique that visually reorders the text around it in the list.
+        const cleanBody = sanitizeInput(newComment.trim(), 'dossierComment');
+        if (!cleanBody) {
+            setPosting(false);
+            return;
+        }
+
         const tempComment = {
             id: tempId,
             dossier_id: id,
             user_id: user.id,
             username: user.username,
-            body: newComment.trim(),
+            body: cleanBody,
             created_at: new Date().toISOString(),
             avatar_url: user.avatar_url ?? null,
         } as unknown as CritiqueRow;
@@ -464,8 +487,12 @@ export default function DossierReaderScreen() {
 
                 {/* Body Content */}
                 <View style={styles.markdownWrap}>
-                    <Markdown style={markdownStyles}>
-                        {dossier.full_content || dossier.excerpt || ''}
+                    {/* onLinkPress is a SECURITY control, not a convenience — without it
+                        the library opens any href straight through Linking.openURL, so
+                        [tap](javascript:…) / (intent://…) in a published dossier bypasses
+                        the app's URL allowlist. See utils/markdownSafety.ts. */}
+                    <Markdown style={markdownStyles} onLinkPress={onMarkdownLinkPress}>
+                        {capMarkdownForRender(dossier.full_content || dossier.excerpt || '')}
                     </Markdown>
                 </View>
 

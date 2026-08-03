@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Edit3, ExternalLink, Eye, Heart, MessageSquare, Share2, Sparkles, Trash2, X as XIcon } from 'lucide-react-native';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, ScrollView, Share, Text, View } from 'react-native';
+import { onMarkdownLinkPress, capMarkdownForRender } from '@/src/utils/markdownSafety';
 import { safeOpenURL } from '@/src/utils/linking';
 import Markdown from 'react-native-markdown-display';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -347,8 +348,11 @@ export const ArticleReaderModal = memo(function ArticleReaderModal({
           <View style={st.readerSep} />
 
           {/* Body content */}
-          <Markdown style={markdownStyles}>
-            {content}
+          {/* This mount renders member-authored dossiers as well as wire excerpts, so
+              it carries the same allowlist bypass and the same parser cap.
+              See utils/markdownSafety.ts. */}
+          <Markdown style={markdownStyles} onLinkPress={onMarkdownLinkPress}>
+            {capMarkdownForRender(content)}
           </Markdown>
 
           {/* Action bar */}

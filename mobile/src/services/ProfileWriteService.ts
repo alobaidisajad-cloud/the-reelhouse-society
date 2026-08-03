@@ -1,6 +1,7 @@
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../lib/supabase';
 import { ProfileUpdateSchema } from '../schemas/profile.schema';
+import { sanitizeInput } from '../utils/sanitizeInput';
 import type { User } from '../types';
 import { withAbortSignal } from '../utils/withAbortSignal';
 
@@ -43,11 +44,22 @@ export const ProfileService = {
 
     const dbUpdates: Record<string, unknown> = {};
 
-    if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+    // ── Free-text profile fields. NOT in the audit register. ────────────────────
+    // Found by enumerating MAX_LENGTHS against its call sites: `bio` had a sanitiser
+    // profile defined and NOT ONE caller. ProfileUpdateSchema (below) caps these by
+    // LENGTH but strips no character classes, so bidi controls and zero-width joiners
+    // survived into public profile text — the same Trojan-Source exposure as a dossier
+    // critique, on the most-read screen in the app. That also makes the register's
+    // claim that stack titles are "the only user input bypassing the sanitizer" false.
+    //
+    // `username` is deliberately NOT sanitised here: validateUsername already reduces
+    // it to [a-z0-9_], which no invisible character can survive. That is why its
+    // MAX_LENGTHS profile is unused too, and that one is correct.
+    if (updates.bio !== undefined) dbUpdates.bio = sanitizeInput(updates.bio ?? '', 'bio');
     if (updates.username !== undefined) dbUpdates.username = updates.username;
     if (updates.avatar_url !== undefined) dbUpdates.avatar_url = updates.avatar_url;
-    if (updates.display_name !== undefined) dbUpdates.display_name = updates.display_name;
-    if (updates.persona !== undefined) dbUpdates.persona = updates.persona;
+    if (updates.display_name !== undefined) dbUpdates.display_name = sanitizeInput(updates.display_name ?? '', 'displayName');
+    if (updates.persona !== undefined) dbUpdates.persona = sanitizeInput(updates.persona ?? '', 'persona');
     if (updates.social_links !== undefined) dbUpdates.social_links = updates.social_links;
     // COMP-1-orig: do NOT write `preferences` here. This is a full-column UPDATE that
     // would overwrite the entire JSONB blob and clobber concurrent cross-device key

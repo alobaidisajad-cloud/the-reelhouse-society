@@ -10,6 +10,7 @@ import { captureError } from '../../lib/sentry';
 import { isNetworkError } from '../../utils/networkError';
 import { enqueueMutation } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
+import { sanitizeInput } from '../../utils/sanitizeInput';
 import { useAuthStore } from '../auth';
 
 export interface ListSlice {
@@ -164,20 +165,36 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         const user = useAuthStore.getState().user;
         if (!user) return;
         const listId = Crypto.randomUUID();
+
+        // #68 — stack titles and descriptions were the last member-authored text
+        // reaching the database raw. Sanitised HERE, above both the direct write and
+        // the offline enqueue below, so the online and offline paths cannot drift the
+        // way the dossier-comment paths had.
+        //
+        // The asymmetry this closes: archiveImport.ts already sanitises with these
+        // exact profiles, so a stack imported from a CSV was protected and the same
+        // stack typed into the app was not.
+        //
+        // Caps (100 / 1000) are measured against live data as headroom, not a
+        // guillotine: 9 stacks exist, the longest title is 36 characters and the
+        // longest description 241. Nothing can be truncated by this.
+        const title = sanitizeInput(list.title ?? '', 'listTitle');
+        const description = sanitizeInput(list.description ?? '', 'listDescription');
+
         const { data, error } = await supabase.from('lists').insert([{
-            id: listId, user_id: user.id, title: list.title, description: list.description ?? '', is_private: list.isPrivate ?? false, is_ranked: list.isRanked ?? false
+            id: listId, user_id: user.id, title, description, is_private: list.isPrivate ?? false, is_ranked: list.isRanked ?? false
         }]).select().single();
         if (error) {
             if (isNetworkError(error)) {
                 // Queue for offline sync
                 const inputFilms = (list as { films?: { id: number; title?: string; poster_path?: string | null; poster?: string | null }[] }).films ?? [];
                 enqueueMutation({ type: 'create_list', payload: {
-                    id: listId, user_id: user.id, title: list.title ?? 'Untitled', description: list.description ?? '',
+                    id: listId, user_id: user.id, title: title || 'Untitled', description,
                     is_private: list.isPrivate ?? false, is_ranked: list.isRanked ?? false,
                     films: inputFilms.map((f, idx) => ({ film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster_path ?? f.poster ?? null, rank_position: idx })),
                 } });
                 const filmEntries = inputFilms.map(f => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? f.poster ?? null }));
-                set((state) => ({ lists: [{ id: listId, title: list.title ?? 'Untitled', description: list.description ?? '', isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: new Date().toISOString(), userId: user.id }, ...state.lists] }));
+                set((state) => ({ lists: [{ id: listId, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: new Date().toISOString(), userId: user.id }, ...state.lists] }));
                 reelToast('List saved offline. Will sync when connected.');
                 return;
             }
@@ -187,7 +204,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             const inputFilms = (list as { films?: { id: number; title?: string; poster_path?: string | null; poster?: string | null }[] }).films ?? [];
             const filmEntries = inputFilms.map((f) => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? f.poster ?? null }));
             
-            set((state) => ({ lists: [{ id: data.id, title: list.title ?? 'Untitled', description: list.description ?? '', isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: data.created_at, userId: user.id }, ...state.lists] }));
+            set((state) => ({ lists: [{ id: data.id, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: data.created_at, userId: user.id }, ...state.lists] }));
             
             if (inputFilms.length > 0) {
                 const items = inputFilms.map((f, idx) => ({
@@ -224,9 +241,12 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         
         const prevList = get().lists.find(l => l.id === listId);
         
+        // #68 — same treatment as createList. Kept as `!== undefined` checks so a
+        // deliberate clear (description: '') still writes the clear, exactly as before;
+        // only the CONTENT of a provided value changes.
         const dbUpdates: Record<string, any> = {};
-        if (updates.title !== undefined) dbUpdates.title = updates.title;
-        if (updates.description !== undefined) dbUpdates.description = updates.description;
+        if (updates.title !== undefined) dbUpdates.title = sanitizeInput(updates.title ?? '', 'listTitle');
+        if (updates.description !== undefined) dbUpdates.description = sanitizeInput(updates.description ?? '', 'listDescription');
         if (updates.isPrivate !== undefined) dbUpdates.is_private = updates.isPrivate;
         if (updates.isRanked !== undefined) dbUpdates.is_ranked = updates.isRanked;
 

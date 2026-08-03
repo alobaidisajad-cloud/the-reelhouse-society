@@ -6,8 +6,28 @@
  * mutation layer so it's impossible to bypass.
  */
 
-/** Known zero-width / invisible Unicode characters */
-const INVISIBLE_CHARS = /[\u200B\u200C\u200D\u200E\u200F\uFEFF\u00AD\u034F\u2028\u2029\u2060\u2061\u2062\u2063\u2064\u2066\u2067\u2068\u2069\u206A-\u206F]/g;
+/**
+ * Known zero-width / invisible Unicode characters.
+ *
+ * \u26A0\uFE0F U+202A\u2013U+202E WERE MISSING, and they are the ones that matter most.
+ *
+ * Unicode has THREE families of bidirectional control, and this set originally had
+ * two of them:
+ *   \u2022 marks      U+200E, U+200F                     \u2014 were covered
+ *   \u2022 isolates   U+2066\u2013U+2069                      \u2014 were covered
+ *   \u2022 embeddings and OVERRIDES  U+202A\u2013U+202E       \u2014 were NOT
+ *
+ * U+202E RIGHT-TO-LEFT OVERRIDE is the canonical Trojan-Source character: it reverses
+ * the rendering of everything after it, so text can be made to display in an order
+ * that has nothing to do with what is stored. U+202D is its mirror. Both passed
+ * straight through every sanitised surface in the app \u2014 reviews, comments, lounge
+ * messages, dossiers \u2014 because the guard caught the two quieter families and stopped.
+ *
+ * Found by asserting the whole class rather than the listed members: the test enumerates
+ * every bidi codepoint and demands each one be removed, which is why this survived a
+ * regex that looked thorough.
+ */
+const INVISIBLE_CHARS = /[\u200B\u200C\u200D\u200E\u200F\u202A-\u202E\uFEFF\u00AD\u034F\u2028\u2029\u2060\u2061\u2062\u2063\u2064\u2066\u2067\u2068\u2069\u206A-\u206F]/g;
 
 /** Control characters except newline (\n), carriage return (\r), and tab (\t) */
 const CONTROL_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
@@ -16,7 +36,7 @@ const CONTROL_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 export const MAX_LENGTHS = {
   review: 5000,
   loungeMessage: 2000,
-  bio: 500,
+  bio: 160,
   listTitle: 100,
   listDescription: 1000,
   listComment: 1000,
@@ -24,6 +44,14 @@ export const MAX_LENGTHS = {
   dossierComment: 2000,
   loungeName: 50,
   username: 30,
+  // Matched to ProfileUpdateSchema's own limits so the two cannot disagree:
+  // bio 160, display_name 50, persona 50 (schemas/profile.schema.ts:26-31).
+  // Zod caps their LENGTH; these exist so the character classes get stripped too.
+  displayName: 50,
+  persona: 50,
+  // Free text a member writes ABOUT another member, read by moderators in the
+  // Tribunal — the one screen guaranteed to be shown hostile input.
+  reportDetails: 500,
   dossierTitle: 200,
   dossierExcerpt: 500,
   // Essays are longform by design: ~4,500 words (a 15–20 minute read). This is

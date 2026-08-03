@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
+import { onMarkdownLinkPress } from '@/src/utils/markdownSafety';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -202,8 +203,12 @@ export default function ComposeDossierScreen() {
                 <CinematicScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false} bottomInset={insets.bottom}>
                     <Text style={styles.previewEyebrow}>LIVE PREVIEW</Text>
                     {title ? <Text style={styles.previewTitle}>{title}</Text> : null}
+                    {/* Guarded like the other mounts — a link is a link even in your own
+                        draft. Deliberately NOT capped: this is the author's live preview,
+                        and truncating someone's essay while they write it is the app
+                        fighting its user. See utils/markdownSafety.ts. */}
                     {content ? (
-                        <Markdown style={markdownStyles}>
+                        <Markdown style={markdownStyles} onLinkPress={onMarkdownLinkPress}>
                             {content}
                         </Markdown>
                     ) : (
