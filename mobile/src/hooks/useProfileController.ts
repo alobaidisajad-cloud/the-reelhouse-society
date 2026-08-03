@@ -4,7 +4,7 @@ import { useIsFocused } from '@react-navigation/native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useAuthStore } from '@/src/stores/auth';
 import { useProfileData, ProfileTab } from '@/src/hooks/useProfileData';
-import { safeOpenURL } from '@/src/utils/linking';
+import { safeOpenURL, normalizeSocialUrl } from '@/src/utils/linking';
 import { useFilmStore } from '@/src/stores/films';
 import { useSocialStore } from '@/src/stores/socialStore';
 import { followUser, unfollowUser } from '@/src/stores/domain/socialSlice';
@@ -339,7 +339,12 @@ export function useProfileController(usernameOverride?: string) {
         (router.push as any)({ pathname: '/social-modal', params: { userId: data.targetUser.id, type: 'following' } } as never);
       }, [router, data.targetUser?.id]),
       toCalendar: useCallback(() => (router.push as any)({ pathname: `/user/${username}`, params: { tab: 'calendar' } } as never), [router, username]),
-      openSocialLink: useCallback((url: string) => safeOpenURL(url.startsWith('http') ? url : `https://${url}`), []),
+      openSocialLink: useCallback((url: string) => {
+        // Same rule the write-time validator uses (utils/linking.ts) — a link accepted
+        // on save is a link that opens, and neither side can drift from the other.
+        const target = normalizeSocialUrl(url);
+        return target ? safeOpenURL(target) : Promise.resolve(false);
+      }, []),
       handleBack: useCallback(() => {
         TactileEngine.selection();
         if (router.canGoBack()) {

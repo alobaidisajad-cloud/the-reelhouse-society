@@ -70,3 +70,47 @@ describe('every field profile the batch introduced or wired up', () => {
     expect(MAX_LENGTHS.bio).toBe(160);
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Social links — one rule shared by the writer and the opener
+// ══════════════════════════════════════════════════════════════════════════════
+describe('normalizeSocialUrl', () => {
+  const { normalizeSocialUrl } = require('../linking');
+
+  it('accepts the BARE DOMAIN members actually type', () => {
+    // This is the ordinary case. Validating the raw string instead of the normalised
+    // one would have stripped every legitimate link on the next profile save.
+    expect(normalizeSocialUrl('instagram.com/name')).toBe('https://instagram.com/name');
+    expect(normalizeSocialUrl('  letterbox.example/x  ')).toBe('https://letterbox.example/x');
+  });
+
+  it('leaves a full https link alone', () => {
+    expect(normalizeSocialUrl('https://example.com/a')).toBe('https://example.com/a');
+    expect(normalizeSocialUrl('http://example.com/a')).toBe('http://example.com/a');
+  });
+
+  it('rejects an http-prefixed scheme that is not http', () => {
+    // "httpx" starts with "http", so it is NOT prefixed — the protocol check is the
+    // only thing standing between it and the OS.
+    expect(normalizeSocialUrl('httpx://evil')).toBeNull();
+  });
+
+  it('neutralises a scheme payload rather than opening it', () => {
+    // Not exploitable even before this existed: the https:// prefix turns these into
+    // ordinary URLs pointing at nonsense hosts. Asserted so that stays true if the
+    // prefix rule is ever "simplified".
+    for (const hostile of ['javascript:alert(1)', 'data:text/html,<script>', 'intent://x']) {
+      const out = normalizeSocialUrl(hostile);
+      expect(out === null || out.startsWith('https://')).toBe(true);
+      // out may legitimately be null (an unparseable host is rejected outright).
+      expect(out ?? '').not.toMatch(/^javascript:|^data:|^intent:/);
+    }
+  });
+
+  it('returns null for nothing', () => {
+    expect(normalizeSocialUrl('')).toBeNull();
+    expect(normalizeSocialUrl('   ')).toBeNull();
+    expect(normalizeSocialUrl(null)).toBeNull();
+    expect(normalizeSocialUrl(undefined)).toBeNull();
+  });
+});

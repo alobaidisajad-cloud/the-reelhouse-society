@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { UserPreferencesSchema } from './user';
 import { validateUsername } from '@/src/utils/validateUsername';
+import { normalizeSocialUrl } from '@/src/utils/linking';
 
 /**
  * Schema for profile update mutations via ProfileWriteService.
@@ -30,9 +31,22 @@ export const ProfileUpdateSchema = z.object({
   is_social_private: z.boolean().optional(),
   persona: z.string().max(50).optional(),
   preferences: UserPreferencesSchema.optional(),
+  // The URL was `z.string()` — anything at all. Not exploitable today (the opener
+  // prefixes https:// to anything not starting with "http", which neutralises a
+  // scheme payload, and http-prefixed values are protocol-checked), but the stored
+  // value was trusted on the strength of a guard that lives somewhere else entirely.
+  //
+  // Entries whose URL cannot survive that guard are DROPPED rather than rejected: a
+  // member with one legacy bad link must still be able to save their profile, and a
+  // failed save that never explains itself is worse than a link quietly not working.
+  // normalizeSocialUrl is the SAME function the opener uses, so a link accepted here
+  // is a link that opens.
   social_links: z.union([
-    z.record(z.string(), z.string()),
+    z.record(z.string(), z.string()).transform((rec) =>
+      Object.fromEntries(Object.entries(rec).filter(([, url]) => normalizeSocialUrl(url) !== null))
+    ),
     z.array(z.object({ title: z.string(), url: z.string() }))
+      .transform((arr) => arr.filter((entry) => normalizeSocialUrl(entry.url) !== null)),
   ]).optional(),
 });
 
