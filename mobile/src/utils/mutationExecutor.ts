@@ -282,6 +282,16 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // ── Lists ──
     create_list: async (p: any) => {
         const { films, _tempId, ...listPayload } = p;
+        // #68, last gate. listSlice already cleans these before enqueueing, so this is
+        // belt AND braces — and it is not theoretical: the offline queue PERSISTS in
+        // MMKV, so a stack queued by the build currently on TestFlight (which does not
+        // sanitise) would otherwise flush raw after the launch build lands.
+        //
+        // This is also the convention the codebase already follows for comments —
+        // LogService AND mutationExecutor both sanitise logComment. Lists were the
+        // outlier, on both halves.
+        if (typeof listPayload.title === 'string') listPayload.title = sanitizeInput(listPayload.title, 'listTitle');
+        if (typeof listPayload.description === 'string') listPayload.description = sanitizeInput(listPayload.description, 'listDescription');
         const result = throwIfError(await supabase.from('lists').upsert([listPayload], { onConflict: 'id' }).select('id').maybeSingle());
         if (result.data) {
             const listId = (result.data as { id: string }).id;
@@ -390,7 +400,11 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         // Worst-case partial failure: user sees old+new items temporarily (safe).
         const { list_id, user_id, updates, films } = p;
         if (updates && Object.keys(updates as object).length > 0) {
-            throwIfError(await supabase.from('lists').update(updates as Record<string, unknown>).eq('id', list_id).eq('user_id', user_id));
+            // Same last gate as create_list above — a queued EDIT from an older build.
+            const u = updates as Record<string, unknown>;
+            if (typeof u.title === 'string') u.title = sanitizeInput(u.title, 'listTitle');
+            if (typeof u.description === 'string') u.description = sanitizeInput(u.description, 'listDescription');
+            throwIfError(await supabase.from('lists').update(u).eq('id', list_id).eq('user_id', user_id));
         }
         if (Array.isArray(films)) {
             if (films.length > 0) {

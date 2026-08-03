@@ -38,7 +38,7 @@ jest.mock('../../stores/mmkv-storage', () => ({
 }));
 
 /** Captures whatever any code path hands to Supabase. */
-const captured: { insert: any[]; update: any[]; rpc: any[] } = { insert: [], update: [], rpc: [] };
+const captured: { insert: any[]; update: any[]; rpc: any[]; upsert: any[] } = { insert: [], update: [], rpc: [], upsert: [] };
 
 jest.mock('@/src/lib/supabase', () => {
   const chain: any = {
@@ -53,6 +53,7 @@ jest.mock('@/src/lib/supabase', () => {
         ...chain,
         insert: jest.fn((payload: any) => { captured.insert.push(payload); return { ...chain, select: jest.fn(() => ({ single: jest.fn(async () => ({ data: null, error: null })) })) }; }),
         update: jest.fn((payload: any) => { captured.update.push(payload); return chain; }),
+        upsert: jest.fn((payload: any) => { captured.upsert.push(payload); return { ...chain, select: jest.fn(() => ({ maybeSingle: jest.fn(async () => ({ data: { id: 'l1' }, error: null })) })) }; }),
       })),
       rpc: jest.fn(async (name: string, args: any) => { captured.rpc.push({ name, args }); return { data: null, error: null }; }),
       auth: {
@@ -72,7 +73,7 @@ jest.mock('@/src/utils/TactileEngine', () => ({ __esModule: true, default: { suc
 jest.mock('../reelToast', () => { const t: any = jest.fn(); t.error = jest.fn(); t.success = jest.fn(); t.info = jest.fn(); return { __esModule: true, default: t }; });
 jest.mock('@/src/utils/reelToast', () => { const t: any = jest.fn(); t.error = jest.fn(); t.success = jest.fn(); t.info = jest.fn(); return { __esModule: true, default: t }; });
 
-beforeEach(() => { captured.insert = []; captured.update = []; captured.rpc = []; jest.clearAllMocks(); });
+beforeEach(() => { captured.insert = []; captured.update = []; captured.rpc = []; captured.upsert = []; jest.clearAllMocks(); });
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Entry point 1 & 2 — stack title and description  (#68)
@@ -159,5 +160,31 @@ describe('buildCritiquePayload', () => {
     const { buildCritiquePayload } = require('../critiquePayload');
     expect(buildCritiquePayload('‮⁦⁩​', ctx)).toBeNull();
     expect(buildCritiquePayload('   ', ctx)).toBeNull();
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// The offline last gate — a stack queued by the CURRENT TestFlight build
+// ══════════════════════════════════════════════════════════════════════════════
+// The queue persists in MMKV. Entries written by the build now on TestFlight carry
+// unsanitised titles, and they flush AFTER the launch build lands. Cleaning at the
+// enqueue source alone would miss exactly those.
+describe('offline list handlers', () => {
+  it('cleans a create queued before the fix existed', async () => {
+    const { executeMutation } = require('../mutationExecutor');
+    await executeMutation({ id: 'm1', type: 'create_list', timestamp: Date.now(),
+      payload: { id: 'l1', user_id: 'u1', title: HOSTILE_TITLE, description: 'a\u200Bb' } } as any, {});
+
+    const row = Array.isArray(captured.upsert[0]) ? captured.upsert[0][0] : captured.upsert[0];
+    expect(row.title).toBe('Best of 1999');
+    expect(row.description).toBe('ab');
+  });
+
+  it('cleans an edit queued before the fix existed', async () => {
+    const { executeMutation } = require('../mutationExecutor');
+    await executeMutation({ id: 'm2', type: 'update_list', timestamp: Date.now(),
+      payload: { list_id: 'l1', user_id: 'u1', updates: { title: HOSTILE_TITLE } } } as any, {});
+
+    expect(captured.update[0].title).toBe('Best of 1999');
   });
 });
