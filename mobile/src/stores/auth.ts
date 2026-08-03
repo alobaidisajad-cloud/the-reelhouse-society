@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import { create } from 'zustand';
 import { removePushToken } from '../lib/pushNotifications';
 import { queryClient } from '../lib/queryClient';
-import { logoutRevenueCat } from '../lib/revenueCat';
+import { identifyUser, logoutRevenueCat } from '../lib/revenueCat';
 import { captureError, setSentryUser } from '../lib/sentry';
 import type { User as AuthUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -220,6 +220,19 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     storage.set(`ironvault_user_cache_${authedUser.id}`, JSON.stringify(completeUser));
     set({ user: completeUser, isAuthenticated: true });
 
+    // ── Link this device's store identity to the account that just signed in ──
+    // initRevenueCat only runs at APP START — AppBootstrapper's effect has an empty
+    // dependency array — and logout() clears the identity below. So after a
+    // logout -> login without restarting the app, RevenueCat stays anonymous: this
+    // member's purchase is never linked to their account, restore fails on any OTHER
+    // device, and a subscription-expiry webhook arrives with an app_user_id that maps
+    // to nobody.
+    //
+    // Fire-and-forget: identifyUser swallows its own errors, and signing in must never
+    // block on the store being reachable. Safe here because this is an action, not the
+    // onAuthStateChange listener, and it touches no supabase.auth call.
+    void identifyUser(authedUser.id);
+
     // Enrich with the full profile in the background. Transient failures are retried;
     // if enrichment ultimately fails, the user operates with an incomplete profile for the session.
     withRetry(
@@ -269,6 +282,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       storage.set('last_user_id', data.user!.id);
       storage.set(`ironvault_user_cache_${data.user!.id}`, JSON.stringify(completeUser));
       set({ user: completeUser, isAuthenticated: true });
+      // Same reason as login(): a second account created on this device without an app
+      // restart would otherwise buy against an anonymous store identity.
+      void identifyUser(data.user!.id);
       return { needsConfirmation: false };
     }
     // Email confirmation required

@@ -49,6 +49,10 @@ jest.mock('../resetAllStores', () => ({
 
 jest.mock('../../lib/revenueCat', () => ({
   logoutRevenueCat: jest.fn(),
+  // login()/signup() re-link the store identity to the account that just signed in —
+  // initRevenueCat only runs at app start, so without this a second account on the
+  // same device would purchase against an anonymous RevenueCat id.
+  identifyUser: jest.fn(),
 }));
 
 jest.mock('../../lib/sentry', () => ({
