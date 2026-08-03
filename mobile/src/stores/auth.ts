@@ -221,12 +221,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({ user: completeUser, isAuthenticated: true });
 
     // ── Link this device's store identity to the account that just signed in ──
-    // initRevenueCat only runs at APP START — AppBootstrapper's effect has an empty
-    // dependency array — and logout() clears the identity below. So after a
-    // logout -> login without restarting the app, RevenueCat stays anonymous: this
-    // member's purchase is never linked to their account, restore fails on any OTHER
-    // device, and a subscription-expiry webhook arrives with an app_user_id that maps
-    // to nobody.
+    // Belt AND braces, not a bug fix: AppBootstrapper subscribes to this store and
+    // re-runs boot() on login (AppBootstrapper.tsx:149-155, its hasBooted guard is
+    // cleared on logout), so initRevenueCat DOES re-configure with the new account.
+    // But switching users by calling configure() a second time is not the documented
+    // path — Purchases.logIn() is — and an identity that silently fails to move means
+    // this member's purchase is linked to the wrong account, breaking restore on any
+    // other device and leaving expiry webhooks pointing at a stranger.
     //
     // Fire-and-forget: identifyUser swallows its own errors, and signing in must never
     // block on the store being reachable. Safe here because this is an action, not the
@@ -282,8 +283,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       storage.set('last_user_id', data.user!.id);
       storage.set(`ironvault_user_cache_${data.user!.id}`, JSON.stringify(completeUser));
       set({ user: completeUser, isAuthenticated: true });
-      // Same reason as login(): a second account created on this device without an app
-      // restart would otherwise buy against an anonymous store identity.
+      // Same reason as login(): logIn() is the documented way to move the store
+      // identity to this account, rather than relying on a repeat configure().
       void identifyUser(data.user!.id);
       return { needsConfirmation: false };
     }
