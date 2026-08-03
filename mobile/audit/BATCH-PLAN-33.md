@@ -472,17 +472,86 @@ Midway (UTC-11) to Kiritimati (UTC+14).
 ---
 
 ## BATCH 14 · Sanitisation & link safety
-`Tier B` · `4 findings` · `no dependency` · **NOT STARTED**
+`Tier B` · `4 findings` · `no dependency` · **✅ CLOSED 2026-08-04**
 
-- **#68** — High · List titles and descriptions are the only user input bypassing the sanitizer.
-- **#104** — High · Dossier comments skip sanitisation on the online path; the offline path sanitises.
-- **#103** — High · Markdown links bypass the app's URL scheme allowlist, including on third-party RSS content.
-- **#2** — Cap dossier markdown render length.
-
-**Together because** they are one input-trust boundary.
+- **#68** ✅ — stack titles/descriptions raw. BROADER than filed: the OFFLINE path was
+  raw too, so unlike 104 there was no accidental half-protection.
+- **#104** ✅ — dossier critiques sanitised OFFLINE and not online.
+- **#103** ✅ — markdown links bypassed the URL allowlist at all three mounts.
+  ⚠️ SCOPE CORRECTED: the register calls third-party RSS the highest-risk surface, but
+  NewsService never populates `body` and the excerpt is tag-stripped to 160 characters.
+  It is member-authored dossiers, not syndicated news.
+- **#2** ✅ — REAL, but named after the wrong vulnerability (below).
 
 **DONE WHEN** a hostile payload is rejected at every one of the four entry points, each
-with its own test.
+with its own test. — met, at six entry points.
+
+### THE FIND — the sanitiser itself was incomplete
+
+`sanitizeInput` did not strip **U+202A–U+202E**. Unicode has three families of
+bidirectional control; this guard caught the marks (200E/200F) and the isolates
+(2066–2069) and missed the embeddings and OVERRIDES. **U+202E is the canonical
+Trojan-Source character.** That hole sat under EVERY sanitised surface in the app —
+reviews, log comments, list comments, lounge messages, dossier titles and bodies — and
+this batch would have routed four more inputs into it.
+
+Found by asserting the whole CLASS rather than the listed members, which is exactly
+what a regex that looks thorough survives.
+
+### #2 was named after an advisory that cannot fire
+
+It exists to mitigate a `linkify-it` quadratic. **linkify is disabled** — the library
+builds `MarkdownIt({ typographer: true })`, and markdown-it's linkify default is false.
+Two OTHERS are reachable, measured against markdown-it 10.0.0: smartquotes **16843ms at
+200k**, nested emphasis **6877ms at 80k**. Reachable in production because the WEB app
+writes `full_content` with no sanitiser and no cap to this same database.
+
+Smart quotes kept deliberately: disabling that rule buys 87ms on the LESSER vector and
+nothing on nested emphasis, at the cost of curly quotes on an app built for film
+writing. Capped instead at `MAX_LENGTHS.dossierContent` — the limit the sanitiser
+already enforces, so one number has one meaning on both sides. The compose preview is
+NOT capped; truncating an author's draft while they write is the app fighting its user.
+
+### Four the register never listed
+
+- Profile **bio / display_name / persona** wrote raw. `bio` had a MAX_LENGTHS profile
+  and NOT ONE caller — Zod capped their length and stripped no characters. This makes
+  the claim that stack titles are "the only user input bypassing the sanitizer" false.
+- **Moderation report `details`** raw on BOTH paths — text one member writes about
+  another, rendered to moderators in the Tribunal.
+- **social_links** had no URL validation at write. NOT exploitable: the opener prefixes
+  `https://` to anything not starting with "http", which neutralises a scheme payload.
+  Hygiene only, now shared with the opener via `normalizeSocialUrl` so the two cannot
+  drift. ⚠️ Naive validation here would have STRIPPED EVERY BARE-DOMAIN LINK, which is
+  how members actually type them.
+- **private_notes** bypasses it too, but is owner-only, so a consistency gap rather than
+  a vulnerability. Recorded, not inflated.
+
+### ⚠️ The library inverts the usual convention
+
+`react-native-markdown-display@7.0.2`: a handler returning **true** makes it ALSO call
+raw `Linking.openURL` — the intuitive fix opens every link twice, the second time
+completely unvalidated. `onMarkdownLinkPress` returns the LITERAL type `false` so that
+mistake is a compile error. Do not widen it.
+
+### The lesson worth carrying forward
+
+Tests proving `sanitizeInput` works are NOT tests proving it is called. Measured:
+deleting the sanitiser from listSlice, ProfileWriteService AND reportStore at once left
+the whole suite green — 1322 passing. `sanitisationCallSites.test.ts` now drives each
+real function against a captured Supabase, and the same mutation fails 5 tests.
+
+`buildCritiquePayload` was extracted to `utils/` because importing a SCREEN into a test
+dies on native mocks — practical proof that logic living inside a screen is logic no
+test will reach, which is exactly how the online path went unsanitised.
+
+### Cleared — checked, not assumed
+
+The **WEB is safe**. Its markdown parser is alarming in isolation (URLs interpolated
+into `href` with no scheme check, `"` never escaped, and on the web `javascript:` hrefs
+execute) — but all FOUR `dangerouslySetInnerHTML` sites wrap output in DOMPurify with an
+explicit tag/attribute allow-list. Enumerated, not inferred. The parser is one refactor
+away from dangerous; worth knowing before anyone touches it.
 
 ---
 
