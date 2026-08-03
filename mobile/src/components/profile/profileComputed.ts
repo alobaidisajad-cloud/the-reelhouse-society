@@ -3,6 +3,7 @@ import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, H
 import { ProfileTab } from '@/src/hooks/useProfileData';
 
 import { colors } from '@/src/theme/theme';
+import { calendarDateString } from '@/src/utils/timeAgo';
 import { FORMAT_META } from '@/src/constants/formats';
 import { toProfileLog, toProfileWatchlistItem, toProfileVaultItem, toProfileList } from '@/src/utils/mappers';
 
@@ -46,6 +47,48 @@ interface UseProfileComputedParams {
   watchlistSearch: string;
   watchlistSort: 'default' | 'az' | 'za';
   physicalFilter: string | null;
+}
+
+/**
+ * Consecutive days ending today (or yesterday) on which the member logged a film.
+ *
+ * Pulled out of the hook so it can actually be tested — it is date arithmetic, which
+ * this codebase has now been bitten by twice, and it was unreachable by any test while
+ * it lived inside a useMemo.
+ *
+ * ⚠️ It previously took `d.substring(0, 10)` for any string. That is exactly right for
+ * `watchedDate`, which is a `date` column and carries no time — but the fallback is
+ * `createdAt`, a TIMESTAMP, and the first ten characters of a timestamp are its **UTC**
+ * day. Those keys were then compared against locally-built ones below, so west of UTC a
+ * log whose watchedDate was missing could be filed under tomorrow and silently break
+ * the streak. calendarDateString draws the distinction: a calendar date keeps its own
+ * day, a timestamp resolves to the member's local one.
+ *
+ * `now` is injectable so the behaviour is testable without waiting for midnight.
+ */
+export function computeDailyStreak(
+  logs: { watchedDate?: string | null; createdAt?: string | null }[],
+  now: Date = new Date(),
+): number {
+  const dates = new Set<string>();
+  for (const log of logs) {
+    const key = calendarDateString(log?.watchedDate ?? log?.createdAt);
+    if (key) dates.add(key);
+  }
+
+  let count = 0;
+  // Bounded by the number of distinct days logged: a streak can never be longer than
+  // that, and an unbounded `for (;;)` here is one malformed data set from spinning.
+  for (let i = 0; i <= dates.size + 1; i++) {
+    const check = new Date(now);
+    check.setDate(check.getDate() - i);
+    const key = `${check.getFullYear()}-${String(check.getMonth() + 1).padStart(2, '0')}-${String(check.getDate()).padStart(2, '0')}`;
+
+    if (dates.has(key)) count++;
+    else if (i === 0) continue;  // today may still be missed without ending the streak
+    else break;
+  }
+  return count;
 }
 
 export function useProfileComputed(params: UseProfileComputedParams) {
@@ -102,37 +145,8 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   // Daily streak
   const streak = useMemo(() => {
     if (serverStreak !== null) return serverStreak;
-
-    const dates = new Set<string>();
     const sourceLogs = analyticsLogs.length > 0 ? analyticsLogs : displayLogs;
-    
-    // Timezone-safe parsing via O(1) string extraction.
-    // Locks the streak explicitly to the true YYYY-MM-DD stored in the DB without V8 Date engine timezone shifts.
-    for (const log of sourceLogs) {
-      const d = log.watchedDate ?? log.createdAt;
-      if (d) {
-        let localStr = '';
-        if (typeof d === 'string') {
-          localStr = d.substring(0, 10);
-        } else if ((d as any) instanceof Date && !isNaN((d as any).getTime())) {
-          localStr = `${(d as any).getFullYear()}-${String((d as any).getMonth() + 1).padStart(2, '0')}-${String((d as any).getDate()).padStart(2, '0')}`;
-        }
-        if (localStr) dates.add(localStr);
-      }
-    }
-    
-    let count = 0;
-    const now = new Date();
-    for (let i = 0; ; i++) {
-      const check = new Date(now);
-      check.setDate(check.getDate() - i); // Mutate local date strictly
-      const key = `${check.getFullYear()}-${String(check.getMonth() + 1).padStart(2, '0')}-${String(check.getDate()).padStart(2, '0')}`;
-      
-      if (dates.has(key)) count++;
-      else if (i === 0) continue; // Allow today to be missed without breaking the streak yet
-      else break;
-    }
-    return count;
+    return computeDailyStreak(sourceLogs);
   }, [serverStreak, displayLogs, analyticsLogs]);
 
   // Archive filtering
