@@ -33,6 +33,7 @@ import { ReviewContent, VerdictBlock } from './ReviewContent';
 import { UserAttributionRow } from './UserAttributionRow';
 import { PosterFrame } from './PosterFrame';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
+import { timeAgo } from '@/src/utils/timeAgo';
 
 // Single source of truth: Zod schema
 import type { FeedItem } from '@/src/schemas/feed.schema';
@@ -110,7 +111,10 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 
   const editorialUri = item.editorial_header ? `${TMDB_IMG_W500}${item.editorial_header}` : null;
 
-  const timeAgo = useMemo(() => getTimeAgo(item.created_at), [item.created_at]);
+  // #75 — a fourth copy of timeAgo lived in this file as `getTimeAgo`, which is why the
+  // register only counted three. It had no date branch at all, so a two-year-old item
+  // read "104w AGO". The shared util falls through to a dated form with the year.
+  const relativeTime = useMemo(() => timeAgo(item.created_at), [item.created_at]);
 
   // ── The confidential back ──
   const [flipped, setFlipped] = useState(false);
@@ -206,7 +210,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
                 username={item.username}
                 avatarUrl={item.avatar_url}
                 role={item.role}
-                timeAgo={timeAgo}
+                timeAgo={relativeTime}
                 onUserPress={handleUserPress}
               />
             </View>
@@ -260,20 +264,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
   );
 });
 
-function getTimeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diff = Math.max(0, now - then);
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'JUST NOW';
-  if (mins < 60) return `${mins}m AGO`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h AGO`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d AGO`;
-  const weeks = Math.floor(days / 7);
-  return `${weeks}w AGO`;
-}
+// getTimeAgo removed — see the note at its former call site above (#75).
 
 const s = StyleSheet.create({
   card: {

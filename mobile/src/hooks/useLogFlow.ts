@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
 import { storage } from '../stores/mmkv-storage';
+import { localCalendarDate } from '@/src/utils/timeAgo';
 export interface LogSearchResult {
     id: number;
     title?: string;
@@ -62,14 +63,14 @@ export const RATING_LABELS: Record<number, string> = {
     4.5: 'Masterpiece', 5: 'Masterpiece',
 };
 
-export const getLocalDateString = (offsetDays = 0) => {
-    const d = new Date();
-    d.setDate(d.getDate() + offsetDays);
-    const yr = d.getFullYear();
-    const mo = String(d.getMonth() + 1).padStart(2, '0');
-    const da = String(d.getDate()).padStart(2, '0');
-    return `${yr}-${mo}-${da}`;
-};
+/**
+ * Today (or an offset day) on the MEMBER's calendar.
+ *
+ * Now a re-export of the shared implementation so the store layer, the importer and
+ * this hook cannot drift apart — they were already answering "what day is it?"
+ * three different ways. LogForm imports this name for the TODAY/YESTERDAY chips.
+ */
+export { localCalendarDate as getLocalDateString };
 
 // Returns a user-facing block message, or null if the log can be submitted.
 export function validateLogSubmission(
@@ -213,7 +214,7 @@ export function useLogFlow() {
     const [review, setReview] = useState('');
     const [isSpoiler, setIsSpoiler] = useState(false);
     const [abandonedReason, setAbandonedReason] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+    const [date, setDate] = useState(localCalendarDate());
     const [watchedWith, setWatchedWith] = useState('');
     const [privateNotes, setPrivateNotes] = useState('');
     const [physicalMedia, setPhysicalMedia] = useState('None');
@@ -261,7 +262,7 @@ export function useLogFlow() {
         setStatus('watched');
         setIsSpoiler(false);
         setAbandonedReason('');
-        setDate(new Date().toISOString().slice(0, 10));
+        setDate(localCalendarDate());
         setWatchedWith('');
         setPrivateNotes('');
         setPhysicalMedia('None');
@@ -280,7 +281,7 @@ export function useLogFlow() {
         setRating(log.rating ?? 0);
         setReview(log.review ?? '');
         setIsSpoiler(log.isSpoiler ?? false);
-        setDate(log.watchedDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
+        setDate(log.watchedDate?.slice(0, 10) ?? localCalendarDate());
         setWatchedWith(log.watchedWith ?? '');
         setPrivateNotes(log.privateNotes ?? '');
         setPhysicalMedia(log.physicalMedia ?? 'None');
@@ -441,7 +442,7 @@ export function useLogFlow() {
         setStatus('watched');
         setIsSpoiler(false);
         setAbandonedReason('');
-        setDate(new Date().toISOString().slice(0, 10));
+        setDate(localCalendarDate());
         setWatchedWith('');
         setPrivateNotes('');
         setPhysicalMedia('None');

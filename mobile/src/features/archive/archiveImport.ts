@@ -10,6 +10,7 @@
  * Batch upsert with ignoreDuplicates for idempotent imports.
  */
 import JSZip from 'jszip';
+import { localCalendarDate, calendarDateString } from '@/src/utils/timeAgo';
 import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '@/src/lib/supabase';
@@ -459,7 +460,11 @@ function isRealDate(iso: string): boolean {
 }
 
 export function normalizeDate(raw: string, format: 'MDY' | 'DMY' = 'MDY'): string {
-  const today = new Date().toISOString().slice(0, 10);
+  // localCalendarDate, not the UTC date. This value is BOTH the fallback for an
+  // unparseable row AND the ceiling that rejects future dates. With the UTC day, a
+  // member east of UTC importing in the morning had every entry watched TODAY silently
+  // clamped back to yesterday — data loss on the one path that brings in years at once.
+  const today = localCalendarDate();
   if (!raw) return today;
 
   const trimmed = raw.trim();
@@ -504,7 +509,10 @@ export function normalizeDate(raw: string, format: 'MDY' | 'DMY' = 'MDY'): strin
 
   // Fallback — try native Date parsing
   const parsed = new Date(trimmed);
-  if (!isNaN(parsed.getTime())) return clamp(parsed.toISOString().slice(0, 10));
+  // The LOCAL day of that instant. toISOString() takes the UTC day, so "Jul 25, 2026"
+  // imported from Tokyo was stored as 2026-07-24.
+  const asCalendar = isNaN(parsed.getTime()) ? null : calendarDateString(parsed);
+  if (asCalendar) return clamp(asCalendar);
 
   return today;
 }

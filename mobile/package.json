@@ -13,7 +13,8 @@
     "test": "jest",
     "docs:generate": "typedoc",
     "docs:check": "typedoc --emit none --logLevel Warn",
-    "docs:deps": "madge --image docs/dependency-graph.svg --ts-config tsconfig.json src/"
+    "docs:deps": "madge --image docs/dependency-graph.svg --ts-config tsconfig.json src/",
+    "test:tz": "node scripts/test-timezones.js"
   },
   "dependencies": {
     "@expo-google-fonts/courier-prime": "^0.4.1",

@@ -11,6 +11,7 @@ import { enqueueMutation, getOfflineQueue } from '../../../../utils/offlineQueue
 import reelToast from '../../../../utils/reelToast';
 import { sanitizeInput } from '../../../../utils/sanitizeInput';
 import { resolveTier } from '../../../../utils/tier';
+import { localCalendarDate } from '../../../../utils/timeAgo';
 import { useAuthStore } from '../../../auth';
 import type { FilmState } from '../../../films';
 
@@ -147,7 +148,7 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
 const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: DomainLog, log: Partial<DomainLog>) => {
     const oldHistory = (Array.isArray(existingLog.viewingHistory) ? existingLog.viewingHistory : []) as any[];
     const archivedEntry = {
-        date: existingLog.watchedDate ?? existingLog.createdAt ?? new Date().toISOString(),
+        date: existingLog.watchedDate ?? existingLog.createdAt ?? localCalendarDate(),
         rating: existingLog.rating,
         review: existingLog.review ?? '',
         isSpoiler: existingLog.isSpoiler ?? false,
@@ -180,7 +181,7 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
         rating: log.rating !== undefined ? log.rating : existingLog.rating,
         review: isAware ? (log.review !== undefined ? log.review : existingLog.review) : (log.review !== undefined && log.review !== '' ? log.review : existingLog.review),
         status: log.status === 'abandoned' ? 'abandoned' : 'rewatched',
-        watchedDate: log.watchedDate ?? new Date().toISOString(),
+        watchedDate: log.watchedDate ?? localCalendarDate(),
         watchedWith: log.watchedWith !== undefined ? log.watchedWith : (existingLog.watchedWith ?? null),
         isSpoiler: (log.isSpoiler !== undefined ? log.isSpoiler : existingLog.isSpoiler) ?? false,
         privateNotes: safeOverride(log.privateNotes, existingLog.privateNotes, null),
@@ -250,7 +251,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 poster_path: log.poster ?? null, year: log.year ? (parseInt(String(log.year)) || null) : null,
                 rating: log.rating ?? 0, review: log.review ?? '',
                 status: log.status ?? 'watched', is_spoiler: log.isSpoiler ?? false,
-                watched_date: log.watchedDate ?? new Date().toISOString(),
+                watched_date: log.watchedDate ?? localCalendarDate(),
                 watched_with: log.watchedWith ?? null,
                 private_notes: log.privateNotes ?? null,
                 abandoned_reason: log.abandonedReason ?? null,
@@ -323,7 +324,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                         drop_cap: log.dropCap ?? false,
                         is_autopsied: log.isAutopsied ?? false,
                         autopsy: log.autopsy ?? null,
-                        watched_date: log.watchedDate ?? new Date().toISOString(),
+                        watched_date: log.watchedDate ?? localCalendarDate(),
                         watched_with: log.watchedWith ?? null,
                         editorial_header: log.editorialHeader ?? null,
                         alt_poster: log.altPoster ?? null,
@@ -396,7 +397,7 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
             review: '',
             status,
             is_spoiler: false,
-            watched_date: new Date().toISOString(),
+            watched_date: localCalendarDate(),
             watched_with: null,
             private_notes: null,
             abandoned_reason: null,
@@ -461,7 +462,7 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
             review: '',
             status,
             createdAt,
-            watchedDate: new Date().toISOString(),
+            watchedDate: localCalendarDate(),
             watchedWith: null,
             privateNotes: null,
             abandonedReason: null,
@@ -619,7 +620,7 @@ export const updateLogOp = async (set: SetState, get: GetState, id: string, upda
                         drop_cap: mergedLog.dropCap ?? false,
                         is_autopsied: mergedLog.isAutopsied ?? false,
                         autopsy: mergedLog.autopsy ?? null,
-                        watched_date: mergedLog.watchedDate ?? new Date().toISOString(),
+                        watched_date: mergedLog.watchedDate ?? localCalendarDate(),
                         watched_with: mergedLog.watchedWith ?? null,
                         editorial_header: mergedLog.editorialHeader ?? null,
                         alt_poster: mergedLog.altPoster ?? null,
@@ -722,7 +723,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             const remainingHistory = history.slice(1);
             
             const updates: Partial<DomainLog> = {
-                watchedDate: poppedEntry.date ?? logToRemove.createdAt ?? new Date().toISOString(),
+                watchedDate: poppedEntry.date ?? logToRemove.createdAt ?? localCalendarDate(),
                 rating: poppedEntry.rating ?? 0,
                 review: poppedEntry.review ?? '',
                 status: poppedEntry.status ?? 'watched',

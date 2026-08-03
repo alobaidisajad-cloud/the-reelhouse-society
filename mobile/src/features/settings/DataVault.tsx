@@ -16,6 +16,7 @@ import {
 import TactileEngine from '@/src/utils/TactileEngine';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import { localCalendarDate } from '@/src/utils/timeAgo';
 import * as Sharing from 'expo-sharing';
 
 import { useFilmStore , useWatchlistStore, useArchiveStore, useListStore } from '@/src/stores/films';
@@ -263,7 +264,9 @@ export default function DataVault() {
       const csv = [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n');
 
       const safeUsername = (user?.username ?? 'archive').replace(/[^a-zA-Z0-9_-]/g, '');
-      const date = new Date().toISOString().slice(0, 10);
+      // The member's own day, not UTC — an export taken at 6pm in Los Angeles was
+      // named with tomorrow's date.
+      const date = localCalendarDate();
       const baseDir = FileSystem.documentDirectory ?? 'file:///';
       filePath = `${baseDir}reelhouse_${safeUsername}_${date}.csv`;
 
@@ -337,7 +340,9 @@ export default function DataVault() {
       const jsonStr = JSON.stringify(dump); // Stripped whitespace for optimal memory usage
 
       const safeUsername = (user?.username ?? 'archive').replace(/[^a-zA-Z0-9_-]/g, '');
-      const date = new Date().toISOString().slice(0, 10);
+      // The member's own day, not UTC — an export taken at 6pm in Los Angeles was
+      // named with tomorrow's date.
+      const date = localCalendarDate();
       const baseDir = FileSystem.documentDirectory ?? 'file:///';
       filePath = `${baseDir}reelhouse_${safeUsername}_${date}.json`;
 

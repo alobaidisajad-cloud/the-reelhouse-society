@@ -59,17 +59,15 @@ export interface PulseActivity {
   time: string;
 }
 
-/** Utility: human-readable relative time */
-export function timeAgo(dateStr: string | null): string {
-  if (!dateStr) return '';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  if (isNaN(diff)) return '';
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'MOMENTS AGO';
-  if (mins < 60) return mins === 1 ? '1 MIN. AGO' : `${mins} MIN. AGO`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return hrs === 1 ? '1 HR. AGO' : `${hrs} HRS. AGO`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return days === 1 ? '1 DAY AGO' : `${days} DAYS AGO`;
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
-}
+/**
+ * Utility: human-readable relative time.
+ *
+ * #75 — this was one of FOUR near-copies of the same function. Its wording is the one
+ * that survived and became canonical ("MOMENTS AGO", "5 MIN. AGO"), because it is the
+ * house voice; what it lacked was a weeks bucket, year disambiguation on old entries,
+ * and safety against a date-only value shifting a day west of UTC.
+ *
+ * Re-exported rather than deleted so FeaturedCritique and SocialPulse keep importing
+ * from here unchanged — one implementation, no call-site churn.
+ */
+export { timeAgo } from '@/src/utils/timeAgo';

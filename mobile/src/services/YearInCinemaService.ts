@@ -9,6 +9,7 @@
  */
 import { supabase } from '@/src/lib/supabase';
 import { LOG_SELECT_COLUMNS, mapLogRow } from '@/src/utils/mappers';
+import { dateParts } from '@/src/utils/timeAgo';
 
 /** Minimal log shape the stats need — DomainLog is structurally assignable. */
 export interface YearLogInput {
@@ -62,7 +63,11 @@ export function computeYearStats(
 ): YearStats {
   const yearLogs = logs.filter((l) => {
     const d = effectiveDate(l);
-    return !!d && new Date(d).getFullYear() === year;
+    // dateParts, not new Date(...).getFullYear(): watched_date is a `date` column, so
+    // "2026-01-01" parses as midnight UTC and reads back as 2025 west of UTC — filing a
+    // New Year's Day film into the previous year's retrospective for all of the Americas.
+    const p = d ? dateParts(d) : null;
+    return !!p && p.year === year;
   });
 
   const total = yearLogs.length;
@@ -84,7 +89,10 @@ export function computeYearStats(
   for (const l of yearLogs) {
     const d = effectiveDate(l);
     if (!d) continue;
-    const m = MONTH_NAMES[new Date(d).getMonth()];
+    // Same reason: "2026-05-01" counted as APRIL west of UTC, so May showed one film short.
+    const parts = dateParts(d);
+    if (!parts) continue;
+    const m = MONTH_NAMES[parts.month];
     monthsMap[m] = (monthsMap[m] || 0) + 1;
   }
   const topMonths = Object.entries(monthsMap)

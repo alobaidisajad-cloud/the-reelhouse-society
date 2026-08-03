@@ -33,24 +33,16 @@ import { isNetworkError, isForbiddenError } from '@/src/utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import reelToast from '@/src/utils/reelToast';
 import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
+import { timeAgo } from '@/src/utils/timeAgo';
 import { ChevronLeft, Film as FilmIcon, MoreHorizontal, Share2, Sparkles } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { z } from 'zod';
 
 // TMDB_IMG hardcoded string removed in favor of tmdb.poster / tmdb.backdrop
 const AnimatedView = Animated.createAnimatedComponent(View);
-function timeAgo(dateStr: string | Date | undefined): string {
-  if (!dateStr) return '';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'JUST NOW';
-  if (mins < 60) return `${mins}m AGO`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h AGO`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d AGO`;
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
-}
+// #75 / finding 109 — a local timeAgo used to live here, one of four near-copies. It had no
+// weeks bucket at all, so a fortnight-old log jumped straight from "6d AGO" to a bare
+// "MAR 5" with no year. The shared util is imported at the top of this file.
 
 interface LogDetail {
   id: string;

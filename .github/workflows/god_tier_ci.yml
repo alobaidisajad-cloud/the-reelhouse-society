@@ -89,6 +89,28 @@ jobs:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: npx jest --coverage --ci --maxWorkers=2
 
+      # ── The same suite, run from the Americas ────────────────────────────────
+      # The step above runs in the runner's timezone, which is UTC — and a whole class
+      # of date bug is invisible from UTC. `logs.watched_date` is a `date` column, so
+      # "2026-07-25" parses as midnight UTC and rendered as JUL 24 for every member
+      # west of it: the entire Americas, on the film diary, which is the product. CI
+      # was green throughout, for months.
+      #
+      # Los Angeles is the cheap catch — one negative-offset zone, with daylight
+      # saving, finds the whole class. When it was first run against this repo it
+      # failed 9 date assertions AND an existing Year in Cinema test that had simply
+      # never been executed outside UTC.
+      #
+      # No coverage flag: the step above owns that gate, this one owns correctness.
+      # `npm run test:tz` runs the full six-zone matrix locally.
+      - name: Jest (America/Los_Angeles — dates are not a UTC-only concern)
+        working-directory: ./mobile
+        env:
+          TZ: America/Los_Angeles
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: npx jest --ci --silent --maxWorkers=2
+
       # The ratchet has existed, calibrated, since June and NOTHING has ever run it —
       # not this workflow, not a package.json script. jest.config.js enforces absolute
       # floors; this catches the slow slide between them, failing on any drop of more

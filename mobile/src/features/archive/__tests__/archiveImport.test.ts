@@ -33,7 +33,17 @@ jest.mock('expo-file-system/legacy', () => ({
   EncodingType: { UTF8: 'utf8', Base64: 'base64' },
 }));
 
-const TODAY = new Date().toISOString().slice(0, 10);
+// The MEMBER's own day, not UTC.
+//
+// This was `new Date().toISOString().slice(0, 10)`, which encoded the very bug batch 13
+// fixed: normalizeDate uses "today" both as the ceiling that rejects future dates and as
+// the fallback for a corrupt row, so with the UTC day a member east of UTC importing in
+// the morning had every entry watched TODAY silently clamped back to yesterday.
+//
+// Computed independently here rather than imported from the util, so this states what
+// the behaviour should be instead of agreeing with whatever the code happens to do.
+const _now = new Date();
+const TODAY = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
 
 describe('parseCSVRows / parseCSV', () => {
   it('handles quoted fields with embedded commas, newlines, and escaped quotes', () => {
