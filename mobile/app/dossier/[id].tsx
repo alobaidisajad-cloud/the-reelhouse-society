@@ -21,7 +21,7 @@ import { useDispatchStore } from '@/src/stores/content';
 import { colors, effects, fonts } from '@/src/theme/theme';
 import { DossierComment, DossierDetail } from '@/src/types';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
-import { sanitizeInput } from '@/src/utils/sanitizeInput';
+import { buildCritiquePayload, type CritiqueRow } from '@/src/utils/critiquePayload';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
 import * as Crypto from 'expo-crypto';
@@ -46,7 +46,6 @@ function formatCount(n: number): string {
     return String(n);
 }
 
-type CritiqueRow = DossierComment & { avatar_url?: string | null };
 
 // dossier_comments has no FK to profiles, so faces arrive via one batched
 // lookup per page. Faces are decoration — a failure never blocks the words.
@@ -275,35 +274,16 @@ export default function DossierReaderScreen() {
         setPosting(true);
         const tempId = Crypto.randomUUID();
 
-        // finding 104 — sanitise HERE, before the optimistic row is built, so the words shown
-        // on screen are the words that get stored. Sanitising at the insert instead
-        // would leave the author reading a version of their critique that no longer
-        // exists in the database.
-        //
-        // This was the ONLY comment surface writing raw: log comments (LogService:217),
-        // list comments (StackService:151) and lounge messages (lounge.ts:595) all
-        // sanitise on the online path, and the OFFLINE path for this very field already
-        // did (mutationExecutor.ts:678). So the protection ran only when a critique was
-        // filed without a network — the exceptional path — and never on the normal one.
-        //
-        // Length is not the exposure (the composer caps at 500, under the 2000 limit);
-        // the bidi controls and isolates are. Those are the Trojan-Source class: a
-        // critique that visually reorders the text around it in the list.
-        const cleanBody = sanitizeInput(newComment.trim(), 'dossierComment');
-        if (!cleanBody) {
+        // finding 104 — cleaned BEFORE the optimistic row is built, so the words on
+        // screen are the words that get stored. Sanitising at the insert instead would
+        // leave the author reading a version of their critique that no longer exists.
+        const tempComment = buildCritiquePayload(newComment, {
+            id, tempId, userId: user.id, username: user.username, avatarUrl: user.avatar_url,
+        });
+        if (!tempComment) {
             setPosting(false);
             return;
         }
-
-        const tempComment = {
-            id: tempId,
-            dossier_id: id,
-            user_id: user.id,
-            username: user.username,
-            body: cleanBody,
-            created_at: new Date().toISOString(),
-            avatar_url: user.avatar_url ?? null,
-        } as unknown as CritiqueRow;
 
         // Optimistic UI update — newest words sit at the top of the pile.
         setComments(prev => [tempComment, ...prev]);
