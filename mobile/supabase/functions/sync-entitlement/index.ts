@@ -161,8 +161,13 @@ serve(async (req: Request) => {
     // apply_entitlement now refuses a downgrade from a provider that did not grant the
     // current tier. A genuinely lapsed App Store subscription still downgrades, because
     // that IS a revenuecat-granted tier. See 20260803_01_entitlement_source.sql.
+    //
+    // The authority is grant_entitlement, NOT a third argument on apply_entitlement:
+    // two overloads of one name would make PostgREST resolve by argument-name set, and
+    // an ambiguity there would fail on a PAYMENT path. apply_entitlement stays
+    // single-signature as the legacy shim.
     const { data: applyRows, error: updateError } = await adminClient
-      .rpc('apply_entitlement', { p_user_id: user.id, p_tier: tier, p_source: 'revenuecat' });
+      .rpc('grant_entitlement', { p_user_id: user.id, p_tier: tier, p_source: 'revenuecat' });
 
     if (updateError) {
       return new Response(JSON.stringify({ error: 'Failed to update profile' }), {

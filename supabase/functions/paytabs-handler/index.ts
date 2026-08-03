@@ -184,7 +184,7 @@ serve(async (req) => {
                     // destroyed, because Apple truthfully reports no purchase for an Apple
                     // ID that never made one. See 20260803_01_entitlement_source.sql.
                     const { data: applyRows, error } = await supabaseAdmin
-                        .rpc('apply_entitlement', { p_user_id: userId, p_tier: resolvedTier, p_source: 'paytabs' })
+                        .rpc('grant_entitlement', { p_user_id: userId, p_tier: resolvedTier, p_source: 'paytabs' })
                     const applied = Array.isArray(applyRows) ? applyRows[0] : applyRows
                     if (error) console.error('Error auto-upgrading user role:', error)
                     else if (applied?.out_applied === false) console.warn(`IPN: entitlement NOT applied for ${userId} — ${applied?.out_reason}`)
