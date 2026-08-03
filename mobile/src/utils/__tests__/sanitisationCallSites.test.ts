@@ -221,3 +221,28 @@ describe('offline last gate — every handler that writes member prose', () => {
     expect(call.args.p_details).toBe('viletext');
   });
 });
+
+describe('offline dossier handlers — the markdown this batch renders', () => {
+  it('add_dossier cleans title, excerpt and full_content', async () => {
+    const { executeMutation } = require('../mutationExecutor');
+    await executeMutation({ id: 'd1', type: 'add_dossier', timestamp: Date.now(),
+      payload: { user_id: 'u1', author_username: 'c', title: 'On ‮Ozu',
+                 excerpt: 'a\u200Bb', full_content: 'body‮text', is_published: true } } as any, {});
+    const row = Array.isArray(captured.insert[0]) ? captured.insert[0][0] : captured.insert[0];
+    expect(row.title).toBe('On Ozu');
+    expect(row.excerpt).toBe('ab');
+    expect(row.full_content).toBe('bodytext');
+  });
+
+  it('update_dossier cleans them too', async () => {
+    const { executeMutation } = require('../mutationExecutor');
+    await executeMutation({ id: 'd2', type: 'update_dossier', timestamp: Date.now(),
+      payload: { id: 'x', user_id: 'u1', updates: { full_content: 'p‮q' } } } as any, {});
+    expect(captured.update[0].full_content).toBe('pq');
+  });
+
+  it('caps an over-length body offline, so the render cap is never the only limit', () => {
+    const { MAX_LENGTHS } = require('../sanitizeInput');
+    expect(MAX_LENGTHS.dossierContent).toBe(25000);
+  });
+});

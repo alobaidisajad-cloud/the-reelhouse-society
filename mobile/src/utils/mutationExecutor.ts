@@ -129,6 +129,22 @@ function cleanProse<T extends Record<string, unknown>>(o: T): T {
     return o;
 }
 
+/**
+ * The dossier equivalent. Kept separate because `title` is ambiguous across the app —
+ * a stack title caps at 100 and a dossier title at 200 — so one generic field→profile
+ * map would silently apply the wrong limit to whichever it saw first.
+ *
+ * full_content matters most: it is the markdown these very fixes render, and the render
+ * cap assumes the write cap held. Offline, it did not.
+ */
+function cleanDossier<T extends Record<string, unknown>>(o: T): T {
+    const w = o as Record<string, unknown>;
+    if (typeof w.title === 'string') w.title = sanitizeInput(w.title, 'dossierTitle');
+    if (typeof w.excerpt === 'string') w.excerpt = sanitizeInput(w.excerpt, 'dossierExcerpt');
+    if (typeof w.full_content === 'string') w.full_content = sanitizeInput(w.full_content, 'dossierContent');
+    return o;
+}
+
 const insertLog = async (p: any): Promise<MutationResult> => {
     const { _fakeId, _tempId, ...raw } = p;
     cleanProse(raw);
@@ -686,7 +702,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             is_published: p.is_published,
             created_at: p.created_at
         };
-        const cleaned = Object.fromEntries(Object.entries(dbPayload).filter(([, v]) => v !== undefined));
+        const cleaned = cleanDossier(Object.fromEntries(Object.entries(dbPayload).filter(([, v]) => v !== undefined)));
         const result = throwIfError(await supabase.from('dispatch_dossiers').insert([cleaned]).select('id').maybeSingle());
         if (p._tempId && result.data) {
             return { newId: (result.data as { id: string }).id, fakeId: p._tempId as string };
@@ -696,7 +712,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
 
     update_dossier: async (p: any) => {
         const { id, user_id, updates } = p;
-        throwIfError(await supabase.from('dispatch_dossiers').update(updates as Record<string, unknown>).eq('id', id).eq('user_id', user_id));
+        throwIfError(await supabase.from('dispatch_dossiers').update(cleanDossier(updates as Record<string, unknown>)).eq('id', id).eq('user_id', user_id));
         return {};
     },
 
