@@ -420,19 +420,54 @@ unknown tier value never downgrades, and the price comes from the store. — all
 ---
 
 ## BATCH 13 · Dates & time
-`Tier B` · `4 findings` · `no dependency` · **NOT STARTED**
+`Tier B` · `4 findings` · `no dependency` · **✅ CLOSED 2026-08-03**
 
-- **#40** — High · Log dates default to the UTC calendar date, not the member's local date.
-- **#74** — High · Every logged date renders one day early for users west of UTC.
-- **#75** — Three `timeAgo` implementations, two of which were supposed to be deleted.
-- **#109** — A local `timeAgo` in `log/[id].tsx` duplicating the shared util.
-
-**Together because** all four are the same timezone/duplication story. **Encode the
-timezone table as assertions before touching anything** — this is the batch most
-likely to look right and be wrong.
+- **#40** ✅ — Log dates default to the UTC calendar date, not the member's local date.
+- **#74** ✅ — Every logged date renders one day early for users west of UTC.
+- **#75** ✅ — *Four*, not three, `timeAgo` implementations. The register undercounted:
+  the fourth was `getTimeAgo` in `ActivityCard.tsx`, hidden by its different name.
+- **#109** ✅ — **not a separate defect.** It points at `log/[id].tsx:42`, which is one
+  of #75's four. The same line, counted twice.
 
 **DONE WHEN** a member west of UTC sees the correct date, proven across a table of
-timezones, and one `timeAgo` implementation remains.
+timezones, and one `timeAgo` implementation remains. — all met, across six zones from
+Midway (UTC-11) to Kiritimati (UTC+14).
+
+### Found during the batch, not in the register
+
+- **The importer silently destroyed dates.** `archiveImport` used the UTC day as BOTH
+  the future-date ceiling and the corrupt-row fallback, so east of UTC in the morning
+  every entry watched *today* was clamped back to yesterday — on the one path that
+  imports years of history at once. Its fallback parser also stored the UTC day of a
+  locally-parsed date ("Jul 25" from Tokyo → `2026-07-24`).
+- **New Year's Day films landed in the wrong year.** `YearInCinemaService` decided the
+  year with `new Date(d).getFullYear()`, and the month the same way, so west of UTC a
+  Jan 1 film joined the *previous* year's retrospective and `2026-05-01` counted as
+  April. **The existing test suite already proved this** — it had never been run
+  outside UTC.
+- Export filenames used the UTC day; `timeAgoLower` was dead.
+
+### The two things that mattered most
+
+- **No `Intl` in the fix.** The obvious answer is `timeZone: 'UTC'` — which is what
+  `formatTMDBDate` did, and what the audit recommended copying. But this app runs on
+  **Hermes with no Intl polyfill**, and whether Hermes honours that option cannot be
+  verified without a device. A calendar date now never becomes a `Date` at all: it is
+  split into integers and formatted from a month table. `profileComputed.ts` already
+  did exactly this, and its comment says why — that file was right all along.
+- **Two files were already correct and were deliberately left alone.**
+  `profileComputed` and `NitrateCalendarGrid` both handle this properly. A confident
+  sweep would have "fixed" both and shipped two regressions.
+
+### Harness traps — read before writing any timezone test
+
+- Mutating `process.env.TZ` **inside** a jest-expo test does **nothing**. Los Angeles
+  and Tokyo both returned `Jul 25`. The natural harness passes while proving nothing.
+- TZ must be set before the process starts. `npm run test:tz` does that across six
+  zones; CI now also runs the suite under `America/Los_Angeles`, having only ever run
+  in UTC — which is why this survived for months.
+- Spawning `npx jest` from a Node script fails with `EINVAL` on Windows/Node 24; the
+  runner invokes Jest's entry point with `process.execPath`.
 
 ---
 
