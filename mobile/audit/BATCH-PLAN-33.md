@@ -370,19 +370,52 @@ rather than promising only "your feeds".
 ---
 
 ## BATCH 12 · Purchases & tier resolution
-`Tier B` · `6 findings` · **REQUIRES BATCH 6** · **NOT STARTED**
+`Tier B` · `6 findings` · **REQUIRES BATCH 6** · **✅ CLOSED 2026-08-03**
 
-- **#47** — "Restore Purchases" silently strips admin privileges, permanently.
-- **#48** — The admin account resolves to the *lowest* tier; unknown tier values downgrade silently.
-- **#99** — Tapping "Restore Purchases" offline locally demotes a paying member.
-- **#100** — Buying a founding seat after the cap fills says "Welcome to the Founding Board!"
-- **#101** — The restore handler uses the one function the codebase warns against for `tier`.
-- **#98** — The founding banner shows a hardcoded `$49` to every storefront.
+- **#47** ✅ — "Restore Purchases" silently strips admin privileges, permanently.
+- **#48** ✅ — The admin account resolves to the *lowest* tier; unknown tier values downgrade silently.
+- **#99** ✅ — Tapping "Restore Purchases" offline locally demotes a paying member.
+- **#100** ✅ — Buying a founding seat after the cap fills says "Welcome to the Founding Board!"
+- **#101** ✅ — The restore handler uses the one function the codebase warns against for `tier`.
+- **#98** ✅ — The founding banner shows a hardcoded `$49` to every storefront.
 
 **Together because** they are one subsystem with one shared tier-resolution path.
 
 **DONE WHEN** an admin survives a restore, an offline restore changes nothing, an
-unknown tier value never downgrades, and the price comes from the store.
+unknown tier value never downgrades, and the price comes from the store. — all met.
+
+### Found during the batch, not in the register
+
+- **A web purchase was destroyed by "Restore Purchases".** RevenueCat truthfully
+  reports "this Apple ID never bought anything" for a PayTabs sale — that is
+  ignorance, not a cancellation — and the app wrote `cinephile`, wiping the purchase
+  on BOTH surfaces. Closed by `profiles.entitlement_source` + `grant_entitlement`:
+  *a provider may only LOWER a tier it granted.* Server-side, so it protects the
+  build already on TestFlight. `20260803_01_entitlement_source.sql`, applied live.
+- **One member's tier could land on another account.** The offline queue treats a
+  payload without `user_id` as session-scoped and safe; `sync_entitlement` had none,
+  and the edge function applies the tier to whoever is signed in.
+- **`profiles.tier` had no CHECK constraint** — which is how `projectionist`, a tier
+  removed from the product, sat in a live row. `20260802_07`, applied live.
+- **The new `entitlement_source` column would have been a free-premium exploit** if
+  it had not been added to `protect_privileged_profile_fields`: cancel, set your own
+  source to `paytabs`, and RevenueCat can never demote you again.
+- **The founding poll waited for a weight it could never reach** when the seats
+  filled mid-purchase, so that member's session was never refreshed either.
+- **`paytabs-handler` is deployed with `verify_jwt: true`**, so PayTabs' webhook is
+  rejected by the gateway before the code runs — and none of the three PayTabs
+  secrets exist, so checkout cannot start either. Web payments are entirely
+  non-functional; nobody has been charged. **Deferred by the owner's decision** —
+  it is a product call, not a bug fix. See `paytabs-not-functional` in memory.
+
+### Still open, deliberately
+
+- **There is no RevenueCat webhook.** The app's sync is the only thing that ever
+  retires a lapsed subscription, so a member who cancels and never reopens the app
+  keeps their tier. Worth its own batch.
+- The `followers_count` / `following_count` / `total_logs` columns are NOT protected
+  by `protect_privileged_profile_fields`, though an older version of that trigger did
+  guard them. Notes say follow-count tampering was closed another way; unverified.
 
 ---
 
