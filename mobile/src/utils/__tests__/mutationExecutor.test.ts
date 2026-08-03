@@ -681,14 +681,64 @@ describe('Entitlements', () => {
         await expect(runMutation('sync_entitlement', { tier: 'auteur' })).rejects.toThrow('500');
     });
 
-    it('skips when no active session', async () => {
+    // ⚠️ This used to assert `result).toEqual({})` — "should NOT throw, just return
+    // silently". That WAS the bug: reporting success made the queue delete the mutation,
+    // so the member's tier never synced at all. The test encoded the defect as intent.
+    it('keeps the mutation queued when there is no session, instead of reporting success', async () => {
         (supabase.auth as any).getSession = jest.fn().mockResolvedValue({
             data: { session: null },
         });
-        // Should NOT throw, just return silently
-        const result = await runMutation('sync_entitlement', { tier: 'auteur' });
-        expect(result).toEqual({});
+        await expect(runMutation('sync_entitlement', { tier: 'auteur' })).rejects.toThrow(/no session/i);
         expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('marks that failure as retryable so the queue preserves it', async () => {
+        // A plain error is dead-lettered by flushOfflineQueue's "unknown failure" branch,
+        // which would lose the sync exactly like returning {} did. status 503 makes
+        // isNetworkError classify it and the flush halts with the mutation intact.
+        (supabase.auth as any).getSession = jest.fn().mockResolvedValue({
+            data: { session: null },
+        });
+        await expect(runMutation('sync_entitlement', { tier: 'auteur' }))
+            .rejects.toMatchObject({ status: 503 });
+    });
+
+    it('refuses a mutation queued for a DIFFERENT account', async () => {
+        // The queue partitions by payload.user_id, but this is the last place a mismatch
+        // can be caught — the edge function derives the account from the JWT and would
+        // apply one member's tier to another person's profile.
+        (supabase.auth as any).getSession = jest.fn().mockResolvedValue({
+            data: { session: { access_token: 'test-jwt', user: { id: 'user-B' } } },
+        });
+        await expect(
+            runMutation('sync_entitlement', { tier: 'auteur', user_id: 'user-A' })
+        ).rejects.toThrow(/different account/i);
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('proceeds when the queued owner matches the session', async () => {
+        (supabase.auth as any).getSession = jest.fn().mockResolvedValue({
+            data: { session: { access_token: 'test-jwt', user: { id: 'user-A' } } },
+        });
+        await runMutation('sync_entitlement', { tier: 'auteur', user_id: 'user-A' });
+        expect(global.fetch).toHaveBeenCalled();
+    });
+
+    it("returns the server's reply instead of discarding it", async () => {
+        // finding 100: seatClaimed=false means the 100 founding seats were full and the
+        // member was granted Auteur instead. This used to `return {}`, so someone who
+        // paid for a seat that no longer existed was never told.
+        (global.fetch as jest.Mock).mockResolvedValue({
+            ok: true,
+            json: async () => ({ tier: 'auteur', seatClaimed: false, applied: true }),
+        });
+        const result = await runMutation('sync_entitlement', { tier: 'founding' });
+        expect(result).toMatchObject({ seatClaimed: false });
+    });
+
+    it('still resolves when the reply has no JSON body', async () => {
+        (global.fetch as jest.Mock).mockResolvedValue({ ok: true });
+        await expect(runMutation('sync_entitlement', { tier: 'auteur' })).resolves.toEqual({});
     });
 });
 

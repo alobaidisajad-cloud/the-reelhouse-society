@@ -587,21 +587,55 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // ── Entitlements ──
     sync_entitlement: async (p: any) => {
         // Entitlement tier sync queued when Edge Function was unreachable.
-        const { tier } = p;
+        const { tier, user_id } = p;
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-            const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-            const response = await fetch(`${supabaseUrl}/functions/v1/sync-entitlement`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ tier }),
-            });
-            if (!response.ok) throw new Error(`Edge Function sync-entitlement returned ${response.status}`);
+
+        // ⚠️ This used to be `if (session?.access_token) { ... }` with no else — so with
+        // no session it skipped the request and fell through to `return {}`, reporting
+        // SUCCESS. The queue then deleted the mutation and that member's tier never
+        // synced at all.
+        //
+        // Throwing plainly would be no better: an unrecognised error is dead-lettered
+        // (offlineQueue.ts:366-370), losing it the same way by a different route. The
+        // 503 marks it as "retry later" so isNetworkError classifies it and the flush
+        // halts with the mutation intact. It is a classifier hint, not an HTTP response
+        // — and an honest one: a flush with no session means auth really is unavailable.
+        if (!session?.access_token) {
+            const err: any = new Error('sync_entitlement: no session — keeping queued for retry');
+            err.status = 503;
+            throw err;
         }
-        return {};
+
+        // Defence in depth behind the queue's ownership partition. The edge function
+        // derives the account from this JWT and applies the tier faithfully, so a
+        // mismatch here would silently move one member's entitlement onto another
+        // account. Retrying can never fix that, so this throws a plain error and is
+        // dead-lettered for post-mortem rather than kept.
+        if (user_id && session.user?.id && user_id !== session.user.id) {
+            throw new Error('sync_entitlement: queued for a different account — refusing');
+        }
+
+        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+        const response = await fetch(`${supabaseUrl}/functions/v1/sync-entitlement`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ tier }),
+        });
+        if (!response.ok) throw new Error(`Edge Function sync-entitlement returned ${response.status}`);
+
+        // ⚠️ finding 100 — this used to `return {}`, throwing the reply away. The server sends
+        // seatClaimed=false when the 100 founding seats were already full and the member
+        // was granted Auteur instead, so someone who paid for a seat that no longer
+        // existed was never told. It also sends applied=false when the entitlement rule
+        // refused the write. Returning the body makes both reachable.
+        try {
+            return await response.json();
+        } catch {
+            return {};
+        }
     },
 
     // ── Dossiers (P0-DOSSIER FIX) ──

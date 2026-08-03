@@ -67,6 +67,28 @@ export default function MembershipScreen() {
   useEffect(() => {
     if (monthlyKnownAbsent && billing === 'monthly') setBilling('annual');
   }, [monthlyKnownAbsent, billing]);
+
+  // ── #98: the Founding seat's REAL store price ──────────────────────────────
+  // The card rendered a "$" and a "49" typed straight into the screen while the tier
+  // cards beside it showed live localized prices — so a member in the UK or Japan saw
+  // two real prices and one US dollar figure. Wrong, and an App Store metadata risk.
+  // getTierPricing now resolves the lifetime product too; the static copy remains the
+  // fallback for when the store cannot be reached, so the card is never blank.
+  //
+  // Adding 'founding' to `pricing` cannot disturb monthlyKnownAbsent above: that uses
+  // .some(), which needs only ONE tier to carry a monthly product, and a lifetime seat
+  // never carries one.
+  const foundingPriceLabel = pricing.founding?.lifetime;
+  const foundingSeatPrice = pricing.founding?.lifetimePrice;
+  const compareAnnualLabel = pricing.archivist?.annual;
+  const compareAnnualPrice = pricing.archivist?.annualPrice;
+  // Only make the payback claim when BOTH real numbers are known. Deriving "pays for
+  // itself in under N years" from one live price and one hardcoded one would state a
+  // number that is simply false in any store where the prices differ.
+  const foundingCompareLine =
+    compareAnnualLabel && foundingSeatPrice && compareAnnualPrice && compareAnnualPrice > 0
+      ? `Compare to ${compareAnnualLabel}/yr recurring — this pays for itself in under ${Math.ceil(foundingSeatPrice / compareAnnualPrice)} years and never charges again.`
+      : 'Compare to $19.99/yr recurring — this pays for itself in under 3 years and never charges again.';
   const scrollRef = useRef<ScrollView>(null);
   const [isRestoring, setIsRestoring] = useState(false);
   // Synchronous mutex prevents concurrent purchases.
@@ -215,18 +237,43 @@ export default function MembershipScreen() {
         useAuthStore.getState().setLocalTierHint({ tier: entitlement.tier, is_founding: entitlement.tier === 'founding' || undefined });
 
         // Global Unlock Polling Architecture
+        //
+        // ⚠️ finding 100 — this waits for the SEAT (is_founding), not for the founding tier.
+        //
+        // The 100-seat cap is enforced atomically server-side by claim_founding_seat, and
+        // RevenueCat has already charged by the time it runs. If the last seat goes while
+        // this purchase is in flight, the member is granted the Auteur rank WITHOUT the
+        // seat — the server reports that as seatClaimed=false and the app used to throw
+        // the whole reply away, so someone who paid for a seat that no longer existed was
+        // never told and believed they were a founding member.
+        //
+        // The old condition made it worse: it waited for a weight >= founding, which in
+        // exactly that case NEVER arrives, so the loop ran out and the member's session
+        // was never refreshed either. Waiting on the seat and handling its absence
+        // explicitly fixes both.
         (async () => {
           try {
             const userId = useAuthStore.getState().user?.id;
+            let last: { tier: string | null; role: string | null; is_founding: boolean | null } | null = null;
             for (let i = 0; i < 4; i++) {
               await new Promise(r => setTimeout(r, 2500));
               if (!userId) break;
               const { data } = await supabase.from('profiles').select('tier, role, is_founding').eq('id', userId).single();
-              if (data && getTierWeight(resolveTier(data)) >= getTierWeight(entitlement.tier)) {
+              last = data ?? last;
+              if (data?.is_founding === true) {
                 await supabase.auth.refreshSession();
                 await useAuthStore.getState().restoreSession?.();
-                break;
+                return;   // seat secured — nothing to explain
               }
+            }
+            // The seat never landed. If the RANK did, they were capped out: say so
+            // plainly rather than letting them believe they hold a seat they do not.
+            // If neither landed the webhook is merely slow — stay quiet, the optimistic
+            // tier hint is already applied and the next session restore will reconcile.
+            if (last && getTierWeight(resolveTier(last)) >= getTierWeight('auteur')) {
+              await supabase.auth.refreshSession();
+              await useAuthStore.getState().restoreSession?.();
+              reelToast.info('The final Founding seat was claimed just before your purchase. You have been granted the Auteur rank — please contact support about your seat.');
             }
           } catch {
             // Background polling failed, ignore
@@ -501,17 +548,26 @@ export default function MembershipScreen() {
             </Text>
   
             <View style={st.foundingPriceRow}>
-              <Text style={st.foundingCurrency}>$</Text>
-              <Text style={st.foundingAmount}>49</Text>
+              {foundingPriceLabel ? (
+                // A localized price is one indivisible string \u2014 "\u00a339.99", "\u00a55,800",
+                // "1 200 kr" \u2014 so it CANNOT be split into the symbol/amount pair the
+                // static layout uses. Render it whole and let it shrink to fit.
+                <Text style={st.foundingAmount} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55}>
+                  {foundingPriceLabel}
+                </Text>
+              ) : (
+                <>
+                  <Text style={st.foundingCurrency}>$</Text>
+                  <Text style={st.foundingAmount}>49</Text>
+                </>
+              )}
               <View>
                 <Text style={st.foundingPriceLabel}>ONE TIME</Text>
                 <Text style={st.foundingPriceSub}>NO RENEWALS</Text>
               </View>
             </View>
-  
-            <Text style={st.foundingCompare}>
-              Compare to $19.99/yr recurring {'\u2014'} this pays for itself in under 3 years and never charges again.
-            </Text>
+
+            <Text style={st.foundingCompare}>{foundingCompareLine}</Text>
   
             <PressableScale style={st.foundingBtn} disabled={isRedirecting || isRestoring} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} onPress={handleFoundingCheckout} pressedScale={0.97} accessibilityRole="button" accessibilityLabel={isRedirecting ? 'Processing purchase' : 'Claim a founding seat'}>
               <LinearGradient colors={[colors.sepia, '#b89530']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
@@ -549,15 +605,35 @@ export default function MembershipScreen() {
               try {
                 const result = await restoreIAP();
                 const authStore = useAuthStore.getState();
-                const isManualVIP = resolveTier(authStore.user) === 'founding' && result.tier !== 'founding';
+
+                if (!result.storeReachable) {
+                  // #99 — the store could not be consulted. That is NOT "you have no
+                  // subscription", and it used to be treated as though it were: a paying
+                  // member on bad signal was told they had nothing and had their tier
+                  // stripped locally, closing every premium feature until a good session
+                  // restored it. Say what actually happened and change nothing.
+                  reelToast.error("Couldn't reach the App Store — your membership is unchanged.");
+                  return;
+                }
 
                 if (result.isActive) {
-                  authStore.updateUser({ tier: result.tier });
+                  // finding 101 — setLocalTierHint, NOT updateUser. `tier` is server-derived and
+                  // absent from ProfileService's allow-list, so updateUser pays for a
+                  // network round trip that cannot write it (stores/auth.ts:411-418), is
+                  // silently dropped by its own 1.5s throttle if anything else touched the
+                  // profile, and on failure shows "Profile update failed — changes
+                  // reverted" immediately after a SUCCESSFUL restore.
+                  authStore.setLocalTierHint({
+                    tier: result.tier,
+                    is_founding: result.tier === 'founding' || undefined,
+                  });
                   reelToast.success(`Restored: ${result.tier.toUpperCase()} tier`);
                 } else {
-                  if (!isManualVIP) {
-                    authStore.updateUser({ tier: 'cinephile' });
-                  }
+                  // The store answered and reported nothing active. restorePurchases has
+                  // already sent that downgrade to the server, where grant_entitlement
+                  // decides whether it is allowed — it refuses to lower a tier bought on
+                  // the website or granted by hand. So ask the server for the truth
+                  // instead of guessing locally, which is what used to demote web buyers.
                   await authStore.restoreSession?.();
                   reelToast.info('No active subscriptions found.');
                 }

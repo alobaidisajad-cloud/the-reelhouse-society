@@ -81,8 +81,21 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   delete_lounge_message: z.object({ message_id: z.string() }).passthrough(),
 
   // ── Entitlement ──
+  // ⚠️ user_id is REQUIRED, and this is a security boundary, not bookkeeping.
+  //
+  // The queue partitions pending work by `payload.user_id` and dead-letters anything
+  // belonging to a previous account (offlineQueue.ts:242-251). Mutations WITHOUT a
+  // user_id are treated as "session-scoped and therefore safe" — true for
+  // increment_dossier_views, false for this one. sync-entitlement derives the account
+  // from the JWT, so a tier queued by one member and flushed after someone else signs
+  // in on that device is applied FAITHFULLY to the wrong account.
+  //
+  // An entry queued by an older build has no user_id, fails this schema, and is
+  // dead-lettered instead of executed (offlineQueue.ts:305-317). That is the safe
+  // direction — the member simply taps Restore Purchases again.
+  //
   // No .passthrough() — sync_entitlement has no extra fields by design.
-  sync_entitlement: z.object({ tier: z.string() }),
+  sync_entitlement: z.object({ tier: z.string(), user_id: z.string().uuid() }),
 
   // ── Moderation ──
   submit_report: z.object({

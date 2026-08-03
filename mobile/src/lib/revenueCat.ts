@@ -222,11 +222,14 @@ async function collectPurchasablePackages(): Promise<any[]> {
 export interface TierPricing {
   monthly?: string;
   annual?: string;
+  /** One-time price (the Founding seat). Same shape as the recurring ones. */
+  lifetime?: string;
   /** Numeric store prices + currency — power the honest "≈ $X.XX / MO" line
    *  under annual billing. Optional: absent when the SDK doesn't expose them,
    *  and the UI simply omits the equivalence line (never shows a wrong number). */
   monthlyPrice?: number;
   annualPrice?: number;
+  lifetimePrice?: number;
   currencyCode?: string;
 }
 
@@ -245,12 +248,18 @@ export async function getTierPricing(): Promise<Record<string, TierPricing>> {
     const productId = String(p?.product?.identifier ?? '').toLowerCase();
     const priceString = typeof p?.product?.priceString === 'string' ? p.product.priceString : undefined;
     if (!priceString) continue;
-    const tierId = ['archivist', 'auteur'].find((t) => productId.startsWith(t));
+    // ⚠️ #98 — 'founding' was missing here and LIFETIME was dropped by the period
+    // check below, so the Founding card had no store price to show and fell back to a
+    // "$49" typed into the screen. Archivist and Auteur showed real localized prices
+    // beside it, so a member in the UK or Japan saw two real prices and one US dollar
+    // figure — wrong, and an App Store metadata risk.
+    const tierId = ['archivist', 'auteur', 'founding'].find((t) => productId.startsWith(t));
     if (!tierId) continue;
     const pType = String(p?.packageType ?? '').toUpperCase();
-    const period: 'monthly' | 'annual' | undefined =
+    const period: 'monthly' | 'annual' | 'lifetime' | undefined =
       productId.includes('annual') || pType === 'ANNUAL' ? 'annual'
       : productId.includes('monthly') || pType === 'MONTHLY' ? 'monthly'
+      : productId.includes('lifetime') || pType === 'LIFETIME' ? 'lifetime'
       : undefined;
     if (!period) continue;
     const priceNum = typeof p?.product?.price === 'number' && isFinite(p.product.price) ? p.product.price : undefined;
@@ -347,22 +356,52 @@ export async function purchaseTier(tier: ReelHouseTier, period?: BillingPeriod):
  * Restore previous purchases — required by Apple for App Store compliance.
  * Use when a user reinstalls the app or switches devices.
  */
-export async function restorePurchases(): Promise<EntitlementInfo> {
-  if (!isConfigured || !Purchases) return parseEntitlements(null);
+/**
+ * The result of a restore, including whether the store could be consulted AT ALL.
+ *
+ * ⚠️ #99 — this distinction is the whole point. Three completely different outcomes
+ * used to collapse into one identical `isActive: false`:
+ *
+ *   1. the store could not be reached (no signal, App Store down)
+ *   2. purchases are not configured on this build/device
+ *   3. the store answered, and this account genuinely has no subscription
+ *
+ * Only (3) means "you have no subscription". The screen could not tell them apart, so
+ * it treated all three the same — told a paying member "No active subscriptions found"
+ * and stripped their tier locally, on the exact tap a confused member makes when
+ * something looks wrong. And "Restore Purchases" is a button Apple REQUIRES.
+ */
+export interface RestoreResult extends EntitlementInfo {
+  /** True only when the store actually answered. False means "we don't know". */
+  storeReachable: boolean;
+}
+
+export async function restorePurchases(): Promise<RestoreResult> {
+  if (!isConfigured || !Purchases) {
+    // Not "you own nothing" — "we could not ask".
+    logger.warn('[revenueCat] restorePurchases: SDK unavailable, cannot consult the store');
+    return { ...parseEntitlements(null), storeReachable: false };
+  }
 
   try {
     // Atomic Parsing: extract entitlement directly from restore payload
     const customerInfo = await Purchases.restorePurchases();
     const entitlement = parseEntitlements(customerInfo);
 
-    // Sync restored tier to Supabase
-    // ALWAYS sync, even if inactive, to ensure downgrades are properly recorded
+    // Sync restored tier to Supabase.
+    // Still ALWAYS sync, including an inactive result, so a genuinely lapsed
+    // subscription is retired — the store ANSWERED here, so the answer is authoritative
+    // for purchases the store made. Whether the downgrade is actually allowed is decided
+    // server-side by grant_entitlement, which refuses to lower a tier bought on the
+    // website or granted by hand (20260803_01_entitlement_source.sql).
     await syncEntitlementToSupabase(entitlement.tier);
 
-    return entitlement;
+    return { ...entitlement, storeReachable: true };
   } catch (e) {
+    // The store threw — we learned nothing. Deliberately does NOT sync: sending a
+    // downgrade off a failed lookup is exactly how a paying member gets demoted.
     logger.warn('[revenueCat] restorePurchases failed', e);
-    return parseEntitlements(null);
+    return { ...parseEntitlements(null), storeReachable: false };
   }
 }
 
@@ -388,7 +427,14 @@ async function syncEntitlementToSupabase(tier: ReelHouseTier): Promise<void> {
     // Securely queue the sync through the MMKV offline queue.
     // This guarantees delivery if the network drops and ensures the transaction
     // is securely validated by the Edge Function instead of trusting the client.
-    enqueueMutation({ type: 'sync_entitlement', payload: { tier } });
+    //
+    // ⚠️ user_id is what stops this being applied to the WRONG ACCOUNT. The queue
+    // discards pending work belonging to a previous user, but only when the payload
+    // says who it belongs to — without it the mutation is treated as session-scoped
+    // and runs against whoever is signed in when the network returns. Hand the phone
+    // over, or just log out and let someone else log in, and your tier landed on their
+    // account. See the note on sync_entitlement in types/mutations.ts.
+    enqueueMutation({ type: 'sync_entitlement', payload: { tier, user_id: user.id } });
     flushOfflineQueue();
   } catch (e) {
     logger.warn('[revenueCat] Entitlement sync enqueue failed', e);

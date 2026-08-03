@@ -13,6 +13,7 @@
 
 // ── Module Mocks (must be before imports) ──────────────────────
 
+import { supabase } from '../../lib/supabase';
 import type { QueuedMutation } from '../offlineQueue';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../offlineQueue';
 
@@ -624,6 +625,71 @@ describe('Offline Queue — Integration Tests', () => {
       // The oldest items should have been dropped
       expect(queue[0].payload.target_log_id).toBe('item-10');
       expect(queue[queue.length - 1].payload.target_log_id).toBe('item-109');
+    });
+  });
+
+  // ════════════════════════════════════════════════════════════════
+  // An entitlement must never land on the wrong account
+  // ════════════════════════════════════════════════════════════════
+  // The queue partitions by payload.user_id and discards work belonging to a previous
+  // account — but it treats a payload WITHOUT user_id as "session-scoped and therefore
+  // safe". That is true for increment_dossier_views and false for sync_entitlement,
+  // because sync-entitlement derives the account from the JWT and applies the tier
+  // faithfully to whoever is signed in when the network returns.
+  //
+  // Hand the phone to someone, or just log out and let them log in, and your paid tier
+  // landed on their profile.
+  describe('sync_entitlement ownership', () => {
+    // Real UUIDs: the schema validates the shape of user_id, and Supabase account ids
+    // always are UUIDs. The short 'u1' ids used elsewhere in this file would be
+    // dead-lettered as schema violations before ownership was ever considered.
+    const UID_A = '11111111-1111-4111-8111-111111111111';
+    const UID_B = '22222222-2222-4222-8222-222222222222';
+
+    const mut = (payload: Record<string, unknown>): QueuedMutation => ({
+      id: 'ent-1', type: 'sync_entitlement', timestamp: Date.now(), payload,
+    } as QueuedMutation);
+
+    beforeEach(() => {
+      // Runs AFTER the outer jest.clearAllMocks(), so the session survives.
+      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
+        data: { session: { user: { id: UID_A }, access_token: 'mock-token' } },
+        error: null,
+      });
+    });
+
+    it('executes when the queued owner is the signed-in member', async () => {
+      mockExecuteMutation.mockResolvedValue({});
+      injectQueue([mut({ tier: 'auteur', user_id: UID_A })]);
+
+      await flushOfflineQueue();
+
+      expect(mockExecuteMutation).toHaveBeenCalledTimes(1);
+      expect(getDeadLetter().length).toBe(0);
+    });
+
+    it('never executes one queued for a DIFFERENT account', async () => {
+      mockExecuteMutation.mockResolvedValue({});
+      // Queued by member B, flushed while member A is signed in.
+      injectQueue([mut({ tier: 'auteur', user_id: UID_B })]);
+
+      await flushOfflineQueue();
+
+      expect(mockExecuteMutation).not.toHaveBeenCalled();
+      expect(getDeadLetter()[0]?.payload._failReason).toBe('cross_user_orphan');
+    });
+
+    it('dead-letters one with NO owner rather than applying it to whoever is signed in', async () => {
+      // This is the shape every build before the fix produced: { tier } and nothing
+      // else. The schema now requires user_id, so it is dead-lettered instead of run.
+      // Losing it is the safe direction — the member taps Restore Purchases again.
+      mockExecuteMutation.mockResolvedValue({});
+      injectQueue([mut({ tier: 'auteur' })]);
+
+      await flushOfflineQueue();
+
+      expect(mockExecuteMutation).not.toHaveBeenCalled();
+      expect(String(getDeadLetter()[0]?.payload._failReason)).toMatch(/schema/i);
     });
   });
 });
