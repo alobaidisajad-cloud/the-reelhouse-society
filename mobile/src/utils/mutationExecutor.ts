@@ -109,8 +109,29 @@ export class UnknownMutationError extends Error {
 // QueuedMutation['type'] but no handler is defined here, this
 // Record will produce a compile error.
 
+/**
+ * The offline last gate for member prose.
+ *
+ * Every online path already sanitises before enqueueing. This exists because the
+ * offline queue PERSISTS IN MMKV: an entry written by the build currently on
+ * TestFlight — which does not sanitise — flushes AFTER the launch build lands, going
+ * straight past the fix. Cleaning only at the source misses exactly those rows.
+ *
+ * It is also the convention this codebase already had for comments (LogService AND
+ * mutationExecutor both clean logComment). Logs, lists and reports were the outliers.
+ *
+ * `private_notes` is included even though it is owner-only, so the surface is uniform:
+ * a rule with exceptions is a rule nobody can check.
+ */
+function cleanProse<T extends Record<string, unknown>>(o: T): T {
+    if (typeof o.review === 'string') (o as Record<string, unknown>).review = sanitizeInput(o.review, 'review');
+    if (typeof o.private_notes === 'string') (o as Record<string, unknown>).private_notes = sanitizeInput(o.private_notes, 'review');
+    return o;
+}
+
 const insertLog = async (p: any): Promise<MutationResult> => {
     const { _fakeId, _tempId, ...raw } = p;
+    cleanProse(raw);
     const dbPayload = {
         id: raw.id,
         user_id: raw.user_id, film_id: raw.film_id, film_title: raw.film_title,
@@ -172,7 +193,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
 
     update_log: async (p: any) => {
         const { id, updates } = p;
-        const upds = updates as Record<string, unknown>;
+        const upds = cleanProse(updates as Record<string, unknown>);
         
         // Protect viewing_history array from Last-Write-Wins offline erasure
         if (upds.viewing_history && Array.isArray(upds.viewing_history)) {
@@ -742,7 +763,9 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             p_content_id: content_id,
             p_content_type: content_type,
             p_reason: reason,
-            p_details: details ?? null,
+            // Last gate — a report queued by the pre-fix build carries raw details,
+            // and a moderator is the person who reads it.
+            p_details: typeof details === 'string' ? sanitizeInput(details, 'reportDetails') : null,
             p_target_user_id: target_user_id,
         }));
         return {};

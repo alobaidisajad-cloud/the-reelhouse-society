@@ -51,7 +51,13 @@ jest.mock('@/src/lib/supabase', () => {
     supabase: {
       from: jest.fn(() => ({
         ...chain,
-        insert: jest.fn((payload: any) => { captured.insert.push(payload); return { ...chain, select: jest.fn(() => ({ single: jest.fn(async () => ({ data: null, error: null })) })) }; }),
+        insert: jest.fn((payload: any) => {
+          captured.insert.push(payload);
+          return { ...chain, select: jest.fn(() => ({
+            single: jest.fn(async () => ({ data: null, error: null })),
+            maybeSingle: jest.fn(async () => ({ data: { id: 'g1' }, error: null })),
+          })) };
+        }),
         update: jest.fn((payload: any) => { captured.update.push(payload); return chain; }),
         upsert: jest.fn((payload: any) => { captured.upsert.push(payload); return { ...chain, select: jest.fn(() => ({ maybeSingle: jest.fn(async () => ({ data: { id: 'l1' }, error: null })) })) }; }),
       })),
@@ -186,5 +192,32 @@ describe('offline list handlers', () => {
       payload: { list_id: 'l1', user_id: 'u1', updates: { title: HOSTILE_TITLE } } } as any, {});
 
     expect(captured.update[0].title).toBe('Best of 1999');
+  });
+});
+
+describe('offline last gate — every handler that writes member prose', () => {
+  it('add_log cleans review and private notes', async () => {
+    const { executeMutation } = require('../mutationExecutor');
+    await executeMutation({ id: 'm3', type: 'add_log', timestamp: Date.now(),
+      payload: { id: 'g1', user_id: 'u1', film_id: 1, review: 'a‮b', private_notes: 'c\u200Bd' } } as any, {});
+    const row = Array.isArray(captured.insert[0]) ? captured.insert[0][0] : captured.insert[0];
+    expect(row.review).toBe('ab');
+    expect(row.private_notes).toBe('cd');
+  });
+
+  it('update_log cleans them too', async () => {
+    const { executeMutation } = require('../mutationExecutor');
+    await executeMutation({ id: 'm4', type: 'update_log', timestamp: Date.now(),
+      payload: { id: 'g1', updates: { review: 'x‮y' } } } as any, {});
+    expect(captured.update[0].review).toBe('xy');
+  });
+
+  it('submit_report cleans the details a moderator reads', async () => {
+    const { executeMutation } = require('../mutationExecutor');
+    await executeMutation({ id: 'm5', type: 'submit_report', timestamp: Date.now(),
+      payload: { reporter_id: 'r', content_id: 'c', content_type: 'log', reason: 'spam',
+                 details: 'vile‮text', target_user_id: 't' } } as any, {});
+    const call = captured.rpc.find((c: any) => c.name === 'submit_report');
+    expect(call.args.p_details).toBe('viletext');
   });
 });
