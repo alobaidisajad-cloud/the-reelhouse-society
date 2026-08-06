@@ -51,6 +51,20 @@ let _realtimeCleanup: (() => void) | null = null;
 
 // Hoisted to module scope — compiled once at import time, not on every WS event.
 // Mirrors HydrateRowSchema pattern in socialSlice.ts.
+/**
+ * The columns every notification read asks for.
+ *
+ * ONE list. It used to be written out twice — byte-identical, in fetch and in
+ * load-more — so adding a column to one and not the other would have produced
+ * notifications that group on first load and stop grouping as you scroll. Silent,
+ * partial, and exactly the kind of half-working state that is hard to notice.
+ *
+ * `group_key` and `title` are what make grouping work at all (#73): the first is the
+ * identity the server declares, the second is the label. Both must ALSO be present in
+ * RealtimeNotifSchema below and on AppNotification — Zod strips unknown keys, so a
+ * column selected but not declared is silently dropped and grouping quietly dies again.
+ */
+const NOTIFICATION_COLUMNS = 'id, user_id, type, from_username, from_user_id, message, is_read, created_at, film_id, poster_path, group_key, title';
 const RealtimeNotifSchema = z.object({
   id: z.string(),
   user_id: z.string(),
@@ -66,6 +80,13 @@ const RealtimeNotifSchema = z.object({
   from_user_id: z.string().nullish().transform(v => v ?? undefined),
   film_id: z.number().nullish().transform(v => v ?? undefined),
   poster_path: z.string().nullish().transform(v => v ?? undefined),
+  // #73 — grouping identity, declared by the trigger. Without this field here Zod
+  // strips the column and grouping silently reverts to inert.
+  group_key: z.string().nullish().transform(v => v ?? undefined),
+  // The certified thing's name (film / stack / dossier), for the group label. Read
+  // from a column instead of parsed out of the message — parsing the message is what
+  // broke grouping when the copy was rewritten.
+  title: z.string().nullish().transform(v => v ?? undefined),
   // DB column is `is_read` — transform to `read` for JS interface compat
   is_read: z.boolean().default(false),
   created_at: z.string().default(() => new Date().toISOString()),
@@ -80,6 +101,10 @@ export interface AppNotification {
   from_user_id?: string;
     film_id?: number;
     poster_path?: string;
+    /** #73 — e.g. "endorse:log:<uuid>". Declared by the server; never inferred here. */
+    group_key?: string;
+    /** The certified thing's name, for a group label. */
+    title?: string;
     read: boolean;
     created_at: string;
 }
@@ -171,7 +196,7 @@ export const useNotificationStore = create<NotificationState>()(
         try {
             const { data, error } = await supabase
                 .from('notifications')
-                .select('id, user_id, type, from_username, from_user_id, message, is_read, created_at, film_id, poster_path')
+                .select(NOTIFICATION_COLUMNS)
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
                 .limit(PAGE_SIZE);
@@ -225,7 +250,7 @@ export const useNotificationStore = create<NotificationState>()(
             const [cursorDate, cursorId] = _cursor.split('|');
             let query = supabase
                 .from('notifications')
-                .select('id, user_id, type, from_username, from_user_id, message, is_read, created_at, film_id, poster_path')
+                .select(NOTIFICATION_COLUMNS)
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
                 .order('id', { ascending: false })
@@ -370,10 +395,17 @@ export const useNotificationStore = create<NotificationState>()(
         }));
 
         try {
+            const user = useAuthStore.getState().user;
+            if (!user) throw new Error('Authentication required');
+            // Defense-in-depth ownership filter, matching dismissGroup. Row security is
+            // the real protection; of the four batch/single mutators here, two carried
+            // this filter and two did not. This path had never once executed — grouping
+            // was inert — so it is being made reachable and consistent in the same change.
             const { error } = await supabase
                 .from('notifications')
                 .update({ is_read: true })
-                .in('id', ids);
+                .in('id', ids)
+                .eq('user_id', user.id);
             if (error) throw error;
         } catch (e) {
             logger.warn(`[markGroupRead] Failed for ${ids.length} items:`, e);

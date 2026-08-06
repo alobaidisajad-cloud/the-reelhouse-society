@@ -1,4 +1,5 @@
 import { AppNotification } from '../stores/notificationStore';
+import { describeGroup, parseGroupKey } from './endorsementGroupKey';
 
 // ─── Display Item Types ───────────────────────────────────────────────────────
 
@@ -45,27 +46,30 @@ const MIN_GROUP_SIZE = 3;
  * Returns null if the notification is not eligible for grouping.
  */
 export function getGroupKey(n: AppNotification): string | null {
-  // Only group endorsements
-  if (n.type !== 'endorse') return null;
-
-  // Group by film_id if present
-  if (n.film_id) return `endorse:film:${n.film_id}`;
-
-  // Fallback: extract target from message pattern
-  const match = n.message.match(/your review of (.+)$/);
-  if (match) return `endorse:msg:${match[1]}`;
-
-  return null;
+  // The server declares this. Both previous legs were dead:  was never
+  // written by the trigger, and the message regex expected wording a migration had
+  // already replaced. Reading a declared key means a copy change can never disable
+  // grouping again — which is precisely how it was disabled the first time.
+  return n.group_key ?? null;
 }
 
 /**
- * Extract the film name from a notification message.
- * Falls back to "your review" if the pattern doesn't match.
+ * The name of the thing that was certified — a film, a stack, or a dossier.
+ *
+ * Read from a column. The previous version matched /your review of (.+)$/ against the
+ * message and fell back to the literal string "your review", so a working group would
+ * have rendered "…endorsed your review of your review".
  */
-export function extractFilmName(n: AppNotification): string {
-  const match = n.message.match(/your review of (.+)$/);
-  return match?.[1] ?? 'your review';
+export function groupTitle(n: AppNotification): string | undefined {
+  return n.title;
 }
+
+// `extractFilmName` was deleted rather than repaired. It matched the message against
+// /your review of (.+)$/ — wording a migration replaced long ago — and fell back to the
+// literal string "your review", so a working group would have rendered
+// "…endorsed your review of your review". Repairing the pattern to match today's copy
+// would have re-armed the same trap for the next copy edit; `groupTitle` reads a column
+// instead, and the label is now the writer's responsibility.
 
 // ─── Main Grouping Function ───────────────────────────────────────────────────
 
@@ -126,7 +130,7 @@ export function groupNotifications(
         type: 'endorse',
         film_id: mostRecent.film_id,
         poster_path: mostRecent.poster_path,
-        message: `${items.length} cinephiles endorsed your review of ${extractFilmName(mostRecent)}`,
+        message: describeGroup(items.length, parseGroupKey(key)?.kind ?? 'log', groupTitle(mostRecent)),
         created_at: mostRecent.created_at,
         hasUnread: items.some(n => !n.read),
         count: items.length,

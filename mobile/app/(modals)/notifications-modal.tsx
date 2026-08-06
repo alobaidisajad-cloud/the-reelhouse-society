@@ -8,6 +8,7 @@ import { AppNotification, useNotificationStore } from '@/src/stores/notification
 import { useSocialStore } from '@/src/stores/followStore';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { DisplayItem, GroupedDisplayItem, groupNotifications } from '@/src/utils/groupNotifications';
+import { groupRoute, parseGroupKey } from '@/src/utils/endorsementGroupKey';
 import * as Notifications from 'expo-notifications';
 
 import { EmptyState } from '@/src/components/EmptyStates';
@@ -109,7 +110,13 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
     }
     nav.back();
     InteractionManager.runAfterInteractions(() => {
-      if (item.film_id) nav.push(`/film/${item.film_id}`);
+      // Route by what the group is ABOUT, not by film alone. Three different actions
+      // produce an `endorse` notification — a log, a stack, or a dossier — and only the
+      // first has a film. The old handler routed on `film_id` only, so a stack or
+      // dossier group would have closed this sheet and gone nowhere: a dead button,
+      // invisible until grouping actually started working (#73).
+      const route = groupRoute(parseGroupKey(item.groupKey), item.film_id);
+      if (route) nav.push(route as never);
     });
   };
 
