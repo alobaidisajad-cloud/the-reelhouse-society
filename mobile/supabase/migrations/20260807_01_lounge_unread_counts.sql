@@ -44,6 +44,25 @@
 
 BEGIN;
 
+-- ── the index both this function and message paging need ─────────────────────
+-- lounge_messages carries NO index at all today. Every read of it is a sequential
+-- scan, which is invisible at six rows and is not what this table looks like after
+-- launch. One index serves three call sites, all of which filter by room and order by
+-- time:
+--   • this function, aggregating per room
+--   • fetchMessages      — lounge_id = X ORDER BY created_at DESC LIMIT 100
+--   • loadMoreMessages   — the compound (created_at, id) cursor added alongside this
+--
+-- The column order matters: room first (the equality), then the two sort keys in the
+-- direction they are read, so the planner can satisfy the cursor from the index
+-- without a sort step.
+--
+-- Plain CREATE INDEX rather than CONCURRENTLY: this table holds 6 rows, so it is
+-- instantaneous, and CONCURRENTLY cannot run inside the transaction that makes the
+-- rest of this script all-or-nothing.
+CREATE INDEX IF NOT EXISTS lounge_messages_lounge_created_id_idx
+  ON public.lounge_messages (lounge_id, created_at DESC, id DESC);
+
 CREATE OR REPLACE FUNCTION public.get_lounge_unread_counts()
 RETURNS TABLE (
   lounge_id uuid,
@@ -101,7 +120,11 @@ BEGIN
     RAISE EXCEPTION 'get_lounge_unread_counts is SECURITY DEFINER. That is the shape of the leak this deliberately avoids. Rolled back.';
   END IF;
 
-  RAISE NOTICE 'OK — unread counts can now be computed in one bounded server-side pass.';
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='lounge_messages_lounge_created_id_idx') THEN
+    RAISE EXCEPTION 'the supporting index was not created. NOTHING changed — rolled back.';
+  END IF;
+
+  RAISE NOTICE 'OK — unread counts in one bounded server-side pass, and the index that serves it.';
 END $$;
 
 COMMIT;
