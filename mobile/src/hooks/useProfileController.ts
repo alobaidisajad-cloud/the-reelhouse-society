@@ -169,7 +169,6 @@ export function useProfileController(usernameOverride?: string) {
     normalizeSocialHash(data.targetUser?.social_links),
     data.targetUser?.preferences?.accent_color,
     data.targetUser?.preferences?.default_tab,
-    data.targetUser?.preferences?.hide_stats,
     data.targetUser?.favorite_films?.join(','),
     JSON.stringify(data.targetUser?.preferences?.favorites || []),
     JSON.stringify(data.targetUser?.preferences?.programmes || [])
@@ -180,8 +179,8 @@ export function useProfileController(usernameOverride?: string) {
       const userSocialStr = normalizeSocialHash(user.social_links);
       const targetSocialStr = normalizeSocialHash(data.targetUser.social_links);
       
-      const userPrefsStr = `${user.preferences?.accent_color}|${user.preferences?.default_tab}|${user.preferences?.hide_stats}|${JSON.stringify(user.preferences?.favorites || [])}|${JSON.stringify(user.preferences?.programmes || [])}`;
-      const targetPrefsStr = `${data.targetUser.preferences?.accent_color}|${data.targetUser.preferences?.default_tab}|${data.targetUser.preferences?.hide_stats}|${JSON.stringify(data.targetUser.preferences?.favorites || [])}|${JSON.stringify(data.targetUser.preferences?.programmes || [])}`;
+      const userPrefsStr = `${user.preferences?.accent_color}|${user.preferences?.default_tab}|${JSON.stringify(user.preferences?.favorites || [])}|${JSON.stringify(user.preferences?.programmes || [])}`;
+      const targetPrefsStr = `${data.targetUser.preferences?.accent_color}|${data.targetUser.preferences?.default_tab}|${JSON.stringify(data.targetUser.preferences?.favorites || [])}|${JSON.stringify(data.targetUser.preferences?.programmes || [])}`;
 
       if (
         user.username !== data.targetUser.username ||

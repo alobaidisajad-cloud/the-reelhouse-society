@@ -31,7 +31,6 @@ export const UserPreferencesSchema = z.object({
   tactile_audio_enabled: z.boolean().optional(),
   favorites: z.array(z.unknown()).nullable().optional(),
   programmes: z.array(z.unknown()).nullable().optional(),
-  hide_stats: z.boolean().optional(),
 }).catchall(z.unknown());
 
 /**

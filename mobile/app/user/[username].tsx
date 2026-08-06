@@ -892,14 +892,17 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             )}
 
             {/* ── Stats Row ── */}
-            {(!targetUser.preferences?.hide_stats || isSelf) && (
-              <View style={[s.statsGrid, { borderColor: tierStatsBorder }]}>
-                <StatCard label="FILMS" value={totalFilms} />
-                <StatCard label="FOLLOWERS" value={targetUser.followers_count || 0} onPress={isPrivate ? undefined : navToFollowers} />
-                <StatCard label="FOLLOWING" value={targetUser.following_count || 0} onPress={isPrivate ? undefined : navToFollowing} />
-                <StatCard label="WATCHLIST" value={totalWatchlist} isLast />
-              </View>
-            )}
+            {/* This row was once gated on a `hide_stats` preference. That preference was
+                removed: it hid these four numbers while the films they count stayed
+                browsable in the tabs below and readable from the API by anyone, so it
+                promised a privacy it never delivered. Members who want to be unreadable
+                have `is_social_private`, which the database actually enforces. */}
+            <View style={[s.statsGrid, { borderColor: tierStatsBorder }]}>
+              <StatCard label="FILMS" value={totalFilms} />
+              <StatCard label="FOLLOWERS" value={targetUser.followers_count || 0} onPress={isPrivate ? undefined : navToFollowers} />
+              <StatCard label="FOLLOWING" value={targetUser.following_count || 0} onPress={isPrivate ? undefined : navToFollowing} />
+              <StatCard label="WATCHLIST" value={totalWatchlist} isLast />
+            </View>
 
           </View>
         </View>

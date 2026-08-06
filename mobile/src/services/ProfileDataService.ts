@@ -166,10 +166,6 @@ export const ProfileDataService = {
       if (publicPrefs.favorites !== undefined) {
         rawData.preferences.favorites = publicPrefs.favorites;
       }
-      if (publicPrefs.hide_stats !== undefined) {
-        // Ensure a true boolean mapping from postgres JSON scaler
-        rawData.preferences.hide_stats = publicPrefs.hide_stats === true || publicPrefs.hide_stats === 'true';
-      }
     }
 
     // Zod validation at the service boundary.

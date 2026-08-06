@@ -167,15 +167,18 @@ export function useProfileComputed(params: UseProfileComputedParams) {
 
   const displayLists = useMemo(() => isSelf ? myLists.map(toProfileList) : lists, [isSelf, myLists, lists]);
 
-  const rawTotalFilms = reconcileCount(counts.logs, displayLogs.length, isSelf);
-  const hideStats = !isSelf && targetUser?.preferences?.hide_stats === true;
-  const totalFilms = hideStats ? 0 : rawTotalFilms;
+  // `hide_stats` used to blank this. It was removed deliberately — see the note at the
+  // bottom of this file. Short version: it hid four digits while leaving the films they
+  // count fully browsable one tab away, and readable from the API by anyone. A privacy
+  // control that does not withhold the data is worse than none, because the member
+  // believes they are covered.
+  const totalFilms = reconcileCount(counts.logs, displayLogs.length, isSelf);
 
   // Stats level — matches web's cineStats computation exactly
-  const statsLevel = hideStats ? 'CLASSIFIED' : (totalFilms > 50 ? 'THE ORACLE' : totalFilms > 20 ? 'MIDNIGHT DEVOTEE' : totalFilms > 5 ? 'THE REGULAR' : 'FIRST REEL');
+  const statsLevel = totalFilms > 50 ? 'THE ORACLE' : totalFilms > 20 ? 'MIDNIGHT DEVOTEE' : totalFilms > 5 ? 'THE REGULAR' : 'FIRST REEL';
   // crimson (not bloodReel) — the deep stamp red was near-invisible on ink
-  const statsColor = hideStats ? colors.ash : (totalFilms > 50 ? colors.sepia : totalFilms > 20 ? colors.crimson : colors.flicker);
-  const statsProgress = hideStats ? 0 : (totalFilms % 20) * 5;
+  const statsColor = totalFilms > 50 ? colors.sepia : totalFilms > 20 ? colors.crimson : colors.flicker;
+  const statsProgress = (totalFilms % 20) * 5;
 
   // Daily streak
   const streak = useMemo(() => {
@@ -335,3 +338,32 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     recentLogs, socialLinks, COLLECTION_CARDS,
   };
 }
+
+/**
+ * ── WHY `hide_stats` WAS REMOVED RATHER THAN FINISHED ────────────────────────────────
+ *
+ * It was a preference that blanked the FILMS stat for visitors. Three facts decided it:
+ *
+ *   1. IT DID NOT WITHHOLD ANYTHING. `get_profile_counts` gates on can_view_user_data —
+ *      blocking and is_social_private — and has never referenced hide_stats. The real
+ *      numbers were returned to any caller regardless. Hiding them in one client is
+ *      decoration, and decoration that says "private" is a lie.
+ *
+ *   2. THE DATA IT HID WAS ONE TAB AWAY. For a member who is not socially private, a
+ *      visitor can browse their archive, watchlist and stacks and count the rows by
+ *      hand. Concealing the total while publishing the contents is incoherent by
+ *      construction — there is no version of this feature that works.
+ *
+ *   3. IT WAS INCOHERENT IN THE UI TOO. The stats row was gated, but the collection
+ *      grid was not, so a member with it on showed ARCHIVE "0" — which reads as
+ *      "watched nothing", not "withheld" — beside real LEDGER and WATCHLIST counts.
+ *
+ * Nothing was lost by removing it: no member had it set (0 of 32 live profiles), the
+ * app never offered a switch for it, and the web app has no reference to it at all.
+ *
+ * Members who want to be unreadable have `is_social_private`, which is enforced in the
+ * database across every read path. That is the control this one was pretending to be.
+ *
+ * If a "show my profile but not my volume" feature is ever genuinely wanted, it has to
+ * start server-side and it has to hide the CONTENT too — otherwise it is this again.
+ */
