@@ -15,6 +15,7 @@
  */
 import * as Crypto from 'expo-crypto';
 import { supabase } from '../lib/supabase';
+import { captureError } from '../lib/sentry';
 import { storage } from '../stores/mmkv-storage';
 import { MutationSchemaMap } from '../types/mutations';
 import { logger } from './logger';
@@ -53,6 +54,52 @@ export interface QueuedMutation {
  * in an obvious place (#82).
  */
 const SOCIAL_MUTATION_TYPES = new Set(['follow_user', 'follow_request_user', 'unfollow_user']);
+
+/**
+ * PostgreSQL's exact duplicate-key wording. Narrow on purpose.
+ *
+ * The old test was `message.includes('unique')` anywhere in the prose, which matched
+ * 42P10 — "there is no UNIQUE or exclusion constraint…" — and filed a broken statement
+ * as a successful duplicate. SQLSTATE is the real signal; this is only a fallback for
+ * transports that lose the code.
+ */
+const DUPLICATE_KEY_MESSAGE = /duplicate key value violates unique constraint/i;
+
+/**
+ * Is this the database rejecting the STATEMENT rather than the data?
+ *
+ * SQLSTATE class 42 is "syntax error or access rule violation": undefined column,
+ * undefined function, bad ON CONFLICT target. Retrying cannot help, and discarding
+ * hides a real defect — so these are dead-lettered and reported.
+ *
+ * 42501 (insufficient_privilege) is deliberately EXCLUDED: an RLS refusal is a
+ * legitimate runtime outcome — a banned member, a row that is not yours — not a broken
+ * statement, and it already has its own handling downstream.
+ */
+function isPermanentSchemaError(code: string): boolean {
+  return /^42/.test(code) && code !== '42501';
+}
+
+export type QueueErrorClass = 'schema' | 'duplicate' | 'other';
+
+/**
+ * The single classifier the flush uses. Exported so it is TESTED rather than mirrored
+ * — a test against a second copy of this logic would have passed happily while the
+ * real branch stayed broken, which is exactly how #77 survived.
+ *
+ * The schema test comes first as defence in depth, NOT because it is load-bearing —
+ * that was measured. Swapping the two branches changes nothing today, because the
+ * duplicate test now matches PostgreSQL's exact duplicate-key wording rather than the
+ * word "unique" anywhere in the prose. Under the OLD word match the order would have
+ * been decisive, which is precisely why the message test was narrowed as well: two
+ * independent reasons 42P10 can no longer be read as a duplicate, so neither one being
+ * changed alone can bring the bug back.
+ */
+export function classifyQueueError(code: string, message: string, status: number | undefined): QueueErrorClass {
+  if (isPermanentSchemaError(code)) return 'schema';
+  if (code === '23505' || status === 409 || DUPLICATE_KEY_MESSAGE.test(message)) return 'duplicate';
+  return 'other';
+}
 
 const QUEUE_KEY = 'reelhouse-offline-mutations';
 const MAX_QUEUE_SIZE = 100;
@@ -336,9 +383,9 @@ export async function flushOfflineQueue() {
             const errMsg = (typeof error === 'object' && error !== null && 'message' in error)
                 ? String((error as any).message)
                 : (error instanceof Error ? error.message : String(error));
-            const errLower = errMsg.toLowerCase();
             const code = String((error as any)?.code);
             const status = Number((error as any)?.status);
+            const errorClass = classifyQueueError(code, errMsg, status);
 
             if (__DEV__) console.error(`[OfflineSync] Failed to execute ${mutation.type}:`, error);
 
@@ -350,8 +397,46 @@ export async function flushOfflineQueue() {
                 // never added to processedIds, so the final write below keeps them as-is.
                 logger.warn(`[OfflineSync] Network failure on ${mutation.type}. Halting queue to preserve causality.`);
                 break;
-            } else if (errLower.includes('duplicate') || errLower.includes('unique') || errLower.includes('23505') || code === '23505' || status === 409) {
-                // Constraint violation — safely discard (already synced)
+            } else if (errorClass === 'schema') {
+                // ── #77 · the trap that hid a silent data loss for the whole of this app ──
+                // This branch MUST come before the duplicate branch below, because the
+                // error it catches contains the word "unique" in its prose:
+                //
+                //   42P10  "there is no unique or exclusion constraint matching the
+                //           ON CONFLICT specification"
+                //
+                // `interactions` has no unique constraint on (user_id, target_user_id,
+                // type) — probed live and confirmed. So EVERY offline follow raised
+                // 42P10, matched `includes('unique')`, and was filed as "already
+                // synced": discarded with no dead-letter, no toast and no Sentry. The
+                // optimistic follow stayed on screen until the next hydrate erased it.
+                // The member followed someone, watched it work, and watched it undo
+                // itself later, with no trace anywhere.
+                //
+                // A 42xxx is the database saying the STATEMENT is wrong — a
+                // programming or schema fault, not a data condition. Retrying cannot
+                // help and discarding hides it, so it is dead-lettered loudly and
+                // reported. That is the difference between finding this in an hour and
+                // never finding it at all.
+                logger.warn(`[OfflineSync] Permanent schema error on ${mutation.type} (code=${code}). Dead-lettering.`);
+                captureError(error, {
+                    scope: 'offlineQueue.schemaError',
+                    mutationType: mutation.type,
+                    pgCode: code,
+                });
+                deadLetterQueue.push({
+                    ...mutation,
+                    payload: { ...mutation.payload, _failReason: `schema: ${errMsg}`, _failedAt: new Date().toISOString() },
+                });
+                processedIds.add(mutation.id);
+            } else if (errorClass === 'duplicate') {
+                // Genuine unique violation — the row is already there, so the write
+                // has effectively succeeded and the mutation can be dropped.
+                //
+                // Judged on SQLSTATE, with the prose fallback narrowed to PostgreSQL's
+                // actual duplicate message. The old test was `includes('unique')`
+                // anywhere in the text, which is how 42P10 got in — and would have let
+                // in any future error that merely mentions a unique constraint.
                 if (__DEV__) console.warn(`[OfflineSync] Discarding duplicate mutation: ${mutation.type}`);
                 processedIds.add(mutation.id);
             } else if (isTransientError(error)) {
