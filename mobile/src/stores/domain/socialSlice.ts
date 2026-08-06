@@ -21,6 +21,7 @@ import reelToast from '../../utils/reelToast';
 import { logger } from '../../utils/logger';
 import { isNetworkError } from '../../utils/networkError';
 import { enqueueMutation } from '../../utils/offlineQueue';
+import { isLookupSafeHandle } from '../../utils/handleGuard';
 
 // Track in-flight social operations to prevent concurrent
 // follow/unfollow on the same target (e.g., from rapid UI transitions)
@@ -59,8 +60,11 @@ const _usernameProfileCache = new Map<string, { id: string; isPrivate: boolean; 
 const _USERNAME_CACHE_TTL = 10 * 60 * 1000;
 
 async function resolveUsernameToProfile(username: string): Promise<{ id: string; isPrivate: boolean } | null> {
-  // Defense-in-depth format guard — fail fast on malformed input
-  if (!/^[a-zA-Z0-9_]{1,30}$/.test(username)) return null;
+  // Defense-in-depth format guard — fail fast on malformed input.
+  // The mechanism is deliberate and kept. The CHARSET was not: it encoded the intended
+  // signup policy rather than what profiles.username can hold, and blocked 5 of 32 live
+  // members from being followed at all (#67). See utils/handleGuard.ts.
+  if (!isLookupSafeHandle(username)) return null;
 
   const cached = _usernameProfileCache.get(username);
   if (cached && Date.now() - cached.ts < _USERNAME_CACHE_TTL) {

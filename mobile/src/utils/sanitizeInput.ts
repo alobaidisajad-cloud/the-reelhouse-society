@@ -27,7 +27,15 @@
  * every bidi codepoint and demands each one be removed, which is why this survived a
  * regex that looked thorough.
  */
-const INVISIBLE_CHARS = /[\u200B\u200C\u200D\u200E\u200F\u202A-\u202E\uFEFF\u00AD\u034F\u2028\u2029\u2060\u2061\u2062\u2063\u2064\u2066\u2067\u2068\u2069\u206A-\u206F]/g;
+/**
+ * The class body alone, so other guards can test for these characters without
+ * duplicating the list. Exported as a STRING rather than the regex below because that
+ * one carries /g: `.test()` on a global regex advances lastIndex and therefore returns
+ * alternating answers for the same input. Callers build their own non-global RegExp.
+ */
+export const INVISIBLE_CHAR_CLASS = '\\u200B\\u200C\\u200D\\u200E\\u200F\\u202A-\\u202E\\uFEFF\\u00AD\\u034F\\u2028\\u2029\\u2060\\u2061\\u2062\\u2063\\u2064\\u2066\\u2067\\u2068\\u2069\\u206A-\\u206F';
+
+const INVISIBLE_CHARS = new RegExp(`[${INVISIBLE_CHAR_CLASS}]`, 'g');
 
 /** Control characters except newline (\n), carriage return (\r), and tab (\t) */
 const CONTROL_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
