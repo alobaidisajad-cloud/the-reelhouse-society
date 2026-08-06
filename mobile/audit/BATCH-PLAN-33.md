@@ -607,13 +607,25 @@ proven on PostgreSQL 18 including the privacy-trigger interaction.
 ---
 
 ## BATCH 17 · Notifications
-`Tier B` · `2 findings` · `after batch 11` · **NOT STARTED**
+`Tier B` · `2 findings` · `after batch 11` · **CLOSED 2026-08-06**
 
 - **#51** — High · Receiving one notification silently deletes up to 450 already-loaded ones.
 - **#73** — High · Notification grouping is completely inert — a copy change broke the parser.
 
 **DONE WHEN** an incoming notification preserves the loaded list, and grouping is
 pinned by a test that fails if the copy changes again.
+
+**CLOSED.** #51 was two numbers for one policy (50 vs 500); one shared cap, and the
+eviction arithmetic now counts what actually fell off instead of assuming one row.
+#73 was bigger than filed: THREE producers write `endorse` notifications (log, stack,
+dossier) and the audit's film_id fix would have covered one. Identity is now DECLARED
+by the trigger via `group_key`; the message regex is deleted, not repaired.
+**Beyond the register:** the group headline was built by the same broken regex (would
+have read "your review of your review"); the group tap routed by film only, so stack
+and dossier groups would have gone NOWHERE; the SELECT column list was duplicated
+byte-for-byte; and `markGroupRead` lacked the ownership filter its twin documents.
+SQL: `20260806_03_notification_group_key.sql`, proven on PostgreSQL 18, 4 mutations
+caught. **No backfill is possible** — an existing row does not record its target.
 
 ---
 
