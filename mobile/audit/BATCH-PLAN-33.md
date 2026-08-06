@@ -630,7 +630,7 @@ caught. **No backfill is possible** — an existing row does not record its targ
 ---
 
 ## BATCH 18 · Lounge
-`Tier B` · `4 findings` · `no dependency` · **NOT STARTED**
+`Tier B` · `4 findings` · `no dependency` · **CLOSED 2026-08-07**
 
 - **#54** — High · Unread counts recomputed client-side with unbounded queries, duplicating a deployed RPC.
 - **#55** — High · Lounge message loading swallows every backend error, silently.
@@ -639,6 +639,17 @@ caught. **No backfill is possible** — an existing row does not record its targ
 
 **DONE WHEN** unread counts come from the RPC, a backend failure surfaces, and paging
 cannot skip or repeat a message.
+
+**CLOSED.** #55 the filed DIAGNOSIS was wrong — the catches always toasted; the defect is
+`if (data && !error)` skipping the block because supabase-js resolves rather than throws.
+And the class was 7 reads, not 2 — treated by consequence, not uniformly. #57 compound
+cursor matching the house pattern. #58 TWO failure paths burned the cooldown, not one.
+#54 the register said to call `get_user_lounges`; that takes a caller-supplied id,
+returns invite_code, and had its access revoked in batch 7 — a NEW SECURITY INVOKER
+function replaces the two unbounded scans instead.
+**Beyond the register:** `resolveProfile` CACHED its failure, pinning the name unknown
+to a real member for 5 minutes. SQL: `20260807_01_lounge_unread_counts.sql`, proven on
+PostgreSQL 18, 4 mutations caught.
 
 ---
 

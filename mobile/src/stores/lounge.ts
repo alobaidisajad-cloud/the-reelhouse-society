@@ -368,56 +368,43 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const ownedOrJoinedIds = new Set(myLoungeIds);
       if (myCreatedRes.data) myCreatedRes.data.forEach(l => ownedOrJoinedIds.add(l.id));
 
-      // Calculate unread counts and last message timestamps — BATCHED (no N+1)
+      // ── #54 · unread counts, computed once on the server ──────────────────────
+      // These two numbers used to be worked out here, with two UNBOUNDED queries:
+      //   1. every message in every lounge you belong to — no LIMIT and no filter at
+      //      all — downloaded solely to find the newest timestamp per room
+      //   2. every message newer than the OLDEST last_read_at across all your rooms —
+      //      no LIMIT and, worse, NO ORDER BY
+      //
+      // The second is the dangerous one: with no ordering, any row cap the server
+      // applies returns an arbitrary subset, so the count came out silently WRONG —
+      // not late, not slow, wrong, with no way for the client to notice.
+      //
+      // The register said to call the existing get_user_lounges. That one takes a
+      // caller-supplied user id instead of reading auth.uid(), returns invite_code,
+      // and had its access revoked in batch 7 after it was found returning every
+      // lounge regardless of the id passed. This is a new function: no parameter to
+      // forge, no invite_code, and SECURITY INVOKER so row security still decides
+      // what may be counted.
+      //
+      // Degrades rather than fails: if the call errors — including before the
+      // migration is applied — the salon list still renders, with counts at zero and
+      // the reason in the log. A list without badges beats no list.
       const unreadCounts: Record<string, number> = {};
       const lastMessageTimestamps: Record<string, string> = {};
 
       const loungeIds = memberships.map(m => m.lounge_id);
       if (loungeIds.length > 0) {
-        // Batch 1: Get last message per lounge in a single query
-        const { data: lastMsgs } = await supabase
-          .from('lounge_messages')
-          .select('lounge_id, created_at')
-          .in('lounge_id', loungeIds)
-          .order('created_at', { ascending: false });
-        
-        if (lastMsgs) {
-          // Keep only the latest per lounge_id
-          for (const msg of lastMsgs) {
-            if (!lastMessageTimestamps[msg.lounge_id]) {
-              lastMessageTimestamps[msg.lounge_id] = msg.created_at;
-            }
+        const { data: unreadRows, error: unreadError } = await supabase.rpc('get_lounge_unread_counts');
+        if (unreadError) {
+          logger.error('[LoungeStore.fetchLounges] unread counts failed:', unreadError);
+        } else if (unreadRows) {
+          for (const row of unreadRows as { lounge_id: string; unread_count: number; last_message_at: string | null }[]) {
+            unreadCounts[row.lounge_id] = Number(row.unread_count) || 0;
+            if (row.last_message_at) lastMessageTimestamps[row.lounge_id] = row.last_message_at;
           }
         }
-
-        // Batch 2: Count unread per lounge — fetch messages newer than last_read_at
-        // Build a map of last_read_at per lounge for comparison
-        const lastReadMap = new Map(memberships.map(m => [m.lounge_id, m.last_read_at]));
-        const oldestLastRead = memberships
-          .filter(m => m.last_read_at)
-          .map(m => m.last_read_at!)
-          .sort()[0];
-        
-        // Single query: fetch all recent messages across all lounges
-        let unreadQuery = supabase
-          .from('lounge_messages')
-          .select('lounge_id, created_at')
-          .in('lounge_id', loungeIds);
-        if (oldestLastRead) {
-          unreadQuery = unreadQuery.gt('created_at', oldestLastRead);
-        }
-        const { data: recentMsgs } = await unreadQuery;
-        
-        // Count per lounge, respecting each membership's last_read_at
-        if (recentMsgs) {
-          for (const msg of recentMsgs) {
-            const memberLastRead = lastReadMap.get(msg.lounge_id);
-            if (!memberLastRead || msg.created_at > memberLastRead) {
-              unreadCounts[msg.lounge_id] = (unreadCounts[msg.lounge_id] || 0) + 1;
-            }
-          }
-        }
-        // Ensure all lounges have an entry
+        // Every room the member belongs to gets an entry, whether or not the call
+        // returned one — the UI reads these maps directly.
         for (const id of loungeIds) {
           if (!(id in unreadCounts)) unreadCounts[id] = 0;
         }

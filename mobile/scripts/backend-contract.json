@@ -13,6 +13,7 @@
     "get_featured_critique",
     "get_filtered_stacks_auth_cursor",
     "get_following_feed_auth_cursor",
+    "get_lounge_unread_counts",
     "get_priority_reports",
     "get_profile_counts",
     "get_report_evidence",

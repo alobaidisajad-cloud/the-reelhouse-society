@@ -144,3 +144,49 @@ describe('#58 · a failed creation must not burn the cooldown', () => {
     expect(rpc).toBeGreaterThan(set);
   });
 });
+
+describe('#54 · unread counts are computed once, on the server', () => {
+  const f = () => fn('fetchLounges: async', 'fetchMessages: async');
+
+  it('the two unbounded scans are GONE', () => {
+    // 1. every message in every lounge you belong to — no LIMIT, no filter
+    // 2. every message newer than the oldest last_read_at — no LIMIT, and NO ORDER BY,
+    //    so any server row cap made the count silently wrong rather than merely slow
+    expect(code).not.toMatch(/const \{ data: lastMsgs \}/);
+    expect(code).not.toMatch(/const \{ data: recentMsgs \}/);
+    expect(code).not.toMatch(/unreadQuery/);
+  });
+
+  it('one RPC replaces them', () => {
+    expect(f()).toMatch(/supabase\.rpc\('get_lounge_unread_counts'\)/);
+  });
+
+  it('it is NOT the function the register recommended', () => {
+    // get_user_lounges takes a caller-supplied user id, returns invite_code, and had
+    // its access revoked in batch 7 after it was found returning every lounge
+    // regardless of the id passed.
+    expect(code).not.toMatch(/get_user_lounges/);
+  });
+
+  it('a failure degrades to a rendered list, not a broken screen', () => {
+    // This also covers the window before the migration is applied: the call fails,
+    // the badges are zero, the salons still list.
+    const body = f();
+    expect(body).toMatch(/if \(unreadError\) \{/);
+    expect(body).toMatch(/logger\.error\('\[LoungeStore\.fetchLounges\] unread counts failed:/);
+    expect(body).not.toMatch(/if \(unreadError\)[\s\S]{0,120}throw/);
+  });
+
+  it('every room the member belongs to still gets an entry', () => {
+    // The UI reads these maps directly; a missing key would render undefined.
+    expect(f()).toMatch(/if \(!\(id in unreadCounts\)\) unreadCounts\[id\] = 0;/);
+  });
+
+  it('the salon list\'s OTHER queries are untouched — they were always bounded', () => {
+    // 100 memberships, 50 browsable, an IN over those ids, and your own rooms. Only the
+    // two message scans moved; widening the change would have been risk for nothing.
+    const body = f();
+    expect(body).toMatch(/\.limit\(100\)/);   // memberships
+    expect(body).toMatch(/\.limit\(50\)/);    // browsable
+  });
+});
