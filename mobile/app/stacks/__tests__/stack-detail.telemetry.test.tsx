@@ -34,6 +34,11 @@ jest.mock('expo-router', () => ({
     useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
 }));
 jest.mock('@tanstack/react-query', () => ({
+    // Must be constructible: src/lib/queryClient.ts instantiates a QueryClient at
+    // module scope, and that module is now reachable from this test through the
+    // offline queue (#82's post-flush feed refresh). Without this the whole suite
+    // fails to LOAD rather than failing an assertion, which is far harder to read.
+    QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); },
     useQueryClient: () => ({
         setQueryData: jest.fn(), getQueryData: jest.fn(), removeQueries: jest.fn(),
         invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),

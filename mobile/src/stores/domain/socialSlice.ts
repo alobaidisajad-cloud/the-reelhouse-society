@@ -22,6 +22,7 @@ import { logger } from '../../utils/logger';
 import { isNetworkError } from '../../utils/networkError';
 import { enqueueMutation } from '../../utils/offlineQueue';
 import { isLookupSafeHandle } from '../../utils/handleGuard';
+import { queryClient } from '../../lib/queryClient';
 
 // Track in-flight social operations to prevent concurrent
 // follow/unfollow on the same target (e.g., from rapid UI transitions)
@@ -93,6 +94,43 @@ function persistFollowingToCache(userId: string) {
   useSocialStore.getState().persistFollowing(userId);
 }
 
+/**
+ * The follow graph changed — tell the feeds that read it.
+ *
+ * ── #82 · WHY THIS LIVES HERE AND NOT AT A CALL SITE ────────────────────────────────
+ * `socialSlice` had no connection to the query cache at all: no import, no
+ * invalidation, nothing. The intended behaviour existed in exactly ONE call site —
+ * `MemberRegistry.tsx` invalidated after a successful follow — so following from the
+ * Registry refreshed the feed while following from the PROFILE screen, the primary
+ * follow surface, did not. Up to 60 seconds on the following feed, 5 minutes on stacks,
+ * and the same in reverse on unfollow, where their content simply stays on screen.
+ *
+ * `blockStore` already does this correctly for block/mute, 60 lines away. This is that
+ * house pattern, applied to the store instead of to one button.
+ *
+ * ── WHY THESE TWO KEYS AND NOT THE `['feed']` PREFIX ────────────────────────────────
+ * The audit recommended invalidating all of `['feed']`. That is broader than the truth:
+ *   • `getCommunityFeed` takes no follow list — verified, it cannot change when you
+ *     follow someone, so refetching it on every follow is pure waste
+ *   • `getStacksFeed` consults the list ONLY when its filter is 'following'
+ *     (`FeedService.ts` returns early on `filter === 'following'` and passes
+ *     `p_filter_following`), so the 'all' view is equally unaffected
+ * The stacks key is ['feed','stacks', filter, …], so this prefix matches exactly the
+ * following-filtered queries and leaves the rest of the cache alone.
+ *
+ * Invalidation cannot fail destructively: worst case it triggers a refetch that was
+ * going to happen anyway on the next focus.
+ */
+function refreshFollowGraphFeeds() {
+  try {
+    queryClient.invalidateQueries({ queryKey: ['feed', 'following'] });
+    queryClient.invalidateQueries({ queryKey: ['feed', 'stacks', 'following'] });
+  } catch (e) {
+    // A stale feed is a far smaller failure than a follow that throws.
+    logger.warn('[socialSlice] feed invalidation failed:', e);
+  }
+}
+
 // ── Public API ──
 
 export async function followUser(targetUsername: string): Promise<boolean> {
@@ -153,6 +191,7 @@ export async function followUser(targetUsername: string): Promise<boolean> {
 
     if (existing) {
       logger.warn(`[socialSlice.followUser] Already interacted with @${targetUsername} in DB, syncing state`);
+      refreshFollowGraphFeeds();
       return true;
     }
 
@@ -161,6 +200,7 @@ export async function followUser(targetUsername: string): Promise<boolean> {
     }]);
     if (error && !error.message?.includes('duplicate')) throw error;
     
+    refreshFollowGraphFeeds();
     return true;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as any).message) : String(err);
@@ -240,6 +280,7 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
         payload: { user_id: userId, target_username: targetUsername },
       });
     }
+    refreshFollowGraphFeeds();
     return true;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as any).message) : String(err);

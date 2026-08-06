@@ -21,6 +21,7 @@ import { logger } from './logger';
 import { applyIdMapToPayload, executeMutation } from './mutationExecutor';
 import { isNetworkError, isTransientError } from './networkError';
 import reelToast from './reelToast';
+import { queryClient } from '../lib/queryClient';
 
 export interface QueuedMutation {
     id: string;
@@ -45,6 +46,13 @@ export interface QueuedMutation {
      */
     _retryCount?: number;
 }
+
+/**
+ * Queue types that change who you follow. Kept as a set beside the queue rather than
+ * a string check at the call site so a new social mutation type is a one-line change
+ * in an obvious place (#82).
+ */
+const SOCIAL_MUTATION_TYPES = new Set(['follow_user', 'follow_request_user', 'unfollow_user']);
 
 const QUEUE_KEY = 'reelhouse-offline-mutations';
 const MAX_QUEUE_SIZE = 100;
@@ -290,6 +298,8 @@ export async function flushOfflineQueue() {
     // network calls are NOT part of `queue` and must survive the final write — diffing by
     // ID against a fresh read does that; overwriting wholesale does not.
     const deadLetterQueue: QueuedMutation[] = [];
+    /** Did anything that changes the follow graph actually reach the server? (#82) */
+    let socialMutationSynced = false;
 
     let successCount = 0;
 
@@ -320,6 +330,7 @@ export async function flushOfflineQueue() {
                 idMap[result.fakeId] = result.newId;
             }
             successCount++;
+            if (SOCIAL_MUTATION_TYPES.has(mutation.type)) socialMutationSynced = true;
             processedIds.add(mutation.id);
         } catch (error: unknown) {
             const errMsg = (typeof error === 'object' && error !== null && 'message' in error)
@@ -403,6 +414,23 @@ export async function flushOfflineQueue() {
         });
     writeQueue(finalQueue);
     useOfflineQueueStore.setState({ pending: finalQueue.length });
+
+    // ── #82 · a follow that syncs is still a follow ────────────────────────────────
+    // Nothing refreshed the feed after a flush. So a follow made offline synced
+    // successfully and STILL did not appear until a 60-second (or 5-minute) timer
+    // lapsed — the same symptom the online fix removes, arriving by a different door.
+    //
+    // Only when a social mutation actually ran: an unrelated flush (a log, a stub, an
+    // archive row) has no bearing on who you follow, and refetching two feeds for it
+    // would be waste.
+    if (socialMutationSynced) {
+        try {
+            queryClient.invalidateQueries({ queryKey: ['feed', 'following'] });
+            queryClient.invalidateQueries({ queryKey: ['feed', 'stacks', 'following'] });
+        } catch (e) {
+            logger.warn('[OfflineSync] post-flush feed invalidation failed:', e);
+        }
+    }
     } finally {
         isFlushing = false;
     }

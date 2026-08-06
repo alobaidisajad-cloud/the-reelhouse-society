@@ -68,8 +68,12 @@ export function useFollowingFeed() {
 export function useStacksFeed(filter: 'all' | 'following' = 'all', search: string = '') {
   const userId = useAuthStore((s) => s.user?.id);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const followingForEnabled = useSocialStore((s) => s.following);
+  // This hook deliberately does NOT subscribe to the follow graph. It used to, with the
+  // lint warning suppressed — someone wired up reactivity, found it did nothing, and
+  // silenced the complaint instead of removing it. It re-rendered on every follow but
+  // never refetched, because the query key was unchanged. socialSlice now invalidates
+  // this key on follow/unfollow, which is the refresh that subscription was reaching
+  // for (#82). Re-adding it would restore the render churn without the benefit.
 
   return useInfiniteQuery({
     queryKey: ['feed', 'stacks', filter, search, userId],

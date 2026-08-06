@@ -27,7 +27,6 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useSocialStore } from '@/src/stores/followStore';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { followUser } from '@/src/stores/domain/socialSlice';
-import { queryClient } from '@/src/lib/queryClient';
 import { resolveTier, isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 
 const MAX_ROWS = 6;
@@ -76,12 +75,15 @@ function MemberRow({ member }: { member: NotableMember }) {
     if (isFollowing || isRequested) return;
     TactileEngine.selection();
     // The store applies the optimistic update instantly (0ms, even offline);
-    // this component re-renders from that state. On success, nudge the
-    // following feed to re-develop so the registry retires on its own.
+    // this component re-renders from that state, and socialSlice refreshes the
+    // following feed itself so the registry retires on its own.
+    //
+    // The invalidation used to live HERE, and only here — which is why following from
+    // the Registry refreshed the feed while following from the profile screen, the
+    // primary follow surface, did not (#82). It now lives in the store, so every
+    // follow surface gets it. Repeating it here would be a harmless double-refetch,
+    // but two copies of one rule is how the rule drifts.
     followUser(member.username)
-      .then((ok) => {
-        if (ok) queryClient.invalidateQueries({ queryKey: ['feed', 'following'] });
-      })
       .catch(() => { /* socialSlice already rolls back + toasts on failure */ });
   }, [member.username, isFollowing, isRequested]);
 
