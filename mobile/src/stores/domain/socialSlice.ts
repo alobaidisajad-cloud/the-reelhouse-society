@@ -153,6 +153,7 @@ function refreshFollowGraphFeeds() {
  * Pure and exported so it can be tested without a store, a network, or a device.
  */
 export function reconcileGraphWithPendingMutations(
+  ownerId: string,
   serverFollowing: string[],
   serverRequested: string[],
   queue: { type: string; payload?: Record<string, unknown> }[],
@@ -164,6 +165,16 @@ export function reconcileGraphWithPendingMutations(
   for (const u of serverRequested) if (u) requested.set(u.toLowerCase(), u);
 
   for (const m of queue) {
+    // ── OWNER SCOPING · not optional ────────────────────────────────────────────
+    // The queue can legitimately hold another member's mutations: an unclean logout
+    // (crash, force-kill) leaves them behind, which is exactly why flushOfflineQueue
+    // partitions by `payload.user_id` and dead-letters the orphans rather than
+    // executing them. Reading the queue WITHOUT that filter would merge a previous
+    // member's pending follows into whoever signs in next — and then persist it to
+    // their cache. The id is required as an argument rather than filtered by the
+    // caller so this cannot be bypassed by forgetting.
+    if (!ownerId || m?.payload?.user_id !== ownerId) continue;
+
     const raw = m?.payload?.target_username;
     if (typeof raw !== 'string' || raw.length === 0) continue;
     const key = raw.toLowerCase();
@@ -203,7 +214,7 @@ export function reconcileGraphWithPendingMutations(
  */
 function commitHydratedGraph(userId: string, serverFollowing: string[], serverRequested: string[]): void {
   const { following, requested } = reconcileGraphWithPendingMutations(
-    serverFollowing, serverRequested, getOfflineQueue(),
+    userId, serverFollowing, serverRequested, getOfflineQueue(),
   );
   useSocialStore.getState().setFollowing(following);
   useSocialStore.getState().setRequested(requested);
