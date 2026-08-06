@@ -199,7 +199,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, setTargetUser } = data;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { username, isSelf, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists, setActiveTab } = ctrl;
+  const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists, setActiveTab } = ctrl;
   const { archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, physicalFilter, setArchiveSieve, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setPhysicalFilter } = ctrl;
 
   
@@ -410,7 +410,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ════════════════════════════════════════════════════════════
   // EARLY RETURNS
   // ════════════════════════════════════════════════════════════
-  if (loading) return (
+  // repairingHandle: we already know this handle is our own stale one and the route is
+  // being corrected — showing "Member Not Found" on the way past would be a lie (#87).
+  // It self-clears after 4s, so this can never become a permanent spinner.
+  if (loading || repairingHandle) return (
     <View style={[s.container, s.centeredFull]}>
       <View style={s.loadingRow}>
         <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />

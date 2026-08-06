@@ -11,6 +11,7 @@ import { queryClient } from '@/src/lib/queryClient';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { captureError } from '@/src/lib/sentry';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { rememberPreviousHandle } from '@/src/utils/handleHistory';
 
 // Zod schema for the form
 const editProfileSchema = z.object({
@@ -276,6 +277,13 @@ export function useEditProfile() {
         });
       }
       
+      // #87 — the handle we are about to stop being. Recorded BEFORE the auth store
+      // moves, because the moment it does, the profile screen underneath this one
+      // starts refetching under a handle that no longer exists and needs to be able to
+      // recognise it as ours. Recorded only on a save that actually renamed, and only
+      // after the write succeeded — a handle we failed to give up is not a past handle.
+      if (usernameChanged) rememberPreviousHandle(user.id, storedUsername);
+
       // Update local auth store
       useAuthStore.setState((state) => {
         const updatedUser = state.user ? {

@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useAuthStore } from '@/src/stores/auth';
@@ -8,6 +8,7 @@ import { safeOpenURL, normalizeSocialUrl } from '@/src/utils/linking';
 import { useFilmStore } from '@/src/stores/films';
 import { useSocialStore } from '@/src/stores/socialStore';
 import { followUser, unfollowUser } from '@/src/stores/domain/socialSlice';
+import { shouldRepairHandleRoute, wasMyHandle } from '@/src/utils/handleHistory';
 
 export const normalizeSocialHash = (links?: any[] | Record<string, string> | null): string => {
   if (!links) return '';
@@ -94,6 +95,67 @@ export function useProfileController(usernameOverride?: string) {
     isFollowing,
     activeTab,
   });
+
+  // ── #87: follow our own rename instead of stranding on the old handle ──────────
+  // Renaming flips isSelf to false while this screen is still mounted underneath Edit
+  // Profile, which re-fires the fetch under a handle that no longer exists and lands
+  // the member on "Member Not Found" about themselves. See utils/handleHistory.ts for
+  // why neither isSelf nor the loaded targetUser can be used to detect this.
+  //
+  // Both halves of the predicate are required:
+  //   • the handle was ONCE ours — otherwise we have no business rewriting the route
+  //   • it currently resolves to NOBODY — a freed handle can be claimed by someone
+  //     else, and redirecting a visit to their profile onto ours would be far worse
+  //     than the bug being fixed
+  //
+  // navigation.setParams, NOT router.setParams: the auth store moves ~750ms before
+  // Edit Profile pops, so at the moment of repair THIS screen is not the focused one.
+  // expo-router's imperative setParams targets whatever is focused (verified: it
+  // dispatches SET_PARAMS with no `source`, and BaseRouter then falls back to
+  // state.index) — it would rewrite Edit Profile's params instead. The per-route
+  // navigation object dispatches with `source: route.key`, so it repairs this route
+  // regardless of focus, in place, without pushing a history entry.
+  const navigation = useNavigation();
+  const wasOurHandle = useMemo(
+    () => wasMyHandle(user?.id, username),
+    [user?.id, username]
+  );
+  const repairRoute = shouldRepairHandleRoute({
+    usernameOverride,
+    routeUsername: username,
+    liveUsername: user?.username,
+    wasOurs: wasOurHandle,
+    loading: data.loading,
+    hasTargetUser: !!data.targetUser,
+  });
+  useEffect(() => {
+    if (!repairRoute || !user?.username) return;
+    navigation.setParams({ username: user.username } as never);
+  }, [repairRoute, user?.username, navigation]);
+
+  // Rewriting the route is not quite enough on its own. The repair is decided in the
+  // render where the failed fetch has already produced the not-found state, and the
+  // refetch under the corrected handle cannot start until the next commit — so without
+  // this the screen still paints "Member Not Found" for a frame or two on the way past.
+  //
+  // Invisible on the path this finding describes (the screen is behind Edit Profile at
+  // that moment), but plainly visible when a stale link is opened cold, and a member
+  // being told their account is gone — even briefly — is the entire bug.
+  //
+  // The timeout is the point of this being state rather than a naked flag: if the
+  // corrected handle somehow fails too, this falls back to the honest not-found screen
+  // WITH its GO BACK button after four seconds. A hanging spinner would be a worse
+  // failure than the one being fixed, so it is not reachable from here.
+  const [repairingHandle, setRepairingHandle] = useState(false);
+  useEffect(() => {
+    if (!repairRoute) return;
+    setRepairingHandle(true);
+    const t = setTimeout(() => setRepairingHandle(false), 4000);
+    return () => clearTimeout(t);
+  }, [repairRoute]);
+  useEffect(() => {
+    if (data.targetUser) setRepairingHandle(false);
+  }, [data.targetUser]);
 
   // Replaced JSON.stringify with specific property mapping to prevent infinite loops from arbitrary key ordering
   const targetUserHash = [
@@ -301,6 +363,8 @@ export function useProfileController(usernameOverride?: string) {
   return {
     username,
     isSelf,
+    // #87: hold the not-found screen while the route is being corrected.
+    repairingHandle,
     isFollowing,
     isRequested,
     myLogs,
