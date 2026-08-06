@@ -197,8 +197,19 @@ async function resolveProfile(userId: string): Promise<{ username: string; avata
   const cached = _profileCache.get(userId);
   if (cached && Date.now() - cached.ts < _PROFILE_CACHE_TTL) return cached;
   if (cached) _profileCache.delete(userId);
-  const { data: profile } = await supabase.from('profiles').select('username, avatar_url').eq('id', userId).single();
-  const result = { username: profile?.username ?? 'unknown', avatar_url: profile?.avatar_url };
+  const { data: profile, error } = await supabase.from('profiles').select('username, avatar_url').eq('id', userId).single();
+
+  // A failure must NOT be cached. The fallback below is the string "unknown", and
+  // caching it pinned that name to a real member for the full 5-minute TTL — every
+  // live dispatch they sent rendered as from "unknown", and because the cache is
+  // consulted first, retrying could not clear it. An error path writing a bad value
+  // into a cache that is then trusted is the same shape as the notification-badge bug.
+  if (error || !profile) {
+    if (error) logger.error('[LoungeStore.resolveProfile] lookup failed:', error);
+    return { username: 'unknown', avatar_url: undefined };
+  }
+
+  const result = { username: profile.username ?? 'unknown', avatar_url: profile.avatar_url };
   if (_profileCache.size >= _PROFILE_CACHE_MAX) {
     const oldest = _profileCache.keys().next().value;
     if (oldest !== undefined) _profileCache.delete(oldest);
@@ -307,11 +318,17 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     set({ loading: true });
     try {
       // Fetch lounges where user is a member
-      const { data: memberRows } = await supabase
+      // #55 — this one is the worst of them. On failure `memberRows` was simply
+      // undefined, so `memberships` fell back to [] and the salon list rendered as
+      // though the member belonged to NOTHING: joined rooms missing, every unread
+      // count zero, no message of any kind. Thrown so the existing catch below
+      // surfaces it — a visible error beats a confidently wrong list.
+      const { data: memberRows, error: memberError } = await supabase
         .from('lounge_members')
         .select('lounge_id, last_read_at, status')
         .eq('user_id', user.id)
         .limit(100);
+      if (memberError) throw memberError;
 
       const memberships = memberRows ?? [];
       const myLoungeIds = memberships.map(r => r.lounge_id);
@@ -411,11 +428,15 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const pendingCounts: Record<string, number> = {};
       const ownedIds = (myCreatedRes.data ?? []).map(l => l.id);
       if (ownedIds.length > 0) {
-        const { data: pendingRows } = await supabase
+        // Logged, not surfaced: the salon list itself is still correct, and a toast
+        // for a badge would be noise. But a silent zero means a host never learns
+        // somebody is waiting at their door, so it must be diagnosable.
+        const { data: pendingRows, error: pendingError } = await supabase
           .from('lounge_members')
           .select('lounge_id')
           .in('lounge_id', ownedIds)
           .eq('status', 'pending');
+        if (pendingError) logger.error('[LoungeStore.fetchLounges] pending-request count failed:', pendingError);
         if (pendingRows) for (const r of pendingRows) pendingCounts[r.lounge_id] = (pendingCounts[r.lounge_id] || 0) + 1;
       }
 
@@ -479,7 +500,17 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (data && !error) {
+      // #55 — supabase-js RESOLVES on a backend failure; it does not throw. So the
+      // guard below (`if (data && !error)`) simply skipped the block, the catch never
+      // fired, and the screen sat empty with no message, no log and no report. The
+      // finding blamed the catch — the catch was always fine. This is the line.
+      //
+      // Branch rather than return: `set({ loading: false })` runs after the try, so an
+      // early return would leave the spinner up forever.
+      if (error) {
+        logger.error('[LoungeStore.fetchMessages] load failed:', error);
+        reelToast.error('Could not load messages — check your connection.');
+      } else if (data) {
         const messages: LoungeMessage[] = (data as LoungeMessageRow[]).reverse().map((m) => ({
           id: m.id,
           lounge_id: m.lounge_id,
@@ -530,10 +561,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         const persistedIds = messages.map(m => m.id);
         if (persistedIds.length > 0) {
           const myId = useAuthStore.getState().user?.id;
-          const { data: reactionRows } = await supabase
+          // Logged, not surfaced: the dispatches themselves are correct; only their
+          // reactions are missing. Worth knowing about, not worth interrupting for.
+          const { data: reactionRows, error: reactionError } = await supabase
             .from('lounge_message_reactions')
             .select('message_id, reaction, user_id')
             .in('message_id', persistedIds);
+          if (reactionError) logger.error('[LoungeStore.fetchMessages] reactions failed:', reactionError);
           if (reactionRows && reactionRows.length > 0) {
             const summaries = summarizeReactions(reactionRows as ReactionRow[], myId);
             finalMessages = finalMessages.map(m =>
@@ -562,11 +596,27 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .from('lounge_messages')
         .select('id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, metadata, created_at, deleted_at, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
         .eq('lounge_id', loungeId)
-        .lt('created_at', oldestMessage.created_at)
+        // #57 — a COMPOUND cursor. A bare "created_at <" cursor silently skips every
+        // message sharing the boundary timestamp with the oldest one loaded — which is
+        // exactly what a burst of chat produces — and the skip is PERMANENT, because
+        // the next page starts below them. The id tiebreaker makes the ordering total.
+        //
+        // Matches the pattern already proven in notificationStore, logSlice,
+        // watchlistSlice and FeedService. The sort must carry the same second key, or
+        // the filter and the ordering disagree and the cursor means nothing.
+        //
+        // Both interpolated values come from a row the server produced — a timestamp
+        // and a uuid — so neither can carry a character this filter grammar reads.
+        .or(`created_at.lt.${oldestMessage.created_at},and(created_at.eq.${oldestMessage.created_at},id.lt.${oldestMessage.id})`)
         .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .limit(100);
 
-      if (data && data.length > 0 && !error) {
+      // #55, same shape: a backend failure resolved here and was skipped in silence.
+      if (error) {
+        logger.error('[LoungeStore.loadMoreMessages] load failed:', error);
+        reelToast.error('Could not load older messages.');
+      } else if (data && data.length > 0) {
         const olderMessages: LoungeMessage[] = (data as LoungeMessageRow[]).reverse().map((m) => ({
           id: m.id,
           lounge_id: m.lounge_id,
@@ -778,6 +828,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (error || !loungeId) {
         logger.error('[LoungeStore.createLounge] RPC failed:', error);
         reelToast.error('Failed to create lounge.');
+        // #58 — release the cooldown. It is set BEFORE the call on purpose (it is the
+        // anti-double-tap guard while the request is in flight), so the fix is to clear
+        // it on the failure paths rather than to move it after success — moving it
+        // would leave a window where two taps fire two create_lounge calls.
+        _lastCreateAt = 0;
         return null;
       }
 
@@ -801,6 +856,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     } catch (e) {
       logger.error('[LoungeStore.createLounge] Unhandled error:', e);
       reelToast.error('Could not create lounge. Check your connection and try again.');
+      // The finding named only the branch above. A throw — the offline case — burns the
+      // cooldown just as completely, and is the likelier one in practice.
+      _lastCreateAt = 0;
       return null;
     }
   },
