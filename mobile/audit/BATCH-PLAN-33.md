@@ -556,7 +556,7 @@ away from dangerous; worth knowing before anyone touches it.
 ---
 
 ## BATCH 15 · Profile identity & counts
-`Tier B` · `4 findings` · `no dependency` · **NOT STARTED**
+`Tier B` · `4 findings` · `no dependency` · **CLOSED 2026-08-06**
 
 - **#86** — High · Your own profile shows "WATCHLIST 0" while the tab beside it shows the real count.
 - **#87** — High · Renaming your handle strands you on "Member Not Found" — for your own profile.
@@ -567,6 +567,16 @@ away from dangerous; worth knowing before anyone touches it.
 
 **DONE WHEN** counts match their tabs, a rename keeps you on your own profile, and
 signup assigns the chosen name or fails loudly.
+
+**CLOSED.** #86 one count derivation shared by pills and cards; #46 PostgREST aggregate
+(`film_count[0].count`) + `filmCount` made REQUIRED on the type so both producers were a
+compiler error; #50 signup records the requested handle and a notice fires when it
+differs, covering BOTH signup paths; #87 the route follows the rename via the
+route-bound `navigation.setParams`, gated so a re-claimed handle can never be hijacked.
+**Beyond the finding:** `video_reviews.username` was a FOURTH denormalised handle column
+the register never listed — the class was enumerated from the schema and each table
+probed live. SQL: `20260806_01_sync_denormalized_username.sql` (trigger + back-fill of
+the 6 live dead rows), proven on throwaway PostgreSQL, 4 mutations caught.
 
 ---
 
