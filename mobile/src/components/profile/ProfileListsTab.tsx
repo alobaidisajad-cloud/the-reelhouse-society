@@ -54,7 +54,9 @@ const ProfileListCard = React.memo(({ list, router }: { list: ProfileList, route
       </View>
       <View style={s.stackContent}>
         <View style={s.badgeRow}>
-          <Text style={s.stackBadge}>{(list.films || []).length} FILMS</Text>
+          {/* filmCount, NOT films.length — for a visitor that array is capped at 4,
+              which is how a 96-film stack advertised itself as "4 FILMS" (#46). */}
+          <Text style={s.stackBadge}>{list.filmCount} FILMS</Text>
           {list.isRanked && (
             <View style={s.rankedBadge}>
               <ListOrdered size={10} color={colors.sepia} />

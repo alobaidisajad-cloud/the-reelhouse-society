@@ -73,5 +73,23 @@ export interface ProfileList {
     isRanked: boolean;
     isPrivate: boolean;
     createdAt: string;
+    /**
+     * Posters to render — deliberately capped at 4 for other members' profiles, because
+     * only four are shown. `films.length` is therefore NOT the size of the stack.
+     */
     films: ProfileListFilm[];
+    /**
+     * How many films the stack actually holds.
+     *
+     * #46: the card rendered `films.length`, and the visitor query caps that array at 4
+     * — so a 96-film journey was advertised to the entire Society as "4 FILMS". Seven of
+     * nine live stacks displayed the wrong number. Only the OWNER saw the truth, because
+     * their own path has no cap.
+     *
+     * REQUIRED, not optional, and that is the point: this type has two producers (the
+     * owner's store and the visitor service), and an optional field would let one of
+     * them be forgotten, compile cleanly, and render `undefined FILMS` at runtime. The
+     * compiler refuses to build until both are wired.
+     */
+    filmCount: number;
 }

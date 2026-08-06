@@ -471,6 +471,10 @@ export function toProfileList(list: FilmList): ProfileList {
       title: f.title,
       poster: f.poster ?? f.poster_path ?? null,
     })),
+    // The OWNER's path is uncapped — listSlice's query has no foreign-table limit — so
+    // here the array genuinely is the whole stack and its length is the true count.
+    // This is why the owner always saw the right number while everyone else saw 4.
+    filmCount: (list.films ?? []).length,
   };
 }
 

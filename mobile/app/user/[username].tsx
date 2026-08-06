@@ -317,6 +317,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     displayVault,
     displayLists,
     totalFilms,
+    totalWatchlist,
     statsLevel,
     statsColor,
     statsProgress,
@@ -893,7 +894,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 <StatCard label="FILMS" value={totalFilms} />
                 <StatCard label="FOLLOWERS" value={targetUser.followers_count || 0} onPress={isPrivate ? undefined : navToFollowers} />
                 <StatCard label="FOLLOWING" value={targetUser.following_count || 0} onPress={isPrivate ? undefined : navToFollowing} />
-                <StatCard label="WATCHLIST" value={counts.watchlist} isLast />
+                <StatCard label="WATCHLIST" value={totalWatchlist} isLast />
               </View>
             )}
 

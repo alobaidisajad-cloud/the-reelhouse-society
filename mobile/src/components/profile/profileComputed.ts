@@ -50,6 +50,41 @@ interface UseProfileComputedParams {
 }
 
 /**
+ * The one place a profile count is reconciled.
+ *
+ * ── WHY THIS IS A FUNCTION AND NOT AN EXPRESSION REPEATED SIX TIMES ──────────
+ * #86: the WATCHLIST StatCard read `counts.watchlist` raw while the WATCHLIST tab pill
+ * a few pixels away read `counts.watchlist || displayWatchlist.length`. On the
+ * cache-first path for your OWN dossier the hook deliberately seeds every count to 0
+ * and skips the round trip — so the card showed **WATCHLIST 0** while the pill beside
+ * it showed the truth. Two contradictory numbers for one collection, on screen at once.
+ *
+ * The fix is not "make the card match the pill". Two expressions that agree today can
+ * disagree tomorrow — and they already had, in this same file: FILMS used `Math.max`
+ * for self while every pill used `||`. Deriving it once is what makes divergence
+ * impossible rather than merely absent.
+ *
+ * ── WHY THE TWO BRANCHES DIFFER ──────────────────────────────────────────────
+ * SELF — `Math.max`. The local arrays are MMKV-hydrated before first paint, so they
+ * are real evidence. Never show a member LESS than what is already on their device,
+ * even if the server says less (it may be mid-write, or paginating).
+ *
+ * OTHER — `||`. There is no local cache of someone else's collection, so the array is
+ * only whatever this session fetched. The server count is authoritative; the array is
+ * a fallback for the moment before it arrives. `Math.max` here would let a partially
+ * fetched page inflate a stranger's count above the truth.
+ *
+ * NOTE the local arrays are a WINDOW: films.ts persists only the most recent 150
+ * entries (PERSIST_WINDOW). So at cold start a member with 300 watchlist items briefly
+ * sees 150, not 300 — low, but consistent across both consumers, and it heals the
+ * moment get_profile_counts resolves. Showing the same number in both places is the
+ * property that matters; exactness arrives ~300ms later.
+ */
+export function reconcileCount(serverCount: number, localLength: number, isSelf: boolean): number {
+  return isSelf ? Math.max(serverCount ?? 0, localLength) : ((serverCount ?? 0) || localLength);
+}
+
+/**
  * Consecutive days ending today (or yesterday) on which the member logged a film.
  *
  * Pulled out of the hook so it can actually be tested — it is date arithmetic, which
@@ -132,7 +167,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
 
   const displayLists = useMemo(() => isSelf ? myLists.map(toProfileList) : lists, [isSelf, myLists, lists]);
 
-  const rawTotalFilms = isSelf ? Math.max(counts.logs, displayLogs.length) : (counts.logs || displayLogs.length);
+  const rawTotalFilms = reconcileCount(counts.logs, displayLogs.length, isSelf);
   const hideStats = !isSelf && targetUser?.preferences?.hide_stats === true;
   const totalFilms = hideStats ? 0 : rawTotalFilms;
 
@@ -273,19 +308,29 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   // `locked` reflects the DOSSIER OWNER's rank: locked rooms wear the brass
   // key and open onto the velvet rope, never a dead end.
   // The Projector is a room, not a count — it shows the ★ mark, never "0".
+  // Every count on this screen goes through reconcileCount — including the ones the
+  // StatCards read below, which is the point: the StatCard and the pill for the same
+  // collection can no longer show different numbers, because there is only one number.
+  const totalLedger = reconcileCount(counts.ledger, displayLogs.filter(l => l.rating > 0 || (l.review && l.review.length > 0)).length, isSelf);
+  const totalWatchlist = reconcileCount(counts.watchlist, displayWatchlist.length, isSelf);
+  const totalLists = reconcileCount(counts.lists, displayLists.length, isSelf);
+  const totalVault = reconcileCount(counts.vault, displayVault.length, isSelf);
+
   const COLLECTION_CARDS = useMemo(() => [
     { id: 'archive' as ProfileTab, label: 'ARCHIVE', desc: 'WATCHED', count: String(totalFilms), Icon: Archive, disabled: false, highlight: false, locked: false },
-    { id: 'ledger' as ProfileTab, label: 'LEDGER', desc: 'DIARY', count: String(counts.ledger || displayLogs.filter(l => l.rating > 0 || (l.review && l.review.length > 0)).length), Icon: BookOpen, disabled: false, highlight: false, locked: false },
-    { id: 'watchlist' as ProfileTab, label: 'WATCHLIST', desc: 'TO SEE', count: String(counts.watchlist || displayWatchlist.length), Icon: Bookmark, disabled: false, highlight: false, locked: false },
-    { id: 'lists' as ProfileTab, label: 'STACKS', desc: 'LISTS', count: String(counts.lists || displayLists.length), Icon: LayoutList, disabled: false, highlight: false, locked: false },
-    { id: 'physical' as ProfileTab, label: 'VAULT', desc: 'PHYSICAL', count: isArchivistPlus ? String(counts.vault || displayVault.length) : '✦', Icon: Disc, disabled: false, highlight: false, locked: !isArchivistPlus },
+    { id: 'ledger' as ProfileTab, label: 'LEDGER', desc: 'DIARY', count: String(totalLedger), Icon: BookOpen, disabled: false, highlight: false, locked: false },
+    { id: 'watchlist' as ProfileTab, label: 'WATCHLIST', desc: 'TO SEE', count: String(totalWatchlist), Icon: Bookmark, disabled: false, highlight: false, locked: false },
+    { id: 'lists' as ProfileTab, label: 'STACKS', desc: 'LISTS', count: String(totalLists), Icon: LayoutList, disabled: false, highlight: false, locked: false },
+    { id: 'physical' as ProfileTab, label: 'VAULT', desc: 'PHYSICAL', count: isArchivistPlus ? String(totalVault) : '✦', Icon: Disc, disabled: false, highlight: false, locked: !isArchivistPlus },
     { id: 'projector' as ProfileTab, label: 'PROJECTOR', desc: 'ANALYTICS', count: '★', Icon: Projector, disabled: false, highlight: true, locked: false },
-  ], [counts, displayLogs, displayWatchlist.length, displayLists.length, displayVault.length, isArchivistPlus, totalFilms]);
+  ], [totalLedger, totalWatchlist, totalLists, totalVault, isArchivistPlus, totalFilms]);
 
   return {
     displayLogs, displayWatchlist, displayVault, displayLists,
     totalFilms, statsLevel, statsColor, statsProgress,
     streak, archiveFiltered, ledgerFiltered, halfLifeMap,
+    // Exposed so the StatCards read the SAME reconciled numbers the pills do.
+    totalWatchlist, totalLedger, totalLists, totalVault,
     watchlistFiltered, physicalFiltered, physicalFormatCounts,
     recentLogs, socialLinks, COLLECTION_CARDS,
   };

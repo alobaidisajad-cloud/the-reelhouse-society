@@ -474,7 +474,21 @@ export const ProfileDataService = {
   async fetchOtherUserLists(userId: string, limit: number = 50, cursor?: string, signal?: AbortSignal): Promise<{ items: ProfileList[], nextCursor: string | null }> {
     const fetchLimit = limit + 1;
     let query = supabase.from('lists')
-      .select('id, title, description, is_ranked, is_private, created_at, list_items(list_id, film_id, film_title, poster_path)')
+      // `film_count:list_items(count)` is a PostgREST aggregate embed: the TRUE size of
+      // the stack, in the SAME round trip as the four posters.
+      //
+      // #46 — the array below is deliberately capped at 4 (only four posters render, and
+      // lifting the cap reintroduces the payload problem #45 exists for). The defect was
+      // taking the COUNT from that capped array, so a 96-film stack advertised itself as
+      // "4 FILMS" to everyone except its owner. Seven of nine live stacks were wrong.
+      //
+      // Verified against this project's live API before writing:
+      //   "Comfort movies" -> list_items:[4 items], film_count:[{count: 88}]  HTTP 200
+      // — so aggregates are enabled here, which is NOT a given (PostgREST can disable
+      // them, and then this silently 400s).
+      //
+      // ⚠️ PostgREST returns the aggregate as an ARRAY: read `film_count[0].count`.
+      .select('id, title, description, is_ranked, is_private, created_at, list_items(list_id, film_id, film_title, poster_path), film_count:list_items(count)')
       .eq('user_id', userId)
       .eq('is_private', false)
       .order('created_at', { ascending: false })
@@ -511,6 +525,11 @@ export const ProfileDataService = {
       films: l.list_items.map((i) => ({
         id: i.film_id, title: i.film_title, poster: i.poster_path ?? null,
       })),
+      // Falls back to the capped array length only if the aggregate is absent — which
+      // would mean the embed stopped working, and an under-count is a better failure
+      // than `undefined FILMS` on a public profile.
+      filmCount: (l as { film_count?: { count: number }[] }).film_count?.[0]?.count
+        ?? l.list_items.length,
     }));
     const lastRow = paginatedRaw.length > 0 ? (paginatedRaw[paginatedRaw.length - 1] as any) : null;
     const nextCursor = hasMore && lastRow ? `${lastRow.created_at || ''}|${lastRow.id}` : null;
