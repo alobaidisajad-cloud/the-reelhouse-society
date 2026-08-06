@@ -121,6 +121,29 @@ export interface AppNotification {
  * Returns the SAME state object when the notification is already present, so Zustand
  * skips the update — and, with it, an MMKV write of the entire list.
  */
+/**
+ * Removing rows can make room under the cap — so paging must become possible again.
+ *
+ *  is set false when a page fills the local cap. Nothing recomputed it when
+ * rows were then DISMISSED, so a member who filled the list and cleared some of it was
+ * stuck: load-more refuses while there is room and a cursor pointing at more rows.
+ *
+ * That is the same "cannot recover" state #51 describes, reached by a different door —
+ * dismissing rather than truncating — which is why closing only the truncation half
+ * would have left the symptom alive.
+ *
+ * When  was false because the SERVER had no more rows, re-enabling costs one
+ * request that returns nothing and sets it false again. Self-correcting, and strictly
+ * better than a list that can never grow again.
+ */
+export function reopenPagingIfRoom<T extends { notifications: AppNotification[]; _hasMore: boolean; _cursor: string | null }>(
+    state: T,
+    cap: number = LOCAL_NOTIFICATION_CAP,
+): boolean {
+    if (state._hasMore) return true;
+    return state._cursor != null && state.notifications.length < cap;
+}
+
 export function applyIncomingNotification<T extends { notifications: AppNotification[]; _unreadCount: number }>(
     state: T,
     incoming: AppNotification,
@@ -358,10 +381,14 @@ export const useNotificationStore = create<NotificationState>()(
         const wasDismissedUnread = previousState.some(n => n.id === id && !n.read);
 
         // Optimistic Update
-        set((state) => ({
-            notifications: state.notifications.filter((n) => n.id !== id),
-            _unreadCount: wasDismissedUnread ? state._unreadCount - 1 : state._unreadCount,
-        }));
+        set((state) => {
+            const notifications = state.notifications.filter((n) => n.id !== id);
+            return {
+                notifications,
+                _unreadCount: wasDismissedUnread ? state._unreadCount - 1 : state._unreadCount,
+                _hasMore: reopenPagingIfRoom({ ...state, notifications }),
+            };
+        });
 
         try {
             const user = useAuthStore.getState().user;
@@ -426,10 +453,14 @@ export const useNotificationStore = create<NotificationState>()(
         ).length;
 
         // Optimistic update
-        set(state => ({
-            notifications: state.notifications.filter(n => !ids.includes(n.id)),
-            _unreadCount: state._unreadCount - unreadDismissed,
-        }));
+        set(state => {
+            const notifications = state.notifications.filter(n => !ids.includes(n.id));
+            return {
+                notifications,
+                _unreadCount: state._unreadCount - unreadDismissed,
+                _hasMore: reopenPagingIfRoom({ ...state, notifications }),
+            };
+        });
 
         try {
             const user = useAuthStore.getState().user;

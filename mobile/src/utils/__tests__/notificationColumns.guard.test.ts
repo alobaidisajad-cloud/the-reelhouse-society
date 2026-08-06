@@ -70,8 +70,12 @@ describe('GATE 3 · the type declares them', () => {
 });
 
 describe('the grouping code reads the declared key and nothing else', () => {
-  it('getGroupKey returns the column', () => {
-    expect(code(grouping)).toMatch(/return n\.group_key \?\? null;/);
+  it('getGroupKey reads the column, and only accepts keys it understands', () => {
+    // It must NOT return the raw value. A key from a newer server would then form a
+    // group and fall back to the log wording, labelling it "certified your log of …".
+    // Unknown means ungrouped — which renders as ordinary rows, not as a wrong label.
+    expect(code(grouping)).toMatch(/parseGroupKey\(n\.group_key\)/);
+    expect(code(grouping)).not.toMatch(/return n\.group_key \?\? null;/);
   });
 
   it('the message regex is GONE from the module, not merely unused', () => {

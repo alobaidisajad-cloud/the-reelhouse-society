@@ -46,11 +46,16 @@ const MIN_GROUP_SIZE = 3;
  * Returns null if the notification is not eligible for grouping.
  */
 export function getGroupKey(n: AppNotification): string | null {
-  // The server declares this. Both previous legs were dead:  was never
-  // written by the trigger, and the message regex expected wording a migration had
-  // already replaced. Reading a declared key means a copy change can never disable
-  // grouping again — which is precisely how it was disabled the first time.
-  return n.group_key ?? null;
+  // The server declares this. Both previous legs were dead: film_id was never written
+  // by the trigger, and the message regex expected wording a migration had already
+  // replaced. Reading a declared key means a copy change can never disable grouping
+  // again — which is precisely how it was disabled the first time.
+  //
+  // Only a key this client UNDERSTANDS may group. Returning any string would let a key
+  // from a newer server (say endorse:screening:…) form a group that then falls back to
+  // the log wording — labelling it "certified your log of …". Unknown means ungrouped,
+  // which renders as ordinary individual rows: correct, just not collapsed.
+  return parseGroupKey(n.group_key) ? (n.group_key as string) : null;
 }
 
 /**

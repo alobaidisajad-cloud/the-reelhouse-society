@@ -17,7 +17,7 @@
  * cap that destroyed 450 rows AND a comment mis-stating the drift by a factor of 450
  * both survived review. It is a pure function now, and this is that test.
  */
-import { applyIncomingNotification, type AppNotification } from '../notificationStore';
+import { applyIncomingNotification, reopenPagingIfRoom, type AppNotification } from '../notificationStore';
 
 const CAP = 500;
 
@@ -146,5 +146,48 @@ describe('the cap is shared, not per-path', () => {
     // cap being shared, so neither fix alone can leave the count lying.
     expect(mismatched._unreadCount).toBe(mismatched.notifications.filter(n => !n.read).length);
     expect(shared._unreadCount).toBe(shared.notifications.filter(n => !n.read).length);
+  });
+});
+
+describe('RECOVERY — dismissing rows must make paging possible again', () => {
+  /**
+   * Found by re-auditing my own execution, not by the register.
+   *
+   * `_hasMore` is set false when a page fills the local cap. Nothing recomputed it when
+   * rows were then DISMISSED — so a member who filled the list and cleared some of it
+   * was stuck: load-more refuses while there is room and a cursor pointing at more rows.
+   *
+   * That is the same "cannot recover" state #51's third consequence describes, reached
+   * by dismissing instead of by truncating. Closing only the truncation half would have
+   * left the symptom alive.
+   */
+  const full = (over: Partial<{ _hasMore: boolean; _cursor: string | null }> = {}) => ({
+    notifications: listOf(CAP),
+    _hasMore: false,          // set false because the cap filled
+    _cursor: 'ts|id',
+    ...over,
+  });
+
+  it('THE GAP: room under the cap plus a cursor means there may be more to fetch', () => {
+    const afterDismissing = { ...full(), notifications: listOf(CAP - 100) };
+    expect(reopenPagingIfRoom(afterDismissing)).toBe(true);
+  });
+
+  it('a still-full list stays closed — nothing to reopen', () => {
+    expect(reopenPagingIfRoom(full())).toBe(false);
+  });
+
+  it('no cursor means there is nothing to page to, however much room there is', () => {
+    expect(reopenPagingIfRoom({ ...full({ _cursor: null }), notifications: listOf(10) })).toBe(false);
+  });
+
+  it('never turns paging OFF when it was already on', () => {
+    // It may only ever widen. A false here would strand the list in the other direction.
+    expect(reopenPagingIfRoom({ ...full({ _hasMore: true }), notifications: listOf(CAP) })).toBe(true);
+    expect(reopenPagingIfRoom({ ...full({ _hasMore: true, _cursor: null }), notifications: listOf(CAP) })).toBe(true);
+  });
+
+  it('an empty list with a cursor can page — the extreme of the same case', () => {
+    expect(reopenPagingIfRoom({ ...full(), notifications: [] })).toBe(true);
   });
 });

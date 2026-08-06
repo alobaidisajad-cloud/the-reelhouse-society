@@ -195,3 +195,38 @@ describe('groupNotifications end to end', () => {
     expect(groupTitle(n({ title: undefined, message: 'certified your log of Metropolis.' }))).toBeUndefined();
   });
 });
+
+describe('a key this client does not understand must NOT group', () => {
+  /**
+   * Found by re-auditing my own execution. `parseGroupKey` correctly rejects a key it
+   * does not recognise — but `getGroupKey` returned ANY string, so a key from a newer
+   * server would have formed a group and then fallen back to the log wording, labelling
+   * it "certified your log of …". The rejecting function existed; the grouping path
+   * never called it.
+   */
+  it('an unrecognised kind is ungrouped, not mislabelled', () => {
+    expect(getGroupKey(n({ group_key: 'endorse:screening:X1' }))).toBeNull();
+  });
+
+  it('a malformed key is ungrouped', () => {
+    for (const bad of ['', 'endorse', 'endorse:log', 'nonsense', 'other:log:x']) {
+      expect(getGroupKey(n({ group_key: bad }))).toBeNull();
+    }
+  });
+
+  it('such notifications still RENDER — they are individual rows, not lost', () => {
+    const items = groupNotifications([
+      n({ group_key: 'endorse:screening:X1' }),
+      n({ group_key: 'endorse:screening:X1' }),
+      n({ group_key: 'endorse:screening:X1' }),
+    ], NOW);
+    expect(items).toHaveLength(3);
+    expect(items.every(i => i.kind === 'individual')).toBe(true);
+  });
+
+  it('the three kinds this client DOES understand still group', () => {
+    for (const key of ['endorse:log:L1', 'endorse:list:S1', 'endorse:dossier:D1']) {
+      expect(getGroupKey(n({ group_key: key }))).toBe(key);
+    }
+  });
+});
