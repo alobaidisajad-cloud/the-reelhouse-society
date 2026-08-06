@@ -5,7 +5,9 @@ import NetInfo from '@react-native-community/netinfo';
 import * as Linking from 'expo-linking';
 import * as Updates from 'expo-updates';
 import { useEffect, useRef } from 'react';
-import { AppState } from 'react-native';
+import { Alert, AppState } from 'react-native';
+import { router } from 'expo-router';
+import { resolveHandleNotice } from '../utils/handleNotice';
 import { registerForPushNotifications, setupNotificationResponseHandler } from '../lib/pushNotifications';
 import { initRevenueCat } from '../lib/revenueCat';
 import { addBreadcrumb, captureError, Sentry, setSentryUser } from '../lib/sentry';
@@ -137,12 +139,38 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
       }
     }
 
+    // ── #50: if signup gave them a different handle than they chose, say so ──
+    // Deliberately NOT inside boot(): boot runs once, the instant a user object exists,
+    // and on the email-confirmation path that object has no username yet — the real
+    // handle arrives later, when the profile enrich lands. Checking on every auth state
+    // change instead covers all three arrivals (immediate signup, first login after
+    // confirming, restored session) with one reader.
+    //
+    // resolveHandleNotice consumes the request the moment a real handle is known, so
+    // this fires exactly once and the ordinary signup leaves nothing behind.
+    //
+    // An Alert, not a toast: being quietly handed a different identity is worth a beat
+    // of friction, and a notice that can be missed is the same as no notice at all.
+    function checkHandle(user: { id?: string | null; username?: string | null } | null) {
+      try {
+        const notice = resolveHandleNotice(user);
+        if (!notice) return;
+        Alert.alert('A note on your handle', notice, [
+          { text: 'Keep it', style: 'cancel' },
+          { text: 'Change it', onPress: () => { try { router.push('/edit-profile'); } catch { /* never block on a route */ } } },
+        ]);
+      } catch (e) {
+        logger.warn('[Bootstrapper] handle notice check failed:', e);
+      }
+    }
+
     // Subscription-based boot — eliminates render-order race condition.
     // If user is already resolved (warm start), boot immediately.
     // If auth hasn't resolved yet (cold start), subscribe and boot when it does.
     const currentUser = useAuthStore.getState().user;
     if (currentUser) {
       boot(currentUser);
+      checkHandle(currentUser);
     }
 
     // Subscribe to future auth state changes (handles cold start + re-login)
@@ -154,6 +182,7 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
           // Reset boot flag on logout so the next login can boot correctly.
           hasBooted.current = false;
         }
+        if (state.user) checkHandle(state.user);
       }
     );
 

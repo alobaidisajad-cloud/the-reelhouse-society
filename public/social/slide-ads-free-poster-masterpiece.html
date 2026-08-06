@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>Propaganda Poster — Ad-Free Native App</title>
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime&family=Bungee+Shade&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --ink: #0B0A08;
+    --parchment: #EDE5D8;
+    --sepia: #C4961A;
+    --soot: #0E0D0A;
+    --flicker: #F8F0C0;
+    --blood-reel: #6B1A0A;
+    --ash: #2A2118;
+    --bone: #C8B99A;
+    --fog: #6B6055;
+  }
+
+  body {
+    width: 1080px;
+    height: 1080px;
+    overflow: hidden;
+    background: var(--ink);
+    font-family: 'Courier Prime', monospace;
+  }
+
+  .canvas {
+    position: relative;
+    width: 1080px;
+    height: 1080px;
+    overflow: hidden;
+    background: linear-gradient(155deg, #1a150e 0%, #0B0A08 35%, #12100b 60%, #0B0A08 100%);
+  }
+
+  .camera-rig {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform-origin: center center;
+    animation: slowZoom 12s linear forwards;
+  }
+
+  @keyframes slowZoom {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.05); }
+  }
+
+  .spotlight {
+    position: absolute;
+    inset: -50%; /* Make it bigger so panning doesn't cut off */
+    z-index: 15;
+    pointer-events: none;
+    background: radial-gradient(circle at 30% 50%, rgba(248, 240, 192, 0.08) 0%, transparent 50%);
+    mix-blend-mode: overlay;
+    animation: spotlightPan 12s ease-in-out infinite alternate;
+  }
+
+  @keyframes spotlightPan {
+    0% { transform: translateX(-10%); opacity: 0.6; }
+    100% { transform: translateX(10%); opacity: 1; }
+  }
+
+  /* Sunburst effect */
+  .sunburst {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(
+      from 0deg,
+      rgba(196, 150, 26, 0.05) 0deg 15deg,
+      transparent 15deg 30deg,
+      rgba(196, 150, 26, 0.05) 30deg 45deg,
+      transparent 45deg 60deg,
+      rgba(196, 150, 26, 0.05) 60deg 75deg,
+      transparent 75deg 90deg,
+      rgba(196, 150, 26, 0.05) 90deg 105deg,
+      transparent 105deg 120deg,
+      rgba(196, 150, 26, 0.05) 120deg 135deg,
+      transparent 135deg 150deg,
+      rgba(196, 150, 26, 0.05) 150deg 165deg,
+      transparent 165deg 180deg,
+      rgba(196, 150, 26, 0.05) 180deg 195deg,
+      transparent 195deg 210deg,
+      rgba(196, 150, 26, 0.05) 210deg 225deg,
+      transparent 225deg 240deg,
+      rgba(196, 150, 26, 0.05) 240deg 255deg,
+      transparent 255deg 270deg,
+      rgba(196, 150, 26, 0.05) 270deg 285deg,
+      transparent 285deg 300deg,
+      rgba(196, 150, 26, 0.05) 300deg 315deg,
+      transparent 315deg 330deg,
+      rgba(196, 150, 26, 0.05) 330deg 345deg,
+      transparent 345deg 360deg
+    );
+    animation: spin 60s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  @keyframes spin {
+    100% { transform: rotate(360deg); }
+  }
+
+  .vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background: radial-gradient(ellipse 85% 80% at center, transparent 35%, rgba(0,0,0,0.4) 65%, rgba(0,0,0,0.85) 100%);
+    animation: vignetteBreathe 4s ease-in-out infinite alternate;
+  }
+
+  @keyframes vignetteBreathe {
+    0% { opacity: 0.9; }
+    100% { opacity: 1; }
+  }
+
+  .scanlines {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+    animation: scanlineScroll 10s linear infinite;
+  }
+
+  @keyframes scanlineScroll {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 400px; }
+  }
+
+  /* Masterpiece addition: Film scratches */
+  .scratch {
+    position: absolute;
+    width: 2px;
+    height: 100%;
+    background: rgba(255,255,255,0.1);
+    left: 30%;
+    z-index: 5;
+    pointer-events: none;
+    animation: scratchEffect 3s infinite;
+  }
+  
+  @keyframes scratchEffect {
+    0%, 90% { opacity: 0; transform: translateX(0); }
+    91% { opacity: 1; transform: translateX(10px); }
+    92% { opacity: 0; transform: translateX(50px); }
+    93% { opacity: 0; transform: translateX(-20px); }
+    94% { opacity: 1; transform: translateX(-10px); }
+    95% { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  .aged-border {
+    position: absolute;
+    inset: 24px;
+    z-index: 5;
+    border: 1px solid rgba(200, 185, 154, 0.15);
+    pointer-events: none;
+  }
+  .aged-border::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 1px solid rgba(200, 185, 154, 0.08);
+  }
+
+  .corner { position: absolute; width: 35px; height: 35px; z-index: 6; pointer-events: none; opacity: 0.4; }
+  .corner.tl { top: 20px; left: 20px; border-top: 2px solid var(--sepia); border-left: 2px solid var(--sepia); }
+  .corner.tr { top: 20px; right: 20px; border-top: 2px solid var(--sepia); border-right: 2px solid var(--sepia); }
+  .corner.bl { bottom: 20px; left: 20px; border-bottom: 2px solid var(--sepia); border-left: 2px solid var(--sepia); }
+  .corner.br { bottom: 20px; right: 20px; border-bottom: 2px solid var(--sepia); border-right: 2px solid var(--sepia); }
+
+  .content {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 80px 60px;
+    text-align: center;
+  }
+
+  .header-badge {
+    font-family: 'Special Elite', cursive;
+    font-size: 16px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--sepia);
+    padding: 6px 20px;
+    margin-bottom: 30px;
+    border-radius: 2px;
+    font-weight: bold;
+    transform: rotate(-2deg);
+    box-shadow: 2px 2px 0px var(--bone);
+  }
+
+  .logo {
+    width: 140px;
+    height: auto;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 0 20px rgba(196, 150, 26, 0.4)) sepia(0.8) contrast(1.2);
+    animation: logoFloat 6s ease-in-out infinite;
+  }
+
+  @keyframes logoFloat {
+    0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 20px rgba(196, 150, 26, 0.4)) sepia(0.8) contrast(1.2); }
+    50% { transform: translateY(-8px); filter: drop-shadow(0 0 30px rgba(196, 150, 26, 0.6)) sepia(0.8) contrast(1.3); }
+  }
+
+  .propaganda-title {
+    font-family: 'Bungee Shade', cursive;
+    font-size: 85px;
+    color: var(--parchment);
+    line-height: 1;
+    text-shadow: 3px 3px 0px var(--blood-reel), 0 0 15px rgba(237, 229, 216, 0.1);
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    animation: titleFlicker 4s infinite;
+  }
+
+  @keyframes titleFlicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; text-shadow: 3px 3px 0px var(--blood-reel), 0 0 15px rgba(237, 229, 216, 0.1); }
+    20%, 24%, 55% { opacity: 0.8; text-shadow: 3px 3px 0px rgba(107, 26, 10, 0.5), 0 0 5px rgba(237, 229, 216, 0.1); }
+    22% { opacity: 0.9; text-shadow: 2px 2px 0px var(--blood-reel); transform: translateX(2px); }
+  }
+
+  .propaganda-subtitle {
+    font-family: 'Rye', serif;
+    font-size: 42px;
+    color: var(--flicker);
+    line-height: 1.1;
+    margin-bottom: 30px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+  }
+
+  .divider {
+    width: 300px;
+    height: 3px;
+    background: var(--sepia);
+    margin-bottom: 35px;
+    position: relative;
+    box-shadow: 0 0 10px var(--sepia);
+  }
+  .divider::after {
+    content: "★";
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--sepia);
+    background: var(--ink);
+    padding: 0 10px;
+    font-size: 20px;
+    text-shadow: 0 0 10px var(--sepia);
+  }
+
+  .fact-text {
+    font-family: 'Special Elite', cursive;
+    font-size: 26px;
+    color: var(--bone);
+    line-height: 1.6;
+    max-width: 750px;
+    text-shadow: 0 2px 15px rgba(0,0,0,0.9);
+    margin-top: 10px;
+  }
+
+  .punchline {
+    display: block;
+    margin-top: 20px;
+    color: var(--flicker);
+    font-size: 28px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .needy-text {
+    margin-top: 20px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 18px;
+    color: var(--fog);
+    max-width: 600px;
+    font-style: italic;
+  }
+
+  .footer {
+    font-family: 'Courier Prime', monospace;
+    font-size: 14px;
+    color: var(--fog);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    position: absolute;
+    bottom: 55px;
+    z-index: 10;
+  }
+
+  /* Big Buster, begging */
+  .buster-giant {
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 8;
+    opacity: 0.18;
+    filter: brightness(0.6) sepia(0.5);
+    animation: busterBreathe 5s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+  
+  @keyframes busterBreathe {
+    0%, 100% { transform: translateX(-50%) scaleY(1); }
+    50% { transform: translateX(-50%) scaleY(1.02); }
+  }
+  
+  .buster-eye {
+    animation: busterBlink 8s infinite;
+    transform-origin: center;
+  }
+  
+  @keyframes busterBlink {
+    0%, 96%, 98%, 100% { transform: scaleY(1); }
+    97%, 99% { transform: scaleY(0.1); }
+  }
+
+  /* Sign held by Buster */
+  .begging-sign {
+    position: absolute;
+    bottom: 160px;
+    left: 50%;
+    transform: translateX(-50%) rotate(3deg);
+    background: var(--parchment);
+    color: var(--ink);
+    padding: 15px 30px;
+    font-family: 'Special Elite', cursive;
+    font-size: 22px;
+    font-weight: bold;
+    border: 4px solid var(--ash);
+    box-shadow: 5px 5px 0 rgba(0,0,0,0.5);
+    z-index: 9;
+    text-transform: uppercase;
+    animation: signSwing 4s ease-in-out infinite;
+    transform-origin: top center;
+  }
+  
+  @keyframes signSwing {
+    0%, 100% { transform: translateX(-50%) rotate(3deg); }
+    50% { transform: translateX(-50%) rotate(0deg); }
+  }
+  
+  /* Masterpiece detail: A cinematic letterbox */
+  .letterbox {
+    position: absolute;
+    left: 0; right: 0;
+    height: 60px;
+    background: #000;
+    z-index: 100;
+    pointer-events: none;
+  }
+  .letterbox.top { top: 0; }
+  .letterbox.bottom { bottom: 0; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="camera-rig">
+    <div class="spotlight"></div>
+    <div class="sunburst"></div>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+    <div class="scratch"></div>
+    <div class="aged-border"></div>
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    
+    <!-- Giant Buster from SVG -->
+    <svg class="buster-giant" viewBox="0 0 100 140" width="600" height="840" xmlns="http://www.w3.org/2000/svg">
+      <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="#E8DFC8" opacity="0.92"/>
+      <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="none" stroke="rgba(242,232,160,0.3)" stroke-width="3"/>
+      
+      <!-- Animated blinking eyes -->
+      <ellipse class="buster-eye" cx="38" cy="52" rx="6" ry="7" fill="#0A0703"/>
+      <ellipse class="buster-eye" cx="62" cy="52" rx="6" ry="7" fill="#0A0703"/>
+      <circle cx="40" cy="50" r="2" fill="white"/>
+      <circle cx="64" cy="50" r="2" fill="white"/>
+      
+      <!-- Sad mouth -->
+      <path d="M 34 72 Q 50 62 66 72" stroke="#0A0703" stroke-width="2.5" fill="none"/>
+      <rect x="40" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+      <rect x="46" y="67" width="4" height="6" fill="#0A0703" rx="0.5"/>
+      <rect x="52" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+      <rect x="58" y="69" width="3" height="4" fill="#0A0703" rx="0.5"/>
+    </svg>
+
+    <div class="begging-sign">COMING SOON.<br>(Prepare yourselves.)</div>
+
+    <div class="content">
+      <div class="header-badge">Public Service Announcement</div>
+      
+      <!-- Added floating logo -->
+      <img class="logo" src="../reelhouse-logo-transparent.png" alt="The ReelHouse Society">
+
+      <h1 class="propaganda-title">NO ADS. EVER.</h1>
+      <div class="propaganda-subtitle">(We forgot to ask for sponsors)</div>
+
+      <div class="divider"></div>
+
+      <p class="fact-text">
+        The ReelHouse Native App is currently under construction. When it drops, you will see exactly zero advertisements.
+        <span class="punchline">Buster ate the marketing budget anyway.</span>
+      </p>
+
+      <p class="needy-text">
+        (The web beta is live. The native app arrives shortly. Proceed accordingly.)
+      </p>
+    </div>
+
+    <p class="footer">By Order of the Remaining Founder</p>
+  </div>
+
+  <!-- Cinematic Letterboxes for that dramatic look (Outside camera-rig so they don't scale) -->
+  <div class="letterbox top"></div>
+  <div class="letterbox bottom"></div>
+</div>
+</body>
+</html>

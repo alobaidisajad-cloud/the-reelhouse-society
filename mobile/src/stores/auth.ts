@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { removePushToken } from '../lib/pushNotifications';
 import { queryClient } from '../lib/queryClient';
 import { identifyUser, logoutRevenueCat } from '../lib/revenueCat';
+import { rememberRequestedHandle } from '../utils/handleNotice';
 import { captureError, setSentryUser } from '../lib/sentry';
 import type { User as AuthUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -277,8 +278,31 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     if (data?.session) {
       // Email confirmation disabled — immediate login
-      await supabase.from('profiles').update({ username, persona }).eq('id', data.user!.id);
+      //
+      // ⚠️ #50 — this used to be `await supabase.from('profiles').update(...)` with the
+      // result THROWN AWAY. The signup trigger appends a suffix when a handle collides
+      // (deliberately: an account must always be created), so this corrective write is
+      // rejected by the unique index — and the rejection vanished. The next line then
+      // read back the SUFFIXED name, cached it, and signed the member in as someone
+      // they did not choose to be.
+      //
+      // The error is captured now, but it is not thrown: failing signup over a handle
+      // is exactly what the trigger was changed to avoid. It is a signal, not a fault.
+      const { error: renameError } = await supabase
+        .from('profiles').update({ username, persona }).eq('id', data.user!.id);
+      if (renameError) {
+        logger.warn('[signup] could not claim the requested handle', { requested: username, code: renameError.code });
+      }
+
       const { data: profile } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', data.user!.id).single();
+
+      // Close the loop. Whatever happened above — collision, reserved word, a path
+      // added later — if the handle the member holds is not the one they typed, say so.
+      // Recorded rather than toasted: signup is immediately followed by navigation and a
+      // first render, and a notice that can be missed is the same as no notice. The
+      // comparison itself happens once the identity resolves, in AppBootstrapper.
+      rememberRequestedHandle(data.user!.id, username);
+
       const completeUser = { ...data.user, ...profile, following: [] } as User;
       storage.set('last_user_id', data.user!.id);
       storage.set(`ironvault_user_cache_${data.user!.id}`, JSON.stringify(completeUser));
@@ -288,7 +312,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       void identifyUser(data.user!.id);
       return { needsConfirmation: false };
     }
-    // Email confirmation required
+    // Email confirmation required — no session, so the profile is unreadable and the
+    // requested handle cannot be claimed or even checked from here. The trigger has
+    // ALREADY created the profile, suffix and all. Record what they asked for; the
+    // comparison happens when they confirm, log in, and a real handle finally resolves.
+    rememberRequestedHandle(data?.user?.id, username);
     return { needsConfirmation: true };
   },
 

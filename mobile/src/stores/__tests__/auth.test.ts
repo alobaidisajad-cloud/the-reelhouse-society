@@ -263,6 +263,86 @@ describe('AuthStore', () => {
     });
   });
 
+  /**
+   * #50 — signup silently giving you a different handle.
+   *
+   * handleNotice.test.ts proves the comparison is right. That is NOT the same thing as
+   * proving signup records anything: batch 14 measured a case where deleting three real
+   * call sites left the entire suite green. These drive the REAL signup() and assert on
+   * what reached storage, so deleting the wiring fails CI.
+   *
+   * Both signup paths are covered, because only one of them can see a handle at all.
+   */
+  describe('signup — the requested handle is recorded (#50)', () => {
+    const { storage } = jest.requireMock('../mmkv-storage');
+    const PENDING_KEY = 'reelhouse_pending_handle';
+
+    /** The `.from('profiles')` chain used by signup: update().eq() then select().eq().single() */
+    function mockProfiles(returnedUsername: string) {
+      mockFrom.mockImplementation(() => {
+        const chain: Record<string, unknown> = {};
+        chain.update = () => chain;
+        chain.eq = () => chain;
+        chain.select = () => chain;
+        chain.single = async () => ({ data: { id: 'u1', username: returnedUsername }, error: null });
+        // `await`ing the chain directly is how the update() call resolves
+        chain.then = (resolve: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve);
+        return chain;
+      });
+    }
+
+    const pendingWrites = () =>
+      storage.set.mock.calls.filter((c: unknown[]) => c[0] === PENDING_KEY);
+
+    it('PATH A (session, confirmation disabled) records what was asked for', async () => {
+      mockSignUp.mockResolvedValue({
+        data: { user: { id: 'u1', email: 'a@reel.app' }, session: { access_token: 't' } },
+        error: null,
+      });
+      mockProfiles('morpho_4f8a21');
+
+      await useAuthStore.getState().signup('a@reel.app', 'Pw!23456', 'morpho');
+
+      const writes = pendingWrites();
+      expect(writes).toHaveLength(1);
+      const stored = JSON.parse(writes[0][1] as string);
+      expect(stored).toMatchObject({ id: 'u1', requested: 'morpho' });
+    });
+
+    it('PATH B (no session, confirmation required) records it too — the profile already exists, suffixed', async () => {
+      mockSignUp.mockResolvedValue({
+        data: { user: { id: 'u1', email: 'a@reel.app' }, session: null },
+        error: null,
+      });
+
+      const result = await useAuthStore.getState().signup('a@reel.app', 'Pw!23456', 'morpho');
+
+      expect(result.needsConfirmation).toBe(true);
+      const writes = pendingWrites();
+      expect(writes).toHaveLength(1);
+      expect(JSON.parse(writes[0][1] as string)).toMatchObject({ id: 'u1', requested: 'morpho' });
+    });
+
+    it('records even when the handle came back unchanged — the reader decides, not signup', async () => {
+      // signup must not try to be clever here: on PATH B it cannot see the handle at
+      // all, so "only record on a mismatch" is not a decision it is able to make.
+      mockSignUp.mockResolvedValue({
+        data: { user: { id: 'u1', email: 'a@reel.app' }, session: { access_token: 't' } },
+        error: null,
+      });
+      mockProfiles('morpho');
+
+      await useAuthStore.getState().signup('a@reel.app', 'Pw!23456', 'morpho');
+      expect(pendingWrites()).toHaveLength(1);
+    });
+
+    it('a failed signup records nothing', async () => {
+      mockSignUp.mockResolvedValue({ data: null, error: new Error('email taken') });
+      await expect(useAuthStore.getState().signup('a@reel.app', 'Pw!23456', 'morpho')).rejects.toThrow();
+      expect(pendingWrites()).toHaveLength(0);
+    });
+  });
+
   describe('logout', () => {
     it('clears user state on logout', async () => {
       useAuthStore.setState({
