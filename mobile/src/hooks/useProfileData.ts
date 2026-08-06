@@ -7,6 +7,7 @@ import type { ValidatedProfileUser } from '@/src/schemas/profile.schema';
 import { useSocialStore } from '@/src/stores/followStore';
 import { useAuthStore } from '@/src/stores/auth';
 import { isArchivistPlusTier } from '@/src/utils/tier';
+import { readCachedCounts, writeCachedCounts } from '@/src/utils/profileCountsCache';
 
 export type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
 
@@ -317,6 +318,9 @@ export function useProfileData({
         // follow still bumps these fields, so the count ticks instantly on follow.
         if (countsResult.followers != null) typedProfile.followers_count = countsResult.followers;
         if (countsResult.following != null) typedProfile.following_count = countsResult.following;
+        // These are exact. Keep them, so the NEXT cold start seeds the real totals
+        // instead of counting the 150-entry window the film store persists.
+        writeCachedCounts(typedProfile.id, countsResult);
         // T2-01: Single dispatch replaces 3 separate setState calls
         dispatch({ type: 'USER_DATA_LOADED', user: typedProfile, counts: countsResult, serverStreak: analyticsSummary?.current_streak ?? null });
 
@@ -546,11 +550,22 @@ export function useProfileData({
     const cachedSelf = isSelf ? useAuthStore.getState().user : null;
     if (cachedSelf) {
       dispatch({ type: 'SET_USER', payload: cachedSelf as unknown as ProfileUser });
-      // Seed the visible counts from the auth user's denormalized columns. The film
-      // count reads Math.max(counts.logs, cached-logs), so logs:0 here still shows the
-      // accurate cached count; the background refresh heals any follower/following drift.
+      // Seed the visible counts from the last EXACT totals this account saw, falling
+      // back to zeros only on the very first open (nothing cached yet), where
+      // reconcileCount's Math.max still shows the locally-loaded rows.
+      //
+      // Zeros used to be unconditional, and that was the whole cold-start flash: the
+      // film store persists only its most recent 150 entries, so a member with 815
+      // watchlist items was shown 150 until the counts landed. The background refresh
+      // below still corrects these within the same beat — this only decides what the
+      // FIRST frame says, and the first frame should not be wrong.
+      const seeded = readCachedCounts(cachedSelf.id);
       dispatch({ type: 'SET_COUNTS', payload: {
-        logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0,
+        logs: seeded?.logs ?? 0,
+        ledger: seeded?.ledger ?? 0,
+        watchlist: seeded?.watchlist ?? 0,
+        vault: seeded?.vault ?? 0,
+        lists: seeded?.lists ?? 0,
         followers: cachedSelf.followers_count ?? 0,
         following: cachedSelf.following_count ?? 0,
       } });
