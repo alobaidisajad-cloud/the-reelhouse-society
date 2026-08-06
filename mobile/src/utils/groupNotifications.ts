@@ -55,6 +55,12 @@ export function getGroupKey(n: AppNotification): string | null {
   // from a newer server (say endorse:screening:…) form a group that then falls back to
   // the log wording — labelling it "certified your log of …". Unknown means ungrouped,
   // which renders as ordinary individual rows: correct, just not collapsed.
+  // Only endorsements group. This check was in the original and is KEPT: the key's
+  // prefix already implies the type, but that equivalence holds only while every writer
+  // stays disciplined about which rows receive a key. Two independent conditions cost
+  // one comparison and mean a mislabelled row cannot be rendered as an endorse group.
+  if (n.type !== 'endorse') return null;
+
   return parseGroupKey(n.group_key) ? (n.group_key as string) : null;
 }
 

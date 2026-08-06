@@ -230,3 +230,34 @@ describe('a key this client does not understand must NOT group', () => {
     }
   });
 });
+
+describe('only ENDORSEMENTS group — the invariant, held by two conditions', () => {
+  /**
+   * The original getGroupKey opened with `if (n.type !== 'endorse') return null`. My
+   * first rewrite dropped it, relying on the key's `endorse:` prefix to imply the type.
+   * That equivalence holds only while every writer is disciplined about which rows get a
+   * key — an implicit invariant where an explicit one had been. Found by reading my own
+   * deletions, not by any property test.
+   */
+  it('a non-endorsement carrying an endorse-shaped key still does NOT group', () => {
+    expect(getGroupKey(n({ type: 'comment', group_key: 'endorse:log:L1' }))).toBeNull();
+    expect(getGroupKey(n({ type: 'follow', group_key: 'endorse:list:S1' }))).toBeNull();
+    expect(getGroupKey(n({ type: 'system', group_key: 'endorse:dossier:D1' }))).toBeNull();
+  });
+
+  it('and such rows still render, as individual notifications', () => {
+    const items = groupNotifications([
+      n({ type: 'comment', group_key: 'endorse:log:L1' }),
+      n({ type: 'comment', group_key: 'endorse:log:L1' }),
+      n({ type: 'comment', group_key: 'endorse:log:L1' }),
+    ], NOW);
+    expect(items).toHaveLength(3);
+    expect(items.every(i => i.kind === 'individual')).toBe(true);
+  });
+
+  it('BOTH conditions are required — neither alone is enough', () => {
+    expect(getGroupKey(n({ type: 'endorse', group_key: undefined }))).toBeNull();      // key alone
+    expect(getGroupKey(n({ type: 'comment', group_key: 'endorse:log:L1' }))).toBeNull(); // type alone
+    expect(getGroupKey(n({ type: 'endorse', group_key: 'endorse:log:L1' }))).toBe('endorse:log:L1');
+  });
+});
