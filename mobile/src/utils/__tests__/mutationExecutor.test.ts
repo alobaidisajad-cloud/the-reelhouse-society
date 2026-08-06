@@ -33,6 +33,7 @@ function createMockChain(resolveValue: { data?: unknown; error: unknown } = { da
     chain.select = jest.fn().mockImplementation(self);
     chain.eq = jest.fn().mockImplementation(self);
     chain.not = jest.fn().mockImplementation(self);
+    chain.in = jest.fn().mockImplementation(self);
     chain.maybeSingle = jest.fn().mockResolvedValue(resolveValue);
     chain.maybeSingle = jest.fn().mockResolvedValue(resolveValue);
     // For non-.single() terminal calls, make the chain itself thenable
@@ -562,7 +563,8 @@ describe('Social', () => {
 
             await runMutation('unfollow_user', { user_id: 'u1', target_username: 'cinephile42' });
             expect(deleteChain.delete).toHaveBeenCalled();
-            expect(deleteChain.eq).toHaveBeenCalledWith('type', 'follow');
+            // #78: both row types, so an offline cancel does not leave the request standing
+            expect(deleteChain.in).toHaveBeenCalledWith('type', ['follow', 'follow_request']);
         });
 
         it('skips delete when username not found', async () => {

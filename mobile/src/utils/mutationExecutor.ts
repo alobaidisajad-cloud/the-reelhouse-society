@@ -573,10 +573,14 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             resolvedId = targetProfile?.id ?? null;
         }
         if (resolvedId) {
+            // BOTH types, mirroring the online path in socialSlice. Deleting only
+            // 'follow' meant cancelling a pending request offline removed it locally
+            // and left the row standing at the target's door — where it reappeared in
+            // the requester's UI after the next hydrate (#78).
             throwIfError(await supabase.from('interactions').delete()
                 .eq('user_id', user_id as string)
                 .eq('target_user_id', resolvedId)
-                .eq('type', 'follow'));
+                .in('type', ['follow', 'follow_request']));
         }
         return {};
     },

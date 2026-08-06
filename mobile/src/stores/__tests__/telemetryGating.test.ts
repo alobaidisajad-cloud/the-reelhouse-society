@@ -118,6 +118,7 @@ jest.mock('../followStore', () => ({
             following: [],
             requested: [],
             setFollowing: jest.fn(),
+            setRequested: jest.fn(),
         })),
     },
 }));

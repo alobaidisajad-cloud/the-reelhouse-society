@@ -280,7 +280,7 @@ describe('mutationExecutor', () => {
             // The unfollow chain is: .delete().eq('user_id').eq('target_user_id').eq('type', 'follow')
             // Need 3 levels of .eq() chaining
             const innerResolve = jest.fn().mockResolvedValue({ error: null });
-            const level3 = { eq: innerResolve };
+            const level3 = { in: innerResolve };
             const level2 = { eq: jest.fn(() => level3) };
             const level1 = { eq: jest.fn(() => level2) };
             const deleteReturn = jest.fn(() => level1);

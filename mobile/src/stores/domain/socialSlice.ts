@@ -203,7 +203,12 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
   if (_inflightOps.has(opKey)) return false;
   _inflightOps.add(opKey);
 
+  // BOTH lists are snapshotted. This function is the CANCEL-REQUEST path too — the
+  // profile screen routes there whenever isFollowing OR isRequested is true — so a
+  // rollback that restored only `following` would leave a cancelled request looking
+  // cancelled while the row still stood (#78).
   const prevFollowing = useSocialStore.getState().following;
+  const prevRequested = useSocialStore.getState().requested;
   const userId = useAuthStore.getState().user?.id;
   if (!userId) {
     logger.warn('[socialSlice.unfollowUser] No userId — user not authenticated');
@@ -211,8 +216,12 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
     return false;
   }
 
-  // Atomic optimistic update via dedicated store
+  // Atomic optimistic update via dedicated store.
+  // removeRequested is NOT optional: cancelling a pending request came through here and
+  // cleared nothing, so the button read REQUESTED for the rest of the session — online
+  // as well as offline — and only corrected on the next launch's hydrate.
   useSocialStore.getState().removeFollowing(targetUsername);
+  useSocialStore.getState().removeRequested(targetUsername);
   persistFollowingToCache(userId);
 
   try {
@@ -252,8 +261,9 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
       return true;
     }
     logger.warn(`[socialSlice.unfollowUser] FAILED for @${targetUsername}: ${msg}`);
-    // Rollback via dedicated store
+    // Rollback via dedicated store — both lists, mirroring the optimistic update above.
     useSocialStore.getState().setFollowing(prevFollowing);
+    useSocialStore.getState().setRequested(prevRequested);
     persistFollowingToCache(userId);
     reelToast.error(`Could not unfollow @${targetUsername}. Please try again.`);
     return false;
