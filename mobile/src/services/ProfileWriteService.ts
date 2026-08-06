@@ -4,6 +4,9 @@ import { ProfileUpdateSchema } from '../schemas/profile.schema';
 import { sanitizeInput } from '../utils/sanitizeInput';
 import type { User } from '../types';
 import { withAbortSignal } from '../utils/withAbortSignal';
+import { storage } from '../stores/mmkv-storage';
+import { CACHE_KEYS } from '../constants/cacheKeys';
+import { rememberPreviousHandle } from '../utils/handleHistory';
 
 /**
  * Canonical column list for auth-bootstrap profile SELECT queries.
@@ -82,6 +85,31 @@ export const ProfileService = {
     // 3. Database Sync
     const { error } = await supabase.from('profiles').update(validatedData).eq('id', userId);
     if (error) throw error;
+
+    // ── #87 · record the handle we just stopped being ──────────────────────────
+    // This lives HERE, and not at the call site, because there are three doors into
+    // this function — useEditProfile, useUpdateUser and auth.updateUser — and the last
+    // two take a `Partial<User>`, which includes `username`. Only the first recorded
+    // anything. No caller passes a handle through the other two today, so nothing was
+    // broken; but "the one path I was looking at" is exactly how this batch's other
+    // findings got closed three times over. This is the single point every handle
+    // change already funnels through, so the recording cannot be bypassed or forgotten.
+    //
+    // Read from the cached user rather than importing the auth store: auth.ts imports
+    // THIS module, and importing it back would close a require cycle.
+    //
+    // After the write, never before — a handle we failed to give up is not a past one.
+    // Still ahead of the auth store moving, which is what starts the doomed refetch
+    // the repair exists to catch.
+    if (typeof dbUpdates.username === 'string') {
+      try {
+        const cached = storage.getString(CACHE_KEYS.USER(userId));
+        const previous = cached ? (JSON.parse(cached) as { username?: string })?.username : undefined;
+        if (previous && previous.toLowerCase() !== dbUpdates.username.toLowerCase()) {
+          rememberPreviousHandle(userId, previous);
+        }
+      } catch { /* a rename that already succeeded must not fail over a convenience */ }
+    }
   },
 
   /**

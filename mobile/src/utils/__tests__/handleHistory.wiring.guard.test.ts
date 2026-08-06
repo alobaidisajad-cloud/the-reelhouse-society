@@ -17,34 +17,62 @@ import * as path from 'path';
 const HOOKS = path.join(__dirname, '..', '..', 'hooks');
 const edit = fs.readFileSync(path.join(HOOKS, 'useEditProfile.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(HOOKS, 'useProfileController.ts'), 'utf8');
+const service = fs.readFileSync(path.join(__dirname, '..', '..', 'services', 'ProfileWriteService.ts'), 'utf8');
 const screen = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'app', 'user', '[username].tsx'), 'utf8');
 
-describe('useEditProfile records the handle being given up', () => {
-  it('imports and calls rememberPreviousHandle', () => {
-    expect(edit).toMatch(/import\s*\{[^}]*rememberPreviousHandle[^}]*\}\s*from\s*['"][^'"]*handleHistory['"]/);
-    expect(edit).toMatch(/rememberPreviousHandle\(/);
+describe('the handle being given up is recorded at the FUNNEL, not at one door', () => {
+  /**
+   * This started at the call site in useEditProfile, and that was a gap.
+   * `ProfileService.updateProfile` has THREE doors — useEditProfile, useUpdateUser and
+   * auth.updateUser — and the last two take a `Partial<User>`, which includes
+   * `username`. Only one of the three recorded anything.
+   *
+   * No caller passes a handle through the other two today, so nothing was broken. But
+   * "the path I happened to be looking at" is exactly how the rest of this batch got
+   * closed three times over, so the recording now sits at the single point every
+   * handle change already funnels through.
+   */
+  it('lives in the write service, which every path goes through', () => {
+    expect(service).toMatch(/import\s*\{[^}]*rememberPreviousHandle[^}]*\}\s*from\s*['"][^'"]*handleHistory['"]/);
+    expect(service).toMatch(/rememberPreviousHandle\(userId,\s*previous\)/);
   });
 
-  it('records only on a save that actually renamed', () => {
-    expect(edit).toMatch(/if \(usernameChanged\) rememberPreviousHandle\(/);
+  it('is NOT duplicated back at a call site, where it could drift', () => {
+    expect(edit).not.toMatch(/rememberPreviousHandle\(/);
   });
 
-  it('records the OLD handle, not the new one', () => {
-    // storedUsername is the handle as it was before the form was submitted.
-    // Passing sanitizedUsername here would record the handle we are moving TO, and the
-    // repair would then never recognise the one we are stranded on.
-    expect(edit).toMatch(/rememberPreviousHandle\(user\.id,\s*storedUsername\)/);
+  it('records only when a handle actually changed', () => {
+    expect(service).toMatch(/if \(typeof dbUpdates\.username === 'string'\)/);
+    expect(service).toMatch(/previous\.toLowerCase\(\) !== dbUpdates\.username\.toLowerCase\(\)/);
   });
 
-  it('records BEFORE the auth store moves', () => {
-    // The store update is what flips isSelf and starts the doomed refetch on the screen
-    // underneath. Recording after it is a race against a re-render that has already
-    // been scheduled.
-    const at = edit.indexOf('rememberPreviousHandle(user.id');
+  it('records the OLD handle, read before the new one replaced it', () => {
+    // Recording the handle being moved TO would leave the repair unable to recognise
+    // the one the member is stranded on.
+    expect(service).toMatch(/const previous = cached \?/);
+    expect(service).toMatch(/CACHE_KEYS\.USER\(userId\)/);
+  });
+
+  it('records AFTER the write succeeds — a handle we failed to give up is not a past one', () => {
+    const write = service.indexOf("supabase.from('profiles').update(validatedData)");
+    const record = service.indexOf('rememberPreviousHandle(userId');
+    expect(write).toBeGreaterThan(-1);
+    expect(record).toBeGreaterThan(write);
+  });
+
+  it('does not import the auth store — that would close a require cycle', () => {
+    // auth.ts imports this module. Importing it back breaks the app at load time.
+    expect(service).not.toMatch(/from\s*['"][^'"]*stores\/auth['"]/);
+  });
+
+  it('still lands before the auth store moves, which starts the doomed refetch', () => {
+    // updateProfile is awaited before useEditProfile touches the store, so the
+    // recording is complete by the time isSelf can flip.
+    const call = edit.indexOf('ProfileService.updateProfile(');
     const storeMove = edit.indexOf('useAuthStore.setState(');
-    expect(at).toBeGreaterThan(-1);
+    expect(call).toBeGreaterThan(-1);
     expect(storeMove).toBeGreaterThan(-1);
-    expect(at).toBeLessThan(storeMove);
+    expect(call).toBeLessThan(storeMove);
   });
 });
 
