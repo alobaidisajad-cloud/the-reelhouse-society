@@ -20,7 +20,7 @@ import TactileEngine from '../../utils/TactileEngine';
 import reelToast from '../../utils/reelToast';
 import { logger } from '../../utils/logger';
 import { isNetworkError } from '../../utils/networkError';
-import { enqueueMutation } from '../../utils/offlineQueue';
+import { enqueueMutation, getOfflineQueue } from '../../utils/offlineQueue';
 import { isLookupSafeHandle } from '../../utils/handleGuard';
 import { queryClient } from '../../lib/queryClient';
 
@@ -129,6 +129,85 @@ function refreshFollowGraphFeeds() {
     // A stale feed is a far smaller failure than a follow that throws.
     logger.warn('[socialSlice] feed invalidation failed:', e);
   }
+}
+
+/**
+ * The server's follow graph, corrected for writes that have not reached it yet.
+ *
+ * ── WHY HYDRATION CANNOT JUST TRUST THE SERVER ──────────────────────────────────────
+ * Follow someone offline and the mutation is queued while the UI updates optimistically.
+ * Relaunch before it flushes and `hydrateFollowing` replaces the whole list with the
+ * server's copy — which does not have it yet. The follow disappears from the screen
+ * even though it is queued and will sync. The offline handler never touches the store
+ * either, so it does not come back until the NEXT launch re-hydrates.
+ *
+ * The same happens in reverse: an offline unfollow is undone on screen because the
+ * server row is still there.
+ *
+ * Neither is fixed by the missing unique constraint — they survive it — so hydration
+ * has to be aware of what is still in flight.
+ *
+ * Applied in queue order, because order is meaning: follow → unfollow → follow ends as
+ * followed, and the queue is FIFO.
+ *
+ * Pure and exported so it can be tested without a store, a network, or a device.
+ */
+export function reconcileGraphWithPendingMutations(
+  serverFollowing: string[],
+  serverRequested: string[],
+  queue: { type: string; payload?: Record<string, unknown> }[],
+): { following: string[]; requested: string[] } {
+  // Case-insensitive identity, first spelling wins — mirrors the store's own index.
+  const following = new Map<string, string>();
+  const requested = new Map<string, string>();
+  for (const u of serverFollowing) if (u) following.set(u.toLowerCase(), u);
+  for (const u of serverRequested) if (u) requested.set(u.toLowerCase(), u);
+
+  for (const m of queue) {
+    const raw = m?.payload?.target_username;
+    if (typeof raw !== 'string' || raw.length === 0) continue;
+    const key = raw.toLowerCase();
+    switch (m.type) {
+      // `set` only when the handle is NEW to the list. The server's spelling is the
+      // real one; a queued payload carries whatever the caller passed, and the profile
+      // screen lowercases before calling followUser. Letting the queue overwrite would
+      // render a member whose handle is `Morpho` as `morpho` until the next hydrate.
+      case 'follow_user':
+        requested.delete(key);
+        if (!following.has(key)) following.set(key, raw);
+        break;
+      case 'follow_request_user':
+        following.delete(key);
+        if (!requested.has(key)) requested.set(key, raw);
+        break;
+      case 'unfollow_user':
+        following.delete(key);
+        requested.delete(key);
+        break;
+      default:
+        break;  // not a social mutation
+    }
+  }
+
+  return { following: [...following.values()], requested: [...requested.values()] };
+}
+
+/**
+ * The ONE place a hydrated graph reaches the store.
+ *
+ * There are two hydrators — the joined query and the fallback that runs whenever that
+ * join fails — and both replaced the lists directly. Fixing only the one being read
+ * would have left the fallback erasing pending follows on exactly the runs where things
+ * are already going wrong. A guard test fails if a third caller ever sets these lists
+ * without coming through here.
+ */
+function commitHydratedGraph(userId: string, serverFollowing: string[], serverRequested: string[]): void {
+  const { following, requested } = reconcileGraphWithPendingMutations(
+    serverFollowing, serverRequested, getOfflineQueue(),
+  );
+  useSocialStore.getState().setFollowing(following);
+  useSocialStore.getState().setRequested(requested);
+  persistFollowingToCache(userId);
 }
 
 // ── Public API ──
@@ -410,9 +489,7 @@ export async function hydrateFollowing(): Promise<void> {
       pageCount++;
     }
 
-    useSocialStore.getState().setFollowing(allUsernames);
-    useSocialStore.getState().setRequested(allRequested);
-    persistFollowingToCache(userId);
+    commitHydratedGraph(userId, allUsernames, allRequested);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.warn('[socialSlice.hydrateFollowing] Unexpected error:', msg);
@@ -480,9 +557,7 @@ async function _hydrateFollowingFallback(userId: string): Promise<void> {
     pageCount++;
   }
 
-  useSocialStore.getState().setFollowing(allUsernames.length > 0 ? allUsernames : []);
-  useSocialStore.getState().setRequested(allRequested.length > 0 ? allRequested : []);
-  persistFollowingToCache(userId);
+  commitHydratedGraph(userId, allUsernames, allRequested);
 }
 
 /**

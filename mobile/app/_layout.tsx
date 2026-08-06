@@ -12,6 +12,7 @@ import { ToastOverlay } from '@/src/components/ToastOverlay';
 import AppBootstrapper from '@/src/providers/AppBootstrapper';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
+import { useSocialStore } from '@/src/stores/followStore';
 import { initEncryptedStorage } from '@/src/stores/mmkv-storage';
 import { rehydrateFilmStore } from '@/src/stores/films';
 import { rehydrateSettingsStore } from '@/src/stores/settings';
@@ -82,6 +83,20 @@ export default function RootLayout() {
         const userId = useAuthStore.getState().user?.id;
         if (userId) {
           useBlockStore.getState().hydrateFromCache(userId);
+          // ── The follow graph, from the same cache, for the same reason ──────────
+          // socialSlice writes `reelhouse_following_*` on every follow and unfollow,
+          // and followStore has always had a hydrateFromCache to read it back — with
+          // ZERO callers. The write half shipped; the read half never did.
+          //
+          // So the follow graph started EMPTY on every cold start: offline, it stayed
+          // empty, every profile read FOLLOW instead of FOLLOWING, and the following
+          // feed switched itself off and showed its empty state. Online, that was
+          // still true for the window before hydrateFollowing answered.
+          //
+          // BlockStore, on the line above, has done this correctly all along. Same
+          // cache, same timing, same reason: render the truth we already hold, then
+          // let the network correct it.
+          useSocialStore.getState().hydrateFromCache(userId);
         }
         restoreSession()
           .then(() => {
@@ -91,6 +106,10 @@ export default function RootLayout() {
             if (uid) {
               useBlockStore.getState().hydrateFromCache(uid);
               useBlockStore.getState().syncFromServer(uid).catch(() => {});
+              // The session may have resolved a DIFFERENT user than the cached one
+              // (account switch), and the cache is keyed by id — so this is not a
+              // duplicate of the call above, it is the one that can be right.
+              useSocialStore.getState().hydrateFromCache(uid);
             }
           })
           .catch((err) => {
