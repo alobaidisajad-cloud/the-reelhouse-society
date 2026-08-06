@@ -581,7 +581,7 @@ the 6 live dead rows), proven on throwaway PostgreSQL, 4 mutations caught.
 ---
 
 ## BATCH 16 · Follow & offline social
-`Tier B` · `4 findings` · `no dependency` · **NOT STARTED**
+`Tier B` · `4 findings` · `no dependency` · **CLOSED 2026-08-06**
 
 - **#67** — High · Five of 32 live members cannot be followed at all.
 - **#77** — Following someone while offline is silently discarded.
@@ -592,6 +592,17 @@ the 6 live dead rows), proven on throwaway PostgreSQL, 4 mutations caught.
 
 **DONE WHEN** all 32 live members can be followed, and an offline follow/unfollow
 survives a reconnect — proven by driving the queue.
+
+**CLOSED.** #67 the lookup guard now rejects what is unsafe instead of allowlisting a
+charset that never matched the column (5 members unblocked). #78 was broader than filed
+— the requested state was cleared in NO path, online included. #82 narrowed three times
+to the two feeds that actually read the graph. #77 **the register's false-positive
+verdict was WRONG**: live-probed 42P10, the whole silent-discard chain confirmed.
+**Beyond the register:** hydration erased writes still in the queue (and there are TWO
+hydrators, both clobbering); and the follow graph's offline cache was written on every
+follow and NEVER read — `followStore.hydrateFromCache` had zero callers, so the graph
+started empty on every cold start. SQL: `20260806_02_interactions_follow_unique.sql`,
+proven on PostgreSQL 18 including the privacy-trigger interaction.
 
 ---
 
