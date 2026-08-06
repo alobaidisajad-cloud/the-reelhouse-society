@@ -8,7 +8,41 @@ import { useBlockStore } from './blockStore';
 import { zustandMMKVStorage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 
-const MAX_NOTIFICATIONS = 50;
+/**
+ * The most notifications the client holds at once — in memory AND in MMKV.
+ *
+ * ── #51 · WHY THIS IS ONE NUMBER NOW ────────────────────────────────────────────────
+ * There used to be two. The fetch and load-more paths kept 500; the Realtime handler
+ * kept 50. So a single arriving notification truncated the list to 50 and destroyed up
+ * to 450 already-loaded rows — and it did it persistently, because the truncated list
+ * is written straight back to MMKV by `partialize` below.
+ *
+ * It broke three things at once, and the third is why a smaller cap could not simply be
+ * accepted as a memory decision:
+ *   1. the rows themselves
+ *   2. the unread badge — the eviction accounting below assumes AT MOST ONE row leaves,
+ *      so evicting 450 subtracted 1 and left the badge counting notifications that no
+ *      longer existed
+ *   3. recovery — `_hasMore` had already been set false at the 500 cap, so load-more
+ *      refuses to run and the list stays at 50 until a cold refetch
+ *
+ * With ONE cap the Realtime path can only ever evict a single row, which makes that
+ * O(1) accounting correct by construction rather than by luck, and makes the stranded
+ * pagination unreachable.
+ *
+ * WHY 500 AND NOT SOMETHING SMALLER: this is not a new cost. Every other state change
+ * in this file already persists the whole list — measured at ~186KB for 500 rows, and
+ * there are 17 such writes. Raising the Realtime cap makes that path pay what the rest
+ * already pay; it can never retain more than the fetch path already does.
+ *
+ * Persisting a SHORTER list was considered and rejected: `_cursor` points at the oldest
+ * row of the full list, so truncating what is saved would make load-more skip rows —
+ * trading a data-loss bug for a pagination bug, which is the same defect class.
+ */
+const LOCAL_NOTIFICATION_CAP = 500;
+
+/** Rows per page. Was declared separately inside two functions; one number now. */
+const PAGE_SIZE = 30;
 
 // Module-scoped cleanup ref — not reactive state.
 // Storing a function in Zustand caused spurious subscriber notifications
@@ -48,6 +82,48 @@ export interface AppNotification {
     poster_path?: string;
     read: boolean;
     created_at: string;
+}
+
+/**
+ * Merge one Realtime notification into the list, and keep the unread badge honest.
+ *
+ * Pulled out of the socket callback so it can be TESTED. It carries the whole of #51:
+ * the cap, the de-duplication, and the eviction arithmetic that feeds the badge. Inside
+ * a `.on(...)` handler none of that was reachable by a test, which is why a cap that
+ * destroyed 450 rows and a comment that mis-stated the drift by a factor of 450 both
+ * survived review.
+ *
+ * Returns the SAME state object when the notification is already present, so Zustand
+ * skips the update — and, with it, an MMKV write of the entire list.
+ */
+export function applyIncomingNotification<T extends { notifications: AppNotification[]; _unreadCount: number }>(
+    state: T,
+    incoming: AppNotification,
+    cap: number = LOCAL_NOTIFICATION_CAP,
+): T {
+    // Prevent duplicate injects
+    if (state.notifications.some(n => n.id === incoming.id)) return state;
+
+    const next = [incoming, ...state.notifications].slice(0, cap);
+
+    // O(1) increment — new Realtime notifications always arrive as read=false.
+    // Because `cap` is the SAME one the fetch paths use, this slice can evict at most
+    // ONE row, so the single-row accounting is exact rather than approximate. Under the
+    // old 50-row cap it could evict 450 while subtracting 1, and the comment that used
+    // to sit here claimed the count "may drift by 1" — it could drift by 450.
+    // Count what ACTUALLY fell off the end, however many rows that is, rather than
+    // assuming a single one. With one shared cap it is always 0 or 1 — but an
+    // assumption that happens to hold is exactly what #51 was: the old code assumed
+    // one eviction while the mismatched caps evicted 450, and the badge went on
+    // counting rows that no longer existed. Deriving it costs one slice of length ≤1
+    // and makes the arithmetic exact for ANY input, so no future cap change can
+    // reintroduce the drift.
+    const evictedRows = state.notifications.length + 1 > cap
+        ? state.notifications.slice(cap - 1)
+        : [];
+    const evictedUnread = evictedRows.reduce((n, r) => n + (r.read ? 0 : 1), 0);
+
+    return { ...state, notifications: next, _unreadCount: state._unreadCount + 1 - evictedUnread };
 }
 
 export interface NotificationState {
@@ -93,7 +169,6 @@ export const useNotificationStore = create<NotificationState>()(
 
         set({ loading: true, _fetching: true });
         try {
-            const PAGE_SIZE = 30;
             const { data, error } = await supabase
                 .from('notifications')
                 .select('id, user_id, type, from_username, from_user_id, message, is_read, created_at, film_id, poster_path')
@@ -144,7 +219,6 @@ export const useNotificationStore = create<NotificationState>()(
 
         set({ loading: true, _fetchingMore: true });
         try {
-            const PAGE_SIZE = 30;
             // Full compound cursor (created_at|id) prevents duplicate/skipped
             // notifications when batch events share the same created_at timestamp.
             // Matches the keyset pagination pattern used in logSlice, watchlistSlice, FeedService.
@@ -181,10 +255,10 @@ export const useNotificationStore = create<NotificationState>()(
                 // Dedup: match Realtime handler pattern (prevents duplicates from clock skew)
                 const existingIds = new Set(state.notifications.map(n => n.id));
                 const deduped = validated.filter(n => !existingIds.has(n.id));
-                const allNotifs = [...state.notifications, ...deduped].slice(0, 500);
+                const allNotifs = [...state.notifications, ...deduped].slice(0, LOCAL_NOTIFICATION_CAP);
                 
                 // Cursor from the SERVER's response (last fetched item),
-                // not the merged array. Prevents skipped pages when .slice(0,500)
+                // not the merged array. Prevents skipped pages when the cap
                 // truncates newer items or existing state contains older items.
                 const lastFetched = validated[validated.length - 1];
                 const newCursor = lastFetched ? `${lastFetched.created_at}|${lastFetched.id}` : state._cursor;
@@ -195,8 +269,8 @@ export const useNotificationStore = create<NotificationState>()(
                 return {
                     notifications: allNotifs,
                     _unreadCount: state._unreadCount + unreadInNewBatch,
-                    // Stop paginating if we've hit the 500 item local memory cap
-                    _hasMore: validated.length >= PAGE_SIZE && allNotifs.length < 500,
+                    // Stop paginating once the local cap is full.
+                    _hasMore: validated.length >= PAGE_SIZE && allNotifs.length < LOCAL_NOTIFICATION_CAP,
                     _cursor: newCursor,
                 };
             });
@@ -386,19 +460,7 @@ export const useNotificationStore = create<NotificationState>()(
                         return;
                     }
 
-                    set((state) => {
-                        // Prevent duplicate injects
-                        if (state.notifications.some(n => n.id === newNotif.id)) return state;
-                        const next = [newNotif, ...state.notifications].slice(0, MAX_NOTIFICATIONS);
-                        // O(1) increment — new Realtime notifications always arrive as read=false.
-                        // If the slice evicts an unread notification (rare), the count may drift by 1;
-                        // fetchNotifications() will reconcile on next cold load.
-                        const evicted = state.notifications.length >= MAX_NOTIFICATIONS
-                            ? state.notifications[state.notifications.length - 1]
-                            : null;
-                        const evictedUnread = evicted && !evicted.read ? 1 : 0;
-                        return { notifications: next, _unreadCount: state._unreadCount + 1 - evictedUnread };
-                    });
+                    set((state) => applyIncomingNotification(state, newNotif));
                 }
             )
             .subscribe();
