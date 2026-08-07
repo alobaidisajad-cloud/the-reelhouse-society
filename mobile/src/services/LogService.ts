@@ -25,11 +25,20 @@ const PROFILE_LOOKUP_BATCH = 200;
 /**
  * Critiques fetched per log.
  *
- * Matches the dossier screen's page size, so all three comment surfaces behave
- * the same way rather than three different ways. The true total travels beside
- * the page — see `getLogComments`.
+ * ── WHY 100 AND NOT THE DOSSIER'S 30 ────────────────────────────────────────
+ * The dossier screen pairs a 30-row page with a "LOAD EARLIER · N MORE" control,
+ * so nothing it bounds is ever unreachable. This screen has the bounded page and
+ * the honest total but NOT that control yet — so at 30 a member would correctly
+ * be told there are 45 critiques while 15 of them could not be reached. Trading
+ * an unbounded query for hidden comments is the same defect wearing a hat.
+ *
+ * 100 closes the actual defect — the query is bounded — while putting the
+ * unreachable case far beyond anything that exists (the largest thread in the
+ * database is ONE comment). When a thread approaches this, the fix is the
+ * dossier's control, not a bigger number; the total already travels beside the
+ * page, which is the hard half.
  */
-const COMMENT_PAGE_SIZE = 30;
+const COMMENT_PAGE_SIZE = 100;
 
 const LogCommentPayloadSchema = z.object({
   id: z.string().uuid(),

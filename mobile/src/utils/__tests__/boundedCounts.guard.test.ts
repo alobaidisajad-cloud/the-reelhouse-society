@@ -75,6 +75,17 @@ describe('#44 · log critiques are bounded, and still counted honestly', () => {
     const ui = stripComments(read('src/components/log/LogComments.tsx'));
     expect(ui).toMatch(/CRITIQUES \(\$\{commentTotal \?\? comments\.length\}\)/);
   });
+
+  it('the page is large enough that nothing is unreachable YET', () => {
+    // This screen has no "load earlier" control, unlike the dossier. So the page
+    // must stay well clear of any real thread, or a bounded fetch would hide
+    // comments the honest total says exist — trading one defect for another.
+    // Largest thread in the database: 1. If this is ever lowered, the control
+    // has to come first.
+    const m = svc.match(/const COMMENT_PAGE_SIZE = (\d+)/);
+    expect(m).not.toBeNull();
+    expect(Number(m![1])).toBeGreaterThanOrEqual(100);
+  });
 });
 
 describe('#52 · one malformed row cannot end a member\'s history', () => {

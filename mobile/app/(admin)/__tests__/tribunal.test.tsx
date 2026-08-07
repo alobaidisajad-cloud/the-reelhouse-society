@@ -16,7 +16,9 @@ const mockResolveReportV2 = jest.fn().mockResolvedValue(undefined);
 const mockBulkDismiss = jest.fn().mockResolvedValue(undefined);
 const mockGetPriorityQueue = jest.fn().mockResolvedValue([]);
 const mockGetPendingReports = jest.fn().mockResolvedValue([]);
-const mockGetUserModerationHistory = jest.fn().mockResolvedValue([]);
+// One batched call for the WHOLE docket, replacing a per-card query. Keyed by
+// user id, ranked per member so one heavy offender cannot starve the rest.
+const mockGetModerationHistoryForUsers = jest.fn().mockResolvedValue({});
 
 jest.mock('@/src/services/ModerationService', () => ({
   ModerationService: {
@@ -24,7 +26,7 @@ jest.mock('@/src/services/ModerationService', () => ({
     bulkDismiss: (...args: any[]) => mockBulkDismiss(...args),
     getPriorityQueue: (...args: any[]) => mockGetPriorityQueue(...args),
     getPendingReports: (...args: any[]) => mockGetPendingReports(...args),
-    getUserModerationHistory: (...args: any[]) => mockGetUserModerationHistory(...args),
+    getModerationHistoryForUsers: (...args: any[]) => mockGetModerationHistoryForUsers(...args),
     getReportEvidence: jest.fn().mockResolvedValue({ found: false }),
     getPendingCount: jest.fn().mockResolvedValue(0),
   },
@@ -194,7 +196,7 @@ describe('TribunalScreen Integration', () => {
     jest.useFakeTimers();
     mockGetPendingReports.mockResolvedValue({ rows: [], total: 0 });
     mockGetPriorityQueue.mockResolvedValue([]);
-    mockGetUserModerationHistory.mockResolvedValue([]);
+    mockGetModerationHistoryForUsers.mockResolvedValue({});
     mockResolveReportV2.mockResolvedValue(undefined);
     mockBulkDismiss.mockResolvedValue(undefined);
   });
@@ -560,6 +562,33 @@ describe('TribunalScreen Integration', () => {
       await waitFor(() => {
         expect(getByText('×5 REPORTS')).toBeTruthy(); // report_count badge for priority-001
       });
+    });
+
+    it('fetches enforcement records ONCE for the whole docket, not per card', async () => {
+      // This used to be a query per report card — `select('*')` with no limit, so
+      // 20 cards meant 20 unbounded requests. The mock in this file previously
+      // pointed at the per-card method, which no longer exists: the test passed
+      // while exercising nothing.
+      const { getByLabelText, getByText } = renderTribunal();
+      await waitFor(() => {
+        expect(getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy();
+      });
+
+      await act(async () => {
+        await fireEvent.press(getByLabelText('Priority queue view'));
+      });
+
+      await waitFor(() => {
+        expect(mockGetModerationHistoryForUsers).toHaveBeenCalled();
+      });
+
+      // ONE call carrying EVERY member on the docket — not one call per card.
+      const calls = mockGetModerationHistoryForUsers.mock.calls;
+      expect(calls.length).toBe(1);
+      const [userIds] = calls[0];
+      expect(Array.isArray(userIds)).toBe(true);
+      // De-duplicated: a repeat offender appears once.
+      expect(new Set(userIds).size).toBe(userIds.length);
     });
   });
 
