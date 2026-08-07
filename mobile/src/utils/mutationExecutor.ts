@@ -698,6 +698,19 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // to execute against supabase.from('physical_archive') — the wrong table.
     add_dossier: async (p: any) => {
         const dbPayload = {
+            // The SAME id the optimistic row already carries.
+            //
+            // Omitting it let Postgres mint a different one, so the local row and
+            // the server row were two different dossiers and both rendered — and
+            // worse, a transient failure retries this up to five times, each
+            // attempt creating ANOTHER copy. With the id supplied the insert is
+            // idempotent: a retry hits the unique key and the queue already
+            // treats a duplicate as "the write landed" and drops it.
+            //
+            // The online path has always inserted this id (content.ts), which is
+            // what proves the column accepts a client-generated UUID; insertLog
+            // above does the same thing for logs.
+            id: p._tempId,
             user_id: p.user_id,
             author_username: p.author_username,
             title: p.title,

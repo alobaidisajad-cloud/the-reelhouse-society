@@ -10,6 +10,7 @@
     "decline_lounge_member",
     "delete_list_cascade",
     "get_community_feed_auth_cursor",
+    "get_dispatch_feed",
     "get_featured_critique",
     "get_filtered_stacks_auth_cursor_v2",
     "get_following_feed_auth_cursor",

@@ -1811,10 +1811,17 @@ export async function importArchiveZip(
       throw new Error('This archive is too large to import.');
     }
   }
-  // Fail CLOSED. If the sizes could not be read at all we have no bound on what
-  // decompressing would cost, so refuse rather than assume it is safe. A real
-  // export always reports its sizes, so this cannot reject a legitimate archive.
-  if (unmeasurable > 0 && totalUncompressed === 0) {
+  // Fail CLOSED on ANY unmeasurable entry.
+  //
+  // This used to require that EVERY entry be unmeasurable — it also tested that
+  // the running total was still zero — which left a gap: ONE measurable entry
+  // alongside 1,999 unmeasurable ones passed both caps, and those 1,999 then
+  // decompress unbounded.
+  //
+  // Rejecting any unmeasurable entry costs nothing on real archives — verified
+  // against the installed JSZip 3.10.1 by building an export the way the app does
+  // and re-loading it: every entry reported its size, none was unmeasurable.
+  if (unmeasurable > 0) {
     throw new Error('This archive could not be inspected safely. Try exporting it again.');
   }
 

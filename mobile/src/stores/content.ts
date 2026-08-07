@@ -10,6 +10,7 @@ import { captureError } from '../lib/sentry';
 import { applyPendingToDossierRow, buildDossierFromPendingCreate, parseDossierPendingState } from '../utils/dossierReconciliation';
 import { DossierRowSchema, type ValidatedDossierRow } from '../schemas/dossier.schema';
 import { sanitizeInput } from '../utils/sanitizeInput';
+import { logger } from '../utils/logger';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
@@ -51,6 +52,18 @@ export interface DispatchState {
   updateDossier: (id: string, updates: { title?: string; excerpt?: string; fullContent?: string }) => Promise<void | { offline: boolean }>;
   deleteDossier: (id: string) => Promise<void>;
   loadMoreDossiers: () => Promise<void>;
+  /**
+   * Fetch one dossier's essay body and keep it on the row.
+   *
+   * The feed no longer carries bodies, so the reader asks for one when it opens.
+   * It must land HERE and not in the reader's own state: the modal renders
+   * `globalDossiers.find(...) ?? base`, so a body held in the component would be
+   * discarded on the next render and the reader would silently fall back to the
+   * 150-character excerpt.
+   *
+   * Caching it on the row also means re-opening is instant.
+   */
+  hydrateDossierBody: (id: string) => Promise<void>;
   syncDossierStats: (id: string, viewsDelta: number, certifyDelta: number, isCertifiedByMe?: boolean) => void;
   markDossierViewed: (id: string) => boolean;
   unmarkDossierViewed: (id: string) => void;
@@ -102,17 +115,26 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
     inflightFetch = (async () => {
       set({ loading: true });
       try {
+        // The feed asks for what the CARD draws — never the essay bodies.
+        //
+        // This read used to be `select('*')`, which includes `full_content`. The
+        // card renders only the excerpt; the body travelled purely to pre-load the
+        // reader. Measured: 83% of the payload on one 2,770-character essay, and
+        // up to half a megabyte per page of twenty at the sanitiser's fence.
+        //
+        // A FUNCTION rather than an explicit column list, because `select('*')`
+        // was deliberate — dispatch_dossiers has a history of remote column
+        // renames, and an explicit client list breaks hard with 42703 (verified).
+        // With the app build frozen until launch, a client-side break could not be
+        // fixed without a release; the function puts those column names in the one
+        // place that CAN be fixed without one.
+        //
+        // `full_content` is declared nullable with a default in DossierRowSchema,
+        // so a row arriving without a body parses cleanly — the reader fetches it
+        // on open (see hydrateDossierBody).
         const { data, error } = await withTimeout(
           (signal) => withAbortSignal(
-            supabase
-              .from('dispatch_dossiers')
-              // select('*') — never error on a renamed/missing column (dispatch_dossiers
-              // has a history of remote column renames; see dossier.schema.ts). The Zod
-              // boundary + mappers default any absent field, so the read stays rename-immune.
-              .select('*')
-              .eq('is_published', true)
-              .order('created_at', { ascending: false })
-              .limit(20),
+            supabase.rpc('get_dispatch_feed', { p_limit: 20, p_cursor_created_at: null }),
             signal
           ) as any,
           15_000,
@@ -364,14 +386,11 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
     set({ _loadingMore: true });
 
     try {
-      const { data, error } = await supabase
-        .from('dispatch_dossiers')
-        // select('*') — rename-immune, same as fetchDossiers.
-        .select('*')
-        .eq('is_published', true)
-        .lt('created_at', oldest.raw_created_at)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      // Same function as the first page — see fetchDossiers for why it is an RPC.
+      const { data, error } = await supabase.rpc('get_dispatch_feed', {
+        p_limit: 20,
+        p_cursor_created_at: oldest.raw_created_at,
+      });
 
       if (!error && data) {
         let certData: { dossier_id: string }[] = [];
@@ -425,6 +444,31 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
       }
     } catch { reelToast.error('Failed to load more dossiers.'); }
     set({ _loadingMore: false });
+  },
+
+  hydrateDossierBody: async (id) => {
+    // Already here (just written by this member, or read before) — nothing to do.
+    const existing = get().dossiers.find(d => d.id === id);
+    if (existing?.fullContent) return;
+
+    const { data, error } = await supabase
+      .from('dispatch_dossiers')
+      .select('id, full_content')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      // The reader still shows the excerpt; only the body is missing. Never silent.
+      logger.warn('[content.hydrateDossierBody] failed:', error.message);
+      return;
+    }
+    if (!data?.full_content) return;
+
+    set((state) => ({
+      dossiers: state.dossiers.map(d =>
+        d.id === id ? { ...d, fullContent: data.full_content as string } : d
+      ),
+    }));
   },
 
   unmarkDossierViewed: (id) => {

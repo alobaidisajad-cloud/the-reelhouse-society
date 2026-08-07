@@ -82,6 +82,18 @@ export const ArticleReaderModal = memo(function ArticleReaderModal({
     activeArticleIdRef.current = targetId;
     const dispatchStore = useDispatchStore.getState();
 
+    // The feed carries excerpts, not essays — ask for the body now.
+    //
+    // It is written onto the STORE row, not into this component: `displayArticle`
+    // below prefers `globalDossiers.find(...)`, so a body held locally would be
+    // discarded on the next render and the reader would quietly show the
+    // 150-character excerpt instead of the essay. Until it lands, the existing
+    // `fullContent || excerpt` fallback renders the excerpt — so the page is
+    // never blank and needs no spinner.
+    if (isDossier && targetId && !targetId.startsWith('seed-') && !targetId.startsWith('fb')) {
+      void dispatchStore.hydrateDossierBody(targetId);
+    }
+
     // Isolate UI states for new article
     setCertifyCount(article.certifyCount ?? 0);
     setLocalViews(article.views ?? 0);

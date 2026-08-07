@@ -15,10 +15,23 @@ import { storage } from '@/src/stores/mmkv-storage';
 import { isAuteurPlusTier } from '@/src/utils/tier';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
+// isOverLimit / remainingChars shipped in the sanitiser with ZERO callers — this
+// screen is the one that needed them.
+import { isOverLimit, remainingChars, MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import PressableScale from '@/src/components/PressableScale';
 
 // A long essay must survive a background-kill. Drafts persist here, new-dossiers only.
 const DRAFT_KEY = 'reelhouse_dispatch_draft';
+
+/**
+ * How close to the fence before the counter appears.
+ *
+ * The limit is ~4,350 words. Showing a counter from the first sentence would
+ * make a memory fence feel like an editorial one, so it stays out of the way
+ * until the last ~870 words — enough warning to finish a thought and trim,
+ * without hovering over anyone writing an ordinary piece.
+ */
+const LIMIT_WARNING_CHARS = 5000;
 
 export default function ComposeDossierScreen() {
     const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
@@ -109,6 +122,30 @@ export default function ComposeDossierScreen() {
         return { words, readMin };
     }, [content]);
 
+    /**
+     * How close this essay is to the fence, and whether it may be filed.
+     *
+     * There was no signal at all. `sanitizeInput` cuts silently — the truncation
+     * has no presence in its return type — so an essay over the limit was
+     * shortened without a word, the publish reported success, and the draft was
+     * deleted on the strength of that success. The writer lost the ending.
+     *
+     * `isOverLimit` and `remainingChars` already existed in the sanitiser,
+     * tested, with ZERO callers. They are wired here.
+     */
+    const limit = useMemo(() => {
+        const trimmed = content.trim();
+        const remaining = remainingChars(trimmed, 'dossierContent');
+        return {
+            over: isOverLimit(trimmed, 'dossierContent'),
+            remaining,
+            // Quiet until it could plausibly matter — a counter on a 400-word
+            // piece is noise, and this fence is meant never to be felt.
+            show: remaining <= LIMIT_WARNING_CHARS,
+            max: MAX_LENGTHS.dossierContent,
+        };
+    }, [content]);
+
     // Wrap the selection (or insert at the cursor) — never dumps at the document end.
     const insertFormatting = (before: string, after: string) => {
         const { start, end } = selection;
@@ -135,6 +172,18 @@ export default function ComposeDossierScreen() {
             return;
         }
         if (!title.trim() || !content.trim() || isPublishing) return;
+
+        // Refuse BEFORE anything is written or deleted. This return happens
+        // outside the try below, so the draft is never touched — the failure
+        // mode moves from "your essay was silently shortened and your draft is
+        // gone" to "this cannot be filed yet, and every word is still here".
+        if (limit.over) {
+            reelToast.error(
+                `This dossier is ${Math.abs(limit.remaining).toLocaleString()} characters over the limit. Trim it and file again — nothing has been lost.`
+            );
+            return;
+        }
+
         Keyboard.dismiss();
         setIsPublishing(true);
 
@@ -277,6 +326,14 @@ export default function ComposeDossierScreen() {
                         <View style={styles.stats}>
                             <Text style={styles.statText} numberOfLines={1}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
                             <Text style={styles.statText} numberOfLines={1}>READ TIME <Text style={styles.statVal}>~{stats.readMin}m</Text></Text>
+                            {limit.show ? (
+                                <Text style={[styles.statText, limit.over && styles.statOver]} numberOfLines={1}>
+                                    {limit.over ? 'OVER BY ' : 'LEFT '}
+                                    <Text style={[styles.statVal, limit.over && styles.statOver]}>
+                                        {Math.abs(limit.remaining).toLocaleString()}
+                                    </Text>
+                                </Text>
+                            ) : null}
                         </View>
                         <PressableScale
                             style={[styles.publishBtn, (!title || !content || isPublishing) && styles.publishBtnDisabled]}
@@ -388,6 +445,11 @@ const styles = StyleSheet.create({
     },
     statVal: {
         color: colors.sepia,
+    },
+    // The one state where the essay cannot be filed. Same strip, same weight —
+    // a colour change, not an alarm.
+    statOver: {
+        color: colors.crimson,
     },
     publishBtn: {
         backgroundColor: colors.sepia,

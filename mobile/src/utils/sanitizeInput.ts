@@ -62,9 +62,28 @@ export const MAX_LENGTHS = {
   reportDetails: 500,
   dossierTitle: 200,
   dossierExcerpt: 500,
-  // Essays are longform by design: ~4,500 words (a 15–20 minute read). This is
-  // the sanitizer's memory/abuse fence, not an editorial limit — no genuine
-  // essayist should ever feel it.
+  // Essays are longform by design: ~4,350 words at this app's measured 5.75
+  // characters per word. This is the sanitizer's memory/abuse fence, not an
+  // editorial limit.
+  //
+  // ── WHY THIS NUMBER DOES NOT MOVE ────────────────────────────────────────
+  // It was raised to 60,000 during batch 21 and put back. The reasoning for
+  // raising it was that 4,350 words is an ordinary longform essay — which is
+  // true — but it missed that this number is ALSO the render cap
+  // (capMarkdownForRender), deliberately, and that two markdown rules are
+  // quadratic. Measured against markdown-it 10.0.0: nested emphasis 6877ms at
+  // 80k. At 60,000 that is seconds of frozen JS thread from input someone can
+  // author on purpose, and worse on a phone than on the machine that measured it.
+  //
+  // It is load-bearing for BOTH clients, not just this one: the web app writes
+  // `dispatch_dossiers.full_content` to this same table with no sanitiser and no
+  // length cap, so this bound is what protects a mobile reader from an essay
+  // this app never wrote.
+  //
+  // So the fence stays where the RENDER cost allows, and the real defect — that
+  // exceeding it silently truncated the essay and then deleted the draft — is
+  // fixed instead: the composer now refuses to file, keeps every word, and says
+  // by how much.
   dossierContent: 25000,
 } as const;
 
