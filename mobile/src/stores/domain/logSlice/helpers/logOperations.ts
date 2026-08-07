@@ -17,6 +17,51 @@ import type { FilmState } from '../../../films';
 
 import { StoreApi } from 'zustand';
 
+/**
+ * Is this error a genuine duplicate-key violation?
+ *
+ * SQLSTATE first, and the prose fallback narrowed to PostgreSQL's actual
+ * duplicate wording — because the test here used to be
+ * `/duplicate|unique|23505/i` against the message, and `42P10` reads
+ * "there is no UNIQUE or exclusion constraint matching…". That substring made a
+ * broken statement look like a duplicate.
+ *
+ * Batch 16 found and fixed exactly this in the offline queue. The same loose test
+ * survived here, in a different file, which is the whole reason that batch's
+ * lesson was "fix the CLASS, not the instance in front of you".
+ */
+const DUPLICATE_KEY_MESSAGE = /duplicate key value violates unique constraint/i;
+const isDuplicateKey = (error: unknown): boolean => {
+    const e = error as { code?: string; message?: string } | null;
+    return e?.code === '23505' || DUPLICATE_KEY_MESSAGE.test(String(e?.message ?? ''));
+};
+
+/**
+ * "A write of this kind is already in flight."
+ *
+ * Carried as a CODE on the error, not as prose. The screen needs to tell "still
+ * working" apart from "it failed" so it can say the right thing, and matching on
+ * an error's MESSAGE is exactly what batch 16 proved fragile — a substring test
+ * read `42P10` as a duplicate and filed a broken statement as a success.
+ */
+export const LOG_BUSY = 'LOG_BUSY' as const;
+
+/**
+ * Speak a SUCCESS to a screen reader.
+ *
+ * Successes here are announced explicitly because they have no toast — the log
+ * flow confirms visually with "RECORD SEALED", which VoiceOver cannot read.
+ * FAILURES are deliberately NOT announced from this file: they carry an error
+ * toast, and the toast is now spoken on both platforms. Announcing here as well
+ * would make Android say it twice.
+ *
+ * `require` rather than a top-level import, and wrapped, to match the existing
+ * call sites — it keeps this file loadable in the test environment.
+ */
+const announceToScreenReader = (message: string): void => {
+    try { require('react-native').AccessibilityInfo.announceForAccessibility(message); } catch { /* test env */ }
+};
+
 export const FORMAT_MAP: Record<string, string> = { 'DVD': 'dvd', 'Blu-Ray': 'bluray', '4K UHD': '4k', 'VHS': 'vhs', 'Film Print': 'filmprint' };
 export const resolveFormat = (physicalMedia?: string | null): string => FORMAT_MAP[physicalMedia ?? ''] ?? 'digital';
 
@@ -221,8 +266,9 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
         }
 
         if (get()._addLogMutex) {
-            reelToast.error('System is currently sealing another record. Please wait.');
-            throw new Error('addLog mutex locked');
+            // No toast here — the screen shows exactly one, and it needs to say
+            // "still saving", not "it failed". The code below tells it which.
+            throw Object.assign(new Error('addLog mutex locked'), { code: LOG_BUSY });
         }
         set({ _addLogMutex: true });
 
@@ -273,10 +319,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                     enqueueMutation({ type: 'add_log', payload: payload });
                     reelToast('Archived offline. Will sync when connected.');
                     finalData = { ...payload, created_at: new Date().toISOString(), id: payload.id };
-                } else if (
-                    (error as any)?.code === '23505' ||
-                    /duplicate|unique|23505/i.test(String((error as any)?.message ?? ''))
-                ) {
+                } else if (isDuplicateKey(error)) {
                     // a concurrent insert (e.g. the same film logged from another
                     // device) won the logs(user_id, film_id) unique race. Mirror the offline
                     // executor's handleDuplicateLogMerge: re-fetch the winning row and merge this
@@ -289,13 +332,21 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                         if (serverRows && serverRows.length > 0) {
                             const existing = mapLogRow(serverRows[0] as any) as unknown as DomainLog;
                             await applyRewatchMerge(set, get, existing, log);
+                            // A merge IS a success, and it returns early — so it
+                            // needs its own announcement. It used to get one from
+                            // the `finally`, which is precisely why that placement
+                            // looked harmless: it covered the success paths by
+                            // accident while also firing on the failures.
+                            announceToScreenReader('Rewatch added to your archive');
                             return;
                         }
                     }
-                    reelToast.error('Failed to seal record. Please try again.');
+                    // The caller toasts. Doing it here as well produced two
+                    // stacked messages for one failure.
                     throw error;
                 } else {
-                    reelToast.error('Failed to seal record. Please try again.');
+                    // The caller toasts. Doing it here as well produced two
+                    // stacked messages for one failure.
                     throw error;
                 }
             }
@@ -360,8 +411,17 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                     if (!isNetworkError(e)) captureError(e, { scope: 'addLogOp.autoSyncPhysicalArchive' });
                 }
             }
+            // Success, and only here. This announcement used to sit in the
+            // `finally` below, which runs on the throw paths too — so a VoiceOver
+            // member was told "Film logged to your archive" at the exact moment
+            // the log had FAILED, while the screen showed an error.
+            //
+            // Failure needs no announcement of its own: the error toast is now
+            // spoken on both platforms (ToastOverlay announces on iOS, where the
+            // live region does not fire). Adding one here would make Android say
+            // it twice.
+            announceToScreenReader('Film logged to your archive');
         } finally {
-            try { require('react-native').AccessibilityInfo.announceForAccessibility('Film logged to your archive'); } catch { /* test env */ }
             set({ _addLogMutex: false });
         }
     }
@@ -423,10 +483,10 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
             if (isNetworkError(error)) {
                 enqueueMutation({ type: 'mark_watched', payload });
                 reelToast('Marked watched offline. Will sync when connected.');
-            } else if (
-                (error as any)?.code === '23505' ||
-                /duplicate|unique|23505/i.test(String((error as any)?.message ?? ''))
-            ) {
+            // Same narrowed test as the add path. This operation currently has no
+            // callers, so the loose version could not fire — but a defect left
+            // beside its own corrected twin is how the fix gets undone later.
+            } else if (isDuplicateKey(error)) {
                 // the row already exists (concurrent insert won the
                 // logs(user_id, film_id) unique race). Treat as existing — update the
                 // status if it differs — instead of throwing and dropping the action.
@@ -545,8 +605,8 @@ export const getCinephileStatsOp = (set: SetState, get: GetState, overrideCount?
 
 export const updateLogOp = async (set: SetState, get: GetState, id: string, updates: Partial<DomainLog>) => {
         if (get()._updateLogMutex) {
-            reelToast.error('System is busy updating a record. Please wait.');
-            throw new Error('updateLog mutex locked');
+            // Same as addLog: one toast, chosen by the screen from this code.
+            throw Object.assign(new Error('updateLog mutex locked'), { code: LOG_BUSY });
         }
         set({ _updateLogMutex: true });
 
@@ -699,7 +759,7 @@ export const updateLogOp = async (set: SetState, get: GetState, id: string, upda
             if (previousLogData !== undefined) {
                 queryClient.setQueryData(['log', id], previousLogData);
             }
-            reelToast.error('Failed to update log — changes reverted.');
+            // The caller toasts — one message per failure.
             throw e;
         } finally {
             queryClient.invalidateQueries({ queryKey: ['log', id] });
@@ -804,7 +864,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             if (logToRemove.filmId && previousFilmData !== undefined) {
                 queryClient.setQueryData(['film', Number(logToRemove.filmId)], previousFilmData);
             }
-            reelToast.error('Failed to remove log.');
+            // The caller toasts — one message per failure.
             throw e;
         } finally {
             queryClient.invalidateQueries({ queryKey: ['log', id] });

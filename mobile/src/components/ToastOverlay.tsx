@@ -5,7 +5,7 @@
  * Dark glass background + sepia accent + auto-dismiss after 2.5s
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions, Platform, AccessibilityInfo } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -51,6 +51,24 @@ export function ToastOverlay() {
 
   useEffect(() => {
     if (!toast) return;
+
+    // ── Say it out loud on iOS ────────────────────────────────────────────────
+    // `accessibilityLiveRegion` below is ANDROID ONLY — React Native's own type
+    // declares it `@platform android`. `accessibilityRole="alert"` does not
+    // announce by itself on iOS. So every toast in this app — including every
+    // error — was silent to VoiceOver on iPhone, and a blind member got no
+    // feedback at all when something failed.
+    //
+    // Announcing here rather than at each call site keeps ONE spoken channel:
+    // Android via the live region, iOS via this. Doing it per-screen would mean
+    // Android saying everything twice, which is the same defect as the double
+    // toasts this batch removes.
+    //
+    // announceForAccessibility is a no-op when no screen reader is running, so
+    // this costs nothing for everyone else and changes nothing visually.
+    if (Platform.OS === 'ios') {
+      AccessibilityInfo.announceForAccessibility(toast.message);
+    }
 
     // Slide in
     translateY.value = -80;

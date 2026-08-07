@@ -4,6 +4,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import { captureError } from '@/src/lib/sentry';
 import reelToast from '@/src/utils/reelToast';
+import { LOG_BUSY } from '@/src/stores/domain/logSlice/helpers/logOperations';
 import { isNetworkError } from '@/src/utils/networkError';
 import { maybeRequestReview } from '@/src/utils/requestReview';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
@@ -348,6 +349,16 @@ export function useLogFlow() {
     const filmPoster = film?.poster_path;
     const filmYear = film?.release_date;
     const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    /**
+     * The dismissal beat after a successful seal.
+     *
+     * Same shape as the draft timer below, for the same reason: its callback
+     * navigates and asks for a store review, and neither should happen on a
+     * screen the member has already left.
+     */
+    const sealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => () => { if (sealTimerRef.current) clearTimeout(sealTimerRef.current); }, []);
+
     useEffect(() => {
         if (editLogId || !filmId) return;
         if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
@@ -391,8 +402,17 @@ export function useLogFlow() {
             storage.delete(DRAFT_KEY);
             TactileEngine.success();
             // Hold on a single brass beat — "RECORD SEALED" — then dismiss.
+            //
+            // Stored and cleared on unmount. It used to be a bare setTimeout: if
+            // the member left during those 650ms, it still fired `router.back()`
+            // on a screen that was already gone — popping whatever they had
+            // navigated to instead — and asked for a store review on top.
+            //
+            // The draft timer forty lines above is already ref'd and cleared;
+            // that asymmetry is what marks this an oversight rather than intent.
             setSealed(true);
-            setTimeout(() => {
+            if (sealTimerRef.current) clearTimeout(sealTimerRef.current);
+            sealTimerRef.current = setTimeout(() => {
                 InteractionManager.runAfterInteractions(() => {
                     router.back();
                     // Only a NEW entry counts — an edit adds no film. The nested wait
@@ -416,7 +436,20 @@ export function useLogFlow() {
             if (!isNetworkError(err)) {
                 captureError(err, { scope: 'useLogFlow.handleLog', isEditing, filmId: film?.id });
             }
-            reelToast.error('The record could not be sealed. Try again.');
+            // ONE toast, and the right one.
+            //
+            // The store used to toast on five of its own failure paths and then
+            // rethrow into this catch, which toasted again — two stacked messages
+            // for a single failure. On the "already saving" paths the two even
+            // CONTRADICTED each other: one said wait, the other said it failed.
+            //
+            // The reason travels as a CODE, not as prose. Matching on an error's
+            // message is what batch 16 proved fragile.
+            reelToast.error(
+                (err as { code?: string })?.code === LOG_BUSY
+                    ? 'Still sealing the previous record — one moment.'
+                    : 'The record could not be sealed. Try again.'
+            );
             setSubmitting(false);
         }
     };

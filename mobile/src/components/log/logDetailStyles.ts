@@ -4,6 +4,22 @@ import { StyleSheet } from 'react-native';
 // ── THE RECORD — one spine for the whole document ──
 export const SPINE = 20;
 
+/**
+ * The transparent strip above the record card, which lets the poster show
+ * through as the page scrolls.
+ *
+ * Exported because the critiques scroll target has to add it back. The comments
+ * section reports its position relative to the CARD, and the card begins after
+ * this padder — so "scroll to the critiques" is `PARALLAX_PADDER_HEIGHT + y`.
+ * That was written as a bare `80` in the screen, silently coupled to this style:
+ * change the padder and the scroll target lands in the wrong place, with nothing
+ * to say why.
+ *
+ * (An audit note suggested this compensated for the HEADER. It does not — the
+ * header measures 96, and the header sits outside the scroll view entirely.)
+ */
+export const PARALLAX_PADDER_HEIGHT = 80;
+
 export const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   centerFull: { justifyContent: 'center', alignItems: 'center', gap: 16 },
@@ -17,7 +33,7 @@ export const s = StyleSheet.create({
   textureOverlay: { backgroundColor: 'rgba(0,0,0,0.03)' },
   hiddenShareContainer: { position: 'absolute', top: 0, left: 0, opacity: 0.01, zIndex: -1 },
   inkBg: { backgroundColor: colors.ink },
-  parallaxPadder: { height: 80, width: '100%' },
+  parallaxPadder: { height: PARALLAX_PADDER_HEIGHT, width: '100%' },
   flexGrowZero: { flexGrow: 0 },
 
   // ── Header rail ──

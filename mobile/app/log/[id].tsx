@@ -10,11 +10,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useRef, useState } from 'react';
-import { Platform, RefreshControl, Share, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Platform, RefreshControl, Share, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { Easing, SlideInUp, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
  
-import { s } from '@/src/components/log/logDetailStyles';
+import { s, PARALLAX_PADDER_HEIGHT } from '@/src/components/log/logDetailStyles';
 import LogShareCard from '@/src/components/film/LogShareCard';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import LogActionDeck from '@/src/components/log/LogActionDeck';
@@ -457,7 +457,17 @@ export default function LogDetailScreen() {
     }
   };
 
-  if (loading) return <View style={s.container} />;
+  // A spinner, not a blank screen. This returned a bare <View>, so a member on a
+  // slow connection saw nothing at all and could not tell the app from a crash.
+  // The dossier and lounge screens both show this; `centerFull` is the same style
+  // the not-found branch below already uses.
+  if (loading) {
+    return (
+      <View style={[s.container, s.centerFull]}>
+        <ActivityIndicator color={colors.sepia} />
+      </View>
+    );
+  }
 
   if (!log) {
     return (
@@ -642,7 +652,7 @@ export default function LogDetailScreen() {
           onPostComment={handlePostComment}
           onDeleteComment={handleDeleteComment}
           onPressUser={(username) => (router.push as any)(`/user/${username}` as any)}
-          onSectionLayout={(y) => { critiquesSectionY.current = 80 + y; }}
+          onSectionLayout={(y) => { critiquesSectionY.current = PARALLAX_PADDER_HEIGHT + y; }}
           onLongPressComment={(comment) => {
             setSelectedComment({ id: comment.id, user_id: comment.user_id, username: comment.username });
             setCommentActionSheetVisible(true);

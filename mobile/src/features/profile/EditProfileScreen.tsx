@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  ActivityIndicator, InteractionManager
+  ActivityIndicator, InteractionManager, Platform, AccessibilityInfo
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
@@ -41,6 +41,16 @@ export function EditProfileScreen() {
     saving, sealed, submitError,
     handleSave, handleBack
   } = useEditProfile();
+
+  // The seal below carries `accessibilityLiveRegion`, which React Native declares
+  // ANDROID ONLY. So on iPhone this confirmation was never spoken — the save
+  // completed in silence for a VoiceOver member. Android already announces it;
+  // this gives iOS the same. A no-op when no screen reader is running.
+  useEffect(() => {
+    if (sealed && Platform.OS === 'ios') {
+      AccessibilityInfo.announceForAccessibility('Dossier amended — the record now reflects your hand');
+    }
+  }, [sealed]);
 
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
