@@ -13,7 +13,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { MAX_LENGTHS, isOverLimit, remainingChars } from '../sanitizeInput';
+import { MAX_LENGTHS, isOverLimit, remainingChars, sanitizeInput } from '../sanitizeInput';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -64,6 +64,26 @@ describe('#122 · the fence itself does not move', () => {
     expect(isOverLimit(under, 'dossierContent')).toBe(false);
     expect(isOverLimit(over, 'dossierContent')).toBe(true);
     expect(remainingChars(over, 'dossierContent')).toBe(-1);
+  });
+
+  it('the helpers measure what is STORED, not what was typed', () => {
+    // sanitizeInput CLEANS before it caps — invisible characters go, runs of
+    // blank lines and spaces collapse. The helpers used to measure the raw
+    // string, so the composer could refuse an essay that would have fitted.
+    // Never the other way round (cleaning only shortens), so nothing was ever
+    // at risk — but a writer told to trim when they needn't is the app lying.
+    const max = MAX_LENGTHS.dossierContent;
+    const body = 'x'.repeat(max - 10);
+    // 40 blank lines collapse to three; raw length is over, stored length is not.
+    const withPadding = body + '\n'.repeat(40);
+    expect(withPadding.length).toBeGreaterThan(max);
+    expect(isOverLimit(withPadding, 'dossierContent')).toBe(false);
+    expect(sanitizeInput(withPadding, 'dossierContent').length).toBeLessThanOrEqual(max);
+
+    // And the two agree exactly: whatever the helper says is left is what the
+    // sanitiser will keep.
+    const stored = sanitizeInput(withPadding, 'dossierContent');
+    expect(remainingChars(withPadding, 'dossierContent')).toBe(max - stored.length);
   });
 });
 

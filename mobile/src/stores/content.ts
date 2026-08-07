@@ -464,11 +464,21 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
     }
     if (!data?.full_content) return;
 
-    set((state) => ({
-      dossiers: state.dossiers.map(d =>
-        d.id === id ? { ...d, fullContent: data.full_content as string } : d
-      ),
-    }));
+    set((state) => {
+      // If the row is not in the list there is nothing to enrich, and mapping
+      // would silently drop the body we just paid to fetch. That should not
+      // happen — the reader is always opened from this list — so say so rather
+      // than fail quietly.
+      if (!state.dossiers.some(d => d.id === id)) {
+        logger.warn('[content.hydrateDossierBody] dossier not in the list; body discarded:', id);
+        return state;
+      }
+      return {
+        dossiers: state.dossiers.map(d =>
+          d.id === id ? { ...d, fullContent: data.full_content as string } : d
+        ),
+      };
+    });
   },
 
   unmarkDossierViewed: (id) => {

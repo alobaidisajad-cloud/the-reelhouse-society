@@ -97,22 +97,37 @@ export type FieldType = keyof typeof MAX_LENGTHS;
  * - Trims leading/trailing whitespace
  * - Enforces max length for the given field type
  */
-export function sanitizeInput(text: string, fieldType: FieldType): string {
+/**
+ * The cleaning half, without the cap.
+ *
+ * Split out so that "how long is this really?" has ONE answer. The length that
+ * matters is the length AFTER cleaning — invisible characters removed, runs of
+ * blank lines and spaces collapsed, trimmed — because that is what gets stored.
+ * `isOverLimit` and `remainingChars` measured the RAW string, so a composer could
+ * refuse an essay that would in fact have fitted. Never the reverse (cleaning
+ * only ever shortens), so nothing was at risk — but a writer told to trim when
+ * they needn't is still the app lying to them.
+ */
+export function cleanForStorage(text: string): string {
   if (!text) return '';
-
-  let clean = text
+  return text
     .replace(INVISIBLE_CHARS, '')
     .replace(CONTROL_CHARS, '')
     .replace(/\n{4,}/g, '\n\n\n')  // max 3 consecutive newlines
     .replace(/[ \t]{10,}/g, '  ')   // max 2 consecutive spaces
     .trim();
+}
 
+export function sanitizeInput(text: string, fieldType: FieldType): string {
+  if (!text) return '';
+
+  const clean = cleanForStorage(text);
   const maxLen = MAX_LENGTHS[fieldType];
-  if (clean.length > maxLen) {
-    clean = clean.slice(0, maxLen);
-  }
 
-  return clean;
+  // Still the last-resort fence. Callers that can warn a member SHOULD ask
+  // isOverLimit first — the dossier composer does — because a truncation here
+  // has no presence in the return type and cannot be noticed downstream.
+  return clean.length > maxLen ? clean.slice(0, maxLen) : clean;
 }
 
 /**
@@ -120,12 +135,14 @@ export function sanitizeInput(text: string, fieldType: FieldType): string {
  * Useful for showing "X/Y characters" counters.
  */
 export function isOverLimit(text: string, fieldType: FieldType): boolean {
-  return (text?.length ?? 0) > MAX_LENGTHS[fieldType];
+  // Measures what will be STORED, not what was typed — see cleanForStorage.
+  return cleanForStorage(text ?? '').length > MAX_LENGTHS[fieldType];
 }
 
 /**
  * Get remaining character count.
  */
 export function remainingChars(text: string, fieldType: FieldType): number {
-  return MAX_LENGTHS[fieldType] - (text?.length ?? 0);
+  // Same measure as isOverLimit and as the cap itself.
+  return MAX_LENGTHS[fieldType] - cleanForStorage(text ?? '').length;
 }
