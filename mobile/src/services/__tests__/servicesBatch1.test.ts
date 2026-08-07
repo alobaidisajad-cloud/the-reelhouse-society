@@ -95,19 +95,42 @@ describe('LogService', () => {
                 { id: 'u1', username: 'filmfan', avatar_url: null, display_name: null },
             ];
             const commentsChain = chain({ data: comments, error: null });
+            const totalChain = chain({ data: null, error: null, count: 7 });
             const profilesChain = chain({ data: profiles, error: null });
             (supabase.from as jest.Mock)
-                .mockReturnValueOnce(commentsChain)   // log_comments query
+                .mockReturnValueOnce(commentsChain)   // the bounded page of comments
+                .mockReturnValueOnce(totalChain)      // the TRUE total, head:true
                 .mockReturnValueOnce(profilesChain);  // profiles DataLoader join
 
             const result = await LogService.getLogComments('log-1');
             expect(supabase.from).toHaveBeenCalledWith('log_comments');
-            expect(commentsChain.order).toHaveBeenCalledWith('created_at', { ascending: true });
+            // Newest-first ON THE WIRE, so the bound keeps the most recent
+            // comments rather than the oldest — then reversed for display.
+            expect(commentsChain.order).toHaveBeenCalledWith('created_at', { ascending: false });
+            expect(commentsChain.limit).toHaveBeenCalled();
             // getLogComments attaches the author profile to each comment for display.
-            expect(result).toEqual(comments.map(cm => ({
+            expect(result.comments).toEqual(comments.map(cm => ({
                 ...cm,
                 profiles: { username: 'filmfan', avatar_url: null, display_name: null },
             })));
+            // The total comes from the SERVER, not from the page length — a
+            // 7-comment thread reports 7 even when one page is returned.
+            expect(result.total).toBe(7);
+        });
+
+        it('returns the page oldest-first even though it is fetched newest-first', async () => {
+            const newestFirst = [
+                { id: 'c3', log_id: 'log-1', user_id: 'u1', body: 'third', created_at: '2024-01-03' },
+                { id: 'c2', log_id: 'log-1', user_id: 'u1', body: 'second', created_at: '2024-01-02' },
+                { id: 'c1', log_id: 'log-1', user_id: 'u1', body: 'first', created_at: '2024-01-01' },
+            ];
+            (supabase.from as jest.Mock)
+                .mockReturnValueOnce(chain({ data: newestFirst, error: null }))
+                .mockReturnValueOnce(chain({ data: null, error: null, count: 3 }))
+                .mockReturnValueOnce(chain({ data: [{ id: 'u1', username: 'filmfan', avatar_url: null, display_name: null }], error: null }));
+
+            const result = await LogService.getLogComments('log-1');
+            expect(result.comments.map((c: { id: string }) => c.id)).toEqual(['c1', 'c2', 'c3']);
         });
 
         it('throws on error', async () => {

@@ -131,6 +131,18 @@ export const StackFeedRowSchema = z.object({
     title: z.string(),
     poster_path: z.string().nullable().optional(),
   })).default([]),
+  /**
+   * The TRUE number of films in the stack, independent of how many posters
+   * travelled. REQUIRED, deliberately: the feed used to count the array it
+   * received, which was only correct because the server shipped every film —
+   * 247 rows to draw 24 posters. Now that the array is capped at four, deriving
+   * the count from it would print "4 FILMS" on every stack. Making this required
+   * turns that mistake into a compile error rather than a wrong number on screen.
+   *
+   * Zod strips unknown keys, so a column selected but not declared here is
+   * silently dropped — which is exactly how the old count would come back.
+   */
+  film_count: z.union([z.number(), z.string()]).transform(Number),
   certify_count: z.union([z.number(), z.string()]).transform(Number),
   is_ranked: z.boolean(),
 });

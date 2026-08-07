@@ -53,6 +53,8 @@ interface ListDetail {
   user: string;
   createdAt: string;
   films: FilmItem[];
+  /** The stack's TRUE size — films above is a bounded page. */
+  filmCount?: number;
   isPrivate: boolean;
   isRanked: boolean;
 }
@@ -210,6 +212,7 @@ export default function StackDetailScreen() {
           user: payload.user,
           createdAt: payload.createdAt,
           films: payload.films,
+          filmCount: payload.filmCount,
           isPrivate: payload.isPrivate,
           isRanked: payload.isRanked,
         };
@@ -680,7 +683,7 @@ export default function StackDetailScreen() {
                 <PressableScale onPress={() => handlePressProfile(list.user)} haptic="light" style={{ flexShrink: 1 }} accessibilityRole="link" accessibilityLabel={`View curator @${list.user}`}>
                   <Text style={s.metaCurator} numberOfLines={1}>@{list.user.toUpperCase()}</Text>
                 </PressableScale>
-                <Text style={s.metaText}>· {list.films.length} {list.films.length === 1 ? 'REEL' : 'REELS'}</Text>
+                <Text style={s.metaText}>· {(list.filmCount ?? list.films.length)} {(list.filmCount ?? list.films.length) === 1 ? 'REEL' : 'REELS'}</Text>
                 {estDate && <Text style={s.metaText}>· EST. {estDate.toUpperCase()}</Text>}
                 {list.isRanked && (
                   <View style={s.metaChip}><Text style={s.metaChipText}>✦ RANKED</Text></View>
@@ -789,7 +792,7 @@ export default function StackDetailScreen() {
         onClose={() => setShowLoungeShare(false)}
         listId={list.id}
         listTitle={list.title}
-        listFilmCount={list.films.length}
+        listFilmCount={list.filmCount ?? list.films.length}
         listCurator={list.user}
         listTopPosters={list.films.map((f: FilmItem) => f.poster_path).filter(Boolean).slice(0, 4) as string[]}
       />

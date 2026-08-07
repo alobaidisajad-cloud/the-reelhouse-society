@@ -22,6 +22,15 @@ import { getOfflineQueue } from '@/src/utils/offlineQueue';
  */
 const PROFILE_LOOKUP_BATCH = 200;
 
+/**
+ * Critiques fetched per log.
+ *
+ * Matches the dossier screen's page size, so all three comment surfaces behave
+ * the same way rather than three different ways. The true total travels beside
+ * the page — see `getLogComments`.
+ */
+const COMMENT_PAGE_SIZE = 30;
+
 const LogCommentPayloadSchema = z.object({
   id: z.string().uuid(),
   log_id: z.string().uuid(),
@@ -179,18 +188,49 @@ export const LogService = {
     return logData;
   },
 
-  async getLogComments(logId: string, signal?: AbortSignal) {
+  /**
+   * One page of a log's critiques, newest-first on the wire, oldest-first for
+   * display — plus the TRUE total.
+   *
+   * ── WHY NOT JUST `.limit(50)` ────────────────────────────────────────────────
+   * The fetch was unbounded. The obvious fix is a limit, and the obvious limit is
+   * wrong twice over:
+   *   • the order is ASCENDING, so `.limit(50)` keeps the OLDEST fifty and hides
+   *     the newest — including a comment the member just posted.
+   *   • the header renders `CRITIQUES (${comments.length})`, so a bounded array
+   *     would print a wrong number the moment a thread exceeds the bound.
+   * So this asks for the newest page, reverses it for display, and carries a
+   * server-side total that does not shrink with the page. Same shape the dossier
+   * screen already uses.
+   */
+  async getLogComments(logId: string, signal?: AbortSignal, limit: number = COMMENT_PAGE_SIZE) {
     let query = supabase
       .from('log_comments')
       .select('id, log_id, user_id, body, created_at')
       .eq('log_id', logId)
-      .order('created_at', { ascending: true });
+      // Newest first ON THE WIRE so the bound keeps the most recent, then
+      // reversed below — the screen reads oldest-first.
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(limit);
 
     query = withAbortSignal(query, signal);
-    const { data: comments, error } = await query;
+    const [{ data: newestFirst, error }, totalRes] = await Promise.all([
+      query,
+      supabase
+        .from('log_comments')
+        .select('id', { count: 'exact', head: true })
+        .eq('log_id', logId),
+    ]);
 
     if (error) throw error;
-    if (!comments || comments.length === 0) return [];
+    if (totalRes.error) {
+      logger.warn('[LogService.getLogComments] total failed:', totalRes.error.message);
+    }
+    const total = totalRes.error ? (newestFirst?.length ?? 0) : (totalRes.count ?? 0);
+    if (!newestFirst || newestFirst.length === 0) return { comments: [], total };
+
+    const comments = [...newestFirst].reverse();
 
     // DataLoader pattern: fetch profiles manually to bypass the missing DB foreign
     // key. `log_comments` genuinely has no link to `profiles` — probed live, the
@@ -198,9 +238,8 @@ export const LogService = {
     //
     // It IS batched, because the ids travel in the request URL and the request
     // fails outright past roughly 350 of them (measured: 300 succeed, 400 do
-    // not). Comments here are fetched without a limit, so a heavily discussed log
-    // could exceed that on its own and the commenters would all render as
-    // "unknown". 200 per batch leaves generous room for the rest of the URL.
+    // not). The page above is now bounded, so this can no longer be exceeded in
+    // one go — the batching stays because the bound is a page size, not a law.
     const userIds = [...new Set(comments.map(c => c.user_id))];
     const profileMap: Record<string, any> = {};
     for (let i = 0; i < userIds.length; i += PROFILE_LOOKUP_BATCH) {
@@ -230,7 +269,7 @@ export const LogService = {
       context: 'LogService.getLogComments',
       data,
     });
-    return valid;
+    return { comments: valid, total };
   },
 
   async addLogComment(payload: unknown) {

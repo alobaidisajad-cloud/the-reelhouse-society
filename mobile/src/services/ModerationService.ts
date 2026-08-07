@@ -1,4 +1,6 @@
 import { supabase } from '@/src/lib/supabase';
+import { logger } from '@/src/utils/logger';
+import type { ModActionRecord } from '@/src/types/moderation';
 
 export const REPORTS_PAGE_SIZE = 30;
 
@@ -144,13 +146,38 @@ export const ModerationService = {
     return (data ?? { found: false }) as ReportEvidence;
   },
 
-  async getUserModerationHistory(userId: string) {
-    const { data, error } = await supabase
-      .from('mod_actions')
-      .select('*')
-      .eq('target_user_id', userId)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+  /**
+   * Enforcement records for a whole page of reports, in ONE query.
+   *
+   * Replaces a per-card `select('*')` with no limit — 20 cards meant 20
+   * unbounded queries, each capable of returning a member's entire audit log to
+   * render five rows.
+   *
+   * ── WHY NOT A PLAIN `.in(userIds)` ──────────────────────────────────────────
+   * Because it starves people. One prolific offender's records fill any overall
+   * limit and the other nineteen render EMPTY — worse than the N+1 it replaces.
+   * The RPC ranks WITHIN each member, so every member on the page gets their own
+   * most recent records. Proven on PostgreSQL 18.4: a member with 50 records
+   * yields 5 while two members with 2 each still yield 2 and 2.
+   */
+  async getModerationHistoryForUsers(userIds: string[], perUser = 5): Promise<Record<string, ModActionRecord[]>> {
+    const ids = [...new Set(userIds.filter(Boolean))];
+    if (ids.length === 0) return {};
+
+    const { data, error } = await supabase.rpc('get_moderation_history_for_users', {
+      p_user_ids: ids,
+      p_per_user: perUser,
+    });
+    if (error) {
+      // The docket still renders; only the record strip is missing. Never silent.
+      logger.warn('[ModerationService.getModerationHistoryForUsers] failed:', error.message);
+      return {};
+    }
+
+    const byUser: Record<string, ModActionRecord[]> = {};
+    for (const row of (data ?? []) as ModActionRecord[]) {
+      (byUser[row.target_user_id] ??= []).push(row);
+    }
+    return byUser;
   },
 };

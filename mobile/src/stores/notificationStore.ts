@@ -217,13 +217,30 @@ export const useNotificationStore = create<NotificationState>()(
 
         set({ loading: true, _fetching: true });
         try {
-            const { data, error } = await supabase
-                .from('notifications')
-                .select(NOTIFICATION_COLUMNS)
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
-                .limit(PAGE_SIZE);
-            
+            // The badge is asked of the SERVER, not counted from this page.
+            // It used to be `validated.filter(n => !n.read).length` over a single
+            // page of 30 — so a member with 50 unread saw at most 30, and nothing
+            // in this file ever asked the database for the real number.
+            const [{ data, error }, unreadRes] = await Promise.all([
+                supabase
+                    .from('notifications')
+                    .select(NOTIFICATION_COLUMNS)
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(PAGE_SIZE),
+                supabase
+                    .from('notifications')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('user_id', user.id)
+                    .eq('is_read', false),
+            ]);
+
+        if (unreadRes.error) {
+            // Degrade to the page-derived number rather than showing nothing —
+            // but never silently.
+            logger.warn('[notificationStore.fetch] unread count failed:', unreadRes.error.message);
+        }
+
         if (!error && data) {
             // Validate HTTP response against RealtimeNotifSchema.
             // The Realtime WS path already had safeParse (L234) but the initial
@@ -241,12 +258,22 @@ export const useNotificationStore = create<NotificationState>()(
             });
             // Compound cursor (created_at|id) prevents duplicate/skipped
             // notifications when two share the same created_at timestamp.
-            const lastItem = validated[validated.length - 1];
-            const cursor = lastItem ? `${lastItem.created_at}|${lastItem.id}` : null;
+            //
+            // Taken from the RAW row, not the salvaged one. If the last row of a
+            // page fails validation, a cursor built from `validated` would not
+            // advance past it — and with _hasMore now driven by the server count
+            // below, that would re-fetch the same page forever.
+            const lastRaw = data[data.length - 1] as { created_at?: string; id?: string } | undefined;
+            const cursor = lastRaw?.created_at && lastRaw?.id ? `${lastRaw.created_at}|${lastRaw.id}` : null;
             set({
                 notifications: validated,
-                _unreadCount: validated.filter(n => !n.read).length,
-                _hasMore: validated.length >= PAGE_SIZE,
+                // Server truth when we have it; the page-derived number only as a
+                // fallback, which is what it always was.
+                _unreadCount: unreadRes.error ? validated.filter(n => !n.read).length : (unreadRes.count ?? 0),
+                // The question _hasMore asks is "did the SERVER have a full page",
+                // not "how many rows survived validation". One malformed row used
+                // to end a member's history permanently.
+                _hasMore: !!cursor && data.length >= PAGE_SIZE,
                 _cursor: cursor,
             });
         } else if (error) {
@@ -305,21 +332,26 @@ export const useNotificationStore = create<NotificationState>()(
                 const deduped = validated.filter(n => !existingIds.has(n.id));
                 const allNotifs = [...state.notifications, ...deduped].slice(0, LOCAL_NOTIFICATION_CAP);
                 
-                // Cursor from the SERVER's response (last fetched item),
-                // not the merged array. Prevents skipped pages when the cap
-                // truncates newer items or existing state contains older items.
-                const lastFetched = validated[validated.length - 1];
-                const newCursor = lastFetched ? `${lastFetched.created_at}|${lastFetched.id}` : state._cursor;
-                
-                // Calculate unread count only for the deduped items
-                const unreadInNewBatch = deduped.filter(n => !n.read).length;
+                // Cursor from the RAW server response, not the salvaged array and
+                // not the merged one. If every row on a page failed validation,
+                // a cursor built from `validated` would stay put — and paging
+                // would re-issue the identical query forever without advancing.
+                const lastRaw = data[data.length - 1] as { created_at?: string; id?: string } | undefined;
+                const advanced = lastRaw?.created_at && lastRaw?.id
+                    ? `${lastRaw.created_at}|${lastRaw.id}`
+                    : null;
 
                 return {
                     notifications: allNotifs,
-                    _unreadCount: state._unreadCount + unreadInNewBatch,
-                    // Stop paginating once the local cap is full.
-                    _hasMore: validated.length >= PAGE_SIZE && allNotifs.length < LOCAL_NOTIFICATION_CAP,
-                    _cursor: newCursor,
+                    // The badge is server truth from the initial fetch; paging in
+                    // OLDER pages cannot change how many are unread overall, so it
+                    // is deliberately left alone here.
+                    _unreadCount: state._unreadCount,
+                    // Ask what the SERVER returned, and only continue if the cursor
+                    // actually moved. Both conditions are required: the first stops
+                    // one bad row ending history, the second stops a stuck loop.
+                    _hasMore: !!advanced && data.length >= PAGE_SIZE && allNotifs.length < LOCAL_NOTIFICATION_CAP,
+                    _cursor: advanced ?? state._cursor,
                 };
             });
         } else if (error) {
@@ -333,6 +365,7 @@ export const useNotificationStore = create<NotificationState>()(
 
     markRead: async (id: string) => {
         const previousState = get().notifications;
+        const previousUnread = get()._unreadCount;
         const wasUnread = previousState.some(n => n.id === id && !n.read);
 
         // Optimistic update
@@ -350,7 +383,7 @@ export const useNotificationStore = create<NotificationState>()(
         } catch (e) {
             logger.warn(`[markRead] Failed for ${id}:`, e);
             // Rollback
-            set({ notifications: previousState, _unreadCount: previousState.filter(n => !n.read).length });
+            set({ notifications: previousState, _unreadCount: previousUnread });
         }
     },
 
@@ -359,6 +392,7 @@ export const useNotificationStore = create<NotificationState>()(
         if (!user) return;
 
         const previousState = get().notifications;
+        const previousUnread = get()._unreadCount;
 
         // Optimistic Update
         set((state) => ({
@@ -372,12 +406,13 @@ export const useNotificationStore = create<NotificationState>()(
         } catch (e) {
             logger.warn(`[markAllRead] Failed:`, e);
             // Rollback
-            set({ notifications: previousState, _unreadCount: previousState.filter(n => !n.read).length });
+            set({ notifications: previousState, _unreadCount: previousUnread });
         }
     },
 
     dismiss: async (id: string) => {
         const previousState = get().notifications;
+        const previousUnread = get()._unreadCount;
         const wasDismissedUnread = previousState.some(n => n.id === id && !n.read);
 
         // Optimistic Update
@@ -401,7 +436,7 @@ export const useNotificationStore = create<NotificationState>()(
         } catch (e) {
             logger.warn(`[dismiss] Failed for ${id}:`, e);
             // Rollback
-            set({ notifications: previousState, _unreadCount: previousState.filter(n => !n.read).length });
+            set({ notifications: previousState, _unreadCount: previousUnread });
         }
     },
 
@@ -409,6 +444,7 @@ export const useNotificationStore = create<NotificationState>()(
         if (ids.length === 0) return;
 
         const previousState = get().notifications;
+        const previousUnread = get()._unreadCount;
         const unreadInGroup = previousState.filter(
             n => ids.includes(n.id) && !n.read
         ).length;
@@ -439,7 +475,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Rollback
             set({
                 notifications: previousState,
-                _unreadCount: previousState.filter(n => !n.read).length,
+                _unreadCount: previousUnread,
             });
         }
     },
@@ -448,6 +484,7 @@ export const useNotificationStore = create<NotificationState>()(
         if (ids.length === 0) return;
 
         const previousState = get().notifications;
+        const previousUnread = get()._unreadCount;
         const unreadDismissed = previousState.filter(
             n => ids.includes(n.id) && !n.read
         ).length;
@@ -477,7 +514,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Rollback
             set({
                 notifications: previousState,
-                _unreadCount: previousState.filter(n => !n.read).length,
+                _unreadCount: previousUnread,
             });
         }
     },

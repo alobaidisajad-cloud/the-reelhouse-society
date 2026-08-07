@@ -120,8 +120,10 @@ export default function LogDetailScreen() {
 
         const profile = logData ? (Array.isArray(logData.profiles) ? logData.profiles[0] : logData.profiles) : null;
 
-        // Fetch comments (included in the query for initial load)
-        const commData = await LogService.getLogComments(id, signal);
+        // One page of critiques, newest kept, plus the TRUE total. The header
+        // used to count this array — which was only right while the fetch was
+        // unbounded.
+        const { comments: commData, total: commentTotal } = await LogService.getLogComments(id, signal);
 
         const mappedComments = (commData || []).map((c: Record<string, any>) => ({
           id: c.id,
@@ -161,7 +163,15 @@ export default function LogDetailScreen() {
 
         const finalComments = Array.from(finalCommentsMap.values()).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-        return { log: logData as LogDetail | null, profile: profile as LogProfile | null, comments: finalComments as LogComment[] };
+        // The total counts what the SERVER holds, plus anything queued offline
+        // that is not in it yet — mirroring the dossier screen.
+        const pendingNotYetCounted = finalComments.length - mappedComments.length;
+        return {
+          log: logData as LogDetail | null,
+          profile: profile as LogProfile | null,
+          comments: finalComments as LogComment[],
+          commentTotal: Math.max(commentTotal + pendingNotYetCounted, finalComments.length),
+        };
       } catch (err: unknown) {
         const cachedData = queryClient.getQueryData(['log', id]);
         if (cachedData) throw err;
@@ -217,7 +227,9 @@ export default function LogDetailScreen() {
               username: useAuthStore.getState().user?.username || 'unknown',
               role: resolveTier(useAuthStore.getState().user)
             },
-            comments: finalComments
+            comments: finalComments,
+            // Offline: the queued comments ARE the whole truth we have.
+            commentTotal: finalComments.length,
           };
         }
         throw err;
@@ -230,7 +242,31 @@ export default function LogDetailScreen() {
   const log = logQueryData?.log ?? null;
   const profile = logQueryData?.profile ?? null;
   const comments = logQueryData?.comments ?? [];
+  const commentTotal = logQueryData?.commentTotal ?? comments.length;
   const loading = logQueryLoading;
+
+  /**
+   * The ONE way this screen changes the critique list.
+   *
+   * The list is now a bounded page with a separate total, so every optimistic
+   * add, edit, delete and rollback has to move both together. There are five such
+   * places; maintaining a counter by hand at five sites is precisely the drift
+   * this batch keeps finding. Here the total follows the list by construction —
+   * it cannot disagree, whatever a future edit does.
+   */
+  const updateComments = useCallback(
+    (updater: (list: LogComment[]) => LogComment[]) => {
+      queryClient.setQueryData(['log', id], (old: any) => {
+        if (!old) return old;
+        const before = (old.comments ?? []) as LogComment[];
+        const after = updater(before);
+        const prevTotal = old.commentTotal ?? before.length;
+        // Never report fewer than are on screen.
+        return { ...old, comments: after, commentTotal: Math.max(prevTotal + (after.length - before.length), after.length) };
+      });
+    },
+    [queryClient, id],
+  );
 
   const effectivePosterPath = log?.alt_poster || log?.poster_path;
   const posterUri = effectivePosterPath ? tmdb.poster(effectivePosterPath, 'w185') : null;
@@ -308,13 +344,7 @@ export default function LogDetailScreen() {
     // No snapshot is taken on purpose: the failure path below rolls back by
     // filtering out this one optimistic comment, which preserves any comment
     // that arrived while the write was in flight.
-    queryClient.setQueryData(['log', id], (old: any) => {
-        if (!old) return old;
-        return {
-            ...old,
-            comments: [...(old.comments || []), optimisticComment]
-        };
-    });
+    updateComments(list => [...list, optimisticComment]);
     
     setNewComment('');
     TactileEngine.success();
@@ -337,13 +367,7 @@ export default function LogDetailScreen() {
           created_at: data.created_at,
         };
         // Ensure UI displays the saved data (profiles etc.)
-        queryClient.setQueryData(['log', id], (old: any) => {
-            if (!old) return old;
-            return {
-                ...old,
-                comments: (old.comments || []).map((c: LogComment) => c.id === commentId ? mappedData : c)
-            };
-        });
+        updateComments(list => list.map(c => (c.id === commentId ? mappedData : c)));
       } else {
         throw new Error('Insert failed');
       }
@@ -361,13 +385,7 @@ export default function LogDetailScreen() {
         flushOfflineQueue();
         TactileEngine.success();
       } else {
-        queryClient.setQueryData(['log', id], (old: any) => {
-            if (!old) return old;
-            return {
-                ...old,
-                comments: (old.comments || []).filter((c: LogComment) => c.id !== commentId)
-            };
-        });
+        updateComments(list => list.filter(c => c.id !== commentId));
         reelToast.error(isForbiddenError(error) ? 'This member limits who may annotate their critiques.' : 'Failed to file critique.');
       }
     } finally {
@@ -382,13 +400,7 @@ export default function LogDetailScreen() {
     const previousData = queryClient.getQueryData<any>(['log', id]);
     const targetComment = previousData?.comments?.find((c: LogComment) => c.id === commentId);
     
-    queryClient.setQueryData(['log', id], (old: any) => {
-        if (!old) return old;
-        return {
-            ...old,
-            comments: (old.comments || []).filter((c: LogComment) => c.id !== commentId)
-        };
-    });
+    updateComments(list => list.filter(c => c.id !== commentId));
     
     try {
       await LogService.deleteLogComment(commentId);
@@ -404,17 +416,11 @@ export default function LogDetailScreen() {
         flushOfflineQueue();
         TactileEngine.success();
       } else {
-        queryClient.setQueryData(['log', id], (old: any) => {
-            if (!old || !targetComment) return old;
-            return {
-                ...old,
-                comments: [...(old.comments || []), targetComment].sort((a: LogComment, b: LogComment) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-            };
-        });
+        if (targetComment) updateComments(list => [...list, targetComment].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
         reelToast.error('Failed to delete critique.');
       }
     }
-  }, [queryClient, id, user]);
+  }, [queryClient, id, user, updateComments]);
 
   const handleShare = async () => {
     if (!isReadyToShare || !viewShotRef.current) return;
@@ -627,6 +633,7 @@ export default function LogDetailScreen() {
         
         <LogComments
           comments={comments}
+          commentTotal={commentTotal}
           currentUserId={user?.id}
           newComment={newComment}
           posting={posting}

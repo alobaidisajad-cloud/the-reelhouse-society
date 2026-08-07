@@ -43,18 +43,35 @@ const StackCommentRowSchema = z.object({
   ]),
 });
 
+/**
+ * Films loaded for a stack detail screen.
+ *
+ * The fetch was unbounded. Generous on purpose — the largest stack in existence
+ * is 96 — and the TRUE size travels separately as filmCount, so the number on
+ * screen stays right even if a stack ever passes this.
+ */
+const STACK_ITEMS_LIMIT = 500;
+
 export const StackService = {
   async getStackFullPayload(stackId: string) {
-    const [listRes, itemsRes, endorseRes] = await Promise.all([
+    const [listRes, itemsRes, filmCountRes, endorseRes] = await Promise.all([
       supabase.from('lists')
         .select('id, title, description, user_id, is_private, is_ranked, created_at, profiles(username)')
         .eq('id', stackId)
         .maybeSingle(),
+      // Bounded. This was unbounded — a stack of any size loaded in full, and the
+      // screen's "N REELS" counts what it receives. The cap is generous (the
+      // largest stack in existence is 96) and the count below is asked of the
+      // server, so the number stays true even if a stack ever exceeds it.
       supabase.from('list_items')
         .select('film_id, film_title, poster_path')
         .eq('list_id', stackId)
         .order('rank_position', { ascending: true })
-        .order('created_at', { ascending: true }),
+        .order('created_at', { ascending: true })
+        .limit(STACK_ITEMS_LIMIT),
+      supabase.from('list_items')
+        .select('film_id', { count: 'exact', head: true })
+        .eq('list_id', stackId),
       supabase.from('interactions')
         .select('user_id', { count: 'exact', head: true })
         .eq('target_list_id', stackId)
@@ -94,6 +111,10 @@ export const StackService = {
       user: profile?.username || 'anonymous',
       createdAt: listRes.data.created_at,
       films: validFilms,
+      // The stack's TRUE size, from the server. The screen prints "N REELS" and
+      // used to count the array it received — correct only while the fetch was
+      // unbounded. Now that it is capped, this is the number that must be shown.
+      filmCount: filmCountRes.count ?? validFilms.length,
       isPrivate: listRes.data.is_private ?? false,
       isRanked: listRes.data.is_ranked ?? false,
       endorseCount: endorseRes.count ?? 0,

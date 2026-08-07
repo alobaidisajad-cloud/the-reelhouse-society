@@ -59,10 +59,14 @@ describe('StackService', () => {
             const listChain = chain({ data: listData, error: null });
             const itemsChain = chain({ data: itemsData, error: null });
             const endorseChain = chain({ data: [], error: null, count: 5 });
+            // getStackFullPayload now also asks the server for the TRUE film count,
+            // because the items query above is bounded.
+            const filmCountChain = chain({ data: null, error: null, count: 1 });
 
             (supabase.from as jest.Mock)
                 .mockReturnValueOnce(listChain)
                 .mockReturnValueOnce(itemsChain)
+                .mockReturnValueOnce(filmCountChain)
                 .mockReturnValueOnce(endorseChain);
 
             const result = await StackService.getStackFullPayload('s1');
@@ -75,10 +79,14 @@ describe('StackService', () => {
             const listChain = chain({ data: null, error: { message: 'Not found' } });
             const itemsChain = chain({ data: [], error: null });
             const endorseChain = chain({ data: [], error: null, count: 0 });
+            // getStackFullPayload now also asks the server for the TRUE film count,
+            // because the items query above is bounded.
+            const filmCountChain = chain({ data: null, error: null, count: 1 });
 
             (supabase.from as jest.Mock)
                 .mockReturnValueOnce(listChain)
                 .mockReturnValueOnce(itemsChain)
+                .mockReturnValueOnce(filmCountChain)
                 .mockReturnValueOnce(endorseChain);
 
             await expect(StackService.getStackFullPayload('bad')).rejects.toBeTruthy();
@@ -90,10 +98,14 @@ describe('StackService', () => {
             const listChain = chain({ data: badData, error: null });
             const itemsChain = chain({ data: [], error: null });
             const endorseChain = chain({ data: [], error: null, count: 0 });
+            // getStackFullPayload now also asks the server for the TRUE film count,
+            // because the items query above is bounded.
+            const filmCountChain = chain({ data: null, error: null, count: 1 });
 
             (supabase.from as jest.Mock)
                 .mockReturnValueOnce(listChain)
                 .mockReturnValueOnce(itemsChain)
+                .mockReturnValueOnce(filmCountChain)
                 .mockReturnValueOnce(endorseChain);
 
             const { logger } = require('@/src/utils/logger');

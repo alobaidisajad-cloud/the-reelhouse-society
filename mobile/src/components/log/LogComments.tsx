@@ -91,6 +91,12 @@ CommentRow.displayName = 'CommentRow';
 
 interface LogCommentsProps {
   comments: LogComment[];
+  /**
+   * The TRUE number of critiques on this log. The list above is one bounded
+   * page, so counting it would under-report the moment a thread outgrows the
+   * page — which is why the fetch could not simply be given a limit.
+   */
+  commentTotal?: number;
   currentUserId?: string;
   newComment: string;
   posting: boolean;
@@ -105,6 +111,7 @@ interface LogCommentsProps {
 
 export default function LogComments({
   comments,
+  commentTotal,
   currentUserId,
   newComment,
   posting,
@@ -126,7 +133,7 @@ export default function LogComments({
   return (
     <SectionErrorBoundary fallbackMessage="Critiques could not be loaded.">
       <View style={s.commentsSection} onLayout={(e) => onSectionLayout?.(e.nativeEvent.layout.y)}>
-        <SectionDivider label={`CRITIQUES (${comments.length})`} />
+        <SectionDivider label={`CRITIQUES (${commentTotal ?? comments.length})`} />
 
         {/* Compose at the top — file a critique, watch it appear right beneath. */}
         <View style={s.composeWrap}>

@@ -78,13 +78,15 @@ interface ActionModalState {
 
 // ── Enforcement History Panel ──────────────────────────────────────────────
 
-function EnforcementHistory({ userId }: { userId: string }) {
-  const { data: history = [], isLoading } = useQuery({
-    queryKey: ['admin', 'moderation-history', userId],
-    queryFn: () => ModerationService.getUserModerationHistory(userId),
-    enabled: !!userId,
-  });
-
+/**
+ * One member's enforcement record.
+ *
+ * The records arrive as a prop now. This used to run its OWN query per card —
+ * `select('*')` with no limit — so a docket of 20 meant 20 unbounded requests to
+ * draw five rows each. They are fetched once for the whole docket instead, ranked
+ * per member so a single prolific offender cannot crowd the others out.
+ */
+function EnforcementHistory({ history, isLoading }: { history: ModActionRecord[]; isLoading: boolean }) {
   if (isLoading) {
     return (
       <View style={s.historyContainer}>
@@ -388,6 +390,20 @@ export default function TribunalScreen() {
       setHasMorePriority(priorityData.length >= 20);
     }
   }, [priorityData]);
+
+  // ── Enforcement records for the WHOLE docket, in one query ──────────────────
+  // Keyed on the accumulated ids, not on page one. The docket grows by appending
+  // pages, so a fetch tied to the first page would leave every later card with an
+  // empty record — the failure mode a naive batch would have introduced.
+  const docketUserIds = React.useMemo(
+    () => [...new Set(priorityItems.map(r => r.target_user_id).filter(Boolean))] as string[],
+    [priorityItems],
+  );
+  const { data: historyByUser = {}, isLoading: historyLoading } = useQuery({
+    queryKey: ['admin', 'moderation-history', docketUserIds],
+    queryFn: () => ModerationService.getModerationHistoryForUsers(docketUserIds),
+    enabled: user?.role === 'admin' && docketUserIds.length > 0,
+  });
 
   // ── Load More for priority queue (compound keyset — matches RPC order) ──
   const loadMoreMutation = useMutation({
@@ -868,7 +884,7 @@ export default function TribunalScreen() {
                     </View>
 
                     {/* Enforcement History — only a real member has a record */}
-                    {!!item.target_user_id && <EnforcementHistory userId={item.target_user_id} />}
+                    {!!item.target_user_id && <EnforcementHistory history={historyByUser[item.target_user_id] ?? []} isLoading={historyLoading} />}
 
                     {/* Action Row — hidden in multi-select mode */}
                     {!multiSelectMode && (

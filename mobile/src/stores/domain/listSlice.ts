@@ -392,11 +392,17 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         }));
 
         try {
-            const position = currentList.films.length; // 0-indexed: new film goes to end
+            // No rank_position: the SERVER assigns it (max + 1 for this stack).
+            //
+            // It used to be `currentList.films.length` — the length of whatever
+            // array this client happened to be holding. That made the array's
+            // completeness load-bearing: bound the query and every new film would
+            // be assigned the same position, collapsing the order. The database
+            // now fills it in when it arrives NULL, so the client no longer has to
+            // hold an entire stack in memory to append one film to it.
             const { error } = await supabase.from('list_items').insert([{
                 list_id: listId, film_id: film.id, film_title: newFilm.title,
                 poster_path: newFilm.poster,
-                rank_position: position, // Required for ranked lists - maintains sort order
             }]);
             if (error) throw error;
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
@@ -407,8 +413,10 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                 enqueueMutation({ 
                     type: 'add_film_to_list', 
                     payload: {
-                        list_id: listId, film_id: film.id, film_title: newFilm.title, poster_path: newFilm.poster, rank_position: currentList.films.length,
-                    } 
+                        // Same as the online path: no position — the server
+                        // assigns it when the queue drains.
+                        list_id: listId, film_id: film.id, film_title: newFilm.title, poster_path: newFilm.poster,
+                    }
                 });
                 queryClient.invalidateQueries({ queryKey: ['stack', listId] });
                 reelToast('Film added offline. Will sync when connected.');

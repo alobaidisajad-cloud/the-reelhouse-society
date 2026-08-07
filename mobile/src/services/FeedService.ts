@@ -81,6 +81,15 @@ function parseRowsSafely<T>(data: unknown[], schema: z.ZodType<T>, context: stri
 // contains — anything carrying PostgREST filter metacharacters (`,` `(` `)` `"` `.` as
 // an operator) fails to match and is treated as absent, degrading to a safe first-page
 // fetch instead of a broken or injectable query.
+/**
+ * Posters requested per stack card.
+ *
+ * The card draws three (`ReelsCards.tsx` filters to films that have a poster and
+ * slices three). A fourth is asked for as headroom so the row still fills if one
+ * is unusable. The stack's real size travels separately as `film_count`.
+ */
+const STACK_CARD_POSTERS = 4;
+
 const ISO_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}(:?\d{2})?|Z)?$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -285,12 +294,23 @@ export const FeedService = {
 
     // ── Strategy 1: Server-side cursor RPC ──
     try {
-      const rpcResult = await supabase.rpc('get_filtered_stacks_auth_cursor', {
+      // v2, for two reasons measured against production:
+      //   • the original ships EVERY film of every stack — 247 rows to draw 24
+      //     posters, 88% of the payload — because the card needs three and the
+      //     count. v2 returns four posters and a true `film_count`.
+      //   • the original builds its search pattern by hand and never escapes it,
+      //     so searching `_` or `%` returned every stack. Fixed in both.
+      //
+      // It is a NEW function rather than an edit: the build on TestFlight counts
+      // the array it receives, so capping that array there would print "4 FILMS"
+      // on every stack for everyone using the app today.
+      const rpcResult = await supabase.rpc('get_filtered_stacks_auth_cursor_v2', {
         p_search: search.trim().toLowerCase(),
         p_filter_following: filter === 'following',
         p_limit: limit,
         p_cursor_created_at: cursorDate,
         p_cursor_id: cursorId,
+        p_poster_count: STACK_CARD_POSTERS,
       });
 
       if (!rpcResult.error && rpcResult.data) {
@@ -306,7 +326,9 @@ export const FeedService = {
             curatorId: l.user_id,
             createdAt: l.created_at,
             films: l.films || [],
-            count: (l.films || []).length,
+            // The stack's real size, from the server — NOT the length of the
+            // poster array, which is now capped at four.
+            count: l.film_count,
             certifyCount: Number(l.certify_count) || 0,
             isRanked: l.is_ranked,
           };
@@ -328,9 +350,15 @@ export const FeedService = {
     }
 
     // ── Strategy 2: Direct query fallback ──
+    // `film_count:list_items(count)` is an aggregate embed — the stack's TRUE
+    // size, independent of how many item rows the shared fetch below returns.
+    // Without it this path counts the films it happened to receive, which is the
+    // same defect the v2 function above exists to fix. This path is a fallback
+    // that does not run while the RPC is deployed; the count is corrected here so
+    // it cannot come back if it ever does.
     let listQuery = supabase
       .from('lists')
-      .select('id, title, description, created_at, user_id, is_private, is_ranked, profiles!lists_user_id_fkey(username)')
+      .select('id, title, description, created_at, user_id, is_private, is_ranked, profiles!lists_user_id_fkey(username), film_count:list_items(count)')
       .eq('is_private', false)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -412,7 +440,9 @@ export const FeedService = {
         curatorId: l.user_id,
         createdAt: l.created_at,
         films,
-        count: films.length,
+        // PostgREST returns an aggregate embed as an ARRAY — `film_count[0].count`.
+        // Falls back to the fetched length only if the aggregate is absent.
+        count: (l as { film_count?: { count: number }[] }).film_count?.[0]?.count ?? films.length,
         certifyCount: endorseMap[l.id] ?? 0,
         isRanked: l.is_ranked ?? false,
       });

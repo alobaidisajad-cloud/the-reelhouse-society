@@ -147,15 +147,21 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 targetId: r.target_log_id,
                 timestamp: r.created_at,
             }));
-            const idx: Record<string, Interaction> = {};
-            mapped.forEach(i => { if (i.type === 'endorse') idx[i.targetId] = i; });
-            set((state) => ({
-                interactions: [
-                    ...state.interactions.filter(i => i.type !== 'endorse'),
-                    ...mapped
-                ],
-                _endorsedIndex: idx,
-            }));
+            set((state) => {
+                // MERGE, never replace. This used to build a fresh index and
+                // assign it, so a re-run — it is called from an auth effect —
+                // discarded anything learned since, including a certification the
+                // member had just made optimistically.
+                const idx: Record<string, Interaction> = { ...state._endorsedIndex };
+                mapped.forEach(i => { if (i.type === 'endorse') idx[i.targetId] = i; });
+                return {
+                    interactions: [
+                        ...state.interactions.filter(i => i.type !== 'endorse'),
+                        ...mapped
+                    ],
+                    _endorsedIndex: idx,
+                };
+            });
         }
     },
 
@@ -251,7 +257,8 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 timestamp: r.created_at,
             }));
             
-            const idx: Record<string, Interaction> = {};
+            // MERGE, never replace — same reason as the log index above.
+            const idx: Record<string, Interaction> = { ...get()._listEndorsedIndex };
             newListEndorsements.forEach(i => { idx[i.targetId] = i; });
 
             set((state) => ({
