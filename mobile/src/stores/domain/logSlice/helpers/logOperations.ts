@@ -286,6 +286,12 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
 
             if (existingLog) {
                 await applyRewatchMerge(set, get, existingLog, log);
+                // Another success that returns early — this is the "you have
+                // already logged this film" merge, distinct from the duplicate-key
+                // collision below. Both were covered by the old `finally`, which
+                // is exactly how moving that announcement can silence a path
+                // nobody was looking at.
+                announceToScreenReader('Rewatch added to your archive');
                 return;
             }
 

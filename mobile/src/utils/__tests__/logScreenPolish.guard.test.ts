@@ -36,6 +36,26 @@ describe('#89 · a screen reader is never told a failure succeeded', () => {
     // already reads the toast.
     expect(logOps).not.toMatch(/announceToScreenReader\('[^']*fail/i);
   });
+
+  it('EVERY success exit announces — enumerated, not spot-checked', () => {
+    // The announcement used to live in a `finally`, which covered every early
+    // return by accident. Moving it means each success exit needs its own — and
+    // there are three, not the one that is obvious. The post-execution audit
+    // found a missed one here; this test is why it cannot happen twice.
+    const lines = logOps.split(/\r?\n/);
+    const start = lines.findIndex(l => /export const addLogOp/.test(l));
+    const end = lines.findIndex((l, i) => i > start && /^export const /.test(l));
+    expect(start).toBeGreaterThan(-1);
+
+    const unannounced: string[] = [];
+    for (let i = start; i < end; i++) {
+      // A bare `return;` inside this function is a SUCCESS exit — failures throw.
+      if (!/^\s*return;\s*$/.test(lines[i])) continue;
+      const preceding = lines.slice(Math.max(start, i - 4), i).join('\n');
+      if (!/announceToScreenReader\(/.test(preceding)) unannounced.push(`line ${i + 1}`);
+    }
+    expect(unannounced).toEqual([]);
+  });
 });
 
 describe('#89 · the toast is the one spoken channel, on BOTH platforms', () => {
