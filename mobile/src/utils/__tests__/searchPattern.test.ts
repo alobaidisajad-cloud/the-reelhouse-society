@@ -8,13 +8,18 @@
  * So these assert the two properties that actually matter, both of which were
  * measured against production before being written down:
  *
- *   1. a LIKE wildcard leaves as a literal          (searching `_` matched all
- *      32 members; escaped and unquoted it matches the 4 that really contain one)
- *   2. no comma can survive                          (a comma separates filter
- *      predicates, and no escape works — a crafted term returned all 32 members)
+ *   1. every wildcard leaves as a literal — `%`, `_`, AND PostgREST's own `*`,
+ *      which is an alias for `%` and is not a SQL wildcard at all. Searching
+ *      `_` matched all 32 members before the fix; so did `*` after the FIRST
+ *      version of the fix, which escaped the two SQL ones and missed this one.
+ *   2. none of `,` `(` `)` can survive — they belong to the filter parser and
+ *      are consumed before the value exists, so no escape reaches them. A
+ *      crafted comma returned all 32 members; so did a LEADING `)`, which closes
+ *      the group early and collapses the query to "match everything".
  *
  * Property 2 is the security one and is tested as an invariant over arbitrary
- * input, not as a list of payloads someone thought of.
+ * input, not as a list of payloads someone thought of. All 95 printable ASCII
+ * characters were then swept against production in five positions each.
  */
 import { buildSearchPattern } from '../searchPattern';
 
@@ -25,6 +30,14 @@ describe('buildSearchPattern · LIKE wildcards become literal', () => {
 
   it('escapes the "any single character" wildcard', () => {
     expect(buildSearchPattern('a_b')).toBe('a\\_b');
+  });
+
+  it('escapes PostgREST\'s OWN wildcard, which is not a SQL one', () => {
+    // Inside an ilike value PostgREST treats `*` as an alias for `%`. Escaping
+    // the two SQL wildcards and leaving this one live reproduced the identical
+    // bug at a different character: searching `*` returned all 32 members.
+    expect(buildSearchPattern('*')).toBe('\\*');
+    expect(buildSearchPattern('sa*ad')).toBe('sa\\*ad');
   });
 
   it('escapes the escape character itself, and does so FIRST', () => {
@@ -51,7 +64,7 @@ describe('buildSearchPattern · LIKE wildcards become literal', () => {
   });
 });
 
-describe('buildSearchPattern · the comma can never reach the parser', () => {
+describe('buildSearchPattern · , ( ) can never reach the parser', () => {
   it('a comma becomes the single-character wildcard', () => {
     expect(buildSearchPattern('Girl, Interrupted')).toBe('Girl_ Interrupted');
   });
@@ -63,7 +76,16 @@ describe('buildSearchPattern · the comma can never reach the parser', () => {
     expect(p).toBe('W_thering');
   });
 
-  it('INVARIANT: no output ever contains a comma, for any input', () => {
+  it('a paren becomes the single-character wildcard too', () => {
+    // A LEADING `)` closed the filter group early and collapsed the query to
+    // "match everything" — 32 of 32 members, measured after the first fix
+    // shipped. A backslash cannot rescue it: `\)` reaches SQL, where it is not
+    // a valid LIKE escape, and the query dies with 22025.
+    expect(buildSearchPattern('Bin (2020)')).toBe('Bin _2020_');
+    expect(buildSearchPattern(')abc')).toBe('_abc');
+  });
+
+  it('INVARIANT: no output ever contains , ( or ), for any input', () => {
     const inputs = [
       'zzqq,id.not.is.null,username.ilike.*zz',   // the payload that returned all 32
       'zz*,and(id.not.is.null),*zz',
@@ -74,7 +96,7 @@ describe('buildSearchPattern · the comma can never reach the parser', () => {
       '"),or=(id.not.is.null',
     ];
     for (const input of inputs) {
-      expect(buildSearchPattern(input) ?? '').not.toContain(',');
+      expect(buildSearchPattern(input) ?? '').not.toMatch(/[(),]/);
     }
   });
 
@@ -85,7 +107,7 @@ describe('buildSearchPattern · the comma can never reach the parser', () => {
       let s = '';
       for (let j = 0; j < len; j++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
       const out = buildSearchPattern(s);
-      if (out !== null) expect(out).not.toContain(',');
+      if (out !== null) expect(out).not.toMatch(/[(),]/);
     }
   });
 });
@@ -97,6 +119,9 @@ describe('buildSearchPattern · refuses terms that would match everything', () =
     ['a single comma', ','],
     ['only commas', ',,,'],
     ['commas and spaces', ' , , '],
+    ['a lone close paren', ')'],
+    ['a lone open paren', '('],
+    ['only structural characters', '(),'],
     ['null', null],
     ['undefined', undefined],
   ])('refuses %s', (_label, input) => {
@@ -106,5 +131,6 @@ describe('buildSearchPattern · refuses terms that would match everything', () =
   it('why: commas become wildcards, and ___ matched all 32 members live', () => {
     // Any term with real content is still accepted, however many commas it has.
     expect(buildSearchPattern('a,,,')).toBe('a___');
+    expect(buildSearchPattern('a)')).toBe('a_');
   });
 });
