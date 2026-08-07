@@ -526,7 +526,7 @@ async function _hydrateFollowingFallback(userId: string): Promise<void> {
     // Cursor-based keyset pagination for the fallback path too.
     let query = supabase
       .from('interactions')
-      .select('target_user_id, created_at, type')
+      .select('target_user_id, created_at, type, profiles!interactions_target_user_id_fkey(username)')
       .eq('user_id', userId)
       .in('type', ['follow', 'follow_request'])
       .order('created_at', { ascending: true })
@@ -543,25 +543,26 @@ async function _hydrateFollowingFallback(userId: string): Promise<void> {
       break;
     }
 
-    const targetIds = followRows.map(r => r.target_user_id);
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username')
-      .in('id', targetIds);
-
-    if (profiles) {
-      const profileMap = new Map(profiles.map(p => [p.id, p.username]));
-      followRows.forEach(row => {
-        const username = profileMap.get(row.target_user_id);
-        if (username) {
-          if (row.type === 'follow_request') {
-            allRequested.push(username);
-          } else {
-            allUsernames.push(username);
-          }
+    // The usernames arrive with the rows. This used to collect up to
+    // HYDRATE_PAGE_SIZE (1000) ids and send them to a second query with .in(),
+    // which put them in the request URL — and that request FAILS past roughly
+    // 350 ids (measured against production: 300 succeed, 400 do not). Anyone
+    // following that many people would have had this page fail, and because the
+    // error was unchecked the graph would simply come back short: follows
+    // silently missing. Capping the list would have hidden the same data loss
+    // more quietly, so the id list is gone instead.
+    followRows.forEach(row => {
+      const embedded = (row as { profiles?: { username?: string } | { username?: string }[] | null }).profiles;
+      const profile = Array.isArray(embedded) ? embedded[0] : embedded;
+      const username = profile?.username;
+      if (username) {
+        if (row.type === 'follow_request') {
+          allRequested.push(username);
+        } else {
+          allUsernames.push(username);
         }
-      });
-    }
+      }
+    });
 
     cursor = (followRows[followRows.length - 1] as { created_at: string }).created_at;
     hasMore = followRows.length === HYDRATE_PAGE_SIZE;

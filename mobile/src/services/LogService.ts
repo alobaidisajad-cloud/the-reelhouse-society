@@ -11,6 +11,17 @@ import { z } from 'zod';
  
 import { getOfflineQueue } from '@/src/utils/offlineQueue';
 
+/**
+ * How many ids may go into one `.in(...)` lookup.
+ *
+ * The ids are carried in the request URL, and the request fails outright once
+ * the whole URL passes roughly 13.8KB — measured against production: 300 uuids
+ * succeed, 400 do not, and the same 300 fail once 2KB of other filters are
+ * added. The budget is the URL, not the id count, so this is set well below the
+ * boundary to leave room for whatever else a query carries.
+ */
+const PROFILE_LOOKUP_BATCH = 200;
+
 const LogCommentPayloadSchema = z.object({
   id: z.string().uuid(),
   log_id: z.string().uuid(),
@@ -181,17 +192,32 @@ export const LogService = {
     if (error) throw error;
     if (!comments || comments.length === 0) return [];
 
-    // DataLoader pattern: Fetch profiles manually to bypass missing DB Foreign Key
+    // DataLoader pattern: fetch profiles manually to bypass the missing DB foreign
+    // key. `log_comments` genuinely has no link to `profiles` — probed live, the
+    // embed returns PGRST200 — so this lookup cannot be replaced by a join.
+    //
+    // It IS batched, because the ids travel in the request URL and the request
+    // fails outright past roughly 350 of them (measured: 300 succeed, 400 do
+    // not). Comments here are fetched without a limit, so a heavily discussed log
+    // could exceed that on its own and the commenters would all render as
+    // "unknown". 200 per batch leaves generous room for the rest of the URL.
     const userIds = [...new Set(comments.map(c => c.user_id))];
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username, avatar_url, display_name')
-      .in('id', userIds);
-
-    const profileMap = (profiles || []).reduce((acc, profile) => {
-      acc[profile.id] = { username: profile.username, avatar_url: profile.avatar_url, display_name: profile.display_name };
-      return acc;
-    }, {} as Record<string, any>);
+    const profileMap: Record<string, any> = {};
+    for (let i = 0; i < userIds.length; i += PROFILE_LOOKUP_BATCH) {
+      const batch = userIds.slice(i, i + PROFILE_LOOKUP_BATCH);
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, display_name')
+        .in('id', batch);
+      if (profileError) {
+        // Names are decoration here — the words still render. Never silent.
+        logger.warn('[LogService.getLogComments] profile batch failed:', profileError.message);
+        continue;
+      }
+      for (const profile of profiles ?? []) {
+        profileMap[profile.id] = { username: profile.username, avatar_url: profile.avatar_url, display_name: profile.display_name };
+      }
+    }
 
     const data = comments.map(c => ({
       ...c,

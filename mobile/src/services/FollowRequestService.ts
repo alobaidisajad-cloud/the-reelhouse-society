@@ -6,11 +6,12 @@
  * requests); accept/decline route through the audited SECURITY DEFINER RPCs.
  *
  * Built for scale: cursor pagination (created_at keyset), server-side search
- * via a profiles pre-filter, and a single-statement bulk decline. Never loads
- * the whole queue — 3 requests or 3,000 cost the same on the client.
+ * joined in a single statement, and a single-statement bulk decline. Never
+ * loads the whole queue — 3 requests or 3,000 cost the same on the client.
  */
 import { supabase } from '@/src/lib/supabase';
 import { logger } from '@/src/utils/logger';
+import { buildSearchPattern } from '@/src/utils/searchPattern';
 
 export interface FollowRequest {
   /** The requester's user id (argument for accept/decline RPCs). */
@@ -47,34 +48,41 @@ export const FollowRequestService = {
    * createdAt (keyset). `search` filters by requester username (server-side).
    */
   async fetchPage({ myId, cursor, search }: { myId: string; cursor?: string | null; search?: string }): Promise<FollowRequestPage> {
-    const trimmed = (search ?? '').trim().toLowerCase();
+    // No .toLowerCase(): ilike is already case-insensitive, and lowercasing a
+    // term can alter it in some locales for no gain.
+    const raw = (search ?? '').trim();
+    const pattern = raw ? buildSearchPattern(raw) : null;
+    // A term of only separators carries nothing searchable — refuse it rather
+    // than fall through and list the whole queue.
+    if (raw && pattern === null) return { items: [], nextCursor: null };
 
-    // Server-side search: resolve matching requester ids first, then page.
-    let restrictIds: string[] | null = null;
-    if (trimmed) {
-      const { data: matches, error: matchErr } = await supabase
-        .from('profiles')
-        .select('id')
-        .ilike('username', `%${trimmed}%`)
-        .limit(500);
-      if (matchErr) {
-        logger.warn('[FollowRequestService.fetchPage] search resolve failed:', matchErr.message);
-        return { items: [], nextCursor: null };
-      }
-      restrictIds = (matches ?? []).map((m: { id: string }) => m.id);
-      if (restrictIds.length === 0) return { items: [], nextCursor: null };
-    }
-
+    // ── One statement, joined server-side ─────────────────────────────────────
+    // This used to resolve matching profile ids first and pass them to the page
+    // query with .in(). That had a hard ceiling: the ids travel in the request
+    // URL, and the request FAILS OUTRIGHT past roughly 350 of them — measured
+    // against production, 300 ids succeed and 400 do not. The cap here was 500,
+    // i.e. above the breaking point, and the failure surfaced as an empty door
+    // rather than an error. Joining removes the id list entirely, so there is no
+    // ceiling to stay under and no second round trip to resolve names.
+    //
+    // The old note here warned that naming the foreign key is fragile. It is
+    // named because a bare embed IS ambiguous — `interactions` has two links to
+    // `profiles` (requester and target) and PostgREST rejects the choice. The
+    // same named form already ships in LogService and FeedService.
+    //
+    // !inner is deliberate: a request whose requester profile is not readable is
+    // dropped, exactly as the previous code dropped it after the fact — but now
+    // the page length is honest instead of silently short.
     let q = supabase
       .from('interactions')
-      .select('user_id, created_at')
+      .select('user_id, created_at, profiles!interactions_user_id_fkey!inner(username, avatar_url)')
       .eq('target_user_id', myId)
       .eq('type', 'follow_request')
       .order('created_at', { ascending: false })
       .limit(PAGE_SIZE + 1);
 
     if (cursor) q = q.lt('created_at', cursor);
-    if (restrictIds) q = q.in('user_id', restrictIds);
+    if (pattern) q = q.ilike('profiles.username', `*${pattern}*`);
 
     const { data: rows, error } = await q;
     if (error) {
@@ -82,22 +90,16 @@ export const FollowRequestService = {
       return { items: [], nextCursor: null };
     }
 
-    const page = (rows ?? []) as { user_id: string; created_at: string }[];
+    type Requester = { username: string; avatar_url: string | null };
+    type Row = { user_id: string; created_at: string; profiles: Requester | Requester[] | null };
+    const page = (rows ?? []) as Row[];
     const hasMore = page.length > PAGE_SIZE;
     const sliced = hasMore ? page.slice(0, PAGE_SIZE) : page;
     if (sliced.length === 0) return { items: [], nextCursor: null };
 
-    // Resolve requester profiles (FK-name independent — avoids embed fragility).
-    const ids = sliced.map(r => r.user_id);
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username, avatar_url')
-      .in('id', ids);
-    const pmap = new Map((profiles ?? []).map((p: { id: string; username: string; avatar_url: string | null }) => [p.id, p]));
-
     const items: FollowRequest[] = sliced
       .map(r => {
-        const p = pmap.get(r.user_id);
+        const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
         if (!p?.username) return null;
         return { requesterId: r.user_id, username: p.username, avatarUrl: p.avatar_url ?? null, createdAt: r.created_at };
       })

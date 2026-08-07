@@ -9,7 +9,7 @@ import {
     StackFeedRowSchema,
 } from '@/src/schemas/feed.schema';
 
-import { escapeSearchPattern } from '@/src/utils/escapeSearchPattern';
+import { buildSearchPattern } from '@/src/utils/searchPattern';
 import { logger } from '@/src/utils/logger';
 import { reportValidationTelemetry } from '@/src/utils/validateWithTelemetry';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
@@ -356,8 +356,12 @@ export const FeedService = {
     }
 
     if (search.trim()) {
-      const safeVal = escapeSearchPattern(search.trim());
-      listQuery = listQuery.or(`title.ilike."%${safeVal}%",description.ilike."%${safeVal}%"`);
+      // Unquoted: inside a quoted value PostgREST swallows the escape, so the
+      // wildcards stayed live and the filter could be rewritten. `null` means the
+      // term is nothing but separators — search for nothing rather than everything.
+      const pattern = buildSearchPattern(search);
+      if (pattern === null) return [];
+      listQuery = listQuery.or(`title.ilike.*${pattern}*,description.ilike.*${pattern}*`);
     }
 
     listQuery = withAbortSignal(listQuery, signal);

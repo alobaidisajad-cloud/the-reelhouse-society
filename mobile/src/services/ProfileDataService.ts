@@ -19,7 +19,7 @@ import type { LogRow } from '../utils/mappers';
 import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList } from '../types';
 import { ProfileUserSchema, type ValidatedProfileUser } from '../schemas/profile.schema';
 import { isArchivistPlusTier, isAuteurPlusTier } from '../utils/tier';
-import { escapeSearchPattern } from '../utils/escapeSearchPattern';
+import { buildSearchPattern } from '../utils/searchPattern';
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -287,12 +287,14 @@ export const ProfileDataService = {
       .select(PUBLIC_LOG_COLUMNS)
       .eq('user_id', userId)
 
-    // Server-side search and filtering for paginated ledger and archive
+    // Server-side search and filtering for paginated ledger and archive.
+    // Unquoted on purpose: PostgREST consumes the escape inside a quoted value,
+    // so the quoted form left `%` and `_` live as wildcards and let the filter be
+    // rewritten. A `null` pattern means the term is only separators.
     if (options?.search) {
-      // escapeSearchPattern handles both LIKE metacharacters (%, _, \)
-      // and PostgREST CSV double-quote escaping in a single pass.
-      const safeSearch = escapeSearchPattern(options.search);
-      query = query.or(`film_title.ilike."%${safeSearch}%",review.ilike."%${safeSearch}%"`);
+      const pattern = buildSearchPattern(options.search);
+      if (pattern === null) return { items: [], nextCursor: null };
+      query = query.or(`film_title.ilike.*${pattern}*,review.ilike.*${pattern}*`);
     }
     if (options?.rating !== undefined && options.rating !== 'all') {
       query = query.eq('rating', options.rating);
@@ -355,9 +357,14 @@ export const ProfileDataService = {
       .select('id, film_id, film_title, poster_path, year, created_at')
       .eq('user_id', userId)
 
-    // Server-side search and multi-axis sorting
+    // Server-side search and multi-axis sorting.
+    // This is the builder form, which always escaped correctly — the quoted
+    // `.or()` sites were the broken ones. It goes through the same funnel so the
+    // refusal of a separators-only term is applied here too.
     if (options?.search) {
-      query = query.ilike('film_title', `%${escapeSearchPattern(options.search)}%`);
+      const pattern = buildSearchPattern(options.search);
+      if (pattern === null) return { items: [], nextCursor: null };
+      query = query.ilike('film_title', `%${pattern}%`);
     }
 
     if (options?.sort === 'az') {
