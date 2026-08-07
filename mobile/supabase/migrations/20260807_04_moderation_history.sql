@@ -11,9 +11,18 @@
 -- Ranking WITHIN each member fixes (1) outright; the client re-runs this with the
 -- accumulated id set, which fixes (2).
 --
--- SECURITY INVOKER, deliberately: `mod_actions` is already protected by row
--- security for admins. Running as the caller means this function cannot become a
--- way to read the audit log — the worst it can do is return less.
+-- SECURITY INVOKER, deliberately: running as the caller means row security still
+-- applies and this cannot become a way around it — the worst it can do is return
+-- less than the caller could already read.
+--
+-- AND an explicit admin check, because "row security will handle it" is an
+-- assumption I could not verify from outside: `mod_actions` answers a signed-out
+-- caller with 200 and zero rows, which is what BOTH an empty table and a
+-- correctly-locked one look like. This function is a tidy, named way to ask for
+-- other members' enforcement records, so it states its own requirement rather
+-- than inheriting one it cannot see. If row security is already correct this
+-- changes nothing; if it is not, this is the difference between a private audit
+-- log and a public one.
 CREATE OR REPLACE FUNCTION public.get_moderation_history_for_users(
   p_user_ids uuid[],
   p_per_user integer DEFAULT 5
@@ -41,6 +50,10 @@ AS $function$
            ROW_NUMBER() OVER (PARTITION BY m.target_user_id ORDER BY m.created_at DESC, m.id DESC) AS rn
     FROM public.mod_actions m
     WHERE m.target_user_id = ANY(COALESCE(p_user_ids, ARRAY[]::uuid[]))
+      AND EXISTS (
+        SELECT 1 FROM public.profiles p
+        WHERE p.id = auth.uid() AND p.role = 'admin'
+      )
   ) r
   -- Clamped: this is callable by any signed-in role, and an unbounded per-user
   -- count would hand back the whole audit log for those members.
