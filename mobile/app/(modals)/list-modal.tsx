@@ -267,7 +267,11 @@ export default function ListModal() {
             queryClient.invalidateQueries({ queryKey: ['stacks'] });
             TactileEngine.success();
             InteractionManager.runAfterInteractions(() => {
-                nav.back();
+                // Guarded like the catch below and like both sibling modals. Work
+                // handed to the InteractionManager still runs after this sheet is
+                // gone, and an unguarded back() there pops whatever the member
+                // navigated to instead.
+                if (isMounted.current) nav.back();
             });
         } catch (err: unknown) {
             TactileEngine.error();

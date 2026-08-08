@@ -61,11 +61,21 @@ export default function ComposeDossierScreen() {
     const titleRef = useRef(title); titleRef.current = title;
     const contentRef = useRef(content); contentRef.current = content;
 
+    // Mirrors the ref three sibling modals keep, for the guard just below.
+    const isMounted = useRef(true);
+    useEffect(() => {
+        isMounted.current = true;
+        return () => { isMounted.current = false; };
+    }, []);
+
     useEffect(() => {
         if (!canWrite) {
             reelToast.error('Auteur tier required');
             InteractionManager.runAfterInteractions(() => {
-                router.back();
+                // This fires while the screen is still animating in, so the wait is
+                // long enough for the member to tap back themselves. Unguarded, both
+                // pops land and they lose two screens instead of one.
+                if (isMounted.current) router.back();
             });
         }
     }, [canWrite]);

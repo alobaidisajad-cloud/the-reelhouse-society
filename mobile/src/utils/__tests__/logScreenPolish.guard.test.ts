@@ -197,6 +197,42 @@ describe('#111 · the scroll target is named, not guessed', () => {
   });
 });
 
+describe('#91 · the CLASS, swept app-wide — a deferred pop is always guarded', () => {
+  it('no runAfterInteractions anywhere pops the stack unguarded', () => {
+    // Fixing useLogFlow alone was fixing the instance in front of me. The class is
+    // "a deferred back() that fires on a screen the member has left" — it pops
+    // whatever they navigated to instead. Sweeping found one more: list-modal,
+    // which already used its own isMounted ref on four other lines INCLUDING the
+    // catch of the same function, and both sibling modals guard this same call.
+    // Enumerated rather than listed, so a new screen cannot reopen it.
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) {
+          if (['node_modules', '__tests__', '.expo', 'android', 'ios'].includes(e.name)) continue;
+          walk(full, out);
+        } else if (/\.tsx?$/.test(e.name)) out.push(full);
+      }
+      return out;
+    };
+
+    const offenders: string[] = [];
+    for (const file of [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))]) {
+      const src = stripComments(fs.readFileSync(file, 'utf8'));
+      const re = /InteractionManager\.runAfterInteractions\(\s*\(\)\s*=>\s*\{([\s\S]{0,300}?)\n\s*\}\s*\)/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(src)) !== null) {
+        const body = m[1];
+        // Only a POP is dangerous. push/replace after a tap is the member's intent.
+        if (!/\b(nav|router)\.back\(\)/.test(body)) continue;
+        if (/isMounted\.current|mountedRef\.current/.test(body)) continue;
+        offenders.push(path.relative(ROOT, file).replace(/\\/g, '/'));
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe('unfiled · batch 16\'s duplicate test reaches this file too', () => {
   it('no loose "unique" substring match survives', () => {
     // `42P10` reads "there is no UNIQUE or exclusion constraint…", so the old
