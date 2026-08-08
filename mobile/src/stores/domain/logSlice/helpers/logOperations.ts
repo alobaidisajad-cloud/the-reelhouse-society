@@ -746,6 +746,14 @@ export const updateLogOp = async (set: SetState, get: GetState, id: string, upda
                     }
                 }
             }
+
+            // Editing had NO announcement at all, while filing a new log did —
+            // and both end in the same visual "RECORD SEALED" through the same
+            // handler. So a VoiceOver member was told when they filed a record and
+            // told nothing when they amended one. Same class as the announcement
+            // that used to fire on failure: the spoken account of what happened
+            // has to match what the screen says.
+            announceToScreenReader('Record amended');
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp', logId: id });
             if (originalLog) {

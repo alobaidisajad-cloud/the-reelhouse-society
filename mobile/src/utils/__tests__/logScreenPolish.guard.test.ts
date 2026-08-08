@@ -56,6 +56,13 @@ describe('#89 · a screen reader is never told a failure succeeded', () => {
     }
     expect(unannounced).toEqual([]);
   });
+
+  it('editing a log confirms too — the same flow, the same seal', () => {
+    // handleLog drives BOTH add and edit, and both end on the visual "RECORD
+    // SEALED". Filing announced; amending said nothing. A blind member got
+    // confirmation for one and silence for the other.
+    expect(logOps).toMatch(/announceToScreenReader\('Record amended'\)/);
+  });
 });
 
 describe('#89 · the toast is the one spoken channel, on BOTH platforms', () => {
