@@ -609,7 +609,14 @@ export const getCinephileStatsOp = (set: SetState, get: GetState, overrideCount?
         return { count, level, color, progress };
 };
 
-export const updateLogOp = async (set: SetState, get: GetState, id: string, updates: Partial<DomainLog>) => {
+export const updateLogOp = async (
+    set: SetState,
+    get: GetState,
+    id: string,
+    updates: Partial<DomainLog>,
+    /** Set by callers using this as a STEP, so it does not narrate their work. */
+    opts?: { silentAnnounce?: boolean },
+) => {
         if (get()._updateLogMutex) {
             // Same as addLog: one toast, chosen by the screen from this code.
             throw Object.assign(new Error('updateLog mutex locked'), { code: LOG_BUSY });
@@ -753,7 +760,13 @@ export const updateLogOp = async (set: SetState, get: GetState, id: string, upda
             // told nothing when they amended one. Same class as the announcement
             // that used to fire on failure: the spoken account of what happened
             // has to match what the screen says.
-            announceToScreenReader('Record amended');
+            //
+            // Suppressed when another operation is using this as a step rather
+            // than as the member's own edit. removeLogOp undoes a rewatch by
+            // calling this, and it says its own, truer thing afterwards — without
+            // this flag a member removing a rewatch heard "Record amended" and
+            // then "Rewatch removed", the first of which is not what they did.
+            if (!opts?.silentAnnounce) announceToScreenReader('Record amended');
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp', logId: id });
             if (originalLog) {
@@ -819,10 +832,16 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             };
 
             try {
-                await get().updateLog(id, updates);
+                // Silent: this is a STEP in removing a rewatch, not the member
+                // amending a record. The toast below says the true thing, and it
+                // is now spoken on both platforms.
+                await updateLogOp(set, get, id, updates, { silentAnnounce: true });
                 reelToast(`Rewatch removed. Reverted to previous viewing.`);
             } catch (e) {
-                // updateLog handles its own error toasts and rollbacks
+                // Rethrown for the caller to report. updateLog USED to toast its
+                // own failures here — this batch removed that, because it and the
+                // caller both toasted and the member saw two messages for one
+                // failure. handleDelete shows the single one.
                 throw e;
             }
             return;

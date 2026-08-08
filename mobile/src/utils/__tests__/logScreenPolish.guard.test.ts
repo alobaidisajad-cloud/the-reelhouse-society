@@ -63,6 +63,24 @@ describe('#89 · a screen reader is never told a failure succeeded', () => {
     // confirmation for one and silence for the other.
     expect(logOps).toMatch(/announceToScreenReader\('Record amended'\)/);
   });
+
+  it('but NOT when another operation is only using it as a step', () => {
+    // removeLogOp undoes a rewatch by calling updateLogOp. Without this, removing
+    // a rewatch announced "Record amended" and then toasted "Rewatch removed" —
+    // two announcements, the first of which is not what the member did.
+    expect(logOps).toMatch(/if \(!opts\?\.silentAnnounce\) announceToScreenReader/);
+    expect(logOps).toMatch(/updateLogOp\(set, get, id, updates, \{ silentAnnounce: true \}\)/);
+  });
+
+  it('deleting needs no announcement of its own — it toasts, and toasts speak', () => {
+    // Checked rather than assumed: removeLogOp shows success toasts on all three
+    // of its paths, and the toast is now spoken on both platforms. Adding one
+    // here would have made deletion say it twice.
+    const start = logOps.indexOf('export const removeLogOp');
+    const body = logOps.slice(start);
+    expect(body).not.toMatch(/announceToScreenReader/);
+    expect(body).toMatch(/removed\./);
+  });
 });
 
 describe('#89 · the toast is the one spoken channel, on BOTH platforms', () => {
