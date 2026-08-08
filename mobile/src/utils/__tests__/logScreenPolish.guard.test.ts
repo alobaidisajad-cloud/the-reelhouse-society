@@ -215,6 +215,38 @@ describe('#89 · a queued write is never announced as a finished one', () => {
     expect((logOps.match(/queuedOffline = true/g) ?? []).length).toBe(2);
   });
 
+  it('a STEP narrates nothing — not its announcement AND not its toast', () => {
+    // updateLogOp does NOT throw when it queues offline; it returns normally. So
+    // an op using it as a step had its own "Saved offline. Will sync when
+    // connected." fire over the top of the caller's message — two messages for
+    // one action, the first with the wrong verb (the member removed a rewatch,
+    // they did not save one). Gating only the ANNOUNCEMENT left the toast.
+    expect(logOps).toMatch(/if \(!opts\?\.silentAnnounce\) reelToast\('Saved offline/);
+  });
+
+  it('the merge paths do not claim the archive holds a queued write', () => {
+    // These two reach the offline branch THROUGH updateLogOp, which returns
+    // normally when it queues — so they announced "Rewatch added to your
+    // archive" while the write sat in the queue. The same contradiction that was
+    // closed for the two non-merge paths, and missed at these.
+    expect((logOps.match(/queuedOffline\b/g) ?? []).length).toBeGreaterThanOrEqual(8);
+    expect(logOps).toMatch(/if \(!merged\?\.queuedOffline\) announceToScreenReader\('Rewatch added/);
+    expect(logOps).toMatch(/if \(!dupMerged\?\.queuedOffline\) announceToScreenReader\('Rewatch added/);
+    // …and the flag actually travels: helper → merge → caller.
+    expect(logOps).toMatch(/return \{ queuedOffline \}/);
+    expect(logOps).toMatch(/return \{ queuedOffline: merge\?\.queuedOffline === true \}/);
+    // The queued removal still reaches the member, in their own verb.
+    expect(logOps).toMatch(/undone\?\.queuedOffline\s*\?\s*'Rewatch removed\. Will sync when connected\.'/);
+  });
+
+  it('the public store action keeps its void contract', () => {
+    // The flag is for internal step callers only. Returning it from the action
+    // broke the slice's Promise<void> type — caught by tsc, pinned here so the
+    // fix is not "widen the interface" next time.
+    const slice = stripComments(read('src/stores/domain/logSlice.ts'));
+    expect(slice).toMatch(/updateLog: async \(id, updates\) => \{ await updateLogOp\(set, get, id, updates\); \}/);
+  });
+
   it('EVERY internal caller of updateLogOp is silent — enumerated', () => {
     // updateLogOp announces. Any op that uses it as a STEP therefore narrates
     // the wrong action unless it silences it. removeLogOp was fixed for exactly

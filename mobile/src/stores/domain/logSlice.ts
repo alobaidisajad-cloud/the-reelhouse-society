@@ -42,7 +42,10 @@ export const createLogSlice: StateCreator<FilmState, [], [], LogSlice> = (set, g
 
     fetchLogs: async (loadMore = false) => fetchLogsOp(set, get, loadMore),
     addLog: async (log) => addLogOp(set, get, log),
-    updateLog: async (id, updates) => updateLogOp(set, get, id, updates),
+    // Awaited rather than returned: updateLogOp reports whether it queued the
+    // write offline, but that is only for internal STEP callers, which call the
+    // helper directly. The public action stays Promise<void>.
+    updateLog: async (id, updates) => { await updateLogOp(set, get, id, updates); },
     removeLog: async (id, forceDeleteAll = false) => removeLogOp(set, get, id, forceDeleteAll),
     markAsWatched: async (film, status = 'watched') => markAsWatchedOp(set, get, film, status as any),
     unmarkWatched: async (filmId) => unmarkWatchedOp(set, get, filmId),

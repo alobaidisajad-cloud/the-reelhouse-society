@@ -228,7 +228,7 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
     // without this a member logging a film they had already seen heard "Record
     // amended" first, which is not what they did. Same defect as removeLogOp's,
     // at the caller I did not sweep for when I fixed that one.
-    await updateLogOp(set, get, existingLog.id, {
+    const merge = await updateLogOp(set, get, existingLog.id, {
         rating: log.rating !== undefined ? log.rating : existingLog.rating,
         review: isAware ? (log.review !== undefined ? log.review : existingLog.review) : (log.review !== undefined && log.review !== '' ? log.review : existingLog.review),
         status: log.status === 'abandoned' ? 'abandoned' : 'rewatched',
@@ -253,6 +253,9 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
     if (existingLog.filmId) {
         queryClient.invalidateQueries({ queryKey: ['film', Number(existingLog.filmId)] });
     }
+    // Passed up so the caller does not claim the archive holds something that is
+    // still sitting in the offline queue.
+    return { queuedOffline: merge?.queuedOffline === true };
 };
 
 export const addLogOp = async (set: SetState, get: GetState, log: Partial<DomainLog>) => {
@@ -291,13 +294,19 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             }
 
             if (existingLog) {
-                await applyRewatchMerge(set, get, existingLog, log);
+                const merged = await applyRewatchMerge(set, get, existingLog, log);
                 // Another success that returns early — this is the "you have
                 // already logged this film" merge, distinct from the duplicate-key
                 // collision below. Both were covered by the old `finally`, which
                 // is exactly how moving that announcement can silence a path
                 // nobody was looking at.
-                announceToScreenReader('Rewatch added to your archive');
+                //
+                // Offline this stays silent for the same reason the two paths
+                // below do: the write is queued, not archived. This merge reaches
+                // the offline branch through updateLogOp, which does NOT throw
+                // when it queues — so without the flag the member was told the
+                // rewatch was in their archive while it sat in the queue.
+                if (!merged?.queuedOffline) announceToScreenReader('Rewatch added to your archive');
                 return;
             }
 
@@ -347,13 +356,18 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                             .order('created_at', { ascending: false }).limit(1);
                         if (serverRows && serverRows.length > 0) {
                             const existing = mapLogRow(serverRows[0] as any) as unknown as DomainLog;
-                            await applyRewatchMerge(set, get, existing, log);
+                            const dupMerged = await applyRewatchMerge(set, get, existing, log);
                             // A merge IS a success, and it returns early — so it
                             // needs its own announcement. It used to get one from
                             // the `finally`, which is precisely why that placement
                             // looked harmless: it covered the success paths by
                             // accident while also firing on the failures.
-                            announceToScreenReader('Rewatch added to your archive');
+                            //
+                            // Gated for the same reason as the merge above: the
+                            // network can drop between the duplicate-key response
+                            // and this write, and a queued write is not an
+                            // archived one.
+                            if (!dupMerged?.queuedOffline) announceToScreenReader('Rewatch added to your archive');
                             return;
                         }
                     }
@@ -760,7 +774,14 @@ export const updateLogOp = async (
                 // Use shared network error detection
                 if (isNetworkError(error)) {
                     enqueueMutation({ type: 'update_log', payload: { id, updates: dbUpdates } });
-                    reelToast('Saved offline. Will sync when connected.');
+                    // A STEP does not narrate itself, and that includes this
+                    // toast — not just the announcement below. Removing a rewatch
+                    // offline showed "Saved offline. Will sync when connected."
+                    // and then "Rewatch removed…": two messages for one action,
+                    // the first using the wrong verb, since the member removed
+                    // something rather than saving it. The caller is told it was
+                    // queued (below) and says one true, offline-aware thing.
+                    if (!opts?.silentAnnounce) reelToast('Saved offline. Will sync when connected.');
                     queuedOffline = true;
                 } else {
                     throw error;
@@ -797,6 +818,11 @@ export const updateLogOp = async (
             // Silent offline too: "Saved offline. Will sync when connected." is
             // already spoken, and "Record amended" would contradict it.
             if (!opts?.silentAnnounce && !queuedOffline) announceToScreenReader('Record amended');
+            // Reported so a caller using this as a step can say the true thing.
+            // Without it, addLogOp's merge announced "Rewatch added to your
+            // archive" while the write was only queued — the same contradiction
+            // that was closed for the two non-merge paths and missed here.
+            return { queuedOffline };
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp', logId: id });
             if (originalLog) {
@@ -865,8 +891,14 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
                 // Silent: this is a STEP in removing a rewatch, not the member
                 // amending a record. The toast below says the true thing, and it
                 // is now spoken on both platforms.
-                await updateLogOp(set, get, id, updates, { silentAnnounce: true });
-                reelToast(`Rewatch removed. Reverted to previous viewing.`);
+                const undone = await updateLogOp(set, get, id, updates, { silentAnnounce: true });
+                // One message, with the member's own verb. The step no longer
+                // says "Saved offline…" over the top of this — they removed a
+                // rewatch, they did not save one — but the queued state still has
+                // to reach them, so it is said here instead.
+                reelToast(undone?.queuedOffline
+                    ? 'Rewatch removed. Will sync when connected.'
+                    : 'Rewatch removed. Reverted to previous viewing.');
             } catch (e) {
                 // Rethrown for the caller to report. updateLog USED to toast its
                 // own failures here — this batch removed that, because it and the
