@@ -371,9 +371,15 @@ export function useLogFlow() {
      * already capture it for exactly this reason.
      */
     const pendingTasks = useRef<{ cancel: () => void }[]>([]);
-    const deferUntilIdle = useCallback((fn: () => void) => {
+    const deferUntilIdle = useCallback((fn: () => void, opts?: { cancelOnUnmount?: boolean }) => {
         const task = InteractionManager.runAfterInteractions(fn);
-        pendingTasks.current.push(task);
+        // Not everything deferred here is work that should be called off. The
+        // dismissal must not fire on a screen the member has left — but the
+        // review prompt is deliberately scheduled to run AFTER that dismissal
+        // completes, which is to say after this screen is gone. Registering it
+        // for cancellation would have let the very navigation it waits for
+        // cancel it, and the prompt would never appear again.
+        if (opts?.cancelOnUnmount !== false) pendingTasks.current.push(task);
         return task;
     }, []);
 
@@ -445,9 +451,14 @@ export function useLogFlow() {
                     // `logs` is the pre-await snapshot, hence +1. maybeRequestReview
                     // gates itself (>=5 logs, 90-day cooldown, 6 lifetime) and never throws.
                     if (isNewEntry) {
+                        // Explicitly NOT cancelled on unmount — see deferUntilIdle.
+                        // This is scheduled to run once the dismissal above has
+                        // finished, so by design it outlives this screen. Treating
+                        // it like the dismissal would mean router.back() cancelled
+                        // the prompt it was supposed to precede.
                         deferUntilIdle(() => {
                             void maybeRequestReview(logs.length + 1);
-                        });
+                        }, { cancelOnUnmount: false });
                     }
                 });
             }, 650);

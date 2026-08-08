@@ -163,6 +163,14 @@ describe('#91 · the dismissal timer cannot fire after the screen is gone', () =
     // this codebase capture the handle for exactly this reason.
     expect(flow).toMatch(/pendingTasks/);
     expect(flow).toMatch(/pendingTasks\.current\.forEach\(t => t\.cancel\(\)\)/);
+    // …but NOT the review prompt. It is deliberately scheduled to run after the
+    // dismissal completes — after this screen is gone — so registering it for
+    // cancellation let router.back() cancel the prompt it was supposed to
+    // precede, and it would never have appeared again. Cancelling every deferral
+    // uniformly is the failure this pins: the dismissal must be called off, the
+    // prompt must survive.
+    expect(flow).toMatch(/maybeRequestReview\(logs\.length \+ 1\);\s*\}, \{ cancelOnUnmount: false \}\)/);
+    expect(flow).toMatch(/if \(opts\?\.cancelOnUnmount !== false\) pendingTasks\.current\.push/);
     // Every deferral goes through the cancellable helper — the raw API is used
     // once, inside it.
     expect((flow.match(/InteractionManager\.runAfterInteractions\(/g) ?? []).length).toBe(1);

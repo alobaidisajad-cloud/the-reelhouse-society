@@ -464,7 +464,10 @@ export default function LogDetailScreen() {
   if (loading) {
     return (
       <View style={[s.container, s.centerFull]}>
-        <ActivityIndicator color={colors.sepia} />
+        {/* Labelled because this spinner is the ONLY thing on screen. Without it
+            the fix was sighted-only: a blank screen became a spinner, and a
+            VoiceOver member still heard nothing either way. */}
+        <ActivityIndicator color={colors.sepia} accessibilityLabel="Loading record" />
       </View>
     );
   }
