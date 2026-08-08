@@ -151,6 +151,20 @@ describe('#91 · the dismissal timer cannot fire after the screen is gone', () =
     const publish = flow.slice(flow.indexOf('setSealed(true)'));
     expect(publish.slice(0, 200)).not.toMatch(/^\s*setTimeout\(/m);
   });
+
+  it('the OTHER deferral mechanism is cancelled too', () => {
+    // Clearing the timer was not enough. This hook also defers through
+    // InteractionManager — three calls, none captured, two of them router.back().
+    // Work already handed to the InteractionManager still runs on a screen the
+    // member has left, popping whatever they navigated to. Three other files in
+    // this codebase capture the handle for exactly this reason.
+    expect(flow).toMatch(/pendingTasks/);
+    expect(flow).toMatch(/pendingTasks\.current\.forEach\(t => t\.cancel\(\)\)/);
+    // Every deferral goes through the cancellable helper — the raw API is used
+    // once, inside it.
+    expect((flow.match(/InteractionManager\.runAfterInteractions\(/g) ?? []).length).toBe(1);
+    expect((flow.match(/deferUntilIdle\(/g) ?? []).length).toBeGreaterThanOrEqual(3);
+  });
 });
 
 describe('#107 · a spinner, not a blank screen', () => {

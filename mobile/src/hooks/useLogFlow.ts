@@ -357,7 +357,31 @@ export function useLogFlow() {
      * screen the member has already left.
      */
     const sealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    useEffect(() => () => { if (sealTimerRef.current) clearTimeout(sealTimerRef.current); }, []);
+
+    /**
+     * Work deferred until the animations settle, so it can be called off.
+     *
+     * `InteractionManager.runAfterInteractions` is the other way this hook defers
+     * work, and it was the unguarded one: three calls, none captured, two of them
+     * `router.back()`. Clearing the seal timer alone was not enough — a
+     * dismissal already handed to the InteractionManager still fires on a screen
+     * the member has left, popping whatever they navigated to instead.
+     *
+     * The handle carries `.cancel()`, and three other files in this codebase
+     * already capture it for exactly this reason.
+     */
+    const pendingTasks = useRef<{ cancel: () => void }[]>([]);
+    const deferUntilIdle = useCallback((fn: () => void) => {
+        const task = InteractionManager.runAfterInteractions(fn);
+        pendingTasks.current.push(task);
+        return task;
+    }, []);
+
+    useEffect(() => () => {
+        if (sealTimerRef.current) clearTimeout(sealTimerRef.current);
+        pendingTasks.current.forEach(t => t.cancel());
+        pendingTasks.current = [];
+    }, []);
 
     useEffect(() => {
         if (editLogId || !filmId) return;
@@ -413,7 +437,7 @@ export function useLogFlow() {
             setSealed(true);
             if (sealTimerRef.current) clearTimeout(sealTimerRef.current);
             sealTimerRef.current = setTimeout(() => {
-                InteractionManager.runAfterInteractions(() => {
+                deferUntilIdle(() => {
                     router.back();
                     // Only a NEW entry counts — an edit adds no film. The nested wait
                     // lets the dismissal finish before an OS modal can appear over it;
@@ -421,7 +445,7 @@ export function useLogFlow() {
                     // `logs` is the pre-await snapshot, hence +1. maybeRequestReview
                     // gates itself (>=5 logs, 90-day cooldown, 6 lifetime) and never throws.
                     if (isNewEntry) {
-                        InteractionManager.runAfterInteractions(() => {
+                        deferUntilIdle(() => {
                             void maybeRequestReview(logs.length + 1);
                         });
                     }
@@ -459,7 +483,7 @@ export function useLogFlow() {
         try {
             await removeLog(editLogId);
             TactileEngine.warn();
-            InteractionManager.runAfterInteractions(() => {
+            deferUntilIdle(() => {
                 router.back();
             });
         } catch {
