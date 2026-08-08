@@ -92,13 +92,23 @@ describe('#89 · the toast is the one spoken channel, on BOTH platforms', () => 
     // app — including every error — was silent to VoiceOver on iPhone.
     expect(toast).toMatch(/accessibilityLiveRegion="polite"/);
     expect(toast).toMatch(/Platform\.OS === 'ios'/);
-    expect(toast).toMatch(/AccessibilityInfo\.announceForAccessibility\(toast\.message\)/);
+    expect(toast).toMatch(/AccessibilityInfo\.announceForAccessibility\(/);
+    expect(toast).toMatch(/toast\.message/);
   });
 
   it('the sibling live region gets the same treatment', () => {
     const profile = stripComments(read('src/features/profile/EditProfileScreen.tsx'));
     expect(profile).toMatch(/accessibilityLiveRegion="polite"/);
     expect(profile).toMatch(/Platform\.OS === 'ios'/);
+  });
+
+  it('an actionable toast announces its action too', () => {
+    // A toast with an action stays up twice as long because it expects a
+    // response. Announcing only the message would give a VoiceOver member five
+    // seconds to act on a button they were never told about. Latent — nothing
+    // fires an action toast yet — which is exactly why it needed pinning.
+    expect(toast).toMatch(/toast\.action \? .*toast\.action\.label/);
+    expect(toast).toMatch(/toast\.action \? 5000 : 2500/);
   });
 });
 

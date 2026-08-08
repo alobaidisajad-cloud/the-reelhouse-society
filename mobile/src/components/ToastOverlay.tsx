@@ -66,8 +66,15 @@ export function ToastOverlay() {
     //
     // announceForAccessibility is a no-op when no screen reader is running, so
     // this costs nothing for everyone else and changes nothing visually.
+    // The action label goes with it. A toast carrying one stays up twice as long
+    // (below) precisely because it expects a response — announcing only the
+    // message would give a VoiceOver member five seconds to act on a button they
+    // were never told exists. No caller passes an action today; this is here so
+    // the first one that does is not silently inaccessible.
     if (Platform.OS === 'ios') {
-      AccessibilityInfo.announceForAccessibility(toast.message);
+      AccessibilityInfo.announceForAccessibility(
+        toast.action ? `${toast.message}. ${toast.action.label} available.` : toast.message
+      );
     }
 
     // Slide in
