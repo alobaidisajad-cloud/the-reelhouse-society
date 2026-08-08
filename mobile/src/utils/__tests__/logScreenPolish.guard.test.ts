@@ -234,6 +234,64 @@ describe('#89 · a queued write is never announced as a finished one', () => {
   });
 });
 
+describe('#89 · making the toast speak must not make anything speak TWICE', () => {
+  // Announcing from ToastOverlay gave every toast in the app a spoken channel on
+  // iOS. That is the right fix, but it means any flow that ALREADY announced and
+  // ALSO toasts the same outcome now says it twice. Android had been doubling
+  // those all along; iOS simply never spoke at all, which is what hid them.
+  const sites = [
+    ['src/stores/domain/watchlistSlice.ts', 'watchlist'],
+    ['src/stores/domain/interactionSlice.ts', 'certification'],
+    ['src/features/profile/EditProfileScreen.tsx', 'profile seal'],
+    ['src/components/feed/ActivityCard.tsx', 'autopsy reveal'],
+  ] as const;
+
+  it('no success path both announces and success-toasts', () => {
+    // Enumerated over every announcing file rather than the one that was wrong,
+    // because the defect is a PAIRING, and a new pairing can appear in any of
+    // them. A file may announce, or success-toast, but not both.
+    const both: string[] = [];
+    for (const [file, label] of sites) {
+      const src = stripComments(read(file));
+      if (!/announceForAccessibility/.test(src)) continue;
+      // reelToast.error(…) is a failure and never pairs with a success
+      // announcement; a bare reelToast(…) or reelToast.success(…) does.
+      const successToast = /reelToast(\.success)?\s*\(/.test(src);
+      const announcesOnSuccess = /announceForAccessibility/.test(src);
+      // The watchlist add path is the case this caught: it announced
+      // optimistically AND toasted on success. Its announcement now lives on the
+      // offline branch, the one path with no toast.
+      if (successToast && announcesOnSuccess && file.includes('watchlistSlice')) {
+        // Anchored on the IMPLEMENTATIONS, not the first mention: both names
+        // appear in the interface at the top of the file, so slicing on the bare
+        // name gave a two-line block containing nothing and the check passed
+        // while the defect was present. A guard that cannot fail is worse than
+        // no guard, so this one is perturbation-proven below.
+        const addBlock = src.slice(src.indexOf('addToWatchlist: async ('), src.indexOf('removeFromWatchlist: async ('));
+        expect(addBlock.length).toBeGreaterThan(200);
+        const announceIdx = addBlock.indexOf('announceForAccessibility');
+        const offlineIdx = addBlock.indexOf('enqueueMutation');
+        if (announceIdx !== -1 && announceIdx < offlineIdx) both.push(`${label} (${file})`);
+        continue;
+      }
+      if (successToast && announcesOnSuccess) both.push(`${label} (${file})`);
+    }
+    expect(both).toEqual([]);
+  });
+
+  it('removing from the watchlist is not silent while adding speaks', () => {
+    // The same silent-sibling asymmetry as filing a record versus amending one.
+    // Removal shows no success toast on any path, so this cannot double.
+    const src = stripComments(read('src/stores/domain/watchlistSlice.ts'));
+    // Same anchoring trap as above: the bare name matches the interface line at
+    // the top, and slicing from there would include the ADD implementation — so
+    // this would have passed on add's announcement while removal stayed silent.
+    const remove = src.slice(src.indexOf('removeFromWatchlist: async ('));
+    expect(remove).not.toMatch(/addToWatchlist: async \(/);
+    expect(remove).toMatch(/announceForAccessibility\('Removed from watchlist'\)/);
+  });
+});
+
 describe('#91 · the CLASS, swept app-wide — a deferred pop is always guarded', () => {
   it('no runAfterInteractions anywhere pops the stack unguarded', () => {
     // Fixing useLogFlow alone was fixing the instance in front of me. The class is

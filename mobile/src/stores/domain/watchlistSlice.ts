@@ -111,7 +111,17 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
             watchlist: [newEntry, ...state.watchlist],
             _watchlistIndex: { ...state._watchlistIndex, [film.id]: true }
         }));
-        try { require('react-native').AccessibilityInfo.announceForAccessibility('Added to watchlist'); } catch { /* test env */ }
+        // NOT announced here. The success path below toasts — and a toast is now
+        // spoken on both platforms (ToastOverlay announces on iOS, where the
+        // live region does not fire) — so announcing here as well made a
+        // VoiceOver member hear "Added to watchlist" and then, half a second
+        // later, "\"Dune\" added to watchlist": the same fact twice, the second
+        // strictly more informative. Android had been doubling this all along;
+        // giving iOS its missing spoken channel is what made it visible.
+        //
+        // The offline branch is the one path with no toast, so it announces —
+        // see below. One spoken message per outcome, which is the same rule the
+        // log flow follows.
 
         const dbOperation = async () => {
             const { error } = await supabase.from('watchlists').insert([{
@@ -131,6 +141,10 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
                         poster_path: film.poster_path ?? null,
                         year: film.release_date ? (parseInt(film.release_date.slice(0, 4)) || null) : null,
                     } });
+                    // The only path here that shows no toast, so it is the only
+                    // one that speaks for itself. Sighted members see the row
+                    // appear; without this a VoiceOver member got nothing at all.
+                    try { require('react-native').AccessibilityInfo.announceForAccessibility('Added to watchlist'); } catch { /* test env */ }
                 } else {
                     // Not a network failure — the offline branch above owns those.
                     captureError(error, { scope: 'watchlistSlice.addToWatchlist', filmId: film.id });
@@ -170,6 +184,13 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
                 _watchlistIndex: nextIdx
             };
         });
+
+        // Adding spoke and removing said nothing — the same silent-sibling
+        // asymmetry as filing a record versus amending one. Removal shows no
+        // success toast on ANY path (the row simply disappears, which a sighted
+        // member can see and a VoiceOver member cannot), so this is the single
+        // spoken channel here and cannot double with one.
+        try { require('react-native').AccessibilityInfo.announceForAccessibility('Removed from watchlist'); } catch { /* test env */ }
 
         const dbOperation = async () => {
             const { error } = await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId);
