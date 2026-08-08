@@ -145,7 +145,15 @@ describe('#91 · the dismissal timer cannot fire after the screen is gone', () =
   it('it is stored and cleared, like the draft timer beside it', () => {
     expect(flow).toMatch(/sealTimerRef/);
     expect(flow).toMatch(/sealTimerRef\.current = setTimeout/);
-    expect(flow).toMatch(/clearTimeout\(sealTimerRef\.current\)/);
+    // Pinned to the UNMOUNT CLEANUP, not to the file. `clearTimeout(sealTimerRef
+    // .current)` appears twice — once when re-arming in handleLog, once here —
+    // so a bare match was satisfied by the re-arm while the cleanup could be
+    // deleted outright. That is the exact defect #91 exists to prevent, and the
+    // guard for it was empty until mutation testing removed the cleanup and the
+    // suite stayed green.
+    expect(flow).toMatch(
+      /useEffect\(\(\) => \(\) => \{[\s\S]*?clearTimeout\(sealTimerRef\.current\)[\s\S]*?pendingTasks\.current\.forEach/
+    );
   });
 
   it('the bare timer is gone', () => {
@@ -183,7 +191,11 @@ describe('#107 · a spinner, not a blank screen', () => {
 
   it('the loading branch shows something', () => {
     expect(screen).not.toMatch(/if \(loading\) return <View style=\{s\.container\} \/>/);
-    expect(screen).toMatch(/ActivityIndicator/);
+    // The ELEMENT, not the word. This asserted /ActivityIndicator/, which the
+    // IMPORT line satisfies — so the whole spinner could be deleted from the
+    // screen and this still passed. Mutation testing is what exposed it; nothing
+    // about reading the test suggested it was empty.
+    expect(screen).toMatch(/<ActivityIndicator[^>]*accessibilityLabel="Loading record"/);
   });
 
   it('using the centring style the not-found branch already uses', () => {
