@@ -216,17 +216,50 @@ describe('#91 · the CLASS, swept app-wide — a deferred pop is always guarded'
       return out;
     };
 
+    // The body is read by BALANCING PARENS, not by matching a shape. A regex for
+    // `() => { … }` cannot see `() => nav.back()`, and five real call sites use
+    // that brace-less form — so a shape-matching guard would have passed while
+    // the very defect it names walked straight through it.
+    const bodyAt = (src: string, open: number): string => {
+      let depth = 0;
+      for (let i = open; i < src.length; i++) {
+        if (src[i] === '(') depth++;
+        else if (src[i] === ')') { depth--; if (depth === 0) return src.slice(open + 1, i); }
+      }
+      return src.slice(open + 1);
+    };
+
+    // Every way this codebase pops a screen — not just the one that was filed.
+    // back, dismiss, dismissAll and popToTop all remove something the member is
+    // looking at; only these are dangerous when deferred. A deferred push or
+    // replace after a tap IS the member's intent and must still fire.
+    const POP = /\b(nav|router)\.(back|dismiss|dismissAll|dismissTo|popToTop)\(/;
+    const GUARDED = /isMounted\.current|mountedRef\.current/;
+
     const offenders: string[] = [];
     for (const file of [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))]) {
+      const rel = path.relative(ROOT, file).replace(/\\/g, '/');
+      // Two files are exempt, each for a REASON, not because they were awkward.
+      //
+      // _layout is mounted for the entire life of the app, so nothing it defers
+      // can outlive it.
+      //
+      // auth-callback must fire even if it unmounts, and guarding it would CREATE
+      // a bug rather than close one: the recovery branch arms `recovery_pending`
+      // and only reset-password clears it. A guard that skipped the redirect
+      // would strand the member with the flag still armed, and restoreSession
+      // destroys the session of an abandoned recovery on next launch — so the
+      // "safe" fix would sign them out. Its redirect is also the promise the
+      // screen has already made on-screen ("Taking you to set a new password").
+      if (rel === 'app/_layout.tsx' || rel === 'app/auth-callback.tsx') continue;
       const src = stripComments(fs.readFileSync(file, 'utf8'));
-      const re = /InteractionManager\.runAfterInteractions\(\s*\(\)\s*=>\s*\{([\s\S]{0,300}?)\n\s*\}\s*\)/g;
-      let m: RegExpExecArray | null;
-      while ((m = re.exec(src)) !== null) {
-        const body = m[1];
-        // Only a POP is dangerous. push/replace after a tap is the member's intent.
-        if (!/\b(nav|router)\.back\(\)/.test(body)) continue;
-        if (/isMounted\.current|mountedRef\.current/.test(body)) continue;
-        offenders.push(path.relative(ROOT, file).replace(/\\/g, '/'));
+      const needle = 'InteractionManager.runAfterInteractions';
+      let at = src.indexOf(needle);
+      while (at !== -1) {
+        const open = src.indexOf('(', at + needle.length - 1);
+        const body = bodyAt(src, open);
+        if (POP.test(body) && !GUARDED.test(body)) offenders.push(rel);
+        at = src.indexOf(needle, at + needle.length);
       }
     }
     expect(offenders).toEqual([]);
