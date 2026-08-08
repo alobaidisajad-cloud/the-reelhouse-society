@@ -68,7 +68,10 @@ describe('#89 · a screen reader is never told a failure succeeded', () => {
     // removeLogOp undoes a rewatch by calling updateLogOp. Without this, removing
     // a rewatch announced "Record amended" and then toasted "Rewatch removed" —
     // two announcements, the first of which is not what the member did.
-    expect(logOps).toMatch(/if \(!opts\?\.silentAnnounce\) announceToScreenReader/);
+    // Matched loosely on purpose: a later audit added `&& !queuedOffline` to this
+    // same condition, and pinning the exact string made a correct change look
+    // like a regression. What must hold is that the flag GATES the announcement.
+    expect(logOps).toMatch(/if \(!opts\?\.silentAnnounce[^)]*\) announceToScreenReader/);
     expect(logOps).toMatch(/updateLogOp\(set, get, id, updates, \{ silentAnnounce: true \}\)/);
   });
 
@@ -194,6 +197,40 @@ describe('#111 · the scroll target is named, not guessed', () => {
     // If these two ever disagree the scroll lands in the wrong place, which is
     // exactly what a bare literal in the screen allowed.
     expect(styles).toMatch(/parallaxPadder: \{ height: PARALLAX_PADDER_HEIGHT/);
+  });
+});
+
+describe('#89 · a queued write is never announced as a finished one', () => {
+  it('the offline branch does not fall through into the success announcement', () => {
+    // The offline branch does NOT return — it fabricates finalData and keeps
+    // going — so the success announcement at the end of the block ran for it
+    // too. A member with no signal heard "Archived offline. Will sync when
+    // connected." and then "Film logged to your archive": two sentences, the
+    // second contradicting the first and describing something that had not
+    // happened. Making the toast speak on iOS is what turned that into two
+    // spoken sentences rather than one silent one.
+    expect(logOps).toMatch(/if \(!queuedOffline\) announceToScreenReader\('Film logged to your archive'\)/);
+    expect(logOps).toMatch(/!opts\?\.silentAnnounce && !queuedOffline/);
+    // Both flags are actually raised where the write is queued, not just declared.
+    expect((logOps.match(/queuedOffline = true/g) ?? []).length).toBe(2);
+  });
+
+  it('EVERY internal caller of updateLogOp is silent — enumerated', () => {
+    // updateLogOp announces. Any op that uses it as a STEP therefore narrates
+    // the wrong action unless it silences it. removeLogOp was fixed for exactly
+    // this, and the lesson recorded — but the sweep for OTHER internal callers
+    // was never actually run, and applyRewatchMerge was one: logging a film you
+    // had already seen said "Record amended" before "Rewatch added to your
+    // archive".
+    //
+    // The store action `updateLog` cannot forward opts, so going through it is
+    // itself the bug. Internal callers must use the helper directly.
+    const start = logOps.indexOf('export const updateLogOp');
+    const outsideItself = logOps.slice(0, start) + logOps.slice(logOps.indexOf('export const ', start + 10));
+    expect(outsideItself).not.toMatch(/get\(\)\.updateLog\(/);
+
+    const calls = logOps.match(/updateLogOp\(set, get,[\s\S]*?\{ silentAnnounce: true \}\)/g) ?? [];
+    expect(calls.length).toBe(4);
   });
 });
 

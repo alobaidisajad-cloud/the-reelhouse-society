@@ -222,7 +222,13 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
         return newVal as T | null;
     };
 
-    await get().updateLog(existingLog.id, {
+    // Direct, not through get().updateLog — the store action does not forward
+    // opts, so it can never be silent. A merge is a STEP inside addLogOp, which
+    // says its own truer thing ("Rewatch added to your archive") right after;
+    // without this a member logging a film they had already seen heard "Record
+    // amended" first, which is not what they did. Same defect as removeLogOp's,
+    // at the caller I did not sweep for when I fixed that one.
+    await updateLogOp(set, get, existingLog.id, {
         rating: log.rating !== undefined ? log.rating : existingLog.rating,
         review: isAware ? (log.review !== undefined ? log.review : existingLog.review) : (log.review !== undefined && log.review !== '' ? log.review : existingLog.review),
         status: log.status === 'abandoned' ? 'abandoned' : 'rewatched',
@@ -242,7 +248,7 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
         format: log.physicalMedia !== undefined ? (log.physicalMedia ? resolveFormat(log.physicalMedia) : 'digital') : existingLog.format,
         viewCount: newViewCount,
         viewingHistory: newHistory,
-    } as Partial<DomainLog>);
+    } as Partial<DomainLog>, { silentAnnounce: true });
 
     if (existingLog.filmId) {
         queryClient.invalidateQueries({ queryKey: ['film', Number(existingLog.filmId)] });
@@ -319,11 +325,15 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             const { data, error } = await supabase.from('logs').insert([payload]).select().single();
 
             let finalData = data;
+            // A queued write is not an archived one, and the announcement at the
+            // end of this block says it is. See the note there.
+            let queuedOffline = false;
             if (error) {
                 // Use shared network error detection
                 if (isNetworkError(error)) {
                     enqueueMutation({ type: 'add_log', payload: payload });
                     reelToast('Archived offline. Will sync when connected.');
+                    queuedOffline = true;
                     finalData = { ...payload, created_at: new Date().toISOString(), id: payload.id };
                 } else if (isDuplicateKey(error)) {
                     // a concurrent insert (e.g. the same film logged from another
@@ -426,7 +436,16 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             // spoken on both platforms (ToastOverlay announces on iOS, where the
             // live region does not fire). Adding one here would make Android say
             // it twice.
-            announceToScreenReader('Film logged to your archive');
+            //
+            // The offline branch above does NOT return — it fabricates finalData
+            // and falls through to here — so without this guard a member with no
+            // signal heard "Archived offline. Will sync when connected." and then
+            // "Film logged to your archive", the second contradicting the first
+            // and describing something that had not happened. Making the toast
+            // speak on iOS is what turned that into two spoken sentences. The
+            // toast already tells the truth on both platforms, so this stays
+            // silent and lets it.
+            if (!queuedOffline) announceToScreenReader('Film logged to your archive');
         } finally {
             set({ _addLogMutex: false });
         }
@@ -448,7 +467,11 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
 
         if (existingLog) {
             if (existingLog.status === status) return;
-            await get().updateLog(existingLog.id, { status } as Partial<DomainLog>);
+            // A step, not the member amending a record — "Record amended" would be
+            // the wrong sentence for marking a film watched. Currently unreachable
+            // (this op has no callers), fixed anyway so reviving it cannot revive
+            // the defect alongside its corrected twin.
+            await updateLogOp(set, get, existingLog.id, { status } as Partial<DomainLog>, { silentAnnounce: true });
             return;
         }
         const newLogId = Crypto.randomUUID();
@@ -503,7 +526,8 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
                 if (serverRows && serverRows.length > 0) {
                     const existing = mapLogRow(serverRows[0] as any) as unknown as DomainLog;
                     if (existing.status !== status) {
-                        await get().updateLog(existing.id, { status } as Partial<DomainLog>);
+                        // Same as above: a step, and unreachable today.
+                        await updateLogOp(set, get, existing.id, { status } as Partial<DomainLog>, { silentAnnounce: true });
                     }
                     return;
                 }
@@ -729,11 +753,15 @@ export const updateLogOp = async (
 
         try {
             const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id);
+            // Same as addLogOp: a queued edit is not a saved one, and this branch
+            // falls through to the announcement below.
+            let queuedOffline = false;
             if (error) {
                 // Use shared network error detection
                 if (isNetworkError(error)) {
                     enqueueMutation({ type: 'update_log', payload: { id, updates: dbUpdates } });
                     reelToast('Saved offline. Will sync when connected.');
+                    queuedOffline = true;
                 } else {
                     throw error;
                 }
@@ -766,7 +794,9 @@ export const updateLogOp = async (
             // calling this, and it says its own, truer thing afterwards — without
             // this flag a member removing a rewatch heard "Record amended" and
             // then "Rewatch removed", the first of which is not what they did.
-            if (!opts?.silentAnnounce) announceToScreenReader('Record amended');
+            // Silent offline too: "Saved offline. Will sync when connected." is
+            // already spoken, and "Record amended" would contradict it.
+            if (!opts?.silentAnnounce && !queuedOffline) announceToScreenReader('Record amended');
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp', logId: id });
             if (originalLog) {
