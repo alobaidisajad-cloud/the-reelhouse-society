@@ -29,7 +29,7 @@
  * and a SKIPPED CHECK COUNTS AS A FAILURE. An unrun check is not a pass; this
  * script once printed "Verified present in production: nothing." and exited 0.
  */
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -37,24 +37,92 @@ import { dirname, join } from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const contract = JSON.parse(readFileSync(join(__dirname, 'backend-contract.json'), 'utf8'));
 
-const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || '';
-let DB_URL = process.env.SUPABASE_DB_URL || '';
+/**
+ * Reading a value out of a KEY=value file, tolerating CRLF.
+ */
+function fromEnvFile(file, key) {
+  try {
+    for (const line of readFileSync(join(__dirname, '..', file), 'utf8').split('\n')) {
+      const i = line.indexOf('=');
+      if (i < 0) continue;
+      if (line.slice(0, i).trim() === key) return line.slice(i + 1).trim();
+    }
+  } catch {
+    /* no such file */
+  }
+  return '';
+}
 
 // A connection string that still carries its placeholder is not a connection
 // string. Left unhandled it reaches psql, fails on authentication, and prints
-// the whole failed command as a wall of text that reads like a bug in this
-// script — and because the variable persists for the life of the shell, every
-// later run repeats it. Name it instead.
-const PLACEHOLDERS = ['YOURPASSWORD', 'YOUR-PASSWORD', 'YOUR_PASSWORD', '[YOUR', 'PASTE', 'xxxx'];
-if (DB_URL && PLACEHOLDERS.some((p) => DB_URL.toUpperCase().includes(p))) {
+// the failed command as a wall of text that reads like a bug in this script.
+const PLACEHOLDERS = ['YOURPASSWORD', 'YOUR-PASSWORD', 'YOUR_PASSWORD', '[YOUR', 'PASTE', 'XXXX'];
+const looksUnfinished = (s) => PLACEHOLDERS.some((p) => s.toUpperCase().includes(p));
+
+let PROJECT_REF = process.env.SUPABASE_PROJECT_REF || fromEnvFile('.env.local', 'SUPABASE_PROJECT_REF');
+let DB_URL = process.env.SUPABASE_DB_URL || fromEnvFile('.env.local', 'SUPABASE_DB_URL');
+
+if (DB_URL && looksUnfinished(DB_URL)) {
   console.warn(
-    '⚠ SUPABASE_DB_URL still contains a placeholder, so it cannot connect.\n' +
-      '  Replace the password portion with the real one, or clear it with:\n' +
-      '      Remove-Item Env:SUPABASE_DB_URL\n' +
-      '  Treating it as unset for this run.',
+    '⚠ The saved connection string still has [YOUR-PASSWORD] in it, so it cannot connect.\n' +
+      '  You will be asked for it again below.',
   );
   DB_URL = '';
 }
+
+// ASK, rather than making someone assemble shell variables by hand.
+//
+// This used to require exporting SUPABASE_DB_URL yourself before running. That
+// is a two-step dance in PowerShell, the variable then persists for the life of
+// the window, and a wrong value silently poisons every later run — which is
+// exactly what happened. A tool that needs a value should ask for it.
+// Only when attached to a terminal, so CI never hangs waiting on a human.
+if (!DB_URL && process.stdin.isTTY) {
+  const { createInterface } = await import('readline/promises');
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  console.log(
+    '\nThe deeper checks (column permissions, trigger state, RLS, length ceilings)\n' +
+      'need your database connection string. Supabase dashboard → Connect → Direct.\n' +
+      'Remember to swap [YOUR-PASSWORD] for your real database password.\n' +
+      'Press Enter alone to skip — the rest of the checks still run.\n',
+  );
+  const answer = (await rl.question('Connection string: ')).trim();
+  if (answer && looksUnfinished(answer)) {
+    console.warn(
+      '\n⚠ That still contains [YOUR-PASSWORD]. Replace it with your actual database\n' +
+        '  password (Project Settings → Database → Database password) and run again.',
+    );
+  } else if (answer) {
+    DB_URL = answer;
+    const save = (await rl.question('Save it so you are not asked again? (y/N) ')).trim().toLowerCase();
+    if (save === 'y' || save === 'yes') {
+      // .env.local is gitignored (mobile/.gitignore: `.env*.local`), so the
+      // password cannot be committed by accident.
+      const path = join(__dirname, '..', '.env.local');
+      let existing = '';
+      try {
+        existing = readFileSync(path, 'utf8');
+      } catch {
+        /* first time */
+      }
+      const kept = existing
+        .split('\n')
+        .filter((l) => !l.startsWith('SUPABASE_DB_URL=') && !l.startsWith('SUPABASE_PROJECT_REF='))
+        .join('\n')
+        .replace(/\n+$/, '');
+      writeFileSync(
+        path,
+        `${kept ? `${kept}\n` : ''}SUPABASE_DB_URL=${DB_URL}\nSUPABASE_PROJECT_REF=${PROJECT_REF || 'wihyqkpoymwcvbprslyz'}\n`,
+      );
+      console.log('  Saved to mobile/.env.local (gitignored).');
+    }
+  }
+  rl.close();
+}
+
+// The project ref is public — it is the subdomain of the API URL the app ships,
+// so there is no reason to make anyone type it. Derived below, once the app's
+// own URL has been read from .env.
 
 // The anon key is public by design (it ships in the app bundle). Reading it from
 // .env means the security-posture half needs no secret and therefore actually runs.
@@ -74,6 +142,13 @@ if (!SUPABASE_URL || !ANON_KEY) {
   } catch {
     /* no .env — the check reports itself skipped, which is a failure */
   }
+}
+
+// Derive the project ref from the app's own API URL rather than asking for it.
+// It is the subdomain, it ships inside the app bundle, and it is not a secret.
+if (!PROJECT_REF && SUPABASE_URL) {
+  const m = SUPABASE_URL.match(/https:\/\/([a-z0-9]+)\./);
+  if (m) PROJECT_REF = m[1];
 }
 
 const missing = { rpcs: [], edgeFunctions: [] };
