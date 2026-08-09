@@ -149,6 +149,20 @@ function ReportSheet({
   // Reactive, so a rotation or a split-screen resize re-measures. See the note
   // on SHEET_HEIGHT_RATIO.
   const { height: windowHeight } = useWindowDimensions();
+  /**
+   * How far the sheet travels to be fully off-screen.
+   *
+   * This was a hardcoded 800. The sheet is three quarters of the window, so on
+   * anything taller than ~1067pt — an iPad in portrait is 1366 — the sheet is
+   * TALLER than the distance it moves: roughly 224pt of it never leaves the
+   * screen. It popped into view on open and left a sliver behind on close.
+   *
+   * Mirrored into a ref rather than added to the animation effect's
+   * dependencies: that effect drives the open/close transition, so re-running it
+   * on a rotation would replay the entry animation mid-use.
+   */
+  const offscreenRef = React.useRef(windowHeight);
+  offscreenRef.current = windowHeight;
   const user = useAuthStore((s) => s.user);
   const submitReport = useReportStore((s) => s.submitReport);
   const isSubmitting = useReportStore((s) => s.isSubmitting);
@@ -162,7 +176,8 @@ function ReportSheet({
   // ── Sheet Animation ─────────────────────────────────────────────────────
   const [isRendered, setIsRendered] = React.useState(false);
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(800);
+  // Starts off-screen by the window's own height, not a guessed 800.
+  const translateY = useSharedValue(windowHeight);
 
   React.useEffect(() => {
     if (visible) {
@@ -172,13 +187,13 @@ function ReportSheet({
       setBlockToggle(false);
       setIsFocused(false);
       setIsRendered(true);
-      translateY.value = 800;
+      translateY.value = offscreenRef.current;
       opacity.value = withTiming(1, { duration: 300 });
       translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
     } else {
       if (isRendered) {
         opacity.value = withTiming(0, { duration: 250 });
-        translateY.value = withTiming(800, { duration: 250, easing: Easing.out(Easing.cubic) }, () => {
+        translateY.value = withTiming(offscreenRef.current, { duration: 250, easing: Easing.out(Easing.cubic) }, () => {
           runOnJS(setIsRendered)(false);
         });
       }

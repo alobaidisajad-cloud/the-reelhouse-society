@@ -42,6 +42,32 @@ describe('#121 · the sheet measures the window when it opens', () => {
   });
 });
 
+describe('#121 · the sheet fully leaves the screen on any window', () => {
+  it('travels the window height, not a hardcoded 800', () => {
+    // The sheet is three quarters of the window, so on anything taller than
+    // ~1067pt — an iPad in portrait is 1366 — it was TALLER than the distance it
+    // moved: roughly 224pt never left the screen. It popped into view on open
+    // and left a sliver behind on close. Pre-existing, but it sat in the code
+    // this finding touches and is the same defect class: a guessed dimension.
+    expect(sheet).not.toMatch(/translateY\.value = 800/);
+    expect(sheet).not.toMatch(/withTiming\(800,/);
+    expect(sheet).not.toMatch(/useSharedValue\(800\)/);
+    expect(sheet).toMatch(/translateY\.value = offscreenRef\.current/);
+    expect(sheet).toMatch(/withTiming\(offscreenRef\.current,/);
+  });
+
+  it('reads it from a ref, so a rotation cannot replay the entry animation', () => {
+    // The distance must be current, but adding it to the animation effect's
+    // dependencies would re-run that effect on every resize — replaying the
+    // open transition while the member is filling the form in.
+    expect(sheet).toMatch(/offscreenRef\.current = windowHeight;/);
+    const effect = sheet.slice(sheet.indexOf('React.useEffect(() => {'));
+    const deps = effect.slice(0, effect.indexOf('}, ['));
+    expect(deps.length).toBeGreaterThan(50);
+    expect(effect).toMatch(/\}, \[visible, opacity, translateY, isRendered\]\)/);
+  });
+});
+
 describe('#121 · the class, swept — no file freezes the window at load', () => {
   it('no module-scope Dimensions.get survives anywhere', () => {
     // Enumerated, not spot-checked: this was a one-of-one, and the point of the
