@@ -24,6 +24,12 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
     getString: (k: string) => mockStore.get(k),
     delete: (k: string) => { mockStore.delete(k); },
   },
+  // These counts are member content, so the cache now writes through
+  // `setSensitive`, which refuses when storage is not encrypted. This file tests
+  // the CACHING behaviour, so it stands in for the encrypted case; the refusal
+  // itself is covered by its own test in encryptionAtRest.guard.test.ts.
+  setSensitive: (k: string, v: string) => { mockStore.set(k, v); },
+  isStorageEncrypted: () => true,
 }));
 
 // Deliberately after the mock — the factory runs the moment the module is required.

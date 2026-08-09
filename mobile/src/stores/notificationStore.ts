@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './auth';
 import { useBlockStore } from './blockStore';
-import { zustandMMKVStorage } from './mmkv-storage';
+import { zustandMMKVStorage, zustandMMKVStorageSensitive } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 import { stillSignedIn } from './domain/helpers/sessionGuard';
 
@@ -608,7 +608,7 @@ export const useNotificationStore = create<NotificationState>()(
         }),
         {
             name: 'reelhouse-notifications',
-            storage: createJSONStorage(() => zustandMMKVStorage),
+            storage: createJSONStorage(() => zustandMMKVStorageSensitive),
             // Only persist data fields, not functions or internal state
             // Persist pagination state to avoid redundant cold-start refetch
             partialize: (state) => ({

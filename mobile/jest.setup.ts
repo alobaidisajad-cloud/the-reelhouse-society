@@ -54,6 +54,19 @@ jest.mock('./src/stores/mmkv-storage', () => ({
     setItem: jest.fn((key: string, value: string) => { _mockMMKVStore[key] = value; }),
     removeItem: jest.fn((key: string) => { delete _mockMMKVStore[key]; }),
   },
+  // ── The encryption gate ────────────────────────────────────────────────────
+  // Member content is no longer written to disk unless storage is encrypted:
+  // the film store persists logs carrying `privateNotes`, and the profile cache
+  // carries the member's email. These stand in for the ENCRYPTED case, which is
+  // what almost every suite means to exercise; the refusal has its own guard
+  // test that drives the real module.
+  zustandMMKVStorageSensitive: {
+    getItem: jest.fn((key: string) => _mockMMKVStore[key] ?? null),
+    setItem: jest.fn((key: string, value: string) => { _mockMMKVStore[key] = value; }),
+    removeItem: jest.fn((key: string) => { delete _mockMMKVStore[key]; }),
+  },
+  setSensitive: jest.fn((key: string, value: string) => { _mockMMKVStore[key] = value; }),
+  isStorageEncrypted: jest.fn(() => true),
   createAsyncMMKVStorage: jest.fn(() => ({
     getItem: jest.fn(() => null),
     setItem: jest.fn(),

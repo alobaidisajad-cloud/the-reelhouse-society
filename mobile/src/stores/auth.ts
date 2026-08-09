@@ -14,7 +14,7 @@ import { clearOfflineQueue } from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
 import { isRetryable, withRetry } from '../utils/withRetry';
 import { hydrateFollowing } from './domain/socialSlice';
-import { storage } from './mmkv-storage';
+import { storage, setSensitive } from './mmkv-storage';
 export { storage };
 
 export interface AuthState {
@@ -166,7 +166,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           }
           const completeUser = { ...session.user, ...profile, ...pendingProfileEdits, preferences: finalPrefs, following: cachedFollowing } as unknown as User;
           storage.set('last_user_id', session.user.id);
-          storage.set(`ironvault_user_cache_${session.user.id}`, JSON.stringify(completeUser));
+          setSensitive(`ironvault_user_cache_${session.user.id}`, JSON.stringify(completeUser));
           set({ user: completeUser, isAuthenticated: true, loading: false });
           // Hydrate following from DB in background (authoritative source)
           hydrateFollowing();
@@ -251,7 +251,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // Set auth immediately
     const completeUser = { ...authedUser, following: [] } as unknown as User;
     storage.set('last_user_id', authedUser.id);
-    storage.set(`ironvault_user_cache_${authedUser.id}`, JSON.stringify(completeUser));
+    setSensitive(`ironvault_user_cache_${authedUser.id}`, JSON.stringify(completeUser));
     set({ user: completeUser, isAuthenticated: true });
 
     // ── Link this device's store identity to the account that just signed in ──
@@ -284,7 +284,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
              const updatedUser = s.user ? { ...s.user, ...profileData } : null;
              if (updatedUser) {
                storage.set('last_user_id', updatedUser.id);
-               storage.set(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
+               setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
              }
              return { user: updatedUser };
            });
@@ -338,7 +338,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       const completeUser = { ...data.user, ...profile, following: [] } as User;
       storage.set('last_user_id', data.user!.id);
-      storage.set(`ironvault_user_cache_${data.user!.id}`, JSON.stringify(completeUser));
+      setSensitive(`ironvault_user_cache_${data.user!.id}`, JSON.stringify(completeUser));
       set({ user: completeUser, isAuthenticated: true });
       // Same reason as login(): logIn() is the documented way to move the store
       // identity to this account, rather than relying on a repeat configure().
@@ -465,7 +465,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // Optimistic update
     set((state) => {
       const updatedUser = state.user ? { ...state.user, ...safeUpdates } : null;
-      if (updatedUser) storage.set(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
+      if (updatedUser) setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
       return { user: updatedUser };
     });
 
@@ -482,7 +482,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         if (__DEV__) console.warn('[updateUser] DB sync failed, rolling back:', e);
         storage.delete(`dirty_profile_${user.id}`);
         set({ user: prevUser });
-        storage.set(`ironvault_user_cache_${prevUser.id}`, JSON.stringify(prevUser));
+        setSensitive(`ironvault_user_cache_${prevUser.id}`, JSON.stringify(prevUser));
         reelToast.error('Profile update failed \u2014 changes reverted.');
       }
     }
@@ -500,7 +500,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set((state) => {
       if (!state.user) return state;
       const updatedUser = { ...state.user, ...updates };
-      storage.set(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
+      setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
       return { user: updatedUser };
     });
   },
@@ -525,7 +525,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set((state) => ({ user: state.user ? { ...state.user, preferences: prefs } : null }));
 
     // 2. Optimistic update (Cache) - guarantees state persists even if app closes during debounce
-    storage.set(`ironvault_user_cache_${user.id}`, JSON.stringify({ ...get().user, preferences: prefs }));
+    setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify({ ...get().user, preferences: prefs }));
     storage.set(`dirty_prefs_${user.id}`, 'true');
 
     if (_prefTimers.has(timerKey)) {
@@ -551,7 +551,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         const baseline = _prefBaselines.get(user.id) ?? {};
         _prefBaselines.delete(user.id);
         set((state) => ({ user: state.user ? { ...state.user, preferences: { ...baseline } } : null }));
-        storage.set(`ironvault_user_cache_${user.id}`, JSON.stringify(get().user));
+        setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify(get().user));
         if (__DEV__) console.warn('[setPreference] DB sync failed, rolled back window locally');
       }
     }, 1000));

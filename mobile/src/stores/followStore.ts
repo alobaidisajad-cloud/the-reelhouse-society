@@ -15,7 +15,7 @@
  */
 import { create } from 'zustand';
 import { registerStoreReset } from './resetAllStores';
-import { storage } from './mmkv-storage';
+import { storage, setSensitive } from './mmkv-storage';
 import { logger } from '../utils/logger';
 
 export interface SocialState {
@@ -121,8 +121,8 @@ export const useSocialStore = create<SocialState>()((set, get) => ({
     persistFollowing: (userId) => {
         const { following, requested } = get();
         try {
-            storage.set(`reelhouse_following_${userId}`, JSON.stringify(following));
-            storage.set(`reelhouse_requested_${userId}`, JSON.stringify(requested));
+            setSensitive(`reelhouse_following_${userId}`, JSON.stringify(following));
+            setSensitive(`reelhouse_requested_${userId}`, JSON.stringify(requested));
         } catch (e) {
             logger.warn('[SocialStore] persistFollowing storage access failed:', e);
         }

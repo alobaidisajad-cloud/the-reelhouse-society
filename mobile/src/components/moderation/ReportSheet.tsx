@@ -12,7 +12,7 @@
 import { BlurView } from 'expo-blur';
 import React, { useCallback, useState } from 'react';
 import {
-    Dimensions,
+    useWindowDimensions,
     Modal,
     ScrollView,
     StyleSheet,
@@ -60,8 +60,22 @@ export interface ReportSheetProps {
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const SHEET_HEIGHT = SCREEN_HEIGHT * 0.75;
+/**
+ * The sheet fills three quarters of the window — measured WHEN IT OPENS.
+ *
+ * This used to be `Dimensions.get('window').height` at module scope, read once
+ * when the JS bundle loaded and never again. The sheet was therefore sized to
+ * whatever the window was at startup: wrong after a rotation, wrong in
+ * split-screen, wrong in iPad multitasking. It was the only module-load
+ * `Dimensions.get` in the entire app — every other component already takes the
+ * reactive hook, and that inconsistency is what marked it an oversight.
+ *
+ * Safe to make reactive because no worklet captures it: the animations here
+ * derive from scale, opacity and translateY, and this value has exactly one
+ * consumer — the sheet's own height. A hook value and a module constant behave
+ * differently inside a worklet, which is why that was checked first.
+ */
+const SHEET_HEIGHT_RATIO = 0.75;
 const REASON_OPTIONS = ReportReasonEnum.options;
 const MAX_DETAILS_LENGTH = 500;
 const COUNTER_WARN_THRESHOLD = 450;
@@ -132,6 +146,9 @@ function ReportSheet({
   onDismiss,
 }: ReportSheetProps) {
   const insets = useSafeAreaInsets();
+  // Reactive, so a rotation or a split-screen resize re-measures. See the note
+  // on SHEET_HEIGHT_RATIO.
+  const { height: windowHeight } = useWindowDimensions();
   const user = useAuthStore((s) => s.user);
   const submitReport = useReportStore((s) => s.submitReport);
   const isSubmitting = useReportStore((s) => s.isSubmitting);
@@ -251,6 +268,9 @@ function ReportSheet({
           <AnimatedView
             style={[
               styles.sheet,
+              // Measured now, not at bundle load — so the sheet is correct after
+              // a rotation and in split-screen.
+              { height: windowHeight * SHEET_HEIGHT_RATIO },
               sheetStyle,
               kbPad,
             ]}
@@ -365,7 +385,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: SHEET_HEIGHT,
+    // height is applied inline from useWindowDimensions — a static stylesheet is
+    // evaluated once, which is the whole defect this replaced.
     backgroundColor: colors.ink,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,

@@ -24,7 +24,7 @@ import type { PersistedBlockData } from '../types/moderation';
 import { logger } from '../utils/logger';
 import reelToast from '../utils/reelToast';
 import { useAuthStore } from './auth';
-import { storage } from './mmkv-storage';
+import { storage, setSensitive } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 import { stillSignedIn } from './domain/helpers/sessionGuard';
 
@@ -379,7 +379,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
         muted,
         lastSynced: Date.now(),
       };
-      storage.set(MMKV_KEY(userId), JSON.stringify(data));
+      setSensitive(MMKV_KEY(userId), JSON.stringify(data));
     } catch (e) {
       logger.warn('[BlockStore] persistToCache failed:', e);
     }

@@ -1,4 +1,4 @@
-import { storage } from '@/src/stores/mmkv-storage';
+import { storage, setSensitive } from '@/src/stores/mmkv-storage';
 import { registerStoreReset } from '@/src/stores/resetAllStores';
 
 const KEY = 'reelhouse_profile_counts';
@@ -76,7 +76,7 @@ export function writeCachedCounts(userId: string | null | undefined, counts: Par
     out[f] = Math.floor(v);
   }
   try {
-    storage.set(`${KEY}_${uid}`, JSON.stringify(out));
+    setSensitive(`${KEY}_${uid}`, JSON.stringify(out));
   } catch { /* a smoother first frame is never worth a crash */ }
 }
 

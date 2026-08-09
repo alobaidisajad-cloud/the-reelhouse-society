@@ -35,6 +35,10 @@ jest.mock('../../lib/supabase', () => ({
 
 jest.mock('../mmkv-storage', () => ({
   storage: { getString: jest.fn(), set: jest.fn(), delete: jest.fn() },
+  // The profile cache is member content (it carries their email), so it writes
+  // through setSensitive now. These suites stand in for the encrypted case.
+  setSensitive: jest.fn(),
+  isStorageEncrypted: () => true,
   zustandMMKVStorage: { getItem: jest.fn(), setItem: jest.fn(), removeItem: jest.fn() },
   getSecureStorage: jest.fn().mockResolvedValue({ set: jest.fn(), delete: jest.fn(), getString: jest.fn() }),
 }));

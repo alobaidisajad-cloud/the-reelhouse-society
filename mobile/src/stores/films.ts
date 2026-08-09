@@ -26,7 +26,7 @@ const useFilmStoreBase = create<FilmState>()(
         }),
         {
             name: 'reelhouse-films',
-            storage: createAsyncMMKVStorage(),
+            storage: createAsyncMMKVStorage({ sensitive: true }),
             // Deferred hydration until the encryption key is resolved (LIB-5).
             skipHydration: true,
             // Explicit allowlist instead of fragile `_` prefix filter

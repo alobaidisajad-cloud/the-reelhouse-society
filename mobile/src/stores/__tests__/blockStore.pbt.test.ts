@@ -18,6 +18,9 @@ jest.mock('../mmkv-storage', () => ({
     delete: jest.fn((key: string) => { delete mockStorage[key]; }),
   },
   zustandMMKVStorage: { getItem: jest.fn(), setItem: jest.fn(), removeItem: jest.fn() },
+  // Block lists are member content — written through setSensitive now.
+  setSensitive: jest.fn((key: string, value: string) => { mockStorage[key] = value; }),
+  isStorageEncrypted: () => true,
 }));
 
 const mockUser = { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', username: 'testuser', role: 'cinephile' };
