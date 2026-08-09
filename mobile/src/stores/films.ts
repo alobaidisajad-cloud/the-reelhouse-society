@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { createAsyncMMKVStorage, storage } from './mmkv-storage';
+import { createAsyncMMKVStorage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 
 import { ArchiveSlice, createArchiveSlice, archiveSliceInitialState } from './domain/archiveSlice';
@@ -147,8 +147,12 @@ registerStoreReset(() => {
     // the previous member's last 150 logs — private notes included — on the
     // device, to be loaded on next launch before anyone signs in.
     //
-    // `removeItem` is synchronous AND drops the pending write, so it closes the
-    // window rather than racing it. notificationStore does exactly this, for
-    // exactly this reason.
-    try { storage.delete('reelhouse-films'); } catch { /* noop */ }
+    // Goes through the persist API rather than deleting the key by hand. That
+    // matters for a reason I got wrong first time: `storage.delete()` removes the
+    // stored value but leaves the DEFERRED write still queued, so the blob was
+    // simply rewritten moments later. `clearStorage()` calls the adapter's
+    // `removeItem`, which drops the pending write AND deletes — closing the
+    // window instead of racing it. It also uses the store's own name, so
+    // renaming the store cannot orphan this line.
+    try { useFilmStoreBase.persist.clearStorage(); } catch { /* noop */ }
 });

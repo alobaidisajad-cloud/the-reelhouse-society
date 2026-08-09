@@ -47,7 +47,15 @@ jest.mock('../mmkv-storage', () => ({
     contains: jest.fn(() => false), getAllKeys: jest.fn(() => []), clearAll: jest.fn(),
   },
   zustandMMKVStorage: { getItem: jest.fn(() => null), setItem: jest.fn(), removeItem: jest.fn() },
-  createAsyncMMKVStorage: jest.fn(() => ({ getItem: jest.fn(() => null), setItem: jest.fn(), removeItem: jest.fn() })),
+  // removeItem records into the same log as delete: the reset clears the
+  // persisted blob through the persist API, which routes to removeItem — and
+  // removeItem is what also drops the DEFERRED write. A raw delete would leave
+  // that write queued to rewrite the blob moments later.
+  createAsyncMMKVStorage: jest.fn(() => ({
+    getItem: jest.fn(() => null),
+    setItem: jest.fn(),
+    removeItem: jest.fn((k: string) => { deleted.push(k); }),
+  })),
   getSecureStorage: jest.fn().mockResolvedValue({ getString: jest.fn(), set: jest.fn(), delete: jest.fn(), contains: jest.fn(() => false) }),
 }));
 jest.mock('@/src/lib/supabase', () => ({
