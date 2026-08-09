@@ -1,4 +1,5 @@
 import { storage } from '@/src/stores/mmkv-storage';
+import { registerStoreReset } from '@/src/stores/resetAllStores';
 
 const KEY = 'reelhouse_profile_counts';
 
@@ -84,3 +85,18 @@ export function clearCachedCounts(userId: string | null | undefined): void {
   if (!uid) return;
   try { storage.delete(`${KEY}_${uid}`); } catch { /* nothing to do */ }
 }
+
+/**
+ * Wire the eraser above to logout.
+ *
+ * It was written, exported and unit-tested — and never called once by the app,
+ * while 24 sites wrote to this cache. So a member's profile totals stayed on the
+ * device after they signed out, indefinitely. Existing is not the same as wired.
+ *
+ * Registered beside the cache it clears rather than in auth.ts's delete list,
+ * for the same reason as the follow caches: that list is what this was missed
+ * from, and a list maintained somewhere else will be missed from again.
+ */
+registerStoreReset((previousUserId) => {
+  clearCachedCounts(previousUserId);
+});

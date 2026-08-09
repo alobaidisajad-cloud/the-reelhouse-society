@@ -161,10 +161,25 @@ export const useSocialStore = create<SocialState>()((set, get) => ({
 }));
 
 // Register cleanup handler for centralized logout
-registerStoreReset(() => {
+registerStoreReset((previousUserId) => {
     useSocialStore.setState({
         following: [], _followingIndex: new Set(),
         requested: [], _requestedIndex: new Set(),
         pendingRequestCount: 0
     });
+
+    // This store writes two per-member caches to disk, and neither was ever
+    // deleted — the member's social graph and their pending follow requests
+    // stayed on the device after they signed out. Clearing memory alone left
+    // them there indefinitely.
+    //
+    // Erased HERE rather than in auth.ts's hand-maintained delete list, because
+    // that list is exactly what these two were missed from. The store that
+    // writes a cache is the only place that reliably knows it exists.
+    if (previousUserId) {
+        try {
+            storage.delete(`reelhouse_following_${previousUserId}`);
+            storage.delete(`reelhouse_requested_${previousUserId}`);
+        } catch { /* noop */ }
+    }
 });

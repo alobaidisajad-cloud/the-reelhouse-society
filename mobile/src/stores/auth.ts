@@ -178,7 +178,33 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         // STORE-2: getSession succeeded with NO session → the optimistic auth
         // restored from cache at startup is stale; clear it here instead of
         // relying solely on the global onAuthStateChange listener to correct it.
+        //
+        // This is the SECOND way a session ends, and it used to erase nothing
+        // but the auth flag. The previous member's logs, watchlist and archive
+        // stayed in the store and on disk, and `last_user_id` still pointed at
+        // them — so the next launch restored that member optimistically all over
+        // again.
+        //
+        // Worse, it DISABLED the cleanup that would otherwise have caught it:
+        // the SIGNED_OUT listener only calls logout() `if (isAuthenticated)`,
+        // and the line below had just made that false. Clearing the flag removed
+        // the safety net for the data.
+        const staleUserId = get().user?.id ?? null;
         set({ user: null, isAuthenticated: false, loading: false });
+        try {
+          const { resetAllStores } = await import('./resetAllStores');
+          await resetAllStores(staleUserId);
+          if (staleUserId) storage.delete(`ironvault_user_cache_${staleUserId}`);
+          storage.delete('last_user_id');
+          storage.delete('REELHOUSE_QUERY_CACHE');
+          storage.delete('nitrate_memory_feed');
+          queryClient.clear();
+        } catch { /* best effort — the auth flag is already cleared */ }
+        // The offline queue is deliberately NOT cleared here, unlike logout.
+        // A dead session is not a decision to discard work: these are the
+        // member's own unsynced writes, they carry their user_id, and RLS
+        // refuses them under anyone else's session. Dropping them would lose
+        // real data to fix a cache problem.
         return;
       }
     } catch (err: unknown) {
@@ -343,7 +369,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     //    Uses the centralized resetAllStores(); each store self-registers its reset handler.
     try {
       const { resetAllStores } = await import('./resetAllStores');
-      await resetAllStores();
+      // Passed so each store can erase its own per-member disk caches. The auth
+      // store was cleared in step 1, so handlers cannot look this up themselves.
+      await resetAllStores(previousUserId);
     } catch { cleanupErrors.push('stores'); }
 
     // 4. Clear RevenueCat identity — prevents next user inheriting paid entitlements
