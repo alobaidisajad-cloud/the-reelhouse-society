@@ -7,6 +7,7 @@ import { useAuthStore } from './auth';
 import { useBlockStore } from './blockStore';
 import { zustandMMKVStorage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
+import { stillSignedIn } from './domain/helpers/sessionGuard';
 
 /**
  * The most notifications the client holds at once — in memory AND in MMKV.
@@ -241,6 +242,13 @@ export const useNotificationStore = create<NotificationState>()(
             logger.warn('[notificationStore.fetch] unread count failed:', unreadRes.error.message);
         }
 
+        // The member can leave while this is in the air. Writing below would
+        // repopulate the store AFTER the reset cleared it — and this store
+        // PERSISTS, so it would rewrite the very MMKV key the reset deletes to
+        // prevent the cross-user leak documented there. The defence and the
+        // defect are in the same file.
+        if (!stillSignedIn(user.id)) return;
+
         if (!error && data) {
             // Validate HTTP response against RealtimeNotifSchema.
             // The Realtime WS path already had safeParse (L234) but the initial
@@ -315,6 +323,9 @@ export const useNotificationStore = create<NotificationState>()(
 
         const { data, error } = await query;
 
+        // Same as the initial fetch — see the note there.
+        if (!stillSignedIn(user.id)) return;
+
         if (!error && data) {
             // NOTIF-1: per-row salvage, same as initial fetch.
             const validated = (data ?? []).flatMap((row) => {
@@ -364,6 +375,7 @@ export const useNotificationStore = create<NotificationState>()(
     },
 
     markRead: async (id: string) => {
+        const startedAs = useAuthStore.getState().user?.id ?? null;
         const previousState = get().notifications;
         const previousUnread = get()._unreadCount;
         const wasUnread = previousState.some(n => n.id === id && !n.read);
@@ -383,11 +395,16 @@ export const useNotificationStore = create<NotificationState>()(
         } catch (e) {
             logger.warn(`[markRead] Failed for ${id}:`, e);
             // Rollback
-            set({ notifications: previousState, _unreadCount: previousUnread });
+            // Roll back only if they are still here. The optimistic change this
+            // undoes was made before the await, so a logout has already cleared
+            // it — restoring would hand the next member the previous one's
+            // notifications, and persist them.
+            if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousUnread });
         }
     },
 
     markAllRead: async () => {
+        const startedAs = useAuthStore.getState().user?.id ?? null;
         const user = useAuthStore.getState().user;
         if (!user) return;
 
@@ -406,11 +423,16 @@ export const useNotificationStore = create<NotificationState>()(
         } catch (e) {
             logger.warn(`[markAllRead] Failed:`, e);
             // Rollback
-            set({ notifications: previousState, _unreadCount: previousUnread });
+            // Roll back only if they are still here. The optimistic change this
+            // undoes was made before the await, so a logout has already cleared
+            // it — restoring would hand the next member the previous one's
+            // notifications, and persist them.
+            if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousUnread });
         }
     },
 
     dismiss: async (id: string) => {
+        const startedAs = useAuthStore.getState().user?.id ?? null;
         const previousState = get().notifications;
         const previousUnread = get()._unreadCount;
         const wasDismissedUnread = previousState.some(n => n.id === id && !n.read);
@@ -436,11 +458,16 @@ export const useNotificationStore = create<NotificationState>()(
         } catch (e) {
             logger.warn(`[dismiss] Failed for ${id}:`, e);
             // Rollback
-            set({ notifications: previousState, _unreadCount: previousUnread });
+            // Roll back only if they are still here. The optimistic change this
+            // undoes was made before the await, so a logout has already cleared
+            // it — restoring would hand the next member the previous one's
+            // notifications, and persist them.
+            if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousUnread });
         }
     },
 
     markGroupRead: async (ids: string[]) => {
+        const startedAs = useAuthStore.getState().user?.id ?? null;
         if (ids.length === 0) return;
 
         const previousState = get().notifications;
@@ -472,8 +499,9 @@ export const useNotificationStore = create<NotificationState>()(
             if (error) throw error;
         } catch (e) {
             logger.warn(`[markGroupRead] Failed for ${ids.length} items:`, e);
-            // Rollback
-            set({
+            // Rollback — only while they are still signed in; see the note on
+            // the single-item rollbacks above.
+            if (stillSignedIn(startedAs)) set({
                 notifications: previousState,
                 _unreadCount: previousUnread,
             });
@@ -481,6 +509,7 @@ export const useNotificationStore = create<NotificationState>()(
     },
 
     dismissGroup: async (ids: string[]) => {
+        const startedAs = useAuthStore.getState().user?.id ?? null;
         if (ids.length === 0) return;
 
         const previousState = get().notifications;
@@ -511,8 +540,9 @@ export const useNotificationStore = create<NotificationState>()(
             if (error) throw error;
         } catch (e) {
             logger.warn(`[dismissGroup] Failed for ${ids.length} items:`, e);
-            // Rollback
-            set({
+            // Rollback — only while they are still signed in; see the note on
+            // the single-item rollbacks above.
+            if (stillSignedIn(startedAs)) set({
                 notifications: previousState,
                 _unreadCount: previousUnread,
             });

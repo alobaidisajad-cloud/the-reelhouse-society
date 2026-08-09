@@ -23,7 +23,31 @@ const SLICES = [
   'src/stores/domain/archiveSlice.ts',
   'src/stores/domain/interactionSlice.ts',
   'src/stores/domain/socialSlice.ts',
+  // The film store was where #64 was filed, but the defect belongs to any store
+  // a logout clears. notificationStore is the sharpest case outside it: it
+  // PERSISTS, and its reset deletes that file to stop a documented "cross-user
+  // notification leak" — so a late write rewrites the very key the defence
+  // removes. The defence and the defect were in the same file.
+  'src/stores/notificationStore.ts',
 ];
+
+/**
+ * Stores with the same shape, NOT yet guarded — recorded rather than omitted, so
+ * the gap is visible instead of forgotten.
+ *
+ * All three are memory-only (they do not persist), so a late write shows the
+ * previous member's data until the next fetch replaces it, rather than writing
+ * it to disk. That is why they rank below notificationStore and why they are a
+ * scope decision rather than something to fold in silently.
+ *
+ * blockStore additionally keeps a per-member MMKV cache, so it should be first
+ * when this is picked up.
+ */
+const KNOWN_UNGUARDED: Record<string, number> = {
+  'src/stores/blockStore.ts': 5,
+  'src/stores/lounge.ts': 12,
+  'src/stores/content.ts': 6,
+};
 
 const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
@@ -78,6 +102,17 @@ describe('a write that lands after logout must not repopulate the store', () => 
       fs.readFileSync(path.join(ROOT, 'src/stores/domain/logSlice/helpers/logOperations.ts'), 'utf8')
     );
     expect((src.match(/stillSignedIn\(/g) ?? []).length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('the unguarded stores have not grown — the gap is pinned, not forgotten', () => {
+    // If one of these gets worse, this fails and says so. If one gets FIXED, it
+    // also fails — prompting the entry to be removed and the file promoted into
+    // SLICES above. Either direction is a deliberate decision rather than drift.
+    const actual: Record<string, number> = {};
+    for (const file of Object.keys(KNOWN_UNGUARDED)) {
+      actual[file] = opsWritingAfterAwait(file).length;
+    }
+    expect(actual).toEqual(KNOWN_UNGUARDED);
   });
 
   it('the guard compares against a CAPTURED id, never the current one', () => {
