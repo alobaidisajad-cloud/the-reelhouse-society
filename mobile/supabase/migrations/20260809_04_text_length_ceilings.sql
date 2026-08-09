@@ -121,7 +121,16 @@ BEGIN
       ('physical_archive',  'notes',             2000),
       ('video_reviews',     'film_title',         300),
       ('video_reviews',     'title',              300),
-      ('profiles',          'username',            50),   -- validated <=30 both
+      -- 100, NOT the 30 both clients validate to. `handle_new_user` derives a
+      -- username on signup when metadata carries none:
+      --     COALESCE(meta->>'username', split_part(NEW.email, '@', 1))
+      -- An email local-part is up to 64 characters (RFC 5321), so a ceiling of
+      -- 50 would abort the trigger and FAIL THE SIGNUP. Both apps send a
+      -- username today and there is no social login yet — but the signup
+      -- endpoint is public, and adding Sign in with Apple/Google makes that
+      -- fallback the normal path. The ceiling must clear what the SERVER can
+      -- generate, not just what the clients send.
+      ('profiles',          'username',           100),
       ('reports',           'reason',             100),   -- enum, longest 16
       ('reports',           'content_type',        50),   -- enum, longest 15
       ('reports',           'content_id',         100)    -- a uuid, 36
@@ -174,7 +183,7 @@ BEGIN
       ('list_items','notes',2000),('watchlists','film_title',300),
       ('vaults','film_title',300),('physical_archive','film_title',300),
       ('physical_archive','notes',2000),('video_reviews','film_title',300),
-      ('video_reviews','title',300),('profiles','username',50),
+      ('video_reviews','title',300),('profiles','username',100),
       ('reports','reason',100),('reports','content_type',50),
       ('reports','content_id',100)
     ) AS t(tbl, col, cap)

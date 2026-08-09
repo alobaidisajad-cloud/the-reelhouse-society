@@ -176,6 +176,23 @@ describe('database ceilings vs both clients', () => {
     expect(exec).toMatch(/ABORTED/);
   });
 
+  it('profiles.username clears what the SERVER can generate, not what clients send', () => {
+    // Both clients validate a username to 30, so 50 looked generous. It was not.
+    // `handle_new_user` derives one on signup when metadata carries none:
+    //     COALESCE(meta->>'username', split_part(NEW.email, '@', 1))
+    // An email local-part is up to 64 characters (RFC 5321). A ceiling of 50
+    // aborts that trigger and FAILS THE SIGNUP. Reachable today via the public
+    // signup endpoint, and the normal path the moment social login is added.
+    //
+    // The lesson generalises: a ceiling must clear every value that can REACH
+    // the column, including ones no client ever typed.
+    const RFC5321_LOCAL_PART_MAX = 64;
+    const ceiling = ceilings.get('profiles.username')!;
+    expect(`username ceiling ${ceiling} > ${RFC5321_LOCAL_PART_MAX}: ${ceiling > RFC5321_LOCAL_PART_MAX}`).toBe(
+      `username ceiling ${ceiling} > ${RFC5321_LOCAL_PART_MAX}: true`,
+    );
+  });
+
   it('refuses to WAIT for a lock rather than queueing behind live traffic', () => {
     // ADD CONSTRAINT takes ACCESS EXCLUSIVE. The tables are small so the scan is
     // instant — the risk is the wait. Without a lock_timeout, one in-flight query
