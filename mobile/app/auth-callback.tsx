@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { hydrateFollowing } from '@/src/stores/domain/socialSlice';
-import { storage } from '@/src/stores/mmkv-storage';
+import { storage, setSensitive } from '@/src/stores/mmkv-storage';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import type { EmailOtpType, Session } from '@supabase/supabase-js';
@@ -56,7 +56,7 @@ export default function AuthCallbackScreen() {
     const sessionOnlyUser = { ...session.user, following: [] } as unknown as import('@/src/types').User;
     useAuthStore.setState({ user: sessionOnlyUser, isAuthenticated: true });
     try {
-      storage.set(`ironvault_user_cache_${sessionOnlyUser.id}`, JSON.stringify(sessionOnlyUser));
+      setSensitive(`ironvault_user_cache_${sessionOnlyUser.id}`, JSON.stringify(sessionOnlyUser));
       storage.set('last_user_id', sessionOnlyUser.id);
     } catch { /* non-critical */ }
 
@@ -70,7 +70,7 @@ export default function AuthCallbackScreen() {
         const updatedUser = s.user ? { ...s.user, ...profile } : null;
         if (updatedUser) {
           try {
-            storage.set(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
+            setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
           } catch { /* non-critical */ }
         }
         return { user: updatedUser };

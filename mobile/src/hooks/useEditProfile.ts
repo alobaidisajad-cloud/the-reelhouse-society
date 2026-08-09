@@ -3,7 +3,8 @@ import { Alert } from 'react-native';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuthStore, storage } from '@/src/stores/auth';
+import { useAuthStore } from '@/src/stores/auth';
+import { setSensitive } from '@/src/stores/mmkv-storage';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { useRouter } from 'expo-router';
 import { validateUsername } from '@/src/utils/validateUsername';
@@ -284,7 +285,7 @@ export function useEditProfile() {
           display_name: updates.display_name ?? state.user.display_name 
         } as any : null;
         if (updatedUser) {
-          storage.set(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
+          setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
         }
         return { user: updatedUser };
       });

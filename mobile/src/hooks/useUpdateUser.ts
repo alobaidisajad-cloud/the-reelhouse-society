@@ -5,7 +5,7 @@ import { User } from '../types';
 import { ProfileService } from '../services/ProfileWriteService';
 import TactileEngine from '../utils/TactileEngine';
 import reelToast from '../utils/reelToast';
-import { storage } from '../stores/mmkv-storage';
+import { setSensitive } from '../stores/mmkv-storage';
 import { CACHE_KEYS } from '../constants/cacheKeys';
 
 export function useUpdateUser() {
@@ -35,7 +35,7 @@ export function useUpdateUser() {
         const updatedUser = { ...prevUser, ...mappedUpdates } as User;
         useAuthStore.setState({ user: updatedUser });
         
-        storage.set(CACHE_KEYS.USER(updatedUser.id), JSON.stringify(updatedUser));
+        setSensitive(CACHE_KEYS.USER(updatedUser.id), JSON.stringify(updatedUser));
       }
       return { prevUser };
     },
@@ -43,7 +43,7 @@ export function useUpdateUser() {
       if (__DEV__) logger.warn('[useUpdateUser] DB sync failed, rolling back:', err);
       if (context?.prevUser) {
         useAuthStore.setState({ user: context.prevUser });
-        storage.set(CACHE_KEYS.USER(context.prevUser.id), JSON.stringify(context.prevUser!));
+        setSensitive(CACHE_KEYS.USER(context.prevUser.id), JSON.stringify(context.prevUser!));
       }
       reelToast.error('Profile update failed \u2014 changes reverted.');
     },

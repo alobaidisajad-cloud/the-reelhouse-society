@@ -110,6 +110,50 @@ describe('#49 · member content never reaches disk unencrypted', () => {
       .toMatch(/createJSONStorage\(\(\) => zustandMMKVStorageSensitive\)/);
   });
 
+  it('EVERY write of the profile cache is gated — swept app-wide, not by directory', () => {
+    // My first sweep looked only in src/stores and src/utils, and closed 9 of 15
+    // sites. Six more lived in src/hooks and app/ — two of them reached the key
+    // through CACHE_KEYS.USER(), so even a literal grep for the key would have
+    // missed them. Enumerated over the whole tree, matching BOTH spellings.
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) {
+          if (['node_modules', '__tests__', '.expo', 'android', 'ios'].includes(e.name)) continue;
+          walk(full, out);
+        } else if (/\.tsx?$/.test(e.name)) out.push(full);
+      }
+      return out;
+    };
+
+    const offenders: string[] = [];
+    for (const file of [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))]) {
+      const src = strip(fs.readFileSync(file, 'utf8'));
+      if (/storage\.set\(\s*`ironvault_user_cache_/.test(src) ||
+          /storage\.set\(\s*CACHE_KEYS\.USER\(/.test(src)) {
+        offenders.push(path.relative(ROOT, file).replace(/\\/g, '/'));
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('the persisted QUERY cache is gated too — it holds fetched member data', () => {
+    // Missed entirely on the first pass: this persists whatever queries ran —
+    // profiles, feeds, logs. A pure cache, refetchable, and already deleted on
+    // logout, so gating it costs only a colder start.
+    const qc = strip(read('src/lib/queryClient.ts'));
+    expect(qc).toMatch(/setSensitive\(CACHE_KEY, serialized\)/);
+    expect(qc).not.toMatch(/storage\.set\(CACHE_KEY/);
+  });
+
+  it('DRAFTS are never gated — they are the member\'s unsaved writing', () => {
+    // The same rule that the pending preferences taught: unsynced work must
+    // survive regardless of encryption. A log draft and a dossier draft are the
+    // member's own words, not a copy of something the server already has.
+    expect(strip(read('src/hooks/useLogFlow.ts'))).toMatch(/storage\.set\(DRAFT_KEY/);
+    expect(strip(read('app/dispatch/compose.tsx'))).toMatch(/storage\.set\(DRAFT_KEY/);
+  });
+
   it('the profile cache — which carries the member EMAIL — is gated', () => {
     // `{ ...session.user, ...profile }`, and JSON.stringify keeps every
     // property. This was the worst of the plaintext writes.

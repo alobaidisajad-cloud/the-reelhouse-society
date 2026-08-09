@@ -20,7 +20,7 @@
 import { QueryClient } from '@tanstack/react-query';
 // Import from lightweight mmkv-storage instead of heavyweight auth.ts
 // to avoid circular dependency risk (auth -> queryClient -> auth)
-import { storage } from '../stores/mmkv-storage';
+import { storage, setSensitive } from '../stores/mmkv-storage';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 
 // ── Query Client Configuration ──────────────────────────────
@@ -57,7 +57,7 @@ export const mmkvPersister: Persister = {
         storage.delete(CACHE_KEY);
         return;
       }
-      storage.set(CACHE_KEY, serialized);
+      setSensitive(CACHE_KEY, serialized);
     } catch {
       // Silently fail — app works without cache, just slower on cold start
     }

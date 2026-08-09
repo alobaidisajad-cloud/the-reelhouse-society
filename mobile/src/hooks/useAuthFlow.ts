@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/src/lib/supabase';
-import { useAuthStore, storage } from '@/src/stores/auth';
+import { useAuthStore } from '@/src/stores/auth';
+import { setSensitive } from '@/src/stores/mmkv-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as WebBrowser from 'expo-web-browser';
@@ -167,7 +168,7 @@ export function useAuthFlow() {
         if (!profile) throw new Error('Profile synchronization timeout');
         const completeUser = { ...data.session.user, ...profile, following: [] } as import('@/src/types').User;
         useAuthStore.setState({ user: completeUser, isAuthenticated: true });
-        try { storage.set(`ironvault_user_cache_${completeUser.id}`, JSON.stringify(completeUser)); } catch {}
+        try { setSensitive(`ironvault_user_cache_${completeUser.id}`, JSON.stringify(completeUser)); } catch {}
         setAwaitingConfirmation(false);
         (router.replace as any)('/(tabs)');
       }

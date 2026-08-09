@@ -7,7 +7,7 @@
  * code that actually runs at launch.
  */
 import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
-import { storage } from '@/src/stores/mmkv-storage';
+import { storage, setSensitive } from '@/src/stores/mmkv-storage';
 
 jest.mock('@/src/stores/mmkv-storage', () => {
   const store = new Map<string, string>();
@@ -18,6 +18,12 @@ jest.mock('@/src/stores/mmkv-storage', () => {
       delete: jest.fn((k: string) => store.delete(k)),
       __store: store,
     },
+    // The persisted query cache holds fetched member data, so it writes through
+    // setSensitive now — which refuses while storage is unencrypted. This suite
+    // tests the size ceiling and round-trip, so it stands in for the encrypted
+    // case; the refusal has its own test in encryptionAtRest.guard.test.ts.
+    setSensitive: jest.fn((k: string, v: string) => store.set(k, v)),
+    isStorageEncrypted: () => true,
   };
 });
 
@@ -33,7 +39,9 @@ beforeEach(() => jest.clearAllMocks());
 describe('mmkvPersister — cache size ceiling', () => {
   it('persists an ordinary cache', async () => {
     await mmkvPersister.persistClient(client());
-    expect(storage.set).toHaveBeenCalled();
+    // The persister writes through setSensitive now — the query cache holds
+    // fetched member data. Same intent: it persisted.
+    expect(setSensitive).toHaveBeenCalled();
   });
 
   it('REFUSES a cache over the 2 MB ceiling, and clears the old one', async () => {
@@ -42,7 +50,7 @@ describe('mmkvPersister — cache size ceiling', () => {
     // a slow launch is worse than a cold one.
     const huge = { timestamp: Date.now(), buster: '', clientState: { mutations: [], queries: [{ big: 'x'.repeat(3 * 1024 * 1024) }] } };
     await mmkvPersister.persistClient(huge as never);
-    expect(storage.set).not.toHaveBeenCalled();
+    expect(setSensitive).not.toHaveBeenCalled();
     expect(storage.delete).toHaveBeenCalled();
   });
 
