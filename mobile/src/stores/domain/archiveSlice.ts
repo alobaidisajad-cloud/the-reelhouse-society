@@ -5,6 +5,7 @@ import { enqueueMutation } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { isArchivistPlusTier } from '../../utils/tier';
 import { useAuthStore } from '../auth';
+import { stillSignedIn } from './helpers/sessionGuard';
 
 import { captureError } from '../../lib/sentry';
 import { isNetworkError } from '../../utils/networkError';
@@ -70,6 +71,11 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             }
 
             const { data, error } = await query;
+            // Guarded on the SIGNED-IN member, not on `uid`. `uid` is who the
+            // fetch was for — which may be another member's public archive — so
+            // comparing it to the session would make this op bail every time
+            // someone viewed a profile that was not their own.
+            if (!stillSignedIn(user?.id)) return get().physicalArchive;
             if (!error && data) {
                 const items = data.map((item) => ({
                     id: item.id,
@@ -141,6 +147,10 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
                 notes,
                 condition,
             }], { onConflict: 'user_id, film_id' }).select().single();
+
+            // Left mid-write — see sessionGuard. The row is saved server-side
+            // either way; the writes below would put it in the next member's store.
+            if (!stillSignedIn(user.id)) return;
             
             if (error) throw error;
             
@@ -191,6 +201,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
 
         try {
             const { error } = await supabase.from('physical_archive').delete().eq('user_id', user.id).eq('film_id', filmId);
+            if (!stillSignedIn(user.id)) return;
             if (error) throw error;
          
         } catch (e: unknown) {
@@ -222,6 +233,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
             if (updates.condition !== undefined) dbUpdates.condition = updates.condition;
             const { error } = await supabase.from('physical_archive').update(dbUpdates).eq('user_id', user.id).eq('film_id', filmId);
+            if (!stillSignedIn(user.id)) return;
             if (error) throw error;
          
         } catch (e: unknown) {
@@ -252,6 +264,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(500);
+        if (!stillSignedIn(user.id)) return;
         if (!error && data) {
             set({
                 stubs: data.map((t) => {

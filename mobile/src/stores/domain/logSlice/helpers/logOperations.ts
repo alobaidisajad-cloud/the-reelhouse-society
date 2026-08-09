@@ -13,6 +13,7 @@ import { sanitizeInput } from '../../../../utils/sanitizeInput';
 import { resolveTier } from '../../../../utils/tier';
 import { localCalendarDate } from '../../../../utils/timeAgo';
 import { useAuthStore } from '../../../auth';
+import { stillSignedIn } from '../../helpers/sessionGuard';
 import type { FilmState } from '../../../films';
 
 import { StoreApi } from 'zustand';
@@ -117,7 +118,14 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
         }
 
         const { data, error } = await query;
-        
+
+        // The member can leave while this is in the air. Writing below would put
+        // their collection back into a store that logout has already cleared —
+        // and persist would then copy it to disk, undoing the deletion that
+        // closes #64's leak. Nothing to clean up here: the reset already
+        // restored every flag this op set.
+        if (!stillSignedIn(user.id)) return;
+
         if (error || !data) { set({ _fetchingLogs: false }); return; }
         
         const hasMore = data.length === PAGE_SIZE;
@@ -381,6 +389,12 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 }
             }
 
+            // Left mid-write: the row is theirs and already saved server-side,
+            // so nothing is lost by not showing it — but putting it into a store
+            // that logout has cleared would leave one of their films visible to
+            // whoever signs in next.
+            if (!stillSignedIn(user.id)) return;
+
             const fullLog = mapLogRow(finalData) as import('@/src/types').DomainLog;
             set((state) => {
                 const newLogs = sortLogs([fullLog, ...state.logs]);
@@ -517,7 +531,12 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
             viewing_history: [],
         };
         const { data, error } = await supabase.from('logs').insert([payload]).select().single();
-        
+
+        // Guarded like every sibling op, though this one is currently
+        // unreachable — it has no callers. Fixed anyway so reviving it cannot
+        // revive the defect beside its corrected twins.
+        if (!stillSignedIn(user.id)) return;
+
         let finalLogId = newLogId;
         let createdAt = new Date().toISOString();
 
@@ -825,7 +844,12 @@ export const updateLogOp = async (
             return { queuedOffline };
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp', logId: id });
-            if (originalLog) {
+            // Roll back only if they are still here. The optimistic write this
+            // undoes was made before the await, so logout has already cleared
+            // it — restoring `originalLog` now would put one of the previous
+            // member's records into an empty store. Telemetry above still fires;
+            // the defect is worth knowing about either way.
+            if (originalLog && stillSignedIn(user.id)) {
                 set((state) => {
                     const revertedLogs = sortLogs(state.logs.map(l => l.id === id ? originalLog : l));
                     const nextIdx = { ...state._loggedIndex };
@@ -856,6 +880,11 @@ export const updateLogOp = async (
     }
 
 export const removeLogOp = async (set: SetState, get: GetState, id: string, forceDeleteAll: boolean = false) => {
+        // Captured HERE, before any await, so the rollback below can tell "still
+        // the same member" from "somebody else is signed in now". Reading the
+        // current user at rollback time and comparing it to itself would always
+        // be true — a guard that cannot fail.
+        const startedAs = useAuthStore.getState().user?.id ?? null;
         const logToRemove = get().logs.find((l) => l.id === id);
         if (!logToRemove) return;
         
@@ -947,15 +976,21 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             if (__DEV__) console.warn(`[removeLog] Failed for log ${id}:`, e);
 
             if (!isNetworkError(e)) captureError(e, { scope: 'removeLogOp', logId: id });
-            set((state) => {
-                const newLogs = sortLogs([logToRemove, ...state.logs]);
-                const nextIdx = { ...state._loggedIndex };
-                if (logToRemove.filmId) {
-                    const updated = newLogs.find(l => l.filmId === logToRemove.filmId);
-                    if (updated) nextIdx[logToRemove.filmId] = updated as DomainLog;
-                }
-                return { logs: newLogs, _loggedIndex: nextIdx };
-            });
+            // Restoring the log they tried to delete is right only while they are
+            // still signed in. After a logout the optimistic removal is already
+            // gone with the rest of the store, and putting the record back would
+            // hand the next member one of theirs.
+            if (stillSignedIn(startedAs)) {
+                set((state) => {
+                    const newLogs = sortLogs([logToRemove, ...state.logs]);
+                    const nextIdx = { ...state._loggedIndex };
+                    if (logToRemove.filmId) {
+                        const updated = newLogs.find(l => l.filmId === logToRemove.filmId);
+                        if (updated) nextIdx[logToRemove.filmId] = updated as DomainLog;
+                    }
+                    return { logs: newLogs, _loggedIndex: nextIdx };
+                });
+            }
             if (logToRemove.filmId && previousFilmData !== undefined) {
                 queryClient.setQueryData(['film', Number(logToRemove.filmId)], previousFilmData);
             }

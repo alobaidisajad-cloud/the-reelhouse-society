@@ -8,6 +8,7 @@ import { enqueueMutation } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { useAuthStore } from '../auth';
 import { runWithMutex } from './helpers/promiseMutex';
+import { stillSignedIn } from './helpers/sessionGuard';
 
 /** The DATA this slice owns — see the note on `LogSliceData`. */
 export interface WatchlistSliceData {
@@ -67,6 +68,10 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
         }
 
         const { data, error } = await query;
+
+        // Left while this was in the air — see sessionGuard. Writing their
+        // watchlist back into a cleared store would also persist it to disk.
+        if (!stillSignedIn(user.id)) return;
 
         if (error || !data) { set({ _fetchingWatchlist: false }); return; }
 
@@ -142,6 +147,12 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
                 year: film.release_date ? (parseInt(film.release_date.slice(0, 4)) || null) : null,
             }]);
 
+            // Only the failure branches below write, and each rolls the
+            // optimistic entry back. After a logout that entry is already gone
+            // with the rest of the store, so rolling back would edit the next
+            // member's watchlist instead.
+            if (!stillSignedIn(user.id)) return;
+
             if (error) {
                 if (isNetworkError(error)) {
                     // Queue for offline sync instead of silent rollback
@@ -206,6 +217,10 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
 
         const dbOperation = async () => {
             const { error } = await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId);
+
+            // Same as the add path: the only write below restores the film, and
+            // restoring it after a logout hands it to whoever is next.
+            if (!stillSignedIn(user.id)) return;
 
             if (error) {
                 if (isNetworkError(error)) {

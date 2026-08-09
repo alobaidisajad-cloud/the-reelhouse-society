@@ -12,6 +12,7 @@ import { enqueueMutation } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { sanitizeInput } from '../../utils/sanitizeInput';
 import { useAuthStore } from '../auth';
+import { stillSignedIn } from './helpers/sessionGuard';
 
 /**
  * The DATA this slice owns — see the note on `LogSliceData`.
@@ -81,6 +82,10 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         }
 
         const { data, error } = await query;
+
+        // Left mid-fetch — see sessionGuard. Their stacks must not be written
+        // back into a store the reset has cleared, nor persisted to disk with it.
+        if (!stillSignedIn(user.id)) return;
 
         if (error || !data) { set({ _fetchingLists: false }); return; }
 
@@ -199,6 +204,12 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         const { data, error } = await supabase.from('lists').insert([{
             id: listId, user_id: user.id, title, description, is_private: list.isPrivate ?? false, is_ranked: list.isRanked ?? false
         }]).select().single();
+
+        // Left mid-create. The stack is theirs and already exists server-side —
+        // every path below only decides how to show it, and showing it now would
+        // put it in the next member's store.
+        if (!stillSignedIn(user.id)) return;
+
         if (error) {
             if (isNetworkError(error)) {
                 // Queue for offline sync
@@ -280,9 +291,10 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         try {
             if (Object.keys(dbUpdates).length > 0) {
                 const { error } = await supabase.from('lists').update(dbUpdates).eq('id', listId).eq('user_id', user.id);
+                if (!stillSignedIn(user.id)) return;
                 if (error) throw error;
             }
-            
+
             if (inputFilms !== undefined) {
                 if (inputFilms.length > 0) {
                     const items = inputFilms.map((f, idx) => ({
@@ -369,6 +381,10 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             // New implementation: single RPC = single PostgreSQL transaction = all-or-nothing.
             // Ownership is verified via auth.uid() inside the function (not client-supplied user_id).
             const { error } = await supabase.rpc('delete_list_cascade', { p_list_id: listId });
+            // The deletion is done server-side; what follows only restores the
+            // stack on failure, and restoring it after a logout would hand the
+            // next member one of theirs.
+            if (!stillSignedIn(user.id)) return;
             if (error) {
                 throw error;
             }
@@ -394,6 +410,10 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
     },
 
     addFilmToList: async (listId, film) => {
+        // Captured before any await. This op never needed the member otherwise —
+        // ownership is enforced server-side — so it is read here purely so the
+        // guard below can tell "still them" from "someone else signed in since".
+        const startedAs = useAuthStore.getState().user?.id ?? null;
         const listIdx = get().lists.findIndex(l => l.id === listId);
         if (listIdx === -1) return;
         
@@ -419,6 +439,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                 list_id: listId, film_id: film.id, film_title: newFilm.title,
                 poster_path: newFilm.poster,
             }]);
+            if (!stillSignedIn(startedAs)) return;
             if (error) throw error;
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
         } catch (e: unknown) {
@@ -445,6 +466,8 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
     },
 
     removeFilmFromList: async (listId, filmId) => {
+        // Captured before any await — see addFilmToList.
+        const startedAs = useAuthStore.getState().user?.id ?? null;
         const listIdx = get().lists.findIndex(l => l.id === listId);
         if (listIdx === -1) return;
         
@@ -465,8 +488,9 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
 
         try {
             const { error } = await supabase.from('list_items').delete().eq('list_id', listId).eq('film_id', filmId);
+            if (!stillSignedIn(startedAs)) return;
             if (error) throw error;
-            
+
             // Sync trailing films online to fix Position-Shift paradox
             if (trailing_films.length > 0) {
                 const rows = trailing_films.map(f => ({

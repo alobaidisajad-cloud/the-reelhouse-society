@@ -14,6 +14,7 @@ import { useAuthStore } from '../auth';
 // FIFO per key, active garbage collection, and the rejection still reaches the
 // caller so toggleEndorse can roll back.
 import { runWithMutex } from './helpers/promiseMutex';
+import { stillSignedIn } from './helpers/sessionGuard';
 
 /** The DATA this slice owns — see the note on `LogSliceData`. */
 export interface InteractionSliceData {
@@ -85,6 +86,11 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 if (e?.code !== '23505' && !isNetworkError(e)) {
                     captureError(e, { scope: 'interactionSlice.toggleEndorsement' });
                 }
+                // Telemetry above still fires — a defect is worth knowing about
+                // either way — but the rollbacks below must not run once the
+                // member has gone: the optimistic change they undo left with the
+                // rest of the store.
+                if (!stillSignedIn(user.id)) return;
                 // Idempotent: silently succeed if the row already exists
                 if (e?.code === '23505') {
                     return;
@@ -131,6 +137,8 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
             .eq('type', 'endorse_log')
             .order('created_at', { ascending: false })
             .limit(500); // Reduced from 2000 — prevents massive payloads
+        // Left mid-fetch — see sessionGuard.
+        if (!stillSignedIn(user.id)) return;
         if (!error && data) {
             const mapped: Interaction[] = (data ?? []).map(r => ({
                 type: 'endorse' as const,
@@ -193,6 +201,11 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 if (e?.code !== '23505' && !isNetworkError(e)) {
                     captureError(e, { scope: 'interactionSlice.toggleEndorsement' });
                 }
+                // Telemetry above still fires — a defect is worth knowing about
+                // either way — but the rollbacks below must not run once the
+                // member has gone: the optimistic change they undo left with the
+                // rest of the store.
+                if (!stillSignedIn(user.id)) return;
                 // Idempotent: silently succeed if the row already exists
                 if (e?.code === '23505') {
                     return;
@@ -240,6 +253,8 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
             .eq('type', 'endorse_list')
             .order('created_at', { ascending: false })
             .limit(500); // Reduced from 2000
+        // Left mid-fetch — see sessionGuard.
+        if (!stillSignedIn(user.id)) return;
         if (!error && data) {
             const newListEndorsements = (data ?? []).map(r => ({
                 type: 'endorse_list' as const,
