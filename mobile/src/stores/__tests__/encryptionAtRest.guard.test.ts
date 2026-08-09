@@ -118,6 +118,32 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     expect(auth).toMatch(/setSensitive\(`ironvault_user_cache_/);
   });
 
+  it('a pending preference does not depend on the gated cache to survive', () => {
+    // The regression THIS batch introduced and the audit caught. The prefs used
+    // to live only inside the profile cache, with `dirty_prefs_<id>` as a bare
+    // 'true' flag. Gating that cache meant the flag survived and its payload did
+    // not: the reconciler found "unsynced" with nothing to sync, skipped
+    // silently, and left the flag set forever. The member's change was gone.
+    const auth = strip(read('src/stores/auth.ts'));
+
+    // The key now HOLDS the preferences, and is written ungated.
+    expect(auth).toMatch(/storage\.set\(`dirty_prefs_\$\{user\.id\}`, JSON\.stringify\(prefs\)\)/);
+    // Both readers go through the one helper rather than reaching into the cache.
+    expect((auth.match(/readPendingPrefs\(/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    // And no reader still tests the bare legacy flag inline.
+    expect(auth).not.toMatch(/dirty_prefs_\$\{session\.user\.id\}`\) === 'true'/);
+  });
+
+  it('and a device mid-upgrade still recovers its legacy pending prefs', () => {
+    // A device that wrote 'true' before this change still has its values in the
+    // cache. Discarding them to fix a bug about discarding them would be absurd,
+    // so the helper reads the legacy shape too.
+    const auth = strip(read('src/stores/auth.ts'));
+    const helper = auth.slice(auth.indexOf('function readPendingPrefs'));
+    expect(helper.slice(0, 900)).toMatch(/raw === 'true'/);
+    expect(helper.slice(0, 900)).toMatch(/ironvault_user_cache_\$\{userId\}/);
+  });
+
   it('but PENDING WRITES are never gated — that would be data loss', () => {
     // The line is caches versus unsynced work. A cache is refetchable, so
     // skipping it costs a slower first paint. A pending write is the member's

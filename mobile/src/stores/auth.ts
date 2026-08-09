@@ -54,6 +54,40 @@ function _withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`timeout after ${ms}ms`)), ms)),
   ]);
 }
+/**
+ * The member's unsynced preference change, or null if there is none.
+ *
+ * `dirty_prefs_<id>` now HOLDS the preferences. It used to be the string
+ * 'true', with the actual values living inside the profile cache — which is fine
+ * until that cache becomes conditional (it is: it carries the member's email and
+ * is only written when storage is encrypted). Then the flag outlives its payload
+ * and the change is lost silently.
+ *
+ * BACKWARD COMPATIBLE on purpose: a device that upgraded mid-flight still has
+ * the legacy 'true' there, and its values still in the cache. That case is read
+ * exactly as before rather than discarded — losing a member's pending change to
+ * fix a bug about losing a member's pending change would be its own joke.
+ */
+function readPendingPrefs(userId: string): Record<string, unknown> | null {
+  const raw = storage.getString(`dirty_prefs_${userId}`);
+  if (!raw) return null;
+
+  if (raw === 'true') {
+    // Legacy shape — the values are in the profile cache.
+    const cached = storage.getString(`ironvault_user_cache_${userId}`);
+    if (!cached) return null;
+    try {
+      const prefs = JSON.parse(cached)?.preferences;
+      return prefs && typeof prefs === 'object' ? prefs as Record<string, unknown> : null;
+    } catch { return null; }
+  }
+
+  try {
+    const prefs = JSON.parse(raw);
+    return prefs && typeof prefs === 'object' ? prefs as Record<string, unknown> : null;
+  } catch { return null; }
+}
+
 function pruneThrottles() {
   if (_actionThrottles.size < _THROTTLE_MAX) return;
   const now = Date.now();
@@ -128,21 +162,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         // Dirty-prefs reconciliation: push local prefs to server if not yet synced
-        const isDirtyPrefs = storage.getString(`dirty_prefs_${session.user.id}`) === 'true';
-        if (isDirtyPrefs) {
-          const cachedData = storage.getString(`ironvault_user_cache_${session.user.id}`);
-          if (cachedData) {
-            try {
-              const cached = JSON.parse(cachedData);
-              if (cached.preferences) {
-                // Merge, don't overwrite: another device may have set keys while
-                // this one was offline with dirty prefs (COMP-7 cross-device).
-                await supabase.rpc('update_my_preferences', { p_preferences: cached.preferences });
-                storage.delete(`dirty_prefs_${session.user.id}`);
-              }
-            } catch {
-              // Push failed — local prefs will be preserved below
-            }
+        const pendingPrefs = readPendingPrefs(session.user.id);
+        if (pendingPrefs) {
+          try {
+            // Merge, don't overwrite: another device may have set keys while
+            // this one was offline with dirty prefs (COMP-7 cross-device).
+            await supabase.rpc('update_my_preferences', { p_preferences: pendingPrefs });
+            storage.delete(`dirty_prefs_${session.user.id}`);
+          } catch {
+            // Push failed — the pending prefs stay on disk and are re-tried on
+            // the next launch, and are preserved in `finalPrefs` below so the
+            // server's older copy does not overwrite them in the meantime.
           }
         }
 
@@ -150,12 +180,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', session.user.id).single();
         if (profile) {
           // CRITICAL: Preserve the cached following list — don't overwrite with []
-          const stillDirty = storage.getString(`dirty_prefs_${session.user.id}`) === 'true';
-          let finalPrefs = profile.preferences;
-          if (stillDirty) {
-            const cd = storage.getString(`ironvault_user_cache_${session.user.id}`);
-            if (cd) { try { finalPrefs = JSON.parse(cd).preferences ?? finalPrefs; } catch {} }
-          }
+          // Read from the pending-prefs key, which survives regardless of
+          // encryption — see setPreference. The server's copy must not overwrite
+          // a change the member made that has not synced yet.
+          const stillPending = readPendingPrefs(session.user.id);
+          const finalPrefs = stillPending ?? profile.preferences;
           // Merge any profile fields (bio, display_name, persona, avatar_url, ...) that updateUser()
           // has optimistically written but not yet confirmed server-side — otherwise a concurrent
           // restoreSession (e.g. post-purchase polling) would silently revert the in-flight edit.
@@ -526,7 +555,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     // 2. Optimistic update (Cache) - guarantees state persists even if app closes during debounce
     setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify({ ...get().user, preferences: prefs }));
-    storage.set(`dirty_prefs_${user.id}`, 'true');
+
+    // The PENDING preferences get their own durable home, and it is NOT gated on
+    // encryption — this is unsynced work, not a cache.
+    //
+    // They used to live only inside the profile cache above, with this key as a
+    // bare 'true' flag. Once that cache became conditional on encryption, the
+    // flag survived and its payload did not: the reconciler on the next launch
+    // found "unsynced" with nothing to sync, skipped silently, and left the flag
+    // set forever. The member's preference change was simply gone.
+    //
+    // A pending write must never depend on a cache to survive.
+    storage.set(`dirty_prefs_${user.id}`, JSON.stringify(prefs));
 
     if (_prefTimers.has(timerKey)) {
       clearTimeout(_prefTimers.get(timerKey)!);
