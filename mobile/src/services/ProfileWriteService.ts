@@ -35,7 +35,15 @@ export const ProfileService = {
    * NOTE: The `role` column is intentionally excluded from ProfileUpdateSchema
    * to prevent client-side privilege escalation. Ensure Supabase RLS blocks this as well.
    */
-  async updateProfile(userId: string, updates: Partial<User>) {
+  /**
+   * @param previousUsername the handle this member held BEFORE this update, when
+   *   the caller knows it. Passed explicitly rather than read back from the
+   *   profile cache: that cache is only written when storage can be encrypted,
+   *   so on a device whose keystore has failed it does not exist — and the
+   *   handle-history record below would have stopped being written, silently,
+   *   with no other symptom. The caller has this value already.
+   */
+  async updateProfile(userId: string, updates: Partial<User>, previousUsername?: string) {
     // 1. Explicit Session Authorization
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !session?.user) {
@@ -103,8 +111,14 @@ export const ProfileService = {
     // the repair exists to catch.
     if (typeof dbUpdates.username === 'string') {
       try {
-        const cached = storage.getString(CACHE_KEYS.USER(userId));
-        const previous = cached ? (JSON.parse(cached) as { username?: string })?.username : undefined;
+        // Prefer what the caller handed us; fall back to the cache for callers
+        // that do not pass it. The cache is only present when storage could be
+        // encrypted, so relying on it alone made this silently stop recording.
+        let previous = previousUsername;
+        if (!previous) {
+          const cached = storage.getString(CACHE_KEYS.USER(userId));
+          previous = cached ? (JSON.parse(cached) as { username?: string })?.username : undefined;
+        }
         if (previous && previous.toLowerCase() !== dbUpdates.username.toLowerCase()) {
           rememberPreviousHandle(userId, previous);
         }

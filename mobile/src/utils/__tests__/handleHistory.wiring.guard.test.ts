@@ -49,8 +49,23 @@ describe('the handle being given up is recorded at the FUNNEL, not at one door',
   it('records the OLD handle, read before the new one replaced it', () => {
     // Recording the handle being moved TO would leave the repair unable to recognise
     // the one the member is stranded on.
-    expect(service).toMatch(/const previous = cached \?/);
+    //
+    // UPDATED, and the implementation is stronger than what this used to assert.
+    // It required the old handle be read from the profile CACHE. That cache is now
+    // only written when storage can be encrypted, so on a device whose keystore has
+    // failed it does not exist — and this recording would have stopped happening
+    // silently, with no other symptom. The caller passes the value it already holds,
+    // and the cache remains only as a fallback for callers that do not.
+    expect(service).toMatch(/previousUsername\?: string/);
+    expect(service).toMatch(/let previous = previousUsername;/);
     expect(service).toMatch(/CACHE_KEYS\.USER\(userId\)/);
+  });
+
+  it('and the rename doors hand it over rather than relying on that cache', () => {
+    const auth = fs.readFileSync(path.join(__dirname, '..', '..', 'stores', 'auth.ts'), 'utf8');
+    // auth.updateUser optimistically moves the store BEFORE calling the service, so
+    // memory already holds the NEW name there — `prevUser` is the only reliable source.
+    expect(auth).toMatch(/updateProfile\(user\.id, safeUpdates as Partial<User>, prevUser\?\.username\)/);
   });
 
   it('records AFTER the write succeeds — a handle we failed to give up is not a past one', () => {

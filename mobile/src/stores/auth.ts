@@ -504,7 +504,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       // useEntitlement.ts) merges them instead of overwriting with the stale fetched profile.
       storage.set(`dirty_profile_${user.id}`, JSON.stringify(safeUpdates));
       try {
-        await ProfileService.updateProfile(user.id, safeUpdates as Partial<User>);
+        // The previous handle travels explicitly. The store was optimistically
+        // updated above, so memory already holds the NEW name, and the profile
+        // cache — the only other place the old one survived — is written only
+        // when storage can be encrypted. `prevUser` is the one reliable source.
+        await ProfileService.updateProfile(user.id, safeUpdates as Partial<User>, prevUser?.username);
         storage.delete(`dirty_profile_${user.id}`);
       } catch (e: unknown) {
         // Rollback optimistic update
