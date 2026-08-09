@@ -316,6 +316,8 @@ export default function TribunalScreen() {
     isLoading,
     isRefetching: refreshing,
     refetch,
+    // A failed docket used to render as an EMPTY one — see `queueFailed` below.
+    isError: pendingFailed,
   } = useQuery({
     queryKey: ['admin', 'reports', 'pending'],
     queryFn: () => ModerationService.getPendingReports(),
@@ -373,6 +375,7 @@ export default function TribunalScreen() {
     isLoading: priorityLoading,
     isRefetching: priorityRefreshing,
     refetch: refetchPriority,
+    isError: priorityFailed,
   } = useQuery({
     queryKey: ['admin', 'reports', 'priority'],
     queryFn: () => ModerationService.getPriorityQueue(20),
@@ -627,6 +630,25 @@ export default function TribunalScreen() {
 
   const displayData: TribunalReport[] = activeView === 'pending' ? pendingItems : priorityItems;
   const isLoadingData = activeView === 'pending' ? isLoading : priorityLoading;
+
+  /**
+   * Did the query behind the visible tab FAIL?
+   *
+   * Neither query used to report this, so a failure left the list empty and the
+   * screen said "The docket is clear. The house rests." — a moderator was told
+   * there was nothing to review when nothing had loaded. The urgent queue had
+   * been in that state permanently (its RPC signature never matched), and the
+   * main docket was one bad request away from the same lie.
+   *
+   * A queue is the one screen where "nothing here" has to be trustworthy, so
+   * this is tracked for BOTH tabs rather than only the one that was broken.
+   *
+   * Moderation history is deliberately NOT included: it is context printed
+   * beside a report, not the verdict, and this file already treats that class as
+   * best-effort.
+   */
+  const queueFailed = activeView === 'pending' ? pendingFailed : priorityFailed;
+  const retryQueue = activeView === 'pending' ? refetch : refetchPriority;
   const isRefreshingData = activeView === 'pending' ? refreshing : priorityRefreshing;
   const pendingRemaining = Math.max(pendingTotal - pendingItems.length, 0);
 
@@ -745,6 +767,27 @@ export default function TribunalScreen() {
         {isLoadingData ? (
           <View style={s.emptyState}>
             <Text style={s.emptyText}>Gathering the docket…</Text>
+          </View>
+        ) : queueFailed ? (
+          // Checked BEFORE the empty branch, which is the whole point: an empty
+          // list and an unanswered question look identical from here, and only
+          // one of them means there is nothing to do.
+          <View style={s.emptyState}>
+            <Scale size={48} color={colors.crimson} style={{ opacity: 0.6, marginBottom: 16 }} />
+            <Text style={s.emptyText}>The docket could not be reached.</Text>
+            <Text style={[s.emptyText, { fontSize: 12, opacity: 0.6, marginTop: 6 }]}>
+              This is not an empty queue — nothing was loaded.
+            </Text>
+            <PressableScale
+              style={s.retryBtn}
+              onPress={() => { void retryQueue(); }}
+              pressedScale={0.97}
+              haptic="medium"
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading the docket"
+            >
+              <Text style={s.retryBtnText}>TRY AGAIN</Text>
+            </PressableScale>
           </View>
         ) : displayData.length === 0 ? (
           <View style={s.emptyState}>
@@ -1289,7 +1332,25 @@ const s = StyleSheet.create({
 
   // ── Empty State ────────────────────────────────────────────────────────
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  emptyText: { fontFamily: fonts.sub, fontSize: 16, color: colors.fog, letterSpacing: 1 },
+  emptyText: { fontFamily: fonts.sub, fontSize: 16, color: colors.fog, letterSpacing: 1, textAlign: 'center' },
+  // Shown only when a queue failed to load — deliberately restrained, in the
+  // same register as the rest of this screen rather than a shouting alert.
+  retryBtn: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: colors.crimson,
+    backgroundColor: 'transparent',
+  },
+  retryBtnText: {
+    fontFamily: fonts.sub,
+    fontSize: 10,
+    letterSpacing: 2.5,
+    color: colors.crimson,
+    fontWeight: '700',
+  },
 
   // ── View Toggle ────────────────────────────────────────────────────────
   viewToggleRow: {
