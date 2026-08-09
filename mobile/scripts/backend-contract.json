@@ -16,7 +16,11 @@
     "get_following_feed_auth_cursor",
     "get_lounge_unread_counts",
     "get_moderation_history_for_users",
-    "get_priority_reports",
+    {
+      "name": "get_priority_reports",
+      "signature": "get_priority_reports(p_limit integer, p_cursor_count bigint, p_cursor_created timestamp with time zone, p_cursor_id uuid)",
+      "why": "#24 — this existed under a name the app knew and a signature it could not call, so a name-only check reported it healthy while every call 404'd and the Tribunal showed an empty docket. Signature-checked from here on."
+    },
     "get_profile_counts",
     "get_public_profile_analytics",
     "get_report_evidence",

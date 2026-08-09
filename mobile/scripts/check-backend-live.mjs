@@ -28,6 +28,10 @@ const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || '';
 const DB_URL = process.env.SUPABASE_DB_URL || '';
 
 const missing = { rpcs: [], edgeFunctions: [] };
+/** Declared signature no longer matches production — the #24 failure mode. */
+const signatureDrift = [];
+/** Entries still checked by name alone, so still blind to that failure mode. */
+const unsignedRpcs = [];
 let checkedEdges = false;
 let checkedRpcs = false;
 
@@ -54,12 +58,35 @@ if (PROJECT_REF) {
 // ── RPCs (via psql against the live DB) ──
 if (DB_URL) {
   try {
+    // SIGNATURES, not names.
+    //
+    // This selected `proname` alone, which is exactly how #24 stayed invisible:
+    // `get_priority_reports` existed under a name the app knew and a signature it
+    // could not call, so this reported it healthy while every call 404'd. A name
+    // says a function exists; only the signature says the app can reach it.
     const out = sh(
-      `psql "${DB_URL}" -tAc "SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public'"`,
+      `psql "${DB_URL}" -tAc "SELECT proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public'"`,
     );
-    const live = new Set(out.split('\n').map((s) => s.trim()).filter(Boolean));
-    for (const rpc of contract.rpcs) {
-      if (!live.has(rpc)) missing.rpcs.push(rpc);
+    const liveSignatures = new Set(out.split('\n').map((s) => s.trim()).filter(Boolean));
+    const liveNames = new Set([...liveSignatures].map((s) => s.slice(0, s.indexOf('('))));
+
+    for (const entry of contract.rpcs) {
+      // An entry is either a bare name (legacy — existence only) or
+      // { name, signature } which is checked exactly.
+      const name = typeof entry === 'string' ? entry : entry.name;
+      const signature = typeof entry === 'string' ? null : entry.signature;
+
+      if (!liveNames.has(name)) {
+        missing.rpcs.push(name);
+        continue;
+      }
+      if (signature && !liveSignatures.has(signature)) {
+        const actual = [...liveSignatures].filter((s) => s.startsWith(`${name}(`));
+        signatureDrift.push(
+          `${name}\n      declared: ${signature}\n      live:     ${actual.join(' | ') || '(none)'}`,
+        );
+      }
+      if (!signature) unsignedRpcs.push(name);
     }
     checkedRpcs = true;
   } catch (e) {
@@ -70,17 +97,47 @@ if (DB_URL) {
 }
 
 // ── Report ──
-const failed = missing.rpcs.length > 0 || missing.edgeFunctions.length > 0;
-if (failed) {
+const skipped = [!checkedEdges && 'edge functions', !checkedRpcs && 'RPCs'].filter(Boolean);
+
+// A check that verifies NOTHING must not report success.
+//
+// This printed "✓ Verified present in production: nothing." and exited 0 when
+// both halves were skipped — a green tick for having looked at nothing, which
+// reads identically to a pass in any log or CI summary. Whether it ran is now
+// part of the result.
+const failed =
+  missing.rpcs.length > 0 ||
+  missing.edgeFunctions.length > 0 ||
+  signatureDrift.length > 0 ||
+  skipped.length > 0;
+
+if (missing.rpcs.length || missing.edgeFunctions.length) {
   console.error('\n✗ Backend contract entries MISSING from production:');
   if (missing.rpcs.length) console.error('  RPCs:', missing.rpcs.join(', '));
   if (missing.edgeFunctions.length) console.error('  Edge functions:', missing.edgeFunctions.join(', '));
   console.error('\nDeploy the missing functions before shipping the app build.');
-} else {
-  const ran = [checkedEdges && 'edge functions', checkedRpcs && 'RPCs'].filter(Boolean);
-  const skipped = [!checkedEdges && 'edge functions', !checkedRpcs && 'RPCs'].filter(Boolean);
-  console.log(`✓ Verified present in production: ${ran.length ? ran.join(' + ') : 'nothing'}.`);
-  if (skipped.length) console.log(`  (not checked: ${skipped.join(' + ')} — provide the config above to include them.)`);
+}
+
+if (signatureDrift.length) {
+  console.error('\n✗ Backend contract SIGNATURE DRIFT — the function exists but the app cannot call it:');
+  for (const d of signatureDrift) console.error(`    ${d}`);
+  console.error('\nThis is the #24 failure mode: a name that resolves and a signature that does not.');
+}
+
+if (skipped.length) {
+  console.error(`\n✗ Not checked: ${skipped.join(' + ')}.`);
+  console.error('  Set SUPABASE_DB_URL / SUPABASE_PROJECT_REF. An unrun check is not a pass.');
+}
+
+if (!failed) {
+  console.log('✓ Verified against production: edge functions + RPCs.');
+  if (unsignedRpcs.length) {
+    // Named-only entries still cannot catch signature drift. Reported every run
+    // so the remaining blind spot is a number someone can watch shrink, rather
+    // than a silence.
+    console.log(`  ${unsignedRpcs.length} RPC(s) checked by NAME only — still blind to signature drift:`);
+    console.log(`    ${unsignedRpcs.join(', ')}`);
+  }
 }
 
 process.exit(failed ? 1 : 0);

@@ -9,6 +9,7 @@
     "ios": "expo run:ios",
     "lint": "expo lint",
     "check:routes": "node ./scripts/check-app-routes.js",
+    "check:backend": "node ./scripts/check-backend-live.mjs",
     "test:e2e": "maestro test .maestro/",
     "test": "jest",
     "docs:generate": "typedoc",
