@@ -163,6 +163,29 @@ function sh(cmd) {
   return execSync(cmd, { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
 }
 
+/**
+ * The REASON psql failed, not the fact that it did.
+ *
+ * `e.message` is only "Command failed: psql <the entire query>" — it echoes back
+ * a wall of SQL and says nothing about the cause, so "network unreachable" and
+ * "password authentication failed" look identical and neither is actionable.
+ * The cause is on stderr. This surfaces it, and recognises the one that is not
+ * a mistake anyone can see: Supabase's direct host is IPv6-only, so on an IPv4
+ * network the connection never reaches the point of checking a password.
+ */
+function why(e) {
+  const err = (e.stderr?.toString() || '').trim().split('\n')[0] || e.message.split('\n')[0];
+  if (/unreachable|Cannot assign requested address|could not translate host|timeout expired/i.test(err)) {
+    return (
+      `${err}\n` +
+      '    → the DIRECT host (db.<ref>.supabase.co) is IPv6-only. On an IPv4 network it\n' +
+      '      is unreachable. Use the SESSION POOLER string instead (Connect → Session\n' +
+      '      pooler); it looks like postgres.<ref>@aws-N-<region>.pooler.supabase.com.'
+    );
+  }
+  return err;
+}
+
 // ── Edge functions (via supabase CLI) ──
 if (PROJECT_REF) {
   try {
@@ -214,7 +237,7 @@ if (DB_URL) {
     }
     checkedRpcs = true;
   } catch (e) {
-    console.warn(`⚠ RPC check skipped (psql failed): ${e.message.split('\n')[0]}`);
+    console.warn(`⚠ RPC check skipped — psql could not connect:\n    ${why(e)}`);
   }
 } else {
   console.warn('⚠ RPC check skipped (set SUPABASE_DB_URL).');
@@ -343,7 +366,7 @@ if (DB_URL) {
     grantViolations = posture.length - postureBeforeGrants;
     checkedGrants = true;
   } catch (e) {
-    console.warn(`⚠ grant/trigger/RLS check skipped (psql failed): ${e.message.split('\n')[0]}`);
+    console.warn(`⚠ grant/trigger/RLS check skipped — psql could not connect:\n    ${why(e)}`);
   }
 } else {
   console.warn('⚠ grant/trigger/RLS check skipped (set SUPABASE_DB_URL).');
