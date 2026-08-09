@@ -856,7 +856,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
       // Left mid-flight — see sessionGuard. Writing here would repopulate a store
       // the logout reset has already cleared.
-      if (!memberUnchanged(startedAs)) return;
+      //
+      // `null`, not bare: this op is declared Promise<string | null>, so a bare
+      // return hands back `undefined` and a caller testing `=== null` misses it.
+      // tsc did NOT catch this one — the store creator types these methods
+      // loosely — which is why the inserted guards were read rather than trusted.
+      if (!memberUnchanged(startedAs)) return null;
       set(s => ({ lounges: [newLounge, ...s.lounges] }));
 
       get().fetchLounges();
