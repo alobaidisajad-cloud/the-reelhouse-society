@@ -95,11 +95,15 @@ describe('database ceilings vs both clients', () => {
     // The migration lists its targets twice: once to check they exist, once to
     // apply. If those lists ever diverge, a column would be verified and never
     // capped — the silent no-op this whole file exists to prevent.
-    // Split on the RAISE EXCEPTION that sits between them — a comment marker
-    // would be stripped by `exec` and silently collapse this to one block.
-    const blocks = exec.split('ABORTED');
-    expect(blocks.length).toBe(2);
-    const [verify, apply] = blocks.map(parseCeilings);
+    // Split at the LAST guard, not on every occurrence: a comment marker would
+    // be stripped by `exec`, and splitting on all of them breaks the moment a
+    // second guard is added — which is exactly what happened when the view
+    // check went in. The apply block is everything after the final RAISE.
+    const cut = exec.lastIndexOf('ABORTED');
+    expect(cut).toBeGreaterThan(0);
+    const verify = parseCeilings(exec.slice(0, cut));
+    const apply = parseCeilings(exec.slice(cut));
+    expect(apply.size).toBeGreaterThanOrEqual(30);
     expect([...apply.entries()].sort()).toEqual([...verify.entries()].sort());
   });
 
@@ -170,6 +174,24 @@ describe('database ceilings vs both clients', () => {
     // repo and production genuinely disagree about these names, so this matters.
     expect(exec).toMatch(/RAISE EXCEPTION/);
     expect(exec).toMatch(/ABORTED/);
+  });
+
+  it('refuses to WAIT for a lock rather than queueing behind live traffic', () => {
+    // ADD CONSTRAINT takes ACCESS EXCLUSIVE. The tables are small so the scan is
+    // instant — the risk is the wait. Without a lock_timeout, one in-flight query
+    // makes this queue, and every read and write arriving afterwards queues
+    // behind it. A clean retry beats a stalled app. Proven on a real held lock:
+    // aborts at 3s instead of hanging, and the transaction rolls back whole.
+    expect(exec).toMatch(/SET\s+LOCAL\s+lock_timeout/i);
+    expect(exec).toMatch(/SET\s+LOCAL\s+statement_timeout/i);
+  });
+
+  it('refuses a target that is not an ordinary table', () => {
+    // A CHECK cannot live on a view, and ALTER TABLE against one fails with a
+    // message about the wrong thing. Every target is a table in the snapshot —
+    // that is a fact about a snapshot, not about the live database.
+    expect(exec).toMatch(/relkind\s*=\s*'r'/);
+    expect(exec).toMatch(/not ordinary tables/);
   });
 
   it('leaves server-DERIVED text alone', () => {

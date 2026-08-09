@@ -60,8 +60,22 @@ DO $$
 DECLARE
   c        record;
   missing  text[] := '{}';
+  notTable text[] := '{}';
   applied  int := 0;
 BEGIN
+  -- ── RUNNING THIS AGAINST A LIVE DATABASE ─────────────────────────────────
+  -- ADD CONSTRAINT takes an ACCESS EXCLUSIVE lock. The tables here are small
+  -- (largest 854 rows) so the validation scan is instant — the risk is not the
+  -- work, it is the WAIT. If any query is mid-flight on one of these tables the
+  -- ALTER queues behind it, and every read and write that arrives afterwards
+  -- queues behind the ALTER. On a live app that is a stall, from a statement
+  -- that only needed a few milliseconds.
+  --
+  -- So: refuse to wait. If a lock cannot be taken in 3 seconds the whole block
+  -- aborts and NOTHING is applied — a clean retry beats a queue of blocked
+  -- members. All 34 run in one transaction, so it is all-or-nothing either way.
+  SET LOCAL lock_timeout = '3s';
+  SET LOCAL statement_timeout = '60s';
   -- ── PASS 1: verify every target exists BEFORE changing anything ───────────
   -- The previous draft of this migration skipped a missing column with a
   -- NOTICE that read the same as "already done". A migration whose whole job is
@@ -118,6 +132,16 @@ BEGIN
       WHERE table_schema = 'public' AND table_name = c.tbl AND column_name = c.col
     ) THEN
       missing := missing || format('%s.%s', c.tbl, c.col);
+    -- A CHECK cannot live on a view, and ALTER TABLE against one fails with a
+    -- message about the wrong thing. Every target was an ordinary table when
+    -- this was written; that is a fact about a schema snapshot, not a promise
+    -- about the database you are running against.
+    ELSIF NOT EXISTS (
+      SELECT 1 FROM pg_class pcl
+      JOIN pg_namespace pn ON pn.oid = pcl.relnamespace
+      WHERE pn.nspname = 'public' AND pcl.relname = c.tbl AND pcl.relkind = 'r'
+    ) THEN
+      notTable := notTable || c.tbl;
     END IF;
   END LOOP;
 
@@ -125,6 +149,12 @@ BEGIN
     RAISE EXCEPTION
       'ABORTED — % target column(s) do not exist on this database: %. Nothing was changed. Reconcile the names against the LIVE schema before re-running.',
       array_length(missing, 1), array_to_string(missing, ', ');
+  END IF;
+
+  IF array_length(notTable, 1) > 0 THEN
+    RAISE EXCEPTION
+      'ABORTED — these targets are not ordinary tables (a CHECK cannot be added to a view): %. Nothing was changed.',
+      array_to_string(notTable, ', ');
   END IF;
 
   -- ── PASS 2: apply. Every target verified, so this cannot half-finish ──────
