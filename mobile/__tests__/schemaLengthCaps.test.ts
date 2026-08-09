@@ -249,6 +249,7 @@ describe('EVERY text column in the schema is accounted for', () => {
   const DUMP = join(__dirname, '..', 'supabase', '_schema_baseline.sql');
   const M04 = join(__dirname, '..', 'supabase', 'migrations', '20260809_04_text_length_ceilings.sql');
   const M05 = join(__dirname, '..', 'supabase', 'migrations', '20260809_05_remaining_text_ceilings.sql');
+  const M06 = join(__dirname, '..', 'supabase', 'migrations', '20260810_01_jsonb_ceilings.sql');
 
   /** Columns whose value set is already restricted to a fixed list. */
   const ENUM_WHITELISTED = [
@@ -264,6 +265,7 @@ describe('EVERY text column in the schema is accounted for', () => {
     const sql = readFileSync(DUMP, 'utf8');
     const scalar: string[] = [];
     const arr: string[] = [];
+    const json: string[] = [];
     for (const [, tbl, body] of sql.matchAll(
       /CREATE TABLE (?:public\.)?"?(\w+)"?\s*\(([\s\S]*?)\n\);/g,
     )) {
@@ -272,11 +274,21 @@ describe('EVERY text column in the schema is accounted for', () => {
         if (/^CONSTRAINT/i.test(line)) continue;
         // NB: no \b after the brackets — a word boundary can never match after ']',
         // which is how text[] was first miscounted as plain text.
-        const m = line.match(/^"?(\w+)"?\s+text(\s*\[\s*\])?(\s|$|,)/i);
-        if (m) (m[2] ? arr : scalar).push(`${tbl}.${m[1]}`);
+        const t = line.match(/^"?(\w+)"?\s+text(\s*\[\s*\])?(\s|$|,)/i);
+        if (t) {
+          (t[2] ? arr : scalar).push(`${tbl}.${t[1]}`);
+          continue;
+        }
+        // jsonb was missed entirely the first time: this guard enumerated `text`
+        // and `text[]` and declared the class complete, so 14 unbounded jsonb
+        // columns — one of them member-writable — sat behind a passing test.
+        // A guard that defines the class too narrowly is worse than none: it
+        // reports safety over the gap it cannot see.
+        const j = line.match(/^"?(\w+)"?\s+(jsonb|json)(\s|$|,)/i);
+        if (j) json.push(`${tbl}.${j[1]}`);
       }
     }
-    return { scalar, arr };
+    return { scalar, arr, json };
   }
 
   function cappedIn(file: string) {
@@ -293,12 +305,36 @@ describe('EVERY text column in the schema is accounted for', () => {
     return out;
   }
 
-  const { scalar, arr } = columnsFromDump();
-  const covered = new Set([...cappedIn(M04), ...cappedIn(M05), ...ENUM_WHITELISTED]);
+  const { scalar, arr, json } = columnsFromDump();
+  const covered = new Set([
+    ...cappedIn(M04),
+    ...cappedIn(M05),
+    ...cappedIn(M06),
+    ...ENUM_WHITELISTED,
+  ]);
 
   it('the schema parses — otherwise this whole file is vacuous', () => {
     expect(scalar.length).toBeGreaterThan(100);
     expect(arr.length).toBe(3);
+    expect(json.length).toBe(14);
+  });
+
+  it('every jsonb column is bounded too', () => {
+    // `profiles.social_links` is one of the seven columns a member may UPDATE
+    // directly, and it is jsonb. Bounding text and stopping there left the same
+    // hole open in a different type.
+    const orphans = json.filter((c) => !covered.has(c));
+    expect(`uncovered jsonb columns: ${orphans.join(', ') || 'none'}`).toBe(
+      'uncovered jsonb columns: none',
+    );
+  });
+
+  it('jsonb is bounded by casting to text, not by storage size', () => {
+    // `char_length(col::text)` is immutable and legal in a CHECK. pg_column_size
+    // measures COMPRESSED storage, which is not a stable promise to make a member.
+    const sql = readFileSync(M06, 'utf8').replace(/--[^\n]*/g, '');
+    expect(sql).toContain('char_length(%I::text)');
+    expect(sql).not.toContain('pg_column_size');
   });
 
   it('every scalar text column has a ceiling or a whitelist', () => {
