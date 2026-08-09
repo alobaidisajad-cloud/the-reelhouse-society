@@ -43,37 +43,29 @@ interface RSSItem {
 
 // ── Helpers ────────────────────────────────────────────────────
 
-const relDate = (daysAgo: number) => {
-    const d = new Date();
-    d.setDate(d.getDate() - daysAgo);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
-};
-
-
-const FALLBACK_NEWS: NewsItem[] = [
-    {
-        id: 'fb1',
-        title: "OSCAR RADAR: The Monochrome Revival",
-        excerpt: "Why modern auteurs are returning to black and white for their most personal statements. A deep look at this year's Academy favorites.",
-        date: relDate(1),
-        time: "10:30 AM",
-        category: "AWARDS",
-        author: "THE ARCHIVIST",
-        link: "#",
-        image: "https://images.unsplash.com/photo-1542204147-993abd55f2eb?q=80&w=2000"
-    },
-    {
-        id: 'fb2',
-        title: "CANNES UNVEILED: The Latest Selection",
-        excerpt: "The festival returns to its roots with a heavy focus on European surrealism and South American neo-noir.",
-        date: relDate(2),
-        time: "02:15 PM",
-        category: "FESTIVALS",
-        author: "MIDNIGHT DEVOTEE",
-        link: "#",
-        image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2000"
-    }
-];
+/**
+ * ── WHY THERE IS NO FALLBACK CONTENT HERE ────────────────────────────────────
+ *
+ * This module used to carry two invented articles — "OSCAR RADAR: The Monochrome
+ * Revival" and "CANNES UNVEILED" — bylined to writers who do not exist, dated by
+ * a helper that made them read as yesterday and the day before NO MATTER WHEN
+ * they were shown, and linked to "#".
+ *
+ * They were returned on the two failure paths below, which meant that any member
+ * OFFLINE — an ordinary state, not a rare one — opened the wire to invented
+ * journalism that looked like today's. Tapping through called the URL opener with
+ * "#", which fails the scheme allowlist, so the app told them the link was
+ * unsafe.
+ *
+ * The original placement was deliberate and scoped — a comment below still
+ * records that these must never be appended to live results — but the failure
+ * path is the one a member actually reaches, and this app refuses invented
+ * content everywhere else.
+ *
+ * The honest alternative was already written and simply unreachable: the Dispatch
+ * screen has an empty state ("The wire is silent tonight.") that could never
+ * appear while this guaranteed a non-empty list. Returning nothing reveals it.
+ */
 
 // ── Service ────────────────────────────────────────────────────
 
@@ -81,10 +73,15 @@ const RSS_FEEDS = ['https://www.theguardian.com/film/rss'];
 
 /**
  * Fetches film news from RSS feeds via Supabase Edge Function proxy.
- * Returns curated fallback content on network failure or empty results.
- * Includes a 4-second timeout per feed and supports external cancellation.
+ * Returns an EMPTY array on network failure or empty results — never invented
+ * content; see the note above. Includes a 4-second timeout per feed and supports
+ * external cancellation.
+ *
+ * Never rejects: every exit returns an array. The caller's `.catch` is therefore
+ * unreachable — noted rather than changed, since signalling failure distinctly
+ * from "no news" is a product decision on a screen due to be rebuilt.
  * @param signal - AbortSignal for component-unmount cancellation
- * @returns Sorted news items (live feed + fallback), newest first
+ * @returns Live news items, newest first; empty if the wire is down or quiet
  */
 export async function getNews(signal?: AbortSignal): Promise<NewsItem[]> {
     try {
@@ -115,7 +112,8 @@ export async function getNews(signal?: AbortSignal): Promise<NewsItem[]> {
         }));
 
         const liveItems = results.flat();
-        if (liveItems.length === 0) return FALLBACK_NEWS;
+        // Nothing, not something invented. The screen has an honest empty state.
+        if (liveItems.length === 0) return [];
 
         const allItems = (liveItems as RSSItem[])
             .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
@@ -131,12 +129,12 @@ export async function getNews(signal?: AbortSignal): Promise<NewsItem[]> {
                 link: item.link || '',
             }));
 
-        // Live results stand on their own — FALLBACK_NEWS is ONLY for the
-        // empty/failure cases (handled above and in catch). Appending it here
-        // would surface fabricated articles with faked dates + dead links.
+        // Live results stand on their own. This comment used to explain why the
+        // fabricated items must not be appended here; they no longer exist at
+        // all, which is the stronger version of the same rule.
         return allItems;
     } catch (e: unknown) {
         logger.warn('[NewsService] RSS news fetch failed:', e);
-        return FALLBACK_NEWS;
+        return [];
     }
 }

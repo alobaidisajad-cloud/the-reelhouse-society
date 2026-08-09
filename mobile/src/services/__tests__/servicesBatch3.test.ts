@@ -223,14 +223,13 @@ describe('NewsService (getNews)', () => {
     it('returns fallback news when fetch fails', async () => {
         global.fetch = jest.fn().mockRejectedValue(new Error('Network down'));
         const result = await getNews();
-        expect(result.length).toBeGreaterThanOrEqual(2);
-        expect(result[0].id).toBe('fb1'); // fallback ID
+        expect(result).toEqual([]);
     });
 
     it('returns fallback news when RSS returns empty', async () => {
         global.fetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [] }) });
         const result = await getNews();
-        expect(result[0].id).toBe('fb1');
+        expect(result).toEqual([]);
     });
 
     it('parses RSS items when available', async () => {

@@ -115,7 +115,20 @@ export default function DispatchScreen() {
     const newsPromise = getNews()
       .then((items: any) => {
         if (!isMounted.current) return;
-        setNews((items ?? []).map((item: any, index: number) => ({ ...item, id: item.id ?? item.link ?? `wire-fallback-${index}`, link: item.link ?? '' })).slice(0, 8));
+        const mapped = (items ?? []).map((item: any, index: number) => ({ ...item, id: item.id ?? item.link ?? `wire-fallback-${index}`, link: item.link ?? '' })).slice(0, 8);
+        // Keep what is already on screen when a refresh comes back empty.
+        //
+        // News is not cached — it is fetched fresh into this state and used to
+        // overwrite unconditionally. That was survivable while the service
+        // returned invented articles on failure; now that it honestly returns
+        // nothing, an unconditional write would BLANK a wire the member is
+        // reading the moment they lose signal. Their articles are real and
+        // correctly dated, so keeping them is both kinder and more truthful than
+        // clearing them.
+        //
+        // A cold start with no signal still reaches the empty state: `prev` is
+        // empty there, so there is nothing to preserve.
+        setNews(prev => (mapped.length === 0 && prev.length > 0 ? prev : mapped));
       })
       .catch(() => {
         if ((isFirstNewsRef.current || isUserAction) && isMounted.current) {

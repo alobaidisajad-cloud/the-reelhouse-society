@@ -1,11 +1,14 @@
 /**
  * NewsService — Comprehensive Unit Tests
  * ────────────────────────────────────────────────────────────────────
- * Covers: happy path, failure/fallback, timeout, external abort signal,
+ * Covers: happy path, failure (empty), timeout, external abort signal,
  * HTML entity decoding, empty RSS items, and pubDate sorting.
  *
  * Requirements: 1.2, 1.3, 1.4
  */
+
+import * as fs from 'fs';
+import * as path from 'path';
 
 jest.mock('@/src/utils/logger', () => ({
   logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn() },
@@ -65,7 +68,7 @@ describe('NewsService (getNews) — Comprehensive', () => {
       jest.runAllTimers();
       const result = await promise;
 
-      // Live items ONLY — curated fallback must NOT pollute a live feed (SVC-2)
+      // Live items only. The fabricated fallback that used to exist is gone (#41).
       expect(result.length).toBe(2);
 
       // Sorted by pubDate descending: item-2 (June) before item-1 (Jan)
@@ -85,8 +88,51 @@ describe('NewsService (getNews) — Comprehensive', () => {
       // Image from enclosure
       expect(result[0].image).toBe('https://img.example.com/photo.jpg');
 
-      // No fallback ids present when live data exists
-      expect(result.some((i) => i.id === 'fb1' || i.id === 'fb2')).toBe(false);
+      // Every item came from the wire — nothing was manufactured to pad it out.
+      //
+      // This used to assert the two fabricated ids were absent. Once those were
+      // deleted that could never fail, so it is replaced with a check that CAN:
+      // the service must return exactly what the feed gave it, no more.
+      expect(result).toHaveLength(2);
+      expect(result.every((i) => Boolean(i.link) && i.link !== '#')).toBe(true);
+    });
+  });
+
+  describe('#41 · the module carries no invented content', () => {
+    it('no fabricated article, byline or dead link survives in the source', () => {
+      // Read from source rather than exercised, because the point is ABSENCE —
+      // a behavioural test cannot prove something is not there on some path it
+      // did not happen to take.
+      const src = fs.readFileSync(
+        path.join(__dirname, '..', 'NewsService.ts'),
+        'utf8',
+      ).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+      for (const ghost of ['FALLBACK_NEWS', 'relDate', 'fb1', 'fb2', 'THE ARCHIVIST', 'MIDNIGHT DEVOTEE']) {
+        expect(`${ghost}:${src.includes(ghost)}`).toBe(`${ghost}:false`);
+      }
+      // Both failure exits return nothing.
+      expect((src.match(/return \[\];/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('a failed refresh does not blank a wire the member is reading', () => {
+      // Returning nothing honestly is only an improvement if it does not ALSO
+      // erase articles already on screen. News is not cached — it is fetched
+      // into local state and overwrites — so an unconditional write would clear
+      // the list the moment a reader loses signal. Their articles are real and
+      // correctly dated; keeping them is both kinder and truer than blanking.
+      //
+      // A cold start still reaches the empty state: `prev` is empty there.
+      const screen = fs.readFileSync(
+        path.join(__dirname, '..', '..', '..', 'app', '(tabs)', 'dispatch.tsx'),
+        'utf8',
+      );
+      expect(screen).toMatch(
+        /setNews\(prev => \(mapped\.length === 0 && prev\.length > 0 \? prev : mapped\)\);/,
+      );
+      // And the honest empty state it exposes is still there to be reached.
+      expect(screen).toMatch(/The wire is silent tonight\./);
+      expect(screen).toMatch(/!newsLoading && news\.length === 0/);
     });
   });
 
@@ -95,25 +141,20 @@ describe('NewsService (getNews) — Comprehensive', () => {
   // ════════════════════════════════════════════════════════════════════
 
   describe('failure path — fetch rejects', () => {
-    it('returns curated FALLBACK_NEWS with at least 2 items', async () => {
+    it('returns NOTHING — never invented articles', async () => {
       global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
 
       const promise = getNews();
       jest.runAllTimers();
       const result = await promise;
 
-      expect(result.length).toBeGreaterThanOrEqual(2);
-      expect(result[0].id).toBe('fb1');
-      expect(result[1].id).toBe('fb2');
-      // Fallback items have expected structure
-      expect(result[0]).toHaveProperty('title');
-      expect(result[0]).toHaveProperty('excerpt');
-      expect(result[0]).toHaveProperty('category');
-      expect(result[0]).toHaveProperty('author');
-      expect(result[0]).toHaveProperty('link');
+      // Nothing at all. These assertions used to check the SHAPE of the two
+      // invented articles this path returned; there is no shape to check now,
+      // which is the point.
+      expect(result).toEqual([]);
     });
 
-    it('returns fallback when response is not ok', async () => {
+    it('returns nothing when the response is not ok', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 500,
@@ -123,8 +164,7 @@ describe('NewsService (getNews) — Comprehensive', () => {
       jest.runAllTimers();
       const result = await promise;
 
-      expect(result.length).toBeGreaterThanOrEqual(2);
-      expect(result[0].id).toBe('fb1');
+      expect(result).toEqual([]);
     });
   });
 
@@ -133,7 +173,7 @@ describe('NewsService (getNews) — Comprehensive', () => {
   // ════════════════════════════════════════════════════════════════════
 
   describe('timeout — 4-second AbortController', () => {
-    it('aborts the fetch after 4000ms and returns fallback', async () => {
+    it('aborts the fetch after 4000ms and returns nothing', async () => {
       // Simulate a fetch that never resolves until aborted
       let abortSignalUsed: AbortSignal | undefined;
       global.fetch = jest.fn().mockImplementation((_url, options) => {
@@ -154,9 +194,8 @@ describe('NewsService (getNews) — Comprehensive', () => {
 
       const result = await promise;
 
-      // Should return fallback since fetch was aborted
-      expect(result.length).toBeGreaterThanOrEqual(2);
-      expect(result[0].id).toBe('fb1');
+      // Nothing, since the fetch was aborted
+      expect(result).toEqual([]);
       expect(abortSignalUsed).toBeDefined();
     });
 
@@ -183,7 +222,7 @@ describe('NewsService (getNews) — Comprehensive', () => {
   // ════════════════════════════════════════════════════════════════════
 
   describe('external AbortSignal — component unmount cancellation', () => {
-    it('cancels fetch and returns fallback when external signal is aborted', async () => {
+    it('cancels fetch and returns nothing when the external signal is aborted', async () => {
       const externalController = new AbortController();
 
       global.fetch = jest.fn().mockImplementation((_url, options) => {
@@ -205,8 +244,7 @@ describe('NewsService (getNews) — Comprehensive', () => {
       const result = await promise;
 
       // Should gracefully return fallback, no unhandled errors
-      expect(result.length).toBeGreaterThanOrEqual(2);
-      expect(result[0].id).toBe('fb1');
+      expect(result).toEqual([]);
     });
 
     it('does not throw unhandled errors when external signal aborts mid-flight', async () => {
@@ -314,8 +352,8 @@ describe('NewsService (getNews) — Comprehensive', () => {
   // EMPTY ITEMS
   // ════════════════════════════════════════════════════════════════════
 
-  describe('empty RSS items — returns FALLBACK_NEWS', () => {
-    it('returns fallback when items array is empty', async () => {
+  describe('empty RSS items — returns nothing', () => {
+    it('returns nothing when the items array is empty', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ items: [] }),
@@ -325,12 +363,10 @@ describe('NewsService (getNews) — Comprehensive', () => {
       jest.runAllTimers();
       const result = await promise;
 
-      expect(result.length).toBeGreaterThanOrEqual(2);
-      expect(result[0].id).toBe('fb1');
-      expect(result[1].id).toBe('fb2');
+      expect(result).toEqual([]);
     });
 
-    it('returns fallback when response has no items field', async () => {
+    it('returns nothing when the response has no items field', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({}),
@@ -340,8 +376,7 @@ describe('NewsService (getNews) — Comprehensive', () => {
       jest.runAllTimers();
       const result = await promise;
 
-      expect(result.length).toBeGreaterThanOrEqual(2);
-      expect(result[0].id).toBe('fb1');
+      expect(result).toEqual([]);
     });
   });
 
