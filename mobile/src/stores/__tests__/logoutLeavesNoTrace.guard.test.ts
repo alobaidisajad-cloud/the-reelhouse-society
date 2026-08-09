@@ -188,6 +188,40 @@ describe('#64 · a logout leaves no trace of the previous member', () => {
   });
 });
 
+describe('#64 · BOTH ways a session ends must erase', () => {
+  const auth = fs.readFileSync(path.join(__dirname, '..', 'auth.ts'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+  it('the stale-session path erases, not just the logout button', () => {
+    // It used to clear the auth flag and return. Worse, that DISABLED the
+    // cleanup that would have caught it: the SIGNED_OUT listener only calls
+    // logout() `if (isAuthenticated)`, which that line had just made false.
+    // Anchored on CODE. My first version sliced from a phrase that lives only in
+    // a comment — which this file strips — so the block examined was empty. The
+    // positive assertion caught it, which a `not.toMatch` would not have.
+    const at = auth.indexOf('const staleUserId = get().user?.id ?? null;');
+    expect(at).toBeGreaterThan(-1);
+    const branch = auth.slice(at, auth.indexOf('return;', at));
+    expect(branch.length).toBeGreaterThan(200);
+    expect(branch).toMatch(/resetAllStores\(staleUserId\)/);
+    expect(branch).toMatch(/storage\.delete\('last_user_id'\)/);
+  });
+
+  it('but does nothing when there was nobody signed in', () => {
+    // This branch also runs on an ordinary cold start for a signed-out visitor —
+    // anonymous browsing is supported — and wiping the query cache every launch
+    // for them would throw away a warm feed to clean up nothing.
+    expect(auth).toMatch(/const hadStaleSession = staleUserId !== null \|\| get\(\)\.isAuthenticated;/);
+    expect(auth).toMatch(/if \(hadStaleSession\) \{/);
+  });
+
+  it('logout passes the departing member to the handlers', () => {
+    // Handlers cannot look it up: logout clears the auth store FIRST so sign-out
+    // is visually instant.
+    expect(auth).toMatch(/await resetAllStores\(previousUserId\)/);
+  });
+});
+
 describe('#64 · every per-member cache on disk is erased', () => {
   it('no per-member key is written without a matching delete — swept, not listed', () => {
     // Three cache families were written and never deleted: the member's profile

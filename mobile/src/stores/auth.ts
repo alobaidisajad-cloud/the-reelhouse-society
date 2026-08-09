@@ -190,16 +190,23 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         // and the line below had just made that false. Clearing the flag removed
         // the safety net for the data.
         const staleUserId = get().user?.id ?? null;
+        const hadStaleSession = staleUserId !== null || get().isAuthenticated;
         set({ user: null, isAuthenticated: false, loading: false });
-        try {
-          const { resetAllStores } = await import('./resetAllStores');
-          await resetAllStores(staleUserId);
-          if (staleUserId) storage.delete(`ironvault_user_cache_${staleUserId}`);
-          storage.delete('last_user_id');
-          storage.delete('REELHOUSE_QUERY_CACHE');
-          storage.delete('nitrate_memory_feed');
-          queryClient.clear();
-        } catch { /* best effort — the auth flag is already cleared */ }
+        // Only when there was actually somebody to erase. This branch also runs
+        // on an ordinary cold start for a signed-out visitor — the app allows
+        // anonymous browsing — and wiping the query cache every launch for them
+        // would throw away a warm feed to clean up nothing.
+        if (hadStaleSession) {
+          try {
+            const { resetAllStores } = await import('./resetAllStores');
+            await resetAllStores(staleUserId);
+            if (staleUserId) storage.delete(`ironvault_user_cache_${staleUserId}`);
+            storage.delete('last_user_id');
+            storage.delete('REELHOUSE_QUERY_CACHE');
+            storage.delete('nitrate_memory_feed');
+            queryClient.clear();
+          } catch { /* best effort — the auth flag is already cleared */ }
+        }
         // The offline queue is deliberately NOT cleared here, unlike logout.
         // A dead session is not a decision to discard work: these are the
         // member's own unsynced writes, they carry their user_id, and RLS
