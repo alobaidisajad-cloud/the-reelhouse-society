@@ -127,7 +127,22 @@ export function sanitizeInput(text: string, fieldType: FieldType): string {
   // Still the last-resort fence. Callers that can warn a member SHOULD ask
   // isOverLimit first — the dossier composer does — because a truncation here
   // has no presence in the return type and cannot be noticed downstream.
-  return clean.length > maxLen ? clean.slice(0, maxLen) : clean;
+  if (clean.length <= maxLen) return clean;
+
+  // `slice` cuts on UTF-16 code units, so cutting at maxLen can land BETWEEN the
+  // two halves of an emoji and leave a lone surrogate. That is not merely ugly:
+  // supabase-js serialises it as an unpaired \uD83C escape and PostgreSQL REFUSES
+  // the whole request — `invalid input syntax for type json: Unicode low surrogate
+  // must follow a high surrogate`. The member's comment vanishes behind an error
+  // that names neither comments nor length. Verified against PostgreSQL 17.
+  //
+  // No composer can reach this today (every one caps typing at 500, every cap here
+  // is >= 500), so this changes nothing now — it removes the trap so that raising
+  // a maxLength later stays the harmless edit it looks like.
+  const cut = clean.slice(0, maxLen);
+  const last = cut.charCodeAt(maxLen - 1);
+  // A high surrogate in the final position lost its partner to the cut; drop it.
+  return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut;
 }
 
 /**
