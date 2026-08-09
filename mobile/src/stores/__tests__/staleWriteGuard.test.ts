@@ -29,25 +29,13 @@ const SLICES = [
   // notification leak" — so a late write rewrites the very key the defence
   // removes. The defence and the defect were in the same file.
   'src/stores/notificationStore.ts',
+  // All eight stores that register a logout reset are now covered. These three
+  // were pinned as a known gap for one round and then closed; the pin fired when
+  // they were fixed, which is what promoted them here.
+  'src/stores/blockStore.ts',
+  'src/stores/lounge.ts',
+  'src/stores/content.ts',
 ];
-
-/**
- * Stores with the same shape, NOT yet guarded — recorded rather than omitted, so
- * the gap is visible instead of forgotten.
- *
- * All three are memory-only (they do not persist), so a late write shows the
- * previous member's data until the next fetch replaces it, rather than writing
- * it to disk. That is why they rank below notificationStore and why they are a
- * scope decision rather than something to fold in silently.
- *
- * blockStore additionally keeps a per-member MMKV cache, so it should be first
- * when this is picked up.
- */
-const KNOWN_UNGUARDED: Record<string, number> = {
-  'src/stores/blockStore.ts': 5,
-  'src/stores/lounge.ts': 12,
-  'src/stores/content.ts': 6,
-};
 
 const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
@@ -58,9 +46,14 @@ function opsWritingAfterAwait(file: string): Op[] {
   const src = stripComments(fs.readFileSync(path.join(ROOT, file), 'utf8'));
   const lines = src.split(/\r?\n/);
 
+  // Boundaries include NON-async members too. They were async-only at first, so
+  // an async op followed by a sync one had no end — its body ran on into the
+  // next function and inherited that function's writes. deleteLounge was
+  // reported unguarded on exactly that basis, while its own rollback is a
+  // refetch that is guarded in its own right.
   const starts: number[] = [];
   lines.forEach((l, i) => {
-    if (/^\s{0,4}(export const )?\w+:?\s*(=\s*)?async\s*\(/.test(l)) starts.push(i);
+    if (/^\s{0,4}(export const )?\w+:?\s*(=\s*)?(async\s*\(|\()/.test(l)) starts.push(i);
   });
 
   const out: Op[] = [];
@@ -80,8 +73,19 @@ function opsWritingAfterAwait(file: string): Op[] {
     }
     if (!writesAfterAwait) continue;
 
-    // Guarded if the operation consults the captured member anywhere in its body.
-    if (body.some((l) => /stillSignedIn\(/.test(l))) continue;
+    // Guarded if the operation consults the captured member anywhere in its
+    // body — by EITHER primitive. `stillSignedIn` requires a member and suits
+    // the film store, where every operation needs one; `memberUnchanged` also
+    // accepts nobody-then-nobody-now, which is what stores reachable by
+    // anonymous browsing need. Recognising only the first would have reported
+    // eighteen correctly-guarded operations as unguarded.
+    if (body.some((l) => /stillSignedIn\(|memberUnchanged\(/.test(l))) continue;
+
+    // A realtime SUBSCRIPTION is exempt, and only this shape is. It has no
+    // caller and therefore no member captured at a start to compare against —
+    // the guard has nothing to ask. Its equivalent protection is unsubscribing
+    // on logout, which the test below asserts actually happens.
+    if (/^\s*subscribeTo\w+:/.test(lines[start])) continue;
 
     out.push({ file, name: lines[start].trim().slice(0, 70), line: start + 1 });
   }
@@ -104,15 +108,43 @@ describe('a write that lands after logout must not repopulate the store', () => 
     expect((src.match(/stillSignedIn\(/g) ?? []).length).toBeGreaterThanOrEqual(4);
   });
 
-  it('the unguarded stores have not grown — the gap is pinned, not forgotten', () => {
-    // If one of these gets worse, this fails and says so. If one gets FIXED, it
-    // also fails — prompting the entry to be removed and the file promoted into
-    // SLICES above. Either direction is a deliberate decision rather than drift.
-    const actual: Record<string, number> = {};
-    for (const file of Object.keys(KNOWN_UNGUARDED)) {
-      actual[file] = opsWritingAfterAwait(file).length;
-    }
-    expect(actual).toEqual(KNOWN_UNGUARDED);
+  it('EVERY store that registers a logout reset is covered — no store is exempt', () => {
+    // The film store was where #64 was filed, and sweeping only its slices left
+    // the identical defect in four other stores. This pins the LIST itself, so
+    // adding a store with a reset handler and forgetting to sweep it fails here.
+    const resetting = new Set<string>();
+    const walk = (dir: string) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) { if (e.name !== '__tests__') walk(full); continue; }
+        if (!/\.ts$/.test(e.name)) continue;
+        const src = fs.readFileSync(full, 'utf8');
+        if (/registerStoreReset\(/.test(src) && !/export function registerStoreReset/.test(src)) {
+          resetting.add(path.relative(ROOT, full).replace(/\\/g, '/'));
+        }
+      }
+    };
+    walk(path.join(ROOT, 'src', 'stores'));
+
+    // A store with a reset must either be swept, or hold nothing that writes
+    // after an await. Anything else is an unswept store.
+    const unswept = [...resetting].filter(
+      (f) => !SLICES.includes(f) && opsWritingAfterAwait(f).length > 0
+    );
+    expect(unswept).toEqual([]);
+  });
+
+  it('the exempted subscription is actually torn down on logout', () => {
+    // The exemption above is only honest if this holds. The lounge reset used to
+    // set `_activeChannel = null` — forgetting the reference while leaving the
+    // subscription LIVE — so a message arriving after logout still reached the
+    // handler and wrote into the store the reset had just cleared. Nulling a
+    // variable is not unsubscribing. notificationStore tears its channel down;
+    // this one did not.
+    const lounge = stripComments(fs.readFileSync(path.join(ROOT, 'src/stores/lounge.ts'), 'utf8'));
+    const reset = lounge.slice(lounge.lastIndexOf('registerStoreReset('));
+    expect(reset).toMatch(/supabase\.removeChannel\(_activeChannel\)/);
+    expect(reset).toMatch(/_activeChannel = null/);
   });
 
   it('the guard compares against a CAPTURED id, never the current one', () => {

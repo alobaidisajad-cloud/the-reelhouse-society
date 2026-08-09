@@ -27,3 +27,19 @@ export function stillSignedIn(capturedUserId: string | null | undefined): boolea
     if (!capturedUserId) return false;
     return useAuthStore.getState().user?.id === capturedUserId;
 }
+
+/**
+ * The same question for stores that also serve SIGNED-OUT visitors.
+ *
+ * `stillSignedIn` answers false when nobody is signed in, which is right for the
+ * film store — every one of its operations requires a member. It is wrong for
+ * anything anonymous browsing can reach: dossiers are public, so guarding those
+ * with `stillSignedIn` would abandon every fetch a visitor makes and leave them
+ * looking at an empty screen.
+ *
+ * This asks the narrower question the guard actually needs — "is it still the
+ * same person?" — where nobody-then and nobody-now counts as unchanged.
+ */
+export function memberUnchanged(capturedUserId: string | null): boolean {
+    return (useAuthStore.getState().user?.id ?? null) === capturedUserId;
+}

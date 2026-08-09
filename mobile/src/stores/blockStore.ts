@@ -26,6 +26,7 @@ import reelToast from '../utils/reelToast';
 import { useAuthStore } from './auth';
 import { storage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
+import { stillSignedIn } from './domain/helpers/sessionGuard';
 
 // ── MMKV Key ────────────────────────────────────────────────────────────────
 const MMKV_KEY = (userId: string) => `reelhouse_blocks_${userId}`;
@@ -135,14 +136,21 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       TactileEngine.warn();
       reelToast.info(`User blocked. Their content is now hidden.`);
     } catch (err) {
-      // Rollback optimistic update
-      set({
-        blocked: prevBlocked,
-        muted: prevMuted,
-        _blockedIndex: prevBlockedIndex,
-        _mutedIndex: prevMutedIndex,
-      });
-      get().persistToCache(currentUser.id);
+      // Rollback — only while they are still signed in. The optimistic change
+      // this undoes went with the store when logout cleared it, so restoring it
+      // would hand the next member the previous one's block list. The
+      // persistToCache below makes that worse than the other stores: it writes
+      // that list straight back to disk under the departed member's key.
+      // Reporting still happens either way.
+      if (stillSignedIn(currentUser.id)) {
+        set({
+          blocked: prevBlocked,
+          muted: prevMuted,
+          _blockedIndex: prevBlockedIndex,
+          _mutedIndex: prevMutedIndex,
+        });
+        get().persistToCache(currentUser.id);
+      }
 
       logger.error('[BlockStore] blockUser failed:', err);
       captureError(err, { action: 'blockUser', targetId });
@@ -191,12 +199,14 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       TactileEngine.success();
       reelToast.info('User unblocked.');
     } catch (err) {
-      // Rollback
-      set({
-        blocked: prevBlocked,
-        _blockedIndex: prevBlockedIndex,
-      });
-      get().persistToCache(currentUser.id);
+      // Rollback — guarded; see blockUser.
+      if (stillSignedIn(currentUser.id)) {
+        set({
+          blocked: prevBlocked,
+          _blockedIndex: prevBlockedIndex,
+        });
+        get().persistToCache(currentUser.id);
+      }
 
       logger.error('[BlockStore] unblockUser failed:', err);
       captureError(err, { action: 'unblockUser', targetId });
@@ -260,12 +270,14 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       // actually happens rather than promising less.
       reelToast.info('User muted. Their content is now hidden from you.');
     } catch (err) {
-      // Rollback
-      set({
-        muted: prevMuted,
-        _mutedIndex: prevMutedIndex,
-      });
-      get().persistToCache(currentUser.id);
+      // Rollback — guarded; see blockUser.
+      if (stillSignedIn(currentUser.id)) {
+        set({
+          muted: prevMuted,
+          _mutedIndex: prevMutedIndex,
+        });
+        get().persistToCache(currentUser.id);
+      }
 
       logger.error('[BlockStore] muteUser failed:', err);
       captureError(err, { action: 'muteUser', targetId });
@@ -314,12 +326,14 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       TactileEngine.success();
       reelToast.info('User unmuted.');
     } catch (err) {
-      // Rollback
-      set({
-        muted: prevMuted,
-        _mutedIndex: prevMutedIndex,
-      });
-      get().persistToCache(currentUser.id);
+      // Rollback — guarded; see blockUser.
+      if (stillSignedIn(currentUser.id)) {
+        set({
+          muted: prevMuted,
+          _mutedIndex: prevMutedIndex,
+        });
+        get().persistToCache(currentUser.id);
+      }
 
       logger.error('[BlockStore] unmuteUser failed:', err);
       captureError(err, { action: 'unmuteUser', targetId });
@@ -372,10 +386,18 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
   },
 
   syncFromServer: async (userId: string) => {
+    // Captured before the await. This op reads the signed-in member 30-odd lines
+    // BELOW its first write, so that variable cannot guard it — and `userId` is
+    // who the sync is FOR, which is not necessarily the session.
+    const startedAs = useAuthStore.getState().user?.id ?? null;
     try {
       const { data, error } = await supabase.rpc('get_user_blocks', {
         p_user_id: userId,
       });
+
+      // Left mid-sync: writing would put the previous member's block list into a
+      // cleared store, and persistToCache below would write it to disk.
+      if (!stillSignedIn(startedAs)) return;
 
       if (error) throw error;
 

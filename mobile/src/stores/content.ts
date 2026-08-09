@@ -17,6 +17,7 @@ import reelToast from '../utils/reelToast';
 import { withAbortSignal } from '../utils/withAbortSignal';
 import { withTimeout } from '../utils/withTimeout';
 import { useAuthStore } from './auth';
+import { memberUnchanged } from './domain/helpers/sessionGuard';
 import { registerStoreReset } from './resetAllStores';
 
 // ── Types ──
@@ -108,6 +109,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
   hasMoreDossiers: true,
 
   fetchDossiers: async () => {
+    const startedAs = useAuthStore.getState().user?.id ?? null;
     if (inflightFetch || get()._loadingMore) return inflightFetch || Promise.resolve();
     
     const currentGen = ++fetchGeneration;
@@ -173,6 +175,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
           const { pendingDeletes, pendingUpdates, pendingCertifies, pendingViews, pendingCreatesMap } = pending;
           const pendingCreates = new Set<string>(pendingCreatesMap.keys());
 
+          if (!memberUnchanged(startedAs)) return;
           set((state) => {
             const nextCertifiedIds = new Set(state.certifiedDossierIds);
             if (user && data.length > 0) {
@@ -275,6 +278,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
 
   addDossier: async (dossier) => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     if (!user) throw new Error('Must be logged in to file a dossier');
 
     // Single sanitization choke point: clean title/excerpt/content once, before
@@ -325,6 +329,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
       if (error || !data) throw error || new Error('Failed to file dossier');
 
       // Swap temp ID with real ID
+      if (!memberUnchanged(startedAs)) return;
       set((state) => ({
         dossiers: state.dossiers.map(d => 
           d.id === tempId ? {
@@ -370,6 +375,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
   },
 
   loadMoreDossiers: async () => {
+    const startedAs = useAuthStore.getState().user?.id ?? null;
     if (inflightFetch) return; // Wait for any fetchDossiers to finish
     const { dossiers, _loadingMore, hasMoreDossiers } = get();
     if (_loadingMore || !hasMoreDossiers || dossiers.length === 0) return;
@@ -413,6 +419,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
         const pending = parseDossierPendingState();
         const { pendingCertifies } = pending;
 
+        if (!memberUnchanged(startedAs)) return;
         set((state) => {
           const nextCertifiedIds = new Set(state.certifiedDossierIds);
           if (user && data.length > 0) {
@@ -447,6 +454,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
   },
 
   hydrateDossierBody: async (id) => {
+    const startedAs = useAuthStore.getState().user?.id ?? null;
     // Already here (just written by this member, or read before) — nothing to do.
     const existing = get().dossiers.find(d => d.id === id);
     if (existing?.fullContent) return;
@@ -464,6 +472,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
     }
     if (!data?.full_content) return;
 
+    if (!memberUnchanged(startedAs)) return;
     set((state) => {
       // If the row is not in the list there is nothing to enrich, and mapping
       // would silently drop the body we just paid to fetch. That should not
@@ -522,6 +531,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
 
   updateDossier: async (id, updates) => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     if (!user) throw new Error('Must be logged in');
 
     // Sanitize edited fields once (parity with addDossier) so the optimistic
@@ -573,7 +583,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
       } else {
         // Rollback
         if (__DEV__) console.warn(`[updateDossier] Failed for dossier ${id}:`, e);
-        if (originalDossier) {
+        if (originalDossier && memberUnchanged(startedAs)) {
           set((state) => ({
             dossiers: state.dossiers.map((d) =>
               d.id === id ? { 
@@ -592,6 +602,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
 
   deleteDossier: async (id) => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     if (!user) throw new Error('Must be logged in');
 
     const dossierToRemove = get().dossiers.find(d => d.id === id);
@@ -622,7 +633,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
       } else {
         // Rollback
         if (__DEV__) console.warn(`[deleteDossier] Failed for dossier ${id}:`, e);
-        if (dossierToRemove) {
+        if (dossierToRemove && memberUnchanged(startedAs)) {
           set(state => {
             const newDossiers = [...state.dossiers, dossierToRemove];
             return {

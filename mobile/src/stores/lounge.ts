@@ -11,6 +11,7 @@ import reelToast from '../utils/reelToast';
 import { sanitizeInput } from '../utils/sanitizeInput';
 import type { LoungeMember } from '../types/social.types';
 import { useAuthStore } from './auth';
+import { memberUnchanged } from './domain/helpers/sessionGuard';
 import { useBlockStore } from './blockStore';
 import { registerStoreReset } from './resetAllStores';
 
@@ -314,6 +315,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   fetchLounges: async () => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     if (!user) return;
     set({ loading: true });
     try {
@@ -469,6 +471,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         memberFaces: facesMap[l.id],
       }));
 
+      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+      // the logout reset has already cleared.
+      if (!memberUnchanged(startedAs)) return;
       set({ lounges: enriched, loading: false });
     } catch (err) {
       if (__DEV__) console.warn('[Lounge] fetchLounges failed:', err);
@@ -478,6 +483,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   },
 
   fetchMessages: async (loungeId: string) => {
+        const startedAs = useAuthStore.getState().user?.id ?? null;
     set({ currentLoungeId: loungeId, loading: true });
     try {
       const { data, error } = await supabase
@@ -567,10 +573,14 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     } catch {
       reelToast.error('Could not load messages — check your connection.');
     }
+    // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+    // the logout reset has already cleared.
+    if (!memberUnchanged(startedAs)) return;
     set({ loading: false });
   },
 
   loadMoreMessages: async (loungeId: string) => {
+        const startedAs = useAuthStore.getState().user?.id ?? null;
     const current = get().currentMessages;
     if (current.length === 0) return;
     
@@ -625,6 +635,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         
         // Prepend older messages (filter blocked/muted)
         const filteredOlder = olderMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id));
+        // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+        // the logout reset has already cleared.
+        if (!memberUnchanged(startedAs)) return;
         set({ currentMessages: [...filteredOlder, ...current] });
       }
     } catch {
@@ -660,6 +673,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   sendMessage: async (loungeId: string, content: string, type = 'text', meta: LoungeMessageMeta = {}) => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     const ALLOWED_TYPES = ['text', 'film_share', 'log_share', 'list_share', 'dossier_share', 'system'] as const;
     const safeType = (ALLOWED_TYPES as readonly string[]).includes(type) ? type : 'text';
     
@@ -738,6 +752,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       
       if (error) throw error;
       
+      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+      // the logout reset has already cleared.
+      if (!memberUnchanged(startedAs)) return false;
       set(s => {
         if (s.currentLoungeId !== loungeId) return s;
         const alreadyReplaced = s.currentMessages.some(m => m.id === data.id);
@@ -783,6 +800,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   createLounge: async (name, description, isPrivate) => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     if (!user) return null;
 
     const trimmedName = sanitizeInput(name, 'loungeName');
@@ -836,6 +854,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         is_member: true,
       };
 
+      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+      // the logout reset has already cleared.
+      if (!memberUnchanged(startedAs)) return;
       set(s => ({ lounges: [newLounge, ...s.lounges] }));
 
       get().fetchLounges();
@@ -851,6 +872,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   },
 
   setLoungeCover: async (loungeId, cover) => {
+        const startedAs = useAuthStore.getState().user?.id ?? null;
     const prev = get().lounges.find(l => l.id === loungeId)?.cover_image ?? null;
     // Optimistic: patch the single lounges collection so the card updates instantly.
     set(s => ({ lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: cover } : l) }));
@@ -861,6 +883,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     } catch (e) {
       logger.warn('[LoungeStore.setLoungeCover] failed:', e);
       // Revert the optimistic patch on failure — the host sees the truth.
+      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+      // the logout reset has already cleared.
+      if (!memberUnchanged(startedAs)) return false;
       set(s => ({ lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: prev } : l) }));
       reelToast.error('Could not update the salon cover.');
       return false;
@@ -869,10 +894,16 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   joinPublicLounge: async (loungeId) => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     if (!user) return false;
     try {
       const { error } = await supabase.rpc('join_public_lounge', { p_lounge_id: loungeId });
       if (error) throw error;
+      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+      // the logout reset has already cleared.
+      // `false`, not bare — this op's contract is Promise<boolean>. Nobody is
+      // reading the result once the member has gone, but the type is the type.
+      if (!memberUnchanged(startedAs)) return false;
       set(s => ({
         lounges: s.lounges.map(l => l.id === loungeId
           ? { ...l, is_member: true, member_count: (l.member_count || 0) + 1 }
@@ -977,6 +1008,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   toggleReaction: async (messageId, reaction) => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     if (!user) return;
     const msg = get().currentMessages.find(m => m.id === messageId);
     if (!msg) return;
@@ -1007,6 +1039,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     } catch (e) {
       logger.warn('[LoungeStore.toggleReaction] failed, reverting:', e);
       // Revert the optimistic delta.
+      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+      // the logout reset has already cleared.
+      if (!memberUnchanged(startedAs)) return;
       set(s => ({
         currentMessages: s.currentMessages.map(m =>
           m.id === messageId ? { ...m, reactions: applyReactionDelta(m.reactions, reaction, (wasMine ? 1 : -1) as 1 | -1, wasMine) } : m
@@ -1016,6 +1051,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   },
 
   withdrawMessage: async (messageId) => {
+        const startedAs = useAuthStore.getState().user?.id ?? null;
     const target = get().currentMessages.find(m => m.id === messageId);
     if (!target) return;
     // Optimistic tombstone (continuity over a jarring disappearance).
@@ -1039,6 +1075,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }
       // A real refusal (not yours to withdraw, row gone) — restore it intact.
       logger.error('[LoungeStore.withdrawMessage] failed, reverting:', e);
+      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+      // the logout reset has already cleared.
+      if (!memberUnchanged(startedAs)) return;
       set(s => ({
         currentMessages: s.currentMessages.map(m => m.id === messageId ? target : m),
       }));
@@ -1048,6 +1087,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   retryMessage: async (messageId) => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     const msg = get().currentMessages.find(m => m.id === messageId);
     if (!user || !msg || msg.status !== 'failed') return;
     set(s => ({
@@ -1073,6 +1113,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .select('id, created_at')
         .single();
       if (error) throw error;
+      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+      // the logout reset has already cleared.
+      if (!memberUnchanged(startedAs)) return;
       set(s => ({
         currentMessages: s.currentMessages.map(m =>
           m.id === messageId ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const } : m
@@ -1092,6 +1135,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   leaveLounge: async (loungeId) => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     if (!user) return;
 
     const lounge = get().lounges.find(l => l.id === loungeId);
@@ -1135,6 +1179,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       .eq('user_id', user.id);
 
     if (error) {
+      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
+      // the logout reset has already cleared.
+      if (!memberUnchanged(startedAs)) return;
       set(s => {
         const newSet = new Set(s._pendingLeaveLoungeIds);
         newSet.delete(loungeId);
@@ -1150,6 +1197,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   },
 
   deleteLounge: async (loungeId) => {
+    // No session capture here, deliberately: this op's rollback is a REFETCH
+    // (`fetchLounges`), which carries its own guard. There is no direct write
+    // after the await to protect, so a capture would be dead weight.
     const user = useAuthStore.getState().user;
     if (!user) return false;
     
@@ -1218,6 +1268,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           };
 
           // Dedup incoming message and re-sort
+          //
+          // Deliberately NOT session-guarded like the async operations above.
+          // This is a long-lived realtime callback, not a call with a member
+          // captured at its start — there is nothing to compare against. Its
+          // equivalent protection is UNSUBSCRIBING on logout, which the reset at
+          // the bottom of this file now actually does; it used to null the
+          // channel reference and leave the subscription running.
           set(s => {
             const messagesWithoutOpt = s.currentMessages.filter(m => m.id !== newMsg.id);
             
@@ -1375,6 +1432,15 @@ registerStoreReset(() => {
     _lastTypingBroadcastAt = 0;
     for (const t of _typingTimers.values()) clearTimeout(t);
     _typingTimers.clear();
+    // Actually UNSUBSCRIBE, not just forget the reference. Nulling the variable
+    // left the channel live, so a message arriving after logout still reached
+    // the realtime handler and wrote it into the store this reset had just
+    // cleared — the one path the per-operation session guards cannot cover,
+    // because a subscription has no caller to capture a member from.
+    // notificationStore tears its channel down properly; this one did not.
+    if (_activeChannel) {
+        try { supabase.removeChannel(_activeChannel); } catch { /* already gone */ }
+    }
     _activeChannel = null;
     // Purge profile cache to prevent cross-session PII leakage
     _profileCache.clear();
