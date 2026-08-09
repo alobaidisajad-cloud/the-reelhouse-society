@@ -48,5 +48,39 @@
     "sign-in-with-username",
     "sync-entitlement",
     "tmdb-proxy"
-  ]
+  ],
+
+  "_securityNote": "Facts about the LIVE database that no test can derive from this repo. Added 2026-08-10 after the schema snapshot misled three times in two days: it showed a column-unrestricted profiles UPDATE policy (live is locked to 7 columns), it showed two conflicting role whitelists (live has one, permitting 'admin' — acting on the snapshot would have locked out the moderators), and it showed email as world-readable (live denies it). Each entry below was OBSERVED live, not read from a migration. If one of these ever flips, this fails loudly instead of a person discovering it during an audit.",
+  "security": {
+    "anonMustNotRead": [
+      { "table": "profiles", "column": "email", "why": "F-15 — world-readable email is mass harvesting" },
+      { "table": "profiles", "column": "ban_reason", "why": "moderation detail; not the member's business" },
+      { "table": "profiles", "column": "banned_at", "why": "moderation detail" },
+      { "table": "profiles", "column": "suspended_until", "why": "moderation detail" },
+      { "table": "profiles", "column": "suspension_reason", "why": "moderation detail" },
+      { "table": "profiles", "column": "warning_count", "why": "moderation detail" },
+      { "table": "profiles", "column": "entitlement_source", "why": "decides who may demote a tier; must not be visible or writable" },
+      { "table": "logs", "column": "private_notes", "why": "owner-only by definition" }
+    ],
+    "anonMustRead": [
+      { "table": "profiles", "column": "username", "why": "CONTROL. If the API is down or the key is wrong every probe above 'passes' by failing. This one must return 200 or the whole anon check is meaningless." }
+    ],
+    "profilesUpdatableColumns": [
+      "avatar_url",
+      "bio",
+      "display_name",
+      "is_social_private",
+      "persona",
+      "social_links",
+      "username"
+    ],
+    "mustBeEnabledTriggers": [
+      { "table": "profiles", "trigger": "tr_protect_privileged_profile_fields", "why": "pins role, tier, ban state, trust_score and entitlement_source on UPDATE. A DISABLED trigger looks identical to a working one everywhere except tgenabled." },
+      { "table": "profiles", "trigger": "tr_ban_freeze_profile_identity", "why": "stops a banned member editing their way out of recognition" },
+      { "table": "profiles", "trigger": "tr_profiles_username_policy", "why": "username charset/shape backstop" },
+      { "table": "profiles", "trigger": "trg_sync_denormalized_username", "why": "keeps the copied handles honest — the impersonation fix" }
+    ],
+    "rlsRequiredOnEveryPublicTable": true,
+    "minLengthCeilings": 130
+  }
 }

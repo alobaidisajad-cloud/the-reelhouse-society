@@ -96,3 +96,76 @@ describe('backend contract (repo↔production drift guard)', () => {
     expect(found.edgeFunctions).toEqual([...contract.edgeFunctions].sort());
   });
 });
+
+describe('the security posture contract cannot be silently emptied', () => {
+  /**
+   * check-backend-live.mjs verifies live facts this repo cannot derive: which
+   * columns a member may write, whether the privilege-freeze trigger is ENABLED
+   * (not merely present), whether RLS is on, whether the length ceilings survive.
+   *
+   * Every one of those checks iterates a list in backend-contract.json. Empty the
+   * list and the check still runs, still prints its tick, and verifies nothing —
+   * the same shape of failure as the checker that reported "Verified present in
+   * production: nothing." So the lists are pinned here.
+   *
+   * These numbers were OBSERVED live on 2026-08-10, not read from a migration.
+   * The schema snapshot was wrong about all three areas within two days.
+   */
+  const sec = (
+    JSON.parse(
+      readFileSync(join(ROOT, 'scripts', 'backend-contract.json'), 'utf8'),
+    ) as { security?: Record<string, unknown> }
+  ).security as
+    | {
+        anonMustNotRead: { table: string; column: string }[];
+        anonMustRead: { table: string; column: string }[];
+        profilesUpdatableColumns: string[];
+        mustBeEnabledTriggers: { table: string; trigger: string }[];
+        rlsRequiredOnEveryPublicTable: boolean;
+        minLengthCeilings: number;
+      }
+    | undefined;
+
+  it('exists at all', () => {
+    expect(sec).toBeDefined();
+  });
+
+  it('still hides the columns that must never be public', () => {
+    const hidden = (sec!.anonMustNotRead || []).map((c) => `${c.table}.${c.column}`);
+    // profiles.email is F-15 (mass harvesting); logs.private_notes is owner-only.
+    expect(hidden).toContain('profiles.email');
+    expect(hidden).toContain('logs.private_notes');
+    expect(hidden).toContain('profiles.entitlement_source');
+    expect(hidden.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it('keeps a CONTROL probe, without which the hidden-column check is meaningless', () => {
+    // If the API is unreachable every "must not read" probe fails closed and the
+    // whole thing passes having verified nothing. The control must be readable.
+    expect((sec!.anonMustRead || []).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('pins the exact set of columns a member may write to their own profile', () => {
+    // Too many is self-elevation. Too few silently breaks profile editing.
+    expect([...sec!.profilesUpdatableColumns].sort()).toEqual([
+      'avatar_url',
+      'bio',
+      'display_name',
+      'is_social_private',
+      'persona',
+      'social_links',
+      'username',
+    ]);
+  });
+
+  it('requires the privilege-freeze trigger to be enabled', () => {
+    const names = (sec!.mustBeEnabledTriggers || []).map((t) => t.trigger);
+    expect(names).toContain('tr_protect_privileged_profile_fields');
+    expect(names.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('requires RLS everywhere and does not let the ceilings quietly shrink', () => {
+    expect(sec!.rlsRequiredOnEveryPublicTable).toBe(true);
+    expect(sec!.minLengthCeilings).toBeGreaterThanOrEqual(130);
+  });
+});
