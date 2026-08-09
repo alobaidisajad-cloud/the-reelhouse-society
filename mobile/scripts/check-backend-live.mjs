@@ -38,7 +38,23 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const contract = JSON.parse(readFileSync(join(__dirname, 'backend-contract.json'), 'utf8'));
 
 const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || '';
-const DB_URL = process.env.SUPABASE_DB_URL || '';
+let DB_URL = process.env.SUPABASE_DB_URL || '';
+
+// A connection string that still carries its placeholder is not a connection
+// string. Left unhandled it reaches psql, fails on authentication, and prints
+// the whole failed command as a wall of text that reads like a bug in this
+// script — and because the variable persists for the life of the shell, every
+// later run repeats it. Name it instead.
+const PLACEHOLDERS = ['YOURPASSWORD', 'YOUR-PASSWORD', 'YOUR_PASSWORD', '[YOUR', 'PASTE', 'xxxx'];
+if (DB_URL && PLACEHOLDERS.some((p) => DB_URL.toUpperCase().includes(p))) {
+  console.warn(
+    '⚠ SUPABASE_DB_URL still contains a placeholder, so it cannot connect.\n' +
+      '  Replace the password portion with the real one, or clear it with:\n' +
+      '      Remove-Item Env:SUPABASE_DB_URL\n' +
+      '  Treating it as unset for this run.',
+  );
+  DB_URL = '';
+}
 
 // The anon key is public by design (it ships in the app bundle). Reading it from
 // .env means the security-posture half needs no secret and therefore actually runs.
