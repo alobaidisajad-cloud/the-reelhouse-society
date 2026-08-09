@@ -18,6 +18,12 @@ import { listSliceInitialState } from '../domain/listSlice';
 import { interactionSliceInitialState } from '../domain/interactionSlice';
 import { archiveSliceInitialState } from '../domain/archiveSlice';
 import { runWithMutex, clearAllMutexes, _mutexCountForTests } from '../domain/helpers/promiseMutex';
+// Imported for their SIDE EFFECT: each registers its own logout handler on load.
+// That is also the real constraint — a store that has never been imported has
+// never written anything either, so the two stay consistent, but the dependency
+// is worth stating. AppBootstrapper forces a static import of the social store
+// for exactly this reason.
+import '@/src/utils/profileCountsCache';
 
 jest.mock('react-native', () => ({
   InteractionManager: { runAfterInteractions: jest.fn((cb) => cb()) },
@@ -133,6 +139,35 @@ describe('#64 · a logout leaves no trace of the previous member', () => {
     // on a deletion made by an earlier test would have proved nothing.
     await resetAllStores('u1');
     expect(deleted).toContain('reelhouse-films');
+  });
+
+  it('#62 · the map deletes its own entries as tasks settle', async () => {
+    // The whole point of #62: the watchlist map grew an entry per film and never
+    // lost one. Tested by DRIVING it — a source check would pass on a
+    // `.delete()` that never runs.
+    expect(_mutexCountForTests()).toBe(0);
+    await runWithMutex('watchlist:1', async () => {});
+    await runWithMutex('watchlist:2', async () => {});
+    // Settling is scheduled on a microtask, so let the queue drain.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(_mutexCountForTests()).toBe(0);
+  });
+
+  it('#62 · a failing task still releases its slot', async () => {
+    await runWithMutex('watchlist:3', async () => { throw new Error('boom'); }).catch(() => {});
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(_mutexCountForTests()).toBe(0);
+  });
+
+  it('erases the per-member caches by DRIVING the reset, not by reading source', async () => {
+    // The profile-counts eraser existed, was exported and was unit-tested — and
+    // had zero callers. A source sweep sees the delete inside it either way, so
+    // only running the reset proves it is wired.
+    deleted.length = 0;
+    await resetAllStores('u1');
+    expect(deleted).toContain('reelhouse_profile_counts_u1');
   });
 
   it('empties the queued-write map, so the next member does not queue behind the last', async () => {

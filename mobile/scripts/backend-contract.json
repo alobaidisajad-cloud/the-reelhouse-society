@@ -25,6 +25,8 @@
     "get_user_blocks",
     "increment_dossier_views",
     "join_public_lounge",
+    "list_certify_count",
+    "list_certify_counts",
     "register_push_token",
     "remove_lounge_member",
     "request_account_deletion",

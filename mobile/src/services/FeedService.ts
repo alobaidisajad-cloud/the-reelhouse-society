@@ -405,9 +405,14 @@ export const FeedService = {
       listIds.length > 0
         ? supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).order('rank_position', { ascending: true }).order('created_at', { ascending: true }).limit(600)
         : Promise.resolve({ data: [] as any[], error: null }),
+      // Server-authoritative, and one round trip for the whole page. Tallying
+      // `interactions` rows here counted only what the VIEWER may see, so this
+      // path disagreed with the RPC path above for the same stack. Both now
+      // report the true number. The 3000-row cap is gone with the rows: a count
+      // cannot be truncated.
       listIds.length > 0
-        ? supabase.from('interactions').select('target_list_id').in('target_list_id', listIds).eq('type', 'endorse_list').limit(3000)
-        : Promise.resolve({ data: [] as any[], error: null }),
+        ? supabase.rpc('list_certify_counts', { p_list_ids: listIds })
+        : Promise.resolve({ data: [] as { list_id: string; certify_count: number }[], error: null }),
     ]);
 
     const itemsMap: Record<string, { film_id: number; film_title: string; poster_path: string | null }[]> = {};
@@ -418,10 +423,12 @@ export const FeedService = {
       }
     }
 
+    // One row per stack now, carrying the count — not one row per endorsement to
+    // be tallied client-side.
     const endorseMap: Record<string, number> = {};
     if (endorseResp.data) {
-      for (const e of endorseResp.data as any[]) {
-        endorseMap[e.target_list_id] = (endorseMap[e.target_list_id] ?? 0) + 1;
+      for (const e of endorseResp.data as { list_id: string; certify_count: number }[]) {
+        endorseMap[e.list_id] = Number(e.certify_count) || 0;
       }
     }
 

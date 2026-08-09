@@ -2,6 +2,7 @@ import { supabase } from '@/src/lib/supabase';
 import { z } from 'zod';
 import { logger } from '@/src/utils/logger';
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
+import { captureError } from '@/src/lib/sentry';
 
 const CommentPayloadSchema = z.object({
   list_id: z.string().uuid(),
@@ -72,14 +73,28 @@ export const StackService = {
       supabase.from('list_items')
         .select('film_id', { count: 'exact', head: true })
         .eq('list_id', stackId),
-      supabase.from('interactions')
-        .select('user_id', { count: 'exact', head: true })
-        .eq('target_list_id', stackId)
-        .eq('type', 'endorse_list'),
+      // Server-authoritative. Counting `interactions` from here runs under the
+      // viewer's RLS, and a stack endorsement carries no target_user_id — so
+      // visibility rested entirely on the ENDORSER's privacy and two members saw
+      // different totals for the same stack. The function returns an aggregate
+      // and nothing else.
+      supabase.rpc('list_certify_count', { p_list_id: stackId }),
     ]);
 
     if (listRes.error) throw listRes.error;
     if (itemsRes.error) throw itemsRes.error;
+    // These two were unchecked. The register noted one; the film-count check was
+    // added in batch 20, after it was written, so there were two. A failed count
+    // fell through to `?? 0` and `?? validFilms.length` — the latter silently
+    // reporting the CAPPED fetch length, which is exactly the dishonest count
+    // batch 20 set out to eliminate. Reported, not thrown: the stack itself
+    // loaded fine and a wrong number is not worth blanking the screen over.
+    if (filmCountRes.error) {
+      captureError(filmCountRes.error, { scope: 'StackService.getStackFullPayload.filmCount', stackId });
+    }
+    if (endorseRes.error) {
+      captureError(endorseRes.error, { scope: 'StackService.getStackFullPayload.certifyCount', stackId });
+    }
     if (!listRes.data) throw new Error('Stack not found');
 
     // Activate Schema Validation Boundaries
@@ -117,7 +132,8 @@ export const StackService = {
       filmCount: filmCountRes.count ?? validFilms.length,
       isPrivate: listRes.data.is_private ?? false,
       isRanked: listRes.data.is_ranked ?? false,
-      endorseCount: endorseRes.count ?? 0,
+      // The RPC returns the count as `data`, not as PostgREST's `count` header.
+      endorseCount: Number(endorseRes.data ?? 0) || 0,
     };
   },
 
