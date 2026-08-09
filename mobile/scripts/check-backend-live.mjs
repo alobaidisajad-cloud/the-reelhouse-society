@@ -139,6 +139,9 @@ const sec = contract.security || {};
 const posture = [];
 let checkedAnon = false;
 let checkedGrants = false;
+// How many violations each half found — a section that RAN is not a section that PASSED.
+let anonViolations = 0;
+let grantViolations = 0;
 
 // Tier A — anon probes. No secrets: the anon key is public by design and lives
 // in .env, so this half runs anywhere, including a laptop with no DB access.
@@ -155,6 +158,7 @@ if (SUPABASE_URL && ANON_KEY) {
     // "must not read" probe below fails-closed and the whole check passes while
     // verifying nothing — the exact green-tick-for-looking-at-nothing this
     // script was already fixed for once.
+    const postureBeforeAnon = posture.length;
     let controlOk = true;
     for (const { table, column } of sec.anonMustRead || []) {
       const { status } = await probe(table, column);
@@ -175,6 +179,7 @@ if (SUPABASE_URL && ANON_KEY) {
           posture.push(`anon CAN read ${table}.${column} — ${why}`);
         }
       }
+      anonViolations = posture.length - postureBeforeAnon;
       checkedAnon = true;
     }
   } catch (e) {
@@ -187,6 +192,7 @@ if (SUPABASE_URL && ANON_KEY) {
 // Tier B — grants, triggers, RLS, ceilings. Needs real DB access.
 if (DB_URL) {
   try {
+    const postureBeforeGrants = posture.length;
     const q = (sql) => sh(`psql "${DB_URL}" -tAc "${sql.replace(/"/g, '\\"')}"`).trim();
 
     // 1. Exactly which columns may an ordinary member write to their own row.
@@ -243,6 +249,7 @@ if (DB_URL) {
         posture.push(`length ceilings dropped: ${n} live, expected at least ${sec.minLengthCeilings}`);
       }
     }
+    grantViolations = posture.length - postureBeforeGrants;
     checkedGrants = true;
   } catch (e) {
     console.warn(`⚠ grant/trigger/RLS check skipped (psql failed): ${e.message.split('\n')[0]}`);
@@ -300,8 +307,34 @@ if (skipped.length) {
   console.error('  Set SUPABASE_DB_URL / SUPABASE_PROJECT_REF. An unrun check is not a pass.');
 }
 
+// Say what DID pass, even when something else was skipped.
+//
+// Without this the run is all warnings and one error: a member reads it as
+// "everything is broken" when in fact the security posture was checked against
+// production and was clean. Reporting only failures is the same defect as
+// reporting only successes — the reader cannot tell verified-good from
+// not-looked-at, which is the distinction this whole script exists to make.
+// A section only counts as passed if it RAN and produced no violations.
+// `checkedAnon` alone is not enough: it means "the probes completed", not "they
+// were clean", so a run that FOUND drift would print the violation and a green
+// tick for the very same check directly underneath it.
+const passed = [
+  checkedEdges && !missing.edgeFunctions.length && 'edge functions',
+  checkedRpcs && !missing.rpcs.length && !signatureDrift.length && 'RPC signatures',
+  checkedAnon && anonViolations === 0 && 'anon column visibility',
+  checkedGrants && grantViolations === 0 && 'profile grants + triggers + RLS + length ceilings',
+].filter(Boolean);
+
+if (passed.length && failed) {
+  console.log(`\n✓ Checked against production and CLEAN: ${passed.join(', ')}.`);
+  if (checkedAnon) {
+    const n = (sec.anonMustNotRead || []).length;
+    console.log(`  ${n} column(s) confirmed still hidden from anonymous readers.`);
+  }
+}
+
 if (!failed) {
-  console.log('✓ Verified against production: edge functions + RPCs.');
+  console.log(`✓ Verified against production: ${passed.join(', ')}.`);
   if (unsignedRpcs.length) {
     // Named-only entries still cannot catch signature drift. Reported every run
     // so the remaining blind spot is a number someone can watch shrink, rather
