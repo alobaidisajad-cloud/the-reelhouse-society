@@ -37,6 +37,20 @@
 -- Read-only and idempotent. Safe to re-run.
 -- ============================================================================
 
+-- ── The index this count needs ─────────────────────────────────────────────
+-- `interactions` carries no index for this lookup, so counting endorsements is a
+-- sequential scan. Trivial at today's 101 rows, but the feed asks for it once
+-- per stack on a page — so it degrades exactly where it is used most.
+--
+-- PARTIAL: endorse_list rows are a small slice of the table, so the index stays
+-- small and every scan of it is already filtered to the right type.
+--
+-- Plain CREATE INDEX briefly locks the table while it builds; on a table this
+-- size that is milliseconds. The same note appears on 20260702_01's indexes.
+CREATE INDEX IF NOT EXISTS idx_interactions_endorse_list
+  ON public.interactions (target_list_id)
+  WHERE type = 'endorse_list';
+
 -- ── Scalar: used inside the feed RPCs and by the stack screen ───────────────
 CREATE OR REPLACE FUNCTION public.list_certify_count(p_list_id uuid)
 RETURNS bigint
@@ -48,7 +62,17 @@ AS $function$
   SELECT count(*)::bigint
   FROM public.interactions i
   WHERE i.target_list_id = p_list_id
-    AND i.type = 'endorse_list';
+    AND i.type = 'endorse_list'
+    -- Bypassing RLS is the point, but it must not become a way to read a
+    -- PRIVATE stack's totals by guessing its id. The gate is on the STACK's
+    -- visibility, not the endorser's — so everyone who can see a stack sees the
+    -- same number, which is the entire fix, while a sealed stack answers only to
+    -- its owner. auth.uid() still reflects the caller inside a DEFINER function.
+    AND EXISTS (
+      SELECT 1 FROM public.lists l
+      WHERE l.id = p_list_id
+        AND (l.is_private = false OR l.user_id = auth.uid())
+    );
 $function$;
 
 COMMENT ON FUNCTION public.list_certify_count(uuid) IS
@@ -69,6 +93,15 @@ AS $function$
     FROM public.interactions i
     WHERE i.target_list_id = t.id
       AND i.type = 'endorse_list'
+      -- Same visibility gate as the scalar. Kept as its own subquery rather than
+      -- a join so a stack the caller cannot see still returns a ROW (with 0)
+      -- instead of vanishing — the client maps by id, and a missing row would
+      -- silently read as "no endorsements" in a different code path.
+      AND EXISTS (
+        SELECT 1 FROM public.lists l
+        WHERE l.id = t.id
+          AND (l.is_private = false OR l.user_id = auth.uid())
+      )
   )
   FROM unnest(p_list_ids) AS t(id);
 $function$;
