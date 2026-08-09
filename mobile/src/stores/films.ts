@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { createAsyncMMKVStorage } from './mmkv-storage';
+import { createAsyncMMKVStorage, storage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 
 import { ArchiveSlice, createArchiveSlice, archiveSliceInitialState } from './domain/archiveSlice';
@@ -9,7 +9,6 @@ import { ListSlice, createListSlice, listSliceInitialState } from './domain/list
 import { LogSlice, createLogSlice, logSliceInitialState } from './domain/logSlice';
 import { WatchlistSlice, createWatchlistSlice, watchlistSliceInitialState } from './domain/watchlistSlice';
 import { clearAllMutexes } from './domain/helpers/promiseMutex';
-import { storage } from './mmkv-storage';
 
 import type { DomainLog, Interaction, WatchlistItem } from '../types';
 import { createSelectors } from './createSelectors';
