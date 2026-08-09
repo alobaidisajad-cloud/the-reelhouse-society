@@ -62,7 +62,7 @@ const OWNERSHIP: {
 /** Parse `('table','column',1234)` rows out of the migration's VALUES blocks. */
 function parseCeilings(sql: string): Map<string, number> {
   const m = new Map<string, number>();
-  for (const r of sql.matchAll(/\(\s*'([a-z_]+)'\s*,\s*'([a-z_]+)'\s*,\s*(\d+)\s*\)/g)) {
+  for (const r of sql.matchAll(/\(\s*'([a-z0-9_]+)'\s*,\s*'([a-z0-9_]+)'\s*,\s*(\d+)\s*\)/g)) {
     m.set(`${r[1]}.${r[2]}`, Number(r[3]));
   }
   return m;
@@ -232,6 +232,118 @@ describe('database ceilings vs both clients', () => {
     }
     // ...but the source that feeds the notification IS bounded.
     expect(ceilings.get('logs.film_title')).toBeDefined();
+  });
+});
+
+describe('EVERY text column in the schema is accounted for', () => {
+  /**
+   * The gap this closes was never "these columns are unbounded" — it was that
+   * nothing could TELL us which ones were. Batch 27 shipped with 34 of 122
+   * capped and the remainder invisible, and the list of what was left came from
+   * a filter over column NAMES, which quietly discarded 70 of them.
+   *
+   * So the class is enumerated from the schema itself and every member must be
+   * accounted for exactly one way: a length ceiling, or an enum whitelist that
+   * makes length moot. A new text column fails this on the day it is added.
+   */
+  const DUMP = join(__dirname, '..', 'supabase', '_schema_baseline.sql');
+  const M04 = join(__dirname, '..', 'supabase', 'migrations', '20260809_04_text_length_ceilings.sql');
+  const M05 = join(__dirname, '..', 'supabase', 'migrations', '20260809_05_remaining_text_ceilings.sql');
+
+  /** Columns whose value set is already restricted to a fixed list. */
+  const ENUM_WHITELISTED = [
+    'mod_actions.action',
+    'notifications.type',
+    'profiles.role',
+    'profiles.social_visibility',
+    'user_blocks.type',
+    'user_reports.status',
+  ];
+
+  function columnsFromDump() {
+    const sql = readFileSync(DUMP, 'utf8');
+    const scalar: string[] = [];
+    const arr: string[] = [];
+    for (const [, tbl, body] of sql.matchAll(
+      /CREATE TABLE (?:public\.)?"?(\w+)"?\s*\(([\s\S]*?)\n\);/g,
+    )) {
+      for (let line of body.split('\n')) {
+        line = line.trim().replace(/,$/, '');
+        if (/^CONSTRAINT/i.test(line)) continue;
+        // NB: no \b after the brackets — a word boundary can never match after ']',
+        // which is how text[] was first miscounted as plain text.
+        const m = line.match(/^"?(\w+)"?\s+text(\s*\[\s*\])?(\s|$|,)/i);
+        if (m) (m[2] ? arr : scalar).push(`${tbl}.${m[1]}`);
+      }
+    }
+    return { scalar, arr };
+  }
+
+  function cappedIn(file: string) {
+    const sql = readFileSync(file, 'utf8').replace(/--[^\n]*/g, '');
+    const out = new Set<string>();
+    // scalar rows: ('table','column',cap)
+    for (const m of sql.matchAll(/\(\s*'([a-z0-9_]+)'\s*,\s*'([a-z0-9_]+)'\s*,\s*(\d+)\s*\)/g)) {
+      out.add(`${m[1]}.${m[2]}`);
+    }
+    // array rows: ('table','column',items,chars)
+    for (const m of sql.matchAll(/\(\s*'([a-z0-9_]+)'\s*,\s*'([a-z0-9_]+)'\s*,\s*\d+\s*,\s*\d+\s*\)/g)) {
+      out.add(`${m[1]}.${m[2]}`);
+    }
+    return out;
+  }
+
+  const { scalar, arr } = columnsFromDump();
+  const covered = new Set([...cappedIn(M04), ...cappedIn(M05), ...ENUM_WHITELISTED]);
+
+  it('the schema parses — otherwise this whole file is vacuous', () => {
+    expect(scalar.length).toBeGreaterThan(100);
+    expect(arr.length).toBe(3);
+  });
+
+  it('every scalar text column has a ceiling or a whitelist', () => {
+    const orphans = scalar.filter((c) => !covered.has(c));
+    expect(`uncovered scalar text columns: ${orphans.join(', ') || 'none'}`).toBe(
+      'uncovered scalar text columns: none',
+    );
+  });
+
+  it('every text[] column is bounded too', () => {
+    // char_length() does not exist for an array. These need item count AND
+    // joined length, and putting them in the scalar list makes the whole
+    // migration error out rather than skip them.
+    const orphans = arr.filter((c) => !covered.has(c));
+    expect(`uncovered array columns: ${orphans.join(', ') || 'none'}`).toBe(
+      'uncovered array columns: none',
+    );
+  });
+
+  it('no array column appears in the SCALAR list', () => {
+    // The scalar loop builds `char_length(%I)`, so an array smuggled into that
+    // list produces `char_length(following)` at RUNTIME — a function that does
+    // not exist for arrays — and the whole migration errors out.
+    //
+    // An earlier version of this test searched the file for the literal text
+    // `char_length(following)`. It can never appear: the column name arrives
+    // through %I at execution time. The guard passed while the mutation it was
+    // written to catch sailed through. Parse the VALUES rows instead.
+    const sql = readFileSync(M05, 'utf8').replace(/--[^\n]*/g, '');
+    const scalarRows = [...sql.matchAll(/\(\s*'([a-z0-9_]+)'\s*,\s*'([a-z0-9_]+)'\s*,\s*\d+\s*\)/g)].map(
+      (m) => `${m[1]}.${m[2]}`,
+    );
+    const smuggled = scalarRows.filter((c) => arr.includes(c));
+    expect(`arrays in the scalar list: ${smuggled.join(', ') || 'none'}`).toBe(
+      'arrays in the scalar list: none',
+    );
+    expect(sql).toContain('array_to_string');
+  });
+
+  it('no CHECK uses a subquery — PostgreSQL forbids it', () => {
+    // "cannot use subquery in check constraint". The first draft bounded array
+    // elements with (SELECT MAX(...) FROM unnest(...)) and failed outright.
+    const sql = readFileSync(M05, 'utf8').replace(/--[^\n]*/g, '');
+    expect(/CHECK[^;]*\(\s*SELECT\s/i.test(sql)).toBe(false);
+    expect(/FROM unnest\(/i.test(sql)).toBe(false);
   });
 });
 
