@@ -4,6 +4,7 @@ import { Send, ChevronDown } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import { useAuthStore } from '../../store'
 import reelToast from '../../utils/reelToast'
+import { LIMITS } from '../../utils/limits'
 
 /**
  * DossierCritiquePanel — mirrors AnnotationPanel but for dossier_comments table.
@@ -118,6 +119,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                 <textarea
                                     value={editBody}
+                                    maxLength={LIMITS.dossierComment}
                                     onChange={e => setEditBody(e.target.value)}
                                     style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--sepia)', borderRadius: '2px', color: 'var(--bone)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', padding: '0.4rem', outline: 'none', resize: 'vertical', minHeight: '60px' }}
                                     autoFocus
@@ -147,6 +149,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
                     <textarea
                         ref={textareaRef}
                         value={text}
+                        maxLength={LIMITS.dossierComment}
                         onChange={handleInput}
                         placeholder="File a critique on this dossier…"
                         rows={2}

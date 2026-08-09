@@ -4,6 +4,7 @@ import { Send, ChevronDown } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import { useAuthStore } from '../../store'
 import reelToast from '../../utils/reelToast'
+import { LIMITS } from '../../utils/limits'
 
 export default function AnnotationPanel({ logId, open, isExpandedView = false }: { logId: string, open: boolean, isExpandedView?: boolean }) {
     const { user: currentUser } = useAuthStore()
@@ -131,6 +132,7 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                 <textarea
                                     value={editBody}
+                                    maxLength={LIMITS.logComment}
                                     onChange={e => setEditBody(e.target.value)}
                                     style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--sepia)', borderRadius: '2px', color: 'var(--bone)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', padding: '0.4rem', outline: 'none', resize: 'vertical', minHeight: '60px' }}
                                     autoFocus
@@ -167,6 +169,7 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
                     <textarea
                         ref={textareaRef}
                         value={annotateText}
+                        maxLength={LIMITS.logComment}
                         onChange={handleInput}
                         placeholder={isExpandedView ? "File an enduring critique..." : "File a critique..."}
                         rows={isExpandedView ? 2 : 1}

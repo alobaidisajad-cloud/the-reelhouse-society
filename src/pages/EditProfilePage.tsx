@@ -17,6 +17,7 @@ import Buster from '../components/Buster'
 import AvatarCropModal from '../components/AvatarCropModal'
 import '../styles/settings.css'
 import { ProfileTriptych } from '../components/profile/ProfileTriptych'
+import { LIMITS } from '../utils/limits'
 
 interface SocialLink {
     id: string
@@ -349,7 +350,7 @@ export default function EditProfilePage() {
                         className="settings-input"
                         value={displayName}
                         onChange={e => setDisplayName(e.target.value)}
-                        maxLength={30}
+                        maxLength={LIMITS.displayName}
                         placeholder="Your name in the credits..."
                     />
                 </div>
@@ -361,7 +362,7 @@ export default function EditProfilePage() {
                         className="settings-input settings-textarea"
                         value={bio}
                         onChange={e => setBio(e.target.value)}
-                        maxLength={160}
+                        maxLength={LIMITS.bio}
                         placeholder="A brief dispatch about your cinematic journey..."
                     />
                     <div className="settings-char-count">

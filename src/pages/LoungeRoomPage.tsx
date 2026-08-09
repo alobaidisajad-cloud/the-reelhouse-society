@@ -9,6 +9,7 @@ import reelToast from '../utils/reelToast'
 import FilmStripLoader from '../components/FilmStripLoader'
 import PageSEO from '../components/PageSEO'
 import { useViewport } from '../hooks/useViewport'
+import { LIMITS } from '../utils/limits'
 
 // ── Time formatting ──
 function formatTime(dateStr: string) {
@@ -257,7 +258,7 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
                                     className="lounge-settings-input"
                                     value={name}
                                     onChange={e => setName(e.target.value)}
-                                    maxLength={60}
+                                    maxLength={LIMITS.loungeName}
                                 />
                             </div>
                             
@@ -267,7 +268,7 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
                                     className="lounge-settings-input"
                                     value={description}
                                     onChange={e => setDescription(e.target.value)}
-                                    maxLength={280}
+                                    maxLength={LIMITS.loungeDescription}
                                     style={{ minHeight: '80px', resize: 'vertical' }}
                                     placeholder="What is this space about?"
                                 />

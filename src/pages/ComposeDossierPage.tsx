@@ -7,6 +7,7 @@ import { useViewport } from '../hooks/useViewport'
 import PageSEO from '../components/PageSEO'
 import '../styles/compose.css'
 import { sanitizeHTML } from '../utils/sanitize'
+import { LIMITS } from '../utils/limits'
 
 /* ══════════════════════════════════════════════════════
    LIGHTWEIGHT MARKDOWN → HTML PARSER
@@ -197,6 +198,17 @@ export default function ComposeDossierPage() {
     // ── Publish or Update ──
     const handlePublish = async () => {
         if (!title.trim() || !content.trim() || isPublishing) return
+        // Refuse rather than truncate. A `maxLength` on the essay box would stop a
+        // writer mid-sentence with no explanation and silently eat the rest of a
+        // paste; truncating on publish would destroy the ending of a finished piece.
+        // So every word is kept, and the writer is told exactly how much to cut.
+        // The ceiling is a RENDERING limit as much as a storage one — two markdown
+        // rules are quadratic, so a longer essay freezes the device reading it.
+        if (content.trim().length > LIMITS.dossierContent) {
+            const over = content.trim().length - LIMITS.dossierContent
+            reelToast.error(`Dossier is ${over.toLocaleString()} characters over the limit. Trim it and try again.`)
+            return
+        }
 
         try {
             setIsPublishing(true)

@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useAuthStore, useUIStore, useFilmStore } from '../store'
 import reelToast from '../utils/reelToast'
+import { LIMITS } from '../utils/limits'
 
 export default function ListActions({ listId, certifyCount: initialCertifyCount, isCertified: initialIsCertified, commentCount: initialCommentCount, hideBorder }: {
     listId: string; certifyCount: number; isCertified: boolean; commentCount: number; hideBorder?: boolean
@@ -64,9 +65,14 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
         if (!commentText.trim() || submittingComment) return
         setSubmittingComment(true)
         try {
-            await supabase.from('list_comments').insert([{
+            // supabase-js RESOLVES on a failed write — it returns the error, it does
+            // not throw one. So the `catch` below never fired for a rejected insert:
+            // the member saw "Comment added!", watched their text clear and the count
+            // tick up, and nothing had been saved. The error has to be read, not caught.
+            const { error } = await supabase.from('list_comments').insert([{
                 user_id: user!.id, list_id: listId, content: commentText.trim()
             }])
+            if (error) { reelToast.error('Failed to comment'); setSubmittingComment(false); return }
             reelToast.success('Comment added!')
             setCommentText('')
             setLocalCommentCount(c => c + 1)
@@ -163,6 +169,7 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
                                 style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.75rem', background: 'rgba(10,7,3,0.6)', borderColor: 'rgba(139,105,20,0.1)', borderRadius: '3px' }}
                                 placeholder="Leave a remark..."
                                 value={commentText}
+                                maxLength={LIMITS.listComment}
                                 onChange={e => setCommentText(e.target.value)}
                                 onClick={e => e.stopPropagation()}
                                 onKeyDown={e => { if (e.key === 'Enter') handleSubmitComment(e as any) }}

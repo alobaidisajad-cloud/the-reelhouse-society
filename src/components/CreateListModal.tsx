@@ -4,6 +4,7 @@ import { Reorder } from 'framer-motion'
 import { tmdb } from '../tmdb'
 import reelToast from '../utils/reelToast'
 import { Portal } from './UI'
+import { LIMITS } from '../utils/limits'
 
 import { useViewport } from '../hooks/useViewport'
 
@@ -105,7 +106,7 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', overflowY: 'auto', paddingRight: '0.2rem', paddingBottom: '1rem' }}>
-                    <input className="input" placeholder="List title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus={!IS_TOUCH} />
+                    <input className="input" placeholder="List title" value={title} maxLength={LIMITS.listTitle} onChange={(e) => setTitle(e.target.value)} autoFocus={!IS_TOUCH} />
                     
                     {/* ── FILM SEARCH HIGHER UP ── */}
                     <div style={{ background: 'rgba(28,23,16,0.5)', padding: '1rem', borderRadius: '4px', border: '1px solid rgba(139,105,20,0.15)' }}>
@@ -186,7 +187,7 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
                         )}
                     </div>
 
-                    <textarea className="input" placeholder="What's this list about? (Optional)" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ minHeight: 60 }} />
+                    <textarea className="input" placeholder="What's this list about? (Optional)" value={desc} maxLength={LIMITS.listDescription} onChange={(e) => setDesc(e.target.value)} style={{ minHeight: 60 }} />
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--bone)' }}>
                         <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} style={{ accentColor: 'var(--sepia)' }} />
                         {isPrivate ? <><Lock size={12} /> PRIVATE LIST (HIDDEN FROM COMMUNITY)</> : <><Globe size={12} /> PUBLIC LIST (VISIBLE TO COMMUNITY)</>}

@@ -9,6 +9,7 @@ import { tmdb } from '../tmdb'
 import reelToast from '../utils/reelToast'
 import PageSEO from '../components/PageSEO'
 import '../styles/lounge.css'
+import { LIMITS } from '../utils/limits'
 
 // ── Gate for non-archivists ──
 function LoungeGate() {
@@ -82,7 +83,7 @@ function CreateLoungeModal({ onClose }: { onClose: () => void }) {
                         placeholder="e.g., The Noir Corner, Asian Cinema Obsessives..."
                         value={name}
                         onChange={e => setName(e.target.value)}
-                        maxLength={60}
+                        maxLength={LIMITS.loungeName}
                         autoFocus
                     />
                 </div>
@@ -94,7 +95,7 @@ function CreateLoungeModal({ onClose }: { onClose: () => void }) {
                         placeholder="What's this lounge about? What kind of cinema lovers belong here?"
                         value={description}
                         onChange={e => setDescription(e.target.value)}
-                        maxLength={300}
+                        maxLength={LIMITS.loungeDescription}
                     />
                 </div>
 
