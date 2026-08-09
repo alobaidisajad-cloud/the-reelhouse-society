@@ -13,11 +13,29 @@ import reelToast from '../../utils/reelToast';
 import { sanitizeInput } from '../../utils/sanitizeInput';
 import { useAuthStore } from '../auth';
 
-export interface ListSlice {
+/**
+ * The DATA this slice owns — see the note on `LogSliceData`.
+ *
+ * This slice is why the hand-written reset was the wrong shape: it was missed
+ * ENTIRELY. All three fields below survived a logout, so a stacks page that had
+ * reached its end stayed ended for the next member.
+ */
+export interface ListSliceData {
     lists: CustomList[];
     listsHasMore: boolean;
     _listsCursor: string | null;
     _fetchingLists: boolean;
+}
+
+/** A FUNCTION, never a shared constant — see `logSliceInitialState`. */
+export const listSliceInitialState = (): ListSliceData => ({
+    lists: [],
+    listsHasMore: true,
+    _listsCursor: null,
+    _fetchingLists: false,
+});
+
+export interface ListSlice extends ListSliceData {
 
     fetchLists: (loadMore?: boolean) => Promise<void>;
     createList: (list: Partial<CustomList>) => Promise<void>;
@@ -28,10 +46,7 @@ export interface ListSlice {
 }
 
 export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set, get) => ({
-    lists: [],
-    listsHasMore: true,
-    _listsCursor: null,
-    _fetchingLists: false,
+    ...listSliceInitialState(),
 
     fetchLists: async (loadMore = false) => {
         const user = useAuthStore.getState().user;

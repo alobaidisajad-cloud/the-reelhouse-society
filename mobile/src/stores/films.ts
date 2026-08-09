@@ -3,11 +3,13 @@ import { persist } from 'zustand/middleware';
 import { createAsyncMMKVStorage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 
-import { ArchiveSlice, createArchiveSlice } from './domain/archiveSlice';
-import { InteractionSlice, createInteractionSlice } from './domain/interactionSlice';
-import { ListSlice, createListSlice } from './domain/listSlice';
-import { LogSlice, createLogSlice } from './domain/logSlice';
-import { WatchlistSlice, createWatchlistSlice } from './domain/watchlistSlice';
+import { ArchiveSlice, createArchiveSlice, archiveSliceInitialState } from './domain/archiveSlice';
+import { InteractionSlice, createInteractionSlice, interactionSliceInitialState } from './domain/interactionSlice';
+import { ListSlice, createListSlice, listSliceInitialState } from './domain/listSlice';
+import { LogSlice, createLogSlice, logSliceInitialState } from './domain/logSlice';
+import { WatchlistSlice, createWatchlistSlice, watchlistSliceInitialState } from './domain/watchlistSlice';
+import { clearAllMutexes } from './domain/helpers/promiseMutex';
+import { storage } from './mmkv-storage';
 
 import type { DomainLog, Interaction, WatchlistItem } from '../types';
 import { createSelectors } from './createSelectors';
@@ -117,9 +119,37 @@ export const useArchiveStore = useFilmStore;
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
+    // Every slice's OWN starting values, not a list maintained by hand. The
+    // hand-written list named 10 of the 28 fields this store holds — it missed
+    // every cursor, every `hasMore`, every in-flight flag, two mutexes, and the
+    // stacks slice entirely. A `hasMore: false` inherited from the previous
+    // member disabled "load more" for the next one, and a stale `_fetching: true`
+    // would have blocked the fetch that repairs it.
+    //
+    // Each factory returns FRESH objects, so no two sessions share an array —
+    // `sortLogs` sorts in place, and a shared constant would let one member's
+    // session mutate the pristine copy the next reset depends on.
     useFilmStore.setState({
-        logs: [], watchlist: [], lists: [], interactions: [], physicalArchive: [],
-        _loggedIndex: {}, _watchlistIndex: {}, _endorsedIndex: {}, _listEndorsedIndex: {},
-        _addLogMutex: false,
+        ...logSliceInitialState(),
+        ...watchlistSliceInitialState(),
+        ...listSliceInitialState(),
+        ...interactionSliceInitialState(),
+        ...archiveSliceInitialState(),
     });
+
+    // The queued-write map outlives the store, so it is cleared here too —
+    // otherwise the next member's first write to a key chains onto a promise
+    // belonging to the previous one.
+    clearAllMutexes();
+
+    // Delete the persisted copy rather than trusting the overwrite above to
+    // reach disk. This store's writes are DEFERRED (up to 1.5s, or until
+    // animations settle), so a logout followed by the app closing would leave
+    // the previous member's last 150 logs — private notes included — on the
+    // device, to be loaded on next launch before anyone signs in.
+    //
+    // `removeItem` is synchronous AND drops the pending write, so it closes the
+    // window rather than racing it. notificationStore does exactly this, for
+    // exactly this reason.
+    try { storage.delete('reelhouse-films'); } catch { /* noop */ }
 });

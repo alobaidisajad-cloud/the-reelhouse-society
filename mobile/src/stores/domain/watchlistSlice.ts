@@ -7,29 +7,39 @@ import { isNetworkError } from '../../utils/networkError';
 import { enqueueMutation } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { useAuthStore } from '../auth';
+import { runWithMutex } from './helpers/promiseMutex';
 
-export interface WatchlistSlice {
+/** The DATA this slice owns — see the note on `LogSliceData`. */
+export interface WatchlistSliceData {
     watchlist: WatchlistItem[];
     watchlistHasMore: boolean;
     watchlistPage: number;
     _fetchingWatchlist: boolean;
     _watchlistIndex: Record<number, true>;
-    _watchlistPromises: Record<number, Promise<void>>;
     _watchlistCursor: string | null;
+}
 
+/**
+ * A FUNCTION, never a shared constant — see the note on `logSliceInitialState`.
+ * The reset spreads this, and a constant would hand every reset the same objects.
+ */
+export const watchlistSliceInitialState = (): WatchlistSliceData => ({
+    watchlist: [],
+    watchlistHasMore: true,
+    watchlistPage: 0,
+    _fetchingWatchlist: false,
+    _watchlistIndex: {},
+    _watchlistCursor: null,
+});
+
+export interface WatchlistSlice extends WatchlistSliceData {
     fetchWatchlist: (loadMore?: boolean) => Promise<void>;
     addToWatchlist: (film: { id: number; title?: string; name?: string; poster_path?: string | null; release_date?: string }) => Promise<void>;
     removeFromWatchlist: (filmId: number) => Promise<void>;
 }
 
 export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], WatchlistSlice> = (set, get) => ({
-    watchlist: [],
-    watchlistHasMore: true,
-    watchlistPage: 0,
-    _fetchingWatchlist: false,
-    _watchlistIndex: {},
-    _watchlistPromises: {},
-    _watchlistCursor: null,
+    ...watchlistSliceInitialState(),
 
     fetchWatchlist: async (loadMore = false) => {
         const user = useAuthStore.getState().user;
@@ -163,9 +173,11 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
             }
         };
 
-        const prevPromise = get()._watchlistPromises[film.id] || Promise.resolve();
-        const nextPromise = prevPromise.then(dbOperation).catch(() => {});
-        set(state => ({ _watchlistPromises: { ...state._watchlistPromises, [film.id]: nextPromise } }));
+        // Fire-and-forget, exactly as before: this function did not await the
+        // chain, and dbOperation handles its own failures rather than throwing.
+        // The trailing catch preserves that — the shared helper propagates a
+        // rejection to its caller, and nothing here is listening.
+        void runWithMutex(`watchlist:${film.id}`, dbOperation).catch(() => {});
     },
 
     removeFromWatchlist: async (filmId) => {
@@ -211,8 +223,8 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
             }
         };
 
-        const prevPromise = get()._watchlistPromises[filmId] || Promise.resolve();
-        const nextPromise = prevPromise.then(dbOperation).catch(() => {});
-        set(state => ({ _watchlistPromises: { ...state._watchlistPromises, [filmId]: nextPromise } }));
+        // Same key as the add path, so add and remove for one film serialise
+        // against each other — a remove must never overtake its own add.
+        void runWithMutex(`watchlist:${filmId}`, dbOperation).catch(() => {});
     },
 });

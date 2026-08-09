@@ -11,7 +11,17 @@ import {
     updateLogOp
 } from './logSlice/helpers/logOperations';
 
-export interface LogSlice {
+/**
+ * The DATA this slice owns, separated from its actions.
+ *
+ * Logout has to restore every one of these, and the reset used to name them by
+ * hand — it named four of eight, so a `hasMore: false` inherited from the
+ * previous member disabled "load more" for the next one. Splitting the data out
+ * means the initial-state factory below must supply every field or the build
+ * fails, and the reset spreads that factory. A field added here cannot be
+ * forgotten by either.
+ */
+export interface LogSliceData {
     logs: DomainLog[];
     logsHasMore: boolean;
     _logsCursor: string | null;
@@ -20,7 +30,26 @@ export interface LogSlice {
     _addLogMutex: boolean;
     _updateLogMutex: boolean;
     _markWatchedMutexes: Record<number, boolean>;
+}
 
+/**
+ * A FUNCTION, deliberately — never a shared constant.
+ *
+ * `sortLogs` sorts in place, so a constant would hand every reset the same array
+ * and let one session mutate the pristine copy the next reset depends on.
+ */
+export const logSliceInitialState = (): LogSliceData => ({
+    logs: [],
+    logsHasMore: true,
+    _logsCursor: null,
+    _loggedIndex: {},
+    _fetchingLogs: false,
+    _addLogMutex: false,
+    _updateLogMutex: false,
+    _markWatchedMutexes: {},
+});
+
+export interface LogSlice extends LogSliceData {
     fetchLogs: (loadMore?: boolean) => Promise<void>;
     addLog: (log: Partial<DomainLog>) => Promise<void>;
     updateLog: (id: string, updates: Partial<DomainLog>) => Promise<void>;
@@ -31,14 +60,7 @@ export interface LogSlice {
 }
 
 export const createLogSlice: StateCreator<FilmState, [], [], LogSlice> = (set, get) => ({
-    logs: [],
-    logsHasMore: true,
-    _logsCursor: null,
-    _loggedIndex: {},
-    _fetchingLogs: false,
-    _addLogMutex: false,
-    _updateLogMutex: false,
-    _markWatchedMutexes: {},
+    ...logSliceInitialState(),
 
     fetchLogs: async (loadMore = false) => fetchLogsOp(set, get, loadMore),
     addLog: async (log) => addLogOp(set, get, log),

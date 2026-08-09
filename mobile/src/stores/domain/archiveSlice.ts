@@ -9,14 +9,27 @@ import { useAuthStore } from '../auth';
 import { captureError } from '../../lib/sentry';
 import { isNetworkError } from '../../utils/networkError';
 
-export interface ArchiveSlice {
+/** The DATA this slice owns — see the note on `LogSliceData`. */
+export interface ArchiveSliceData {
     physicalArchive: PhysicalArchiveItem[];
     archiveHasMore: boolean;
     archivePage: number;
     _fetchingArchive: boolean;
     _archiveCursor: string | null;
     stubs: TicketStub[];
+}
 
+/** A FUNCTION, never a shared constant — see `logSliceInitialState`. */
+export const archiveSliceInitialState = (): ArchiveSliceData => ({
+    physicalArchive: [],
+    archiveHasMore: true,
+    archivePage: 0,
+    _fetchingArchive: false,
+    _archiveCursor: null,
+    stubs: [],
+});
+
+export interface ArchiveSlice extends ArchiveSliceData {
     fetchPhysicalArchive: (userId?: string, loadMore?: boolean) => Promise<PhysicalArchiveItem[]>;
     addToPhysicalArchive: (film: { id: number; title?: string; name?: string; poster_path?: string | null; poster?: string | null; release_date?: string }, formats: string[], notes?: string, condition?: string) => Promise<void>;
     removeFromPhysicalArchive: (filmId: number) => Promise<void>;
@@ -27,12 +40,7 @@ export interface ArchiveSlice {
 }
 
 export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice> = (set, get) => ({
-    physicalArchive: [],
-    archiveHasMore: true,
-    archivePage: 0,
-    _fetchingArchive: false,
-    _archiveCursor: null,
-    stubs: [],
+    ...archiveSliceInitialState(),
 
     fetchPhysicalArchive: async (userId?: string, loadMore = false) => {
         const uid = userId ?? useAuthStore.getState().user?.id;

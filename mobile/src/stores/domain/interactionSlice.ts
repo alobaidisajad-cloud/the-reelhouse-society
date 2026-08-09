@@ -8,36 +8,28 @@ import { enqueueMutation, flushOfflineQueue } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { useAuthStore } from '../auth';
 
-// ── Transient Module-Scoped Mutex Queue — guarantees FIFO execution & zero memory leaks ──
-const _endorseMutexes = new Map<string, Promise<void>>();
+// The implementation that used to live here is now shared — the watchlist had
+// the same problem and solved it by growing a map in Zustand state forever.
+// One copy, both callers, and it is cleared on logout. Behaviour is unchanged:
+// FIFO per key, active garbage collection, and the rejection still reaches the
+// caller so toggleEndorse can roll back.
+import { runWithMutex } from './helpers/promiseMutex';
 
-async function runWithMutex(targetId: string, task: () => Promise<void>): Promise<void> {
-    const previous = _endorseMutexes.get(targetId) || Promise.resolve();
-    
-    // Chain the new task to run after the previous one finishes (regardless of success/fail)
-    const current = previous.then(task, task);
-    _endorseMutexes.set(targetId, current);
-    
-    // Active Garbage Collection: remove the promise from the map once it resolves,
-    // ONLY if it's still the latest promise for this target.
-    // The .catch is not optional: this cleanup chain is discarded, so when
-    // `current` rejects — toggleEndorse rethrows genuine failures so callers can
-    // roll back — the derived promise would reject with nobody listening and
-    // raise an unhandled rejection. The real rejection still reaches the caller
-    // through `return current` below.
-    current.finally(() => {
-        if (_endorseMutexes.get(targetId) === current) {
-            _endorseMutexes.delete(targetId);
-        }
-    }).catch(() => { /* delivered via `current`; see above */ });
-    
-    return current;
-}
-
-export interface InteractionSlice {
+/** The DATA this slice owns — see the note on `LogSliceData`. */
+export interface InteractionSliceData {
     interactions: Interaction[];
     _endorsedIndex: Record<string, Interaction>;
     _listEndorsedIndex: Record<string, Interaction>;
+}
+
+/** A FUNCTION, never a shared constant — see `logSliceInitialState`. */
+export const interactionSliceInitialState = (): InteractionSliceData => ({
+    interactions: [],
+    _endorsedIndex: {},
+    _listEndorsedIndex: {},
+});
+
+export interface InteractionSlice extends InteractionSliceData {
 
     toggleEndorse: (targetId: string) => Promise<void>;
     hasEndorsed: (targetId: string) => boolean;
@@ -49,9 +41,7 @@ export interface InteractionSlice {
 }
 
 export const createInteractionSlice: StateCreator<InteractionSlice, [], [], InteractionSlice> = (set, get) => ({
-    interactions: [],
-    _endorsedIndex: {},
-    _listEndorsedIndex: {},
+    ...interactionSliceInitialState(),
 
     toggleEndorse: async (targetId) => {
         return runWithMutex(`endorse:${targetId}`, async () => {

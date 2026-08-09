@@ -17,6 +17,7 @@
  * throw there would cost the member their data. See src/lib/sentry.ts.
  */
 import { useFilmStore } from '../films';
+import { clearAllMutexes, runWithMutex } from '../domain/helpers/promiseMutex';
 import { captureError } from '@/src/lib/sentry';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { followUser, unfollowUser, hydrateFollowing } from '../domain/socialSlice';
@@ -139,10 +140,17 @@ const attempt = async (fn: () => Promise<unknown>) => {
     try { await fn(); } catch { /* rethrown by design — see above */ }
 };
 
-/** addToWatchlist returns before its write settles; the chain is parked here. */
+/**
+ * addToWatchlist returns before its write settles, so tests have to wait for it.
+ *
+ * This used to reach into `_watchlistPromises` in store state. That map now
+ * lives in the shared mutex helper and deletes its own entries, so instead we
+ * queue a no-op on the SAME key: the queue is FIFO, so it cannot run until the
+ * real write has settled. That waits through the actual ordering guarantee
+ * rather than around it, and it works whether or not the entry still exists.
+ */
 const settle = async (filmId: number) => {
-    const p = (useFilmStore.getState() as unknown as { _watchlistPromises: Record<number, Promise<void>> })._watchlistPromises[filmId];
-    if (p) await p;
+    await runWithMutex(`watchlist:${filmId}`, async () => {}).catch(() => {});
 };
 
 beforeEach(() => {
@@ -151,7 +159,12 @@ beforeEach(() => {
     mockDbData = null;
     mockEndorseError = null;
     mockDbQueue = [];
-    useFilmStore.setState({ watchlist: [], _watchlistIndex: {}, _watchlistPromises: {} });
+    // The queued-write chain moved out of store state into a shared module map,
+    // so isolating tests from each other means clearing that instead. Same
+    // intent as the `_watchlistPromises: {}` this replaces: no test inherits a
+    // pending promise from the one before it.
+    useFilmStore.setState({ watchlist: [], _watchlistIndex: {} });
+    clearAllMutexes();
 });
 
 describe('watchlist add — a genuine defect', () => {
@@ -206,8 +219,9 @@ describe('watchlist remove — same two rules on the delete path', () => {
     beforeEach(() => {
         useFilmStore.setState({
             watchlist: [{ id: 550, title: 'Fight Club', poster: '/p.jpg', poster_path: '/p.jpg', year: 1999 }],
-            _watchlistIndex: { 550: true }, _watchlistPromises: {},
+            _watchlistIndex: { 550: true },
         });
+        clearAllMutexes();
     });
 
     it('reports a genuine defect and restores the film', async () => {
