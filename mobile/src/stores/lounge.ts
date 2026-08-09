@@ -679,7 +679,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     
     // Parity with the offline mutationExecutor path: strip zero-width/control
     // chars and length-cap via the shared sanitizer (was a bare trim+slice).
-    const cleanContent = sanitizeInput(content.slice(0, 500), 'loungeMessage');
+    // No second, hardcoded cap here. `sanitizeInput` already enforces
+    // MAX_LENGTHS.loungeMessage; a `.slice(0, 500)` in front of it was a
+    // stricter duplicate that silently truncated at 500 no matter what the
+    // composer allowed — so widening the box alone would have changed nothing.
+    // One cap, one place.
+    const cleanContent = sanitizeInput(content, 'loungeMessage');
     if (!user || (!cleanContent && type === 'text')) return false;
 
     const now = Date.now();

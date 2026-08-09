@@ -47,7 +47,7 @@ export const MAX_LENGTHS = {
   bio: 160,
   listTitle: 100,
   listDescription: 1000,
-  listComment: 1000,
+  listComment: 2000,
   logComment: 2000,
   dossierComment: 2000,
   loungeName: 50,

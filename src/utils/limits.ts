@@ -18,7 +18,7 @@ export const LIMITS = {
   /** A critique on someone's log. */
   logComment: 2000,
   /** A comment on a stack. */
-  listComment: 1000,
+  listComment: 2000,
   /** A critique on a dossier. */
   dossierComment: 2000,
   /** A message in a lounge. */

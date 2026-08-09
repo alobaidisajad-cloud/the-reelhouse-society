@@ -24,6 +24,7 @@ import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
 import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { formatDateMonthYear, timeAgo } from '@/src/utils/timeAgo';
@@ -755,7 +756,7 @@ export default function StackDetailScreen() {
                         onChangeText={handleCommentTextChange}
                         returnKeyType="send"
                         onSubmitEditing={handleSubmitComment}
-                        maxLength={500}
+                        maxLength={MAX_LENGTHS.listComment}
                         selectionColor={colors.selection}
                         cursorColor={colors.sepia}
                         disableFullscreenUI={true}

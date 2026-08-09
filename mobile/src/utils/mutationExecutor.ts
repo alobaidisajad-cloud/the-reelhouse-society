@@ -592,7 +592,11 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const { lounge_id, user_id, username, content, type: msgType, _tempId, film_id, film_title, film_poster, reply_to_id, reply_to_username, reply_to_content, metadata } = p;
         const dbPayload = {
             lounge_id, user_id, username,
-            content: sanitizeInput((content as string).slice(0, 500), 'loungeMessage'),
+            // sanitizeInput enforces MAX_LENGTHS.loungeMessage on its own; the
+            // `.slice(0, 500)` that used to sit here was a stricter duplicate cap
+            // that would have truncated a queued message at 500 regardless of what
+            // the composer accepted. One cap, one place — see the online path.
+            content: sanitizeInput(content as string, 'loungeMessage'),
             type: msgType ?? 'text',
             film_id, film_title, film_poster, reply_to_id, reply_to_username, reply_to_content, metadata
         };

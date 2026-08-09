@@ -21,6 +21,7 @@ import { useDispatchStore } from '@/src/stores/content';
 import { colors, effects, fonts } from '@/src/theme/theme';
 import { DossierComment, DossierDetail } from '@/src/types';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { buildCritiquePayload, type CritiqueRow } from '@/src/utils/critiquePayload';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -579,7 +580,7 @@ export default function DossierReaderScreen() {
                     value={newComment}
                     onChangeText={handleNewCommentChange}
                     multiline
-                    maxLength={500}
+                    maxLength={MAX_LENGTHS.dossierComment}
                     keyboardAppearance="dark"
                     accessibilityLabel="Dossier critique"
                     selectionColor={colors.selection}

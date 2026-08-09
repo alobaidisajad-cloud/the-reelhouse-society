@@ -13,6 +13,7 @@ import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 
 import reelToast from '@/src/utils/reelToast';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 interface ShareToLoungeProps {
     visible: boolean;
@@ -208,7 +209,7 @@ export default function ShareToLoungeModal({
                                 value={message}
                                 onChangeText={setMessage}
                                 multiline
-                                maxLength={500}
+                                maxLength={MAX_LENGTHS.loungeMessage}
                                 keyboardAppearance="dark"
                                 accessibilityLabel="Share message"
                                 selectionColor={colors.selection}

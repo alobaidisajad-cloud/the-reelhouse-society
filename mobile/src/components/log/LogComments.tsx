@@ -5,6 +5,7 @@ import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Image } from 'expo-image';
 import { Sparkles, ChevronDown } from 'lucide-react-native';
 import React, { RefObject, useMemo, useState } from 'react';
@@ -145,7 +146,7 @@ export default function LogComments({
             value={newComment}
             onChangeText={onNewCommentChange}
             multiline
-            maxLength={500}
+            maxLength={MAX_LENGTHS.logComment}
             selectionColor={'rgba(218,165,32,0.3)'}
             cursorColor={colors.sepia}
             disableFullscreenUI={true}

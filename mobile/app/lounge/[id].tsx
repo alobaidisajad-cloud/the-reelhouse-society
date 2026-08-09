@@ -16,6 +16,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { LoungeMember, LoungeMemberStatus } from '@/src/types/social.types';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { safeOpenURL } from '@/src/utils/linking';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -591,7 +592,7 @@ export default function LoungeRoomScreen() {
               value={input}
               onChangeText={handleInputChange}
               multiline
-              maxLength={500}
+              maxLength={MAX_LENGTHS.loungeMessage}
               selectionColor={colors.sepia}
               keyboardAppearance="dark"
               accessibilityLabel="Compose a dispatch"

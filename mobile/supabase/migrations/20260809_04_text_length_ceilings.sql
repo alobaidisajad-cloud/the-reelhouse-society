@@ -86,7 +86,7 @@ BEGIN
     SELECT * FROM (VALUES
       -- ── member prose: limits agreed with BOTH clients ────────────────────
       ('log_comments',      'body',              2000),
-      ('list_comments',     'content',           1000),
+      ('list_comments',     'content',           2000),
       ('dossier_comments',  'body',              2000),
       ('lounge_messages',   'content',           2000),
       -- the quoted copy of the message being replied to. Member-supplied on
@@ -169,7 +169,7 @@ BEGIN
   -- ── PASS 2: apply. Every target verified, so this cannot half-finish ──────
   FOR c IN
     SELECT * FROM (VALUES
-      ('log_comments','body',2000),('list_comments','content',1000),
+      ('log_comments','body',2000),('list_comments','content',2000),
       ('dossier_comments','body',2000),('lounge_messages','content',2000),
       ('lounge_messages','reply_to_content',2000),('reports','details',500),
       ('logs','review',5000),('lists','title',100),('lists','description',1000),

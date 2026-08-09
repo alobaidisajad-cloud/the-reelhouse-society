@@ -599,14 +599,21 @@ describe('Lounge', () => {
             ]);
         });
 
-        it('truncates content to 500 chars before sanitizing', async () => {
+        it('hands content to the sanitizer WHOLE — one cap, in one place', async () => {
+            // This used to assert a `.slice(0, 500)` applied before sanitizing, and
+            // it was right to exist: it is what caught the change. But the second
+            // cap was the defect. It was stricter than MAX_LENGTHS.loungeMessage and
+            // hardcoded, so widening the composer changed nothing — every message
+            // was still cut at 500 on its way to the database, online and offline.
+            //
+            // The sanitizer owns the length. Passing the text through untouched is
+            // what makes raising the limit in one place actually raise it.
             makeChainResolveTo(mockChain, { error: null });
             (sanitizeInput as jest.Mock).mockImplementation((s: string) => s);
             const longContent = 'a'.repeat(1000);
             await runMutation('send_lounge_message', { lounge_id: 'l1', user_id: 'u1', content: longContent, type: 'text' });
-            expect(sanitizeInput).toHaveBeenCalledWith(expect.any(String), 'loungeMessage');
-            const calledWith = (sanitizeInput as jest.Mock).mock.calls[0][0];
-            expect(calledWith.length).toBe(500);
+            expect(sanitizeInput).toHaveBeenCalledWith(longContent, 'loungeMessage');
+            expect((sanitizeInput as jest.Mock).mock.calls[0][0].length).toBe(1000);
         });
     });
 

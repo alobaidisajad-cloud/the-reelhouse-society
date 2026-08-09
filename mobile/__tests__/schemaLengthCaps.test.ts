@@ -235,6 +235,66 @@ describe('database ceilings vs both clients', () => {
   });
 });
 
+describe('the composers agree with the limits they write to', () => {
+  /**
+   * The comment boxes were hardcoded to 500 while the sanitiser, the web app and
+   * the database all allowed 2000 — so the phone, which IS the product, was the
+   * most restrictive client by a factor of four. Nobody noticed because the web
+   * had no limit at all to compare against.
+   *
+   * Wiring each box to the constant it writes through means the number cannot
+   * drift again: raising a limit raises the box with it.
+   */
+  const COMPOSERS: [string, keyof typeof MAX_LENGTHS][] = [
+    ['src/components/log/LogComments.tsx', 'logComment'],
+    ['app/dossier/[id].tsx', 'dossierComment'],
+    ['app/lounge/[id].tsx', 'loungeMessage'],
+    ['app/stacks/[id].tsx', 'listComment'],
+    ['src/components/ShareToLoungeModal.tsx', 'loungeMessage'],
+  ];
+
+  it.each(COMPOSERS)('%s caps typing at MAX_LENGTHS.%s, not a literal', (file, field) => {
+    const src = readFileSync(join(__dirname, '..', file), 'utf8');
+    expect(`${file} uses the constant: ${src.includes(`maxLength={MAX_LENGTHS.${field}}`)}`).toBe(
+      `${file} uses the constant: true`,
+    );
+  });
+
+  it('no composer smuggles a bare numeric maxLength back in', () => {
+    // A literal here is how the 500 survived: invisible next to a 2000 sanitiser.
+    for (const [file] of COMPOSERS) {
+      const src = readFileSync(join(__dirname, '..', file), 'utf8');
+      const literals = [...src.matchAll(/maxLength=\{(\d+)\}/g)].map((m) => m[1]);
+      expect(`${file} bare literals: ${literals.join(',') || 'none'}`).toBe(
+        `${file} bare literals: none`,
+      );
+    }
+  });
+
+  it('lounge messages are capped in ONE place, not two', () => {
+    // `sanitizeInput(content.slice(0, 500), 'loungeMessage')` applied a stricter
+    // hardcoded cap in front of the real one. Widening the box would have changed
+    // nothing at all — the message was cut at 500 on its way to the database, on
+    // both the online and the offline path.
+    for (const file of ['src/stores/lounge.ts', 'src/utils/mutationExecutor.ts']) {
+      const src = readFileSync(join(__dirname, '..', file), 'utf8');
+      const doubled = /\.slice\(\s*0\s*,\s*\d+\s*\)\s*,\s*'loungeMessage'/.test(src);
+      expect(`${file} double-caps lounge messages: ${doubled}`).toBe(
+        `${file} double-caps lounge messages: false`,
+      );
+    }
+  });
+
+  it('all four kinds of comment allow the same length', () => {
+    // A member should not discover that a critique fits on one screen and not
+    // another. Pinned so a future change to one carries the others.
+    const { logComment, listComment, dossierComment, loungeMessage } = MAX_LENGTHS;
+    expect([logComment, listComment, dossierComment, loungeMessage]).toEqual([
+      2000, 2000, 2000, 2000,
+    ]);
+  });
+});
+
 describe('client truncation can never be rejected by a ceiling', () => {
   /**
    * Exact-match ceilings are only safe because of an asymmetry worth stating:
