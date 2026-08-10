@@ -62,98 +62,75 @@ export default function TribunalPage() {
     }
 
     // ── Actions ──
-    const dismissReport = async (reportId: string) => {
+    //
+    // Every action now goes through resolve_moderation_report_v2. None of them
+    // writes a table directly any more.
+    //
+    // They used to, and only ONE table in the database lets a moderator touch
+    // another member's row, so:
+    //
+    //   ban            wrote profiles.is_banned. The only rule on profiles is
+    //                  `auth.uid() = id`, with NO admin override, so the row was
+    //                  invisible to the update: zero rows changed, NO error, and
+    //                  then "User has been silenced from The Society." Nobody
+    //                  was ever actually banned.
+    //   delete content wrote the content table. Same outcome — and it attempted
+    //                  only 3 of the 8 reportable types, skipping the rest in
+    //                  silence while still reporting "Content destroyed."
+    //
+    // `catch` could not have saved it: supabase-js RESOLVES on failure, and RLS
+    // does not fail for an invisible row — it reports zero rows changed, which
+    // is indistinguishable from success.
+    //
+    // The RPC is SECURITY DEFINER, so it acts with rights the caller lacks, and
+    // checks `role = 'admin'` itself. Fixing this by loosening RLS instead —
+    // letting moderators write to every member's row — would open a far larger
+    // hole than the one being closed.
+    const resolve = async (
+        reportId: string,
+        action: 'dismiss' | 'delete_content' | 'ban',
+        reason: string,
+        successMessage: string,
+        failureMessage: string,
+    ) => {
         setActionInProgress(reportId)
         try {
-            await supabase.from('reports').update({
-                status: 'dismissed',
-                resolution: 'dismissed',
-                resolved_by: user!.id,
-                resolved_at: new Date().toISOString(),
-            }).eq('id', reportId)
-            reelToast.success('Report dismissed.')
+            // The error is RETURNED, not thrown. It has to be read.
+            const { error } = await supabase.rpc('resolve_moderation_report_v2', {
+                p_report_id: reportId,
+                p_action: action,
+                p_admin_id: user!.id,   // ignored server-side; the actor is auth.uid()
+                p_reason: reason,
+                p_duration_hours: null,
+                p_notify_user: true,
+            })
+            if (error) { reelToast.error(error.message || failureMessage); return }
+            reelToast.success(successMessage)
             queryClient.invalidateQueries({ queryKey: ['tribunal-reports'] })
-        } catch { reelToast.error('Failed to dismiss.') }
+        } catch { reelToast.error(failureMessage) }
         finally { setActionInProgress(null) }
     }
 
-    const deleteContent = async (report: any) => {
-        setActionInProgress(report.id)
-        try {
-            // Delete the actual content
-            const typeMap: Record<string, string> = {
-                log: 'logs',
-                list: 'lists',
-                list_comment: 'list_comments',
-            }
-            const table = typeMap[report.content_type]
-            if (table) {
-                // Delete list items first if it's a list
-                if (report.content_type === 'list') {
-                    await supabase.from('list_items').delete().eq('list_id', report.content_id)
-                }
-                await supabase.from(table).delete().eq('id', report.content_id)
-            }
+    const dismissReport = (reportId: string) =>
+        resolve(reportId, 'dismiss', 'Dismissed after review.', 'Report dismissed.', 'Failed to dismiss.')
 
-            // Mark report as resolved
-            await supabase.from('reports').update({
-                status: 'resolved',
-                resolution: 'content_removed',
-                resolved_by: user!.id,
-                resolved_at: new Date().toISOString(),
-            }).eq('id', report.id)
+    const deleteContent = (report: { id: string; reason?: string | null }) =>
+        resolve(
+            report.id,
+            'delete_content',
+            report.reason || 'Removed after review.',
+            'Content removed and report resolved.',
+            'Failed to remove content.',
+        )
 
-            reelToast.success('Content destroyed and report resolved.')
-            queryClient.invalidateQueries({ queryKey: ['tribunal-reports'] })
-        } catch { reelToast.error('Failed to delete content.') }
-        finally { setActionInProgress(null) }
-    }
-
-    const banUser = async (report: any) => {
-        setActionInProgress(report.id)
-        try {
-            // Find the content owner's user_id
-            let targetUserId: string | null = null
-
-            if (report.content_type === 'user') {
-                // Direct user report — content_id IS the user_id
-                const { data: p } = await supabase.from('profiles').select('id').eq('username', report.content_id).maybeSingle()
-                targetUserId = p?.id || report.content_id
-            } else if (report.content_type === 'log') {
-                const { data: log } = await supabase.from('logs').select('user_id').eq('id', report.content_id).maybeSingle()
-                targetUserId = log?.user_id
-            } else if (report.content_type === 'list') {
-                const { data: list } = await supabase.from('lists').select('user_id').eq('id', report.content_id).maybeSingle()
-                targetUserId = list?.user_id
-            } else if (report.content_type === 'list_comment') {
-                const { data: comment } = await supabase.from('list_comments').select('user_id').eq('id', report.content_id).maybeSingle()
-                targetUserId = comment?.user_id
-            }
-
-            if (!targetUserId) {
-                reelToast.error('Could not identify the user to ban.')
-                return
-            }
-
-            // Ban the user
-            await supabase.from('profiles').update({
-                is_banned: true,
-                ban_reason: `Banned for: ${report.reason}. Report details: ${report.details || 'N/A'}`,
-            }).eq('id', targetUserId)
-
-            // Resolve the report
-            await supabase.from('reports').update({
-                status: 'resolved',
-                resolution: 'user_banned',
-                resolved_by: user!.id,
-                resolved_at: new Date().toISOString(),
-            }).eq('id', report.id)
-
-            reelToast.success('User has been silenced from The Society.')
-            queryClient.invalidateQueries({ queryKey: ['tribunal-reports'] })
-        } catch { reelToast.error('Failed to ban user.') }
-        finally { setActionInProgress(null) }
-    }
+    const banUser = (report: { id: string; reason?: string | null; details?: string | null }) =>
+        resolve(
+            report.id,
+            'ban',
+            `Banned for: ${report.reason ?? 'review'}. ${report.details ?? ''}`.trim(),
+            'User has been silenced from The Society.',
+            'Failed to ban user.',
+        )
 
     const pendingCount = reports.filter((r: any) => r.status === 'pending').length
 

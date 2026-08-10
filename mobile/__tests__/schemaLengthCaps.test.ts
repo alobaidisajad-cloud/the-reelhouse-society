@@ -17,7 +17,7 @@
  * app still lets people type. So both clients are re-derived here and the
  * ceiling is required to clear the HIGHER of the two.
  */
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { MAX_LENGTHS } from '../src/utils/sanitizeInput';
 
@@ -312,6 +312,54 @@ describe('EVERY text column in the schema is accounted for', () => {
     ...cappedIn(M06),
     ...ENUM_WHITELISTED,
   ]);
+
+  it('a column added by a MIGRATION cannot hide from this test', () => {
+    /**
+     * THE BLIND SPOT IN THIS FILE.
+     *
+     * Everything above enumerates the class from `_schema_baseline.sql`, which is
+     * a PHOTOGRAPH taken on 2026-06-27. A column added later by a migration is
+     * simply not in it, so it is not merely uncapped — it is invisible, and this
+     * test reports full coverage over a column it has never seen.
+     *
+     * That is the same failure this file was written to prevent, one level up: a
+     * guard that defines the class too narrowly reports safety over the gap.
+     *
+     * So the migrations are read as a second source. Any `ADD COLUMN` of a text
+     * or jsonb type must have a ceiling declared somewhere in the same tree.
+     */
+    const dir = join(__dirname, '..', 'supabase', 'migrations');
+    const files = readdirSync(dir).filter((f) => f.endsWith('.sql'));
+    const all = files.map((f) => readFileSync(join(dir, f), 'utf8')).join('\n');
+    const allExec = all.replace(/--[^\n]*/g, '');
+
+    const added: string[] = [];
+    for (const m of allExec.matchAll(
+      /ALTER TABLE\s+(?:public\.)?(\w+)\s+ADD COLUMN\s+(?:IF NOT EXISTS\s+)?(\w+)\s+(text|jsonb|json)\b/gi,
+    )) {
+      added.push(`${m[1]}.${m[2]}`);
+    }
+
+    const uncapped = added.filter((c) => {
+      const [tbl, col] = c.split('.');
+      // Three ways a column can be accounted for. An enum whitelist is the
+      // strongest of them — a fixed set of values bounds length implicitly — and
+      // omitting it here reported `lounge_members.status` and
+      // `profiles.entitlement_source` as gaps when both are restricted to four
+      // and three literals respectively.
+      const hasNamedCeiling = new RegExp(`${tbl}_${col}_len`).test(allExec);
+      const inCeilingsTable = new RegExp(`'${tbl}'\\s*,\\s*'${col}'\\s*,\\s*\\d+`).test(allExec);
+      // BOTH spellings. A migration writes `status IN ('a','b')`; PostgreSQL
+      // stores it as `status = ANY (ARRAY[...])`. Matching only the stored form
+      // reported two whitelisted columns as gaps, because the source says IN.
+      const hasEnumWhitelist = new RegExp(`${col}\\s*(=\\s*ANY|IN\\s*\\()`).test(allExec);
+      return !hasNamedCeiling && !inCeilingsTable && !hasEnumWhitelist;
+    });
+
+    expect(`columns added by migration with no ceiling: ${uncapped.join(', ') || 'none'}`).toBe(
+      'columns added by migration with no ceiling: none',
+    );
+  });
 
   it('the schema parses — otherwise this whole file is vacuous', () => {
     expect(scalar.length).toBeGreaterThan(100);
