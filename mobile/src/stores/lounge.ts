@@ -191,6 +191,25 @@ function clearTypingState(set: (partial: Partial<LoungeState>) => void) {
 }
 
 // ── Username cache for Realtime messages — prevents N+1 profile queries ──
+/**
+ * The author of a message, when the author may be gone.
+ *
+ * Deleting an account nulls user_id on shared content and keeps the words, so a
+ * lounge message can outlive the person who wrote it. Two different situations
+ * used to collapse into one word:
+ *
+ *   user_id null        -> they deleted their account. A settled fact.
+ *   user_id set, no row -> the profile did not load. Transient.
+ *
+ * Both read as "unknown", which is a lie in the first case. The previous form
+ * also left the ARRAY branch with no fallback at all — `?? 'unknown'` binds only
+ * to the else, so an empty array yielded undefined.
+ */
+function authorHandle(userId: string | null | undefined, username?: string | null): string {
+  if (!userId) return '[deleted]';
+  return username || 'unknown';
+}
+
 const _profileCache = new Map<string, { username: string; avatar_url?: string; ts: number }>();
 const _PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const _PROFILE_CACHE_MAX = 100;
@@ -508,7 +527,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           id: m.id,
           lounge_id: m.lounge_id,
           user_id: m.user_id,
-          username: Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username ?? 'unknown',
+          username: authorHandle(m.user_id, Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username),
           avatar_url: Array.isArray(m.profiles) ? m.profiles[0]?.avatar_url : m.profiles?.avatar_url,
           content: m.content,
           type: (m.type as LoungeMessage['type']) ?? 'text',
@@ -618,7 +637,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           id: m.id,
           lounge_id: m.lounge_id,
           user_id: m.user_id,
-          username: Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username ?? 'unknown',
+          username: authorHandle(m.user_id, Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username),
           avatar_url: Array.isArray(m.profiles) ? m.profiles[0]?.avatar_url : m.profiles?.avatar_url,
           content: m.content,
           type: (m.type as LoungeMessage['type']) ?? 'text',

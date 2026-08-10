@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback, memo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Send, MoreVertical, Users, Copy, Check, LogOut, X, Trash2, Settings, MessageCircle, Reply, Lock, Globe, Crown, Shield } from 'lucide-react'
-import { useLoungeStore, LoungeMessage } from '../stores/lounge'
+import { useLoungeStore, LoungeMessage, authorOf } from '../stores/lounge'
 import { useAuthStore } from '../stores/auth'
 import { tmdb } from '../tmdb'
 import reelToast from '../utils/reelToast'
@@ -87,6 +87,8 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
     onDelete?: (id: string) => void; onReply?: (msg: LoungeMessage) => void; isTouch: boolean
 }) {
     const [actionSheet, setActionSheet] = useState(false)
+    // false once the author has deleted their account: nothing to open.
+    const authorLinkable = authorOf(msg.user_id, msg.username).linkable
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     // Clean up long press timer on unmount
@@ -107,16 +109,31 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
 
     return (
         <div className={`lounge-msg-wrapper ${isSelf ? 'msg-self' : 'msg-other'} ${showAuthor ? 'mt-author' : 'mt-compact'}`}>
+            {/* A message can outlive its author: deleting an account keeps the words
+                and drops the name. There is no profile to open, so the handle must
+                not be a link — it used to send you to /user/Unknown, a broken page
+                dressed up as a working one. `?.[0]` because a name can now be a
+                tombstone rather than a handle. */}
             {showAuthor && (
-                <Link to={`/user/${msg.username}`} className="lounge-msg-avatar" style={{ textDecoration: 'none', cursor: 'pointer' }}>
-                   {msg.avatar_url ? <img src={msg.avatar_url} alt="" /> : <div className="lounge-msg-avatar-fallback">{msg.username[0]?.toUpperCase()}</div>}
-                </Link>
+                authorLinkable ? (
+                    <Link to={`/user/${msg.username}`} className="lounge-msg-avatar" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                       {msg.avatar_url ? <img src={msg.avatar_url} alt="" /> : <div className="lounge-msg-avatar-fallback">{msg.username?.[0]?.toUpperCase()}</div>}
+                    </Link>
+                ) : (
+                    <div className="lounge-msg-avatar">
+                       <div className="lounge-msg-avatar-fallback">{msg.username?.[0]?.toUpperCase()}</div>
+                    </div>
+                )
             )}
-            
+
             <div className="lounge-msg-content-col">
                 {showAuthor && (
                     <div className="lounge-msg-header">
-                        <Link to={`/user/${msg.username}`} className="lounge-msg-author" style={{ textDecoration: 'none', cursor: 'pointer' }}>{isSelf ? 'You' : msg.username}</Link>
+                        {authorLinkable ? (
+                            <Link to={`/user/${msg.username}`} className="lounge-msg-author" style={{ textDecoration: 'none', cursor: 'pointer' }}>{isSelf ? 'You' : msg.username}</Link>
+                        ) : (
+                            <span className="lounge-msg-author">{msg.username}</span>
+                        )}
                         <span className="lounge-msg-time">{formatTime(msg.created_at)}</span>
                     </div>
                 )}

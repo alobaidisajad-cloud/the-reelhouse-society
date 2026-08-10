@@ -2,6 +2,27 @@ import { create } from 'zustand'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
 
+/**
+ * The author of a message, when the author may be gone.
+ *
+ * Deleting an account nulls user_id on shared content and keeps the words — so a
+ * lounge message can outlive the person who wrote it. Two different situations
+ * used to collapse into the same word:
+ *
+ *   user_id null        -> they deleted their account. A settled fact.
+ *   user_id set, no row -> the profile did not load. Transient.
+ *
+ * Both rendered as "Unknown", which reads like a bug in the second case and like
+ * a lie in the first. Worse, the name is wrapped in a link, so clicking a
+ * departed member sent you to /user/Unknown — a broken profile page presented as
+ * a working one. `linkable` is false when there is nobody to link to.
+ */
+export function authorOf(userId: string | null | undefined, username?: string | null) {
+    if (!userId) return { username: '[deleted]', linkable: false };
+    return { username: username || 'Unknown', linkable: Boolean(username) };
+}
+
+
 // ── TYPES ──
 export interface Lounge {
     id: string
@@ -308,7 +329,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             id: m.id,
             lounge_id: m.lounge_id,
             user_id: m.user_id,
-            username: m.profiles?.username || 'Unknown',
+            username: authorOf(m.user_id, m.profiles?.username).username,
             avatar_url: m.profiles?.avatar_url,
             content: m.content,
             type: m.type || 'text',
@@ -358,7 +379,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                     id: payload.new.id,
                     lounge_id: payload.new.lounge_id,
                     user_id: payload.new.user_id,
-                    username: profile?.username || 'Unknown',
+                    username: authorOf(payload.new.user_id, profile?.username).username,
                     avatar_url: profile?.avatar_url,
                     content: payload.new.content,
                     type: payload.new.type || 'text',
@@ -439,7 +460,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 id: m.id,
                 lounge_id: m.lounge_id,
                 user_id: m.user_id,
-                username: m.profiles?.username || 'Unknown',
+                username: authorOf(m.user_id, m.profiles?.username).username,
                 avatar_url: m.profiles?.avatar_url,
                 content: m.content,
                 type: m.type || 'text',
@@ -592,7 +613,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             id: m.id,
             lounge_id: m.lounge_id,
             user_id: m.user_id,
-            username: m.profiles?.username || 'Unknown',
+            username: authorOf(m.user_id, m.profiles?.username).username,
             avatar_url: m.profiles?.avatar_url,
             content: m.content,
             type: m.type || 'text',
@@ -695,7 +716,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         if (!data) return []
         return data.map((m: any) => ({
             user_id: m.user_id,
-            username: m.profiles?.username || 'Unknown',
+            username: authorOf(m.user_id, m.profiles?.username).username,
             avatar_url: m.profiles?.avatar_url || null,
             joined_at: m.joined_at,
         }))
