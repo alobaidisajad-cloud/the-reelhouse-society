@@ -327,7 +327,15 @@ export default function TribunalPage() {
                                                 borderRadius: '2px',
                                                 color: report.status === 'resolved' ? '#2ecc71' : '#95a5a6',
                                             }}>
-                                                {report.resolution?.toUpperCase().replace('_', ' ') || report.status.toUpperCase()}
+                                                {/* `resolution` was written by this page's own direct
+                                                    updates, which are gone: the RPC records the outcome in
+                                                    `resolution_action`. Reading only the old column would
+                                                    show every newly resolved report as plain "RESOLVED" and
+                                                    lose whether it was a ban, a removal or a dismissal — the
+                                                    history would still be there and stop meaning anything.
+                                                    Old rows keep the old column, so both are read. */}
+                                                {(report.resolution_action || report.resolution)?.toUpperCase().replace(/_/g, ' ')
+                                                    || report.status.toUpperCase()}
                                             </span>
                                         )}
                                     </div>
