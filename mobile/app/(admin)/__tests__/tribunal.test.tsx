@@ -81,27 +81,30 @@ jest.mock('@/src/utils/reelToast', () => {
 });
 
 // Mock lucide-react-native icons (SVG native components)
+//
+// A PROXY, not a hand-written list. The list version named fourteen icons, so
+// adding a fifteenth to the screen made it resolve to `undefined` and every test
+// in this file died with "Element type is invalid" — pointing at the renderer,
+// not at the mock. Adding an icon is not a behaviour change and must not be able
+// to fail a test suite; the mock's job is to draw something, for any name asked.
 jest.mock('lucide-react-native', () => {
   const React = require('react');
   const { View } = require('react-native');
-  const icon = (name: string) => (props: any) =>
-    React.createElement(View, { ...props, testID: `icon-${name}` });
-  return {
-    AlertTriangle: icon('AlertTriangle'),
-    ArrowLeft: icon('ArrowLeft'),
-    Ban: icon('Ban'),
-    Check: icon('Check'),
-    CheckSquare: icon('CheckSquare'),
-    Clock: icon('Clock'),
-    FileSearch: icon('FileSearch'),
-    Layers: icon('Layers'),
-    List: icon('List'),
-    Scale: icon('Scale'),
-    ShieldAlert: icon('ShieldAlert'),
-    Skull: icon('Skull'),
-    Square: icon('Square'),
-    X: icon('X'),
-  };
+  const cache = new Map<string, unknown>();
+  return new Proxy(
+    {},
+    {
+      get: (_t, name: string) => {
+        if (name === '__esModule') return true;
+        if (!cache.has(name)) {
+          cache.set(name, (props: Record<string, unknown>) =>
+            React.createElement(View, { ...props, testID: `icon-${name}` }),
+          );
+        }
+        return cache.get(name);
+      },
+    },
+  );
 });
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
