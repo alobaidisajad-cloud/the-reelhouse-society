@@ -237,11 +237,17 @@ CREATE OR REPLACE FUNCTION public.request_account_deletion()
  SET search_path TO 'public'
 AS $function$
 DECLARE
-  uid uuid := auth.uid();
+  uid      uuid := auth.uid();
+  -- Their handle, read while the profile still exists. Several erasures below
+  -- can only be keyed on the name itself, and after the delete there is nothing
+  -- left to look it up from.
+  v_handle text;
 BEGIN
   IF uid IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
+
+  SELECT username INTO v_handle FROM public.profiles WHERE id = uid;
 
   -- ── A lounge outlives the person who started it ──────────────────────────
   -- lounges.creator_id -> profiles is ON DELETE CASCADE, so deleting the founder
@@ -298,9 +304,29 @@ BEGIN
      SET reply_to_username = '[deleted]'
    WHERE reply_to_id IN (SELECT id FROM public.lounge_messages WHERE user_id = uid);
 
-  UPDATE public.notifications SET from_username = '[deleted]' WHERE from_user_id = uid;
+  -- Notifications they CAUSED go entirely, rather than being tombstoned.
+  -- The handle is not only in from_username, it is written into the prose:
+  -- "@divisionops is now following you." — 14 of 51 rows. Blanking the column
+  -- would leave the sentence perfectly legible, which is not erasure. And a
+  -- notification from someone who no longer exists is noise to its recipient:
+  -- there is nobody to visit and nothing to answer.
+  DELETE FROM public.notifications WHERE from_user_id = uid;
+
   UPDATE public.tips          SET from_username = '[deleted]' WHERE from_user_id = uid;
   UPDATE public.video_reviews SET user_id = NULL, username = '[deleted]' WHERE user_id = uid;
+
+  -- A share freezes the shared person's handle into someone else's message:
+  -- ShareToLoungeModal writes { log_id, owner_username } and
+  -- { dossier_id, author_username }. No id to match on inside the json, so this
+  -- is keyed on the handle captured above — which is why it must run BEFORE the
+  -- profile disappears. Zero rows carry these keys today; the path exists, so the
+  -- erasure has to cover it.
+  IF v_handle IS NOT NULL THEN
+    UPDATE public.lounge_messages
+       SET metadata = (metadata - 'owner_username') - 'author_username'
+     WHERE metadata->>'owner_username' = v_handle
+        OR metadata->>'author_username' = v_handle;
+  END IF;
 
   -- These two carry no denormalised handle; they read the author through a join,
   -- so a null author is all that is needed.

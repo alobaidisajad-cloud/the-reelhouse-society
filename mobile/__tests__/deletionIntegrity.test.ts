@@ -197,8 +197,35 @@ describe('deletion integrity', () => {
      * is gone and the name is still readable. Verified end to end — before, the
      * handle appeared in four places; after, in none.
      */
+    it('notifications they caused are DELETED, not tombstoned', () => {
+      // The handle is not only in from_username, it is written into the prose:
+      // "@divisionops is now following you." — 14 of 51 live rows. Blanking the
+      // column leaves the sentence perfectly legible, which is not erasure.
+      // A notification from someone who no longer exists is also noise: there is
+      // nobody to visit and nothing to answer.
+      expect(exec).toMatch(/DELETE FROM public\.notifications WHERE from_user_id = uid/);
+      expect(exec).not.toMatch(/UPDATE public\.notifications SET from_username/);
+    });
+
+    it('a handle frozen into share metadata is stripped', () => {
+      // ShareToLoungeModal writes { log_id, owner_username } into someone ELSE'S
+      // message. There is no id inside the json, so this is keyed on the handle.
+      expect(exec).toMatch(/metadata - 'owner_username'/);
+      expect(exec).toMatch(/- 'author_username'/);
+      expect(exec).toMatch(/metadata->>'owner_username' = v_handle/);
+    });
+
+    it('the handle is captured while the profile still exists', () => {
+      // Several erasures can only be keyed on the name. Read it after the delete
+      // and there is nothing left to read it from.
+      const capture = exec.indexOf('SELECT username INTO v_handle');
+      const del = exec.indexOf('DELETE FROM auth.users');
+      expect(`capture(${capture}) before delete(${del}): ${capture > 0 && capture < del}`).toBe(
+        `capture(${capture}) before delete(${del}): true`,
+      );
+    });
+
     it.each([
-      ['notifications', 'from_username', 'from_user_id'],
       ['tips', 'from_username', 'from_user_id'],
       ['video_reviews', 'username', 'user_id'],
     ])('%s.%s is tombstoned, matched on %s', (table, col, idCol) => {
@@ -332,7 +359,7 @@ describe('deletion integrity', () => {
     });
 
     it('only the account owner can ask to be deleted', () => {
-      expect(exec).toMatch(/uid uuid := auth\.uid\(\)/);
+      expect(exec).toMatch(/uid\s+uuid := auth\.uid\(\)/);
       expect(exec).toMatch(/RAISE EXCEPTION 'Not authenticated'/);
       expect(exec).toMatch(/REVOKE ALL ON FUNCTION public\.request_account_deletion\(\) FROM PUBLIC, anon/);
     });
