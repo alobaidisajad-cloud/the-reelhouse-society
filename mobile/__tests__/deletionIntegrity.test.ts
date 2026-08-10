@@ -168,6 +168,48 @@ describe('deletion integrity', () => {
     });
   });
 
+  describe('a lounge outlives the person who started it', () => {
+    /**
+     * lounges.creator_id -> profiles is ON DELETE CASCADE, so deleting the
+     * founder destroys the lounge and every conversation in it. That never fired
+     * before ONLY because account deletion was broken — fixing deletion ARMS it.
+     *
+     * SET NULL is not the escape: every lounge policy reads
+     * `auth.uid() = creator_id` and there is NO admin override, so a null creator
+     * leaves a lounge nobody can rename, moderate or even delete. Checked against
+     * the live policies.
+     *
+     * So the founder hands it on. Verified end to end: a lounge with two other
+     * members passed to the longest-standing one with its messages intact, while
+     * a lounge containing only the founder went with them.
+     */
+    it('transfers the lounge to the longest-standing member', () => {
+      expect(exec).toMatch(/UPDATE public\.lounges/);
+      expect(exec).toMatch(/SET creator_id =/);
+      expect(exec).toMatch(/ORDER BY m\.joined_at ASC/);
+    });
+
+    it('never hands it to the departing member or an unapproved one', () => {
+      expect(exec).toMatch(/m\.user_id <> uid/);
+      expect(exec).toMatch(/m\.status = 'approved'/);
+    });
+
+    it('only transfers when a successor actually exists', () => {
+      // Without the EXISTS guard the subquery returns NULL, and creator_id is
+      // NOT NULL — the whole account deletion would abort.
+      expect(exec).toMatch(/AND EXISTS \(SELECT 1 FROM public\.lounge_members/);
+    });
+
+    it('runs BEFORE the account is deleted', () => {
+      // Afterwards there is nothing left to identify their lounges by.
+      const transfer = exec.indexOf('SET creator_id =');
+      const del = exec.indexOf('DELETE FROM auth.users');
+      expect(`transfer(${transfer}) before delete(${del}): ${transfer > 0 && transfer < del}`).toBe(
+        `transfer(${transfer}) before delete(${del}): true`,
+      );
+    });
+  });
+
   describe('constraint names are an API, not an implementation detail', () => {
     /**
      * PostgREST lets a client disambiguate a join by naming the foreign key:

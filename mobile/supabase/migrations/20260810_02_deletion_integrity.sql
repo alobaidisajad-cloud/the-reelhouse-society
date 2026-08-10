@@ -243,6 +243,32 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
+  -- ── A lounge outlives the person who started it ──────────────────────────
+  -- lounges.creator_id -> profiles is ON DELETE CASCADE, so deleting the founder
+  -- destroys the lounge and every conversation in it. That never fired before
+  -- only because account deletion was broken; fixing deletion ARMS it. Five real
+  -- lounges with messages exist.
+  --
+  -- SET NULL is not the answer either. Every lounge policy is written as
+  -- `auth.uid() = creator_id`, and there is no admin override, so a null creator
+  -- leaves a lounge nobody can rename, moderate or even delete — a permanent
+  -- zombie. Verified against the live policies, not assumed.
+  --
+  -- So: hand it on. The longest-standing approved member becomes the founder.
+  -- If nobody else is left the lounge is empty, and letting it go with them is
+  -- correct rather than destructive.
+  UPDATE public.lounges l
+     SET creator_id = (
+           SELECT m.user_id FROM public.lounge_members m
+            WHERE m.lounge_id = l.id AND m.user_id <> uid AND m.status = 'approved'
+            ORDER BY m.joined_at ASC NULLS LAST
+            LIMIT 1)
+   WHERE l.creator_id = uid
+     AND EXISTS (SELECT 1 FROM public.lounge_members m
+                  WHERE m.lounge_id = l.id AND m.user_id <> uid AND m.status = 'approved');
+
+  -- Whatever is left had no one else in it. The CASCADE below takes those.
+
   -- ── Shared content: the words stay, the name goes ────────────────────────
   -- user_id and the handle move together, in one statement, or the derive
   -- trigger writes the real name straight back over the tombstone.
