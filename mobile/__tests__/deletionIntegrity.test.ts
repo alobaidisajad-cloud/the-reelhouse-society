@@ -385,3 +385,36 @@ describe('erasure covers files, not only rows', () => {
     expect(sql2).not.toMatch(/storage\.objects[^;]*name\s+LIKE/i);
   });
 });
+
+describe('deleting the files needs Supabase permission first', () => {
+  const sql3 = readFileSync(MIGRATION, 'utf8').replace(/--[^\n]*/g, '');
+
+  it('sets storage.allow_delete_query before touching storage.objects', () => {
+    /**
+     * Supabase guards that table with storage.protect_delete(), which raises
+     * 42501 on ANY direct DELETE unless this setting is on. Without it the whole
+     * function aborts at that line, so "delete my account" fails completely.
+     *
+     * It shipped that way. The throwaway had a plain table with no such trigger,
+     * so it passed there and broke production. Only running the real function
+     * against the real database — inside a rolled-back transaction — found it.
+     *
+     * `true` as the third argument scopes the setting to the transaction, so it
+     * cannot leak and leave the protection off for anything else.
+     */
+    expect(sql3).toMatch(/set_config\('storage\.allow_delete_query', 'true', true\)/);
+
+    const permit = sql3.indexOf("set_config('storage.allow_delete_query'");
+    const del = sql3.indexOf('DELETE FROM storage.objects');
+    expect(`permit(${permit}) before delete(${del}): ${permit > 0 && permit < del}`).toBe(
+      `permit(${permit}) before delete(${del}): true`,
+    );
+  });
+
+  it('scopes the permission to the transaction, never globally', () => {
+    // A global SET would leave the protection off for every later statement on
+    // that connection.
+    expect(sql3).not.toMatch(/set_config\('storage\.allow_delete_query',[^)]*false\)/);
+    expect(sql3).not.toMatch(/SET storage\.allow_delete_query/);
+  });
+});

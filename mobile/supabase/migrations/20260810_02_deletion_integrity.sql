@@ -344,6 +344,22 @@ BEGIN
   -- the uploader's id, so they are attributable either way; owner is the honest
   -- key. Removing the row is what makes the object unreachable — the storage API
   -- resolves every request through this table.
+  -- Supabase guards this table with storage.protect_delete(), which raises
+  -- 42501 on any direct DELETE unless `storage.allow_delete_query` is set. My
+  -- throwaway had a plain table with no such trigger, so this passed there and
+  -- BROKE ACCOUNT DELETION ENTIRELY on production — the whole function aborted
+  -- at this line. Caught by running the real thing against the real database
+  -- inside a rolled-back transaction; nothing else would have found it.
+  --
+  -- The guard exists to stop rows being removed while the underlying file stays
+  -- in the bucket. That is the right default and the wrong answer here: the
+  -- alternative is the client calling the Storage API separately, which can fail
+  -- halfway and leave an account half-erased. Removing the row is what makes the
+  -- object unreachable — every storage request resolves through this table — so
+  -- the erasure is complete from the member's side and atomic with the rest.
+  -- The physical file may linger in the bucket until a storage sweep; that is a
+  -- housekeeping matter, not a privacy one.
+  PERFORM set_config('storage.allow_delete_query', 'true', true);  -- true = this transaction only
   DELETE FROM storage.objects WHERE owner = uid;
 
   -- ── Everything else follows the account ──────────────────────────────────
