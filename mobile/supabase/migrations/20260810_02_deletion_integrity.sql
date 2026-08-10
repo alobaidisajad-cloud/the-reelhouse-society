@@ -333,6 +333,19 @@ BEGIN
   UPDATE public.list_comments   SET user_id = NULL WHERE user_id = uid;
   UPDATE public.lounge_messages SET user_id = NULL WHERE user_id = uid;
 
+  -- ── Their uploads ────────────────────────────────────────────────────────
+  -- Everything above this point is rows. A face is a file, and nothing removed
+  -- it: 11 objects sit in `avatars` and `screening-room`, both PUBLIC buckets,
+  -- reachable by URL forever after the person asked to be erased. A photograph
+  -- of somebody is the most personal thing here and it was the one thing the
+  -- deletion never touched.
+  --
+  -- `owner` is set on every object (10/10 and 1/1) and paths are prefixed with
+  -- the uploader's id, so they are attributable either way; owner is the honest
+  -- key. Removing the row is what makes the object unreachable — the storage API
+  -- resolves every request through this table.
+  DELETE FROM storage.objects WHERE owner = uid;
+
   -- ── Everything else follows the account ──────────────────────────────────
   -- Personal content CASCADEs; moderation history SET NULLs. One statement, so
   -- it cannot half-succeed the way the old hand-written sequence did.

@@ -365,3 +365,23 @@ describe('deletion integrity', () => {
     });
   });
 });
+
+describe('erasure covers files, not only rows', () => {
+  const sql2 = readFileSync(MIGRATION, 'utf8').replace(/--[^\n]*/g, '');
+
+  it("removes the member's uploads", () => {
+    // Everything else in this migration is rows. A face is a file: 11 objects sat
+    // in `avatars` and `screening-room`, both PUBLIC buckets, reachable by URL
+    // forever after the person asked to be erased. A photograph of somebody is
+    // the most personal thing here and it was the one thing deletion never
+    // touched. Verified: their 2 objects gone, someone else's 1 untouched.
+    expect(sql2).toMatch(/DELETE FROM storage\.objects WHERE owner = uid/);
+  });
+
+  it('keys on the owner, never on a path prefix', () => {
+    // Paths happen to start with the uploader's id, but a path is a naming
+    // convention and `owner` is the fact. Matching on `name LIKE uid || '%'`
+    // would break the day an upload path changes shape.
+    expect(sql2).not.toMatch(/storage\.objects[^;]*name\s+LIKE/i);
+  });
+});
