@@ -284,6 +284,24 @@ BEGIN
      SET user_id = NULL, author_username = '[deleted]'
    WHERE user_id = uid;
 
+  -- ── Names FROZEN into other people's rows at write time ─────────────────
+  -- A foreign key can only null an ID. These columns are copies of the handle
+  -- taken when the row was written, so they are not reachable by any cascade and
+  -- survive the account entirely: 51 of 51 notifications carry one today. Leaving
+  -- them is residual personal data after an erasure request — the account is gone
+  -- and the name is still legible.
+  --
+  -- ⚠️ reply_to_username MUST be done before the lounge_messages line below.
+  -- It is identified through the parent message's author, and that author is
+  -- about to become NULL — after which there is nothing left to match on.
+  UPDATE public.lounge_messages
+     SET reply_to_username = '[deleted]'
+   WHERE reply_to_id IN (SELECT id FROM public.lounge_messages WHERE user_id = uid);
+
+  UPDATE public.notifications SET from_username = '[deleted]' WHERE from_user_id = uid;
+  UPDATE public.tips          SET from_username = '[deleted]' WHERE from_user_id = uid;
+  UPDATE public.video_reviews SET user_id = NULL, username = '[deleted]' WHERE user_id = uid;
+
   -- These two carry no denormalised handle; they read the author through a join,
   -- so a null author is all that is needed.
   UPDATE public.list_comments   SET user_id = NULL WHERE user_id = uid;

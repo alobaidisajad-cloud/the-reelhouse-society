@@ -51,13 +51,18 @@ const CommentRow = React.memo(({
   >
     <View style={s.commentItem}>
       <View style={s.commentTopRow}>
+        {/* A critique outlives its author: deleting an account keeps the words and
+            drops the name, leaving user_id null and the handle a tombstone. There
+            is no profile behind it, so the byline must not behave like a button —
+            it used to open a profile page for someone who no longer exists. */}
         <PressableScale
           style={s.commentByline}
-          onPress={() => onPressUser(c.username)}
+          onPress={c.user_id ? () => onPressUser(c.username) : undefined}
+          disabled={!c.user_id}
           hitSlop={HITSLOP}
-          pressedScale={0.96}
-          haptic="selection"
-          accessibilityLabel={`View profile of @${c.username}`}
+          pressedScale={c.user_id ? 0.96 : 1}
+          haptic={c.user_id ? 'selection' : undefined}
+          accessibilityLabel={c.user_id ? `View profile of @${c.username}` : `Critique by a former member`}
         >
           {c.avatar_url ? (
             <Image source={{ uri: c.avatar_url }} style={s.commentAvatar} cachePolicy="memory-disk" contentFit="cover" transition={150} />

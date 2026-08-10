@@ -126,7 +126,15 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
             <div style={{ maxHeight: showAllComments ? '40vh' : 'auto', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingRight: showAllComments ? '0.5rem' : 0 }}>
                 {visibleComments.map(c => (
                     <div key={c.id} style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.75rem', alignItems: 'flex-start' }}>
-                        <Link to={`/user/${c.username}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0, marginTop: '2px' }}>@{c.username}</Link>
+                        {/* A critique outlives its author: deleting an account keeps the
+                            words and drops the name. There is no profile behind a
+                            tombstone, so it must not be a link — it used to navigate to
+                            a dead page dressed up as a working one. */}
+                        {(c as { user_id?: string | null }).user_id ? (
+                            <Link to={`/user/${c.username}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0, marginTop: '2px' }}>@{c.username}</Link>
+                        ) : (
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--ash)', whiteSpace: 'nowrap', flexShrink: 0, marginTop: '2px' }}>@{c.username}</span>
+                        )}
                         
                         {editingCommentId === c.id ? (
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>

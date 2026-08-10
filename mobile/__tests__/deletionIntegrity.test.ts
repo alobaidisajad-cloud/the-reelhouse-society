@@ -149,15 +149,34 @@ describe('deletion integrity', () => {
       expect(`${table}: ${stmt.test(exec)}`).toBe(`${table}: true`);
     });
 
-    it('never sets a tombstone without nulling the author first', () => {
-      // The failing shape: a handle assignment with no user_id=NULL beside it.
+    it('never sets a tombstone without nulling the author, WHERE THE TRIGGER RUNS', () => {
+      // Scope matters. `derive_username_column` is attached to exactly these
+      // tables, and only there can a tombstone be overwritten by a profile lookup.
+      //
+      // An earlier version of this test demanded `user_id = NULL` beside EVERY
+      // '[deleted]' write, and correctly failed when the erasure of frozen names
+      // was added — notifications.from_username and lounge_messages
+      // .reply_to_username are copies of somebody ELSE'S handle, carry no derive
+      // trigger, and have no author of their own to null. The rule was too broad,
+      // not the code. A guard aimed wider than the hazard reports false alarms,
+      // and a false alarm gets a test deleted.
+      const TRIGGERED = ['log_comments', 'dossier_comments', 'dispatch_dossiers', 'video_reviews'];
       for (const m of exec.matchAll(/UPDATE\s+public\.(\w+)\s+SET\s+([^;]+);/gi)) {
         const [, table, body] = m;
         if (!/\[deleted\]/.test(body)) continue;
+        if (!TRIGGERED.includes(table)) continue;
         expect(`${table} nulls the author too: ${/user_id\s*=\s*NULL/i.test(body)}`).toBe(
           `${table} nulls the author too: true`,
         );
       }
+    });
+
+    it('video_reviews is in that set — it carries the derive trigger too', () => {
+      // Easy to miss: the trigger is on four tables, not the three that obviously
+      // look like comments.
+      expect(exec).toMatch(
+        /UPDATE public\.video_reviews SET user_id = NULL, username = '\[deleted\]'/,
+      );
     });
 
     it('the two tables with no denormalised handle only null the author', () => {
@@ -165,6 +184,43 @@ describe('deletion integrity', () => {
       for (const t of ['list_comments', 'lounge_messages']) {
         expect(new RegExp(`UPDATE public\\.${t}\\s+SET user_id = NULL`).test(exec)).toBe(true);
       }
+    });
+  });
+
+  describe('the name is legible nowhere afterwards', () => {
+    /**
+     * A foreign key can only null an ID. Several columns hold a COPY of the handle
+     * taken when the row was written — they are unreachable by any cascade and
+     * survive the account entirely. 51 of 51 notifications carried one.
+     *
+     * Leaving them is residual personal data after an erasure request: the account
+     * is gone and the name is still readable. Verified end to end — before, the
+     * handle appeared in four places; after, in none.
+     */
+    it.each([
+      ['notifications', 'from_username', 'from_user_id'],
+      ['tips', 'from_username', 'from_user_id'],
+      ['video_reviews', 'username', 'user_id'],
+    ])('%s.%s is tombstoned, matched on %s', (table, col, idCol) => {
+      const stmt = new RegExp(
+        `UPDATE public\\.${table}\\s+SET[^;]*${col}\\s*=\\s*'\\[deleted\\]'[^;]*WHERE[^;]*${idCol}\\s*=\\s*uid`,
+        'i',
+      );
+      expect(`${table}.${col}: ${stmt.test(exec)}`).toBe(`${table}.${col}: true`);
+    });
+
+    it('a quoted reply loses the name of who it quoted', () => {
+      expect(exec).toMatch(/UPDATE public\.lounge_messages\s+SET reply_to_username = '\[deleted\]'/);
+    });
+
+    it('...and does so BEFORE that author becomes null', () => {
+      // reply_to_username is reached through the PARENT message's author. Null the
+      // author first and there is nothing left to match on — the name would stay.
+      const quote = exec.indexOf("SET reply_to_username = '[deleted]'");
+      const nullify = exec.indexOf('UPDATE public.lounge_messages SET user_id = NULL');
+      expect(`quote(${quote}) before nullify(${nullify}): ${quote > 0 && nullify > 0 && quote < nullify}`).toBe(
+        `quote(${quote}) before nullify(${nullify}): true`,
+      );
     });
   });
 
