@@ -363,6 +363,27 @@ if (DB_URL) {
         posture.push(`length ceilings dropped: ${n} live, expected at least ${sec.minLengthCeilings}`);
       }
     }
+    // 5. Every function in public demotes pg_temp.
+    //    `SET search_path = public` is a VACUOUS pin: PostgreSQL searches pg_temp
+    //    FIRST — before pg_catalog — for relation names unless pg_temp is named
+    //    explicitly, so a temp table shadows the real one. Both anon and
+    //    authenticated hold TEMP privilege here.
+    //    Proven on production 2026-08-10: with a decoy `logs` table planted,
+    //    get_profile_counts reported logs_count 0 / ledger_count 0 instead of
+    //    145 / 93. After pinning `public, pg_temp` the same attack returned the
+    //    true numbers. This check exists because the repo cannot see proconfig —
+    //    a function added straight through the SQL editor would never appear in
+    //    a migration file, and only the live DB knows.
+    if (sec.everyFunctionDemotesPgTemp) {
+      const bad = q(
+        `SELECT string_agg(p.proname, ', ' ORDER BY p.proname) FROM pg_proc p ` +
+          `JOIN pg_namespace n ON n.oid=p.pronamespace ` +
+          `WHERE n.nspname='public' AND p.prokind='f' AND NOT COALESCE(` +
+          `(SELECT cfg FROM unnest(p.proconfig) cfg WHERE cfg LIKE 'search_path=%') LIKE '%pg_temp%', false)`,
+      );
+      if (bad) posture.push(`search_path is not pg_temp-safe on: ${bad}`);
+    }
+
     grantViolations = posture.length - postureBeforeGrants;
     checkedGrants = true;
   } catch (e) {
