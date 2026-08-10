@@ -128,6 +128,15 @@ BEGIN
       ('vaults',           'user_id',         'profiles',  'CASCADE'),
       ('tickets',          'user_id',         'profiles',  'CASCADE'),
       ('venues',           'owner_id',        'profiles',  'CASCADE'),
+      -- The chain BELOW venues, or the cascade above stops dead on it.
+      -- profile -> venues CASCADE, but showtimes.venue_id was NO ACTION, and
+      -- tickets.showtime_id below that. A venue owner's account deletion would
+      -- fail on showtimes_venue_id_fkey — reproduced. All three tables are empty
+      -- today, so this is a hole that has not been fallen into yet rather than
+      -- one anybody has hit. Account deletion is legally required; it must not
+      -- depend on which corner of the product someone happened to use.
+      ('showtimes',        'venue_id',        'venues',    'CASCADE'),
+      ('tickets',          'showtime_id',     'showtimes', 'CASCADE'),
       -- the link that never existed
       ('log_comments',     'log_id',          'logs',      'CASCADE'),
       -- shared: the words stay, the name goes
@@ -158,14 +167,29 @@ BEGIN
       WHERE con.contype='f' AND n.nspname='public'
         AND cl.relname = c.tbl AND a.attname = c.col
       LIMIT 1;
+
       IF v_name IS NOT NULL THEN
         EXECUTE format('ALTER TABLE public.%I DROP CONSTRAINT %I', c.tbl, v_name);
       END IF;
-    END;
 
-    EXECUTE format(
-      'ALTER TABLE public.%I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES public.%I(id) ON DELETE %s',
-      c.tbl, c.tbl || '_' || c.col || '_fk', c.col, c.parent, c.action);
+      -- ⚠️ THE NAME IS PART OF THE PUBLIC INTERFACE. PUT IT BACK UNCHANGED.
+      --
+      -- PostgREST lets a client disambiguate a join by naming the constraint:
+      --     profiles!logs_user_id_fkey(username, role, avatar_url)
+      -- Both apps do this in 29 places across 8 constraints. An earlier draft of
+      -- this migration recreated each key as `<table>_<col>_fk`, which would have
+      -- renamed 5 of those 8 and broken every one of those queries — including in
+      -- the TestFlight build already in people's hands, which cannot be patched.
+      --
+      -- A foreign key's name looks like an implementation detail. Here it is an
+      -- API. Reuse the captured name; only a genuinely new key gets a new one,
+      -- under the convention PostgREST and everyone else expects.
+      EXECUTE format(
+        'ALTER TABLE public.%I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES public.%I(id) ON DELETE %s',
+        c.tbl,
+        COALESCE(v_name, c.tbl || '_' || c.col || '_fkey'),
+        c.col, c.parent, c.action);
+    END;
     applied := applied + 1;
   END LOOP;
 

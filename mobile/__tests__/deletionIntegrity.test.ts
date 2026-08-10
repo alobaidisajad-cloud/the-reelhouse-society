@@ -168,6 +168,54 @@ describe('deletion integrity', () => {
     });
   });
 
+  describe('constraint names are an API, not an implementation detail', () => {
+    /**
+     * PostgREST lets a client disambiguate a join by naming the foreign key:
+     *
+     *     profiles!logs_user_id_fkey(username, role, avatar_url)
+     *
+     * Both apps do this in 29 places across 8 constraints. An earlier draft of
+     * this migration recreated every key as `<table>_<col>_fk`, which would have
+     * renamed 5 of those 8 and broken every one of those queries — including in
+     * the TestFlight build already in people's hands, which cannot be patched.
+     *
+     * So: reuse the captured name. Only a genuinely new key gets a new one.
+     */
+    const HARDCODED_IN_THE_APPS = [
+      'logs_user_id_fkey',
+      'lounge_messages_user_id_fkey',
+      'lounge_members_user_id_fkey',
+      'lounges_creator_id_fkey',
+      'interactions_user_id_fkey',
+      'interactions_target_user_id_fkey',
+      'lounge_message_reactions_user_id_fkey',
+      'lists_user_id_fkey',
+    ];
+
+    it('recreates each key under the name it already had', () => {
+      expect(exec).toMatch(/COALESCE\(v_name,/);
+    });
+
+    it('never invents a new name for an existing key', () => {
+      // `_fk` was the shape that would have broken things.
+      expect(exec).not.toMatch(/'_fk'/);
+      expect(exec).not.toMatch(/\|\|\s*'_fk'\s*,/);
+    });
+
+    it.each(HARDCODED_IN_THE_APPS)('%s is not renamed by this migration', (name) => {
+      // A rename would appear as the literal new name in the file.
+      const table = name.replace(/_[a-z_]*_fkey$/, '');
+      const renamed = new RegExp(`${table}_[a-z_]+_fk\\b(?!ey)`);
+      expect(`${name} renamed: ${renamed.test(exec)}`).toBe(`${name} renamed: false`);
+    });
+
+    it('a genuinely new key uses the conventional suffix', () => {
+      // log_comments.log_id had no key at all, so it needs one — named the way
+      // PostgREST and everyone else expects, in case a client ever hints it.
+      expect(exec).toMatch(/_fkey'\)/);
+    });
+  });
+
   describe('the migration is safe to run against production', () => {
     it('refuses to wait for a lock', () => {
       expect(exec).toMatch(/SET\s+LOCAL\s+lock_timeout/i);
