@@ -170,3 +170,88 @@ describe('the web Tribunal no longer writes tables directly', () => {
     expect(web).toMatch(/if \(error\)/);
   });
 });
+
+describe('the Tribunal can now ask for content removal', () => {
+  const TRIBUNAL = join(__dirname, '..', 'app', '(admin)', 'tribunal.tsx');
+  const ui = readFileSync(TRIBUNAL, 'utf8');
+
+  it('offers the action at all', () => {
+    // The server could remove content for a while before anything could ask it
+    // to: the branch existed and no button did.
+    expect(ui).toMatch(/type EnforcementAction =[^;]*'delete_content'/);
+    expect(ui).toMatch(/openActionModal\('delete_content', item\)/);
+  });
+
+  it('describes what actually happens, including the tombstone', () => {
+    // The description is the only place a moderator learns that a lounge message
+    // is struck through rather than erased, and that a copy is retained.
+    expect(ui).toMatch(/delete_content: \{[\s\S]{0,400}title: 'REMOVE CONTENT'/);
+    expect(ui).toMatch(/struck through rather than erased/);
+    expect(ui).toMatch(/A copy is kept with the record/);
+  });
+
+  it('is hidden for a profile report', () => {
+    // The server refuses it — a profile is not content, it is a person. Offering
+    // a button that can only fail is how a moderator learns to distrust the tool.
+    expect(ui).toMatch(/item\.content_type !== 'profile' &&/);
+  });
+
+  it('is NOT hidden when the reported member has left', () => {
+    // Their content can outlive them: personal work goes, but a comment on
+    // someone else's log survives as [deleted]. The punishments are gated on
+    // target_user_id; this must not be, or reported content from a departed
+    // member could never be removed.
+    // Assert the CONDITION, not where a string happens to sit. An earlier
+    // version compared indexOf positions, which a logical change slips straight
+    // past — and the mutation written to prove it never applied, so the test
+    // "passed" having checked nothing.
+    const btn = ui.indexOf("openActionModal('delete_content', item)");
+    expect(btn).toBeGreaterThan(0);
+    // The guard is the nearest `{ ... && (` opening the block above the button.
+    const guard = ui.slice(Math.max(0, btn - 700), btn);
+    const lastGuard = guard.slice(guard.lastIndexOf('{', guard.lastIndexOf('&& (')));
+    expect(`guard mentions target_user_id: ${/target_user_id/.test(lastGuard)}`).toBe(
+      'guard mentions target_user_id: false',
+    );
+    expect(`guard checks the content type: ${/content_type !== 'profile'/.test(lastGuard)}`).toBe(
+      "guard checks the content type: true",
+    );
+  });
+
+  it('sends no duration', () => {
+    // Only suspend collects one, and the server now REFUSES a suspend or mute
+    // without it rather than silently writing NULL.
+    expect(ui).toMatch(/const hours = state\.action === 'suspend' \? parseInt\(durationHours, 10\) : undefined/);
+  });
+
+  it('reads as correction rather than punishment', () => {
+    // Sepia, like a warning. The crimson actions all address the member; this one
+    // addresses the work, and colouring it the same would misread the escalation.
+    expect(ui).toMatch(/delete_content: \{[\s\S]{0,120}color: colors\.sepia/);
+  });
+});
+
+describe('a report survives the member leaving', () => {
+  it('the resolver checks NOT FOUND, not a null target', () => {
+    // Those were the same thing until account deletion started working. Now
+    // reports.target_user_id is ON DELETE SET NULL, so a report against someone
+    // who has since left has a null target and is still perfectly real. Testing
+    // the target made every such report PERMANENTLY UNRESOLVABLE — stuck in the
+    // docket, refusing even a dismiss, saying "not found". Reproduced.
+    expect(exec).toMatch(/IF NOT FOUND THEN\s+RAISE EXCEPTION 'Report not found or already resolved'/);
+    expect(exec).not.toMatch(/IF v_target_user_id IS NULL THEN\s+RAISE EXCEPTION 'Report not found/);
+  });
+
+  it('dismiss and removal still work; the punishments refuse plainly', () => {
+    expect(exec).toMatch(
+      /v_target_user_id IS NULL AND p_action NOT IN \('dismiss', 'delete_content'\)/,
+    );
+    expect(exec).toMatch(/has deleted their account/);
+  });
+
+  it('it does not try to notify somebody who is gone', () => {
+    // notifications.user_id is NOT NULL, so this would abort the resolve AFTER
+    // the content had already been removed.
+    expect(exec).toMatch(/p_action != 'dismiss' AND v_target_user_id IS NOT NULL THEN/);
+  });
+});

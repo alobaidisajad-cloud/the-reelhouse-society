@@ -13,6 +13,7 @@ import {
     Scale,
     Skull,
     Square,
+    Trash2,
     X,
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
@@ -67,7 +68,7 @@ function chargeLabel(reason: string): string {
   return REPORT_REASON_LABELS[reason as ReportReason]?.label ?? reason.toUpperCase();
 }
 
-type EnforcementAction = 'warn' | 'suspend' | 'ban' | 'permanent_exile';
+type EnforcementAction = 'warn' | 'suspend' | 'ban' | 'permanent_exile' | 'delete_content';
 type TribunalView = 'pending' | 'priority';
 
 interface ActionModalState {
@@ -201,6 +202,15 @@ function ActionModal({
       title: 'PERMANENT EXILE',
       color: colors.crimson,
       description: 'Irrevocable expulsion from the Society. Cannot be undone.',
+    },
+    // The only action here that addresses the WORK rather than the member.
+    // Sepia, not crimson: this is correction, not punishment, and it is usually
+    // the right first answer to a report about one bad piece.
+    delete_content: {
+      title: 'REMOVE CONTENT',
+      color: colors.sepia,
+      description:
+        'The reported piece is struck from the house. A lounge dispatch is struck through rather than erased, so the conversation around it still reads. A copy is kept with the record, should the decision ever be questioned.',
     },
   };
 
@@ -959,6 +969,26 @@ export default function TribunalScreen() {
                             </PressableScale>
                           )}
                         </View>
+
+                        {/* Removing the reported piece — a different axis from the
+                            punishments below, so it stands on its own row.
+                            Hidden for a profile report: a profile is not content,
+                            the server refuses it, and a button that cannot work
+                            should never be offered. Still shown when the member
+                            has left, because their content can outlive them. */}
+                        {item.content_type !== 'profile' && (
+                          <PressableScale
+                            style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
+                            onPress={() => openActionModal('delete_content', item)}
+                            haptic="medium"
+                            pressedScale={0.95}
+                            accessibilityRole="button"
+                            accessibilityLabel="Remove the reported content"
+                          >
+                            <Trash2 size={14} color={colors.sepia} />
+                            <Text style={[s.actionText, { color: colors.sepia }]}>REMOVE CONTENT</Text>
+                          </PressableScale>
+                        )}
 
                         {!!item.target_user_id && (
                           <>

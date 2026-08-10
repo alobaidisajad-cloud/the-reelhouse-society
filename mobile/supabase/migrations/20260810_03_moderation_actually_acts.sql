@@ -103,8 +103,25 @@ BEGIN
   FROM reports
   WHERE id = p_report_id AND status = 'pending';
 
-  IF v_target_user_id IS NULL THEN
+  -- NOT FOUND, not "target_user_id IS NULL".
+  --
+  -- Those were the same thing until this batch made account deletion work:
+  -- reports.target_user_id is now ON DELETE SET NULL, so a report against
+  -- somebody who has since left has a NULL target while being a perfectly real,
+  -- still-pending report. Testing the target instead of the row made every such
+  -- report PERMANENTLY UNRESOLVABLE — stuck in the docket, refusing even a
+  -- dismiss, with an error saying "not found" that was untrue. Reproduced.
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'Report not found or already resolved';
+  END IF;
+
+  -- There is nobody left to warn, suspend or ban. Say so plainly instead of
+  -- writing an UPDATE that matches no rows and reporting success — the exact
+  -- failure this whole batch is about. The content may well still be standing,
+  -- so removal and dismissal remain available.
+  IF v_target_user_id IS NULL AND p_action NOT IN ('dismiss', 'delete_content') THEN
+    RAISE EXCEPTION 'That member has deleted their account. Only dismiss or delete_content remain.'
+      USING ERRCODE = 'P0001';
   END IF;
 
   -- ── Refuse rather than pretend ───────────────────────────────────────────
@@ -217,7 +234,10 @@ BEGIN
       jsonb_build_object('report_id', p_report_id, 'action', p_action)
     );
 
-    IF p_action != 'dismiss' THEN
+    -- Only if there is still somebody to notify. notifications.user_id is NOT
+    -- NULL, so a departed target would abort the whole resolve here — after the
+    -- content had already been removed.
+    IF p_action != 'dismiss' AND v_target_user_id IS NOT NULL THEN
       v_notice := CASE p_action
         WHEN 'warn' THEN 'After reviewing a report, the house has issued a formal warning.'
         WHEN 'suspend' THEN 'After reviewing a report, the house has paused your membership for ' || COALESCE(p_duration_hours::text, 'a number of') || ' hours.'
