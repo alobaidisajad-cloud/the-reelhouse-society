@@ -173,8 +173,21 @@ function sh(cmd) {
  * a mistake anyone can see: Supabase's direct host is IPv6-only, so on an IPv4
  * network the connection never reaches the point of checking a password.
  */
+/**
+ * Strip credentials before anything is printed.
+ *
+ * execSync's `e.message` is "Command failed: psql <the whole command>", and the
+ * command carries the connection string — user, host AND password. On a terminal
+ * that is untidy; in a CI log it is a leaked database password. Every path that
+ * can surface a raw message goes through here.
+ */
+function redact(s) {
+  return String(s ?? '').replace(/postgres(?:ql)?:\/\/[^\s"']+/gi, 'postgresql://<redacted>');
+}
+
 function why(e) {
-  const err = (e.stderr?.toString() || '').trim().split('\n')[0] || e.message.split('\n')[0];
+  const err =
+    (e.stderr?.toString() || '').trim().split('\n')[0] || redact(e.message).split('\n')[0];
   if (/unreachable|Cannot assign requested address|could not translate host|timeout expired/i.test(err)) {
     return (
       `${err}\n` +
@@ -382,6 +395,31 @@ if (DB_URL) {
           `(SELECT cfg FROM unnest(p.proconfig) cfg WHERE cfg LIKE 'search_path=%') LIKE '%pg_temp%', false)`,
       );
       if (bad) posture.push(`search_path is not pg_temp-safe on: ${bad}`);
+    }
+
+    // 6. Actually RUN the admin read RPCs, as an admin, inside a rolled-back
+    //    transaction.
+    //    Existence is not health. get_priority_reports existed, was granted, and
+    //    had the right signature — and raised on every single call for days,
+    //    because it declared `content_id uuid` while reports.content_id is text.
+    //    PostgreSQL validates a RETURNS TABLE descriptor at execution, so no
+    //    static check could see it; only calling it could. The Tribunal docket
+    //    was unopenable and every name-and-signature check reported healthy.
+    //    The jwt claim is built with json_build_object so this SQL carries no
+    //    double quotes to survive shell escaping.
+    for (const call of sec.smokeExecuteAsAdmin || []) {
+      try {
+        q(
+          `BEGIN; ` +
+            `SELECT set_config('request.jwt.claims', json_build_object(` +
+            `'sub',(SELECT id FROM public.profiles WHERE role='admin' LIMIT 1),` +
+            `'role','authenticated')::text, true); ` +
+            `SELECT count(*) FROM ${call}; ` +
+            `ROLLBACK;`,
+        );
+      } catch (e) {
+        posture.push(`admin RPC raises when called: ${call} — ${why(e)}`);
+      }
     }
 
     grantViolations = posture.length - postureBeforeGrants;

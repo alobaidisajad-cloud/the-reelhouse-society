@@ -82,6 +82,12 @@
     ],
     "rlsRequiredOnEveryPublicTable": true,
     "minLengthCeilings": 130,
-    "everyFunctionDemotesPgTemp": true
+    "everyFunctionDemotesPgTemp": true,
+    "smokeExecuteAsAdmin": [
+      "public.get_priority_reports(20, NULL, NULL, NULL)",
+      "public.get_moderation_history_for_users(ARRAY[]::uuid[])",
+      "public.get_user_lounges((SELECT id FROM public.profiles WHERE role='admin' LIMIT 1))",
+      "public.get_lounge_unread_counts()"
+    ]
   }
 }
