@@ -35,10 +35,22 @@ DECLARE
   c         record;
   n_dropped int := 0;
   n_left    int;
+  fk_before int;
+  fk_after  int;
   covered   boolean;
 BEGIN
   SET LOCAL lock_timeout = '5s';
   SET LOCAL statement_timeout = '60s';
+
+  -- Both indexes begin with a foreign-key column, so the same guard part 2 used
+  -- belongs here: prove the drops remove no foreign-key coverage rather than
+  -- rely on having checked by hand.
+  SELECT count(*) INTO fk_before
+  FROM pg_constraint con
+  JOIN pg_namespace n ON n.oid = con.connamespace AND n.nspname = 'public'
+  JOIN LATERAL unnest(con.conkey) AS k(attnum) ON true
+  WHERE con.contype = 'f' AND array_length(con.conkey,1) = 1
+    AND NOT EXISTS (SELECT 1 FROM pg_index i WHERE i.indrelid = con.conrelid AND i.indkey[0] = k.attnum);
 
   FOR c IN
     SELECT unnest(ARRAY[
@@ -95,5 +107,19 @@ BEGIN
     RAISE EXCEPTION 'ABORTED — % redundant index(es) still present. Nothing was applied.', n_left;
   END IF;
 
-  RAISE NOTICE 'OK — % multi-column redundant index(es) removed. Nothing redundant remains at any width.', n_dropped;
+  SELECT count(*) INTO fk_after
+  FROM pg_constraint con
+  JOIN pg_namespace n ON n.oid = con.connamespace AND n.nspname = 'public'
+  JOIN LATERAL unnest(con.conkey) AS k(attnum) ON true
+  WHERE con.contype = 'f' AND array_length(con.conkey,1) = 1
+    AND NOT EXISTS (SELECT 1 FROM pg_index i WHERE i.indrelid = con.conrelid AND i.indkey[0] = k.attnum);
+
+  IF fk_after > fk_before THEN
+    RAISE EXCEPTION
+      'ABORTED — a drop removed foreign-key coverage (% -> % unindexed). Nothing was applied.', fk_before, fk_after;
+  END IF;
+
+  RAISE NOTICE
+    'OK — % multi-column redundant index(es) removed. Nothing redundant remains at any width, and unindexed foreign keys are unchanged at %.',
+    n_dropped, fk_after;
 END $$;
