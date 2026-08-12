@@ -833,6 +833,26 @@ recorded before and after.
 
 - **#61** — An entire dead feature subsystem is still live in the database.
 
+**ADDED BY BATCH 29** — a second cluster of dead objects, already live-probed, two of
+them running **every minute**:
+
+| object | state |
+|---|---|
+| `sweep_interaction_buffer()` | **171,883 failures, 0 successes** — has never worked. Inserts `interactions_queue_buffer.target_log_id` (**text**) into `interactions.target_log_id` (**uuid**) with no cast. Nothing lost: no client writes that buffer at any commit, 0 rows |
+| `interactions_queue_buffer` | the buffer nothing fills |
+| `refresh_global_feed()` | succeeded **171,826 times** refreshing a view nothing reads |
+| `global_feed_materialized` | was leaking 263 rows of review text to `anon` (RLS cannot protect a matview). Grants revoked in batch 29; the object itself remains |
+| cron `sweep-interaction-buffer`, `refresh-global-feed` | both `* * * * *`, both still scheduled |
+
+**Why it is not just tidiness:** 171,883 identical cron errors would completely hide a
+real scheduled-job failure. Do not "repair" the sweep — fixing a text/uuid cast for a
+buffer nothing fills is polish on something being deleted.
+
+Also drop here: `book_showtime_seat`, `increment_video_views`, `increment_video_tips`
+(access already revoked in batch 29), `handle_interaction_removal` (orphaned trigger
+function, no trigger attached), and the `user_reports` / `process_user_report` /
+`trust_score` trio (inert — trust_score is read nowhere, every member sits at 100).
+
 **DONE WHEN** a live probe proves nothing reads those objects, then they are dropped
 with a written restore script.
 
