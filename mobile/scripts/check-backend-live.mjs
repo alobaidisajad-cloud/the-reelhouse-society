@@ -407,15 +407,20 @@ if (DB_URL) {
     //    An unindexed FK makes every parent delete scan the whole child table —
     //    measured at 143x on 200k rows, and account deletion crosses ~12 of them.
     if (sec.indexHygiene) {
+      // Coverage is compared at ANY width, not just single-column. The first
+      // version of this check only looked at indnkeyatts=1, and two multi-column
+      // duplicates survived the batch because of it — idx_logs_composite_user_film
+      // (user_id, film_id) sat beside both a UNIQUE index on exactly those columns
+      // and a wider one starting with them, on the hottest write table in the app.
       const dup = q(
         `SELECT string_agg(x, ', ') FROM (SELECT DISTINCT ic.relname AS x FROM pg_index i ` +
           `JOIN pg_class ic ON ic.oid=i.indexrelid JOIN pg_class c ON c.oid=i.indrelid ` +
           `JOIN pg_namespace n ON n.oid=c.relnamespace AND n.nspname='public' ` +
-          `WHERE i.indnkeyatts=1 AND i.indnatts=i.indnkeyatts AND NOT i.indisunique AND i.indpred IS NULL ` +
+          `WHERE i.indnatts=i.indnkeyatts AND NOT i.indisunique AND i.indpred IS NULL ` +
           `AND NOT EXISTS (SELECT 1 FROM pg_constraint con WHERE con.conindid=i.indexrelid) ` +
           `AND EXISTS (SELECT 1 FROM pg_index o WHERE o.indrelid=i.indrelid AND o.indexrelid<>i.indexrelid ` +
-          `AND o.indkey[0]=i.indkey[0] AND o.indpred IS NULL ` +
-          `AND (o.indnkeyatts>1 OR (o.indisunique AND o.indnkeyatts=i.indnkeyatts)))) s`,
+          `AND o.indpred IS NULL AND o.indkey[0:i.indnkeyatts-1]=i.indkey[0:i.indnkeyatts-1] ` +
+          `AND (o.indnkeyatts>i.indnkeyatts OR (o.indisunique AND o.indnkeyatts=i.indnkeyatts)))) s`,
       );
       if (dup) posture.push(`redundant index(es) — already covered by another: ${dup}`);
 
