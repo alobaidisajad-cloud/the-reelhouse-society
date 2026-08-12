@@ -419,10 +419,10 @@ if (DB_URL) {
         `SELECT string_agg(DISTINCT c.relname, ', ') FROM pg_class c ` +
           `JOIN pg_namespace n ON n.oid=c.relnamespace AND n.nspname='public' ` +
           `CROSS JOIN (VALUES ('anon'),('authenticated')) AS rr(role) ` +
-          `CROSS JOIN (VALUES ('TRUNCATE'),('REFERENCES'),('TRIGGER')) AS pp(priv) ` +
-          `WHERE c.relkind IN ('r','p') AND has_table_privilege(rr.role, c.oid, pp.priv)`,
+          `CROSS JOIN (VALUES ('TRUNCATE'),('REFERENCES'),('TRIGGER'),('MAINTAIN')) AS pp(priv) ` +
+          `WHERE c.relkind IN ('r','p','m') AND has_table_privilege(rr.role, c.oid, pp.priv)`,
       );
-      if (bad) posture.push(`anon/authenticated still hold TRUNCATE/REFERENCES/TRIGGER on: ${bad}`);
+      if (bad) posture.push(`anon/authenticated still hold TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on: ${bad}`);
 
       // A materialized view cannot carry RLS — PostgreSQL has no policy to apply —
       // so a SELECT grant on one is unconditional access to every row it holds.
