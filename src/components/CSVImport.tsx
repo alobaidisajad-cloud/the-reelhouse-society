@@ -52,6 +52,9 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
     const [importing, setImporting] = useState(false)
     const [done, setDone] = useState(false)
     const [importCount, setImportCount] = useState(0)
+    /** Films whose title could not be matched to a real film. Reported to the
+     *  member rather than silently dropped — see the success screen. */
+    const [skippedCount, setSkippedCount] = useState(0)
     const fileRef = useRef<any>(null)
 
     const handleFile = useCallback((file: any) => {
@@ -82,16 +85,75 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
         if (!parsed || !user) return
         setImporting(true)
 
+        // ── Identify every film BEFORE writing anything ──────────────────────
+        // This import was completely broken, and moving this step is the repair.
+        //
+        // It used to insert every row with `film_id: 0` and resolve the real ids
+        // afterwards, in the background. Two things made that impossible:
+        //   1. it upserted `onConflict: 'user_id,film_title'`, and no unique index
+        //      exists on those columns, so PostgREST rejected the whole request —
+        //      "there is no unique or exclusion constraint matching the ON CONFLICT
+        //      specification";
+        //   2. even without that, `logs_user_id_film_id_key` is UNIQUE on
+        //      (user_id, film_id), so with every row carrying film_id 0 the SECOND
+        //      row of any import collided with the first. Verified against the live
+        //      database: first insert succeeds, second raises duplicate key.
+        // So nothing could ever be imported, and fixing only the conflict target
+        // would have swapped one error for another.
+        //
+        // Resolving first gives every row a real, distinct film_id, which is what
+        // the unique constraint was designed around: one log per film per member.
+        // The lookup is the same TMDB search this file already ran afterwards.
+        const entries = parsed.entries
+        type Entry = { title: string; year: string | null; rating: number; watchedDate: string }
+        type Resolved = Entry & { filmId: number; posterPath: string | null }
+
+        const { tmdb } = await import('../tmdb')
+        const RESOLVE_BATCH = 5 // TMDB allows 40 requests / 10s; stay well under
+        const resolved: Resolved[] = []
+        let unidentified = 0
+        let processed = 0
+
+        for (let i = 0; i < entries.length; i += RESOLVE_BATCH) {
+            const batch: Entry[] = entries.slice(i, i + RESOLVE_BATCH)
+            const results = await Promise.allSettled(batch.map(async (entry): Promise<Resolved | null> => {
+                const yearSuffix = entry.year ? ` ${entry.year}` : ''
+                const data = await tmdb.search(`${entry.title}${yearSuffix}`)
+                const match = data.results?.find((r: { media_type?: string; id?: number }) => r.media_type !== 'person' && r.id)
+                if (!match?.id) return null
+                return {
+                    ...entry,
+                    filmId: match.id,
+                    posterPath: ('poster_path' in match && match.poster_path) ? (match.poster_path as string) : null,
+                }
+            }))
+            for (const r of results) {
+                if (r.status === 'fulfilled' && r.value) resolved.push(r.value)
+                else unidentified += 1
+            }
+            processed += batch.length
+            setImportCount(processed)
+            if (i + RESOLVE_BATCH < entries.length) await new Promise(r => setTimeout(r, 500))
+        }
+
+        // A CSV can list the same film twice. Deduplicate before writing, so one
+        // request cannot conflict with itself.
+        const byFilmId = new Map<number, Resolved>()
+        for (const r of resolved) if (!byFilmId.has(r.filmId)) byFilmId.set(r.filmId, r)
+        const unique = [...byFilmId.values()]
+
         const BATCH = 20
         let count = 0
-        const entries = parsed.entries
-
-        for (let i = 0; i < entries.length; i += BATCH) {
-            const batch = entries.slice(i, i + BATCH)
-            const dbRows = batch.map((e: { title: string; year: string | null; rating: number; watchedDate: string }) => ({
+        for (let i = 0; i < unique.length; i += BATCH) {
+            const batch = unique.slice(i, i + BATCH)
+            const dbRows = batch.map((e) => ({
                 user_id: user.id,
-                film_id: 0,
+                film_id: e.filmId,
                 film_title: e.title,
+                // `poster_path` — the column that actually exists. The old background
+                // step wrote `poster`, which does not, so every enrichment update
+                // failed with "column poster of relation logs does not exist".
+                poster_path: e.posterPath,
                 year: e.year ? parseInt(e.year) : null,
                 rating: e.rating || 0,
                 status: 'watched',
@@ -102,13 +164,16 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
                 pull_quote: '',
             }))
 
+            // Now a real constraint backs this: films already in the archive are
+            // skipped instead of duplicated.
             const { error } = await supabase
                 .from('logs')
-                .upsert(dbRows, { onConflict: 'user_id,film_title', ignoreDuplicates: true })
+                .upsert(dbRows, { onConflict: 'user_id,film_id', ignoreDuplicates: true })
 
             if (!error) count += batch.length
-            setImportCount(count)
         }
+        setImportCount(count)
+        setSkippedCount(unidentified)
 
         // Refresh local store
         const { fetchLogs } = await import('../store').then(m => m.useFilmStore.getState())
@@ -116,48 +181,8 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
 
         setImporting(false)
         setDone(true)
-
-        // ── Background TMDB Enrichment ──
-        // Fire-and-forget: resolve film_id=0 entries by searching TMDB
-        // This runs after the success screen so users aren't blocked
-        enrichImportedFilms(user.id, entries).catch(() => { /* non-critical */ })
     }
 
-    /** Background enrichment: queries TMDB for each imported film and patches the DB record */
-    const enrichImportedFilms = async (userId: string, entries: { title: string; year: string | null }[]) => {
-        const { tmdb } = await import('../tmdb')
-        const ENRICH_BATCH = 5 // throttle to avoid TMDB rate limits
-        for (let i = 0; i < entries.length; i += ENRICH_BATCH) {
-            const batch = entries.slice(i, i + ENRICH_BATCH)
-            await Promise.allSettled(batch.map(async (entry) => {
-                try {
-                    const yearSuffix = entry.year ? ` ${entry.year}` : ''
-                    const data = await tmdb.search(`${entry.title}${yearSuffix}`)
-                    const match = data.results?.find((r: { media_type?: string }) => r.media_type !== 'person')
-                    if (match && match.id) {
-                        await supabase
-                            .from('logs')
-                            .update({
-                                film_id: match.id,
-                                poster: ('poster_path' in match && match.poster_path)
-                                    ? `https://image.tmdb.org/t/p/w185${match.poster_path}`
-                                    : null,
-                            })
-                            .eq('user_id', userId)
-                            .eq('film_title', entry.title)
-                            .eq('film_id', 0)
-                    }
-                } catch { /* individual enrichment failures are non-critical */ }
-            }))
-            // Small delay between batches to respect TMDB rate limits (40 req/10s)
-            if (i + ENRICH_BATCH < entries.length) {
-                await new Promise(r => setTimeout(r, 500))
-            }
-        }
-        // Re-fetch logs one more time to pick up enriched data
-        const { fetchLogs } = await import('../store').then(m => m.useFilmStore.getState())
-        await fetchLogs()
-    }
 
     return (
         <AnimatePresence>
@@ -230,6 +255,14 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
                             </div>
                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)', opacity: 0.8, marginBottom: '2rem' }}>
                                 {importCount} films successfully imported into The Society.
+                                {skippedCount > 0 && (
+                                    <>
+                                        {' '}
+                                        {skippedCount} {skippedCount === 1 ? 'title' : 'titles'} could not be
+                                        identified and {skippedCount === 1 ? 'was' : 'were'} left out — you can add
+                                        {skippedCount === 1 ? ' it' : ' them'} by hand.
+                                    </>
+                                )}
                             </div>
                             <button className="btn btn-primary" onClick={onClose}>
                                 ENTER THE SOCIETY
