@@ -407,6 +407,24 @@ if (DB_URL) {
     //    was unopenable and every name-and-signature check reported healthy.
     //    The jwt claim is built with json_build_object so this SQL carries no
     //    double quotes to survive shell escaping.
+    // 7. anon/authenticated hold no TRUNCATE, REFERENCES or TRIGGER.
+    //    TRUNCATE is the one write RLS cannot defend: a DELETE with the anon key
+    //    returns 204 and removes nothing because the policies filter the rows,
+    //    but TRUNCATE has no rows to filter. Nothing needs it — PostgREST answers
+    //    the verb with 501 and no function contains it — so it is simply gone.
+    //    This also catches a NEW table arriving with Supabase's default GRANT ALL,
+    //    which is the way this drifts back.
+    if (sec.noWipePrivileges) {
+      const bad = q(
+        `SELECT string_agg(DISTINCT c.relname, ', ') FROM pg_class c ` +
+          `JOIN pg_namespace n ON n.oid=c.relnamespace AND n.nspname='public' ` +
+          `CROSS JOIN (VALUES ('anon'),('authenticated')) AS rr(role) ` +
+          `CROSS JOIN (VALUES ('TRUNCATE'),('REFERENCES'),('TRIGGER')) AS pp(priv) ` +
+          `WHERE c.relkind IN ('r','p') AND has_table_privilege(rr.role, c.oid, pp.priv)`,
+      );
+      if (bad) posture.push(`anon/authenticated still hold TRUNCATE/REFERENCES/TRIGGER on: ${bad}`);
+    }
+
     //    Guarded on an admin existing: with no admin row, set_config would write a
     //    null subject and every one of these RPCs would raise "Not authenticated",
     //    reporting the whole admin surface broken when nothing is. A guard that

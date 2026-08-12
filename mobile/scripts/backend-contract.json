@@ -83,6 +83,7 @@
     "rlsRequiredOnEveryPublicTable": true,
     "minLengthCeilings": 130,
     "everyFunctionDemotesPgTemp": true,
+    "noWipePrivileges": true,
     "smokeExecuteAsAdmin": [
       "public.get_priority_reports(20, NULL, NULL, NULL)",
       "public.get_moderation_history_for_users(ARRAY[]::uuid[])",
