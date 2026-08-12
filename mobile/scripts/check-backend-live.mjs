@@ -164,16 +164,6 @@ function sh(cmd) {
 }
 
 /**
- * The REASON psql failed, not the fact that it did.
- *
- * `e.message` is only "Command failed: psql <the entire query>" — it echoes back
- * a wall of SQL and says nothing about the cause, so "network unreachable" and
- * "password authentication failed" look identical and neither is actionable.
- * The cause is on stderr. This surfaces it, and recognises the one that is not
- * a mistake anyone can see: Supabase's direct host is IPv6-only, so on an IPv4
- * network the connection never reaches the point of checking a password.
- */
-/**
  * Strip credentials before anything is printed.
  *
  * execSync's `e.message` is "Command failed: psql <the whole command>", and the
@@ -185,6 +175,16 @@ function redact(s) {
   return String(s ?? '').replace(/postgres(?:ql)?:\/\/[^\s"']+/gi, 'postgresql://<redacted>');
 }
 
+/**
+ * The REASON psql failed, not the fact that it did.
+ *
+ * `e.message` is only "Command failed: psql <the entire query>" — it echoes back
+ * a wall of SQL and says nothing about the cause, so "network unreachable" and
+ * "password authentication failed" look identical and neither is actionable.
+ * The cause is on stderr. This surfaces it, and recognises the one that is not
+ * a mistake anyone can see: Supabase's direct host is IPv6-only, so on an IPv4
+ * network the connection never reaches the point of checking a password.
+ */
 function why(e) {
   const err =
     (e.stderr?.toString() || '').trim().split('\n')[0] || redact(e.message).split('\n')[0];
@@ -407,7 +407,18 @@ if (DB_URL) {
     //    was unopenable and every name-and-signature check reported healthy.
     //    The jwt claim is built with json_build_object so this SQL carries no
     //    double quotes to survive shell escaping.
-    for (const call of sec.smokeExecuteAsAdmin || []) {
+    //    Guarded on an admin existing: with no admin row, set_config would write a
+    //    null subject and every one of these RPCs would raise "Not authenticated",
+    //    reporting the whole admin surface broken when nothing is. A guard that
+    //    cries wolf is a guard someone eventually deletes.
+    const adminId =
+      (sec.smokeExecuteAsAdmin || []).length > 0
+        ? q(`SELECT id FROM public.profiles WHERE role='admin' LIMIT 1`)
+        : '';
+    if ((sec.smokeExecuteAsAdmin || []).length > 0 && !adminId) {
+      console.warn('⚠ admin RPC smoke test skipped — no profile with role=admin exists.');
+    }
+    for (const call of adminId ? sec.smokeExecuteAsAdmin : []) {
       try {
         q(
           `BEGIN; ` +
