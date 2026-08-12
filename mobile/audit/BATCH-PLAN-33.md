@@ -849,8 +849,20 @@ time** — which caught a real bug in the drop list on its first run.
 100k it turns cost 4628 into **1.83**. Added as scale insurance, and it will sit at
 zero reads looking exactly like the indexes just removed.
 
-**DONE WHEN** — met: duplicates gone, new indexes in place, and timings recorded
-(143× and 2,500× above, both measured rather than estimated).
+**Part 3, found by re-auditing a batch already called finished:** the rule above was
+written for SINGLE-COLUMN indexes. The same logic holds at any width, and two
+survived — `idx_logs_composite_user_film` (user_id, film_id), covered both by a
+UNIQUE index on exactly those columns and by a wider one starting with them, on the
+hottest write table; and `idx_dossier_certifications_user_dossier`. Compare coverage
+as a PREFIX of the key columns, never column-by-column. 132 → **130**.
+
+**The finishing steps nobody files as findings:** 27 tables had NEVER been analyzed
+and 29 never vacuumed (autovacuum thresholds are unreachable for small tables). One
+`ANALYZE;` and one `VACUUM;` fixed both — row estimates went from guesses to exact.
+After any index change, ANALYZE is part of the change.
+
+**DONE WHEN** — met: duplicates gone at every width, new indexes in place, timings
+recorded (143× and 2,500×, both measured), statistics fresh, zero dead rows.
 
 ---
 
