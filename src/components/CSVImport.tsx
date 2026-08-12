@@ -117,15 +117,14 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
         for (let i = 0; i < entries.length; i += RESOLVE_BATCH) {
             const batch: Entry[] = entries.slice(i, i + RESOLVE_BATCH)
             const results = await Promise.allSettled(batch.map(async (entry): Promise<Resolved | null> => {
-                const yearSuffix = entry.year ? ` ${entry.year}` : ''
-                const data = await tmdb.search(`${entry.title}${yearSuffix}`)
-                const match = data.results?.find((r: { media_type?: string; id?: number }) => r.media_type !== 'person' && r.id)
+                // The year goes in as a PARAMETER. Appending it to the query text —
+                // which this file used to do — matches nothing: verified live,
+                // "The Matrix 1999" returns 0 results while "The Matrix" with
+                // year=1999 returns the film. That alone would have made this
+                // importer report every single title as unidentifiable.
+                const match = await tmdb.searchByTitleYear(entry.title, entry.year ? parseInt(entry.year) : null)
                 if (!match?.id) return null
-                return {
-                    ...entry,
-                    filmId: match.id,
-                    posterPath: ('poster_path' in match && match.poster_path) ? (match.poster_path as string) : null,
-                }
+                return { ...entry, filmId: match.id, posterPath: match.poster_path ?? null }
             }))
             for (const r of results) {
                 if (r.status === 'fulfilled' && r.value) resolved.push(r.value)

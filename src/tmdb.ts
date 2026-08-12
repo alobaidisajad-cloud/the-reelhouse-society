@@ -272,6 +272,36 @@ export const tmdb = {
             .slice(0, 6)
     },
 
+    /**
+     * Resolve a CSV row — a title and maybe a year — to one film.
+     *
+     * The year MUST be a parameter, never appended to the query text. TMDB
+     * matches the query against titles, so "The Matrix 1999" matches nothing at
+     * all: verified live, 0 results, while "The Matrix" returns 20 and
+     * "The Matrix" with year=1999 returns 3. The CSV importer used to append it,
+     * which is why every lookup silently failed.
+     *
+     * Tries the precise search first (title + year), then falls back to the title
+     * alone, so a wrong or missing year in someone's export costs precision
+     * rather than the whole row.
+     */
+    searchByTitleYear: async (title: string, year?: number | null) => {
+        const q = encodeURIComponent(title)
+        if (year) {
+            const exact = await fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(
+                `/search/movie?query=${q}&year=${year}&page=1&include_adult=false`,
+                { results: [], total_pages: 0, total_results: 0, page: 1 }
+            )
+            const hit = exact?.results?.find((r) => r.id)
+            if (hit) return hit
+        }
+        const loose = await fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(
+            `/search/movie?query=${q}&page=1&include_adult=false`,
+            { results: [], total_pages: 0, total_results: 0, page: 1 }
+        )
+        return loose?.results?.find((r) => r.id) ?? null
+    },
+
     topRated: async (page: number = 1) => fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(
         `/movie/top_rated?page=${page}`,
         { results: [], total_pages: 0, total_results: 0, page: 1 }
