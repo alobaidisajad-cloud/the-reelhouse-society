@@ -784,12 +784,36 @@ applies cleanly.
 ---
 
 ## BATCH 29 · `search_path` hardening
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **CLOSED 2026-08-10**
 
 - **#28** — 24 `SECURITY DEFINER` functions lack `SET search_path`.
 
-**Alone because** it touches 24 live functions. **DONE WHEN** all 24 carry it and a
-smoke probe of each still returns what it did before.
+**CLOSED.** The filed count was wrong three ways (register 24, re-audit 18, **live 12**)
+and the filed severity was wrong: this was never "hardening only".
+
+**#28.1 — a live privacy bypass, HIGH.** `get_following_feed` is `SECURITY DEFINER`,
+so it never consults RLS. Sealed a member, then asked as `anon`: the gate said false,
+the logs table returned 0 reviews, the function returned the review text. Over plain
+HTTP with the public key and no login: **200, review body returned.** The register had
+recorded it "not deployed (404)" — untrue. **DROPPED** (no caller at any commit,
+absent from the contract, not in the shipped TestFlight build), with a gated restore
+script in-file. Every other feed function checked: all nine gate correctly.
+
+**#28.2 — the pin we already used was VACUOUS.** `SET search_path = public` does not
+stop `pg_temp` shadowing. Proved on a REAL function: with a decoy `logs` table planted,
+`get_profile_counts` returned 0/0 instead of 145/93; with `public, pg_temp` it returned
+the truth. Scope was therefore **102 functions, not 12** — I had wrongly bounded it to
+`SECURITY DEFINER` and missed 14 invoker functions, including all nine gatekeepers RLS
+itself calls. 106 now protected, **0 left**.
+
+**Found during post-execution smoke testing — `get_priority_reports` had raised on
+EVERY call since batch 26** (declared `content_id uuid`, table stores `text`). The
+Tribunal docket was unopenable. Mine, and batch 26's "live-verified" note was vacuous.
+Fixed, and the live checker now **executes** the admin RPCs rather than only checking
+they exist.
+
+**DONE WHEN** — met: 0 functions unpinned, the leak returns 404 over HTTP, the decoy
+attack returns true data, and feeds/lounges/analytics/push/tier checks all still work.
 
 ---
 
