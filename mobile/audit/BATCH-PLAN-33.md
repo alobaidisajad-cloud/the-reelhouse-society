@@ -818,13 +818,39 @@ attack returns true data, and feeds/lounges/analytics/push/tier checks all still
 ---
 
 ## BATCH 30 · Index hygiene
-`Tier C` · `2 findings` · `no dependency` · **NOT STARTED**
+`Tier C` · `2 findings` · `no dependency` · **CLOSED 2026-08-13**
 
 - **#29** — 9 exactly-duplicated indexes in production.
 - **#3** — The notable-members query has no index.
 
-**DONE WHEN** the 9 duplicates are gone, the new index exists, and query timings are
-recorded before and after.
+**CLOSED.** 141 indexes → **132**, unindexed FKs **19 → 7**, redundant **0**.
+
+**The two filed findings mattered least.** Not filed, found by studying the class:
+
+- **19 unindexed foreign keys.** Batch 28 gave these `ON DELETE CASCADE`; PostgreSQL
+  does not index an FK automatically, so every parent delete scans the whole child
+  table. Measured on 200k rows: **27.401 ms → 0.192 ms (143×)**.
+  `request_account_deletion` crosses ~12 — and account deletion is an Apple
+  requirement. 12 indexed here; the other 7 are on the dead cinema/ticket tables
+  this batch's successor drops.
+- **The web CSV import is broken for every user** — see batch 31 note below.
+
+**#29 count was 10 pairs live** (register 9, deep-verify 11 — both dump-derived),
+and **22 drops** once prefix coverage was included: a single-column index is
+redundant when a wider index begins with the same column. Measured at 300k rows:
+**0.06%** more to read, one whole index less to write.
+
+⭐⭐ **Scan counts are NOT valid justification.** Proved both ways here: `profiles`
+(32 rows) ignores a perfectly good index, `notifications` (54 rows) uses one. Drops
+are justified structurally only, and the migration **re-derives coverage at run
+time** — which caught a real bug in the drop list on its first run.
+
+**#3 is real but does nothing today** — at 32 profiles the planner ignores it; at
+100k it turns cost 4628 into **1.83**. Added as scale insurance, and it will sit at
+zero reads looking exactly like the indexes just removed.
+
+**DONE WHEN** — met: duplicates gone, new indexes in place, and timings recorded
+(143× and 2,500× above, both measured rather than estimated).
 
 ---
 
@@ -855,6 +881,25 @@ function, no trigger attached), and the `user_reports` / `process_user_report` /
 
 **DONE WHEN** a live probe proves nothing reads those objects, then they are dropped
 with a written restore script.
+
+---
+
+### ⚠️ CARRIED FROM BATCH 30 — the web CSV import is broken for every user
+
+`src/components/CSVImport.tsx` upserts with `onConflict: 'user_id,film_title'`. No
+such unique index exists, so PostgREST rejects every import outright.
+
+**It is NOT a one-line fix, and changing that line fixes nothing.** Every row is
+stamped `film_id: 0`, so `logs_user_id_film_id_key` (unique on `user_id, film_id`)
+rejects the **second** row whatever the conflict target says. Verified live:
+`INSERT 0 1`, then `duplicate key value violates unique constraint`.
+
+**Do NOT add a unique index on `(user_id, film_title)`** — two different films can
+share a title (Dune 1984 / 2021) and it would block logging both.
+
+The real repair: resolve titles to real `film_id`s **before** insert. The mobile
+importer already does this; the web one only enriches in the background, afterwards.
+Needs its own batch — it is a feature repair, not index or schema work.
 
 ---
 
