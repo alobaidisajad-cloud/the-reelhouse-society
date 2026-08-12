@@ -397,6 +397,45 @@ if (DB_URL) {
       if (bad) posture.push(`search_path is not pg_temp-safe on: ${bad}`);
     }
 
+    // 8. Index hygiene: no redundant indexes, and no unindexed foreign keys.
+    //    Both are invisible to the repo — an index added through the SQL editor,
+    //    or a new FK created without one, appears in no migration file.
+    //    Redundant means STRUCTURALLY covered by another index (identical, or a
+    //    wider index starting with the same column), never "looks unused":
+    //    proven on this database that a 32-row table ignores a good index while a
+    //    54-row table uses one, so scan counts say nothing about worth.
+    //    An unindexed FK makes every parent delete scan the whole child table —
+    //    measured at 143x on 200k rows, and account deletion crosses ~12 of them.
+    if (sec.indexHygiene) {
+      const dup = q(
+        `SELECT string_agg(x, ', ') FROM (SELECT DISTINCT ic.relname AS x FROM pg_index i ` +
+          `JOIN pg_class ic ON ic.oid=i.indexrelid JOIN pg_class c ON c.oid=i.indrelid ` +
+          `JOIN pg_namespace n ON n.oid=c.relnamespace AND n.nspname='public' ` +
+          `WHERE i.indnkeyatts=1 AND i.indnatts=i.indnkeyatts AND NOT i.indisunique AND i.indpred IS NULL ` +
+          `AND NOT EXISTS (SELECT 1 FROM pg_constraint con WHERE con.conindid=i.indexrelid) ` +
+          `AND EXISTS (SELECT 1 FROM pg_index o WHERE o.indrelid=i.indrelid AND o.indexrelid<>i.indexrelid ` +
+          `AND o.indkey[0]=i.indkey[0] AND o.indpred IS NULL ` +
+          `AND (o.indnkeyatts>1 OR (o.indisunique AND o.indnkeyatts=i.indnkeyatts)))) s`,
+      );
+      if (dup) posture.push(`redundant index(es) — already covered by another: ${dup}`);
+
+      const maxFk = Number(sec.maxUnindexedForeignKeys ?? 0);
+      const fk = Number(
+        q(
+          `SELECT count(*) FROM pg_constraint con ` +
+            `JOIN pg_namespace n ON n.oid=con.connamespace AND n.nspname='public' ` +
+            `JOIN LATERAL unnest(con.conkey) k(attnum) ON true ` +
+            `WHERE con.contype='f' AND array_length(con.conkey,1)=1 ` +
+            `AND NOT EXISTS (SELECT 1 FROM pg_index i WHERE i.indrelid=con.conrelid AND i.indkey[0]=k.attnum)`,
+        ),
+      );
+      if (fk > maxFk) {
+        posture.push(
+          `${fk} unindexed foreign key(s), expected at most ${maxFk} — every parent delete scans the child table`,
+        );
+      }
+    }
+
     // 6. Actually RUN the admin read RPCs, as an admin, inside a rolled-back
     //    transaction.
     //    Existence is not health. get_priority_reports existed, was granted, and

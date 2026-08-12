@@ -84,6 +84,8 @@
     "minLengthCeilings": 130,
     "everyFunctionDemotesPgTemp": true,
     "noWipePrivileges": true,
+    "indexHygiene": true,
+    "maxUnindexedForeignKeys": 7,
     "smokeExecuteAsAdmin": [
       "public.get_priority_reports(20, NULL, NULL, NULL)",
       "public.get_moderation_history_for_users(ARRAY[]::uuid[])",
