@@ -53,6 +53,7 @@ DECLARE
   before_cols  int;
   after_cols   int;
   n_tables     int := 0;
+  n_matviews   int := 0;
   n_left       int;
 BEGIN
   SET LOCAL lock_timeout = '5s';
@@ -84,6 +85,33 @@ BEGIN
   LOOP
     EXECUTE format('REVOKE TRUNCATE, REFERENCES, TRIGGER ON TABLE %s FROM anon, authenticated', r.tbl);
     n_tables := n_tables + 1;
+  END LOOP;
+
+  -- ── Materialized views: revoke EVERYTHING, not just the three ────────────
+  -- **PostgreSQL cannot apply RLS to a materialized view.** There is no policy
+  -- to write, so a SELECT grant is total access to every row it holds.
+  --
+  -- public.global_feed_materialized holds 263 rows of user_id, username,
+  -- avatar_url, rating and REVIEW TEXT, and `anon` could read all of it:
+  -- GET /rest/v1/global_feed_materialized returned **200** with review bodies.
+  -- Sealing a member changed nothing — can_view_user_data said false while 32 of
+  -- their rows stayed visible, because a matview has no gate to consult. This is
+  -- the same leak as get_following_feed in part 1, through a different door.
+  --
+  -- Safe to close completely: no client reads it at ANY commit in history, it is
+  -- absent from backend-contract.json, and the shipped TestFlight build does not
+  -- touch it. Only refresh_global_feed references it. It and its refresh function
+  -- are dead weight and should be DROPPED with the rest of the dead subsystem in
+  -- batch 31; this takes away the public door now.
+  FOR r IN
+    SELECT c.oid::regclass AS tbl
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relkind = 'm'
+    ORDER BY c.relname
+  LOOP
+    EXECUTE format('REVOKE ALL ON TABLE %s FROM anon, authenticated', r.tbl);
+    n_matviews := n_matviews + 1;
   END LOOP;
 
   -- The rule, not just the snapshot.
@@ -121,13 +149,20 @@ BEGIN
   JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
   CROSS JOIN (VALUES ('anon'),('authenticated')) AS rr(role)
   CROSS JOIN (VALUES ('TRUNCATE'),('REFERENCES'),('TRIGGER')) AS pp(priv)
-  WHERE c.relkind IN ('r','p') AND has_table_privilege(rr.role, c.oid, pp.priv);
+  WHERE c.relkind IN ('r','p','m') AND has_table_privilege(rr.role, c.oid, pp.priv);
+
+  -- A matview must be readable by NEITHER role: RLS cannot protect it.
+  SELECT n_left + count(*) INTO n_left
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
+  CROSS JOIN (VALUES ('anon'),('authenticated')) AS rr(role)
+  WHERE c.relkind = 'm' AND has_table_privilege(rr.role, c.oid, 'SELECT');
 
   IF n_left > 0 THEN
     RAISE EXCEPTION 'ABORTED — % table/privilege pair(s) still held. Nothing was applied.', n_left;
   END IF;
 
   RAISE NOTICE
-    'OK — TRUNCATE/REFERENCES/TRIGGER removed from anon and authenticated on % tables, and from the default privileges for future ones. Read/write pairs unchanged at %, column visibility unchanged at %.',
-    n_tables, after_rw, after_cols;
+    'OK — TRUNCATE/REFERENCES/TRIGGER removed from anon and authenticated on % tables; ALL privileges removed on % materialized view(s), which RLS cannot protect; and the default privileges for future tables updated. Read/write pairs unchanged at %, column visibility unchanged at %.',
+    n_tables, n_matviews, after_rw, after_cols;
 END $$;

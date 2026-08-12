@@ -423,6 +423,19 @@ if (DB_URL) {
           `WHERE c.relkind IN ('r','p') AND has_table_privilege(rr.role, c.oid, pp.priv)`,
       );
       if (bad) posture.push(`anon/authenticated still hold TRUNCATE/REFERENCES/TRIGGER on: ${bad}`);
+
+      // A materialized view cannot carry RLS — PostgreSQL has no policy to apply —
+      // so a SELECT grant on one is unconditional access to every row it holds.
+      // global_feed_materialized served 263 rows of usernames and review text to
+      // `anon` over HTTP 200, and sealing a member changed nothing. Any matview
+      // readable by these roles is that same leak.
+      const mv = q(
+        `SELECT string_agg(DISTINCT c.relname, ', ') FROM pg_class c ` +
+          `JOIN pg_namespace n ON n.oid=c.relnamespace AND n.nspname='public' ` +
+          `CROSS JOIN (VALUES ('anon'),('authenticated')) AS rr(role) ` +
+          `WHERE c.relkind='m' AND has_table_privilege(rr.role, c.oid, 'SELECT')`,
+      );
+      if (mv) posture.push(`materialized view readable by anon/authenticated (RLS cannot protect it): ${mv}`);
     }
 
     //    Guarded on an admin existing: with no admin row, set_config would write a
