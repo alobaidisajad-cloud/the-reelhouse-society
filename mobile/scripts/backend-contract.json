@@ -85,6 +85,10 @@
     "everyFunctionDemotesPgTemp": true,
     "noWipePrivileges": true,
     "indexHygiene": true,
+    "columnsInvisibleToEveryClient": [
+      "profiles.email",
+      "profiles.entitlement_source"
+    ],
     "maxUnindexedForeignKeys": 7,
     "smokeExecuteAsAdmin": [
       "public.get_priority_reports(20, NULL, NULL, NULL)",

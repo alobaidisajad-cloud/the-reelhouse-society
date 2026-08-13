@@ -397,6 +397,39 @@ if (DB_URL) {
       if (bad) posture.push(`search_path is not pg_temp-safe on: ${bad}`);
     }
 
+    // 9. No column is invisible to every client.
+    //    profiles is protected by COLUMN-level grants, and PostgreSQL does not
+    //    extend those to columns created later. So the next ALTER TABLE ADD
+    //    COLUMN produces a column no client can read — and the error names the
+    //    TABLE, not the column: "permission denied for table profiles". The
+    //    cause looks nothing like the symptom.
+    //    Reproduced live: adding a column left it unreadable by anon AND
+    //    authenticated, while existing named-column queries kept working, so
+    //    nothing fails until someone selects the new column.
+    //    Private-by-default is the RIGHT posture — it is the same whitelist
+    //    logic the email-harvest fix chose deliberately. What was missing is
+    //    noticing. Exactly two columns are meant to be invisible to both roles;
+    //    a third means someone added a column and forgot the grant.
+    if (sec.columnsInvisibleToEveryClient) {
+      const expected = [...sec.columnsInvisibleToEveryClient].sort().join(', ');
+      const live = q(
+        `SELECT COALESCE(string_agg(x, ', ' ORDER BY x), '') FROM (` +
+          `SELECT c.table_name||'.'||c.column_name AS x ` +
+          `FROM information_schema.columns c ` +
+          `JOIN information_schema.tables t ON t.table_name=c.table_name AND t.table_schema=c.table_schema ` +
+          `WHERE c.table_schema='public' AND t.table_type='BASE TABLE' ` +
+          `AND NOT has_column_privilege('anon','public.'||quote_ident(c.table_name),c.column_name,'SELECT') ` +
+          `AND NOT has_column_privilege('authenticated','public.'||quote_ident(c.table_name),c.column_name,'SELECT')) s`,
+      );
+      if (live !== expected) {
+        posture.push(
+          `columns invisible to every client changed\n      expected: ${expected}\n      live:     ${live || '(none)'}` +
+            `\n    A new one means a column was added without extending the column-level grant;` +
+            `\n    reads of it will fail with "permission denied for table <name>".`,
+        );
+      }
+    }
+
     // 8. Index hygiene: no redundant indexes, and no unindexed foreign keys.
     //    Both are invisible to the repo — an index added through the SQL editor,
     //    or a new FK created without one, appears in no migration file.
