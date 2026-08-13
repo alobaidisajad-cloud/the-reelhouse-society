@@ -426,7 +426,13 @@ export default function ReelScreen() {
         </View>
         <Text style={st.gateTitle}>Admit One Required</Text>
         <Text style={st.gateSub}>Join the Society to access The Reel.</Text>
-        <PressableScale style={st.gateCta} onPress={() => { TactileEngine.destroy(); (router.push as any)('/login' as any); }}>
+        {/* The same fault the Lobby's gate had, on a page already polished
+            twice: this button says REQUEST MEMBERSHIP beneath "Join the Society
+            to access The Reel", and pushed a bare '/login' — which opens the
+            sign-IN form. Every other caller of '/login' in the app is a "you
+            must be signed in to do that" gate and correctly wants the default;
+            these two were the only ones promising membership. */}
+        <PressableScale style={st.gateCta} onPress={() => { TactileEngine.destroy(); (router.push as any)({ pathname: '/login', params: { action: 'signup' } }); }}>
           <BrassSheen />
           <Text style={st.gateCtaText}>✦ REQUEST MEMBERSHIP</Text>
         </PressableScale>
