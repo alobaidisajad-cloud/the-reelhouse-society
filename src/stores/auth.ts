@@ -103,16 +103,15 @@ export async function hydrateFollowing() {
 
 // Parallel hydration helper — fires all user-data fetches simultaneously
 async function hydrateUserData() {
-    const [films, programmes] = await Promise.all([
-        import('./films'),
-        import('./content'),
-    ])
+    const films = await import('./films')
+    // fetchVault and fetchProgrammes were removed with batch 31 — they read
+    // `vaults` and `programmes`, two tables from an abandoned feature that has
+    // now been dropped. This is the second of two hydration paths that called
+    // them; the other is hydrateAllStores in ./realtime.
     await Promise.all([
         films.useFilmStore.getState().fetchLogs(),
         films.useFilmStore.getState().fetchWatchlist(),
-        films.useFilmStore.getState().fetchVault(),
         films.useFilmStore.getState().fetchLists(),
-        programmes.useProgrammeStore.getState().fetchProgrammes(),
         hydrateFollowing(),
     ])
 }

@@ -19,15 +19,17 @@ async function hydrateAllStores() {
     if (_hydrating) return // Prevent concurrent hydration
     _hydrating = true
     try {
+        // fetchVault, fetchStubs and fetchProgrammes were removed with batch 31.
+        // They read `vaults`, `tickets` and `programmes` — three tables from a
+        // feature that was abandoned and has now been dropped. Every page load
+        // was firing three requests that could only ever return nothing.
+        // The physical media feature lives in `physical_archive`, which stays.
         await Promise.all([
             useFilmStore.getState().fetchLogs(),
             useFilmStore.getState().fetchWatchlist(),
-            useFilmStore.getState().fetchVault(),
             useFilmStore.getState().fetchLists(),
-            useFilmStore.getState().fetchStubs(),
             useFilmStore.getState().fetchEndorsements(),
             useFilmStore.getState().fetchPhysicalArchive(),
-            useProgrammeStore.getState().fetchProgrammes(),
             hydrateFollowing(),
         ])
     } catch { /* background hydration failure is non-critical */ }

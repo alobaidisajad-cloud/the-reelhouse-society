@@ -255,57 +255,14 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
         }
     },
 
-    fetchStubs: async () => {
-        const user = useAuthStore.getState().user;
-        if (!user) return;
-        const { data, error } = await supabase
-            .from('tickets')
-            .select('id, user_id, showtime_id, seat, ticket_type, amount, qr_code, screen_name, created_at, showtimes(film_title, date)')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(500);
-        if (!stillSignedIn(user.id)) return;
-        if (!error && data) {
-            set({
-                stubs: data.map((t) => {
-                    const showtime = Array.isArray(t.showtimes) ? t.showtimes[0] : t.showtimes;
-                    return {
-                        id: t.id ?? '',
-                        filmTitle: showtime?.film_title ?? 'Unknown Film',
-                        date: showtime?.date ?? '',
-                        seat: t.seat ?? '—',
-                        ticketType: t.ticket_type ?? 'Standard',
-                        amount: t.amount ?? 0,
-                        qrCode: t.qr_code ?? null,
-                        screenName: t.screen_name ?? null,
-                        createdAt: t.created_at ?? new Date().toISOString(),
-                    };
-                }),
-            });
-        }
-    },
-
-    saveStub: async (stub) => {
-        const user = useAuthStore.getState().user;
-        if (!user) return null;
-        
-        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const isRealShowtime = stub.showtimeId && UUID_RE.test(stub.showtimeId);
-        if (!isRealShowtime) return null;
-        const { data, error } = await supabase.from('tickets').insert([{
-            user_id: user.id,
-            showtime_id: stub.showtimeId,
-            slot_id: stub.slotId ?? 'default',
-            seat: stub.seat ?? '—',
-            ticket_type: stub.ticketType ?? 'Standard',
-            amount: stub.amount ?? 0,
-            qr_code: stub.qrCode ?? null,
-            screen_name: stub.screenName ?? null,
-        }]).select().single();
-        if (error || !data) {
-            reelToast.error('Failed to save ticket stub — please try again.');
-            throw error ?? new Error('Ticket stub save returned no data');
-        }
-        return data.id;
-    },
+    // fetchStubs and saveStub were removed with batch 31. They read and wrote
+    // `tickets` and `showtimes`, two tables from an abandoned cinema-booking
+    // feature that has now been dropped. Neither had a single call site in the
+    // app or in the shipped TestFlight build — verified across the whole history
+    // — so they were unreachable code pointing at tables that no longer exist.
+    //
+    // `stubs` stays on the slice as an empty array so nothing reading it breaks;
+    // removing the field is a UI decision, not cleanup.
+    fetchStubs: async () => { /* removed with batch 31 — `tickets` no longer exists */ },
+    saveStub: async () => null,
 });

@@ -166,6 +166,11 @@ describe('the security posture contract cannot be silently emptied', () => {
 
   it('requires RLS everywhere and does not let the ceilings quietly shrink', () => {
     expect(sec!.rlsRequiredOnEveryPublicTable).toBe(true);
-    expect(sec!.minLengthCeilings).toBeGreaterThanOrEqual(130);
+    // 130 until batch 31. Dropping 11 dead tables took their CHECK constraints
+    // with them, so the old floor became unreachable and this test failed —
+    // which is exactly what it is for. Lowered only after proving no LIVE
+    // ceiling was lost: zero uncapped text or jsonb columns remain on the
+    // tables that survived.
+    expect(sec!.minLengthCeilings).toBeGreaterThanOrEqual(98);
   });
 });

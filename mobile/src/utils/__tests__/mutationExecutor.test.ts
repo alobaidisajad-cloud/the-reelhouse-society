@@ -797,12 +797,14 @@ describe('Dossiers', () => {
 
 describe('Stubs', () => {
     describe('save_stub', () => {
-        it('inserts to tickets', async () => {
-            makeChainResolveTo(mockChain, { error: null });
-            const payload = { user_id: 'u1', showtime_id: 's1', slot_id: 'slot1', seat: 'A1', ticket_type: 'standard', amount: 12, qr_code: 'qr', screen_name: 'Screen 1' };
-            await runMutation('save_stub', payload);
-            expect(supabase.from).toHaveBeenCalledWith('tickets');
-            expect(mockChain.insert).toHaveBeenCalledWith([expect.objectContaining({ seat: 'A1' })]);
+        // Batch 31 dropped `tickets` with the rest of the abandoned cinema
+        // feature. The handler is kept as a no-op so that any item left in a
+        // queue persisted by an older install drains instead of retrying
+        // forever against a table that no longer exists.
+        it('drains without touching the database', async () => {
+            const payload = { user_id: 'u1', showtime_id: 's1', seat: 'A1' };
+            await expect(runMutation('save_stub', payload)).resolves.toBeDefined();
+            expect(supabase.from).not.toHaveBeenCalledWith('tickets');
         });
     });
 });

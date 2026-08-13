@@ -516,14 +516,18 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         return {};
     },
 
-    save_stub: async (p: any) => {
-        // Previously missing — ticket stubs saved offline
-        const { user_id, showtime_id, slot_id, seat, ticket_type, amount, qr_code, screen_name } = p;
-        throwIfError(await supabase.from('tickets').insert([{
-            user_id, showtime_id, slot_id, seat, ticket_type, amount, qr_code, screen_name,
-        }]));
-        return {};
-    },
+    // `save_stub` wrote to `tickets`, a table from the abandoned cinema-booking
+    // feature that batch 31 dropped. Nothing ever enqueued it — verified across
+    // the whole app and the shipped TestFlight build — so no persisted queue can
+    // hold one.
+    //
+    // Kept as a no-op rather than deleted, which is how this file already treats
+    // legacy kinds. Deleting the handler would leave any queued item retrying
+    // forever against a table that no longer exists; succeeding immediately
+    // drains it. The cost of being wrong about "nothing enqueued it" is then a
+    // discarded ticket stub for a feature that does not exist, instead of a
+    // permanently wedged offline queue.
+    save_stub: async () => ({}),
 
     // ── Social ──
     follow_user: async (p: any) => {

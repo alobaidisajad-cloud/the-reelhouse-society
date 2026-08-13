@@ -220,24 +220,14 @@ export default function UserProfilePage() {
         staleTime: 1000 * 60 * 5,
     })
 
-    // Fetch other user's programmes
-    const { data: otherUserProgrammes = [] } = useQuery({
-        queryKey: ['user-profile-programmes', routeUsername],
-        queryFn: async () => {
-            const { data: prof } = await supabase
-                .from('profiles').select('id').eq('username', routeUsername).single()
-            if (!prof) return []
-            const { data } = await supabase
-                .from('programmes').select('*').eq('user_id', prof.id).eq('is_public', true).order('created_at', { ascending: false }).limit(20)
-            if (!data) return []
-            return data.map((p) => ({
-                id: p.id, title: p.title, description: p.description,
-                films: p.films || [], isPublic: p.is_public, createdAt: p.created_at,
-            }))
-        },
-        enabled: !isOwnProfile && !!routeUsername,
-        staleTime: 1000 * 60 * 5,
-    })
+    // Programmes were dropped in batch 31 — an abandoned feature whose table is
+    // gone, so this query could only 404 and the section always rendered empty.
+    // It fired on every visit to somebody else's profile.
+    //
+    // The empty array is kept rather than the prop removed: tearing the section
+    // out of the child component is a design decision, not cleanup. Flagged for
+    // the polish pass.
+    const otherUserProgrammes: never[] = []
 
     const loadMoreRef = useRef(null)
     const [viewLog, setViewLog] = useState<any>(null)
