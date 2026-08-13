@@ -42,13 +42,23 @@ function walk(dir: string, out: string[] = []): string[] {
     return out;
 }
 
-/** Each <PressableScale …>…</PressableScale> with its inner copy. */
+/**
+ * Every tappable, with the copy inside it.
+ *
+ * Not just PressableScale. Every /login route in the app happens to use that
+ * one today, so scanning only for it would pass — but Pressable appears in
+ * eleven files, and a future gate written with it would slip past this guard
+ * silently. The alternation lists PressableScale first so the \b does not
+ * truncate it.
+ */
+const TAPPABLES = ['PressableScale', 'Pressable', 'TouchableOpacity', 'TouchableHighlight'];
+
 function tappables(src: string): { block: string }[] {
     const out: { block: string }[] = [];
-    const re = /<PressableScale\b/g;
+    const re = new RegExp(`<(${TAPPABLES.join('|')})\\b`, 'g');
     let m: RegExpExecArray | null;
     while ((m = re.exec(src))) {
-        const end = src.indexOf('</PressableScale>', m.index);
+        const end = src.indexOf(`</${m[1]}>`, m.index);
         if (end === -1) continue;
         out.push({ block: src.slice(m.index, end) });
     }
