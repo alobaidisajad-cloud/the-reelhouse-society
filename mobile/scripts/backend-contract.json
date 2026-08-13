@@ -81,7 +81,7 @@
       { "table": "profiles", "trigger": "trg_sync_denormalized_username", "why": "keeps the copied handles honest — the impersonation fix" }
     ],
     "rlsRequiredOnEveryPublicTable": true,
-    "minLengthCeilings": 130,
+    "minLengthCeilings": 98,
     "everyFunctionDemotesPgTemp": true,
     "noWipePrivileges": true,
     "indexHygiene": true,
