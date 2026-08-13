@@ -424,6 +424,37 @@ export const tmdb = {
   // ── Top Rated ──
   topRated: async (page = 1) => fetchTMDB<TMDBMovieListResponse>(`/movie/top_rated?page=${page}`, { results: [] }),
 
+  /**
+   * The Canon — films that actually built the medium.
+   *
+   * NOT `/movie/top_rated`. That endpoint sorts by raw vote average with a low
+   * vote-count floor, so a three-week-old release with a few hundred votes
+   * outranks the canon. Measured against production on 2026-08-13 it returned:
+   *
+   *   Avatar Aang (2026)          9.273
+   *   Accidental Partners (2026)  8.9
+   *   Swapped (2026)              8.886
+   *   The Shawshank Redemption    8.727   <- fourth
+   *   The Godfather               8.686   <- sixth
+   *
+   * So the Lobby's "ESSENTIAL ARCHIVES · The films that built the medium" was
+   * showing this month's releases — quietly contradicting the one thing that
+   * section claims.
+   *
+   * A vote-count floor fixes it, and the number matters: at 5,000 a 2026 title
+   * still slips in. At 8,000 the list reads Shawshank, The Godfather, Godfather
+   * II, Schindler's List, 12 Angry Men, The Dark Knight, Spirited Away, The
+   * Green Mile. Both thresholds were run against the live proxy, not reasoned
+   * about.
+   *
+   * Response shape is identical to top_rated (checked field by field), and the
+   * rail reads only `id` and `poster_path`.
+   */
+  canon: async (page = 1) => fetchTMDB<TMDBMovieListResponse>(
+    `/discover/movie?sort_by=vote_average.desc&vote_count.gte=8000&page=${page}`,
+    { results: [] }
+  ),
+
   // ── Now Playing ──
   nowPlaying: async () => fetchTMDB<TMDBMovieListResponse>(`/movie/now_playing`, { results: [] }),
 

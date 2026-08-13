@@ -90,17 +90,20 @@ export default function LobbyScreen() {
     staleTime: 10 * 60 * 1000,  // 10 min fresh window
   });
 
-  const { data: topRatedData } = useQuery({
-    queryKey: ['lobby', 'topRated'],
+  // The Canon. `tmdb.canon()` rather than `topRated()` — see the note on the
+  // helper: top_rated ranks by raw average, so it was serving 2026 releases
+  // under a heading that promises "the films that built the medium".
+  const { data: canonData } = useQuery({
+    queryKey: ['lobby', 'canon'],
     queryFn: async () => {
-      const res = await tmdb.topRated();
+      const res = await tmdb.canon();
       return (res?.results ?? []).slice(0, 10) as TMDBFilm[];
     },
     staleTime: 10 * 60 * 1000,
   });
 
   const trending = trendingData ?? [];
-  const topRated = topRatedData ?? [];
+  const canon = canonData ?? [];
 
   // Parallax Scroll Tracking & Breathing Atmospherics
   const scrollY = useSharedValue(0);
@@ -352,19 +355,26 @@ export default function LobbyScreen() {
 
         <SocialPulseSection refreshTrigger={refreshTrigger} />
 
-        <FilmStripRow title="The Canon" label="ESSENTIAL ARCHIVES" films={topRated} lore="The films that built the medium" />
+        <FilmStripRow title="The Canon" label="ESSENTIAL ARCHIVES" films={canon} lore="The films that built the medium" />
 
+        {/* The sign-off. One whisper, not two — "Est. 1924" is lore that already
+            appears in eleven other files, and repeating it here made the closing
+            line share its moment. Buster sits at 40 rather than 26: the house
+            convention uses 14–24 for inline glyphs and 40–80 for Buster as a
+            presence, and standing alone under the mark he is a presence. */}
         <View style={s.lobbyFooter}>
           <View style={s.lobbyFooterRule} />
           <Image source={require('../../assets/images/reelhouse-logo.png')} style={s.lobbyFooterLogo} contentFit="contain" />
-          <View style={s.lobbyFooterBusterWrap}><Buster size={26} mood="sleeping" /></View>
-          <Text style={s.lobbyFooterSub}>Est. 1924 · The Society is watching.</Text>
+          <View style={s.lobbyFooterBusterWrap}><Buster size={40} mood="sleeping" /></View>
           <Text style={s.lobbyFooterWhisper}>The projection booth never closes.</Text>
           <View style={s.lobbyFooterRule} />
         </View>
       </CinematicScrollView>
 
-      <QuickActionsFAB />
+      {/* Passing scrollY lets the button step aside while you read downward. It
+          floated over an AUTEUR badge and the ESSENTIAL ARCHIVES heading before.
+          Safe to hide because the top bar carries its own Add Log button. */}
+      <QuickActionsFAB scrollY={scrollY} />
     </View>
     </FrozenTab>
   );
@@ -440,7 +450,12 @@ const s = StyleSheet.create({
     fontSize: 10,
     lineHeight: 15,
     color: colors.fog,
-    opacity: 0.65,
+    // 0.65 measured 3.36:1 against ink; 0.80 gives 4.58:1 and clears AA. This is
+    // the line that changes with the hour — a signature detail, and one that
+    // should be readable rather than merely atmospheric. It also sits over the
+    // feature backdrop, so the figure is the floor rather than a guarantee; the
+    // shadow below carries it over a bright still.
+    opacity: 0.8,
     letterSpacing: 0.5,
     marginTop: 10,
     textAlign: 'center',
@@ -461,8 +476,12 @@ const s = StyleSheet.create({
   lobbyFooterBusterWrap: { marginTop: 10 },
   lobbyFooterLogo: { width: 32, height: 32, opacity: 0.4, marginVertical: 18 },
   lobbyFooterText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 7, color: colors.sepia, opacity: 0.45, marginBottom: 6 },
-  lobbyFooterSub: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, opacity: 0.45, fontStyle: 'italic', marginBottom: 10 },
-  lobbyFooterWhisper: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fog, opacity: 0.3, fontStyle: 'italic', marginBottom: 18, letterSpacing: 1 },
+  // `lobbyFooterSub` removed with the "Est. 1924 · The Society is watching." line.
+  // 0.30 measured 1.58:1 against ink — effectively invisible outdoors. 0.60 gives
+  // 3.02:1. Deliberately NOT taken to 4.5: this is a closing flourish, and making
+  // it prominent would flatten the fade-to-black the footer is built around.
+  // Legible, still a whisper.
+  lobbyFooterWhisper: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fog, opacity: 0.6, fontStyle: 'italic', marginBottom: 18, letterSpacing: 1 },
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx

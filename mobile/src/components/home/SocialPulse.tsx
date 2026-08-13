@@ -12,7 +12,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { FlashList } from '@shopify/flash-list';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors, fonts } from '@/src/theme/theme';
 import { SectionDivider } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
@@ -105,6 +105,7 @@ const pulseKeyExtractor = (item: PulseActivity) => item.id;
 function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
   const { width } = useWindowDimensions();
   const PULSE_ITEM_SIZE = width * 0.82 + 16;
+  const queryClient = useQueryClient();
 
   const user = useAuthStore(s => s.user);
 
@@ -137,7 +138,9 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
           .neq('review', '')
           .not('review', 'is', null)
           .order('created_at', { ascending: false })
-          .limit(6);
+          // Seven, not six: the featured critique is filtered out below and the
+          // list trimmed back to six, so removing it never leaves the wire short.
+          .limit(7);
 
         if (error) {
           if (__DEV__) console.warn('[SocialPulse] Fetch failed:', error);
@@ -168,7 +171,19 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
         }));
 
         // Hide logs from blocked/muted users (HOOK-8).
-        return filterContentByBlocks(mapped, (a) => a.user_id ?? '');
+        const visible = filterContentByBlocks(mapped, (a) => a.user_id ?? '');
+
+        // The Lead Story is not also the wire.
+        //
+        // FeaturedCritique picks an editorial choice and The Pulse picks the
+        // newest — and with the archive at its current size those are routinely
+        // the same log, so one film filled both sections on a single screen.
+        // Read from FeaturedCritique's own cache entry rather than asking the
+        // database again: it has already run by the time this renders, so this
+        // costs no request. If it has not, or the featured log is not among the
+        // newest, nothing is filtered and the wire is unchanged.
+        const featuredId = (queryClient.getQueryData(['featuredCritique', refreshTrigger]) as { id?: string } | undefined)?.id;
+        return (featuredId ? visible.filter((a) => a.id !== featuredId) : visible).slice(0, 6);
     },
     staleTime: 5 * 60 * 1000,
   });

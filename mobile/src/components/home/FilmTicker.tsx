@@ -6,8 +6,9 @@ import { memo, useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, withDelay,
-  Easing, cancelAnimation
+  Easing, cancelAnimation, useReducedMotion
 } from 'react-native-reanimated';
+import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts } from '@/src/theme/theme';
 import type { TMDBFilm } from './types';
@@ -20,24 +21,47 @@ function tickerLine(f: TMDBFilm): string {
 }
 
 export const FilmTicker = memo(function FilmTicker({ films }: { films: TMDBFilm[] }) {
+  const isFocused = useIsFocused();
+  const reducedMotion = useReducedMotion();
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(0);
   const [contentWidth, setContentWidth] = useState(0);
 
   useEffect(() => {
     if (contentWidth === 0 || films.length === 0) return;
+    // Parks when the tab loses focus. This loop is `-1` — it ran forever, on
+    // every other tab, for the rest of the session. MarqueeBoard, PulseCardItem,
+    // ProjectorBeam and FilmGrainOverlay already do this; the ticker was missed.
+    //
+    // The reset to 0 is not cosmetic. withTiming animates from the CURRENT value,
+    // so resuming from a frozen mid-lap position would make withRepeat loop that
+    // shortened range forever and the seam would show. Restarting the lap is
+    // invisible — you were looking at another tab.
+    // Visibility is decided BEFORE the motion branch, deliberately. Folding the
+    // fade-in into the same early return meant a member with Reduce Motion on
+    // never saw the ticker at all — the accessibility setting silently blanked
+    // the component. It should stop the scrolling, not the content.
+    opacity.value = withDelay(400, withTiming(1, { duration: 1000, easing: Easing.out(Easing.quad) }));
+
+    if (!isFocused || reducedMotion) {
+      cancelAnimation(translateX);
+      // Reduce Motion: park the strip at its start so it reads as a static
+      // headline rather than a strip frozen mid-word.
+      if (reducedMotion) translateX.value = 0;
+      return;
+    }
+
+    translateX.value = 0;
     translateX.value = withRepeat(
       withTiming(-contentWidth, { duration: contentWidth * 30, easing: Easing.linear }),
       -1, false
     );
-    // Suppress layout shift by keeping ticker blacked out until math ensures smooth tracking natively
-    opacity.value = withDelay(400, withTiming(1, { duration: 1000, easing: Easing.out(Easing.quad) }));
     return () => {
       cancelAnimation(translateX);
       cancelAnimation(opacity);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentWidth, films.length]);
+  }, [contentWidth, films.length, isFocused, reducedMotion]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],

@@ -296,7 +296,10 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
 
         <View style={s.marqueeContent}>
           <Text style={s.marqueeEyebrow}>✦ THE WEEKLY FEATURE ✦</Text>
-          <Text style={s.marqueeLoreSub}>As decreed by the Programming Committee</Text>
+          {/* Clamped: this line had no limit and wraps to two centred lines
+              today. A longer one would take three and push the film title down
+              inside a card that reads as fixed-height. */}
+          <Text style={s.marqueeLoreSub} numberOfLines={2}>As decreed by the Programming Committee</Text>
 
           <View style={s.marqueeTitleWrap}>
             <Text style={s.marqueeTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.6}>

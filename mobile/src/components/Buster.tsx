@@ -1,13 +1,16 @@
 import React, { useEffect, memo } from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import Animated, { 
-    useSharedValue, 
-    useAnimatedStyle, 
-    withRepeat, 
-    withSequence, 
-    withTiming, 
-    Easing 
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withRepeat,
+    withSequence,
+    withTiming,
+    Easing,
+    cancelAnimation,
+    useReducedMotion
 } from 'react-native-reanimated';
+import { useIsFocused } from '@react-navigation/native';
 import Svg, { Path, Ellipse, Circle, Rect, G } from 'react-native-svg';
 import { colors, fonts } from '@/src/theme/theme';
 
@@ -39,20 +42,35 @@ const busterColors = {
 
 export default memo(function Buster({ size = 120, message, mood, style }: BusterProps) {
     const activeMood = mood ?? clockMood();
+    const isFocused = useIsFocused();
+    const reducedMotion = useReducedMotion();
     const floatY = useSharedValue(0);
 
-    // Floating animation
+    // Buster's float. He appears on thirteen screens, and this loop was `-1` with
+    // no cleanup at all — every Buster ever mounted kept breathing on the UI
+    // thread for the rest of the session, including on tabs nobody was looking
+    // at. He now parks on blur and is cancelled on unmount, matching the pattern
+    // MarqueeBoard and PulseCardItem already use.
+    //
+    // Reduce Motion settles him at rest rather than removing him: he is a
+    // character, and a still ghost is still a ghost.
     useEffect(() => {
+        if (!isFocused || reducedMotion) {
+            cancelAnimation(floatY);
+            floatY.value = 0;
+            return;
+        }
         floatY.value = withRepeat(
             withSequence(
                 withTiming(-8, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
                 withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.sin) })
             ),
-            -1, // Loop forever
+            -1,
             true
         );
+        return () => cancelAnimation(floatY);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [isFocused, reducedMotion]);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [{ translateY: floatY.value }],

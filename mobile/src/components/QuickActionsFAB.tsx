@@ -17,7 +17,7 @@
  */
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, Platform, InteractionManager, useWindowDimensions } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing, runOnJS } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing, runOnJS, useAnimatedReaction, useReducedMotion, type SharedValue } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,7 +30,21 @@ import PressableScale from '@/src/components/PressableScale';
 const OPEN_MS = 200;
 const CLOSE_MS = 160;
 
-export default function QuickActionsFAB() {
+/**
+ * `scrollY` is optional and opt-in. When a screen passes it, the button steps
+ * aside while you are reading downward and returns the moment you stop or reach
+ * back up. Screens that do not pass it behave exactly as before.
+ *
+ * It floats at zIndex 100, so on the Lobby it sat on top of an AUTEUR badge and
+ * the ESSENTIAL ARCHIVES heading. Hiding it is safe rather than a trade: the
+ * top bar carries its own "Add Log" button on every screen, so the action is
+ * never out of reach — only the overlap goes.
+ *
+ * The threshold matters more than the animation. Reacting to every pixel would
+ * make it flicker on the small elastic bounce at the top of a list, which is
+ * worse than the overlap it fixes.
+ */
+export default function QuickActionsFAB({ scrollY }: { scrollY?: SharedValue<number> }) {
     const [visible, setVisible] = useState(false);
     const [open, setOpen] = useState(false);
     const router = useRouter();
@@ -43,6 +57,39 @@ export default function QuickActionsFAB() {
 
     const rotation = useSharedValue(0);
     const progress = useSharedValue(0);
+    const reducedMotion = useReducedMotion();
+
+    // 1 = present, 0 = stepped aside. Driven entirely on the UI thread.
+    const presence = useSharedValue(1);
+    const lastY = useSharedValue(0);
+
+    // 12px of travel before it reacts: enough to ignore the elastic bounce at the
+    // top of a list and a thumb resting on the screen, small enough to feel
+    // immediate. It always returns when the sheet is open, so the button can
+    // never vanish underneath its own menu.
+    useAnimatedReaction(
+        () => scrollY?.value ?? 0,
+        (y, prev) => {
+            if (prev === null || !scrollY) return;
+            const delta = y - lastY.value;
+            if (Math.abs(delta) < 12) return;
+            lastY.value = y;
+            const shouldShow = delta < 0 || y < 80;
+            presence.value = withTiming(shouldShow ? 1 : 0, { duration: 180, easing: Easing.out(Easing.quad) });
+        },
+        [scrollY]
+    );
+
+    const presenceStyle = useAnimatedStyle(() => {
+        // Reduce Motion keeps it still and always present rather than sliding.
+        if (reducedMotion || !scrollY || open) return { opacity: 1, transform: [{ translateY: 0 }] };
+        return {
+            opacity: presence.value,
+            // Travels a little further than its own height so it clears the edge
+            // completely instead of peeking.
+            transform: [{ translateY: (1 - presence.value) * 96 }],
+        };
+    });
 
     const iconStyle = useAnimatedStyle(() => ({
         transform: [{ rotate: `${rotation.value}deg` }],
@@ -98,8 +145,18 @@ export default function QuickActionsFAB() {
     return (
         <>
             {/* The FAB */}
+            {/* The presence animation lives on a wrapper, not on the button.
+                PressableScale composes `style={[style, animatedStyle]}` and its own
+                animatedStyle sets `transform: [{ scale }]` for the press — passing a
+                translateY through `style` would simply be overwritten by it, and the
+                button would fade without ever moving. A wrapper owns position and
+                travel; the button keeps its press-scale. Neither fights the other. */}
+            <Animated.View
+                style={[s.fabAnchor, { bottom: fabBottom }, presenceStyle]}
+                pointerEvents="box-none"
+            >
             <PressableScale
-                style={[s.fab, { bottom: fabBottom }, open && s.fabActive]}
+                style={[s.fab, open && s.fabActive]}
                 onPress={handlePress}
                 pressedScale={0.9}
                 accessibilityLabel={open ? 'Close quick actions' : 'Open quick actions'}
@@ -108,6 +165,7 @@ export default function QuickActionsFAB() {
                     <Plus size={24} color={open ? colors.bloodReel : colors.ink} strokeWidth={3} />
                 </Animated.View>
             </PressableScale>
+            </Animated.View>
 
             {/* The Concierge card, anchored above the FAB */}
             <Modal statusBarTranslucent visible={visible} transparent animationType="none" onShow={onModalShow} onRequestClose={closeSheet}>
@@ -169,10 +227,15 @@ export default function QuickActionsFAB() {
 }
 
 const s = StyleSheet.create({
-    fab: {
+    // Position and travel live here; the button inside keeps its own press-scale
+    // transform, so the two never overwrite each other.
+    fabAnchor: {
         position: 'absolute',
         bottom: 24, // Overridden by inline style with safe area insets
         right: 16,
+        zIndex: 100,
+    },
+    fab: {
         width: 56,
         height: 56,
         borderRadius: 28,
