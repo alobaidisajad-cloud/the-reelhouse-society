@@ -1,0 +1,31 @@
+-- Operational state — rows that behave like schema.
+-- pg_dump --schema-only cannot see any of this.
+
+[cron jobs]
+(none)
+
+[storage buckets]
+avatars  public=true  size_limit=2097152  mime=image/jpeg,image/png,image/webp,image/gif
+
+[storage.objects policies]
+Avatar images are publicly accessible.  cmd=r  (bucket_id = 'avatars'::text)
+Users can delete their own avatar.  cmd=d  ((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]))
+Users can update mathematically verified images  cmd=w  ((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]))
+Users can update their own avatar.  cmd=w  ((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]))
+Users can upload mathematically verified images  cmd=a  -
+Users can upload their own avatar.  cmd=a  -
+auth_upload  cmd=a  -
+owner_delete  cmd=d  ((bucket_id = 'screening-room'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))
+public_read  cmd=r  (bucket_id = 'screening-room'::text)
+
+[extensions]
+pg_cron 1.6.4
+pg_net 0.20.0
+pg_stat_statements 1.11
+pgcrypto 1.3
+plpgsql 1.0
+supabase_vault 0.3.1
+uuid-ossp 1.1
+
+[migration ledger]
+supabase_migrations.schema_migrations rows: 0

@@ -1,0 +1,16 @@
+# ── Schema snapshots must round-trip byte-for-byte ─────────────────────────
+#
+# This repo has core.autocrlf=true and no .gitattributes, so git rewrites LF to
+# CRLF on checkout. pg_dump emits pure LF. Without this rule the committed
+# snapshot comes back with all ~7,800 lines changed, a freshly generated dump
+# never matches it, and `npm run schema:check` reports drift on a perfectly
+# clean database — forever. A check that always cries wolf is a check somebody
+# switches off.
+#
+# Proven, not assumed: committing the dump without this rule changed its hash
+# from 602b8add to bd24ad67; with it, the hash survives the round trip intact.
+#
+# Deliberately scoped to the snapshot directory. A blanket `*.sql` rule would
+# renormalise all 143 existing migration files and produce a diff touching
+# every one of them.
+mobile/supabase/schema/** -text

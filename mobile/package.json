@@ -15,7 +15,9 @@
     "docs:generate": "typedoc",
     "docs:check": "typedoc --emit none --logLevel Warn",
     "docs:deps": "madge --image docs/dependency-graph.svg --ts-config tsconfig.json src/",
-    "test:tz": "node scripts/test-timezones.js"
+    "test:tz": "node scripts/test-timezones.js",
+    "schema:snapshot": "node scripts/schema-snapshot.mjs",
+    "schema:check": "node scripts/schema-snapshot.mjs --check"
   },
   "dependencies": {
     "@expo-google-fonts/courier-prime": "^0.4.1",
