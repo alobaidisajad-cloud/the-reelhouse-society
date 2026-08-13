@@ -330,7 +330,9 @@ const s = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 2,
     color: colors.sepia,
-    opacity: 0.85,
+    // No opacity. This plate sits on ash, not ink, so the usual sums do not
+    // apply: 0.85 measured 4.00:1 against ash, just under AA at 8pt, while
+    // full sepia gives 4.99:1 and still reads quieter than the title above it.
     marginTop: 6,
   },
   quickSaveIcon: {
