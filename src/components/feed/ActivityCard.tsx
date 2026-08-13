@@ -96,13 +96,24 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
             setIsMuted(true)
             reelToast.success('Reported. This user has been muted from your feed.')
             if (log.user_id || log.userId) {
-                // Fire and forget — the Supabase query builder is a thenable without a
-                // .catch() method, so swallow failures with try/catch instead.
+                // Reports go through `submit_report`, the same RPC the app uses.
+                //
+                // This used to insert straight into `user_reports` — a table the
+                // Tribunal does not read. It reads `reports`. So every report filed
+                // from the web feed landed in a place nobody looks, silently, while
+                // the member was told "Reported." user_reports is dropped in batch 31.
+                //
+                // The RPC is also strictly safer than the insert it replaces: it
+                // derives the reporter from auth.uid() rather than trusting the
+                // client, rate-limits to 10 reports an hour, and refuses self-reports.
                 try {
-                    await supabase.from('user_reports').insert({
-                        reported_id: log.user_id || log.userId,
-                        log_id: log.id,
-                        reason: 'Inappropriate content via Web'
+                    await supabase.rpc('submit_report', {
+                        p_reporter_id: currentUser.id,   // ignored server-side; auth.uid() wins
+                        p_content_id: log.id,
+                        p_content_type: 'log',
+                        p_reason: 'inappropriate',
+                        p_details: 'Reported from the web feed',
+                        p_target_user_id: log.user_id || log.userId,
                     })
                 } catch { /* non-critical */ }
             }
