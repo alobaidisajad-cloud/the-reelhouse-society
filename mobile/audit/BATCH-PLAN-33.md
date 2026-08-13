@@ -867,7 +867,31 @@ recorded (143× and 2,500×, both measured), statistics fresh, zero dead rows.
 ---
 
 ## BATCH 31 · Drop the dead subsystem
-`Tier C` · `1 finding` · `no dependency` · **NOT STARTED**
+`Tier C` · `1 finding` · `no dependency` · **CLOSED 2026-08-13**
+
+**CLOSED.** 38 tables → 27. Removed 11 tables (all 0 rows), 1 matview, 14 functions,
+2 cron jobs, 22 policies, 12 triggers, 20 indexes, `profiles.trust_score`, and the
+`screening-room` storage bucket (PUBLIC, no size limit, any member could upload —
+for a feature that no longer exists).
+
+⭐⭐ **Rehearsing the whole batch in a rolled-back transaction found 3 defects that
+reading never would**: two DROP signatures guessed wrong (they take NO arguments, so
+those functions would have silently survived), a rewrite that silently did not apply
+(changing a username would have broken), and a security trigger naming the dropped
+column (every profile update would have broken).
+
+⭐⭐ **Four "dead" objects were LIVE** — every one a false positive from my own
+detectors: `rls_auto_enable` (bound to the ensure_rls EVENT trigger — dropping it
+ships every new table with no RLS), `member_no_seq` (nextval inside a column
+default), `logs.video_url`, and `public_prefs` (a JSON key, not the table). All four
+are now asserted by guards that abort.
+
+**Two live defects found inside a dead-code batch:** web feed reports were landing in
+a table the Tribunal does not read, and the storage bucket was an open public upload
+endpoint. Both fixed.
+
+**Rollback** `supabase/restore/20260813_batch31_restore.sql`, committed BEFORE the
+drop and round-trip proven (38→27→38).
 
 - **#61** — An entire dead feature subsystem is still live in the database.
 
