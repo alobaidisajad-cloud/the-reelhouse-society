@@ -442,7 +442,12 @@ const s = StyleSheet.create({
   welcomeRootFlex: { flex: 1, zIndex: 10 },
   // flexGrow (not fixed flex halves) + scroll: content can compress spacing on
   // small screens or scroll, but can never overflow off the top of the screen.
-  welcomeScrollContent: { flexGrow: 1, paddingHorizontal: 32, paddingVertical: 12, justifyContent: 'flex-start' },
+  // paddingTop 24, not 12. With flex-start all the free space now collects in
+  // the spacer between the two halves, so the old symmetric breathing room
+  // above the seal went to zero. This is fixed padding rather than distributed
+  // space, so unlike `space-evenly` it cannot push content off the top when
+  // the content is tall — which was the whole bug.
+  welcomeScrollContent: { flexGrow: 1, paddingHorizontal: 32, paddingTop: 24, paddingBottom: 12, justifyContent: 'flex-start' },
   welcomeSpacer: { flex: 1, minHeight: 24 },
   welcomeTopHalf: { justifyContent: 'center', alignItems: 'center' },
   welcomeBottomHalf: { justifyContent: 'center', alignItems: 'center', paddingTop: 24 },
@@ -454,9 +459,8 @@ const s = StyleSheet.create({
     fontFamily: fonts.display, fontSize: 38, color: colors.parchment,
     textAlign: 'center', lineHeight: 46, ...effects.textGlowSepia, textShadowRadius: 20,
   },
-  welcomeEstRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 16, marginBottom: 8 },
-  welcomeEstLine: { width: 36, height: 1, backgroundColor: colors.sepia, opacity: 0.4 },
-  welcomeEstText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 5, color: colors.sepia, opacity: 0.65 },
+  // `welcomeEstRow`, `welcomeEstLine` and `welcomeEstText` left with the
+  // "EST. 1924" rule they drew.
   welcomeTagline: {
     fontFamily: fonts.sub, fontSize: 12, color: colors.bone, textAlign: 'center',
     lineHeight: 22, fontStyle: 'italic', opacity: 0.8, marginTop: 16, letterSpacing: 0.3,
