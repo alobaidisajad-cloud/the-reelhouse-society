@@ -288,18 +288,21 @@ export default function ReelScreen() {
 
 
 
-  const stackCount = filteredStacks.length;
+  // `stackCount` removed with the header count it fed. The stacks list already
+  // tracks `filteredStacks.length` directly in its extraData below.
 
   const logsHeader = useMemo(() => (
     <>
-      <SharedReelHeader section={section} variant="logs" logCount={logCount} stackCount={stackCount} userRole={resolvedRole} onTabSwitch={switchSection} />
+      <SharedReelHeader section={section} variant="logs" userRole={resolvedRole} onTabSwitch={switchSection} />
       <View style={st.filterRow}>
         <FilterChip label="MAIN REEL" active={feedFilter === 'all'} onPress={() => switchFeedFilter('all')} />
         <FilterChip label="FOLLOWING" active={feedFilter === 'following'} onPress={() => switchFeedFilter('following')} />
       </View>
       <SectionDivider label="THE LIVING RECORD" />
     </>
-  ), [section, feedFilter, logCount, stackCount, resolvedRole, switchSection, switchFeedFilter]);
+  // No longer depends on the feed length: with the count gone the header does
+  // not change when a page loads, so it stops being rebuilt on every scroll-in.
+  ), [section, feedFilter, resolvedRole, switchSection, switchFeedFilter]);
 
   const logsEmpty = useMemo(() => {
     if (feedLoading) return <TungstenSpooling />;
@@ -335,7 +338,7 @@ export default function ReelScreen() {
 
   const stackHeader = useMemo(() => (
     <>
-      <SharedReelHeader section={section} variant="stacks" logCount={logCount} stackCount={stackCount} userRole={resolvedRole} onTabSwitch={switchSection} />
+      <SharedReelHeader section={section} variant="stacks" userRole={resolvedRole} onTabSwitch={switchSection} />
       <View style={st.searchWrap}>
         <Animated.Text style={st.searchIcon}>✦</Animated.Text>
         <AutonomousSearchBar 
@@ -344,13 +347,16 @@ export default function ReelScreen() {
           onClear={handleClearSearch} 
         />
       </View>
+      {/* The trailing "{n} STACKS" is gone. It repeated the header three rows
+          above, it clipped off the right edge (no shrink guard in a row with a
+          flex spacer), it measured 2.44:1 — and it was never a total anyway:
+          the stacks feed pages 60 at a time, so `.length` is the page size. */}
       <View style={st.filterRow}>
         <FilterChip label="ALL STACKS" active={stackFilter === 'all'} onPress={() => switchStackFilter('all')} />
         <FilterChip label="FOLLOWING" active={stackFilter === 'following'} onPress={() => switchStackFilter('following')} />
-        <View style={st.filterSpacer} />
-        <Text style={st.resultCount}>{filteredStacks.length} {stackSearch ? 'RESULTS' : 'STACKS'}</Text>
       </View>
-      <SectionDivider label="CURATED STACKS" />
+      {/* Create sits ABOVE the rule now, so "CURATED STACKS" introduces the grid
+          it labels rather than the button. */}
       <PressableScale
         style={st.createStackBtn}
         onPress={() => { TactileEngine.destroy(); (router.push as any)('/list-modal' as any); }}
@@ -363,9 +369,11 @@ export default function ReelScreen() {
         />
         <Text style={st.createStackText}>✦ CURATE A COLLECTION</Text>
       </PressableScale>
+      <SectionDivider label="CURATED STACKS" />
     </>
    
-  ), [section, logCount, stackCount, resolvedRole, stackSearch, stackFilter, filteredStacks.length, switchSection, switchStackFilter, router, handleStackSearchChange, handleClearSearch]);
+  // Same here — `filteredStacks.length` left with the duplicate count.
+  ), [section, resolvedRole, stackSearch, stackFilter, switchSection, switchStackFilter, router, handleStackSearchChange, handleClearSearch]);
 
   const logsExtraData = useMemo(() => [feedFilter, section, logCount, resolvedRole, feedLoading], [feedFilter, section, logCount, resolvedRole, feedLoading]);
   const stacksExtraData = useMemo(() => [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading], [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading]);
@@ -476,7 +484,11 @@ export default function ReelScreen() {
         />
       </Animated.View>
 
-      <QuickActionsFAB />
+      {/* Steps aside while you read downward, as it does on the Lobby. The
+          active list's own offset is passed rather than the global bridge:
+          both tabs stay mounted, so the bridge carries whichever tab last
+          scrolled — including the Lobby's. */}
+      <QuickActionsFAB scrollY={section === 'logs' ? overallLogsScrollY : stacksScrollY} />
     </View>
     </FrozenTab>
     </SectionErrorBoundary>
@@ -489,17 +501,19 @@ const st = StyleSheet.create({
 
   filterRow: {
     flexDirection: 'row', paddingHorizontal: 16, gap: 12,
-    marginBottom: 20, alignItems: 'center',
+    marginBottom: 14, alignItems: 'center',
   },
-  resultCount: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, opacity: 0.5 },
-  filterSpacer: { flex: 1 },
+  // `resultCount` and `filterSpacer` removed together — the spacer existed only
+  // to push the count to the right edge, which is where it clipped.
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 12,
     backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.12)',
     borderRadius: 4, paddingHorizontal: 12, height: 40,
   },
-  searchIcon: { fontSize: 9, color: colors.sepia, opacity: 0.55, marginRight: 10 },
+  // 0.55 measured 2.60:1 — the glyph that marks the field as searchable was
+  // fainter than the placeholder beside it. 0.80 gives 4.35:1.
+  searchIcon: { fontSize: 9, color: colors.sepia, opacity: 0.8, marginRight: 10 },
   searchInput: {
     flex: 1, fontFamily: fonts.body, fontSize: 11, color: colors.parchment,
     paddingVertical: 0,
@@ -522,7 +536,9 @@ const st = StyleSheet.create({
 
   emptyWrap: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, opacity: 0.8, textAlign: 'center', marginBottom: 8 },
-  emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.5, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
+  // 0.5 measured 3.12:1 on 12pt italic. 0.7 gives 5.14:1 — this is the line that
+  // tells a member what to DO with an empty feed, so it has to be readable.
+  emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.7, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
   emptyBtn: {
     backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, borderStyle: 'dashed',

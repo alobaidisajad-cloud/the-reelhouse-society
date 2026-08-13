@@ -433,7 +433,9 @@ const s = StyleSheet.create({
   // Rhythm: every section-to-section gap on the page resolves to 36px.
   heroSection: { alignItems: 'center', paddingHorizontal: 16, marginBottom: 36, marginTop: 10 },
   heroEyebrow: {
-    fontFamily: fonts.sub, fontSize: 11, letterSpacing: 12, color: colors.sepia, opacity: 0.6, marginBottom: 6,
+    // 0.6 measured 2.90:1. 0.85 gives 4.78:1. The shadow below helps over a
+    // bright still, but it cannot rescue a base contrast under the large-text floor.
+    fontFamily: fonts.sub, fontSize: 11, letterSpacing: 12, color: colors.sepia, opacity: 0.85, marginBottom: 6,
     // Sits over the feature backdrop — soft dark shadow keeps it legible on a bright still.
     textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6,
   },

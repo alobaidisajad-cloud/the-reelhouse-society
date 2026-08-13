@@ -1,7 +1,6 @@
 import React, { memo, useEffect } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, withSpring, interpolate, cancelAnimation } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from '@react-navigation/native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -11,9 +10,20 @@ import { isAuteurPlusTier } from '@/src/utils/tier';
 
 // ══════════════════════════════════════════════════════════════
 //  INTERLOCKING GEAR TAB (Mechanical Segment Control)
+//
+//  The live lamp lives HERE, on the LOGS tab, rather than in a
+//  status row of its own. The wire is what's live, so the light
+//  belongs on it — and a row that only said "LIVE" was a row
+//  spent narrating what the lamp already shows.
 // ══════════════════════════════════════════════════════════════
 
-export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch }: { activeTab: ReelSection, onTabSwitch: (t: ReelSection) => void }) => {
+export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteur }: {
+  activeTab: ReelSection,
+  onTabSwitch: (t: ReelSection) => void,
+  /** Only the VISIBLE logs header breathes — the hidden twin holds a steady lamp. */
+  pulse: boolean,
+  auteur: boolean,
+}) => {
   const position = useSharedValue(activeTab === 'logs' ? 0 : 1);
 
   useEffect(() => {
@@ -21,50 +31,9 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch }: { activeTa
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  const { width } = useWindowDimensions();
-
-  const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(position.value, [0, 1], [0, (width - 34) / 2]) }]
-  }));
-
-  return (
-    <View style={st.tabsContainer}>
-      <Animated.View style={[StyleSheet.absoluteFillObject, st.tabsActiveBg, pillStyle]} />
-      <PressableScale style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
-        <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fog, opacity: activeTab === 'logs' ? 1 : 0.6 }]}>LOGS</Text>
-      </PressableScale>
-      <PressableScale style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
-        <Text style={[st.tabText, { color: activeTab === 'stacks' ? colors.parchmentDim : colors.fog, opacity: activeTab === 'stacks' ? 1 : 0.6 }]}>STACKS</Text>
-      </PressableScale>
-    </View>
-  );
-});
-
-// ══════════════════════════════════════════════════════════════
-//  SHARED REEL HEADER
-//  `variant` = which list this header instance lives in (both lists
-//  stay mounted for the crossfade). The status row renders on BOTH
-//  variants at identical height — the tab bar never jumps between
-//  tabs. Logs pulse LIVE; the stacks archive holds a steady lamp.
-// ══════════════════════════════════════════════════════════════
-export const SharedReelHeader = memo(function SharedReelHeader({
-  section, variant, logCount, stackCount, userRole, onTabSwitch,
-}: {
-  section: ReelSection;
-  variant: ReelSection;
-  logCount: number;
-  stackCount: number;
-  userRole?: string;
-  onTabSwitch: (t: ReelSection) => void;
-}) {
-  const isFocused = useIsFocused();
-  const isLogsVariant = variant === 'logs';
-  // Only the visible logs header runs the pulse — the hidden twin idles.
-  const shouldPulse = isFocused && isLogsVariant && section === 'logs';
-
-  const livePulse = useSharedValue(0.4);
+  const livePulse = useSharedValue(0.8);
   useEffect(() => {
-    if (shouldPulse) {
+    if (pulse) {
       livePulse.value = withRepeat(
         withSequence(withTiming(1, { duration: 1000 }), withTiming(0.4, { duration: 1000 })),
         -1,
@@ -76,48 +45,77 @@ export const SharedReelHeader = memo(function SharedReelHeader({
     }
     return () => cancelAnimation(livePulse);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldPulse]);
+  }, [pulse]);
   const pulseStyle = useAnimatedStyle(() => ({ opacity: livePulse.value }));
 
-  const statusText = isLogsVariant
-    ? `LIVE · ${logCount > 0 ? `${logCount} LOG${logCount === 1 ? '' : 'S'}` : 'AWAITING SIGNAL'}`
-    : `ARCHIVE · ${stackCount > 0 ? `${stackCount} STACK${stackCount === 1 ? '' : 'S'}` : 'AWAITING CURATORS'}`;
+  const { width } = useWindowDimensions();
+
+  const pillStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(position.value, [0, 1], [0, (width - 34) / 2]) }]
+  }));
+
+  return (
+    <View style={st.tabsContainer}>
+      <Animated.View style={[StyleSheet.absoluteFillObject, st.tabsActiveBg, pillStyle]} />
+      <PressableScale style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
+        <View style={st.tabInner}>
+          <Animated.View style={[st.liveDot, auteur ? st.liveDotAuteur : st.liveDotDefault, pulseStyle]} />
+          <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fog, opacity: activeTab === 'logs' ? 1 : 0.75 }]}>LOGS</Text>
+        </View>
+      </PressableScale>
+      <PressableScale style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
+        <Text style={[st.tabText, { color: activeTab === 'stacks' ? colors.parchmentDim : colors.fog, opacity: activeTab === 'stacks' ? 1 : 0.75 }]}>STACKS</Text>
+      </PressableScale>
+    </View>
+  );
+});
+
+// ══════════════════════════════════════════════════════════════
+//  SHARED REEL HEADER
+//  `variant` = which list this header instance lives in (both lists
+//  stay mounted for the crossfade). Both variants render the SAME
+//  elements, so the header is identical in height on either tab and
+//  the control below it never jumps.
+//
+//  There is deliberately no count here. Both feeds are paginated —
+//  the old "LIVE · 40 LOGS" was reading the PAGE SIZE, so it said 40
+//  whether the society had 41 logs or a million, and climbed as you
+//  scrolled. Recency would have been just as wrong: on a
+//  reverse-chronological timeline the newest item's age is already
+//  printed on the first card. The header carries state, not statistics.
+// ══════════════════════════════════════════════════════════════
+export const SharedReelHeader = memo(function SharedReelHeader({
+  section, variant, userRole, onTabSwitch,
+}: {
+  section: ReelSection;
+  variant: ReelSection;
+  userRole?: string;
+  onTabSwitch: (t: ReelSection) => void;
+}) {
+  const isFocused = useIsFocused();
+  const shouldPulse = isFocused && variant === 'logs' && section === 'logs';
 
   return (
     <>
-      {/* Section Header */}
       <View style={st.sectionHeaderWrap}>
         <Text style={st.headerTitle} accessibilityRole="header">The Reel</Text>
-
-        {/* Decorative Est. 1924 rule */}
-        <View style={st.headerEstRow}>
-          <LinearGradient colors={['transparent', colors.sepia]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.headerEstLine} />
-          <Text style={st.headerEst}>EST. 1924</Text>
-          <LinearGradient colors={[colors.sepia, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.headerEstLine} />
-        </View>
-
-        {/* Status row — ALWAYS rendered: identical header height on both tabs */}
-        <View style={st.liveRow}>
-          <Animated.View style={[
-            st.liveDot,
-            isLogsVariant && isAuteurPlusTier(userRole) ? st.liveDotAuteur : st.liveDotDefault,
-            isLogsVariant ? pulseStyle : st.liveDotSteady,
-          ]} />
-          <Text style={st.liveText}>
-            {statusText}
-          </Text>
-        </View>
       </View>
 
-      {/* Section Tabs (Mechanical Slider) */}
-      <InterlockingGearTabs activeTab={section} onTabSwitch={onTabSwitch} />
+      <InterlockingGearTabs
+        activeTab={section}
+        onTabSwitch={onTabSwitch}
+        pulse={shouldPulse}
+        auteur={isAuteurPlusTier(userRole)}
+      />
     </>
   );
 });
 
 const st = StyleSheet.create({
   tabsContainer: {
-    flexDirection: 'row', marginHorizontal: 16, marginTop: 12, marginBottom: 24,
+    // 16 rather than 24 below: with the Est. rule and the status row gone the
+    // masthead is tighter, and the old gap left the tabs floating.
+    flexDirection: 'row', marginHorizontal: 16, marginTop: 12, marginBottom: 16,
     backgroundColor: 'rgba(18,14,9,0.5)', borderRadius: 4, borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.15)', height: 46, position: 'relative'
   },
@@ -126,24 +124,19 @@ const st = StyleSheet.create({
     borderWidth: 1, borderRadius: 4, ...effects.shadowSurface, elevation: 5
   },
   tabButton: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  tabInner: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  // 0.60 measured 3.04:1 on ink; 0.75 gives 4.16:1. The inactive tab should read
+  // as unselected, not as unavailable.
   tabText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 5 },
 
-  sectionHeaderWrap: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14 },
+  sectionHeaderWrap: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
   headerTitle: {
     fontFamily: fonts.display, fontSize: 36, color: colors.silverScreen, marginBottom: 4,
     ...effects.textGlowSepia, textShadowRadius: 25, textShadowColor: 'rgba(184,137,26, 0.4)', letterSpacing: 2
   },
-  headerEstRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 10, marginBottom: 4,
-  },
-  headerEstLine: { width: 32, height: StyleSheet.hairlineWidth },
-  headerEst: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 5, color: colors.sepia, opacity: 0.55 },
-  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, minHeight: 12 },
   liveDot: { width: 6, height: 6, borderRadius: 3 },
   liveDotDefault: { backgroundColor: colors.sepia, shadowColor: colors.sepia, shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
   liveDotAuteur: { backgroundColor: colors.crimson, shadowColor: colors.crimson, shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
-  liveDotSteady: { opacity: 0.8 },
-  liveText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.fog, opacity: 0.65 },
 });
 
 

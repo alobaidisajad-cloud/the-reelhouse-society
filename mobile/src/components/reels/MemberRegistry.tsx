@@ -173,7 +173,8 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
   headerLine: { flex: 1, height: 1, backgroundColor: colors.sepia, opacity: 0.25 },
   headerText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5, color: colors.sepia },
-  subtitle: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fog, opacity: 0.7, textAlign: 'center', marginBottom: 12 },
+  // 0.7 was 3.75:1; 0.8 gives 4.59:1. Same for `serial` below.
+  subtitle: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fog, opacity: 0.8, textAlign: 'center', marginBottom: 12 },
 
   list: {},
   row: {
@@ -195,7 +196,7 @@ const s = StyleSheet.create({
   name: { fontFamily: fonts.body, fontSize: 12, color: colors.parchment, letterSpacing: 0.5, marginBottom: 2 },
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   rank: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.2 },
-  serial: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1, color: colors.fog, opacity: 0.7 },
+  serial: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1, color: colors.fog, opacity: 0.8 },
 
   stamp: {
     borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(184,137,26,0.45)',

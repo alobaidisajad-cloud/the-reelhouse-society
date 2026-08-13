@@ -70,9 +70,13 @@ export const AutopsyStrip = React.memo(function AutopsyStrip({ onTurnOver }: { o
       accessibilityRole="button"
       accessibilityLabel="Turn the card over to read the confidential autopsy"
     >
+      {/* stripContent shrinks, but its children did not — so on a narrow card
+          the CONFIDENTIAL stamp overflowed its own parent and painted over
+          TURN OVER. Only the title may give ground; the stamp and the
+          invitation hold their width. */}
       <View style={s.stripContent}>
         <View style={s.stripDot} />
-        <Text style={s.stripTitle}>THE AUTOPSY</Text>
+        <Text style={s.stripTitle} numberOfLines={1} ellipsizeMode="tail">THE AUTOPSY</Text>
         <Text style={s.stripConfidential}>CONFIDENTIAL</Text>
       </View>
       <Text style={s.stripTurn}>TURN OVER ⟳</Text>
@@ -166,6 +170,7 @@ const s = StyleSheet.create({
     flexShrink: 1,
   },
   stripDot: {
+    flexShrink: 0,
     width: 6,
     height: 6,
     borderRadius: 3,
@@ -176,6 +181,8 @@ const s = StyleSheet.create({
     shadowRadius: 4,
   },
   stripTitle: {
+    // The only element permitted to give ground when the row is tight.
+    flexShrink: 1,
     fontFamily: fonts.display,
     fontSize: 10,
     letterSpacing: 3,
@@ -183,6 +190,7 @@ const s = StyleSheet.create({
     includeFontPadding: false,
   },
   stripConfidential: {
+    flexShrink: 0,
     fontFamily: fonts.sub,
     fontSize: 6,
     letterSpacing: 2,
@@ -201,7 +209,9 @@ const s = StyleSheet.create({
     fontSize: 7,
     letterSpacing: 2,
     color: colors.sepia,
-    opacity: 0.7,
+    // 0.7 measured 3.56:1 at 7pt. 0.9 gives 5.25:1 — this is the affordance
+    // that tells you the card turns over, so it should not be a rumour.
+    opacity: 0.9,
     includeFontPadding: false,
     flexShrink: 0,
     marginLeft: 8,
@@ -245,7 +255,8 @@ const s = StyleSheet.create({
     fontFamily: fonts.bodyItalic,
     fontSize: 9,
     color: colors.fog,
-    opacity: 0.7,
+    // 0.7 was 3.75:1; 0.8 gives 4.59:1 and clears AA for small text.
+    opacity: 0.8,
     marginBottom: 14,
     includeFontPadding: false,
   },

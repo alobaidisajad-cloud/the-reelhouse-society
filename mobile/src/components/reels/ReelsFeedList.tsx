@@ -164,7 +164,8 @@ const fs = StyleSheet.create({
     fontSize: 7,
     letterSpacing: 3,
     color: colors.fog,
-    opacity: 0.6,
+    // 0.6 was 3.04:1 at 7pt — the end-of-feed marker was a rumour. 0.8 = 4.59:1.
+    opacity: 0.8,
     includeFontPadding: false,
   },
 });

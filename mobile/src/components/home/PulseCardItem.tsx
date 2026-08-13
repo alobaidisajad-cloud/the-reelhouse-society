@@ -254,7 +254,9 @@ const s = StyleSheet.create({
   dropCapBody: { flex: 1, paddingTop: 2 },
   pulseReadMoreRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, paddingTop: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.15)' },
   pulseReadMoreRule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(184,137,26,0.1)' },
-  pulseReadMoreText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.6, includeFontPadding: false },
+  // 0.6 measured 2.90:1 — under the 3:1 large-text floor, on 8pt. This is the
+  // line that tells a member the card opens, so it cannot be a rumour. 0.85 = 4.78:1.
+  pulseReadMoreText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.85, includeFontPadding: false },
   editorialBanner: { width: '100%', height: 90, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.2)' },
   editorialBannerImg: { width: '100%', height: '100%', opacity: 0.6 },
   editorialBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(18,14,9,0.7)', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },

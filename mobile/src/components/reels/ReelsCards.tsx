@@ -192,7 +192,11 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
           <View style={st.stackCardMetaDivider} />
         </View>
 
-        <Text style={st.stackCardTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{(stack.title ?? '').toUpperCase()}</Text>
+        {/* No adjustsFontSizeToFit. In a two-column grid it sized every card's
+            title independently — a short title at 16pt beside a long one
+            silently shrunk to 12.8 — and pairing it with a fixed lineHeight
+            clips descenders. One size across the grid, honest ellipsis. */}
+        <Text style={st.stackCardTitle} numberOfLines={2} ellipsizeMode="tail">{(stack.title ?? '').toUpperCase()}</Text>
 
         <View style={st.stackCardCuratorRow}>
           <View style={st.stackCardCuratorDot} />
@@ -267,7 +271,9 @@ const st = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
     backgroundColor: 'rgba(18,14,9,0.5)',
   },
-  filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog, opacity: 0.6 },
+  // 0.6 measured 3.04:1; 0.8 gives 4.59:1. An unselected filter should read as
+  // unselected, not as disabled.
+  filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog, opacity: 0.8 },
   filterChipTextActive: { color: colors.sepia, opacity: 1 },
 
   stackCard: {

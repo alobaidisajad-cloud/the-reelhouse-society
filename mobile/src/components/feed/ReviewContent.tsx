@@ -125,8 +125,20 @@ const s = StyleSheet.create({
   },
   abandonedText: {
     includeFontPadding: false, textAlignVertical: 'center',
+    // Bone, not crimson. The previous note (below) moved this from bloodReel to
+    // crimson for legibility, but crimson tops out at 3.18:1 on ink and this
+    // text sits on a FAINT CRIMSON wash, which lightens the background to a
+    // real 3.03:1 — worse than it looked. Crimson cannot reach AA at any
+    // opacity, so the colour had to change rather than the alpha.
+    //
+    // Bone on the same wash measures 9.25:1. The stamp stays red — the faint
+    // fill and the crimson border still carry the meaning — and only the
+    // lettering becomes legible, which is exactly how CONFIDENTIAL already
+    // works on the autopsy strip.
+    //
+    // Previous note, kept because it explains the fill and border:
     // Crimson, not bloodReel — the deep stamp red was near-invisible on soot.
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.crimson,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.bone,
   },
   ratingWrap: { marginTop: 2, marginBottom: 4, alignItems: 'flex-start' },
   watchedWith: {
