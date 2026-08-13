@@ -195,6 +195,13 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
   //
   // `enabled: false` means this never issues a request of its own — it only
   // observes the entry FeaturedCritique already owns.
+  //
+  // Sharing a query key between two observers is subtler than it looks: this
+  // one has no queryFn, and query-core lets every observer overwrite the shared
+  // Query's options, so it really does wipe the queryFn off it. Query.fetch
+  // recovers it from the observer that has one, which is why this is safe — but
+  // that is internal library behaviour, so it is pinned in
+  // __tests__/featuredCritiqueCacheShare.test.ts. Read that before touching this.
   const { data: featured } = useQuery<{ id?: string } | undefined>({
     queryKey: ['featuredCritique', refreshTrigger],
     enabled: false,

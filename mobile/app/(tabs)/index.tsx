@@ -475,7 +475,8 @@ const s = StyleSheet.create({
   lobbyFooterRule: { width: 60, height: StyleSheet.hairlineWidth, backgroundColor: colors.sepia, opacity: 0.3 },
   lobbyFooterBusterWrap: { marginTop: 10 },
   lobbyFooterLogo: { width: 32, height: 32, opacity: 0.4, marginVertical: 18 },
-  lobbyFooterText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 7, color: colors.sepia, opacity: 0.45, marginBottom: 6 },
+  // `lobbyFooterText` removed — it was already orphaned before this pass, with
+  // no JSX referencing it.
   // `lobbyFooterSub` removed with the "Est. 1924 · The Society is watching." line.
   // 0.30 measured 1.58:1 against ink — effectively invisible outdoors. 0.60 gives
   // 3.02:1. Deliberately NOT taken to 4.5: this is a closing flourish, and making

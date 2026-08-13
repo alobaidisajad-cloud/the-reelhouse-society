@@ -421,11 +421,11 @@ export const tmdb = {
     { results: [] }
   ),
 
-  // ── Top Rated ──
-  topRated: async (page = 1) => fetchTMDB<TMDBMovieListResponse>(`/movie/top_rated?page=${page}`, { results: [] }),
-
   /**
    * The Canon — films that actually built the medium.
+   *
+   * This replaced a `topRated()` helper that called `/movie/top_rated`; that
+   * helper had exactly one caller (the Lobby) and was removed with the switch.
    *
    * NOT `/movie/top_rated`. That endpoint sorts by raw vote average with a low
    * vote-count floor, so a three-week-old release with a few hundred votes
