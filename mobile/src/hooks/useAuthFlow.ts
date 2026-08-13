@@ -51,29 +51,46 @@ export function validateLoginSubmission(input: LoginSubmissionInput): string | n
 // Maps a raw Supabase/auth error message to its user-facing copy.
 // isInvalidCredentials tells the caller whether to record a throttle attempt.
 export function mapAuthError(rawMsg: string): { message: string; isInvalidCredentials: boolean } {
-  let message = rawMsg;
-  let isInvalidCredentials = false;
-  if (message.includes('Database error saving new user')) message = 'Username is already taken.';
-  if (message.includes('Invalid login credentials')) {
-    isInvalidCredentials = true;
-    message = 'Identity not recognized. Check your credentials.';
-  }
-  // Anything unmapped fell through and was shown VERBATIM, so a member could
-  // meet "AuthApiError: Invalid Refresh Token: Refresh Token Not Found" inside
-  // a 1924 members' club. These are the messages Supabase actually returns;
-  // each keeps the meaning and drops the stack-trace voice.
-  else if (message.includes('User already registered')) {
-    message = 'That address is already on the register. Try signing in.';
-  } else if (/rate limit|too many requests/i.test(message)) {
-    message = 'Too many attempts. The door needs a moment — try again shortly.';
-  } else if (/Refresh Token|session|JWT/i.test(message)) {
-    message = 'Your session lapsed. Please identify yourself again.';
-  } else if (/network|fetch|timeout/i.test(message)) {
-    message = 'The line went quiet. Check your connection and try again.';
-  } else if (message.includes('Password should be')) {
-    message = 'That password is too short. Eight characters minimum.';
-  }
+  const isInvalidCredentials = rawMsg.includes('Invalid login credentials');
+
+  // Every test reads rawMsg, never the partly-rewritten value. The first draft
+  // of this chain tested `message`, so each branch was matching against
+  // whatever an earlier branch had already substituted — harmless with today's
+  // strings, but it meant adding a pattern that happened to appear in one of
+  // the replacements would silently double-map. Anything unmatched still falls
+  // through verbatim, so a genuinely new Supabase signal is never swallowed.
+  //
+  // Before this, unmapped errors were shown as-is: a member could meet
+  // "AuthApiError: Invalid Refresh Token: Refresh Token Not Found" inside a
+  // 1924 members' club.
+  const message =
+    isInvalidCredentials              ? 'Identity not recognized. Check your credentials.'
+  : rawMsg.includes('Database error saving new user')
+                                      ? 'Username is already taken.'
+  : rawMsg.includes('User already registered')
+                                      ? 'That address is already on the register. Try signing in.'
+  : /rate limit|too many requests/i.test(rawMsg)
+                                      ? 'Too many attempts. The door needs a moment — try again shortly.'
+  : /Refresh Token|session|JWT/i.test(rawMsg)
+                                      ? 'Your session lapsed. Please identify yourself again.'
+  : /network|fetch|timeout/i.test(rawMsg)
+                                      ? 'The line went quiet. Check your connection and try again.'
+  : rawMsg.includes('Password should be')
+                                      ? 'That password is too short. Eight characters minimum.'
+  : rawMsg;
+
   return { message, isInvalidCredentials };
+}
+
+/**
+ * Which form the screen opens on, decided from the route BEFORE first paint.
+ *
+ * Exported so the invariant is testable without mounting the whole hook: the
+ * effect that also handles `action` fires after mount, so relying on it alone
+ * made the modal slide up on the wrong form and flip.
+ */
+export function initialIsLogin(action?: string): boolean {
+  return action !== 'signup' && action !== 'resend_signup';
 }
 
 export function useAuthFlow() {
@@ -82,7 +99,15 @@ export function useAuthFlow() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { login, signup, isAuthenticated } = useAuthStore();
 
-  const [isLogin, setIsLogin] = useState(true);
+  // Seeded from the route, not defaulted to true. The effect below cannot do
+  // this job alone: it fires AFTER mount, so a member tapping SEEK ADMISSION
+  // would watch the modal slide up showing "Enter The House" and the sign-in
+  // form, then flip to "Join The Society" with the username field animating
+  // in under LinearTransition. Render one is now already correct, and the
+  // effect remains for the case it actually handles — the param CHANGING on a
+  // screen that is already mounted (auth-callback and reset-password both
+  // router.replace into this route).
+  const [isLogin, setIsLogin] = useState(() => initialIsLogin(params.action));
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');

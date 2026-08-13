@@ -5,7 +5,33 @@
  * before calling login/signup) and mapAuthError (the raw-error -> copy
  * mapping in the catch block), both extracted as pure functions.
  */
-import { validateLoginSubmission, mapAuthError, LoginSubmissionInput } from '../useAuthFlow';
+import { validateLoginSubmission, mapAuthError, initialIsLogin, LoginSubmissionInput } from '../useAuthFlow';
+
+/**
+ * Which form the screen opens on, decided from the route before first paint.
+ *
+ * The gate's "SEEK ADMISSION" is the sign-up button, and it used to push a bare
+ * '/login' that defaulted to the sign-IN form. Passing `action: 'signup'` fixed
+ * the destination, but reading it only in a useEffect meant the modal slid up
+ * showing "Enter The House" and then flipped to "Join The Society" with the
+ * username field animating in — correct, one frame late, and visibly wrong.
+ */
+describe('initialIsLogin — the form is right on the first frame', () => {
+  it('opens sign-up when the gate asks for it', () => {
+    expect(initialIsLogin('signup')).toBe(false);
+  });
+
+  it('opens sign-up for a resent confirmation link', () => {
+    expect(initialIsLogin('resend_signup')).toBe(false);
+  });
+
+  it.each([['login'], ['forgot_password'], ['resend_verification'], [undefined]])(
+    'opens sign-in for %s',
+    (action) => {
+      expect(initialIsLogin(action as string | undefined)).toBe(true);
+    }
+  );
+});
 
 function baseInput(overrides: Partial<LoginSubmissionInput> = {}): LoginSubmissionInput {
   return {
