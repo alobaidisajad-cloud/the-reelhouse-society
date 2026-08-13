@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, memo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Send, MoreVertical, Users, Copy, Check, LogOut, X, Trash2, Settings, MessageCircle, Reply, Lock, Globe, Crown, Shield } from 'lucide-react'
+import { ArrowLeft, Send, MoreVertical, Users, Copy, LogOut, X, Trash2, Settings, MessageCircle, Reply, Lock, Globe, Crown, Shield } from 'lucide-react'
 import { useLoungeStore, LoungeMessage, authorOf } from '../stores/lounge'
 import { useAuthStore } from '../stores/auth'
 import { tmdb } from '../tmdb'
@@ -211,7 +211,6 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
     const [isPrivate, setIsPrivate] = useState(lounge.is_private)
     const [members, setMembers] = useState<Array<{ user_id: string; username: string; avatar_url: string | null; joined_at: string }>>([])
     const [saving, setSaving] = useState(false)
-    const [copied, setCopied] = useState(false)
 
     useEffect(() => {
         fetchMembers(lounge.id).then(setMembers)
@@ -238,14 +237,7 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
         reelToast.success(`@${username} removed.`)
     }
 
-    const handleCopyCode = () => {
-        if (lounge.invite_code) {
-            navigator.clipboard.writeText(lounge.invite_code)
-            setCopied(true)
-            reelToast.success('Invite code copied.')
-            setTimeout(() => setCopied(false), 2000)
-        }
-    }
+    // handleCopyCode removed with the invite-code block it served.
 
     const handleLeave = async () => {
         if (!confirm('Leave this lounge?')) return
@@ -315,26 +307,11 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
                         </div>
                     )}
 
-                    {/* Invite Code */}
-                    {isPrivate && lounge.invite_code && (
-                        <div className="lounge-settings-section">
-                            <div className="lounge-settings-section-label">INVITE CODE</div>
-                            <button
-                                onClick={handleCopyCode}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                    fontFamily: 'var(--font-ui)', fontSize: '1rem', letterSpacing: '0.3em',
-                                    color: 'var(--parchment)', background: 'rgba(139,105,20,0.06)',
-                                    border: '1px dashed rgba(139,105,20,0.3)', padding: '0.8rem 1rem',
-                                    borderRadius: '6px', cursor: 'pointer', width: '100%',
-                                    justifyContent: 'center', transition: 'background 0.2s',
-                                }}
-                            >
-                                {lounge.invite_code}
-                                {copied ? <Check size={14} color="var(--sepia)" /> : <Copy size={14} color="var(--fog)" />}
-                            </button>
-                        </div>
-                    )}
+                    {/* The INVITE CODE block stood here. Codes are retired: a
+                        private salon is entered by requesting admission and being
+                        admitted by the host, which is the only door now. Mobile
+                        stopped issuing codes with the Editorial Salon overhaul
+                        and this page was the last thing still showing them. */}
 
                     {isCreator && (name.trim() !== lounge.name || description.trim() !== (lounge.description || '') || isPrivate !== lounge.is_private) && (
                         <button

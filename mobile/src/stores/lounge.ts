@@ -21,7 +21,13 @@ export interface LoungeRoom {
   name: string;
   description: string;
   is_private: boolean;
-  invite_code: string | null;
+  // `invite_code` removed. Mobile stopped issuing codes with the Editorial
+  // Salon overhaul — a private room is entered by requesting admission and
+  // being admitted — but the column was still being SELECTed here and carried
+  // through the type for no reader. It was readable by anyone holding the
+  // public anon key until the lounges SELECT policy was scoped to
+  // authenticated, and web was still minting and displaying codes until they
+  // were retired there too.
   creator_id: string;
   created_at: string;
   cover_image?: string | null;
@@ -361,18 +367,18 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // 3) Lounges user created (fallback if lounge_members insert failed)
       // Fetch ALL browsable lounges (public + private — both are visible, private just needs approval)
       const browsablePromise = supabase.from('lounges')
-        .select('id, name, description, is_private, invite_code, creator_id, created_at, member_count')
+        .select('id, name, description, is_private, creator_id, created_at, member_count')
         .order('created_at', { ascending: false })
         .limit(50);
 
       const myJoinedPromise = myLoungeIds.length > 0 
         ? supabase.from('lounges')
-            .select('id, name, description, is_private, invite_code, creator_id, created_at, member_count')
+            .select('id, name, description, is_private, creator_id, created_at, member_count')
             .in('id', myLoungeIds)
-        : Promise.resolve({ data: [] as { id: string; name: string; description: string; is_private: boolean; invite_code: string | null; creator_id: string; created_at: string; member_count: number }[] });
+        : Promise.resolve({ data: [] as { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number }[] });
 
       const myCreatedPromise = supabase.from('lounges')
-        .select('id, name, description, is_private, invite_code, creator_id, created_at, member_count')
+        .select('id, name, description, is_private, creator_id, created_at, member_count')
         .eq('creator_id', user.id);
 
       const [browsableRes, myJoinedRes, myCreatedRes] = await Promise.all([
@@ -380,7 +386,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       ]);
 
       // Merge all three, deduplicating by id
-      const allLoungesMap = new Map<string, { id: string; name: string; description: string; is_private: boolean; invite_code: string | null; creator_id: string; created_at: string; member_count: number }>();
+      const allLoungesMap = new Map<string, { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number }>();
       if (browsableRes.data) browsableRes.data.forEach(l => allLoungesMap.set(l.id, l));
       if (myJoinedRes.data) myJoinedRes.data.forEach(l => allLoungesMap.set(l.id, l));
       if (myCreatedRes.data) myCreatedRes.data.forEach(l => allLoungesMap.set(l.id, l));
@@ -479,7 +485,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         name: l.name,
         description: l.description ?? '',
         is_private: l.is_private ?? false,
-        invite_code: l.invite_code ?? null,
         creator_id: l.creator_id,
         created_at: l.created_at,
         member_count: l.member_count ?? 0,
@@ -870,7 +875,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         name: trimmedName,
         description: trimmedDesc,
         is_private: isPrivate,
-        invite_code: null,
         creator_id: user.id,
         created_at: new Date().toISOString(),
         member_count: 1,

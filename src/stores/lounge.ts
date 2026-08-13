@@ -99,12 +99,16 @@ let _activeChannel: ReturnType<typeof supabase.channel> | null = null
 const _messageThrottles = new Map<string, number>()
 const PAGE_SIZE = 50
 
-function generateInviteCode(): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    let code = ''
-    for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)]
-    return code
-}
+// generateInviteCode() removed with the invite-code feature.
+//
+// Mobile retired codes in the Editorial Salon overhaul — a private room is
+// gated by the request/admit flow, not a shared secret — and web was the only
+// caller still minting them. They were a second, weaker door that bypassed the
+// host's approval, and `secure_invite_codes` (the server-side validation that
+// would have made them safe) was scoped as Phase 5.3 and never built.
+//
+// They were also readable by anyone holding the app's public anon key until the
+// lounges SELECT policy was scoped from {public} to {authenticated}.
 
 export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
     myLounges: [],
@@ -212,7 +216,11 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         const user = useAuthStore.getState().user
         if (!user) return null
 
-        const invite_code = isPrivate ? generateInviteCode() : null
+        // Always null now — see the note where generateInviteCode() used to be.
+        // The column is still WRITTEN rather than dropped from the insert so the
+        // currently shipped mobile build, which selects it, keeps working until
+        // that build is replaced.
+        const invite_code = null
 
         const { data, error } = await supabase
             .from('lounges')
@@ -260,17 +268,13 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         await get().fetchPublicLounges()
     },
 
-    joinByInviteCode: async (code) => {
-        const { data: lounge } = await supabase
-            .from('lounges')
-            .select('id')
-            .eq('invite_code', code.toUpperCase())
-            .single()
-
-        if (!lounge) return null
-
-        await get().joinLounge(lounge.id)
-        return lounge.id
+    // Retired. This was the redemption half of the invite-code feature: look a
+    // salon up by its shared secret and join it, bypassing the host's approval
+    // entirely. Kept as a no-op rather than deleted from the interface so any
+    // caller still wired to it fails closed — returning null, which its callers
+    // already handle as "no such code" — instead of throwing.
+    joinByInviteCode: async (_code) => {
+        return null
     },
 
     leaveLounge: async (loungeId) => {
@@ -644,21 +648,17 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         
         if (!error) {
             set(s => {
-                // If invite code was cleared (made public) or generated (made private)
-                const newActive = s.activeLounge?.id === loungeId 
+                const newActive = s.activeLounge?.id === loungeId
                     ? { ...s.activeLounge, ...updates }
-                    // Update invite code explicitly if privacy changed
                     : s.activeLounge
 
-                if (newActive && 'is_private' in updates && updates.is_private === false) {
+                // Turning a salon private no longer mints a code. It used to
+                // generate one here AND fire a second, unawaited write to
+                // persist it — so a room could become private and hand out a
+                // shared secret in the same action, with no error path if that
+                // write failed. Privacy is the request/admit flow now.
+                if (newActive) {
                     newActive.invite_code = null
-                } else if (newActive && 'is_private' in updates && updates.is_private === true && !newActive.invite_code) {
-                    newActive.invite_code = generateInviteCode()
-                    // We also need to update this actual token to the DB in a perfect world, 
-                    // but the RLS actually prevents modifying invite_code directly by default unless we allow it,
-                    // but wait - our UI does the updates via this store call. 
-                    // Let's ensure if privacy changes to true, we auto-generate an invite code via another DB shot
-                    supabase.from('lounges').update({ invite_code: newActive.invite_code }).eq('id', loungeId)
                 }
 
                 return {

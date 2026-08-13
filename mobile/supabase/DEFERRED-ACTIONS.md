@@ -74,3 +74,39 @@ this project does not do.
 
 The `noWipePrivileges` assertion in `scripts/check-backend-live.mjs` catches it
 if such a table ever appears.
+
+---
+
+## 3. Drop `public.lounges.invite_code`
+
+**Found in** the Lounge polish pass, 2026-08-14
+**Blocked on** a mobile build shipping
+
+Invite codes are retired. A private salon is entered by requesting admission and
+being admitted by the host; the code was a second, weaker door that bypassed that
+approval, and `secure_invite_codes` — the server-side validation that would have
+made it safe — was scoped as Phase 5.3 and never built.
+
+Mobile stopped issuing codes with the Editorial Salon overhaul but kept SELECTing
+the column; web was still minting, displaying and redeeming them. Both are now
+clean, and the values themselves are nulled.
+
+**The column cannot be dropped yet.** The currently shipped TestFlight build
+still lists `invite_code` in its `lounges` select. Dropping it makes PostgREST
+answer `column lounges.invite_code does not exist` — a 400 that fails the whole
+query, so the salon list would break for every tester on that build.
+
+Run this once a build without the column in its select has replaced it:
+
+```sql
+ALTER TABLE public.lounges DROP COLUMN invite_code;
+```
+
+Until then the column sits NULL and unread, which costs nothing and keeps the old
+build working.
+
+**Why it mattered:** until the `lounges` SELECT policy was scoped from `{public}`
+to `{authenticated}`, every code was readable by anyone holding the app's public
+anon key — and web's `joinByInviteCode` would redeem one straight into a private
+room. Probed live: two private salons' codes came back to an unauthenticated
+caller.
