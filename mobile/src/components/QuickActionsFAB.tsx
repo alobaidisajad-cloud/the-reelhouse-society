@@ -16,7 +16,7 @@
  * experimental blur method is a documented flicker risk).
  */
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, Platform, InteractionManager, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, Platform, InteractionManager, useWindowDimensions, AccessibilityInfo } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing, runOnJS, useAnimatedReaction, useReducedMotion, type SharedValue } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
@@ -62,6 +62,24 @@ export default function QuickActionsFAB({ scrollY }: { scrollY?: SharedValue<num
     // 1 = present, 0 = stepped aside. Driven entirely on the UI thread.
     const presence = useSharedValue(1);
     const lastY = useSharedValue(0);
+    // Mirrored into React state purely to drive pointerEvents. A view at opacity
+    // 0 still receives touches, so without this the button stayed tappable while
+    // invisible — a tap on apparently empty space would open the sheet. The
+    // shared value keeps the animation on the UI thread; this only flips once
+    // per direction change, so it costs a render, not a frame.
+    const [reachable, setReachable] = useState(true);
+
+    // Stepping aside is a convenience for someone whose eyes are on the page. A
+    // member using VoiceOver or TalkBack does not scroll to reveal things, so
+    // the same behaviour would simply take a button away from them. When a
+    // screen reader is running the button stays put.
+    const [screenReader, setScreenReader] = useState(false);
+    React.useEffect(() => {
+        let alive = true;
+        AccessibilityInfo.isScreenReaderEnabled().then(on => { if (alive) setScreenReader(on); });
+        const sub = AccessibilityInfo.addEventListener('screenReaderChanged', setScreenReader);
+        return () => { alive = false; sub.remove(); };
+    }, []);
 
     // 12px of travel before it reacts: enough to ignore the elastic bounce at the
     // top of a list and a thumb resting on the screen, small enough to feel
@@ -76,13 +94,15 @@ export default function QuickActionsFAB({ scrollY }: { scrollY?: SharedValue<num
             lastY.value = y;
             const shouldShow = delta < 0 || y < 80;
             presence.value = withTiming(shouldShow ? 1 : 0, { duration: 180, easing: Easing.out(Easing.quad) });
+            runOnJS(setReachable)(shouldShow);
         },
         [scrollY]
     );
 
     const presenceStyle = useAnimatedStyle(() => {
-        // Reduce Motion keeps it still and always present rather than sliding.
-        if (reducedMotion || !scrollY || open) return { opacity: 1, transform: [{ translateY: 0 }] };
+        // Always present when there is nothing to hide from, when the sheet is
+        // open, when Reduce Motion is on, or when a screen reader is running.
+        if (reducedMotion || screenReader || !scrollY || open) return { opacity: 1, transform: [{ translateY: 0 }] };
         return {
             opacity: presence.value,
             // Travels a little further than its own height so it clears the edge
@@ -153,7 +173,7 @@ export default function QuickActionsFAB({ scrollY }: { scrollY?: SharedValue<num
                 travel; the button keeps its press-scale. Neither fights the other. */}
             <Animated.View
                 style={[s.fabAnchor, { bottom: fabBottom }, presenceStyle]}
-                pointerEvents="box-none"
+                pointerEvents={reachable || open || !scrollY || screenReader || reducedMotion ? 'box-none' : 'none'}
             >
             <PressableScale
                 style={[s.fab, open && s.fabActive]}

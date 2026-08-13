@@ -12,7 +12,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { FlashList } from '@shopify/flash-list';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { colors, fonts } from '@/src/theme/theme';
 import { SectionDivider } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
@@ -105,7 +105,6 @@ const pulseKeyExtractor = (item: PulseActivity) => item.id;
 function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
   const { width } = useWindowDimensions();
   const PULSE_ITEM_SIZE = width * 0.82 + 16;
-  const queryClient = useQueryClient();
 
   const user = useAuthStore(s => s.user);
 
@@ -171,19 +170,8 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
         }));
 
         // Hide logs from blocked/muted users (HOOK-8).
-        const visible = filterContentByBlocks(mapped, (a) => a.user_id ?? '');
-
-        // The Lead Story is not also the wire.
-        //
-        // FeaturedCritique picks an editorial choice and The Pulse picks the
-        // newest — and with the archive at its current size those are routinely
-        // the same log, so one film filled both sections on a single screen.
-        // Read from FeaturedCritique's own cache entry rather than asking the
-        // database again: it has already run by the time this renders, so this
-        // costs no request. If it has not, or the featured log is not among the
-        // newest, nothing is filtered and the wire is unchanged.
-        const featuredId = (queryClient.getQueryData(['featuredCritique', refreshTrigger]) as { id?: string } | undefined)?.id;
-        return (featuredId ? visible.filter((a) => a.id !== featuredId) : visible).slice(0, 6);
+        // The featured critique is removed at render time, not here — see below.
+        return filterContentByBlocks(mapped, (a) => a.user_id ?? '');
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -192,9 +180,31 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
     <AnimatedPulseWrapper item={item} index={index} scrollX={scrollX} itemSize={PULSE_ITEM_SIZE} cardWidth={width * 0.82} onMute={handleMute} />
   ), [scrollX, PULSE_ITEM_SIZE, width, handleMute]);
 
-  const visibleActivities = mutedIds.size === 0
+  // The Lead Story is not also the wire.
+  //
+  // FeaturedCritique picks an editorial choice and The Pulse picks the newest,
+  // and with the archive at its current size those are routinely the same log —
+  // one film filling both sections on a single screen. Confirmed against the
+  // database, not inferred from the screen.
+  //
+  // Filtered HERE rather than inside the queryFn. Both sections mount together
+  // and fetch in parallel, so reading the featured id at fetch time was a race:
+  // if that request had not resolved yet the id was undefined and the duplicate
+  // went through anyway. Subscribing to the cache re-renders this list the
+  // moment the featured critique lands, whichever finishes first.
+  //
+  // `enabled: false` means this never issues a request of its own — it only
+  // observes the entry FeaturedCritique already owns.
+  const { data: featured } = useQuery<{ id?: string } | undefined>({
+    queryKey: ['featuredCritique', refreshTrigger],
+    enabled: false,
+  });
+  const featuredId = featured?.id;
+
+  const visibleActivities = (mutedIds.size === 0
     ? activities
-    : activities.filter(a => !mutedIds.has(a.id));
+    : activities.filter(a => !mutedIds.has(a.id))
+  ).filter(a => a.id !== featuredId).slice(0, 6);
 
   if (visibleActivities.length === 0) {
     return (
