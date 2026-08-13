@@ -4084,6 +4084,13 @@ CREATE INDEX idx_logs_user_id_created_at ON public.logs USING btree (user_id, cr
 
 
 --
+-- Name: idx_logs_watched_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_logs_watched_date ON public.logs USING btree (watched_date DESC);
+
+
+--
 -- Name: idx_lounge_members_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4147,6 +4154,13 @@ CREATE INDEX idx_notifications_from_user_id ON public.notifications USING btree 
 
 
 --
+-- Name: idx_notifications_is_read; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_notifications_is_read ON public.notifications USING btree (user_id) WHERE (is_read = false);
+
+
+--
 -- Name: idx_notifications_user_id_read; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4158,6 +4172,13 @@ CREATE INDEX idx_notifications_user_id_read ON public.notifications USING btree 
 --
 
 CREATE INDEX idx_physical_archive_created_at_id_desc ON public.physical_archive USING btree (created_at DESC, id DESC);
+
+
+--
+-- Name: idx_physical_archive_film_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_physical_archive_film_id ON public.physical_archive USING btree (film_id);
 
 
 --
@@ -5202,13 +5223,6 @@ CREATE POLICY "Authenticated users can create lounges" ON public.lounges FOR INS
 
 
 --
--- Name: log_comments Authenticated users can insert; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Authenticated users can insert" ON public.log_comments FOR INSERT WITH CHECK ((auth.uid() = user_id));
-
-
---
 -- Name: dossier_certifications Certifications viewable by everyone; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -5540,13 +5554,6 @@ CREATE POLICY "Users can update own profile." ON public.profiles FOR UPDATE USIN
 
 
 --
--- Name: notifications Users can update their notifications (mark read); Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Users can update their notifications (mark read)" ON public.notifications FOR UPDATE USING ((auth.uid() = user_id));
-
-
---
 -- Name: logs Users can update their own logs; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -5565,20 +5572,6 @@ CREATE POLICY "Users can view own errors" ON public.error_logs FOR SELECT USING 
 --
 
 CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT USING ((auth.uid() = user_id));
-
-
---
--- Name: notifications Users can view their notifications; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Users can view their notifications" ON public.notifications FOR SELECT USING ((auth.uid() = user_id));
-
-
---
--- Name: error_logs Users insert their own error logs.; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Users insert their own error logs." ON public.error_logs FOR SELECT USING ((auth.uid() = user_id));
 
 
 --
@@ -6013,13 +6006,6 @@ CREATE POLICY physical_archive_select_authorized ON public.physical_archive FOR 
 --
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
---
--- Name: dossier_comments public_read_dossier_comments; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY public_read_dossier_comments ON public.dossier_comments FOR SELECT TO authenticated USING (true);
-
 
 --
 -- Name: push_subscriptions; Type: ROW SECURITY; Schema: public; Owner: -
