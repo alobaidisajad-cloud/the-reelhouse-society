@@ -21,6 +21,7 @@ import { useFilmStore } from '@/src/stores/films';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import QuickActionsFAB from '@/src/components/QuickActionsFAB';
 import Buster from '@/src/components/Buster';
 import PressableScale from '@/src/components/PressableScale';
@@ -236,7 +237,11 @@ export default function LobbyScreen() {
                 <View style={s.welcomeEstLine} />
               </View>
 
-              <Text style={s.welcomeTagline} adjustsFontSizeToFit numberOfLines={4} minimumFontScale={0.7}>
+              {/* 12pt in a 22pt line box. The generous ratio makes this look
+                  safe, and I first cleared it on exactly that reasoning — but
+                  UNCAPPED means unbounded, and iOS accessibility sizes run well
+                  past 1.83x. Capped at 1.35 it can never outgrow the box. */}
+              <Text {...scaledTextProps} style={s.welcomeTagline} adjustsFontSizeToFit numberOfLines={4} minimumFontScale={0.7}>
                 {'A secret fellowship for the devoted cinephile.\nTrack every screening. Avoid the algorithmic gaze.\nKeep the record alive.'}
               </Text>
 

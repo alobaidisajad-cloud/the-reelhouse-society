@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { Bookmark } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import { tmdb } from '@/src/lib/tmdb';
 import { type DiscoverFilm } from '@/src/stores/discover';
 import { useFilmStore } from '@/src/stores/films';
@@ -161,10 +162,10 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
                negative would carry on its edge. */
             <View style={s.undevelopedWrap}>
               <Text style={s.posterPlaceholderGlyph}>✦</Text>
-              <Text style={s.undevelopedTitle} numberOfLines={3} ellipsizeMode="tail">
+              <Text {...scaledTextProps} style={s.undevelopedTitle} numberOfLines={3} ellipsizeMode="tail">
                 {(item.title || item.name || 'UNTITLED').toUpperCase()}
               </Text>
-              {!!year && <Text style={s.undevelopedYear}>{year}</Text>}
+              {!!year && <Text {...scaledTextProps} style={s.undevelopedYear}>{year}</Text>}
             </View>
           )}
         </View>
@@ -321,7 +322,13 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 1,
-    lineHeight: 13,
+    // No fixed lineHeight. React Native does NOT scale lineHeight with Dynamic
+    // Type, so `lineHeight: 13` on 9pt text meant that at 1.35x the glyphs grew
+    // to 12.15 inside a line box still fixed at 13 — cramped, descenders
+    // clipping. This is the same fault removed from heroTitle in this same
+    // pass; it was written back in here thirty lines later. The tile cannot
+    // grow, so the text is capped instead (scaledTextProps, 1.35) and the line
+    // box left free to follow it.
     color: colors.bone,
     textAlign: 'center',
   },

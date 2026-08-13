@@ -164,6 +164,68 @@ describe('muted text stays readable', () => {
         }
     });
 
+    // ── A fixed lineHeight is a ceiling the font can grow through ──
+    // React Native does NOT scale `lineHeight` with Dynamic Type. So a style
+    // with lineHeight/fontSize below the scaling cap will, at large accessibility
+    // sizes, render glyphs taller than the line box holding them — clipped
+    // descenders on the most prominent text in the app. adjustsFontSizeToFit does
+    // not save it: that fits text to WIDTH and ignores lineHeight entirely.
+    //
+    // Found the hard way. heroTitle was fixed for this in the Darkroom pass, and
+    // the same fault was then written back in thirty lines later on the new
+    // undeveloped-negative plate. marqueeTitle (1.21) and cardTitle (1.26) had
+    // been carrying it on pages already called finished.
+    //
+    // The rule: a style is safe only when the cap it DECLARES is <= its
+    // lineHeight/fontSize ratio. With no cap the multiplier is unbounded, so a
+    // fixed lineHeight is always a ceiling the font can grow through.
+    //
+    // The first version of this test asserted `ratio < 1.2` and passed while
+    // cardTitle (ratio 1.26) sat uncapped — the comparison was backwards, and a
+    // mutation run is what exposed it. Do not "simplify" this back to a ratio
+    // threshold; the cap is the variable that matters.
+    it('no display text can grow through its own line box', () => {
+        const CAPS: Record<string, number> = {
+            decorativeTextProps: 1,     // allowFontScaling: false
+            displayTextProps: 1.2,
+            scaledTextProps: 1.35,
+        };
+        const offenders: string[] = [];
+        for (const target of SURFACE) {
+            for (const file of filesUnder(target)) {
+                const src = fs.readFileSync(file, 'utf8');
+                const styles = new Map(styleBlocks(src).map((b) => [b.name, b.body]));
+
+                // Walk each <Text …> tag so the cap is read from the SAME usage
+                // that shrinks — a spread elsewhere in the file proves nothing.
+                for (const tag of src.matchAll(/<Text([^>]*)>/g)) {
+                    const attrs = tag[1];
+                    if (!/adjustsFontSizeToFit/.test(attrs)) continue;
+                    const styleRef = attrs.match(/style=\{s?t?\.(\w+)\}/);
+                    if (!styleRef) continue;
+                    const body = styles.get(styleRef[1]);
+                    if (!body) continue;
+
+                    const fsz = body.match(/fontSize:\s*([0-9.]+)/);
+                    const lh = body.match(/lineHeight:\s*([0-9.]+)/);
+                    if (!fsz || !lh) continue;   // no fixed lineHeight == no ceiling
+
+                    const ratio = parseFloat(lh[1]) / parseFloat(fsz[1]);
+                    const declared = Object.keys(CAPS).find((k) => attrs.includes(k));
+                    const cap = declared ? CAPS[declared] : Infinity;
+
+                    if (cap > ratio) {
+                        offenders.push(
+                            `${path.basename(file)} › ${styleRef[1]} — line box holds ${ratio.toFixed(2)}x, ` +
+                            `text may reach ${declared ?? 'UNCAPPED'}`
+                        );
+                    }
+                }
+            }
+        }
+        expect(offenders).toEqual([]);
+    });
+
     it('the Darkroom text that was raised stays raised', () => {
         expect(ratioOf('DarkroomMoodBar.tsx', 'moodSub')).toBeGreaterThanOrEqual(4.5);
         expect(ratioOf('DarkroomFilterPanel.tsx', 'yearRangeDash')).toBeGreaterThanOrEqual(4.0);

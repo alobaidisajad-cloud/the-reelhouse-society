@@ -26,6 +26,7 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { ActionDeck } from './ActionDeck';
 import { AutopsyStrip, AutopsyBack, hasRatedAutopsy } from './AutopsyView';
@@ -220,7 +221,11 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
               <PosterFrame itemId={item.id} filmId={item.film_id} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />
               <View style={s.filmMeta}>
                 <PressableScale onPress={handleFilmPress} hitSlop={st.hitSlop} haptic="selection" pressedScale={0.96}>
-                  <Text style={s.cardTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>{item.film_title}</Text>
+                  {/* 19pt in a 24pt line box (ratio 1.26), and lineHeight does
+                      not scale with Dynamic Type — at 1.35 the glyphs reach
+                      25.7pt in a box fixed at 24 and clip. Capped at 1.2 they
+                      land on 22.8. See the same note in MarqueeBoard. */}
+                  <Text {...displayTextProps} style={s.cardTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>{item.film_title}</Text>
                 </PressableScale>
                 {item.year != null && <Text style={s.cardYear}>{item.year}</Text>}
                 <VerdictBlock item={item} />

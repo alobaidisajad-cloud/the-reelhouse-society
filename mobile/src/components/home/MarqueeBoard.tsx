@@ -31,6 +31,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
+import { displayTextProps } from '@/src/constants/textScaling';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { supabase } from '@/src/lib/supabase';
@@ -302,7 +303,13 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
           <Text style={s.marqueeLoreSub} numberOfLines={2}>As decreed by the Programming Committee</Text>
 
           <View style={s.marqueeTitleWrap}>
-            <Text style={s.marqueeTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.6}>
+            {/* displayTextProps caps at 1.2x. This title is 28pt in a 34pt line
+                box — a ratio of 1.21 — and lineHeight does NOT scale with
+                Dynamic Type, so at the usual 1.35 cap the glyphs would reach
+                37.8pt inside a box still fixed at 34 and clip. adjustsFontSizeToFit
+                does not rescue it: that fits text to WIDTH and ignores lineHeight.
+                At 1.2x it lands on 33.6 and fits. */}
+            <Text {...displayTextProps} style={s.marqueeTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.6}>
               {(film.title ?? 'REELHOUSE').toUpperCase()}
             </Text>
           </View>
