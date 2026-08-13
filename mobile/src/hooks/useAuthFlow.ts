@@ -58,6 +58,21 @@ export function mapAuthError(rawMsg: string): { message: string; isInvalidCreden
     isInvalidCredentials = true;
     message = 'Identity not recognized. Check your credentials.';
   }
+  // Anything unmapped fell through and was shown VERBATIM, so a member could
+  // meet "AuthApiError: Invalid Refresh Token: Refresh Token Not Found" inside
+  // a 1924 members' club. These are the messages Supabase actually returns;
+  // each keeps the meaning and drops the stack-trace voice.
+  else if (message.includes('User already registered')) {
+    message = 'That address is already on the register. Try signing in.';
+  } else if (/rate limit|too many requests/i.test(message)) {
+    message = 'Too many attempts. The door needs a moment — try again shortly.';
+  } else if (/Refresh Token|session|JWT/i.test(message)) {
+    message = 'Your session lapsed. Please identify yourself again.';
+  } else if (/network|fetch|timeout/i.test(message)) {
+    message = 'The line went quiet. Check your connection and try again.';
+  } else if (message.includes('Password should be')) {
+    message = 'That password is too short. Eight characters minimum.';
+  }
   return { message, isInvalidCredentials };
 }
 
@@ -108,8 +123,18 @@ export function useAuthFlow() {
     credentialsRef.current = { email: emailOrUsername, password };
   }, [emailOrUsername, password]);
 
+  // `signup` and `login` are the two the GATE sends. They did not exist here,
+  // which is why passing the param alone would have fixed nothing: the handler
+  // only knew the two deep-link actions below, and the form fell through to its
+  // isLogin=true default either way. `login` matters as much as `signup` —
+  // without it, opening signup and then tapping "Already a member?" would land
+  // on whichever mode happened to be left over.
   useEffect(() => {
-    if (params.action === 'forgot_password') {
+    if (params.action === 'signup') {
+      setIsLogin(false);
+    } else if (params.action === 'login') {
+      setIsLogin(true);
+    } else if (params.action === 'forgot_password') {
       setIsLogin(true);
       setForgotModalVisible(true);
     } else if (params.action === 'resend_signup') {

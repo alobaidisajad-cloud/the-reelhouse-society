@@ -21,7 +21,7 @@ import { useFilmStore } from '@/src/stores/films';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts, effects } from '@/src/theme/theme';
-import { scaledTextProps } from '@/src/constants/textScaling';
+import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import QuickActionsFAB from '@/src/components/QuickActionsFAB';
 import Buster from '@/src/components/Buster';
 import PressableScale from '@/src/components/PressableScale';
@@ -64,9 +64,27 @@ export default function LobbyScreen() {
   useScrollToTop(scrollRef);
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   // Deterministic title sizing — adjustsFontSizeToFit is unreliable with
-  // explicit line breaks (wraps "REELHOUSE" mid-word on narrow screens instead
-  // of shrinking). Rye glyphs run ~0.75em wide; "REELHOUSE" is 9 chars.
-  const welcomeTitleSize = Math.min(38, Math.floor((windowWidth - 64) / (9 * 0.75)));
+  // explicit line breaks (wraps "REELHOUSE" mid-word instead of shrinking).
+  //
+  // The 0.75em/char estimate this used was very nearly right: measured out of
+  // Rye_400Regular.ttf, "REELHOUSE" is 6.507em total, ~0.723em/char. At 38pt
+  // that is 265pt inside 329pt and it FITS. What broke it was not the constant
+  // but the thing the formula never accounted for — Dynamic Type. Solving
+  // 6.507 * 38 * scale + 18 > 329 puts the wrap at 1.26x, which is roughly
+  // where a device with larger text sits, and is why it breaks in production
+  // and not in a simulator at default size.
+  //
+  // So the width budget is divided by the cap the text actually declares
+  // (displayTextProps, 1.2x) and the letterSpacing is subtracted rather than
+  // ignored — it does not scale with the font. That yields 38pt on a 393pt
+  // screen and 37pt on a 375pt one, where a bare 1.2x cap alone would still
+  // have wrapped.
+  const RYE_REELHOUSE_EM = 6.507;   // measured from the font file, not estimated
+  const TITLE_LETTER_SPACING = 2;   // welcomeTitle.letterSpacing, 9 glyphs
+  const welcomeTitleSize = Math.min(
+    38,
+    Math.floor((windowWidth - 64 - TITLE_LETTER_SPACING * 9) / (RYE_REELHOUSE_EM * 1.2))
+  );
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const fetchLogs = useFilmStore(s => s.fetchLogs);
   const fetchEndorsements = useFilmStore(s => s.fetchEndorsements);
@@ -227,21 +245,31 @@ export default function LobbyScreen() {
                 <SocietySeal size={Math.min(104, Math.round(windowHeight * 0.15))} />
               </View>
               <Text style={s.welcomeEyebrow}>WELCOME TO</Text>
-              <Text style={[s.welcomeTitle, { fontSize: welcomeTitleSize, lineHeight: Math.round(welcomeTitleSize * 1.21) }]} accessibilityRole="header">
+              {/* displayTextProps is what makes the size budget above real —
+                  without a declared cap the multiplier is unbounded and the
+                  arithmetic is guessing. The 1.21 lineHeight ratio also clears
+                  that 1.2 cap, so the glyphs cannot outgrow their own line box. */}
+              <Text
+                {...displayTextProps}
+                style={[s.welcomeTitle, { fontSize: welcomeTitleSize, lineHeight: Math.round(welcomeTitleSize * 1.21) }]}
+                accessibilityRole="header"
+              >
                 {'THE\nREELHOUSE\nSOCIETY'}
               </Text>
 
-              <View style={s.welcomeEstRow}>
-                <View style={s.welcomeEstLine} />
-                <Text style={s.welcomeEstText}>EST. 1924</Text>
-                <View style={s.welcomeEstLine} />
-              </View>
+              {/* The "EST. 1924" rule stood here. Fourth page carrying it; it is
+                  lore, not furniture, and the name above already says 1924. */}
 
               {/* 12pt in a 22pt line box. The generous ratio makes this look
                   safe, and I first cleared it on exactly that reasoning — but
                   UNCAPPED means unbounded, and iOS accessibility sizes run well
                   past 1.83x. Capped at 1.35 it can never outgrow the box. */}
-              <Text {...scaledTextProps} style={s.welcomeTagline} adjustsFontSizeToFit numberOfLines={4} minimumFontScale={0.7}>
+              {/* Six, not four. Measured in Special Elite (0.626em/char) the
+                  first two sentences are 352pt and 391pt against a 329pt slot,
+                  so they wrap to two lines EVEN AT 1.0x — five lines in total,
+                  and numberOfLines={4} cut the last one off. "Keep the record
+                  alive." has never rendered, on any device, at any text size. */}
+              <Text {...scaledTextProps} style={s.welcomeTagline} adjustsFontSizeToFit numberOfLines={6} minimumFontScale={0.7}>
                 {'A secret fellowship for the devoted cinephile.\nTrack every screening. Avoid the algorithmic gaze.\nKeep the record alive.'}
               </Text>
 
@@ -253,14 +281,32 @@ export default function LobbyScreen() {
             </Animated.View>
           </View>
 
+          {/* A spacer, not justifyContent. `space-evenly` on a scroll content
+              container distributes NEGATIVE free space too — when the content
+              is taller than the viewport it is pushed off BOTH ends, and a
+              ScrollView cannot scroll above its origin. That is why the seal
+              and "WELCOME TO" were unreachable rather than merely off-screen.
+              A flex spacer expands to the same gap when everything fits and
+              collapses to zero when it does not. */}
+          <View style={s.welcomeSpacer} />
+
           {/* Bottom: Tactile CTAs */}
           <View style={s.welcomeBottomHalf}>
             <View style={s.welcomeCtaContainer}>
+              {/* This is the SIGN-UP button and it opened the SIGN-IN form.
+                  Both gate CTAs pushed a bare '/login', which defaults to
+                  isLogin=true — so the largest button on the front door asked a
+                  brand-new visitor to identify themselves as an existing member,
+                  and the real signup was reachable only through a small link at
+                  the bottom of that form. The `action` param already existed and
+                  auth-callback/reset-password both use it; the gate was the one
+                  caller that omitted it. The old accessibility label ("sign up
+                  or log in") papered over the ambiguity rather than fixing it. */}
               <PressableScale
                 style={s.ctaPrimaryNoir}
-                onPress={() => { TactileEngine.destroy(); router.push('/login' as any); }}
+                onPress={() => { TactileEngine.destroy(); (router.push as any)({ pathname: '/login', params: { action: 'signup' } }); }}
                 accessibilityRole="button"
-                accessibilityLabel="Seek admission — sign up or log in"
+                accessibilityLabel="Seek admission — request membership"
               >
                 <BrassSheen />
                 {/* Physical embedded metal plate effect */}
@@ -396,7 +442,8 @@ const s = StyleSheet.create({
   welcomeRootFlex: { flex: 1, zIndex: 10 },
   // flexGrow (not fixed flex halves) + scroll: content can compress spacing on
   // small screens or scroll, but can never overflow off the top of the screen.
-  welcomeScrollContent: { flexGrow: 1, paddingHorizontal: 32, paddingVertical: 12, justifyContent: 'space-evenly' },
+  welcomeScrollContent: { flexGrow: 1, paddingHorizontal: 32, paddingVertical: 12, justifyContent: 'flex-start' },
+  welcomeSpacer: { flex: 1, minHeight: 24 },
   welcomeTopHalf: { justifyContent: 'center', alignItems: 'center' },
   welcomeBottomHalf: { justifyContent: 'center', alignItems: 'center', paddingTop: 24 },
 

@@ -28,9 +28,22 @@ export const loginStyles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
+  headerFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 20,
+    zIndex: 99,   // under the header (100), over the scrolling content
+  },
   scroll: {
     flexGrow: 1,
-    justifyContent: 'center',
+    // NOT 'center'. On a scroll content container, centring distributes
+    // negative free space as well as positive — when the form is taller than
+    // the viewport (which it always is) the top is pushed above the scroll
+    // origin and becomes unreachable, and every keyboard open re-centres the
+    // whole form under the user's thumb. A form beneath a fixed header belongs
+    // at the top; no spacer is wanted here, unlike the gate.
+    justifyContent: 'flex-start',
     paddingHorizontal: 32,
     paddingBottom: 24,
     paddingTop: 40,
@@ -53,7 +66,10 @@ export const loginStyles = StyleSheet.create({
     fontSize: 34,
     color: colors.parchment,
     textAlign: 'center',
-    lineHeight: 40,
+    // 40 gave a ratio of 1.176, under the 1.2 cap the text now declares — the
+    // glyphs would have grown a fraction past their own line box. 42 clears it
+    // (34 * 1.2 = 40.8) and the extra 2pt is invisible at rest.
+    lineHeight: 42,
     ...effects.textShadowDeep,
   },
   rule: {
@@ -75,7 +91,9 @@ export const loginStyles = StyleSheet.create({
     color: colors.fog,
     textAlign: 'center',
     marginTop: 12,
-    opacity: 0.6,
+    // 0.6 measured 3.04:1 on ink — under the floor WCAG allows even for LARGE
+    // text, on 10pt italic. 0.8 = 4.59:1 and still reads as a whisper.
+    opacity: 0.8,
     lineHeight: 16,
     maxWidth: 280,
     alignSelf: 'center',
@@ -246,7 +264,9 @@ export const loginStyles = StyleSheet.create({
     color: colors.fog,
     textAlign: 'center',
     lineHeight: 14,
-    opacity: 0.6,
+    // This is the terms-of-service line — the one piece of text on the page a
+    // member is legally taken to have read. It measured 3.04:1. 0.8 = 4.59:1.
+    opacity: 0.8,
   },
 });
 

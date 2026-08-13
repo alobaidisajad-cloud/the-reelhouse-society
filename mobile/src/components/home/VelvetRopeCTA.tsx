@@ -53,10 +53,13 @@ export const ShimmerRule = memo(() => {
 export const VelvetRopeCTA = memo(() => {
     const router = useRouter();
 
+    // Explicit `login`, not a bare push. Its sibling on the gate now opens
+    // signup, so this one has to state its own mode — otherwise reopening
+    // after a signup visit would inherit whichever form was left over.
     return (
        <PressableScale
           style={s.ctaSecondaryNoir}
-          onPress={() => { TactileEngine.destroy(); (router.push as any)('/login' as any); }}
+          onPress={() => { TactileEngine.destroy(); (router.push as any)({ pathname: '/login', params: { action: 'login' } }); }}
        >
           <Text style={s.ctaSecondaryNoirText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.7}>ALREADY A MEMBER?</Text>
           <ShimmerRule />

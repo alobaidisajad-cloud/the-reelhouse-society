@@ -34,10 +34,15 @@ const SURFACE = [
     'src/components/reels',
     'src/components/feed',
     'src/components/darkroom',
+    'src/components/auth',
     'app/(tabs)/index.tsx',
     'app/(tabs)/reels.tsx',
     'app/(tabs)/darkroom.tsx',
+    'app/(modals)/login.tsx',
 ];
+
+/** Styles that live apart from the components using them. */
+const EXTRA_STYLE_FILES = ['src/theme/authStyles.ts'];
 
 /** Text allowed under the floor, with why. */
 const EXCEPTIONS: Record<string, string> = {
@@ -106,7 +111,10 @@ type Row = { file: string; name: string; ratio: number; alpha: number; size: num
 
 function scan(): Row[] {
     const rows: Row[] = [];
-    for (const target of SURFACE) {
+    // login.tsx keeps its StyleSheet in src/theme/authStyles.ts, so scanning
+    // only the component files would have missed the whole auth palette —
+    // including the terms-of-service line, which measured 3.04:1.
+    for (const target of [...SURFACE, ...EXTRA_STYLE_FILES]) {
         for (const file of filesUnder(target)) {
             const src = fs.readFileSync(file, 'utf8');
             for (const { name, body } of styleBlocks(src)) {
@@ -194,7 +202,18 @@ describe('muted text stays readable', () => {
         for (const target of SURFACE) {
             for (const file of filesUnder(target)) {
                 const src = fs.readFileSync(file, 'utf8');
-                const styles = new Map(styleBlocks(src).map((b) => [b.name, b.body]));
+                // Styles may live in another file — login.tsx imports its whole
+                // StyleSheet from authStyles.ts, so resolving only same-file
+                // blocks would make this guard silently skip the auth screen
+                // rather than check it.
+                const styles = new Map([
+                    ...styleBlocks(src),
+                    ...EXTRA_STYLE_FILES.flatMap((f) =>
+                        fs.existsSync(path.join(ROOT, f))
+                            ? styleBlocks(fs.readFileSync(path.join(ROOT, f), 'utf8'))
+                            : []
+                    ),
+                ].map((b) => [b.name, b.body] as [string, string]));
 
                 // Walk each <Text …> tag so the cap is read from the SAME usage
                 // that shrinks — a spread elsewhere in the file proves nothing.

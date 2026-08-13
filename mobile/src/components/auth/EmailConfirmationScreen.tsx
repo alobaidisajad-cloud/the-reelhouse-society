@@ -4,6 +4,7 @@ import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Mail, X } from 'lucide-react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { AuthBackdrop, SocietyEyebrow, HaloIcon, Est1924 } from './AuthChrome';
 
@@ -40,7 +41,10 @@ export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, o
           <HaloIcon icon={Mail} iconSize={30} haloSize={130} style={s.iconWrap} />
 
           <SocietyEyebrow label="CLEARANCE PENDING" style={s.eyebrowWrap} />
-          <Text style={s.confirmTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>Check Your Inbox.</Text>
+          {/* 28pt in a 34pt line box — ratio 1.21 — and lineHeight does not
+              scale with Dynamic Type, so uncapped the glyphs outgrow the box.
+              displayTextProps caps at 1.2, which the ratio holds. */}
+          <Text {...displayTextProps} style={s.confirmTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>Check Your Inbox.</Text>
           <Text style={s.confirmBody}>
             {/* eslint-disable-next-line react/no-unescaped-entities */}
             We've dispatched a sealed verification link to:

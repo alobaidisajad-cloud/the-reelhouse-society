@@ -101,9 +101,26 @@ describe('mapAuthError', () => {
     expect(result.isInvalidCredentials).toBe(true);
   });
 
-  it('passes through unrecognized error messages unchanged', () => {
-    const result = mapAuthError('Network request failed');
-    expect(result.message).toBe('Network request failed');
+  // These used to fall through and be shown VERBATIM, so a member could meet
+  // "AuthApiError: Invalid Refresh Token: Refresh Token Not Found" inside a
+  // 1924 members' club. Network failure was the case this suite originally
+  // pinned as passthrough; it is now mapped, deliberately.
+  it.each([
+    ['Network request failed', 'The line went quiet. Check your connection and try again.'],
+    ['User already registered', 'That address is already on the register. Try signing in.'],
+    ['Email rate limit exceeded', 'Too many attempts. The door needs a moment — try again shortly.'],
+    ['Invalid Refresh Token: Refresh Token Not Found', 'Your session lapsed. Please identify yourself again.'],
+  ])('speaks in the house voice for "%s"', (raw, expected) => {
+    const result = mapAuthError(raw);
+    expect(result.message).toBe(expected);
+    expect(result.isInvalidCredentials).toBe(false);
+  });
+
+  // Passthrough still holds for anything genuinely novel — the mapping is a
+  // list of known cases, not a catch-all that would swallow a new signal.
+  it('passes through an error it has never seen', () => {
+    const result = mapAuthError('Teapot refused the brew');
+    expect(result.message).toBe('Teapot refused the brew');
     expect(result.isInvalidCredentials).toBe(false);
   });
 });

@@ -12,10 +12,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
 import { useIsFocused } from '@react-navigation/native';
 import * as WebBrowser from 'expo-web-browser';
 import { colors } from '@/src/theme/theme';
+import { displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { pickAny } from '@/src/lore/fragments';
 import { useAuthFlow } from '@/src/hooks/useAuthFlow';
@@ -133,7 +135,11 @@ export default function LoginScreen() {
     // CONST-1: channels match base sepia (#B8891A = rgb(184,137,26))
     textShadowColor: `rgba(184, 137, 26, ${interpolate(titleGlow.value, [0, 1], [0.15, 0.55])})`,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: interpolate(titleGlow.value, [0, 1], [4, 18]),
+    // 18 was the problem, not the glow. Past roughly 10 iOS stops rendering a
+    // soft halo and starts painting a blocky rectangle behind the glyphs — the
+    // bright box visible at the peak of the breath. 10 keeps the candlelight
+    // and loses the artefact.
+    textShadowRadius: interpolate(titleGlow.value, [0, 1], [4, 10]),
   }));
 
   // ── Field focus — the ledger line under the active field warms to brass ──
@@ -164,7 +170,12 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    // No paddingTop here any more. The pinned header is absolutely positioned
+    // at top:0 — which is the container's PADDING box — and then adds
+    // `paddingTop: insets.top` and `height: 56 + insets.top` of its own. With
+    // the container also padding the inset it was counted twice, which is why
+    // the close button sat so far down the screen.
+    <View style={[s.container, { paddingBottom: insets.bottom }]}>
       <ToastOverlay />
       {/* ── Background & Atmospherics ── */}
       <AuthBackdrop />
@@ -186,12 +197,26 @@ export default function LoginScreen() {
         </PressableScale>
       </BlurView>
 
+      {/* The header's lower edge was a hard line that content met and was cut
+          by. Correct padding stops the guillotine; this makes the boundary a
+          dissolve rather than an edge, so anything scrolling past it fades into
+          the blur the way the safelight falls off in the Darkroom. Sits just
+          below the header, non-interactive. */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={['rgba(10,9,6,0.85)', 'rgba(10,9,6,0)']}
+        style={[s.headerFade, { top: 56 + insets.top }]}
+      />
+
       {/* IMP #2: Native keyboard handling — no KeyboardAvoidingView jank */}
       <ScrollView
         style={{ flex: 1 }}
-          // The pinned blur header is 56px tall and absolutely positioned —
-          // content must clear it or the seal slides underneath and clips.
-          contentContainerStyle={[s.scroll, { paddingTop: 56 + 16 }]}
+          // The header is `56 + insets.top` tall, not 56. The hardcoded 56+16
+          // cleared a header that does not exist at that height, so on any
+          // notched device the title was guillotined by roughly a full inset —
+          // and because s.scroll centred its content, that slice was
+          // unreachable rather than merely scrolled past.
+          contentContainerStyle={[s.scroll, { paddingTop: 56 + insets.top + 16 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
@@ -209,7 +234,10 @@ export default function LoginScreen() {
             style={s.eyebrowWrap}
           />
 
-          <AnimatedText style={[s.title, titleGlowStyle]}>
+          {/* Capped for the same reason as the gate's masthead: a fixed
+              lineHeight is a ceiling the font grows through, and uncapped the
+              multiplier is unbounded. */}
+          <AnimatedText {...displayTextProps} style={[s.title, titleGlowStyle]}>
             {isLogin ? 'Enter\nThe House' : 'Join\nThe Society'}
           </AnimatedText>
 
@@ -221,10 +249,10 @@ export default function LoginScreen() {
               : 'Every great collection begins with a single frame.'}
           </Text>
 
-          <Text style={s.loreTransmission}>
-            {/* eslint-disable-next-line react/no-unescaped-entities */}
-            — "{loreQuote}"
-          </Text>
+          {/* The lore quote used to sit here, making six things a member had to
+              pass before the first field. It is not cut — it moved to the
+              footer, where it reads as the house signing off rather than as a
+              fourth line of preamble. */}
         </AnimatedView>
 
         {/* ── Form ── */}
@@ -337,7 +365,14 @@ export default function LoginScreen() {
                 selectionColor={colors.sepia}
                 returnKeyType="go"
                 onSubmitEditing={handleLoginSubmit}
+                // secureTextEntry suppresses auto-capitalisation only while it
+                // is ON. The moment SHOW is pressed the field falls back to
+                // React Native's default of 'sentences' and silently capitalises
+                // the first character — a correct password, rejected, with no
+                // way for the member to see why.
+                autoCapitalize="none"
                 autoCorrect={false}
+                spellCheck={false}
                 maxLength={128}
                 keyboardAppearance="dark"
                 accessibilityLabel="Password"
@@ -415,6 +450,13 @@ export default function LoginScreen() {
         {/* Footer — founding mark + legal note */}
         <AnimatedView entering={FadeIn.duration(500).delay(700).reduceMotion(ReduceMotion.Never)} style={s.footerNote}>
           <Est1924 style={s.estMark} />
+          {/* Relocated from above the form. Beneath the founding mark it reads
+              as the house having the last word, which is what a lore fragment
+              is for. */}
+          <Text style={s.loreTransmission}>
+            {/* eslint-disable-next-line react/no-unescaped-entities */}
+            — "{loreQuote}"
+          </Text>
           <Text style={s.footerText}>
             {/* eslint-disable-next-line react/no-unescaped-entities */}
             By continuing, you agree to The ReelHouse Society's{'\n'}Terms of Service & Privacy Policy
