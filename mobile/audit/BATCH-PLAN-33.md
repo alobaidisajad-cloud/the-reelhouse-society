@@ -940,7 +940,30 @@ Needs its own batch — it is a feature repair, not index or schema work.
 ---
 
 ## BATCH 32 · Migration ledger
-`Tier C` · `1 finding` · `after 26–31` · **NOT STARTED**
+`Tier C` · `1 finding` · `after 26–31` · **CLOSED 2026-08-13**
+
+**CLOSED.** `npm run schema:check` reconciles the live database against the repo.
+Two committed files — `supabase/schema/live-schema.sql` (DDL) and `live-state.txt`
+(cron jobs, buckets and their limits, storage policies, extensions).
+
+⭐ **A snapshot, not a backfilled ledger.** The ledger holds 0 rows and 143 files
+were applied by hand, so any backfill would record a guess as fact. A snapshot
+records what IS and catches drift from any source — including SQL typed into the
+editor, which is how this project works. **DDL alone is blind**: a schema-only dump
+sees zero cron jobs and zero buckets, where the worst finds of batches 29–31 lived.
+
+⭐⭐ **Three things would have made it lie**, each proven: git rewriting LF to CRLF
+(drift on a clean database, forever), pg_dump version-specific formatting, and a
+positional diff calling one new table "3,987 lines differ".
+
+**The migrations are fine.** Every function, index and table all 143 files claim to
+create was diffed against live; every absence traced to a deliberate decision. The
+one real find became `supabase/DEFERRED-ACTIONS.md` — STEP 4 of the preferences
+revoke, correctly unrun, recorded only in a comment.
+
+Also: 5 duplicate policies dropped (checking `polroles` first — one pair was NOT
+interchangeable), 3 indexes restored, and #34 turned from a silent trap into a
+named failure.
 
 - **#31** — Nothing records which migrations are actually live.
 
