@@ -198,27 +198,33 @@ describe('muted text stays readable', () => {
 
                 // Walk each <Text …> tag so the cap is read from the SAME usage
                 // that shrinks — a spread elsewhere in the file proves nothing.
-                for (const tag of src.matchAll(/<Text([^>]*)>/g)) {
+                for (const tag of src.matchAll(/<(?:Animated\.)?Text([^>]*)>/g)) {
                     const attrs = tag[1];
                     if (!/adjustsFontSizeToFit/.test(attrs)) continue;
-                    const styleRef = attrs.match(/style=\{s?t?\.(\w+)\}/);
-                    if (!styleRef) continue;
-                    const body = styles.get(styleRef[1]);
-                    if (!body) continue;
 
-                    const fsz = body.match(/fontSize:\s*([0-9.]+)/);
-                    const lh = body.match(/lineHeight:\s*([0-9.]+)/);
-                    if (!fsz || !lh) continue;   // no fixed lineHeight == no ceiling
-
-                    const ratio = parseFloat(lh[1]) / parseFloat(fsz[1]);
+                    // EVERY style reference in the tag, not the first one. An
+                    // earlier version matched only `style={s.name}` and was blind
+                    // to `style={[s.a, cond && s.b]}` — four such usages exist on
+                    // these surfaces, and any one of them could have grown a
+                    // fixed lineHeight without this noticing.
+                    const refs = [...attrs.matchAll(/\b(?:st|s|t)\.(\w+)\b/g)].map((m) => m[1]);
                     const declared = Object.keys(CAPS).find((k) => attrs.includes(k));
                     const cap = declared ? CAPS[declared] : Infinity;
 
-                    if (cap > ratio) {
-                        offenders.push(
-                            `${path.basename(file)} › ${styleRef[1]} — line box holds ${ratio.toFixed(2)}x, ` +
-                            `text may reach ${declared ?? 'UNCAPPED'}`
-                        );
+                    for (const ref of new Set(refs)) {
+                        const body = styles.get(ref);
+                        if (!body) continue;
+                        const fsz = body.match(/fontSize:\s*([0-9.]+)/);
+                        const lh = body.match(/lineHeight:\s*([0-9.]+)/);
+                        if (!fsz || !lh) continue;   // no fixed lineHeight == no ceiling
+
+                        const ratio = parseFloat(lh[1]) / parseFloat(fsz[1]);
+                        if (cap > ratio) {
+                            offenders.push(
+                                `${path.basename(file)} › ${ref} — line box holds ${ratio.toFixed(2)}x, ` +
+                                `text may reach ${declared ?? 'UNCAPPED'}`
+                            );
+                        }
                     }
                 }
             }
