@@ -125,11 +125,14 @@ const s = StyleSheet.create({
     color: colors.parchment,
     marginBottom: 2,
   },
+  // 0.5 was 2.44:1 on ink; 0.8 gives 4.59:1. See the note in SocialPulse — this
+  // style is duplicated verbatim across three Lobby sections. This is the copy
+  // that carries the rail lore ("The films that built the medium").
   sectionLoreSub: {
     fontFamily: fonts.bodyItalic,
     fontSize: 10,
     color: colors.fog,
-    opacity: 0.5,
+    opacity: 0.8,
     letterSpacing: 0.3,
   },
   flashListStripWrap: {

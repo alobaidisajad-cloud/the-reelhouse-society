@@ -275,7 +275,12 @@ const s = StyleSheet.create({
   pulseHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, marginBottom: 16 },
   sectionAccentBar: { width: 3, height: 32, borderRadius: 2 },
   sectionTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 2 },
-  sectionLoreSub: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, opacity: 0.5, letterSpacing: 0.3 },
+  // 0.5 measured 2.44:1 on ink — below even the 3:1 floor for LARGE text, and
+  // this is 10pt italic. 0.8 gives 4.59:1 and clears AA. The line explains what
+  // the section is, so it is content rather than decoration; the footer's
+  // closing whisper stays quieter on purpose. Same value in FeaturedCritique
+  // and FilmStripRow, where this style is duplicated verbatim.
+  sectionLoreSub: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, opacity: 0.8, letterSpacing: 0.3 },
   pulseEmpty: {
     marginHorizontal: 20, backgroundColor: 'rgba(18,14,9,0.85)', borderLeftWidth: 3,
     borderLeftColor: 'rgba(184,137,26,0.3)', borderRadius: 6, padding: 32, alignItems: 'center',

@@ -14,7 +14,12 @@ export const colors = {
   danger: '#E74C3C',      // Alert red
   ash: '#2A2118',         // Borders, dividers, subtle backgrounds
   bone: '#C2B492',        // Secondary text (more weathered)
-  fog: '#9E9488',         // Muted text, disabled — WCAG AA compliant (4.62:1 on ink)
+  // 6.68:1 on ink at full opacity. The 4.62 this comment used to claim was the
+  // ratio of the PREVIOUS fog (#82786B, = 4.60); brightening it left the number
+  // behind. It matters because fog is nearly always drawn at partial opacity and
+  // that headroom is what the opacity budget spends: 0.80 -> 4.59 (clears AA),
+  // 0.65 -> 3.38, 0.60 -> 3.04, 0.45 -> 2.18, 0.30 -> 1.58 (invisible outdoors).
+  fog: '#9E9488',         // Muted text, disabled
   silverNitrate: '#D8E0E8', // System/info accent
   rust: '#8B4513',           // Tarnished copper — dossier accents, warm highlights
 
