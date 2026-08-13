@@ -206,7 +206,9 @@ const s = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 16,
     color: colors.fog,
-    opacity: 0.4,
+    // 0.4 measured 1.96:1 — the one mark that tells you FROM and TO are a
+    // range, and it was all but invisible. 0.75 = 4.16:1.
+    opacity: 0.75,
   },
   yearClearBtn: {
     width: 28,

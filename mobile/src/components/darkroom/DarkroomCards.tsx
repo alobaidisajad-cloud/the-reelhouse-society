@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation, useReducedMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useIsFocused } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Bookmark } from 'lucide-react-native';
 
@@ -17,8 +18,21 @@ import PressableScale from '@/src/components/PressableScale';
 //  DARKROOM SAFELIGHT ATMOSPHERICS
 // ══════════════════════════════════════════════════════════════
 export const DarkroomAtmo = React.memo(function DarkroomAtmo() {
+  const isFocused = useIsFocused();
+  const reducedMotion = useReducedMotion();
   const pulse = useSharedValue(0.15);
+  // The safelight stays — it is the soul of this room. It just stops breathing
+  // when nobody is in it. This ran with `[]` deps and cancelled only on
+  // unmount, and a tab screen never unmounts, so a 12-second cycle drove the
+  // UI thread for the whole session from behind a header nobody was looking at.
+  //
+  // Parked at 0.18 rather than 0: the lamp is still on, it simply holds still.
   useEffect(() => {
+    if (!isFocused || reducedMotion) {
+      cancelAnimation(pulse);
+      pulse.value = 0.18;
+      return;
+    }
     // A slow, rhythmic breathing of amber/red darkroom safelight
     pulse.value = withRepeat(
       withSequence(
@@ -28,7 +42,7 @@ export const DarkroomAtmo = React.memo(function DarkroomAtmo() {
     );
     return () => cancelAnimation(pulse);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isFocused, reducedMotion]);
   const style = useAnimatedStyle(() => ({ opacity: pulse.value }));
   return (
     <Animated.View style={[StyleSheet.absoluteFillObject, style, { zIndex: 0 }]} pointerEvents="none">
@@ -69,6 +83,11 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
   const removeFromWatchlist = useFilmStore((s: any) => s.removeFromWatchlist);
   const isAuthenticated = useAuthStore(s => !!s.user);
 
+  // Every poster-less film measured against the live API carried a year, so the
+  // plate can bear it the way a negative's edge marking would.
+  const year = ((item as { release_date?: string; first_air_date?: string }).release_date
+    || (item as { release_date?: string; first_air_date?: string }).first_air_date
+    || '').slice(0, 4);
   const posterPath = isPerson ? item.profile_path : item.poster_path;
   const posterUri = posterPath ? (isPerson ? tmdb.profile(posterPath, 'w185') : tmdb.poster(posterPath, 'w342')) : null;
 
@@ -133,7 +152,20 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
               <View style={s.posterBorderEngrave} pointerEvents="none" />
             </>
           ) : (
-            <Text style={s.posterPlaceholderGlyph}>✦</Text>
+            /* An undeveloped negative. These used to be filtered out of the
+               fetch entirely, so a real film with no poster simply did not
+               exist as far as search was concerned. On a page headed THE
+               NEGATIVES — "undeveloped stock" — a film with no print made yet
+               is the purest example of the idea, so it gets a plate of its own
+               rather than deletion: the mark, then the title and year that a
+               negative would carry on its edge. */
+            <View style={s.undevelopedWrap}>
+              <Text style={s.posterPlaceholderGlyph}>✦</Text>
+              <Text style={s.undevelopedTitle} numberOfLines={3} ellipsizeMode="tail">
+                {(item.title || item.name || 'UNTITLED').toUpperCase()}
+              </Text>
+              {!!year && <Text style={s.undevelopedYear}>{year}</Text>}
+            </View>
           )}
         </View>
 
@@ -276,6 +308,30 @@ const s = StyleSheet.create({
     fontFamily: fonts.display,
     color: colors.fog,
     fontSize: 18,
+    opacity: 0.55,
+    marginBottom: 8,
+  },
+  undevelopedWrap: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  undevelopedTitle: {
+    fontFamily: fonts.sub,
+    fontSize: 9,
+    letterSpacing: 1,
+    lineHeight: 13,
+    color: colors.bone,
+    textAlign: 'center',
+  },
+  undevelopedYear: {
+    fontFamily: fonts.sub,
+    fontSize: 8,
+    letterSpacing: 2,
+    color: colors.sepia,
+    opacity: 0.85,
+    marginTop: 6,
   },
   quickSaveIcon: {
     position: 'absolute',

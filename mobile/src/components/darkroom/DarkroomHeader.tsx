@@ -6,6 +6,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
+import { useIsFocused } from '@react-navigation/native';
 import { useShallow } from 'zustand/react/shallow';
 
 import { colors, fonts, spacing, effects } from '@/src/theme/theme';
@@ -74,16 +75,20 @@ export const DarkroomHeader = React.memo(() => {
   const [localYearTo, setLocalYearTo] = useState(filters.yearTo ? String(filters.yearTo) : '');
   
   // ── Breathing Ember (Scanning) ──
+  const navFocused = useIsFocused();
   const searchEmberOpacity = useSharedValue(0.5);
   useEffect(() => {
-    if (isFocused && inputVal.length > 0 && suggestions.length === 0 && inputVal !== query) {
+    // `isFocused` here is the TEXT INPUT's focus, not the screen's — so this was
+    // tightly gated on typing but would still breathe on a tab you had left
+    // mid-search. navFocused closes that.
+    if (navFocused && isFocused && inputVal.length > 0 && suggestions.length === 0 && inputVal !== query) {
       searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true);
     } else {
       searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
     }
     return () => cancelAnimation(searchEmberOpacity);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFocused, inputVal, query, suggestions.length]);
+  }, [navFocused, isFocused, inputVal, query, suggestions.length]);
 
   // ── Search ghosting ──
   useEffect(() => {
@@ -280,7 +285,15 @@ export const DarkroomHeader = React.memo(() => {
           {isSearching ? `DEVELOPING: "${query.toUpperCase()}"` : (mood ? `MOOD: ${mood.label.toUpperCase()}` : 'THE NEGATIVES')}
         </Text>
         <Text style={s.sectionTitle} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.7}>
-          {isSearching ? `${matchCount} Matches Found` : (mood ? mood.sub : 'Awaiting Development')}
+          {/* "Matches Found" claimed a TOTAL, and `matchCount` is
+              accumulatedFilms.length — what has been LOADED. It read 20, then
+              40, then 60 as you scrolled. No honest total exists here either:
+              the fetch drops results the grid will not show and dedupes the
+              rest, so TMDB's total_results would over-count instead.
+              "Prints Developed" describes what is in front of you, so the
+              number climbing as you scroll is the darkroom working rather
+              than a counter glitching. */}
+          {isSearching ? `${matchCount} ${matchCount === 1 ? 'Print' : 'Prints'} Developed` : (mood ? mood.sub : 'Awaiting Development')}
         </Text>
       </View>
     </View>
@@ -291,7 +304,10 @@ DarkroomHeader.displayName = 'DarkroomHeader';
 
 const s = StyleSheet.create({
   headerContainer: {
-    marginBottom: spacing.xl,
+    // The gaps between every block on this page totalled ~224pt, which pushed
+    // the first poster row to 82% down the screen. This one and the four below
+    // are the dead space; the hero above keeps its room deliberately.
+    marginBottom: 20,
     zIndex: 100,
   },
   chip: {
@@ -311,7 +327,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: 14,
   },
   filterToggle: {
     flexDirection: 'row',
@@ -358,11 +374,11 @@ const s = StyleSheet.create({
   },
   sectionDividerLine: {
     height: 1,
-    marginVertical: spacing.md,
+    marginVertical: 12,
     marginHorizontal: -spacing.md,
   },
   sectionHeaderWrap: {
-    marginBottom: spacing.lg,
+    marginBottom: 16,
     alignItems: 'center',
     marginTop: spacing.sm,
   },

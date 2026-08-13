@@ -3,8 +3,9 @@
 // ============================================================
 import React from 'react';
 import { View, Text, StyleSheet , ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, fonts, spacing, effects } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { MOODS, MOOD_ICONS } from './constants';
 
@@ -43,14 +44,28 @@ export const DarkroomMoodBar = React.memo(function DarkroomMoodBar({
   return (
     <View style={s.moodSection}>
       <Text style={s.sectionEyebrow}>✦ DEVELOP BY MOOD ✦</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={s.moodList}
-      >
-        {MOODS.map(item => renderItem({ item }))}
-        <View style={{ width: 16 }} />
-      </ScrollView>
+      {/* The row runs off the right edge, and a card sliced mid-word reads as
+          broken rather than scrollable. This is a darkroom: the safelight falls
+          off toward the walls, so the row now dissolves into the dark instead
+          of being cut by it — the same treatment the Lobby ticker uses. Right
+          edge only, since a symmetric fade would dim the first card at rest for
+          no reason, and pointerEvents none so it never eats a swipe. */}
+      <View style={s.moodScrollWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.moodList}
+        >
+          {MOODS.map(item => renderItem({ item }))}
+          <View style={{ width: 16 }} />
+        </ScrollView>
+        <LinearGradient
+          colors={['transparent', colors.ink]}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={s.moodEdgeFade}
+          pointerEvents="none"
+        />
+      </View>
     </View>
   );
 });
@@ -60,7 +75,17 @@ DarkroomMoodBar.displayName = 'DarkroomMoodBar';
 // ── Styles — copied PIXEL-PERFECT from DarkroomHeader.tsx ──
 const s = StyleSheet.create({
   moodSection: {
-    marginBottom: spacing.xl,
+    marginBottom: 20,
+  },
+  moodScrollWrap: {
+    position: 'relative',
+  },
+  moodEdgeFade: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 28,
   },
   sectionEyebrow: {
     fontFamily: fonts.sub,
@@ -103,7 +128,9 @@ const s = StyleSheet.create({
     fontSize: 10,
     color: colors.fog,
     marginTop: 4,
-    opacity: 0.6,
+    // 0.6 measured 3.04:1 — this line is what tells you what a mood MEANS
+    // ("Heavy, profound stories"), so it earns AA. 0.8 = 4.59:1.
+    opacity: 0.8,
   },
   moodSubActive: {
     opacity: 0.9,

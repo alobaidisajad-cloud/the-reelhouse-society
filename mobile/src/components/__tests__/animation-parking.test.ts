@@ -17,6 +17,20 @@
  *   • useFocusEffect() — same, effect-shaped (ProjectorBeam)
  *   • AppState         — a global overlay with no screen of its own (FilmGrainOverlay)
  *   • an isActive / paused / isVisible prop — a child whose parent knows better
+ *
+ * ── KNOWN BLIND SPOT — read before trusting a pass ──
+ * This scan is FILE-level. It can prove a file contains no pause mechanism at
+ * all; it cannot prove that each individual loop uses the one it finds. A file
+ * that imports useFocusEffect for something unrelated reads as clean even if
+ * its animation is ungated.
+ *
+ * That is not hypothetical. app/(tabs)/darkroom.tsx passed this test for its
+ * entire life while its skeleton pulse ran with `[]` deps and cancelled only on
+ * unmount — which a tab screen never does — because the file happened to import
+ * useFocusEffect to reset a scroll bridge. The leak sat inside a green test.
+ *
+ * So: a pass here means "nothing is obviously unparked", not "every loop is
+ * parked". When you touch a file with an infinite animation, read the effect.
  */
 import fs from 'fs';
 import path from 'path';
@@ -45,8 +59,6 @@ const KNOWN_UNPARKED: Record<string, string> = {
     // ── Pending their own page's polish pass ──────────────────────────────
     // Each is a genuine session-length loop. They are scheduled with the page
     // they live on; delete the entry when that page is polished.
-    'src/components/darkroom/DarkroomCards.tsx': 'pending Darkroom polish',
-    'src/components/darkroom/DarkroomHeader.tsx': 'pending Darkroom polish',
     'src/components/dispatch/NightlyTransmission.tsx': 'pending Dispatch polish',
     'src/components/log/LogSearchEngine.tsx': 'pending Log-modal polish',
     'src/components/person/PersonOrnaments.tsx': 'pending Person polish',
@@ -123,5 +135,18 @@ describe('infinite animations park when nobody is watching', () => {
         );
 
         expect(unparked).toEqual([]);
+    });
+
+    // Named individually rather than by file, because the file-level scan above
+    // is exactly what missed the Darkroom skeleton for so long. Each of these
+    // is a loop that was verified by reading the effect, not by grepping.
+    it('the Darkroom loops are gated on more than mount', () => {
+        const screen = fs.readFileSync(path.join(ROOT, 'app/(tabs)/darkroom.tsx'), 'utf8');
+        // The skeleton pulse must depend on BOTH focus and whether a skeleton
+        // is actually on screen — focus alone still burns the whole visit.
+        expect(screen).toMatch(/\}, \[isFocused, showSkeleton\]\)/);
+
+        const atmo = fs.readFileSync(path.join(ROOT, 'src/components/darkroom/DarkroomCards.tsx'), 'utf8');
+        expect(atmo).toMatch(/\}, \[isFocused, reducedMotion\]\)/);
     });
 });

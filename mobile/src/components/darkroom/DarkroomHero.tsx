@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Search, X } from 'lucide-react-native';
 
 import { colors, fonts, spacing, effects } from '@/src/theme/theme';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { DarkroomAtmo, DarkroomSuggestionRow } from './DarkroomCards';
 import type { DiscoverFilm } from '@/src/stores/discover';
@@ -57,11 +58,9 @@ export const DarkroomHero = React.memo(function DarkroomHero({
           );
         })()}
 
-        <View style={s.estRow}>
-          <LinearGradient colors={['transparent', 'rgba(184,137,26,0.35)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.estRule} />
-          <Text style={s.heroEst} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>EST. 1924</Text>
-          <LinearGradient colors={['rgba(184,137,26,0.35)', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.estRule} />
-        </View>
+        {/* The "EST. 1924" rule lived here. It is lore that already appears in
+            eleven other files, it cost a full row plus two gradients, and it
+            measured 3.38:1. The title and the safelight carry this room. */}
 
         <View style={s.searchWrap}>
           <AnimatedSearchIcon size={16} animatedProps={animatedSearchProps} style={[animatedSearchStyle, s.searchIcon]} />
@@ -70,7 +69,16 @@ export const DarkroomHero = React.memo(function DarkroomHero({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             style={[s.searchInput, (isFocused || query.length > 0) && s.searchInputActive]}
-            placeholder="Film title, director, actor..."
+            {...scaledTextProps}
+            /* "Film title, director, actor..." needed 249pt in a 259pt slot — it
+               fit at 1.00x with 10pt to spare and truncated at 1.04x, so ANY
+               Dynamic Type setting cut it (as it does in production). A
+               TextInput placeholder cannot use adjustsFontSizeToFit, so the
+               string itself had to give. "Film" is redundant inside a film app,
+               under a heading that reads THE NEGATIVES; this keeps every piece
+               of information and buys headroom to 1.36x — just past the 1.35
+               cap applied above, so the two agree. */
+            placeholder="Title, director, actor…"
             placeholderTextColor={colors.fog}
             selectionColor={colors.selection}
             value={inputVal}
@@ -105,9 +113,15 @@ DarkroomHero.displayName = 'DarkroomHero';
 // ── Styles — copied PIXEL-PERFECT from DarkroomHeader.tsx ──
 const s = StyleSheet.create({
   heroContainer: {
-    paddingVertical: spacing.xxl,
+    // Was paddingVertical 48 + marginBottom 32 — 128pt of frame around one
+    // title and a search box, which pushed the first poster to 82% down the
+    // screen. Trimmed, but NOT flattened: the safelight behind this block is
+    // the signature of the page and needs room to fall off. It gives up 8pt at
+    // the top; the rest of the reclaimed space comes from dead gaps below.
+    paddingTop: 40,
+    paddingBottom: 32,
     marginHorizontal: 0,
-    marginBottom: spacing.xl,
+    marginBottom: 20,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(184,137,26,0.2)',
@@ -123,31 +137,19 @@ const s = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 34,
     color: colors.silverScreen,
-    marginBottom: 8,
+    // 8 -> 14: the Est. rule used to sit between this and the search field and
+    // carried its own 14pt margin. Without it the title needs that breath.
+    marginBottom: 14,
     textAlign: 'center',
-    lineHeight: 38,
+    // No fixed lineHeight. It fought adjustsFontSizeToFit — the line box stayed
+    // 38 while the glyphs shrank, so "Late Night Projection" (which DOES shrink,
+    // at minimumFontScale 0.6) sat off-centre in its own row.
     letterSpacing: 2,
     ...effects.textGlowSepia,
     textShadowRadius: 20,
     textShadowColor: 'rgba(180,45,45, 0.6)',
   },
-  estRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 14,
-  },
-  estRule: {
-    flex: 1,
-    height: 1,
-  },
-  heroEst: {
-    fontFamily: fonts.sub,
-    fontSize: 7,
-    letterSpacing: 4,
-    color: colors.fog,
-    opacity: 0.65,
-  },
+  // `estRow`, `estRule` and `heroEst` removed with the "EST. 1924" line.
   searchWrap: {
     width: '100%',
     position: 'relative',

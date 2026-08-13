@@ -4,7 +4,7 @@ import Animated, { FadeInDown, useSharedValue, withTiming, withRepeat, Easing, c
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useFocusEffect } from 'expo-router';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop, useIsFocused } from '@react-navigation/native';
 import { storage } from '@/src/stores/mmkv-storage';
 
 import { colors, fonts, spacing, effects } from '@/src/theme/theme';
@@ -53,17 +53,18 @@ export default function DarkRoomScreen() {
     }))
   );
 
+  const isFocused = useIsFocused();
+
   const localScrollY = useSharedValue(0);
   const scrollHeight = useSharedValue(0);
   const viewHeight = useSharedValue(0);
   const isScrolling = useSharedValue(false);
   const skeletonOpacity = useSharedValue(0.4);
 
-  useEffect(() => {
-    skeletonOpacity.value = withRepeat(withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }), -1, true);
-    return () => cancelAnimation(skeletonOpacity);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // The skeleton pulse is started further down, once `showSkeleton` is known.
+  // It used to start here with `[]` deps and cancel only on unmount — and a tab
+  // screen never unmounts, so it drove the UI thread for the whole session, on
+  // every tab, long after the posters had arrived.
 
   // Reset scroll bridge so NavBar returns to transparent on this tab
   useEffect(() => { globalScrollY.value = 0; }, []);
@@ -95,6 +96,22 @@ export default function DarkRoomScreen() {
     // Pure alphanumeric sanitation & truncation to guarantee JNI/C++ safety
     return rawKey.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 128);
   }, [isSearching, query, mood, filters]);
+
+  // Hoisted out of renderEmpty so the pulse below can be gated on it. Parking
+  // this on focus alone would not have been enough — it would still have run
+  // the entire time you sat on the Darkroom, skeleton or no skeleton.
+  const showSkeleton = loading || (cacheKey !== lastFetchedKey && network.isConnected !== false);
+
+  useEffect(() => {
+    if (!isFocused || !showSkeleton) {
+      cancelAnimation(skeletonOpacity);
+      skeletonOpacity.value = 0.4;
+      return;
+    }
+    skeletonOpacity.value = withRepeat(withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }), -1, true);
+    return () => cancelAnimation(skeletonOpacity);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocused, showSkeleton]);
 
   // Synchronous cache injection to completely eliminate the 3-stage UI flash
   const displayData = useMemo(() => {
@@ -193,7 +210,24 @@ export default function DarkRoomScreen() {
             return; // Gracefully abort this cycle, let the rollback re-trigger cache
           }
 
-          const withPostersRaw = results.filter((f: DiscoverFilm) => f.poster_path || f.profile_path);
+          // People need a face; films need a name.
+          //
+          // This used to require `poster_path || profile_path`, which silently
+          // deleted every film TMDB has no poster for — so searching a real but
+          // unillustrated title told you it did not exist. On THIS page that is
+          // backwards: the section is called THE NEGATIVES, "undeveloped
+          // stock", and a film with no print made yet is the purest example of
+          // it. Those now render as unexposed plates.
+          //
+          // Measured live against the proxy before changing it (five queries
+          // through search/multi): poster-less films are 0-2 per ~19 results,
+          // and 7 of 7 carried BOTH a title and a year — real catalogue
+          // entries, not database stubs. So the grid gains a rare blank plate,
+          // not a patchy wall. A person with no photograph is still just a
+          // gap, so they keep their filter.
+          const withPostersRaw = results.filter((f: DiscoverFilm) =>
+            f.media_type === 'person' ? !!f.profile_path : !!(f.poster_path || f.title || f.name)
+          );
 
           const getFilmKey = (f: DiscoverFilm) => `${f.media_type || 'movie'}-${f.id}`;
 
@@ -255,9 +289,8 @@ export default function DarkRoomScreen() {
   }, [loading, page]);
 
   const renderEmpty = useMemo(() => {
-    const isStale = cacheKey !== lastFetchedKey;
-    const showSkeleton = loading || (isStale && network.isConnected !== false);
-
+    // `showSkeleton` is hoisted to component scope so the pulse animation can
+    // be gated on the same condition that renders the skeleton.
     if (showSkeleton) {
       return (
         <View style={s.skeletonGrid}>
@@ -310,7 +343,7 @@ export default function DarkRoomScreen() {
         </PressableScale>
       </Animated.View>
     );
-  }, [loading, network.isConnected, isSearching, clearAllFilters, clearAllSearch, setPage, cacheKey, lastFetchedKey, skeletonOpacity]);
+  }, [showSkeleton, network.isConnected, isSearching, clearAllFilters, clearAllSearch, setPage, skeletonOpacity]);
 
   const renderFilmItem = useCallback(({ item }: { item: DiscoverFilm }) => (
     <View style={s.filmItemWrap}>
@@ -375,7 +408,9 @@ const s = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 3,
     color: colors.sepia,
-    opacity: 0.6,
+    // 0.6 was 2.90:1 — under the large-text floor. This is the only thing that
+    // tells you more prints are on the way. 0.85 = 4.78:1.
+    opacity: 0.85,
   },
   emptyWrap: {
     alignItems: 'center',
@@ -399,7 +434,9 @@ const s = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
     lineHeight: 18,
-    opacity: 0.5,
+    // 0.5 was 3.12:1 on 12pt italic — this is the line that tells a member what
+    // to do with an empty room. 0.7 = 5.14:1.
+    opacity: 0.7,
     fontStyle: 'italic',
   },
   emptyBtn: {

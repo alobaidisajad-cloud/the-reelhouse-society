@@ -33,8 +33,10 @@ const SURFACE = [
     'src/components/home',
     'src/components/reels',
     'src/components/feed',
+    'src/components/darkroom',
     'app/(tabs)/index.tsx',
     'app/(tabs)/reels.tsx',
+    'app/(tabs)/darkroom.tsx',
 ];
 
 /** Text allowed under the floor, with why. */
@@ -43,6 +45,7 @@ const EXCEPTIONS: Record<string, string> = {
     posterEmptyMark: 'the ✦ drawn inside an empty poster frame — an ornament, not text',
     posterPlaceholder: 'the ✦ standing in for a missing rail poster — an ornament, not text',
     tickerDot: 'the ✦ separating titles on the wire ticker — an ornament, not text',
+    posterPlaceholderGlyph: 'the ✦ above an undeveloped plate — an ornament over the title, and it sits on ash, not ink',
 };
 
 const INK: number[] = [0x0a, 0x09, 0x06];
@@ -109,6 +112,14 @@ function scan(): Row[] {
             for (const { name, body } of styleBlocks(src)) {
                 if (/backgroundColor:/.test(body)) continue;      // see header note
                 const cm = body.match(/(?<!background)(?<!border)(?<!shadow)\bcolor:\s*colors\.(\w+)/);
+                // Ink ON ink would be invisible, so a style that paints text in
+                // `ink` is by definition sitting on a fill — a badge, a stamp, a
+                // pill — that this scan cannot resolve. Measuring it against ink
+                // produced a 1.00:1 "failure" for the AUTEUR badge (really
+                // 8.90:1), the LOGGED tick and the filter-count badge. The
+                // colour itself is the tell, so it is a rule rather than three
+                // hand-written exceptions.
+                if (cm && cm[1] === 'ink') continue;
                 const sm = body.match(/fontSize:\s*([0-9.]+)/);
                 if (!cm || !sm || !PALETTE[cm[1]]) continue;
                 const om = body.match(/opacity:\s*([0-9.]+)/);
@@ -151,6 +162,13 @@ describe('muted text stays readable', () => {
         for (const f of ['SocialPulse.tsx', 'FeaturedCritique.tsx', 'FilmStripRow.tsx']) {
             expect(ratioOf(f, 'sectionLoreSub')).toBeGreaterThanOrEqual(4.5);
         }
+    });
+
+    it('the Darkroom text that was raised stays raised', () => {
+        expect(ratioOf('DarkroomMoodBar.tsx', 'moodSub')).toBeGreaterThanOrEqual(4.5);
+        expect(ratioOf('DarkroomFilterPanel.tsx', 'yearRangeDash')).toBeGreaterThanOrEqual(4.0);
+        expect(ratioOf('darkroom.tsx', 'paginationRetrieving')).toBeGreaterThanOrEqual(4.5);
+        expect(ratioOf('darkroom.tsx', 'emptySub')).toBeGreaterThanOrEqual(4.5);
     });
 
     it('the Reel text that was raised stays raised', () => {
