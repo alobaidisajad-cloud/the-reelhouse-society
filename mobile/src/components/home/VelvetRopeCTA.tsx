@@ -5,8 +5,9 @@ import { memo, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming,
-  Easing, interpolate, cancelAnimation
+  Easing, interpolate, cancelAnimation, useReducedMotion
 } from 'react-native-reanimated';
+import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
@@ -15,15 +16,27 @@ import PressableScale from '@/src/components/PressableScale';
 
  
 export const ShimmerRule = memo(() => {
+    const isFocused = useIsFocused();
+    const reducedMotion = useReducedMotion();
     const shimmer = useSharedValue(-1);
+    // ShimmerRule is not only the logged-out CTA's underline — FeaturedCritique
+    // renders it on the authenticated Lobby too, so this `-1` loop was running
+    // forever on every other tab for the rest of the session. Parked at -1, the
+    // rule keeps its faint base line and simply loses the travelling highlight.
     useEffect(() => {
+       if (!isFocused || reducedMotion) {
+         cancelAnimation(shimmer);
+         shimmer.value = -1;
+         return;
+       }
+       shimmer.value = -1;
        shimmer.value = withRepeat(
          withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
          -1, false
        );
        return () => cancelAnimation(shimmer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [isFocused, reducedMotion]);
     const shimmerStyle = useAnimatedStyle(() => ({
        transform: [{ translateX: interpolate(shimmer.value, [-1, 1], [-100, 300]) }]
     }));
@@ -53,15 +66,26 @@ export const VelvetRopeCTA = memo(() => {
 
  
 export const BrassSheen = memo(() => {
+    const isFocused = useIsFocused();
+    const reducedMotion = useReducedMotion();
     const sheen = useSharedValue(-2);
+    // Same parking as ShimmerRule. The sheen is a decorative highlight sweeping
+    // across the brass plate; parked off-frame at -2 the plate reads exactly as
+    // it does between sweeps, so nothing is lost but the motion.
     useEffect(() => {
+       if (!isFocused || reducedMotion) {
+         cancelAnimation(sheen);
+         sheen.value = -2;
+         return;
+       }
+       sheen.value = -2;
        sheen.value = withRepeat(
          withTiming(2, { duration: 4000, easing: Easing.inOut(Easing.quad) }),
          -1, false
        );
        return () => cancelAnimation(sheen);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [isFocused, reducedMotion]);
     const sheenStyle = useAnimatedStyle(() => ({
        transform: [{ translateX: interpolate(sheen.value, [-2, 2], [-200, 300]) }]
     }));
