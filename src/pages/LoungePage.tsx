@@ -277,44 +277,10 @@ function PublicLoungeCard({ lounge }: { lounge: any }) {
     )
 }
 
-// ── Join by Invite Code ──
-function InviteCodeInput() {
-    const [code, setCode] = useState('')
-    const [joining, setJoining] = useState(false)
-    const joinByInviteCode = useLoungeStore(s => s.joinByInviteCode)
-    const navigate = useNavigate()
-
-    const handleJoin = async () => {
-        if (!code.trim()) return
-        setJoining(true)
-        const loungeId = await joinByInviteCode(code.trim())
-        if (loungeId) {
-            reelToast.success('You took a seat.')
-            navigate(`/lounge/${loungeId}`)
-        } else {
-            reelToast.error('Invalid invite code.')
-        }
-        setJoining(false)
-        setCode('')
-    }
-
-    return (
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <input
-                className="lounge-create-input"
-                placeholder="INVITE CODE"
-                value={code}
-                onChange={e => setCode(e.target.value.toUpperCase())}
-                maxLength={8}
-                style={{ flex: '1 1 120px', minWidth: 100, maxWidth: 200, textAlign: 'center', letterSpacing: '0.3em', fontFamily: 'var(--font-ui)', fontSize: '0.65rem' }}
-                onKeyDown={e => e.key === 'Enter' && handleJoin()}
-            />
-            <button className="lounge-join-btn" onClick={handleJoin} disabled={joining || !code.trim()}>
-                {joining ? '...' : 'JOIN'}
-            </button>
-        </div>
-    )
-}
+// The "INVITE CODE" box that used to sit here has been removed along with the
+// feature. The store's joinByInviteCode is a no-op returning null, so the box
+// could only ever answer "Invalid invite code." — a door painted on a wall.
+// Lounges are joined openly or by the host's approval.
 
 // ════════════════════════════════════════════════════════════
 // MAIN PAGE
@@ -412,7 +378,6 @@ export default function LoungePage() {
                     >
                         <Plus size={14} /> OPEN A LOUNGE
                     </button>
-                    <InviteCodeInput />
                 </div>
 
                 {/* ── YOUR SCREENING ROOMS (Joined) ── */}
