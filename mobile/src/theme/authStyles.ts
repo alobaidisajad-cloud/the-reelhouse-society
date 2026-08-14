@@ -34,6 +34,10 @@ export const loginStyles = StyleSheet.create({
     right: 0,
     height: 20,
     zIndex: 99,   // under the header (100), over the scrolling content
+    // Nothing beneath this one is elevated today, so it works as-is — but the
+    // two sibling fades were both invisible on Android for exactly this reason,
+    // and a card gaining a shadow later should not silently delete an effect.
+    elevation: 99,
   },
   scroll: {
     flexGrow: 1,

@@ -176,6 +176,12 @@ export const s = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 28,
+    // Android paints by ELEVATION, not by JSX order. joinedCard sits at
+    // elevation 8, so without this the cards paint straight over the gradient
+    // and the fade simply does not exist on Android — invisible on exactly the
+    // platform nobody was checking. zIndex keeps iOS agreeing.
+    elevation: 12,
+    zIndex: 12,
   },
 
   // ── Empty directory ──

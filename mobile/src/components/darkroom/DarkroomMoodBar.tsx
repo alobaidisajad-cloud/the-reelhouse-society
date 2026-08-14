@@ -86,6 +86,13 @@ const s = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 28,
+    // moodCard spreads effects.shadowSurface, which carries elevation: 10.
+    // Android paints by elevation rather than JSX order, so without this the
+    // cards covered the gradient entirely and the fade did not exist on
+    // Android — shipped that way, and found only by auditing the Lounge fade
+    // that repeated the same mistake.
+    elevation: 12,
+    zIndex: 12,
   },
   sectionEyebrow: {
     fontFamily: fonts.sub,
