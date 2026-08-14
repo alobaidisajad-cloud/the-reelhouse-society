@@ -22,7 +22,6 @@ import { useNotificationStore } from '@/src/stores/notificationStore';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
-import QuickActionsFAB from '@/src/components/QuickActionsFAB';
 import Buster from '@/src/components/Buster';
 import PressableScale from '@/src/components/PressableScale';
 import { globalScrollY } from '@/src/lib/scrollBridge';
@@ -40,6 +39,7 @@ import { FilmStripRow } from '@/src/components/home/FilmStripRow';
 import { FeaturedCritique } from '@/src/components/home/FeaturedCritique';
 import { SocialPulseSection } from '@/src/components/home/SocialPulse';
 import { VelvetRopeCTA, BrassSheen } from '@/src/components/home/VelvetRopeCTA';
+import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
 
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
@@ -177,9 +177,10 @@ export default function LobbyScreen() {
     };
   });
 
-  const NAV_HEIGHT = 44 + 12;
-  // Mirror the TopNavBar's Math.max(insets.top, 20) floor — see reels.tsx.
-  const topPad = Math.max(insets.top, 20) + NAV_HEIGHT + 12;
+  const NAV_HEIGHT = NAV_ROW_MIN_H + 12;
+  // The zero-inset floor comes FROM the bar now rather than being copied — see
+  // navMetrics.ts and the longer note in reels.tsx.
+  const topPad = navTopPadding(insets.top) + NAV_HEIGHT + 12;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -421,11 +422,6 @@ export default function LobbyScreen() {
           <View style={s.lobbyFooterRule} />
         </View>
       </CinematicScrollView>
-
-      {/* Passing scrollY lets the button step aside while you read downward. It
-          floated over an AUTEUR badge and the ESSENTIAL ARCHIVES heading before.
-          Safe to hide because the top bar carries its own Add Log button. */}
-      <QuickActionsFAB scrollY={scrollY} />
     </View>
     </FrozenTab>
   );

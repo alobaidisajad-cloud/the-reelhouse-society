@@ -35,6 +35,7 @@ import { NightlyTransmission } from '@/src/components/dispatch/NightlyTransmissi
 import { st } from '@/src/components/dispatch/styles';
 import { DispatchFilm, WireStory } from '@/src/components/dispatch/types';
 import { volumeNumber } from '@/src/components/dispatch/utils';
+import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
 
 export default function DispatchScreen() {
   const insets = useSafeAreaInsets();
@@ -77,10 +78,10 @@ export default function DispatchScreen() {
   const fetchDossiers = useDispatchStore(s => s.fetchDossiers);
   const router = useRouter();
 
-  const NAV_HEIGHT = 44 + 12;
-  // Mirror the TopNavBar's Math.max(insets.top, 20) floor — the formulas must
-  // never disagree (see reels.tsx) or zero-inset devices tuck under the blur.
-  const topPad = Math.max(insets.top, 20) + NAV_HEIGHT + 8;
+  const NAV_HEIGHT = NAV_ROW_MIN_H + 12;
+  // The zero-inset floor comes FROM the bar now rather than being copied — see
+  // navMetrics.ts and the longer note in reels.tsx.
+  const topPad = navTopPadding(insets.top) + NAV_HEIGHT + 8;
 
   const canWrite = isAuteurPlusTier(user);
 

@@ -19,7 +19,6 @@ import { useSocialStore } from '@/src/stores/followStore';
 import { colors, fonts, effects } from '@/src/theme/theme';
 
 import { SectionDivider } from '@/src/components/Decorative';
-import QuickActionsFAB from '@/src/components/QuickActionsFAB';
 import PressableScale from '@/src/components/PressableScale';
 import Buster from '@/src/components/Buster';
 import FrozenTab from '@/src/components/layout/FrozenTab';
@@ -40,6 +39,7 @@ import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/u
 import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
 import { ReelsStackList } from '@/src/components/reels/ReelsStackList';
 import { MemberRegistry } from '@/src/components/reels/MemberRegistry';
+import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
 
 // Removed LayoutAnimation — conflicts with Reanimated layout transitions.
 // Reanimated's entering/exiting animations handle all transitions in this screen.
@@ -111,11 +111,14 @@ export default function ReelScreen() {
   const resolvedRole = resolveTier(user);
   const router = useRouter();
 
-  const NAV_HEIGHT = 44 + 12;
-  // Mirror the TopNavBar's own Math.max(insets.top, 20) floor — on zero-inset
-  // devices the nav is 74px tall while a bare insets.top offset would be 64px,
-  // tucking the masthead under the blur. The two formulas must never disagree.
-  const topPad = Math.max(insets.top, 20) + NAV_HEIGHT + 8;
+  // NAV_ROW_MIN_H plus the bar's bottom padding. The 12 is 2pt more than the
+  // bar actually pads; it predates this and is left alone on purpose, since
+  // trimming it would shift three screens for no gain.
+  const NAV_HEIGHT = NAV_ROW_MIN_H + 12;
+  // The zero-inset floor now comes FROM the bar instead of being copied here.
+  // It exists because on a zero-inset device the nav is 74px tall while a bare
+  // insets.top offset would be 64px, tucking the masthead under the blur.
+  const topPad = navTopPadding(insets.top) + NAV_HEIGHT + 8;
 
   useEffect(() => { globalScrollY.value = 0; }, []);
 
@@ -489,12 +492,6 @@ export default function ReelScreen() {
           extraData={stacksExtraData}
         />
       </Animated.View>
-
-      {/* Steps aside while you read downward, as it does on the Lobby. The
-          active list's own offset is passed rather than the global bridge:
-          both tabs stay mounted, so the bridge carries whichever tab last
-          scrolled — including the Lobby's. */}
-      <QuickActionsFAB scrollY={section === 'logs' ? overallLogsScrollY : stacksScrollY} />
     </View>
     </FrozenTab>
     </SectionErrorBoundary>

@@ -1,7 +1,7 @@
 import React, { useCallback, memo } from 'react';
 import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Search, Plus, Bell, MessageSquareText, KeyRound } from 'lucide-react-native';
+import { Search, Bell, MessageSquareText, KeyRound } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, withSpring, useSharedValue, useAnimatedProps } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Href } from 'expo-router';
@@ -13,6 +13,14 @@ import { globalScrollY } from '@/src/lib/scrollBridge';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { NotificationBadge } from '@/src/components/ui/NotificationBadge';
 import { isArchivistPlusTier } from '@/src/utils/tier';
+import { ConciergeButton } from '@/src/components/layout/ConciergeButton';
+import {
+  NAV_H_PADDING,
+  NAV_ROW_MIN_H,
+  NAV_BTN_SIZE,
+  NAV_BOTTOM_PADDING,
+  navTopPadding,
+} from '@/src/components/layout/navMetrics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -69,7 +77,7 @@ const NavIconButton = memo(function NavIconButton({
 
 // ════════════════════════════════════════════════════════════════
 //  TOP NAV BAR — The Society's Crown
-//  LEFT:   + Log  |  Lounge (Archivist/Auteur only)
+//  LEFT:   Concierge ＋ (brass)  |  Lounge / brass key
 //  CENTER: MasterLogo
 //  RIGHT:  Search  |  Notifications Bell
 // ════════════════════════════════════════════════════════════════
@@ -104,7 +112,8 @@ export const TopNavBar = memo(function TopNavBar() {
   const hasLoungeAccess = useAuthStore(s => isArchivistPlusTier(s.user));
 
   // ── Zero-Cost Memoized Routing ──
-  const onLogPress = useCallback(() => router.navigate('/log-modal' as Href), [router]);
+  // No onLogPress here any more — logging is one of the Concierge's two doors,
+  // and the button owns its own routing.
   const onLoungePress = useCallback(() => router.navigate('/lounge' as Href), [router]);
   const onSearchPress = useCallback(() => router.navigate('/search-modal' as Href), [router]);
   const onNotifPress = useCallback(() => router.navigate('/notifications-modal' as Href), [router]);
@@ -112,14 +121,12 @@ export const TopNavBar = memo(function TopNavBar() {
   const navInner = (
     <>
         <View style={styles.navContent}>
-          {/* ── LEFT CLUSTER: Log + Lounge ── */}
+          {/* ── LEFT CLUSTER: Concierge + Lounge ── */}
           <View style={styles.sideCluster}>
-            <NavIconButton
-              icon={Plus}
-              onPress={onLogPress}
-              accent
-              accessibilityLabel="Add Log"
-            />
+            {/* The brass disc. Solid where every other button is outlined, so
+                the one thing that MAKES something reads apart from the four
+                that navigate — including the brass key beside it. */}
+            <ConciergeButton />
             {hasLoungeAccess ? (
               <NavIconButton
                 icon={MessageSquareText}
@@ -180,7 +187,7 @@ export const TopNavBar = memo(function TopNavBar() {
     </>
   );
 
-  const shellStyle = [styles.blur, { paddingTop: Math.max(insets.top, 20) }, animatedBlurStyle];
+  const shellStyle = [styles.blur, { paddingTop: navTopPadding(insets.top) }, animatedBlurStyle];
 
   return (
     <View style={styles.container}>
@@ -208,15 +215,18 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 100,
   },
+  // Built from navMetrics, not from literals. The Concierge card anchors itself
+  // by computing where this button lands, so a number typed twice is a menu
+  // hanging off its own button.
   blur: {
-    paddingBottom: 10,
-    paddingHorizontal: 16,
+    paddingBottom: NAV_BOTTOM_PADDING,
+    paddingHorizontal: NAV_H_PADDING,
   },
   navContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 44,
+    minHeight: NAV_ROW_MIN_H,
   },
 
   // ── Logo (absolute-centered so side clusters don't push it) ──
@@ -238,9 +248,9 @@ const styles = StyleSheet.create({
 
   // ── Icon buttons ──
   iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: NAV_BTN_SIZE,
+    height: NAV_BTN_SIZE,
+    borderRadius: NAV_BTN_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(11, 10, 8, 0.45)',

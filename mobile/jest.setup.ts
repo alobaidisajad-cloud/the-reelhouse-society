@@ -289,7 +289,19 @@ jest.mock('react-native-reanimated', () => {
     withSequence: jest.fn((...args: any[]) => args[0]),
     withRepeat: jest.fn((v: any) => v),
     withDelay: jest.fn((_d: any, v: any) => v),
-    Easing: { inOut: jest.fn(() => jest.fn()), ease: 'ease', linear: 'linear', bezier: jest.fn() },
+    // `in`, `out` and the curve names were absent, so any component reaching for
+    // the ordinary `Easing.out(Easing.quad)` threw the moment a test rendered
+    // it. Purely additive — nothing can depend on these being missing.
+    Easing: {
+      inOut: jest.fn(() => jest.fn()),
+      in: jest.fn(() => jest.fn()),
+      out: jest.fn(() => jest.fn()),
+      quad: 'quad',
+      cubic: 'cubic',
+      ease: 'ease',
+      linear: 'linear',
+      bezier: jest.fn(),
+    },
     FadeIn: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
     FadeOut: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
     FadeInUp: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
