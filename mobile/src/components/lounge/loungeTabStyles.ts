@@ -182,6 +182,9 @@ export const s = StyleSheet.create({
     // platform nobody was checking. zIndex keeps iOS agreeing.
     elevation: 12,
     zIndex: 12,
+    // Elevation also DRAWS a shadow on Android. This strip wants the z-order,
+    // not the mark, so the shadow is cleared explicitly.
+    shadowColor: 'transparent',
   },
 
   // ── Empty directory ──

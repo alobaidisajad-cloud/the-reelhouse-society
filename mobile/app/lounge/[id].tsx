@@ -774,8 +774,8 @@ const s = StyleSheet.create({
   authorAvatarLetter: { fontFamily: fonts.display, color: colors.fog, fontSize: 11 },
   authorName: { fontFamily: fonts.sub, fontSize: 12, color: colors.bone, letterSpacing: 0.3, flexShrink: 1 },
   authorNameSelf: { color: colors.sepia },
-  authorTime: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, // 0.6 was 3.04:1 — every timestamp in every conversation. 0.8 = 4.59:1.
-    opacity: 0.8, includeFontPadding: false },
+  // 0.6 was 3.04:1 — every timestamp in every conversation. 0.8 = 4.59:1.
+  authorTime: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, opacity: 0.8, includeFontPadding: false },
 
   contentCol: { paddingLeft: 32 },
   contentColSelf: { paddingLeft: 13, marginLeft: 11, borderLeftWidth: 2, borderLeftColor: 'rgba(184,137,26,0.45)' },

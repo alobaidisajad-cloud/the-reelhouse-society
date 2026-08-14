@@ -230,8 +230,8 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment },
   subtitle: { fontFamily: fonts.serif, fontSize: 13, color: colors.fog, marginTop: 4, lineHeight: 18 },
-  label: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, // 0.8 gave 4.35:1. 0.85 = 4.78:1.
-    opacity: 0.85, marginBottom: 12, includeFontPadding: false },
+  // 0.8 gave 4.35:1. 0.85 = 4.78:1.
+  label: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.85, marginBottom: 12, includeFontPadding: false },
 
   memberBlock: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
   memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 10 },

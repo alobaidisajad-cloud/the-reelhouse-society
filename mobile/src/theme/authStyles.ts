@@ -38,6 +38,9 @@ export const loginStyles = StyleSheet.create({
     // two sibling fades were both invisible on Android for exactly this reason,
     // and a card gaining a shadow later should not silently delete an effect.
     elevation: 99,
+    // Elevation also DRAWS a shadow on Android. This strip wants the z-order,
+    // not the mark, so the shadow is cleared explicitly.
+    shadowColor: 'transparent',
   },
   scroll: {
     flexGrow: 1,
