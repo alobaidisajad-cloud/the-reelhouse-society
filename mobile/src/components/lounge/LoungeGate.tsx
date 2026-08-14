@@ -23,7 +23,10 @@ export function LoungeGate() {
           </View>
 
           <Text style={s.gateTitle} accessibilityRole="header">The Lounge</Text>
-          <Text style={s.gateEst}>EST. 1924</Text>
+          {/* "EST. 1924" removed — sixth page it appeared on. The line that
+              earns this spot is the one below, naming which ranks hold the key;
+              a visitor stopped at this rope needs to know what would let them
+              in, not when the house was founded. */}
           <OrnamentalRule />
 
           <Text style={s.gateSub}>[ CLEARANCE REQUIRED ]</Text>
@@ -92,14 +95,7 @@ const s = StyleSheet.create({
     color: colors.parchment,
     marginBottom: 6,
   },
-  gateEst: {
-    fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 5,
-    color: colors.sepia,
-    marginBottom: 4,
-    opacity: 0.7,
-  },
+  // `gateEst` removed with the "EST. 1924" line it drew.
   gateSub: {
     fontFamily: fonts.sub,
     fontSize: 8,
@@ -137,7 +133,8 @@ const s = StyleSheet.create({
     fontSize: 7,
     letterSpacing: 2.5,
     color: colors.sepia,
-    opacity: 0.6,
+    // 0.6 was 2.90:1 in sepia. 0.85 = 4.78:1.
+    opacity: 0.85,
     textAlign: 'center',
     marginTop: -18,
     marginBottom: 24,
@@ -147,7 +144,8 @@ const s = StyleSheet.create({
     fontSize: 7,
     letterSpacing: 2.5,
     color: colors.fog,
-    opacity: 0.4,
+    // 0.4 was 1.96:1. 0.8 = 4.59:1.
+    opacity: 0.8,
     textAlign: 'center',
   },
 });

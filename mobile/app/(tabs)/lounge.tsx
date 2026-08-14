@@ -23,6 +23,8 @@ import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
 import { isArchivistPlusTier } from '@/src/utils/tier';
 import { colors } from '@/src/theme/theme';
+import { scaledTextProps } from '@/src/constants/textScaling';
+import { LinearGradient } from 'expo-linear-gradient';
 import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -193,15 +195,25 @@ export default function LoungeScreen() {
         </View>
 
         <Text style={s.headerTitle}>The Lounge</Text>
-        <Text style={s.headerMetaLine}>EST. 1924 · ARCHIVIST EXCLUSIVE</Text>
+        {/* "EST. 1924 ·" dropped from the front of this line — fifth page it had
+            appeared on, and the tab is only reachable by an Archivist anyway, so
+            the half that earns its place is the half naming who is inside. */}
+        <Text style={s.headerMetaLine}>ARCHIVIST EXCLUSIVE</Text>
 
         {/* Search + Establish — one working row */}
         <View style={s.actionsRow}>
           <View style={s.searchWrap}>
             <AnimatedSearchIcon size={14} animatedProps={animatedSearchProps} style={animatedSearchStyle} strokeWidth={1.5} />
             <TextInput
+              {...scaledTextProps}
               style={s.searchInput}
-              placeholder="Search the salons…"
+              /* "Search the salons…" needed 144pt of a 195pt field — it fit at
+                 1.0x and truncated at 1.36x, which is why it reads "Search the
+                 sal…" on a device with larger text. A TextInput placeholder
+                 cannot shrink to fit, so the string had to give. "the" carries
+                 nothing here; dropping it buys headroom past 1.7x, comfortably
+                 clear of the 1.35 cap now applied above. */
+              placeholder="Search salons…"
               placeholderTextColor={colors.fog}
               value={searchQuery}
               onChangeText={handleSearchQueryChange}
@@ -263,15 +275,30 @@ export default function LoungeScreen() {
                   <Text style={s.sectionLabel}>YOUR SALONS</Text>
                   <View style={s.sectionTitleLine} />
                 </View>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={s.joinedStrip}
-                >
-                  {myLounges.map((l, i) => (
-                    <JoinedLoungeCard key={`my-${l.id}`} lounge={l} index={i} />
-                  ))}
-                </ScrollView>
+                {/* The strip runs off the right edge and a card sliced through
+                    its badge reads as broken rather than scrollable — "⧗ AWAI…"
+                    hanging in the margin. Same treatment as the Darkroom's mood
+                    row: the row dissolves into the dark instead of being cut by
+                    it. Right edge only, since a symmetric fade would dim the
+                    first card at rest, and pointerEvents none so it never eats
+                    a swipe. */}
+                <View style={s.joinedStripWrap}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={s.joinedStrip}
+                  >
+                    {myLounges.map((l, i) => (
+                      <JoinedLoungeCard key={`my-${l.id}`} lounge={l} index={i} />
+                    ))}
+                  </ScrollView>
+                  <LinearGradient
+                    colors={['transparent', colors.ink]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={s.joinedStripFade}
+                    pointerEvents="none"
+                  />
+                </View>
               </View>
             ) : (
               !loading && !searchQuery && <EmptyMyLounges onEstablishPress={() => setShowCreate(true)} />

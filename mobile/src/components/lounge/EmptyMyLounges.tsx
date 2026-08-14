@@ -68,7 +68,8 @@ const s = StyleSheet.create({
     color: colors.fog,
     lineHeight: 16,
     textAlign: 'center',
-    opacity: 0.7,
+    // 0.7 was 3.75:1. 0.8 = 4.59:1.
+    opacity: 0.8,
     marginBottom: 24,
   },
   ctaBtn: {

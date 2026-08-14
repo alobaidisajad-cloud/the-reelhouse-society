@@ -267,7 +267,9 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 7,
     color: colors.fog,
-    opacity: 0.35,
+    // 0.35 measured 1.75:1 — effectively invisible, while being the thing
+    // that tells you how much room is left. 0.8 = 4.59:1.
+    opacity: 0.8,
     textAlign: 'right',
     marginTop: 4,
     includeFontPadding: false,

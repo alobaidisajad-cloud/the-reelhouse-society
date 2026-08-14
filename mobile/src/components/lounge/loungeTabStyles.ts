@@ -49,7 +49,9 @@ export const s = StyleSheet.create({
     fontSize: 7,
     letterSpacing: 4,
     color: colors.sepia,
-    opacity: 0.65,
+    // 0.65 measured 3.22:1 at 7pt. 0.85 gives 4.78:1 — this line names who the
+    // room is for, so it should be readable rather than merely present.
+    opacity: 0.85,
     marginTop: 4,
     marginBottom: 14,
     textAlign: 'center',
@@ -142,25 +144,38 @@ export const s = StyleSheet.create({
     fontSize: 7.5,
     letterSpacing: 3,
     color: colors.sepia,
-    opacity: 0.8,
+    // 0.8 gave 4.35:1 — just shy. 0.85 = 4.78:1 and clears AA.
+    opacity: 0.85,
     includeFontPadding: false,
   },
   sectionSubtext: {
     fontFamily: fonts.bodyItalic,
     fontSize: 9,
     color: colors.fog,
-    opacity: 0.5,
+    // 0.5 measured 2.44:1 — below the floor WCAG allows even for LARGE
+    // text. This line explains what the directory IS. 0.8 = 4.59:1.
+    opacity: 0.8,
     paddingHorizontal: 20,
     marginBottom: 14,
     textAlign: 'center',
   },
 
   // ── Joined strip ──
+  joinedStripWrap: {
+    position: 'relative',
+  },
   joinedStrip: {
     gap: 12,
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 18,
+  },
+  joinedStripFade: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 28,
   },
 
   // ── Empty directory ──
@@ -184,7 +199,8 @@ export const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 8,
     color: colors.fog,
-    opacity: 0.5,
+    // 0.5 was 2.44:1 — the invitation shown when the directory is empty.
+    opacity: 0.8,
     letterSpacing: 1.5,
     includeFontPadding: false,
   },
