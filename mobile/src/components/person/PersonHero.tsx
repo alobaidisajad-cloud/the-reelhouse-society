@@ -162,7 +162,11 @@ export const PersonHero = memo(function PersonHero({
     if (definingFilm && definingWorksCount === 0) {
       const title = (definingFilm.title || definingFilm.name || '').toUpperCase();
       out.push({
-        label: 'KNOWN FOR',
+        // NOTED, not "KNOWN FOR". Two reasons, and the second is the real one:
+        // "KNOWN FOR" measures 72pt against a 58pt label column and would have
+        // wrapped or clipped — and BORN / DIED / RECORD are all single words, so
+        // a two-word label broke the card's grammar as well as its geometry.
+        label: 'NOTED',
         value: `${title}  →`,
         onPress: handleKnownForPress,
         a11y: `Known for ${definingFilm.title || definingFilm.name}, open film`,

@@ -167,3 +167,32 @@ describe('the skeleton describes the page that actually arrives', () => {
     }
   });
 });
+
+describe('the record card’s labels fit the column they sit in', () => {
+  // Caught a real defect: "KNOWN FOR" measured 72pt against a 58pt column and
+  // would have wrapped or clipped on every file where the shelf was empty.
+  // Nothing in TypeScript or the renderer complains about that — the text just
+  // silently goes to two lines.
+  const EM_PER_CHAR = 0.626; // Special Elite, read from the TTF
+  const CAP = 1.2;           // the tier this text declares
+
+  it('every label the card can emit fits, at rest AND at the cap', () => {
+    const hero = read(HERO);
+    // The labels are lifted OUT of the component, so adding a new row without
+    // widening the column fails here instead of on someone's screen.
+    const labels = [...hero.matchAll(/label:\s*'([A-Z ]+)'/g)].map((m) => m[1]);
+    expect(labels.length).toBeGreaterThanOrEqual(3);
+
+    const body = style(read(STYLES), 'recordLabel');
+    const col = num(body, 'width')!;
+    const size = num(body, 'fontSize')!;
+    const ls = num(body, 'letterSpacing')!;
+
+    const tooWide = labels.filter((l) => {
+      // letterSpacing is a fixed point value: it does not scale with the font.
+      const w = l.length * (size * CAP * EM_PER_CHAR + ls);
+      return w > col;
+    });
+    expect(tooWide).toEqual([]);
+  });
+});

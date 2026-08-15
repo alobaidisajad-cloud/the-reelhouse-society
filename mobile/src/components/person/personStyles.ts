@@ -138,7 +138,12 @@ export const s = StyleSheet.create({
   recordRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 8 },
   recordLabel: {
     fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia,
-    width: 58, paddingTop: 1, includeFontPadding: false,
+    // 62 is not arbitrary. The longest label the card can emit is RECORD, which
+    // measures 54.1pt at the 1.2 tier this text declares — letterSpacing is a
+    // fixed point value in RN and does NOT shrink back when the font grows, so
+    // it has to be counted per character at the cap, not at rest.
+    // personPage.test.ts recomputes this from the shipped labels.
+    width: 62, paddingTop: 1, includeFontPadding: false,
   },
   recordValue: {
     flex: 1, fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2,
