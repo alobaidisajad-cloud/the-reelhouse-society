@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { Sparkles, Lock } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
-import { extractDropCap, stripHTML } from '@/src/utils/text';
+import { extractDropCap, stripHTML, isRTLText } from '@/src/utils/text';
 import { s } from '@/src/components/log/logDetailStyles';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
 
@@ -40,7 +40,7 @@ export default function LogReviewBody({
              <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} style={s.ornamentalStar} />
              <View style={s.ornamentalLine} />
            </View>
-           <Text style={[s.featuredQuote, isAuteur && s.featuredQuoteAuteur]} adjustsFontSizeToFit numberOfLines={6} minimumFontScale={0.7}>« {pullQuote} »</Text>
+           <Text style={[s.featuredQuote, isAuteur && s.featuredQuoteAuteur, isRTLText(pullQuote) && s.rtlText]} adjustsFontSizeToFit numberOfLines={6} minimumFontScale={0.7}>« {pullQuote} »</Text>
            {/* Ornamental divider bottom */}
            <View style={s.ornamentalRow}>
              <View style={s.ornamentalLine} />
@@ -57,7 +57,15 @@ export default function LogReviewBody({
         // Set the essay as paragraphs — real rhythm at any length, drop cap on the first only.
         const split = cleanReview.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
         const paragraphs = split.length ? split : [cleanReview];
-        const dc = dropCap ? extractDropCap(paragraphs[0]) : null;
+
+        // The member's own writing direction, read from the text rather than
+        // the device's locale. Without it, iOS gives an Arabic essay a
+        // left-to-right base and drops each sentence's full stop at the far
+        // left of its line, away from the words it ends.
+        const rtl = isRTLText(cleanReview);
+        // No drop cap on a joined script: lifting the first letter out of an
+        // Arabic word leaves an isolated form and breaks the word behind it.
+        const dc = dropCap && !rtl ? extractDropCap(paragraphs[0]) : null;
 
         return (
           <View style={s.reviewBodyWrap}>
@@ -66,12 +74,12 @@ export default function LogReviewBody({
               if (i === 0 && dc && dc.first) {
                 return (
                   <Text key={i} style={[s.dropCapParagraph, spaced && s.reviewParagraphSpaced]}>
-                    <Text style={s.dropCapLetter}>{dc.first}</Text>{dc.rest}
+                    <Text style={s.dropCapLetter} allowFontScaling={false}>{dc.first}</Text>{dc.rest}
                   </Text>
                 );
               }
               return (
-                <Text key={i} style={[s.reviewParagraph, spaced && s.reviewParagraphSpaced]}>
+                <Text key={i} style={[s.reviewParagraph, spaced && s.reviewParagraphSpaced, rtl && s.rtlText]}>
                   {para}
                 </Text>
               );
@@ -89,7 +97,7 @@ export default function LogReviewBody({
               <Lock size={10} color={colors.sepia} />
               <Text style={s.privateNotesLabel}>PRIVATE ARCHIVIST NOTES</Text>
            </View>
-           <Text style={s.privateNotesBody}>
+           <Text style={[s.privateNotesBody, isRTLText(privateNotes) && s.rtlText]}>
               {privateNotes}
            </Text>
         </View>

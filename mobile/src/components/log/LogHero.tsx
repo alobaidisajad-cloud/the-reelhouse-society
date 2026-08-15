@@ -8,6 +8,8 @@ import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
 import { s } from '@/src/components/log/logDetailStyles';
+import { formatFiledDate, hasPhysicalFormat } from '@/src/components/log/logRecord';
+import { displayTextProps } from '@/src/constants/textScaling';
 
 interface LogHeroProps {
   log: {
@@ -49,6 +51,27 @@ export default function LogHero({
   onPressUser,
   onPressFilm,
 }: LogHeroProps) {
+  /**
+   * What the filing mark actually has to say. Every entry is conditional, so a
+   * log with nothing recorded produces no band rather than an empty rule.
+   *
+   * NO_FORMAT guards the composer's 'None' option. The save path already drops
+   * it (`physicalMedia !== 'None' ? … : null`) but the offline mapping in
+   * app/log/[id].tsx passes the raw local value straight through — so the same
+   * log printed "FORMAT: NONE" when read from the local store and nothing when
+   * read from the server. That mapping is fixed too; this guard is what keeps
+   * legacy rows and any future path from re-introducing it.
+   */
+  const filed = React.useMemo(() => {
+    const out: { key: string; value: string; accent?: boolean }[] = [];
+    if (log.watched_date) out.push({ key: 'date', value: formatFiledDate(log.watched_date) });
+    if (log.watched_with) out.push({ key: 'with', value: `WITH ${log.watched_with.toUpperCase()}`, accent: true });
+    if (hasPhysicalFormat(log.physical_media)) {
+      out.push({ key: 'format', value: log.physical_media!.toUpperCase() });
+    }
+    return out;
+  }, [log.watched_date, log.watched_with, log.physical_media]);
+
   return (
     <View style={s.logCenter}>
       {/* The ledger byline — the app's own handwriting: avatar · handle · crest · rule */}
@@ -67,7 +90,8 @@ export default function LogHero({
         {(isAuteur || isArchivist) && posterUri && (
           <View style={[s.posterGlow, isAuteur ? s.posterGlowAuteur : s.posterGlowArchivist]} />
         )}
-        <PressableScale onPress={onPressFilm} style={[s.posterBounds, isAuteur && s.posterBoundsAuteur]} pressedScale={0.95} haptic="selection">
+        <PressableScale onPress={onPressFilm} style={[s.posterBoundsShadow, isAuteur && s.posterBoundsShadowAuteur]} pressedScale={0.95} haptic="selection">
+        <View style={[s.posterBounds, isAuteur && s.posterBoundsAuteur]}>
           {posterUri ? (
             <Image source={{ uri: posterUri }} style={s.posterCentered} contentFit="cover" cachePolicy="memory-disk" transition={150} onLoadEnd={onPosterLoaded} />
           ) : (
@@ -75,6 +99,7 @@ export default function LogHero({
               <FilmIcon size={20} color={colors.sepia} strokeWidth={1} />
             </View>
           )}
+        </View>
         </PressableScale>
       </View>
 
@@ -103,25 +128,27 @@ export default function LogHero({
         </View>
       )}
 
-      {(log.watched_date || log.watched_with || log.physical_media) && (
-         <View style={s.metaRow}>
-            {log.watched_date && (
-              <Text style={s.metaDateText}>
-                 WATCHED {new Date(log.watched_date).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
-              </Text>
-            )}
-            {log.watched_date && (log.watched_with || log.physical_media) && <Text style={s.metaDot}>·</Text>}
-            {log.watched_with && (
-              <Text style={s.metaWithText}>
-                 WITH {log.watched_with.toUpperCase()}
-              </Text>
-            )}
-            {log.watched_with && log.physical_media && <Text style={s.metaDot}>·</Text>}
-            {log.physical_media && (
-              <Text style={s.metaFormatText}>
-                 FORMAT: {log.physical_media.toUpperCase()}
-              </Text>
-            )}
+      {/* ── THE FILING MARK ──
+          Four centred captions used to stack here — watched, with, format —
+          each on its own line, which reads as a tombstone rather than a record.
+          This is one ruled band instead: a brass label and its values, the same
+          grammar the feed card already speaks. The rules above and below are
+          what make it read as something stamped into the file.
+
+          `format` is only a fact when there IS one. 'None' is a selectable
+          option in the composer and it is stored as that literal string, so it
+          used to print "FORMAT: NONE" — a field announcing its own absence. */}
+      {filed.length > 0 && (
+         <View style={s.filingMark}>
+            <Text style={s.filingLabel} {...displayTextProps}>FILED</Text>
+            {filed.map((entry, i) => (
+              <View key={entry.key} style={s.filingEntry}>
+                {i > 0 && <Text style={s.filingDot}>·</Text>}
+                <Text style={[s.filingValue, entry.accent && s.filingValueAccent]} {...displayTextProps}>
+                  {entry.value}
+                </Text>
+              </View>
+            ))}
          </View>
       )}
     </View>

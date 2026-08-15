@@ -41,12 +41,73 @@ export function extractDropCap(text: string): { first: string; rest: string } {
  * Strips legacy HTML formatting tags from text while preserving structural newlines
  * and ignoring literal user input (e.g., "<The Batman>").
  */
+/**
+ * Does this text read right-to-left?
+ *
+ * First-strong: the direction of a paragraph is set by its first strong
+ * character, which is what every text engine does and what a reader expects.
+ * Neutrals — quotes, guillemets, digits, spaces — are skipped, so a review that
+ * opens with « or a year still resolves to the language underneath.
+ *
+ * WHY THIS EXISTS. `writingDirection` is an iOS-only style and the app never
+ * set it, so on iPhone an Arabic review inherited the app's own left-to-right
+ * base. The visible symptom is a sentence's full stop appearing at the far LEFT
+ * of the line, detached from the words it ends. Android resolves this itself.
+ *
+ * Ranges: Hebrew, Arabic (incl. supplement + extended-A), Syriac/Thaana/N'Ko,
+ * and the Arabic presentation forms.
+ */
+const RTL_STRONG = /[֐-׿؀-޿ࢠ-ࣿיִ-﷿ﹰ-﻿]/;
+const LTR_STRONG = /[A-Za-zÀ-ʯͰ-֏]/;
+
+export function isRTLText(text: string | null | undefined): boolean {
+    if (!text) return false;
+    // Only the first 400 characters are inspected: the paragraph's direction is
+    // decided long before that, and reviews can be very long.
+    const head = text.slice(0, 400);
+    const rtl = head.search(RTL_STRONG);
+    if (rtl === -1) return false;
+    const ltr = head.search(LTR_STRONG);
+    return ltr === -1 || rtl < ltr;
+}
+
+/**
+ * The named entities a review can realistically carry out of the web editor.
+ * Anything else is left alone rather than mangled.
+ */
+const HTML_ENTITIES: Record<string, string> = {
+    '&quot;': '"', '&apos;': "'", '&#39;': "'", '&amp;': '&',
+    '&lt;': '<', '&gt;': '>', '&nbsp;': ' ',
+    '&mdash;': '—', '&ndash;': '–', '&hellip;': '…',
+    '&lsquo;': '‘', '&rsquo;': '’', '&ldquo;': '“', '&rdquo;': '”',
+};
+
+/**
+ * ONE cleaner for a review, wherever it is read.
+ *
+ * There used to be two: this, and a second inline copy in the feed card. They
+ * disagreed three ways, so the same review read differently on its card than on
+ * its own page —
+ *   · entities: the card decoded seven, this decoded none, so the page showed
+ *     a literal `&quot;` where the card showed a quotation mark;
+ *   · unknown tags: the card stripped everything, this stripped a whitelist, so
+ *     a `<blockquote>` survived as visible text on the page only;
+ *   · paragraphs: this mapped opening AND closing block tags to a newline and
+ *     the card only opening ones, so only the page could find the breaks.
+ *
+ * Keeping this one's paragraph handling (it is the correct half) and the card's
+ * entity decoding and total tag-stripping.
+ *
+ * `&amp;` is decoded LAST so that `&amp;lt;` yields `&lt;` rather than `<` —
+ * decoding it first would let an escaped entity smuggle a bracket through.
+ */
 export function stripHTML(html: string): string {
     if (!html) return '';
-    return html
+    const withBreaks = html
         .replace(/<\/?(p|div|br)(?:\s+[^>]*|)\/?>/gi, '\n')
-        .replace(/<\/?(strong|em|b|i|u|span|h[1-6]|ul|li|ol|a)(?:\s+[^>]*|)\/?>/gi, '')
-        .trim();
+        .replace(/<[^>]+>/g, '');
+    const decoded = withBreaks.replace(/&(?!amp;)[a-z0-9#]+;/gi, (m) => HTML_ENTITIES[m.toLowerCase()] ?? m);
+    return decoded.replace(/&amp;/gi, '&').trim();
 }
 
 /**

@@ -3,6 +3,8 @@ import { s } from '@/src/components/log/logDetailStyles';
 import { SectionDivider } from '@/src/components/Decorative';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import PressableScale from '@/src/components/PressableScale';
+import { formatFiledDate } from '@/src/components/log/logRecord';
+import { isRTLText } from '@/src/utils/text';
 import { colors } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -73,9 +75,11 @@ const CommentRow = React.memo(({
           )}
           <Text style={s.commUsername} numberOfLines={1}>@{c.username}</Text>
         </PressableScale>
-        <Text style={s.commDate}>{new Date(c.created_at).toLocaleDateString()}</Text>
+        {/* The archive's own date shape. This printed the device's short form —
+            8/5/2026 — directly beneath the record's AUG 5, 2026. */}
+        <Text style={s.commDate}>{formatFiledDate(c.created_at)}</Text>
       </View>
-      <Text style={s.commBody} selectable>{c.body}</Text>
+      <Text style={[s.commBody, isRTLText(c.body) && s.rtlText]} selectable>{c.body}</Text>
       {currentUserId === c.user_id && (
         <PressableScale
           onPress={() => onDelete(c.id)}

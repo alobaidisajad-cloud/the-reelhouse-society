@@ -5,8 +5,12 @@ import { colors, fonts } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
+import { stripHTML, isRTLText } from '@/src/utils/text';
 
 import type { FeedItem } from '@/src/schemas/feed.schema';
+
+/** The preview cap. The read-more affordance is derived from it, not guessed. */
+const PREVIEW_LINES = 8;
 
 interface VerdictProps {
   item: Pick<FeedItem, 'status' | 'abandoned_reason' | 'rating' | 'watched_with'>;
@@ -18,16 +22,6 @@ interface ProseProps {
   isAuteur: boolean;
   onPress: () => void;
 }
-
-const ENTITIES: Record<string, string> = {
-  '&quot;': '"',
-  '&apos;': "'",
-  '&#39;': "'",
-  '&amp;': '&',
-  '&lt;': '<',
-  '&gt;': '>',
-  '&nbsp;': ' '
-};
 
 /**
  * VerdictBlock — the film-column verdict on the index card:
@@ -65,13 +59,26 @@ export const VerdictBlock = React.memo(function VerdictBlock({ item }: VerdictPr
  * recycled FlashList rows.
  */
 export const ReviewContent = React.memo(function ReviewContent({ item, isPremium, isAuteur, onPress }: ProseProps) {
-  // O(N) Regex stripping blocks the JS thread during FlashList rendering.
-  // We memoize the stripped text so it only computes once per item.
-  const cleanReview = React.useMemo(() => {
-    if (!item.review) return '';
-    let text = item.review.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<[^>]+>/g, '').trim();
-    return text.replace(/&[a-z0-9#]+;/gi, (m) => ENTITIES[m] || m);
-  }, [item.review]);
+  // The shared cleaner, not a second copy. This file used to carry its own,
+  // and the two disagreed on entities, unknown tags and paragraph breaks — so
+  // a review read one way here and another on its own page.
+  //
+  // Still memoized: the regex work is O(N) and this runs inside FlashList's
+  // render path, where a re-cleaned review is a dropped frame.
+  const cleanReview = React.useMemo(() => stripHTML(item.review ?? ''), [item.review]);
+
+  // Whether this member wrote right-to-left. Decided from the text itself, not
+  // from the device's locale — an Arabic review on an English phone is still
+  // Arabic, and this is the app's own members we are talking about.
+  const rtl = React.useMemo(() => isRTLText(item.pull_quote || cleanReview), [item.pull_quote, cleanReview]);
+
+  // Did the preview actually clip? onTextLayout reports the lines that were
+  // laid out, so this asks the same question the cap answers instead of
+  // guessing from character count.
+  const [truncated, setTruncated] = React.useState(false);
+  const onLayout = React.useCallback((e: { nativeEvent: { lines: unknown[] } }) => {
+    setTruncated(e.nativeEvent.lines.length >= PREVIEW_LINES);
+  }, []);
 
   if (!item.pull_quote && !cleanReview) return null;
 
@@ -81,29 +88,35 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
         {/* Pull quote — capped at 4 lines so no quote can swallow the card */}
         {item.pull_quote && (
           <View style={s.pullQuoteWrap}>
-            <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isPremium && !isAuteur && s.pullQuotePremium]} numberOfLines={4}>
+            <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isPremium && !isAuteur && s.pullQuotePremium, rtl && s.rtl]} numberOfLines={4}>
               « {item.pull_quote} »
             </Text>
           </View>
         )}
 
-        {/* Review text */}
+        {/* Review text.
+            A drop cap is suppressed for right-to-left prose: Arabic letters
+            join, so lifting the first one out leaves an isolated form and a
+            broken word. The ornament is worth less than the sentence. */}
         {cleanReview ? (
-          item.drop_cap ? (
-            <Text style={[s.review, s.dropCapReview]} numberOfLines={8}>
-              <Text style={s.dropCapLetter}>{cleanReview.charAt(0).toUpperCase()}</Text>
+          item.drop_cap && !rtl ? (
+            <Text style={[s.review, s.dropCapReview]} numberOfLines={PREVIEW_LINES} onTextLayout={onLayout}>
+              <Text style={s.dropCapLetter} allowFontScaling={false}>{cleanReview.charAt(0).toUpperCase()}</Text>
               <Text style={s.dropCapText}>{cleanReview.slice(1)}</Text>
             </Text>
           ) : (
-            <Text style={s.review} numberOfLines={8}>
+            <Text style={[s.review, rtl && s.rtl]} numberOfLines={PREVIEW_LINES} onTextLayout={onLayout}>
               {cleanReview}
             </Text>
           )
         ) : null}
 
-        {/* Read more */}
-        {cleanReview.length > 200 && (
-          <View style={s.readMoreWrap}>
+        {/* Read more — shown when the text ACTUALLY clipped.
+            The old gate was `length > 200`, which is a different question from
+            the one the cap asks: a short-but-tall review was cut with no way to
+            know, and a long-but-flat one offered to reveal nothing. */}
+        {truncated && (
+          <View style={[s.readMoreWrap, rtl && s.rtlAlign]}>
             <Text style={s.readMoreText}>Read more</Text>
           </View>
         )}
@@ -176,6 +189,10 @@ const s = StyleSheet.create({
     textShadowColor: 'rgba(184,137,26,0.2)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6,
   },
   dropCapText: { lineHeight: 22 },
+  // iOS needs the paragraph direction stated; Android resolves it itself, and
+  // textAlign 'right' is what makes the block sit on the side it reads from.
+  rtl: { writingDirection: 'rtl', textAlign: 'right' } as import('react-native').TextStyle,
+  rtlAlign: { alignItems: 'flex-end' } as import('react-native').ViewStyle,
   readMoreWrap: { marginTop: 6 },
   readMoreText: {
     includeFontPadding: false, textAlignVertical: 'center',

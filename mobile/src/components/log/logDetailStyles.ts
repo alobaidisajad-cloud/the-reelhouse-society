@@ -48,10 +48,17 @@ export const s = StyleSheet.create({
   backBtn: { width: 60, zIndex: 2 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 14, zIndex: 2 },
   // The eyebrow is absolutely centered so it never shifts owner↔visitor.
-  // Gutters sized past the measured worst case: visitor view's right cluster
-  // (SHARE + ⋯) is ~84px — the old 80px insets guaranteed overlap. 104px
-  // clears it with margin, and the un-ornamented text fits deterministically
-  // at 360dp and up without any font auto-shrink.
+  // Gutters sized past the measured worst case: the visitor's right cluster
+  // (SHARE + ⋯) measures 87.7pt, so 104 clears it with margin.
+  //
+  // The note that used to sit here claimed the text "fits deterministically at
+  // 360dp and up". It did not, by 40pt. Between the two 104pt gutters the box
+  // is 120pt at 360dp and 150pt at 390dp — and "FROM THE PERMANENT RECORD"
+  // needs 159.5pt in Special Elite at 7pt with 2pt of letterspacing. It was
+  // ellipsizing on the two commonest phone widths; only a Pro Max ever showed
+  // it whole. "PERMANENT RECORD" needs 102.1pt and fits both with room, and
+  // says the same thing. logPage.test.ts recomputes this rather than trusting
+  // another comment.
   eyebrowWrap: { position: 'absolute', top: 0, bottom: 0, left: 104, right: 104, alignItems: 'center', justifyContent: 'center' },
   eyebrow: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.sepia, opacity: 0.72, includeFontPadding: false },
   shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -61,7 +68,13 @@ export const s = StyleSheet.create({
   content: { paddingBottom: 40 },
 
   // ── The record card ──
-  contentCard: { backgroundColor: 'rgba(10,7,3,0.92)', borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40, elevation: 24 },
+  // Shadow host / clip host. This card lifts UPWARD off the backdrop above it
+  // (offset -20, radius 40) — a deliberate, large effect that iOS has never
+  // drawn, because the same style also clips. Android drew one from elevation
+  // 24, so the record has been sitting on the page differently per platform.
+  contentCardShadow: { borderTopLeftRadius: 12, borderTopRightRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40, elevation: 24 },
+  contentCardShadowAuteur: { shadowColor: colors.bloodReel },
+  contentCard: { backgroundColor: 'rgba(10,7,3,0.92)', borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden' },
   contentCardAuteur: { backgroundColor: 'rgba(25,10,10,0.92)', borderColor: colors.crimsonBorder },
   logCardInner: { paddingHorizontal: SPINE, paddingBottom: 16, marginTop: 0, paddingTop: 24 },
   logCenter: { alignItems: 'center' },
@@ -72,8 +85,11 @@ export const s = StyleSheet.create({
   posterGlow: { position: 'absolute', top: '50%', left: '50%', width: 180, height: 250, marginLeft: -90, marginTop: -125, borderRadius: 125, zIndex: 0 },
   posterGlowAuteur: { backgroundColor: colors.crimsonFaint },
   posterGlowArchivist: { backgroundColor: colors.sepiaSubtle },
-  posterBounds: { width: 140, height: 210, borderRadius: 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.sepiaBorderStrong, backgroundColor: colors.soot, shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 40, elevation: 12 },
-  posterBoundsAuteur: { borderColor: colors.crimsonBorder, shadowColor: 'rgba(107,26,10,0.3)', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 40 },
+  // Shadow host / clip host, same reason as the record card above.
+  posterBoundsShadow: { width: 140, height: 210, borderRadius: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 40, elevation: 12 },
+  posterBoundsShadowAuteur: { shadowColor: 'rgba(107,26,10,0.3)' },
+  posterBounds: { width: '100%', height: '100%', borderRadius: 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.sepiaBorderStrong, backgroundColor: colors.soot },
+  posterBoundsAuteur: { borderColor: colors.crimsonBorder },
   posterCentered: { width: '100%', height: '100%' },
   posterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
 
@@ -93,6 +109,12 @@ export const s = StyleSheet.create({
   featuredQuoteAuteur: { color: colors.crimson, textShadowColor: 'rgba(107,26,10,0.15)' },
   reviewBodyWrap: { paddingHorizontal: 0, marginTop: 0 },
   // The essay, set as paragraphs — a raised drop cap opens the first.
+  // iOS needs the paragraph direction stated — writingDirection is an iOS-only
+  // style and the app never set it, so an Arabic essay inherited the app's own
+  // left-to-right base and dropped each sentence's stop at the far left of its
+  // line. Android resolves direction itself; textAlign is what puts the block
+  // on the side it reads from, on both.
+  rtlText: { writingDirection: 'rtl', textAlign: 'right' } as import('react-native').TextStyle,
   reviewParagraph: { fontFamily: fonts.body, fontSize: 14, lineHeight: 24, color: colors.bone, opacity: 0.9 },
   dropCapParagraph: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, opacity: 0.9 },
   reviewParagraphSpaced: { marginBottom: 14 },
@@ -154,7 +176,12 @@ export const s = StyleSheet.create({
   commBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },
   commDate: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog, marginLeft: 'auto', includeFontPadding: false, flexShrink: 0 },
   commDeleteBtn: { marginTop: 8, alignSelf: 'flex-end' },
-  commDelete: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimson, includeFontPadding: false },
+  // Bone, not crimson. Crimson measures 3.18:1 on ink and cannot reach AA at
+  // any opacity — exactly the finding already written up for the ABANDONED
+  // stamp in ReviewContent, which changed its colour rather than its alpha.
+  // That lesson never crossed to here, and this control DELETES a critique.
+  // The word carries the warning; it only had to be readable.
+  commDelete: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.bone, includeFontPadding: false },
 
   // Show earlier/more critiques
   showMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'center', marginTop: 16, paddingVertical: 9, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2 },
@@ -185,11 +212,32 @@ export const s = StyleSheet.create({
   abandonedText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.crimson, includeFontPadding: false, flexShrink: 1 },
 
   // ── Watched Metadata Row ──
-  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  metaDateText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, letterSpacing: 1.5, includeFontPadding: false },
-  metaDot: { color: colors.ash, fontSize: 10 },
-  metaWithText: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 1.5, includeFontPadding: false },
-  metaFormatText: { fontFamily: fonts.sub, fontSize: 9, color: colors.bone, letterSpacing: 1.5, includeFontPadding: false },
+  // ── The filing mark ──
+  // What used to be three centred captions stacked under the title. The rules
+  // above and below are the whole idea: they make the line read as something
+  // stamped into a file rather than a caption floating under a poster. It wraps
+  // rather than shrinking, so a long companion name never squeezes the date.
+  filingMark: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    flexWrap: 'wrap', columnGap: 10, rowGap: 4,
+    marginTop: 16, paddingVertical: 9,
+    alignSelf: 'stretch', marginHorizontal: 20,
+    borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(184,137,26,0.22)',
+  },
+  filingLabel: {
+    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 3,
+    color: colors.sepia, opacity: 0.85, includeFontPadding: false,
+  },
+  filingEntry: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  filingDot: { color: colors.ash, fontSize: 10, includeFontPadding: false },
+  filingValue: {
+    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6,
+    color: colors.bone, includeFontPadding: false,
+  },
+  // The companion keeps the brass — who you watched it with is the warm fact
+  // in the band, and it was already sepia before this.
+  filingValueAccent: { color: colors.sepia } as import('react-native').TextStyle,
 
   // ── Private Notes ──
   privateNotesWrap: { marginTop: 24, padding: 16, backgroundColor: 'rgba(10,7,3,0.5)', borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 4 },

@@ -194,6 +194,13 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
       {/* Rasterize ONLY at rest: the flattened bitmap makes the heavy card
           shadow cheap during scroll, but re-rasterizing every frame of the
           flip is a per-frame bitmap redraw — release it while animating. */}
+      {/* Shadow host / clip host. The card's own clip is load-bearing — the
+          reverse face rotates inside it and would spill without it — but a
+          layer that masks to its bounds cannot draw a shadow outside them, so
+          this card's 20pt lift has never rendered on iOS while Android drew one
+          from elevation. The outer view holds the lift and the rail margins;
+          the inner one holds the clip and the paper. */}
+      <View style={[s.cardShadow, isAuteur && s.cardShadowAuteur]}>
       <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]} shouldRasterizeIOS={!flipped}>
         {/* ── FRONT of the card ── */}
         <Animated.View
@@ -265,6 +272,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
           </Animated.View>
         )}
       </View>
+      </View>
     </View>
   );
 });
@@ -272,21 +280,30 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 // getTimeAgo removed — see the note at its former call site above (#75).
 
 const s = StyleSheet.create({
-  card: {
-    backgroundColor: 'rgba(8,6,4,0.98)',
+  // The shadow host: the rail margins and the lift, nothing that clips.
+  cardShadow: {
     // One rail: 16px, aligned with the header, tabs, and chips above.
     marginHorizontal: 16,
     marginBottom: 20,
     borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.4)',
-    overflow: 'hidden',
-    position: 'relative',
     elevation: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.7,
     shadowRadius: 20,
+  },
+  // Auteur cards lift in their own colour — the crimson file reads as warmer
+  // paper, and a neutral black shadow under it flattened that.
+  cardShadowAuteur: { shadowColor: colors.bloodReel },
+  // The clip host: the paper, the border, and the mask the reverse face turns
+  // inside of.
+  card: {
+    backgroundColor: 'rgba(8,6,4,0.98)',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(184,137,26,0.4)',
+    overflow: 'hidden',
+    position: 'relative',
   },
   cardPremium: {
     borderColor: 'rgba(184,137,26,0.3)',

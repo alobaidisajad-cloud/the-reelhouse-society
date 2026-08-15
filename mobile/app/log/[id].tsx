@@ -15,6 +15,7 @@ import Animated, { Easing, SlideInUp, useAnimatedKeyboard, useAnimatedStyle } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
  
 import { s, PARALLAX_PADDER_HEIGHT } from '@/src/components/log/logDetailStyles';
+import { hasPhysicalFormat } from '@/src/components/log/logRecord';
 import LogShareCard from '@/src/components/film/LogShareCard';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import LogActionDeck from '@/src/components/log/LogActionDeck';
@@ -193,7 +194,10 @@ export default function LogDetailScreen() {
             watched_date: localLog.watchedDate,
             watched_with: localLog.watchedWith,
             private_notes: localLog.privateNotes,
-            physical_media: localLog.physicalMedia,
+            // The save path drops the composer's 'None' sentinel; this mapping
+            // did not, so a log read from the local store printed FORMAT: NONE
+            // while the same log from the server printed nothing. One answer.
+            physical_media: hasPhysicalFormat(localLog.physicalMedia) ? localLog.physicalMedia : null,
             abandoned_reason: localLog.abandonedReason,
             is_autopsied: localLog.isAutopsied,
             autopsy: (() => {
@@ -526,7 +530,7 @@ export default function LogDetailScreen() {
 
           {/* Absolutely centered — never shifts owner↔visitor */}
           <View style={s.eyebrowWrap} pointerEvents="none">
-            <Text style={s.eyebrow} numberOfLines={1} allowFontScaling={false}>FROM THE PERMANENT RECORD</Text>
+            <Text style={s.eyebrow} numberOfLines={1} allowFontScaling={false}>PERMANENT RECORD</Text>
           </View>
 
           <View style={s.headerRight}>
@@ -581,6 +585,8 @@ export default function LogDetailScreen() {
         <View style={s.parallaxPadder} />
 
         {/* Overlapping Content Card — Web: bg rgba(10,7,3,0.85), backdropFilter blur(16px), borderRadius 12px 12px 0 0, boxShadow 0 -20px 40px rgba(0,0,0,0.8) */}
+        {/* Shadow host outside the clip — see contentCardShadow. */}
+        <View style={[s.contentCardShadow, isAuteur && s.contentCardShadowAuteur]}>
         <View style={[s.contentCard, isAuteur && s.contentCardAuteur]}>
           {isAuteur && (
             <LinearGradient colors={['rgba(125,31,31,0.08)', 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
@@ -661,6 +667,7 @@ export default function LogDetailScreen() {
             setCommentActionSheetVisible(true);
           }}
         />
+        </View>
         </View>
       </CinematicScrollView>
 

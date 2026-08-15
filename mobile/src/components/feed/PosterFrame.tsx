@@ -26,7 +26,15 @@ export const PosterFrame = React.memo(function PosterFrame({ itemId, filmId, pos
   const posterUri = posterPath ? `${TMDB_IMG_W185}${posterPath}` : null;
 
   return (
-    <PressableScale onPress={onPress} haptic="heavy" style={s.wrap} accessibilityLabel="View film details">
+    // Two views, not one. This poster declares a 20pt shadow at 0.7 opacity —
+    // the thing that makes it read as stapled to the file rather than printed
+    // on it — and it also declared overflow:'hidden' to clip the blurred glow
+    // layer below. A layer that masks to its bounds cannot draw a shadow
+    // OUTSIDE them, so on iOS that shadow has never existed, while Android
+    // drew one anyway from elevation. The outer view carries the shadow; the
+    // inner one carries the clip. Same split as the brass Concierge disc.
+    <PressableScale onPress={onPress} haptic="heavy" style={s.wrapShadow} accessibilityLabel="View film details">
+    <View style={s.wrap}>
       {/* Premium glow shadow layer */}
       {posterUri && (isPremium || isAuteur) && (
         <AnimatedExpoImage
@@ -69,28 +77,38 @@ export const PosterFrame = React.memo(function PosterFrame({ itemId, filmId, pos
         pointerEvents="none"
       />
       <View style={s.edgeHighlight} pointerEvents="none" />
+    </View>
     </PressableScale>
   );
 });
 
 const s = StyleSheet.create({
-  wrap: {
+  // The shadow host. Carries the lift and nothing that clips, so the shadow can
+  // actually be drawn outside the bounds on iOS.
+  wrapShadow: {
     // Index-card scale: the poster is the photo stapled to the file,
     // not the shrine centerpiece.
     width: 74,
     height: 111,
-    borderWidth: 1,
-    borderColor: 'rgba(218,165,32,0.4)',
     borderRadius: 3,
-    backgroundColor: colors.soot,
-    position: 'relative',
-    overflow: 'hidden',
     zIndex: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.7,
     shadowRadius: 20,
     elevation: 12,
+  },
+  // The clip host. The blurred glow layer is scaled to 1.15 and would spill
+  // past the frame without this.
+  wrap: {
+    width: '100%',
+    height: '100%',
+    borderWidth: 1,
+    borderColor: 'rgba(218,165,32,0.4)',
+    borderRadius: 3,
+    backgroundColor: colors.soot,
+    position: 'relative',
+    overflow: 'hidden',
   },
   posterEmpty: {
     ...StyleSheet.absoluteFillObject,
