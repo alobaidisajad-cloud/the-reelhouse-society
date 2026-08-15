@@ -74,6 +74,40 @@ const CROWN = ['rgba(240,232,176,0.40)', 'rgba(240,232,176,0.10)', 'transparent'
 // rim is simply invisible, and real brass hardware catches light all the way round.
 const RIM = 'rgba(240,232,176,0.30)';
 
+/**
+ * Where everything lands, in screen coordinates.
+ *
+ * Exported so it can be asserted rather than eyeballed. The menu anchors by
+ * COMPUTING the button's position instead of measuring it — measuring costs a
+ * layout pass and makes the first open flicker into place — which is only
+ * honest while the notch keeps pointing at the disc it belongs to. A test
+ * calls this same function, so it checks the shipped arithmetic rather than a
+ * copy of it.
+ */
+export function conciergeGeometry(insetTop: number, windowWidth: number) {
+  const btnTop = navButtonTop(insetTop);
+  // The disc's centre expressed from the card's own left edge. Both start at
+  // NAV_H_PADDING, so this reduces to half a button less half a notch.
+  const notchLeft = NAV_BTN_SIZE / 2 - NOTCH / 2;
+  return {
+    btnTop,
+    notchLeft,
+    // Where the turned square actually centres, from the card's left edge —
+    // rotation is about the centre, so THIS is what must line up with the disc.
+    // Derived from the same `notchLeft` the component renders with, so a wrong
+    // notchLeft fails the check instead of hiding inside it.
+    notchCentre: notchLeft + NOTCH / 2,
+    /** Top of the disc's twin inside the Modal — identical to the real one. */
+    discCenterX: NAV_H_PADDING + NAV_BTN_SIZE / 2,
+    discBottom: navButtonBottom(insetTop),
+    cardTop: navButtonBottom(insetTop) + CARD_GAP,
+    cardLeft: NAV_H_PADDING,
+    cardWidth: Math.min(300, windowWidth - NAV_H_PADDING * 2),
+    /** How far the notch's turned corner reaches above the card's top edge. */
+    notchReach: (NOTCH * Math.SQRT2) / 2,
+  };
+}
+
 // ── The disc ─────────────────────────────────────────────────────
 // Rendered twice: once in the bar, once inside the Modal at the identical
 // coordinates. The copy sits above the scrim so the ＋ turning into an ✕ is
@@ -148,7 +182,9 @@ export const ConciergeButton = memo(function ConciergeButton() {
   }, [visible, flush]);
 
   const openSheet = useCallback(() => {
-    TactileEngine.mutate();
+    // The haptic is NOT fired here. PressableScale fires it on finger-down,
+    // which is what every other button in this bar does; firing it on release
+    // made the one brass button feel a beat slower than its neighbours.
     rotation.value = reducedMotion ? 45 : withSpring(45, { damping: 14, stiffness: 200 });
     setOpen(true);
     setVisible(true);
@@ -191,12 +227,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
     };
   });
 
-  const btnTop = navButtonTop(insets.top);
-  const cardTop = navButtonBottom(insets.top) + CARD_GAP;
-  const cardWidth = Math.min(300, windowWidth - NAV_H_PADDING * 2);
-  // Centre of the disc, measured from the card's own left edge — both start at
-  // NAV_H_PADDING, so this is just half a button.
-  const notchLeft = NAV_BTN_SIZE / 2 - NOTCH / 2;
+  const { btnTop, cardTop, cardWidth, notchLeft } = conciergeGeometry(insets.top, windowWidth);
 
   return (
     <>
@@ -207,6 +238,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
         style={[s.discShadow, open && s.discHidden]}
         onPress={openSheet}
         pressedScale={0.9}
+        haptic="medium"
         // No debounce: this opens a sheet rather than pushing a route, so the
         // guard against double-pushes only buys a dead tap here.
         debounceMs={0}
@@ -294,6 +326,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
             style={s.discShadow}
             onPress={closeSheet}
             pressedScale={0.9}
+            haptic="selection"
             debounceMs={0}
             accessibilityLabel="Close"
           >

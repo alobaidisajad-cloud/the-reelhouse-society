@@ -109,7 +109,10 @@ function CreateLoungeModal({ onClose }: { onClose: () => void }) {
                                 {isPrivate ? 'PRIVATE SCREENING ROOM' : 'PUBLIC SALON'}
                             </div>
                             <div className="lounge-create-toggle-hint">
-                                {isPrivate ? 'Invite-only via code' : 'Anyone with Archivist+ can join'}
+                                {/* Not "invite-only via code" — codes are retired, so that
+                                    sentence described a door that no longer exists. Private
+                                    rooms are joined by asking; the host admits at the door. */}
+                                {isPrivate ? 'The host admits each guest' : 'Anyone with Archivist+ can join'}
                             </div>
                         </div>
                     </div>

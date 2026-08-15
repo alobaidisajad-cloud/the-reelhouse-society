@@ -300,7 +300,9 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
                                         {isPrivate ? <><Lock size={11} /> PRIVATE SCREENING ROOM</> : <><Globe size={11} /> PUBLIC SALON</>}
                                     </div>
                                     <div className="lounge-create-toggle-hint">
-                                        {isPrivate ? 'Invite-only via code' : 'Anyone with Archivist+ can join'}
+                                        {/* Codes are retired — see the note where the INVITE
+                                            CODE block stood. The host admits at the door now. */}
+                                        {isPrivate ? 'The host admits each guest' : 'Anyone with Archivist+ can join'}
                                     </div>
                                 </div>
                             </div>

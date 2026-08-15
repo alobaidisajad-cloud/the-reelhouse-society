@@ -110,7 +110,7 @@ Reading all 80k lines line-by-line in one pass is not possible and is not claime
 | Purchases end-to-end (sandbox buy) | Lives in RC + App Store Connect dashboards | Launch checklist §1 — **user must confirm RC account ownership** (iOS key exists in eas.json but user stated no RC account — unresolved contradiction, potential launch blocker for revenue) |
 | Email live test (inbox placement, link taps, recovery e2e) | Needs a real mailbox + final build (PKCE fix rides next build; build 36 recovery is known-broken) | Checklist §5; mail-tester score pending |
 | Push banner live test | Needs second device/account | One follow/certify from any user proves the chain |
-| Visual feel of this cycle's UI (cover picker, FAB motion, brass key) | Pixels need glass | Final-build device pass list |
+| Visual feel of this cycle's UI (cover picker, the brass Concierge ＋ and its card, brass key) | Pixels need glass — the brass ramp especially, which was chosen from colour values and has never been seen on a screen | Final-build device pass list |
 | Cold-boot time on poor network | Runtime measurement | Device pass (flagged in boot audit) |
 | Android runtime everything | No Android device exists; purchases/push unwired (no RC android key, no FCM) | ANDROID_LAUNCH.md runbook — §1 config is user's pre-launch work |
 | Scale behavior (realtime at 1000s concurrent, TMDB proxy under load) | Needs production traffic | Sentry + staged rollout are the instruments |
@@ -124,7 +124,7 @@ No blockers exist in the codebase. Every defect found across four audit cycles h
 
 ## Punch list (all owner-side, priority order)
 1. **[BLOCKER-if-unresolved] RevenueCat account contradiction** — confirm dashboard ownership of the `appl_…` key; create App Store Connect IAPs + agreements; one sandbox purchase. Without this, launch ships with dead revenue.
-2. **[HIGH] Final build + 1-hour device pass** — the scripted checklist (auth links warm/cold, recovery e2e, covers, counts, camera path, FAB, brass key, cold boot, purchase, push).
+2. **[HIGH] Final build + 1-hour device pass** — the scripted checklist (auth links warm/cold, recovery e2e, covers, counts, camera path, the Concierge ＋ — open it, take both doors, confirm each screen actually opens — brass key, cold boot, purchase, push).
 3. **[HIGH] Android §1 wiring** (Play Console → Firebase/FCM → RC android key → Play IAPs) — required for the decided simultaneous launch; Play pre-launch report as robot device-pass substitute.
 4. **[MED] Email live test + mail-tester score** (target 9+).
 5. **[LOW] Store listings** — screenshots, description, privacy-policy URL.

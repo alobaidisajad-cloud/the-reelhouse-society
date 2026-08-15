@@ -90,7 +90,9 @@ jest.mock('expo-linear-gradient', () => {
 // in place before the component that consumes them. Jest hoists jest.mock
 // regardless, so this is about legibility, not correctness.
 // eslint-disable-next-line import/first
-import { ConciergeButton } from '../ConciergeButton';
+import { ConciergeButton, conciergeGeometry } from '../ConciergeButton';
+// eslint-disable-next-line import/first
+import { NAV_BTN_SIZE, NAV_H_PADDING } from '../navMetrics';
 
 /** Opens the sheet and runs onShow, as the platform would. */
 async function open(api: ReturnType<typeof render>) {
@@ -174,5 +176,43 @@ describe('ConciergeButton', () => {
     await waitPastBackstop();
 
     expect(mockPush).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The card is anchored by arithmetic, not by measuring the button — measuring
+ * costs a layout pass and makes the first open flicker into place. The price of
+ * that is these relationships, which nothing on screen enforces.
+ */
+describe('conciergeGeometry', () => {
+  // A notched phone, a flat-top phone, and the zero-inset case the bar's
+  // Math.max(_, 20) floor exists for.
+  const insets = [47, 20, 0];
+  const widths = [320, 390, 430, 1024];
+
+  it.each(insets)('the notch points at the disc (inset %i)', (top) => {
+    const g = conciergeGeometry(top, 390);
+    const notchCentreOnScreen = g.cardLeft + g.notchCentre;
+    expect(notchCentreOnScreen).toBe(g.discCenterX);
+  });
+
+  it.each(insets)('the card clears the disc without a gap the notch cannot span (inset %i)', (top) => {
+    const g = conciergeGeometry(top, 390);
+    const gap = g.cardTop - g.discBottom;
+    expect(gap).toBeGreaterThan(0);
+    // The turned corner reaches up from the card's edge. If it reached further
+    // than the gap it would collide with the disc; if the gap were much larger
+    // the notch would point at nothing.
+    expect(g.notchReach).toBeLessThan(gap);
+  });
+
+  it.each(widths)('the card never leaves the screen (width %i)', (w) => {
+    const g = conciergeGeometry(47, w);
+    expect(g.cardLeft + g.cardWidth).toBeLessThanOrEqual(w - NAV_H_PADDING);
+  });
+
+  it('the disc sits inside the bar the metrics describe', () => {
+    const g = conciergeGeometry(47, 390);
+    expect(g.discBottom - g.btnTop).toBe(NAV_BTN_SIZE);
   });
 });
