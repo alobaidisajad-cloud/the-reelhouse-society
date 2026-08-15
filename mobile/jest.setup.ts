@@ -315,6 +315,10 @@ jest.mock('react-native-reanimated', () => {
     Layout: { duration: jest.fn().mockReturnThis(), springify: jest.fn().mockReturnThis() },
     LinearTransition: { duration: jest.fn().mockReturnThis(), springify: jest.fn().mockReturnThis() },
     cancelAnimation: jest.fn(),
+    // scrollBridge.ts calls makeMutable(0) at MODULE load, so without this any
+    // test that so much as imports TopNavBar threw before rendering a line.
+    // That is why the nav bar had no test at all. Purely additive.
+    makeMutable: jest.fn((v: any) => ({ value: v })),
     runOnJS: jest.fn((fn: any) => fn),
     runOnUI: jest.fn((fn: any) => fn),
     interpolate: jest.fn((v: any) => v),
