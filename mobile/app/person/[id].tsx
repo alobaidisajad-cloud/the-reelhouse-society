@@ -235,8 +235,15 @@ export default function PersonDetailScreen() {
       return;
     }
     if (!person) return;
-    nav.push('/(modals)/social-modal', {
-      mode: 'share-person',
+    // '/social-modal', not '/(modals)/social-modal'. Both resolve — expo-router
+    // accepts the group segment — but every other call site in the app and the
+    // typed router's own documentation use the plain path, and nav.push keys its
+    // circular-navigation history off the string it is given. Two spellings of
+    // one screen meant the guard counted them as two different rooms.
+    //
+    // `mode` is not sent: social-modal infers share-person from personId and
+    // never reads a mode param, so passing one only suggests it does.
+    nav.push('/social-modal', {
       personId: String(id),
       personName: person.name,
     });

@@ -244,3 +244,22 @@ describe('the page has ONE answer to "what is today"', () => {
     expect(src).toMatch(/function localToday[\s\S]{0,240}getFullYear\(\)/);
   });
 });
+
+describe('the share action points at the same room as everywhere else', () => {
+  it('uses the plain route, not the group-qualified spelling', () => {
+    const src = read(SCREEN);
+    // nav.push keys its circular-navigation history off the literal string, so
+    // '/(modals)/social-modal' and '/social-modal' counted as two rooms.
+    expect(src).not.toContain('/(modals)/social-modal');
+    expect(src).toContain("nav.push('/social-modal'");
+  });
+
+  it('sends what the modal actually reads', () => {
+    const src = read(SCREEN);
+    const modal = read('app/(modals)/social-modal.tsx');
+    // resolveMode infers share-person from personId. If that ever changes to
+    // read an explicit mode, this fails and the caller gets updated with it.
+    expect(modal).toMatch(/params\.personId/);
+    expect(src).toMatch(/personId: String\(id\)/);
+  });
+});
