@@ -12,6 +12,7 @@ import Animated, {
   cancelAnimation, withRepeat, useReducedMotion
 } from 'react-native-reanimated';
 import { colors } from '@/src/theme/theme';
+import { displayTextProps } from '@/src/constants/textScaling';
 import { st } from '@/src/components/person/personStyles';
 
 import type { StyleProp, ViewStyle } from 'react-native';
@@ -42,8 +43,11 @@ export const ObscurityBadge = memo(function ObscurityBadge({ score }: { score: n
   const color = score > 70 ? colors.sepia : score > 40 ? colors.bone : colors.fog;
   return (
     <View style={[st.obsBadge, { borderColor: color }]}>
-      <Text style={[st.obsScore, { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{score}</Text>
-      <Text style={st.obsLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{label}</Text>
+      {/* The raw score is gone. It was an internal 2–99 number shown without a
+          unit — "51 INDIE" asked a question it could not answer — and the word
+          already carries the whole meaning. The score still chooses the word
+          and the colour, so nothing is lost but the noise. */}
+      <Text style={[st.obsLabel, { color }]} numberOfLines={1} {...displayTextProps}>{label}</Text>
     </View>
   );
 });

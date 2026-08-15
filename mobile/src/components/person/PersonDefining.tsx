@@ -4,7 +4,7 @@
  * never stars — the Society has its own instruments.
  */
 import { useCallback, memo } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, PixelRatio } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,10 +13,10 @@ import { tmdb, obscurityScore } from '@/src/lib/tmdb';
 import { nav } from '@/src/utils/typedRouter';
 import PressableScale from '@/src/components/PressableScale';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
-import { ReelRating } from '@/src/components/Decorative';
 import { Film as FilmIcon } from 'lucide-react-native';
 import { ObscurityBadge } from '@/src/components/person/PersonOrnaments';
 import { s, st } from '@/src/components/person/personStyles';
+import { displayTextProps } from '@/src/constants/textScaling';
 
 // ── Interfaces ──────────────────────────────────────────────
 interface PersonCredit {
@@ -37,9 +37,12 @@ interface PersonDefiningProps {
   definingWorks: PersonCredit[];
 }
 
+// A 140pt card is 420 physical pixels on a 3x screen. 2x devices keep w342.
+const DEF_POSTER_SIZE = PixelRatio.get() >= 3 ? 'w500' : 'w342';
+
 // ── Defining Work Card ───────────────────────────────────────
 const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }) {
-  const posterUri = film.poster_path ? tmdb.poster(film.poster_path, 'w342') : null;
+  const posterUri = film.poster_path ? tmdb.poster(film.poster_path, DEF_POSTER_SIZE) : null;
   const score = obscurityScore(film);
 
   const handlePress = useCallback(() => {
@@ -51,6 +54,10 @@ const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }
       style={st.defCard}
       onPress={handlePress}
       haptic="selection"
+      // The shelf's separator is 12pt, so 6 is the most either card may claim.
+      // At the default 15 they overlapped by 18pt and the later card took it.
+      hitSlop={{ top: 15, bottom: 15, left: 6, right: 6 }}
+      accessibilityLabel={`${film.title || film.name}${film.release_date ? `, ${film.release_date.slice(0, 4)}` : ''}`}
     >
       <View style={st.defPosterWrap}>
         {posterUri ? (
@@ -65,12 +72,14 @@ const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }
           locations={[0, 0.45, 1]}
           style={st.defOverlay}
         >
-          <Text style={st.defTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{film.title || film.name}</Text>
+          <Text style={st.defTitle} numberOfLines={2} {...displayTextProps}>{film.title || film.name}</Text>
           <View style={st.defMetaRow}>
-            <Text style={st.defYear}>{film.release_date ? film.release_date.slice(0, 4) : 'TBA'}</Text>
-            {film.vote_average !== undefined && film.vote_average > 0 && (
-              <ReelRating rating={film.vote_average / 2} size={8} />
-            )}
+            {/* The five reels used to sit here at 8pt, where they resolved to
+                smudges rather than a rating — an instrument you cannot read is
+                worse than none. The year and the obscurity mark below already
+                say what this card needs to say. The reels keep their meaning on
+                surfaces large enough to show them. */}
+            <Text style={st.defYear} {...displayTextProps}>{film.release_date ? film.release_date.slice(0, 4) : 'TBA'}</Text>
           </View>
         </LinearGradient>
       </View>

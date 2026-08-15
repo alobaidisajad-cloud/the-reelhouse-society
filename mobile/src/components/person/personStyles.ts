@@ -31,11 +31,11 @@ export const s = StyleSheet.create({
   shimmerContent: { alignItems: 'center', marginTop: -75, paddingHorizontal: RAIL, zIndex: 2 },
   shimmerPortrait: { width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 2, marginBottom: 12 },
   shimmerDeptBadge: { width: 90, height: 22, borderRadius: 2, marginBottom: 10 },
-  shimmerName: { width: 220, height: 34, borderRadius: 2, marginBottom: 12 },
-  shimmerDateRow: { width: 190, height: 10, borderRadius: 2, marginBottom: 6 },
-  shimmerPlaceRow: { width: 150, height: 9, borderRadius: 2, marginBottom: 14 },
-  shimmerStatsRow: { flexDirection: 'row', gap: 14, marginBottom: 14, justifyContent: 'center' },
-  shimmerStat: { width: 90, height: 10, borderRadius: 2 },
+  shimmerName: { width: 220, height: 38, borderRadius: 2, marginBottom: 14 },
+  // Mirrors the record CARD now, not the four caption lines it replaced. A
+  // skeleton that promises a shape the page no longer has is worse than none.
+  shimmerRecordCard: { width: '100%', height: 78, borderRadius: 3, marginBottom: 14 },
+  shimmerLoungeBtn: { width: 190, height: 39, borderRadius: 2 },
 
   // ── Not Found / Error ──
   notFoundContainer: { justifyContent: 'center', alignItems: 'center', padding: 32 },
@@ -49,13 +49,38 @@ export const s = StyleSheet.create({
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: 'rgba(10,7,3,0.65)', borderWidth: 1, borderColor: colors.sepiaBorder,
     alignItems: 'center', justifyContent: 'center',
+    // Must out-rank the veil (90). Android orders by elevation, not zIndex, so
+    // giving the veil an elevation without raising this one would have hidden
+    // the only way off the page behind its own backdrop.
+    elevation: 100,
+  },
+
+  // ── The veil ──
+  // The back button is pinned and the list runs underneath it, so every heading
+  // and poster used to collide with it, and the clock sat on bare content. This
+  // is the ground for both: invisible at rest so the backdrop is untouched, and
+  // faded in by scroll on the UI thread. Below the button (100), above the list.
+  topVeil: {
+    position: 'absolute', top: 0, left: 0, right: 0,
+    zIndex: 90,
+    // The list beneath carries elevated content of its own — the portrait card
+    // sits at 16 — and on Android elevation beats zIndex. Without this the veil
+    // would have been drawn under the very thing it exists to cover. 90 clears
+    // everything in the list and still sits below the back button at 100.
+    elevation: 90,
+    // Elevation also DRAWS a shadow. This wants the z-order, not the mark.
+    shadowColor: 'transparent',
   },
 
   // ── Hero Backdrop ──
   heroWrap: { minHeight: 240, maxHeight: 300, position: 'relative', overflow: 'hidden' },
   heroBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   heroSepia: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.5)' },
-  perfBar: { position: 'absolute', bottom: 4, left: 0, right: 0, zIndex: 2 },
+  // The film leader runs along the TOP of the frame, not the bottom. The title
+  // block is pulled 75pt up over the hero, so a strip anywhere in the hero's
+  // lower region crosses the portrait's face — measured, not guessed. Moving it
+  // down cannot help; only moving it clear can.
+  perfBar: { position: 'absolute', top: 6, left: 0, right: 0, zIndex: 2 },
 
   // ── Dossier Section (the title block — four beats) ──
   dossierSection: { alignItems: 'center', marginTop: -75, paddingHorizontal: RAIL, zIndex: 2 },
@@ -72,6 +97,12 @@ export const s = StyleSheet.create({
   portraitCard: {
     width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 2, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
+    // The glow above carries elevation 15 to cast its sepia halo. Android paints
+    // siblings by elevation rather than JSX order, so without a higher number
+    // here the glow — a translucent wash 10pt larger than the card on every
+    // side — painted straight over the face. iOS was fine; Android was not.
+    elevation: 16,
+    zIndex: 1,
   },
   portrait: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
   portraitPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
@@ -87,18 +118,39 @@ export const s = StyleSheet.create({
   deptLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3.5, color: colors.sepia, includeFontPadding: false },
   personName: {
     fontFamily: fonts.display, fontSize: 28, color: colors.parchment,
-    textAlign: 'center', lineHeight: 34, marginBottom: 10,
+    // 34 gave 1.21 — already at the edge of the 1.2 tier this text declares, and
+    // 0.90 at 1.35. The name would have grown through its own line box on any
+    // enlarged system text. 38 clears both (38 / 33.6 = 1.13).
+    textAlign: 'center', lineHeight: 38, marginBottom: 10,
   },
-  // The life line — dates first, ground second; the dagger wears crimson.
-  lifeLine: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, textAlign: 'center', includeFontPadding: false },
-  lifeLineDeath: { color: colors.crimson },
-  lifeLinePlace: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog, opacity: 0.75, textAlign: 'center', marginTop: 4, includeFontPadding: false },
 
-  // ── Beat 2: the record — craft stats · known for ──
-  recordGroup: { alignItems: 'center', marginTop: 14, marginBottom: 14 },
-  statLine: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.bone, textAlign: 'center', includeFontPadding: false },
-  knownForLine: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, textAlign: 'center', marginTop: 5, includeFontPadding: false },
-  knownForTitle: { color: colors.sepia } as import('react-native').TextStyle,
+  // ── Beat 2: the record — a typed card, not four centred captions ──
+  // Born / place / craft / known-for used to stack as four separate centred
+  // lines, which read as a tombstone rather than a file. They are one card now:
+  // brass label, bone value, hairline between. A long birthplace WRAPS here
+  // instead of being shrunk by adjustsFontSizeToFit to 5.6pt.
+  recordCard: {
+    width: '100%', marginTop: 14, marginBottom: 14,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.18)', borderRadius: 3,
+    backgroundColor: 'rgba(18,14,9,0.5)',
+    paddingHorizontal: 12,
+  },
+  recordRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 8 },
+  recordLabel: {
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia,
+    width: 58, paddingTop: 1, includeFontPadding: false,
+  },
+  recordValue: {
+    flex: 1, fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2,
+    color: colors.bone, lineHeight: 15, includeFontPadding: false,
+  },
+  // The pressable KNOWN FOR row fills its value column, so the tap target is the
+  // whole line rather than the glyphs.
+  recordPressValue: { flex: 1 },
+  recordRule: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(184,137,26,0.14)' },
+  // The dagger wears crimson — archival convention, no skulls in this house.
+  recordDeath: { color: colors.crimson } as import('react-native').TextStyle,
+  recordLink: { color: colors.sepia } as import('react-native').TextStyle,
 
   // ── Beat 3: the action — lounge (every rank sees the door) ──
   loungeBtn: {
@@ -186,9 +238,11 @@ export const st = StyleSheet.create({
   shimmer: { backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 3 },
 
   // ── Obscurity Badge ──
-  obsBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 4, borderWidth: 1, borderRadius: 2 },
-  obsScore: { fontFamily: fonts.sub, fontSize: 10, includeFontPadding: false },
-  obsLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
+  // The raw score is gone. It was an internal 2–99 number with no unit — "51
+  // INDIE" invited the question "51 of what?", and the word already carries the
+  // whole meaning. The score still decides the word and the colour.
+  obsBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 7, paddingVertical: 4, borderWidth: 1, borderRadius: 2 },
+  obsLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, includeFontPadding: false },
 
   // ── Film-strip Perforations ──
   perfRow: {
@@ -218,6 +272,11 @@ export const st = StyleSheet.create({
   gridTitle: {
     fontFamily: fonts.sub, fontSize: 10, color: colors.bone,
     marginTop: 5, width: '100%', includeFontPadding: false,
+    lineHeight: 13,
+    // Two lines at a readable size beats one line shrunk to 7pt — "Untitled
+    // Daniels Event Film" was unreadable. The fixed height is what keeps a
+    // three-column grid's rows level when some titles wrap and others do not.
+    height: 26,
   },
   gridYear: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, letterSpacing: 1, marginTop: 2, includeFontPadding: false },
 

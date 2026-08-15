@@ -8,7 +8,7 @@
  * marked-up contact sheet of the artist's career.
  */
 import { useCallback, memo } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, PixelRatio, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
@@ -17,8 +17,12 @@ import PressableScale from '@/src/components/PressableScale';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { Film as FilmIcon, Check } from 'lucide-react-native';
 import { s, st, GRID_COL_STYLES } from '@/src/components/person/personStyles';
+import { displayTextProps } from '@/src/constants/textScaling';
 
-const PERF_COUNT = 40;
+// A 110pt-wide poster is 330 physical pixels on a 3x screen; w185 left nearly
+// half the detail to the upscaler. 2x devices are already served by w185 and
+// download exactly what they do today.
+const GRID_POSTER_SIZE = PixelRatio.get() >= 3 ? 'w342' : 'w185';
 
 // ── Interfaces ──────────────────────────────────────────────
 interface PersonCredit {
@@ -36,10 +40,16 @@ interface PersonCredit {
 }
 
 // ── Film-strip Perforations ──────────────────────────────────
+// Each hole is 14 wide with a 6pt gap, so a fixed 40 laid down ~800pt of strip
+// on a 390pt screen and threw over half of it away behind overflow:hidden.
+// Two spare holes keep the row running past both edges, which is the point.
+const PERF_PITCH = 20;
 export const FilmStripPerforations = memo(function FilmStripPerforations() {
+  const { width } = useWindowDimensions();
+  const count = Math.ceil(width / PERF_PITCH) + 2;
   return (
     <View style={st.perfRow}>
-      {Array.from({ length: PERF_COUNT }).map((_, i) => (
+      {Array.from({ length: count }).map((_, i) => (
         <View key={i} style={st.perfHole} />
       ))}
     </View>
@@ -48,7 +58,7 @@ export const FilmStripPerforations = memo(function FilmStripPerforations() {
 
 // ── Film Poster Card (grid item) ─────────────────────────────
 export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: { film: PersonCredit; screened?: boolean }) {
-  const posterUri = film.poster_path ? tmdb.poster(film.poster_path, 'w185') : null;
+  const posterUri = film.poster_path ? tmdb.poster(film.poster_path, GRID_POSTER_SIZE) : null;
 
   const handlePress = useCallback(() => {
     nav.push(`/film/${film.id}`);
@@ -59,6 +69,11 @@ export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: {
       style={st.gridCard}
       onPress={handlePress}
       haptic="selection"
+      // Columns sit 10pt apart and rows 18pt. PressableScale's default 15pt on
+      // every side made neighbours overlap by 20pt sideways, and the later
+      // sibling wins on both platforms — so the edge of one poster opened the
+      // film beside it. Half the real gap is the most either may claim.
+      hitSlop={{ top: 9, bottom: 9, left: 5, right: 5 }}
       accessibilityLabel={`${film.title || film.name}${screened ? ', screened' : ''}`}
     >
       <View style={st.gridPosterWrap}>
@@ -82,8 +97,11 @@ export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: {
           </View>
         )}
       </View>
-      <Text style={st.gridTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{film.title || film.name}</Text>
-      <Text style={st.gridYear}>{film.release_date ? film.release_date.slice(0, 4) : 'TBA'}</Text>
+      {/* Two lines at a readable size rather than one line squeezed to 7pt —
+          "Untitled Daniels Event Film" was unreadable. The style carries a fixed
+          height so a wrapped title cannot knock its row out of line. */}
+      <Text style={st.gridTitle} numberOfLines={2} {...displayTextProps}>{film.title || film.name}</Text>
+      <Text style={st.gridYear} {...displayTextProps}>{film.release_date ? film.release_date.slice(0, 4) : 'TBA'}</Text>
     </PressableScale>
   );
 });

@@ -20,6 +20,7 @@ import {
   View, Text, StyleSheet,
   RefreshControl, useWindowDimensions,
 } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
@@ -111,6 +112,19 @@ export default function PersonDetailScreen() {
   const heroDynStyle = useMemo(() => ({ height: windowWidth * 0.6 }), [windowWidth]);
   const floatingBackDynStyle = useMemo(() => ({ top: Math.max(insets.top + 10, 20) }), [insets.top]);
   const scrollContentDynStyle = useMemo(() => ({ paddingBottom: 100 + insets.bottom }), [insets.bottom]);
+
+  // ── The veil ──
+  // CinematicFlashList already mirrors its scroll offset into whatever shared
+  // value you hand it, so this needs no scroll handler of its own and leaves the
+  // cinematic scrollbar's own metrics untouched.
+  const scrollY = useSharedValue(0);
+  // Tall enough to cover the status bar and the button beneath it, and to give
+  // the gradient room to fall away before it reaches content.
+  const veilDynStyle = useMemo(() => ({ height: Math.max(insets.top, 20) + 56 }), [insets.top]);
+  const veilStyle = useAnimatedStyle(() => ({
+    // Fully drawn by the time the hero starts leaving; nothing at rest.
+    opacity: interpolate(scrollY.value, [0, 64], [0, 1], Extrapolation.CLAMP),
+  }));
 
   const personId = Number(id);
   const isArchivist = isArchivistPlusTier(user);
@@ -269,10 +283,23 @@ export default function PersonDetailScreen() {
 
   const heroBackdrop = definingFilm?.backdrop_path ? tmdb.backdrop(definingFilm.backdrop_path) : null;
 
+  /**
+   * THE CANON — the record, newest first, but the RECORD comes first.
+   *
+   * The old sort substituted '9999-99-99' for a missing date, which made
+   * undated entries the newest thing in the file. A 92-film career therefore
+   * opened on an untitled placeholder and two unreleased titles, most without
+   * posters. Work that exists now leads; announced and undated films keep their
+   * place in the file but sit at the end of it.
+   */
   const canonSorted = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const rank = (c: PersonCredit) => (!c.release_date ? 2 : c.release_date > today ? 1 : 0);
     return [...canon].sort((a, b) => {
-      const dateA = a.release_date || '9999-99-99';
-      const dateB = b.release_date || '9999-99-99';
+      const ra = rank(a), rb = rank(b);
+      if (ra !== rb) return ra - rb;
+      const dateA = a.release_date || '';
+      const dateB = b.release_date || '';
       if (dateA > dateB) return -1;
       if (dateA < dateB) return 1;
       return (b.popularity || 0) - (a.popularity || 0);
@@ -365,12 +392,10 @@ export default function PersonDetailScreen() {
         <ShimmerBlock style={s.shimmerPortrait} />
         <ShimmerBlock style={s.shimmerDeptBadge} />
         <ShimmerBlock style={s.shimmerName} />
-        <ShimmerBlock style={s.shimmerDateRow} />
-        <ShimmerBlock style={s.shimmerPlaceRow} />
-        <View style={s.shimmerStatsRow}>
-          <ShimmerBlock style={s.shimmerStat} />
-          <ShimmerBlock style={s.shimmerStat} />
-        </View>
+        {/* The record CARD, not the four caption lines it replaced — a skeleton
+            that promises a shape the page no longer has is worse than none. */}
+        <ShimmerBlock style={s.shimmerRecordCard} />
+        <ShimmerBlock style={s.shimmerLoungeBtn} />
       </View>
     </View>
   );
@@ -396,16 +421,37 @@ export default function PersonDetailScreen() {
 
   return (
     <View style={s.container}>
+      {/* ── The veil ──
+          The back button is pinned and the list runs beneath it, so headings and
+          posters used to slide under it and the clock sat on bare content. This
+          is the ground for both. Invisible at rest — the backdrop stays pristine
+          — and faded in by scroll on the UI thread, so it costs no JS per frame. */}
+      <Animated.View style={[s.topVeil, veilStyle, veilDynStyle]} pointerEvents="none">
+        <LinearGradient
+          colors={[colors.ink, 'rgba(10,9,6,0.86)', 'transparent']}
+          locations={[0, 0.55, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+
       {/* ── Floating Back Button ── */}
-      <PressableScale style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
+      <PressableScale
+        style={[s.floatingBack, floatingBackDynStyle]}
+        onPress={handleBack}
+        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+        haptic="light"
+        accessibilityLabel="Go back"
+      >
         <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
       </PressableScale>
 
       <CinematicFlashList
+        externalScrollY={scrollY}
+        topInset={insets.top}
         bottomInset={insets.bottom}
         data={canonSorted}
         numColumns={3}
-        estimatedItemSize={200}
+        estimatedItemSize={215}
         contentContainerStyle={[s.scrollContent, scrollContentDynStyle]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isManualRefresh} onRefresh={onPullToRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}
@@ -419,6 +465,7 @@ export default function PersonDetailScreen() {
             craftLabel={craftLabel}
             careerSpan={careerSpan}
             definingFilm={definingFilm}
+            definingWorksCount={definingWorks.length}
             isArchivist={!!isArchivist}
             handleLoungeShare={handleLoungeShare}
             showHunt={showHunt}

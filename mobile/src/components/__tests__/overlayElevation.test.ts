@@ -37,10 +37,13 @@ const EXEMPT: Record<string, string> = {
     joinedNameOverlay: 'sits among images and gradients inside the salon card — no elevated sibling',
     videoPlayOverlay: 'nothing in FilmMediaCarousel declares an elevation',
     topFade: 'nothing in ProfileBackdrop declares an elevation',
-    // NOT verified. personStyles.ts contains two elevated styles, so this one
-    // may genuinely be painted over on Android. It predates this guard and sits
-    // on a page not yet polished; checking it belongs to the Person pass.
-    defOverlay: 'UNVERIFIED — two elevated styles share its file; revisit in the Person pass',
+    // VERIFIED in the Person pass, 2026-08-15. The two elevated styles in
+    // personStyles.ts (portraitGlow, auteurHuntMastery) live in entirely
+    // different subtrees. defOverlay's only siblings inside defPosterWrap are
+    // the poster Image and nothing else — neither carries elevation — so paint
+    // order falls through to JSX order and the overlay sits on top on both
+    // platforms. Safe as written.
+    defOverlay: 'verified: its only sibling is the poster, and neither is elevated',
 };
 
 function walk(dir: string, out: string[] = []): string[] {

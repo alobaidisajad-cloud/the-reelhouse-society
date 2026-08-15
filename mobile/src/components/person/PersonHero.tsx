@@ -8,7 +8,7 @@
  * The life line follows archival convention: dates first, ground second,
  * the dagger (†) in crimson for the departed. No skulls in this house.
  */
-import { memo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +17,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { Film as FilmIcon, MessageCircle, KeyRound } from 'lucide-react-native';
 import { nav } from '@/src/utils/typedRouter';
 import { s } from '@/src/components/person/personStyles';
+import { displayTextProps } from '@/src/constants/textScaling';
 import { FilmStripPerforations } from '@/src/components/person/PersonFilmography';
 
 import type { DimensionValue } from 'react-native';
@@ -55,6 +56,8 @@ interface PersonHeroProps {
   craftLabel: string;
   careerSpan: number;
   definingFilm: PersonCredit | null;
+  /** How many cards the Defining shelf will show. 0 means KNOWN FOR must survive in the record card. */
+  definingWorksCount: number;
   isArchivist: boolean;
   handleLoungeShare: () => void;
   showHunt: boolean;
@@ -114,6 +117,7 @@ export const PersonHero = memo(function PersonHero({
   craftLabel,
   careerSpan,
   definingFilm,
+  definingWorksCount,
   isArchivist,
   handleLoungeShare,
   showHunt,
@@ -123,9 +127,49 @@ export const PersonHero = memo(function PersonHero({
   auteurHuntDynStyle,
   formatDossierDate: fmtDate,
 }: PersonHeroProps) {
-  const handleKnownForPress = () => {
+  const handleKnownForPress = useCallback(() => {
     if (definingFilm?.id) nav.push(`/film/${definingFilm.id}`);
-  };
+  }, [definingFilm?.id]);
+
+  /**
+   * The record card's rows, built once. Each is conditional, so a file with no
+   * birthday, no birthplace and no credits produces no card at all rather than
+   * an empty frame.
+   *
+   * KNOWN FOR is deliberately the exception: it appears ONLY when the Defining
+   * Works shelf will not render. When the shelf is there it already answers the
+   * question, usually with the very same film — so the line was a duplicate.
+   * When the shelf is empty this row is the only place that answer survives.
+   */
+  const rows = useMemo(() => {
+    const out: { label: string; value: string; crimson?: boolean; onPress?: () => void; a11y?: string }[] = [];
+
+    const birthBits = [
+      person.birthday ? fmtDate(person.birthday) : '',
+      person.place_of_birth ? person.place_of_birth.trim().toUpperCase() : '',
+    ].filter(Boolean);
+    if (birthBits.length) out.push({ label: 'BORN', value: birthBits.join('  ·  ') });
+
+    if (person.deathday) {
+      out.push({ label: 'DIED', value: `† ${fmtDate(person.deathday)}`, crimson: true });
+    }
+
+    if (canonCount > 0) {
+      const span = careerSpan > 0 ? `  ·  ${careerSpan} YEAR${careerSpan === 1 ? '' : 'S'} IN CINEMA` : '';
+      out.push({ label: 'RECORD', value: `${canonCount} ${craftLabel}${span}` });
+    }
+
+    if (definingFilm && definingWorksCount === 0) {
+      const title = (definingFilm.title || definingFilm.name || '').toUpperCase();
+      out.push({
+        label: 'KNOWN FOR',
+        value: `${title}  →`,
+        onPress: handleKnownForPress,
+        a11y: `Known for ${definingFilm.title || definingFilm.name}, open film`,
+      });
+    }
+    return out;
+  }, [person.birthday, person.place_of_birth, person.deathday, canonCount, craftLabel, careerSpan, definingFilm, definingWorksCount, fmtDate, handleKnownForPress]);
 
   return (
     <>
@@ -175,42 +219,41 @@ export const PersonHero = memo(function PersonHero({
         {person.known_for_department && (
           <View style={s.deptBadge}>
             <FilmIcon size={8} color={colors.sepia} strokeWidth={1.5} />
-            <Text style={s.deptLabel}>{person.known_for_department.toUpperCase()}</Text>
+            <Text style={s.deptLabel} {...displayTextProps}>{person.known_for_department.toUpperCase()}</Text>
           </View>
         )}
 
         <View>
-          <Text style={s.personName} accessibilityRole="header" adjustsFontSizeToFit numberOfLines={2} minimumFontScale={0.6}>{person.name}</Text>
+          <Text style={s.personName} accessibilityRole="header" {...displayTextProps} adjustsFontSizeToFit numberOfLines={2} minimumFontScale={0.6}>{person.name}</Text>
         </View>
 
-        {/* The life line — dates, then ground */}
-        {(person.birthday || person.deathday) && (
-          <Text style={s.lifeLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-            {person.birthday ? `BORN ${fmtDate(person.birthday)}` : ''}
-            {person.deathday ? (
-              <Text style={s.lifeLineDeath}>{person.birthday ? '  —  ' : ''}† {fmtDate(person.deathday)}</Text>
-            ) : null}
-          </Text>
-        )}
-        {person.place_of_birth && (
-          <Text style={s.lifeLinePlace} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-            {person.place_of_birth.trim().toUpperCase()}
-          </Text>
-        )}
-
-        {/* Beat 2 — the record */}
-        {canonCount > 0 && (
-          <View style={s.recordGroup}>
-            <Text style={s.statLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-              {canonCount} {craftLabel}{careerSpan > 0 ? ` · ${careerSpan} YEAR${careerSpan === 1 ? '' : 'S'} IN CINEMA` : ''}
-            </Text>
-            {definingFilm && (
-              <PressableScale onPress={handleKnownForPress} pressedScale={0.97} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel={`Known for ${definingFilm.title || definingFilm.name}, open film`}>
-                <Text style={s.knownForLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-                  KNOWN FOR: <Text style={s.knownForTitle}>{(definingFilm.title || definingFilm.name || '').toUpperCase()} →</Text>
-                </Text>
-              </PressableScale>
-            )}
+        {/* Beat 2 — THE RECORD, as a typed card.
+            Every row is conditional and the card itself only appears when at
+            least one row has something to say: TMDB's thinner files would
+            otherwise get an empty brass box. */}
+        {rows.length > 0 && (
+          <View style={s.recordCard}>
+            {rows.map((row, i) => (
+              <View key={row.label}>
+                {i > 0 && <View style={s.recordRule} />}
+                <View style={s.recordRow}>
+                  <Text style={s.recordLabel} {...displayTextProps}>{row.label}</Text>
+                  {row.onPress ? (
+                    <PressableScale
+                      style={s.recordPressValue}
+                      onPress={row.onPress}
+                      pressedScale={0.98}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityLabel={row.a11y}
+                    >
+                      <Text style={[s.recordValue, s.recordLink]} {...displayTextProps}>{row.value}</Text>
+                    </PressableScale>
+                  ) : (
+                    <Text style={[s.recordValue, row.crimson && s.recordDeath]} {...displayTextProps}>{row.value}</Text>
+                  )}
+                </View>
+              </View>
+            ))}
           </View>
         )}
 
@@ -228,7 +271,7 @@ export const PersonHero = memo(function PersonHero({
             ) : (
               <KeyRound size={11} color={colors.sepia} strokeWidth={1.5} />
             )}
-            <Text style={s.loungeBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SHARE TO LOUNGE</Text>
+            <Text style={s.loungeBtnText} {...displayTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SHARE TO LOUNGE</Text>
           </PressableScale>
         </View>
 
@@ -236,10 +279,17 @@ export const PersonHero = memo(function PersonHero({
         {showHunt && (
           <View style={s.auteurHunt}>
             <View style={s.auteurHuntHeader}>
-              <Text style={s.auteurHuntTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦ THE AUTEUR HUNT</Text>
-              <Text style={s.auteurHuntCount} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{seenCount} OF {huntTotal} SCREENED</Text>
+              <Text style={s.auteurHuntTitle} {...displayTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦ THE AUTEUR HUNT</Text>
+              <Text style={s.auteurHuntCount} {...displayTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{seenCount} OF {huntTotal} SCREENED</Text>
             </View>
-            <View style={s.auteurHuntTrack}>
+            {/* A progress bar that says nothing is a decoration. VoiceOver now
+                reads it as what it is, with its real position. */}
+            <View
+              style={s.auteurHuntTrack}
+              accessibilityRole="progressbar"
+              accessibilityLabel="The Auteur Hunt"
+              accessibilityValue={{ min: 0, max: huntTotal, now: seenCount }}
+            >
               <View style={[s.auteurHuntFill, auteurHuntDynStyle, isAuteurMastery && s.auteurHuntMastery]} />
               <View style={s.auteurHuntNotches} pointerEvents="none">
                 {HUNT_NOTCHES.map((i) => (
@@ -248,7 +298,7 @@ export const PersonHero = memo(function PersonHero({
               </View>
             </View>
             {isAuteurMastery && (
-              <Text style={s.auteurComplete} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>AUTEUR MASTERY — COMPLETE</Text>
+              <Text style={s.auteurComplete} {...displayTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>AUTEUR MASTERY — COMPLETE</Text>
             )}
           </View>
         )}
