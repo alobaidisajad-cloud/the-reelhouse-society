@@ -416,7 +416,12 @@ const s = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 16,
     paddingBottom: 6,
-    overflow: 'hidden',
+    // NO overflow:'hidden' here, deliberately. It sets clipsToBounds, and a
+    // layer that masks to its bounds cannot draw a shadow OUTSIDE them — so the
+    // card below declared a shadow that iOS silently never rendered. (This is
+    // the same rule that made discFace and discShadow two views instead of
+    // one.) Nothing in this card overflows: the glow is inset 22, the brackets
+    // 6, and the rows wrap rather than spill.
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.5,
@@ -435,6 +440,10 @@ const s = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
     elevation: 11,
     zIndex: 11,
+    // It has a background and an elevation, so on Android it would cast its own
+    // shadow — a small turned diamond that does not match the card's. The card
+    // carries the silhouette's shadow; this only wants the z-order.
+    shadowColor: 'transparent',
   },
   cardGlow: {
     position: 'absolute', top: 0, left: 22, right: 22, height: 1,
