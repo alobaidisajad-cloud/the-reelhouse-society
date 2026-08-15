@@ -285,12 +285,18 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 
 const s = StyleSheet.create({
   // The shadow host: the rail margins and the lift, nothing that clips.
+  //
+  // iOS geometry ONLY. `elevation` stays below on the clip host, because that
+  // is the view with a background — Android builds its shadow from the
+  // background's outline, so an elevated view with nothing painted in it is
+  // not guaranteed to cast anything. Leaving elevation where it already was
+  // means Android renders exactly as it did before this split, and iOS gains
+  // the shadow that overflow:'hidden' had been silently discarding.
   cardShadow: {
     // One rail: 16px, aligned with the header, tabs, and chips above.
     marginHorizontal: 16,
     marginBottom: 20,
     borderRadius: 4,
-    elevation: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.7,
@@ -308,6 +314,12 @@ const s = StyleSheet.create({
     borderColor: 'rgba(184,137,26,0.4)',
     overflow: 'hidden',
     position: 'relative',
+    // Android's lift. Kept on the painted view (see cardShadow above), where it
+    // has always been. shadowColor travels with it because from API 28 that is
+    // what tints the elevation shadow; it draws nothing on iOS on its own,
+    // since shadowOpacity defaults to 0.
+    elevation: 12,
+    shadowColor: '#000',
   },
   cardPremium: {
     borderColor: 'rgba(184,137,26,0.3)',
@@ -316,6 +328,9 @@ const s = StyleSheet.create({
   cardAuteur: {
     borderColor: colors.crimsonBorder,
     backgroundColor: 'rgba(12,5,5,1)',
+    // Pairs with cardShadowAuteur: the crimson file lifts in its own colour on
+    // Android too, not just iOS.
+    shadowColor: colors.bloodReel,
   },
   backFace: {
     backgroundColor: '#0B0806',

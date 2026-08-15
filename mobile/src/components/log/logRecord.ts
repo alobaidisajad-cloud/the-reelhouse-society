@@ -43,3 +43,38 @@ export function hasPhysicalFormat(value: string | null | undefined): boolean {
   const v = value.trim().toLowerCase();
   return v !== '' && v !== 'none';
 }
+
+export interface FilingMarkEntry {
+  key: 'date' | 'with' | 'format';
+  value: string;
+  accent?: boolean;
+}
+
+/**
+ * What the filing mark actually has to say.
+ *
+ * A pure function rather than logic inside the hero, because the interesting
+ * cases are the empty ones — a log with no date, an unparseable date, a format
+ * of 'None' — and an empty caption in a ruled band is exactly the kind of
+ * defect that renders fine and reads wrong. An entry is included only when it
+ * has a printable value, so the band is either facts or nothing at all.
+ */
+export function buildFilingMark(log: {
+  watched_date?: string | null;
+  watched_with?: string | null;
+  physical_media?: string | null;
+}): FilingMarkEntry[] {
+  const out: FilingMarkEntry[] = [];
+
+  const date = formatFiledDate(log.watched_date);
+  if (date) out.push({ key: 'date', value: date });
+
+  const withWhom = log.watched_with?.trim();
+  if (withWhom) out.push({ key: 'with', value: `WITH ${withWhom.toUpperCase()}`, accent: true });
+
+  if (hasPhysicalFormat(log.physical_media)) {
+    out.push({ key: 'format', value: log.physical_media!.trim().toUpperCase() });
+  }
+
+  return out;
+}

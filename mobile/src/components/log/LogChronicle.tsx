@@ -2,7 +2,9 @@
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { ReelRating } from '@/src/components/Decorative';
-import { stripHTML } from '@/src/utils/text';
+import { stripHTML, isRTLText } from '@/src/utils/text';
+import { formatFiledDate } from '@/src/components/log/logRecord';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import { s, SPINE } from '@/src/components/log/logDetailStyles';
 
 interface ViewingHistoryEntry {
@@ -22,10 +24,8 @@ const ChronicleCard = React.memo(({ entry, cardWidth }: { entry: Record<string, 
           {entry.label}
         </Text>
       </View>
-      {entry.date && (
-        <Text style={s.chronicleDateText}>
-          · {new Date(entry.date).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' })}
-        </Text>
+      {!!formatFiledDate(entry.date) && (
+        <Text style={s.chronicleDateText}>· {formatFiledDate(entry.date)}</Text>
       )}
     </View>
     {entry.rating > 0 && (
@@ -35,7 +35,18 @@ const ChronicleCard = React.memo(({ entry, cardWidth }: { entry: Record<string, 
     )}
     {entry.review ? (
       <ScrollView style={s.maxHeight200} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-        <Text style={[s.chronicleReviewText, entry.isCurrent && s.chronicleReviewTextCurrent, !entry.isCurrent && s.chronicleReviewTextPast]} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {/* Same two rules as every other place a member's own writing is read on
+            this page: a capped line box (this one is fixed at 20/22pt and would
+            clip without it) and the paragraph's own direction. */}
+        <Text
+          style={[
+            s.chronicleReviewText,
+            entry.isCurrent && s.chronicleReviewTextCurrent,
+            !entry.isCurrent && s.chronicleReviewTextPast,
+            isRTLText(entry.review) && s.rtlText,
+          ]}
+          {...scaledTextProps}
+        >
           {entry.isCurrent ? '' : '"'}{stripHTML(entry.review)}{entry.isCurrent ? '' : '"'}
         </Text>
       </ScrollView>

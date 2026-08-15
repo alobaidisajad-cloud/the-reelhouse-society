@@ -157,6 +157,9 @@ export default function LogComments({
             onChangeText={onNewCommentChange}
             multiline
             maxLength={MAX_LENGTHS.logComment}
+            // The box below it is a fixed 22pt line. Uncapped, a member writing
+            // at the largest accessibility size types into clipped lines.
+            {...scaledTextProps}
             selectionColor={'rgba(220,166,58,0.3)'}
             cursorColor={colors.sepia}
             disableFullscreenUI={true}

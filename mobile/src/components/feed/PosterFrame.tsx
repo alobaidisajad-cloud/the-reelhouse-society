@@ -92,11 +92,14 @@ const s = StyleSheet.create({
     height: 111,
     borderRadius: 3,
     zIndex: 5,
+    // iOS geometry only. `elevation` stays on the clip host below, which is the
+    // view that paints a background — Android derives its shadow from that
+    // background's outline. Keeping it there also keeps this poster's paint
+    // order over the blurred glow exactly as it was.
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.7,
     shadowRadius: 20,
-    elevation: 12,
   },
   // The clip host. The blurred glow layer is scaled to 1.15 and would spill
   // past the frame without this.
@@ -109,6 +112,9 @@ const s = StyleSheet.create({
     backgroundColor: colors.soot,
     position: 'relative',
     overflow: 'hidden',
+    // Android's lift, on the painted view where it has always been.
+    elevation: 12,
+    shadowColor: '#000',
   },
   posterEmpty: {
     ...StyleSheet.absoluteFillObject,

@@ -72,10 +72,14 @@ export const s = StyleSheet.create({
   // (offset -20, radius 40) — a deliberate, large effect that iOS has never
   // drawn, because the same style also clips. Android drew one from elevation
   // 24, so the record has been sitting on the page differently per platform.
-  contentCardShadow: { borderTopLeftRadius: 12, borderTopRightRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40, elevation: 24 },
+  // iOS geometry only. `elevation` stays on contentCard below: Android builds
+  // its shadow from the painted background's outline, and this host paints
+  // nothing — the sheet is deliberately 8% see-through so the film's backdrop
+  // reads under it, which is why the background cannot simply be copied up here.
+  contentCardShadow: { borderTopLeftRadius: 12, borderTopRightRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40 },
   contentCardShadowAuteur: { shadowColor: colors.bloodReel },
-  contentCard: { backgroundColor: 'rgba(10,7,3,0.92)', borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden' },
-  contentCardAuteur: { backgroundColor: 'rgba(25,10,10,0.92)', borderColor: colors.crimsonBorder },
+  contentCard: { backgroundColor: 'rgba(10,7,3,0.92)', borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', elevation: 24, shadowColor: '#000' },
+  contentCardAuteur: { backgroundColor: 'rgba(25,10,10,0.92)', borderColor: colors.crimsonBorder, shadowColor: colors.bloodReel },
   logCardInner: { paddingHorizontal: SPINE, paddingBottom: 16, marginTop: 0, paddingTop: 24 },
   logCenter: { alignItems: 'center' },
   bylineFull: { width: '100%', marginBottom: 20 },
@@ -86,10 +90,12 @@ export const s = StyleSheet.create({
   posterGlowAuteur: { backgroundColor: colors.crimsonFaint },
   posterGlowArchivist: { backgroundColor: colors.sepiaSubtle },
   // Shadow host / clip host, same reason as the record card above.
-  posterBoundsShadow: { width: 140, height: 210, borderRadius: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 40, elevation: 12 },
+  // iOS geometry only — `elevation` stays on posterBounds, the painted view,
+  // which also keeps the plate drawing over its own glow on Android.
+  posterBoundsShadow: { width: 140, height: 210, borderRadius: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 40 },
   posterBoundsShadowAuteur: { shadowColor: 'rgba(107,26,10,0.3)' },
-  posterBounds: { width: '100%', height: '100%', borderRadius: 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.sepiaBorderStrong, backgroundColor: colors.soot },
-  posterBoundsAuteur: { borderColor: colors.crimsonBorder },
+  posterBounds: { width: '100%', height: '100%', borderRadius: 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.sepiaBorderStrong, backgroundColor: colors.soot, elevation: 12, shadowColor: '#000' },
+  posterBoundsAuteur: { borderColor: colors.crimsonBorder, shadowColor: 'rgba(107,26,10,0.3)' },
   posterCentered: { width: '100%', height: '100%' },
   posterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
 

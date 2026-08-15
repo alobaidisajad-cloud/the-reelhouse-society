@@ -4,6 +4,7 @@ import { View, Text } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Heart, MessageSquare, Edit3, MessageCircle, ChevronDown, Bookmark } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
+import { deckLabelProps } from '@/src/constants/textScaling';
 import AutopsyGauge from '@/src/components/AutopsyGauge';
 import { hasRatedAutopsy } from '@/src/components/feed/AutopsyView';
 import PressableScale from '@/src/components/PressableScale';
@@ -90,13 +91,13 @@ export default function LogActionDeck({
            {/* CERTIFY — wired to toggleEndorse */}
            <PressableScale style={s.deckBtn} onPress={onToggleEndorse} hitSlop={{ top: 4, bottom: 8, left: 0, right: 0 }} haptic="light" pressedScale={0.92}>
               <Heart size={16} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
-              <Text style={[s.deckLabel, endorsed && s.deckLabelCertified]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
+              <Text style={[s.deckLabel, endorsed && s.deckLabelCertified]} {...deckLabelProps}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
            </PressableScale>
 
            {/* CRITIQUE — scrolls to comment input */}
            <PressableScale style={s.deckBtn} onPress={onCritiquePress} hitSlop={{ top: 4, bottom: 8, left: 0, right: 0 }} haptic="selection" pressedScale={0.92}>
               <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
-              <Text style={s.deckLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>CRITIQUE</Text>
+              <Text style={s.deckLabel} {...deckLabelProps}>CRITIQUE</Text>
            </PressableScale>
 
            {/* The third slot adapts, exactly as the feed card's does: your own
@@ -106,7 +107,7 @@ export default function LogActionDeck({
            {isOwner ? (
              <PressableScale style={s.deckBtn} onPress={onEditPress} hitSlop={{ top: 4, bottom: 8, left: 0, right: 0 }} haptic="light" pressedScale={0.92}>
                 <Edit3 size={16} strokeWidth={2} color={colors.sepia} />
-                <Text style={[s.deckLabel, s.deckLabelActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>EDIT</Text>
+                <Text style={[s.deckLabel, s.deckLabelActive]} {...deckLabelProps}>EDIT</Text>
              </PressableScale>
            ) : (
              <PressableScale
@@ -119,14 +120,14 @@ export default function LogActionDeck({
                accessibilityLabel={filmSaved ? 'Remove film from your watchlist' : 'Save film to your watchlist'}
              >
                 <Bookmark size={16} strokeWidth={2} color={filmSaved ? colors.sepia : colors.fog} fill={filmSaved ? colors.sepia : 'transparent'} />
-                <Text style={[s.deckLabel, filmSaved && s.deckLabelActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{filmSaved ? 'SAVED' : 'SAVE'}</Text>
+                <Text style={[s.deckLabel, filmSaved && s.deckLabelActive]} {...deckLabelProps}>{filmSaved ? 'SAVED' : 'SAVE'}</Text>
              </PressableScale>
            )}
 
            {/* LOUNGE — opens ShareToLoungeModal with this log's film */}
            <PressableScale style={s.deckBtn} onPress={onLoungePress} hitSlop={{ top: 4, bottom: 8, left: 0, right: 0 }} haptic="medium" pressedScale={0.92}>
               <MessageCircle size={16} strokeWidth={2} color={colors.fog} />
-              <Text style={s.deckLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>LOUNGE</Text>
+              <Text style={s.deckLabel} {...deckLabelProps}>LOUNGE</Text>
            </PressableScale>
         </View>
       </View>

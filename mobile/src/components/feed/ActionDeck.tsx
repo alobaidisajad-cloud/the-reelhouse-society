@@ -6,6 +6,7 @@ import { Heart, MessageSquare, Edit3, Bookmark, MessageCircle, KeyRound } from '
 import { useWatchlistStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
+import { deckLabelProps } from '@/src/constants/textScaling';
 import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
@@ -152,12 +153,17 @@ export const ActionDeck = React.memo(function ActionDeck({
           <Animated.View style={animatedHeartStyle}>
             <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
           </Animated.View>
-          <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
+          {/* Four labels, one line each, at every text size the app allows.
+              The cap does the work: at 1.35 the widest of them ('CERTIFIED')
+              needs ~79pt of an ~81pt column, and shrink-to-fit absorbs the
+              rest. Uncapped, all four ran past their columns — three of them
+              wrapped to a second line and left the deck ragged. */}
+          <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]} {...deckLabelProps}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
         </PressableScale>
 
         <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleCritique} accessibilityRole="button" accessibilityLabel="Write a critique">
           <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
-          <Text style={s.actionLabel}>CRITIQUE</Text>
+          <Text style={s.actionLabel} {...deckLabelProps}>CRITIQUE</Text>
         </PressableScale>
 
         <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: !isOwner && filmSaved }} accessibilityLabel={isOwner ? 'Edit this log' : filmSaved ? 'Remove film from your watchlist' : 'Save film to your watchlist'}>
@@ -168,7 +174,7 @@ export const ActionDeck = React.memo(function ActionDeck({
               <Bookmark size={15} strokeWidth={2} color={filmSaved ? colors.sepia : colors.fog} fill={filmSaved ? colors.sepia : 'transparent'} />
             )}
           </Animated.View>
-          <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelSaved]}>{isOwner ? 'EDIT' : filmSaved ? 'SAVED' : 'SAVE'}</Text>
+          <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelSaved]} {...deckLabelProps}>{isOwner ? 'EDIT' : filmSaved ? 'SAVED' : 'SAVE'}</Text>
         </PressableScale>
 
         {/* Eligible members share to a salon; cinephiles hold the brass key —
@@ -179,7 +185,7 @@ export const ActionDeck = React.memo(function ActionDeck({
           ) : (
             <KeyRound size={15} strokeWidth={2} color={colors.sepia} style={s.keyDim} />
           )}
-          <Text style={[s.actionLabel, !isLoungeEligible && s.actionLabelKey]}>LOUNGE</Text>
+          <Text style={[s.actionLabel, !isLoungeEligible && s.actionLabelKey]} {...deckLabelProps}>LOUNGE</Text>
         </PressableScale>
       </View>
 

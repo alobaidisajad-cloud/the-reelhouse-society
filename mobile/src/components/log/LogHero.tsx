@@ -8,7 +8,7 @@ import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
 import { s } from '@/src/components/log/logDetailStyles';
-import { formatFiledDate, hasPhysicalFormat } from '@/src/components/log/logRecord';
+import { buildFilingMark } from '@/src/components/log/logRecord';
 import { displayTextProps } from '@/src/constants/textScaling';
 
 interface LogHeroProps {
@@ -51,26 +51,12 @@ export default function LogHero({
   onPressUser,
   onPressFilm,
 }: LogHeroProps) {
-  /**
-   * What the filing mark actually has to say. Every entry is conditional, so a
-   * log with nothing recorded produces no band rather than an empty rule.
-   *
-   * NO_FORMAT guards the composer's 'None' option. The save path already drops
-   * it (`physicalMedia !== 'None' ? … : null`) but the offline mapping in
-   * app/log/[id].tsx passes the raw local value straight through — so the same
-   * log printed "FORMAT: NONE" when read from the local store and nothing when
-   * read from the server. That mapping is fixed too; this guard is what keeps
-   * legacy rows and any future path from re-introducing it.
-   */
-  const filed = React.useMemo(() => {
-    const out: { key: string; value: string; accent?: boolean }[] = [];
-    if (log.watched_date) out.push({ key: 'date', value: formatFiledDate(log.watched_date) });
-    if (log.watched_with) out.push({ key: 'with', value: `WITH ${log.watched_with.toUpperCase()}`, accent: true });
-    if (hasPhysicalFormat(log.physical_media)) {
-      out.push({ key: 'format', value: log.physical_media!.toUpperCase() });
-    }
-    return out;
-  }, [log.watched_date, log.watched_with, log.physical_media]);
+  // What the filing mark has to say — see buildFilingMark, which owns the rules
+  // for what counts as a printable fact (and is tested on the empty cases).
+  const filed = React.useMemo(
+    () => buildFilingMark(log),
+    [log.watched_date, log.watched_with, log.physical_media], // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   return (
     <View style={s.logCenter}>
@@ -108,7 +94,9 @@ export default function LogHero({
         <PressableScale onPress={onPressFilm} pressedScale={0.95} haptic="selection">
            <Text style={s.logFilmTitle} {...displayTextProps} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.8}>{log.film_title}</Text>
         </PressableScale>
-        {log.year && <Text style={s.logFilmYear}>{log.year}</Text>}
+        {/* `!!` because a bare number in a && guard RENDERS when it is 0 — and a
+            loose 0 outside a <Text> is a red screen, not a missing year. */}
+        {!!log.year && <Text style={s.logFilmYear}>{log.year}</Text>}
       </View>
 
       {log.rating > 0 && (

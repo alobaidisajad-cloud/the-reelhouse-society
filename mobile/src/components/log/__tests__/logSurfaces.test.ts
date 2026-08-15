@@ -11,7 +11,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { stripHTML, isRTLText } from '@/src/utils/text';
-import { formatFiledDate, hasPhysicalFormat } from '@/src/components/log/logRecord';
+import { formatFiledDate, hasPhysicalFormat, buildFilingMark } from '@/src/components/log/logRecord';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const read = (f: string) =>
@@ -28,9 +28,12 @@ const CARD = 'src/components/feed/ActivityCard.tsx';
 const POSTER = 'src/components/feed/PosterFrame.tsx';
 const AUTOPSY = 'src/components/feed/AutopsyView.tsx';
 
-/** Brace-matched, so a single-line style cannot swallow the next block's body. */
+/**
+ * Brace-matched, so a single-line style cannot swallow the next block's body.
+ * Matches both an object key (`foo: {`) and a declaration (`const foo = {`).
+ */
 function style(src: string, name: string): string {
-  const at = src.search(new RegExp(`\\b${name}\\s*:\\s*\\{`));
+  const at = src.search(new RegExp(`\\b${name}\\s*[:=]\\s*\\{`));
   if (at === -1) return '';
   const open = src.indexOf('{', at);
   let depth = 0;
@@ -99,12 +102,42 @@ describe('a record states only facts', () => {
 
   it('the filing mark only appears when it has something to say', () => {
     expect(read(HERO)).toMatch(/filed\.length > 0 &&/);
+    expect(buildFilingMark({})).toEqual([]);
+    expect(buildFilingMark({ watched_date: null, watched_with: '', physical_media: 'None' })).toEqual([]);
+  });
+
+  it('the filing mark prints facts and nothing else', () => {
+    // An empty caption inside a ruled band renders fine and reads wrong, so
+    // these are the cases that matter: each field present but unprintable.
+    expect(buildFilingMark({ watched_date: 'not a date' })).toEqual([]);
+    expect(buildFilingMark({ watched_with: '   ' })).toEqual([]);
+    expect(buildFilingMark({ physical_media: '  none  ' })).toEqual([]);
+
+    expect(buildFilingMark({
+      watched_date: '2026-08-05',
+      watched_with: 'mara',
+      physical_media: '4k uhd',
+    })).toEqual([
+      { key: 'date', value: 'AUG 5, 2026' },
+      { key: 'with', value: 'WITH MARA', accent: true },
+      { key: 'format', value: '4K UHD' },
+    ]);
+
+    // Order is the record's grammar: when, with whom, on what. A gap in the
+    // middle must close up rather than leave the band lopsided.
+    expect(buildFilingMark({ watched_date: '2026-08-05', physical_media: 'VHS' })
+      .map((e) => e.key)).toEqual(['date', 'format']);
   });
 
   it('one date shape on the page', () => {
     expect(formatFiledDate('2026-08-05')).toBe('AUG 5, 2026');
-    // The critiques list used to print the device's short form beneath it.
-    expect(read('src/components/log/LogComments.tsx')).not.toMatch(/toLocaleDateString/);
+    expect(formatFiledDate('not a date')).toBe('');
+    // Nowhere on this page formats its own date: the critiques list printed the
+    // device's short form, and the chronicle printed a third shape again.
+    for (const f of ['src/components/log/LogComments.tsx', 'src/components/log/LogChronicle.tsx',
+                     'src/components/log/LogHero.tsx']) {
+      expect(read(f)).not.toMatch(/toLocaleDateString/);
+    }
   });
 });
 
@@ -123,8 +156,23 @@ describe('a member’s own writing is rendered in their own direction', () => {
   });
 
   it('every surface carrying member prose asks the question', () => {
-    for (const f of [REVIEW, 'src/components/log/LogReviewBody.tsx', 'src/components/log/LogComments.tsx']) {
-      expect(read(f)).toMatch(/\bisRTLText\b/);
+    // LogChronicle is on this list because it was missed the first time: past
+    // viewings are member prose too, and they read on the same page.
+    // The count is the point. A file-level "does it mention RTL" passed while
+    // the chronicle had none, and still passed when one of three prose blocks
+    // on a surface lost its direction — so every block is counted.
+    const BLOCKS: [string, number][] = [
+      [REVIEW, 3],                                       // pull quote, review, read-more row
+      ['src/components/log/LogReviewBody.tsx', 3],        // pull quote, essay, private notes
+      ['src/components/log/LogComments.tsx', 1],          // critique body
+      ['src/components/log/LogChronicle.tsx', 1],         // past viewing
+    ];
+    for (const [f, blocks] of BLOCKS) {
+      // Imports are stripped first: matching the whole file proved only that
+      // the helper was IMPORTED, not that it is called where text renders.
+      const body = read(f).replace(/^\s*import[\s\S]*?;\s*$/gm, '');
+      expect(body).toMatch(/\bisRTLText\s*\(/);
+      expect(body.match(/&&\s*s\.rtl/g) ?? []).toHaveLength(blocks);
     }
   });
 
@@ -150,6 +198,16 @@ describe('one cleaner, so a review reads the same on both surfaces', () => {
     // escaping is undone and no more: &amp;lt; yields &lt;, never <.
     expect(stripHTML('&amp;lt;script&amp;gt;')).toBe('&lt;script&gt;');
     expect(stripHTML('&amp;amp;')).toBe('&amp;');
+  });
+
+  it('leaves a member’s own angle brackets alone', () => {
+    // The card's old cleaner deleted anything between brackets, which ate the
+    // first two words of `<The Batman> is the best of them`.
+    expect(stripHTML('<The Batman> is the best of them')).toBe('<The Batman> is the best of them');
+    expect(stripHTML('<president> was a strange choice')).toBe('<president> was a strange choice');
+    // …while still removing real tags, including ones no whitelist had before.
+    expect(stripHTML('<blockquote cite="x">kept</blockquote>')).toBe('kept');
+    expect(stripHTML('a <br/> b')).toBe('a \n b');
   });
 
   it('the card no longer carries a second copy', () => {
@@ -178,10 +236,16 @@ describe('a shadow is never asked for through a clip', () => {
     // The host that casts must not clip…
     expect(shadow).not.toMatch(/overflow:\s*['"]hidden['"]/);
     expect(shadow).toMatch(/shadowOpacity|shadowRadius|shadowOffset/);
-    // …and the host that clips must not carry a box shadow.
+    // …and the host that clips must not carry the iOS box shadow.
     expect(clip).toMatch(/overflow:\s*['"]hidden['"]/);
     expect(clip.split('\n').filter((l) => !/textShadow/.test(l)).join('\n'))
       .not.toMatch(/shadowOpacity|shadowRadius|shadowOffset/);
+    // Android is the other half, and it splits the OTHER way: its shadow comes
+    // from the painted background's outline, so `elevation` belongs on the clip
+    // host — which is also exactly where it sat before the split, so Android
+    // renders unchanged. An elevation on the empty outer host may cast nothing.
+    expect(clip).toMatch(/elevation:/);
+    expect(shadow).not.toMatch(/elevation:/);
   });
 });
 
@@ -216,18 +280,100 @@ describe('neighbours do not claim the same pixels', () => {
 });
 
 describe('text can be enlarged without leaving its line box', () => {
-  const cases: [string, number][] = [
-    ['logFilmTitle', 1.2],
-    ['featuredQuote', 1.2],
-    ['reviewParagraph', 1.35],
-    ['commBody', 1.35],
-    ['privateNotesBody', 1.35],
-  ];
-  it.each(cases)('%s survives its declared tier', (name, cap) => {
+  // Every FIXED line box on this page, and the cap declared where it renders.
+  // 1.35 = scaledTextProps, 1.2 = displayTextProps, 1 = decorative (no scaling).
+  const TIERS: Record<string, [cap: number, file: string]> = {
+    logFilmTitle: [1.2, 'src/components/log/LogHero.tsx'],
+    featuredQuote: [1.2, 'src/components/log/LogReviewBody.tsx'],
+    reviewParagraph: [1.35, 'src/components/log/LogReviewBody.tsx'],
+    commBody: [1.35, 'src/components/log/LogComments.tsx'],
+    privateNotesBody: [1.35, 'src/components/log/LogReviewBody.tsx'],
+    critiqueInput: [1.35, 'src/components/log/LogComments.tsx'],
+    chronicleReviewText: [1.35, 'src/components/log/LogChronicle.tsx'],
+    chronicleReviewTextCurrent: [1.35, 'src/components/log/LogChronicle.tsx'],
+    dropCapLetter: [1, 'src/components/log/LogReviewBody.tsx'],
+  };
+  const PROP: Record<number, RegExp> = {
+    1.35: /\{\.\.\.scaledTextProps\}/,
+    1.2: /\{\.\.\.displayTextProps\}/,
+    1: /allowFontScaling=\{false\}/,
+  };
+
+  /** The opening tag that carries this style, brace-aware so `() =>` in a prop
+   *  cannot end it early. */
+  function tagUsing(src: string, styleName: string): string {
+    const at = src.search(new RegExp(`s\\.${styleName}\\b`));
+    if (at === -1) return '';
+    const start = src.lastIndexOf('<', at);
+    let depth = 0;
+    for (let i = start; i < src.length; i++) {
+      if (src[i] === '{') depth++;
+      else if (src[i] === '}') depth--;
+      else if (src[i] === '>' && depth === 0) return src.slice(start, i + 1);
+    }
+    return '';
+  }
+
+  // The card has its own stylesheet and its own fixed boxes. All within the
+  // caps below; listed so that a new one there is caught too.
+  // `ownSite: false` means the cap is inherited from the enclosing <Text>,
+  // which RN does for nested text — so there is no prop to assert on the tag.
+  const CARD_TIERS: Record<string, [cap: number, file: string, ownSite: boolean]> = {
+    pullQuote: [1.2, REVIEW, true],
+    review: [1.35, REVIEW, true],
+    dropCapText: [1.35, REVIEW, false],  // nested in `review`, inherits its 13pt
+    dropCapLetter: [1, REVIEW, true],
+  };
+
+  // The enumeration IS the test. A style with a fixed lineHeight and no
+  // declared cap fails here rather than clipping on someone's phone — this page
+  // grew three such boxes without anyone noticing.
+  //
+  // `lineHeight: undefined` is deliberately NOT a fixed box: that is how
+  // dropCapReview releases the line height so a 32pt initial has room.
+  const boxes = (file: string) =>
+    [...read(file).matchAll(/(\w+)\s*:\s*\{[^{}]*lineHeight:\s*\d/g)].map((m) => m[1]).sort();
+
+  it('every fixed line box on the record page is accounted for', () => {
+    expect(boxes(STYLES)).toEqual(Object.keys(TIERS).sort());
+  });
+
+  it('every fixed line box on the card is accounted for', () => {
+    expect(boxes(REVIEW)).toEqual(Object.keys(CARD_TIERS).sort());
+  });
+
+  it.each(Object.entries(CARD_TIERS))('%s on the card survives its tier', (name, [cap, file, ownSite]) => {
+    const body = style(read(file), name);
+    const lh = num(body, 'lineHeight')!;
+    // dropCapText sets no size of its own — it reads the paragraph's.
+    const size = num(body, 'fontSize') ?? num(style(read(file), 'review'), 'fontSize')!;
+    expect(lh / (size * cap)).toBeGreaterThanOrEqual(1.05);
+    if (ownSite) expect(tagUsing(read(file), name)).toMatch(PROP[cap]);
+  });
+
+  it.each(Object.entries(TIERS))('%s survives its declared tier', (name, [cap]) => {
     const body = style(read(STYLES), name);
     const size = num(body, 'fontSize')!;
     const lh = num(body, 'lineHeight')!;
     expect(lh / (size * cap)).toBeGreaterThanOrEqual(1.05);
+  });
+
+  // The arithmetic above is only true if the cap is actually DECLARED where the
+  // text renders. Without this, deleting the prop leaves every sum still green.
+  it.each(Object.entries(TIERS))('%s declares that tier where it renders', (name, [cap, file]) => {
+    const tag = tagUsing(read(file), name);
+    expect(tag).not.toBe('');
+    expect(tag).toMatch(PROP[cap]);
+  });
+
+  it('one essay reads at one size', () => {
+    // The opening paragraph is a different element from the rest (it carries
+    // the initial), and it was the only one without a cap — so at large text
+    // paragraph one grew while paragraphs two onward held.
+    const src = read('src/components/log/LogReviewBody.tsx');
+    for (const p of ['dropCapParagraph', 'reviewParagraph']) {
+      expect(tagUsing(src, p)).toMatch(/\{\.\.\.scaledTextProps\}/);
+    }
   });
 
   it('the drop caps do not scale at all — they clipped above 1.01x', () => {
@@ -235,6 +381,52 @@ describe('text can be enlarged without leaving its line box', () => {
     // would push the first line of the paragraph off its own baseline.
     expect(read(REVIEW)).toMatch(/dropCapLetter\}\s*allowFontScaling=\{false\}/);
     expect(read('src/components/log/LogReviewBody.tsx')).toMatch(/dropCapLetter\}\s*allowFontScaling=\{false\}/);
+  });
+});
+
+describe('no deck label outgrows its column', () => {
+  // A deck splits the width evenly and cannot reflow, so a label that grows
+  // past its share wraps or truncates. Both decks now read one shared prop set;
+  // this checks the geometry that set was chosen for, at the narrowest width
+  // the app targets, with the labels taken from the shipped source.
+  // Read from the shipped constants, never restated here: a test that keeps its
+  // own copy of the cap goes on passing after someone changes the real one.
+  const scaling = read('src/constants/textScaling.ts');
+  const deckProps = style(scaling, 'deckLabelProps');
+  const CAP = num(style(scaling, 'scaledTextProps'), 'maxFontSizeMultiplier')!;
+  const MIN_SCALE = num(deckProps, 'minimumFontScale')!;
+
+  it('the shared props are the capped tier plus one line', () => {
+    expect(deckProps).toMatch(/\.\.\.scaledTextProps/);
+    expect(deckProps).toMatch(/numberOfLines:\s*1/);
+    expect(deckProps).toMatch(/adjustsFontSizeToFit:\s*true/);
+    expect(CAP).toBeGreaterThan(1);
+    expect(MIN_SCALE).toBeGreaterThan(0);
+  });
+
+  const widest = (file: string) => {
+    const labels = [...read(file).matchAll(/'([A-Z]{3,})'/g)].map((m) => m[1]);
+    expect(labels.length).toBeGreaterThan(3);
+    return labels.reduce((a, b) => (b.length > a.length ? b : a));
+  };
+
+  it.each([
+    // record deck: 360 − two 20pt spines − 2pt padding − 3 seams
+    ['src/components/log/LogActionDeck.tsx', STYLES, 'deckLabel', (360 - 40 - 2 - 3) / 4],
+    // card deck: 360 − two 16pt rails − 2pt card border − 3 seams
+    ['src/components/feed/ActionDeck.tsx', 'src/components/feed/ActionDeck.tsx', 'actionLabel', (360 - 32 - 2 - 3) / 4],
+  ])('%s never truncates a label', (file, styleFile, styleName, column) => {
+    const label = widest(file);
+    const body = style(read(styleFile), styleName);
+    // Shrink-to-fit lowers the font but NOT the letter spacing, which is a
+    // fixed pt value — the reason a label can still overrun after shrinking.
+    const floor = num(body, 'fontSize')! * CAP * MIN_SCALE;
+    expect(textWidth(label, floor, num(body, 'letterSpacing')!)).toBeLessThanOrEqual(column);
+    // And every label declares the shared props rather than its own.
+    const src = read(file);
+    const labelTags = [...src.matchAll(/<Text[^>]*?(?:deckLabel|actionLabel)[^>]*>/g)];
+    expect(labelTags.length).toBeGreaterThan(3);
+    for (const t of labelTags) expect(t[0]).toMatch(/\{\.\.\.deckLabelProps\}/);
   });
 });
 

@@ -80,7 +80,11 @@ export default function LogReviewBody({
               const spaced = i < paragraphs.length - 1;
               if (i === 0 && dc && dc.first) {
                 return (
-                  <Text key={i} style={[s.dropCapParagraph, spaced && s.reviewParagraphSpaced]}>
+                  // Same cap as every other paragraph below. Without it the
+                  // opening paragraph of an essay grew while the rest held, and
+                  // one essay read at two sizes. The initial itself opts out
+                  // separately — it is an ornament, not reading text.
+                  <Text key={i} style={[s.dropCapParagraph, spaced && s.reviewParagraphSpaced]} {...scaledTextProps}>
                     <Text style={s.dropCapLetter} allowFontScaling={false}>{dc.first}</Text>{dc.rest}
                   </Text>
                 );

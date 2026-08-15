@@ -31,3 +31,22 @@ export const displayTextProps = {
   allowFontScaling: true,
   maxFontSizeMultiplier: 1.2,  // Large text needs less scaling to remain accessible
 } as const;
+
+/**
+ * Props for a label in a fixed column of an action deck — one line, always.
+ *
+ * A deck divides the width evenly and cannot reflow, so a label that grows
+ * past its column has nowhere to go: it wraps and leaves the row ragged, or it
+ * truncates. The cap keeps the widest label ('CERTIFIED', ~79pt of an ~81pt
+ * column at 1.35) inside its share, and shrink-to-fit absorbs the remainder on
+ * a narrow phone rather than clipping a word.
+ *
+ * Both decks — the card's and the record's — read from here so they cannot
+ * drift apart again.
+ */
+export const deckLabelProps = {
+  ...scaledTextProps,
+  numberOfLines: 1,
+  adjustsFontSizeToFit: true,
+  minimumFontScale: 0.75,
+} as const;

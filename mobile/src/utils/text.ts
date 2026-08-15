@@ -38,10 +38,6 @@ export function extractDropCap(text: string): { first: string; rest: string } {
 }
 
 /**
- * Strips legacy HTML formatting tags from text while preserving structural newlines
- * and ignoring literal user input (e.g., "<The Batman>").
- */
-/**
  * Does this text read right-to-left?
  *
  * First-strong: the direction of a paragraph is set by its first strong
@@ -96,16 +92,39 @@ const HTML_ENTITIES: Record<string, string> = {
  *     the card only opening ones, so only the page could find the breaks.
  *
  * Keeping this one's paragraph handling (it is the correct half) and the card's
- * entity decoding and total tag-stripping.
+ * entity decoding.
+ *
+ * Tags are matched by NAME, not by "anything between angle brackets". The card
+ * used the latter and it quietly ate a member's own words: a review reading
+ * `<The Batman> is the best of them` lost its first two words on the card, and
+ * would have lost them everywhere once these two merged. So the name must be a
+ * real element and must END where the tag's name ends — `<pre>` is a tag,
+ * `<president>` is a member writing a sentence.
  *
  * `&amp;` is decoded LAST so that `&amp;lt;` yields `&lt;` rather than `<` —
  * decoding it first would let an escaped entity smuggle a bracket through.
  */
+const HTML_TAG = new RegExp(
+    '<\\/?(?:' + [
+        'p', 'div', 'br', 'hr', 'span', 'section', 'article', 'aside', 'header', 'footer', 'nav', 'main',
+        'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del', 'ins', 'mark', 'small', 'big', 'sub', 'sup',
+        'h[1-6]', 'ul', 'ol', 'li', 'dl', 'dt', 'dd', 'a', 'blockquote', 'q', 'cite', 'abbr', 'address',
+        'pre', 'code', 'kbd', 'samp', 'var', 'tt', 'font', 'center', 'time', 'wbr', 'bdi', 'bdo',
+        'img', 'figure', 'figcaption', 'picture', 'source', 'video', 'audio', 'track', 'iframe', 'embed', 'object',
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'col', 'colgroup',
+        'details', 'summary', 'ruby', 'rt', 'rp', 'template', 'noscript', 'script', 'style',
+        'form', 'input', 'button', 'select', 'option', 'textarea', 'label', 'fieldset', 'legend',
+        'meta', 'link', 'html', 'head', 'body', 'title',
+    ].join('|') + ')(?=[\\s/>])[^>]*>',
+    'gi',
+);
+const HTML_BLOCK_TAG = /<\/?(?:p|div|br)(?=[\s/>])[^>]*>/gi;
+
 export function stripHTML(html: string): string {
     if (!html) return '';
     const withBreaks = html
-        .replace(/<\/?(p|div|br)(?:\s+[^>]*|)\/?>/gi, '\n')
-        .replace(/<[^>]+>/g, '');
+        .replace(HTML_BLOCK_TAG, '\n')
+        .replace(HTML_TAG, '');
     const decoded = withBreaks.replace(/&(?!amp;)[a-z0-9#]+;/gi, (m) => HTML_ENTITIES[m.toLowerCase()] ?? m);
     return decoded.replace(/&amp;/gi, '&').trim();
 }
