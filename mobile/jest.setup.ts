@@ -323,6 +323,11 @@ jest.mock('react-native-reanimated', () => {
     runOnUI: jest.fn((fn: any) => fn),
     interpolate: jest.fn((v: any) => v),
     Extrapolate: { CLAMP: 'clamp', EXTEND: 'extend' },
+    // `Extrapolation` is the current name; `Extrapolate` is the deprecated one.
+    // Only the old name was here, so a component using the current API would
+    // throw on `Extrapolation.CLAMP` the moment a test rendered it — the same
+    // trap that made TopNavBar untestable via makeMutable. Purely additive.
+    Extrapolation: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
     createAnimatedComponent: animatedComponent,
     useAnimatedRef: jest.fn(() => ({ current: null })),
     measure: jest.fn(() => ({ x: 0, y: 0, width: 0, height: 0, pageX: 0, pageY: 0 })),

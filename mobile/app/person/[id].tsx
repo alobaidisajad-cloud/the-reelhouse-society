@@ -360,11 +360,9 @@ export default function PersonDetailScreen() {
   // ── Error (Offline) ──
   if (error) return (
     <View style={[s.container, s.notFoundContainer]}>
-      <View style={[s.floatingBack, floatingBackDynStyle]}>
-        <PressableScale onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
+      <PressableScale style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
-        </PressableScale>
-      </View>
+          </PressableScale>
       <Text style={s.notFoundLabel}>CONNECTION TIMED OUT</Text>
       <Text style={s.notFoundTitle}>Signal Disrupted</Text>
       <Text style={s.notFoundBody}>The telegraph to the TMDB archive failed. Please check your connection.</Text>
@@ -379,11 +377,9 @@ export default function PersonDetailScreen() {
   // ── Loading (mirrors the real anatomy exactly) ──
   if (loading) return (
     <View style={s.container}>
-      <View style={[s.floatingBack, floatingBackDynStyle]}>
-        <PressableScale onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
+      <PressableScale style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
-        </PressableScale>
-      </View>
+          </PressableScale>
       <View style={[s.shimmerBackdrop, heroDynStyle]}>
         <ShimmerBlock style={StyleSheet.absoluteFillObject} />
         <LinearGradient colors={['rgba(11,10,8,0.1)', 'rgba(11,10,8,0.6)', colors.ink]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />

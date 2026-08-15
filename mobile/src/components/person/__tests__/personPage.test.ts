@@ -196,3 +196,19 @@ describe('the record card’s labels fit the column they sit in', () => {
     expect(tooWide).toEqual([]);
   });
 });
+
+describe('every way off the page is reachable and labelled', () => {
+  it('all three screen states use the same back control', () => {
+    const src = read(SCREEN);
+    // Loading and error used to wrap a bare PressableScale in a View, so the
+    // tap target was the icon plus its slop rather than the circle you can see,
+    // and neither announced itself. The page has three states; a blind member
+    // hits all three.
+    const labelled = (src.match(/accessibilityLabel="Go back"/g) || []).length;
+    const styled = (src.match(/style=\{\[s\.floatingBack, floatingBackDynStyle\]\}/g) || []).length;
+    expect(styled).toBeGreaterThanOrEqual(3);
+    expect(labelled).toBe(styled);
+    // And none of them may go back to being a plain View wrapper.
+    expect(src).not.toMatch(/<View style=\{\[s\.floatingBack/);
+  });
+});
