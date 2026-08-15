@@ -240,6 +240,13 @@ export const ConciergeButton = memo(function ConciergeButton() {
         onPress={openSheet}
         pressedScale={0.9}
         haptic="medium"
+        // Asymmetric on purpose. To the LEFT is the screen edge — nothing to
+        // collide with, so the full 15 stays and edge taps still land. To the
+        // RIGHT sits the Lounge key, 6pt away in the same cluster; at 15 the
+        // two overlapped by 17pt and the key, being later in the JSX, took it —
+        // the right edge of this button opened the Lounge instead of the
+        // Concierge. Half the gap is the ceiling there.
+        hitSlop={{ top: 15, bottom: 15, left: 15, right: 3 }}
         // No debounce: this opens a sheet rather than pushing a route, so the
         // guard against double-pushes only buys a dead tap here.
         debounceMs={0}
@@ -332,6 +339,11 @@ export const ConciergeButton = memo(function ConciergeButton() {
               pressedScale={0.9}
               haptic="selection"
               debounceMs={0}
+              // The twin stands exactly where the real disc stands, so it takes
+              // exactly the real disc's target. Nothing sits beside it up here,
+              // but matching means the button does not quietly change size the
+              // moment the sheet opens under your finger.
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 3 }}
               accessibilityLabel="Close"
             >
               <BrassDisc rotation={rotation} />

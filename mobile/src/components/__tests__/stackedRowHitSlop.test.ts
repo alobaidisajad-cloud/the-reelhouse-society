@@ -30,11 +30,19 @@ import { join } from 'path';
 const ROOT = join(__dirname, '..', '..', '..');
 
 type Axis = 'x' | 'y';
+type Side = 'top' | 'bottom' | 'left' | 'right';
 interface Rule {
   file: string;
   style: string;
   /** The measured gap between neighbours, per axis. Absent = no neighbour there. */
   gap: Partial<Record<Axis, number>>;
+  /**
+   * Restricts the check to specific sides. Needed where a control has a
+   * neighbour on ONE side and open space on the other — the brass ＋ has the
+   * Lounge key to its right and the screen edge to its left, and it should keep
+   * a generous target on the edge side.
+   */
+  only?: Side[];
   note: string;
 }
 
@@ -93,7 +101,19 @@ const RULES: Rule[] = [
     note: 'badge grid, gap 12' },
   { file: 'src/components/darkroom/DarkroomMoodBar.tsx', style: 'moodCard', gap: { x: 8 },
     note: 'mood strip, gap 8' },
+  // The bar itself. Missed on the first sweep because the disc is a
+  // ConciergeButton, not a row in a list — the shape looked different, the
+  // defect was identical.
+  { file: 'src/components/layout/ConciergeButton.tsx', style: 'discShadow', gap: { x: 6 }, only: ['right'],
+    note: 'brass ＋ has the Lounge key 6pt to its RIGHT; open screen edge to its left' },
 ];
+
+/**
+ * TopNavBar's icon buttons are a plain Animated.Pressable, not a
+ * PressableScale, so the scanner above cannot see them — and they sit in the
+ * same 6pt cluster as the brass disc. Checked directly.
+ */
+const NAV_CLUSTER_GAP = 6;
 
 const AXIS_SIDES: Record<Axis, [string, string]> = { x: ['left', 'right'], y: ['top', 'bottom'] };
 
@@ -169,6 +189,7 @@ describe('neighbouring controls do not overlap each other’s touch targets', ()
         for (const [axis, gap] of Object.entries(rule.gap) as [Axis, number][]) {
           const budget = gap / 2;
           for (const side of AXIS_SIDES[axis]) {
+            if (rule.only && !rule.only.includes(side as Side)) continue;
             if (slop[side] > budget) {
               offenders.push(
                 `L${t.line} ${side}=${slop[side]} exceeds ${budget} (gap ${gap} on ${axis}) — ` +
@@ -181,4 +202,46 @@ describe('neighbouring controls do not overlap each other’s touch targets', ()
       expect(offenders).toEqual([]);
     });
   }
+});
+
+describe('the top bar’s own icon cluster', () => {
+  const NAV_BAR = 'src/components/layout/TopNavBar.tsx';
+  const METRICS = 'src/components/layout/navMetrics.ts';
+
+  const read = (f: string) =>
+    readFileSync(join(ROOT, f), 'utf8')
+      .replace(/\/\/[^\n]*/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+
+  /** Effective slop of the bar's single shared NavIconButton. */
+  function navSlop() {
+    const body = read(NAV_BAR).match(/hitSlop=\{\{([^}]*)\}\}/);
+    expect(body).not.toBeNull();
+    return (n: string) => {
+      const m = body![1].match(new RegExp(`${n}\\s*:\\s*(\\d+)`));
+      return m ? Number(m[1]) : 15; // omitted sides keep PressableScale's 15
+    };
+  }
+
+  it('claims at most half the cluster gap sideways', () => {
+    // The gap is read from the stylesheet rather than assumed: respace the
+    // cluster and this test moves with it instead of enshrining today's number.
+    const gap = Number((read(NAV_BAR).match(/sideCluster:\s*\{[\s\S]*?gap:\s*(\d+)/) || [])[1]);
+    expect(gap).toBe(NAV_CLUSTER_GAP);
+
+    const side = navSlop();
+    // Both sides: the buttons share one component, and each has a neighbour on
+    // one side or the other.
+    expect(side('left')).toBeLessThanOrEqual(gap / 2);
+    expect(side('right')).toBeLessThanOrEqual(gap / 2);
+  });
+
+  it('still clears 44pt across, slop included', () => {
+    const size = Number((read(METRICS).match(/NAV_BTN_SIZE\s*=\s*(\d+)/) || [])[1]);
+    expect(size).toBeGreaterThan(0); // a failed parse must not pass vacuously
+
+    const side = navSlop();
+    // Narrowing the slop must not quietly push the target under the minimum.
+    expect(size + side('left') + side('right')).toBeGreaterThanOrEqual(44);
+  });
 });
