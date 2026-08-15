@@ -17,7 +17,7 @@
  * get a plain crossfade.
  */
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, AccessibilityInfo } from 'react-native';
+import { View, Text, StyleSheet, AccessibilityInfo, PixelRatio } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -39,7 +39,11 @@ import { timeAgo } from '@/src/utils/timeAgo';
 // Single source of truth: Zod schema
 import type { FeedItem } from '@/src/schemas/feed.schema';
 
-const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
+// The editorial banner spans the full card at ~326pt. On a 3x screen that is
+// 978 physical pixels being filled from a 500px image — barely half the detail,
+// on the most prominent image the feed has. Matched to the device so 2x phones
+// download exactly what they did before.
+const TMDB_IMG_EDITORIAL = `https://image.tmdb.org/t/p/${PixelRatio.get() >= 3 ? 'w780' : 'w500'}`;
 export type { FeedItem };
 
 // The flip law: heavy card stock — acceleration off the fingertip,
@@ -110,7 +114,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
   // no genuinely filed scores) must not present the card as autopsied.
   const hasAutopsy = !!item.is_autopsied && hasRatedAutopsy(autopsyStats);
 
-  const editorialUri = item.editorial_header ? `${TMDB_IMG_W500}${item.editorial_header}` : null;
+  const editorialUri = item.editorial_header ? `${TMDB_IMG_EDITORIAL}${item.editorial_header}` : null;
 
   // #75 — a fourth copy of timeAgo lived in this file as `getTimeAgo`, which is why the
   // register only counted three. It had no date branch at all, so a two-year-old item
@@ -352,7 +356,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 7,
     letterSpacing: 2.5,
-    color: 'rgba(218,165,32,0.9)',
+    color: 'rgba(220,166,58,0.9)',
     includeFontPadding: false,
   },
 

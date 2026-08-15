@@ -6,6 +6,7 @@ import { colors } from '@/src/theme/theme';
 import { extractDropCap, stripHTML, isRTLText } from '@/src/utils/text';
 import { s } from '@/src/components/log/logDetailStyles';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
+import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 
 interface LogReviewBodyProps {
   review?: string | null;
@@ -26,6 +27,12 @@ export default function LogReviewBody({
   isSpoiler,
   privateNotes,
 }: LogReviewBodyProps) {
+  // A rating-only log has no quote, no essay and no notes — and this section's
+  // own margins (24 above, 16 below) still rendered, leaving a 40pt hole under
+  // the filing mark with nothing in it. Nothing to say, nothing to occupy.
+  const hasBody = !!pullQuote || !!stripHTML(review ?? '') || !!(isOwner && privateNotes);
+  if (!hasBody) return null;
+
   return (
     <View style={s.reviewSection}>
 
@@ -40,7 +47,7 @@ export default function LogReviewBody({
              <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} style={s.ornamentalStar} />
              <View style={s.ornamentalLine} />
            </View>
-           <Text style={[s.featuredQuote, isAuteur && s.featuredQuoteAuteur, isRTLText(pullQuote) && s.rtlText]} adjustsFontSizeToFit numberOfLines={6} minimumFontScale={0.7}>« {pullQuote} »</Text>
+           <Text style={[s.featuredQuote, isAuteur && s.featuredQuoteAuteur, isRTLText(pullQuote) && s.rtlText]} {...displayTextProps} adjustsFontSizeToFit numberOfLines={6} minimumFontScale={0.7}>« {pullQuote} »</Text>
            {/* Ornamental divider bottom */}
            <View style={s.ornamentalRow}>
              <View style={s.ornamentalLine} />
@@ -79,7 +86,7 @@ export default function LogReviewBody({
                 );
               }
               return (
-                <Text key={i} style={[s.reviewParagraph, spaced && s.reviewParagraphSpaced, rtl && s.rtlText]}>
+                <Text key={i} style={[s.reviewParagraph, spaced && s.reviewParagraphSpaced, rtl && s.rtlText]} {...scaledTextProps}>
                   {para}
                 </Text>
               );
@@ -97,7 +104,7 @@ export default function LogReviewBody({
               <Lock size={10} color={colors.sepia} />
               <Text style={s.privateNotesLabel}>PRIVATE ARCHIVIST NOTES</Text>
            </View>
-           <Text style={[s.privateNotesBody, isRTLText(privateNotes) && s.rtlText]}>
+           <Text style={[s.privateNotesBody, isRTLText(privateNotes) && s.rtlText]} {...scaledTextProps}>
               {privateNotes}
            </Text>
         </View>

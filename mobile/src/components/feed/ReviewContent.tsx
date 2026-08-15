@@ -6,6 +6,7 @@ import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
 import { stripHTML, isRTLText } from '@/src/utils/text';
+import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 
 import type { FeedItem } from '@/src/schemas/feed.schema';
 
@@ -97,7 +98,7 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
         {/* Pull quote — capped at 4 lines so no quote can swallow the card */}
         {item.pull_quote && (
           <View style={s.pullQuoteWrap}>
-            <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isPremium && !isAuteur && s.pullQuotePremium, rtl && s.rtl]} numberOfLines={4}>
+            <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isPremium && !isAuteur && s.pullQuotePremium, rtl && s.rtl]} {...displayTextProps} numberOfLines={4}>
               « {item.pull_quote} »
             </Text>
           </View>
@@ -109,12 +110,12 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
             broken word. The ornament is worth less than the sentence. */}
         {cleanReview ? (
           item.drop_cap && !rtl ? (
-            <Text style={[s.review, s.dropCapReview]} numberOfLines={PREVIEW_LINES} onTextLayout={onLayout}>
+            <Text style={[s.review, s.dropCapReview]} {...scaledTextProps} numberOfLines={PREVIEW_LINES} onTextLayout={onLayout}>
               <Text style={s.dropCapLetter} allowFontScaling={false}>{cleanReview.charAt(0).toUpperCase()}</Text>
               <Text style={s.dropCapText}>{cleanReview.slice(1)}</Text>
             </Text>
           ) : (
-            <Text style={[s.review, rtl && s.rtl]} numberOfLines={PREVIEW_LINES} onTextLayout={onLayout}>
+            <Text style={[s.review, rtl && s.rtl]} {...scaledTextProps} numberOfLines={PREVIEW_LINES} onTextLayout={onLayout}>
               {cleanReview}
             </Text>
           )
@@ -183,7 +184,7 @@ const s = StyleSheet.create({
     color: colors.sepia, lineHeight: 22,
     textShadowColor: 'rgba(184,137,26,0.15)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8,
   },
-  pullQuotePremium: { color: 'rgba(218,165,32,0.9)' },
+  pullQuotePremium: { color: 'rgba(220,166,58,0.9)' },
   pullQuoteAuteur: { color: colors.crimson },
   review: {
     includeFontPadding: false, textAlignVertical: 'center',

@@ -188,7 +188,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                             ✦ THE MANUSCRIPT — FROM THE DESK OF @{deskName}
                         </Text>
                     </View>
-                    <TextInput testID="review-input" style={st.reviewInput} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={2000} textAlignVertical="top" selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
+                    <TextInput testID="review-input" style={st.reviewInput} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={2000} textAlignVertical="top" selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
                     <View style={st.reviewFooter}>
                         <PressableScale style={st.spoilerRow} onPress={() => { setIsSpoiler(!isSpoiler); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection">
                             <View style={[st.cbox, isSpoiler && st.cboxOn]}>{isSpoiler && <Check size={10} color={colors.ink} />}</View>
@@ -281,7 +281,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     {/* Watched With */}
                     <View style={st.sec}>
                         <SectionDivider label="WATCHED WITH" />
-                        <TextInput style={st.input} placeholder="A name, a memory, or @username..." placeholderTextColor={colors.fog} value={watchedWith} onChangeText={setWatchedWith} maxLength={60} selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} autoCorrect={false} autoCapitalize="none" keyboardAppearance="dark" accessibilityLabel="Watched with companion" />
+                        <TextInput style={st.input} placeholder="A name, a memory, or @username..." placeholderTextColor={colors.fog} value={watchedWith} onChangeText={setWatchedWith} maxLength={60} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} autoCorrect={false} autoCapitalize="none" keyboardAppearance="dark" accessibilityLabel="Watched with companion" />
                         {(watchedWith || '').includes('@') && following && following.length > 0 && (() => {
                             const atMatch = watchedWith.match(/@([\w.]*)$/);
                             if (!atMatch) return null;
@@ -334,7 +334,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                             <Text style={st.secLabel}>PRIVATE NOTES (THE CUTTING ROOM FLOOR)</Text>
                         </View>
                         {isPremium ? (
-                            <TextInput style={[st.reviewInput, st.privateNotesInput]} placeholder="Notes only you can see..." placeholderTextColor={colors.fog} value={privateNotes} onChangeText={setPrivateNotes} multiline maxLength={1000} textAlignVertical="top" keyboardAppearance="dark" accessibilityLabel="Private notes" selectionColor={'rgba(218,165,32,0.3)'} />
+                            <TextInput style={[st.reviewInput, st.privateNotesInput]} placeholder="Notes only you can see..." placeholderTextColor={colors.fog} value={privateNotes} onChangeText={setPrivateNotes} multiline maxLength={1000} textAlignVertical="top" keyboardAppearance="dark" accessibilityLabel="Private notes" selectionColor={'rgba(220,166,58,0.3)'} />
                         ) : (
                             <View style={st.lockedBox}>
                                 <Lock size={20} color={colors.sepia} />

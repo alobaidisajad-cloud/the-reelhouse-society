@@ -134,7 +134,13 @@ const s = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 1,
     color: colors.ink,
-    backgroundColor: '#DAA520',
+    // The Shade Ledger's marqueeGold, not a seventh hand-mixed gold. The
+    // goldenrod that used to sit here measured 26 units away from it, and it
+    // marked the app's HIGHEST tier in a colour the palette did not own. The
+    // same shade appeared as an rgba in four other places on these surfaces
+    // (poster border, premium pull quote, two selection tints); all now read
+    // from marqueeGold's channels.
+    backgroundColor: colors.marqueeGold,
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 2,

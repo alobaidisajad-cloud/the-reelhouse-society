@@ -106,7 +106,7 @@ export default function LogHero({
       {/* BOTTOM: Title & Meta */}
       <View style={s.titleSection}>
         <PressableScale onPress={onPressFilm} pressedScale={0.95} haptic="selection">
-           <Text style={s.logFilmTitle} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.8}>{log.film_title}</Text>
+           <Text style={s.logFilmTitle} {...displayTextProps} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.8}>{log.film_title}</Text>
         </PressableScale>
         {log.year && <Text style={s.logFilmYear}>{log.year}</Text>}
       </View>

@@ -95,7 +95,12 @@ export const s = StyleSheet.create({
 
   // ── Title ──
   titleSection: { alignItems: 'center', marginBottom: 12 },
-  logFilmTitle: { fontFamily: fonts.display, fontSize: 32, lineHeight: 35, color: colors.parchment, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 12 },
+  // 35 gave a ratio of 1.09 — the glyphs grew through their own line box above
+  // 1.04x system text, which is to say almost immediately. lineHeight does not
+  // scale with Dynamic Type, so the box has to be sized for the CAP: 42 clears
+  // the 1.2 tier this title declares (42 / 38.4 = 1.09) and the extra leading
+  // is invisible at rest under a 32pt display face.
+  logFilmTitle: { fontFamily: fonts.display, fontSize: 32, lineHeight: 42, color: colors.parchment, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 12 },
   logFilmYear: { fontFamily: fonts.sub, fontSize: 12, letterSpacing: 3.6, color: colors.fog, marginTop: 8, includeFontPadding: false },
   ratingWrap: { marginTop: 12 },
 
@@ -122,7 +127,7 @@ export const s = StyleSheet.create({
 
   // ── Editorial Badge ──
   editorialBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, position: 'absolute', left: 16, backgroundColor: 'rgba(11,10,8,0.5)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 2, borderWidth: 1, borderColor: colors.sepiaBorder },
-  editorialBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.2, color: 'rgba(218,165,32,0.85)', includeFontPadding: false },
+  editorialBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.2, color: 'rgba(220,166,58,0.85)', includeFontPadding: false },
 
   // ── Viewing Chronicle ──
   chronicleWrap: { marginTop: 8, marginBottom: 16, backgroundColor: '#050403', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder, borderRadius: 2, overflow: 'hidden' },

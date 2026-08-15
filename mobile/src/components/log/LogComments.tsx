@@ -5,6 +5,7 @@ import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import PressableScale from '@/src/components/PressableScale';
 import { formatFiledDate } from '@/src/components/log/logRecord';
 import { isRTLText } from '@/src/utils/text';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import { colors } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -79,7 +80,7 @@ const CommentRow = React.memo(({
             8/5/2026 — directly beneath the record's AUG 5, 2026. */}
         <Text style={s.commDate}>{formatFiledDate(c.created_at)}</Text>
       </View>
-      <Text style={[s.commBody, isRTLText(c.body) && s.rtlText]} selectable>{c.body}</Text>
+      <Text style={[s.commBody, isRTLText(c.body) && s.rtlText]} {...scaledTextProps} selectable>{c.body}</Text>
       {currentUserId === c.user_id && (
         <PressableScale
           onPress={() => onDelete(c.id)}
@@ -156,7 +157,7 @@ export default function LogComments({
             onChangeText={onNewCommentChange}
             multiline
             maxLength={MAX_LENGTHS.logComment}
-            selectionColor={'rgba(218,165,32,0.3)'}
+            selectionColor={'rgba(220,166,58,0.3)'}
             cursorColor={colors.sepia}
             disableFullscreenUI={true}
             keyboardAppearance="dark"
