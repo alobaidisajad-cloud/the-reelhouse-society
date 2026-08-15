@@ -289,6 +289,8 @@ export default function LogDetailScreen() {
   }, []);
   const [chronicleActiveIdx, setChronicleActiveIdx] = useState(0);
   const [showLoungeShare, setShowLoungeShare] = useState(false);
+  // Mounted only while a share is in flight — see handleShare.
+  const [shareCardMounted, setShareCardMounted] = useState(false);
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
   const [commentActionSheetVisible, setCommentActionSheetVisible] = useState(false);
@@ -301,8 +303,44 @@ export default function LogDetailScreen() {
   const critiquesSectionY = useRef(0);
 
   // Endorse
-  const { hasEndorsed, toggleEndorse } = useInteractionStore();
-  const endorsed = hasEndorsed(id);
+  /**
+   * Selectors, not the whole store.
+   *
+   * `const { hasEndorsed, toggleEndorse } = useInteractionStore()` subscribes to
+   * EVERY field, so this screen — hero image, full essay, critique list — re-
+   * rendered whenever anything in the film store changed anywhere in the app.
+   * The feed card next door already reads one value at a time; this page did
+   * not. Same store, three aliases (useFilmStore / useWatchlistStore /
+   * useInteractionStore all point at it), so nothing here is a new dependency.
+   */
+  const endorsed = useInteractionStore(st => !!st._endorsedIndex[id]);
+  const toggleEndorse = useInteractionStore(st => st.toggleEndorse);
+
+  // SAVE was on the feed card and missing here, so the fuller surface offered
+  // less: read a review properly, decide you want the film, and there was no
+  // way to keep it. The deck is presentational, so the screen owns the state
+  // and hands it down — same shape as its other handlers.
+  const filmSaved = useInteractionStore(st => !!st._watchlistIndex[log?.film_id ?? -1]);
+  const addToWatchlist = useInteractionStore(st => st.addToWatchlist);
+  const removeFromWatchlist = useInteractionStore(st => st.removeFromWatchlist);
+
+  // Mirrors the feed card's handler exactly, including the toasts — the same
+  // action on two surfaces should not confirm itself two different ways.
+  const handleToggleSave = useCallback(() => {
+    if (!log) return;
+    if (filmSaved) {
+      removeFromWatchlist(log.film_id);
+      reelToast.success('Removed from watchlist');
+    } else {
+      addToWatchlist({
+        id: log.film_id,
+        title: log.film_title,
+        poster_path: log.poster_path,
+        release_date: log.year ? `${log.year}-01-01` : undefined,
+      });
+      reelToast.success('Saved to watchlist ✦');
+    }
+  }, [log, filmSaved, addToWatchlist, removeFromWatchlist]);
 
   const keyboard = useAnimatedKeyboard();
   const animatedContainerStyle = useAnimatedStyle(() => ({
@@ -427,13 +465,30 @@ export default function LogDetailScreen() {
   }, [queryClient, id, user, updateComments]);
 
   const handleShare = async () => {
-    if (!isReadyToShare || !viewShotRef.current) return;
+    // The ref is no longer checked here: the card it points at does not exist
+    // until this function mounts it, three lines down.
+    if (!isReadyToShare || sharing) return;
     try {
       TactileEngine.navigate();
       setSharing(true);
-      
-      // Additional deterministic UI lock: wait one frame to ensure layout is fully calculated
-      await new Promise(resolve => requestAnimationFrame(resolve));
+
+      /**
+       * Mount the share card NOW, not on page open.
+       *
+       * It is a complete second rendering of the log — poster included — and it
+       * lived permanently in the tree at opacity 0.01 behind everything, with
+       * collapsable={false} so it could not even be flattened away. Every member
+       * who opened a log paid for a card most of them never share.
+       *
+       * Safe to mount late because `isReadyToShare` already gates on the VISIBLE
+       * poster having loaded, so the same URI is in expo-image's memory cache
+       * before this card asks for it. Two frames: one for React to commit the
+       * mount, one for layout and paint.
+       */
+      setShareCardMounted(true);
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      if (!viewShotRef.current) throw new Error('SHARE_CARD_NOT_MOUNTED');
 
       const uri = await captureRef(viewShotRef, {
         format: 'png',
@@ -458,6 +513,9 @@ export default function LogDetailScreen() {
        TactileEngine.error();
     } finally {
        setSharing(false);
+       // Always unmount, including after a failed capture — a share card left
+       // behind is the very cost this change exists to remove.
+       setShareCardMounted(false);
     }
   };
 
@@ -555,7 +613,12 @@ export default function LogDetailScreen() {
         </View>
       </View>
 
-      {/* Hidden Share Card */}
+      {/* The share card, mounted ONLY while a share is in flight.
+          It is a complete second rendering of this log, poster and all, and it
+          used to sit here permanently at 1% opacity behind everything — with
+          collapsable={false}, so it could not even be flattened away. Every
+          member who opened a log paid for a card most never share. */}
+      {shareCardMounted && (
       <View style={s.hiddenShareContainer} collapsable={false} pointerEvents="none">
          <View ref={viewShotRef} collapsable={false} style={s.inkBg}>
             <LogShareCard data={{
@@ -574,8 +637,9 @@ export default function LogDetailScreen() {
             }} />
          </View>
       </View>
+      )}
 
-      <CinematicScrollView 
+      <CinematicScrollView
         ref={scrollViewRef}
         contentContainerStyle={s.content}
         bottomInset={insets.bottom}
@@ -631,6 +695,8 @@ export default function LogDetailScreen() {
             isOwner={isOwner}
             endorsed={endorsed}
             autopsyOpen={autopsyOpen}
+            filmSaved={filmSaved}
+            onSavePress={handleToggleSave}
             onToggleEndorse={() => { toggleEndorse(id); }}
             onToggleAutopsy={() => { setAutopsyOpen(!autopsyOpen); }}
             onCritiquePress={() => {

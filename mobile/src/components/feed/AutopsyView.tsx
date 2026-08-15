@@ -65,6 +65,12 @@ export const AutopsyStrip = React.memo(function AutopsyStrip({ onTurnOver }: { o
     <PressableScale
       onPress={onTurnOver}
       style={s.stripBtn}
+      // Flush against the deck above (a 1pt border between them), so it may claim
+      // nothing upward — at the default 15 the strip took the bottom 15pt of
+      // CERTIFY, and being later in the JSX it won. Downward there is the card's
+      // own edge and then 20pt to the next card, so 8 is free and brings this
+      // 36pt row to 44.
+      hitSlop={{ top: 0, bottom: 8, left: 15, right: 15 }}
       haptic="selection"
       pressedScale={0.98}
       accessibilityRole="button"

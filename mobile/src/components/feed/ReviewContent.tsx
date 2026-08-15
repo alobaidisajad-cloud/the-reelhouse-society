@@ -83,7 +83,16 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
   if (!item.pull_quote && !cleanReview) return null;
 
   return (
-    <PressableScale onPress={onPress} haptic="selection" pressedScale={0.98} style={s.pressable} accessibilityLabel="Read full review">
+    <PressableScale
+      onPress={onPress}
+      haptic="selection"
+      pressedScale={0.98}
+      style={s.pressable}
+      // 10pt under the title at its tightest (no year, no rating) and 14pt above
+      // the deck. At the default 15 a tap just below the review certified it.
+      hitSlop={{ top: 5, bottom: 7, left: 15, right: 15 }}
+      accessibilityLabel="Read full review"
+    >
       <SpoilerVeil isSpoiler={item.is_spoiler} revealKey={item.id} compact>
         {/* Pull quote — capped at 4 lines so no quote can swallow the card */}
         {item.pull_quote && (
