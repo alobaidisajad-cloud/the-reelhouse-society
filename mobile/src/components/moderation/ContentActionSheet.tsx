@@ -212,6 +212,11 @@ export function ContentActionSheet({
                 <PressableScale
                   key={option.key}
                   style={[styles.optionRow, isLast && styles.optionRowLast]}
+                  // PressableScale's default 15pt slop makes adjacent rows
+                  // OVERLAP by 30pt, and the later row wins — so the bottom of
+                  // one option fires the next one down. These rows are ~50pt
+                  // tall already. Same fix as ActionSheet.tsx.
+                  hitSlop={null}
                   onPress={() => handleOptionPress(option)}
                   haptic="selection"
                   accessibilityRole="button"

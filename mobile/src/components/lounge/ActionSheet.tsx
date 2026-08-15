@@ -122,25 +122,31 @@ function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose
             </View>
           )}
 
+          {/* Every row below passes hitSlop={null}. PressableScale defaults to
+              15pt on all sides, which on rows stacked a hairline apart makes
+              their targets OVERLAP by 30pt — and the later row in the JSX wins.
+              Here that meant the bottom of REPORT MESSAGE fired BLOCK @user:
+              a destructive action stolen by a benign one. The rows are ~50pt
+              tall and need no help. */}
           {!internalMsg.id.startsWith('optimistic-') && (
-            <PressableScale style={s.actionBtn} onPress={() => { onReply(internalMsg); onClose(); }} haptic="selection" accessibilityRole="button">
+            <PressableScale style={s.actionBtn} hitSlop={null} onPress={() => { onReply(internalMsg); onClose(); }} haptic="selection" accessibilityRole="button">
               <Reply size={18} color={colors.bone} strokeWidth={1.5} />
               <Text style={s.actionBtnText}>REPLY</Text>
             </PressableScale>
           )}
           {!!internalMsg.content?.trim() && (
-            <PressableScale style={s.actionBtn} onPress={handleCopy} accessibilityRole="button">
+            <PressableScale style={s.actionBtn} hitSlop={null} onPress={handleCopy} accessibilityRole="button">
               <Copy size={18} color={colors.bone} strokeWidth={1.5} />
               <Text style={s.actionBtnText}>COPY TEXT</Text>
             </PressableScale>
           )}
           {!internalIsSelf && (
             <>
-              <PressableScale style={s.actionBtn} onPress={() => { onReport?.(internalMsg); onClose(); }} accessibilityRole="button">
+              <PressableScale style={s.actionBtn} hitSlop={null} onPress={() => { onReport?.(internalMsg); onClose(); }} accessibilityRole="button">
                 <ShieldAlert size={18} color={colors.fog} strokeWidth={1.5} />
                 <Text style={s.actionBtnText}>REPORT MESSAGE</Text>
               </PressableScale>
-              <PressableScale style={[s.actionBtn, s.actionBtnLast]} onPress={() => { onBlock?.(internalMsg.user_id); onClose(); }} accessibilityRole="button">
+              <PressableScale style={[s.actionBtn, s.actionBtnLast]} hitSlop={null} onPress={() => { onBlock?.(internalMsg.user_id); onClose(); }} accessibilityRole="button">
                 <Ban size={18} color={colors.crimson} strokeWidth={1.5} />
                 <Text style={[s.actionBtnText, s.actionBtnDanger]}>BLOCK @{internalMsg.username?.toUpperCase()}</Text>
               </PressableScale>
@@ -148,7 +154,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose
           )}
           {internalIsSelf && !internalMsg.id.startsWith('optimistic-') && !internalMsg.deleted_at && (
             <PressableScale
-              style={[s.actionBtn, s.actionBtnLast]}
+              style={[s.actionBtn, s.actionBtnLast]} hitSlop={null}
               onPress={() => {
                 onClose();
                 Alert.alert('Withdraw dispatch?', 'It will be replaced with a quiet "dispatch withdrawn" note.', [

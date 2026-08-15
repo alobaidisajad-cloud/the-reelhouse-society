@@ -51,6 +51,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, Film, ListPlus } from 'lucide-react-native';
 
 import { colors, fonts } from '@/src/theme/theme';
+import { displayTextProps } from '@/src/constants/textScaling';
 import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
 import { NAV_BTN_SIZE, NAV_H_PADDING, navButtonTop, navButtonBottom } from './navMetrics';
@@ -137,7 +138,7 @@ const BrassDisc = memo(function BrassDisc({ rotation }: { rotation: SharedValue<
         pointerEvents="none"
       />
       <Animated.View style={iconStyle}>
-        <Plus size={21} color={colors.ink} strokeWidth={3} />
+        <Plus size={19} color={colors.ink} strokeWidth={3} />
       </Animated.View>
     </View>
   );
@@ -275,64 +276,67 @@ export const ConciergeButton = memo(function ConciergeButton() {
             only the card modal would have left the ✕ — the one control that
             closes this — invisible to VoiceOver. */}
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none" accessibilityViewIsModal>
-        <Animated.View
-          style={[s.cardWrap, { top: cardTop, width: cardWidth }, cardStyle]}
-        >
-          <View style={s.card}>
-            {/* Hairline brass glow along the top — the same law as the login form card */}
-            <View style={s.cardGlow} />
-            {/* Archival registration brackets */}
-            <View style={[s.bracket, s.bracketTL]} />
-            <View style={[s.bracket, s.bracketTR]} />
-            <View style={[s.bracket, s.bracketBL]} />
-            <View style={[s.bracket, s.bracketBR]} />
+          <Animated.View style={[s.cardWrap, { top: cardTop, width: cardWidth }, cardStyle]}>
+            <View style={s.card}>
+              {/* Hairline brass glow along the top — the same law as the login form card */}
+              <View style={s.cardGlow} />
+              {/* Archival registration brackets */}
+              <View style={[s.bracket, s.bracketTL]} />
+              <View style={[s.bracket, s.bracketTR]} />
+              <View style={[s.bracket, s.bracketBL]} />
+              <View style={[s.bracket, s.bracketBR]} />
 
-            <Text style={s.sheetTitle}>✦ THE CONCIERGE ✦</Text>
-            <Text style={s.sheetLore}>At your service.</Text>
-            <View style={s.headRule} />
+              <Text style={s.sheetTitle} {...displayTextProps}>✦ THE CONCIERGE ✦</Text>
+              <Text style={s.sheetLore} {...displayTextProps}>At your service.</Text>
+              <View style={s.headRule} />
 
-            <PressableScale style={s.actionRow} onPress={onLog} accessibilityLabel="Log a film">
-              <View style={[s.actionIconWrap, s.actionIconLog]}>
-                <Film size={18} color={colors.sepia} strokeWidth={1.5} />
-              </View>
-              <View style={s.actionTextCol}>
-                <Text style={s.actionTitle}>Log a Film</Text>
-                <Text style={s.actionDesc}>Set down what you&apos;ve seen.</Text>
-              </View>
-            </PressableScale>
+              {/* hitSlop null, deliberately. PressableScale defaults to 15pt on
+                  every side, which on two rows stacked a hairline apart makes
+                  their targets OVERLAP by 30pt — and the later row in the JSX
+                  wins, so the bottom of "Log a Film" would have opened "Curate a
+                  Stack". These rows are 66pt tall; they need no help. */}
+              <PressableScale style={s.actionRow} onPress={onLog} hitSlop={null} accessibilityLabel="Log a film">
+                <View style={[s.actionIconWrap, s.actionIconLog]}>
+                  <Film size={18} color={colors.sepia} strokeWidth={1.5} />
+                </View>
+                <View style={s.actionTextCol}>
+                  <Text style={s.actionTitle} {...displayTextProps}>Log a Film</Text>
+                  <Text style={s.actionDesc} {...displayTextProps}>Set down what you&apos;ve seen.</Text>
+                </View>
+              </PressableScale>
 
-            <View style={s.rowDivider} />
+              <View style={s.rowDivider} />
 
-            <PressableScale style={s.actionRow} onPress={onStack} accessibilityLabel="Curate a stack">
-              <View style={[s.actionIconWrap, s.actionIconStack]}>
-                <ListPlus size={18} color={colors.bone} strokeWidth={1.5} />
-              </View>
-              <View style={s.actionTextCol}>
-                <Text style={s.actionTitle}>Curate a Stack</Text>
-                <Text style={s.actionDesc}>Gather films under one theme.</Text>
-              </View>
+              <PressableScale style={s.actionRow} onPress={onStack} hitSlop={null} accessibilityLabel="Curate a stack">
+                <View style={[s.actionIconWrap, s.actionIconStack]}>
+                  <ListPlus size={18} color={colors.bone} strokeWidth={1.5} />
+                </View>
+                <View style={s.actionTextCol}>
+                  <Text style={s.actionTitle} {...displayTextProps}>Curate a Stack</Text>
+                  <Text style={s.actionDesc} {...displayTextProps}>Gather films under one theme.</Text>
+                </View>
+              </PressableScale>
+            </View>
+
+            {/* The notch, pointing back at the button. Drawn AFTER the card so its
+                soot fill erases the segment of card border it crosses; drawn
+                before the disc so the disc still sits on top. */}
+            <View style={[s.notch, { left: notchLeft }]} pointerEvents="none" />
+          </Animated.View>
+
+          {/* The disc's twin, above the scrim, at the identical coordinates. */}
+          <View style={[s.discInModal, { top: btnTop }]} pointerEvents="box-none">
+            <PressableScale
+              style={s.discShadow}
+              onPress={closeSheet}
+              pressedScale={0.9}
+              haptic="selection"
+              debounceMs={0}
+              accessibilityLabel="Close"
+            >
+              <BrassDisc rotation={rotation} />
             </PressableScale>
           </View>
-
-          {/* The notch, pointing back at the button. Drawn AFTER the card so its
-              soot fill erases the segment of card border it crosses; drawn
-              before the disc so the disc still sits on top. */}
-          <View style={[s.notch, { left: notchLeft }]} pointerEvents="none" />
-        </Animated.View>
-
-        {/* The disc's twin, above the scrim, at the identical coordinates. */}
-        <View style={[s.discInModal, { top: btnTop }]} pointerEvents="box-none">
-          <PressableScale
-            style={s.discShadow}
-            onPress={closeSheet}
-            pressedScale={0.9}
-            haptic="selection"
-            debounceMs={0}
-            accessibilityLabel="Close"
-          >
-            <BrassDisc rotation={rotation} />
-          </PressableScale>
-        </View>
         </View>
       </Modal>
     </>
