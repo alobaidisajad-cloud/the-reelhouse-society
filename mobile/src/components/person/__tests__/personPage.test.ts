@@ -68,23 +68,34 @@ describe('THE CANON is ordered as a record', () => {
 });
 
 describe('text can grow without leaving its line box', () => {
-  // The page declares the 1.2 tier. A fixed lineHeight must still contain the
-  // glyphs at that cap, or enlarged system text clips.
-  const CAP = 1.2;
-  const cases: [string, string][] = [
-    [STYLES, 'personName'],
-    [STYLES, 'recordValue'],
-    [STYLES, 'gridTitle'],
-    [STYLES, 'defTitle'],
+  // A fixed lineHeight must still contain the glyphs at whatever cap the text
+  // declares, or enlarged system text clips. Uncapped, bioText clipped above
+  // 1.63x and notFoundBody above 1.50x — iOS reaches about 3.1x.
+  // bioText and notFoundBody declare the 1.35 body tier, not 1.2 — they are
+  // prose, and prose should be allowed to grow further than a label.
+  const cases: [string, string, number][] = [
+    [STYLES, 'personName', 1.2],
+    [STYLES, 'recordValue', 1.2],
+    [STYLES, 'gridTitle', 1.2],
+    [STYLES, 'defTitle', 1.2],
+    [STYLES, 'bioText', 1.35],
+    [STYLES, 'notFoundBody', 1.35],
   ];
-  it.each(cases)('%s :: %s survives the 1.2 tier', (file, name) => {
+  it.each(cases)('%s :: %s survives its declared tier', (file, name, cap) => {
     const body = style(read(file), name);
     expect(body).not.toBe('');
     const size = num(body, 'fontSize');
     const lh = num(body, 'lineHeight');
     expect(size).toBeGreaterThan(0);
     if (lh === undefined) return; // no fixed line box, nothing to outgrow
-    expect(lh / (size! * CAP)).toBeGreaterThanOrEqual(1.05);
+    expect(lh / (size! * cap)).toBeGreaterThanOrEqual(1.05);
+  });
+
+  it('the prose actually declares the cap this test assumes', () => {
+    // Without this the check above is a statement about a number nobody
+    // enforces: the styles could pass while the components stayed uncapped.
+    expect(read('src/components/person/PersonBio.tsx')).toMatch(/bioText\}\s*\{\.\.\.scaledTextProps\}/);
+    expect(read(SCREEN)).toMatch(/notFoundBody\}\s*\{\.\.\.scaledTextProps\}/);
   });
 
   it('the grid title reserves room for the two lines it now allows', () => {
@@ -210,5 +221,26 @@ describe('every way off the page is reachable and labelled', () => {
     expect(labelled).toBe(styled);
     // And none of them may go back to being a plain View wrapper.
     expect(src).not.toMatch(/<View style=\{\[s\.floatingBack/);
+  });
+});
+
+describe('the page has ONE answer to "what is today"', () => {
+  it('never asks UTC what the local date is', () => {
+    const src = read(SCREEN);
+    // toISOString() converts to UTC first, so a member in Los Angeles at 5pm is
+    // already "tomorrow" and would see tomorrow's releases ranked as released.
+    // The Hunt has always built the date locally; the canon's ordering asks the
+    // same question and must not answer it differently in the same file.
+    expect(src).not.toContain('toISOString');
+  });
+
+  it('both release-date questions read from the same helper', () => {
+    const src = read(SCREEN);
+    // Two call sites: the canon's ordering and the Auteur Hunt's released test.
+    // If a third appears it must come from here too.
+    const calls = (src.match(/localToday\(\)/g) || []).length;
+    expect(calls).toBeGreaterThanOrEqual(2);
+    // And the helper must be built from local getters, not a UTC round-trip.
+    expect(src).toMatch(/function localToday[\s\S]{0,240}getFullYear\(\)/);
   });
 });

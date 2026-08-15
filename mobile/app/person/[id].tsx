@@ -37,6 +37,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NetInfo from '@react-native-community/netinfo';
 
 import { s } from '@/src/components/person/personStyles';
+import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { ShimmerBlock } from '@/src/components/person/PersonOrnaments';
 import { PersonHero, formatDossierDate, calcCareerSpan } from '@/src/components/person/PersonHero';
 import { PersonBio } from '@/src/components/person/PersonBio';
@@ -96,6 +97,22 @@ const CREDIT_LABELS: [string, string] = ['CREDIT', 'CREDITS'];
 
 // "Self" documentary appearances are part of the record, never performances.
 const SELF_RE = /^self\b/i;
+
+/**
+ * Today, in the member's OWN timezone, as a TMDB-shaped date string.
+ *
+ * Not `toISOString().slice(0, 10)` — that converts to UTC first, so a member in
+ * Los Angeles at 5pm is already "tomorrow" and would see tomorrow's releases
+ * ranked as released. The Hunt has always built the date this way; the canon's
+ * ordering asks the same question and must not answer it differently in the
+ * same file.
+ */
+function localToday(): string {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
 
 // ════════════════════════════════════════════════════════════
 //  MAIN PERSON DETAIL SCREEN
@@ -293,7 +310,7 @@ export default function PersonDetailScreen() {
    * place in the file but sit at the end of it.
    */
   const canonSorted = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localToday();
     const rank = (c: PersonCredit) => (!c.release_date ? 2 : c.release_date > today ? 1 : 0);
     return [...canon].sort((a, b) => {
       const ra = rank(a), rb = rank(b);
@@ -319,15 +336,11 @@ export default function PersonDetailScreen() {
 
   const huntFilms = useMemo(() => {
     if (!isDirectingFile) return [];
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const localToday = `${y}-${m}-${day}`;
+    const today = localToday();
 
     return canon.filter((c) => {
       const isLogged = _loggedIndex[c.id] !== undefined;
-      const isReleased = !!(c.release_date && c.release_date <= localToday);
+      const isReleased = !!(c.release_date && c.release_date <= today);
       const hasVotes = (c.vote_count ?? 0) > 0;
       return isReleased || isLogged || hasVotes;
     });
@@ -363,12 +376,12 @@ export default function PersonDetailScreen() {
       <PressableScale style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
-      <Text style={s.notFoundLabel}>CONNECTION TIMED OUT</Text>
-      <Text style={s.notFoundTitle}>Signal Disrupted</Text>
-      <Text style={s.notFoundBody}>The telegraph to the TMDB archive failed. Please check your connection.</Text>
+      <Text style={s.notFoundLabel} {...displayTextProps}>CONNECTION TIMED OUT</Text>
+      <Text style={s.notFoundTitle} {...displayTextProps}>Signal Disrupted</Text>
+      <Text style={s.notFoundBody} {...scaledTextProps}>The telegraph to the TMDB archive failed. Please check your connection.</Text>
       <PressableScale style={s.backBtnBottom} onPress={() => handleRefresh()} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection">
         <View style={s.backBtnRow}>
-          <Text style={s.backBtnBottomText}>RETRY TRANSMISSION</Text>
+          <Text style={s.backBtnBottomText} {...displayTextProps}>RETRY TRANSMISSION</Text>
         </View>
       </PressableScale>
     </View>
@@ -399,15 +412,15 @@ export default function PersonDetailScreen() {
   // ── Not found ──
   if (!person) return (
     <View style={[s.container, s.notFoundContainer]}>
-      <Text style={s.notFoundLabel}>RECORDS DEPT — FILE NOT FOUND</Text>
-      <Text style={s.notFoundTitle}>No Record On File</Text>
-      <Text style={s.notFoundBody}>
+      <Text style={s.notFoundLabel} {...displayTextProps}>RECORDS DEPT — FILE NOT FOUND</Text>
+      <Text style={s.notFoundTitle} {...displayTextProps}>No Record On File</Text>
+      <Text style={s.notFoundBody} {...scaledTextProps}>
         This person does not exist in the TMDB archive, or the reel was lost.
       </Text>
       <PressableScale style={s.backBtnBottom} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
         <View style={s.backBtnRow}>
           <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
-          <Text style={s.backBtnBottomText}>GO BACK</Text>
+          <Text style={s.backBtnBottomText} {...displayTextProps}>GO BACK</Text>
         </View>
       </PressableScale>
     </View>
@@ -499,9 +512,9 @@ export default function PersonDetailScreen() {
         {/* ── Empty state ── */}
         {allCredits.length === 0 && !loading && (
           <View style={s.emptyState}>
-            <Text style={s.emptyLabel}>THE RECORD IS BLANK</Text>
-            <Text style={s.emptyTitle}>No Known Works Found</Text>
-            <Text style={s.emptyBody}>The Society has no film records on file for this artist.</Text>
+            <Text style={s.emptyLabel} {...displayTextProps}>THE RECORD IS BLANK</Text>
+            <Text style={s.emptyTitle} {...displayTextProps}>No Known Works Found</Text>
+            <Text style={s.emptyBody} {...displayTextProps}>The Society has no film records on file for this artist.</Text>
           </View>
         )}
 
