@@ -311,22 +311,22 @@ export default function ComposeDossierScreen() {
 
                     <View style={styles.toolbar}>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScroll} keyboardShouldPersistTaps="handled">
-                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
+                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
                                 <Bold size={18} color={colors.parchment} />
                             </PressableScale>
-                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
+                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
                                 <Italic size={18} color={colors.parchment} />
                             </PressableScale>
-                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
+                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
                                 <Type size={18} color={colors.parchment} />
                             </PressableScale>
-                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
+                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
                                 <Quote size={18} color={colors.parchment} />
                             </PressableScale>
-                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Horizontal rule">
+                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Horizontal rule">
                                 <Minus size={18} color={colors.parchment} />
                             </PressableScale>
-                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
+                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
                                 <Link2 size={18} color={colors.parchment} />
                             </PressableScale>
                         </ScrollView>

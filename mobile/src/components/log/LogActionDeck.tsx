@@ -83,26 +83,26 @@ export default function LogActionDeck({
       <View style={s.actionDeckWrap}>
         <View style={s.actionDeck}>
            {/* CERTIFY — wired to toggleEndorse */}
-           <PressableScale style={s.deckBtn} onPress={onToggleEndorse} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.92}>
+           <PressableScale style={s.deckBtn} onPress={onToggleEndorse} hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} haptic="light" pressedScale={0.92}>
               <Heart size={16} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
               <Text style={[s.deckLabel, endorsed && s.deckLabelCertified]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
            </PressableScale>
 
            {/* CRITIQUE — scrolls to comment input */}
-           <PressableScale style={s.deckBtn} onPress={onCritiquePress} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" pressedScale={0.92}>
+           <PressableScale style={s.deckBtn} onPress={onCritiquePress} hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} haptic="selection" pressedScale={0.92}>
               <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
               <Text style={s.deckLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>CRITIQUE</Text>
            </PressableScale>
 
            {isOwner && (
-             <PressableScale style={s.deckBtn} onPress={onEditPress} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.92}>
+             <PressableScale style={s.deckBtn} onPress={onEditPress} hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} haptic="light" pressedScale={0.92}>
                 <Edit3 size={16} strokeWidth={2} color={colors.sepia} />
                 <Text style={[s.deckLabel, s.deckLabelActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>EDIT</Text>
              </PressableScale>
            )}
 
            {/* LOUNGE — opens ShareToLoungeModal with this log's film */}
-           <PressableScale style={s.deckBtn} onPress={onLoungePress} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="medium" pressedScale={0.92}>
+           <PressableScale style={s.deckBtn} onPress={onLoungePress} hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} haptic="medium" pressedScale={0.92}>
               <MessageCircle size={16} strokeWidth={2} color={colors.fog} />
               <Text style={s.deckLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>LOUNGE</Text>
            </PressableScale>

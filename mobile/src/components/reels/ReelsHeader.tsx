@@ -57,13 +57,13 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteu
   return (
     <View style={st.tabsContainer}>
       <Animated.View style={[StyleSheet.absoluteFillObject, st.tabsActiveBg, pillStyle]} />
-      <PressableScale style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
+      <PressableScale hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
         <View style={st.tabInner}>
           <Animated.View style={[st.liveDot, auteur ? st.liveDotAuteur : st.liveDotDefault, pulseStyle]} />
           <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fog, opacity: activeTab === 'logs' ? 1 : 0.75 }]}>LOGS</Text>
         </View>
       </PressableScale>
-      <PressableScale style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
+      <PressableScale hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
         <Text style={[st.tabText, { color: activeTab === 'stacks' ? colors.parchmentDim : colors.fog, opacity: activeTab === 'stacks' ? 1 : 0.75 }]}>STACKS</Text>
       </PressableScale>
     </View>

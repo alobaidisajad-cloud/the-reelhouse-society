@@ -30,7 +30,7 @@ const ProfileListCard = React.memo(({ list, router }: { list: ProfileList, route
     .map((f: ProfileListFilm) => tmdb.poster(f.poster || '', 'w185'));
 
   return (
-    <PressableScale 
+    <PressableScale hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} 
       style={s.stackCard} 
       onPress={() => (router.push as any)(`/stacks/${list.id}` as any)}
       haptic

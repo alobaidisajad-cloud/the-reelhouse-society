@@ -36,7 +36,7 @@ export default React.memo(function AuteurToolkit({
     autopsy, setAutopsy, availablePosters, altPoster, setAltPoster, onUpgradePress
 }: Props) {
     const renderPosterItem = React.useCallback(({ item: p }: { item: { file_path: string } }) => p.file_path === '__default__' ? (
-        <PressableScale onPress={() => { setAltPoster(null); }} style={[st.pThumb, altPoster === null && st.pThumbActive]} haptic="selection" pressedScale={0.96}>
+        <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} onPress={() => { setAltPoster(null); }} style={[st.pThumb, altPoster === null && st.pThumbActive]} haptic="selection" pressedScale={0.96}>
             <Text style={[st.pDefault, altPoster === null && st.pDefaultActive]}>DEFAULT</Text>
         </PressableScale>
     ) : (
@@ -72,7 +72,7 @@ export default React.memo(function AuteurToolkit({
                                                 key={v}
                                                 onPress={() => { setAutopsy({ ...autopsy, [axis]: val === v ? null : v }); }}
                                                 style={[st.sliderSeg, rated && v <= (val as number) && st.sliderSegOn]}
-                                                hitSlop={{top: 10, bottom: 10}} haptic="light" pressedScale={0.9}
+                                                hitSlop={{ top: 10, bottom: 10, left: 1, right: 1 }} haptic="light" pressedScale={0.9}
                                                 accessibilityLabel={`${AUTOPSY_LABELS[axis] || axis} score ${v}${val === v ? ' — tap to withdraw' : ''}`}
                                             />
                                         ))}

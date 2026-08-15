@@ -63,7 +63,7 @@ export default function PaywallModal({ visible, onClose, recommendedTier }: Payw
                         const displayPrice = rc?.monthly ? `${rc.monthly}${tier.pricePeriod}`.toLowerCase() : tier.price;
                         return (
                         <Animated.View key={tier.name} entering={FadeInUp.delay(i * 150).duration(400)}>
-                            <PressableScale
+                            <PressableScale hitSlop={{ top: 6, bottom: 6, left: 15, right: 15 }}
                                 style={[s.tierCard, recommendedTier === tier.id && s.tierRecommended]}
                                 onPress={handleUpgrade}
                                 haptic="medium"

@@ -139,7 +139,7 @@ export function Achievements({ logs, analytics }: { logs: AchievementLog[]; anal
 
       <View style={s.grid}>
         {earned.map((badge) => (
-          <PressableScale
+          <PressableScale hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             key={badge.id}
             onPress={() => reelToast(`${badge.title}: ${badge.desc}`)}
             style={[

@@ -113,7 +113,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
 
         {isCreator && !isFounder && isOpen && (
           <AnimatedView entering={SlideInDown.duration(160)} style={s.actionRow}>
-            <PressableScale
+            <PressableScale hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
               style={s.memberAction}
               haptic="selection"
               onPress={() => muted
@@ -124,7 +124,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
               <Text style={s.memberActionText}>{muted ? 'UNMUTE' : 'MUTE'}</Text>
             </PressableScale>
 
-            <PressableScale
+            <PressableScale hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
               style={s.memberAction}
               haptic="selection"
               onPress={() => confirmAction('Remove member?', `@${uname} will leave the salon. They can return later.`, 'Remove', () => removeMember(lounge.id, item.user_id))}
@@ -133,7 +133,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
               <Text style={[s.memberActionText, { color: BLOOD }]}>REMOVE</Text>
             </PressableScale>
 
-            <PressableScale
+            <PressableScale hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
               style={[s.memberAction, s.memberActionBan]}
               haptic="selection"
               onPress={() => banned

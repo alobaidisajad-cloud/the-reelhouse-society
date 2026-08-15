@@ -370,19 +370,19 @@ export const ArticleReaderModal = memo(function ArticleReaderModal({
           {/* Action bar */}
           {isDossier && (
             <View style={st.readerActions}>
-              <PressableScale style={st.readerActionBtn} onPress={handleCertify} pressedScale={0.95} haptic>
+              <PressableScale hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={st.readerActionBtn} onPress={handleCertify} pressedScale={0.95} haptic>
                 <Heart size={14} color={certified ? colors.crimson : colors.fog} strokeWidth={1.5} fill={certified ? colors.crimson : 'transparent'} />
                 <Text style={[st.readerActionText, certified && st.readerActionCertified]} numberOfLines={1}>
                   {certified ? 'CERTIFIED' : 'CERTIFY'} ({certifyCount})
                 </Text>
               </PressableScale>
 
-              <PressableScale style={st.readerActionBtn} onPress={handleShare} pressedScale={0.95} haptic>
+              <PressableScale hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={st.readerActionBtn} onPress={handleShare} pressedScale={0.95} haptic>
                 <Share2 size={14} color={colors.fog} strokeWidth={1.5} />
                 <Text style={st.readerActionText} numberOfLines={1}>SHARE</Text>
               </PressableScale>
 
-              <PressableScale style={st.readerActionBtn} onPress={() => {
+              <PressableScale hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={st.readerActionBtn} onPress={() => {
                 if (isClosingRef.current || isDeleting) return;
                 isClosingRef.current = true;
                 onClose();
@@ -396,12 +396,12 @@ export const ArticleReaderModal = memo(function ArticleReaderModal({
 
               {isAuthor && (
                 <>
-                  <PressableScale style={st.readerActionBtn} onPress={handleEdit} pressedScale={0.95} haptic>
+                  <PressableScale hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={st.readerActionBtn} onPress={handleEdit} pressedScale={0.95} haptic>
                     <Edit3 size={14} color={colors.fog} strokeWidth={1.5} />
                     <Text style={st.readerActionText} numberOfLines={1}>EDIT</Text>
                   </PressableScale>
                   
-                  <PressableScale style={st.readerActionBtn} onPress={handleDelete} pressedScale={0.95} haptic>
+                  <PressableScale hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={st.readerActionBtn} onPress={handleDelete} pressedScale={0.95} haptic>
                     <Trash2 size={14} color={colors.bloodReel} strokeWidth={1.5} />
                     <Text style={[st.readerActionText, { color: colors.bloodReel }]} numberOfLines={1}>DELETE</Text>
                   </PressableScale>

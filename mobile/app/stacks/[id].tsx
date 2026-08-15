@@ -712,7 +712,7 @@ export default function StackDetailScreen() {
 
               {/* ── ACTION BAR: Certify · Critic · Share to Lounge ── */}
               <Animated.View entering={FadeInDown.duration(600).delay(350)} style={s.actionBar}>
-                <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" accessibilityRole="button" accessibilityLabel={isCertified ? "Uncertify stack" : "Certify stack"}>
+                <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={{top: 10, bottom: 10, left: 0, right: 0}} haptic="selection" accessibilityRole="button" accessibilityLabel={isCertified ? "Uncertify stack" : "Certify stack"}>
                   <View pointerEvents="none"><Heart size={16} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'} /></View>
                   <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                     {certifyCount > 0 ? `${certifyCount} ` : ''}{isCertified ? 'CERTIFIED' : 'CERTIFY'}
@@ -721,14 +721,14 @@ export default function StackDetailScreen() {
 
                 <View style={s.actionDivider} />
 
-                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" accessibilityRole="button" accessibilityLabel="Toggle critiques">
+                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={{top: 10, bottom: 10, left: 0, right: 0}} haptic="selection" accessibilityRole="button" accessibilityLabel="Toggle critiques">
                   <View pointerEvents="none"><MessageCircle size={14} color={showComments ? colors.sepia : colors.fog} /></View>
                   <Text style={[s.actionLabel, showComments && s.actionLabelOpen]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>CRITIQUES</Text>
                 </PressableScale>
 
                 <View style={s.actionDivider} />
 
-                <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" accessibilityRole="button" accessibilityLabel="Share to lounge">
+                <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={{top: 10, bottom: 10, left: 0, right: 0}} haptic="selection" accessibilityRole="button" accessibilityLabel="Share to lounge">
                   <View pointerEvents="none"><Send size={14} color={colors.fog} /></View>
                   <Text style={s.actionLabel} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>LOUNGE</Text>
                 </PressableScale>

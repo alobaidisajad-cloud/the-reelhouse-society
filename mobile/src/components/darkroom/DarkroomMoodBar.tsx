@@ -23,7 +23,7 @@ export const DarkroomMoodBar = React.memo(function DarkroomMoodBar({
   const renderItem = React.useCallback(({ item }: { item: typeof MOODS[number] }) => {
     const active = mood?.label === item.label;
     return (
-      <PressableScale
+      <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }}
         onPress={() => handleSelectMood(item)}
         style={[s.moodCard, active && { backgroundColor: item.color, borderColor: item.accent }]}
         haptic="medium"

@@ -1008,7 +1008,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             <View style={s.accountSection}>
               <SectionDivider label="ACCOUNT & SETTINGS" />
               {targetUser.is_social_private && (
-                <PressableScale style={s.accountRow} onPress={() => setDoorOpen(true)} haptic accessibilityRole="button" accessibilityLabel={`At the door, ${pendingRequestCount} awaiting entry`}>
+                <PressableScale hitSlop={{ top: 0, bottom: 0, left: 15, right: 15 }} style={s.accountRow} onPress={() => setDoorOpen(true)} haptic accessibilityRole="button" accessibilityLabel={`At the door, ${pendingRequestCount} awaiting entry`}>
                   <KeyRound size={13} color={colors.sepia} strokeWidth={1.5} />
                   <Text style={s.accountRowText}>AT THE DOOR</Text>
                   {pendingRequestCount > 0 && (
@@ -1018,11 +1018,11 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   )}
                 </PressableScale>
               )}
-              <PressableScale style={s.accountRow} onPress={navToMembership} haptic>
+              <PressableScale hitSlop={{ top: 0, bottom: 0, left: 15, right: 15 }} style={s.accountRow} onPress={navToMembership} haptic>
                 <Crown size={13} color={colors.sepia} strokeWidth={1.5} />
                 <Text style={s.accountRowText}>THE SOCIETY RANKS</Text>
               </PressableScale>
-              <PressableScale style={[s.accountRow, s.accountRowLast]} onPress={navToSettings} haptic>
+              <PressableScale hitSlop={{ top: 0, bottom: 0, left: 15, right: 15 }} style={[s.accountRow, s.accountRowLast]} onPress={navToSettings} haptic>
                 <Settings size={13} color={colors.sepia} strokeWidth={1.5} />
                 <Text style={s.accountRowText}>SETTINGS & PROFILE</Text>
               </PressableScale>

@@ -479,7 +479,7 @@ export default function DossierReaderScreen() {
 
                 {/* ── ACTION BAR: Certify · Critiques · Share to Lounge ── */}
                 <View style={styles.actionBar}>
-                    <PressableScale style={styles.actionItem} onPress={handleCertify} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel={certified ? 'Uncertify dossier' : 'Certify dossier'}>
+                    <PressableScale style={styles.actionItem} onPress={handleCertify} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} haptic="selection" accessibilityRole="button" accessibilityLabel={certified ? 'Uncertify dossier' : 'Certify dossier'}>
                         <View pointerEvents="none"><Heart size={16} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} /></View>
                         <Text style={[styles.actionLabel, certified && styles.actionLabelActive]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                             {certified ? 'CERTIFIED' : 'CERTIFY'}
@@ -488,7 +488,7 @@ export default function DossierReaderScreen() {
 
                     <View style={styles.actionDivider} />
 
-                    <PressableScale style={styles.actionItem} onPress={handleJumpToCritiques} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Jump to critiques">
+                    <PressableScale style={styles.actionItem} onPress={handleJumpToCritiques} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Jump to critiques">
                         <View pointerEvents="none"><MessageCircle size={14} color={colors.fog} /></View>
                         <Text style={styles.actionLabel} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                             {commentTotal > 0 ? `CRITIQUES (${formatCount(commentTotal)})` : 'CRITIQUES'}
@@ -497,7 +497,7 @@ export default function DossierReaderScreen() {
 
                     <View style={styles.actionDivider} />
 
-                    <PressableScale style={styles.actionItem} onPress={handleOpenShareLounge} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Share to lounge">
+                    <PressableScale style={styles.actionItem} onPress={handleOpenShareLounge} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Share to lounge">
                         <View pointerEvents="none"><Send size={14} color={colors.fog} /></View>
                         <Text style={styles.actionLabel} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>LOUNGE</Text>
                     </PressableScale>

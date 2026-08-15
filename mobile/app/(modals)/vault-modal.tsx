@@ -194,7 +194,7 @@ export default function VaultModal() {
           <Text style={s.formatTitle}>SELECT FORMAT</Text>
           <Text style={s.formatFilmName} numberOfLines={1}>{formatFilm.title?.toUpperCase()}</Text>
           {['4K Ultra HD', 'Blu-ray', 'DVD', 'VHS'].map(fmt => (
-            <PressableScale key={fmt} style={s.formatBtn} onPress={() => handleFormatChoice(fmt === '4K Ultra HD' ? '4K' : fmt)} haptic="selection" pressedScale={0.97} accessibilityRole="button" accessibilityLabel={`Select ${fmt} format`}>
+            <PressableScale hitSlop={{ top: 4, bottom: 4, left: 15, right: 15 }} key={fmt} style={s.formatBtn} onPress={() => handleFormatChoice(fmt === '4K Ultra HD' ? '4K' : fmt)} haptic="selection" pressedScale={0.97} accessibilityRole="button" accessibilityLabel={`Select ${fmt} format`}>
               <Text style={s.formatBtnText}>{fmt.toUpperCase()}</Text>
             </PressableScale>
           ))}

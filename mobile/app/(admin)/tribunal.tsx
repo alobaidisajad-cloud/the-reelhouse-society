@@ -943,7 +943,7 @@ export default function TribunalScreen() {
                     {!multiSelectMode && (
                       <View style={s.actionGrid}>
                         <View style={s.actionRow}>
-                          <PressableScale
+                          <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             style={[s.actionBtn, { borderColor: colors.ash }, !item.target_user_id && { flex: 1 }]}
                             onPress={() => handleDismiss(item)}
                             haptic="selection"
@@ -956,7 +956,7 @@ export default function TribunalScreen() {
                           </PressableScale>
 
                           {!!item.target_user_id && (
-                            <PressableScale
+                            <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                               style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
                               onPress={() => openActionModal('warn', item)}
                               haptic="selection"
@@ -977,7 +977,7 @@ export default function TribunalScreen() {
                             should never be offered. Still shown when the member
                             has left, because their content can outlive them. */}
                         {item.content_type !== 'profile' && (
-                          <PressableScale
+                          <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
                             onPress={() => openActionModal('delete_content', item)}
                             haptic="medium"
@@ -993,7 +993,7 @@ export default function TribunalScreen() {
                         {!!item.target_user_id && (
                           <>
                             <View style={s.actionRow}>
-                              <PressableScale
+                              <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                                 style={[s.actionBtn, { borderColor: colors.crimson, backgroundColor: 'rgba(180,45,45,0.08)' }]}
                                 onPress={() => openActionModal('suspend', item)}
                                 haptic="medium"
@@ -1005,7 +1005,7 @@ export default function TribunalScreen() {
                                 <Text style={[s.actionText, { color: colors.crimson }]}>SUSPEND</Text>
                               </PressableScale>
 
-                              <PressableScale
+                              <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                                 style={[s.actionBtn, { borderColor: colors.bloodReel, backgroundColor: 'rgba(107,26,10,0.12)' }]}
                                 onPress={() => handleBanOrExile('ban', item)}
                                 haptic="medium"
@@ -1018,7 +1018,7 @@ export default function TribunalScreen() {
                               </PressableScale>
                             </View>
 
-                            <PressableScale
+                            <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                               style={[s.actionBtn, s.exileBtn]}
                               onPress={() => handleBanOrExile('permanent_exile', item)}
                               haptic="heavy"

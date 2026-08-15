@@ -148,19 +148,19 @@ export const ActionDeck = React.memo(function ActionDeck({
   return (
     <>
       <View style={s.actionDeck}>
-        <PressableScale style={s.actionBtn} onPress={handleCertify} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: endorsed }} accessibilityLabel={endorsed ? 'Remove certification from this critique' : 'Certify this critique'}>
+        <PressableScale hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} style={s.actionBtn} onPress={handleCertify} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: endorsed }} accessibilityLabel={endorsed ? 'Remove certification from this critique' : 'Certify this critique'}>
           <Animated.View style={animatedHeartStyle}>
             <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
           </Animated.View>
           <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
         </PressableScale>
 
-        <PressableScale style={s.actionBtn} onPress={handleCritique} accessibilityRole="button" accessibilityLabel="Write a critique">
+        <PressableScale hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} style={s.actionBtn} onPress={handleCritique} accessibilityRole="button" accessibilityLabel="Write a critique">
           <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
           <Text style={s.actionLabel}>CRITIQUE</Text>
         </PressableScale>
 
-        <PressableScale style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: !isOwner && filmSaved }} accessibilityLabel={isOwner ? 'Edit this log' : filmSaved ? 'Remove film from your watchlist' : 'Save film to your watchlist'}>
+        <PressableScale hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: !isOwner && filmSaved }} accessibilityLabel={isOwner ? 'Edit this log' : filmSaved ? 'Remove film from your watchlist' : 'Save film to your watchlist'}>
           <Animated.View style={animatedBookmarkStyle}>
             {isOwner ? (
               <Edit3 size={15} strokeWidth={2} color={colors.fog} />
@@ -173,7 +173,7 @@ export const ActionDeck = React.memo(function ActionDeck({
 
         {/* Eligible members share to a salon; cinephiles hold the brass key —
             an invitation marked private, never a dead switch. */}
-        <PressableScale style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityLabel={isLoungeEligible ? 'Share to a lounge' : 'The Lounge — clearance required. Opens membership details.'}>
+        <PressableScale hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityLabel={isLoungeEligible ? 'Share to a lounge' : 'The Lounge — clearance required. Opens membership details.'}>
           {isLoungeEligible ? (
             <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
           ) : (

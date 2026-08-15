@@ -96,14 +96,14 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
           </View>
         ) : (
           <View style={s.actions}>
-            <PressableScale style={s.actionCard} onPress={() => handlePick('camera')} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Take a photo with the camera">
+            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 8, right: 8 }} style={s.actionCard} onPress={() => handlePick('camera')} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Take a photo with the camera">
               <View style={s.iconWrap}>
                 <Camera size={24} color={colors.sepia} />
               </View>
               <Text style={s.actionText}>USE CAMERA</Text>
             </PressableScale>
 
-            <PressableScale style={s.actionCard} onPress={() => handlePick('library')} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Choose a photo from your library">
+            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 8, right: 8 }} style={s.actionCard} onPress={() => handlePick('library')} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Choose a photo from your library">
               <View style={s.iconWrap}>
                 <ImageIcon size={24} color={colors.bone} />
               </View>

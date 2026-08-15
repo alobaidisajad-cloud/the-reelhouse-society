@@ -69,7 +69,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
                     : <Users size={14} color={colors.fog} strokeWidth={1.5} />}
                 </View>
                 <Text style={s.name} numberOfLines={1}>@{m.username?.toUpperCase()}</Text>
-                <PressableScale
+                <PressableScale hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
                   style={[s.btn, s.declineBtn]}
                   onPress={() => act(m.user_id, false)}
                   disabled={busy === m.user_id}
@@ -79,7 +79,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
                 >
                   <X size={14} color={BLOOD} strokeWidth={2} />
                 </PressableScale>
-                <PressableScale
+                <PressableScale hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
                   style={[s.btn, s.admitBtn]}
                   onPress={() => act(m.user_id, true)}
                   disabled={busy === m.user_id}

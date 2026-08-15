@@ -113,7 +113,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
                         const future = isFuture(day);
 
                         return (
-                            <PressableScale
+                            <PressableScale hitSlop={{ top: 1, bottom: 1, left: 0, right: 0 }}
                                 key={ci}
                                 disabled={future}
                                 onPress={() => selectDay(day)}
