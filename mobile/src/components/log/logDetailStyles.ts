@@ -93,9 +93,9 @@ export const s = StyleSheet.create({
   // iOS geometry only — `elevation` stays on posterBounds, the painted view,
   // which also keeps the plate drawing over its own glow on Android.
   posterBoundsShadow: { width: 140, height: 210, borderRadius: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 40 },
-  posterBoundsShadowAuteur: { shadowColor: 'rgba(107,26,10,0.3)' },
+  posterBoundsShadowAuteur: { shadowColor: colors.bloodFaint },
   posterBounds: { width: '100%', height: '100%', borderRadius: 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.sepiaBorderStrong, backgroundColor: colors.soot, elevation: 12, shadowColor: '#000' },
-  posterBoundsAuteur: { borderColor: colors.crimsonBorder, shadowColor: 'rgba(107,26,10,0.3)' },
+  posterBoundsAuteur: { borderColor: colors.crimsonBorder, shadowColor: colors.bloodFaint },
   posterCentered: { width: '100%', height: '100%' },
   posterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
 
@@ -116,7 +116,7 @@ export const s = StyleSheet.create({
   ornamentalLine: { flex: 1, maxWidth: 80, height: 1, backgroundColor: colors.sepiaBorderStrong },
   ornamentalStar: { opacity: 0.7 },
   featuredQuoteWrap: { paddingVertical: 24, alignItems: 'center' },
-  featuredQuote: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, fontStyle: 'italic', lineHeight: 27, textAlign: 'center', textShadowColor: 'rgba(184,137,26,0.15)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12 },
+  featuredQuote: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, fontStyle: 'italic', lineHeight: 27, textAlign: 'center', textShadowColor: colors.sepiaSubtle, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12 },
   featuredQuoteAuteur: { color: colors.crimson, textShadowColor: 'rgba(107,26,10,0.15)' },
   reviewBodyWrap: { paddingHorizontal: 0, marginTop: 0 },
   // The essay, set as paragraphs — a raised drop cap opens the first.
@@ -136,7 +136,7 @@ export const s = StyleSheet.create({
   editorialBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.2, color: 'rgba(220,166,58,0.85)', includeFontPadding: false },
 
   // ── Viewing Chronicle ──
-  chronicleWrap: { marginTop: 8, marginBottom: 16, backgroundColor: '#050403', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder, borderRadius: 2, overflow: 'hidden' },
+  chronicleWrap: { marginTop: 8, marginBottom: 16, backgroundColor: colors.inkwell, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder, borderRadius: 2, overflow: 'hidden' },
   chronicleHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.sepiaBorder },
   chronicleDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia },
   chronicleTitle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
@@ -167,7 +167,7 @@ export const s = StyleSheet.create({
 
   // ── Action Deck ──
   actionDeckWrap: { marginTop: 8 },
-  actionDeck: { flexDirection: 'row', backgroundColor: '#050403', borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder, marginBottom: 16, overflow: 'hidden', padding: 1, gap: StyleSheet.hairlineWidth, zIndex: 1 },
+  actionDeck: { flexDirection: 'row', backgroundColor: colors.inkwell, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder, marginBottom: 16, overflow: 'hidden', padding: 1, gap: StyleSheet.hairlineWidth, zIndex: 1 },
   deckBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 18, gap: 6, backgroundColor: colors.ink, borderRadius: 1 },
   deckLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
   deckLabelActive: { color: colors.sepia },
@@ -208,7 +208,7 @@ export const s = StyleSheet.create({
   // ── Compose critique (top of the section) ──
   composeWrap: { marginTop: 4 },
   critiqueInput: {
-    backgroundColor: '#050403', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder,
+    backgroundColor: colors.inkwell, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder,
     borderRadius: 2, paddingHorizontal: 16, paddingVertical: 16,
     color: colors.bone, fontFamily: fonts.body, fontSize: 13, lineHeight: 22,
     minHeight: 100, textAlignVertical: 'top',
@@ -241,7 +241,7 @@ export const s = StyleSheet.create({
     marginTop: 16, paddingVertical: 9,
     alignSelf: 'stretch', marginHorizontal: 20,
     borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(184,137,26,0.22)',
+    borderColor: colors.sepiaBorder,
   },
   filingLabel: {
     fontFamily: fonts.sub, fontSize: 7, letterSpacing: 3,

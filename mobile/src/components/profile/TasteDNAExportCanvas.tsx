@@ -98,7 +98,7 @@ const s = StyleSheet.create({
     canvas: {
         width: CARD_WIDTH,
         height: CARD_HEIGHT,
-        backgroundColor: '#050403', // Deepest black-brown
+        backgroundColor: colors.inkwell, // Deepest black-brown
     },
     background: {
         flex: 1,

@@ -400,6 +400,40 @@ describe('text can be enlarged without leaving its line box', () => {
   });
 });
 
+describe('every colour on these surfaces is a named one', () => {
+  const SURFACES = [STYLES, HERO, DECK, REVIEW, CARD, POSTER, AUTOPSY,
+    'src/components/feed/ActionDeck.tsx', 'src/components/feed/UserAttributionRow.tsx',
+    'src/components/log/LogComments.tsx', 'src/components/log/LogReviewBody.tsx',
+    'src/components/log/LogChronicle.tsx'];
+
+  it.each(SURFACES)('%s mixes no raw hex', (file) => {
+    // #000 stays: it is the shadow colour, and every shadow on these surfaces
+    // is black by definition rather than by choice.
+    const raw = [...read(file).matchAll(/#[0-9a-fA-F]{3,8}\b/g)]
+      .map((m) => m[0]).filter((h) => !/^#(000|000000)$/i.test(h));
+    expect(raw).toEqual([]);
+  });
+
+  it('does not hand-write a value the theme already names', () => {
+    // Nine of these were sitting on these surfaces: the exact digits of
+    // bloodFaint, sepiaSubtle, sepiaFaint, sepiaBorder and selection, written
+    // out by hand. The token existing is worth nothing if it is bypassed.
+    const theme = read('src/theme/theme.ts');
+    const flat = (s: string) => s.replace(/\s+/g, '').toLowerCase();
+    const named = new Map<string, string>();
+    for (const m of theme.matchAll(/(\w+):\s*'(rgba\([^']+\))'/g)) named.set(flat(m[2]), m[1]);
+
+    const offenders: string[] = [];
+    for (const file of SURFACES) {
+      for (const m of read(file).matchAll(/rgba\([^)]+\)/g)) {
+        const token = named.get(flat(m[0]));
+        if (token) offenders.push(`${file}: ${m[0]} is colors.${token}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe('a control that erases something looks like one', () => {
   it('DELETE is the same red on both pages that show it', () => {
     // These two rows are the same control with the same name and size. One of

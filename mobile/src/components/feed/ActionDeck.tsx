@@ -208,7 +208,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(184,137,26,0.12)',
-    backgroundColor: '#050403', // Deep soot
+    backgroundColor: colors.inkwell,
     overflow: 'hidden',
     zIndex: 1,
     paddingTop: 1,

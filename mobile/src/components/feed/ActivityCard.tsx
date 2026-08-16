@@ -62,7 +62,7 @@ const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.
       />
       {(isPremium || isAuteur) && (
         <>
-          <LinearGradient colors={[isAuteur ? 'rgba(125,31,31,0.08)' : 'rgba(184,137,26,0.08)', 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[isAuteur ? 'rgba(125,31,31,0.08)' : colors.sepiaFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
           <LinearGradient colors={[isAuteur ? 'rgba(125,31,31,0.04)' : 'rgba(184,137,26,0.04)', 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
         </>
       )}
@@ -333,7 +333,7 @@ const s = StyleSheet.create({
     shadowColor: colors.bloodReel,
   },
   backFace: {
-    backgroundColor: '#0B0806',
+    backgroundColor: colors.ink,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -365,7 +365,7 @@ const s = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 2,
     borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.25)',
+    borderColor: colors.sepiaBorder,
   },
   editorialBadgeText: {
     fontFamily: fonts.sub,
@@ -401,7 +401,7 @@ const s = StyleSheet.create({
     fontSize: 19,
     color: colors.silverScreen,
     lineHeight: 24,
-    textShadowColor: 'rgba(184,137,26, 0.35)',
+    textShadowColor: colors.selection,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
     includeFontPadding: false,

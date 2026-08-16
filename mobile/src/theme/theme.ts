@@ -59,6 +59,17 @@ export const colors = {
   marqueeGold: '#DCA63A',   // marquee-bulb gold — the brightest brass, sparing use
   tarnish: '#8B6914',       // aged dark brass — tints, muted gold accents
   bloodAged: '#8B1A1A',     // dried blood — legacy deep-red accents (prefer crimson/bloodReel)
+
+  // Two more the log surfaces were still mixing by hand. Same rule as above:
+  // the values are EXACTLY what shipped, so naming them changes nothing on
+  // screen — it only stops the next person guessing at them again.
+  inkwell: '#050403',       // the recess UNDER the paper — deck bars, the chronicle
+                            // strip, the critique field. Darker than ink on purpose:
+                            // these are cut into the page, not laid on it.
+  tarnishDeep: '#5A430D',   // brass in shadow — the closing stop of a brass gradient.
+                            // `sepia → this` was written out by hand in both autopsy
+                            // gauges; using tarnish instead flattens the ramp that
+                            // makes the fill read as curved metal.
 } as const;
 
 export const fonts = {

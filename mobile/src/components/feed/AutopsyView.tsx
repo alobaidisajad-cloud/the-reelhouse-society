@@ -133,7 +133,7 @@ export const AutopsyBack = React.memo(function AutopsyBack({
               </View>
               <View style={s.track}>
                 <View style={s.sprocketStrip} />
-                <LinearGradient colors={[colors.sepia, '#5a430d']} style={[s.fill, { width: `${(stat.value / 10) * 100}%` }]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
+                <LinearGradient colors={[colors.sepia, colors.tarnishDeep]} style={[s.fill, { width: `${(stat.value / 10) * 100}%` }]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
                   <View style={s.cutMarker} />
                 </LinearGradient>
               </View>
@@ -166,7 +166,7 @@ const s = StyleSheet.create({
     paddingVertical: 11,
     paddingHorizontal: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(184,137,26,0.15)',
+    borderTopColor: colors.sepiaSubtle,
     backgroundColor: 'rgba(20,15,5,0.4)',
   },
   stripContent: {
@@ -226,7 +226,7 @@ const s = StyleSheet.create({
   // ── The back of the card ──
   backRoot: {
     flex: 1,
-    backgroundColor: '#0B0806',
+    backgroundColor: colors.ink,
   },
   backFileBorder: {
     position: 'absolute',
@@ -345,7 +345,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(184,137,26,0.15)',
+    borderTopColor: colors.sepiaSubtle,
   },
   returnText: {
     fontFamily: fonts.sub,

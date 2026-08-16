@@ -182,7 +182,7 @@ const s = StyleSheet.create({
     includeFontPadding: false, textAlignVertical: 'center',
     fontFamily: fonts.display, fontSize: 15, fontStyle: 'italic',
     color: colors.sepia, lineHeight: 22,
-    textShadowColor: 'rgba(184,137,26,0.15)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8,
+    textShadowColor: colors.sepiaSubtle, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8,
   },
   pullQuotePremium: { color: 'rgba(220,166,58,0.9)' },
   pullQuoteAuteur: { color: colors.crimson },

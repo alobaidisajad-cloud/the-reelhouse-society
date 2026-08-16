@@ -83,7 +83,7 @@ export default function AutopsyGauge({ autopsy }: AutopsyGaugeProps) {
                         <View style={s.track}>
                             {/* Fill */}
                             <LinearGradient
-                                colors={[colors.sepia, '#5a430d']}
+                                colors={[colors.sepia, colors.tarnishDeep]}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 0, y: 1 }}
                                 style={[s.trackFill, { width: `${(item.value / 10) * 100}%` as import('react-native').DimensionValue }]}
