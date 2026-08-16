@@ -212,6 +212,11 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 </Animated.View>
             )}
 
+            {/* ══ THE SHEET ══ the document rises off the film, on the app's
+                blessed upward lift — the same construction as the record's own
+                content card. Negative rails so it spans the full width inside a
+                scroll that is already inset by 20. */}
+            <View style={st.sheet}>
             {/* ══ THE VERDICT ══ */}
             <SectionDivider label="THE VERDICT" />
             <View style={st.statusRow}>
@@ -442,6 +447,8 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         </LogIndexEntry>
                     );
                 })()}
+            </View>
+
             </View>
 
             {/* Past the end of the record: the things you should have to reach for.

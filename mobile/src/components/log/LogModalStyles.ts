@@ -187,6 +187,22 @@ export const st = StyleSheet.create({
     autoSuggestItem: { backgroundColor: 'rgba(184,137,26,0.12)', borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 3, paddingHorizontal: 10, paddingVertical: 5 },
     autoSuggestText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
 
+    // Over the film the header is chrome, not a container: its hairline would
+    // cut straight across the picture.
+    headerOnFilm: { borderBottomWidth: 0 },
+
+    // The document, lifting off the film. The Booth Law blesses an UPWARD
+    // shadow for surfaces that rise from the floor — bottom sheets, and the
+    // record's own card. This is the composer's.
+    sheet: {
+        marginHorizontal: -20, paddingHorizontal: 20, marginTop: 26, paddingTop: 2,
+        backgroundColor: colors.soot,
+        borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,
+        borderTopLeftRadius: 12, borderTopRightRadius: 12,
+        shadowColor: '#000', shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.85, shadowRadius: 40,
+        elevation: 24,
+    },
+
     // ── THE DOCKET ───────────────────────────────────────────────────────────
     // Registration brackets, not a border. The Concierge card that opens this
     // screen carries the same four marks; you bracket a DOCUMENT, you do not

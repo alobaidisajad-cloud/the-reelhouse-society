@@ -44,6 +44,16 @@ const EXEMPT: Record<string, string> = {
     // order falls through to JSX order and the overlay sits on top on both
     // platforms. Safe as written.
     defOverlay: 'verified: its only sibling is the poster, and neither is elevated',
+    // VERIFIED in the composer pass. LogAtmosphere.tsx: chromeScrim's siblings
+    // inside the `film` layer are the blurred Image, the main fade and the
+    // texture view — none declares an elevation, so paint order falls through
+    // to JSX order on both platforms and it lands where it is written.
+    //
+    // It also must NOT be elevated. This layer is a BACKDROP: the whole point is
+    // that it sits beneath the chrome and the document. Giving it an elevation
+    // would raise it above its siblings on Android — the exact inversion this
+    // test exists to prevent, applied backwards.
+    chromeScrim: 'verified: a backdrop layer — no elevated siblings, and must stay beneath the sheet',
 };
 
 function walk(dir: string, out: string[] = []): string[] {

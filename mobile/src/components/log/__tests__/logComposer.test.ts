@@ -257,6 +257,68 @@ describe('the seal cannot disagree with the save path', () => {
   });
 });
 
+
+describe('the film behind the record', () => {
+  const ATMOS = 'src/components/log/LogAtmosphere.tsx';
+
+  it('costs no second image', () => {
+    // The record uses w780 because its backdrop is a sharp hero. Ours is blurred
+    // to 20% under a gradient, so w780 buys a sharpness it throws away. Sharing
+    // the DOCKET's URI means one download, one cache entry, one base decode.
+    const size = (read(FORM).match(/tmdb\.poster\(altPoster \?\? film\.poster_path, '(w\d+)'\)/) || [])[1];
+    expect(size).toBe('w342');
+    expect(read(ATMOS)).toContain(`tmdb.poster(posterPath, '${size}')`);
+  });
+
+  it('needs no new data at all', () => {
+    // It takes the poster the composer already holds — the same fallback the
+    // record uses when a log carries no editorial header.
+    expect(read(SCREEN)).toMatch(/posterPath=\{film\?\.poster_path\}/);
+  });
+
+  it('arrives after the entrance, and cannot be starved', () => {
+    // A decode must never compete with the sheet sliding up. And the one element
+    // carrying the atmosphere must not hang on a promise that can be starved:
+    // whichever of the two fires first wins.
+    const a = read(ATMOS);
+    expect(a).toMatch(/InteractionManager\.runAfterInteractions/);
+    expect(a).toMatch(/setTimeout\(arrive, \d+\)/);
+    expect(a).toMatch(/task\.cancel\(\)/);
+    expect(a).toMatch(/clearTimeout/);
+  });
+
+  it('reaches solid ink before any writing begins', () => {
+    // Text is never set over an image on this page.
+    const a = read(ATMOS);
+    expect(a).toMatch(/colors\.ink\]/);
+    expect(a).toMatch(/locations=\{\[0, 0\.38, 0\.76, 1\]\}/);
+  });
+
+  it('gives the chrome a scrim of its own', () => {
+    // The record's gradient starts fully transparent because its header is
+    // opaque. Ours dissolves into the film, so CLOSE and the handle would sit on
+    // the LEAST covered part of a blurred poster.
+    expect(read(ATMOS)).toMatch(/chromeScrim/);
+    expect(read(SCREEN)).toMatch(/step === 1 && st\.headerOnFilm/);
+  });
+
+  it('the document rises off it, and iOS can draw the lift', () => {
+    // A large shadow on a view that also clips draws NOTHING on iOS — the bug
+    // fixed four times on the record. The sheet casts and never clips.
+    const sheet = style(read(STYLES), 'sheet');
+    expect(sheet).toMatch(/shadowOffset: \{ width: 0, height: -20 \}/);
+    expect(sheet).not.toMatch(/overflow:\s*'hidden'/);
+    // Android draws from the painted background's outline, so elevation belongs
+    // on the same view — which here has one.
+    expect(sheet).toMatch(/elevation:/);
+    expect(sheet).toMatch(/backgroundColor/);
+  });
+
+  it('honours a member who asked for less motion', () => {
+    expect(read(ATMOS)).toMatch(/ReduceMotion\.System/);
+  });
+});
+
 describe('destructive things are reached for, not stumbled on', () => {
   it('delete sits past the seal', () => {
     const src = read(FORM);

@@ -12,6 +12,7 @@ import LogForm from '@/src/components/log/LogForm';
 import { st } from '@/src/components/log/LogModalStyles';
 import LogSearchEngine from '@/src/components/log/LogSearchEngine';
 import LogSealBar, { SEAL_BAR_HEIGHT } from '@/src/components/log/LogSealBar';
+import LogAtmosphere from '@/src/components/log/LogAtmosphere';
 import PressableScale from '@/src/components/PressableScale';
 import { useLogFlow } from '@/src/hooks/useLogFlow';
 import { useAuthStore } from '@/src/stores/auth';
@@ -49,12 +50,16 @@ export default function LogModalScreen() {
     return (
         <View style={st.root} accessibilityViewIsModal={true}>
             <StatusBar style="light" backgroundColor="transparent" translucent />
+            {/* The film, behind the chrome and the document alike. Fixed, so it
+                stays put while the docket scrolls over it — the record's own
+                parallax. Arrives after the entrance settles. */}
+            {step === 1 && <LogAtmosphere posterPath={film?.poster_path} />}
             <View style={st.kavFlex}>
                 {/* Drag handle */}
                 <View style={st.dragHandleWrap}><View style={st.dragHandle} /></View>
 
                 {/* Header */}
-                <View style={st.header}>
+                <View style={[st.header, step === 1 && st.headerOnFilm]}>
                     <View style={st.headerLeft}>
                         {isEditing && <View style={st.editBadge}><Text style={st.editBadgeText}>EDITING</Text></View>}
                         {step === 1 && !isEditing && (
