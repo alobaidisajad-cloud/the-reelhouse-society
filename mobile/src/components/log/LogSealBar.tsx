@@ -77,8 +77,13 @@ export default React.memo(function LogSealBar({
         physical_media: physicalMedia,
     });
 
+    // The label goes WITH the mark. A record whose date cannot be read produces
+    // an empty mark, and "FILED · " on its own is a caption trailing a separator
+    // into nothing — the same class of defect as the ruled band that announced
+    // FORMAT: NONE on the record page.
+    const filed = mark.map(e => e.value).join('  ·  ');
     const line = ready
-        ? mark.map(e => e.value).join('  ·  ')
+        ? (filed ? `FILED · ${filed}` : 'READY TO SEAL')
         : status === 'abandoned'
             ? 'WHY DID YOU STOP?'
             : 'A VERDICT, OR A FEW WORDS';
@@ -92,7 +97,7 @@ export default React.memo(function LogSealBar({
     return (
         <Animated.View style={[s.bar, { paddingBottom: insets.bottom + 14 }, barStyle]}>
             <Text style={s.line} numberOfLines={1} {...scaledTextProps}>
-                {ready ? 'FILED · ' : ''}{line}
+                {line}
             </Text>
             <PressableScale
                 testID="submit-log-button"
