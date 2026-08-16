@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -8,6 +7,7 @@ import { Sparkles, Check } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 interface Props {
     dropCap: boolean;
@@ -49,19 +49,24 @@ export default React.memo(function EditorialDesk({
             
             <View>
                 <Text style={st.editLabel}>PULL QUOTE</Text>
-                <TextInput style={st.pullQuoteInput} placeholder="Highlight a memorable line..." placeholderTextColor={colors.fog} value={pullQuote} onChangeText={setPullQuote} maxLength={120} multiline={true} textAlignVertical="top" selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Pull quote" />
+                <TextInput style={st.pullQuoteInput} placeholder="Highlight a memorable line..." placeholderTextColor={colors.fog} value={pullQuote} onChangeText={setPullQuote} maxLength={120} multiline={true} textAlignVertical="top" {...scaledTextProps} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Pull quote" />
             </View>
             
             <View>
                 <Text style={st.editLabel}>ARTICLE HEADER (STILL)</Text>
+                {/* A plain scroller, not a FlashList.
+                    A horizontal virtualised list nested inside a vertical
+                    ScrollView has no bounded height to measure against, and the
+                    documented failure mode is that it renders NOTHING — which is
+                    precisely the report on this feature: the Editorial Desk works
+                    on the web and appears blank in the app. Ten stills need no
+                    virtualisation; a scroller is cheaper and certain to draw. */}
                 {availableBackdrops.length > 0 ? (
-                    <FlashList horizontal data={[{ file_path: '__none__' }, ...availableBackdrops]} showsHorizontalScrollIndicator={false} 
-                        keyExtractor={backdropKeyExtractor} 
-                        contentContainerStyle={st.flatListGap}
-                        estimatedItemSize={88}
-                        ListFooterComponent={<View style={{ width: 16 }} />}
-                        renderItem={renderBackdropItem}
-                    />
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.flatListGap} keyboardShouldPersistTaps="handled">
+                        {[{ file_path: '__none__' }, ...availableBackdrops].map(p => (
+                            <React.Fragment key={backdropKeyExtractor(p)}>{renderBackdropItem({ item: p })}</React.Fragment>
+                        ))}
+                    </ScrollView>
                 ) : <Text style={st.noData}>No stills found.</Text>}
             </View>
         </View>

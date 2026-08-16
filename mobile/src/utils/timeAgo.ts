@@ -225,6 +225,36 @@ export function formatDate(dateStr: string | Date | undefined | null, format: 's
   return renderParts(resolved.parts, format);
 }
 
+const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+const MONTHS_TITLE = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+] as const;
+
+/**
+ * A calendar day written out in full — "Sun, August 16, 2026".
+ *
+ * The one place in the app that shows a whole date in words: the composer's
+ * date field, where a member is choosing the day a film was watched.
+ *
+ * The weekday is derived by constructing the date from EXPLICIT UTC parts and
+ * reading the UTC day back, so no local offset can shift it. Everything else
+ * comes from the tables above. The composer was building this with
+ * `new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short',
+ * … })` — the noon anchor was a workaround for a timezone shift, and the
+ * `toLocaleDateString` is Intl, which Hermes ships here without.
+ *
+ * Returns '' for anything that is not a calendar date, so a caller can decide
+ * whether to render the row at all.
+ */
+export function formatLongCalendarDate(value: string | null | undefined): string {
+  if (!value) return '';
+  const p = parseCalendarDate(value);
+  if (!p) return '';
+  const dow = new Date(Date.UTC(p.year, p.month, p.day)).getUTCDay();
+  return `${WEEKDAYS_SHORT[dow]}, ${MONTHS_TITLE[p.month]} ${p.day}, ${p.year}`;
+}
+
 /**
  * Month and day only — "AUG 5", for a byline that carries its own recency.
  *

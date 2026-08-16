@@ -59,6 +59,10 @@ export const st = StyleSheet.create({
     prevTakeRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
     prevTakeRatingNum: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, includeFontPadding: false },
     prevTakeReview: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.8, fontStyle: 'italic' },
+    // iOS has no writingDirection unless it is stated, so an Arabic review
+    // inherited the app's left-to-right base — the full stop landed at the far
+    // LEFT of the line. Android resolves it itself. Same style as the record.
+    rtlText: { writingDirection: 'rtl', textAlign: 'right' } as import('react-native').TextStyle,
     prevTakeDate: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 0.8, color: colors.fog, marginTop: 6, includeFontPadding: false },
     filmInfoCol: { flex: 1 },
     poster: { width: 100, height: 150, borderRadius: 3 },

@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -11,6 +10,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { AUTOPSY_INIT } from '@/src/hooks/useLogFlow';
 import AutopsyGauge from '@/src/components/AutopsyGauge';
 import PressableScale from '@/src/components/PressableScale';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 const AUTOPSY_LABELS: Record<string, string> = {
     story: 'STORY', script: 'SCRIPT/DIALOGUE', acting: 'ACTING/CHAR',
@@ -59,7 +59,7 @@ export default React.memo(function AuteurToolkit({
                 <Animated.View entering={FadeInDown.duration(200)} style={st.autopContent}>
                     <View>
                         <Text style={st.editLabel}>THE AUTOPSY ENGINE (0-10)</Text>
-                        <Text style={st.editHint}>TAP A NOTCH TO FILE A SCORE — A DELIBERATE 0 COUNTS. TAP IT AGAIN TO WITHDRAW.</Text>
+                        <Text style={st.editHint} {...scaledTextProps}>TAP A NOTCH TO FILE A SCORE — A DELIBERATE 0 COUNTS. TAP IT AGAIN TO WITHDRAW.</Text>
                         {Object.keys(AUTOPSY_INIT).map(axis => {
                             const rated = typeof autopsy[axis] === 'number';
                             const val = autopsy[axis];
@@ -89,14 +89,18 @@ export default React.memo(function AuteurToolkit({
                     
                     <View>
                         <Text style={st.editLabel}>CURATORIAL CONTROL (ALT POSTER)</Text>
+                        {/* A plain scroller, not a FlashList. A horizontal virtualised
+                            list nested inside a vertical ScrollView has no bounded
+                            height to measure against and commonly renders NOTHING —
+                            which is exactly the symptom reported for this feature. For
+                            a fixed set of ~20 thumbnails virtualisation buys nothing
+                            anyway; this is both cheaper and certain to appear. */}
                         {availablePosters.length > 0 ? (
-                            <FlashList horizontal data={[{ file_path: '__default__' }, ...availablePosters]} showsHorizontalScrollIndicator={false} 
-                                keyExtractor={posterKeyExtractor} 
-                                contentContainerStyle={st.flatListGapPad}
-                                estimatedItemSize={52}
-                                ListFooterComponent={<View style={{ width: 16 }} />}
-                                renderItem={renderPosterItem}
-                            />
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.flatListGapPad} keyboardShouldPersistTaps="handled">
+                                {[{ file_path: '__default__' }, ...availablePosters].map(p => (
+                                    <React.Fragment key={posterKeyExtractor(p)}>{renderPosterItem({ item: p })}</React.Fragment>
+                                ))}
+                            </ScrollView>
                         ) : <Text style={st.noData}>No alternative posters found on TMDB.</Text>}
                     </View>
                 </Animated.View>
