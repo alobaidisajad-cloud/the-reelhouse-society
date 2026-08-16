@@ -295,7 +295,18 @@ jest.mock('react-native-reanimated', () => {
       FlatList: animatedComponent(View),
       createAnimatedComponent: animatedComponent,
     },
-    useSharedValue: jest.fn((v: any) => ({ value: v })),
+    // STABLE ACROSS RENDERS, because the real one is. This used to return a
+    // fresh `{ value }` on every render, which meant any effect listing a
+    // shared value in its deps re-ran on EVERY render under test — a loop that
+    // cannot happen in the app. It was caught by a deferred fade running twice
+    // in a component that starts it exactly once; on the device it is correct.
+    // A mock that invents a re-render is worse than no mock: it fails good code
+    // and, when an effect's work is idempotent, passes bad code silently.
+    useSharedValue: jest.fn((v: any) => {
+      const ref: { current: { value: any } | null } = React.useRef(null);
+      if (ref.current === null) ref.current = { value: v };
+      return ref.current;
+    }),
     useAnimatedStyle: jest.fn((fn: any) => fn()),
     useDerivedValue: jest.fn((fn: any) => ({ value: fn() })),
     useAnimatedScrollHandler: jest.fn(() => jest.fn()),
