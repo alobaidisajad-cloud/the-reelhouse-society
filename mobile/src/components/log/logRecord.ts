@@ -6,7 +6,8 @@
  */
 import { dateParts, formatDate } from '@/src/utils/timeAgo';
 
-/**
+/* ── WHY THERE IS NO DATE FORMATTER HERE ──────────────────────────────────────
+ *
  * There is no date formatter in this file. Use `formatDate` from
  * `@/src/utils/timeAgo`, which already prints AUG 5, 2026 and is the only
  * implementation allowed to answer "which day is this?".
@@ -26,8 +27,7 @@ import { dateParts, formatDate } from '@/src/utils/timeAgo';
  *
  * `formatDate` distinguishes them. This note is here so the shortcut is not
  * reinvented the next time two dates on one screen look different.
- */
-
+ * ───────────────────────────────────────────────────────────────────────── */
 
 /**
  * Whether a physical format is a fact worth printing.

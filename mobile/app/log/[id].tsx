@@ -653,7 +653,7 @@ export default function LogDetailScreen() {
         <View style={[s.contentCardShadow, isAuteur && s.contentCardShadowAuteur]}>
         <View style={[s.contentCard, isAuteur && s.contentCardAuteur]}>
           {isAuteur && (
-            <LinearGradient colors={['rgba(125,31,31,0.08)', 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
+            <LinearGradient colors={[colors.crimsonFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
           )}
         
         <AnimatedView entering={SlideInUp.duration(500).easing(Easing.out(Easing.cubic))} style={s.logCardInner}>

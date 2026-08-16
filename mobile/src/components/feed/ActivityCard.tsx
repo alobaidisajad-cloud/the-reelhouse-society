@@ -62,8 +62,8 @@ const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.
       />
       {(isPremium || isAuteur) && (
         <>
-          <LinearGradient colors={[isAuteur ? 'rgba(125,31,31,0.08)' : colors.sepiaFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
-          <LinearGradient colors={[isAuteur ? 'rgba(125,31,31,0.04)' : 'rgba(184,137,26,0.04)', 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[isAuteur ? colors.crimsonFaint : colors.sepiaFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[isAuteur ? 'rgba(180,45,45,0.04)' : 'rgba(184,137,26,0.04)', 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
         </>
       )}
       {children}
@@ -401,7 +401,7 @@ const s = StyleSheet.create({
     fontSize: 19,
     color: colors.silverScreen,
     lineHeight: 24,
-    textShadowColor: colors.selection,
+    textShadowColor: colors.sepiaGlow,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
     includeFontPadding: false,

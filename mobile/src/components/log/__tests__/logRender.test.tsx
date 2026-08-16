@@ -186,9 +186,17 @@ describe('the viewing chronicle', () => {
     expect(r.getByText('· MAR 2, 2024')).toBeTruthy();
   });
 
-  it('says nothing rather than "Invalid Date"', () => {
+  it('prints no date at all rather than a broken one', () => {
     const r = chronicle([{ date: 'whenever', rating: 3, review: 'x' }]);
     expect(r.queryByText(/Invalid/i)).toBeNull();
+    // The assertion that does the work. The shared formatter ECHOES what it
+    // cannot parse, so the failure mode here is not "Invalid Date" — it is the
+    // raw stored value appearing in the byline. Checking for the former left
+    // the guard that prevents the latter completely untested.
+    expect(r.queryByText(/whenever/)).toBeNull();
+    // One dated card, not two: the CURRENT viewing still shows its own date, so
+    // counting is what proves the unreadable one printed nothing.
+    expect(r.queryAllByText(/^· /)).toHaveLength(1);
   });
 
   it('cleans a past review the same way the current one is cleaned', () => {

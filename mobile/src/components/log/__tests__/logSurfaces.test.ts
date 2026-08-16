@@ -436,6 +436,15 @@ describe('every colour on these surfaces is a named one', () => {
     expect(raw).toEqual([]);
   });
 
+  it('carries no red the palette already retired', () => {
+    // theme.ts says, in as many words, that rgb(125,31,31) was replaced so every
+    // red in the app is bloodReel or crimson. Three instances had survived on
+    // these two surfaces — the auteur washes on the card and on the record.
+    for (const file of [...SURFACES, SCREEN]) {
+      expect(read(file)).not.toMatch(/125\s*,\s*31\s*,\s*31/);
+    }
+  });
+
   it('does not hand-write a value the theme already names', () => {
     // Nine of these were sitting on these surfaces: the exact digits of
     // bloodFaint, sepiaSubtle, sepiaFaint, sepiaBorder and selection, written

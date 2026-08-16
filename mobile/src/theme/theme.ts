@@ -29,6 +29,12 @@ export const colors = {
   sepiaFaint: 'rgba(184, 137, 26, 0.08)',
   sepiaSubtle: 'rgba(184, 137, 26, 0.15)',
   sepiaBorder: 'rgba(184, 137, 26, 0.25)',
+  // The 0.35 step of the same ramp, for a warm glow BEHIND text rather than a
+  // border around something. `selection` happens to carry the same value, but
+  // it means "highlight over selected text" and every other use of it is a
+  // TextInput's selectionColor — so a title's textShadow reading from it was a
+  // value that matched and a name that lied.
+  sepiaGlow: 'rgba(184, 137, 26, 0.35)',
   sepiaBorderStrong: 'rgba(184, 137, 26, 0.5)',
   sepiaBorderBold: 'rgba(184, 137, 26, 0.8)',
   bloodFaint: 'rgba(107, 26, 10, 0.3)',
