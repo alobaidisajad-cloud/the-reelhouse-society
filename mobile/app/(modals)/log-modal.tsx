@@ -67,7 +67,11 @@ export default function LogModalScreen() {
                                 <ChevronLeft size={20} color={colors.fog} strokeWidth={2.5} />
                             </PressableScale>
                         )}
-                        {step === 0 && <Text style={st.headerTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Log a Film</Text>}
+                        {/* No title, at either step. The Concierge card that opens
+                            this screen already says "Log a Film — set down what
+                            you've seen"; repeating it here made the same invitation
+                            twice in four seconds. At step 1 the docket names the
+                            film. The header is chrome, never content. */}
                     </View>
                     <PressableScale onPress={() => { nav.back(); }} disabled={submitting} style={[st.closeBtn, submitting && { opacity: 0.5 }]} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityLabel="Close">
                         <X size={16} color={colors.fog} />

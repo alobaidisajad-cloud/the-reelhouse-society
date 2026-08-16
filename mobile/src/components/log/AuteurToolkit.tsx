@@ -87,11 +87,11 @@ export default React.memo(function AuteurToolkit({ isAuteur, autopsy, setAutopsy
 });
 
 const st = StyleSheet.create({
-    editHint: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1, color: colors.fog, opacity: 0.8, marginBottom: 14, lineHeight: 11, includeFontPadding: false },
+    editHint: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1, color: colors.fog, opacity: 0.8, marginBottom: 14, lineHeight: 11, includeFontPadding: false },
     axisRow: { marginBottom: 12 },
     axisHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 },
-    axisLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog, flexShrink: 1, includeFontPadding: false },
-    axisValue: { fontFamily: fonts.sub, fontSize: 12, color: colors.bone, includeFontPadding: false },
+    axisLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.fog, flexShrink: 1, includeFontPadding: false },
+    axisValue: { fontFamily: fonts.sub, fontSize: 11, color: colors.bone, includeFontPadding: false },
     axisValueUnrated: { color: colors.fog, opacity: 0.6 },
     // The channel: a dark strip of film. The published autopsy on the record and
     // the feed card is the same object, so what you author looks like what you

@@ -250,10 +250,14 @@ describe('the seal cannot disagree with the save path', () => {
 
   it('the header no longer names the film', () => {
     // It overflowed CLOSE by 88pt and repeated the docket four pixels below.
+    // Nor anything else. The Concierge card already says "Log a Film"; a title
+    // here repeated the same invitation twice in four seconds, and at step 1 it
+    // overflowed CLOSE by 88pt while duplicating the docket four pixels below.
+    // The header is chrome at BOTH steps.
     const screen = read(SCREEN);
     expect(screen).not.toMatch(/film\?\.title \|\| 'Log'/);
-    // …and what remains renders ONLY at step 0, where there is no docket yet.
-    expect(screen).toMatch(/\{step === 0 && <Text style=\{st\.headerTitle\}/);
+    expect(screen).not.toMatch(/st\.headerTitle/);
+    expect(screen).not.toMatch(/Log a Film/);
   });
 });
 
@@ -316,6 +320,80 @@ describe('the film behind the record', () => {
 
   it('honours a member who asked for less motion', () => {
     expect(read(ATMOS)).toMatch(/ReduceMotion\.System/);
+  });
+});
+
+
+describe('the page speaks in one type scale', () => {
+  const SCALED = [
+    STYLES,
+    'src/components/log/LogVerdict.tsx',
+    'src/components/log/AuteurToolkit.tsx',
+    'src/components/log/LogSealBar.tsx',
+    'src/components/log/EditorialDesk.tsx',
+  ];
+  // FINE · LABEL · ASIDE · PROSE · TITLE · HERO
+  const SCALE = [7.5, 9, 11, 14, 17, 28];
+
+  it('uses six sizes, and only those six', () => {
+    // It had FOURTEEN, all at one volume — the single largest reason the page
+    // read as cramped. Counting them was in the plan and was not done until an
+    // audit of the finished work went looking; by then it was sixteen.
+    const found = new Set<number>();
+    for (const f of SCALED) {
+      for (const m of read(f).matchAll(/fontSize:\s*([\d.]+)/g)) found.add(Number(m[1]));
+    }
+    expect([...found].sort((a, b) => a - b)).toEqual(SCALE);
+  });
+
+  it('no style is left behind by the restructure', () => {
+    // Twenty-seven styles were orphaned when the boxes went. A dead style is a
+    // box waiting to be reinstated by someone who finds it and assumes it means
+    // something.
+    const names = [...read(STYLES).matchAll(/^\s{4}([A-Za-z0-9_]+):\s*\{/gm)].map(m => m[1]);
+    const users = [FORM, DESK, TOOLKIT, SEAL, SCREEN,
+      'src/components/log/LogIndexEntry.tsx',
+      'src/components/log/LogClearanceGate.tsx',
+      'src/components/log/LogFormBody.tsx',
+      'src/components/log/LogSearchEngine.tsx',
+      'app/(modals)/search-modal.tsx',
+    ].map(read).join('');
+    const orphans = names.filter(n => !new RegExp('st\\.' + n + '\\b').test(users) && !new RegExp('modalSt\\.' + n + '\\b').test(users));
+    expect(orphans).toEqual([]);
+  });
+});
+
+describe('the first frame of the ritual', () => {
+  const SEARCH = 'src/components/log/LogSearchEngine.tsx';
+
+  it('says nothing — the Concierge already made the invitation', () => {
+    // "Log a Film — set down what you've seen" on the card, then "Log a Film"
+    // again in the header two seconds later. The room is simply ready.
+    expect(read(SEARCH)).not.toMatch(/Log a Film/);
+  });
+
+  it('the field is marked like the record it will become', () => {
+    expect(read(SEARCH)).toMatch(/<Brackets\s*\/>/);
+  });
+});
+
+describe('the docket is a hero, not a thumbnail', () => {
+  it('the poster is sized for the film behind it', () => {
+    const poster = style(read(STYLES), 'poster');
+    expect(num(poster, 'width')).toBeGreaterThanOrEqual(120);
+    expect(num(poster, 'height')).toBeGreaterThanOrEqual(180);
+  });
+
+  it('the sheet you write on has room to be written on', () => {
+    // 130 showed about six lines between an autopsy and a date picker, in a
+    // critique app.
+    expect(num(style(read(STYLES), 'reviewInput'), 'minHeight')).toBeGreaterThanOrEqual(170);
+  });
+
+  it('the manuscript header is legible', () => {
+    // 6.5pt was the smallest text in the app, shrinking to 6.3 to fit — and it
+    // stayed 6.5 through the redesign under a comment claiming otherwise.
+    expect(num(style(read(STYLES), 'manuscriptHeaderText'), 'fontSize')).toBeGreaterThanOrEqual(9);
   });
 });
 

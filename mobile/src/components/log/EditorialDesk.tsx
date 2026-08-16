@@ -75,11 +75,11 @@ export default React.memo(function EditorialDesk({
 
 const st = StyleSheet.create({
     editDesk: { padding: 16, borderWidth: 1, borderColor: colors.sepia, borderRadius: 6, backgroundColor: 'rgba(184,137,26,0.05)', gap: 16, marginBottom: 20 },
-    editDeskTitle: { fontFamily: fonts.display, fontSize: 14, color: colors.sepia },
+    editDeskTitle: { fontFamily: fonts.display, fontSize: 17, color: colors.sepia },
     editRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    editLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.bone, marginBottom: 8, includeFontPadding: false },
-    editToggleText: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.fog, includeFontPadding: false },
-    pullQuoteInput: { backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 13, fontStyle: 'italic', color: colors.parchment },
+    editLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.bone, marginBottom: 8, includeFontPadding: false },
+    editToggleText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, includeFontPadding: false },
+    pullQuoteInput: { backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 14, fontStyle: 'italic', color: colors.parchment },
     spoilerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     cbox: { width: 16, height: 16, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     cboxSepia: { backgroundColor: colors.sepia, borderColor: colors.sepia },

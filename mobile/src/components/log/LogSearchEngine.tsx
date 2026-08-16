@@ -6,6 +6,8 @@ import Animated, { FadeIn, Easing, useSharedValue, useAnimatedStyle, withRepeat,
 import { Search, Sparkles, Star } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
+import { Brackets } from '@/src/components/log/LogFormBody';
+import { st as modalSt } from '@/src/components/log/LogModalStyles';
 import PressableScale from '@/src/components/PressableScale';
 
 
@@ -106,6 +108,10 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
 
     return (
         <Animated.View entering={FadeIn.duration(400).easing(Easing.out(Easing.cubic))} style={st.searchStep}>
+            {/* Marked, like the docket it is about to become. The room says
+                nothing else — the invitation was already made at the door. */}
+            <View style={modalSt.bracketed}>
+            <Brackets />
             <View style={st.searchWrap}>
                 <Animated.View style={[st.searchIcon, animatedIconStyle]}>
                     <Search size={16} color={searching ? colors.sepia : colors.fog} />
@@ -128,6 +134,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                     keyboardAppearance="dark"
                     accessibilityLabel="Search for a film to log"
                 />
+            </View>
             </View>
             {searching && (
                 <View style={st.searchingWrap}><Text style={st.searchingText}>TRANSMITTING QUERY...</Text></View>

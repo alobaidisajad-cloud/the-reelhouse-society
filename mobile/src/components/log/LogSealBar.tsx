@@ -137,7 +137,7 @@ const s = StyleSheet.create({
     pressSealed: { backgroundColor: colors.flicker },
     mark: { width: 16, height: 16 },
     pressText: {
-        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.ink,
+        fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.ink,
         includeFontPadding: false,
     },
 });
