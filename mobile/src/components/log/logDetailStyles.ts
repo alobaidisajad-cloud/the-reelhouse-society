@@ -192,7 +192,14 @@ export const s = StyleSheet.create({
   // stamp in ReviewContent, which changed its colour rather than its alpha.
   // That lesson never crossed to here, and this control DELETES a critique.
   // The word carries the warning; it only had to be readable.
-  commDelete: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.bone, includeFontPadding: false },
+  // A destructive control has to read as one AND be legible. Crimson at 9pt
+  // measures 3.2:1 on ink — under the 4.5:1 small text needs — but bone made
+  // DELETE look exactly like the body text above it, which is worse: a control
+  // that erases something should never be the same colour as prose. `danger`
+  // is the one red in the palette that clears the bar (5.2:1) while still
+  // unmistakably being a red. The dossier's identical row reads from the same
+  // decision.
+  commDelete: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.danger, includeFontPadding: false },
 
   // Show earlier/more critiques
   showMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'center', marginTop: 16, paddingVertical: 9, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2 },

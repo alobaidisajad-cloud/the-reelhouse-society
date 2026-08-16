@@ -792,7 +792,9 @@ const styles = StyleSheet.create({
     commBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 18 },
     commMetaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
     commDate: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog },
-    commDelete: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimson },
+    // Same control, same colour as the log page's — see logDetailStyles.
+    // Crimson at 9pt is 3.2:1 on ink; `danger` is 5.2:1 and still red.
+    commDelete: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.danger },
     loadEarlierBtn: { paddingVertical: 16, alignItems: 'center' },
     loadEarlierText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia },
 

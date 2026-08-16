@@ -384,6 +384,20 @@ describe('text can be enlarged without leaving its line box', () => {
   });
 });
 
+describe('a control that erases something looks like one', () => {
+  it('DELETE is the same red on both pages that show it', () => {
+    // These two rows are the same control with the same name and size. One of
+    // them was changed alone and they drifted — crimson on the dossier, body
+    // text on the log. Whatever the colour is, it has to be one colour.
+    const log = style(read(STYLES), 'commDelete');
+    const dossier = style(read('app/dossier/[id].tsx'), 'commDelete');
+    const colourOf = (b: string) => b.match(/color:\s*colors\.(\w+)/)![1];
+    expect(colourOf(log)).toBe(colourOf(dossier));
+    // …and not a neutral. bone/fog/parchment are what prose is set in.
+    expect(['bone', 'fog', 'parchment', 'ash']).not.toContain(colourOf(log));
+  });
+});
+
 describe('no deck label outgrows its column', () => {
   // A deck splits the width evenly and cannot reflow, so a label that grows
   // past its share wraps or truncates. Both decks now read one shared prop set;
