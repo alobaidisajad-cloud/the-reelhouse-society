@@ -328,18 +328,16 @@ jest.mock('react-native-reanimated', () => {
       linear: 'linear',
       bezier: jest.fn(),
     },
-    FadeIn: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
-    FadeOut: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
-    FadeInUp: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
-    FadeOutUp: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
-    FadeInDown: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
-    FadeOutDown: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
-    SlideInRight: { duration: jest.fn().mockReturnThis() },
-    SlideOutLeft: { duration: jest.fn().mockReturnThis() },
-    SlideInLeft: { duration: jest.fn().mockReturnThis() },
-    SlideOutRight: { duration: jest.fn().mockReturnThis() },
-    Layout: { duration: jest.fn().mockReturnThis(), springify: jest.fn().mockReturnThis() },
-    LinearTransition: { duration: jest.fn().mockReturnThis(), springify: jest.fn().mockReturnThis() },
+    // CHAINABLE, because the real builders are. Every modifier on a reanimated
+    // entering/exiting builder returns the builder, so they compose in any
+    // order and any number. These were hand-listed one modifier at a time, so
+    // a component reaching for one nobody had needed yet — .easing() on a
+    // Fade — threw the moment a test rendered it. The only reason that was
+    // survivable is that the component using it had never been mounted.
+    ...Object.fromEntries(['FadeIn', 'FadeOut', 'FadeInUp', 'FadeOutUp', 'FadeInDown', 'FadeOutDown', 'SlideInRight', 'SlideOutLeft', 'SlideInLeft', 'SlideOutRight', 'Layout', 'LinearTransition'].map(name => {
+      const builder: any = new Proxy({}, { get: () => jest.fn(() => builder) });
+      return [name, builder];
+    })),
     cancelAnimation: jest.fn(),
     // scrollBridge.ts calls makeMutable(0) at MODULE load, so without this any
     // test that so much as imports TopNavBar threw before rendering a line.

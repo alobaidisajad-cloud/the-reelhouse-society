@@ -27,10 +27,23 @@ interface Props {
     onSelectFilm: (film: LogSearchResult) => void;
 }
 
- 
+/**
+ * A result may claim half the gap to the row below it, and no more.
+ *
+ * The rows sit 8pt apart and PressableScale defaults to 15pt on EVERY side,
+ * named or not — so two defaults overlapped by 22pt, and where two targets
+ * overlap the LATER sibling wins on both platforms. The bottom 7pt of every
+ * result was pressing the film below it. On this screen that is not a mis-tap
+ * anyone notices: it opens a record for a film nobody chose.
+ *
+ * 4pt is half the 8pt gap. The row is 74pt tall, so the target stays far past
+ * the 44pt minimum. Sideways it has no neighbour at all.
+ */
+const ROW_SLOP = { top: 4, bottom: 4, left: 15, right: 15 } as const;
+
 const LogSearchResultRow = React.memo(({ r, onSelectFilm }: { r: LogSearchResult, onSelectFilm: (film: LogSearchResult) => void }) => {
     return (
-        <PressableScale style={st.resultRow} onPress={() => onSelectFilm(r)} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.96}>
+        <PressableScale style={st.resultRow} onPress={() => onSelectFilm(r)} hitSlop={ROW_SLOP} haptic="selection" pressedScale={0.96}>
             {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={st.resultPoster} contentFit="cover" cachePolicy="memory-disk" transition={150} />}
             <View style={st.resultFlex}>
                 <Text style={st.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{r.title || r.name}</Text>
@@ -160,10 +173,15 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                 renderItem={renderItem}
                 keyboardShouldPersistTaps="handled"
             />
-            {!searching && query.length > 0 && results.length === 0 && (
+            {/* TRIMMED, and not by accident. Spaces are not a search — the
+                request is never sent for them — so a field holding only spaces
+                was being answered with "No films found for ' '": a failure
+                reported for a query nobody made. It also keeps the message
+                honest about what was actually looked for. */}
+            {!searching && query.trim().length > 0 && results.length === 0 && (
                 <View style={st.noResultsWrap}>
                     {/* eslint-disable-next-line react/no-unescaped-entities */}
-                    <Text style={st.noResultsText}>No films found for "{query}"</Text>
+                    <Text style={st.noResultsText}>No films found for "{query.trim()}"</Text>
                 </View>
             )}
         </Animated.View>
