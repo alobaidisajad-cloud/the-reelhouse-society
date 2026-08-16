@@ -8,15 +8,28 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { s, SPINE } from '@/src/components/log/logDetailStyles';
 
 interface ViewingHistoryEntry {
-  date?: string;
+  date?: string | null;
   rating: number;
-  review?: string;
-  watchedWith?: string;
+  review?: string | null;
+  watchedWith?: string | null;
+}
+
+/**
+ * A past viewing plus the two things this screen adds: what to call it, and
+ * whether it is the viewing being read right now.
+ *
+ * Spelled out because the card took `Record<string, any>`, which meant every
+ * field it reads — and the six it compares in the memo below — were unchecked.
+ * A renamed field would have compiled and silently rendered a blank card.
+ */
+interface ChronicleEntry extends ViewingHistoryEntry {
+  label: string;
+  isCurrent: boolean;
 }
 
 // ── Memoized Viewing History Card ──
  
-const ChronicleCard = React.memo(({ entry, cardWidth }: { entry: Record<string, any>; cardWidth: number }) => (
+const ChronicleCard = React.memo(({ entry, cardWidth }: { entry: ChronicleEntry; cardWidth: number }) => (
   <View style={[s.chronicleCard, { width: cardWidth }]}>
     <View style={s.chronicleLabelRow}>
       <View style={[s.chronicleLabelBadge, entry.isCurrent && s.chronicleLabelBadgeCurrent]}>
@@ -103,7 +116,9 @@ export default function LogChronicle({
       : []);
   if (!history.length) return null;
 
-  const allViewings = [
+  // Annotated so a mismatch is caught HERE, where the entries are built, rather
+  // than surfacing as a blank card.
+  const allViewings: ChronicleEntry[] = [
     // Current viewing (top-level log data)
     {
       label: '◆ CURRENT',

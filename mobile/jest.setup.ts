@@ -215,11 +215,26 @@ jest.mock('expo-haptics', () => ({
 // Mock expo-image — native module
 // ─────────────────────────────────────────────────────────────────────────────
 jest.mock('expo-image', () => {
+  // `Image` has to be BOTH: a component, because plenty of screens render one,
+  // and a carrier for the static `prefetch` that list screens call. It used to
+  // be only the latter — a plain object — which meant any component showing an
+  // image failed to mount with "element type is invalid", and four separate
+  // test files had grown their own local copy of this workaround.
+  //
+  // A host element rather than RN's Image: expo-image takes props RN's does not
+  // (contentFit, cachePolicy, recyclingKey, placeholder, transition), and
+  // passing those to a real component only produces warnings. As a host element
+  // they are simply recorded, so tests can assert on them.
+  const React = require('react');
+  const Image: React.FC<Record<string, unknown>> & { prefetch: jest.Mock } =
+    Object.assign(
+      (props: Record<string, unknown>) => React.createElement('ExpoImage', props),
+      { prefetch: jest.fn().mockResolvedValue(true) },
+    );
   return {
-    Image: {
-      prefetch: jest.fn().mockResolvedValue(true),
-    },
-    ImageBackground: jest.fn(() => null),
+    Image,
+    ImageBackground: (props: Record<string, unknown>) =>
+      React.createElement('ExpoImageBackground', props),
     prefetch: jest.fn().mockResolvedValue(true),
   };
 });

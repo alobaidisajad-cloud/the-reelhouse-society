@@ -15,17 +15,8 @@ import LogHero from '@/src/components/log/LogHero';
 import LogChronicle from '@/src/components/log/LogChronicle';
 import LogReviewBody from '@/src/components/log/LogReviewBody';
 
-/**
- * The global setup mocks expo-image's `Image` as a plain object with a
- * `prefetch` method — fine for the code that only calls prefetch, but any
- * component that actually RENDERS an image then fails with "element type is
- * invalid". Locally it becomes a real component so these surfaces can mount.
- * (Hoisted above the imports by jest regardless of where it is written.)
- */
-jest.mock('expo-image', () => {
-  const RN = jest.requireActual('react-native');
-  return { Image: RN.Image, ImageBackground: RN.ImageBackground, prefetch: jest.fn() };
-});
+// No local expo-image mock: the shared one in jest.setup.ts renders a real
+// element now, so any surface with an image can simply be mounted.
 
 const baseLog = {
   film_id: 27205,

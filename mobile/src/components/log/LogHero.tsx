@@ -53,9 +53,15 @@ export default function LogHero({
 }: LogHeroProps) {
   // What the filing mark has to say — see buildFilingMark, which owns the rules
   // for what counts as a printable fact (and is tested on the empty cases).
+  //
+  // The three fields are pulled out rather than depending on `log`, which would
+  // rebuild the band every time anything else on the record changed. Written
+  // this way the dependency list is the truth, instead of a shorter list with
+  // the lint rule silenced over it.
+  const { watched_date, watched_with, physical_media } = log;
   const filed = React.useMemo(
-    () => buildFilingMark(log),
-    [log.watched_date, log.watched_with, log.physical_media], // eslint-disable-line react-hooks/exhaustive-deps
+    () => buildFilingMark({ watched_date, watched_with, physical_media }),
+    [watched_date, watched_with, physical_media],
   );
 
   return (

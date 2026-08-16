@@ -23,10 +23,9 @@ jest.mock('expo-haptics', () => ({
   selectionAsync: jest.fn(),
 }));
 
-jest.mock('expo-image', () => {
-  const { View } = require('react-native');
-  return { Image: View };
-});
+// expo-image comes from jest.setup.ts, which renders a real element and also
+// carries `prefetch`. This file used to mock it to a bare View, which dropped
+// prefetch entirely — one of four local copies of the same workaround.
 
 jest.mock('react-native-mmkv', () => ({
   MMKV: jest.fn().mockImplementation(() => ({
