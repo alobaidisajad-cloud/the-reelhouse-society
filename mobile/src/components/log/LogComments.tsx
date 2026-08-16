@@ -38,6 +38,20 @@ const HITSLOP = { top: 15, bottom: 15, left: 15, right: 15 } as const;
 const HITSLOP_BYLINE = { top: 14, bottom: 15, left: 15, right: 15 } as const;
 const HITSLOP_DELETE = { top: 15, bottom: 14, left: 15, right: 15 } as const;
 
+/**
+ * And the ROW ITSELF, which that sweep missed — it looked at the controls
+ * inside the critique and not at the critique.
+ *
+ * Critiques are flush: `commentItem` separates them with a hairline and nothing
+ * else. The wrapper carried no hitSlop at all, so it took the default 15 on
+ * every side and each row's target reached 15pt into the one after it. In an
+ * overlap the LATER row wins, so a long press near the foot of a critique
+ * opened the report-and-block sheet for the NEXT member's. There is no gap to
+ * halve, so there is nothing to claim; the row is already 14pt-padded and full
+ * width, and loses no reachable area.
+ */
+const HITSLOP_ROW = { top: 0, bottom: 0, left: 0, right: 0 } as const;
+
 // ── Memoized Critique Row — avatar + handle both open the profile, no dead ends ──
 const CommentRow = React.memo(({
   c,
@@ -60,6 +74,7 @@ const CommentRow = React.memo(({
       }
     }}
     delayLongPress={400}
+    hitSlop={HITSLOP_ROW}
     pressedScale={0.98}
     accessibilityLabel={`Critique by ${c.username}`}
     accessibilityHint={c.user_id !== currentUserId ? 'Long press to report or block' : undefined}

@@ -43,6 +43,8 @@ interface Rule {
    * a generous target on the edge side.
    */
   only?: Side[];
+  /** Keys the rule when the control has no style prop to match on. */
+  match?: string;
   note: string;
 }
 
@@ -106,6 +108,21 @@ const RULES: Rule[] = [
   // defect was identical.
   { file: 'src/components/layout/ConciergeButton.tsx', style: 'discShadow', gap: { x: 6 }, only: ['right'],
     note: 'brass ＋ has the Lounge key 6pt to its RIGHT; open screen edge to its left' },
+
+  // ── The log composer and the record, 2026-08-16 ────────────────────────────
+  // All three were found by MOUNTING the surfaces rather than reading them.
+  // None was in the sweep above, because that sweep was a list of the places
+  // someone thought of and these three did not look like rows in a list.
+  // Keyed on the constant, not a style: the still's own PressableScale carries
+  // no style (the <Image> inside it does), so a rule written against `stillImg`
+  // matched nothing — and this file's vacuity check refused to let that pass as
+  // a green tick. The one constant covers both the stills and the NONE chip.
+  { file: 'src/components/log/EditorialDesk.tsx', match: 'STILL_SLOP', gap: { x: 8 }, style: '(article-header stills)',
+    note: 'stills and the NONE chip, flatListGap 8' },
+  { file: 'src/components/log/LogSearchEngine.tsx', style: 'resultRow', gap: { y: 8 },
+    note: 'search results, searchResultsContent gap 8 — a mis-tap logs the wrong film' },
+  { file: 'src/components/log/LogComments.tsx', match: 'HITSLOP_ROW', gap: { y: 0 }, style: '(the critique row)',
+    note: 'critiques are flush (commentItem hairline) — a mis-press reports the wrong member' },
 ];
 
 /**
@@ -154,12 +171,30 @@ function styleValue(attrs: string) {
   return '';
 }
 
-/** Resolves the EFFECTIVE slop, honouring the 15pt default for omitted sides. */
-function effectiveSlop(attrs: string): Record<string, number> {
+/**
+ * Resolves the EFFECTIVE slop, honouring the 15pt default for omitted sides.
+ *
+ * `src` is the whole file, because a slop is often written as a named constant
+ * — `hitSlop={ROW_SLOP}` — with the reasoning attached to its declaration.
+ * Without that lookup this scanner read the NAME, matched no sides, and scored
+ * a correctly-narrowed control as the full default: it would have failed three
+ * fixes that were right, and, worse, the same blindness in reverse means a rule
+ * could only ever be written against an inline object. The constant is followed
+ * to its declaration in the same file.
+ */
+function effectiveSlop(attrs: string, src = ''): Record<string, number> {
   const m = attrs.match(/hitSlop=\{([\s\S]*?)\}\s*(?:[\w[]|\/?>|$)/);
   const sides = { top: 15, bottom: 15, left: 15, right: 15 };
   if (!m) return sides;                                  // no prop at all
-  const body = m[1];
+  let body = m[1];
+  const named = body.match(/^\s*([A-Z_][A-Z0-9_]*)\s*$/);
+  if (named) {
+    const decl = src.match(new RegExp(`\\b${named[1]}\\s*=\\s*\\{([^}]*)\\}`));
+    // An unresolvable constant must NOT quietly read as the default — that is
+    // a pass for a control nobody measured.
+    if (!decl) throw new Error(`hitSlop constant ${named[1]} could not be resolved`);
+    body = decl[1];
+  }
   if (/^\s*null\s*$/.test(body)) return { top: 0, bottom: 0, left: 0, right: 0 };
   const num = body.match(/^\s*(\d+(?:\.\d+)?)\s*$/);
   if (num) { const v = Number(num[1]); return { top: v, bottom: v, left: v, right: v }; }
@@ -177,15 +212,19 @@ describe('neighbouring controls do not overlap each other’s touch targets', ()
     it(`${label} — slop ≤ half the gap (${rule.note})`, () => {
       const src = readFileSync(join(ROOT, rule.file), 'utf8')
         .replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
-      const nameRe = new RegExp(`\\b${rule.style}\\b`);
-      const tags = scanTags(src, 'PressableScale').filter((t) => nameRe.test(styleValue(t.attrs)));
+      // Most controls are found by their style name. A row that carries no
+      // style at all — the critique wrapper is a bare PressableScale around a
+      // styled View — is keyed on `match` against the whole tag instead.
+      const nameRe = new RegExp(`\\b${rule.match ?? rule.style}\\b`);
+      const tags = scanTags(src, 'PressableScale')
+        .filter((t) => nameRe.test(rule.match ? t.attrs : styleValue(t.attrs)));
 
       // A rule that matches nothing would pass while proving nothing.
       expect(tags.length).toBeGreaterThan(0);
 
       const offenders: string[] = [];
       for (const t of tags) {
-        const slop = effectiveSlop(t.attrs);
+        const slop = effectiveSlop(t.attrs, src);
         for (const [axis, gap] of Object.entries(rule.gap) as [Axis, number][]) {
           const budget = gap / 2;
           for (const side of AXIS_SIDES[axis]) {
