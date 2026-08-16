@@ -22,6 +22,7 @@ const STYLES = 'src/components/log/LogModalStyles.ts';
 const DESK = 'src/components/log/EditorialDesk.tsx';
 const TOOLKIT = 'src/components/log/AuteurToolkit.tsx';
 const SCREEN = 'app/(modals)/log-modal.tsx';
+const SEAL = 'src/components/log/LogSealBar.tsx';
 const SURFACES = [FORM, DESK, TOOLKIT, SCREEN];
 
 /** Brace-matched, so a one-line style cannot swallow the next block. */
@@ -36,6 +37,9 @@ function style(src: string, name: string): string {
   }
   return '';
 }
+/** Imports stripped: matching a whole file proves only that a name was
+ *  IMPORTED — a renamed call site slips straight through. */
+const stripImports = (src: string) => src.replace(/^\s*import[\s\S]*?;\s*$/gm, '');
 const num = (body: string, prop: string) => {
   const m = body.match(new RegExp(`(?<![\\w.])${prop}\\s*:\\s*(-?[\\d.]+)`));
   return m ? Number(m[1]) : undefined;
@@ -71,12 +75,12 @@ describe('the inventory — every control the composer owns', () => {
     ['record the format',       'setPhysicalMedia(opt)'],
     ['write a private note',    'onChangeText={setPrivateNotes}'],
     ['add to a stack',          'toggleList(list.id)'],
-    ['seal the record',         'handleLog()'],
+    ['seal the record',         'onSeal={flow.handleLog}'],
     ['reach the Society',       'goToSociety'],
   ];
 
   it.each(CONTROLS)('a member can still %s', (_what, handler) => {
-    const src = read(FORM) + read(DESK) + read(TOOLKIT);
+    const src = read(FORM) + read(DESK) + read(TOOLKIT) + read(SEAL) + read(SCREEN);
     expect(src.includes(handler)).toBe(true);
   });
 });
@@ -164,6 +168,92 @@ describe('the velvet rope is said once', () => {
     expect(src).toMatch(/st\.lockedPanel/);
     expect(src).toMatch(/pointerEvents=\{isPremium \? 'auto' : 'none'\}/);
     expect(src).toMatch(/pointerEvents=\{isAuteur \? 'auto' : 'none'\}/);
+  });
+});
+
+describe('the verdict is the largest thing on the page', () => {
+  const VERDICT = 'src/components/log/LogVerdict.tsx';
+
+  it('every possible word fits the narrowest phone at the cap', () => {
+    const word = style(read(VERDICT), 'word');
+    const size = num(word, 'fontSize')!;
+    const cap = 1.2; // displayTextProps
+    // Rye measures 0.723 em per character. 360dp less the form's 20pt rails.
+    const EM = 0.723, BOX = 360 - 40;
+    const words = ['Masterpiece', 'Unwatchable', 'Really Good', 'Not Great', 'Fine', 'Abandoned'];
+    for (const w of words) {
+      expect(w.length * size * cap * EM).toBeLessThanOrEqual(BOX);
+    }
+    expect(size).toBeGreaterThanOrEqual(24);
+  });
+
+  it('the slot never changes height', () => {
+    // Three states share one box, so nothing shifts under a finger at the exact
+    // moment it touches a reel.
+    expect(num(style(read(VERDICT), 'slot'), 'minHeight')).toBeGreaterThanOrEqual(90);
+  });
+
+  it('the score is printed once', () => {
+    // It used to appear in the rating header AND beside the reels.
+    const form = read(FORM);
+    expect(form).not.toMatch(/ratingValue|ratingMax|ratingLabel|ratingHint/);
+    expect(read(VERDICT)).toMatch(/\/ 5/);
+  });
+
+  it('the half-reel hint lives only while unrated', () => {
+    // A permanent instruction for a gesture you learn once; it now appears at
+    // the moment you are about to rate, and never again.
+    const v = read(VERDICT);
+    expect(v).toMatch(/TAP LEFT HALF FOR ½ REELS/);
+    expect(read(FORM)).not.toMatch(/TAP LEFT HALF/);
+  });
+});
+
+describe('the seal cannot disagree with the save path', () => {
+  const SEAL_F = 'src/components/log/LogSealBar.tsx';
+
+  it('sealability comes from the validator itself', () => {
+    // Not a copy of the rule — the same function handleLog calls, so the bar
+    // can never say "ready" about a record the save path will refuse.
+    const src = read(SEAL_F);
+    expect(src).toMatch(/import \{ validateLogSubmission \}/);
+    expect(src).toMatch(/validateLogSubmission\(status, rating, review, abandonedReason\)/);
+  });
+
+  it('the line is the record’s own filing mark', () => {
+    // buildFilingMark is what draws it on the finished record. Same code, so a
+    // member cannot see one thing here and get another there.
+    // Imports stripped: matching the whole file proved only that it was
+    // IMPORTED, and a renamed call site slipped straight through.
+    expect(stripImports(read(SEAL_F))).toMatch(/\bbuildFilingMark\s*\(/);
+  });
+
+  it('the reason travels in the label, not an announcement', () => {
+    // accessibilityLiveRegion is Android-only; a dim button that reads "Seal
+    // the record" and does nothing is a dead end without sight.
+    expect(read(SEAL_F)).toMatch(/accessibilityLabel=\{ready \? label : `\$\{label\}\. \$\{blockReason\}`\}/);
+  });
+
+  it('it rides the keyboard rather than listening for it', () => {
+    // keyboardDismissMode is "interactive": the keyboard height changes
+    // CONTINUOUSLY as you drag, so an event-driven bar would jump at the end.
+    const src = read(SEAL_F);
+    expect(stripImports(src)).toMatch(/\buseAnimatedKeyboard\s*\(/);
+    expect(src).not.toMatch(/keyboardDidShow|Keyboard\.addListener/);
+    expect(read(SCREEN)).toMatch(/keyboardDismissMode="interactive"/);
+  });
+
+  it('the scroll ends above the bar', () => {
+    // Or the last index entry hides behind the seal.
+    expect(read(SCREEN)).toMatch(/paddingBottom: insets\.bottom \+ SEAL_BAR_HEIGHT/);
+  });
+
+  it('the header no longer names the film', () => {
+    // It overflowed CLOSE by 88pt and repeated the docket four pixels below.
+    const screen = read(SCREEN);
+    expect(screen).not.toMatch(/film\?\.title \|\| 'Log'/);
+    // …and what remains renders ONLY at step 0, where there is no docket yet.
+    expect(screen).toMatch(/\{step === 0 && <Text style=\{st\.headerTitle\}/);
   });
 });
 

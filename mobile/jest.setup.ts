@@ -343,6 +343,11 @@ jest.mock('react-native-reanimated', () => {
     // throw on `Extrapolation.CLAMP` the moment a test rendered it — the same
     // trap that made TopNavBar untestable via makeMutable. Purely additive.
     Extrapolation: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
+    // Same class of gap as Extrapolation above: real components pass
+    // `reduceMotion: ReduceMotion.System` to withTiming, and an undefined enum
+    // throws the instant a test renders one — which is exactly how this was
+    // found. SocietySeal, the auth chrome and the verdict all rely on it.
+    ReduceMotion: { System: 'system', Always: 'always', Never: 'never' },
     createAnimatedComponent: animatedComponent,
     useAnimatedRef: jest.fn(() => ({ current: null })),
     measure: jest.fn(() => ({ x: 0, y: 0, width: 0, height: 0, pageX: 0, pageY: 0 })),

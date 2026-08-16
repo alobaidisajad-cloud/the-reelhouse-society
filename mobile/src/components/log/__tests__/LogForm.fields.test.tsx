@@ -82,7 +82,11 @@ describe('LogForm core-field wiring (COMP-LOG-1 regression)', () => {
     // No rating + no review ⇒ submit is blocked (validateLogSubmission).
     await fireEvent.press(view.getByTestId('reel-rating'));
 
-    // The "/5" rating label appears once rating > 0 — proves setRating fired.
-    await waitFor(() => expect(view.queryByText('/5')).toBeTruthy());
+    // The verdict slot answers once rating > 0 — proves setRating fired.
+    // It used to be a bare "/5" beside a header label; the score is now the
+    // quiet companion under the verdict word, written "4 / 5", and the
+    // placeholder it replaces is gone.
+    await waitFor(() => expect(view.queryByText(/\/ 5/)).toBeTruthy());
+    expect(view.queryByText('awaiting your verdict')).toBeNull();
   });
 });

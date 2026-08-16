@@ -12,11 +12,12 @@ import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import NitrateCalendar from '@/src/components/NitrateCalendar';
 import EditorialDesk from '@/src/components/log/EditorialDesk';
 import AuteurToolkit from '@/src/components/log/AuteurToolkit';
+import LogVerdict from '@/src/components/log/LogVerdict';
 import LogIndexEntry from '@/src/components/log/LogIndexEntry';
 import LogClearanceGate from '@/src/components/log/LogClearanceGate';
 import { Brackets, FieldLabel } from '@/src/components/log/LogFormBody';
 import { X, Eye, History, Trash2, Check, ListOrdered, Feather, Sparkles } from 'lucide-react-native';
-import { PHYSICAL_OPTIONS, RATING_LABELS, ABANDONED_REASONS, getLocalDateString } from '@/src/hooks/useLogFlow';
+import { PHYSICAL_OPTIONS, ABANDONED_REASONS, getLocalDateString } from '@/src/hooks/useLogFlow';
 import { hasPhysicalFormat } from '@/src/components/log/logRecord';
 import { stripHTML, isRTLText } from '@/src/utils/text';
 import { dateParts, formatDate, formatLongCalendarDate } from '@/src/utils/timeAgo';
@@ -61,7 +62,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
         isPremium,
         film,
         status, rating, review, isSpoiler, abandonedReason, date, watchedWith, privateNotes, physicalMedia,
-        autopsy, altPoster, editorialHeader, dropCap, pullQuote, autopsyOpen, calendarOpen, showDeleteConfirm, submitting, sealed,
+        autopsy, altPoster, editorialHeader, dropCap, pullQuote, autopsyOpen, calendarOpen, showDeleteConfirm, submitting,
         setStatus, setRating, setReview, setIsSpoiler, setAbandonedReason,
         setDate, setWatchedWith, setPrivateNotes, setPhysicalMedia,
         setCalendarOpen, setShowDeleteConfirm,
@@ -70,7 +71,6 @@ export default function LogForm({ flow, user }: LogFormProps) {
         isRewatchMode, previousLog,
         availablePosters, availableBackdrops,
         isEditing,
-        handleLog,
         handleDelete,
         discardDraft,
         hasUnsavedChanges,
@@ -227,6 +227,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
 
             {status === 'abandoned' ? (
                 <View style={st.sec}>
+                    <LogVerdict status={status} rating={rating} />
                     <View style={st.tagRow}>
                         {ABANDONED_REASONS.map((r: string) => (
                             <PressableScale key={r} style={[st.tag, abandonedReason === r && st.tagActive]} onPress={() => { setAbandonedReason(r); }} hitSlop={{ top: 3, bottom: 3, left: 3, right: 3 }} accessibilityRole="button" accessibilityState={{ selected: abandonedReason === r }} accessibilityLabel={r} haptic="selection">
@@ -237,18 +238,9 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 </View>
             ) : (
                 <View style={st.sec}>
-                    <View style={st.ratingHeader}>
-                        <Text style={st.secLabel}>YOUR RATING</Text>
-                        {rating > 0 && (
-                            <Text style={st.ratingValue}>{rating % 1 === 0 ? rating : rating.toFixed(1)}<Text style={st.ratingMax}>/5</Text></Text>
-                        )}
-                    </View>
+                    <LogVerdict status={status} rating={rating} />
                     <View style={st.ratingBody}>
                         <ReelRating rating={rating} size={44} onChange={(v: number) => { setRating(v === rating ? 0 : v); if (Number.isInteger(v)) { TactileEngine.mutate(); } else { TactileEngine.navigate(); } }} />
-                        <View style={st.ratingFooter}>
-                            {rating > 0 ? <Text style={st.ratingLabel}>{RATING_LABELS[rating] || ''}</Text> : <View />}
-                            <Text style={st.ratingHint}>TAP LEFT HALF FOR ½ REELS</Text>
-                        </View>
                     </View>
                 </View>
             )}
@@ -450,16 +442,6 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         </LogIndexEntry>
                     );
                 })()}
-            </View>
-
-            {/* ══ THE SEAL ══ */}
-            <View style={st.submitRow}>
-                <PressableScale testID="submit-log-button" style={[st.submitBtn, submitting && st.submitBtnSubmitting, sealed && st.submitBtnSealed]} onPress={() => { TactileEngine.mutate(); handleLog(); }} disabled={submitting} hitSlop={{ top: 15, bottom: 15 }} pressedScale={0.97} accessibilityRole="button" accessibilityLabel={isEditing ? 'Reseal the record' : 'Seal the record'}>
-                    <Text style={st.submitText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>{sealed ? '✦ RECORD SEALED' : submitting ? 'SEALING RECORD…' : (isEditing ? 'RESEAL THE RECORD' : 'SEAL THE RECORD')}</Text>
-                </PressableScale>
-                <PressableScale style={[st.cancelBtn, submitting && { opacity: 0.5 }]} onPress={() => { router.back(); }} disabled={submitting} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Cancel">
-                    <Text style={st.cancelText}>CANCEL</Text>
-                </PressableScale>
             </View>
 
             {/* Past the end of the record: the things you should have to reach for.

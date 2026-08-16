@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LogForm from '@/src/components/log/LogForm';
 import { st } from '@/src/components/log/LogModalStyles';
 import LogSearchEngine from '@/src/components/log/LogSearchEngine';
+import LogSealBar, { SEAL_BAR_HEIGHT } from '@/src/components/log/LogSealBar';
 import PressableScale from '@/src/components/PressableScale';
 import { useLogFlow } from '@/src/hooks/useLogFlow';
 import { useAuthStore } from '@/src/stores/auth';
@@ -61,7 +62,7 @@ export default function LogModalScreen() {
                                 <ChevronLeft size={20} color={colors.fog} strokeWidth={2.5} />
                             </PressableScale>
                         )}
-                        <Text style={st.headerTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{step === 0 ? 'Log a Film' : (film?.title || 'Log')}</Text>
+                        {step === 0 && <Text style={st.headerTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Log a Film</Text>}
                     </View>
                     <PressableScale onPress={() => { nav.back(); }} disabled={submitting} style={[st.closeBtn, submitting && { opacity: 0.5 }]} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityLabel="Close">
                         <X size={16} color={colors.fog} />
@@ -76,11 +77,34 @@ export default function LogModalScreen() {
 
                 {/* ════ STEP 1: LOG FORM ════ */}
                 {step === 1 && film && (
-                    <Animated.ScrollView style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: insets.bottom + 20 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+                    // The scroll must END above the docked seal, or the last index
+                    // entry hides behind it. One measured number: the bar's own
+                    // height plus the safe area, instead of the 80 + 20 + inset
+                    // that had accumulated here for no stated reason.
+                    <Animated.ScrollView style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: insets.bottom + SEAL_BAR_HEIGHT + 16 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
                         <LogForm flow={flow} user={user} />
                     </Animated.ScrollView>
                 )}
             </View>
+
+            {/* The wax, on the desk from the moment you sit down. A SIBLING of
+                the scroll view, never inside it — the scroll adjusts its own
+                insets for the keyboard, and the bar answers the keyboard itself. */}
+            {step === 1 && film && (
+                <LogSealBar
+                    status={flow.status}
+                    rating={flow.rating}
+                    review={flow.review}
+                    abandonedReason={flow.abandonedReason}
+                    date={flow.date}
+                    watchedWith={flow.watchedWith}
+                    physicalMedia={flow.physicalMedia}
+                    submitting={flow.submitting}
+                    sealed={flow.sealed}
+                    isEditing={isEditing}
+                    onSeal={flow.handleLog}
+                />
+            )}
         </View>
     );
 }
