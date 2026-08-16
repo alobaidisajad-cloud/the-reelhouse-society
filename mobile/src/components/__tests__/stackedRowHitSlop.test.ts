@@ -53,10 +53,10 @@ interface Rule {
  * corrects what this test demands.
  */
 const RULES: Rule[] = [
-  { file: 'src/components/log/AuteurToolkit.tsx', style: 'sliderSeg', gap: { x: 2 },
-    note: 'autopsy score: 11 segments in a row, sliderTrack gap 2' },
-  { file: 'src/components/log/AuteurToolkit.tsx', style: 'pThumb', gap: { x: 8 },
-    note: 'poster thumbs, list gap 8' },
+  { file: 'src/components/log/AuteurToolkit.tsx', style: 'axisNotch', gap: { x: 2 },
+    note: 'autopsy score: 11 notches in a row, axisTrack gap 2 (was sliderSeg)' },
+  { file: 'src/components/log/LogForm.tsx', style: 'pThumb', gap: { x: 8 },
+    note: 'poster thumbs, list gap 8 — Curatorial Control moved to the docket' },
   { file: 'src/components/NitrateCalendar.tsx', style: 'dayCell', gap: { x: 0, y: 2 },
     note: 'date grid: columns flush, dayRow marginBottom 2' },
   { file: 'src/components/lounge/AtTheDoorPanel.tsx', style: 'declineBtn', gap: { x: 10, y: 22 },

@@ -41,6 +41,141 @@ const num = (body: string, prop: string) => {
   return m ? Number(m[1]) : undefined;
 };
 
+describe('the inventory — every control the composer owns', () => {
+  /**
+   * The restructure moves almost every block on this page, and the one way that
+   * goes badly is a control quietly disappearing. Each entry is the handler the
+   * control calls: drop the control and its call goes with it.
+   *
+   * This is the contract the redesign is held to. It is not about layout.
+   */
+  const CONTROLS: [string, string][] = [
+    ['delete a log',            'setShowDeleteConfirm(true)'],
+    ['confirm the deletion',    'handleDelete()'],
+    ['discard a draft',         'discardDraft()'],
+    ['set the status',          'setStatus(s)'],
+    ['give an abandon reason',  'setAbandonedReason(r)'],
+    ['rate the film',           'setRating('],
+    ['write the review',        'onChangeText={setReview}'],
+    ['flag a spoiler',          'setIsSpoiler('],
+    ['toggle the drop cap',     'setDropCap('],
+    ['write a pull quote',      'setPullQuote'],
+    ['choose an article still', 'setEditorialHeader'],
+    ['open the autopsy',        'setAutopsyOpen('],
+    ['score an axis',           'setAutopsy('],
+    ['choose an alt poster',    'setAltPoster'],
+    ['pick today',              'setDate(todayStr)'],
+    ['pick yesterday',          'setDate(yesterday)'],
+    ['open the calendar',       'setCalendarOpen('],
+    ['name a companion',        'onChangeText={setWatchedWith}'],
+    ['record the format',       'setPhysicalMedia(opt)'],
+    ['write a private note',    'onChangeText={setPrivateNotes}'],
+    ['add to a stack',          'toggleList(list.id)'],
+    ['seal the record',         'handleLog()'],
+    ['reach the Society',       'goToSociety'],
+  ];
+
+  it.each(CONTROLS)('a member can still %s', (_what, handler) => {
+    const src = read(FORM) + read(DESK) + read(TOOLKIT);
+    expect(src.includes(handler)).toBe(true);
+  });
+});
+
+describe('the record reads as one document', () => {
+  it('the docket is marked, not boxed', () => {
+    // Registration brackets — you bracket a document, you do not box it in.
+    // Same four marks as the Concierge card that opens this screen.
+    expect(read(FORM)).toMatch(/<Brackets\s*\/>/);
+    const b = style(read(STYLES), 'bracketed');
+    expect(b).not.toMatch(/borderWidth/);
+  });
+
+  it('the manuscript is the only box left', () => {
+    // Nine bordered containers were the cramped feeling itself. The manuscript
+    // keeps its frame because it IS the sheet you write on; every other box was
+    // deleted rather than restyled, so it cannot quietly come back.
+    const styles = read(STYLES);
+    for (const gone of ['lockedBox', 'editorialTeaser', 'upgradeRow', 'moreToggle', 'dateDisplay', 'secLabelRow']) {
+      expect(styles).not.toMatch(new RegExp(`\\b${gone}\\s*:\\s*\\{`));
+    }
+    expect(styles).toMatch(/manuscriptFrame\s*:\s*\{/);
+    // The autopsy's crimson container is gone too — the entry carries the colour.
+    expect(read(TOOLKIT)).not.toMatch(/auteurBox/);
+  });
+
+  it('the index states what each entry holds', () => {
+    const src = read(FORM);
+    for (const name of ['THE AUTOPSY', 'THE PHYSICAL ARCHIVE', 'THE VAULT', 'FILED', 'STACKS']) {
+      expect(src).toContain(`name="${name}"`);
+    }
+  });
+
+  it('an entry opens itself when it already holds something', () => {
+    // Editing last year's record must never make a member hunt for their own
+    // words; a fresh log must still open calm. Computed once, from what arrived.
+    const src = read(FORM);
+    expect(src).toMatch(/useState\(\(\) => !!\(dropCap \|\| pullQuote \|\| editorialHeader\)\)/);
+    expect(src).toMatch(/useState\(\(\) => hasPhysicalFormat\(physicalMedia\)\)/);
+    expect(src).toMatch(/useState\(\(\) => !!privateNotes\)/);
+  });
+
+  it('the Vault never previews what it holds', () => {
+    // Every other entry shows its value. This is the one field a member might
+    // not want legible over someone's shoulder — it shows only that it is full.
+    // Only the ENTRY's own props — the panel below it holds the real input,
+    // which of course carries the text.
+    const src = read(FORM);
+    const at = src.indexOf('name="THE VAULT"');
+    const props = src.slice(at, src.indexOf('>', src.indexOf('onPress', at)));
+    expect(props).toMatch(/value=\{privateNotes \? ' ' : ''\}/);
+    expect(props).not.toMatch(/privateNotes\.slice|value=\{privateNotes\}/);
+  });
+});
+
+describe('the velvet rope is said once', () => {
+  it('the four refusals are gone', () => {
+    // Three identical "UNLOCK WITH ARCHIVIST" boxes and an "UPGRADE" link used
+    // to interrupt the core action. Visibility was never the problem.
+    for (const f of [FORM, TOOLKIT, DESK]) {
+      expect(read(f)).not.toMatch(/UNLOCK WITH ARCHIVIST|>UPGRADE</);
+    }
+  });
+
+  it('a rank you lack is a key and a name, never a no', () => {
+    // Counted, not merely present: there are TWO Archivist tools in the index
+    // (the Physical Archive and the Vault) and one Auteur tool. Asserting only
+    // that a lock exists let a mutation strip one of the two and still pass.
+    const src = read(FORM);
+    expect(src.match(/lockedTo=\{isAuteur \? undefined : 'THE AUTEUR'\}/g) ?? []).toHaveLength(1);
+    expect(src.match(/lockedTo=\{isPremium \? undefined : 'THE ARCHIVIST'\}/g) ?? []).toHaveLength(2);
+    // The app's own mark for a thing you lack clearance for — not a padlock.
+    expect(read('src/components/log/LogIndexEntry.tsx')).toMatch(/KeyRound/);
+  });
+
+  it('the gate is the Lounge’s, word for word', () => {
+    const gate = read('src/components/log/LogClearanceGate.tsx');
+    expect(gate).toContain('[ CLEARANCE REQUIRED ]');
+    expect(gate).toContain('✦ ASCEND THE RANKS');
+  });
+
+  it('the locked instrument is shown, inert', () => {
+    // You are not sold a name; you are looking at the tool.
+    const src = read(FORM);
+    expect(src).toMatch(/st\.lockedPanel/);
+    expect(src).toMatch(/pointerEvents=\{isPremium \? 'auto' : 'none'\}/);
+    expect(src).toMatch(/pointerEvents=\{isAuteur \? 'auto' : 'none'\}/);
+  });
+});
+
+describe('destructive things are reached for, not stumbled on', () => {
+  it('delete sits past the seal', () => {
+    const src = read(FORM);
+    // It used to be the FIRST thing on the page when editing a record.
+    expect(src.indexOf('handleLog()')).toBeLessThan(src.indexOf('setShowDeleteConfirm(true)'));
+    expect(src.indexOf('handleLog()')).toBeLessThan(src.indexOf('handleDelete()'));
+  });
+});
+
 describe('a date is never built the way this engine cannot honour', () => {
   it('writes the long form from the app’s own tables', () => {
     expect(formatLongCalendarDate('2026-08-16')).toBe('Sun, August 16, 2026');
@@ -116,7 +251,6 @@ describe('text can be enlarged without leaving its line box', () => {
     filmTitle:           [1.2,  FORM, 'st.filmTitle'],
     prevTakeReview:      [1.35, FORM, 'st.prevTakeReview'],
     reviewInput:         [1.35, FORM, 'testID="review-input"'],
-    editorialTeaserText: [1.35, FORM, 'st.editorialTeaserText'],
   };
   const PROP: Record<number, RegExp> = {
     1.35: /\{\.\.\.scaledTextProps\}/,
@@ -165,7 +299,7 @@ describe('the composer never stacks a modal on a modal', () => {
 });
 
 describe('a nested horizontal list cannot render nothing', () => {
-  it.each([DESK, TOOLKIT])('%s uses a plain scroller', (file) => {
+  it.each([DESK, FORM])('%s uses a plain scroller', (file) => {
     const src = read(file);
     // A horizontal FlashList inside a vertical ScrollView has no bounded height
     // to measure against; the documented failure is that it draws nothing — the

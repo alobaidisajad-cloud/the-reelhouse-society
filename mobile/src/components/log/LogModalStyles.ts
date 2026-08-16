@@ -46,7 +46,6 @@ export const st = StyleSheet.create({
     formContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 80 },
     sec: { marginBottom: 20 },
     secLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
-    secLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
     input: { backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 12, fontFamily: fonts.body, fontSize: 13, color: colors.parchment },
     filmHeader: { flexDirection: 'row', gap: 16, marginBottom: 24 },
 
@@ -91,10 +90,6 @@ export const st = StyleSheet.create({
     ratingHint: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fog, opacity: 0.6, includeFontPadding: false },
 
     // More Toggle (LOGISTICS drawer)
-    moreToggle: { paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.ash, borderBottomWidth: 1, borderBottomColor: colors.ash, marginBottom: 16 },
-    moreToggleInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    moreText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
-    moreHint: { fontFamily: fonts.sub, fontSize: 7.5, color: colors.fog, letterSpacing: 1, marginTop: 4, includeFontPadding: false },
 
     // Date
     quickDateRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
@@ -102,10 +97,6 @@ export const st = StyleSheet.create({
     qDateActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     qDateText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
     qDateTextActive: { color: colors.ink },
-    dateDisplay: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 10 },
-    dateText: { fontFamily: fonts.body, fontSize: 13, color: colors.parchment },
-    dateToggle: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
-    dateToggleActive: { color: colors.sepia },
     calendarWrap: { marginTop: 8 },
 
     // Review — THE MANUSCRIPT
@@ -163,13 +154,6 @@ export const st = StyleSheet.create({
     cancelColor: { color: colors.bone },
 
     // Physical / Locked
-    premiumLocked: { opacity: 0.4 },
-    upgradeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-    upgradeRowText: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, letterSpacing: 1, textDecorationLine: 'underline' },
-    lockedBox: { height: 80, backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, alignItems: 'center', justifyContent: 'center', gap: 8 },
-    lockedText: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, letterSpacing: 1, textDecorationLine: 'underline' },
-    editorialTeaser: { height: undefined, paddingVertical: 16 },
-    editorialTeaserText: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, textAlign: 'center', lineHeight: 15 },
 
     // Stacks
     listChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
@@ -202,4 +186,72 @@ export const st = StyleSheet.create({
     autoSuggestWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
     autoSuggestItem: { backgroundColor: 'rgba(184,137,26,0.12)', borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 3, paddingHorizontal: 10, paddingVertical: 5 },
     autoSuggestText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
+
+    // ── THE DOCKET ───────────────────────────────────────────────────────────
+    // Registration brackets, not a border. The Concierge card that opens this
+    // screen carries the same four marks; you bracket a DOCUMENT, you do not
+    // box it in — which is why the record is marked this way and the window
+    // is not.
+    bracketed: { position: 'relative', paddingVertical: 14, paddingHorizontal: 12, marginBottom: 4 },
+    bracket: { position: 'absolute', width: 10, height: 10, borderColor: colors.sepiaBorderStrong },
+    bracketTL: { top: 0, left: 0, borderLeftWidth: 1, borderTopWidth: 1 },
+    bracketTR: { top: 0, right: 0, borderRightWidth: 1, borderTopWidth: 1 },
+    bracketBL: { bottom: 0, left: 0, borderLeftWidth: 1, borderBottomWidth: 1 },
+    bracketBR: { bottom: 0, right: 0, borderRightWidth: 1, borderBottomWidth: 1 },
+
+    // ── THE INDEX ────────────────────────────────────────────────────────────
+    // Ruled catalogue entries, not a settings list: a hairline, a name, and what
+    // it holds. No chevrons — those would make it someone else's app.
+    idxWrap: { marginTop: 8 },
+    idxEntry: {
+        flexDirection: 'row', alignItems: 'center', gap: 9,
+        paddingVertical: 13, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,
+    },
+    idxDot: { width: 5, height: 5, borderRadius: 2.5, borderWidth: 1 },
+    idxName: { flex: 1, fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, includeFontPadding: false },
+    idxValue: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1, color: colors.fog, textAlign: 'right', maxWidth: 170, includeFontPadding: false },
+    idxBody: { paddingBottom: 16 },
+
+    // A ruled field: a line under it, never a box around it. The filing half of
+    // this page was six bordered wells; a typed document has rules.
+    ruledField: {
+        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.sepiaBorder,
+        paddingBottom: 9, paddingTop: 2, fontFamily: fonts.body, fontSize: 14, color: colors.parchment,
+    },
+    ruledRow: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',
+        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.sepiaBorder, paddingBottom: 9,
+    },
+    ruledValue: { fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
+    ruledAction: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+    fieldLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginBottom: 9, includeFontPadding: false },
+
+    // ── THE CLEARANCE GATE ───────────────────────────────────────────────────
+    gate: { alignItems: 'center', paddingTop: 16, paddingBottom: 6 },
+    gateSub: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 3, color: colors.fog, marginBottom: 8, textAlign: 'center', includeFontPadding: false },
+    gateCta: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.5, textAlign: 'center', includeFontPadding: false },
+    // The instrument itself, shown but inert. `premiumLocked` above is the same
+    // 0.4 the app already uses for this.
+    lockedPanel: { opacity: 0.4 },
+
+    // The Editorial Desk continues the manuscript SHEET — attached to its foot,
+    // no border between them, because decorating your writing is part of writing.
+    deskFoot: {
+        borderWidth: 1, borderTopWidth: 0, borderColor: colors.sepiaBorder,
+        borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
+        backgroundColor: 'rgba(184,137,26,0.03)', paddingHorizontal: 12, paddingVertical: 11,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+    },
+    deskFootName: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+    deskFootText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+    deskFootValue: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+    deskBody: {
+        borderWidth: 1, borderTopWidth: 0, borderColor: colors.sepiaBorder,
+        borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
+        backgroundColor: 'rgba(184,137,26,0.03)', paddingHorizontal: 12, paddingVertical: 14,
+    },
+
+    // Delete lives past the end of the scroll now — reaching it takes intent,
+    // where it used to be the FIRST thing on the page when editing a record.
+    tailRow: { alignItems: 'center', gap: 16, paddingTop: 26, paddingBottom: 8 },
 });
