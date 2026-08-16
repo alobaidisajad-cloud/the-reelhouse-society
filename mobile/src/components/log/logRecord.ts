@@ -1,30 +1,33 @@
 /**
  * logRecord.ts — how a record states its own facts.
  *
- * Two small rules that were being answered differently in different corners of
+ * Small rules that were being answered differently in different corners of
  * the same page, which is how a page stops reading as one document.
  */
+import { dateParts, formatDate } from '@/src/utils/timeAgo';
 
 /**
- * A date as the archive writes it: AUG 5, 2026.
+ * There is no date formatter in this file. Use `formatDate` from
+ * `@/src/utils/timeAgo`, which already prints AUG 5, 2026 and is the only
+ * implementation allowed to answer "which day is this?".
  *
- * The hero already spoke this way; the critiques list did not — it called bare
- * `toLocaleDateString()` and printed the device's short form, so `8/5/2026`
- * sat directly beneath `AUG 5, 2026` on the same screen. Three date shapes on
- * one page is two too many.
+ * A `formatFiledDate` briefly lived here and was wrong in two ways at once:
  *
- * UTC is deliberate and unchanged from the shipped behaviour: a watched-date is
- * a calendar day, not an instant, and reading it in the device's zone would
- * shift it a day either side of midnight.
+ *  1. It went through `new Date(...).toLocaleDateString('en-US', { timeZone:
+ *     'UTC', … })`. This app runs on Hermes with no Intl polyfill, so whether
+ *     that `timeZone` option is honoured cannot be verified without a device —
+ *     and `new Date("2026-08-05")` is midnight UTC by definition, so if it is
+ *     ignored the whole of the Americas reads AUG 4. `timeAgo.ts` formats from
+ *     a month table for exactly this reason.
+ *  2. It forced UTC onto BOTH kinds of date. `watched_date` is a calendar day
+ *     and must render as the day it says; every `created_at` is an instant and
+ *     must render on the READER's clock. Putting one shape on both is how a
+ *     critique filed at 8pm in Los Angeles got dated tomorrow.
+ *
+ * `formatDate` distinguishes them. This note is here so the shortcut is not
+ * reinvented the next time two dates on one screen look different.
  */
-export function formatFiledDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  return d
-    .toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' })
-    .toUpperCase();
-}
+
 
 /**
  * Whether a physical format is a fact worth printing.
@@ -66,8 +69,12 @@ export function buildFilingMark(log: {
 }): FilingMarkEntry[] {
   const out: FilingMarkEntry[] = [];
 
-  const date = formatFiledDate(log.watched_date);
-  if (date) out.push({ key: 'date', value: date });
+  // `dateParts` decides whether this is a date at all; `formatDate` renders it.
+  // Both are needed because formatDate ECHOES what it cannot parse, and an
+  // echoed "whenever" in a ruled band is worse than no band.
+  if (dateParts(log.watched_date)) {
+    out.push({ key: 'date', value: formatDate(log.watched_date) });
+  }
 
   const withWhom = log.watched_with?.trim();
   if (withWhom) out.push({ key: 'with', value: `WITH ${withWhom.toUpperCase()}`, accent: true });

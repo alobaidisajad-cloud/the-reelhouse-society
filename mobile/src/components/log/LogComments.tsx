@@ -3,7 +3,7 @@ import { s } from '@/src/components/log/logDetailStyles';
 import { SectionDivider } from '@/src/components/Decorative';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import PressableScale from '@/src/components/PressableScale';
-import { formatFiledDate } from '@/src/components/log/logRecord';
+import { formatDate } from '@/src/utils/timeAgo';
 import { isRTLText } from '@/src/utils/text';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { colors } from '@/src/theme/theme';
@@ -88,9 +88,12 @@ const CommentRow = React.memo(({
           )}
           <Text style={s.commUsername} numberOfLines={1}>@{c.username}</Text>
         </PressableScale>
-        {/* The archive's own date shape. This printed the device's short form —
-            8/5/2026 — directly beneath the record's AUG 5, 2026. */}
-        <Text style={s.commDate}>{formatFiledDate(c.created_at)}</Text>
+        {/* The archive's own date shape — this printed the device's short form,
+            8/5/2026, directly beneath the record's AUG 5, 2026.
+            `formatDate`, not a local one: `created_at` is an INSTANT, so it has
+            to render on the reader's clock. A critique filed at 8pm in Los
+            Angeles is dated that evening, not the following morning. */}
+        <Text style={s.commDate}>{formatDate(c.created_at)}</Text>
       </View>
       <Text style={[s.commBody, isRTLText(c.body) && s.rtlText]} {...scaledTextProps} selectable>{c.body}</Text>
       {currentUserId === c.user_id && (

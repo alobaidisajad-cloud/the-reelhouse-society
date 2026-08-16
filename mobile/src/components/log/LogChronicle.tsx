@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { ReelRating } from '@/src/components/Decorative';
 import { stripHTML, isRTLText } from '@/src/utils/text';
-import { formatFiledDate } from '@/src/components/log/logRecord';
+import { dateParts, formatDate } from '@/src/utils/timeAgo';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { s, SPINE } from '@/src/components/log/logDetailStyles';
 
@@ -37,8 +37,8 @@ const ChronicleCard = React.memo(({ entry, cardWidth }: { entry: ChronicleEntry;
           {entry.label}
         </Text>
       </View>
-      {!!formatFiledDate(entry.date) && (
-        <Text style={s.chronicleDateText}>· {formatFiledDate(entry.date)}</Text>
+      {!!dateParts(entry.date) && (
+        <Text style={s.chronicleDateText}>· {formatDate(entry.date)}</Text>
       )}
     </View>
     {entry.rating > 0 && (

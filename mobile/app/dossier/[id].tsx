@@ -22,6 +22,7 @@ import { colors, effects, fonts } from '@/src/theme/theme';
 import { DossierComment, DossierDetail } from '@/src/types';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { formatDate, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { buildCritiquePayload, type CritiqueRow } from '@/src/utils/critiquePayload';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -459,7 +460,7 @@ export default function DossierReaderScreen() {
                     </PressableScale>
                     <Text style={styles.dateText} numberOfLines={1}>
                         {[
-                            dossier.created_at ? new Date(dossier.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase() : null,
+                            dossier.created_at ? formatDateMonthDay(dossier.created_at) : null,
                             `${readMinutes(dossier.full_content || dossier.excerpt || '')} MIN`,
                             (dossier.views ?? 0) > 0 ? `${formatCount(dossier.views ?? 0)} READINGS` : null,
                         ].filter(Boolean).join(' · ')}
@@ -538,7 +539,7 @@ export default function DossierReaderScreen() {
                         </PressableScale>
                         <Text style={styles.commBody}>{c.body}</Text>
                         <View style={styles.commMetaRow}>
-                            <Text style={styles.commDate}>{new Date(c.created_at).toLocaleDateString()}</Text>
+                            <Text style={styles.commDate}>{formatDate(c.created_at)}</Text>
                             {user?.id === c.user_id && (
                             <PressableScale onPress={() => handleDeleteComment(c.id)} haptic="heavy" pressedScale={0.95}>
                                 <Text style={styles.commDelete}>DELETE</Text>

@@ -11,7 +11,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { stripHTML, isRTLText } from '@/src/utils/text';
-import { formatFiledDate, hasPhysicalFormat, buildFilingMark } from '@/src/components/log/logRecord';
+import { hasPhysicalFormat, buildFilingMark } from '@/src/components/log/logRecord';
+import { formatDate } from '@/src/utils/timeAgo';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const read = (f: string) =>
@@ -130,14 +131,35 @@ describe('a record states only facts', () => {
   });
 
   it('one date shape on the page', () => {
-    expect(formatFiledDate('2026-08-05')).toBe('AUG 5, 2026');
-    expect(formatFiledDate('not a date')).toBe('');
-    // Nowhere on this page formats its own date: the critiques list printed the
-    // device's short form, and the chronicle printed a third shape again.
+    expect(formatDate('2026-08-05')).toBe('AUG 5, 2026');
+  });
+
+  it('no surface formats a date itself', () => {
+    // The critiques list printed the device's short form; the chronicle printed
+    // a third shape again. All of them defer to timeAgo.ts now — including
+    // logRecord, which briefly grew its own and got it wrong twice over.
     for (const f of ['src/components/log/LogComments.tsx', 'src/components/log/LogChronicle.tsx',
-                     'src/components/log/LogHero.tsx']) {
-      expect(read(f)).not.toMatch(/toLocaleDateString/);
+                     'src/components/log/LogHero.tsx', 'src/components/log/logRecord.ts', SCREEN]) {
+      expect(read(f)).not.toMatch(/toLocaleDateString|toLocaleString|Intl\./);
     }
+  });
+
+  it('a calendar day is never turned into an instant', () => {
+    // THE rule this project already learned once: `new Date("2026-08-05")` is
+    // midnight UTC by definition, so anything built from it reads as the day
+    // before across the Americas. Hermes ships with no Intl polyfill here, so a
+    // `timeZone: 'UTC'` option cannot be trusted to correct it either. Months
+    // come from a table in timeAgo.ts; nothing on these surfaces may re-derive.
+    expect(read('src/components/log/logRecord.ts')).not.toMatch(/new Date\(/);
+
+    // A calendar date keeps its own day, wherever it is read…
+    expect(formatDate('2026-01-01')).toBe('JAN 1, 2026');
+    expect(buildFilingMark({ watched_date: '2026-01-01' })[0].value).toBe('JAN 1, 2026');
+
+    // …and an instant takes the reader's, which is the OTHER half of the rule:
+    // a critique filed at 8pm in Los Angeles is dated that evening, not tomorrow.
+    const evening = new Date(2026, 0, 1, 20, 0, 0);   // local by construction
+    expect(formatDate(evening.toISOString())).toBe('JAN 1, 2026');
   });
 });
 

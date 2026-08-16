@@ -226,6 +226,23 @@ export function formatDate(dateStr: string | Date | undefined | null, format: 's
 }
 
 /**
+ * Month and day only — "AUG 5", for a byline that carries its own recency.
+ *
+ * Added for the Dispatch reader, which was building this with
+ * `toLocaleDateString('en-US', { month: 'short', day: 'numeric' })`. That reads
+ * correctly on Node and is a coin toss on Hermes, which ships here with no Intl
+ * polyfill: with no Intl the options are ignored and the whole locale string
+ * comes back, so a byline reading "AUG 5" becomes "8/5/2026" or worse. Same
+ * month table as everything else in this file, so there is nothing to ignore.
+ */
+export function formatDateMonthDay(dateStr: string | Date | undefined | null): string {
+  if (!dateStr) return '';
+  const resolved = toParts(dateStr);
+  if (!resolved) return echo(dateStr);
+  return `${MONTHS_SHORT[resolved.parts.month]} ${resolved.parts.day}`;
+}
+
+/**
  * Month and year only (e.g. "MEMBER SINCE").
  *
  * Every caller today passes a `created_at` timestamp, so the calendar branch is
