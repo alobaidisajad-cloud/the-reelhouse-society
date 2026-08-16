@@ -271,6 +271,22 @@ describe('neighbours do not claim the same pixels', () => {
     expect(Number(slop.match(/bottom:\s*(\d+)/)![1])).toBeLessThanOrEqual(7);
   });
 
+  it('a critique’s DELETE and the next critique’s byline split their gap', () => {
+    // 14pt of padding below one critique and 14 above the next: 28pt of real
+    // gap, so 14 each. Derived from the stylesheet so that changing the row
+    // padding fails here instead of silently re-creating the overlap.
+    const item = style(read(STYLES), 'commentItem');
+    const gap = num(item, 'paddingVertical')! * 2;
+    const src = read('src/components/log/LogComments.tsx');
+    const slop = (name: string) => style(src, name);
+    const deleteDown = num(slop('HITSLOP_DELETE'), 'bottom')!;
+    const bylineUp = num(slop('HITSLOP_BYLINE'), 'top')!;
+    expect(deleteDown + bylineUp).toBeLessThanOrEqual(gap);
+    // Neither may be starved to buy the other room.
+    expect(deleteDown).toBeGreaterThanOrEqual(gap / 2 - 1);
+    expect(bylineUp).toBeGreaterThanOrEqual(gap / 2 - 1);
+  });
+
   it('the page deck sits 8pt under the autopsy toggle', () => {
     const src = read(DECK);
     for (const m of src.matchAll(/hitSlop=\{\{([^}]*)\}\}/g)) {

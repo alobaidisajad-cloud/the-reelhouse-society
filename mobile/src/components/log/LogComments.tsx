@@ -26,6 +26,18 @@ interface LogComment {
 const PAGE = 12;
 const HITSLOP = { top: 15, bottom: 15, left: 15, right: 15 } as const;
 
+/**
+ * Two controls sit 28pt apart across a row boundary: your own DELETE, and the
+ * profile link of the critique filed after it (14pt of padding each side of the
+ * hairline). At the default 15 they claimed 30pt between them and overlapped by
+ * two — and an overlap always goes to the LATER control, so the bottom of
+ * DELETE opened the next member's profile instead.
+ *
+ * Half the real gap each. Both keep the full 15 on the side facing nothing.
+ */
+const HITSLOP_BYLINE = { top: 14, bottom: 15, left: 15, right: 15 } as const;
+const HITSLOP_DELETE = { top: 15, bottom: 14, left: 15, right: 15 } as const;
+
 // ── Memoized Critique Row — avatar + handle both open the profile, no dead ends ──
 const CommentRow = React.memo(({
   c,
@@ -62,7 +74,7 @@ const CommentRow = React.memo(({
           style={s.commentByline}
           onPress={c.user_id ? () => onPressUser(c.username) : undefined}
           disabled={!c.user_id}
-          hitSlop={HITSLOP}
+          hitSlop={HITSLOP_BYLINE}
           pressedScale={c.user_id ? 0.96 : 1}
           haptic={c.user_id ? 'selection' : undefined}
           accessibilityLabel={c.user_id ? `View profile of @${c.username}` : `Critique by a former member`}
@@ -85,7 +97,7 @@ const CommentRow = React.memo(({
         <PressableScale
           onPress={() => onDelete(c.id)}
           style={s.commDeleteBtn}
-          hitSlop={HITSLOP}
+          hitSlop={HITSLOP_DELETE}
           haptic="heavy"
           pressedScale={0.92}
         >
