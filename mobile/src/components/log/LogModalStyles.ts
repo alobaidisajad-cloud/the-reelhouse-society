@@ -45,7 +45,10 @@ export const st = StyleSheet.create({
     formContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 80 },
     sec: { marginBottom: 20 },
     input: { backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
-    filmHeader: { flexDirection: 'row', gap: 16, marginBottom: 24 },
+    // No marginBottom: this sits INSIDE the bracket, whose own padding sets the
+    // inset. A margin here pushed the bottom brackets 24pt below the poster —
+    // 14pt of air above the docket and 38 below it.
+    filmHeader: { flexDirection: 'row', gap: 16 },
 
     // Previous Take (rewatch context)
     prevTakeBox: { backgroundColor: 'rgba(184,137,26,0.06)', borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 8, padding: 14, marginBottom: -4 },

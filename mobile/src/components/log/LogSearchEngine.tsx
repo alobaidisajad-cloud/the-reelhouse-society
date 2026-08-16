@@ -172,7 +172,9 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
 
 const st = StyleSheet.create({
     searchStep: { flex: 1, paddingHorizontal: 20 },
-    searchWrap: { marginTop: 12, position: 'relative' },
+    // Inside the bracket, which sets its own inset — a margin here would push
+    // the top marks away from the field they mark.
+    searchWrap: { position: 'relative' },
     searchIcon: { position: 'absolute', left: 12, top: 14, zIndex: 1 },
     searchInput: { backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingLeft: 38, paddingRight: 12, paddingVertical: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
     searchingWrap: { alignItems: 'center', paddingVertical: 20 },
