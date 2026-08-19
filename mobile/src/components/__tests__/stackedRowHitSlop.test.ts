@@ -113,12 +113,14 @@ const RULES: Rule[] = [
   // All three were found by MOUNTING the surfaces rather than reading them.
   // None was in the sweep above, because that sweep was a list of the places
   // someone thought of and these three did not look like rows in a list.
-  // Keyed on the constant, not a style: the still's own PressableScale carries
-  // no style (the <Image> inside it does), so a rule written against `stillImg`
-  // matched nothing — and this file's vacuity check refused to let that pass as
-  // a green tick. The one constant covers both the stills and the NONE chip.
-  { file: 'src/components/log/EditorialDesk.tsx', match: 'STILL_SLOP', gap: { x: 8 }, style: '(article-header stills)',
-    note: 'stills and the NONE chip, flatListGap 8' },
+  //
+  // The Editorial Desk's stills used to be listed here, claiming half their 8pt
+  // gap. They reach 48 by their own geometry now and claim nothing at all, so
+  // there is no slop left for this file to measure — logTouchTargets.test.ts
+  // pins their height instead. The same is true of the alternate posters, the
+  // status row, DELETE, CLOSE and the seal: once a control's own box clears the
+  // floor, its halo is pure surplus, and surplus is how a control comes to take
+  // its neighbour's taps in the first place.
   { file: 'src/components/log/LogSearchEngine.tsx', style: 'resultRow', gap: { y: 8 },
     note: 'search results, searchResultsContent gap 8 — a mis-tap logs the wrong film' },
   { file: 'src/components/log/LogComments.tsx', match: 'HITSLOP_ROW', gap: { y: 0 }, style: '(the critique row)',

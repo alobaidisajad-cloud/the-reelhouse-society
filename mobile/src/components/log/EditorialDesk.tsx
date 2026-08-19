@@ -22,33 +22,29 @@ interface Props {
 const backdropKeyExtractor = (p: { file_path: string }) => p.file_path;
 
 /**
- * A still may claim half the gap to its neighbour, and no more.
+ * THE STILLS NEED NO HALO.
  *
- * PressableScale's default is 15pt on EVERY side, including the sides you do
- * not name. The stills sit 8pt apart, so two defaults overlapped by 22pt — and
- * where two touch targets overlap the LATER sibling wins, on both platforms.
- * The right-hand 7pt of every still was selecting the next one along.
+ * They used to claim 15pt on every side — PressableScale's default, which
+ * applies to the sides you do not name as well — and sitting 8pt apart, two of
+ * them overlapped by 22. In an overlap the LATER sibling wins on both
+ * platforms, so the right-hand 7pt of every still selected the next one along.
  *
- * 4pt is half of the 8pt gap between stills; 4 above is half the label's 8pt
- * margin, and 8 below is half the desk's own 16pt gap.
- *
- * The thumb itself is 48pt tall, which is what actually matters: a halo only
- * helps a finger and is invisible to both platforms' accessibility layers, so
- * the floor has to be cleared by the control's own geometry. It was 45 until
- * this page's audit — three points short, and no amount of slop could have
- * closed it.
+ * That was first fixed by halving the gap. It is fixed properly now: the thumb
+ * is 48pt by its own geometry, which is the only measure either platform's
+ * accessibility layer can see, and a control that reaches the floor on its own
+ * has nothing left to ask for. A halo past that point is not generosity — it is
+ * the neighbour's area.
  */
-const STILL_SLOP = { top: 4, bottom: 8, left: 4, right: 4 } as const;
 
 export default React.memo(function EditorialDesk({
     dropCap, setDropCap, pullQuote, setPullQuote, editorialHeader, setEditorialHeader, availableBackdrops
 }: Props) {
     const renderBackdropItem = React.useCallback(({ item: p }: { item: { file_path: string } }) => p.file_path === '__none__' ? (
-        <PressableScale onPress={() => { setEditorialHeader(null); }} style={[st.stillThumb, editorialHeader === null && st.stillActive]} haptic="selection" pressedScale={0.96} hitSlop={STILL_SLOP}>
+        <PressableScale onPress={() => { setEditorialHeader(null); }} style={[st.stillThumb, editorialHeader === null && st.stillActive]} haptic="selection" pressedScale={0.96} hitSlop={null}>
             <Text style={[st.stillNone, editorialHeader === null && st.stillNoneActive]}>NONE</Text>
         </PressableScale>
     ) : (
-        <PressableScale onPress={() => { setEditorialHeader(p.file_path); }} haptic="selection" pressedScale={0.96} hitSlop={STILL_SLOP}>
+        <PressableScale onPress={() => { setEditorialHeader(p.file_path); }} haptic="selection" pressedScale={0.96} hitSlop={null}>
             <Image source={{ uri: tmdb.backdrop(p.file_path, 'w300') }} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && st.stillImgFaded]} contentFit="cover" cachePolicy="memory-disk" transition={150} />
         </PressableScale>
     ), [editorialHeader, setEditorialHeader]);

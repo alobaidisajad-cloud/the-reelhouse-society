@@ -110,6 +110,47 @@ describe('the composer’s controls reach the floor without a halo', () => {
     expect(hit).toMatch(/alignItems:\s*'flex-start'/);
   });
 
+  it('a control that reaches the floor claims no halo at all', () => {
+    // THE OTHER HALF OF THE RULE, and the half that was missed: raising the
+    // geometry without dropping the halo leaves the control claiming MORE than
+    // the floor, which is precisely how a control comes to take its neighbour's
+    // taps. Every one of these had its box raised to 48 and kept the slop it
+    // used to need.
+    const SIZED: [string, string][] = [
+      ['src/components/log/LogForm.tsx', 'setStatus(s)'],
+      ['src/components/log/LogForm.tsx', 'setAltPoster(null)'],
+      ['src/components/log/LogForm.tsx', 'setAltPoster(p.file_path)'],
+      ['src/components/log/LogForm.tsx', 'setShowDeleteConfirm(true)'],
+      ['src/components/log/LogForm.tsx', 'toggleList(list.id)'],
+      ['src/components/log/EditorialDesk.tsx', 'setEditorialHeader(null)'],
+      ['src/components/log/EditorialDesk.tsx', 'setEditorialHeader(p.file_path)'],
+    ];
+    for (const [file, marker] of SIZED) {
+      const src = read(file);
+      const at = src.indexOf(marker);
+      expect(at).toBeGreaterThan(-1);
+      // THE ENCLOSING TAG, not a window around the handler. A window caught the
+      // NEIGHBOURING control's `null` first and passed while this one carried a
+      // halo — the mutation that proved it is why this reads the tag.
+      const open = src.lastIndexOf('<PressableScale', at);
+      expect(open).toBeGreaterThan(-1);
+      let depth = 0, end = open, str: string | null = null;
+      for (; end < src.length; end++) {
+        const c = src[end];
+        if (str) { if (c === str && src[end - 1] !== '\\') str = null; continue; }
+        if (c === '"' || c === "'" || c === '`') { str = c; continue; }
+        if (c === '{') depth++;
+        else if (c === '}') depth--;
+        else if (c === '>' && depth === 0) break;
+      }
+      const tag = src.slice(open, end);
+      expect(tag).toContain(marker);
+      const slop = tag.match(/hitSlop=\{(null|\{[^}]*\})\}/);
+      expect(slop).not.toBeNull();
+      expect(slop![1]).toBe('null');
+    }
+  });
+
   it('the seal uses minHeight, so enlarged text grows it instead of clipping', () => {
     // A fixed `height` on a control whose label scales to 1.35x would cut the
     // label off. Every control here that wraps text must be free to grow.

@@ -73,7 +73,7 @@ export default function LogModalScreen() {
                             twice in four seconds. At step 1 the docket names the
                             film. The header is chrome, never content. */}
                     </View>
-                    <PressableScale onPress={() => { nav.back(); }} disabled={submitting} style={[st.closeBtn, submitting && { opacity: 0.5 }]} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityLabel="Close">
+                    <PressableScale onPress={() => { nav.back(); }} disabled={submitting} style={[st.closeBtn, submitting && { opacity: 0.5 }]} hitSlop={null} haptic="selection" accessibilityLabel="Close">
                         <X size={16} color={colors.fog} />
                         <Text style={st.closeBtnText}>CLOSE</Text>
                     </PressableScale>

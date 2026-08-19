@@ -104,7 +104,7 @@ export default React.memo(function LogSealBar({
                 style={[s.press, !ready && s.pressDim, sealed && s.pressSealed]}
                 onPress={() => { TactileEngine.mutate(); onSeal(); }}
                 disabled={submitting}
-                hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
+                hitSlop={null}
                 pressedScale={0.97}
                 accessibilityRole="button"
                 // The reason travels in the LABEL: `accessibilityLiveRegion` is

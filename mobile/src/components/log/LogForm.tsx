@@ -166,11 +166,11 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     <FieldLabel>CURATORIAL CONTROL</FieldLabel>
                     {availablePosters.length > 0 ? (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.flatListGapPad} keyboardShouldPersistTaps="handled">
-                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} onPress={() => { setAltPoster(null); }} style={[st.pThumb, altPoster === null && st.pThumbActive]} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityState={{ selected: altPoster === null }} accessibilityLabel="Use the default poster">
+                            <PressableScale hitSlop={null} onPress={() => { setAltPoster(null); }} style={[st.pThumb, altPoster === null && st.pThumbActive]} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityState={{ selected: altPoster === null }} accessibilityLabel="Use the default poster">
                                 <Text style={[st.pDefault, altPoster === null && st.pDefaultActive]}>DEFAULT</Text>
                             </PressableScale>
                             {availablePosters.map(p => (
-                                <PressableScale key={p.file_path} hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} onPress={() => { setAltPoster(p.file_path); }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityState={{ selected: altPoster === p.file_path }} accessibilityLabel="Select this alternate poster">
+                                <PressableScale key={p.file_path} hitSlop={null} onPress={() => { setAltPoster(p.file_path); }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityState={{ selected: altPoster === p.file_path }} accessibilityLabel="Select this alternate poster">
                                     <Image source={{ uri: tmdb.poster(p.file_path, 'w92') }} style={[st.pImg, altPoster === p.file_path && st.pImgActive, altPoster && altPoster !== p.file_path && st.pImgFaded]} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                                 </PressableScale>
                             ))}
@@ -221,7 +221,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
             <SectionDivider label="THE VERDICT" />
             <View style={st.statusRow}>
                 {(['watched', 'rewatched', 'abandoned'] as const).map(s => (
-                    <PressableScale key={s} style={[st.statusBtn, status === s && st.statusActive]} onPress={() => { setStatus(s); }} hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }} accessibilityRole="button" accessibilityState={{ selected: status === s }} accessibilityLabel={s} haptic="selection">
+                    <PressableScale key={s} style={[st.statusBtn, status === s && st.statusActive]} onPress={() => { setStatus(s); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ selected: status === s }} accessibilityLabel={s} haptic="selection">
                         {s === 'watched' && <Eye size={14} color={status === s ? colors.ink : colors.fog} />}
                         {s === 'rewatched' && <History size={14} color={status === s ? colors.ink : colors.fog} />}
                         {s === 'abandoned' && <X size={14} color={status === s ? colors.ink : colors.fog} />}
@@ -465,7 +465,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     </PressableScale>
                 )}
                 {isEditing && !showDeleteConfirm && (
-                    <PressableScale style={st.deleteBtn} onPress={() => { setShowDeleteConfirm(true); }} hitSlop={{ top: 10, bottom: 10, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Delete this entire log">
+                    <PressableScale style={st.deleteBtn} onPress={() => { setShowDeleteConfirm(true); }} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Delete this entire log">
                         <Trash2 size={14} color={colors.crimson} />
                         <Text style={st.deleteBtnText}>DELETE THIS ENTIRE LOG</Text>
                     </PressableScale>
