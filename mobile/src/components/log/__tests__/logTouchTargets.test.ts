@@ -53,7 +53,7 @@ const num = (body: string, prop: string) => {
  * that changes the number has to make the decision again rather than inherit
  * it.
  */
-const CONTROLS: { file: string; style: string; prop: 'minHeight' | 'height'; note: string }[] = [
+const CONTROLS: { file: string; style: string; prop: 'minHeight' | 'height' | 'width'; note: string }[] = [
   { file: 'src/components/log/LogModalStyles.ts', style: 'idxEntry', prop: 'minHeight',
     note: 'the catalogue index rows — flush, so they can claim no slop at all' },
   { file: 'src/components/log/LogModalStyles.ts', style: 'deskFoot', prop: 'minHeight',
@@ -64,6 +64,18 @@ const CONTROLS: { file: string; style: string; prop: 'minHeight' | 'height'; not
     note: 'article-header stills' },
   { file: 'src/components/log/EditorialDesk.tsx', style: 'stillThumb', prop: 'height',
     note: 'the NONE chip beside them' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'statusBtn', prop: 'minHeight',
+    note: 'watched / rewatched / abandoned — the first decision the page asks for' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'closeBtn', prop: 'minHeight',
+    note: 'the way out — no border, so the growth is invisible' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'deleteBtn', prop: 'minHeight',
+    note: 'destructive, and so the easiest thing to hit deliberately' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'pThumb', prop: 'width',
+    note: 'alternate posters — 48x72 keeps the 2:3 a poster actually is' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'pImg', prop: 'width',
+    note: 'the poster images in the same strip' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'listChipHit', prop: 'minHeight',
+    note: 'the box AROUND the chip — the chip itself stays chip-sized' },
 ];
 
 describe('the composer’s controls reach the floor without a halo', () => {

@@ -457,9 +457,15 @@ describe('no chip lands on its neighbour', () => {
     const at = src.indexOf(marker);
     expect(at).toBeGreaterThan(-1);
     // The hitSlop belonging to this control: the first one after its handler.
-    const slop = src.slice(at).match(/hitSlop=\{\{([^}]*)\}\}/)![1];
-    const left = Number(slop.match(/left:\s*(\d+)/)![1]);
-    const right = Number(slop.match(/right:\s*(\d+)/)![1]);
+    // `hitSlop={null}` is a real answer and claims nothing — a control whose
+    // own box reaches the floor needs no halo, and matching only `{{...}}`
+    // would silently skip past it to the NEXT control's slop and judge this row
+    // by a number belonging to something else.
+    const m = src.slice(at).match(/hitSlop=\{(null|\{[^}]*\})\}/);
+    expect(m).not.toBeNull();
+    const [left, right] = m![1] === 'null'
+      ? [0, 0]
+      : [Number(m![1].match(/left:\s*(\d+)/)![1]), Number(m![1].match(/right:\s*(\d+)/)![1])];
     expect(left).toBeLessThanOrEqual(gap / 2);
     expect(right).toBeLessThanOrEqual(gap / 2);
   });

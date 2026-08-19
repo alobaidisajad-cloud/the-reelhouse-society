@@ -13,7 +13,7 @@ export const st = StyleSheet.create({
     editBadge: { backgroundColor: colors.bloodReel, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 2, alignSelf: 'flex-start', marginBottom: 4 },
     editBadgeText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2, color: colors.parchmentBright, includeFontPadding: false },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 10 },
-    closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8 },
+    closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, minHeight: 48 },
     closeBtnText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
     signInBtn: { marginTop: 20, backgroundColor: colors.sepia, borderRadius: 2, paddingVertical: 14, paddingHorizontal: 28 },
     signInBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
@@ -74,7 +74,7 @@ export const st = StyleSheet.create({
     filmTitle: { fontFamily: fonts.display, fontSize: 17, color: colors.parchment, lineHeight: 22 },
     filmYear: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, letterSpacing: 2, marginTop: 4, includeFontPadding: false },
     statusRow: { flexDirection: 'row', gap: 8 },
-    statusBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
+    statusBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, minHeight: 48, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
     statusActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     statusText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, includeFontPadding: false },
     statusTextActive: { color: colors.ink },
@@ -128,10 +128,10 @@ export const st = StyleSheet.create({
     noData: { fontFamily: fonts.body, fontSize: 11, color: colors.fog },
 
     // Auteur (dead-dup keys kept swept — leaf owns live styles; autopsy blood is deliberate)
-    pThumb: { width: 44, height: 66, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
+    pThumb: { width: 48, height: 72, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     pThumbActive: { backgroundColor: colors.sepia, borderColor: colors.sepia, borderWidth: 2 },
     pDefault: { fontFamily: fonts.sub, fontSize: 7.5, color: colors.fog, includeFontPadding: false },
-    pImg: { width: 44, height: 66, borderRadius: 2, borderWidth: 1, borderColor: 'transparent' },
+    pImg: { width: 48, height: 72, borderRadius: 2, borderWidth: 1, borderColor: 'transparent' },
     pImgActive: { borderWidth: 2, borderColor: colors.bloodReel },
     pImgFaded: { opacity: 0.4 },
     pDefaultActive: { color: colors.ink },
@@ -140,13 +140,26 @@ export const st = StyleSheet.create({
     // Physical / Locked
 
     // Stacks
+    /**
+     * THE CHIP IS THE ORNAMENT; THE BOX AROUND IT IS THE TARGET.
+     *
+     * A chip has to stay chip-sized — inflate it to 48 and it stops reading as
+     * a chip and starts reading as a button, which is why Material ships a 32dp
+     * chip and reaches the floor with a touch delegate instead. React Native
+     * has no touch delegate, and a halo is invisible to both platforms'
+     * accessibility layers, so the only lever left is the pressable's own box.
+     *
+     * So the pressable is 48 and the chip inside it is untouched. Identical on
+     * screen, compliant in bounds, and the strip gains air rather than bulk.
+     */
+    listChipHit: { minHeight: 48, justifyContent: 'center' },
     listChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     listChipOn: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     listChipText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, maxWidth: 120, includeFontPadding: false },
     listChipTextActive: { color: colors.ink },
 
     // Delete (destructive → house crimson, not the bright alert red)
-    deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderWidth: 1, borderColor: colors.crimsonBorder, borderRadius: 4, marginBottom: 16 },
+    deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, minHeight: 48, borderWidth: 1, borderColor: colors.crimsonBorder, borderRadius: 4, marginBottom: 16 },
     deleteBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimson, includeFontPadding: false },
     deleteConfirm: { ...effects.shadowPrimary, shadowColor: colors.crimson, backgroundColor: 'rgba(50,0,0,0.6)', borderWidth: 1, borderColor: colors.crimson, borderRadius: 4, padding: 20, alignItems: 'center', marginBottom: 16 },
     deleteConfirmText: { fontFamily: fonts.sub, fontSize: 11, color: colors.crimson, marginBottom: 16, textAlign: 'center' },

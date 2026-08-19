@@ -433,11 +433,16 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                     {lists.map((list: any) => {
                                         const isIn = list.films.some((f: any) => f.id === film.id);
                                         return (
-                                            <PressableScale key={list.id} style={[st.listChip, isIn && st.listChipOn]} onPress={() => { toggleList(list.id); }} hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isIn }} accessibilityLabel={list.title}>
-                                                {isIn && <Check size={12} color={colors.ink} />}
-                                                {list.isPrivate && <ListOrdered size={10} color={isIn ? colors.ink : colors.fog} />}
-                                                {list.isRanked && <ListOrdered size={10} color={isIn ? colors.ink : colors.fog} />}
-                                                <Text style={[st.listChipText, isIn && st.listChipTextActive]} numberOfLines={1}>{list.title}</Text>
+                                            // The pressable carries the 48pt box; the chip inside it
+                                            // keeps its own size. No halo is needed once the box is
+                                            // real, and a halo would only have reached its neighbour.
+                                            <PressableScale key={list.id} style={st.listChipHit} onPress={() => { toggleList(list.id); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isIn }} accessibilityLabel={list.title}>
+                                                <View style={[st.listChip, isIn && st.listChipOn]}>
+                                                    {isIn && <Check size={12} color={colors.ink} />}
+                                                    {list.isPrivate && <ListOrdered size={10} color={isIn ? colors.ink : colors.fog} />}
+                                                    {list.isRanked && <ListOrdered size={10} color={isIn ? colors.ink : colors.fog} />}
+                                                    <Text style={[st.listChipText, isIn && st.listChipTextActive]} numberOfLines={1}>{list.title}</Text>
+                                                </View>
                                             </PressableScale>
                                         );
                                     })}
