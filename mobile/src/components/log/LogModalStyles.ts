@@ -197,8 +197,13 @@ export const st = StyleSheet.create({
     // Ruled catalogue entries, not a settings list: a hairline, a name, and what
     // it holds. No chevrons — those would make it someone else's app.
     idxWrap: { marginTop: 8 },
+    // minHeight, not padding: an index row was 37pt tall and claimed no vertical
+    // slop (correctly — the rows are flush, separated by a hairline, so there is
+    // no gap to halve). 37pt of reach is under both platforms' floors, and a
+    // halo could not have fixed it: neither accessibility layer can see one.
+    // 48 by geometry, and the rows stay flush.
     idxEntry: {
-        flexDirection: 'row', alignItems: 'center', gap: 9,
+        flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 48,
         paddingVertical: 13, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,
     },
     idxDot: { width: 5, height: 5, borderRadius: 2.5, borderWidth: 1 },
@@ -230,10 +235,17 @@ export const st = StyleSheet.create({
 
     // The Editorial Desk continues the manuscript SHEET — attached to its foot,
     // no border between them, because decorating your writing is part of writing.
+    // The worst target on the page as built: ~33pt tall and carrying hitSlop
+    //={null}. The null was right — this bar is attached to the manuscript's
+    // foot with no border between them, so any halo would have reached up into
+    // the critique field. But it left a 33pt target, under even Apple's floor.
+    // The answer is height, not halo: 48 by geometry takes nothing from the
+    // field above it.
     deskFoot: {
         borderWidth: 1, borderTopWidth: 0, borderColor: colors.sepiaBorder,
         borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
         backgroundColor: 'rgba(184,137,26,0.03)', paddingHorizontal: 12, paddingVertical: 11,
+        minHeight: 48,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10,
     },
     deskFootName: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },

@@ -30,8 +30,13 @@ const backdropKeyExtractor = (p: { file_path: string }) => p.file_path;
  * The right-hand 7pt of every still was selecting the next one along.
  *
  * 4pt is half of the 8pt gap between stills; 4 above is half the label's 8pt
- * margin, and 8 below is half the desk's own 16pt gap. With the thumb at 45pt
- * tall the target is 57pt high, comfortably past the 44pt minimum.
+ * margin, and 8 below is half the desk's own 16pt gap.
+ *
+ * The thumb itself is 48pt tall, which is what actually matters: a halo only
+ * helps a finger and is invisible to both platforms' accessibility layers, so
+ * the floor has to be cleared by the control's own geometry. It was 45 until
+ * this page's audit — three points short, and no amount of slop could have
+ * closed it.
  */
 const STILL_SLOP = { top: 4, bottom: 8, left: 4, right: 4 } as const;
 
@@ -97,10 +102,10 @@ const st = StyleSheet.create({
     spoilerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     cbox: { width: 16, height: 16, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     cboxSepia: { backgroundColor: colors.sepia, borderColor: colors.sepia },
-    stillThumb: { width: 80, height: 45, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
+    stillThumb: { width: 80, height: 48, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     stillActive: { backgroundColor: colors.sepia, borderColor: colors.sepia, borderWidth: 2 },
     stillNone: { fontFamily: fonts.sub, fontSize: 7.5, color: colors.fog, includeFontPadding: false },
-    stillImg: { width: 80, height: 45, borderRadius: 2, borderWidth: 1, borderColor: 'transparent' },
+    stillImg: { width: 80, height: 48, borderRadius: 2, borderWidth: 1, borderColor: 'transparent' },
     stillImgActive: { borderWidth: 2, borderColor: colors.sepia },
     stillImgFaded: { opacity: 0.4 },
     stillNoneActive: { color: colors.ink },

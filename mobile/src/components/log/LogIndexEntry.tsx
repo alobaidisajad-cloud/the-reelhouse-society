@@ -56,8 +56,15 @@ export default React.memo(function LogIndexEntry({
       <PressableScale
         style={st.idxEntry}
         onPress={onPress}
-        // The rows are 44pt apart with nothing between them, so an entry claims
-        // only its own height — no slop to overlap the row above or below.
+        // The rows are FLUSH — a hairline between them and no gap at all — so an
+        // entry claims nothing vertically; there is no space to halve, and any
+        // claim would land on the row above or below, where the later one wins.
+        //
+        // (This comment used to say the rows were "44pt apart". They never were:
+        // the row was 37pt tall and butted against its neighbours. The number
+        // was an assumption, and it hid the real defect — 37pt of reach, under
+        // both platforms' floors. `idxEntry` now carries minHeight: 48, which is
+        // the only fix, since neither accessibility layer can see a halo.)
         hitSlop={{ top: 0, bottom: 0, left: 20, right: 20 }}
         haptic="selection"
         pressedScale={0.99}
