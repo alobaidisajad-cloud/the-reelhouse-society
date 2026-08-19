@@ -565,3 +565,48 @@ describe('assistive tech is told what is chosen', () => {
     expect(tag).toMatch(/accessibilityState=\{\{\s*selected:/);
   });
 });
+
+/**
+ * The docked seal reserves its own space twice over, from ONE hand-typed
+ * number: the scroll ends at `insets.bottom + SEAL_BAR_HEIGHT + 16`, and the
+ * bar slides away by `SEAL_BAR_HEIGHT + insets.bottom` when the keyboard opens.
+ * Neither is derived from the bar's actual styles.
+ *
+ * So the constant and the bar can drift apart in silence, and the day the bar
+ * grows past it the last index row hides behind the wax and the bar leaves a
+ * sliver on screen while you write. The press was raised from 46 to 48 during
+ * this page's work and nothing checked that it still fitted — it did, with 6pt
+ * to spare, which is luck rather than design.
+ */
+describe('the seal reserves enough room for itself', () => {
+  const CAP = 1.35;   // scaledTextProps, the largest the line can be asked to grow
+
+  it('SEAL_BAR_HEIGHT covers the bar it is standing in for', () => {
+    const seal = read(SEAL);
+    const declared = Number(seal.match(/SEAL_BAR_HEIGHT\s*=\s*(\d+)/)![1]);
+
+    const bar = style(seal, 'bar');
+    const line = style(seal, 'line');
+    const press = style(seal, 'press');
+
+    // Everything above the safe-area inset, which the caller adds separately.
+    const lineBox = Math.ceil(num(line, 'fontSize')! * CAP * 1.3);
+    const real =
+      num(bar, 'paddingTop')! +
+      lineBox +
+      num(line, 'marginBottom')! +
+      num(press, 'minHeight')! +
+      14;                                    // the bar's own paddingBottom, added in the component
+
+    expect(real).toBeGreaterThan(0);         // a failed parse must not pass vacuously
+    expect(declared).toBeGreaterThanOrEqual(real);
+  });
+
+  it('and the scroll ends above it, using that same number', () => {
+    // Two places reserve the room; both must read the constant rather than
+    // repeat a number that looks like it.
+    const modal = read('app/(modals)/log-modal.tsx');
+    expect(modal).toMatch(/paddingBottom:\s*insets\.bottom\s*\+\s*SEAL_BAR_HEIGHT/);
+    expect(read(SEAL)).toMatch(/translateY:[\s\S]{0,80}SEAL_BAR_HEIGHT \+ insets\.bottom/);
+  });
+});
