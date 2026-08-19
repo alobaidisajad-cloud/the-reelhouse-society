@@ -248,6 +248,21 @@ describe('the composer’s controls reach the floor without a halo', () => {
     expect(num(hit!, 'minWidth')).toBeGreaterThanOrEqual(FLOOR);
   });
 
+  it('an ornament is never narrower than the box around it', () => {
+    // The box states minWidth 48 so a short label still makes the floor. If the
+    // ornament inside it does NOT, the ornament sits left in a wider target and
+    // leaves dead space after it — so a row of pills gets two different gaps
+    // depending on the length of each label. DVD and VHS are about 42pt; a
+    // stack called "80s" about 46.
+    const styles = read('src/components/log/LogModalStyles.ts');
+    const box = num(styleBody(styles, 'hit48')!, 'minWidth')!;
+    for (const ornament of ['tag', 'listChip']) {
+      const body = styleBody(styles, ornament);
+      expect(body).not.toBeNull();
+      expect(num(body!, 'minWidth')).toBeGreaterThanOrEqual(box);
+    }
+  });
+
   it('a control that reaches the floor claims no halo at all', () => {
     // THE OTHER HALF OF THE RULE, and the half that was missed: raising the
     // geometry without dropping the halo leaves the control claiming MORE than

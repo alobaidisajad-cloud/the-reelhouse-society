@@ -96,7 +96,13 @@ export const st = StyleSheet.create({
     statusText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, includeFontPadding: false },
     statusTextActive: { color: colors.ink },
     tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-    tag: { paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
+    // minWidth matches the box around it. Without it a short pill — DVD and
+    // VHS are about 42pt — sat left-aligned inside a 48pt target and left ~6pt
+    // of dead space after it, so the gap following the short options read as
+    // twice the gap following the long ones. The row's rhythm broke, and only
+    // for some of its pills, which is the kind of unevenness that reads as
+    // carelessness without being nameable.
+    tag: { minWidth: 48, alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     tagActive: { backgroundColor: colors.flicker, borderColor: colors.flicker },
     tagText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
     tagTextActive: { color: colors.ink },
@@ -183,7 +189,9 @@ export const st = StyleSheet.create({
      * whole point of putting a box around it.
      */
     hit48: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignItems: 'flex-start' },
-    listChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
+    // Same reason: a stack called "80s" is about 46pt and would have rattled
+    // inside its own target.
+    listChip: { minWidth: 48, justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     listChipOn: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     listChipText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, maxWidth: 120, includeFontPadding: false },
     listChipTextActive: { color: colors.ink },
