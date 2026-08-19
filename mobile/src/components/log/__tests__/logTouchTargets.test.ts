@@ -149,17 +149,10 @@ const ACCOUNTED: { marker: string; why: string }[] = [
   { marker: 'onPress={onPress}', why: 'the index row, idxEntry minHeight 48; and the clearance gate, minHeight 48' },
 
   // — stated exceptions —
-  {
-    marker: 'setDate(todayStr)',
-    why: 'EXCEPTION: TODAY / YESTERDAY are date pills in a 6pt-gapped row. ' +
-      'They keep a 10pt vertical halo instead of a 48pt box because the box ' +
-      'would push the calendar a further 23pt down a section that is already ' +
-      'the longest on the page. Reach is 45 — above Apple\'s floor, below ' +
-      'Material\'s. Revisit with this section\'s design pass.',
-  },
-  { marker: 'setDate(yesterday)', why: 'EXCEPTION: YESTERDAY sits beside TODAY in the same 6pt-gapped row and is held to the same decision, for the same reason — see above.' },
+  { marker: 'setDate(todayStr)', why: 'hit48 box around the date pill' },
+  { marker: 'setDate(yesterday)', why: 'hit48 box around the date pill' },
   { marker: 'setCalendarOpen(!calendarOpen)', why: 'ruledRow minHeight 48' },
-  { marker: 'setWatchedWith(watchedWith.replace', why: 'EXCEPTION: the @handle suggestions are inline text links inside a wrapping row, and both platforms exempt inline links from the floor for exactly this reason — a 48pt box per handle would break the line it belongs to.' },
+  { marker: 'setWatchedWith(watchedWith.replace', why: 'EXEMPT: the @handle suggestions are inline text links inside a wrapping row. Both platforms carve inline links out of the minimum rather than excusing them — this is a category the standard names, not a decision taken against it, and a 48pt box per handle would break the line it belongs to.' },
   {
     marker: 'setAutopsy({ ...autopsy',
     why: 'EXCEPTION: the autopsy notches are an 18pt film-strip track lifted to ' +
@@ -170,6 +163,17 @@ const ACCOUNTED: { marker: string; why: string }[] = [
 ];
 
 describe('every touchable on this page has been decided about', () => {
+  it('there is ONE exception on this page, and it argues its case', () => {
+    // Three exceptions became one. The @handle suggestions are inline text
+    // links, which both platforms exempt outright rather than excuse; and the
+    // date pills were only ever short to save 23pt, which is not worth the page
+    // carrying three rules instead of one. What is left is the autopsy gauge,
+    // which is genuinely a different shape of thing.
+    const exceptions = ACCOUNTED.filter(a => a.why.startsWith('EXCEPTION'));
+    expect(exceptions).toHaveLength(1);
+    expect(exceptions[0].marker).toContain('setAutopsy');
+  });
+
   it('the enumeration is complete — nothing is merely absent', () => {
     const unaccounted: string[] = [];
     let counted = 0;
@@ -201,7 +205,7 @@ describe('every touchable on this page has been decided about', () => {
 
   it('every exception says why, at length', () => {
     // An exception with a thin reason is a defect wearing a label.
-    for (const a of ACCOUNTED.filter(x => x.why.startsWith('EXCEPTION'))) {
+    for (const a of ACCOUNTED.filter(x => /^(EXCEPTION|EXEMPT)/.test(x.why))) {
       expect(a.why.length).toBeGreaterThan(60);
     }
   });
@@ -260,6 +264,9 @@ describe('the composer’s controls reach the floor without a halo', () => {
       ['src/components/log/LogForm.tsx', 'setPhysicalMedia(opt)'],
       ['src/components/log/LogForm.tsx', 'setIsSpoiler(!isSpoiler)'],
       ['src/components/log/LogForm.tsx', 'setShowDeleteConfirm(false)'],
+      ['src/components/log/LogForm.tsx', 'setDate(todayStr)'],
+      ['src/components/log/LogForm.tsx', 'setDate(yesterday)'],
+      ['src/components/log/LogForm.tsx', 'setCalendarOpen(!calendarOpen)'],
       ['src/components/log/EditorialDesk.tsx', 'setEditorialHeader(null)'],
       ['src/components/log/EditorialDesk.tsx', 'setEditorialHeader(p.file_path)'],
     ];

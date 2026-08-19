@@ -379,14 +379,18 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 >
                     <View style={st.idxBody}>
                         <View style={st.quickDateRow}>
-                            <PressableScale style={[st.qDateBtn, date === todayStr && st.qDateActive]} onPress={() => { setDate(todayStr); setCalendarOpen(false); }} hitSlop={{ top: 10, bottom: 10, left: 3, right: 3 }} accessibilityRole="button" accessibilityState={{ selected: date === todayStr }} accessibilityLabel="Watched today" haptic="selection">
-                                <Text style={[st.qDateText, date === todayStr && st.qDateTextActive]}>TODAY</Text>
+                            <PressableScale style={st.hit48} onPress={() => { setDate(todayStr); setCalendarOpen(false); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ selected: date === todayStr }} accessibilityLabel="Watched today" haptic="selection">
+                                <View style={[st.qDateBtn, date === todayStr && st.qDateActive]}>
+                                    <Text style={[st.qDateText, date === todayStr && st.qDateTextActive]}>TODAY</Text>
+                                </View>
                             </PressableScale>
-                            <PressableScale style={[st.qDateBtn, date === yesterday && st.qDateActive]} onPress={() => { setDate(yesterday); setCalendarOpen(false); }} hitSlop={{ top: 10, bottom: 10, left: 3, right: 3 }} accessibilityRole="button" accessibilityState={{ selected: date === yesterday }} accessibilityLabel="Watched yesterday" haptic="selection">
-                                <Text style={[st.qDateText, date === yesterday && st.qDateTextActive]}>YESTERDAY</Text>
+                            <PressableScale style={st.hit48} onPress={() => { setDate(yesterday); setCalendarOpen(false); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ selected: date === yesterday }} accessibilityLabel="Watched yesterday" haptic="selection">
+                                <View style={[st.qDateBtn, date === yesterday && st.qDateActive]}>
+                                    <Text style={[st.qDateText, date === yesterday && st.qDateTextActive]}>YESTERDAY</Text>
+                                </View>
                             </PressableScale>
                         </View>
-                        <PressableScale style={st.ruledRow} onPress={() => { setCalendarOpen(!calendarOpen); }} hitSlop={{ top: 6, bottom: 6, left: 20, right: 20 }} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: calendarOpen }} accessibilityLabel={`Watched on ${formatLongCalendarDate(date)}. Change the date.`}>
+                        <PressableScale style={st.ruledRow} onPress={() => { setCalendarOpen(!calendarOpen); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: calendarOpen }} accessibilityLabel={`Watched on ${formatLongCalendarDate(date)}. Change the date.`}>
                             <Text style={st.ruledValue}>{formatLongCalendarDate(date)}</Text>
                             <Text style={st.ruledAction}>{calendarOpen ? 'CLOSE' : 'CHANGE'}</Text>
                         </PressableScale>
