@@ -9,7 +9,24 @@ export const st = StyleSheet.create({
     kavFlex: { flex: 1 },
     dragHandleWrap: { alignItems: 'center', paddingTop: 10 },
     dragHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.ash },
+    /**
+     * THE CHROME DOES NOT GROW.
+     *
+     * Raising CLOSE to a 48pt box would have pushed this header from 64 to 80 —
+     * on a page whose worst structural habit is chrome before content. The
+     * button's own box now supplies the air the padding used to, so the header
+     * is the same 64 it always was and the mark sits in exactly the same place:
+     *   before  16 padding + 8 button padding = glyph 24pt down, header 64
+     *   after    8 padding + 16 inside a 48 box = glyph 24pt down, header 64
+     * Identical on screen. The target goes from 32 to 48.
+     */
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.ash },
+    /**
+     * The way back to the search step — a bare 20pt chevron with a 4pt pad,
+     * about 24 × 20. The box is 48 and the glyph stays hard left inside it, so
+     * it does not move; the target simply extends right into the empty header.
+     */
+    backBtn: { width: 48, height: 48, alignItems: 'flex-start', justifyContent: 'center' },
     editBadge: { backgroundColor: colors.bloodReel, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 2, alignSelf: 'flex-start', marginBottom: 4 },
     editBadgeText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2, color: colors.parchmentBright, includeFontPadding: false },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 10 },
@@ -152,7 +169,10 @@ export const st = StyleSheet.create({
      * So the pressable is 48 and the chip inside it is untouched. Identical on
      * screen, compliant in bounds, and the strip gains air rather than bulk.
      */
-    listChipHit: { minHeight: 48, justifyContent: 'center' },
+    // alignItems is stated, not inherited: a flex container defaults to
+    // `stretch`, and a stretched child would have grown the chip to fill the
+    // box — undoing the whole point of putting a box around it.
+    listChipHit: { minHeight: 48, justifyContent: 'center', alignItems: 'flex-start' },
     listChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     listChipOn: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     listChipText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, maxWidth: 120, includeFontPadding: false },

@@ -63,7 +63,7 @@ export default function LogModalScreen() {
                     <View style={st.headerLeft}>
                         {isEditing && <View style={st.editBadge}><Text style={st.editBadgeText}>EDITING</Text></View>}
                         {step === 1 && !isEditing && (
-                            <PressableScale onPress={() => { setStep(0); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" style={{ marginRight: 6, paddingRight: 4 }}>
+                            <PressableScale onPress={() => { setStep(0); }} hitSlop={null} haptic="selection" style={st.backBtn} accessibilityRole="button" accessibilityLabel="Back to search">
                                 <ChevronLeft size={20} color={colors.fog} strokeWidth={2.5} />
                             </PressableScale>
                         )}

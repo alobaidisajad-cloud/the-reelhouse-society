@@ -76,6 +76,8 @@ const CONTROLS: { file: string; style: string; prop: 'minHeight' | 'height' | 'w
     note: 'the poster images in the same strip' },
   { file: 'src/components/log/LogModalStyles.ts', style: 'listChipHit', prop: 'minHeight',
     note: 'the box AROUND the chip — the chip itself stays chip-sized' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'backBtn', prop: 'height',
+    note: 'the way back to search — a 20pt chevron in a 48pt box' },
 ];
 
 describe('the composer’s controls reach the floor without a halo', () => {
@@ -89,6 +91,24 @@ describe('the composer’s controls reach the floor without a halo', () => {
       expect(h).toBeGreaterThanOrEqual(FLOOR);
     });
   }
+
+  it('the header did not grow to pay for CLOSE', () => {
+    // Raising the button to 48 must not push the chrome down the page: the
+    // button's own box supplies the air the padding used to. 8 + 48 + 8 is the
+    // 64 this header always was, and the mark stays 24pt from the top.
+    const header = styleBody(read('src/components/log/LogModalStyles.ts'), 'header');
+    expect(header).not.toBeNull();
+    const pad = num(header!, 'paddingTop');
+    const close = styleBody(read('src/components/log/LogModalStyles.ts'), 'closeBtn');
+    expect(pad! * 2 + num(close!, 'minHeight')!).toBeLessThanOrEqual(64);
+  });
+
+  it('the chip is never stretched to fill its own touch box', () => {
+    // A flex container defaults to align-items: stretch, which would have
+    // grown the chip to 48 and undone the reason the box exists.
+    const hit = styleBody(read('src/components/log/LogModalStyles.ts'), 'listChipHit');
+    expect(hit).toMatch(/alignItems:\s*'flex-start'/);
+  });
 
   it('the seal uses minHeight, so enlarged text grows it instead of clipping', () => {
     // A fixed `height` on a control whose label scales to 1.35x would cut the
