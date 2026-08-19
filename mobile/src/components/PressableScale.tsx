@@ -63,7 +63,12 @@ function PressableScale({
   const scale = useSharedValue(1);
   const lastPressRef = useRef<number>(0);
 
-  // Normalize hitSlop to guarantee 44x44 HIG compliance if partially provided
+  // Normalize hitSlop so a partial object does not silently zero the sides it
+  // omits. This buys REACH, not compliance: hitSlop lives inside React Native's
+  // own touch dispatch and never reaches either platform's accessibility layer
+  // (iOS reads accessibilityFrame from the view's frame; RN installs no Android
+  // TouchDelegate). A control under the 48dp floor is fixed with minHeight /
+  // minWidth on the control itself — never by widening this halo.
   const normalizedHitSlop = hitSlop === null ? null : typeof hitSlop === 'number' ? hitSlop : {
     top: hitSlop?.top ?? 15,
     bottom: hitSlop?.bottom ?? 15,
