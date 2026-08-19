@@ -32,7 +32,7 @@ export default React.memo(function LogClearanceGate({
     <PressableScale
       style={st.gate}
       onPress={onPress}
-      hitSlop={{ top: 6, bottom: 6, left: 20, right: 20 }}
+      hitSlop={null}
       haptic="light"
       accessibilityRole="button"
       accessibilityLabel={`Clearance required. ${label} opens this. Opens the Society.`}

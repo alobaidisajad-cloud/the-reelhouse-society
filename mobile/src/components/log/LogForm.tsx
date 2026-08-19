@@ -235,8 +235,10 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     <LogVerdict status={status} rating={rating} />
                     <View style={st.tagRow}>
                         {ABANDONED_REASONS.map((r: string) => (
-                            <PressableScale key={r} style={[st.tag, abandonedReason === r && st.tagActive]} onPress={() => { setAbandonedReason(r); }} hitSlop={{ top: 3, bottom: 3, left: 3, right: 3 }} accessibilityRole="button" accessibilityState={{ selected: abandonedReason === r }} accessibilityLabel={r} haptic="selection">
-                                <Text style={[st.tagText, abandonedReason === r && st.tagTextActive]}>{r}</Text>
+                            <PressableScale key={r} style={st.hit48} onPress={() => { setAbandonedReason(r); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ selected: abandonedReason === r }} accessibilityLabel={r} haptic="selection">
+                                <View style={[st.tag, abandonedReason === r && st.tagActive]}>
+                                    <Text style={[st.tagText, abandonedReason === r && st.tagTextActive]}>{r}</Text>
+                                </View>
                             </PressableScale>
                         ))}
                     </View>
@@ -264,7 +266,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 </View>
                 <TextInput testID="review-input" style={[st.reviewInput, isRTLText(review) && st.rtlText]} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={2000} textAlignVertical="top" {...scaledTextProps} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
                 <View style={st.reviewFooter}>
-                    <PressableScale style={st.spoilerRow} onPress={() => { setIsSpoiler(!isSpoiler); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isSpoiler }} accessibilityLabel="Contains spoilers">
+                    <PressableScale style={st.spoilerRow} onPress={() => { setIsSpoiler(!isSpoiler); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isSpoiler }} accessibilityLabel="Contains spoilers">
                         <View style={[st.cbox, isSpoiler && st.cboxOn]}>{isSpoiler && <Check size={10} color={colors.ink} />}</View>
                         <Text style={st.spoilerText}>CONTAINS SPOILERS</Text>
                     </PressableScale>
@@ -339,8 +341,10 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     <View style={st.idxBody}>
                         <View style={[st.tagRow, !isPremium && st.lockedPanel]} pointerEvents={isPremium ? 'auto' : 'none'}>
                             {PHYSICAL_OPTIONS.map(opt => (
-                                <PressableScale key={opt} style={[st.tag, physicalMedia === opt && st.tagActive]} onPress={() => { setPhysicalMedia(opt); }} hitSlop={{ top: 3, bottom: 3, left: 3, right: 3 }} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: physicalMedia === opt }} accessibilityLabel={opt}>
-                                    <Text style={[st.tagText, physicalMedia === opt && st.tagTextActive]}>{opt}</Text>
+                                <PressableScale key={opt} style={st.hit48} onPress={() => { setPhysicalMedia(opt); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: physicalMedia === opt }} accessibilityLabel={opt}>
+                                    <View style={[st.tag, physicalMedia === opt && st.tagActive]}>
+                                        <Text style={[st.tagText, physicalMedia === opt && st.tagTextActive]}>{opt}</Text>
+                                    </View>
                                 </PressableScale>
                             ))}
                         </View>
@@ -436,7 +440,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                             // The pressable carries the 48pt box; the chip inside it
                                             // keeps its own size. No halo is needed once the box is
                                             // real, and a halo would only have reached its neighbour.
-                                            <PressableScale key={list.id} style={st.listChipHit} onPress={() => { toggleList(list.id); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isIn }} accessibilityLabel={list.title}>
+                                            <PressableScale key={list.id} style={st.hit48} onPress={() => { toggleList(list.id); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isIn }} accessibilityLabel={list.title}>
                                                 <View style={[st.listChip, isIn && st.listChipOn]}>
                                                     {isIn && <Check size={12} color={colors.ink} />}
                                                     {list.isPrivate && <ListOrdered size={10} color={isIn ? colors.ink : colors.fog} />}
@@ -460,7 +464,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 Delete used to be the FIRST thing on this page when editing. */}
             <View style={st.tailRow}>
                 {hasUnsavedChanges && (
-                    <PressableScale onPress={() => { TactileEngine.warn(); discardDraft(); router.back(); }} disabled={submitting} hitSlop={{ top: 10, bottom: 10, left: 15, right: 15 }} haptic="heavy" accessibilityRole="button" accessibilityLabel="Discard this draft">
+                    <PressableScale style={st.discardBtn} onPress={() => { TactileEngine.warn(); discardDraft(); router.back(); }} disabled={submitting} hitSlop={null} haptic="heavy" accessibilityRole="button" accessibilityLabel="Discard this draft">
                         <Text style={[st.cancelText, { color: colors.fog }]}>DISCARD DRAFT</Text>
                     </PressableScale>
                 )}
@@ -474,8 +478,8 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     <View style={st.deleteConfirm}>
                         <Text style={st.deleteConfirmText}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</Text>
                         <View style={st.deleteConfirmRow}>
-                            <PressableScale style={st.deleteYes} onPress={() => { TactileEngine.destroy(); handleDelete(); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} accessibilityRole="button" accessibilityLabel="Confirm deletion"><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></PressableScale>
-                            <PressableScale style={st.deleteNo} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Keep this log"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
+                            <PressableScale style={st.deleteYes} onPress={() => { TactileEngine.destroy(); handleDelete(); }} hitSlop={null} accessibilityRole="button" accessibilityLabel="Confirm deletion"><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></PressableScale>
+                            <PressableScale style={st.deleteNo} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Keep this log"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
                         </View>
                     </View>
                 )}

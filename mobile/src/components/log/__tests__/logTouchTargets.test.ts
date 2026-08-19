@@ -22,10 +22,16 @@ import { join } from 'path';
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const FLOOR = 48;
 
+/**
+ * Comments are blanked, never deleted — a block comment removed outright takes
+ * its newlines with it, and every line number this file reports after that
+ * point is wrong. The enumeration below names offending lines, so they have to
+ * be the lines a person will actually find.
+ */
 const read = (f: string) =>
   readFileSync(join(ROOT, f), 'utf8')
-    .replace(/\/\/[^\n]*/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '');
+    .replace(/\/\/[^\n]*/g, m => ' '.repeat(m.length))
+    .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '));
 
 /** Brace-matched style body — survives nested objects and multi-line bodies. */
 function styleBody(src: string, name: string): string | null {
@@ -74,11 +80,132 @@ const CONTROLS: { file: string; style: string; prop: 'minHeight' | 'height' | 'w
     note: 'alternate posters — 48x72 keeps the 2:3 a poster actually is' },
   { file: 'src/components/log/LogModalStyles.ts', style: 'pImg', prop: 'width',
     note: 'the poster images in the same strip' },
-  { file: 'src/components/log/LogModalStyles.ts', style: 'listChipHit', prop: 'minHeight',
-    note: 'the box AROUND the chip — the chip itself stays chip-sized' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'hit48', prop: 'minHeight',
+    note: 'the shared box — chips, tags and date pills sit inside it untouched' },
   { file: 'src/components/log/LogModalStyles.ts', style: 'backBtn', prop: 'height',
     note: 'the way back to search — a 20pt chevron in a 48pt box' },
+  // These were claimed by the enumeration and verified by nothing — a mutation
+  // stripped their minHeight and the suite stayed green. A claim that reaches
+  // the floor must be CHECKED here, not merely asserted over there.
+  { file: 'src/components/log/LogModalStyles.ts', style: 'spoilerRow', prop: 'minHeight',
+    note: 'CONTAINS SPOILERS, and the Editorial Desk drop-cap toggle' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'gate', prop: 'minHeight',
+    note: 'the clearance gate — the only way a locked rank reaches the Society' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'discardBtn', prop: 'minHeight',
+    note: 'DISCARD DRAFT — destructive, and text-only, so it had no box at all' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'deleteYes', prop: 'minHeight',
+    note: 'CONFIRM DELETE' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'deleteNo', prop: 'minHeight',
+    note: 'CANCEL, beside it' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'ruledRow', prop: 'minHeight',
+    note: 'the date row that opens the calendar' },
+  { file: 'src/components/log/LogModalStyles.ts', style: 'signInBtn', prop: 'minHeight',
+    note: 'IDENTIFY YOURSELF — the whole page for a signed-out member' },
 ];
+
+/**
+ * EVERY touchable on this page, and what was decided about it.
+ *
+ * The list above is a list, and a list is what let ten controls sit under the
+ * floor while this file stayed green — the exact flaw this project diagnosed in
+ * the app-wide guard and then rebuilt here. So the page is ENUMERATED: every
+ * `<PressableScale` in these files must appear below, either because its box
+ * reaches 48 or as a stated exception. A control nobody has decided about fails
+ * the suite; it cannot simply be absent.
+ */
+const PAGE = [
+  'src/components/log/LogForm.tsx',
+  'src/components/log/LogSealBar.tsx',
+  'src/components/log/LogIndexEntry.tsx',
+  'src/components/log/LogClearanceGate.tsx',
+  'src/components/log/EditorialDesk.tsx',
+  'src/components/log/AuteurToolkit.tsx',
+  'app/(modals)/log-modal.tsx',
+];
+
+/** Each control is identified by a fragment unique to its opening tag. */
+const ACCOUNTED: { marker: string; why: string }[] = [
+  // — reach 48 by their own geometry —
+  { marker: 'setPosterOpen(o => !o)', why: 'the docket poster, 120x180' },
+  { marker: 'setAltPoster(null)', why: 'pThumb 48x72' },
+  { marker: 'setAltPoster(p.file_path)', why: 'pImg 48x72' },
+  { marker: 'setStatus(s)', why: 'statusBtn minHeight 48' },
+  { marker: 'setAbandonedReason(r)', why: 'hit48 box around the tag' },
+  { marker: 'setIsSpoiler(!isSpoiler)', why: 'spoilerRow minHeight 48' },
+  { marker: 'setDeskOpen(true)', why: 'deskFoot minHeight 48' },
+  { marker: 'setPhysicalMedia(opt)', why: 'hit48 box around the tag' },
+  { marker: 'toggleList(list.id)', why: 'hit48 box around the chip' },
+  { marker: 'setShowDeleteConfirm(true)', why: 'deleteBtn minHeight 48' },
+  { marker: 'setShowDeleteConfirm(false)', why: 'deleteNo minHeight 48' },
+  { marker: 'handleDelete()', why: 'deleteYes minHeight 48' },
+  { marker: 'discardDraft()', why: 'discardBtn minHeight 48' },
+  { marker: 'setStep(0)', why: 'backBtn 48x48' },
+  { marker: 'nav.back()', why: 'closeBtn minHeight 48' },
+  { marker: "nav.replace('/login')", why: 'signInBtn minHeight 48' },
+  { marker: 'onSeal()', why: 'the seal, press minHeight 48' },
+  { marker: 'setEditorialHeader(null)', why: 'stillThumb 80x48' },
+  { marker: 'setEditorialHeader(p.file_path)', why: 'stillImg 80x48' },
+  { marker: 'setDropCap(!dropCap)', why: 'spoilerRow minHeight 48' },
+  { marker: 'onPress={onPress}', why: 'the index row, idxEntry minHeight 48; and the clearance gate, minHeight 48' },
+
+  // — stated exceptions —
+  {
+    marker: 'setDate(todayStr)',
+    why: 'EXCEPTION: TODAY / YESTERDAY are date pills in a 6pt-gapped row. ' +
+      'They keep a 10pt vertical halo instead of a 48pt box because the box ' +
+      'would push the calendar a further 23pt down a section that is already ' +
+      'the longest on the page. Reach is 45 — above Apple\'s floor, below ' +
+      'Material\'s. Revisit with this section\'s design pass.',
+  },
+  { marker: 'setDate(yesterday)', why: 'EXCEPTION: YESTERDAY sits beside TODAY in the same 6pt-gapped row and is held to the same decision, for the same reason — see above.' },
+  { marker: 'setCalendarOpen(!calendarOpen)', why: 'ruledRow minHeight 48' },
+  { marker: 'setWatchedWith(watchedWith.replace', why: 'EXCEPTION: the @handle suggestions are inline text links inside a wrapping row, and both platforms exempt inline links from the floor for exactly this reason — a 48pt box per handle would break the line it belongs to.' },
+  {
+    marker: 'setAutopsy({ ...autopsy',
+    why: 'EXCEPTION: the autopsy notches are an 18pt film-strip track lifted to ' +
+      '44 by a halo. Reaching 48 by geometry would nearly triple the gauge and ' +
+      'destroy what it imitates — a design decision about the instrument, not a ' +
+      'defect. The one control on this page the rule is knowingly not applied to.',
+  },
+];
+
+describe('every touchable on this page has been decided about', () => {
+  it('the enumeration is complete — nothing is merely absent', () => {
+    const unaccounted: string[] = [];
+    let counted = 0;
+    for (const file of PAGE) {
+      const src = read(file);
+      const re = /<PressableScale/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(src))) {
+        counted++;
+        // The whole opening tag, brace- and string-aware.
+        let depth = 0, i = m.index, str: string | null = null;
+        for (; i < src.length; i++) {
+          const c = src[i];
+          if (str) { if (c === str && src[i - 1] !== '\\') str = null; continue; }
+          if (c === '"' || c === "'" || c === '`') { str = c; continue; }
+          if (c === '{') depth++;
+          else if (c === '}') depth--;
+          else if (c === '>' && depth === 0) break;
+        }
+        const tag = src.slice(m.index, i);
+        if (!ACCOUNTED.some(a => tag.includes(a.marker))) {
+          unaccounted.push(`${file}:${src.slice(0, m.index).split('\n').length}`);
+        }
+      }
+    }
+    expect(counted).toBeGreaterThan(15);   // a scanner that finds nothing proves nothing
+    expect(unaccounted).toEqual([]);
+  });
+
+  it('every exception says why, at length', () => {
+    // An exception with a thin reason is a defect wearing a label.
+    for (const a of ACCOUNTED.filter(x => x.why.startsWith('EXCEPTION'))) {
+      expect(a.why.length).toBeGreaterThan(60);
+    }
+  });
+});
 
 describe('the composer’s controls reach the floor without a halo', () => {
   for (const c of CONTROLS) {
@@ -106,8 +233,15 @@ describe('the composer’s controls reach the floor without a halo', () => {
   it('the chip is never stretched to fill its own touch box', () => {
     // A flex container defaults to align-items: stretch, which would have
     // grown the chip to 48 and undone the reason the box exists.
-    const hit = styleBody(read('src/components/log/LogModalStyles.ts'), 'listChipHit');
+    const hit = styleBody(read('src/components/log/LogModalStyles.ts'), 'hit48');
     expect(hit).toMatch(/alignItems:\s*'flex-start'/);
+  });
+
+  it('the shared box clears the floor sideways too', () => {
+    // A chip is only as wide as its label. A stack called "80s" would have been
+    // a 32pt target across, so the box states minWidth as well as minHeight.
+    const hit = styleBody(read('src/components/log/LogModalStyles.ts'), 'hit48');
+    expect(num(hit!, 'minWidth')).toBeGreaterThanOrEqual(FLOOR);
   });
 
   it('a control that reaches the floor claims no halo at all', () => {
@@ -122,6 +256,10 @@ describe('the composer’s controls reach the floor without a halo', () => {
       ['src/components/log/LogForm.tsx', 'setAltPoster(p.file_path)'],
       ['src/components/log/LogForm.tsx', 'setShowDeleteConfirm(true)'],
       ['src/components/log/LogForm.tsx', 'toggleList(list.id)'],
+      ['src/components/log/LogForm.tsx', 'setAbandonedReason(r)'],
+      ['src/components/log/LogForm.tsx', 'setPhysicalMedia(opt)'],
+      ['src/components/log/LogForm.tsx', 'setIsSpoiler(!isSpoiler)'],
+      ['src/components/log/LogForm.tsx', 'setShowDeleteConfirm(false)'],
       ['src/components/log/EditorialDesk.tsx', 'setEditorialHeader(null)'],
       ['src/components/log/EditorialDesk.tsx', 'setEditorialHeader(p.file_path)'],
     ];

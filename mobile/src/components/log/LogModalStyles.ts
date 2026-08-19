@@ -32,7 +32,7 @@ export const st = StyleSheet.create({
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 10 },
     closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, minHeight: 48 },
     closeBtnText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
-    signInBtn: { marginTop: 20, backgroundColor: colors.sepia, borderRadius: 2, paddingVertical: 14, paddingHorizontal: 28 },
+    signInBtn: { marginTop: 20, backgroundColor: colors.sepia, borderRadius: 2, paddingVertical: 14, paddingHorizontal: 28, minHeight: 48, justifyContent: 'center' },
     signInBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
 
     // Search
@@ -120,7 +120,7 @@ export const st = StyleSheet.create({
     manuscriptHeaderText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false, flexShrink: 1 },
     reviewInput: { padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment, minHeight: 170, lineHeight: 22, letterSpacing: 0.2 },
     reviewFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.12)' },
-    spoilerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    spoilerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48 },
     cbox: { width: 16, height: 16, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     cboxOn: { backgroundColor: colors.bloodReel, borderColor: colors.bloodReel },
     cboxSepia: { backgroundColor: colors.sepia, borderColor: colors.sepia },
@@ -169,10 +169,20 @@ export const st = StyleSheet.create({
      * So the pressable is 48 and the chip inside it is untouched. Identical on
      * screen, compliant in bounds, and the strip gains air rather than bulk.
      */
-    // alignItems is stated, not inherited: a flex container defaults to
-    // `stretch`, and a stretched child would have grown the chip to fill the
-    // box — undoing the whole point of putting a box around it.
-    listChipHit: { minHeight: 48, justifyContent: 'center', alignItems: 'flex-start' },
+    /**
+     * THE BOX THAT LIFTS AN ORNAMENT TO THE FLOOR.
+     *
+     * A chip, a tag, a date pill — each is deliberately small, and inflating it
+     * to 48 turns it into a button. Material ships a 32dp chip for exactly that
+     * reason and reaches the floor with a touch delegate React Native does not
+     * have, so the only lever left is the pressable's own box. Wrap the ornament
+     * in this and it is untouched on screen while its target clears 48.
+     *
+     * alignItems is stated, not inherited: a flex container defaults to
+     * `stretch`, and a stretched child would grow to fill the box — undoing the
+     * whole point of putting a box around it.
+     */
+    hit48: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignItems: 'flex-start' },
     listChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     listChipOn: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     listChipText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, maxWidth: 120, includeFontPadding: false },
@@ -184,11 +194,12 @@ export const st = StyleSheet.create({
     deleteConfirm: { ...effects.shadowPrimary, shadowColor: colors.crimson, backgroundColor: 'rgba(50,0,0,0.6)', borderWidth: 1, borderColor: colors.crimson, borderRadius: 4, padding: 20, alignItems: 'center', marginBottom: 16 },
     deleteConfirmText: { fontFamily: fonts.sub, fontSize: 11, color: colors.crimson, marginBottom: 16, textAlign: 'center' },
     deleteConfirmRow: { flexDirection: 'row', gap: 12 },
-    deleteYes: { flex: 1, backgroundColor: colors.crimson, paddingVertical: 12, borderRadius: 4, alignItems: 'center' },
-    deleteNo: { flex: 1, borderWidth: 1, borderColor: colors.ash, paddingVertical: 12, borderRadius: 4, alignItems: 'center' },
+    deleteYes: { flex: 1, backgroundColor: colors.crimson, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
+    deleteNo: { flex: 1, borderWidth: 1, borderColor: colors.ash, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
     deleteBtnLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.parchmentBright, includeFontPadding: false },
 
     // Submit — SEAL THE RECORD
+    discardBtn: { minHeight: 48, justifyContent: 'center' },
     cancelText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
     flatListGap: { gap: 8 },
     flatListGapPad: { gap: 8, paddingVertical: 4 },
@@ -251,7 +262,7 @@ export const st = StyleSheet.create({
         paddingBottom: 9, paddingTop: 2, fontFamily: fonts.body, fontSize: 14, color: colors.parchment,
     },
     ruledRow: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', minHeight: 48,
         borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.sepiaBorder, paddingBottom: 9,
     },
     ruledValue: { fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
@@ -259,7 +270,7 @@ export const st = StyleSheet.create({
     fieldLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginBottom: 9, includeFontPadding: false },
 
     // ── THE CLEARANCE GATE ───────────────────────────────────────────────────
-    gate: { alignItems: 'center', paddingTop: 16, paddingBottom: 6 },
+    gate: { alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingTop: 16, paddingBottom: 6 },
     gateSub: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.fog, marginBottom: 8, textAlign: 'center', includeFontPadding: false },
     gateCta: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, textAlign: 'center', includeFontPadding: false },
     // The instrument itself, shown but inert. `premiumLocked` above is the same

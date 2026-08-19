@@ -475,9 +475,17 @@ describe('no chip lands on its neighbour', () => {
     // "Film Print", stranded on its own line, was the hardest thing to tap.
     const gap = num(style(read(STYLES), 'tagRow'), 'gap')!;
     const src = read(FORM);
-    const slop = src.slice(src.indexOf('setPhysicalMedia(opt)')).match(/hitSlop=\{\{([^}]*)\}\}/)![1];
-    expect(Number(slop.match(/top:\s*(\d+)/)![1])).toBeLessThanOrEqual(gap / 2);
-    expect(Number(slop.match(/bottom:\s*(\d+)/)![1])).toBeLessThanOrEqual(gap / 2);
+    // The tag now sits inside a 48pt box and claims nothing — `null` is the
+    // strongest possible answer to "does it reach its neighbour", not a case to
+    // skip past. Matching only `{{...}}` would have walked on to the NEXT
+    // control's slop and judged this row by a number belonging to something else.
+    const m = src.slice(src.indexOf('setPhysicalMedia(opt)')).match(/hitSlop=\{(null|\{[^}]*\})\}/);
+    expect(m).not.toBeNull();
+    const [top, bottom] = m![1] === 'null'
+      ? [0, 0]
+      : [Number(m![1].match(/top:\s*(\d+)/)![1]), Number(m![1].match(/bottom:\s*(\d+)/)![1])];
+    expect(top).toBeLessThanOrEqual(gap / 2);
+    expect(bottom).toBeLessThanOrEqual(gap / 2);
   });
 });
 
