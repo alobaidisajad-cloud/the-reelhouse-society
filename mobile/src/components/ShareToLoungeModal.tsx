@@ -38,9 +38,28 @@ interface _LoungeMemberRow {
     lounges: LoungeRoom | null;
 }
 
+/**
+ * WHICH ROOM YOU POST IN.
+ *
+ * The rows are 6pt apart (loungeItem marginBottom) and carried the 15pt
+ * default, so each row's target reached 15pt into the next and overlapped it by
+ * 24. In an overlap the LATER row wins on both platforms — so aiming at the
+ * lower part of a lounge selected the one BELOW it, and the film went to a room
+ * you did not choose. Of everything this halo can do wrong, posting in the
+ * wrong room is the one you cannot take back.
+ *
+ * 3 is half the real gap: the two targets meet and never overlap. Sideways the
+ * rows are full width and have no neighbour, so they keep the full default.
+ *
+ * The row is ~40pt tall, still under the 48dp floor — geometry this list's
+ * design pass must raise, which no halo can do.
+ */
+const LOUNGE_SLOP = { top: 3, bottom: 3, left: 15, right: 15 } as const;
+
 const LoungeItem = React.memo(({ item, isSelected, onSelect }: { item: LoungeRoom, isSelected: boolean, onSelect: (id: string) => void }) => (
     <PressableScale
         style={[s.loungeItem, isSelected && s.loungeActive]}
+        hitSlop={LOUNGE_SLOP}
         onPress={() => onSelect(item.id)}
         disabled={isSelected}
         haptic="selection"

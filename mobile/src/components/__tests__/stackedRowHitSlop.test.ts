@@ -123,6 +123,17 @@ const RULES: Rule[] = [
     note: 'search results, searchResultsContent gap 8 — a mis-tap logs the wrong film' },
   { file: 'src/components/log/LogComments.tsx', match: 'HITSLOP_ROW', gap: { y: 0 }, style: '(the critique row)',
     note: 'critiques are flush (commentItem hairline) — a mis-press reports the wrong member' },
+
+  // ── The irreversible three, 2026-08-19 ─────────────────────────────────────
+  // Chosen first because a mis-tap on any of them does something you cannot
+  // take back: a film posted in a room you did not pick, a notice dismissed
+  // instead of opened, a member accused of the wrong thing.
+  { file: 'src/components/ShareToLoungeModal.tsx', match: 'LOUNGE_SLOP', gap: { y: 6 }, style: '(lounge rows)',
+    note: 'loungeItem marginBottom 6 — the later row wins, so the film went to the wrong room' },
+  { file: 'src/components/moderation/ReportSheet.tsx', match: 'REASON_SLOP', gap: { x: 8, y: 8 }, style: '(reason chips)',
+    note: 'reasonList gap spacing.sm = 8 — a mis-tap accuses a member of the wrong thing' },
+  { file: 'app/(modals)/notifications-modal.tsx', match: 'HITSLOP_DISMISS', gap: { x: 20, y: 20 }, style: '(dismiss, inside the row)',
+    note: 'a CHILD of the notice row: 28pt control, 10 per side reaches the 48dp floor and no further' },
 ];
 
 /**

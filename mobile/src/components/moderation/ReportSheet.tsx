@@ -86,6 +86,22 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 
 // ── ReasonChip Sub-Component ────────────────────────────────────────────────
 
+/**
+ * WHAT YOU ACCUSE SOMEONE OF.
+ *
+ * The reason chips sit 8pt apart (`reasonList` gap: spacing.sm) and carried the
+ * 15pt default, so each chip's target reached 15pt into the next and overlapped
+ * it by 22 — and in an overlap the LATER sibling wins on both platforms. Aiming
+ * at the lower edge of one reason selected the reason after it, and the report
+ * that reached the Tribunal accused a member of something the reporter never
+ * chose.
+ *
+ * 4 is half the real gap, so two chips meet without ever overlapping. The chip
+ * is ~42pt tall, so it still clears the 48dp floor with the halo (42 + 8), and
+ * it is the full width of the sheet — no neighbour sideways.
+ */
+const REASON_SLOP = { top: 4, bottom: 4, left: 4, right: 4 } as const;
+
 interface ReasonChipProps {
   reason: ReportReason;
   selected: boolean;
@@ -118,6 +134,7 @@ function ReasonChip({ reason, selected, onSelect }: ReasonChipProps) {
           selected && effects.glowSepia,
         ]}
         onPress={handlePress}
+        hitSlop={REASON_SLOP}
         pressedScale={0.98}
         accessibilityRole="radio"
         accessibilityLabel={label}

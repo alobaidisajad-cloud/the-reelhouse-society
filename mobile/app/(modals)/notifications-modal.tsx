@@ -22,7 +22,27 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 
 // ── Hoisted Constants (P2-HITSLOP FIX) ──
 const HITSLOP_15 = { top: 15, bottom: 15, left: 15, right: 15 } as const;
-const HITSLOP_20 = { top: 20, bottom: 20, left: 15, right: 15 } as const;
+/**
+ * DISMISS — a child inside a pressable row, so it takes what it claims.
+ *
+ * The button is a 12pt × with 8pt of padding: a 28pt control. It carried 20pt
+ * top and bottom and 15 at the sides, and the row (`itemWrap`) is padded by 14
+ * — so the halo reached 6pt past the row's own padding and 15pt into the
+ * notice's text. A child always beats its parent in hit testing on both
+ * platforms (RCTView hitTest walks subviews in reverse; TouchTargetHelper
+ * recurses children first), which meant pressing the lower-right of a notice
+ * DISMISSED it instead of opening it. You cannot get a dismissed notice back.
+ *
+ * 10 per side is exactly what a 28pt control needs to reach the 48dp floor,
+ * and it stays inside the row's 14pt padding, so it takes nothing that was
+ * ever the row's. Reaching the floor is the whole job; anything beyond it is
+ * theft.
+ *
+ * The control's own bounds are still 28pt, which no halo can fix — the geometry
+ * (minWidth/minHeight 48) grows the row visibly and belongs to this screen's
+ * design pass.
+ */
+const HITSLOP_DISMISS = { top: 10, bottom: 10, left: 10, right: 10 } as const;
 
 // Map notification types to icons
 const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
@@ -90,7 +110,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
         ) : null}
 
         {/* TactileEngine.warn() before dismiss for destructive-action feedback */}
-        <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_20} onPress={() => {
+        <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_DISMISS} onPress={() => {
             TactileEngine.warn();
             useNotificationStore.getState().dismiss(item.id);
         }} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss notice">
@@ -155,7 +175,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
         ) : null}
 
         {/* Dismiss button */}
-        <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_20} onPress={handleDismiss} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss grouped notice">
+        <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_DISMISS} onPress={handleDismiss} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss grouped notice">
           <X size={12} color={colors.fog} />
         </PressableScale>
       </PressableScale>
