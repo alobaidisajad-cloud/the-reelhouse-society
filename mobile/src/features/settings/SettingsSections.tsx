@@ -381,10 +381,15 @@ export function AccountSection(props: AccountSectionProps) {
           <Text style={st.recordValue} {...scaledTextProps}>@{user.username}</Text>
           <Text style={st.recordNote} {...scaledTextProps}>CHANGED IN YOUR PROFILE</Text>
         </View>
-        <View style={st.fieldWrap}>
-          <Text style={st.fieldLabel} {...scaledTextProps}>EMAIL</Text>
-          <Text style={st.recordValue} {...scaledTextProps}>{user.email}</Text>
-        </View>
+        {/* Omitted rather than shown blank. `email` is optional on the user, and
+            a label with a ruled empty line under it reads as a field that failed
+            to load. */}
+        {!!user.email && (
+          <View style={st.fieldWrap}>
+            <Text style={st.fieldLabel} {...scaledTextProps}>EMAIL</Text>
+            <Text style={st.recordValue} {...scaledTextProps}>{user.email}</Text>
+          </View>
+        )}
 
         <View style={st.fieldWrap}>
           <Text style={st.fieldLabel} {...scaledTextProps}>BIOMETRIC SECURITY</Text>
@@ -554,6 +559,10 @@ export function NotificationsSection({ control, saving }: { control: Control<Set
     <AnimatedView entering={enterDown(250)}>
       <SectionCard>
         <SectionHead icon={Bell} label="NOTIFICATIONS" />
+        {/* ABOVE the switches, not below them. If the phone will not deliver
+            anything, the member should learn that before spending time setting
+            four controls that cannot take effect — not after. */}
+        <PushPermissionNotice />
         {[
           { name: 'notifFollows' as const, label: 'New Followers', desc: 'When someone follows you' },
           { name: 'notifEndorsements' as const, label: 'Certifications', desc: 'When someone certifies your log' },
@@ -574,7 +583,6 @@ export function NotificationsSection({ control, saving }: { control: Control<Set
             />
           </View>
         ))}
-        <PushPermissionNotice />
         {/* Says what the switches govern, so nobody fears their record is being
             erased along with the banner. */}
         <Text style={st.quietLine} {...scaledTextProps}>
@@ -696,7 +704,7 @@ const st = StyleSheet.create({
 
   // Brass, not blood: nothing has gone wrong, the phone simply has not been
   // asked, or has been told no. Red would have the member hunting for a mistake.
-  permNotice: { marginHorizontal: 16, marginTop: 16, padding: 12, borderRadius: 4, backgroundColor: 'rgba(184,137,26,0.07)', borderWidth: 1, borderColor: colors.sepiaBorder },
+  permNotice: { marginHorizontal: 16, marginTop: 16, marginBottom: 4, padding: 12, borderRadius: 4, backgroundColor: 'rgba(184,137,26,0.07)', borderWidth: 1, borderColor: colors.sepiaBorder },
   permTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   permTitle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, flex: 1, includeFontPadding: false },
   permText: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, lineHeight: 16 },

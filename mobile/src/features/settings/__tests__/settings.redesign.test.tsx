@@ -239,6 +239,15 @@ describe('account', () => {
     expect(styleBody(SECTIONS, 'recordValue')).not.toMatch(/borderWidth:/);
   });
 
+  it('omits the email row rather than ruling an empty line', async () => {
+    // `email` is optional on the user. A label with a hairline under nothing
+    // reads as a field that failed to load.
+    mockUser = { ...BASE, email: undefined };
+    const r = await settle(mount());
+    expect(r.getByText('HANDLE')).toBeTruthy();
+    expect(r.queryByText('EMAIL')).toBeNull();
+  });
+
   it('the biometric switch admits all three things it does', async () => {
     // It said "for destructive actions". It also puts a vault screen in front
     // of the member's OWN Physical Archive, unannounced.
@@ -335,6 +344,16 @@ describe('notifications — four switches nobody read', () => {
     expect(r.getByLabelText('Open system settings')).toBeTruthy();
   });
 
+  it('and says it BEFORE the switches, not after', async () => {
+    // Learning that nothing can be delivered is only useful before you spend
+    // time setting four controls that cannot take effect.
+    mockPerm = 'denied';
+    const r = await settle(mount());
+    await waitFor(() => expect(r.getByText('THIS DEVICE IS WITHHOLDING ALERTS')).toBeTruthy());
+    const tree = JSON.stringify(r.toJSON());
+    expect(tree.indexOf('WITHHOLDING')).toBeLessThan(tree.indexOf('New Followers'));
+  });
+
   it('and offers to ask when it never has', async () => {
     mockPerm = 'undetermined';
     const r = await settle(mount());
@@ -360,6 +379,53 @@ describe('notifications — four switches nobody read', () => {
     const body = lib.slice(at, lib.indexOf('export async function requestPushPermission'));
     expect(body).toMatch(/getPermissionsAsync/);
     expect(body).not.toMatch(/requestPermissionsAsync/);
+  });
+});
+
+/**
+ * ── THE SEAM BETWEEN THE APP AND THE DATABASE ────────────────────────────────
+ *
+ * The switches only work because the app writes a key the `tg_notify_push`
+ * trigger reads. That contract lives in two different systems and nothing bound
+ * them together: rename `notif_endorsements` here and the switches go silently
+ * dead again, exactly as they were for the whole life of the app, with every
+ * test still green.
+ *
+ * The trigger's mapping, applied live 2026-08-20:
+ *   follow | follow_request | follow_accept  -> notif_follows
+ *   endorse | endorse_log                    -> notif_endorsements
+ *   comment | annotate                       -> notif_comments
+ *   system                                   -> notif_system
+ */
+describe('the keys the trigger reads', () => {
+  const KEYS = ['notif_follows', 'notif_endorsements', 'notif_comments', 'notif_system'] as const;
+
+  it('are the exact keys the app writes, at EVERY save path', () => {
+    // Two paths write them: the ordinary save, and the one that resumes after an
+    // emailed security code. Both must agree with the database.
+    for (const key of KEYS) {
+      const writes = (CODE_SCREEN.match(new RegExp(`${key}: data\\.`, 'g')) || []).length;
+      expect(`${key} written at ${writes} save paths`).toBe(`${key} written at 2 save paths`);
+    }
+  });
+
+  it('and the same keys are what it reads back in, at BOTH read sites', () => {
+    // Read twice: once seeding the form, once re-syncing it when the server
+    // copy changes. Requiring only ONE match let a rename at either site pass
+    // — which is how a form drifts out of step with itself.
+    for (const key of KEYS) {
+      const reads = (CODE_SCREEN.match(new RegExp(`currentPrefs\\?\\.${key}\\b`, 'g')) || []).length;
+      expect(`${key} read at ${reads} sites`).toBe(`${key} read at 2 sites`);
+    }
+  });
+
+  it('and absent means ON, at both of them', () => {
+    // A missing key must mean "deliver" on both sides of the seam. The trigger
+    // treats NULL as deliver; the form must treat it as a switch that is on.
+    for (const key of KEYS) {
+      const defaulted = (CODE_SCREEN.match(new RegExp(`currentPrefs\\?\\.${key} \\?\\? true`, 'g')) || []).length;
+      expect(`${key} defaults ON at ${defaulted} sites`).toBe(`${key} defaults ON at 2 sites`);
+    }
   });
 });
 
