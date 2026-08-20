@@ -10,8 +10,8 @@
  * that make the single column — it is read from the source instead, because
  * layout arithmetic has no rendered symptom until it is wrong on a device.
  */
-import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import React, { act } from 'react';
+import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -304,5 +304,82 @@ describe('the page is legible and reachable', () => {
     const offenders = SOURCE.split('\n')
       .filter(l => /FadeIn(Down|Up)\./.test(l) && !/reduceMotion\(ReduceMotion\.System\)/.test(l));
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('the critiques overlay', () => {
+  const openIt = async (over: Record<string, unknown> = {}) => {
+    const r = mount(over);
+    await waitFor(() => expect(r.getByText(/CRITIQUES/)).toBeTruthy());
+    const action = r.getByLabelText(/critiques?/i);
+    await act(async () => { fireEvent.press(action); });
+    return r;
+  };
+
+  it('opens over the page instead of pushing the index down', async () => {
+    // It used to render BETWEEN the description and the index, so the films a
+    // reader came for were displaced by talk about them — and at 500 reels that
+    // panel sat on top of 167 rows of posters.
+    const r = await openIt();
+    await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+    // The index is still mounted and still above it in the page.
+    expect(r.getByText(/INDEXED REELS/)).toBeTruthy();
+    expect(SOURCE).not.toMatch(/showComments && \(\s*<Animated\.View[\s\S]{0,80}commentsPanel/);
+  });
+
+  it('is NOT a Modal, so the moderation sheet cannot stack on it', () => {
+    // A critique is long-pressed to report or block, and ContentActionSheet is
+    // a real RN Modal. Modal-over-Modal is the iOS trap behind this app's
+    // park-then-travel law, so the critiques surface must not be one.
+    const overlay = SOURCE.slice(SOURCE.indexOf('══ THE CRITIQUES'), SOURCE.indexOf('SHARE TO LOUNGE MODAL'));
+    expect(overlay).toMatch(/StyleSheet\.absoluteFill/);
+    expect(overlay).not.toMatch(/<Modal/);
+  });
+
+  it('an overlay gets no back button for free, so it takes one by hand', () => {
+    expect(SOURCE).toMatch(/BackHandler\.addEventListener\('hardwareBackPress'/);
+    // Consumed, or Android would leave the page as well as the sheet.
+    const h = SOURCE.slice(SOURCE.indexOf("hardwareBackPress"));
+    expect(h.slice(0, 220)).toMatch(/return true;/);
+  });
+
+  it('the strip of page left showing is a way out', async () => {
+    const r = await openIt();
+    // TWO of them, which is the point: the ✕ and the strip of page above the
+    // sheet. Reaching for the thing behind is how most people close a surface
+    // like this, and it did nothing before.
+    await waitFor(() => expect(r.getAllByLabelText('Close critiques').length).toBeGreaterThanOrEqual(2));
+  });
+
+  it('says what it holds, in the sheet as well as on the button', async () => {
+    const r = await openIt({ critiqueCount: 12 });
+    await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+    expect(r.getAllByText('12').length).toBeGreaterThan(0);
+  });
+
+  it('invites the first critique rather than showing an empty box', async () => {
+    const r = await openIt();
+    await waitFor(() => expect(r.getByText(/Be the first to speak/)).toBeTruthy());
+  });
+
+  it('focuses the field on the way in and not on the way out', () => {
+    // It focused on close too, which summoned the keyboard for a surface that
+    // was going away.
+    const t = SOURCE.slice(SOURCE.indexOf('const handleToggleComments'));
+    expect(t.slice(0, 400)).toMatch(/if \(!prev\) setTimeout/);
+  });
+
+  it('every control in it reaches 48 by geometry', () => {
+    for (const [style, prop] of [['critiqueClose', 'height'], ['critiqueField', 'minHeight'], ['critiqueSend', 'minHeight']] as const) {
+      const body = SOURCE.slice(SOURCE.indexOf(`${style}: {`));
+      const value = Number(body.slice(0, body.indexOf('}')).match(new RegExp(`${prop}: (\\d+)`))![1]);
+      expect(value).toBeGreaterThanOrEqual(48);
+    }
+  });
+
+  it('leaves no style behind from the panel it replaced', () => {
+    for (const gone of ['commentsPanel', 'commentInputRow', 'commentInput:', 'commentSendBtn']) {
+      expect(SOURCE).not.toContain(gone);
+    }
   });
 });

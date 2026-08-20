@@ -6,8 +6,8 @@ import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MoreHorizontal, Send, Trash2, User } from 'lucide-react-native';
-import { ActivityIndicator, Alert, Platform, RefreshControl, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MoreHorizontal, Send, Trash2, User, X } from 'lucide-react-native';
+import { ActivityIndicator, Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -250,6 +250,12 @@ export default function StackDetailScreen() {
   const keyboard = useAnimatedKeyboard();
   const animatedContainerStyle = useAnimatedStyle(() => ({
     paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
+  }));
+  // The overlay is absolute, so the container's padding cannot lift it — its
+  // own foot rides the keyboard instead. Android resizes the window, so there
+  // is nothing to lift there.
+  const critiqueSheetStyle = useAnimatedStyle(() => ({
+    bottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
   }));
   const logs = useListStore(s => s.logs);
   const toggleListEndorse = useListStore(s => s.toggleListEndorse);
@@ -532,11 +538,30 @@ export default function StackDetailScreen() {
 
   const handleToggleComments = useCallback(() => {
     TactileEngine.selection();
-    setShowComments((prev) => !prev);
-    setTimeout(() => {
-      commentInputRef.current?.focus();
-    }, 100);
+    // Focus only on the way IN. This focused the field on close too, which
+    // summoned the keyboard for a surface that was going away.
+    setShowComments((prev) => {
+      if (!prev) setTimeout(() => commentInputRef.current?.focus(), 120);
+      return !prev;
+    });
   }, []);
+
+  /**
+   * An overlay is not a Modal, so it gets no back button for free.
+   *
+   * It is deliberately not a Modal: long-pressing a critique opens
+   * ContentActionSheet, which IS one, and a Modal over a Modal is the iOS trap
+   * this app already has a law about. As an overlay the moderation sheet is the
+   * only Modal on screen and nothing nests — the cost is handling this by hand.
+   */
+  React.useEffect(() => {
+    if (!showComments) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setShowComments(false);
+      return true;                       // consumed: the page stays put
+    });
+    return () => sub.remove();
+  }, [showComments]);
 
   /**
    * Moves the number on the button in step with the list beneath it.
@@ -881,48 +906,11 @@ export default function StackDetailScreen() {
                 </PressableScale>
               </Animated.View>
 
-              {showComments && (
-                <Animated.View entering={FadeInDown.duration(300).reduceMotion(ReduceMotion.System)} style={s.commentsPanel}>
-                  {(queryComments || []).length === 0 && (
-                    <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
-                  )}
-                  {(queryComments || []).map(c => (
-                    <StackCommentRow key={c.id} c={c} currentUserId={user?.id} onPressProfile={handlePressProfile} onLongPress={(comment) => {
-                      setSelectedComment(comment);
-                      setCommentActionSheetVisible(true);
-                    }} />
-                  ))}
-                  {user && (
-                    <View style={s.commentInputRow}>
-                      <TextInput
-                        ref={commentInputRef}
-                        style={s.commentInput}
-                        placeholder="File a critique..."
-                        placeholderTextColor={colors.ash}
-                        value={commentText}
-                        onChangeText={handleCommentTextChange}
-                        returnKeyType="send"
-                        onSubmitEditing={handleSubmitComment}
-                        maxLength={MAX_LENGTHS.listComment}
-                        selectionColor={colors.selection}
-                        cursorColor={colors.sepia}
-                        disableFullscreenUI={true}
-                        keyboardAppearance="dark"
-                        accessibilityLabel="Stack critique"
-                      />
-                      <PressableScale onPress={handleSubmitComment} disabled={submittingComment || !commentText.trim()} style={[s.commentSendBtn, (!commentText.trim()) && s.sendBtnDisabled]} haptic="light" accessibilityRole="button" accessibilityLabel="Submit critique">
-                        <Send size={14} color={colors.sepia} />
-                      </PressableScale>
-                    </View>
-                  )}
-                </Animated.View>
-              )}
-
-              {/* The index states its own bound. The colophon prints the TRUE
-                  size from the server while the grid renders at most
-                  STACK_ITEMS_LIMIT, so a stack past that cap would announce
-                  "620 REELS" and quietly show 500 with nothing said. Today's
-                  largest is 96 — which is exactly how a defect waits. */}
+              {/* The critiques are not here any more. They opened BETWEEN the
+                  description and the index, so the films a reader came for were
+                  pushed below a panel of unknown length — and at 500 reels that
+                  panel sat on top of 167 rows. They live in an overlay now,
+                  which is one tap away at any size and displaces nothing. */}
               <View style={s.trackRow}>
                 <Text style={s.trackLabel}>
                   INDEXED REELS{(list.filmCount ?? 0) > list.films.length ? `  ·  FIRST ${list.films.length}` : ''}
@@ -940,6 +928,82 @@ export default function StackDetailScreen() {
           </View>
         }
       />
+
+      {/* ══ THE CRITIQUES ══════════════════════════════════════════════════
+          An overlay, NOT a Modal. Long-pressing a critique opens
+          ContentActionSheet, which is a real RN Modal — and a Modal over a
+          Modal is the iOS trap that produced this app's park-then-travel law.
+          Rendered in the page instead, the moderation sheet is the only Modal
+          on screen and nothing nests. It also keeps the docked input clear of
+          the keyboard problems a Modal brings with it.
+
+          It sits below the chrome so the way out stays visible, and the strip
+          of page above it is a dimmed backdrop you can tap to leave. */}
+      {showComments && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          <PressableScale
+            style={[s.critiqueBackdrop, { height: Math.max(insets.top + 50, 70) }]}
+            onPress={handleToggleComments}
+            hitSlop={null}
+            pressedScale={1}
+            accessibilityRole="button"
+            accessibilityLabel="Close critiques"
+          />
+          <Animated.View
+            entering={FadeInUp.duration(260).reduceMotion(ReduceMotion.System)}
+            style={[s.critiqueSheet, { top: Math.max(insets.top + 50, 70) }, critiqueSheetStyle]}
+          >
+            <View style={s.critiqueHandleWrap}><View style={s.critiqueHandle} /></View>
+            <View style={s.critiqueHead}>
+              <Text style={s.critiqueTitle}>THE CRITIQUES</Text>
+              {critiqueCount !== null && (
+                <View style={s.critiqueCountChip}><Text style={s.critiqueCountText}>{critiqueCount}</Text></View>
+              )}
+              <PressableScale style={s.critiqueClose} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Close critiques">
+                <X size={16} color={colors.fog} />
+              </PressableScale>
+            </View>
+
+            <ScrollView style={s.critiqueBody} contentContainerStyle={s.critiqueBodyContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              {(queryComments || []).length === 0 ? (
+                <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
+              ) : (
+                (queryComments || []).map(c => (
+                  <StackCommentRow key={c.id} c={c} currentUserId={user?.id} onPressProfile={handlePressProfile} onLongPress={(comment) => {
+                    setSelectedComment(comment);
+                    setCommentActionSheetVisible(true);
+                  }} />
+                ))
+              )}
+            </ScrollView>
+
+            {user && (
+              <View style={[s.critiqueFoot, { paddingBottom: Platform.OS === 'ios' ? 16 : Math.max(insets.bottom, 16) }]}>
+                <TextInput
+                  ref={commentInputRef}
+                  style={s.critiqueField}
+                  placeholder="File a critique..."
+                  placeholderTextColor={colors.ash}
+                  value={commentText}
+                  onChangeText={handleCommentTextChange}
+                  returnKeyType="send"
+                  onSubmitEditing={handleSubmitComment}
+                  maxLength={MAX_LENGTHS.listComment}
+                  multiline
+                  selectionColor={colors.selection}
+                  cursorColor={colors.sepia}
+                  disableFullscreenUI={true}
+                  keyboardAppearance="dark"
+                  accessibilityLabel="Stack critique"
+                />
+                <PressableScale onPress={handleSubmitComment} disabled={submittingComment || !commentText.trim()} style={[s.critiqueSend, (!commentText.trim()) && s.sendBtnDisabled]} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Submit critique">
+                  <Send size={15} color={colors.ink} />
+                </PressableScale>
+              </View>
+            )}
+          </Animated.View>
+        </View>
+      )}
 
       {/* ── SHARE TO LOUNGE MODAL ── */}
       <ShareToLoungeModal
@@ -1088,11 +1152,6 @@ const s = StyleSheet.create({
   actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
 
   // ── Critiques Panel ──
-  commentsPanel: {
-    backgroundColor: 'rgba(10,7,3,0.8)',
-    borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)',
-    borderRadius: 6, padding: 12, marginBottom: 16,
-  },
   commentEmpty: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 12, color: colors.fog, textAlign: 'center', paddingVertical: 8, opacity: 0.7 },
   commentRow: { flexDirection: 'row', gap: 8, marginBottom: 10, alignItems: 'flex-start' },
   commentAvatar: {
@@ -1110,9 +1169,6 @@ const s = StyleSheet.create({
   // critique on the page was effectively undated. fog reads at 5.9:1.
   commentTime: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 0.5, color: colors.fog, includeFontPadding: false },
   commentBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, lineHeight: 18, marginTop: 2 },
-  commentInputRow: { flexDirection: 'row', gap: 8, marginTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.15)', paddingTop: 8 },
-  commentInput: { flex: 1, backgroundColor: 'rgba(10,7,3,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4, paddingHorizontal: 10, paddingVertical: 8, fontFamily: fonts.body, fontSize: 12, color: colors.bone },
-  commentSendBtn: { padding: 8, borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
 
   trackRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 20 },
   trackLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
@@ -1149,6 +1205,48 @@ const s = StyleSheet.create({
   filmRankFirst: { color: colors.flicker },
   filmTitleInline: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 11, lineHeight: 14, minHeight: 28, color: colors.fog, textAlign: 'center' },
   
+  /* ── THE CRITIQUES ── an overlay, so the index behind it never moves ── */
+  // The strip of page left visible above the sheet. Dimmed so the sheet reads
+  // as sitting ON the page, and tappable, because reaching for the thing behind
+  // is the most natural way anyone closes a surface like this.
+  critiqueBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: 'rgba(5,4,2,0.72)' },
+  critiqueSheet: {
+    position: 'absolute', left: 0, right: 0,
+    backgroundColor: colors.soot,
+    borderTopLeftRadius: 14, borderTopRightRadius: 14,
+    borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.28)',
+    overflow: 'hidden',
+  },
+  critiqueHandleWrap: { paddingTop: 10, alignItems: 'center' },
+  critiqueHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
+  critiqueHead: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 20, paddingRight: 8,
+    paddingTop: 14, paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.25)',
+  },
+  critiqueTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },
+  critiqueCountChip: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 1 },
+  critiqueCountText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+  // 48 by geometry, glyph hard right, so the box extends into empty chrome.
+  critiqueClose: { marginLeft: 'auto', width: 48, height: 48, alignItems: 'flex-end', justifyContent: 'center', paddingRight: 4 },
+  critiqueBody: { flex: 1 },
+  critiqueBodyContent: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 12 },
+  critiqueFoot: {
+    flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: 20, paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.25)',
+    backgroundColor: colors.ink,
+  },
+  critiqueField: {
+    flex: 1, minHeight: 48, maxHeight: 120,
+    backgroundColor: 'rgba(10,7,3,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
+    borderRadius: 4, paddingHorizontal: 12, paddingVertical: 12,
+    fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.bone,
+  },
+  critiqueSend: {
+    minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.sepia, borderRadius: 4,
+  },
+
   emptyState: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, marginBottom: 8 },
   emptySubtitle: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.fog, textAlign: 'center' },
