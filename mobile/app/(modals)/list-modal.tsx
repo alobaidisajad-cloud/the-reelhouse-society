@@ -18,6 +18,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+    AccessibilityInfo,
     InteractionManager,
     Keyboard,
     Platform,
@@ -34,6 +35,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
 import { ToastOverlay } from '@/src/components/ToastOverlay';
+import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { useBanCheck } from '@/src/hooks/useBanCheck';
 import { tmdb } from '@/src/lib/tmdb';
 import { useListStore } from '@/src/stores/films';
@@ -43,6 +45,18 @@ import { Globe, GripVertical, List, ListOrdered, Lock, Plus, Search, X } from 'l
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
+
+/**
+ * Height of the docked act, so the scroll can end above it.
+ *
+ * The bar was reserving 80pt against a real ~145 — it stood on top of the last
+ * 65pt of the form, which is the whole RANKED / UNRANKED row. Declared here,
+ * checked against the bar's own styles by a test, exactly as SEAL_BAR_HEIGHT is
+ * on the composer: two places reserve this room and neither may guess it.
+ *
+ * Everything above the safe-area inset, which the callers add separately.
+ */
+export const CURATE_BAR_HEIGHT = 104;
 
 // No hitSlop constants: every control on this page reaches 48 by its own
 // geometry now. A halo lives inside React Native's touch dispatch and is
@@ -65,7 +79,7 @@ interface SearchResult {
 }
 
  
-const ListFilmItem = React.memo(({ item, index, drag, isActive, onRemove }: { item: ListFilm, index: number | undefined, drag: () => void, isActive: boolean, onRemove: (id: number) => void }) => {
+const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove }: { item: ListFilm, index: number | undefined, drag: () => void, isActive: boolean, sealed: boolean, onRemove: (id: number) => void }) => {
     // Cache the index during active drag so the number never flashes to a hyphen.
     const lastIndex = React.useRef<number | undefined>(index);
     if (index !== undefined) {
@@ -76,18 +90,24 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, onRemove }: { it
     return (
         <ScaleDecorator>
             <PressableScale
-                onLongPress={drag}
+                onLongPress={sealed ? undefined : drag}
                 disabled={isActive}
                 style={[
                     s.filmRow,
                     s.filmRowMargin,
                     isActive ? s.filmRowActive : undefined
                 ]}
+                // The row is ~58pt tall — already well over the floor — and these
+                // rows are STACKED. PressableScale's default halo is 15pt on every
+                // side, so each row's halo reached 15pt up into the row above it,
+                // and a later sibling wins an overlap on both platforms. The
+                // bottom of every film row was firing the row BELOW it.
+                hitSlop={null}
                 haptic="light"
-                accessibilityRole="button"
-                accessibilityLabel={`Reorder ${item.title}`}
+                accessibilityRole={sealed ? 'text' : 'button'}
+                accessibilityLabel={sealed ? item.title : `Reorder ${item.title}`}
             >
-                <GripVertical size={16} color={isActive ? colors.sepia : colors.fog} style={s.gripOpacity} />
+                {!sealed && <GripVertical size={16} color={isActive ? colors.sepia : colors.fog} style={s.gripOpacity} />}
                 <View style={[s.rankWrap, isActive && s.rankWrapActive]}>
                     <Text 
                         style={[s.rankText, isActive && s.rankTextActive]} 
@@ -104,9 +124,11 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, onRemove }: { it
                     <View style={[s.filmPoster, s.filmPosterEmpty]} />
                 )}
                 <Text style={s.filmTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{item.title}</Text>
-                <PressableScale onPress={() => onRemove(item.id)} style={s.removeBtn} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel={`Remove ${item.title}`}>
-                    <X size={14} color={colors.crimson} />
-                </PressableScale>
+                {!sealed && (
+                    <PressableScale onPress={() => onRemove(item.id)} style={s.removeBtn} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel={`Remove ${item.title}`}>
+                        <X size={14} color={colors.crimson} />
+                    </PressableScale>
+                )}
             </PressableScale>
         </ScaleDecorator>
     );
@@ -114,8 +136,11 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, onRemove }: { it
 
  
 const DropdownResultRow = React.memo(({ r, onAdd }: { r: SearchResult, onAdd: (r: SearchResult) => void }) => {
+    // Same stacking trap as the film rows: a 62pt result, six of them in a
+    // column, each claiming 15pt into its neighbour. Adding the wrong film is a
+    // worse outcome than most misses on this page — it is silent.
     return (
-        <PressableScale style={s.dropRow} onPress={() => onAdd(r)} accessibilityRole="button" accessibilityLabel={`Add ${r.title ?? r.name}`}>
+        <PressableScale style={s.dropRow} onPress={() => onAdd(r)} hitSlop={null} accessibilityRole="button" accessibilityLabel={`Add ${r.title ?? r.name}`}>
             {r.poster_path ? (
                 <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={s.dropPoster} cachePolicy="memory-disk" transition={150} />
             ) : (
@@ -215,6 +240,16 @@ export default function ListModal() {
     const editTargetMissing = !!params.editId && !editList;
 
     /**
+     * ── AND THE CONTROLS MUST AGREE WITH THE SAVE ────────────────────────────
+     *
+     * Omitting the holdings keeps them safe, but it left the ✕, the grip and the
+     * search field all working on a set that would then be thrown away: every
+     * removal appeared to take, and came back on the next open. A sheet that
+     * cannot write the index must not offer to edit it.
+     */
+    const holdingsAreSealed = !!params.editId && !editTargetMissing && !holdingsAreComplete;
+
+    /**
      * ── WHAT THE ACT SAYS ────────────────────────────────────────────────────
      *
      * The button dimmed itself and explained nothing, so a member with no title
@@ -285,20 +320,44 @@ export default function ListModal() {
         return () => { active = false; clearTimeout(timeoutId); };
     }, [query, films]);
 
-    // ── Add film to list ──
+    /**
+     * ── THE HOLDINGS ARE SPOKEN, NOT ONLY SHOWN ──────────────────────────────
+     *
+     * A film joins at the BOTTOM of an index that may be hundreds of rows long,
+     * so the only sighted confirmation is the count on the docked bar. Someone
+     * who cannot see that has none at all, and `accessibilityLiveRegion` is
+     * Android-only — so it is announced outright or it is not announced on iOS.
+     *
+     * The announcement reads the CURRENT set from a ref rather than from inside
+     * the updater. A state updater must be pure: React may run it more than
+     * once, which would say the same sentence twice. The ref also keeps both
+     * callbacks identity-stable, so adding a film cannot re-render five hundred
+     * memoised rows.
+     */
+    const filmsRef = useRef(films);
+    useEffect(() => { filmsRef.current = films; }, [films]);
+
     const addFilm = useCallback((f: SearchResult) => {
-        setFilms(prev => {
-            if (prev.some(film => film.id === f.id)) return prev;
-            return [...prev, { id: f.id, title: f.title ?? f.name ?? '', poster_path: f.poster_path }];
-        });
+        const name = f.title ?? f.name ?? '';
+        const already = filmsRef.current.some(film => film.id === f.id);
+        setFilms(prev => (prev.some(film => film.id === f.id)
+            ? prev
+            : [...prev, { id: f.id, title: name, poster_path: f.poster_path }]));
         setQuery('');
         setResults([]);
+        if (!already) {
+            AccessibilityInfo.announceForAccessibility(`${name} added. ${filmsRef.current.length + 1} in the stack.`);
+        }
         TactileEngine.selection();
     }, []);
 
     // ── Remove film from list ──
     const removeFilm = useCallback((filmId: number) => {
+        const gone = filmsRef.current.find(f => f.id === filmId);
         setFilms(prev => prev.filter(f => f.id !== filmId));
+        if (gone) {
+            AccessibilityInfo.announceForAccessibility(`${gone.title} removed. ${filmsRef.current.length - 1} in the stack.`);
+        }
         TactileEngine.mutate();
     }, []);
 
@@ -368,15 +427,16 @@ export default function ListModal() {
 
     const renderFilmItem = useCallback(({ item, getIndex, drag, isActive }: RenderItemParams<ListFilm>) => {
         return (
-            <ListFilmItem 
-                item={item} 
+            <ListFilmItem
+                item={item}
                 index={getIndex()}
-                drag={drag} 
-                isActive={isActive} 
-                onRemove={removeFilm} 
+                drag={drag}
+                isActive={isActive}
+                sealed={holdingsAreSealed}
+                onRemove={removeFilm}
             />
         );
-    }, [removeFilm]);
+    }, [removeFilm, holdingsAreSealed]);
 
     const ListHeader = (
         <>
@@ -388,23 +448,23 @@ export default function ListModal() {
             {/* Header */}
             <View style={s.header}>
                 {/* It said NEW STACK while you were amending one — beside a
-                    button reading SAVE CHANGES, so the sheet contradicted
-                    itself in two places at once. A member who believes they are
+                    button reading SAVE CHANGES, so the sheet contradicted itself
+                    in two places at once. A member who believes they are
                     starting something new will fill in a form that is actually
                     about to rewrite something old.
+
+                    It names the MODE, not the stack. Naming the stack here put
+                    the same words twice within sixty points, since the plate
+                    directly below holds that title in a larger face — and the
+                    plate is the copy you can actually edit.
 
                     No shrink-to-fit: it is unreliable on Android, so the two
                     platforms disagreed about the same title. Two lines and an
                     ellipsis are honest at any width. */}
                 <View style={s.headerTitleWrap}>
-                    {editList ? (
-                        <>
-                            <Text style={s.headerLabel}>AMENDING</Text>
-                            <Text style={s.headerTitle} numberOfLines={2}>{editList.title}</Text>
-                        </>
-                    ) : (
-                        <Text style={s.headerTitle} numberOfLines={2}>Curate a Stack</Text>
-                    )}
+                    <Text style={s.headerTitle} numberOfLines={2} {...displayTextProps}>
+                        {editList ? 'Amend a Stack' : 'Curate a Stack'}
+                    </Text>
                 </View>
                 <PressableScale onPress={() => { nav.back(); }} style={s.closeBtn} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Close list modal">
                     <X size={16} color={colors.fog} />
@@ -433,72 +493,85 @@ export default function ListModal() {
                     disableFullscreenUI={true}
                     keyboardAppearance="dark"
                     accessibilityLabel="Stack title"
+                    // 26pt is already display size; uncapped, an accessibility
+                    // setting could take it past 70 and leave four words filling
+                    // the sheet.
+                    {...displayTextProps}
                 />
             </View>
 
             {/* Film Search & Add */}
             <View style={[s.sec, { marginBottom: films.length > 0 ? 12 : 0 }]}>
                 <Text style={s.label}>HOLDINGS</Text>
-                <View style={s.searchWrap}>
-                    <AnimatedSearchIcon 
-                        size={14} 
-                        animatedProps={animatedIconProps} 
-                        style={[s.searchIcon, animatedIconStyle]} 
-                    />
-                    <TextInput
-                        style={s.searchInput}
-                        placeholder="Search films to add..."
-                        placeholderTextColor={colors.fog}
-                        value={query}
-                        onChangeText={handleSearch}
-                        returnKeyType="search"
-                        selectionColor={'rgba(218,165,32,0.3)'}
-                        cursorColor={colors.sepia}
-                        disableFullscreenUI={true}
-                        autoCorrect={false}
-                        spellCheck={false}
-                        autoCapitalize="words"
-                        keyboardAppearance="dark"
-                        accessibilityLabel="Search films to add to stack"
-                    />
-                </View>
 
-                {/* Search results dropdown */}
-                {results.length > 0 && (
-                    <Animated.View entering={FadeIn.duration(150)} style={s.dropdown}>
-                        {results.map(r => (
-                            <DropdownResultRow key={r.id} r={r} onAdd={addFilm} />
-                        ))}
-                    </Animated.View>
+                {/* Held back only while the index cannot be written. Live
+                    controls over holdings that will be discarded are worse than
+                    no controls: every removal would appear to take and then
+                    quietly return. */}
+                {holdingsAreSealed ? (
+                    // In the search field's own place, so the section reads the
+                    // same either way: label, then the thing you may do here.
+                    <View style={s.lockNote}>
+                        <Text style={s.lockNoteText} {...scaledTextProps}>
+                            THIS INDEX IS LARGER THAN THIS SHEET CAN HOLD{typeof trueFilmCount === 'number' ? ` — ${trueFilmCount} REELS` : ''}.{'\n'}
+                            THE NAME, NOTE AND TERMS CAN BE AMENDED HERE; THE HOLDINGS ARE KEPT EXACTLY AS THEY STAND.
+                        </Text>
+                    </View>
+                ) : (
+                    <>
+                        <View style={s.searchWrap}>
+                            <AnimatedSearchIcon
+                                size={14}
+                                animatedProps={animatedIconProps}
+                                style={[s.searchIcon, animatedIconStyle]}
+                            />
+                            <TextInput
+                                style={s.searchInput}
+                                placeholder="Search films to add..."
+                                placeholderTextColor={colors.fog}
+                                value={query}
+                                onChangeText={handleSearch}
+                                returnKeyType="search"
+                                selectionColor={'rgba(218,165,32,0.3)'}
+                                cursorColor={colors.sepia}
+                                disableFullscreenUI={true}
+                                autoCorrect={false}
+                                spellCheck={false}
+                                autoCapitalize="words"
+                                keyboardAppearance="dark"
+                                accessibilityLabel="Search films to add to stack"
+                            />
+                        </View>
+
+                        {/* Search results dropdown */}
+                        {results.length > 0 && (
+                            <Animated.View entering={FadeIn.duration(150)} style={s.dropdown}>
+                                {results.map(r => (
+                                    <DropdownResultRow key={r.id} r={r} onAdd={addFilm} />
+                                ))}
+                            </Animated.View>
+                        )}
+                    </>
                 )}
             </View>
+
+            {/* ── A caption about the index belongs ABOVE the index ───────────
+                It was beneath it, so on a stack of any size you met the caption
+                after scrolling past the thing it was describing.
+
+                Said once there is an ORDER to speak of — a single reel has none
+                — and never before. The order is written to rank_position for
+                every stack, ranked or not: "unranked" means unnumbered, not
+                unordered, and nothing here ever said so while the grip sat in
+                the row in both modes. */}
+            {!holdingsAreSealed && films.length > 1 && (
+                <Text style={s.dragLine} {...scaledTextProps}>DRAG TO ORDER  ·  THE ORDER IS KEPT EITHER WAY</Text>
+            )}
         </>
     );
 
     const ListFooter = (
         <>
-            {/* The holdings are not ours to rewrite unless we hold all of them.
-                `films: []` is a real instruction — both the direct write and the
-                offline replay read it as the curator having emptied the stack —
-                so when the set is short the note and terms still save and the
-                index is left exactly as it stands. */}
-            {!!params.editId && !holdingsAreComplete && !editTargetMissing && (
-                <View style={s.lockNote}>
-                    <Text style={s.lockNoteText}>
-                        THE FULL INDEX IS STILL ARRIVING{typeof trueFilmCount === 'number' ? ` — ${films.length} OF ${trueFilmCount} REELS` : ''}.{'\n'}
-                        THE NOTE AND TERMS CAN BE SAVED NOW; THE HOLDINGS STAY AS THEY ARE.
-                    </Text>
-                </View>
-            )}
-
-            {/* Said once there is something to drag, and never before. The order
-                is written to rank_position for EVERY stack — "unranked" means
-                unnumbered, not unordered — and nothing here ever said so while
-                the grip sat in the row in both modes. */}
-            {films.length > 0 && (
-                <Text style={s.dragLine}>DRAG TO ORDER  ·  THE ORDER IS KEPT EITHER WAY</Text>
-            )}
-
             {/* Description */}
             <View style={s.sec}>
                 {/* (OPTIONAL) spent three words on a signal the docked bar
@@ -608,7 +681,7 @@ export default function ListModal() {
                 // your stack." The search field is its own instruction.
                 ListEmptyComponent={null}
                 ListFooterComponent={ListFooter}
-                contentContainerStyle={[s.scrollPad, { paddingBottom: Math.max(insets.bottom, 20) + 80 }]}
+                contentContainerStyle={{ paddingBottom: insets.bottom + CURATE_BAR_HEIGHT + 16 }}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 containerStyle={s.containerFlex}
@@ -622,8 +695,8 @@ export default function ListModal() {
                 law as the composer's seal: a control that refuses must say why,
                 and the act a page exists for should never be somewhere you have
                 to go and find. */}
-            <View style={[s.bar, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
-                <Text style={s.barLine} numberOfLines={1}>{barLine}</Text>
+            <View style={[s.bar, { paddingBottom: insets.bottom + 14 }]}>
+                <Text style={s.barLine} numberOfLines={1} {...scaledTextProps}>{barLine}</Text>
                 <PressableScale
                     style={[s.barPress, !canFile && s.barDim]}
                     onPress={handleSave}
@@ -640,9 +713,10 @@ export default function ListModal() {
                 >
                     <Text style={s.barPressText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{fileLabel}</Text>
                 </PressableScale>
-                <PressableScale style={s.barCancel} onPress={() => nav.back()} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Cancel">
-                    <Text style={s.barCancelText}>CANCEL</Text>
-                </PressableScale>
+                {/* No CANCEL. The way out is CLOSE, top-right, where a sheet's
+                    dismissal lives — and the sheet still pulls down. A second
+                    one here cost 48pt of a bar that was already standing on the
+                    form, and gave the page two names for one act. */}
             </View>
         </Animated.View>
     );
@@ -658,7 +732,6 @@ const s = StyleSheet.create({
         borderBottomWidth: 1, borderBottomColor: colors.ash,
     },
     headerTitleWrap: { flex: 1, paddingRight: 12 },
-    headerLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 4, includeFontPadding: false },
     headerTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, color: colors.parchment },
     // 48 by geometry. A halo is invisible to both platforms' accessibility
     // layers, so only the box itself answers "is this big enough".
@@ -750,9 +823,12 @@ const s = StyleSheet.create({
     // unnumbered, not unordered — and nothing on this page ever said so while
     // the grip sat there in both modes.
     dragLine: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.fog, opacity: 0.8, paddingHorizontal: 20, marginTop: 14, marginBottom: 8, includeFontPadding: false },
+    // Brass, not blood. Nothing has gone wrong here — a very large index simply
+    // cannot be rewritten from a sheet, which is a house rule, not an error. Red
+    // would have the member hunting for the mistake they had made.
     lockNote: {
-        marginHorizontal: 20, marginTop: 12, padding: 12, borderRadius: 4,
-        backgroundColor: 'rgba(180,45,45,0.08)', borderWidth: 1, borderColor: 'rgba(180,45,45,0.3)',
+        padding: 12, borderRadius: 4,
+        backgroundColor: 'rgba(184,137,26,0.07)', borderWidth: 1, borderColor: colors.sepiaBorder,
     },
     lockNoteText: { fontFamily: fonts.sub, fontSize: 9, lineHeight: 15, letterSpacing: 0.6, color: colors.bone, includeFontPadding: false },
 
@@ -791,11 +867,8 @@ const s = StyleSheet.create({
     barPressText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.ink, includeFontPadding: false },
     barDim: { opacity: 0.42 },
     // A way out should not carry the weight of the act it sits beside.
-    barCancel: { alignSelf: 'center', minHeight: 48, justifyContent: 'center', paddingHorizontal: 16 },
-    barCancelText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
 
     // Extracted
-    scrollPad: { paddingBottom: 60 },
     searchIcon: { position: 'absolute', left: 12, top: 13, zIndex: 1 },
     dropFlex: { flex: 1 },
     descInput: { minHeight: 72 },

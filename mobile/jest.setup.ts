@@ -3,12 +3,27 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Mock AccessibilityInfo (used by stores for announceForAccessibility)
-jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => ({
+//
+// It MUST carry a `default`. React Native's index.js reads this module as
+// `require(…/AccessibilityInfo).default` (index.js:153-156), so a mock without
+// one makes `import { AccessibilityInfo } from 'react-native'` resolve to
+// **undefined** — and every component that announces something throws the
+// instant a test renders that path. The same class of gap as the missing
+// `ReduceMotion` and `Extrapolation` below: invisible until the first test
+// mounts the code that needs it, which for ActivityCard's two announcements had
+// never happened. Purely additive; the named exports stay for anyone importing
+// the module path directly.
+const mockAccessibilityInfo = {
   announceForAccessibility: jest.fn(),
   isReduceMotionEnabled: jest.fn().mockResolvedValue(false),
   addEventListener: jest.fn(() => ({ remove: jest.fn() })),
   isBoldTextEnabled: jest.fn().mockResolvedValue(false),
   isScreenReaderEnabled: jest.fn().mockResolvedValue(false),
+};
+jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => ({
+  __esModule: true,
+  ...mockAccessibilityInfo,
+  default: mockAccessibilityInfo,
 }));
 
 // Also make it available on the RN mock
