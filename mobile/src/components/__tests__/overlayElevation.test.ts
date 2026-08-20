@@ -34,6 +34,14 @@ const OVERLAY = /(Fade|Scrim|Overlay|Veil)$/;
  * is unnecessary. Do not add to this list without looking at the siblings.
  */
 const EXEMPT: Record<string, string> = {
+    // VERIFIED in the Stacks pass, 2026-08-20. app/stacks/[id].tsx declares NO
+    // elevation anywhere — grep it — and navScrim's only sibling inside navBar
+    // is navInner, the row holding the back arrow and the owner's actions.
+    // Neither is elevated, so paint order falls through to JSX order: the scrim
+    // is written first and the controls sit on top of it, which is the whole
+    // point. Elevating it would raise the ground above the things standing on
+    // it — the same reason the composer's chromeScrim is exempt below.
+    navScrim: 'a backdrop, and its only sibling is the button row it sits behind',
     joinedNameOverlay: 'sits among images and gradients inside the salon card — no elevated sibling',
     videoPlayOverlay: 'nothing in FilmMediaCarousel declares an elevation',
     topFade: 'nothing in ProfileBackdrop declares an elevation',

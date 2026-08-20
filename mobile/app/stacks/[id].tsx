@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MoreHorizontal, Send, Trash2, User } from 'lucide-react-native';
 import { ActivityIndicator, Alert, Platform, RefreshControl, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeInDown, FadeInUp, interpolate, useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
@@ -127,8 +127,11 @@ const StackDetailFilmCard = React.memo(({
   itemWidth: number;
   itemHeight: number;
 }) => {
-  // The podium touch: in a ranked stack, only #1 earns metal — a brass
-  // numeral and a hairline brass frame. Everyone else stays parchment.
+  // The podium touch: in a ranked stack only #1 earns metal — a hairline brass
+  // frame on the card, and its numeral in candlelight rather than brass. The
+  // numeral itself sits in the caption now; it used to be stamped 28pt across
+  // the bottom of the artwork under a gradient, which covered the one thing a
+  // reader opened the page to look at.
   const isFirst = isRanked && index === 0;
   return (
     <Animated.View entering={index < 15 ? FadeInUp.duration(400).delay(index * 30) : undefined} style={[s.filmItem, { width: itemWidth }]}>
@@ -156,19 +159,74 @@ const StackDetailFilmCard = React.memo(({
             <CheckCircle2 size={12} color={colors.sepia} />
           </View>
         )}
-        {isRanked && (
-          <View style={s.rankBadgeWrap}>
-            <LinearGradient
-              colors={['transparent', 'rgba(10,7,3,0.8)', 'rgba(5,4,2,0.95)']}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <Text style={[s.rankNumber, isFirst && s.rankNumberFirst]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{index + 1}</Text>
-          </View>
-        )}
       </PressableScale>
-      <Text style={s.filmTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{item.title}</Text>
+      {isRanked ? (
+        <View style={s.filmCaptionRow}>
+          <Text style={[s.filmRank, isFirst && s.filmRankFirst]}>{index + 1}</Text>
+          <Text style={s.filmTitleInline} numberOfLines={2}>{item.title}</Text>
+        </View>
+      ) : (
+        <Text style={s.filmTitle} numberOfLines={2}>{item.title}</Text>
+      )}
     </Animated.View>
   );
+});
+
+/**
+ * THE CHROME, WITH A GROUND.
+ *
+ * There were three of these — loading, unreachable, and the stack itself — and
+ * they had drifted apart. The loading one carried no safe-area padding and no
+ * height at all, so the way back sat under the notch for as long as the fetch
+ * took. One component now, so a fix cannot land on two screens out of three.
+ *
+ * ── A BLUR IS NOT A SCRIM ───────────────────────────────────────────────────
+ * The only thing behind this chrome used to be a blur whose opacity ramped from
+ * zero. Two things follow from that, and both were visible on a real phone:
+ * near-black content blurred against near-black chrome separates almost
+ * nothing, so the page read straight through beneath the clock; and at the top
+ * of the page the ramp is still at 0, so the back arrow sat on bare artwork.
+ *
+ * The gradient is the mechanism now and the blur is a bonus, which is also the
+ * law this page is held to: NO PLATFORM-SPECIFIC EFFECT MAY BE THE ONLY
+ * MECHANISM. expo-blur is strong on iOS and weak on Android; a gradient renders
+ * identically on both. So the page is correct everywhere and lovelier on iOS,
+ * instead of resting on something one platform does badly.
+ *
+ * The scrim overhangs the bar by 44pt and fades to nothing, so the chrome
+ * dissolves into the film rather than sitting on it behind a ruled edge — the
+ * hairline border this used to carry is gone with it.
+ */
+const StackNav = React.memo(function StackNav({
+    topInset, onBack, blurStyle, children,
+}: {
+    topInset: number;
+    onBack: () => void;
+    /** Scroll-driven blur, on iOS only. Omitted on the loading and error screens. */
+    blurStyle?: any;
+    children?: React.ReactNode;
+}) {
+    const height = Math.max(topInset + 50, 70);
+    return (
+        <View style={[s.navBar, { height, paddingTop: topInset }]} pointerEvents="box-none">
+            <View style={[s.navScrim, { height: height + 44 }]} pointerEvents="none">
+                <LinearGradient
+                    colors={['rgba(10,7,3,0.92)', 'rgba(10,7,3,0.78)', 'rgba(10,7,3,0.34)', 'rgba(10,7,3,0)']}
+                    locations={[0, 0.46, 0.78, 1]}
+                    style={StyleSheet.absoluteFillObject}
+                />
+                {Platform.OS === 'ios' && blurStyle && (
+                    <AnimatedBlurView intensity={80} tint="dark" style={[StyleSheet.absoluteFill, blurStyle]} />
+                )}
+            </View>
+            <View style={s.navInner}>
+                <PressableScale onPress={onBack} style={s.backBtn} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Go back">
+                    <ArrowLeft size={20} color={colors.bone} />
+                </PressableScale>
+                {children ?? <View />}
+            </View>
+        </View>
+    );
 });
 
 export default function StackDetailScreen() {
@@ -194,9 +252,19 @@ export default function StackDetailScreen() {
   const deleteList = useListStore(s => s.deleteList);
   const isCertified = useListStore(s => !!s._listEndorsedIndex[id]);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const ITEM_WIDTH = (windowWidth - 32 - 16) / 3;
+  const ITEM_WIDTH = (windowWidth - 18 - 42) / 3;   // 9*2 page + 7*2 per cell x3
   const ITEM_HEIGHT = ITEM_WIDTH * 1.5;
-  const HEADER_HEIGHT = windowHeight * 0.45;
+  /**
+   * The hero is measured from the safe area, not from the phone.
+   *
+   * It was windowHeight * 0.45, so the title landed 204pt below the notch on a
+   * 852pt phone and 120pt lower on a 932pt one — the page's first impression
+   * changed with the hardware. Anchored to the inset it is the same picture
+   * everywhere, with a floor and a ceiling so a small phone is not swallowed by
+   * its own header.
+   */
+  const HEADER_HEIGHT = insets.top + Math.min(320, Math.max(236, windowHeight * 0.38));
+
 
   // ── React Query: MMKV-cached stack detail (instant revisits & offline fallback) ──
   const { data: stackQueryData, isLoading: stackQueryLoading, isError } = useQuery({
@@ -285,6 +353,31 @@ export default function StackDetailScreen() {
 
   const list = stackQueryData?.list ?? null;
   const loading = stackQueryLoading;
+
+  /**
+   * THE TITLE IS SET, NOT SQUEEZED.
+   *
+   * A stack title may be 100 characters (MAX_LENGTHS.listTitle). Rye at 36pt
+   * fits about 14 per line here, so numberOfLines={3} held roughly 42 — and
+   * "WHEN THE MIND BECOMES THE MONSTER" is 33, which means the sample title was
+   * already at the edge and anything longer was cut with an ellipsis.
+   *
+   * adjustsFontSizeToFit is not the answer: it is unreliable multiline on
+   * Android, so the two platforms would disagree about the same title. This is
+   * the editorial answer instead — a longer title is SET SMALLER, the way a
+   * catalogue sets one, in three deterministic steps computed from the real
+   * measured width. Identical on both platforms, and it cannot truncate: the
+   * smallest step holds 100 characters on a 360dp screen with a line to spare.
+   */
+  const titleType = React.useMemo(() => {
+    const width = windowWidth - 32;                    // one column, 16 each side
+    const capacity = (size: number, lines: number) => (width / (size * 0.723)) * lines;
+    const len = (list?.title?.length ?? 0);
+    if (len <= capacity(36, 3)) return { fontSize: 36, lineHeight: 40, numberOfLines: 3 };
+    if (len <= capacity(30, 4)) return { fontSize: 30, lineHeight: 34, numberOfLines: 4 };
+    return { fontSize: 24, lineHeight: 28, numberOfLines: 6 };
+  }, [windowWidth, list?.title]);
+
   const [isCertifying, setIsCertifying] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -568,11 +661,7 @@ export default function StackDetailScreen() {
   if (loading) {
     return (
       <View style={s.container}>
-        <View style={[s.navBar, { zIndex: 10 }]}>
-          <PressableScale onPress={() => router.back()} style={s.backBtn} haptic="light" accessibilityLabel="Go back">
-            <ArrowLeft size={20} color={colors.bone} />
-          </PressableScale>
-        </View>
+        <StackNav topInset={insets.top} onBack={() => router.back()} />
         <View style={s.loadingCenter}>
           <ActivityIndicator size="large" color={colors.sepia} />
         </View>
@@ -585,11 +674,7 @@ export default function StackDetailScreen() {
   if (isError || !list || (list.isPrivate && !isOwner)) {
     return (
       <View style={s.container}>
-        <View style={[s.navBar, { zIndex: 10, paddingTop: insets.top, height: Math.max(insets.top + 50, 70) }]}>
-          <PressableScale onPress={() => router.back()} style={s.backBtn} haptic="light" accessibilityLabel="Go back">
-            <ArrowLeft size={20} color={colors.bone} />
-          </PressableScale>
-        </View>
+        <StackNav topInset={insets.top} onBack={() => router.back()} />
         <View style={s.loadingCenter}>
           <Text style={s.title}>CLASSIFIED</Text>
           <Text style={[s.desc, { textAlign: 'center', marginTop: 12 }]}>This stack could not be retrieved.{'\n'}It may be sealed or incinerated.</Text>
@@ -603,43 +688,45 @@ export default function StackDetailScreen() {
 
 
 
-  const heroPoster = list.films.length > 0 && list.films[0].poster_path 
-    ? tmdb.poster(list.films[0].poster_path, 'w780') 
-    : null;
+  /**
+   * The first film that HAS artwork — not simply the first film.
+   *
+   * This read films[0].poster_path, so a stack whose opening entry happened to
+   * have no poster lost its entire hero even when the other ten did. One
+   * missing image should never flatten the page.
+   */
+  const heroPoster = (() => {
+    const withArt = list.films.find(f => !!f.poster_path);
+    return withArt ? tmdb.poster(withArt.poster_path!, 'w780') : null;
+  })();
 
   return (
     <Animated.View style={[s.container, animatedContainerStyle]}>
       {/* Absolute Dynamic Nav Bar */}
-      <View style={[s.navBar, { height: Math.max(insets.top + 50, 70), paddingTop: insets.top }]}>
-        <AnimatedBlurView intensity={80} tint="dark" style={[StyleSheet.absoluteFill, navBlurStyle]} />
-        <View style={s.navInner}>
-          <PressableScale onPress={() => router.back()} style={s.backBtn} hitSlop={{top: 20, bottom: 20, left: 20, right: 20}} haptic="light" accessibilityLabel="Go back">
-            <ArrowLeft size={20} color={colors.bone} />
-          </PressableScale>
-          {isOwner && (
-            <View style={s.headerActions}>
-              <PressableScale style={s.actionBtn} onPress={() => { (router.push as any)({ pathname: '/list-modal', params: { editId: id } } as import('expo-router').Href); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" accessibilityLabel="Edit stack">
-                <Edit3 size={18} color={colors.fog} />
-              </PressableScale>
-              <PressableScale style={s.actionBtn} onPress={handleDelete} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" accessibilityLabel="Delete stack">
-                <Trash2 size={18} color={colors.crimson} />
-              </PressableScale>
-            </View>
-          )}
-          {!isOwner && (
-            <PressableScale
-              style={s.moreBtn}
-              onPress={() => setActionSheetVisible(true)}
-              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              haptic="selection"
-              pressedScale={0.92}
-              accessibilityLabel="More options for this stack"
-            >
-              <MoreHorizontal size={16} color={colors.fog} strokeWidth={1.5} />
+      <StackNav topInset={insets.top} onBack={() => router.back()} blurStyle={navBlurStyle}>
+        {isOwner ? (
+          <View style={s.headerActions}>
+            <PressableScale style={s.actionBtn} onPress={() => { (router.push as any)({ pathname: '/list-modal', params: { editId: id } } as import('expo-router').Href); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Edit stack">
+              <Edit3 size={18} color={colors.fog} />
             </PressableScale>
-          )}
-        </View>
-      </View>
+            <PressableScale style={s.actionBtn} onPress={handleDelete} hitSlop={null} haptic="medium" accessibilityRole="button" accessibilityLabel="Delete stack">
+              <Trash2 size={18} color={colors.crimson} />
+            </PressableScale>
+          </View>
+        ) : (
+          <PressableScale
+            style={s.moreBtn}
+            onPress={() => setActionSheetVisible(true)}
+            hitSlop={null}
+            haptic="selection"
+            pressedScale={0.92}
+            accessibilityRole="button"
+            accessibilityLabel="More options for this stack"
+          >
+            <MoreHorizontal size={16} color={colors.fog} strokeWidth={1.5} />
+          </PressableScale>
+        )}
+      </StackNav>
 
       <CinematicFlashList
         data={list.films}
@@ -668,24 +755,36 @@ export default function StackDetailScreen() {
 
             {/* Content Overlaid on Header */}
             <View style={[s.headerContentWrap, { marginTop: HEADER_HEIGHT - 120 }]}>
+              {/* No eyebrow. "FROM THE STACKS" labelled a page that is
+                  unmistakably a stack, and it was the first of eight rows
+                  before any content on the page most guilty of chrome. A
+                  catalogue does not print its own category above its title. */}
 
-              <Animated.Text entering={FadeInDown.duration(600).delay(80)} style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-                ✦&nbsp; FROM THE STACKS &nbsp;✦
-              </Animated.Text>
-
-              <Animated.Text entering={FadeInDown.duration(600).delay(100)} style={s.title} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>
+              <Animated.Text
+                entering={FadeInDown.duration(600).delay(100).reduceMotion(ReduceMotion.System)}
+                style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]}
+                numberOfLines={titleType.numberOfLines}
+              >
                 {list.title.toUpperCase()}
               </Animated.Text>
 
               {/* Colophon — curator (tappable) · reel count · curation date · chips.
                   flexWrap lets long names push the chips to a second line, never cramping. */}
-              <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.metaRow}>
+              {/* ONE LINE OF TYPE, not four flex items that wrap.
+                  Each fragment used to be its own <Text> inside a wrapping row,
+                  so "· EST. MARCH 2026" could fall to the next line carrying its
+                  separator — a line that begins with a middle dot. Nested Text
+                  wraps as prose instead, and the separators belong to the words
+                  before them. The chips stay their own elements: they are
+                  objects, not punctuation. */}
+              <Animated.View entering={FadeInDown.duration(600).delay(200).reduceMotion(ReduceMotion.System)} style={s.metaRow}>
                 <View style={s.metaDiamond} />
-                <PressableScale onPress={() => handlePressProfile(list.user)} haptic="light" style={{ flexShrink: 1 }} accessibilityRole="link" accessibilityLabel={`View curator @${list.user}`}>
-                  <Text style={s.metaCurator} numberOfLines={1}>@{list.user.toUpperCase()}</Text>
-                </PressableScale>
-                <Text style={s.metaText}>· {(list.filmCount ?? list.films.length)} {(list.filmCount ?? list.films.length) === 1 ? 'REEL' : 'REELS'}</Text>
-                {estDate && <Text style={s.metaText}>· EST. {estDate.toUpperCase()}</Text>}
+                <Text style={s.metaText} numberOfLines={2}>
+                  <Text style={s.metaCurator} onPress={() => handlePressProfile(list.user)} suppressHighlighting accessibilityRole="link" accessibilityLabel={`View curator @${list.user}`}>@{list.user.toUpperCase()}</Text>
+                  <Text style={s.metaSep}>{'  ·  '}</Text>
+                  {(list.filmCount ?? list.films.length)} {(list.filmCount ?? list.films.length) === 1 ? 'REEL' : 'REELS'}
+                  {estDate ? <><Text style={s.metaSep}>{'  ·  '}</Text>EST. {estDate.toUpperCase()}</> : null}
+                </Text>
                 {list.isRanked && (
                   <View style={s.metaChip}><Text style={s.metaChipText}>✦ RANKED</Text></View>
                 )}
@@ -874,27 +973,44 @@ export default function StackDetailScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
-  navBar: {
-    position: 'absolute', top: 0, left: 0, right: 0,
-    zIndex: 100, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.05)',
-  },
+  // No border: the scrim below fades out instead of ending on a ruled line, so
+  // the chrome dissolves into the film rather than sitting on top of it.
+  navBar: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 },
+  // Overhangs the bar so the gradient has room to reach zero past the chrome.
+  navScrim: { position: 'absolute', top: 0, left: 0, right: 0 },
   navInner: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
-  backBtn: { padding: 8, marginLeft: -8 },
+  // 48 by geometry, and the glyph stays hard left so it does not move: the box
+  // simply extends into empty chrome. A halo could not have done this — neither
+  // platform's accessibility layer can see one.
+  backBtn: { width: 48, height: 48, marginLeft: -14, alignItems: 'flex-start', justifyContent: 'center' },
   headerActions: { flexDirection: 'row', gap: 12 },
-  actionBtn: { padding: 8 },
-  moreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 8, marginLeft: 8 },
+  actionBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  moreBtn: { width: 48, height: 48, alignItems: 'flex-end', justifyContent: 'center', marginRight: -10 },
 
-  scrollContent: { paddingBottom: 60, paddingHorizontal: 12 },
-  parallaxHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: -1 },
-  headerContentWrap: { paddingHorizontal: 16, paddingBottom: 24 },
-  
-  eyebrow: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3.5, color: colors.sepia, marginBottom: 8, textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  /**
+   * ONE COLUMN.
+   *
+   * The scroll held 12 and the hero wrap added 16, so the title began 28pt in
+   * while the posters began at 16 — two left edges on one page, which is most
+   * of why it read as assembled rather than designed.
+   *
+   * The arithmetic, stated once: 9 here + 7 on each cell = a 16pt page margin,
+   * and 7 + 7 = a 14pt gutter between cells. The hero wrap adds the same 7, so
+   * the title starts exactly where the posters do. Change any one of these
+   * three numbers and the column breaks.
+   */
+  scrollContent: { paddingBottom: 60, paddingHorizontal: 9 },
+  parallaxHeader: { position: 'absolute', top: 0, left: 0, right: 0 },
+  headerContentWrap: { paddingHorizontal: 7, paddingBottom: 24 },
   title: { fontFamily: fonts.display, fontSize: 36, color: colors.parchment, lineHeight: 40, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
-  // Colophon — wraps so long curator names push chips to a second line, never cramping.
+  // The colophon is ONE Text now, so the curator, the count and the date wrap
+  // as prose and a separator can never begin a line. The row still wraps, but
+  // only to let the chips fall below — they are objects, not punctuation.
   metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 7, rowGap: 6, marginTop: 16, marginBottom: 16 },
   metaDiamond: { width: 5, height: 5, backgroundColor: colors.sepia, transform: [{ rotate: '45deg' }] },
   metaCurator: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.parchment, textDecorationLine: 'underline', textDecorationColor: colors.sepiaBorder },
-  metaText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
+  metaText: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 10, lineHeight: 16, letterSpacing: 1.5, color: colors.fog },
+  metaSep: { color: colors.sepia },
   metaChip: { flexDirection: 'row', alignItems: 'center', gap: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
   metaChipText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
   // The epigraph — prose wears Courier italic, folded past four lines.
@@ -941,18 +1057,36 @@ const s = StyleSheet.create({
   trackLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
   trackLine: { flex: 1, height: 1 },
   
-  filmItem: { marginBottom: 24, marginHorizontal: 4 },
+  // The gutters disagreed — 8 across, 24 down — so the sheet read tight
+  // sideways and loose downward. They are one number now, and the row gap lives
+  // on the item so FlashList still measures a whole cell.
+  filmItem: { marginBottom: 14, marginHorizontal: 7 },
   filmCard: { borderRadius: 2, overflow: 'hidden', backgroundColor: colors.soot, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.1)' },
   // The podium frame — only #1 of a ranked stack earns the brass hairline.
   filmCardFirst: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)' },
   posterPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 },
   placeholderText: { fontFamily: fonts.sub, fontSize: 10, color: colors.ash, textAlign: 'center' },
   loggedBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(10,7,3,0.75)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)' },
-  filmTitle: { fontFamily: fonts.sub, fontSize: 11, color: colors.fog, marginTop: 6, textAlign: 'center', paddingHorizontal: 2 },
-
-  rankBadgeWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, justifyContent: 'flex-end', paddingBottom: 6, paddingLeft: 8, paddingRight: 8 },
-  rankNumber: { fontFamily: fonts.display, fontSize: 28, color: colors.parchment, lineHeight: 28, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 },
-  rankNumberFirst: { color: colors.sepia },
+  /**
+   * A CAPTION BOX, not a caption.
+   *
+   * numberOfLines={2} with no reserved height meant a one-line title made a
+   * short cell and a two-line title a tall one, so the rows stopped sharing a
+   * baseline and the index rippled. minHeight is two lines of its own
+   * lineHeight — computed, not typed — so it still grows rather than clips when
+   * the reader enlarges text.
+   */
+  filmTitle: {
+    fontFamily: fonts.sub, fontSize: 11, lineHeight: 14, minHeight: 28,
+    color: colors.fog, marginTop: 8, textAlign: 'center', paddingHorizontal: 2,
+  },
+  // The rank, off the artwork and into the catalogue line. A 28pt numeral under
+  // a gradient covered the bottom of every poster to say what one line of type
+  // says better — and the poster is the thing a reader came to look at.
+  filmCaptionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 5, marginTop: 8 },
+  filmRank: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
+  filmRankFirst: { color: colors.flicker },
+  filmTitleInline: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 11, lineHeight: 14, minHeight: 28, color: colors.fog, textAlign: 'center' },
   
   emptyState: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, marginBottom: 8 },
