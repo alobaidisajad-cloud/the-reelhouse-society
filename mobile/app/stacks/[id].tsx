@@ -407,7 +407,21 @@ export default function StackDetailScreen() {
   // a READ MORE fold. The toggle shows on a deterministic length threshold —
   // no platform-dependent line measurement, so it behaves identically everywhere.
   const [descExpanded, setDescExpanded] = useState(false);
+  /**
+   * The fold is measured PER DESCRIPTION, not once per mount.
+   *
+   * Pull-to-refresh invalidates the stack on this same screen, so a curator can
+   * edit the epigraph and have the new text arrive without anything
+   * remounting. Measuring once would leave the fold decided by words that are
+   * no longer there — READ MORE offered on two lines, or a long description
+   * silently cut with no way to open it. Which is the defect this measurement
+   * exists to prevent, arriving through a different door.
+   *
+   * Holding the text it measured, rather than a boolean, means the answer is
+   * only ever trusted for the text it was an answer about.
+   */
   const [descLineCount, setDescLineCount] = useState(0);
+  const [measuredFor, setMeasuredFor] = useState<string | null>(null);
   /**
    * ONE source of truth. A separate "filed" counter added to the payload's
    * number would double-count the moment the stack refetched, because the
@@ -748,7 +762,7 @@ export default function StackDetailScreen() {
   // carrying line breaks was clamped with NO way to open it, and a long one of
   // short words offered a READ MORE that did nothing when pressed. Only the
   // text itself knows how many lines it took.
-  const descNeedsFold = descLineCount > DESC_CLAMP_LINES;
+  const descNeedsFold = measuredFor === list.description && descLineCount > DESC_CLAMP_LINES;
 
 
 
@@ -874,10 +888,13 @@ export default function StackDetailScreen() {
                       readers, and unmounted the moment it has answered. It
                       spans the same width as the real one, so its line count is
                       the real one. */}
-                  {descLineCount === 0 && (
+                  {measuredFor !== list.description && (
                     <Text
                       style={[s.desc, s.descMeasure]}
-                      onTextLayout={e => setDescLineCount(e.nativeEvent.lines.length)}
+                      onTextLayout={e => {
+                        setDescLineCount(e.nativeEvent.lines.length);
+                        setMeasuredFor(list.description);
+                      }}
                       accessible={false}
                       importantForAccessibility="no-hide-descendants"
                       pointerEvents="none"

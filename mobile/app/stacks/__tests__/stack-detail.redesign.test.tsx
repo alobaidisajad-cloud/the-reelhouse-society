@@ -298,7 +298,7 @@ describe('the epigraph folds only when there is more', () => {
     // `description.length > 240` against a four-line clamp disagreed both ways:
     // a short description with line breaks was cut with no way to open it, and
     // a long one of short words offered a fold that did nothing.
-    expect(SOURCE).toMatch(/descNeedsFold = descLineCount > DESC_CLAMP_LINES/);
+    expect(SOURCE).toMatch(/descNeedsFold = measuredFor === list\.description && descLineCount > DESC_CLAMP_LINES/);
     expect(SOURCE).toMatch(/onTextLayout/);
     expect(SOURCE).not.toMatch(/description\?\.length \?\? 0\) > 240/);
   });
@@ -565,6 +565,26 @@ describe('the fold is driven, not merely described', () => {
     expect(before!.props.importantForAccessibility).toBe('no-hide-descendants');
     await layout(r, 9);
     await waitFor(() => expect(walk(r).find(isMeasurer)).toBeUndefined());
+  });
+
+  it('re-measures when the epigraph itself changes', async () => {
+    // Pull-to-refresh invalidates the stack on this SAME screen, so a curator
+    // can edit the description and have new text arrive without anything
+    // remounting. Measured once, the fold would stay decided by words that are
+    // gone: READ MORE offered on two lines, or a long description silently cut
+    // with no way to open it.
+    const r = mount({ description: 'A long one.' });
+    await layout(r, 9);
+    await waitFor(() => expect(r.getByText(/READ MORE/)).toBeTruthy());
+
+    // the curator shortens it, and the page refreshes in place
+    mockStackData = { list: { ...baseStack, description: 'Now short.' }, endorseCount: 0 };
+    await act(async () => { r.rerender(<StackDetailScreen />); });
+
+    // the old measurement must not survive the words it measured
+    await waitFor(() => expect(r.queryByText(/READ MORE/)).toBeNull());
+    await layout(r, 2);
+    expect(r.queryByText(/READ MORE/)).toBeNull();
   });
 
   it('folds back open and shut', async () => {
