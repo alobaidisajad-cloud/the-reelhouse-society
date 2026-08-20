@@ -48,6 +48,60 @@ async function loadModules() {
   }
 }
 
+/** What the operating system currently allows, from its own point of view. */
+export type PushPermissionState = 'granted' | 'denied' | 'undetermined' | 'unavailable';
+
+/**
+ * Read the OS permission WITHOUT asking for it.
+ *
+ * Settings listed four notification switches and never said whether the device
+ * would deliver anything, so all four could be on and the member hear nothing.
+ *
+ * This only READS. `registerForPushNotifications` and `requestPushPermission`
+ * are the only places allowed to prompt, because iOS grants exactly one prompt
+ * per install — spending it on a screen someone is merely inspecting spends it
+ * forever.
+ *
+ * Routed through the same lazy `loadModules()` as everything else here, so the
+ * "expo-notifications isn't installed" case stays known in one place — and a
+ * simulator, where push cannot work at all, reports `unavailable` rather than
+ * an alarming `denied`.
+ */
+export async function getPushPermissionState(): Promise<PushPermissionState> {
+  const loaded = await loadModules();
+  if (!loaded || !Notifications || !Device) return 'unavailable';
+  if (!Device.isDevice) return 'unavailable';
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status === 'granted') return 'granted';
+    if (status === 'denied') return 'denied';
+    return 'undetermined';
+  } catch {
+    return 'unavailable';
+  }
+}
+
+/**
+ * Ask for the permission, once, on an explicit press.
+ *
+ * Settings is the best moment anyone will get: the member is standing over the
+ * switches they just set. Returns the state AFTER asking, so the caller can
+ * redraw without a second round trip.
+ */
+export async function requestPushPermission(): Promise<PushPermissionState> {
+  const loaded = await loadModules();
+  if (!loaded || !Notifications || !Device) return 'unavailable';
+  if (!Device.isDevice) return 'unavailable';
+  try {
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status === 'granted') return 'granted';
+    if (status === 'denied') return 'denied';
+    return 'undetermined';
+  } catch {
+    return 'unavailable';
+  }
+}
+
 /**
  * Register for push notifications and store the token.
  * Must be called after the user has authenticated.

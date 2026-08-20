@@ -47,7 +47,9 @@ export default function DataVault() {
   const [undoing, setUndoing] = useState(false);
 
   // ── Export State ──
-  const [exporting, setExporting] = useState(false);
+  // WHICH export, not merely THAT one is running. Both buttons shared a
+  // single boolean, so pressing CSV made the JSON button say EXPORTING too.
+  const [exporting, setExporting] = useState<null | 'csv' | 'json'>(null);
 
   /**
    * Reverses the last import. Confirmed first — it deletes — and worded so the
@@ -236,7 +238,7 @@ export default function DataVault() {
   // ══════════════════════════════════════
   const handleExportCSV = async () => {
     if (!user || importing || exporting) return;
-    setExporting(true);
+    setExporting('csv');
     TactileEngine.mutate();
     let filePath = '';
 
@@ -247,7 +249,7 @@ export default function DataVault() {
       if (!isMounted.current) return;
       if (!dbLogs || dbLogs.length === 0) {
         reelToast.error('No logs to export yet. Start logging films first.');
-        setExporting(false);
+        setExporting(null);
         return;
       }
 
@@ -290,7 +292,7 @@ export default function DataVault() {
       reelToast.error(msg);
       TactileEngine.error();
     } finally {
-      if (isMounted.current) setExporting(false);
+      if (isMounted.current) setExporting(null);
       if (filePath) { try { await FileSystem.deleteAsync(filePath, { idempotent: true }); } catch (e) {} }
     }
   };
@@ -300,7 +302,7 @@ export default function DataVault() {
   // ══════════════════════════════════════
   const handleExportJSON = async () => {
     if (!user || importing || exporting) return;
-    setExporting(true);
+    setExporting('json');
     TactileEngine.mutate();
     let filePath = '';
 
@@ -316,7 +318,7 @@ export default function DataVault() {
       const hasData = (dbLogs?.length ?? 0) + (dbWatchlist?.length ?? 0) + (dbVault?.length ?? 0) + (dbLists?.length ?? 0) > 0;
       if (!hasData) {
         reelToast.error('No data to export yet. Start logging films first.');
-        setExporting(false);
+        setExporting(null);
         return;
       }
 
@@ -364,7 +366,7 @@ export default function DataVault() {
       reelToast.error(msg);
       TactileEngine.error();
     } finally {
-      if (isMounted.current) setExporting(false);
+      if (isMounted.current) setExporting(null);
       if (filePath) { try { await FileSystem.deleteAsync(filePath, { idempotent: true }); } catch (e) {} }
     }
   };
@@ -382,12 +384,12 @@ export default function DataVault() {
       <View style={s.importSection}>
         <Text style={s.subLabel}>IMPORT YOUR DATA</Text>
         <Text style={s.importDesc}>
-          Upload your exported film archive (.zip or .json) to transfer your complete viewing history, reviews, ratings, watchlist, and curated lists into The ReelHouse.
+          A .zip or .json export brings your history, reviews, ratings, watchlist and stacks across.
         </Text>
 
         {/* ── Upload Zone (idle state) ── */}
         {!importing && !importResult && (
-          <PressableScale style={s.uploadZone} onPress={handlePickFile} haptic="medium" pressedScale={0.98} accessibilityLabel="Upload a file to import">
+          <PressableScale style={s.uploadZone} onPress={handlePickFile} hitSlop={null} haptic="medium" pressedScale={0.98} accessibilityRole="button" accessibilityLabel="Upload a file to import">
             <Upload size={24} color={colors.sepia} style={{ opacity: 0.7, marginBottom: 10 }} />
             <Text style={s.uploadTitle}>Tap to select your archive</Text>
             <Text style={s.uploadHint}>or use the file browser</Text>
@@ -454,7 +456,7 @@ export default function DataVault() {
                   <Text key={i} style={s.errorLine}>{'\u2022'} {err}</Text>
                 ))}
                 {importResult.errors.length > 8 && (
-                  <Text style={s.errorLine}>{'\u2022'} \u2026and {importResult.errors.length - 8} more</Text>
+                  <Text style={s.errorLine}>{'\u2022'} {'\u2026'}and {importResult.errors.length - 8} more</Text>
                 )}
               </View>
             )}
@@ -462,6 +464,8 @@ export default function DataVault() {
             <PressableScale
               style={s.importAnotherBtn}
               onPress={handlePickFile}
+              hitSlop={null}
+              accessibilityRole="button"
               accessibilityLabel="Import another file"
               haptic="selection"
               pressedScale={0.97}
@@ -485,7 +489,7 @@ export default function DataVault() {
             accessibilityRole="button"
             haptic="heavy"
             pressedScale={0.97}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={null}
           >
             <Undo2 size={12} color={colors.crimson} />
             <Text style={s.undoText}>
@@ -502,16 +506,16 @@ export default function DataVault() {
 
       <Text style={s.subLabel}>EXPORT YOUR DATA</Text>
 
-      <PressableScale style={s.actionBtn} onPress={handleExportCSV} disabled={exporting} haptic="medium" pressedScale={0.97} accessibilityLabel="Export data as CSV">
+      <PressableScale style={[s.actionBtn, !!exporting && s.dimmed]} onPress={handleExportCSV} disabled={!!exporting} hitSlop={null} haptic="medium" pressedScale={0.97} accessibilityRole="button" accessibilityState={{ disabled: !!exporting }} accessibilityLabel="Export data as CSV">
         <Download size={12} color={colors.fog} />
-        <Text style={s.actionBtnText}>{exporting ? 'EXPORTING...' : 'EXPORT DATA (CSV)'}</Text>
+        <Text style={s.actionBtnText}>{exporting === 'csv' ? 'EXPORTING…' : 'EXPORT DATA (CSV)'}</Text>
       </PressableScale>
 
       <View style={s.exportSpacer} />
 
-      <PressableScale style={s.actionBtn} onPress={handleExportJSON} disabled={exporting} haptic="medium" pressedScale={0.97} accessibilityLabel="Export full archive as JSON">
+      <PressableScale style={[s.actionBtn, !!exporting && s.dimmed]} onPress={handleExportJSON} disabled={!!exporting} hitSlop={null} haptic="medium" pressedScale={0.97} accessibilityRole="button" accessibilityState={{ disabled: !!exporting }} accessibilityLabel="Export full archive as JSON">
         <Download size={12} color={colors.fog} />
-        <Text style={s.actionBtnText}>{exporting ? 'EXPORTING...' : 'EXPORT FULL ARCHIVE (JSON)'}</Text>
+        <Text style={s.actionBtnText}>{exporting === 'json' ? 'EXPORTING…' : 'EXPORT FULL ARCHIVE (JSON)'}</Text>
       </PressableScale>
 
     </Animated.View>
@@ -616,7 +620,7 @@ const s = StyleSheet.create({
   // ── Import Another ──
   importAnotherBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 10, paddingHorizontal: 14,
+    minHeight: 48, paddingHorizontal: 14,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.08)',
     borderRadius: 3, marginTop: 12,
   },
@@ -627,7 +631,7 @@ const s = StyleSheet.create({
   // under the primary action, never competing with it.
   undoBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 10, paddingHorizontal: 14, marginTop: 8,
+    minHeight: 48, paddingHorizontal: 14, marginTop: 10,
     borderWidth: 1, borderColor: 'rgba(125,31,31,0.28)',
   },
   undoText: {
@@ -637,10 +641,11 @@ const s = StyleSheet.create({
   // ── Export Action ──
   actionBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 10, paddingHorizontal: 14,
+    minHeight: 48, paddingHorizontal: 14,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.08)',
     borderRadius: 3,
   },
+  dimmed: { opacity: 0.5 },
   actionBtnText: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog,
   },
@@ -650,5 +655,5 @@ const s = StyleSheet.create({
     height: 1, marginVertical: 14,
     backgroundColor: 'rgba(184,137,26,0.15)',
   },
-  exportSpacer: { height: 8 },
+  exportSpacer: { height: 10 },
 });
