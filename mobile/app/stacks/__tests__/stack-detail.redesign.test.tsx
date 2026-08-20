@@ -33,10 +33,11 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ id: STACK_ID }),
   useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
 }));
+const mockSetQueryData = jest.fn();
 jest.mock('@tanstack/react-query', () => ({
   QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); },
   useQueryClient: () => ({
-    setQueryData: jest.fn(), getQueryData: jest.fn(), removeQueries: jest.fn(),
+    setQueryData: mockSetQueryData, getQueryData: jest.fn(), removeQueries: jest.fn(),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),
   }),
   useQuery: (opts: { queryKey: unknown[] }) => {
@@ -59,9 +60,19 @@ jest.mock('@/src/stores/blockStore', () => {
   return { useBlockStore };
 });
 jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: 'u1', username: 'morpho' } }) }));
+const mockAddComment = jest.fn();
 jest.mock('@/src/services/StackService', () => ({
-  StackService: { getStackFullPayload: jest.fn(), getStackComments: jest.fn() },
+  StackService: {
+    getStackFullPayload: jest.fn(), getStackComments: jest.fn(),
+    addStackComment: (...a: unknown[]) => mockAddComment(...a),
+  },
 }));
+const mockEnqueue = jest.fn();
+jest.mock('@/src/utils/offlineQueue', () => ({
+  enqueueMutation: (...a: unknown[]) => mockEnqueue(...a),
+  flushOfflineQueue: jest.fn(), getOfflineQueue: jest.fn(() => []),
+}));
+const mockBackHandlers: (() => boolean)[] = [];
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 jest.mock('@/src/lib/tmdb', () => ({ tmdb: { poster: (p: string, size: string) => `https://img/${size}${p}` } }));
 jest.mock('@/src/components/layout/CinematicFlashList', () => {
@@ -115,7 +126,15 @@ function flatText(n: Node): string {
   return (n.children ?? []).map(c => (typeof c === 'string' ? c : flatText(c))).join('');
 }
 
-beforeEach(() => { jest.clearAllMocks(); });
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockBackHandlers.length = 0;
+  jest.spyOn(require('react-native').BackHandler, 'addEventListener')
+    .mockImplementation(((_e: string, h: () => boolean) => {
+      mockBackHandlers.push(h);
+      return { remove: jest.fn() };
+    }) as never);
+});
 
 describe('the chrome has a ground', () => {
   it('the scrim is a gradient, not only a blur', async () => {
@@ -664,5 +683,115 @@ describe('the film card, actually rendered', () => {
       return st.borderRadius === 11 && st.width === 22;
     });
     expect(badges).toHaveLength(0);
+  });
+});
+
+describe('filing a critique — what the action actually does', () => {
+  const open = async (over: Record<string, unknown> = {}) => {
+    const r = mount({ critiqueCount: 3, ...over });
+    await waitFor(() => expect(r.getByText(/CRITIQUES/)).toBeTruthy());
+    await act(async () => { fireEvent.press(r.getByLabelText(/critiques?/i)); });
+    await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+    return r;
+  };
+
+  const file = async (r: ReturnType<typeof mount>, text: string) => {
+    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), text); });
+    await act(async () => { fireEvent.press(r.getByLabelText('Submit critique')); });
+  };
+
+  /** Every ['stack', id] cache write the page made, as the updater's result. */
+  const stackWrites = () => mockSetQueryData.mock.calls
+    .filter(c => Array.isArray(c[0]) && c[0][0] === 'stack')
+    .map(c => (typeof c[1] === 'function' ? c[1]({ list: { critiqueCount: 3 } }) : c[1]));
+
+  it('shows the critique before the server has answered', async () => {
+    mockAddComment.mockResolvedValue({ id: 'real', user_id: 'u1', username: 'morpho', content: 'x', created_at: '2026-01-01' });
+    const r = await open();
+    await file(r, 'The Others belongs here.');
+    const commentWrites = mockSetQueryData.mock.calls.filter(c => c[0][0] === 'stackComments');
+    expect(commentWrites.length).toBeGreaterThan(0);
+  });
+
+  it('moves the number in step with the list', async () => {
+    mockAddComment.mockResolvedValue({ id: 'real', user_id: 'u1', username: 'morpho', content: 'x', created_at: '2026-01-01' });
+    const r = await open();
+    await file(r, 'A critique.');
+    expect(stackWrites().some(w => w?.list?.critiqueCount === 4)).toBe(true);
+  });
+
+  it('takes the number back when the filing genuinely fails', async () => {
+    mockAddComment.mockRejectedValue(Object.assign(new Error('permission denied'), { code: '42501' }));
+    const r = await open();
+    await file(r, 'A critique.');
+    await waitFor(() => expect(stackWrites().some(w => w?.list?.critiqueCount === 2)).toBe(true));
+  });
+
+  it('but NOT when it was queued offline, because the critique is still there', async () => {
+    // The optimistic critique stays in cache when queued, so the count must
+    // stay with it. Decrementing here would show 3 beside four visible entries.
+    mockAddComment.mockRejectedValue(new TypeError('Network request failed'));
+    const r = await open();
+    await file(r, 'A critique.');
+    await waitFor(() => expect(mockEnqueue).toHaveBeenCalled());
+    expect(stackWrites().some(w => w?.list?.critiqueCount === 2)).toBe(false);
+  });
+
+  it('never invents a count the server never gave', async () => {
+    // critiqueCount null means "could not ask". Filing one must not turn that
+    // into a confident 1.
+    mockAddComment.mockResolvedValue({ id: 'real', user_id: 'u1', username: 'morpho', content: 'x', created_at: '2026-01-01' });
+    const r = await open({ critiqueCount: null });
+    await file(r, 'A critique.');
+    const writes = mockSetQueryData.mock.calls
+      .filter(c => Array.isArray(c[0]) && c[0][0] === 'stack')
+      .map(c => (typeof c[1] === 'function' ? c[1]({ list: { critiqueCount: null } }) : c[1]));
+    for (const w of writes) expect(w?.list?.critiqueCount ?? null).toBeNull();
+  });
+
+  it('will not file nothing, and will not file whitespace', async () => {
+    // Named for what it actually proves. An earlier version claimed the
+    // HANDLER refuses, and a mutation stripping that guard escaped — because
+    // the press never reaches it: the button is disabled, so nothing fires.
+    // The handler's own check is unreachable belt-and-braces, which is worth
+    // keeping and not worth claiming.
+    const r = await open();
+    const send = r.getByLabelText('Submit critique');
+    expect(send.props.accessibilityState?.disabled ?? send.props.disabled).toBe(true);
+
+    // Spaces are not a critique — the field is empty as far as anyone is
+    // concerned, and the button must stay shut.
+    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), '    '); });
+    const stillShut = r.getByLabelText('Submit critique');
+    expect(stillShut.props.accessibilityState?.disabled ?? stillShut.props.disabled).toBe(true);
+    await act(async () => { fireEvent.press(stillShut); });
+    expect(mockAddComment).not.toHaveBeenCalled();
+
+    // and it opens the moment there is something to say
+    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), 'A real one.'); });
+    const open2 = r.getByLabelText('Submit critique');
+    expect(open2.props.accessibilityState?.disabled ?? open2.props.disabled).toBeFalsy();
+  });
+});
+
+describe('the overlay’s back button, driven', () => {
+  it('closes the critiques and leaves the page standing', async () => {
+    const r = mount({ critiqueCount: 2 });
+    await waitFor(() => expect(r.getByText(/CRITIQUES/)).toBeTruthy());
+    await act(async () => { fireEvent.press(r.getByLabelText(/critiques?/i)); });
+    await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+
+    expect(mockBackHandlers.length).toBeGreaterThan(0);
+    let consumed = false;
+    await act(async () => { consumed = mockBackHandlers[mockBackHandlers.length - 1](); });
+
+    expect(consumed).toBe(true);                       // or Android leaves the page too
+    await waitFor(() => expect(r.queryByText('THE CRITIQUES')).toBeNull());
+    expect(r.getByText(/INDEXED REELS/)).toBeTruthy(); // the page is still here
+  });
+
+  it('registers nothing while the critiques are shut', async () => {
+    mount({ critiqueCount: 2 });
+    await waitFor(() => expect(mockBackHandlers).toHaveLength(0));
   });
 });
