@@ -55,7 +55,7 @@ const STACK_ITEMS_LIMIT = 500;
 
 export const StackService = {
   async getStackFullPayload(stackId: string) {
-    const [listRes, itemsRes, filmCountRes, endorseRes] = await Promise.all([
+    const [listRes, itemsRes, filmCountRes, endorseRes, critiqueCountRes] = await Promise.all([
       supabase.from('lists')
         .select('id, title, description, user_id, is_private, is_ranked, created_at, profiles(username)')
         .eq('id', stackId)
@@ -79,6 +79,14 @@ export const StackService = {
       // different totals for the same stack. The function returns an aggregate
       // and nothing else.
       supabase.rpc('list_certify_count', { p_list_id: stackId }),
+      // The critiques are fetched only when their surface opens, so the action
+      // that leads there had no number to show — it said CRITIQUES whether
+      // there were none or forty. A head-only count rides along with the four
+      // requests already in flight, so the button can say what it holds before
+      // anyone commits to opening it. No extra round trip.
+      supabase.from('list_comments')
+        .select('id', { count: 'exact', head: true })
+        .eq('list_id', stackId),
     ]);
 
     if (listRes.error) throw listRes.error;
@@ -130,6 +138,7 @@ export const StackService = {
       // used to count the array it received — correct only while the fetch was
       // unbounded. Now that it is capped, this is the number that must be shown.
       filmCount: filmCountRes.count ?? validFilms.length,
+      critiqueCount: critiqueCountRes.error ? null : (critiqueCountRes.count ?? 0),
       isPrivate: listRes.data.is_private ?? false,
       isRanked: listRes.data.is_ranked ?? false,
       // The RPC returns the count as `data`, not as PostgREST's `count` header.

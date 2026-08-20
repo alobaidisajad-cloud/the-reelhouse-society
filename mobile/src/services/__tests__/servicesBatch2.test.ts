@@ -58,7 +58,7 @@ describe('StackService', () => {
             
             const listChain = chain({ data: listData, error: null });
             const itemsChain = chain({ data: itemsData, error: null });
-            const endorseChain = chain({ data: [], error: null, count: 5 });
+            const critiqueChain = chain({ data: [], error: null, count: 5 });
             // getStackFullPayload now also asks the server for the TRUE film count,
             // because the items query above is bounded.
             const filmCountChain = chain({ data: null, error: null, count: 1 });
@@ -67,7 +67,7 @@ describe('StackService', () => {
                 .mockReturnValueOnce(listChain)
                 .mockReturnValueOnce(itemsChain)
                 .mockReturnValueOnce(filmCountChain)
-                .mockReturnValueOnce(endorseChain);
+                .mockReturnValueOnce(critiqueChain);
 
             const result = await StackService.getStackFullPayload('s1');
             expect(supabase.from).toHaveBeenCalledWith('lists');
@@ -75,10 +75,39 @@ describe('StackService', () => {
             expect(result.films).toHaveLength(1);
         });
 
+        /**
+         * The critique count rides along with the four requests already in
+         * flight so the action that opens the critiques can say what it holds.
+         * It must distinguish NONE from COULD NOT ASK: a button reading "0
+         * CRITIQUES" when the count failed is a confident statement nobody
+         * verified, so a failed count is null and the button says nothing.
+         */
+        it('carries the critique count', async () => {
+            const listData = { id: 's1', title: 'T', user_id: 'u1', created_at: '2024-01-01', description: null, is_private: false, is_ranked: false, profiles: { username: 'c' } };
+            (supabase.from as jest.Mock)
+                .mockReturnValueOnce(chain({ data: listData, error: null }))
+                .mockReturnValueOnce(chain({ data: [], error: null }))
+                .mockReturnValueOnce(chain({ data: null, error: null, count: 0 }))
+                .mockReturnValueOnce(chain({ data: null, error: null, count: 12 }));
+            const result = await StackService.getStackFullPayload('s1');
+            expect((result as { critiqueCount?: number | null }).critiqueCount).toBe(12);
+        });
+
+        it('reports null, never zero, when the critiques could not be counted', async () => {
+            const listData = { id: 's1', title: 'T', user_id: 'u1', created_at: '2024-01-01', description: null, is_private: false, is_ranked: false, profiles: { username: 'c' } };
+            (supabase.from as jest.Mock)
+                .mockReturnValueOnce(chain({ data: listData, error: null }))
+                .mockReturnValueOnce(chain({ data: [], error: null }))
+                .mockReturnValueOnce(chain({ data: null, error: null, count: 0 }))
+                .mockReturnValueOnce(chain({ data: null, error: { message: 'denied' } }));
+            const result = await StackService.getStackFullPayload('s1');
+            expect((result as { critiqueCount?: number | null }).critiqueCount).toBeNull();
+        });
+
         it('throws on Supabase error', async () => {
             const listChain = chain({ data: null, error: { message: 'Not found' } });
             const itemsChain = chain({ data: [], error: null });
-            const endorseChain = chain({ data: [], error: null, count: 0 });
+            const critiqueChain = chain({ data: [], error: null, count: 0 });
             // getStackFullPayload now also asks the server for the TRUE film count,
             // because the items query above is bounded.
             const filmCountChain = chain({ data: null, error: null, count: 1 });
@@ -87,7 +116,7 @@ describe('StackService', () => {
                 .mockReturnValueOnce(listChain)
                 .mockReturnValueOnce(itemsChain)
                 .mockReturnValueOnce(filmCountChain)
-                .mockReturnValueOnce(endorseChain);
+                .mockReturnValueOnce(critiqueChain);
 
             await expect(StackService.getStackFullPayload('bad')).rejects.toBeTruthy();
         });
@@ -97,7 +126,7 @@ describe('StackService', () => {
             const badData = { id: 's1', user_id: 'u1', created_at: '2024-01-01' };
             const listChain = chain({ data: badData, error: null });
             const itemsChain = chain({ data: [], error: null });
-            const endorseChain = chain({ data: [], error: null, count: 0 });
+            const critiqueChain = chain({ data: [], error: null, count: 0 });
             // getStackFullPayload now also asks the server for the TRUE film count,
             // because the items query above is bounded.
             const filmCountChain = chain({ data: null, error: null, count: 1 });
@@ -106,7 +135,7 @@ describe('StackService', () => {
                 .mockReturnValueOnce(listChain)
                 .mockReturnValueOnce(itemsChain)
                 .mockReturnValueOnce(filmCountChain)
-                .mockReturnValueOnce(endorseChain);
+                .mockReturnValueOnce(critiqueChain);
 
             const { logger } = require('@/src/utils/logger');
             // The schema validation should log a warning but not throw

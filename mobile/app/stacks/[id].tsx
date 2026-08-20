@@ -32,6 +32,10 @@ import { z } from 'zod';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
+/** The epigraph folds past this many lines — the clamp and the test for the
+ *  fold must be the same number, or the page offers to open what is not shut. */
+const DESC_CLAMP_LINES = 4;
+
 const isNetworkError = (e: unknown): boolean => {
     const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
     return msg.includes('fetch') || msg.includes('network') || msg.includes('offline');
@@ -134,7 +138,7 @@ const StackDetailFilmCard = React.memo(({
   // reader opened the page to look at.
   const isFirst = isRanked && index === 0;
   return (
-    <Animated.View entering={index < 15 ? FadeInUp.duration(400).delay(index * 30) : undefined} style={[s.filmItem, { width: itemWidth }]}>
+    <Animated.View entering={index < 15 ? FadeInUp.duration(400).delay(index * 30).reduceMotion(ReduceMotion.System) : undefined} style={[s.filmItem, { width: itemWidth }]}>
       <PressableScale
         style={[s.filmCard, { width: itemWidth, height: itemHeight }, isFirst && s.filmCardFirst]}
         onPress={() => onPress(item.id)}
@@ -392,6 +396,14 @@ export default function StackDetailScreen() {
   // a READ MORE fold. The toggle shows on a deterministic length threshold —
   // no platform-dependent line measurement, so it behaves identically everywhere.
   const [descExpanded, setDescExpanded] = useState(false);
+  const [descLineCount, setDescLineCount] = useState(0);
+  /**
+   * ONE source of truth. A separate "filed" counter added to the payload's
+   * number would double-count the moment the stack refetched, because the
+   * server's count already includes the critique just filed. The cached payload
+   * is nudged instead, exactly as the comment list itself already is.
+   */
+  const critiqueCount = (stackQueryData?.list as { critiqueCount?: number | null } | null)?.critiqueCount ?? null;
 
   const blockUser = useBlockStore(s => s.blockUser);
   const muteUser = useBlockStore(s => s.muteUser);
@@ -526,6 +538,21 @@ export default function StackDetailScreen() {
     }, 100);
   }, []);
 
+  /**
+   * Moves the number on the button in step with the list beneath it.
+   *
+   * Not applied on the offline path: the optimistic critique stays in the cache
+   * there because it is queued, so the count must stay with it. Only a real
+   * failure takes it back.
+   */
+  const bumpCritiqueCount = useCallback((by: number) => {
+    queryClient.setQueryData(['stack', id], (old: any) => {
+      const current = old?.list?.critiqueCount;
+      if (typeof current !== 'number') return old;   // never invent a count
+      return { ...old, list: { ...old.list, critiqueCount: Math.max(0, current + by) } };
+    });
+  }, [queryClient, id]);
+
   const handleSubmitComment = useCallback(async () => {
     // Pre-flight Zod validation
     if (!commentText.trim() || submittingComment || !user || !z.string().uuid().safeParse(id).success) {
@@ -552,6 +579,7 @@ export default function StackDetailScreen() {
       return [...old, optimisticComment];
     });
 
+    bumpCritiqueCount(+1);
     setCommentText('');
     TactileEngine.success();
 
@@ -583,13 +611,14 @@ export default function StackDetailScreen() {
           if (!old) return [];
           return old.filter(c => c.id !== tempId);
         });
+        bumpCritiqueCount(-1);
         setCommentText(content);
         reelToast.error('Your critique could not be filed.');
       }
     } finally {
       setSubmittingComment(false);
     }
-  }, [commentText, submittingComment, user, id, queryClient]);
+  }, [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount]);
 
   const handleOpenShareLounge = useCallback(async () => {
     TactileEngine.selection();
@@ -684,7 +713,12 @@ export default function StackDetailScreen() {
   }
 
   const estDate = list.createdAt && !isNaN(Date.parse(list.createdAt)) ? formatDateMonthYear(list.createdAt) : null;
-  const descNeedsFold = (list.description?.length ?? 0) > 240;
+  // Measured, not guessed. This was `description.length > 240` while the clamp
+  // is four lines, and the two disagree in both directions: a short description
+  // carrying line breaks was clamped with NO way to open it, and a long one of
+  // short words offered a READ MORE that did nothing when pressed. Only the
+  // text itself knows how many lines it took.
+  const descNeedsFold = descLineCount > DESC_CLAMP_LINES;
 
 
 
@@ -797,8 +831,17 @@ export default function StackDetailScreen() {
               </Animated.View>
 
               {list.description ? (
-                <Animated.View entering={FadeInDown.duration(600).delay(300)} style={s.descWrap}>
-                  <Text style={s.desc} numberOfLines={descExpanded ? undefined : 4}>
+                <Animated.View entering={FadeInDown.duration(600).delay(300).reduceMotion(ReduceMotion.System)} style={s.descWrap}>
+                  <Text
+                    style={s.desc}
+                    numberOfLines={descExpanded ? undefined : DESC_CLAMP_LINES}
+                    // Reported once, from the UNCLAMPED pass RN performs first,
+                    // so the count is the real one rather than the clamp.
+                    onTextLayout={e => {
+                      const n = e.nativeEvent.lines.length;
+                      setDescLineCount(prev => (n > prev ? n : prev));
+                    }}
+                  >
                     {list.description}
                   </Text>
                   {descNeedsFold && (
@@ -810,8 +853,8 @@ export default function StackDetailScreen() {
               ) : null}
 
               {/* ── ACTION BAR: Certify · Critic · Share to Lounge ── */}
-              <Animated.View entering={FadeInDown.duration(600).delay(350)} style={s.actionBar}>
-                <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={{top: 10, bottom: 10, left: 0, right: 0}} haptic="selection" accessibilityRole="button" accessibilityLabel={isCertified ? "Uncertify stack" : "Certify stack"}>
+              <Animated.View entering={FadeInDown.duration(600).delay(350).reduceMotion(ReduceMotion.System)} style={s.actionBar}>
+                <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel={isCertified ? "Uncertify stack" : "Certify stack"}>
                   <View pointerEvents="none"><Heart size={16} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'} /></View>
                   <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                     {certifyCount > 0 ? `${certifyCount} ` : ''}{isCertified ? 'CERTIFIED' : 'CERTIFY'}
@@ -820,21 +863,26 @@ export default function StackDetailScreen() {
 
                 <View style={s.actionDivider} />
 
-                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={{top: 10, bottom: 10, left: 0, right: 0}} haptic="selection" accessibilityRole="button" accessibilityLabel="Toggle critiques">
+                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: showComments }} accessibilityLabel={critiqueCount === null ? 'Critiques' : `${critiqueCount} ${critiqueCount === 1 ? 'critique' : 'critiques'}`}>
                   <View pointerEvents="none"><MessageCircle size={14} color={showComments ? colors.sepia : colors.fog} /></View>
-                  <Text style={[s.actionLabel, showComments && s.actionLabelOpen]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>CRITIQUES</Text>
+                  {/* The count is null when the server could not be asked — the
+                      button then says CRITIQUES rather than a confident 0, since
+                      "none" and "we could not count" are different statements. */}
+                  <Text style={[s.actionLabel, showComments && s.actionLabelOpen]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                    {critiqueCount ? `${critiqueCount} ` : ''}CRITIQUES
+                  </Text>
                 </PressableScale>
 
                 <View style={s.actionDivider} />
 
-                <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={{top: 10, bottom: 10, left: 0, right: 0}} haptic="selection" accessibilityRole="button" accessibilityLabel="Share to lounge">
+                <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Share to lounge">
                   <View pointerEvents="none"><Send size={14} color={colors.fog} /></View>
                   <Text style={s.actionLabel} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>LOUNGE</Text>
                 </PressableScale>
               </Animated.View>
 
               {showComments && (
-                <Animated.View entering={FadeInDown.duration(300)} style={s.commentsPanel}>
+                <Animated.View entering={FadeInDown.duration(300).reduceMotion(ReduceMotion.System)} style={s.commentsPanel}>
                   {(queryComments || []).length === 0 && (
                     <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
                   )}
@@ -870,8 +918,15 @@ export default function StackDetailScreen() {
                 </Animated.View>
               )}
 
+              {/* The index states its own bound. The colophon prints the TRUE
+                  size from the server while the grid renders at most
+                  STACK_ITEMS_LIMIT, so a stack past that cap would announce
+                  "620 REELS" and quietly show 500 with nothing said. Today's
+                  largest is 96 — which is exactly how a defect waits. */}
               <View style={s.trackRow}>
-                <Text style={s.trackLabel}>INDEXED REELS</Text>
+                <Text style={s.trackLabel}>
+                  INDEXED REELS{(list.filmCount ?? 0) > list.films.length ? `  ·  FIRST ${list.films.length}` : ''}
+                </Text>
                 <LinearGradient colors={[colors.sepiaBorder, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.trackLine} />
               </View>
             </View>
@@ -1023,9 +1078,12 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.25)',
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.25)',
-    paddingVertical: 10, marginBottom: 16,
+    marginBottom: 16,
   },
-  actionItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  // The row's padding moved into the items, so each one IS the target: 48 by
+  // its own geometry rather than a 36pt control wearing a halo neither
+  // platform's accessibility layer can see.
+  actionItem: { flex: 1, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   actionLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
   actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
 
@@ -1047,7 +1105,10 @@ const s = StyleSheet.create({
   commentHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
   commentUserPress: { flexShrink: 1 },
   commentUser: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.5, color: colors.sepia },
-  commentTime: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 0.5, color: colors.ash, includeFontPadding: false },
+  // colors.ash is this app's BORDER colour, and it was being used as text:
+  // 1.27:1 against the panel, where 4.5 is the floor for small type. Every
+  // critique on the page was effectively undated. fog reads at 5.9:1.
+  commentTime: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 0.5, color: colors.fog, includeFontPadding: false },
   commentBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, lineHeight: 18, marginTop: 2 },
   commentInputRow: { flexDirection: 'row', gap: 8, marginTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.15)', paddingTop: 8 },
   commentInput: { flex: 1, backgroundColor: 'rgba(10,7,3,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4, paddingHorizontal: 10, paddingVertical: 8, fontFamily: fonts.body, fontSize: 12, color: colors.bone },
