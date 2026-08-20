@@ -68,10 +68,16 @@ jest.mock('@/src/components/layout/CinematicFlashList', () => {
   const React = require('react');
   const { View } = require('react-native');
   const render = (c: React.ReactNode) => (typeof c === 'function' ? React.createElement(c as never) : c);
-  return { CinematicFlashList: ({ ListHeaderComponent, ListEmptyComponent, data }: {
-    ListHeaderComponent?: React.ReactNode; ListEmptyComponent?: React.ReactNode; data?: unknown[];
+  return { CinematicFlashList: ({ ListHeaderComponent, ListEmptyComponent, data, renderItem }: {
+    ListHeaderComponent?: React.ReactNode; ListEmptyComponent?: React.ReactNode;
+    data?: unknown[]; renderItem?: (a: { item: unknown; index: number }) => React.ReactNode;
   }) => React.createElement(View, null,
     render(ListHeaderComponent),
+    // renderItem was never called, so every claim about the index was a
+    // source-read: the caption box, the rank leaving the artwork, the rows
+    // sharing a baseline. None of it had ever rendered.
+    ...(data ?? []).map((item, index) =>
+      React.createElement(React.Fragment, { key: index }, renderItem ? renderItem({ item, index }) : null)),
     (data ?? []).length === 0 ? render(ListEmptyComponent) : null) };
 });
 jest.mock('@/src/components/ShareToLoungeModal', () => () => null);
@@ -381,8 +387,11 @@ describe('the critiques overlay', () => {
   });
 
   it('leaves no style behind from the panel it replaced', () => {
-    for (const gone of ['commentsPanel', 'commentInputRow', 'commentInput:', 'commentSendBtn']) {
-      expect(SOURCE).not.toContain(gone);
+    // Matched as a DECLARATION, not a substring: `placeholderText` is also the
+    // opening of `placeholderTextColor`, a live prop on the critique input, so
+    // a bare contains() reported a style that had been removed as still there.
+    for (const gone of ['commentsPanel', 'commentInputRow', 'commentInput', 'commentSendBtn', 'placeholderText']) {
+      expect(SOURCE).not.toContain(`\n  ${gone}: {`);
     }
   });
 });
@@ -545,5 +554,115 @@ describe('the fold is driven, not merely described', () => {
     await waitFor(() => expect(r.getByText(/READ MORE/)).toBeTruthy());
     await act(async () => { fireEvent.press(r.getByText(/READ MORE/)); });
     await waitFor(() => expect(r.getByText(/FOLD/)).toBeTruthy());
+  });
+});
+
+describe('the film card, actually rendered', () => {
+  const FILMS = [
+    { id: 1, title: 'Perfect Blue', poster_path: '/pb.jpg' },
+    { id: 2, title: '28 Years Later: The Bone Temple', poster_path: '/by.jpg' },
+    { id: 3, title: 'No Artwork Here', poster_path: null },
+  ];
+
+  /** Style of the caption under a given film, flattened. */
+  const captionOf = (r: ReturnType<typeof mount>, title: string) =>
+    Object.assign({}, ...[r.getByText(title).props.style].flat(2).filter(Boolean));
+
+  it('draws every film in the stack', async () => {
+    const r = mount({ films: FILMS, filmCount: 3 });
+    await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
+    for (const f of FILMS) expect(r.getByText(f.title)).toBeTruthy();
+  });
+
+  it('reserves the same caption height whether the title takes one line or two', async () => {
+    // The whole reason the rows stopped sharing a baseline. A source read said
+    // minHeight: 28 was declared; only rendering says it is APPLIED, to both.
+    const r = mount({ films: FILMS, filmCount: 3 });
+    await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
+    const short = captionOf(r, 'Perfect Blue');
+    const long = captionOf(r, '28 Years Later: The Bone Temple');
+    expect(short.minHeight).toBe(28);
+    expect(long.minHeight).toBe(short.minHeight);
+    expect(r.getByText('Perfect Blue').props.numberOfLines).toBe(2);
+  });
+
+  it('reserves that height in a RANKED stack too', async () => {
+    // The ranked branch uses a different caption style, and the mutation run
+    // proved nothing was watching it: stripping its minHeight escaped every
+    // test. A ranked stack's rows could ripple exactly as the unranked ones
+    // used to, and the index is the one place regularity is the whole point.
+    const r = mount({ films: FILMS, filmCount: 3, isRanked: true });
+    await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
+    const short = captionOf(r, 'Perfect Blue');
+    const long = captionOf(r, '28 Years Later: The Bone Temple');
+    expect(short.minHeight).toBe(28);
+    expect(long.minHeight).toBe(short.minHeight);
+  });
+
+  it('a film with no artwork is named ONCE, not twice', async () => {
+    // The placeholder printed the film's name inside the card while the
+    // caption printed it directly beneath — the same words stacked, which
+    // reads as a bug rather than a missing poster. Found only by rendering it.
+    const r = mount({ films: FILMS, filmCount: 3 });
+    await waitFor(() => expect(r.getByText('No Artwork Here')).toBeTruthy());
+    expect(r.getAllByText('No Artwork Here')).toHaveLength(1);
+    // and the empty frame still looks deliberate
+    expect(r.getByText('✦')).toBeTruthy();
+  });
+
+  it('an unranked stack carries no numerals at all', async () => {
+    const r = mount({ films: FILMS, filmCount: 3, isRanked: false });
+    await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
+    expect(r.queryByText('1')).toBeNull();
+    expect(r.queryByText('2')).toBeNull();
+  });
+
+  it('a ranked stack numbers its holdings in the caption, off the artwork', async () => {
+    const r = mount({ films: FILMS, filmCount: 3, isRanked: true });
+    await waitFor(() => expect(r.getByText('1')).toBeTruthy());
+    expect(r.getByText('2')).toBeTruthy();
+    expect(r.getByText('3')).toBeTruthy();
+    // The numeral is a sibling of the title, not a layer over the poster: the
+    // old badge sat absolutely positioned inside the card under a gradient.
+    const numeral = r.getByText('1');
+    const style = Object.assign({}, ...[numeral.props.style].flat(2).filter(Boolean));
+    expect(style.position).not.toBe('absolute');
+  });
+
+  it('only the first of a ranked stack earns candlelight', async () => {
+    const r = mount({ films: FILMS, filmCount: 3, isRanked: true });
+    await waitFor(() => expect(r.getByText('1')).toBeTruthy());
+    const colour = (t: string) =>
+      Object.assign({}, ...[r.getByText(t).props.style].flat(2).filter(Boolean)).color;
+    expect(colour('1')).not.toBe(colour('2'));
+    expect(colour('2')).toBe(colour('3'));
+  });
+
+  it('the cell is as wide as the column arithmetic says', async () => {
+    // ITEM_WIDTH = (width - 18 - 42) / 3, and the card must actually be given it.
+    const r = mount({ films: FILMS, filmCount: 3 });
+    await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
+    const cards = walk(r).filter(n => {
+      const st = Object.assign({}, ...[n.props?.style].flat(2).filter(Boolean));
+      return st.borderRadius === 2 && typeof st.height === 'number' && typeof st.width === 'number';
+    });
+    expect(cards.length).toBe(FILMS.length);
+    const w = Object.assign({}, ...[cards[0].props.style].flat(2).filter(Boolean)).width;
+    for (const c of cards) {
+      const st = Object.assign({}, ...[c.props.style].flat(2).filter(Boolean));
+      expect(st.width).toBe(w);                    // one column, every cell equal
+      expect(st.height).toBeCloseTo(w * 1.5, 5);   // and a poster's 2:3
+    }
+  });
+
+  it('a film that has been logged is marked, and one that has not is bare', async () => {
+    const r = mount({ films: FILMS, filmCount: 3 });
+    await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
+    // No logs in the mocked store, so nothing should be badged.
+    const badges = walk(r).filter(n => {
+      const st = Object.assign({}, ...[n.props?.style].flat(2).filter(Boolean));
+      return st.borderRadius === 11 && st.width === 22;
+    });
+    expect(badges).toHaveLength(0);
   });
 });

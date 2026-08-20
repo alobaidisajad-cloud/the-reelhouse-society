@@ -154,8 +154,13 @@ const StackDetailFilmCard = React.memo(({
             recyclingKey={item.poster_path}
           />
         ) : (
+          // A MARK, NOT THE TITLE AGAIN. This printed the film's name inside
+          // the card, and the caption prints it directly beneath — the same
+          // words twice, stacked, which reads as a mistake rather than a
+          // missing poster. The caption already names it, so the empty frame
+          // only has to look deliberate.
           <View style={s.posterPlaceholder}>
-            <Text style={s.placeholderText} numberOfLines={3} adjustsFontSizeToFit>{item.title}</Text>
+            <Text style={s.placeholderMark}>✦</Text>
           </View>
         )}
         {isLogged && (
@@ -1199,7 +1204,7 @@ const s = StyleSheet.create({
   // The podium frame — only #1 of a ranked stack earns the brass hairline.
   filmCardFirst: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)' },
   posterPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 },
-  placeholderText: { fontFamily: fonts.sub, fontSize: 10, color: colors.ash, textAlign: 'center' },
+  placeholderMark: { fontFamily: fonts.sub, fontSize: 15, color: colors.ash, includeFontPadding: false },
   loggedBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(10,7,3,0.75)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)' },
   /**
    * A CAPTION BOX, not a caption.
