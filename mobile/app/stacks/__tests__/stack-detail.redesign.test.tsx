@@ -67,9 +67,12 @@ jest.mock('@/src/lib/tmdb', () => ({ tmdb: { poster: (p: string, size: string) =
 jest.mock('@/src/components/layout/CinematicFlashList', () => {
   const React = require('react');
   const { View } = require('react-native');
-  return { CinematicFlashList: ({ ListHeaderComponent }: { ListHeaderComponent?: React.ReactNode }) =>
-    React.createElement(View, null, typeof ListHeaderComponent === 'function'
-      ? React.createElement(ListHeaderComponent as never) : ListHeaderComponent) };
+  const render = (c: React.ReactNode) => (typeof c === 'function' ? React.createElement(c as never) : c);
+  return { CinematicFlashList: ({ ListHeaderComponent, ListEmptyComponent, data }: {
+    ListHeaderComponent?: React.ReactNode; ListEmptyComponent?: React.ReactNode; data?: unknown[];
+  }) => React.createElement(View, null,
+    render(ListHeaderComponent),
+    (data ?? []).length === 0 ? render(ListEmptyComponent) : null) };
 });
 jest.mock('@/src/components/ShareToLoungeModal', () => () => null);
 jest.mock('@/src/components/moderation/ReportSheet', () => () => null);
@@ -381,5 +384,92 @@ describe('the critiques overlay', () => {
     for (const gone of ['commentsPanel', 'commentInputRow', 'commentInput:', 'commentSendBtn']) {
       expect(SOURCE).not.toContain(gone);
     }
+  });
+});
+
+describe('the states a real stack arrives in', () => {
+  const LONG_TITLE = 'A'.repeat(100);          // MAX_LENGTHS.listTitle
+
+  it('an empty stack says so instead of showing a bare grid', async () => {
+    const r = mount({ films: [], filmCount: 0 });
+    await waitFor(() => expect(r.getByText('An Empty Stack')).toBeTruthy());
+  });
+
+  it('a single reel is a REEL, not REELS', async () => {
+    const r = mount({ films: [{ id: 1, title: 'One', poster_path: '/a.jpg' }], filmCount: 1 });
+    await waitFor(() => expect(r.getByText(/1 REEL(?!S)/)).toBeTruthy());
+  });
+
+  it('no description means no fold offered', async () => {
+    const r = mount({ description: '' });
+    await waitFor(() => expect(r.getByText(/INDEXED REELS/)).toBeTruthy());
+    expect(r.queryByText(/READ MORE/)).toBeNull();
+  });
+
+  /** The rendered size and line allowance of the hero title. */
+  const titleSetting = async (title: string) => {
+    const r = mount({ title });
+    await waitFor(() => expect(r.getByText(title.toUpperCase())).toBeTruthy());
+    const node = r.getByText(title.toUpperCase());
+    const flat = Object.assign({}, ...[node.props.style].flat(2).filter(Boolean));
+    return { fontSize: flat.fontSize as number, lines: node.props.numberOfLines as number };
+  };
+
+  it('a long title is set smaller, and given more room, rather than cut', async () => {
+    // Asserted as a RELATION, not as a number: the steps are computed from the
+    // measured width, so the exact size depends on the screen — which is the
+    // whole point of computing it. An earlier version of this test hard-coded
+    // 24pt and failed on a wider viewport while the code was behaving.
+    const short = await titleSetting('Noir');
+    const long = await titleSetting(LONG_TITLE);
+    expect(long.fontSize).toBeLessThan(short.fontSize);
+    expect(long.lines).toBeGreaterThan(short.lines);
+  });
+
+  it('a short title keeps the full display size', async () => {
+    expect((await titleSetting('Noir')).fontSize).toBe(36);
+  });
+
+  it('a very long curator handle cannot push the date onto a line of its own', async () => {
+    // The whole colophon is one run of text, so it wraps as prose no matter
+    // how long the handle is — there is no fragment left to strand.
+    const r = mount({ user: 'a'.repeat(40), filmCount: 3 });
+    await waitFor(() => expect(r.getByText(/3 REELS/)).toBeTruthy());
+    const runs = walk(r).filter(n => flatText(n).includes('3 REELS'));
+    expect(flatText(runs[runs.length - 1])).toContain('EST.');
+  });
+
+  it('a ranked stack numbers its holdings and an unranked one does not', () => {
+    // Numbers read as rank whatever the label says, so only a ranked stack
+    // carries them — an index may number its holdings, but a reader will not
+    // believe it is merely an index.
+    expect(SOURCE).toContain('{isRanked ? (');
+    expect(SOURCE).toContain('<View style={s.filmCaptionRow}>');
+    // The unranked branch renders the plain caption and nothing else — located
+    // by its own caption rather than by slicing between loose delimiters, which
+    // is how the first version of this matched the whole component.
+    const ranked = SOURCE.indexOf('<View style={s.filmCaptionRow}>');
+    const plain = SOURCE.indexOf('<Text style={s.filmTitle} numberOfLines={2}>');
+    expect(plain).toBeGreaterThan(ranked);
+    expect(SOURCE.slice(plain, plain + 120)).not.toContain('filmRank');
+  });
+
+  it('a sealed stack shows its key only to the curator', () => {
+    expect(SOURCE).toMatch(/list.isPrivate && isOwner/);
+  });
+
+  it('a stack sealed against you is not merely empty', () => {
+    // A private stack reached by direct link is CLASSIFIED, beside the RLS gate.
+    expect(SOURCE).toMatch(/list.isPrivate && !isOwner/);
+    expect(SOURCE).toContain('CLASSIFIED');
+  });
+
+  it('a queued critique keeps its place in the count', () => {
+    // The optimistic critique stays in cache when it is queued offline, so the
+    // number must stay with it. Only a real failure takes it back.
+    const submit = SOURCE.slice(SOURCE.indexOf('const handleSubmitComment'), SOURCE.indexOf('const handleOpenShareLounge'));
+    const offline = submit.slice(submit.indexOf('isNetworkError'), submit.indexOf('} else {'));
+    expect(offline).not.toMatch(/bumpCritiqueCount/);
+    expect(submit.slice(submit.indexOf('} else {'))).toContain('bumpCritiqueCount(-1)');
   });
 });
