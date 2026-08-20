@@ -473,3 +473,77 @@ describe('the states a real stack arrives in', () => {
     expect(submit.slice(submit.indexOf('} else {'))).toContain('bumpCritiqueCount(-1)');
   });
 });
+
+describe('the fold is driven, not merely described', () => {
+  /**
+   * The source-reading tests above passed while the feature was BROKEN.
+   * onTextLayout reports the lines it actually laid out, so measuring on the
+   * clamped Text returned four, and "4 > 4" meant READ MORE could never
+   * appear — worse than the character count it replaced. Only firing the
+   * layout event catches that.
+   */
+  const layout = async (r: ReturnType<typeof mount>, lines: number) => {
+    const measurer = walk(r).find(n => {
+      const st = Object.assign({}, ...[n.props?.style].flat(2).filter(Boolean));
+      return st.opacity === 0 && st.position === 'absolute' && typeof n.props?.onTextLayout === 'function';
+    });
+    expect(measurer).toBeDefined();
+    await act(async () => {
+      measurer!.props.onTextLayout({ nativeEvent: { lines: Array.from({ length: lines }, () => ({})) } });
+    });
+  };
+
+  it('offers the fold once the text genuinely overruns', async () => {
+    const r = mount({ description: 'A collection of psychological horror films.' });
+    expect(r.queryByText(/READ MORE/)).toBeNull();      // nothing measured yet
+    await layout(r, 9);
+    await waitFor(() => expect(r.getByText(/READ MORE/)).toBeTruthy());
+  });
+
+  it('offers nothing when the text fits', async () => {
+    const r = mount({ description: 'Short.' });
+    await layout(r, 2);
+    expect(r.queryByText(/READ MORE/)).toBeNull();
+  });
+
+  it('offers nothing at exactly the clamp', async () => {
+    // The off-by-one that decides whether a page invites you to open what is
+    // already fully visible.
+    const r = mount({ description: 'Exactly four lines of prose.' });
+    await layout(r, 4);
+    expect(r.queryByText(/READ MORE/)).toBeNull();
+  });
+
+  it('measures with an UNCLAMPED copy, or it measures the clamp', async () => {
+    const r = mount({ description: 'A collection of psychological horror films.' });
+    const measurer = walk(r).find(n =>
+      typeof n.props?.onTextLayout === 'function' && n.props?.numberOfLines === undefined);
+    expect(measurer!.props.numberOfLines).toBeUndefined();
+  });
+
+  it('the measurer leaves once it has answered, and is invisible while it stays', async () => {
+    const r = mount({ description: 'A collection of psychological horror films.' });
+    // onTextLayout is what makes it the measurer. Without that clause this
+    // matched the nav's BlurView, which is also absolute and also sits at
+    // opacity 0 while the page is at rest — a loose predicate finding a
+    // confidently wrong node.
+    const isMeasurer = (n: any) => {
+      const st = Object.assign({}, ...[n.props?.style].flat(2).filter(Boolean));
+      return st.opacity === 0 && st.position === 'absolute' && typeof n.props?.onTextLayout === 'function';
+    };
+    const before = walk(r).find(isMeasurer);
+    // Never read aloud twice: the epigraph is on screen once, and a screen
+    // reader must not find a second, invisible copy of it.
+    expect(before!.props.importantForAccessibility).toBe('no-hide-descendants');
+    await layout(r, 9);
+    await waitFor(() => expect(walk(r).find(isMeasurer)).toBeUndefined());
+  });
+
+  it('folds back open and shut', async () => {
+    const r = mount({ description: 'A collection of psychological horror films.' });
+    await layout(r, 9);
+    await waitFor(() => expect(r.getByText(/READ MORE/)).toBeTruthy());
+    await act(async () => { fireEvent.press(r.getByText(/READ MORE/)); });
+    await waitFor(() => expect(r.getByText(/FOLD/)).toBeTruthy());
+  });
+});

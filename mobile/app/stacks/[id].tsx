@@ -857,16 +857,30 @@ export default function StackDetailScreen() {
 
               {list.description ? (
                 <Animated.View entering={FadeInDown.duration(600).delay(300).reduceMotion(ReduceMotion.System)} style={s.descWrap}>
-                  <Text
-                    style={s.desc}
-                    numberOfLines={descExpanded ? undefined : DESC_CLAMP_LINES}
-                    // Reported once, from the UNCLAMPED pass RN performs first,
-                    // so the count is the real one rather than the clamp.
-                    onTextLayout={e => {
-                      const n = e.nativeEvent.lines.length;
-                      setDescLineCount(prev => (n > prev ? n : prev));
-                    }}
-                  >
+                  {/* THE MEASURER.
+                      onTextLayout reports the lines it ACTUALLY laid out, so a
+                      clamped Text reports the clamp — four — and "4 > 4" is
+                      false, which would mean the fold never appeared at all.
+                      That is worse than the character count it replaced, which
+                      at least appeared sometimes.
+
+                      So the measuring is done by a copy that is never clamped:
+                      out of flow, invisible, untouchable, hidden from screen
+                      readers, and unmounted the moment it has answered. It
+                      spans the same width as the real one, so its line count is
+                      the real one. */}
+                  {descLineCount === 0 && (
+                    <Text
+                      style={[s.desc, s.descMeasure]}
+                      onTextLayout={e => setDescLineCount(e.nativeEvent.lines.length)}
+                      accessible={false}
+                      importantForAccessibility="no-hide-descendants"
+                      pointerEvents="none"
+                    >
+                      {list.description}
+                    </Text>
+                  )}
+                  <Text style={s.desc} numberOfLines={descExpanded ? undefined : DESC_CLAMP_LINES}>
                     {list.description}
                   </Text>
                   {descNeedsFold && (
@@ -1136,6 +1150,9 @@ const s = StyleSheet.create({
   descWrap: { marginBottom: 24 },
   desc: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.bone, lineHeight: 21, opacity: 0.9 },
   descToggle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginTop: 8 },
+  // Out of flow and invisible: it exists only to be laid out once, so it must
+  // occupy the same width as the real epigraph and none of its height.
+  descMeasure: { position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 },
   
   // ── Action Bar ──
   actionBar: {
