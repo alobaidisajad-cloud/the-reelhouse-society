@@ -177,6 +177,15 @@ export function PatronageSection({ userRole, onUpgrade }: { userRole: string; on
             </Text>
             {isAuteur && <Star size={12} color={colors.bloodReel} strokeWidth={1.5} fill={colors.bloodReel} />}
             {isArchivist && !isAuteur && <Sparkles size={12} color={colors.sepia} strokeWidth={1.5} />}
+            {/* The only thing on this page telling a paying member their
+                membership is in good standing. It predates this pass and a
+                rewrite lost it; it is not the app's place to quietly stop
+                confirming that someone's subscription is live. */}
+            {isArchivist && (
+              <View style={st.activeBadge}>
+                <Text style={st.activeBadgeText} {...scaledTextProps}>ACTIVE</Text>
+              </View>
+            )}
           </View>
 
           {/* The three standings, yours lit. It shows what the button opens —
@@ -655,7 +664,13 @@ const st = StyleSheet.create({
   rankDisplay: { fontFamily: fonts.display, fontSize: 26, color: colors.bone },
   rankCinephile: { color: colors.bone },
   rankArchivist: { color: colors.sepia, ...effects.textShadowDeep },
+  // No fontWeight. Rye ships no bold cut, so asking for one gets synthetic
+  // bolding on iOS and, on Android, a silent fall back to the system face —
+  // the rank would render in a different typeface entirely. Nothing else in
+  // the app puts a weight on fonts.display, and this used to.
   rankAuteur: { color: colors.bloodReel },
+  activeBadge: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: 'rgba(184,137,26,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 2 },
+  activeBadgeText: { fontFamily: fonts.sub, fontSize: 8, color: colors.sepia, letterSpacing: 1, includeFontPadding: false },
   ladder: { flexDirection: 'row', alignItems: 'center', marginTop: 12, flexWrap: 'wrap' },
   ladderRank: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.fog, opacity: 0.42, includeFontPadding: false },
   ladderRankNow: { color: colors.sepia, opacity: 1 },

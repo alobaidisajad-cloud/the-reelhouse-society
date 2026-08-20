@@ -195,6 +195,24 @@ describe('membership & billing — the card that had no billing', () => {
     expect(r.getByText('CHOOSE YOUR RANK')).toBeTruthy();
   });
 
+  it('still tells a paying member their membership is live', async () => {
+    // This badge predates the redesign and my rewrite silently dropped it. It
+    // is the only thing on the page confirming a subscription is in good
+    // standing, and losing it is not a decision the app gets to make quietly.
+    mockUser = { ...BASE, tier: 'archivist' };
+    const paying = await settle(mount());
+    expect(paying.getByText('ACTIVE')).toBeTruthy();
+
+    mockUser = { ...BASE, tier: 'auteur' };
+    const auteur = await settle(mount());
+    expect(auteur.getByText('ACTIVE')).toBeTruthy();
+  });
+
+  it('and does not claim it for a member who pays nothing', async () => {
+    const free = await settle(mount());
+    expect(free.queryByText('ACTIVE')).toBeNull();
+  });
+
   it('never names one rank as though it were the only next step', async () => {
     // The Society shows all three side by side and you may go straight from
     // free to Auteur, so naming a single step would be a lie.
