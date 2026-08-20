@@ -259,12 +259,21 @@ export default function ListModal() {
      * far below the fold by then.
      */
     const canFile = !!title.trim() && !saving && !editTargetMissing;
-    const fileLabel = saving ? 'FILING…' : (editList ? 'SAVE THE AMENDMENTS' : 'FILE THE STACK');
-    const reelWord = films.length === 1 ? 'REEL' : 'REELS';
+    // The MODE is what the member asked for, not what happened to load. Reading
+    // it off `editList` meant that in the window before the stack resolved — and
+    // in the rare case it never does — the sheet called itself a create again,
+    // which is the very contradiction this page was opened to remove.
+    const isAmending = !!params.editId;
+    const fileLabel = saving ? 'FILING…' : (isAmending ? 'SAVE THE AMENDMENTS' : 'FILE THE STACK');
+    // The stack's TRUE size, not the part of it this sheet is holding. A sealed
+    // index said "620 REELS" in the notice and "2 REELS" on the bar directly
+    // below it — one screen, one stack, two numbers.
+    const markCount = holdingsAreSealed && typeof trueFilmCount === 'number' ? trueFilmCount : films.length;
+    const reelWord = markCount === 1 ? 'REEL' : 'REELS';
     const barLine = editTargetMissing ? 'THIS STACK COULD NOT BE OPENED'
         : !title.trim() ? 'A NAME FOR YOUR THESIS'
         : [
-            `${films.length} ${reelWord}`,
+            `${markCount} ${reelWord}`,
             isRanked ? 'RANKED' : 'UNRANKED',
             isPrivate ? 'SEALED' : 'PUBLIC',
           ].join('  ·  ');
@@ -463,7 +472,7 @@ export default function ListModal() {
                     ellipsis are honest at any width. */}
                 <View style={s.headerTitleWrap}>
                     <Text style={s.headerTitle} numberOfLines={2} {...displayTextProps}>
-                        {editList ? 'Amend a Stack' : 'Curate a Stack'}
+                        {isAmending ? 'Amend a Stack' : 'Curate a Stack'}
                     </Text>
                 </View>
                 <PressableScale onPress={() => { nav.back(); }} style={s.closeBtn} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Close list modal">

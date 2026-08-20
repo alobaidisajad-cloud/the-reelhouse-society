@@ -188,8 +188,19 @@ describe('the form can never destroy a stack', () => {
     mockParams = { editId: STACK_ID };
     mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: 620 } };
     const r = mount();
-    await waitFor(() => expect(r.getByText(/620 REELS/)).toBeTruthy());
+    await waitFor(() => expect(r.getByText(/LARGER THAN THIS SHEET CAN HOLD/)).toBeTruthy());
+    expect(r.getByText(/620 REELS\./)).toBeTruthy();          // the notice's own count
     expect(r.getByText(/KEPT EXACTLY AS THEY STAND/)).toBeTruthy();
+  });
+
+  it('and the bar reports the stack’s true size, not the part it is holding', async () => {
+    // The notice said 620 REELS and the bar directly below it said 2 REELS —
+    // one screen, one stack, two numbers.
+    mockParams = { editId: STACK_ID };
+    mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: 620 } };
+    const r = mount();
+    await waitFor(() => expect(r.getByText('620 REELS  ·  UNRANKED  ·  PUBLIC')).toBeTruthy());
+    expect(r.queryByText(/^2 REELS/)).toBeNull();
   });
 
   it('and takes the holdings controls away, rather than discarding what they do', async () => {
@@ -223,10 +234,23 @@ describe('the form can never destroy a stack', () => {
     const r = mount();
     await act(async () => { fireEvent.changeText(r.getByLabelText('Stack title'), 'Anything'); });
     await waitFor(() => expect(r.getByText('THIS STACK COULD NOT BE OPENED')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText(/FILE THE STACK/)); });
+    await act(async () => { fireEvent.press(r.getByLabelText(/SAVE THE AMENDMENTS/)); });
     await act(async () => {});
     expect(mockCreateList).not.toHaveBeenCalled();
     expect(mockUpdateList).not.toHaveBeenCalled();
+  });
+
+  it('and still calls itself an amendment while the stack has not arrived', async () => {
+    // The mode is what the member asked for, not what happened to load. Read off
+    // `editList`, the sheet called itself "Curate a Stack" with a FILE THE STACK
+    // button for the whole window before the store resolved — the very
+    // contradiction this page was opened to remove, just later.
+    mockParams = { editId: STACK_ID };
+    const r = mount();
+    await waitFor(() => expect(r.getByText('Amend a Stack')).toBeTruthy());
+    expect(r.getByText('SAVE THE AMENDMENTS')).toBeTruthy();
+    expect(r.queryByText('Curate a Stack')).toBeNull();
+    expect(r.queryByText('FILE THE STACK')).toBeNull();
   });
 });
 
