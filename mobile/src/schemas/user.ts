@@ -31,6 +31,11 @@ export const UserPreferencesSchema = z.object({
   tactile_audio_enabled: z.boolean().optional(),
   favorites: z.array(z.unknown()).nullable().optional(),
   programmes: z.array(z.unknown()).nullable().optional(),
+  // Auteur only: whether the centre of their triptych dresses their dossier.
+  // ABSENT MEANS ON — see backdropIsOn() — so this is genuinely optional and
+  // must never be given a default here, which would turn "never chose" into a
+  // deliberate choice.
+  backdrop: z.boolean().optional(),
 }).catchall(z.unknown());
 
 /**

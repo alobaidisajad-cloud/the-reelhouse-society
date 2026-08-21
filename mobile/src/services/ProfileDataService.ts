@@ -61,6 +61,29 @@ export const SELF_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio
  */
 export const PUBLIC_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio, role, tier, is_founding, persona, is_social_private, followers_count, following_count, favorite_films, created_at, social_links, member_no, public_prefs' as const;
 
+/**
+ * The preference keys a VISITOR is allowed to see on someone else's dossier.
+ *
+ * ── THIS LIST IS HALF OF A PAIR ──────────────────────────────────────────────
+ * The other half is the `public.public_prefs(jsonb)` function in the database,
+ * which decides what ever reaches the wire. This one decides what we keep once
+ * it arrives. They are deliberately redundant: the DB whitelist is the security
+ * boundary, and this is a second filter so that a mistake in the SQL still
+ * cannot put a private preference into app state.
+ *
+ * The cost of the redundancy is that a key added to ONE side does nothing. That
+ * is exactly how `backdrop` was nearly shipped broken — the SQL exposed it, the
+ * loop below dropped it on the floor, and the Auteur who switched their
+ * backdrop off would still have had it showing to everyone but themselves.
+ *
+ * ADDING A KEY MEANS BOTH SIDES. Run `npm run schema:check` after the SQL to
+ * confirm the live function and the repo agree.
+ *
+ * NOTE these are DISPLAY preferences only. Notification and privacy settings
+ * are the owner's business and must never appear here.
+ */
+export const VISITOR_PREFERENCE_KEYS = ['programmes', 'favorites', 'backdrop'] as const;
+
 // ── Zod Schemas ────────────────────────────────────────────────────────
 
 
@@ -160,11 +183,8 @@ export const ProfileDataService = {
       const publicPrefs = rawData.public_prefs ?? {};
       delete rawData.public_prefs;
       rawData.preferences = {};
-      if (publicPrefs.programmes !== undefined) {
-        rawData.preferences.programmes = publicPrefs.programmes;
-      }
-      if (publicPrefs.favorites !== undefined) {
-        rawData.preferences.favorites = publicPrefs.favorites;
+      for (const key of VISITOR_PREFERENCE_KEYS) {
+        if (publicPrefs[key] !== undefined) rawData.preferences[key] = publicPrefs[key];
       }
     }
 

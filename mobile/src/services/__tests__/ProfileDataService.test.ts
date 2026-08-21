@@ -9,7 +9,7 @@
  * The constants are now exported and asserted directly, and fetchProfile is
  * driven so the set it ACTUALLY sends is observed rather than assumed.
  */
-import { ProfileDataService, SELF_PROFILE_COLUMNS, PUBLIC_PROFILE_COLUMNS } from '../ProfileDataService';
+import { ProfileDataService, SELF_PROFILE_COLUMNS, PUBLIC_PROFILE_COLUMNS, VISITOR_PREFERENCE_KEYS } from '../ProfileDataService';
 import { supabase } from '@/src/lib/supabase';
 
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn() } }));
@@ -107,6 +107,97 @@ describe('fetchProfile — the set it actually sends', () => {
     await ProfileDataService.fetchProfile('someone', false);
     expect(supabase.from).toHaveBeenCalledWith('profiles');
     expect(chain.eq).toHaveBeenCalledWith('username', 'someone');
+  });
+});
+
+/**
+ * The projection is a PAIR, and a key added to one half does nothing.
+ *
+ * `public.public_prefs(jsonb)` in the database decides what reaches the wire;
+ * this mapping decides what survives arrival. The redundancy is deliberate —
+ * the SQL is the security boundary and this is a second filter — but it means a
+ * display preference exposed by the SQL and forgotten here is silently dropped.
+ *
+ * That is not hypothetical: `backdrop` was exposed by the SQL and thrown away
+ * by a mapping that copied exactly two hard-coded keys, so an Auteur who
+ * switched their backdrop off would still have had it showing to everybody
+ * except themselves.
+ */
+describe('the visitor projection keeps every DISPLAY preference and no other', () => {
+  const visitorPrefs = async (publicPrefs: unknown) => {
+    (supabase.from as jest.Mock).mockReturnValue(mockChain({
+      id: 'u1', username: 'someone', public_prefs: publicPrefs,
+    }));
+    const p = await ProfileDataService.fetchProfile('someone', false);
+    return (p as { preferences?: Record<string, unknown> } | null)?.preferences ?? {};
+  };
+
+  it('carries each whitelisted display key through', async () => {
+    const prefs = await visitorPrefs({
+      favorites: [{ id: 1, title: 'Stalker' }],
+      programmes: [{ id: 9 }],
+      backdrop: false,
+    });
+    for (const key of VISITOR_PREFERENCE_KEYS) {
+      expect(Object.keys(prefs)).toContain(key);
+    }
+    // A boolean false must survive as false, not be dropped as falsy — the
+    // whole point of the switch is the OFF position.
+    expect(prefs.backdrop).toBe(false);
+    expect(prefs.favorites).toEqual([{ id: 1, title: 'Stalker' }]);
+  });
+
+  it('drops anything that is not a display preference', async () => {
+    // Belt and braces: even if the SQL whitelist were widened by mistake, a
+    // private setting must not reach app state.
+    const prefs = await visitorPrefs({
+      favorites: [], backdrop: true,
+      notif_system: true, biometric_lock: true,
+      tactile_audio_enabled: false, privacy_annotations: 'nobody',
+    });
+    for (const leaked of ['notif_system', 'biometric_lock', 'tactile_audio_enabled', 'privacy_annotations']) {
+      expect(Object.keys(prefs)).not.toContain(leaked);
+    }
+  });
+
+  it('omits a key the member has never set rather than inventing one', async () => {
+    // `backdrop` absent means ON. A mapping that wrote `undefined` or `false`
+    // into the object would turn "never chose" into a deliberate choice.
+    const prefs = await visitorPrefs({ favorites: [] });
+    expect(Object.keys(prefs)).not.toContain('backdrop');
+    expect('backdrop' in prefs).toBe(false);
+  });
+
+  it('survives public_prefs being absent entirely', async () => {
+    expect(await visitorPrefs(undefined)).toEqual({});
+    expect(await visitorPrefs(null)).toEqual({});
+  });
+
+  it('never hands the raw public_prefs blob onward', async () => {
+    (supabase.from as jest.Mock).mockReturnValue(mockChain({
+      id: 'u1', username: 'someone', public_prefs: { favorites: [] },
+    }));
+    const p = await ProfileDataService.fetchProfile('someone', false) as Record<string, unknown>;
+    expect(p.public_prefs).toBeUndefined();
+  });
+
+  it('the member’s OWN preferences are never filtered by this list', async () => {
+    // Self reads `preferences` whole. Running the visitor mapping over a
+    // member's own dossier would silently delete their notification settings.
+    (supabase.from as jest.Mock).mockReturnValue(mockChain({
+      id: 'u1', username: 'me', preferences: { notif_system: true, backdrop: false },
+    }));
+    const p = await ProfileDataService.fetchProfile('me', true) as { preferences: Record<string, unknown> };
+    expect(p.preferences.notif_system).toBe(true);
+    expect(p.preferences.backdrop).toBe(false);
+  });
+
+  it('lists only display keys — notification and privacy settings are the owner’s business', () => {
+    for (const key of VISITOR_PREFERENCE_KEYS) {
+      expect(key).not.toMatch(/^notif_/);
+      expect(key).not.toMatch(/^privacy_/);
+      expect(key).not.toMatch(/biometric|tactile|oracle|email/);
+    }
   });
 });
 
