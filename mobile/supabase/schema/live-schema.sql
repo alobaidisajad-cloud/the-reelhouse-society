@@ -2364,10 +2364,10 @@ CREATE FUNCTION public.public_prefs(p jsonb) RETURNS jsonb
     AS $$
   SELECT COALESCE(jsonb_object_agg(k, p -> k), '{}'::jsonb)
   FROM unnest(ARRAY[
-    'programmes','favorites','hide_stats',
+    'programmes','favorites','hide_stats','backdrop',
     'privacy_annotations','privacy_endorsements','social_visibility'
   ]) AS k
-  WHERE p ? k;
+  WHERE jsonb_exists(p, k);
 $$;
 
 
@@ -2938,16 +2938,37 @@ CREATE FUNCTION public.tg_notify_push() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-DECLARE v_secret text;
+DECLARE
+  v_secret   text;
+  v_pref_key text;
 BEGIN
-  -- Do not ask for a push the recipient has chosen not to receive.
-  -- NULL from_user_id is a system notice and must always deliver.
   IF NEW.from_user_id IS NOT NULL AND EXISTS (
     SELECT 1 FROM public.user_blocks
     WHERE (blocker_id = NEW.user_id      AND blocked_id = NEW.from_user_id)
        OR (blocker_id = NEW.from_user_id AND blocked_id = NEW.user_id AND type = 'block')
   ) THEN
     RETURN NEW;
+  END IF;
+
+  v_pref_key := CASE NEW.type
+                  WHEN 'follow'         THEN 'notif_follows'
+                  WHEN 'follow_request' THEN 'notif_follows'
+                  WHEN 'follow_accept'  THEN 'notif_follows'
+                  WHEN 'endorse'        THEN 'notif_endorsements'
+                  WHEN 'endorse_log'    THEN 'notif_endorsements'
+                  WHEN 'comment'        THEN 'notif_comments'
+                  WHEN 'annotate'       THEN 'notif_comments'
+                  WHEN 'system'         THEN 'notif_system'
+                  ELSE NULL
+                END;
+
+  IF v_pref_key IS NOT NULL THEN
+    IF (SELECT preferences ->> v_pref_key
+          FROM public.profiles
+         WHERE id = NEW.user_id) = 'false'
+    THEN
+      RETURN NEW;
+    END IF;
   END IF;
 
   SELECT decrypted_secret INTO v_secret
@@ -5263,7 +5284,7 @@ CREATE POLICY "Dossier comments viewable by everyone" ON public.dossier_comments
 -- Name: lounge_messages Lounge messages readable; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Lounge messages readable" ON public.lounge_messages FOR SELECT USING (((EXISTS ( SELECT 1
+CREATE POLICY "Lounge messages readable" ON public.lounge_messages FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
    FROM public.lounges l
   WHERE ((l.id = lounge_messages.lounge_id) AND (l.is_private = false)))) OR (EXISTS ( SELECT 1
    FROM public.lounge_members m
@@ -5274,7 +5295,7 @@ CREATE POLICY "Lounge messages readable" ON public.lounge_messages FOR SELECT US
 -- Name: lounges Lounges are discoverable; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Lounges are discoverable" ON public.lounges FOR SELECT USING (true);
+CREATE POLICY "Lounges are discoverable" ON public.lounges FOR SELECT TO authenticated USING (true);
 
 
 --
@@ -5295,7 +5316,7 @@ CREATE POLICY "Published dossiers are viewable by everyone." ON public.dispatch_
 -- Name: lounge_message_reactions Reactions readable; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Reactions readable" ON public.lounge_message_reactions FOR SELECT USING (((EXISTS ( SELECT 1
+CREATE POLICY "Reactions readable" ON public.lounge_message_reactions FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
    FROM public.lounges l
   WHERE ((l.id = lounge_message_reactions.lounge_id) AND (l.is_private = false)))) OR (EXISTS ( SELECT 1
    FROM public.lounge_members m
