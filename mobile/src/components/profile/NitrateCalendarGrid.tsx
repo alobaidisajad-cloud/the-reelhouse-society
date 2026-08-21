@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import Svg, { Rect, G, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { Flame } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import PressableScale from '../PressableScale';
@@ -33,7 +33,11 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
     if (logs.length === 0 && isSelf) {
       flickerAnim.value = withRepeat(
         withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        -1, true
+        // Infinite is right HERE and nowhere else on the page: it only runs on
+        // an EMPTY calendar on your own file, as the invitation to fill it, and
+        // stops the moment there is anything to show. It still holds still for
+        // a member who has asked the system to stop things moving.
+        -1, true, undefined, ReduceMotion.System,
       );
     } else {
       // Explicitly cancel orphaned animations to prevent UI thread leaks

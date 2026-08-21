@@ -6,7 +6,7 @@ import { colors, fonts } from '../../theme/theme';
 import PressableScale from '../PressableScale';
 import type { ProfileLog } from '../../types';
 import { useRouter } from 'expo-router';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import VaultLock from './VaultLock';
 import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
@@ -57,7 +57,11 @@ export default function ProfileArchiveTab({
   useEffect(() => {
     breatheAnim.value = withRepeat(
       withTiming(0.6, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-      -1, true
+      // 20, not -1 — the app's own convention, so the UI thread can idle
+      // instead of running a worklet for as long as the room stays open. And
+      // it is atmosphere, so it holds still for anyone who has asked the
+      // system to stop things moving.
+      20, true, undefined, ReduceMotion.System,
     );
     return () => cancelAnimation(breatheAnim);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -120,7 +124,10 @@ export default function ProfileArchiveTab({
             key={sv.id} 
             style={[s.filterChip, archiveSieve === sv.id && s.filterChipActive]} 
             onPress={() => { setArchiveSieve(sv.id); }} 
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            // filterChipRow gap 8: half of it each side, so two chips meet
+            // without overlapping. Vertical slop is free (nothing above or
+            // below in a horizontal scroller) and carries the chip past 44pt.
+            hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
             haptic
             accessibilityRole="button"
             accessibilityLabel={`Filter the archive by ${sv.label}`}

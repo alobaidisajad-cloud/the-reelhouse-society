@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { LayoutList, Lock, ListOrdered } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
 import type { ProfileList, ProfileListFilm } from '../../types';
@@ -88,7 +88,8 @@ export default React.memo(function ProfileListsTab({ lists, onLoadMore, isLoadin
   useEffect(() => {
     breatheAnim.value = withRepeat(
       withTiming(0.4, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-      -1, true
+      // 20, not -1 — see the Archive.
+      20, true, undefined, ReduceMotion.System,
     );
     return () => cancelAnimation(breatheAnim);
   // eslint-disable-next-line react-hooks/exhaustive-deps

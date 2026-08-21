@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Bookmark, Search, X, Disc3, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
 import PressableScale from '../PressableScale';
 import type { ProfileWatchlistItem } from '../../types';
@@ -57,7 +57,8 @@ export default function ProfileWatchlistTab({
   useEffect(() => {
     breatheAnim.value = withRepeat(
       withTiming(0.4, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-      20, true
+      // Atmosphere holds still for anyone who asked the system to stop motion.
+      20, true, undefined, ReduceMotion.System,
     );
     return () => cancelAnimation(breatheAnim);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,7 +71,7 @@ export default function ProfileWatchlistTab({
   const searchEmberOpacity = useSharedValue(0.5);
   useEffect(() => {
       if (watchlistSearch.length > 0) {
-          searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true);
+          searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true, undefined, ReduceMotion.System);
       } else {
           searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
       }
@@ -180,7 +181,9 @@ export default function ProfileWatchlistTab({
                   key={sv.id} 
                   style={[s.filterChip, watchlistSort === sv.id && s.filterChipActive]} 
                   onPress={() => { setWatchlistSort(sv.id); }} 
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  // sortRow gap 4 — the tightest row on the page, so 2 per
+                  // side. At 10 each, RECENT reached 16pt into A-Z and lost.
+                  hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }}
                   haptic
                   accessibilityRole="button"
                   accessibilityLabel={`Sort the watchlist: ${sv.label}`}

@@ -6,7 +6,7 @@ import { Disc, Film as FilmIcon } from 'lucide-react-native';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
 import { useRouter } from 'expo-router';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import type { ProfileVaultItem, FormatCount } from '../../types';
 import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
@@ -99,7 +99,11 @@ export default React.memo(function ProfilePhysicalTab({
   useEffect(() => {
     breatheAnim.value = withRepeat(
       withTiming(0.6, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
-      -1, true
+      // 20, not -1. Every sibling room caps here and says why: to let the UI
+      // thread idle instead of running a worklet for as long as the tab stays
+      // open. The Vault looped forever. And it is atmosphere, so it holds still
+      // for anyone who has asked the system to stop things moving.
+      20, true, undefined, ReduceMotion.System,
     );
     return () => cancelAnimation(breatheAnim);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,7 +170,11 @@ export default React.memo(function ProfilePhysicalTab({
           <PressableScale
             style={[s.filterChip, !physicalFilter && s.filterChipActive]}
             onPress={() => setPhysicalFilter(null)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            // filterChipRowTight gap 6: half of it each side, so two chips meet
+            // without overlapping. Vertical slop is free — nothing sits above or
+            // below in a horizontal scroller — and it carries the ~27pt chip
+            // past the 44pt floor.
+            hitSlop={{ top: 10, bottom: 10, left: 3, right: 3 }}
             haptic
             accessibilityRole="button"
             accessibilityLabel={`Show the whole vault, ${vault.length}`}
@@ -179,7 +187,7 @@ export default React.memo(function ProfilePhysicalTab({
               key={f.id} 
               style={[s.filterChip, physicalFilter === f.id && { borderColor: f.color, backgroundColor: `${f.color}15` }]} 
               onPress={() => setPhysicalFilter(physicalFilter === f.id ? null : f.id)} 
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hitSlop={{ top: 10, bottom: 10, left: 3, right: 3 }}
               haptic
               accessibilityRole="button"
               accessibilityLabel={`Filter the vault by ${f.label}, ${f.count}`}

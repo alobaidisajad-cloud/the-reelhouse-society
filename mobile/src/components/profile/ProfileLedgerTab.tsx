@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { PenTool, Film as FilmIcon, Search, X, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
 import PressableScale from '../PressableScale';
@@ -62,7 +62,8 @@ export default function ProfileLedgerTab({
   useEffect(() => {
     breatheAnim.value = withRepeat(
       withTiming(0.4, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-      20, true
+      // Atmosphere holds still for anyone who asked the system to stop motion.
+      20, true, undefined, ReduceMotion.System,
     );
     return () => cancelAnimation(breatheAnim);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,7 +77,7 @@ export default function ProfileLedgerTab({
   const searchEmberOpacity = useSharedValue(0.5);
   useEffect(() => {
       if (ledgerSearch.length > 0) {
-          searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true);
+          searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true, undefined, ReduceMotion.System);
       } else {
           searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
       }
@@ -200,7 +201,8 @@ export default function ProfileLedgerTab({
               key={String(r)} 
               style={[s.filterChip, ledgerRatingFilter === r && s.filterChipActive]} 
               onPress={() => { setLedgerRatingFilter(r); }} 
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              // filterChipRowTight gap 6 — half each side.
+              hitSlop={{ top: 10, bottom: 10, left: 3, right: 3 }}
               haptic
               accessibilityRole="button"
               accessibilityLabel={r === 'all' ? 'Show every rating' : `Show films rated ${r} of 5`}

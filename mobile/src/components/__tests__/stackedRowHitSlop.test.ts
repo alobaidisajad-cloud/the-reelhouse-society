@@ -110,6 +110,26 @@ const RULES: Rule[] = [
     note: 'MOVE / REPLACE / REMOVE, hairline apart — one of them deletes' },
   { file: 'src/components/profile/ProfileTriptych.tsx', style: 'resultItem', gap: { y: 8 },
     note: 'film search results, marginBottom 8 — a mis-tap pins the wrong film' },
+
+  // ── The seven rooms, 2026-08-21 ────────────────────────────────────────────
+  // Every filter and sort chip in every room claimed 10pt on every side while
+  // sitting 8, 6 or 4pt from its neighbour — reaching clean through the gap and
+  // past the far edge of the next chip, where the LATER sibling wins. The
+  // watchlist sort row was the worst on the page: three chips 4pt apart, each
+  // claiming 10, an overlap of 16. Tapping the right-hand end of RECENT sorted
+  // A-Z instead.
+  //
+  // These were missed by the last sweep for the same reason the accessibility
+  // sweep missed 27 controls: this list is hand-written, and the rooms were
+  // never added to it.
+  { file: 'src/components/profile/ProfileArchiveTab.tsx', style: 'filterChip', gap: { x: 8 },
+    note: 'archive sieve, filterChipRow gap 8' },
+  { file: 'src/components/profile/ProfileLedgerTab.tsx', style: 'filterChip', gap: { x: 6 },
+    note: 'ledger rating filter, filterChipRowTight gap 6' },
+  { file: 'src/components/profile/ProfilePhysicalTab.tsx', style: 'filterChip', gap: { x: 6 },
+    note: 'vault format filter, filterChipRowTight gap 6' },
+  { file: 'src/components/profile/ProfileWatchlistTab.tsx', style: 'filterChip', gap: { x: 4 },
+    note: 'watchlist sort, sortRow gap 4 — the tightest row on the page' },
   { file: 'app/(modals)/vault-modal.tsx', style: 'formatBtn', gap: { y: 8 },
     note: 'export formats, marginBottom 8' },
   { file: 'src/components/PaywallModal.tsx', style: 'tierCard', gap: { y: 12 },
