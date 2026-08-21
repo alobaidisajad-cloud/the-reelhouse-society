@@ -18,6 +18,7 @@ import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 import { isNetworkError } from '@/src/utils/networkError';
 import { readMounts, MOUNT_COUNT, CENTRE_MOUNT, type FavouriteFilm } from './favourites';
+import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 // Module-scoped: prevents remount on every render cycle
@@ -147,6 +148,8 @@ const TriptychResultRow = React.memo(({ film, handleSetFilm }: { film: TriptychS
         // by 22pt and the later row wins — you would pick the wrong film.
         hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
         haptic
+        accessibilityRole="button"
+        accessibilityLabel={`Choose ${film.title}${film.release_date ? `, ${film.release_date.slice(0, 4)}` : ''}`}
     >
         {film.poster_path ? (
             <Image source={{ uri: tmdb.poster(film.poster_path, 'w92') }} style={s.resultPoster} contentFit="cover" cachePolicy="memory-disk" transition={150} />
@@ -156,8 +159,8 @@ const TriptychResultRow = React.memo(({ film, handleSetFilm }: { film: TriptychS
             </View>
         )}
         <View style={s.resultInfo}>
-            <Text style={s.resultTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.title}</Text>
-            {film.release_date && <Text style={s.resultYear} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.release_date.slice(0, 4)}</Text>}
+            <Text {...scaledTextProps} style={s.resultTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.title}</Text>
+            {film.release_date && <Text {...scaledTextProps} style={s.resultYear} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.release_date.slice(0, 4)}</Text>}
         </View>
     </PressableScale>
 ));
@@ -385,7 +388,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                         // no artwork. A titled plate is the dignified answer; a
                         // broken image was the old one.
                         <View style={s.titlePlate}>
-                            <Text style={[s.titlePlateText, isCentre && s.titlePlateTextLg]} numberOfLines={4}>{film.title}</Text>
+                            <Text {...scaledTextProps} style={[s.titlePlateText, isCentre && s.titlePlateTextLg]} numberOfLines={4}>{film.title}</Text>
                         </View>
                     )
                 ) : (
@@ -394,7 +397,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                     <View style={s.emptyMount}>
                         {isOwnProfile
                             ? <Plus size={isCentre ? 20 : 15} color={colors.sepia} style={s.inviteGlyph} />
-                            : <Text style={s.emptyMark} allowFontScaling={false}>✦</Text>}
+                            : <Text {...decorativeTextProps} style={s.emptyMark}>✦</Text>}
                     </View>
                 )}
                 {/* The mount board: a hairline mat just inside the frame. It is
@@ -431,20 +434,20 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                         <View key={index} style={{ width: isCentre ? m.centreW : m.wingW }}>
                             {film ? (
                                 <>
-                                    <Text style={[s.gallLabel, isCentre && s.gallLabelCentre]} numberOfLines={2}>
+                                    <Text {...scaledTextProps} style={[s.gallLabel, isCentre && s.gallLabelCentre]} numberOfLines={2}>
                                         {film.title.toUpperCase()}
                                     </Text>
                                     {/* Newly chosen favourites carry their year;
                                         ones stored before this build simply have
                                         none, and the label closes up. */}
-                                    {!!film.year && <Text style={s.gallYear} numberOfLines={1}>{film.year}</Text>}
+                                    {!!film.year && <Text {...scaledTextProps} style={s.gallYear} numberOfLines={1}>{film.year}</Text>}
                                 </>
                             ) : isOwnProfile ? (
-                                <Text style={s.gallInvite} numberOfLines={2}>
+                                <Text {...scaledTextProps} style={s.gallInvite} numberOfLines={2}>
                                     {index === CENTRE_MOUNT ? 'CHOOSE THE\nCENTRE' : 'CHOOSE A\nWING'}
                                 </Text>
                             ) : (
-                                <Text style={s.gallEmpty} numberOfLines={2}>A MOUNT{'\n'}STANDS EMPTY</Text>
+                                <Text {...scaledTextProps} style={s.gallEmpty} numberOfLines={2}>A MOUNT{'\n'}STANDS EMPTY</Text>
                             )}
                         </View>
                     );
@@ -485,8 +488,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                     {sheet?.mode === 'plate' && sheetFilm ? (
                         <Animated.View entering={FadeIn.duration(180)} style={[s.sheet, s.plateSheet, { paddingBottom: 20 + insets.bottom }]}>
                             <View style={s.grabber} />
-                            <Text style={s.plateEyebrow}>{MOUNT_NAME[sheet.index].toUpperCase()}</Text>
-                            <Text style={s.plateTitle} numberOfLines={2}>{sheetFilm.title}</Text>
+                            <Text {...scaledTextProps} style={s.plateEyebrow}>{MOUNT_NAME[sheet.index].toUpperCase()}</Text>
+                            <Text {...scaledTextProps} style={s.plateTitle} numberOfLines={2}>{sheetFilm.title}</Text>
 
                             {sheet.index !== CENTRE_MOUNT && (
                                 <PlateAction
@@ -512,7 +515,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                         <Animated.View entering={FadeIn.duration(180)} style={[s.sheet, s.searchSheet]}>
                             <View style={s.modalHeader}>
                                 <View style={s.grabber} />
-                                <Text style={s.modalEyebrow}>{sheetFilm ? 'REPLACE' : 'CURATE'} {MOUNT_NAME[sheet.index].toUpperCase()}</Text>
+                                <Text {...scaledTextProps} style={s.modalEyebrow}>{sheetFilm ? 'REPLACE' : 'CURATE'} {MOUNT_NAME[sheet.index].toUpperCase()}</Text>
                                 <View style={s.searchWrap}>
                                     <AnimatedSearchIcon size={18} animatedProps={animatedSearchProps} style={[s.searchIcon, animatedSearchStyle]} />
                                     <TextInput
@@ -538,7 +541,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                         <TriptychResultRow key={film.id} film={film} handleSetFilm={handleSetFilm} />
                                     ))
                                 ) : searchQuery ? (
-                                    <Text style={s.noResults}>NO MATCHES FOUND</Text>
+                                    <Text {...scaledTextProps} style={s.noResults}>NO MATCHES FOUND</Text>
                                 ) : null}
                             </ScrollView>
                         </Animated.View>
@@ -569,8 +572,8 @@ function PlateAction({ Icon, label, hint, destructive, onPress }: {
         >
             <Icon size={16} color={destructive ? colors.crimson : colors.sepia} />
             <View style={s.plateActionText}>
-                <Text style={[s.plateActionLabel, destructive && s.plateActionLabelDanger]}>{label}</Text>
-                {hint ? <Text style={s.plateActionHint}>{hint}</Text> : null}
+                <Text {...scaledTextProps} style={[s.plateActionLabel, destructive && s.plateActionLabelDanger]}>{label}</Text>
+                {hint ? <Text {...scaledTextProps} style={s.plateActionHint}>{hint}</Text> : null}
             </View>
         </PressableScale>
     );

@@ -34,7 +34,7 @@ import { join } from 'path';
 import { ProfileTriptych, triptychMetrics, TRIPTYCH_AISLE, TRIPTYCH_GAP } from '../ProfileTriptych';
 import { readMounts, pickBackdropFilm, CENTRE_MOUNT, MOUNT_COUNT } from '../favourites';
 import { tally } from '../profileComputed';
-import { backdropIsOn } from '../ProfileBackdrop';
+import { ProfileBackdrop, backdropIsOn } from '../ProfileBackdrop';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
@@ -121,6 +121,72 @@ describe('the altarpiece fits the phone it is hung on', () => {
     expect(TRIPTYCH_GAP).toBe(5);
     const guard = read('src/components/__tests__/stackedRowHitSlop.test.ts');
     expect(guard).toMatch(/ProfileTriptych\.tsx'[^\n]*gap: \{ x: 5 \}/);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// EVERY CONTROL SAYS ITS OWN NAME
+// ════════════════════════════════════════════════════════════════════════════
+describe('nothing on the member file is anonymous to a screen reader', () => {
+  const A11Y_FILES = [
+    'app/user/[username].tsx',
+    'src/components/profile/ProfileTriptych.tsx',
+    'src/components/profile/ProfileHelpers.tsx',
+    'src/features/profile/EditProfileScreen.tsx',
+  ];
+
+  /**
+   * Blanks comments WITHOUT collapsing lines. Replacing a block comment with
+   * '' shifts every line number after it — the first run of this sweep
+   * reported all five of its findings at the wrong places because of exactly
+   * that.
+   */
+  const blank = (s: string) => s
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
+
+  /** Brace-tracked: a lazy match to `>` ends the tag early on `() =>`. */
+  function scanTags(src: string, name: string) {
+    const out: { attrs: string; line: number }[] = [];
+    const open = `<${name}`;
+    let i = 0;
+    while ((i = src.indexOf(open, i)) !== -1) {
+      const after = src[i + open.length];
+      if (after && /[A-Za-z0-9_]/.test(after)) { i += open.length; continue; }
+      let depth = 0, j = i + open.length, inStr: string | null = null;
+      for (; j < src.length; j++) {
+        const c = src[j];
+        if (inStr) { if (c === inStr && src.charCodeAt(j - 1) !== 92) inStr = null; continue; }
+        if (c === '"' || c === "'" || c === '`') { inStr = c; continue; }
+        if (c === '{') depth++;
+        else if (c === '}') depth--;
+        else if (c === '>' && depth === 0) break;
+      }
+      out.push({ attrs: src.slice(i + open.length, j), line: src.slice(0, i).split('\n').length });
+      i = j;
+    }
+    return out;
+  }
+
+  it('every pressable, switch and field carries an accessibilityLabel', () => {
+    // An icon-only control has no text child to borrow a name from, so it
+    // announces NOTHING. That is how the profile's back button — the one
+    // control that leaves the page — was silent to VoiceOver until this swept
+    // it up.
+    const unnamed: string[] = [];
+    let total = 0;
+    for (const f of A11Y_FILES) {
+      const src = blank(read(f));
+      for (const tag of ['PressableScale', 'Pressable', 'Switch', 'TextInput']) {
+        for (const t of scanTags(src, tag)) {
+          total++;
+          if (!/accessibilityLabel\s*=/.test(t.attrs)) unnamed.push(`${f}:${t.line} <${tag}`);
+        }
+      }
+    }
+    // A scan that finds nothing would pass while proving nothing.
+    expect(total).toBeGreaterThan(20);
+    expect(unnamed).toEqual([]);
   });
 });
 
@@ -429,6 +495,41 @@ function mount(favorites: unknown, own = true) {
     <ProfileTriptych user={{ id: 'u1', preferences: { favorites } as never }} isOwnProfile={own} userRole="cinephile" />
   );
 }
+
+describe('the backdrop guards itself, not just where it is called from', () => {
+  // The screen only MOUNTS ProfileBackdrop inside its Auteur branch, so the
+  // component's own tier check can never be exercised through the page — a
+  // mutation pass deleted that check and every screen test still passed. It is
+  // defence in depth for the day someone renders this somewhere else, and it
+  // deserves a test that can actually see it.
+  const FAV = { favorites: [{ id: 1, title: 'Stalker', poster_path: '/s.jpg' }] };
+
+  it('refuses to render for a rank below Auteur, whoever calls it', () => {
+    for (const tier of [undefined, 'free', 'cinephile', 'archivist']) {
+      const r = render(<ProfileBackdrop user={{ tier, preferences: FAV } as never} logs={[]} />);
+      expect(r.toJSON()).toBeNull();
+    }
+  });
+
+  it('renders for an Auteur, and for a founding member of any nominal tier', () => {
+    for (const user of [{ tier: 'auteur' }, { tier: 'cinephile', is_founding: true }]) {
+      const r = render(<ProfileBackdrop user={{ ...user, preferences: FAV } as never} logs={[]} />);
+      expect(r.toJSON()).not.toBeNull();
+    }
+  });
+
+  it('honours the switch even when called directly', () => {
+    const off = render(<ProfileBackdrop
+      user={{ tier: 'auteur', preferences: { ...FAV, backdrop: false } } as never} logs={[]} />);
+    expect(off.toJSON()).toBeNull();
+  });
+
+  it('renders nothing at all rather than an empty frame when there is no art', () => {
+    const r = render(<ProfileBackdrop
+      user={{ tier: 'auteur', preferences: { favorites: [] } } as never} logs={[]} />);
+    expect(r.toJSON()).toBeNull();
+  });
+});
 
 describe('the altarpiece, driven', () => {
   beforeEach(() => { mockRpc.mockClear(); mockUpdateUser.mockClear(); });

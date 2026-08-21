@@ -52,7 +52,7 @@ export function ProfileBackdrop({ user, logs }: { user: BackdropUser; logs: Back
     if (!posterSrc) return null;
 
     return (
-        <Animated.View entering={FadeIn.duration(1200)} style={s.container}>
+        <Animated.View testID="profile-backdrop" entering={FadeIn.duration(1200)} style={s.container}>
             {/* Poster image */}
             <Image
                 source={{ uri: posterSrc }}

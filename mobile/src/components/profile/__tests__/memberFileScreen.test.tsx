@@ -12,6 +12,8 @@
  */
 import React, { act } from 'react';
 import { render } from '@testing-library/react-native';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 // The screen itself. `jest.mock` factories are hoisted above every import by
 // babel-plugin-jest-hoist, so the mocks written below still apply.
 import UserProfileScreen from '@/app/user/[username]';
@@ -277,6 +279,61 @@ describe('your own file differs from someone else’s', () => {
     // top either — so "every door is open" would be a lie.
     const r = await mount({ isSelf: true }, { targetUser: baseUser({ tier: 'archivist' }) });
     expect(r.getByText(/rooms above this one/)).toBeTruthy();
+  });
+});
+
+describe('the atmosphere behind the plate belongs to the rank', () => {
+  const withFav = (over: Record<string, unknown> = {}) => baseUser({
+    preferences: { favorites: [{ id: 1, title: 'Stalker', poster_path: '/s.jpg' }] },
+    ...over,
+  });
+
+  it('an Auteur’s file is dressed from their own film', async () => {
+    const r = await mount({}, { targetUser: withFav({ tier: 'auteur' }) });
+    expect(r.getByTestId('profile-backdrop')).toBeTruthy();
+  });
+
+  it('and comes down the moment they switch it off — for VISITORS too', async () => {
+    // The whole point of the switch. It reaches a visitor through
+    // public_prefs, so this is the case that was silently broken.
+    const r = await mount({}, { targetUser: withFav({
+      tier: 'auteur',
+      preferences: { favorites: [{ id: 1, title: 'Stalker', poster_path: '/s.jpg' }], backdrop: false },
+    }) });
+    expect(r.queryByTestId('profile-backdrop')).toBeNull();
+  });
+
+  it('an Auteur who never touched the switch keeps theirs', async () => {
+    // Absent means ON. Nobody loses a backdrop they already had.
+    const r = await mount({}, { targetUser: withFav({ tier: 'auteur' }) });
+    expect(r.getByTestId('profile-backdrop')).toBeTruthy();
+  });
+
+  it('an Auteur with no favourites falls back rather than showing nothing', async () => {
+    const r = await mount({}, {
+      targetUser: baseUser({ tier: 'auteur', preferences: { favorites: [] } }),
+      mainLogs: [{ id: 'l1', filmId: 1, title: 'A', poster: '/p.jpg', year: 2001, rating: 4, status: 'watched' }],
+    });
+    expect(r.getByTestId('profile-backdrop')).toBeTruthy();
+  });
+
+  it('no rank below Auteur gets one', async () => {
+    for (const tier of ['cinephile', 'archivist']) {
+      const r = await mount({}, { targetUser: withFav({ tier }) });
+      expect(r.queryByTestId('profile-backdrop')).toBeNull();
+    }
+  });
+
+  it('the breathing wash runs ONLY where something reads it', () => {
+    // `pulseStyle` drives the Archivist gradient and nothing else since the
+    // avatar ring was replaced by the mounted print. It used to start for every
+    // member: a worklet re-evaluated each frame for seventy-two seconds, on two
+    // ranks out of three, setting an opacity nothing painted.
+    const src = readFileSync(join(__dirname, '..', '..', '..', '..', 'app/user/[username].tsx'), 'utf8');
+    expect(src).toMatch(/const showsPulse = isArchivistPlus && !isAuteurPlus;/);
+    expect(src).toMatch(/if \(!showsPulse \|\| reducedMotion\) return;/);
+    // And exactly one consumer, so the gate above stays true.
+    expect(src.match(/pulseStyle\]/g) ?? []).toHaveLength(1);
   });
 });
 

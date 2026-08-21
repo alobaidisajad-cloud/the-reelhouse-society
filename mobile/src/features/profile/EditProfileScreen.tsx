@@ -218,7 +218,7 @@ export function EditProfileScreen() {
               <Text style={st.avatarHint}>Tap portrait to change</Text>
               <Text style={st.avatarSpec}>JPG, PNG, or WEBP · MAX 5MB</Text>
               {avatarPreview && (
-                <PressableScale onPress={handleRemoveAvatar} style={{ marginTop: 12, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder }} haptic="light">
+                <PressableScale onPress={handleRemoveAvatar} style={{ marginTop: 12, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder }} haptic="light" accessibilityRole="button" accessibilityLabel="Remove portrait">
                   <Text style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimson, textAlign: 'center', letterSpacing: 1 }}>REMOVE PORTRAIT</Text>
                 </PressableScale>
               )}

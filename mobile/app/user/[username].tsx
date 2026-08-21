@@ -75,6 +75,7 @@ import ReportSheet from '@/src/components/moderation/ReportSheet';
 import { StatCard } from '@/src/components/profile/ProfileHelpers';
 import { ProfilePosterCard } from '@/src/components/profile/ProfilePosterCard';
 import { useBlockStore } from '@/src/stores/blockStore';
+import { decorativeTextProps, displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
  
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
@@ -220,14 +221,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const POSTER_COL_4 = (windowWidth - 32 - 18) / 4;
   const POSTER_COL_3 = (windowWidth - 32 - 16) / 3;
 
-  // Breathing avatar animation — purely on native thread (capped to save battery)
   const breatheAnim = useSharedValue(0.4);
-  useEffect(() => {
-    // Capped at 20 repeats (approx 72 seconds) to allow UI thread idling and prevent battery drain
-    breatheAnim.value = withRepeat(withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }), 20, true);
-    return () => cancelAnimation(breatheAnim);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const pulseStyle = useAnimatedStyle(() => ({ opacity: breatheAnim.value }));
 
   // ── THE DEVELOPING PLATE ──────────────────────────────────────
@@ -284,6 +278,31 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const isArchivistPlus = isArchivistPlusTier(targetUser);
   const isAuteurPlus = isAuteurPlusTier(targetUser);
   const isPrivate = targetUser?.is_social_private && !isSelf && !isFollowing;
+
+  /**
+   * The breathing gold wash behind an Archivist's plate.
+   *
+   * ── IT NOW RUNS ONLY WHERE IT IS SEEN ────────────────────────────────────
+   * `pulseStyle` used to drive the avatar ring as well, which every member had,
+   * so starting the animation unconditionally was right. The composition
+   * replaced that ring with a mounted print, and the ONLY consumer left is the
+   * Archivist gradient below — a Cinephile renders a flat dark base and an
+   * Auteur renders their backdrop, neither of which reads it. The animation
+   * went on running anyway: a worklet re-evaluated every frame for seventy-two
+   * seconds, on two members out of three, to set an opacity nothing painted.
+   *
+   * It also never asked about reduce-motion, which the developing plate below
+   * has always honoured. A pulsing wash is atmosphere; it holds still for
+   * anyone who has asked the system to stop things moving.
+   */
+  const showsPulse = isArchivistPlus && !isAuteurPlus;
+  useEffect(() => {
+    if (!showsPulse || reducedMotion) return;
+    // Capped at 20 repeats (approx 72 seconds) to allow UI thread idling and prevent battery drain
+    breatheAnim.value = withRepeat(withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }), 20, true);
+    return () => cancelAnimation(breatheAnim);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showsPulse, reducedMotion]);
 
   // Tier echo — the member's tier color resonates through the hero (founder
   // mark + stats panel). Cinephile = house brass (understated); Archivist =
@@ -721,7 +740,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
                   {/* Cinema DNA CTA */}
                   <View style={s.tabContentPad}>
-                    <PressableScale style={s.ctaBtn} onPress={() => { setDnaCardOpen(true); data.loadTabData('projector'); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
+                    <PressableScale style={s.ctaBtn} onPress={() => { setDnaCardOpen(true); data.loadTabData('projector'); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic accessibilityRole="button" accessibilityLabel="View cinema DNA">
                       <View style={s.ctaBtnRow}>
                         <Dna size={12} color={colors.sepia} strokeWidth={1.5} />
                         <Text style={s.ctaBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>VIEW CINEMA DNA</Text>
@@ -771,7 +790,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                           {displayLogs.filter((l: ProfileLog) => l.rating >= 4).slice(0, 6).map((log: ProfileLog) => {
                             const posterUri = tmdb.poster(log.poster, 'w185');
                             return (
-                              <PressableScale key={log.id} style={s.favouriteRow} onPress={() => log.filmId && (router.push as any)(`/film/${log.filmId}` as any)} haptic>
+                              <PressableScale key={log.id} style={s.favouriteRow} onPress={() => log.filmId && (router.push as any)(`/film/${log.filmId}` as any)} haptic accessibilityRole="button" accessibilityLabel={`${log.title}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}>
                                 {posterUri && <Image source={{ uri: posterUri }} style={s.favPosterThumb} transition={50} cachePolicy="memory-disk" />}
                                 <View style={s.favTextWrap}>
                                   <Text style={s.favTitle} numberOfLines={1}>{log.title}</Text>
@@ -834,7 +853,18 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
       {/* Back button (only when navigated to, not on own tab) */}
       {!usernameOverride && (
         <View style={[s.topNav, { paddingTop: Math.max(insets.top + 10, 40) }]}>
-          <PressableScale onPress={handleBack} style={s.topNavBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic>
+          {/* Icon-only, so it has NO text child to borrow a name from: without
+              this label a screen reader announced nothing at all for the one
+              control that leaves the page. The tab-view's back button has had
+              a name all along; this one never did. */}
+          <PressableScale
+            onPress={handleBack}
+            style={s.topNavBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            haptic
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <ChevronLeft size={24} color={colors.parchment} strokeWidth={1.5} />
           </PressableScale>
         </View>
@@ -902,7 +932,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     />
                   ) : (
                     <View style={s.plateInitialWrap}>
-                      <Text style={s.plateInitial} allowFontScaling={false}>{avatarInitial}</Text>
+                      <Text {...decorativeTextProps} style={s.plateInitial}>{avatarInitial}</Text>
                     </View>
                   )}
                   {/* The grain is inside the frame, over the photograph — it is
@@ -918,30 +948,30 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     literally stamps down, on the last beat of the develop. */}
                 <AnimatedView style={[s.tierStamp, isAuteurPlus && s.tierStampRuby, stampDevelop]}>
                   <Text
+                    {...decorativeTextProps}
                     style={[s.tierStampText, isAuteurPlus && s.tierStampTextRuby]}
                     numberOfLines={1}
-                    allowFontScaling={false}
                   >{stampLabel}</Text>
                 </AnimatedView>
               </View>
 
               <View style={s.particulars}>
-                <Text style={[s.heroName, nameStyle]} numberOfLines={2}>{heroName}</Text>
+                <Text {...displayTextProps} style={[s.heroName, nameStyle]} numberOfLines={2}>{heroName}</Text>
                 <LinearGradient
                   colors={[tierLine, 'transparent']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={s.nameRule}
                 />
-                {showHandle && <Text style={s.heroHandle} numberOfLines={1}>{heroHandle}</Text>}
+                {showHandle && <Text {...scaledTextProps} style={s.heroHandle} numberOfLines={1}>{heroHandle}</Text>}
                 {isFounding && (
-                  <Text style={[s.heroStand, { color: tierText }]} numberOfLines={1}>✦ FOUNDING MEMBER</Text>
+                  <Text {...scaledTextProps} style={[s.heroStand, { color: tierText }]} numberOfLines={1}>✦ FOUNDING MEMBER</Text>
                 )}
-                {!!serialLine && <Text style={s.heroSerial} numberOfLines={1}>{serialLine}</Text>}
+                {!!serialLine && <Text {...scaledTextProps} style={s.heroSerial} numberOfLines={1}>{serialLine}</Text>}
               </View>
             </AnimatedView>
 
             {/* ── The bio, in the house's own quotation marks ── */}
-            <Text style={[s.heroBio, bioStyle]} numberOfLines={bioLines}>
+            <Text {...scaledTextProps} style={[s.heroBio, bioStyle]} numberOfLines={bioLines}>
               <Text style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>« </Text>
               {bioText}
               <Text style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}> »</Text>
@@ -966,7 +996,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     accessibilityLabel={`Open ${link.title || 'link'}`}
                   >
                     <Globe size={10} color={colors.fog} />
-                    <Text style={s.socialLinkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(link.title || '').toUpperCase()}</Text>
+                    <Text {...scaledTextProps} style={s.socialLinkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(link.title || '').toUpperCase()}</Text>
                   </PressableScale>
                 ))}
               </View>
@@ -1001,7 +1031,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   accessibilityRole="button"
                   accessibilityLabel="Edit your file"
                 >
-                  <Text style={s.actText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>EDIT YOUR FILE</Text>
+                  <Text {...scaledTextProps} style={s.actText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>EDIT YOUR FILE</Text>
                 </PressableScale>
                 <PressableScale
                   style={[s.act, s.actGhost]}
@@ -1104,7 +1134,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     accessibilityRole="button"
                     accessibilityLabel={`${log.title}${log.year ? `, ${log.year}` : ''}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}
                   >
-                    <Text style={s.latelyIndex} allowFontScaling={false}>{String(i + 1).padStart(2, '0')}</Text>
+                    <Text {...decorativeTextProps} style={s.latelyIndex}>{String(i + 1).padStart(2, '0')}</Text>
                     <View style={[s.latelyPoster, !log.poster && s.latelyPosterEmpty]}>
                       {log.poster ? (
                         <Image source={{ uri: tmdb.poster(log.poster, 'w185') }} style={s.latelyPosterImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
@@ -1113,16 +1143,16 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       )}
                     </View>
                     <View style={s.latelyText}>
-                      <Text style={s.latelyTitle} numberOfLines={1}>{(log.title || '').toUpperCase()}</Text>
-                      {!!log.year && <Text style={s.latelyYear} numberOfLines={1}>{log.year}</Text>}
+                      <Text {...scaledTextProps} style={s.latelyTitle} numberOfLines={1}>{(log.title || '').toUpperCase()}</Text>
+                      {!!log.year && <Text {...scaledTextProps} style={s.latelyYear} numberOfLines={1}>{log.year}</Text>}
                     </View>
                     <View style={s.latelyRight}>
                       {log.rating > 0 && <ReelRating rating={log.rating} size={9} />}
                       {/* A rewatch says more than a date does. */}
                       {log.status === 'rewatched' ? (
-                        <Text style={s.latelyRewatch} numberOfLines={1}>↺ REWATCHED</Text>
+                        <Text {...scaledTextProps} style={s.latelyRewatch} numberOfLines={1}>↺ REWATCHED</Text>
                       ) : (
-                        <Text style={s.latelyWhen} numberOfLines={1}>{timeAgo(log.watchedDate ?? (log as any).createdAt).toUpperCase()}</Text>
+                        <Text {...scaledTextProps} style={s.latelyWhen} numberOfLines={1}>{timeAgo(log.watchedDate ?? (log as any).createdAt).toUpperCase()}</Text>
                       )}
                     </View>
                   </PressableScale>
@@ -1161,15 +1191,15 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                         : `${item.label}, ${item.desc.toLowerCase()}, ${item.count === '—' ? 'none filed yet' : item.count}`}
                     >
                       <View style={s.holdNameRow}>
-                        <Text style={s.holdName} numberOfLines={1}>{item.label}</Text>
+                        <Text {...scaledTextProps} style={s.holdName} numberOfLines={1}>{item.label}</Text>
                         {/* Locked rooms wear the brass key — informed taps only */}
                         {item.locked && <KeyRound size={9} color={colors.sepia} strokeWidth={2.2} style={s.roomKeyDim} />}
                       </View>
                       <View style={s.holdBase}>
-                        <Text style={s.holdSub} numberOfLines={1}>{item.desc.toLowerCase()}</Text>
+                        <Text {...scaledTextProps} style={s.holdSub} numberOfLines={1}>{item.desc.toLowerCase()}</Text>
                         <View style={s.holdLeader} />
                         {/* The Projector shows its ★, never a lying zero */}
-                        <Text style={[s.holdCount, item.locked && s.holdCountLock]} numberOfLines={1}>{item.count}</Text>
+                        <Text {...scaledTextProps} style={[s.holdCount, item.locked && s.holdCountLock]} numberOfLines={1}>{item.count}</Text>
                       </View>
                     </PressableScale>
                   ))}
@@ -1188,7 +1218,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             accessibilityLabel={isArchivistPlus ? 'The Viewing Calendar' : 'The Viewing Calendar, locked'}
           >
             <CalendarDays size={13} color={isArchivistPlus ? colors.sepia : 'rgba(158,148,136,0.55)'} strokeWidth={1.6} />
-            <Text style={[s.doorText, !isArchivistPlus && s.doorTextLocked]} numberOfLines={1}>THE VIEWING CALENDAR</Text>
+            <Text {...scaledTextProps} style={[s.doorText, !isArchivistPlus && s.doorTextLocked]} numberOfLines={1}>THE VIEWING CALENDAR</Text>
             {isArchivistPlus
               ? <ChevronRight size={11} color={colors.sepia} strokeWidth={2} />
               : <KeyRound size={11} color={'rgba(158,148,136,0.55)'} strokeWidth={2} />}
@@ -1213,7 +1243,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   accessibilityLabel="Settings and profile"
                 >
                   <Settings size={14} color={colors.sepia} strokeWidth={1.6} />
-                  <Text style={s.deskText} numberOfLines={1}>SETTINGS &amp; PROFILE</Text>
+                  <Text {...scaledTextProps} style={s.deskText} numberOfLines={1}>SETTINGS &amp; PROFILE</Text>
                   <ChevronRight size={11} color={colors.fog} strokeWidth={2} />
                 </PressableScale>
               </View>
@@ -1222,8 +1252,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   door, not an upsell, so it does not disappear once you reach
                   the top; at the top it simply stops shouting. */}
               <View style={s.ranksPlate}>
-                <Text style={s.ranksTitle} numberOfLines={1}>THE SOCIETY RANKS</Text>
-                <Text style={s.ranksSub}>{ranksSub}</Text>
+                <Text {...scaledTextProps} style={s.ranksTitle} numberOfLines={1}>THE SOCIETY RANKS</Text>
+                <Text {...scaledTextProps} style={s.ranksSub}>{ranksSub}</Text>
                 <PressableScale
                   style={[s.ranksBtn, isAuteurPlus && s.ranksBtnQuiet]}
                   onPress={navToMembership}
@@ -1232,7 +1262,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   accessibilityRole="button"
                   accessibilityLabel={isAuteurPlus ? 'View and manage your rank' : 'Ascend the ranks'}
                 >
-                  <Text style={[s.ranksBtnText, isAuteurPlus && s.ranksBtnTextQuiet]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                  <Text {...scaledTextProps} style={[s.ranksBtnText, isAuteurPlus && s.ranksBtnTextQuiet]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                     {isAuteurPlus ? 'VIEW & MANAGE' : '✦ ASCEND THE RANKS'}
                   </Text>
                 </PressableScale>
@@ -1243,7 +1273,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           {/* The foot of the file. */}
           <View style={s.footRow}>
             <View style={s.footRule} />
-            <Text style={[s.footMark, isAuteurPlus && s.footMarkRuby]} allowFontScaling={false}>✦</Text>
+            <Text {...decorativeTextProps} style={[s.footMark, isAuteurPlus && s.footMarkRuby]}>✦</Text>
             <View style={s.footRule} />
           </View>
         </View>

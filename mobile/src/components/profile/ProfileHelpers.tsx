@@ -2,6 +2,7 @@ import React from 'react';
 import { Text } from 'react-native';
 import PressableScale from '@/src/components/PressableScale';
 import { s } from '@/src/components/profile/profileStyles';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 /**
  * One of the four figures on the member's plate.
@@ -41,10 +42,10 @@ export const StatCard = React.memo(function StatCard({
       accessibilityLabel={`${value === '—' ? 'no' : value} ${label.toLowerCase()}`}
       haptic
     >
-      <Text style={s.statNum} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.6}>
+      <Text {...scaledTextProps} style={s.statNum} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.6}>
         {value}
       </Text>
-      <Text style={s.statCap} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+      <Text {...scaledTextProps} style={s.statCap} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Text>
     </PressableScale>
