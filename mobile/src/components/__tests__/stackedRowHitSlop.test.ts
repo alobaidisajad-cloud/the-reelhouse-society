@@ -24,7 +24,7 @@
  *   • the tribunal's DISMISS / BAN / PERMANENT EXILE row;
  *   • the Lounge sheet, where BLOCK sat under REPORT.
  */
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 const ROOT = join(__dirname, '..', '..', '..');
@@ -301,6 +301,104 @@ describe('neighbouring controls do not overlap each other’s touch targets', ()
       expect(offenders).toEqual([]);
     });
   }
+});
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * THE SWEEP — because the list above is the wrong SHAPE
+ * ─────────────────────────────────────────────────────────────────────────────
+ * `RULES` is default-ALLOW: it checks the places somebody remembered to add and
+ * says nothing about anywhere else. That has now missed real findings twice on
+ * the same page — 27 unnamed controls, then every filter chip in every room —
+ * and both times the fix was "add the rooms to the list", which leaves the
+ * shape exactly as wrong as it was.
+ *
+ * This is default-DENY, and it asserts the one thing that is exactly checkable
+ * without inferring layout from source: a control rendered inside a `.map(` is
+ * adjacent to a COPY OF ITSELF, so it has a neighbour by construction — and it
+ * may not silently inherit PressableScale's 15pt default on all four sides. It
+ * has to DECLARE its slop. `null` is a perfectly good declaration; the point is
+ * that somebody looked.
+ *
+ * An earlier version of this tried to resolve each control's container and
+ * compare against its gap. That flagged a chip's vertical slop — free and
+ * correct, since nothing sits above or below it in a horizontal scroller —
+ * against its row's HORIZONTAL gap. Inferring layout statically is approximate,
+ * and an approximate guard that cries wolf is one that gets weakened by the
+ * next person who hits it. So the two halves split the job: this one guarantees
+ * nobody forgets to think, RULES checks the arithmetic where somebody did.
+ */
+const SWEEP_DIRS = ['src/components/profile', 'src/features/profile'];
+const SWEEP_EXTRA = ['app/user/[username].tsx'];
+
+describe('the sweep: no repeated control may inherit the default halo', () => {
+  const read = (f: string) =>
+    readFileSync(join(ROOT, f), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+      .replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
+
+  const files: string[] = [];
+  for (const dir of SWEEP_DIRS) {
+    const walk = (d: string) => {
+      for (const e of readdirSync(join(ROOT, d), { withFileTypes: true })) {
+        if (e.name === '__tests__') continue;
+        const rel = `${d}/${e.name}`;
+        if (e.isDirectory()) walk(rel);
+        else if (rel.endsWith('.tsx')) files.push(rel);
+      }
+    };
+    walk(dir);
+  }
+  files.push(...SWEEP_EXTRA);
+
+  /**
+   * The spans of every `.map(` call in the file — from its opening paren to
+   * the matching close. A control is REPEATED if and only if it sits inside
+   * one. Proximity is not good enough: an empty-state button written just
+   * below the loop that builds a poster grid is a single button, and a
+   * look-behind window reads it as one of many.
+   */
+  function mapSpans(src: string): [number, number][] {
+    const spans: [number, number][] = [];
+    let i = 0;
+    while ((i = src.indexOf('.map(', i)) !== -1) {
+      const open = i + 4;
+      let depth = 0, inStr: string | null = null, close = -1;
+      for (let j = open; j < src.length; j++) {
+        const c = src[j];
+        if (inStr) { if (c === inStr && src.charCodeAt(j - 1) !== 92) inStr = null; continue; }
+        if (c === '"' || c === "'" || c === '\'') { inStr = c; continue; }
+        if (c === '(') depth++;
+        else if (c === ')') { depth--; if (depth === 0) { close = j; break; } }
+      }
+      if (close === -1) break;
+      spans.push([open, close]);
+      i = open;
+    }
+    return spans;
+  }
+
+  it('every repeated control on the member file declares its own hitSlop', () => {
+    const bare: string[] = [];
+    let repeated = 0;
+
+    for (const f of files) {
+      const src = read(f);
+      const spans = mapSpans(src);
+      for (const tag of ['PressableScale', 'Pressable', 'TouchableOpacity']) {
+        for (const t of scanTags(src, tag)) {
+          const idx = src.split('\n').slice(0, t.line - 1).join('\n').length;
+          if (!spans.some(([a, b]) => idx > a && idx < b)) continue;   // not repeated
+          repeated++;
+          if (!/hitSlop\s*=/.test(t.attrs)) bare.push(`${f}:${t.line} <${tag}`);
+        }
+      }
+    }
+
+    // A sweep that finds nothing to look at would pass while proving nothing.
+    expect(repeated).toBeGreaterThan(8);
+    expect(bare).toEqual([]);
+  });
 });
 
 describe('the top bar’s own icon cluster', () => {

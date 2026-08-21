@@ -30,8 +30,12 @@ const ProfileListCard = React.memo(({ list, router }: { list: ProfileList, route
     .slice(0, 3)
     .map((f: ProfileListFilm) => tmdb.poster(f.poster || '', 'w185'));
 
+  // stacksGrid has `gap: 10`, so a card may claim 5 — at 8 each, two
+  // neighbouring stacks overlapped by 6pt and the later one took the tap. The
+  // card is far larger than 44pt on its own, so it needs no halo at all; 5 is
+  // kept only so the edge stays forgiving.
   return (
-    <PressableScale hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} 
+    <PressableScale hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
       style={s.stackCard} 
       onPress={() => (router.push as any)(`/stacks/${list.id}` as any)}
       haptic

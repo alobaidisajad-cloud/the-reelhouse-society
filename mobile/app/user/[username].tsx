@@ -790,7 +790,21 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                           {displayLogs.filter((l: ProfileLog) => l.rating >= 4).slice(0, 6).map((log: ProfileLog) => {
                             const posterUri = tmdb.poster(log.poster, 'w185');
                             return (
-                              <PressableScale key={log.id} style={s.favouriteRow} onPress={() => log.filmId && (router.push as any)(`/film/${log.filmId}` as any)} haptic accessibilityRole="button" accessibilityLabel={`${log.title}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}>
+                              <PressableScale
+                                key={log.id}
+                                style={s.favouriteRow}
+                                onPress={() => log.filmId && (router.push as any)(`/film/${log.filmId}` as any)}
+                                // Six rows stacked in a card with `gap: 10`, so
+                                // each may claim 5 vertically. At the 15pt
+                                // default they reached 20pt into each other and
+                                // the LATER row won: tapping the bottom of one
+                                // film opened the film below it. The row is
+                                // 42pt tall, so 5 each side still clears 44.
+                                hitSlop={{ top: 5, bottom: 5, left: 8, right: 8 }}
+                                haptic
+                                accessibilityRole="button"
+                                accessibilityLabel={`${log.title}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}
+                              >
                                 {posterUri && <Image source={{ uri: posterUri }} style={s.favPosterThumb} transition={50} cachePolicy="memory-disk" />}
                                 <View style={s.favTextWrap}>
                                   <Text {...scaledTextProps} style={s.favTitle} numberOfLines={1}>{log.title}</Text>
