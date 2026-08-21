@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { View, ScrollView, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { PenTool, Film as FilmIcon, Search, X, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -133,11 +134,11 @@ export default function ProfileLedgerTab({
       })
       .filter((url): url is string => !!url);
     
-    if (urlsToPrefetch.length > 0) {
-      import('expo-image').then(({ Image }) => {
-        Image.prefetch(urlsToPrefetch);
-      });
-    }
+    // A STATIC import, as the Vault already does. expo-image is a hard
+    // dependency rendered on nearly every screen, so deferring it bought
+    // nothing — and the dynamic form made this component impossible to mount
+    // in a test at all, which is exactly why nothing covered it.
+    if (urlsToPrefetch.length > 0) Image.prefetch(urlsToPrefetch);
   }, [ledgerFiltered]);
 
   const renderItem = useCallback(({ item }: { item: LedgerItem }) => {

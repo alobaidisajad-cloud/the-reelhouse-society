@@ -972,9 +972,19 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
             {/* ── The bio, in the house's own quotation marks ── */}
             <Text {...scaledTextProps} style={[s.heroBio, bioStyle]} numberOfLines={bioLines}>
-              <Text {...decorativeTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>« </Text>
+              {/* The guillemets sit INSIDE the bio and inherit its size, so they
+                  must inherit its ceiling too. A blanket "anything called a
+                  mark is decorative" rule had made them the one piece of text
+                  on the page that would not grow — leaving the quote marks
+                  small around a bio that had grown around them. */}
+              <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>« </Text>
               {bioText}
-              <Text {...decorativeTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}> »</Text>
+              {/* The guillemets sit INSIDE the bio and inherit its size, so they
+                  must inherit its ceiling too. A blanket "anything called a
+                  mark is decorative" rule had made them the one piece of text
+                  on the page that would not grow — leaving the quote marks
+                  small around a bio that had grown around them. */}
+              <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}> »</Text>
             </Text>
 
             {/* ── Social Links ── */}

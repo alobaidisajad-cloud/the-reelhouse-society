@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Bookmark, Search, X, Disc3, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -116,11 +117,8 @@ export default function ProfileWatchlistTab({
       .map(item => tmdb.poster(item.poster_path, 'w185'))
       .filter((url): url is string => !!url);
     
-    if (urlsToPrefetch.length > 0) {
-      import('expo-image').then(({ Image }) => {
-        Image.prefetch(urlsToPrefetch);
-      });
-    }
+    // A STATIC import, as the Vault already does — see the note in the Ledger.
+    if (urlsToPrefetch.length > 0) Image.prefetch(urlsToPrefetch);
   }, [watchlistFiltered]);
 
   const renderItem = useCallback(({ item }: { item: WatchlistRowItem }) => {
