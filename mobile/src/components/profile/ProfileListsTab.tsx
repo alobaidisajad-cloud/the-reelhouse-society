@@ -9,6 +9,7 @@ import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
 import type { ProfileList, ProfileListFilm } from '../../types';
 import PressableScale from '../PressableScale';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 
 interface ProfileListsTabProps {
@@ -34,6 +35,8 @@ const ProfileListCard = React.memo(({ list, router }: { list: ProfileList, route
       style={s.stackCard} 
       onPress={() => (router.push as any)(`/stacks/${list.id}` as any)}
       haptic
+      accessibilityRole="button"
+      accessibilityLabel={[list.title ?? 'Untitled stack', list.isRanked ? 'ranked' : '', list.isPrivate ? 'private' : ''].filter(Boolean).join(', ')}
     >
       <View style={s.stackPosterWrap}>
         {posters.length > 0 ? (
@@ -56,17 +59,17 @@ const ProfileListCard = React.memo(({ list, router }: { list: ProfileList, route
         <View style={s.badgeRow}>
           {/* filmCount, NOT films.length — for a visitor that array is capped at 4,
               which is how a 96-film stack advertised itself as "4 FILMS" (#46). */}
-          <Text style={s.stackBadge}>{list.filmCount} FILMS</Text>
+          <Text {...scaledTextProps} style={s.stackBadge}>{list.filmCount} FILMS</Text>
           {list.isRanked && (
             <View style={s.rankedBadge}>
               <ListOrdered size={10} color={colors.sepia} />
-              <Text style={s.rankedText}>RANKED</Text>
+              <Text {...scaledTextProps} style={s.rankedText}>RANKED</Text>
             </View>
           )}
         </View>
-        <Text style={s.stackTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{(list.title || '').toUpperCase()}</Text>
+        <Text {...scaledTextProps} style={s.stackTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{(list.title || '').toUpperCase()}</Text>
         {list.description ? (
-          <Text style={s.stackDesc} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{list.description}</Text>
+          <Text {...scaledTextProps} style={s.stackDesc} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{list.description}</Text>
         ) : null}
       </View>
       {list.isPrivate && (
@@ -111,9 +114,9 @@ export default React.memo(function ProfileListsTab({ lists, onLoadMore, isLoadin
           <View style={s.dossierStackBg2} />
           <View style={s.dossierFront}>
             <LayoutList size={32} color={colors.parchment} strokeWidth={1.5} style={s.emptyLockIcon} />
-            <Text style={s.emptyTitleSelf}>Uncharted Stacks</Text>
-            <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/list-modal' as never)} haptic>
-              <Text style={s.ctaBtnTextSelf}>COMPILE A DOSSIER</Text>
+            <Text {...scaledTextProps} style={s.emptyTitleSelf}>Uncharted Stacks</Text>
+            <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/list-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Compile a dossier">
+              <Text {...scaledTextProps} style={s.ctaBtnTextSelf}>COMPILE A DOSSIER</Text>
             </PressableScale>
           </View>
         </Animated.View>
@@ -123,8 +126,8 @@ export default React.memo(function ProfileListsTab({ lists, onLoadMore, isLoadin
     return (
       <View style={s.emptyState}>
         <LayoutList size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-        <Text style={s.emptyTitle}>The Stacks are Empty</Text>
-        <Text style={s.emptyDesc}>No lists yet.</Text>
+        <Text {...scaledTextProps} style={s.emptyTitle}>The Stacks are Empty</Text>
+        <Text {...scaledTextProps} style={s.emptyDesc}>No lists yet.</Text>
       </View>
     );
   }, [lists.length, isSelf, pulseStyle, router]);
@@ -134,8 +137,8 @@ export default React.memo(function ProfileListsTab({ lists, onLoadMore, isLoadin
     return (
       <View>
         {hasMore && (
-          <PressableScale style={s.loadMoreBtn} onPress={onLoadMore} disabled={isLoadingMore}>
-            {isLoadingMore ? <ActivityIndicator color={colors.sepia} /> : <Text style={s.loadMoreText}>LOAD MORE</Text>}
+          <PressableScale style={s.loadMoreBtn} onPress={onLoadMore} disabled={isLoadingMore} accessibilityRole="button" accessibilityLabel={isLoadingMore ? 'Loading more' : 'Load more'} accessibilityState={{ busy: isLoadingMore, disabled: isLoadingMore }}>
+            {isLoadingMore ? <ActivityIndicator color={colors.sepia} /> : <Text {...scaledTextProps} style={s.loadMoreText}>LOAD MORE</Text>}
           </PressableScale>
         )}
       </View>

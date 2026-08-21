@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, fonts } from '@/src/theme/theme';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 interface TasteLog {
   rating: number;
@@ -69,16 +70,16 @@ export function TasteMatch({ myLogs = [], theirLogs = [], theirUsername }: Taste
 
   return (
     <View style={s.container}>
-      <Text style={s.header}>TASTE COMPATIBILITY</Text>
+      <Text {...scaledTextProps} style={s.header}>TASTE COMPATIBILITY</Text>
 
-      <Text style={[s.percentage, { color, textShadowColor: `${color}40` }]}>
+      <Text {...scaledTextProps} style={[s.percentage, { color, textShadowColor: `${color}40` }]}>
         {match}%
       </Text>
 
-      <Text style={[s.label, { color }]}>{label}</Text>
+      <Text {...scaledTextProps} style={[s.label, { color }]}>{label}</Text>
 
-      <Text style={s.description} numberOfLines={2} adjustsFontSizeToFit>
-        You and <Text style={{ color: colors.bone }}>@{theirUsername}</Text> share a {match}% cinematic overlap
+      <Text {...scaledTextProps} style={s.description} numberOfLines={2} adjustsFontSizeToFit>
+        You and <Text {...scaledTextProps} style={{ color: colors.bone }}>@{theirUsername}</Text> share a {match}% cinematic overlap
       </Text>
     </View>
   );

@@ -24,7 +24,7 @@
 import React, { act } from 'react';
 import { StyleSheet } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 // One import, at the top. `jest.mock` factories are hoisted above every import
@@ -128,12 +128,29 @@ describe('the altarpiece fits the phone it is hung on', () => {
 // EVERY CONTROL SAYS ITS OWN NAME
 // ════════════════════════════════════════════════════════════════════════════
 describe('nothing on the member file is anonymous to a screen reader', () => {
-  const A11Y_FILES = [
-    'app/user/[username].tsx',
-    'src/components/profile/ProfileTriptych.tsx',
-    'src/components/profile/ProfileHelpers.tsx',
-    'src/features/profile/EditProfileScreen.tsx',
-  ];
+  /**
+   * THE WHOLE member file, not a hand-written list.
+   *
+   * This started as four filenames — the ones the redesign happened to touch —
+   * and reported a clean 27 of 27 while twenty-seven controls in the seven
+   * ROOMS behind the profile still had no name at all. A list of files someone
+   * remembered to add is not a sweep; walking the directory is.
+   */
+  const A11Y_FILES: string[] = (function collect() {
+    const found: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+        if (e.name === '__tests__') continue;
+        const rel = `${dir}/${e.name}`;
+        if (e.isDirectory()) walk(rel);
+        else if (rel.endsWith('.tsx')) found.push(rel);
+      }
+    };
+    walk('src/components/profile');
+    walk('src/features/profile');
+    found.push('app/user/[username].tsx');
+    return found;
+  })();
 
   /**
    * Blanks comments WITHOUT collapsing lines. Replacing a block comment with
@@ -177,16 +194,57 @@ describe('nothing on the member file is anonymous to a screen reader', () => {
     let total = 0;
     for (const f of A11Y_FILES) {
       const src = blank(read(f));
-      for (const tag of ['PressableScale', 'Pressable', 'Switch', 'TextInput']) {
+      for (const tag of ['PressableScale', 'Pressable', 'TouchableOpacity', 'Switch', 'TextInput']) {
         for (const t of scanTags(src, tag)) {
           total++;
-          if (!/accessibilityLabel\s*=/.test(t.attrs)) unnamed.push(`${f}:${t.line} <${tag}`);
+          // A control deliberately lifted out of the accessibility tree needs
+          // no name — the roulette's card exists only to swallow a tap, and
+          // announcing it as a button that does nothing is worse than silence.
+          const hidden = /accessible=\{false\}/.test(t.attrs)
+            || /importantForAccessibility="no/.test(t.attrs);
+          if (!hidden && !/accessibilityLabel\s*=/.test(t.attrs)) unnamed.push(`${f}:${t.line} <${tag}`);
         }
       }
     }
     // A scan that finds nothing would pass while proving nothing.
-    expect(total).toBeGreaterThan(20);
+    expect(total).toBeGreaterThan(60);
     expect(unnamed).toEqual([]);
+  });
+
+  it('every piece of text has a ceiling on how far it can grow', () => {
+    // React Native's default is allowFontScaling:true with NO cap, so at the
+    // largest accessibility setting type grows without limit — through fixed
+    // circles, fixed-height rows and a composition built around a 120pt
+    // portrait. The app has three shared constants for exactly this; the
+    // member file used none of them.
+    const uncapped: string[] = [];
+    let total = 0;
+    for (const f of A11Y_FILES) {
+      const src = blank(read(f));
+      for (const t of scanTags(src, 'Text')) {
+        total++;
+        const capped = /\.\.\.(scaledTextProps|displayTextProps|decorativeTextProps|deckLabelProps)/.test(t.attrs)
+          || /allowFontScaling/.test(t.attrs)
+          || /maxFontSizeMultiplier/.test(t.attrs);
+        if (!capped) uncapped.push(`${f}:${t.line}`);
+      }
+    }
+    expect(total).toBeGreaterThan(200);
+    expect(uncapped).toEqual([]);
+  });
+
+  it('no date or number on the page is formatted through Intl', () => {
+    // Where Hermes has no Intl the OPTIONS ARE IGNORED SILENTLY and the output
+    // looks like a design choice rather than a failure, which is how it
+    // survived on the hero until this pass.
+    const found: string[] = [];
+    for (const f of A11Y_FILES) {
+      const src = blank(read(f));
+      for (const m of src.matchAll(/toLocale(Date|Time)?String|Intl\./g)) {
+        found.push(`${f}:${src.slice(0, m.index).split('\n').length} ${m[0]}`);
+      }
+    }
+    expect(found).toEqual([]);
   });
 });
 

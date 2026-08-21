@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
 import VaultLock from './VaultLock';
 import { useAuthStore } from '@/src/stores/auth';
+import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 
 interface ProfileArchiveTabProps {
   logs: ProfileLog[];
@@ -97,7 +98,7 @@ export default function ProfileArchiveTab({
 
   const renderItem = useCallback(({ item }: { item: ArchiveItem }) => {
     if (item.type === 'header') {
-      return <Text style={s.monthHeader}>{item.title}</Text>;
+      return <Text {...scaledTextProps} style={s.monthHeader}>{item.title}</Text>;
     }
     return (
       <View style={s.grid4}>
@@ -121,8 +122,11 @@ export default function ProfileArchiveTab({
             onPress={() => { setArchiveSieve(sv.id); }} 
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             haptic
+            accessibilityRole="button"
+            accessibilityLabel={`Filter the archive by ${sv.label}`}
+            accessibilityState={{ selected: archiveSieve === sv.id }}
           >
-            <Text style={[s.filterChipText, archiveSieve === sv.id && s.filterChipTextActive]}>{sv.label}</Text>
+            <Text {...scaledTextProps} style={[s.filterChipText, archiveSieve === sv.id && s.filterChipTextActive]}>{sv.label}</Text>
           </PressableScale>
         ))}
       </ScrollView>
@@ -136,9 +140,9 @@ export default function ProfileArchiveTab({
       return (
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-          <Text style={s.emptyTitleSelf}>The Archive Awaits</Text>
-          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
-            <Text style={s.ctaBtnText}>RECORD A SCREENING</Text>
+          <Text {...scaledTextProps} style={s.emptyTitleSelf}>The Archive Awaits</Text>
+          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Record a screening">
+            <Text {...scaledTextProps} style={s.ctaBtnText}>RECORD A SCREENING</Text>
           </PressableScale>
 
           {/* The import signpost — the feature already lives in Settings; this
@@ -146,10 +150,10 @@ export default function ProfileArchiveTab({
               Own-profile empty-archive only, so it shares a screen with nothing. */}
           <View style={s.importDividerRow}>
             <View style={s.importDividerLine} />
-            <Text style={s.importDividerMark}>✦</Text>
+            <Text {...decorativeTextProps} style={s.importDividerMark}>✦</Text>
             <View style={s.importDividerLine} />
           </View>
-          <Text style={s.importLine}>Your viewing history can travel with you.</Text>
+          <Text {...scaledTextProps} style={s.importLine}>Your viewing history can travel with you.</Text>
           <PressableScale
             style={s.importBtn}
             onPress={() => (router.push as any)('/settings' as never)}
@@ -157,7 +161,7 @@ export default function ProfileArchiveTab({
             accessibilityRole="button"
             accessibilityLabel="Import your archive from another service"
           >
-            <Text style={s.importBtnText}>✦  IMPORT YOUR ARCHIVE</Text>
+            <Text {...scaledTextProps} style={s.importBtnText}>✦  IMPORT YOUR ARCHIVE</Text>
           </PressableScale>
         </Animated.View>
       );
@@ -166,8 +170,8 @@ export default function ProfileArchiveTab({
     return (
       <View style={s.emptyState}>
         <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-        <Text style={s.emptyTitle}>The Archive is Empty</Text>
-        <Text style={s.emptyDesc}>
+        <Text {...scaledTextProps} style={s.emptyTitle}>The Archive is Empty</Text>
+        <Text {...scaledTextProps} style={s.emptyDesc}>
           {logs.length === 0 
             ? "This member hasn't watched any films yet." 
             : 'No films match this filter.'}

@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '../PressableScale';
+import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 
 interface RouletteFilm {
     id?: number;
@@ -194,19 +195,19 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
 
     return (
         <Modal statusBarTranslucent visible transparent animationType="fade" onRequestClose={() => { TactileEngine.selection(); onClose?.(); }}>
-            <Pressable style={s.overlay} onPress={() => { TactileEngine.selection(); onClose?.(); }}>
-                <Pressable style={s.card} onPress={() => {}}>
+            <Pressable style={s.overlay} onPress={() => { TactileEngine.selection(); onClose?.(); }} accessibilityRole="button" accessibilityLabel="Close the oracle">
+                <Pressable style={s.card} onPress={() => {}} accessible={false}>
 
                     {/* IDLE — Summon */}
                     {!picking && !result && (
                         <Animated.View entering={FadeIn.duration(400)} style={s.centerContent}>
-                            <Text style={s.reelGlyph}>{'◉ ◉ ◉'}</Text>
+                            <Text {...decorativeTextProps} style={s.reelGlyph}>{'◉ ◉ ◉'}</Text>
                             {/* eslint-disable-next-line react/no-unescaped-entities */}
-                            <Text style={s.title}>The Oracle's Choice</Text>
+                            <Text {...scaledTextProps} style={s.title}>The Oracle's Choice</Text>
                             {/* eslint-disable-next-line react/no-unescaped-entities */}
-                            <Text style={s.subtitle}>Can't decide? Let the Archive choose tonight's obsession.</Text>
-                            <PressableScale style={s.spinBtn} onPress={spin} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium">
-                                <Text style={s.spinBtnText}>{'✦ CONSULT THE ORACLE'}</Text>
+                            <Text {...scaledTextProps} style={s.subtitle}>Can't decide? Let the Archive choose tonight's obsession.</Text>
+                            <PressableScale style={s.spinBtn} onPress={spin} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" accessibilityRole="button" accessibilityLabel="Consult the oracle — pick a film from your watchlist">
+                                <Text {...scaledTextProps} style={s.spinBtnText}>{'✦ CONSULT THE ORACLE'}</Text>
                             </PressableScale>
                         </Animated.View>
                     )}
@@ -214,7 +215,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                     {/* PICKING — the film gate */}
                     {picking && (
                         <View style={s.centerContent}>
-                            <Text style={s.scanningText}>SCANNING THE ARCHIVES</Text>
+                            <Text {...scaledTextProps} style={s.scanningText}>SCANNING THE ARCHIVES</Text>
                             <View style={s.gate}>
                                 <Perforations />
                                 <View style={s.gateWindow}>
@@ -230,14 +231,14 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                 </View>
                                 <Perforations />
                             </View>
-                            <Text style={s.gateFooter}>the reel spins…</Text>
+                            <Text {...scaledTextProps} style={s.gateFooter}>the reel spins…</Text>
                         </View>
                     )}
 
                     {/* RESULT — the verdict */}
                     {!picking && result && (
                         <Animated.View entering={FadeIn.duration(400)} style={s.centerContent}>
-                            <Text style={s.oracleSpoken}>THE ORACLE HAS SPOKEN</Text>
+                            <Text {...scaledTextProps} style={s.oracleSpoken}>THE ORACLE HAS SPOKEN</Text>
                             <View style={s.gate}>
                                 <Perforations />
                                 <Animated.View style={[s.gateWindow, s.resultPosterWrap, plateStyle]}>
@@ -245,29 +246,29 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                         <Image source={{ uri: posterUri(result)! }} style={s.poster} cachePolicy="memory-disk" transition={150} />
                                     ) : (
                                         <View style={[s.posterBlank, s.posterBlankResult]}>
-                                            <Text style={s.posterBlankTitle} numberOfLines={3}>{result.title ?? result.name}</Text>
+                                            <Text {...scaledTextProps} style={s.posterBlankTitle} numberOfLines={3}>{result.title ?? result.name}</Text>
                                         </View>
                                     )}
                                 </Animated.View>
                                 <Perforations />
                             </View>
-                            <Text style={s.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{result.title ?? result.name}</Text>
+                            <Text {...scaledTextProps} style={s.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{result.title ?? result.name}</Text>
                             {/* eslint-disable-next-line react/no-unescaped-entities */}
-                            <Text style={s.resultReason}>"{reason}"</Text>
+                            <Text {...scaledTextProps} style={s.resultReason}>"{reason}"</Text>
                             <View style={s.verdictActions}>
                                 <PressableScale style={s.seeFilmBtn} onPress={handleSelect} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="medium" accessibilityRole="button" accessibilityLabel={`See ${result.title ?? result.name}`}>
-                                    <Text style={s.seeFilmText}>{'SEE THE FILM →'}</Text>
+                                    <Text {...scaledTextProps} style={s.seeFilmText}>{'SEE THE FILM →'}</Text>
                                 </PressableScale>
                                 <PressableScale style={s.rerollBtn} onPress={spin} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic accessibilityRole="button" accessibilityLabel="Re-roll the Oracle">
-                                    <Text style={s.rerollText}>{'↻ RE-ROLL'}</Text>
+                                    <Text {...scaledTextProps} style={s.rerollText}>{'↻ RE-ROLL'}</Text>
                                 </PressableScale>
                             </View>
                         </Animated.View>
                     )}
 
                     {/* Close button */}
-                    <PressableScale style={s.closeBtn} onPress={() => { onClose?.(); }} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic>
-                        <Text style={s.closeBtnText}>{'✕'}</Text>
+                    <PressableScale style={s.closeBtn} onPress={() => { onClose?.(); }} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close the oracle">
+                        <Text {...scaledTextProps} style={s.closeBtnText}>{'✕'}</Text>
                     </PressableScale>
                 </Pressable>
             </Pressable>

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import Svg, { Defs, RadialGradient as SvgRadialGradient, Stop, Rect } from 'react-native-svg';
 import { colors, fonts } from '@/src/theme/theme';
+import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 
 interface TasteDNAExportCanvasProps {
     genres: [string, number][];
@@ -47,21 +48,21 @@ export const TasteDNAExportCanvas = forwardRef<ViewShot, TasteDNAExportCanvasPro
                         {/* Content Wrap */}
                         <View style={s.content}>
                             <View style={s.header}>
-                                <Text style={s.societyLabel}>THE REELHOUSE SOCIETY</Text>
+                                <Text {...scaledTextProps} style={s.societyLabel}>THE REELHOUSE SOCIETY</Text>
                                 <View style={s.divider} />
-                                <Text style={s.dossierTitle}>DOSSIER: {username.toUpperCase()}</Text>
+                                <Text {...scaledTextProps} style={s.dossierTitle}>DOSSIER: {username.toUpperCase()}</Text>
                             </View>
 
                             <View style={s.mainBody}>
-                                <Text style={s.title}>TASTE DNA</Text>
-                                <Text style={s.subtitle}>CINEMATIC FINGERPRINT</Text>
+                                <Text {...scaledTextProps} style={s.title}>TASTE DNA</Text>
+                                <Text {...scaledTextProps} style={s.subtitle}>CINEMATIC FINGERPRINT</Text>
 
                                 <View style={s.dnaStrip}>
                                     {genres.map(([genre, count], i) => {
                                         const barWidth = `${(count / maxCount) * 100}%`;
                                         return (
                                             <View key={genre} style={s.row}>
-                                                <Text style={s.genreLabel} numberOfLines={1}>{genre.toUpperCase()}</Text>
+                                                <Text {...scaledTextProps} style={s.genreLabel} numberOfLines={1}>{genre.toUpperCase()}</Text>
                                                 <View style={s.barTrack}>
                                                     <View style={[s.barFill, { width: barWidth as any, backgroundColor: dnaColors[i] ?? colors.sepia }]} />
                                                 </View>
@@ -74,8 +75,8 @@ export const TasteDNAExportCanvas = forwardRef<ViewShot, TasteDNAExportCanvasPro
                             {/* Footer Watermark — the REAL serial, not a random
                                 counterfeit that changed on every render. */}
                             <View style={s.footer}>
-                                <Text style={s.watermark}>DOCUMENT CLASSIFIED</Text>
-                                <Text style={s.watermarkId}>
+                                <Text {...decorativeTextProps} style={s.watermark}>DOCUMENT CLASSIFIED</Text>
+                                <Text {...decorativeTextProps} style={s.watermarkId}>
                                     {memberNo ? `MEMBER Nº ${memberNo}` : 'THE REELHOUSE SOCIETY'}
                                 </Text>
                             </View>

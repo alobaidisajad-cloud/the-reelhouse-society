@@ -3,6 +3,7 @@ import React, { useMemo, memo } from 'react';
 import Svg, { Circle, Text as SvgText, Line } from 'react-native-svg';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 interface PassportLog {
     filmId?: number;
@@ -202,9 +203,9 @@ export const NoirPassport = memo(function NoirPassport({ logs, analytics }: { lo
 
                 {/* Header */}
                 <View style={s.header}>
-                    <Text style={s.societyLabel}>THE REELHOUSE SOCIETY</Text>
-                    <Text style={s.title}>Cinematic Passport</Text>
-                    <Text style={s.counter}>{earnedCount} of {PASSPORT_STAMPS.length} STAMPS EARNED</Text>
+                    <Text {...scaledTextProps} style={s.societyLabel}>THE REELHOUSE SOCIETY</Text>
+                    <Text {...scaledTextProps} style={s.title}>Cinematic Passport</Text>
+                    <Text {...scaledTextProps} style={s.counter}>{earnedCount} of {PASSPORT_STAMPS.length} STAMPS EARNED</Text>
                 </View>
 
                 {/* Stamps grid */}
@@ -216,7 +217,7 @@ export const NoirPassport = memo(function NoirPassport({ logs, analytics }: { lo
 
                 {/* Footer */}
                 <View style={s.footer}>
-                    <Text style={s.footerText}>STAMPS ARE ISSUED BY THE SOCIETY ARCHIVIST · NOT TRANSFERABLE · REELHOUSE ARCHIVE DEPT</Text>
+                    <Text {...scaledTextProps} style={s.footerText}>STAMPS ARE ISSUED BY THE SOCIETY ARCHIVIST · NOT TRANSFERABLE · REELHOUSE ARCHIVE DEPT</Text>
                 </View>
             </View>
         </Animated.View>

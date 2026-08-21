@@ -9,6 +9,7 @@ import { tmdb } from '../../lib/tmdb';
 import PressableScale from '../PressableScale';
 import { ReelRating } from '../Decorative';
 import type { ProfileLog, HalfLifeEntry } from '../../types';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -141,7 +142,7 @@ export default function ProfileLedgerTab({
 
   const renderItem = useCallback(({ item }: { item: LedgerItem }) => {
     if (item.type === 'header') {
-      return <Text style={s.monthHeader}>{item.title}</Text>;
+      return <Text {...scaledTextProps} style={s.monthHeader}>{item.title}</Text>;
     }
     return (
       <View style={s.grid4}>
@@ -156,7 +157,7 @@ export default function ProfileLedgerTab({
                     {hl.trajectory === 'ASCENDING' ? <TrendingUp size={7} color={colors.validation} strokeWidth={2} />
                       : hl.trajectory === 'DECAYING' ? <TrendingDown size={7} color={colors.crimson} strokeWidth={2} />
                       : <Minus size={7} color={colors.sepia} strokeWidth={2} />}
-                    <Text style={[s.halfLifeText, { color: hl.trajectory === 'ASCENDING' ? colors.validation : hl.trajectory === 'DECAYING' ? colors.crimson : colors.sepia }]}>
+                    <Text {...scaledTextProps} style={[s.halfLifeText, { color: hl.trajectory === 'ASCENDING' ? colors.validation : hl.trajectory === 'DECAYING' ? colors.crimson : colors.sepia }]}>
                       x{hl.count}
                     </Text>
                   </View>
@@ -187,7 +188,7 @@ export default function ProfileLedgerTab({
             returnKeyType="search"
           />
           {localSearch.length > 0 && (
-            <PressableScale onPress={() => { setLocalSearch(''); setLedgerSearch(''); }} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
+            <PressableScale onPress={() => { setLocalSearch(''); setLedgerSearch(''); }} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic accessibilityRole="button" accessibilityLabel="Clear search">
               <X size={14} color={colors.fog} strokeWidth={1.5} />
             </PressableScale>
           )}
@@ -200,9 +201,12 @@ export default function ProfileLedgerTab({
               onPress={() => { setLedgerRatingFilter(r); }} 
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               haptic
+              accessibilityRole="button"
+              accessibilityLabel={r === 'all' ? 'Show every rating' : `Show films rated ${r} of 5`}
+              accessibilityState={{ selected: ledgerRatingFilter === r }}
             >
               {r === 'all' ? (
-                <Text style={[s.filterChipText, ledgerRatingFilter === r && s.filterChipTextActive]}>ALL</Text>
+                <Text {...scaledTextProps} style={[s.filterChipText, ledgerRatingFilter === r && s.filterChipTextActive]}>ALL</Text>
               ) : (
                 <ReelRating rating={r} size={8} />
               )}
@@ -221,9 +225,9 @@ export default function ProfileLedgerTab({
       return (
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <PenTool size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-          <Text style={s.emptyTitleSelf}>A Blank Ledger</Text>
-          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
-            <Text style={s.ctaBtnText}>DRAFT A CRITIQUE</Text>
+          <Text {...scaledTextProps} style={s.emptyTitleSelf}>A Blank Ledger</Text>
+          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Draft a critique">
+            <Text {...scaledTextProps} style={s.ctaBtnText}>DRAFT A CRITIQUE</Text>
           </PressableScale>
         </Animated.View>
       );
@@ -232,8 +236,8 @@ export default function ProfileLedgerTab({
     return (
       <View style={s.emptyState}>
         <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-        <Text style={s.emptyTitle}>{ledgerSearch ? 'No Results' : 'The Ledger is Empty'}</Text>
-        <Text style={s.emptyDesc}>{ledgerSearch ? `No entries match "${ledgerSearch}"` : 'No rated or reviewed films yet.'}</Text>
+        <Text {...scaledTextProps} style={s.emptyTitle}>{ledgerSearch ? 'No Results' : 'The Ledger is Empty'}</Text>
+        <Text {...scaledTextProps} style={s.emptyDesc}>{ledgerSearch ? `No entries match "${ledgerSearch}"` : 'No rated or reviewed films yet.'}</Text>
       </View>
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps

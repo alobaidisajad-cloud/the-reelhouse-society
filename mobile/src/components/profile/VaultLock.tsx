@@ -5,6 +5,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { colors, fonts } from '@/src/theme/theme';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import PressableScale from '@/src/components/PressableScale';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
     const [locked, setLocked] = useState(true);
@@ -54,11 +55,11 @@ export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
 
     return (
         <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.container}>
-            <Text style={styles.title}>RESTRICTED ACCESS</Text>
-            <Text style={styles.subtitle}>Authenticate to view your private archive.</Text>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <PressableScale style={styles.button} onPress={authenticate}>
-                <Text style={styles.btnText}>AUTHENTICATE</Text>
+            <Text {...scaledTextProps} style={styles.title}>RESTRICTED ACCESS</Text>
+            <Text {...scaledTextProps} style={styles.subtitle}>Authenticate to view your private archive.</Text>
+            {error ? <Text {...scaledTextProps} style={styles.error}>{error}</Text> : null}
+            <PressableScale style={styles.button} onPress={authenticate} accessibilityRole="button" accessibilityLabel="Authenticate to open the vault">
+                <Text {...scaledTextProps} style={styles.btnText}>AUTHENTICATE</Text>
             </PressableScale>
         </Animated.View>
     );

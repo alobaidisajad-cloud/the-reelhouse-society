@@ -6,6 +6,7 @@ import { Flame } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import PressableScale from '../PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 interface CalendarGridLog {
   watchedDate?: string;
@@ -111,8 +112,8 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
   return (
     <Animated.View entering={FadeInUp.duration(600).delay(300)} style={s.container}>
       <View style={s.header}>
-        <Text style={s.title}>CINEMATIC RHYTHM</Text>
-        <Text style={s.subtitle}>{logs.length} FILMS THIS YEAR</Text>
+        <Text {...scaledTextProps} style={s.title}>CINEMATIC RHYTHM</Text>
+        <Text {...scaledTextProps} style={s.subtitle}>{logs.length} FILMS THIS YEAR</Text>
       </View>
       
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
@@ -149,21 +150,21 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
           </Svg>
           
           <View style={s.legend}>
-            <Text style={s.legendText}>LESS</Text>
+            <Text {...scaledTextProps} style={s.legendText}>LESS</Text>
             <View style={[s.legendBox, { backgroundColor: getColor(0) }]} />
             <View style={[s.legendBox, { backgroundColor: getColor(1) }]} />
             <View style={[s.legendBox, { backgroundColor: getColor(3) }]} />
             <View style={[s.legendBox, { backgroundColor: getColor(5) }]} />
-            <Text style={s.legendText}>MORE</Text>
+            <Text {...scaledTextProps} style={s.legendText}>MORE</Text>
           </View>
         </View>
       </ScrollView>
 
       {logs.length === 0 && isSelf && (
         <Animated.View style={[s.ctaContainer, flickerStyle]}>
-          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
+          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Ignite the timeline — log a film">
             <Flame size={14} color={colors.flicker} style={{ marginRight: 8 }} />
-            <Text style={s.ctaText}>IGNITE THE TIMELINE</Text>
+            <Text {...scaledTextProps} style={s.ctaText}>IGNITE THE TIMELINE</Text>
           </PressableScale>
         </Animated.View>
       )}

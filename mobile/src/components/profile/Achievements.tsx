@@ -4,6 +4,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import type { ProfileAnalyticsPayload } from './NoirPassport';
+import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 
 interface AchievementLog {
     rating: number;
@@ -133,8 +134,8 @@ export function Achievements({ logs, analytics }: { logs: AchievementLog[]; anal
   return (
     <View style={s.container}>
       <View style={s.headerRow}>
-        <Text style={s.title}>SOCIETY HONORS</Text>
-        <Text style={s.countText}>{unlockedCount}/{BADGES.length} EARNED</Text>
+        <Text {...scaledTextProps} style={s.title}>SOCIETY HONORS</Text>
+        <Text {...scaledTextProps} style={s.countText}>{unlockedCount}/{BADGES.length} EARNED</Text>
       </View>
 
       <View style={s.grid}>
@@ -147,11 +148,14 @@ export function Achievements({ logs, analytics }: { logs: AchievementLog[]; anal
               badge.unlocked ? s.badgeUnlocked : s.badgeLocked,
             ]}
             pressedScale={0.93}
+            accessibilityRole="button"
+            accessibilityLabel={`${badge.title}, ${badge.unlocked ? 'earned' : 'not yet earned'}`}
+            accessibilityHint={badge.desc}
           >
-            <Text style={[s.badgeGlyph, badge.unlocked ? s.glyphUnlocked : s.glyphLocked]}>
+            <Text {...decorativeTextProps} style={[s.badgeGlyph, badge.unlocked ? s.glyphUnlocked : s.glyphLocked]}>
               {badge.glyph}
             </Text>
-            <Text style={[s.badgeTitle, badge.unlocked ? s.titleUnlocked : s.titleLocked]} numberOfLines={2}>
+            <Text {...scaledTextProps} style={[s.badgeTitle, badge.unlocked ? s.titleUnlocked : s.titleLocked]} numberOfLines={2}>
               {badge.title}
             </Text>
           </PressableScale>

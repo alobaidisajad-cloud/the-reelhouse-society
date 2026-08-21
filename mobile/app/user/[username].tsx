@@ -152,8 +152,8 @@ function VelvetGate({ title, line, isSelf, onAscend }: { title: string; line: st
   return (
     <View style={s.emptyState}>
       <KeyRound size={26} color={colors.sepia} strokeWidth={1.5} style={s.emptyLockIcon} />
-      <Text style={s.emptyTitle}>{title}</Text>
-      <Text style={s.emptyDesc}>{line}</Text>
+      <Text {...scaledTextProps} style={s.emptyTitle}>{title}</Text>
+      <Text {...scaledTextProps} style={s.emptyDesc}>{line}</Text>
       {isSelf && (
         <PressableScale
           style={s.ascendBtn}
@@ -162,7 +162,7 @@ function VelvetGate({ title, line, isSelf, onAscend }: { title: string; line: st
           accessibilityRole="button"
           accessibilityLabel="Ascend the ranks — opens membership"
         >
-          <Text style={s.ascendBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦ ASCEND THE RANKS</Text>
+          <Text {...scaledTextProps} style={s.ascendBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦ ASCEND THE RANKS</Text>
         </PressableScale>
       )}
     </View>
@@ -533,7 +533,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     <View style={[s.container, s.centeredFull]}>
       <View style={s.loadingRow}>
         <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
-        <Text style={s.loadingText}>RETRIEVING DOSSIER</Text>
+        <Text {...scaledTextProps} style={s.loadingText}>RETRIEVING DOSSIER</Text>
         <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
       </View>
     </View>
@@ -542,13 +542,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   if (!targetUser) return (
     <View style={[s.container, s.centeredPadded]}>
       <FilmIcon size={48} color={colors.sepia} strokeWidth={1} style={s.notFoundIcon} />
-      <Text style={s.notFoundTitle}>Member Not Found</Text>
+      <Text {...scaledTextProps} style={s.notFoundTitle}>Member Not Found</Text>
       {/* eslint-disable-next-line react/no-unescaped-entities */}
-      <Text style={s.notFoundBody}>This member doesn't exist yet, or has been removed.</Text>
+      <Text {...scaledTextProps} style={s.notFoundBody}>This member doesn't exist yet, or has been removed.</Text>
       <PressableScale style={s.ghostBtn} onPress={handleBack} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
         <View style={s.ghostBtnRow}>
           <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
-          <Text style={s.ghostBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>GO BACK</Text>
+          <Text {...scaledTextProps} style={s.ghostBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>GO BACK</Text>
         </View>
       </PressableScale>
     </View>
@@ -604,8 +604,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             <ChevronLeft size={22} color={colors.sepia} />
           </PressableScale>
           <View style={s.tabHeaderTextWrap}>
-            <Text style={s.tabHeaderUsername} adjustsFontSizeToFit numberOfLines={1}>@{username}</Text>
-            <Text style={s.tabHeaderTitle} accessibilityRole="header" adjustsFontSizeToFit numberOfLines={1}>{TAB_TITLES[activeTab] ?? activeTab}</Text>
+            <Text {...scaledTextProps} style={s.tabHeaderUsername} adjustsFontSizeToFit numberOfLines={1}>@{username}</Text>
+            <Text {...scaledTextProps} style={s.tabHeaderTitle} accessibilityRole="header" adjustsFontSizeToFit numberOfLines={1}>{TAB_TITLES[activeTab] ?? activeTab}</Text>
           </View>
         </View>
 
@@ -733,9 +733,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 <View style={s.projectorGap}>
                   {/* Header */}
                   <View style={s.projectorHeader}>
-                    <Text style={s.projectorSuper}>GLOBAL ANALYTICS</Text>
-                    <Text style={s.projectorTitle}>The Projector Room</Text>
-                    <Text style={s.projectorSub}>Lifetime cinematic data & achievements.</Text>
+                    <Text {...scaledTextProps} style={s.projectorSuper}>GLOBAL ANALYTICS</Text>
+                    <Text {...scaledTextProps} style={s.projectorTitle}>The Projector Room</Text>
+                    <Text {...scaledTextProps} style={s.projectorSub}>Lifetime cinematic data & achievements.</Text>
                   </View>
 
                   {/* Cinema DNA CTA */}
@@ -743,7 +743,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     <PressableScale style={s.ctaBtn} onPress={() => { setDnaCardOpen(true); data.loadTabData('projector'); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic accessibilityRole="button" accessibilityLabel="View cinema DNA">
                       <View style={s.ctaBtnRow}>
                         <Dna size={12} color={colors.sepia} strokeWidth={1.5} />
-                        <Text style={s.ctaBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>VIEW CINEMA DNA</Text>
+                        <Text {...scaledTextProps} style={s.ctaBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>VIEW CINEMA DNA</Text>
                       </View>
                     </PressableScale>
                   </View>
@@ -754,7 +754,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/year-in-cinema')} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic accessibilityRole="button" accessibilityLabel="Your Year in Cinema">
                         <View style={s.ctaBtnRow}>
                           <CalendarDays size={12} color={colors.sepia} strokeWidth={1.5} />
-                          <Text style={s.ctaBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>YOUR YEAR IN CINEMA</Text>
+                          <Text {...scaledTextProps} style={s.ctaBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>YOUR YEAR IN CINEMA</Text>
                         </View>
                       </PressableScale>
                     </View>
@@ -793,7 +793,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                               <PressableScale key={log.id} style={s.favouriteRow} onPress={() => log.filmId && (router.push as any)(`/film/${log.filmId}` as any)} haptic accessibilityRole="button" accessibilityLabel={`${log.title}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}>
                                 {posterUri && <Image source={{ uri: posterUri }} style={s.favPosterThumb} transition={50} cachePolicy="memory-disk" />}
                                 <View style={s.favTextWrap}>
-                                  <Text style={s.favTitle} numberOfLines={1}>{log.title}</Text>
+                                  <Text {...scaledTextProps} style={s.favTitle} numberOfLines={1}>{log.title}</Text>
                                   <View style={s.favRatingRow}>
                                     <ReelRating rating={log.rating} size={10} />
                                   </View>
@@ -972,9 +972,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
             {/* ── The bio, in the house's own quotation marks ── */}
             <Text {...scaledTextProps} style={[s.heroBio, bioStyle]} numberOfLines={bioLines}>
-              <Text style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>« </Text>
+              <Text {...decorativeTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>« </Text>
               {bioText}
-              <Text style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}> »</Text>
+              <Text {...decorativeTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}> »</Text>
             </Text>
 
             {/* ── Social Links ── */}
@@ -1086,8 +1086,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           /* ── THE SEALED DOSSIER ── */
           <View style={s.sealedWrap}>
             <View style={s.sealedCard}>
-              <Text style={s.sealedTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦ THIS DOSSIER IS SEALED ✦</Text>
-              <Text style={s.sealedBody}>
+              <Text {...scaledTextProps} style={s.sealedTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦ THIS DOSSIER IS SEALED ✦</Text>
+              <Text {...scaledTextProps} style={s.sealedBody}>
                 The member keeps their records private.{'\n'}Follow to request the key.
               </Text>
             </View>

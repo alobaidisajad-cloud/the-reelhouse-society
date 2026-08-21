@@ -4,6 +4,7 @@ import { GripVertical, Plus, X } from 'lucide-react-native';
 import { ControlledInput } from '@/src/components/ControlledInput';
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 export interface LinksEditorProps {
   links: { id: string; title: string; url: string }[];
@@ -15,7 +16,7 @@ export interface LinksEditorProps {
 export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: LinksEditorProps) {
   return (
     <View>
-      <Text style={st.fieldBody}>Add links to your profile. They will be visible to anyone who visits your page.</Text>
+      <Text {...scaledTextProps} style={st.fieldBody}>Add links to your profile. They will be visible to anyone who visits your page.</Text>
       
       <View style={st.linksContainer}>
           {links.map((link, index) => (
@@ -23,7 +24,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                   <View style={st.linkItemHeader}>
                       <View style={st.linkDragHandleRow}>
                           <GripVertical size={12} color={colors.ash} style={st.linkDragHandleIcon} />
-                          <Text style={st.linkItemTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>LINK {index + 1}</Text>
+                          <Text {...scaledTextProps} style={st.linkItemTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>LINK {index + 1}</Text>
                       </View>
                   </View>
 
@@ -41,7 +42,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                   </PressableScale>
 
                   <View style={st.fieldWrap}>
-                      <Text style={st.fieldLabel}>TITLE</Text>
+                      <Text {...scaledTextProps} style={st.fieldLabel}>TITLE</Text>
                       <ControlledInput
                         name={`links.${index}.title` as const}
                         style={st.fieldInput} placeholder="e.g. My Portfolio, Blog, Channel..." placeholderTextColor={colors.ash} maxLength={40} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia}
@@ -49,12 +50,12 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                   </View>
                   
                   <View style={st.fieldWrap}>
-                      <Text style={st.fieldLabel}>URL</Text>
+                      <Text {...scaledTextProps} style={st.fieldLabel}>URL</Text>
                       <ControlledInput
                         name={`links.${index}.url` as const}
                         style={st.fieldInput} placeholder="https://..." placeholderTextColor={colors.ash} keyboardType="url" autoCapitalize="none" autoCorrect={false} keyboardAppearance="dark" accessibilityLabel="Link URL" selectionColor={colors.sepia}
                       />
-                      {!!errors.links?.[index]?.url && <Text style={st.errorText}>{errors.links[index]?.url?.message}</Text>}
+                      {!!errors.links?.[index]?.url && <Text {...scaledTextProps} style={st.errorText}>{errors.links[index]?.url?.message}</Text>}
                   </View>
               </View>
           ))}
@@ -62,10 +63,10 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
 
       <PressableScale style={st.addLinkBtn} onPress={handleAddLink} haptic="selection" accessibilityLabel="Add link">
           <Plus size={14} color={colors.sepia} />
-          <Text style={st.addLinkText}>ADD LINK</Text>
+          <Text {...scaledTextProps} style={st.addLinkText}>ADD LINK</Text>
       </PressableScale>
 
-      {links.length > 0 && <Text style={st.linksCount}>{links.length}/10 LINKS</Text>}
+      {links.length > 0 && <Text {...scaledTextProps} style={st.linksCount}>{links.length}/10 LINKS</Text>}
     </View>
   );
 }

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Polygon, Circle, Line, Text as SvgText } from 'react-native-svg';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -24,7 +25,7 @@ export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, nu
     if (!data) {
         return (
             <View style={[styles.fallback, { width: size, height: size, borderRadius: size/2 }]}>
-                <Text style={styles.fallbackText}>INSUFFICIENT DATA</Text>
+                <Text {...scaledTextProps} style={styles.fallbackText}>INSUFFICIENT DATA</Text>
             </View>
         );
     }

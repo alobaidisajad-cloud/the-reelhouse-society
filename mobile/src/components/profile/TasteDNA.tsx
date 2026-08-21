@@ -15,6 +15,7 @@ import { GLOBAL_TMDB_CACHE, INFLIGHT_TMDB_REQUESTS } from './CinematicInsights';
 import { FilmSchema } from '@/src/lib/schemas';
 import { TasteDNAExportCanvas } from './TasteDNAExportCanvas';
 import PressableScale from '../PressableScale';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 // Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
 // TactileEngine.navigate would lose its `this` binding).
@@ -170,10 +171,10 @@ export const TasteDNA = memo(function TasteDNA({ logs, username, memberNo }: Tas
         <Animated.View entering={FadeIn.duration(500)} style={s.container}>
             <View style={s.headerRow}>
                 <View>
-                    <Text style={s.title}>TASTE DNA</Text>
-                    <Text style={s.subtitle}>Your cinematic fingerprint</Text>
+                    <Text {...scaledTextProps} style={s.title}>TASTE DNA</Text>
+                    <Text {...scaledTextProps} style={s.subtitle}>Your cinematic fingerprint</Text>
                 </View>
-                <PressableScale onPress={handleShare} style={s.shareBtn} haptic>
+                <PressableScale onPress={handleShare} style={s.shareBtn} haptic accessibilityRole="button" accessibilityLabel="Share your taste profile" accessibilityState={{ busy: isSharing }}>
                     <Share2 size={16} color={isSharing ? colors.sepia : colors.fog} />
                 </PressableScale>
             </View>
@@ -189,11 +190,11 @@ export const TasteDNA = memo(function TasteDNA({ logs, username, memberNo }: Tas
                     });
                     return (
                         <Animated.View key={genre} entering={anim} style={s.row}>
-                            <Text style={s.genreLabel} numberOfLines={1} adjustsFontSizeToFit>{genre.toUpperCase()}</Text>
+                            <Text {...scaledTextProps} style={s.genreLabel} numberOfLines={1} adjustsFontSizeToFit>{genre.toUpperCase()}</Text>
                             <View style={s.barTrack}>
                                 <View style={[s.barFill, { width: barWidth as import('react-native').DimensionValue, backgroundColor: dnaColors[i] ?? colors.sepia }]} />
                             </View>
-                            <Text style={s.pctLabel}>{pct}%</Text>
+                            <Text {...scaledTextProps} style={s.pctLabel}>{pct}%</Text>
                         </Animated.View>
                     );
                 })}

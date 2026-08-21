@@ -10,6 +10,7 @@ import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { FilmSchema } from '@/src/lib/schemas';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 interface InsightLog {
     filmId?: number;
@@ -232,8 +233,8 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
     if (filmIds.length < 3) {
         return (
             <View style={s.card}>
-                <Text style={s.sectionTitle}>CINEMATIC INSIGHTS</Text>
-                <Text style={s.emptyText}>Log at least 3 films to unlock your cinematic insights.</Text>
+                <Text {...scaledTextProps} style={s.sectionTitle}>CINEMATIC INSIGHTS</Text>
+                <Text {...scaledTextProps} style={s.emptyText}>Log at least 3 films to unlock your cinematic insights.</Text>
             </View>
         );
     }
@@ -241,9 +242,9 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
     if (loading || !insights) {
         return (
             <View style={s.card}>
-                <Text style={s.sectionTitle}>ANALYZING {filmIds.length} LOGGED FILMS</Text>
+                <Text {...scaledTextProps} style={s.sectionTitle}>ANALYZING {filmIds.length} LOGGED FILMS</Text>
                 <ActivityIndicator color={colors.sepia} style={s.loaderMargin} />
-                <Text style={s.emptyText}>Fetching credits from TMDB...</Text>
+                <Text {...scaledTextProps} style={s.emptyText}>Fetching credits from TMDB...</Text>
             </View>
         );
     }
@@ -254,35 +255,35 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
 
     return (
         <View style={s.container}>
-            <Text style={s.metaNote}>BASED ON {insights.fetchedFilms} OF {filmIds.length} LOGGED FILMS</Text>
+            <Text {...scaledTextProps} style={s.metaNote}>BASED ON {insights.fetchedFilms} OF {filmIds.length} LOGGED FILMS</Text>
 
             {/* Top Actors */}
             {insights.topActors.length > 0 && (
                 <Animated.View entering={FadeIn.duration(500)} style={s.card}>
-                    <Text style={s.sectionTitle}>✦ MOST WATCHED ACTORS</Text>
+                    <Text {...scaledTextProps} style={s.sectionTitle}>✦ MOST WATCHED ACTORS</Text>
                     {insights.topActors.map((actor, i) => (
                         <Animated.View key={actor.id} entering={FadeInRight.delay(i * 80).duration(400)} style={s.personRow}>
                             {/* Rank */}
                             <View style={[s.rankCircle, i === 0 && { backgroundColor: colors.sepia }]}>
-                                <Text style={[s.rankText, i === 0 && { color: colors.ink }]}>{i + 1}</Text>
+                                <Text {...scaledTextProps} style={[s.rankText, i === 0 && { color: colors.ink }]}>{i + 1}</Text>
                             </View>
                             {/* Photo */}
                             <View style={[s.avatar, i === 0 && { borderColor: colors.sepia, borderWidth: 2 }]}>
                                 {actor.profile_path ? (
                                 <Image source={{ uri: `https://image.tmdb.org/t/p/w185${actor.profile_path}` }} style={s.avatarImg} cachePolicy="memory-disk" transition={150} />
                                 ) : (
-                                    <Text style={s.avatarFallback}>✦</Text>
+                                    <Text {...scaledTextProps} style={s.avatarFallback}>✦</Text>
                                 )}
                             </View>
                             {/* Name + Bar */}
                             <View style={s.personInfo}>
-                                <Text style={[s.personName, i === 0 && { color: colors.parchment }]} numberOfLines={1}>{actor.name}</Text>
+                                <Text {...scaledTextProps} style={[s.personName, i === 0 && { color: colors.parchment }]} numberOfLines={1}>{actor.name}</Text>
                                 <View style={s.barTrack}>
                                     <View style={[s.barFill, { width: `${(actor.count / maxActorCount) * 100}%` }, i === 0 && { backgroundColor: colors.flicker }]} />
                                 </View>
                             </View>
                             {/* Count */}
-                            <Text style={[s.countText, i === 0 && { color: colors.sepia }]}>{actor.count}</Text>
+                            <Text {...scaledTextProps} style={[s.countText, i === 0 && { color: colors.sepia }]}>{actor.count}</Text>
                         </Animated.View>
                     ))}
                 </Animated.View>
@@ -291,26 +292,26 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
             {/* Top Directors */}
             {insights.topDirectors.length > 0 && (
                 <Animated.View entering={FadeIn.delay(200).duration(500)} style={s.card}>
-                    <Text style={s.sectionTitle}>✦ MOST WATCHED DIRECTORS</Text>
+                    <Text {...scaledTextProps} style={s.sectionTitle}>✦ MOST WATCHED DIRECTORS</Text>
                     {insights.topDirectors.map((director, i) => (
                         <Animated.View key={director.id} entering={FadeInRight.delay(i * 80).duration(400)} style={s.personRow}>
                             <View style={[s.rankCircle, i === 0 && { backgroundColor: colors.sepia }]}>
-                                <Text style={[s.rankText, i === 0 && { color: colors.ink }]}>{i + 1}</Text>
+                                <Text {...scaledTextProps} style={[s.rankText, i === 0 && { color: colors.ink }]}>{i + 1}</Text>
                             </View>
                             <View style={[s.avatar, i === 0 && { borderColor: colors.sepia, borderWidth: 2 }]}>
                                 {director.profile_path ? (
                                 <Image source={{ uri: `https://image.tmdb.org/t/p/w185${director.profile_path}` }} style={s.avatarImg} cachePolicy="memory-disk" transition={150} />
                                 ) : (
-                                    <Text style={s.avatarFallback}>✦</Text>
+                                    <Text {...scaledTextProps} style={s.avatarFallback}>✦</Text>
                                 )}
                             </View>
                             <View style={s.personInfo}>
-                                <Text style={[s.personName, i === 0 && { color: colors.parchment }]} numberOfLines={1}>{director.name}</Text>
+                                <Text {...scaledTextProps} style={[s.personName, i === 0 && { color: colors.parchment }]} numberOfLines={1}>{director.name}</Text>
                                 <View style={s.barTrack}>
                                     <View style={[s.barFill, { width: `${(director.count / maxDirectorCount) * 100}%` }, i === 0 && { backgroundColor: colors.flicker }]} />
                                 </View>
                             </View>
-                            <Text style={[s.countText, i === 0 && { color: colors.sepia }]}>{director.count}</Text>
+                            <Text {...scaledTextProps} style={[s.countText, i === 0 && { color: colors.sepia }]}>{director.count}</Text>
                         </Animated.View>
                     ))}
                 </Animated.View>
@@ -319,16 +320,16 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
             {/* Genre Breakdown */}
             {insights.topGenres.length > 0 && (
                 <Animated.View entering={FadeIn.delay(400).duration(500)} style={s.card}>
-                    <Text style={s.sectionTitle}>✦ GENRE BREAKDOWN</Text>
+                    <Text {...scaledTextProps} style={s.sectionTitle}>✦ GENRE BREAKDOWN</Text>
                     {insights.topGenres.map((genre, i) => {
                         const pct = Math.round((genre.count / insights.totalFilms) * 100);
                         return (
                             <Animated.View key={genre.name} entering={FadeInRight.delay(i * 50).duration(300)} style={s.genreRow}>
                                 <View style={s.genreHeader}>
-                                    <Text style={[s.genreName, i === 0 && { color: colors.parchment }]} numberOfLines={1}>{genre.name}</Text>
+                                    <Text {...scaledTextProps} style={[s.genreName, i === 0 && { color: colors.parchment }]} numberOfLines={1}>{genre.name}</Text>
                                     <View style={s.genreCountWrap}>
-                                        <Text style={[s.countText, i === 0 && { color: colors.sepia }]}>{genre.count}</Text>
-                                        <Text style={s.pctText}>{pct}%</Text>
+                                        <Text {...scaledTextProps} style={[s.countText, i === 0 && { color: colors.sepia }]}>{genre.count}</Text>
+                                        <Text {...scaledTextProps} style={s.pctText}>{pct}%</Text>
                                     </View>
                                 </View>
                                 <View style={s.barTrack}>

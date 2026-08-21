@@ -31,6 +31,7 @@ import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
 import { LinksEditor } from '@/src/features/profile/LinksEditor';
 import Buster from '@/src/components/Buster';
 import { Image } from 'expo-image';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 /**
  * THE BACKDROP — an Auteur privilege, and now a choice.
@@ -88,7 +89,7 @@ function BackdropSetting({ user }: { user: { id: string; preferences?: Record<st
       <SectionHead icon={ImageIcon} label="THE BACKDROP" />
       <View style={bd.row}>
         <View style={bd.copy}>
-          <Text style={st.fieldBody}>
+          <Text {...scaledTextProps} style={st.fieldBody}>
             {centre
               ? `Your file is dressed from ${centre.title}. Turn this off for the house's own dark.`
               : "Dress your file with the centre of your triptych. Turn this off for the house's own dark."}
@@ -164,7 +165,7 @@ export function EditProfileScreen() {
         </PressableScale>
         <PressableScale onPress={handleSave} disabled={saving} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" accessibilityRole="button" accessibilityLabel={saving ? 'Saving profile' : 'Save profile changes'}>
           {saving ? <ActivityIndicator size="small" color={colors.sepia} /> : (
-            <Text style={st.navSaveText}>SAVE</Text>
+            <Text {...scaledTextProps} style={st.navSaveText}>SAVE</Text>
           )}
         </PressableScale>
       </View>
@@ -175,7 +176,7 @@ export function EditProfileScreen() {
         {!!submitError && (
           <Animated.View entering={FadeInDown} style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder, borderRadius: 4, marginBottom: 16, marginHorizontal: 16 }}>
             {/* Type-guard submitError to prevent invariant violation on object errors */}
-            <Text style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimson, textAlign: 'center', letterSpacing: 1 }}>
+            <Text {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimson, textAlign: 'center', letterSpacing: 1 }}>
               {typeof submitError === 'string' ? submitError : (submitError instanceof Error ? submitError.message : (submitError as any)?.message || 'An unexpected error occurred while saving your dossier.')}
             </Text>
           </Animated.View>
@@ -185,11 +186,11 @@ export function EditProfileScreen() {
           <View style={st.heroRuleTop} />
           <View style={st.heroEyebrowRow}>
             <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
-            <Text style={st.heroEyebrow}>THE DOSSIER BUREAU</Text>
+            <Text {...scaledTextProps} style={st.heroEyebrow}>THE DOSSIER BUREAU</Text>
             <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
           </View>
-          <Text style={st.heroTitle}>Edit Profile</Text>
-          <Text style={st.heroDesc}>Shape how the society sees you.</Text>
+          <Text {...scaledTextProps} style={st.heroTitle}>Edit Profile</Text>
+          <Text {...scaledTextProps} style={st.heroDesc}>Shape how the society sees you.</Text>
           <View style={st.heroRuleBottom} />
         </Animated.View>
 
@@ -215,11 +216,11 @@ export function EditProfileScreen() {
                 </View>
               </PressableScale>
               
-              <Text style={st.avatarHint}>Tap portrait to change</Text>
-              <Text style={st.avatarSpec}>JPG, PNG, or WEBP · MAX 5MB</Text>
+              <Text {...scaledTextProps} style={st.avatarHint}>Tap portrait to change</Text>
+              <Text {...scaledTextProps} style={st.avatarSpec}>JPG, PNG, or WEBP · MAX 5MB</Text>
               {avatarPreview && (
                 <PressableScale onPress={handleRemoveAvatar} style={{ marginTop: 12, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder }} haptic="light" accessibilityRole="button" accessibilityLabel="Remove portrait">
-                  <Text style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimson, textAlign: 'center', letterSpacing: 1 }}>REMOVE PORTRAIT</Text>
+                  <Text {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimson, textAlign: 'center', letterSpacing: 1 }}>REMOVE PORTRAIT</Text>
                 </PressableScale>
               )}
             </View>
@@ -234,33 +235,33 @@ export function EditProfileScreen() {
             <SectionHead icon={User} label="IDENTITY" />
 
             <View style={st.fieldWrap}>
-              <Text style={st.fieldLabel}>USERNAME</Text>
+              <Text {...scaledTextProps} style={st.fieldLabel}>USERNAME</Text>
               <ControlledUsernameInput
                 name="username"
                 placeholderTextColor={colors.ash} maxLength={30} keyboardAppearance="dark" accessibilityLabel="Username" selectionColor={colors.sepia}
               />
-              {!!errors.username && <Text style={st.errorText}>{errors.username.message}</Text>}
-              <Text style={st.helperText}>Lowercase letters, numbers, and underscores only · 3-30 characters</Text>
+              {!!errors.username && <Text {...scaledTextProps} style={st.errorText}>{errors.username.message}</Text>}
+              <Text {...scaledTextProps} style={st.helperText}>Lowercase letters, numbers, and underscores only · 3-30 characters</Text>
             </View>
 
             <View style={st.fieldWrap}>
-              <Text style={st.fieldLabel}>DISPLAY NAME</Text>
+              <Text {...scaledTextProps} style={st.fieldLabel}>DISPLAY NAME</Text>
               <ControlledInput
                 name="displayName"
                 style={st.fieldInput}
                 placeholderTextColor={colors.ash} placeholder="Your name in the credits..." maxLength={50} keyboardAppearance="dark" accessibilityLabel="Display name" selectionColor={colors.sepia}
               />
-              {!!errors.displayName && <Text style={st.errorText}>{errors.displayName.message}</Text>}
+              {!!errors.displayName && <Text {...scaledTextProps} style={st.errorText}>{errors.displayName.message}</Text>}
             </View>
 
             <View style={st.fieldWrap}>
-              <Text style={st.fieldLabel}>BIO</Text>
+              <Text {...scaledTextProps} style={st.fieldLabel}>BIO</Text>
               <ControlledBioInput
                 name="bio"
                 maxLength={160}
                 placeholderTextColor={colors.ash} placeholder="A brief dispatch about your cinematic journey..." keyboardAppearance="dark" accessibilityLabel="Bio" selectionColor={colors.sepia} returnKeyType="done" blurOnSubmit={true}
               />
-              {!!errors.bio && <Text style={st.errorText}>{errors.bio.message}</Text>}
+              {!!errors.bio && <Text {...scaledTextProps} style={st.errorText}>{errors.bio.message}</Text>}
             </View>
           </SectionCard>
         </Animated.View>
@@ -272,7 +273,7 @@ export function EditProfileScreen() {
           <Animated.View entering={FadeInDown.duration(500).delay(150)}>
               <SectionCard>
                   <SectionHead icon={Film} label="FAVORITE FILMS" />
-                  <Text style={st.fieldBody}>Choose 3 films that define your cinematic identity. Tap a slot to search and select.</Text>
+                  <Text {...scaledTextProps} style={st.fieldBody}>Choose 3 films that define your cinematic identity. Tap a slot to search and select.</Text>
                   <ProfileTriptych 
                     user={{ 
                       id: user.id, 
@@ -319,7 +320,7 @@ export function EditProfileScreen() {
         <Animated.View entering={FadeInDown.duration(500).delay(250)} style={st.heritageFooter}>
           <DiamondDivider />
 
-          <Text style={st.memberSince}>
+          <Text {...scaledTextProps} style={st.memberSince}>
             MEMBER SINCE {user.created_at ? formatDateMonthYear(user.created_at) : 'THE BEGINNING'}
           </Text>
 
@@ -341,8 +342,8 @@ export function EditProfileScreen() {
             <View style={st.sealRing}>
               <Stamp size={24} color={colors.crimson} strokeWidth={1.5} />
             </View>
-            <Text style={st.sealTitle}>DOSSIER AMENDED</Text>
-            <Text style={st.sealSub}>the record now reflects your hand</Text>
+            <Text {...scaledTextProps} style={st.sealTitle}>DOSSIER AMENDED</Text>
+            <Text {...scaledTextProps} style={st.sealSub}>the record now reflects your hand</Text>
           </Animated.View>
         </View>
       )}

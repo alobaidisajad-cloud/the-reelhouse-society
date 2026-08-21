@@ -12,6 +12,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '../PressableScale';
 
 import type { ProfileAnalyticsPayload } from './NoirPassport';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 interface DNALog {
     year?: number | string;
@@ -113,7 +114,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
 
     return (
         <Animated.View entering={FadeInDown} exiting={FadeOut} style={s.overlay}>
-            <PressableScale onPress={() => { onClose(); }} style={[s.closeBtn, { top: Math.max(insets.top + 10, 40) }]} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic>
+            <PressableScale onPress={() => { onClose(); }} style={[s.closeBtn, { top: Math.max(insets.top + 10, 40) }]} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close cinema DNA">
                 <X size={16} color={colors.parchment} />
             </PressableScale>
 
@@ -130,19 +131,19 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
                         )}
                     </View>
                     <View style={s.userInfoWrap}>
-                        <Text style={s.username} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>@{user?.username ?? 'cinephile'}</Text>
-                        <Text style={s.subtext} numberOfLines={1}>THE REELHOUSE SOCIETY</Text>
+                        <Text {...scaledTextProps} style={s.username} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>@{user?.username ?? 'cinephile'}</Text>
+                        <Text {...scaledTextProps} style={s.subtext} numberOfLines={1}>THE REELHOUSE SOCIETY</Text>
                     </View>
                 </View>
 
                 <View style={s.titleWrap}>
-                    <Text style={s.eyebrow}>CINEMATIC FINGERPRINT</Text>
-                    <Text style={s.title}>CINEMA DNA</Text>
+                    <Text {...scaledTextProps} style={s.eyebrow}>CINEMATIC FINGERPRINT</Text>
+                    <Text {...scaledTextProps} style={s.title}>CINEMA DNA</Text>
                 </View>
 
                 <View style={s.archetypeWrap}>
-                    <Text style={s.archetypeLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{archetype}</Text>
-                    <Text style={s.archetypeSub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SCHOOL OF {tones.toUpperCase()}</Text>
+                    <Text {...scaledTextProps} style={s.archetypeLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{archetype}</Text>
+                    <Text {...scaledTextProps} style={s.archetypeSub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SCHOOL OF {tones.toUpperCase()}</Text>
                 </View>
 
                 {avgAutopsy && (
@@ -153,48 +154,48 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
 
                 <View style={s.statsGrid}>
                     <View style={s.statBox}>
-                        <Text style={s.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{totalCount}</Text>
-                        <Text style={s.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>FILMS</Text>
+                        <Text {...scaledTextProps} style={s.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{totalCount}</Text>
+                        <Text {...scaledTextProps} style={s.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>FILMS</Text>
                     </View>
                     <View style={s.statBox}>
-                        <Text style={s.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{avgRatingStr}</Text>
-                        <Text style={s.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>AVG RATING</Text>
+                        <Text {...scaledTextProps} style={s.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{avgRatingStr}</Text>
+                        <Text {...scaledTextProps} style={s.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>AVG RATING</Text>
                     </View>
                 </View>
 
                 <View style={s.decadesWrap}>
-                    <Text style={s.sectionEyebrow}>DOMINANT ERAS</Text>
+                    <Text {...scaledTextProps} style={s.sectionEyebrow}>DOMINANT ERAS</Text>
                     <View style={s.decadesRow}>
                         {topDecades.length > 0 ? (
                             topDecades.map(([decade, count]) => {
                                 const pct = Math.round((count / Math.max(totalCount, 1)) * 100);
                                 return (
                                     <View key={decade} style={s.decadeBox}>
-                                        <Text style={s.decadeLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{decade}</Text>
-                                        <Text style={s.decadePct} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{pct}%</Text>
+                                        <Text {...scaledTextProps} style={s.decadeLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{decade}</Text>
+                                        <Text {...scaledTextProps} style={s.decadePct} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{pct}%</Text>
                                     </View>
                                 );
                             })
                         ) : (
                             <View style={[s.decadeBox, { opacity: 0.5 }]}>
-                                <Text style={s.decadeLabel}>UNKNOWN</Text>
-                                <Text style={s.decadePct}>—</Text>
+                                <Text {...scaledTextProps} style={s.decadeLabel}>UNKNOWN</Text>
+                                <Text {...scaledTextProps} style={s.decadePct}>—</Text>
                             </View>
                         )}
                     </View>
                 </View>
 
                 <View style={s.obscurityWrap}>
-                    <Text style={s.obscurityLabel}>OBSCURITY INDEX</Text>
-                    <Text style={s.obscurityVal}>{obscurityScore}</Text>
+                    <Text {...scaledTextProps} style={s.obscurityLabel}>OBSCURITY INDEX</Text>
+                    <Text {...scaledTextProps} style={s.obscurityVal}>{obscurityScore}</Text>
                 </View>
 
                 <View style={s.footer}>
-                    <Text style={s.logo}>REELHOUSE</Text>
+                    <Text {...scaledTextProps} style={s.logo}>REELHOUSE</Text>
                     {/* The real serial — the member's number on their own artifact.
                         Falls back to the film-count case number until the
                         member_no migration data reaches this client. */}
-                    <Text style={s.footerSub}>
+                    <Text {...scaledTextProps} style={s.footerSub}>
                         {user?.member_no
                             ? `MEMBER Nº ${String(user.member_no).padStart(4, '0')}`
                             : `CASE №${String(totalCount).padStart(4, '0')}`}

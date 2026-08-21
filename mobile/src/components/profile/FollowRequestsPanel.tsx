@@ -21,6 +21,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { useFollowRequests } from '@/src/hooks/useFollowRequests';
 import type { FollowRequest } from '@/src/services/FollowRequestService';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const HITSLOP = { top: 10, bottom: 10, left: 10, right: 10 } as const;
@@ -35,7 +36,7 @@ const RequestRow = React.memo(function RequestRow({
           ? <Image source={{ uri: item.avatarUrl }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} recyclingKey={item.requesterId} />
           : <User size={15} color={colors.fog} strokeWidth={1.5} />}
       </View>
-      <Text style={s.name} numberOfLines={1}>@{item.username?.toUpperCase()}</Text>
+      <Text {...scaledTextProps} style={s.name} numberOfLines={1}>@{item.username?.toUpperCase()}</Text>
       <PressableScale
         style={[s.btn, s.declineBtn, busy && s.btnBusy]}
         onPress={() => onDecline(item)}
@@ -57,7 +58,7 @@ const RequestRow = React.memo(function RequestRow({
         accessibilityLabel={`Admit ${item.username}`}
       >
         <Check size={14} color={colors.ink} strokeWidth={2.5} />
-        <Text style={s.admitText}>ADMIT</Text>
+        <Text {...scaledTextProps} style={s.admitText}>ADMIT</Text>
       </PressableScale>
     </View>
   );
@@ -90,13 +91,13 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
           <View style={s.headerRow}>
             <View style={s.titleRow}>
               <KeyRound size={18} color={colors.sepia} strokeWidth={1.5} />
-              <Text style={s.title}>At the Door</Text>
+              <Text {...scaledTextProps} style={s.title}>At the Door</Text>
             </View>
             <PressableScale onPress={onClose} hitSlop={HITSLOP} haptic="selection" accessibilityRole="button" accessibilityLabel="Close">
               <X size={20} color={colors.fog} strokeWidth={1.5} />
             </PressableScale>
           </View>
-          <Text style={s.subtitle}>Petitions to follow your dossier.</Text>
+          <Text {...scaledTextProps} style={s.subtitle}>Petitions to follow your dossier.</Text>
 
           {showSearch && (
             <View style={s.searchWrap}>
@@ -128,7 +129,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
               </View>
             ) : items.length === 0 ? (
               <View style={s.center}>
-                <Text style={s.emptyText}>{search ? 'No one by that name.' : "No one's at the door."}</Text>
+                <Text {...scaledTextProps} style={s.emptyText}>{search ? 'No one by that name.' : "No one's at the door."}</Text>
               </View>
             ) : (
               <FlashList
@@ -149,7 +150,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
 
           {items.length > 0 && (
             <PressableScale style={s.declineAll} onPress={declineAll} haptic="heavy" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Decline all remaining requests">
-              <Text style={s.declineAllText}>DECLINE ALL REMAINING</Text>
+              <Text {...scaledTextProps} style={s.declineAllText}>DECLINE ALL REMAINING</Text>
             </PressableScale>
           )}
         </AnimatedView>

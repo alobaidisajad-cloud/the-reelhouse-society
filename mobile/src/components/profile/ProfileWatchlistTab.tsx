@@ -8,6 +8,7 @@ import { colors, fonts } from '../../theme/theme';
 import PressableScale from '../PressableScale';
 import type { ProfileWatchlistItem } from '../../types';
 import { tmdb } from '../../lib/tmdb';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -145,8 +146,8 @@ export default function ProfileWatchlistTab({
             </View>
             <Disc3 size={18} color={colors.sepia} strokeWidth={1.5} />
             <View style={s.oracleCtaText}>
-              <Text style={s.oracleCtaTitle}>THE ORACLE&apos;S CHOICE</Text>
-              <Text style={s.oracleCtaSub}>Let the Archive pick tonight&apos;s reel</Text>
+              <Text {...scaledTextProps} style={s.oracleCtaTitle}>THE ORACLE&apos;S CHOICE</Text>
+              <Text {...scaledTextProps} style={s.oracleCtaSub}>Let the Archive pick tonight&apos;s reel</Text>
             </View>
             <Sparkles size={13} color={colors.sepia} strokeWidth={1.5} />
             <View style={s.oracleCtaPerf}>
@@ -170,7 +171,7 @@ export default function ProfileWatchlistTab({
                 returnKeyType="search"
               />
               {localSearch.length > 0 && (
-                <PressableScale onPress={() => { setLocalSearch(''); setWatchlistSearch(''); }} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
+                <PressableScale onPress={() => { setLocalSearch(''); setWatchlistSearch(''); }} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic accessibilityRole="button" accessibilityLabel="Clear search">
                   <X size={14} color={colors.fog} strokeWidth={1.5} />
                 </PressableScale>
               )}
@@ -183,8 +184,11 @@ export default function ProfileWatchlistTab({
                   onPress={() => { setWatchlistSort(sv.id); }} 
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   haptic
+                  accessibilityRole="button"
+                  accessibilityLabel={`Sort the watchlist: ${sv.label}`}
+                  accessibilityState={{ selected: watchlistSort === sv.id }}
                 >
-                  <Text style={[s.filterChipText, watchlistSort === sv.id && s.filterChipTextActive]}>{sv.label}</Text>
+                  <Text {...scaledTextProps} style={[s.filterChipText, watchlistSort === sv.id && s.filterChipTextActive]}>{sv.label}</Text>
                 </PressableScale>
               ))}
             </View>
@@ -202,9 +206,9 @@ export default function ProfileWatchlistTab({
       return (
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <Bookmark size={32} color={colors.sepia} strokeWidth={1.5} style={s.emptyLockIcon} />
-          <Text style={s.emptyTitleSelf}>An Empty Queue</Text>
-          <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
-            <Text style={s.ctaBtnTextSelf}>CURATE FUTURE VIEWINGS</Text>
+          <Text {...scaledTextProps} style={s.emptyTitleSelf}>An Empty Queue</Text>
+          <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Curate future viewings">
+            <Text {...scaledTextProps} style={s.ctaBtnTextSelf}>CURATE FUTURE VIEWINGS</Text>
           </PressableScale>
         </Animated.View>
       );
@@ -214,15 +218,15 @@ export default function ProfileWatchlistTab({
       return (
         <View style={s.emptyState}>
           <Bookmark size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-          <Text style={s.emptyTitle}>The Queue is Empty</Text>
+          <Text {...scaledTextProps} style={s.emptyTitle}>The Queue is Empty</Text>
           {/* eslint-disable-next-line react/no-unescaped-entities */}
-          <Text style={s.emptyDesc}>This member hasn't saved any films yet.</Text>
+          <Text {...scaledTextProps} style={s.emptyDesc}>This member hasn't saved any films yet.</Text>
         </View>
       );
     }
     
     if (watchlistSearch) {
-      return <Text style={s.searchNoResults}>No films match &quot;{watchlistSearch}&quot;</Text>;
+      return <Text {...scaledTextProps} style={s.searchNoResults}>No films match &quot;{watchlistSearch}&quot;</Text>;
     }
     
     return null;

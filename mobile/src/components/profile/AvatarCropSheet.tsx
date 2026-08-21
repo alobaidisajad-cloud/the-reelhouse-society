@@ -19,6 +19,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 interface Props {
   onClose: () => void;
@@ -83,7 +84,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
       <Animated.View entering={FadeInUp.springify().damping(15)} exiting={FadeOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
         <View style={s.header}>
-          <Text style={s.title}>UPDATE IDENTITY</Text>
+          <Text {...scaledTextProps} style={s.title}>UPDATE IDENTITY</Text>
           <PressableScale onPress={() => { onClose(); }} style={s.closeBtn} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic="selection" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Close">
             <X size={20} color={colors.fog} />
           </PressableScale>
@@ -92,7 +93,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
         {uploading ? (
           <View style={s.uploading}>
             <ActivityIndicator size="large" color={colors.sepia} />
-            <Text style={s.uploadText}>Developing in Darkroom...</Text>
+            <Text {...scaledTextProps} style={s.uploadText}>Developing in Darkroom...</Text>
           </View>
         ) : (
           <View style={s.actions}>
@@ -100,14 +101,14 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
               <View style={s.iconWrap}>
                 <Camera size={24} color={colors.sepia} />
               </View>
-              <Text style={s.actionText}>USE CAMERA</Text>
+              <Text {...scaledTextProps} style={s.actionText}>USE CAMERA</Text>
             </PressableScale>
 
             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 8, right: 8 }} style={s.actionCard} onPress={() => handlePick('library')} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Choose a photo from your library">
               <View style={s.iconWrap}>
                 <ImageIcon size={24} color={colors.bone} />
               </View>
-              <Text style={s.actionText}>LIBRARY VAULT</Text>
+              <Text {...scaledTextProps} style={s.actionText}>LIBRARY VAULT</Text>
             </PressableScale>
           </View>
         )}

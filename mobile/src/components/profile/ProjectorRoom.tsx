@@ -5,6 +5,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '../PressableScale';
 import reelToast from '@/src/utils/reelToast';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 interface CinephileStats {
     count: number;
@@ -44,8 +45,8 @@ function StatDial({ count, color }: { count: number; color: string }) {
                     strokeLinecap="round"
                 />
             </Svg>
-            <Text style={[ds.dialValue, { color }]}>{count}</Text>
-            <Text style={ds.dialLabel}>LIFETIME LOGS</Text>
+            <Text {...scaledTextProps} style={[ds.dialValue, { color }]}>{count}</Text>
+            <Text {...scaledTextProps} style={ds.dialLabel}>LIFETIME LOGS</Text>
         </View>
     );
 }
@@ -75,8 +76,8 @@ export function ProjectorRoom({ stats, user }: { stats?: CinephileStats; user?: 
                         <StatDial count={stats.count} color={stats.color} />
                     </View>
 
-                    <Text style={s.rankLabel}>RANKING</Text>
-                    <Text style={[s.rankValue, { color: stats.color }]}>{stats.level}</Text>
+                    <Text {...scaledTextProps} style={s.rankLabel}>RANKING</Text>
+                    <Text {...scaledTextProps} style={[s.rankValue, { color: stats.color }]}>{stats.level}</Text>
 
                     {/* Progress bar */}
                     <View style={s.progressTrack}>
@@ -88,24 +89,24 @@ export function ProjectorRoom({ stats, user }: { stats?: CinephileStats; user?: 
             {/* Certificate of Obsession */}
             {stats.count > 0 && (
                 <AnimatedView entering={FadeInDown.delay(200).duration(600)} style={s.certCard}>
-                    <Text style={s.certCornerTL}>✦</Text>
-                    <Text style={s.certCornerBR}>✦</Text>
+                    <Text {...scaledTextProps} style={s.certCornerTL}>✦</Text>
+                    <Text {...scaledTextProps} style={s.certCornerBR}>✦</Text>
 
-                    <Text style={s.certSociety}>REELHOUSE PRESERVATION SOCIETY</Text>
-                    <Text style={s.certTitle}>Certificate of Obsession</Text>
-                    <Text style={s.certBody}>
+                    <Text {...scaledTextProps} style={s.certSociety}>REELHOUSE PRESERVATION SOCIETY</Text>
+                    <Text {...scaledTextProps} style={s.certTitle}>Certificate of Obsession</Text>
+                    <Text {...scaledTextProps} style={s.certBody}>
                         This document certifies that the bearer has witnessed {stats.count} films and contributed to the archival history of The ReelHouse Society.
                     </Text>
                     <View style={[s.certBadge, { borderColor: stats.color }]}>
-                        <Text style={[s.certBadgeText, { color: stats.color }]}>{stats.level}</Text>
+                        <Text {...scaledTextProps} style={[s.certBadgeText, { color: stats.color }]}>{stats.level}</Text>
                     </View>
                 </AnimatedView>
             )}
 
             {/* CSV Export button */}
             <AnimatedView entering={FadeInDown.delay(400).duration(600)} style={s.exportWrap}>
-                <PressableScale style={s.exportBtn} onPress={handleCSVExport} haptic>
-                    <Text style={s.exportText}>SHARE YOUR STANDING</Text>
+                <PressableScale style={s.exportBtn} onPress={handleCSVExport} haptic accessibilityRole="button" accessibilityLabel="Share your standing">
+                    <Text {...scaledTextProps} style={s.exportText}>SHARE YOUR STANDING</Text>
                 </PressableScale>
             </AnimatedView>
         </View>

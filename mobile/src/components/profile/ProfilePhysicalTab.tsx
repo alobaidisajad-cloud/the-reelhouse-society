@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
 import type { ProfileVaultItem, FormatCount } from '../../types';
 import PressableScale from '../PressableScale';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 
 interface ProfilePhysicalTabProps {
@@ -46,10 +47,12 @@ const PhysicalVaultCard = React.memo(({ vaultItem }: { vaultItem: ProfileVaultIt
   }, [vaultItem.film_id, router]);
 
   return (
-    <PressableScale 
-      style={s.posterCardWrap} 
+    <PressableScale
+      style={s.posterCardWrap}
       onPress={onPress}
       haptic
+      accessibilityRole="button"
+      accessibilityLabel={[vaultItem.title ?? 'Untitled film', (vaultItem.formats ?? []).join(' and ')].filter(Boolean).join(', ')}
     >
       {posterUri ? (
         <Image 
@@ -66,7 +69,7 @@ const PhysicalVaultCard = React.memo(({ vaultItem }: { vaultItem: ProfileVaultIt
       )}
       {fmt && (
         <View style={[s.formatBadge, { borderColor: FC[fmt] || colors.sepia }]}>
-          <Text style={[s.formatBadgeText, { color: FC[fmt] || colors.sepia }]}>
+          <Text {...scaledTextProps} style={[s.formatBadgeText, { color: FC[fmt] || colors.sepia }]}>
             {FL[fmt] || fmt.toUpperCase()}
           </Text>
         </View>
@@ -141,7 +144,7 @@ export default React.memo(function ProfilePhysicalTab({
     if (item.type === 'header') {
       return (
         <View style={s.monthHeaderWrap}>
-          <Text style={s.monthHeader}>{item.month}</Text>
+          <Text {...scaledTextProps} style={s.monthHeader}>{item.month}</Text>
         </View>
       );
     }
@@ -160,13 +163,16 @@ export default React.memo(function ProfilePhysicalTab({
     return (
       <View style={s.filterHeaderWrap}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScrollMargin} contentContainerStyle={s.filterChipRowTight}>
-          <PressableScale 
-            style={[s.filterChip, !physicalFilter && s.filterChipActive]} 
-            onPress={() => setPhysicalFilter(null)} 
+          <PressableScale
+            style={[s.filterChip, !physicalFilter && s.filterChipActive]}
+            onPress={() => setPhysicalFilter(null)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             haptic
+            accessibilityRole="button"
+            accessibilityLabel={`Show the whole vault, ${vault.length}`}
+            accessibilityState={{ selected: !physicalFilter }}
           >
-            <Text style={[s.filterChipText, !physicalFilter && s.filterChipTextActive]}>ALL ({vault.length})</Text>
+            <Text {...scaledTextProps} style={[s.filterChipText, !physicalFilter && s.filterChipTextActive]}>ALL ({vault.length})</Text>
           </PressableScale>
           {physicalFormatCounts.map((f: FormatCount) => (
             <PressableScale 
@@ -175,8 +181,11 @@ export default React.memo(function ProfilePhysicalTab({
               onPress={() => setPhysicalFilter(physicalFilter === f.id ? null : f.id)} 
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               haptic
+              accessibilityRole="button"
+              accessibilityLabel={`Filter the vault by ${f.label}, ${f.count}`}
+              accessibilityState={{ selected: physicalFilter === f.id }}
             >
-              <Text style={[s.filterChipText, physicalFilter === f.id && { color: f.color }]}>
+              <Text {...scaledTextProps} style={[s.filterChipText, physicalFilter === f.id && { color: f.color }]}>
                 {f.label} ({f.count})
               </Text>
             </PressableScale>
@@ -194,9 +203,9 @@ export default React.memo(function ProfilePhysicalTab({
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <View style={s.vaultPattern} />
           <Disc size={36} color={colors.parchment} strokeWidth={1.5} style={s.emptyLockIcon} />
-          <Text style={s.emptyTitleSelf}>The Vault is Sealed</Text>
-          <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
-            <Text style={s.ctaBtnTextSelf}>CATALOGUE MEDIA</Text>
+          <Text {...scaledTextProps} style={s.emptyTitleSelf}>The Vault is Sealed</Text>
+          <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Catalogue physical media">
+            <Text {...scaledTextProps} style={s.ctaBtnTextSelf}>CATALOGUE MEDIA</Text>
           </PressableScale>
         </Animated.View>
       );
@@ -205,8 +214,8 @@ export default React.memo(function ProfilePhysicalTab({
     return (
       <View style={s.emptyState}>
         <Disc size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-        <Text style={s.emptyTitle}>Physical Archive is Empty</Text>
-        <Text style={s.emptyDesc}>No physical media.</Text>
+        <Text {...scaledTextProps} style={s.emptyTitle}>Physical Archive is Empty</Text>
+        <Text {...scaledTextProps} style={s.emptyDesc}>No physical media.</Text>
       </View>
     );
   }, [physicalFiltered.length, isSelf, pulseStyle, router]);
@@ -216,8 +225,8 @@ export default React.memo(function ProfilePhysicalTab({
     return (
       <View>
         {hasMore && (
-          <PressableScale style={s.loadMoreBtn} onPress={onLoadMore} disabled={isLoadingMore}>
-            {isLoadingMore ? <ActivityIndicator color={colors.sepia} /> : <Text style={s.loadMoreText}>LOAD MORE</Text>}
+          <PressableScale style={s.loadMoreBtn} onPress={onLoadMore} disabled={isLoadingMore} accessibilityRole="button" accessibilityLabel={isLoadingMore ? 'Loading more' : 'Load more'} accessibilityState={{ busy: isLoadingMore, disabled: isLoadingMore }}>
+            {isLoadingMore ? <ActivityIndicator color={colors.sepia} /> : <Text {...scaledTextProps} style={s.loadMoreText}>LOAD MORE</Text>}
           </PressableScale>
         )}
       </View>

@@ -9,6 +9,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { ReelRating } from '@/src/components/Decorative';
 import { timeAgo } from '@/src/utils/timeAgo';
 import type { ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '@/src/types';
+import { scaledTextProps } from '@/src/constants/textScaling';
 
 interface ProfilePosterCardProps {
   item: ProfileLog | ProfileVaultItem | ProfileWatchlistItem;
@@ -117,6 +118,14 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
         }
       }}
       haptic
+      accessibilityRole="button"
+      accessibilityLabel={[
+        log.title ?? 'Untitled film',
+        log.year ? String(log.year) : '',
+        showRating && log.rating > 0 ? `rated ${log.rating} of 5` : '',
+        log.status && log.status !== 'watched' ? String(log.status) : '',
+      ].filter(Boolean).join(', ')}
+      accessibilityHint={navigateToLog ? 'Opens your log' : 'Opens the film'}
     >
       {posterUri ? (
         <Image
@@ -141,7 +150,7 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
             </View>
           )}
           {showTimeAgo && (
-            <Text style={s.posterTimeAgo}>
+            <Text {...scaledTextProps} style={s.posterTimeAgo}>
               {timeAgo(log.watchedDate ?? log.createdAt)}
             </Text>
           )}
