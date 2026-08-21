@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   ActivityIndicator, InteractionManager, Platform, AccessibilityInfo
@@ -9,11 +9,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FormProvider } from 'react-hook-form';
 import { ControlledInput, ControlledBioInput, ControlledUsernameInput } from '@/src/components/ControlledInput';
 import { useAmbientGlow } from '@/src/hooks/useAmbientGlow';
-import { ChevronLeft, User, Camera, Link2, Film, Sparkles, Stamp } from 'lucide-react-native';
+import { ChevronLeft, User, Camera, Link2, Film, Sparkles, Stamp, Image as ImageIcon } from 'lucide-react-native';
 
 import { useEditProfile } from '@/src/hooks/useEditProfile';
 import { formatDateMonthYear } from '@/src/utils/timeAgo';
-import { resolveTier } from '@/src/utils/tier';
+import { resolveTier, isAuteurPlusTier } from '@/src/utils/tier';
+import { Toggle } from '@/src/components/Toggle';
+import { backdropIsOn } from '@/src/components/profile/ProfileBackdrop';
+import { pickBackdropFilm } from '@/src/components/profile/favourites';
+import { useAuthStore } from '@/src/stores/auth';
+import { supabase } from '@/src/lib/supabase';
+import { enqueueMutation } from '@/src/utils/offlineQueue';
+import { isNetworkError } from '@/src/utils/networkError';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { SectionCard, SectionHead } from '@/src/components/layout/SectionCards';
@@ -24,6 +31,79 @@ import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
 import { LinksEditor } from '@/src/features/profile/LinksEditor';
 import Buster from '@/src/components/Buster';
 import { Image } from 'expo-image';
+
+/**
+ * THE BACKDROP — an Auteur privilege, and now a choice.
+ *
+ * An Auteur's file is dressed from the centre of their altarpiece: the poster
+ * bleeds behind their portrait, washed and vignetted. It is the most striking
+ * thing the app does with a member's own taste — and it is not what everyone
+ * wants behind their own face. This gives it back to them.
+ *
+ * ── WHY IT WRITES IMMEDIATELY INSTEAD OF WAITING FOR SAVE ────────────────────
+ * The triptych directly above it already writes the moment a film is chosen,
+ * with no Save. A switch that quietly needed one would be the only control on
+ * the page that did, and the member would find out by leaving and losing it.
+ * Same optimistic-then-reconcile shape as the triptych: apply locally, send the
+ * one key (the RPC merges), queue it if the network is out, roll back only on a
+ * real refusal.
+ *
+ * ── ABSENT MEANS ON ──────────────────────────────────────────────────────────
+ * Only an explicit `false` takes the backdrop down, so no Auteur loses theirs
+ * on the day this ships.
+ */
+function BackdropSetting({ user }: { user: { id: string; preferences?: Record<string, unknown> | null } }) {
+  const updateUser = useAuthStore(state => state.updateUser);
+  const on = backdropIsOn(user?.preferences as { backdrop?: unknown } | null | undefined);
+  const [busy, setBusy] = useState(false);
+
+  // The film it would be cut from — so the line names it rather than making
+  // the member go and look.
+  const centre = pickBackdropFilm((user?.preferences as { favorites?: unknown } | null)?.favorites);
+
+  const toggle = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    const next = !on;
+    const currentPrefs = useAuthStore.getState().user?.preferences ?? {};
+    const updated = { ...currentPrefs, backdrop: next };
+    updateUser({ preferences: updated });
+    try {
+      const { error } = await supabase.rpc('update_my_preferences', { p_preferences: { backdrop: next } });
+      if (error) throw error;
+    } catch (e: unknown) {
+      if (isNetworkError(e)) {
+        enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updated } });
+      } else {
+        updateUser({ preferences: currentPrefs });
+        if (__DEV__) console.error('[EditProfile] Failed to set backdrop:', e);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, on, updateUser, user.id]);
+
+  return (
+    <SectionCard>
+      <SectionHead icon={ImageIcon} label="THE BACKDROP" />
+      <View style={bd.row}>
+        <View style={bd.copy}>
+          <Text style={st.fieldBody}>
+            {centre
+              ? `Your file is dressed from ${centre.title}. Turn this off for the house's own dark.`
+              : "Dress your file with the centre of your triptych. Turn this off for the house's own dark."}
+          </Text>
+        </View>
+        <Toggle active={on} onToggle={toggle} disabled={busy} label="Film backdrop on your profile" />
+      </View>
+    </SectionCard>
+  );
+}
+
+const bd = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  copy: { flex: 1, minWidth: 0 },
+});
 
 export function EditProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -198,11 +278,23 @@ export function EditProfileScreen() {
                       id: user.id, 
                       preferences: user.preferences ? { favorites: user.preferences.favorites as import('@/src/components/profile/ProfileTriptych').TriptychFilm[] } : null 
                     }} 
-                    isOwnProfile={true} 
-                    userRole={resolveTier(user)} 
+                    isOwnProfile={true}
+                    userRole={resolveTier(user)}
                   />
               </SectionCard>
           </Animated.View>
+        )}
+
+        {/* ════ THE BACKDROP — Auteur only ════
+            It sits directly under the triptych because it is about the
+            triptych: the centre panel is the film it dresses the page with. */}
+        {isReady && isAuteurPlusTier(user) && (
+          <>
+            <DiamondDivider />
+            <Animated.View entering={FadeInDown.duration(500).delay(175)}>
+              <BackdropSetting user={user as { id: string; preferences?: Record<string, unknown> | null }} />
+            </Animated.View>
+          </>
         )}
 
         <DiamondDivider />

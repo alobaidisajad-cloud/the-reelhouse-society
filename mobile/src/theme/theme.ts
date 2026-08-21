@@ -22,6 +22,12 @@ export const colors = {
   fog: '#9E9488',         // Muted text, disabled
   silverNitrate: '#D8E0E8', // System/info accent
   rust: '#8B4513',           // Tarnished copper — dossier accents, warm highlights
+  // The dark INSIDE a frame — the member's mounted portrait, the three panels of
+  // the triptych, the small poster wells in the LATELY ledger. It has to be a
+  // clear step above `ink` so an empty frame reads as a frame rather than a hole
+  // punched in the page; `soot` is only three values off ink and disappears
+  // against it, which is why this is its own shade and not a reuse.
+  frame: '#14100B',
 
   // Derived — channels MUST match base `sepia` (#B8891A = rgb(184, 137, 26)).
   // (CONST-1: previously rgb(196,150,26), a subtly different hue than the base.)

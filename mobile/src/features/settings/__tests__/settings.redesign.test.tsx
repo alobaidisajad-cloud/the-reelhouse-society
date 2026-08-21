@@ -24,6 +24,9 @@ const SCREEN = readFileSync(join(DIR, 'SettingsScreen.tsx'), 'utf8');
 const SECTIONS = readFileSync(join(DIR, 'SettingsSections.tsx'), 'utf8');
 const STYLES = readFileSync(join(DIR, 'settings.styles.ts'), 'utf8');
 const VAULT = readFileSync(join(DIR, 'DataVault.tsx'), 'utf8');
+// The switch itself now lives in one shared place — the profile's Dossier
+// Bureau needed one too, and a second copy would have drifted from this one.
+const TOGGLE = readFileSync(join(DIR, '..', '..', 'components', 'Toggle.tsx'), 'utf8');
 
 let mockUser: Record<string, unknown> | null;
 let mockPerm: string;
@@ -289,8 +292,11 @@ describe('account', () => {
   it('the off state is drawn by the app on BOTH platforms', () => {
     // On iOS trackColor.false tints only the outline; the fill stays system
     // default, so an off switch was a bright grey pill on the darkest page.
-    const at = SECTIONS.indexOf('<Switch');
-    expect(SECTIONS.slice(at, at + 700)).toMatch(/ios_backgroundColor/);
+    const at = TOGGLE.indexOf('<Switch');
+    expect(at).toBeGreaterThan(-1);
+    expect(TOGGLE.slice(at, at + 700)).toMatch(/ios_backgroundColor/);
+    // And this page must not grow a second, unfixed switch of its own.
+    expect(CODE_SECTIONS).not.toMatch(/<Switch/);
   });
 });
 

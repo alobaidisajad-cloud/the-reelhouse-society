@@ -5,6 +5,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors } from '@/src/theme/theme';
 import { isAuteurPlusTier } from '@/src/utils/tier';
+import { pickBackdropFilm } from './favourites';
+
+/**
+ * The backdrop is a privilege, not an imposition.
+ *
+ * An Auteur's page is dressed from the centre of their altarpiece — beautiful,
+ * and not what everyone wants behind their own face. The switch lives in the
+ * Dossier Bureau; ABSENT MEANS ON, so nobody who already has a backdrop loses
+ * it the day this ships, and only an explicit `false` takes it down.
+ */
+export function backdropIsOn(preferences: { backdrop?: unknown } | null | undefined): boolean {
+    return preferences?.backdrop !== false;
+}
 
 /**
  * ProfileBackdrop — Auteur-only full-bleed poster backdrop.
@@ -20,18 +33,20 @@ interface BackdropUser {
     role?: string | null;
     tier?: string | null;
     is_founding?: boolean | null;
-    preferences?: { favorites?: { poster_path?: string | null }[]; [key: string]: unknown } | null;
+    preferences?: { favorites?: { poster_path?: string | null }[]; backdrop?: unknown; [key: string]: unknown } | null;
 }
 
 export function ProfileBackdrop({ user, logs }: { user: BackdropUser; logs: BackdropLog[] }) {
     const isAuteurPlus = isAuteurPlusTier(user);
     if (!isAuteurPlus) return null;
+    if (!backdropIsOn(user?.preferences)) return null;
 
-    const rawFavorites = user?.preferences?.favorites;
-    const safeFavorites = Array.isArray(rawFavorites) ? rawFavorites : [];
-    const favorites = safeFavorites.filter((f: { poster_path?: string | null }) => f && f.poster_path);
-    const posterSrc = favorites.length > 0
-        ? `https://image.tmdb.org/t/p/w780${favorites[0].poster_path}`
+    // The centre of the altarpiece dresses the page. That rule lives in one
+    // place so this and ProfileTriptych can never disagree about which film is
+    // "first" — they used to read the same array two different ways.
+    const centre = pickBackdropFilm(user?.preferences?.favorites);
+    const posterSrc = centre
+        ? `https://image.tmdb.org/t/p/w780${centre.poster_path}`
         : logs?.filter((l: BackdropLog) => l.poster).slice(0, 1).map((l: BackdropLog) => tmdb.poster(l.poster ?? '', 'w342'))[0];
 
     if (!posterSrc) return null;

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, Switch, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Linking, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import Animated from 'react-native-reanimated';
@@ -22,6 +22,7 @@ import { AuthService } from '@/src/services/AuthService';
 import { supabase } from '@/src/lib/supabase';
 import { isAuteurPlusTier, isArchivistPlusTier, getDisplayTier } from '@/src/utils/tier';
 import { getPasswordChecks, PW_CHECK_LABELS, getStrengthInfo } from '@/src/components/auth/PasswordStrengthMeter';
+import { Toggle } from '@/src/components/Toggle';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -61,32 +62,12 @@ export const SectionHead = ({ icon: Icon, label, danger }: { icon: import('lucid
 );
 
 /**
- * A switch that looks the same on both platforms, and says its own name.
- *
- * ── ios_backgroundColor ──────────────────────────────────────────────────────
- * On iOS `trackColor.false` maps to UISwitch's `tintColor`, which colours the
- * OUTLINE only; the fill stays the system default. So an off switch rendered as
- * a bright light-grey pill on the app's darkest page, while the same switch on
- * Android was dark brass. `ios_backgroundColor` sets the actual fill, and the
- * two platforms finally agree.
- *
- * ── the label ────────────────────────────────────────────────────────────────
- * A Switch with no accessibilityLabel announces "off, switch" and never which
- * switch. Six of them on this page were anonymous.
+ * The switch moved to `src/components/Toggle.tsx` when the Dossier Bureau
+ * needed one too. Re-exported here so every existing import still resolves —
+ * one implementation, two doors to it. Both platform fixes live there now.
+ * (The import itself sits with the others at the top of the file.)
  */
-export const Toggle = ({ active, onToggle, disabled, label }: { active: boolean; onToggle: () => void; disabled?: boolean; label: string }) => (
-  <Switch
-    value={active}
-    disabled={disabled}
-    onValueChange={() => { TactileEngine.selection(); onToggle(); }}
-    trackColor={{ false: 'rgba(184,137,26,0.12)', true: colors.sepia }}
-    ios_backgroundColor={'rgba(184,137,26,0.12)'}
-    thumbColor={active ? colors.parchment : colors.fog}
-    accessibilityLabel={label}
-    accessibilityRole="switch"
-    accessibilityState={{ checked: active, disabled: !!disabled }}
-  />
-);
+export { Toggle };
 
 /**
  * One option in a group. 48 by geometry: these stack with no gap, so the old

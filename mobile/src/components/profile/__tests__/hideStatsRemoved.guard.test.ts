@@ -32,10 +32,22 @@ describe('hide_stats is gone from every client surface', () => {
     expect(code).not.toMatch(/hideStats/);
   });
 
-  it('the stats row renders unconditionally for every viewer', () => {
+  it('all four figures render unconditionally for every viewer', () => {
     const screen = fs.readFileSync(path.join(ROOT, 'app/user/[username].tsx'), 'utf8');
-    expect(screen).toMatch(/<StatCard label="FILMS" value=\{totalFilms\} \/>/);
-    // No preference-driven wrapper around the grid.
+
+    // This used to pin the exact source of ONE card, `value={totalFilms}`, which
+    // made it a spelling test rather than a behaviour test: it broke the day the
+    // count got a thousands separator — nothing to do with hide_stats — while
+    // still saying nothing about the other three. Name all four instead, and
+    // check the ROW for a gate rather than the card for a shape.
+    for (const label of ['FILMS', 'WATCHLIST', 'FOLLOWERS', 'FOLLOWING']) {
+      expect(screen).toMatch(new RegExp(`<StatCard label="${label}"`));
+    }
+
+    // No preference-driven wrapper around the row.
+    const at = screen.indexOf('s.statsBox');
+    expect(at).toBeGreaterThan(-1);   // a moved style must not pass vacuously
+    expect(screen.slice(Math.max(0, at - 400), at)).not.toMatch(/preferences\?\./);
     expect(screen).not.toMatch(/preferences\?\.\w+\s*\|\|\s*isSelf\)\s*&&\s*\(/);
   });
 

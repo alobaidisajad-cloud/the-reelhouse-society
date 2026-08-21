@@ -85,6 +85,33 @@ export function reconcileCount(serverCount: number, localLength: number, isSelf:
 }
 
 /**
+ * How a holdings count is written on the page.
+ *
+ * An em dash for an empty room, never `0`. Two reasons, and the second is the
+ * one that matters. A room nobody has filed anything in yet is not a score of
+ * zero, it is a room waiting — "—" invites, "0" indicts. And on the cache-first
+ * path a member's own counts are deliberately seeded to 0 before the round trip
+ * resolves, so for a few hundred milliseconds the old markup stated, in Rye at
+ * 22pt, that someone with two thousand films had watched none of them. A dash
+ * is honest in both cases: nothing to show yet.
+ *
+ * A thousands separator too — 2481 is a number, 2,481 is a figure.
+ */
+export function tally(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return '—';
+  // Manual grouping: `toLocaleString` routes through Intl, which this codebase
+  // does not assume Hermes provides — when it is absent the options are ignored
+  // and the failure looks like a design choice.
+  const digits = String(Math.floor(n));
+  let out = '';
+  for (let i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 === 0) out += ',';
+    out += digits[i];
+  }
+  return out;
+}
+
+/**
  * Consecutive days ending today (or yesterday) on which the member logged a film.
  *
  * Pulled out of the hook so it can actually be tested — it is date arithmetic, which
@@ -287,11 +314,19 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     return computed;
   }, [displayVault, physicalFilter]);
 
-  // Extracted from IIFE in JSX — enables proper memoization
-  const recentLogs = useMemo(() =>
-    displayLogs.filter((l: ProfileLog) => l.poster && l.poster.length > 5).slice(0, 3),
-    [displayLogs]
-  );
+  /**
+   * The last three films, for LATELY.
+   *
+   * ── WHY THE POSTER FILTER WENT ───────────────────────────────────────────
+   * This used to require `l.poster && l.poster.length > 5`, because the section
+   * was three poster tiles in a row and one empty tile looked broken. LATELY is
+   * a numbered ledger now, and a ledger row with a marked placeholder does not
+   * look broken — it looks like a film TMDB has no art for, which is what it
+   * is. Filtering meant the three films a member had actually watched most
+   * recently could silently not be the three the page showed; the row is now
+   * simply the truth, in order.
+   */
+  const recentLogs = useMemo(() => displayLogs.slice(0, 3), [displayLogs]);
 
   // Social links parsing (matches web exactly)
   const socialLinks = useMemo(() => {
@@ -320,11 +355,11 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   const totalVault = reconcileCount(counts.vault, displayVault.length, isSelf);
 
   const COLLECTION_CARDS = useMemo(() => [
-    { id: 'archive' as ProfileTab, label: 'ARCHIVE', desc: 'WATCHED', count: String(totalFilms), Icon: Archive, disabled: false, highlight: false, locked: false },
-    { id: 'ledger' as ProfileTab, label: 'LEDGER', desc: 'DIARY', count: String(totalLedger), Icon: BookOpen, disabled: false, highlight: false, locked: false },
-    { id: 'watchlist' as ProfileTab, label: 'WATCHLIST', desc: 'TO SEE', count: String(totalWatchlist), Icon: Bookmark, disabled: false, highlight: false, locked: false },
-    { id: 'lists' as ProfileTab, label: 'STACKS', desc: 'LISTS', count: String(totalLists), Icon: LayoutList, disabled: false, highlight: false, locked: false },
-    { id: 'physical' as ProfileTab, label: 'VAULT', desc: 'PHYSICAL', count: isArchivistPlus ? String(totalVault) : '✦', Icon: Disc, disabled: false, highlight: false, locked: !isArchivistPlus },
+    { id: 'archive' as ProfileTab, label: 'ARCHIVE', desc: 'WATCHED', count: tally(totalFilms), Icon: Archive, disabled: false, highlight: false, locked: false },
+    { id: 'ledger' as ProfileTab, label: 'LEDGER', desc: 'DIARY', count: tally(totalLedger), Icon: BookOpen, disabled: false, highlight: false, locked: false },
+    { id: 'watchlist' as ProfileTab, label: 'WATCHLIST', desc: 'TO SEE', count: tally(totalWatchlist), Icon: Bookmark, disabled: false, highlight: false, locked: false },
+    { id: 'lists' as ProfileTab, label: 'STACKS', desc: 'LISTS', count: tally(totalLists), Icon: LayoutList, disabled: false, highlight: false, locked: false },
+    { id: 'physical' as ProfileTab, label: 'VAULT', desc: 'PHYSICAL', count: isArchivistPlus ? tally(totalVault) : '✦', Icon: Disc, disabled: false, highlight: false, locked: !isArchivistPlus },
     { id: 'projector' as ProfileTab, label: 'PROJECTOR', desc: 'ANALYTICS', count: '★', Icon: Projector, disabled: false, highlight: true, locked: false },
   ], [totalLedger, totalWatchlist, totalLists, totalVault, isArchivistPlus, totalFilms]);
 

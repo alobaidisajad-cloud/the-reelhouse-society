@@ -42,27 +42,27 @@ import { ProjectorRoom } from '@/src/components/profile/ProjectorRoom';
 import { TasteDNA } from '@/src/components/profile/TasteDNA';
 import { TasteMatch } from '@/src/components/profile/TasteMatch';
 import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
-import { useProfileComputed } from '@/src/components/profile/profileComputed';
+import { useProfileComputed, tally } from '@/src/components/profile/profileComputed';
 import { s } from '@/src/components/profile/profileStyles';
  
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import PressableScale from '@/src/components/PressableScale';
 import ProfileListsTab from '@/src/components/profile/ProfileListsTab';
 import ProfilePhysicalTab from '@/src/components/profile/ProfilePhysicalTab';
-import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
+import { isArchivistPlusTier, isAuteurPlusTier, resolveTier, getDisplayTier } from '@/src/utils/tier';
+import { formatDateMonthYear, timeAgo } from '@/src/utils/timeAgo';
 import {
-    Archive,
     ArrowLeft,
     CalendarDays,
     ChevronLeft,
-    Crown, Dna,
+    ChevronRight,
+    Dna,
     Film as FilmIcon,
     Globe,
     KeyRound,
     MoreVertical,
     Settings,
-    Sparkles,
-    Star
+    Sparkles
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -72,9 +72,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
-import FollowRequestsPanel from '@/src/components/profile/FollowRequestsPanel';
-import { useSocialStore } from '@/src/stores/followStore';
-import { refreshFollowRequestCount } from '@/src/hooks/useFollowRequests';
 import { StatCard } from '@/src/components/profile/ProfileHelpers';
 import { ProfilePosterCard } from '@/src/components/profile/ProfilePosterCard';
 import { useBlockStore } from '@/src/stores/blockStore';
@@ -208,19 +205,16 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ── Moderation State ──
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
-  const [doorOpen, setDoorOpen] = useState(false);
-  const pendingRequestCount = useSocialStore(s => s.pendingRequestCount);
-  // Keep the door badge fresh whenever we land on our own profile.
-  useEffect(() => { if (isSelf) refreshFollowRequestCount(); }, [isSelf]);
+  // "At the door" used to be duplicated here, with its own count subscription
+  // and its own refresh. It lives in Notices now — one place to check, one
+  // place to keep in step. Notices refreshes the count on mount and owns the
+  // same panel, so removing the copy took nothing with it.
   const isBlocked = useBlockStore((state) => state.isBlocked(targetUser?.id ?? ''));
   const isMuted = useBlockStore((state) => state.isMuted(targetUser?.id ?? ''));
   const blockStore = useBlockStore();
 
   const POSTER_COL_4 = (windowWidth - 32 - 18) / 4;
   const POSTER_COL_3 = (windowWidth - 32 - 16) / 3;
-  // Deterministic pixel width (16px rails ×2, 10px gaps ×2) — the old
-  // '31%'-of-a-widthless-wrapper collapsed the whole grid to zero.
-  const COLLECTION_CARD_W = (windowWidth - 32 - 20) / 3;
 
   // Breathing avatar animation — purely on native thread (capped to save battery)
   const breatheAnim = useSharedValue(0.4);
@@ -306,10 +300,76 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const avatarInitial = (targetUser?.persona || (targetUser as any)?.display_name || targetUser?.username || '?')
     .charAt(0).toUpperCase();
 
-  // Favorites presence — guards the FAVORITE FILMS label so it never
-  // floats orphaned over a triptych that rendered null for visitors.
+  // Favorites presence — guards the THE TRIPTYCH label so it never
+  // floats orphaned over an altarpiece that rendered null for visitors.
   const hasFavorites = Array.isArray(targetUser?.preferences?.favorites)
     && (targetUser!.preferences!.favorites as unknown[]).filter(Boolean).length > 0;
+
+  // ════════════════════════════════════════════════════════════
+  // THE PARTICULARS — the member's name block, set beside their portrait
+  // ════════════════════════════════════════════════════════════
+
+  const heroName = (targetUser?.persona || (targetUser as any)?.display_name || `@${targetUser?.username ?? 'unknown'}`).toUpperCase();
+
+  /**
+   * A DETERMINISTIC step-down, not `adjustsFontSizeToFit`.
+   *
+   * Auto-shrinking measures at layout time and picks any fraction it likes, so
+   * two members side by side get two different sizes for no reason a reader can
+   * see, and on Android it interacts badly with a second line. Three fixed
+   * steps mean the same name always renders at the same size, and the type
+   * scale survives contact with a long one. Two lines at the smallest step hold
+   * roughly 46 characters — past that it ellipsizes rather than shrinking into
+   * illegibility.
+   */
+  const nameSize = heroName.length <= 16 ? 26 : heroName.length <= 28 ? 20 : 16;
+  const nameStyle = { fontSize: nameSize, lineHeight: Math.round(nameSize * 1.16), letterSpacing: nameSize >= 26 ? 1.4 : 1 };
+
+  const bioText = targetUser?.bio?.trim() || (isSelf ? 'No bio yet. Tell the society who you are.' : 'No bio on file.');
+  // Same reasoning as the name: fixed steps, and the longest bios get more
+  // lines rather than smaller type.
+  const bioSize = bioText.length <= 90 ? 12.5 : bioText.length <= 170 ? 11.5 : 10.5;
+  const bioStyle = { fontSize: bioSize, lineHeight: Math.round(bioSize * 1.52) };
+  const bioLines = bioText.length <= 90 ? 4 : bioText.length <= 170 ? 5 : 6;
+
+  /**
+   * `Nº 0147 · ADMITTED MARCH 2026` — one line where there were two.
+   *
+   * The month is built by the house formatter, NOT `toLocaleDateString(…, {
+   * month, year })`: those options travel through Intl, which this codebase
+   * does not assume Hermes provides. When it is missing the options are ignored
+   * silently and the line renders as `3/14/2026` — the failure looks like a
+   * design choice, which is why it survives.
+   */
+  const admittedFull = formatDateMonthYear(targetUser?.created_at);
+  const admitted = (() => {
+    const [mon, yr] = admittedFull.split(' ');
+    return mon && yr ? `ADMITTED ${mon.toUpperCase()} ${yr}` : '';
+  })();
+  const serialLine = [memberNo ? `Nº ${memberNo}` : '', admitted].filter(Boolean).join(' · ');
+
+  // The rank is stamped on the corner of the print. `getDisplayTier` applies
+  // the Highest Watermark Rule, so a founding member reads AUTEUR whatever
+  // their nominal tier says.
+  const stampLabel = getDisplayTier(tier);
+  // Founding is a FLAG, not a rank — it cannot appear as "ARCHIVIST · FOUNDING".
+  // It gets the one line the stamp cannot carry, and nobody else pays for it.
+  const isFounding = !!(targetUser as any)?.is_founding;
+
+  /**
+   * Where the ident row starts.
+   *
+   * The old hero used a flat `paddingTop: 120` for both cases. Your OWN file is
+   * a TAB — it has no back button — so 120 there was ~50pt of nothing above
+   * your own portrait, on every phone. A pushed profile has the absolutely
+   * positioned back button to clear, and how far down that sits depends on the
+   * notch, so the number has to be derived from the same expression the button
+   * itself uses rather than guessed at once.
+   */
+  const heroTop = usernameOverride
+    ? insets.top + 16
+    : Math.max(insets.top + 10, 40) + 46;   // topNav padding + the 40pt button + 6
+
 
   const {
     displayLogs,
@@ -356,6 +416,24 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     watchlistSort,
     physicalFilter,
   });
+
+  /**
+   * What the Society plate says, and it has to be TRUE at every rank.
+   *
+   * "One room remains closed to you" is only worth saying if the page can
+   * actually count the closed rooms, so it counts the ones it draws as locked —
+   * the holdings wearing a key, plus the calendar — rather than asserting a
+   * number from the tier name. An Archivist has none of those locked but is
+   * still not at the top, so that case gets its own line instead of the false
+   * "every door is open".
+   */
+  const WORD = ['no', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
+  const lockedRooms = COLLECTION_CARDS.filter((c: any) => c.locked).length + (isArchivistPlus ? 0 : 1);
+  const ranksSub = isAuteurPlus
+    ? 'You hold the highest rank. Every door in the house is open to you.'
+    : lockedRooms > 0
+      ? `${WORD[lockedRooms] ?? lockedRooms} room${lockedRooms === 1 ? '' : 's'} remain${lockedRooms === 1 ? 's' : ''} closed to you.`
+      : 'There are rooms above this one.';
 
   // Group by month helper
   const groupByMonth = useCallback(<T extends ProfileLog | ProfileVaultItem>(items: T[], dateKey = 'watchedDate') => {
@@ -769,91 +847,105 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           </AnimatedView>
 
           {/* Film grain texture overlay */}
-          <View style={s.filmGrainOverlay} />
+          <View style={s.filmGrainOverlay} pointerEvents="none" />
+
+          {/* A breath of dark at the very top so the status bar and the back
+              button recede into the plate instead of competing with a bright
+              backdrop for the same pixels. */}
+          <LinearGradient colors={['rgba(6,5,3,0.72)', 'transparent']} style={s.heroTopFade} pointerEvents="none" />
 
           {/* Bottom structural edge */}
-          <View style={s.headerGoldEdge} />
+          <View style={[s.headerGoldEdge, isAuteurPlus && { backgroundColor: 'rgba(180,45,45,0.35)' }]} pointerEvents="none" />
 
-          {/* ── Header Content ── */}
-          <View style={s.headerContent}>
+          {/* ── Header Content ──
+              No horizontal padding here: the ident row, the bio, the figures
+              and the acts each set their own, exactly as the design does. A
+              shared 20pt pad plus alignItems:'center' is what produced the old
+              single centred column. */}
+          <View style={[s.headerContent, { paddingTop: heroTop }]}>
 
-            {/* ── Avatar with Tier-Specific Enclosure — the portrait develops ── */}
-            <View style={s.avatarWrap}>
-              <AnimatedView style={[{ width: 116, height: 116, alignItems: 'center', justifyContent: 'center' }, portraitDevelop]}>
-                {isAuteurPlus && <View style={s.avatarHaloAuteur} pointerEvents="none" />}
-                <AnimatedView style={[
-                  StyleSheet.absoluteFillObject,
-                  s.avatarRing,
-                  isAuteurPlus ? s.avatarRingAuteur : isArchivistPlus ? s.avatarRingArchivist : s.avatarRingCinephile,
-                  pulseStyle
-                ]} />
-                {targetUser.avatar_url ? (
-                  <Image source={{ uri: targetUser.avatar_url }} style={s.avatar} cachePolicy="memory-disk" />
-                ) : (
-                  <View style={[s.avatar, s.avatarPlaceholder]}>
-                    <Text style={s.avatarInitial}>{avatarInitial}</Text>
-                  </View>
-                )}
-              </AnimatedView>
-
-              {/* Level badge */}
-              <View style={[s.levelBadge, { borderColor: statsColor }]}>
-                <View style={s.levelBadgeRow}>
-                  <Sparkles size={7} color={statsColor} strokeWidth={1.5} />
-                  <Text style={[s.levelBadgeText, { color: statsColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{statsLevel}</Text>
+            {/* ══ THE IDENT — a mounted print, and the particulars beside it ══
+                This replaces ten centred blocks stacked down the middle of the
+                screen. Everything that was in them is still here; it is set as
+                a composition instead of a list, which is why it now fits in one
+                glance instead of one and a half screens. */}
+            <AnimatedView style={[s.identRow, portraitDevelop]}>
+              <View style={s.portraitWrap}>
+                <View style={s.plate}>
+                  {targetUser.avatar_url ? (
+                    <Image
+                      source={{ uri: targetUser.avatar_url }}
+                      style={s.plateImage}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                      transition={150}
+                      accessibilityIgnoresInvertColors
+                    />
+                  ) : (
+                    <View style={s.plateInitialWrap}>
+                      <Text style={s.plateInitial} allowFontScaling={false}>{avatarInitial}</Text>
+                    </View>
+                  )}
+                  {/* The grain is inside the frame, over the photograph — it is
+                      the PRINT that is old, not the screen. */}
+                  <View style={s.plateGrain} pointerEvents="none" />
+                  <View style={[s.corner, s.cornerTL]} pointerEvents="none" />
+                  <View style={[s.corner, s.cornerTR]} pointerEvents="none" />
+                  <View style={[s.corner, s.cornerBL]} pointerEvents="none" />
+                  <View style={[s.corner, s.cornerBR]} pointerEvents="none" />
                 </View>
+
+                {/* The rank, stamped on the corner at a hand's angle — and it
+                    literally stamps down, on the last beat of the develop. */}
+                <AnimatedView style={[s.tierStamp, isAuteurPlus && s.tierStampRuby, stampDevelop]}>
+                  <Text
+                    style={[s.tierStampText, isAuteurPlus && s.tierStampTextRuby]}
+                    numberOfLines={1}
+                    allowFontScaling={false}
+                  >{stampLabel}</Text>
+                </AnimatedView>
               </View>
-            </View>
 
-            {/* ── Username + Tier Badge ── */}
-            <View style={s.usernameRow}>
-              <Text style={s.displayName} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.5}>
-                {targetUser.persona ? targetUser.persona.toUpperCase() : (targetUser.display_name ? targetUser.display_name.toUpperCase() : `@${(targetUser.username || 'unknown').toUpperCase()}`)}
-              </Text>
-              {isAuteurPlus && (
-                <View style={s.auteurBadge}>
-                  <Star size={9} color={'#FFB3B3'} fill={'#FFB3B3'} />
-                  <Text style={s.auteurBadgeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>AUTEUR</Text>
-                </View>
-              )}
-              {(!isAuteurPlus && isArchivistPlus) && (
-                <View style={s.archivistBadge}>
-                  <Archive size={8} color={colors.silverScreen} strokeWidth={1.5} />
-                  <Text style={s.archivistBadgeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>ARCHIVIST</Text>
-                </View>
-              )}
-            </View>
+              <View style={s.particulars}>
+                <Text style={[s.heroName, nameStyle]} numberOfLines={2}>{heroName}</Text>
+                <LinearGradient
+                  colors={[tierLine, 'transparent']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={s.nameRule}
+                />
+                <Text style={s.heroHandle} numberOfLines={1}>@{(targetUser.username || 'unknown').toUpperCase()}</Text>
+                {isFounding && (
+                  <Text style={[s.heroStand, { color: tierText }]} numberOfLines={1}>✦ FOUNDING MEMBER</Text>
+                )}
+                {!!serialLine && <Text style={s.heroSerial} numberOfLines={1}>{serialLine}</Text>}
+              </View>
+            </AnimatedView>
 
-            {/* ── The Member Plate — the member's own serial, nothing else.
-                EST. 1924 is brand chrome (welcome, login, concierge) and has
-                no business posing as user data. Plate hides without a serial. ── */}
-            {memberNo && (
-              <AnimatedView style={[s.founderMark, stampDevelop]}>
-                <View style={[s.founderLine, { backgroundColor: tierLine }]} />
-                <Text style={[s.founderText, { color: tierText }]} numberOfLines={1}>
-                  {`MEMBER Nº ${memberNo}`}
-                </Text>
-                <View style={[s.founderLine, { backgroundColor: tierLine }]} />
-              </AnimatedView>
-            )}
-
-            {/* ── Member Since ── */}
-            {targetUser.created_at && (
-              <Text style={s.memberSince}>
-                MEMBER SINCE {new Date(targetUser.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()}
-              </Text>
-            )}
-
-            {/* ── Bio ── */}
-            <Text style={s.bio} numberOfLines={4} adjustsFontSizeToFit>
-              {targetUser.bio || (isSelf ? "No bio yet. Tell the society who you are." : "No bio on file.")}
+            {/* ── The bio, in the house's own quotation marks ── */}
+            <Text style={[s.heroBio, bioStyle]} numberOfLines={bioLines}>
+              <Text style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>« </Text>
+              {bioText}
+              <Text style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}> »</Text>
             </Text>
 
             {/* ── Social Links ── */}
             {socialLinks.length > 0 && (
               <View style={s.socialLinksRow}>
                 {socialLinks.map((link: SocialLink, i: number) => (
-                  <PressableScale key={i} style={s.socialLinkChip} onPress={() => openSocialLink(link.url)} haptic>
+                  <PressableScale
+                    key={i}
+                    style={s.socialLinkChip}
+                    onPress={() => openSocialLink(link.url)}
+                    // The chips wrap, so a chip has neighbours on BOTH axes,
+                    // 8pt away — 4 per side is the whole budget. The chip
+                    // itself is 36pt tall so 36+8 still clears the 44pt floor;
+                    // it used to be ~20pt tall with the full 15pt default,
+                    // which was under the floor AND overlapping its neighbour.
+                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                    haptic
+                    accessibilityRole="link"
+                    accessibilityLabel={`Open ${link.title || 'link'}`}
+                  >
                     <Globe size={10} color={colors.fog} />
                     <Text style={s.socialLinkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(link.title || '').toUpperCase()}</Text>
                   </PressableScale>
@@ -861,48 +953,81 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               </View>
             )}
 
-            {/* ── Follow / Edit Buttons ── */}
+            {/* ── The four figures ──
+                This row was once gated on a `hide_stats` preference. That preference was
+                removed: it hid these four numbers while the films they count stayed
+                browsable in the tabs below and readable from the API by anyone, so it
+                promised a privacy it never delivered. Members who want to be unreadable
+                have `is_social_private`, which the database actually enforces.
+
+                FILMS and WATCHLIST now sit together, and the two social counts
+                together — the two pairs a reader actually compares. */}
+            <View style={[s.statsBox, { borderColor: tierStatsBorder }]}>
+              <StatCard label="FILMS" value={tally(totalFilms)} />
+              <StatCard label="WATCHLIST" value={tally(totalWatchlist)} rule />
+              <StatCard label="FOLLOWERS" value={tally(targetUser.followers_count || 0)} onPress={isPrivate ? undefined : navToFollowers} rule />
+              <StatCard label="FOLLOWING" value={tally(targetUser.following_count || 0)} onPress={isPrivate ? undefined : navToFollowing} rule />
+            </View>
+
+            {/* ── The two acts ── */}
             {isSelf ? (
-              <View style={s.editRow}>
-                <PressableScale style={s.editBtn} onPress={navToEditProfile} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic accessibilityRole="button" accessibilityLabel="Edit profile">
-                  <Text style={s.editBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>EDIT PROFILE</Text>
+              <View style={s.actsRow}>
+                <PressableScale
+                  style={s.act}
+                  onPress={navToEditProfile}
+                  // 48pt tall and flex:1 — no halo needed, and the pair is
+                  // only 10pt apart, so 5 is the entire per-side budget.
+                  hitSlop={{ top: 0, bottom: 0, left: 5, right: 5 }}
+                  haptic
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit your file"
+                >
+                  <Text style={s.actText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>EDIT YOUR FILE</Text>
                 </PressableScale>
-                <PressableScale style={s.settingsBtn} onPress={navToSettings} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic accessibilityRole="button" accessibilityLabel="Open settings">
-                  <Settings size={14} color={colors.fog} />
+                <PressableScale
+                  style={[s.act, s.actGhost]}
+                  onPress={navToSettings}
+                  hitSlop={{ top: 0, bottom: 0, left: 5, right: 5 }}
+                  haptic
+                  accessibilityRole="button"
+                  accessibilityLabel="Open settings"
+                >
+                  <Settings size={15} color={colors.fog} strokeWidth={1.7} />
                 </PressableScale>
               </View>
             ) : (
-              <View style={s.profileActionRow}>
-                <PressableScale style={[s.followBtn, (isFollowing || isRequested) && s.followingBtn, followLoading && { opacity: 0.5 }]} onPress={toggleFollow} disabled={followLoading || isRequested} pressedScale={0.92} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" accessibilityRole="button" accessibilityLabel={isFollowing ? "Unfollow user" : "Follow user"}>
-                  <AnimatedRN.Text entering={FadeIn.duration(300)} style={[s.followBtnText, (isFollowing || isRequested) && s.followingBtnText]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>
+              <View style={s.actsRow}>
+                <PressableScale
+                  style={[s.act, !isFollowing && !isRequested && s.actSolid, followLoading && { opacity: 0.5 }]}
+                  onPress={toggleFollow}
+                  disabled={followLoading || isRequested}
+                  pressedScale={0.96}
+                  hitSlop={{ top: 0, bottom: 0, left: 5, right: 5 }}
+                  haptic="medium"
+                  accessibilityRole="button"
+                  accessibilityLabel={isFollowing ? 'Unfollow this member' : isRequested ? 'Follow request sent' : 'Follow this member'}
+                >
+                  <AnimatedRN.Text
+                    entering={FadeIn.duration(300)}
+                    style={[s.actText, !isFollowing && !isRequested && s.actTextSolid]}
+                    adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}
+                  >
                     {followLoading ? '...' : isFollowing ? 'FOLLOWING' : isRequested ? 'REQUESTED' : targetUser.is_social_private ? '+ REQUEST' : '+ FOLLOW'}
                   </AnimatedRN.Text>
                 </PressableScale>
                 <PressableScale
-                  style={s.moreBtn}
+                  style={[s.act, s.actGhost]}
                   onPress={() => setActionSheetVisible(true)}
-                  hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  hitSlop={{ top: 0, bottom: 0, left: 5, right: 5 }}
                   haptic="selection"
-                  pressedScale={0.92}
+                  pressedScale={0.96}
+                  accessibilityRole="button"
                   accessibilityLabel="More options for this member"
                 >
-                  <MoreVertical size={18} color={colors.fog} strokeWidth={1.5} />
+                  <MoreVertical size={16} color={colors.fog} strokeWidth={1.8} />
                 </PressableScale>
               </View>
             )}
-
-            {/* ── Stats Row ── */}
-            {/* This row was once gated on a `hide_stats` preference. That preference was
-                removed: it hid these four numbers while the films they count stayed
-                browsable in the tabs below and readable from the API by anyone, so it
-                promised a privacy it never delivered. Members who want to be unreadable
-                have `is_social_private`, which the database actually enforces. */}
-            <View style={[s.statsGrid, { borderColor: tierStatsBorder }]}>
-              <StatCard label="FILMS" value={totalFilms} />
-              <StatCard label="FOLLOWERS" value={targetUser.followers_count || 0} onPress={isPrivate ? undefined : navToFollowers} />
-              <StatCard label="FOLLOWING" value={targetUser.following_count || 0} onPress={isPrivate ? undefined : navToFollowing} />
-              <StatCard label="WATCHLIST" value={totalWatchlist} isLast />
-            </View>
 
           </View>
         </View>
@@ -921,115 +1046,187 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         ) : (
         <View style={s.contentArea}>
 
-          {/* ── Favorite Films — slot glows on solid ink ── */}
+          {/* ══ THE TRIPTYCH — three favourites, hung as an altarpiece ══ */}
           {(hasFavorites || isSelf) && (
-            <View style={s.plateSections}>
-              <View style={s.triptychWrap}>
-                <SectionDivider label="FAVORITE FILMS" />
-                <ProfileTriptych
-                  user={{
-                    id: targetUser.id,
-                    preferences: targetUser.preferences ? { favorites: targetUser.preferences.favorites as import('@/src/components/profile/ProfileTriptych').TriptychFilm[] } : null
-                  }}
-                  isOwnProfile={isSelf}
-                  userRole={tier}
-                />
+            <View style={s.triptychWrap}>
+              <SectionDivider label="THE TRIPTYCH" />
+              <ProfileTriptych
+                user={{
+                  id: targetUser.id,
+                  preferences: targetUser.preferences ? { favorites: targetUser.preferences.favorites as import('@/src/components/profile/ProfileTriptych').TriptychFilm[] } : null
+                }}
+                isOwnProfile={isSelf}
+                userRole={tier}
+              />
+            </View>
+          )}
+
+          {/* ══ LATELY — a ledger, numbered ══
+              Three poster tiles said "here are three pictures". A numbered
+              ledger says "these are the last three films, in order, and here is
+              what each one got". It is about 35pt TALLER than the three tiles
+              were, and worth every point: a tile showed a poster and a date, a
+              row shows the title, the year, the rating, and whether the film
+              was a rewatch — which says more than any date does. */}
+          {recentLogs.length > 0 && (
+            <View style={s.latelySection}>
+              <SectionDivider label="LATELY" />
+              <View style={s.latelyWrap}>
+                {recentLogs.map((log: ProfileLog, i: number) => (
+                  <PressableScale
+                    key={log.id}
+                    style={[s.latelyRow, i === recentLogs.length - 1 && s.latelyRowLast]}
+                    onPress={() => (router.push as any)(`/log/${log.id}` as never)}
+                    // Rows sit edge to edge: the default 15pt of vertical slop
+                    // would put the bottom of each row inside the NEXT one, and
+                    // the later sibling wins. 66pt is target enough on its own.
+                    hitSlop={{ top: 0, bottom: 0, left: 12, right: 12 }}
+                    haptic
+                    accessibilityRole="button"
+                    accessibilityLabel={`${log.title}${log.year ? `, ${log.year}` : ''}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}
+                  >
+                    <Text style={s.latelyIndex} allowFontScaling={false}>{String(i + 1).padStart(2, '0')}</Text>
+                    <View style={[s.latelyPoster, !log.poster && s.latelyPosterEmpty]}>
+                      {log.poster ? (
+                        <Image source={{ uri: tmdb.poster(log.poster, 'w185') }} style={s.latelyPosterImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
+                      ) : (
+                        <FilmIcon size={14} color={colors.sepia} strokeWidth={1.4} opacity={0.4} />
+                      )}
+                    </View>
+                    <View style={s.latelyText}>
+                      <Text style={s.latelyTitle} numberOfLines={1}>{(log.title || '').toUpperCase()}</Text>
+                      {!!log.year && <Text style={s.latelyYear} numberOfLines={1}>{log.year}</Text>}
+                    </View>
+                    <View style={s.latelyRight}>
+                      {log.rating > 0 && <ReelRating rating={log.rating} size={9} />}
+                      {/* A rewatch says more than a date does. */}
+                      {log.status === 'rewatched' ? (
+                        <Text style={s.latelyRewatch} numberOfLines={1}>↺ REWATCHED</Text>
+                      ) : (
+                        <Text style={s.latelyWhen} numberOfLines={1}>{timeAgo(log.watchedDate ?? (log as any).createdAt).toUpperCase()}</Text>
+                      )}
+                    </View>
+                  </PressableScale>
+                ))}
               </View>
             </View>
           )}
 
-          {/* ── Recently Watched ── */}
-          {recentLogs.length > 0 && (
-            <View style={s.plateSections}>
-              <View style={s.triptychWrapRecent}>
-                <SectionDivider label="RECENTLY WATCHED" />
-                <View style={s.recentRow}>
-                  {recentLogs.map((log: ProfileLog) => (
-                    <View key={log.id} style={s.recentItem}>
-                      {renderPosterCard(log, 0, true, true)}
-                    </View>
+          {/* ══ THE HOLDINGS ══
+              Six 122pt cards in a 3-wide grid spent ~286pt saying six numbers,
+              and put a decorative icon circle above each one. Three rows in two
+              columns say the same six in ~156pt, and a dotted leader carries the
+              eye from the room to its count the way a printed index does. That
+              130pt is what pays for the altarpiece's centre being large. */}
+          <SectionDivider label="THE HOLDINGS" />
+          <View style={s.holdWrap}>
+            {[0, 1].map(col => {
+              const rooms = COLLECTION_CARDS.slice(col * 3, col * 3 + 3);
+              return (
+                <View key={col} style={s.holdCol}>
+                  {rooms.map((item: any, i: number) => (
+                    <PressableScale
+                      key={item.id}
+                      testID={`collection-card-${item.id}`}
+                      style={[s.holdRow, i === rooms.length - 1 && s.holdRowLast]}
+                      onPress={() => (router.push as any)({ pathname: `/user/${username}`, params: { tab: item.id } } as any)}
+                      // Vertical slop would spill into the row below (later
+                      // sibling wins); 7pt horizontal exactly fills the 14pt
+                      // gutter between the columns without crossing it.
+                      hitSlop={{ top: 0, bottom: 0, left: 7, right: 7 }}
+                      haptic
+                      accessibilityRole="button"
+                      accessibilityLabel={item.locked
+                        ? `${item.label}, ${item.desc.toLowerCase()}, locked`
+                        // An em dash is a mark for the eye; spoken, it says nothing.
+                        : `${item.label}, ${item.desc.toLowerCase()}, ${item.count === '—' ? 'none filed yet' : item.count}`}
+                    >
+                      <View style={s.holdNameRow}>
+                        <Text style={s.holdName} numberOfLines={1}>{item.label}</Text>
+                        {/* Locked rooms wear the brass key — informed taps only */}
+                        {item.locked && <KeyRound size={9} color={colors.sepia} strokeWidth={2.2} style={s.roomKeyDim} />}
+                      </View>
+                      <View style={s.holdBase}>
+                        <Text style={s.holdSub} numberOfLines={1}>{item.desc.toLowerCase()}</Text>
+                        <View style={s.holdLeader} />
+                        {/* The Projector shows its ★, never a lying zero */}
+                        <Text style={[s.holdCount, item.locked && s.holdCountLock]} numberOfLines={1}>{item.count}</Text>
+                      </View>
+                    </PressableScale>
                   ))}
                 </View>
-              </View>
-            </View>
-          )}
-
-          <SectionDivider label="THE COLLECTION" />
-
-          {/* ── Collection Grid — six rooms, pixel-computed, uncollapsible ── */}
-          <View style={s.collectionSection}>
-            <View style={s.collectionGrid}>
-              {COLLECTION_CARDS.map((item: any) => (
-                <PressableScale
-                  key={item.id}
-                  testID={`collection-card-${item.id}`}
-                  style={[s.collectionCard, { width: COLLECTION_CARD_W }, item.highlight && s.collectionCardHighlight]}
-                  onPress={() => (router.push as any)({ pathname: `/user/${username}`, params: { tab: item.id } } as any)}
-                  haptic
-                >
-                  {/* Locked rooms wear the brass key — informed taps only */}
-                  {item.locked && (
-                    <View style={s.roomKey} pointerEvents="none">
-                      <KeyRound size={9} color={colors.sepia} strokeWidth={2} style={s.roomKeyDim} />
-                    </View>
-                  )}
-                  {/* Icon circle */}
-                  <View style={[s.collectionIconCircle, item.highlight && s.collectionIconHighlight]}>
-                    <item.Icon size={16} strokeWidth={1.5} color={item.highlight ? colors.sepia : colors.bone} />
-                  </View>
-                  {/* Label */}
-                  <Text style={[s.collectionCardLabel, item.highlight && s.collectionHighlightText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.label}</Text>
-                  {/* Description */}
-                  <Text style={s.collectionCardDesc} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.desc}</Text>
-                  {/* Count — the Projector shows its ★, never a lying zero */}
-                  <Text style={[s.collectionCardCount, item.highlight && s.collectionHighlightText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.count}</Text>
-                </PressableScale>
-              ))}
-            </View>
+              );
+            })}
           </View>
 
           {/* The Viewing Calendar — Archivist+ door */}
-          <View style={s.calendarCtaWrap}>
-            <PressableScale
-              style={s.collectionCardWide}
-              onPress={navToCalendar}
-              haptic
-            >
-              {!isArchivistPlus && <KeyRound size={11} color={colors.sepia} strokeWidth={2} style={[s.lockIconMr, s.roomKeyDim]} />}
-              {isArchivistPlus && <CalendarDays size={12} color={colors.sepia} strokeWidth={1.5} style={s.lockIconMr} />}
-              <Text style={[s.calendarCtaText, isArchivistPlus && s.collectionHighlightText]}>
-                THE VIEWING CALENDAR
-              </Text>
-            </PressableScale>
-          </View>
+          <PressableScale
+            style={[s.doorRow, !isArchivistPlus && s.doorRowLocked]}
+            onPress={navToCalendar}
+            hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
+            haptic
+            accessibilityRole="button"
+            accessibilityLabel={isArchivistPlus ? 'The Viewing Calendar' : 'The Viewing Calendar, locked'}
+          >
+            <CalendarDays size={13} color={isArchivistPlus ? colors.sepia : 'rgba(158,148,136,0.55)'} strokeWidth={1.6} />
+            <Text style={[s.doorText, !isArchivistPlus && s.doorTextLocked]} numberOfLines={1}>THE VIEWING CALENDAR</Text>
+            {isArchivistPlus
+              ? <ChevronRight size={11} color={colors.sepia} strokeWidth={2} />
+              : <KeyRound size={11} color={'rgba(158,148,136,0.55)'} strokeWidth={2} />}
+          </PressableScale>
 
-          {/* ── Account & Settings (self only) ── */}
+          {/* ══ THE DESK — your own file only ══
+              "AT THE DOOR" used to live here as well as in Notices. Follow
+              requests are notices; keeping a second, stateful copy of them on
+              the profile meant two places to check and two places to get out of
+              step. Notices already carries the pinned banner and the very same
+              panel, so nothing was lost by taking this one out. */}
           {isSelf && (
-            <View style={s.accountSection}>
-              <SectionDivider label="ACCOUNT & SETTINGS" />
-              {targetUser.is_social_private && (
-                <PressableScale hitSlop={{ top: 0, bottom: 0, left: 15, right: 15 }} style={s.accountRow} onPress={() => setDoorOpen(true)} haptic accessibilityRole="button" accessibilityLabel={`At the door, ${pendingRequestCount} awaiting entry`}>
-                  <KeyRound size={13} color={colors.sepia} strokeWidth={1.5} />
-                  <Text style={s.accountRowText}>AT THE DOOR</Text>
-                  {pendingRequestCount > 0 && (
-                    <View style={s.doorCountBadge}>
-                      <Text style={s.doorCountText}>{pendingRequestCount > 99 ? '99+' : pendingRequestCount}</Text>
-                    </View>
-                  )}
+            <>
+              <SectionDivider label="THE DESK" />
+              <View style={s.deskWrap}>
+                <PressableScale
+                  style={[s.deskRow, s.deskRowLast]}
+                  onPress={navToSettings}
+                  hitSlop={{ top: 0, bottom: 0, left: 12, right: 12 }}
+                  haptic
+                  accessibilityRole="button"
+                  accessibilityLabel="Settings and profile"
+                >
+                  <Settings size={14} color={colors.sepia} strokeWidth={1.6} />
+                  <Text style={s.deskText} numberOfLines={1}>SETTINGS &amp; PROFILE</Text>
+                  <ChevronRight size={11} color={colors.fog} strokeWidth={2} />
                 </PressableScale>
-              )}
-              <PressableScale hitSlop={{ top: 0, bottom: 0, left: 15, right: 15 }} style={s.accountRow} onPress={navToMembership} haptic>
-                <Crown size={13} color={colors.sepia} strokeWidth={1.5} />
-                <Text style={s.accountRowText}>THE SOCIETY RANKS</Text>
-              </PressableScale>
-              <PressableScale hitSlop={{ top: 0, bottom: 0, left: 15, right: 15 }} style={[s.accountRow, s.accountRowLast]} onPress={navToSettings} haptic>
-                <Settings size={13} color={colors.sepia} strokeWidth={1.5} />
-                <Text style={s.accountRowText}>SETTINGS & PROFILE</Text>
-              </PressableScale>
-            </View>
+              </View>
+
+              {/* The way into the society page — at EVERY rank. This is the
+                  door, not an upsell, so it does not disappear once you reach
+                  the top; at the top it simply stops shouting. */}
+              <View style={s.ranksPlate}>
+                <Text style={s.ranksTitle} numberOfLines={1}>THE SOCIETY RANKS</Text>
+                <Text style={s.ranksSub}>{ranksSub}</Text>
+                <PressableScale
+                  style={[s.ranksBtn, isAuteurPlus && s.ranksBtnQuiet]}
+                  onPress={navToMembership}
+                  hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
+                  haptic="medium"
+                  accessibilityRole="button"
+                  accessibilityLabel={isAuteurPlus ? 'View and manage your rank' : 'Ascend the ranks'}
+                >
+                  <Text style={[s.ranksBtnText, isAuteurPlus && s.ranksBtnTextQuiet]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                    {isAuteurPlus ? 'VIEW & MANAGE' : '✦ ASCEND THE RANKS'}
+                  </Text>
+                </PressableScale>
+              </View>
+            </>
           )}
 
-          {isSelf && <FollowRequestsPanel visible={doorOpen} onClose={() => setDoorOpen(false)} />}
+          {/* The foot of the file. */}
+          <View style={s.footRow}>
+            <View style={s.footRule} />
+            <Text style={[s.footMark, isAuteurPlus && s.footMarkRuby]} allowFontScaling={false}>✦</Text>
+            <View style={s.footRule} />
+          </View>
         </View>
         )}
       </CinematicScrollView>

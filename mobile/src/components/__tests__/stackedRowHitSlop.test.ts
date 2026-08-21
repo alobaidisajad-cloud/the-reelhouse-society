@@ -81,8 +81,35 @@ const RULES: Rule[] = [
     note: 'action bar split by a 1pt divider' },
   { file: 'app/dossier/[id].tsx', style: 'actionItem', gap: { x: 1 },
     note: 'action bar split by a 1pt divider' },
-  { file: 'app/user/[username].tsx', style: 'accountRow', gap: { y: 0 },
-    note: 'account rows, hairline apart' },
+  // ── The member file, rebuilt 2026-08-21 ────────────────────────────────────
+  // `accountRow` used to be listed here. That row is gone (the account section
+  // became THE DESK, and "at the door" moved to Notices), and the new layout
+  // put four more stacks of neighbours on the page. Every one of these was
+  // written wrong first and caught by this test:
+  //   • the two act buttons, 10pt apart, both claiming the full 15 — the right
+  //     edge of + FOLLOW opened the action sheet instead;
+  //   • the triptych's three panels, 5pt apart, each reaching 15 into the next;
+  //   • the plate sheet, where REMOVE sat under REPLACE;
+  //   • the search results, where the later row took the tap and you would have
+  //     pinned the wrong film to your own profile.
+  { file: 'app/user/[username].tsx', style: 'deskRow', gap: { y: 0 },
+    note: 'the desk, hairline apart' },
+  { file: 'app/user/[username].tsx', style: 'holdRow', gap: { x: 14, y: 0 },
+    note: 'six holdings in two columns — holdWrap gap 14, rows hairline apart' },
+  { file: 'app/user/[username].tsx', style: 'latelyRow', gap: { y: 0 },
+    note: 'the LATELY ledger, rows hairline apart' },
+  { file: 'app/user/[username].tsx', style: 's.act', gap: { x: 10 },
+    note: 'the two acts, actsRow gap 10 — the ghost button is the later sibling' },
+  { file: 'app/user/[username].tsx', style: 'socialLinkChip', gap: { x: 8, y: 8 },
+    note: 'links wrap, so a chip has neighbours on both axes' },
+  { file: 'src/components/profile/ProfileHelpers.tsx', style: 'statCell', gap: { x: 0 },
+    note: 'four figures flush, separated by a border not a gap' },
+  { file: 'src/components/profile/ProfileTriptych.tsx', style: 's.mount', gap: { x: 5 },
+    note: 'the altarpiece: wing / centre / wing, TRIPTYCH_GAP 5' },
+  { file: 'src/components/profile/ProfileTriptych.tsx', style: 'plateAction', gap: { y: 0 },
+    note: 'MOVE / REPLACE / REMOVE, hairline apart — one of them deletes' },
+  { file: 'src/components/profile/ProfileTriptych.tsx', style: 'resultItem', gap: { y: 8 },
+    note: 'film search results, marginBottom 8 — a mis-tap pins the wrong film' },
   { file: 'app/(modals)/vault-modal.tsx', style: 'formatBtn', gap: { y: 8 },
     note: 'export formats, marginBottom 8' },
   { file: 'src/components/PaywallModal.tsx', style: 'tierCard', gap: { y: 12 },

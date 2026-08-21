@@ -62,6 +62,19 @@ const EXEMPT: Record<string, string> = {
     // would raise it above its siblings on Android — the exact inversion this
     // test exists to prevent, applied backwards.
     chromeScrim: 'verified: a backdrop layer — no elevated siblings, and must stay beneath the sheet',
+    // VERIFIED in the member-file rebuild, 2026-08-21. heroTopFade's four direct
+    // siblings inside headerWrap are the atmosphere layer, filmGrainOverlay,
+    // headerGoldEdge and headerContent, and NONE declares an elevation — the two
+    // elevated styles in profileStyles.ts (actSolid, ranksBtn) are nested deep
+    // inside headerContent, where their elevation orders them against their own
+    // siblings and not against this. Ordering here falls to the explicit zIndex
+    // ladder: the fade is 3, the content is 4, on both platforms.
+    //
+    // It also must NOT be elevated. It is a BACKDROP — a breath of dark so the
+    // status bar and the back arrow read against a bright Auteur poster. Raising
+    // it would put a dark wash over the member's own portrait and name on
+    // Android: this test's inversion, applied backwards.
+    heroTopFade: 'verified: a backdrop layer beneath the hero — no elevated siblings, ordered by zIndex 3 vs 4',
 };
 
 function walk(dir: string, out: string[] = []): string[] {
