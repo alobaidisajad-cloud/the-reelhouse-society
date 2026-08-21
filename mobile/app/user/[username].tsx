@@ -142,6 +142,10 @@ const spotStyles = StyleSheet.create({
   wrap: { position: 'absolute', top: -30, left: 0, right: 0, height: 340, zIndex: 1 },
 });
 
+/** Small numbers read better as words on a plate. Module scope: it is a
+ *  constant, and rebuilding it on every render of the screen was waste. */
+const WORD = ['no', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
+
 // ── The velvet rope — locked rooms invite, they never dead-end ──
 function VelvetGate({ title, line, isSelf, onAscend }: { title: string; line: string; isSelf: boolean; onAscend: () => void }) {
   return (
@@ -309,7 +313,23 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // THE PARTICULARS — the member's name block, set beside their portrait
   // ════════════════════════════════════════════════════════════
 
-  const heroName = (targetUser?.persona || (targetUser as any)?.display_name || `@${targetUser?.username ?? 'unknown'}`).toUpperCase();
+  const heroName = String(
+    targetUser?.persona || (targetUser as any)?.display_name || targetUser?.username || 'unknown',
+  ).toUpperCase();
+  const heroHandle = `@${(targetUser?.username || 'unknown').toUpperCase()}`;
+
+  /**
+   * The handle earns a line only when it says something the name does not.
+   *
+   * The old hero had no handle line at all — it fell back to `@username` in the
+   * NAME slot and stopped there. Giving the composition a handle line beneath
+   * the name reintroduced a duplicate for two very ordinary members: one who
+   * has set no display name, and one whose display name simply IS their
+   * handle. Both would have had the same word printed twice, stacked, in 26pt
+   * and 9.5pt. The name keeps the fallback; the handle steps aside when it
+   * would only be an echo.
+   */
+  const showHandle = heroHandle.slice(1) !== heroName;
 
   /**
    * A DETERMINISTIC step-down, not `adjustsFontSizeToFit`.
@@ -427,7 +447,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
    * still not at the top, so that case gets its own line instead of the false
    * "every door is open".
    */
-  const WORD = ['no', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
   const lockedRooms = COLLECTION_CARDS.filter((c: any) => c.locked).length + (isArchivistPlus ? 0 : 1);
   const ranksSub = isAuteurPlus
     ? 'You hold the highest rank. Every door in the house is open to you.'
@@ -913,7 +932,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={s.nameRule}
                 />
-                <Text style={s.heroHandle} numberOfLines={1}>@{(targetUser.username || 'unknown').toUpperCase()}</Text>
+                {showHandle && <Text style={s.heroHandle} numberOfLines={1}>{heroHandle}</Text>}
                 {isFounding && (
                   <Text style={[s.heroStand, { color: tierText }]} numberOfLines={1}>✦ FOUNDING MEMBER</Text>
                 )}
