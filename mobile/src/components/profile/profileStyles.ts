@@ -1,5 +1,6 @@
 import { colors, effects, fonts } from '@/src/theme/theme';
 import { StyleSheet } from 'react-native';
+import { ROOM_INSET } from './roomStyles';
 
 // ════════════════════════════════════════════════════════════
 // STYLES — Nitrate Noir Design System
@@ -181,6 +182,8 @@ export const s = StyleSheet.create({
   tabHeaderUsername: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5, color: colors.fog },
   tabHeaderTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, lineHeight: 22 },
   tabScrollContent: { paddingBottom: 80, paddingTop: 8 },
+  /** A sealed room, which has no list to inherit the room inset from. */
+  sealedPad: { paddingHorizontal: ROOM_INSET },
   tabContentPad: { paddingHorizontal: 16 },
   filterGroupCol: { marginBottom: 16, gap: 10 },
   filterScrollMargin: { marginBottom: 16 },
@@ -210,16 +213,18 @@ export const s = StyleSheet.create({
   stackEmptyBg: { flex: 1, backgroundColor: 'rgba(8,6,4,0.98)' },
 
   // ── Projector Tab ──
+  // The Projector Room used to announce itself a second time under the header
+  // that already named it — a super, a display title and a line of prose, three
+  // rows of chrome before a single number. `projectorHeader`, `projectorSuper`,
+  // `projectorTitle` and `projectorSub` went with it.
   projectorGap: { gap: 32 },
-  projectorHeader: { alignItems: 'center' as const, paddingHorizontal: 16, paddingTop: 8 },
-  projectorSuper: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia, marginBottom: 6 },
-  projectorTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, lineHeight: 28, textAlign: 'center' as const },
-  projectorSub: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic' as const, marginTop: 6 },
   projectorSectionsWrap: { paddingHorizontal: 16, gap: 32 },
 
   // ── Favourites ──
-  favPosterThumb: { width: 28, height: 42, borderRadius: 2 },
-  favTextWrap: { flex: 1 },
+  favPosterThumb: { width: 28, height: 42, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(232,223,208,0.14)' },
+  favPosterEmpty: { backgroundColor: '#050402' },
+  favYear: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
+  favTextWrap: { flex: 1, minWidth: 0 },
   favTitle: { fontFamily: fonts.sub, fontSize: 11, color: colors.parchment, lineHeight: 14 },
   favRatingRow: { flexDirection: 'row' as const, gap: 2, marginTop: 2 },
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
-import { View, ScrollView, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Disc, Film as FilmIcon } from 'lucide-react-native';
@@ -10,7 +10,26 @@ import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Eas
 import type { ProfileVaultItem, FormatCount } from '../../types';
 import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { FORMAT_META, shelfRank } from '@/src/constants/formats';
+import { r, posterColumns } from './roomStyles';
+import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
 
+/**
+ * THE VAULT — a collection of OBJECTS, arranged the way objects are.
+ *
+ * This room held physical discs and drew them as flat posters in a grid,
+ * shelved by the MONTH each one was catalogued — a fact about the database, not
+ * about the collection: a member's 4K box and their father's VHS sat side by
+ * side because they were typed in on the same Tuesday. Nothing on the screen
+ * said "this is a thing you own" rather than "this is a film you watched".
+ *
+ * So the Vault is shelved by CARRIER now, newest first, and every item is drawn
+ * as a CASE: a coloured spine down its left edge in the format's own colour,
+ * standing on a shelf board. It is the same data. It reads as a wall of discs.
+ */
+
+const SHELF_LABEL: Record<string, string> = { '4k': '4K UHD', bluray: 'BLU-RAY', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LASERDISC', steelbook: 'STEELBOOK', criterion: 'CRITERION' };
+const CASE_BADGE: Record<string, string> = { '4k': '4K', bluray: 'BD', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LD', steelbook: 'SB', criterion: 'CC' };
 
 interface ProfilePhysicalTabProps {
   isSelf: boolean;
@@ -19,7 +38,11 @@ interface ProfilePhysicalTabProps {
   setPhysicalFilter: (val: string | null) => void;
   physicalFormatCounts: FormatCount[];
   physicalFiltered: ProfileVaultItem[];
-  groupByMonth: (items: ProfileVaultItem[], dateKey?: string) => Record<string, ProfileVaultItem[]>;
+  // `groupByMonth` is gone: a collection is shelved by carrier, not by the
+  // Tuesday each copy happened to be typed in.
+  /** Has the data landed? A room must not describe itself before it knows. */
+  ready?: boolean;
+  tier?: string | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   hasMore?: boolean;
@@ -28,52 +51,71 @@ interface ProfilePhysicalTabProps {
   bottomInset?: number;
 }
 
-type VaultListItem = 
-  | { type: 'header'; month: string; id: string }
-  | { type: 'row'; items: ProfileVaultItem[]; id: string };
+type VaultListItem =
+  | { type: 'shelf'; format: string; count: number; id: string }
+  | { type: 'row'; items: ProfileVaultItem[]; format: string; id: string };
 
-const POSTER_COL_4 = 4;
-
- 
-const PhysicalVaultCard = React.memo(({ vaultItem }: { vaultItem: ProfileVaultItem }) => {
+// ════════════════════════════════════════════════════════════════════════════
+// A CASE ON A SHELF
+// ════════════════════════════════════════════════════════════════════════════
+const VaultCase = React.memo(function VaultCase({
+  vaultItem, format, width,
+}: {
+  vaultItem: ProfileVaultItem;
+  /** The shelf this copy stands on — its spine takes that carrier's colour. */
+  format: string;
+  width: number;
+}) {
   const router = useRouter();
   const posterUri = tmdb.poster(vaultItem.poster_path, 'w185');
-  const fmt = (vaultItem.formats || [])[0];
-  const FC: Record<string, string> = { '4k': '#a855f7', bluray: '#3b82f6', dvd: '#f59e0b', vhs: '#ef4444', laserdisc: '#10b981', steelbook: '#6366f1', criterion: colors.sepia };
-  const FL: Record<string, string> = { '4k': '4K', bluray: 'BD', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LD', steelbook: 'SB', criterion: 'CC' };
-  
+  const tint = FORMAT_META[format]?.color ?? colors.sepia;
+  // A copy that is BOTH a Blu-ray and a Steelbook stands on both shelves; the
+  // badge on the face names the shelf it is standing on, so the same object
+  // reads correctly in both places.
+  const badge = CASE_BADGE[format] ?? format.toUpperCase();
+
   const onPress = useCallback(() => {
-    if (vaultItem.film_id) (router.push as any)(`/film/${vaultItem.film_id}` as never);
-  }, [vaultItem.film_id, router]);
+    const fid = vaultItem.film_id ?? vaultItem.filmId;
+    if (fid) (router.push as any)(`/film/${fid}` as never);
+  }, [vaultItem.film_id, vaultItem.filmId, router]);
 
   return (
     <PressableScale
-      style={s.posterCardWrap}
+      style={[s.case, { width }]}
       onPress={onPress}
+      // Cases sit in a row at the grid gap and stack in shelves — the whole
+      // case clears 44pt on its own, so it claims nothing from its neighbours.
+      hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
       haptic
       accessibilityRole="button"
-      accessibilityLabel={[vaultItem.title ?? 'Untitled film', (vaultItem.formats ?? []).join(' and ')].filter(Boolean).join(', ')}
+      accessibilityLabel={[
+        vaultItem.title ?? 'Untitled film',
+        FORMAT_META[format]?.label ?? format,
+        vaultItem.condition ? `condition ${vaultItem.condition}` : '',
+      ].filter(Boolean).join(', ')}
+      accessibilityHint="Opens the film"
     >
       {posterUri ? (
-        <Image 
-          source={{ uri: posterUri }} 
-          style={s.posterImg} 
+        <Image
+          source={{ uri: posterUri }}
+          style={s.caseFace}
+          recyclingKey={posterUri}
           cachePolicy="memory-disk"
           placeholder={{ blurhash: SEPIA_HASH }}
           transition={200}
         />
       ) : (
-        <View style={[s.posterImg, s.posterPlaceholder]}>
+        <View style={[s.caseFace, s.caseEmpty]}>
           <FilmIcon size={14} color={colors.sepia} strokeWidth={1} />
         </View>
       )}
-      {fmt && (
-        <View style={[s.formatBadge, { borderColor: FC[fmt] || colors.sepia }]}>
-          <Text {...scaledTextProps} style={[s.formatBadgeText, { color: FC[fmt] || colors.sepia }]}>
-            {FL[fmt] || fmt.toUpperCase()}
-          </Text>
-        </View>
-      )}
+      {/* The spine and its seam — drawn after the face so they sit on top of
+          it, and inert so neither can swallow the tap. */}
+      <View style={[r.spine, { backgroundColor: tint, opacity: 0.9 }]} pointerEvents="none" />
+      <View style={r.spineSeam} pointerEvents="none" />
+      <View style={[s.caseBadge, { borderColor: tint }]} pointerEvents="none">
+        <Text {...scaledTextProps} style={[s.caseBadgeText, { color: tint }]} numberOfLines={1}>{badge}</Text>
+      </View>
     </PressableScale>
   );
 });
@@ -85,7 +127,8 @@ export default React.memo(function ProfilePhysicalTab({
   setPhysicalFilter,
   physicalFormatCounts,
   physicalFiltered,
-  groupByMonth,
+  ready = true,
+  tier,
   onLoadMore,
   isLoadingMore,
   hasMore,
@@ -94,6 +137,8 @@ export default React.memo(function ProfilePhysicalTab({
   bottomInset
 }: ProfilePhysicalTabProps) {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
+  const grid = useMemo(() => posterColumns(windowWidth, 4), [windowWidth]);
 
   const breatheAnim = useSharedValue(0.1);
   useEffect(() => {
@@ -113,24 +158,47 @@ export default React.memo(function ProfilePhysicalTab({
     backgroundColor: `rgba(10,8,6,${0.9 + (breatheAnim.value * 0.1)})`,
   }));
 
+  /**
+   * The shelves.
+   *
+   * A copy stands on the shelf of EVERY carrier it is recorded under, which is
+   * what `formats: string[]` means. Today the log flow writes exactly one, so
+   * nothing doubles — but when it learns to write two, a Criterion Blu-ray will
+   * appear on both shelves without a line changing here, which is the whole
+   * reason it is written this way rather than reading `formats[0]`.
+   *
+   * A copy with no format at all still has to live somewhere: it goes to an
+   * UNFILED shelf rather than silently vanishing from the member's own vault.
+   */
   const flashData = useMemo(() => {
     const result: VaultListItem[] = [];
     if (physicalFiltered.length === 0) return result;
 
-    const grouped = groupByMonth(physicalFiltered, 'created_at');
-    Object.entries(grouped).forEach(([month, items]) => {
-      result.push({ type: 'header', month, id: `header-${month}` });
-      const vaultItems = items as ProfileVaultItem[];
-      for (let i = 0; i < vaultItems.length; i += POSTER_COL_4) {
-        result.push({
-          type: 'row',
-          items: vaultItems.slice(i, i + POSTER_COL_4),
-          id: `row-${month}-${i}`
-        });
+    const shelves = new Map<string, ProfileVaultItem[]>();
+    for (const item of physicalFiltered) {
+      const formats = (item.formats || []).filter(Boolean);
+      const keys = formats.length > 0 ? formats : ['unfiled'];
+      for (const key of keys) {
+        // When a filter is on, only that shelf is standing.
+        if (physicalFilter && key !== physicalFilter) continue;
+        const shelf = shelves.get(key);
+        if (shelf) shelf.push(item); else shelves.set(key, [item]);
       }
+    }
+
+    const ordered = Array.from(shelves.entries()).sort((a, b) => {
+      const d = shelfRank(a[0]) - shelfRank(b[0]);
+      return d !== 0 ? d : a[0].localeCompare(b[0]);
     });
+
+    for (const [format, items] of ordered) {
+      result.push({ type: 'shelf', format, count: items.length, id: `shelf-${format}` });
+      for (let i = 0; i < items.length; i += 4) {
+        result.push({ type: 'row', items: items.slice(i, i + 4), format, id: `row-${format}-${i}` });
+      }
+    }
     return result;
-  }, [physicalFiltered, groupByMonth]);
+  }, [physicalFiltered, physicalFilter]);
 
   // Pre-fetch all visible and next-page posters using expo-image for zero-latency scroll
   useEffect(() => {
@@ -138,122 +206,129 @@ export default React.memo(function ProfilePhysicalTab({
       .slice(0, 40) // aggressive prefetch of first 40 items
       .map(item => tmdb.poster(item.poster_path, 'w185'))
       .filter((url): url is string => !!url);
-    
+
     if (urlsToPrefetch.length > 0) {
       Image.prefetch(urlsToPrefetch);
     }
   }, [physicalFiltered]);
 
   const renderItem = useCallback(({ item }: { item: VaultListItem }) => {
-    if (item.type === 'header') {
+    if (item.type === 'shelf') {
+      const meta = FORMAT_META[item.format];
       return (
-        <View style={s.monthHeaderWrap}>
-          <Text {...scaledTextProps} style={s.monthHeader}>{item.month}</Text>
-        </View>
+        <RoomRail
+          label={SHELF_LABEL[item.format] ?? (meta?.label ?? item.format).toUpperCase()}
+          count={`${item.count} ${item.count === 1 ? 'COPY' : 'COPIES'}`}
+          tint={meta?.color}
+        />
       );
     }
-
     return (
-      <View style={s.grid4}>
-        {item.items.map((vaultItem: ProfileVaultItem) => (
-          <PhysicalVaultCard key={vaultItem.id} vaultItem={vaultItem} />
-        ))}
+      <View>
+        <View style={[r.gridRow, { gap: grid.gap }]}>
+          {item.items.map(v => (
+            <VaultCase key={`${item.format}-${v.id}`} vaultItem={v} format={item.format} width={grid.width} />
+          ))}
+        </View>
+        {/* The board the row stands on. */}
+        <View style={r.shelfBoard} />
       </View>
     );
-  }, []);
+  }, [grid]);
 
   const ListHeaderComponent = useMemo(() => {
     if (physicalFormatCounts.length === 0) return null;
     return (
-      <View style={s.filterHeaderWrap}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScrollMargin} contentContainerStyle={s.filterChipRowTight}>
-          <PressableScale
-            style={[s.filterChip, !physicalFilter && s.filterChipActive]}
-            onPress={() => setPhysicalFilter(null)}
-            // filterChipRowTight gap 6: half of it each side, so two chips meet
-            // without overlapping. Vertical slop is free — nothing sits above or
-            // below in a horizontal scroller — and it carries the ~27pt chip
-            // past the 44pt floor.
-            hitSlop={{ top: 10, bottom: 10, left: 3, right: 3 }}
-            haptic
-            accessibilityRole="button"
-            accessibilityLabel={`Show the whole vault, ${vault.length}`}
-            accessibilityState={{ selected: !physicalFilter }}
-          >
-            <Text {...scaledTextProps} style={[s.filterChipText, !physicalFilter && s.filterChipTextActive]}>ALL ({vault.length})</Text>
-          </PressableScale>
-          {physicalFormatCounts.map((f: FormatCount) => (
-            <PressableScale 
-              key={f.id} 
-              style={[s.filterChip, physicalFilter === f.id && { borderColor: f.color, backgroundColor: `${f.color}15` }]} 
-              onPress={() => setPhysicalFilter(physicalFilter === f.id ? null : f.id)} 
-              hitSlop={{ top: 10, bottom: 10, left: 3, right: 3 }}
-              haptic
-              accessibilityRole="button"
-              accessibilityLabel={`Filter the vault by ${f.label}, ${f.count}`}
-              accessibilityState={{ selected: physicalFilter === f.id }}
-            >
-              <Text {...scaledTextProps} style={[s.filterChipText, physicalFilter === f.id && { color: f.color }]}>
-                {f.label} ({f.count})
-              </Text>
-            </PressableScale>
-          ))}
-        </ScrollView>
-      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={r.chipScroll} contentContainerStyle={r.chipRow}>
+        <RoomChip
+          label="ALL"
+          count={vault.length}
+          on={!physicalFilter}
+          onPress={() => setPhysicalFilter(null)}
+          gap={8}
+          a11y={`Show the whole vault, ${vault.length} items`}
+        />
+        {physicalFormatCounts.map((f: FormatCount) => (
+          <RoomChip
+            key={f.id}
+            label={f.label.toUpperCase()}
+            count={f.count}
+            on={physicalFilter === f.id}
+            onPress={() => setPhysicalFilter(physicalFilter === f.id ? null : f.id)}
+            gap={8}
+            a11y={`Show only ${f.label}, ${f.count} items`}
+          />
+        ))}
+      </ScrollView>
     );
   }, [physicalFormatCounts, physicalFilter, vault.length, setPhysicalFilter]);
 
   const ListEmptyComponent = useMemo(() => {
     if (physicalFiltered.length > 0) return null;
-    
+
+    if (!ready) return <RoomRetrieving room="the vault" />;
+
+    // A FORMAT filter matched nothing — not an empty vault.
+    if (vault.length > 0) {
+      const meta = physicalFilter ? FORMAT_META[physicalFilter] : null;
+      return (
+        <RoomEmpty
+          invite
+          icon={<Disc size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
+          title="That shelf is bare"
+          body={`Nothing in the vault is catalogued as ${meta?.label ?? physicalFilter ?? 'that format'}.`}
+          actionLabel="SHOW EVERY SHELF"
+          onAction={() => setPhysicalFilter(null)}
+        />
+      );
+    }
+
     if (isSelf) {
       return (
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <View style={s.vaultPattern} />
-          <Disc size={36} color={colors.parchment} strokeWidth={1.5} style={s.emptyLockIcon} />
-          <Text {...scaledTextProps} style={s.emptyTitleSelf}>The Vault is Sealed</Text>
-          <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Catalogue physical media">
-            <Text {...scaledTextProps} style={s.ctaBtnTextSelf}>CATALOGUE MEDIA</Text>
+          <Disc size={36} color={colors.parchment} strokeWidth={1.5} style={r.ownIcon} />
+          <Text {...scaledTextProps} style={r.ownTitle}>Empty Shelves</Text>
+          <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Catalogue physical media">
+            <Text {...scaledTextProps} style={r.ownActText}>CATALOGUE A COPY</Text>
           </PressableScale>
         </Animated.View>
       );
     }
 
     return (
-      <View style={s.emptyState}>
-        <Disc size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-        <Text {...scaledTextProps} style={s.emptyTitle}>Physical Archive is Empty</Text>
-        <Text {...scaledTextProps} style={s.emptyDesc}>No physical media.</Text>
-      </View>
+      <RoomEmpty
+        icon={<Disc size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
+        title="The Shelves are Bare"
+        body="This member hasn’t catalogued a physical copy yet."
+      />
     );
-  }, [physicalFiltered.length, isSelf, pulseStyle, router]);
+  }, [physicalFiltered.length, vault.length, physicalFilter, setPhysicalFilter, ready, isSelf, pulseStyle, router]);
 
   const ListFooterComponent = useMemo(() => {
-    if (physicalFiltered.length === 0) return null;
+    if (flashData.length === 0) return null;
     return (
       <View>
-        {hasMore && (
-          <PressableScale style={s.loadMoreBtn} onPress={onLoadMore} disabled={isLoadingMore} accessibilityRole="button" accessibilityLabel={isLoadingMore ? 'Loading more' : 'Load more'} accessibilityState={{ busy: isLoadingMore, disabled: isLoadingMore }}>
-            {isLoadingMore ? <ActivityIndicator color={colors.sepia} /> : <Text {...scaledTextProps} style={s.loadMoreText}>LOAD MORE</Text>}
-          </PressableScale>
-        )}
+        {hasMore && <RoomLoadMore busy={isLoadingMore} onPress={onLoadMore} />}
+        <RoomFoot tier={tier} />
       </View>
     );
-  }, [physicalFiltered.length, hasMore, isLoadingMore, onLoadMore]);
+  }, [flashData.length, hasMore, isLoadingMore, onLoadMore, tier]);
 
   return (
-    <View style={s.container}>
+    <View style={r.container}>
       <CinematicFlashList
         data={flashData}
         renderItem={renderItem}
-        keyExtractor={(item: any) => item.id}
+        keyExtractor={(item: VaultListItem) => item.id}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
-        /* Mixed header/row items: weighted average */
-        estimatedItemSize={100}
-        getItemType={(item: any) => item.type}
-        contentContainerStyle={s.listContent}
+        // A row of cases plus its shelf board — derived, where the old 100 was a
+        // guess less than half the true height of the item it described.
+        estimatedItemSize={Math.round(grid.width * 1.5) + 11}
+        getItemType={(item: VaultListItem) => item.type}
+        contentContainerStyle={r.listContent}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={onLoadMore}
@@ -265,35 +340,23 @@ export default React.memo(function ProfilePhysicalTab({
 });
 
 const s = StyleSheet.create({
-  container: { flex: 1 },
-  listContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 },
-  filterHeaderWrap: { marginBottom: 16 },
-  filterScrollMargin: { marginBottom: 12 },
-  filterChipRowTight: { gap: 8, flexDirection: 'row', alignItems: 'center' },
-  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', backgroundColor: 'transparent' },
-  filterChipActive: { backgroundColor: 'rgba(184,137,26,0.1)', borderColor: 'rgba(184,137,26,0.4)' },
-  filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
-  filterChipTextActive: { color: colors.sepia },
-  emptyState: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', backgroundColor: 'rgba(8,6,4,0.98)' },
+  // ── a cased copy ──
+  /**
+   * `maxWidth: '23.5%'` used to fight `flex: 1` inside a row with an 8pt gap —
+   * four of them came to 94% plus 24pt of gaps, which is how the fourth case
+   * was clipped on every phone. The width is passed in now, derived once.
+   */
+  case: {
+    position: 'relative', aspectRatio: 2 / 3, borderRadius: 2, overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(232,223,208,0.14)',
+    backgroundColor: colors.posterVoid,
+  },
+  caseFace: { width: '100%', height: '100%' },
+  caseEmpty: { backgroundColor: 'rgba(18,14,9,0.7)', justifyContent: 'center', alignItems: 'center' },
+  caseBadge: { position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(5,4,3,0.95)', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 2, borderWidth: 1 },
+  caseBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1 },
+
+  // ── your own empty shelves ──
   emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, borderWidth: 2, borderRadius: 4, marginTop: 12, overflow: 'hidden' },
   vaultPattern: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.02)', opacity: 0.5 },
-  emptyLockIcon: { marginBottom: 16, opacity: 0.8 },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
-  emptyTitleSelf: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 24, textAlign: 'center', letterSpacing: 1 },
-  emptyDesc: { fontFamily: fonts.body, fontSize: 10, color: colors.fog, fontStyle: 'italic', textAlign: 'center', lineHeight: 16 },
-  ctaBtnSelf: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(184,137,26,0.6)', backgroundColor: 'rgba(184,137,26,0.1)', borderRadius: 2 },
-  ctaBtnTextSelf: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia },
-  monthHeaderWrap: { paddingTop: 16, paddingBottom: 12 },
-  monthHeader: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, opacity: 0.7, paddingHorizontal: 4 },
-  grid4: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  posterCardWrap: { position: 'relative', flex: 1, maxWidth: '23.5%', aspectRatio: 2 / 3, borderRadius: 6, overflow: 'hidden', borderWidth: 1, borderColor: '#3A2E1C', backgroundColor: '#050402' },
-  posterImg: { width: '100%', height: '100%' },
-  posterPlaceholder: { backgroundColor: 'rgba(18,14,9,0.7)', justifyContent: 'center', alignItems: 'center' },
-  formatBadge: { position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(5,4,3,0.95)', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 3, borderWidth: 1 },
-  formatBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1 },
-  loadMoreBtn: { width: '100%', paddingVertical: 16, alignItems: 'center', justifyContent: 'center', marginTop: 16, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)' },
-  loadMoreText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
 });
-
-
-PhysicalVaultCard.displayName = 'PhysicalVaultCard';

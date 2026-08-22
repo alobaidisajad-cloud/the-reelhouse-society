@@ -22,15 +22,42 @@ interface ProfilePosterCardProps {
 }
 
 const s = StyleSheet.create({
-  posterImg: { 
-    width: '100%', 
-    height: '100%', 
-    borderRadius: 4, 
-    borderWidth: StyleSheet.hairlineWidth, 
-    borderColor: 'rgba(184,137,26,0.2)' 
+  /**
+   * BONE, not brass.
+   *
+   * Every poster in the app was framed in a brass hairline — while the
+   * altarpiece on the member's own profile, three scrolls up, frames its films
+   * in bone. Brass is the colour of ACTION here: a picture frame that glows
+   * like a button reads as a control, and sixteen of them in a grid read as a
+   * toolbar. Radius drops 4 → 2 to match the frames upstairs and the rest of
+   * the house; nothing in this app is round.
+   */
+  posterImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(232,223,208,0.14)',
+  },
+  /** No inner hairline under a tier glow — two borders 1pt apart is a smudge. */
+  posterImgGlowed: { borderWidth: 0 },
+  /**
+   * Four points of nothing, just inside the frame: the difference between a
+   * picture on a wall and an image in a box. The altarpiece's mount board,
+   * scaled from 4 to 3 for a cell a third the width of its centre panel.
+   */
+  mountBoard: {
+    position: 'absolute',
+    top: 3, left: 3, right: 3, bottom: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(232,223,208,0.10)',
+    borderRadius: 1,
+    // No zIndex: paint order alone puts it over the image and under the rating
+    // bar and the status badge, which is exactly right. A zIndex here would
+    // have drawn a hairline straight across the badges.
   },
   posterPlaceholder: { 
-    backgroundColor: '#050402', 
+    backgroundColor: colors.posterVoid, 
     justifyContent: 'center', 
     alignItems: 'center' 
   },
@@ -71,6 +98,7 @@ const s = StyleSheet.create({
     borderRadius: 2,
     borderStyle: 'solid',
   },
+  posterFrame: { aspectRatio: 2 / 3, position: 'relative' },
   statusBadge: { 
     position: 'absolute', 
     top: 4, 
@@ -99,16 +127,37 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
   const router = useRouter();
   const log = item as any;
   const posterUri = tmdb.poster(log.altPoster ?? log.poster ?? log.poster_path, 'w185');
-  const glowStyle = isAuteurPlus ? s.auteurGlow : isArchivistPlus ? s.archivistGlow : {};
-  
+  // `isAuteurPlus` used to be computed and then thrown away unless
+  // `isArchivistPlus` also happened to be true — which it always is, since
+  // Auteur outranks Archivist, but the expression said the opposite of what it
+  // meant. One flag now decides whether a glow exists, and rank picks which.
+  const hasGlow = isAuteurPlus || isArchivistPlus;
+  const glowStyle = isAuteurPlus ? s.auteurGlow : s.archivistGlow;
+
   return (
     <PressableScale
       key={log.id ?? log.filmId ?? log.film_id}
       style={[
-        { aspectRatio: 2 / 3, position: 'relative' }, 
-        width > 0 ? { width } : { flex: 1 }, 
-        isArchivistPlus ? glowStyle : {}
+        s.posterFrame,
+        width > 0 ? { width } : { flex: 1 },
+        hasGlow ? glowStyle : null,
       ]}
+      /**
+       * NOTHING. Not a partial object — every side, explicitly zero.
+       *
+       * This card is the most-repeated control in the app: sixteen to a screen
+       * in the Archive, nine in the Watchlist, and it had no hitSlop at all, so
+       * it inherited PressableScale's 15pt on all four sides. The grids it sits
+       * in have gaps of 8 and 12 — meaning each poster reached 15pt into a gap
+       * of 8 and 7pt past it, onto the FACE of the next poster. Both platforms
+       * hand an overlapping touch to the LATER sibling, so the right-hand 7pt
+       * of every poster in every grid opened the film beside it.
+       *
+       * A 79×118pt card is four times the 44pt floor on its own; the halo was
+       * pure surplus, and surplus is exactly how a control takes its
+       * neighbour's taps.
+       */
+      hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
       onPress={() => {
         if (navigateToLog && log.id) {
           (router.push as any)(`/log/${log.id}` as any);
@@ -130,17 +179,20 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
       {posterUri ? (
         <Image
           source={{ uri: posterUri }}
-          style={s.posterImg}
+          style={[s.posterImg, hasGlow && s.posterImgGlowed]}
           recyclingKey={posterUri}
           cachePolicy="memory-disk"
           placeholder={{ blurhash: SEPIA_HASH }}
-          transition={200} 
+          transition={200}
         />
       ) : (
-        <View style={[s.posterImg, s.posterPlaceholder]}>
+        <View style={[s.posterImg, hasGlow && s.posterImgGlowed, s.posterPlaceholder]}>
           <FilmIcon size={18} color={colors.sepia} strokeWidth={1} />
         </View>
       )}
+      {/* RN has no ::after — the mount board is a real view, and it must never
+          intercept the tap that belongs to the frame beneath it. */}
+      <View style={s.mountBoard} pointerEvents="none" />
       {/* Bottom gradient overlay */}
       {(showRating || showTimeAgo) && (
         <View style={s.posterBottomGrad}>

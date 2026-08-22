@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Bookmark, Search, X, Disc3, Sparkles } from 'lucide-react-native';
@@ -10,9 +10,27 @@ import PressableScale from '../PressableScale';
 import type { ProfileWatchlistItem } from '../../types';
 import { tmdb } from '../../lib/tmdb';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { r, posterColumns } from './roomStyles';
+import { RoomChip, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
+
+/**
+ * THE WATCHLIST — the queue, and the one room with a ritual in it.
+ *
+ * The Oracle stays exactly where it is. It is the best object on any of these
+ * six screens: a reel of perforations that picks tonight's film, and the only
+ * thing in the rooms that a member comes back FOR rather than to check. What
+ * changes is everything around it — one chip, one search, honest empty states,
+ * and a grid that stops clipping its third column.
+ */
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
+
+const SORTS = [
+  { id: 'default' as const, label: 'RECENT' },
+  { id: 'az' as const, label: 'A–Z' },
+  { id: 'za' as const, label: 'Z–A' },
+];
 
 interface ProfileWatchlistTabProps {
   watchlist: ProfileWatchlistItem[];
@@ -24,7 +42,9 @@ interface ProfileWatchlistTabProps {
   setWatchlistSort: (val: 'default' | 'az' | 'za') => void;
   setRouletteOpen: (val: boolean) => void;
   renderPosterCard: (item: ProfileWatchlistItem, width: number) => React.ReactNode;
-  POSTER_COL_3: number;
+  /** Has the data landed? A room must not describe itself before it knows. */
+  ready?: boolean;
+  tier?: string | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   refreshing?: boolean;
@@ -44,7 +64,8 @@ export default function ProfileWatchlistTab({
   setWatchlistSort,
   setRouletteOpen,
   renderPosterCard,
-  POSTER_COL_3,
+  ready = true,
+  tier,
   onLoadMore,
   isLoadingMore,
   refreshing = false,
@@ -52,6 +73,8 @@ export default function ProfileWatchlistTab({
   bottomInset
 }: ProfileWatchlistTabProps) {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
+  const grid = useMemo(() => posterColumns(windowWidth, 3), [windowWidth]);
 
   const breatheAnim = useSharedValue(0.1);
   useEffect(() => {
@@ -98,6 +121,11 @@ export default function ProfileWatchlistTab({
       }, 300);
   }, [setWatchlistSearch]);
 
+  // A pending debounce used to outlive the room — see the Ledger.
+  useEffect(() => () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+  }, []);
+
   const flashData = useMemo(() => {
     if (watchlistFiltered.length === 0) return [];
     const result: WatchlistRowItem[] = [];
@@ -117,36 +145,36 @@ export default function ProfileWatchlistTab({
       .slice(0, 40) // aggressive prefetch of first 40 items
       .map(item => tmdb.poster(item.poster_path, 'w185'))
       .filter((url): url is string => !!url);
-    
+
     // A STATIC import, as the Vault already does — see the note in the Ledger.
     if (urlsToPrefetch.length > 0) Image.prefetch(urlsToPrefetch);
   }, [watchlistFiltered]);
 
   const renderItem = useCallback(({ item }: { item: WatchlistRowItem }) => {
     return (
-      <View style={s.grid3}>
+      <View style={[r.gridRow, { gap: grid.gap, marginBottom: grid.gap }]}>
         {item.data.map(film => (
-          <View key={film.id || (film as {id?: number, film_id?: number}).film_id} style={{ width: POSTER_COL_3 }}>
-            {renderPosterCard(film, POSTER_COL_3)}
+          <View key={film.id || (film as {id?: number, film_id?: number}).film_id} style={{ width: grid.width }}>
+            {renderPosterCard(film, grid.width)}
           </View>
         ))}
       </View>
     );
-  }, [renderPosterCard, POSTER_COL_3]);
+  }, [renderPosterCard, grid]);
 
   const ListHeaderComponent = useMemo(() => {
     if (watchlist.length === 0) return null;
     return (
       <>
         {isSelf && watchlist.length > 1 && (
-          <PressableScale style={s.oracleCta} onPress={() => setRouletteOpen(true)} haptic accessibilityRole="button" accessibilityLabel="Consult the Oracle's Choice">
+          <PressableScale style={s.oracleCta} onPress={() => setRouletteOpen(true)} haptic accessibilityRole="button" accessibilityLabel="Consult the Oracle's Choice — let the archive pick tonight's film">
             <View style={s.oracleCtaPerf}>
               {[0, 1, 2].map(i => <View key={i} style={s.oracleCtaHole} />)}
             </View>
             <Disc3 size={18} color={colors.sepia} strokeWidth={1.5} />
             <View style={s.oracleCtaText}>
-              <Text {...scaledTextProps} style={s.oracleCtaTitle}>THE ORACLE&apos;S CHOICE</Text>
-              <Text {...scaledTextProps} style={s.oracleCtaSub}>Let the Archive pick tonight&apos;s reel</Text>
+              <Text {...scaledTextProps} style={s.oracleCtaTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>THE ORACLE&apos;S CHOICE</Text>
+              <Text {...scaledTextProps} style={s.oracleCtaSub} numberOfLines={2}>Let the Archive pick tonight&apos;s reel</Text>
             </View>
             <Sparkles size={13} color={colors.sepia} strokeWidth={1.5} />
             <View style={s.oracleCtaPerf}>
@@ -155,99 +183,110 @@ export default function ProfileWatchlistTab({
           </PressableScale>
         )}
         {watchlist.length > 5 && (
-          <View style={s.watchlistControlRow}>
-            <View style={[s.searchWrap, s.searchWrapFlex]}>
-              <AnimatedSearchIcon size={12} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />
-              <TextInput 
-                style={s.searchInput} 
-                value={localSearch} 
-                onChangeText={handleSearchChange} 
-                placeholder="Search watchlist..." 
+          <View style={s.controlCol}>
+            <View style={r.search}>
+              <AnimatedSearchIcon size={13} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />
+              <TextInput
+                style={r.searchInput}
+                value={localSearch}
+                onChangeText={handleSearchChange}
+                placeholder="Search the queue…"
                 placeholderTextColor={colors.fog}
                 selectionColor={colors.sepia}
                 keyboardAppearance="dark"
-                accessibilityLabel="Filter your watchlist"
+                accessibilityLabel="Search the watchlist"
                 returnKeyType="search"
               />
               {localSearch.length > 0 && (
-                <PressableScale onPress={() => { setLocalSearch(''); setWatchlistSearch(''); }} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic accessibilityRole="button" accessibilityLabel="Clear search">
+                <PressableScale onPress={() => { setLocalSearch(''); setWatchlistSearch(''); }} style={r.searchClear} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic accessibilityRole="button" accessibilityLabel="Clear the search">
                   <X size={14} color={colors.fog} strokeWidth={1.5} />
                 </PressableScale>
               )}
             </View>
-            <View style={s.sortRow}>
-              {([{ id: 'default' as const, label: 'RECENT' }, { id: 'az' as const, label: 'A-Z' }, { id: 'za' as const, label: 'Z-A' }]).map(sv => (
-                <PressableScale 
-                  key={sv.id} 
-                  style={[s.filterChip, watchlistSort === sv.id && s.filterChipActive]} 
-                  onPress={() => { setWatchlistSort(sv.id); }} 
-                  // sortRow gap 4 — the tightest row on the page, so 2 per
-                  // side. At 10 each, RECENT reached 16pt into A-Z and lost.
-                  hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }}
-                  haptic
-                  accessibilityRole="button"
-                  accessibilityLabel={`Sort the watchlist: ${sv.label}`}
-                  accessibilityState={{ selected: watchlistSort === sv.id }}
-                >
-                  <Text {...scaledTextProps} style={[s.filterChipText, watchlistSort === sv.id && s.filterChipTextActive]}>{sv.label}</Text>
-                </PressableScale>
+            {/* The sort row used to sit BESIDE the search box, which left each
+                chip about 40pt wide with 4pt between them — three targets a
+                thumb could not separate. Its own line, at the shared gap. */}
+            <View style={r.chipRow}>
+              {SORTS.map(sv => (
+                <RoomChip
+                  key={sv.id}
+                  label={sv.label}
+                  on={watchlistSort === sv.id}
+                  onPress={() => { setWatchlistSort(sv.id); }}
+                  gap={8}
+                  a11y={`Sort the queue: ${sv.label}`}
+                />
               ))}
             </View>
           </View>
         )}
       </>
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchlist.length, isSelf, setRouletteOpen, watchlistSearch, handleSearchChange, watchlistSort, setWatchlistSort, animatedSearchProps, animatedSearchStyle]);
+   
+  }, [watchlist.length, isSelf, setRouletteOpen, localSearch, handleSearchChange, setWatchlistSearch, watchlistSort, setWatchlistSort, animatedSearchProps, animatedSearchStyle]);
 
   const ListEmptyComponent = useMemo(() => {
     if (watchlist.length > 0 && watchlistFiltered.length > 0) return null;
-    
-    if (watchlist.length === 0 && isSelf) {
+
+    if (!ready) return <RoomRetrieving room="the queue" />;
+
+    // A SEARCH found nothing. This used to be one grey line of italic text
+    // floating in the middle of the page with no way out of it — the only
+    // "empty state" in the six rooms that was not a panel at all.
+    if (watchlist.length > 0) {
+      return (
+        <RoomEmpty
+          invite
+          icon={<Search size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
+          title="Nothing under that name"
+          body={watchlistSearch ? `No film in the queue matches “${watchlistSearch}”.` : 'No films to show.'}
+          actionLabel="CLEAR THE SEARCH"
+          onAction={() => { setLocalSearch(''); setWatchlistSearch(''); }}
+        />
+      );
+    }
+
+    if (isSelf) {
       return (
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
-          <Bookmark size={32} color={colors.sepia} strokeWidth={1.5} style={s.emptyLockIcon} />
-          <Text {...scaledTextProps} style={s.emptyTitleSelf}>An Empty Queue</Text>
-          <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Curate future viewings">
-            <Text {...scaledTextProps} style={s.ctaBtnTextSelf}>CURATE FUTURE VIEWINGS</Text>
+          <Bookmark size={32} color={colors.sepia} strokeWidth={1.5} style={r.ownIcon} />
+          <Text {...scaledTextProps} style={r.ownTitle}>An Empty Queue</Text>
+          <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Curate future viewings">
+            <Text {...scaledTextProps} style={r.ownActText}>CURATE FUTURE VIEWINGS</Text>
           </PressableScale>
         </Animated.View>
       );
     }
 
-    if (watchlist.length === 0) {
-      return (
-        <View style={s.emptyState}>
-          <Bookmark size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-          <Text {...scaledTextProps} style={s.emptyTitle}>The Queue is Empty</Text>
-          {/* eslint-disable-next-line react/no-unescaped-entities */}
-          <Text {...scaledTextProps} style={s.emptyDesc}>This member hasn't saved any films yet.</Text>
-        </View>
-      );
-    }
-    
-    if (watchlistSearch) {
-      return <Text {...scaledTextProps} style={s.searchNoResults}>No films match &quot;{watchlistSearch}&quot;</Text>;
-    }
-    
-    return null;
-  }, [watchlist.length, watchlistFiltered.length, isSelf, watchlistSearch, pulseStyle, router]);
+    return (
+      <RoomEmpty
+        icon={<Bookmark size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
+        title="The Queue is Empty"
+        body="This member hasn’t saved a film for later yet."
+      />
+    );
+  }, [watchlist.length, watchlistFiltered.length, isSelf, ready, watchlistSearch, setWatchlistSearch, pulseStyle, router]);
 
   return (
-    <View style={s.container}>
+    <View style={r.container}>
       <CinematicFlashList
         data={flashData}
         renderItem={renderItem}
         keyExtractor={(item: WatchlistRowItem) => item.id}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
-        estimatedItemSize={150}
-        contentContainerStyle={s.listContent}
+        // A 3-wide poster row, derived — the old 150 was a guess.
+        estimatedItemSize={Math.round(grid.width * 1.5) + grid.gap}
+        contentContainerStyle={r.listContent}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={isLoadingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null}
+        ListFooterComponent={
+          isLoadingMore
+            ? <RoomRetrieving room="more" />
+            : flashData.length > 0 ? <RoomFoot tier={tier} /> : null
+        }
         bottomInset={bottomInset}
       />
     </View>
@@ -255,33 +294,16 @@ export default function ProfileWatchlistTab({
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1 },
-  listContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 },
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, marginTop: 12 },
   emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderRadius: 4, marginTop: 12 },
-  emptyLockIcon: { marginBottom: 16, opacity: 0.8 },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
-  emptyTitleSelf: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 24, textAlign: 'center', letterSpacing: 1 },
-  emptyDesc: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone, opacity: 0.6, textAlign: 'center', lineHeight: 20 },
-  ctaBtnSelf: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 2, backgroundColor: colors.sepiaFaint },
-  ctaBtnTextSelf: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia },
-  oracleCta: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.sepiaFaint, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)', paddingVertical: 14, paddingHorizontal: 14, marginBottom: 24, overflow: 'hidden' },
-  oracleCtaText: { flex: 1 },
+
+  // ── the Oracle — untouched, because it is the best thing here ──
+  oracleCta: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.sepiaFaint, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)', paddingVertical: 14, paddingHorizontal: 14, marginBottom: 18, overflow: 'hidden' },
+  oracleCtaText: { flex: 1, minWidth: 0 },
   oracleCtaTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia },
-  oracleCtaSub: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, marginTop: 2 },
+  oracleCtaSub: { fontFamily: fonts.bodyItalic, fontSize: 10, lineHeight: 14, color: colors.fog, marginTop: 2 },
   oracleCtaPerf: { alignSelf: 'stretch', justifyContent: 'space-around', paddingVertical: 2 },
   oracleCtaHole: { width: 5, height: 6, borderRadius: 1, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)' },
-  watchlistControlRow: { gap: 12, marginBottom: 24 },
-  searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, paddingHorizontal: 16, height: 44 },
-  searchWrapFlex: { flex: 1 },
+
+  controlCol: { gap: 12, marginBottom: 18 },
   searchIconStyle: { opacity: 0.6 },
-  searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.parchment, paddingHorizontal: 12, height: '100%' },
-  searchClear: { padding: 4, opacity: 0.8 },
-  sortRow: { flexDirection: 'row', gap: 8 },
-  filterChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', backgroundColor: 'transparent' },
-  filterChipActive: { backgroundColor: 'rgba(184,137,26,0.1)', borderColor: 'rgba(184,137,26,0.4)' },
-  filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
-  filterChipTextActive: { color: colors.sepia },
-  searchNoResults: { fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.fog, textAlign: 'center', marginTop: 40 },
-  grid3: { flexDirection: 'row', gap: 12, marginBottom: 12 },
 });

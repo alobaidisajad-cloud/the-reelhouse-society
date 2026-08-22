@@ -354,7 +354,9 @@ describe('the rooms behind the doors still open', () => {
     // getAllBy: a locked room names itself twice on purpose — once in the
     // header, once on the velvet rope that explains why it will not open.
     expect(r.getAllByText(title).length).toBeGreaterThan(0);
-    expect(r.getByLabelText('Back to profile')).toBeTruthy();
+    // The rooms share one threshold now — the Room Plate — and its back
+    // control is named for where it goes, in the app's own word for that page.
+    expect(r.getByLabelText('Back to the member file')).toBeTruthy();
     // The hero must NOT be underneath it — a tab is a whole screen.
     expect(r.queryByText('THE HOLDINGS')).toBeNull();
   });

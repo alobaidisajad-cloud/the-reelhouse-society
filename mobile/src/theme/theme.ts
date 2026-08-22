@@ -78,6 +78,14 @@ export const colors = {
   inkwell: '#050403',       // the recess UNDER the paper — deck bars, the chronicle
                             // strip, the critique field. Darker than ink on purpose:
                             // these are cut into the page, not laid on it.
+  // The black behind a MISSING poster — the hole in the wall where a picture
+  // is not. Mixed by hand in three places (the poster card, the vault case, the
+  // ledger plate) and now named, at exactly the value that ships.
+  // ⚠ One point of blue from `inkwell` (#050403). They are almost certainly the
+  // same shade and want merging — but that is a pixel change, and this pass
+  // promised not to make one silently. Flagged here for a colour pass.
+  posterVoid: '#050402',
+
   tarnishDeep: '#5A430D',   // brass in shadow — the closing stop of a brass gradient.
                             // `sepia → this` was written out by hand in both autopsy
                             // gauges; using tarnish instead flattens the ramp that

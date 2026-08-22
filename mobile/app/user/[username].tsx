@@ -1,14 +1,13 @@
  
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
-    View,
-    useWindowDimensions
+    View
 } from 'react-native';
 import AnimatedRN, { Easing, Extrapolation, FadeIn, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import Svg, { Defs, Ellipse, RadialGradient as SvgRadialGradient, Stop } from 'react-native-svg';
@@ -44,6 +43,7 @@ import { TasteMatch } from '@/src/components/profile/TasteMatch';
 import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
 import { useProfileComputed, tally } from '@/src/components/profile/profileComputed';
 import { s } from '@/src/components/profile/profileStyles';
+import { RoomPlate, RoomSealed, RoomFoot } from '@/src/components/profile/RoomParts';
  
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import PressableScale from '@/src/components/PressableScale';
@@ -174,7 +174,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const params = useLocalSearchParams<{ username: string; tab?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width: windowWidth } = useWindowDimensions();
+  // The screen no longer measures the window: each room derives its own grid
+  // from `posterColumns`, which re-runs on rotation where a value read once
+  // here did not.
 
   const scrollY = useSharedValue(0);
 
@@ -218,8 +220,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const isMuted = useBlockStore((state) => state.isMuted(targetUser?.id ?? ''));
   const blockStore = useBlockStore();
 
-  const POSTER_COL_4 = (windowWidth - 32 - 18) / 4;
-  const POSTER_COL_3 = (windowWidth - 32 - 16) / 3;
+  // The poster grids used to be sized here — `(windowWidth - 32 - 18) / 4`,
+  // reserving 18pt of gaps for a row that was then laid out with 24. Each room
+  // derives its own from `posterColumns` now, from the gap it actually draws.
 
   const breatheAnim = useSharedValue(0.4);
   const pulseStyle = useAnimatedStyle(() => ({ opacity: breatheAnim.value }));
@@ -417,6 +420,12 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     displayLists,
     totalFilms,
     totalWatchlist,
+    // The Room Plate states what a room holds, from the same reconciled totals
+    // the profile's own tab pills use — never from the windowed array a room
+    // was handed, which caps at 150.
+    totalLedger,
+    totalLists,
+    totalVault,
     statsLevel,
     statsColor,
     statsProgress,
@@ -472,6 +481,85 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     : lockedRooms > 0
       ? `${WORD[lockedRooms] ?? lockedRooms} room${lockedRooms === 1 ? '' : 's'} remain${lockedRooms === 1 ? 's' : ''} closed to you.`
       : 'There are rooms above this one.';
+
+  // ════════════════════════════════════════════════════════════
+  // THE ROOMS
+  // ════════════════════════════════════════════════════════════
+
+  /**
+   * What the Room Plate says a room holds.
+   *
+   * From the RECONCILED totals, never from the array the room was handed —
+   * those are windowed at 150, so a member with 247 films would have been told
+   * 150 by any count taken from the list itself. This is the same number their
+   * own profile shows, through the same `tally`: an em dash for a room nobody
+   * has filed anything in, and thousands grouped without going near Intl.
+   */
+  const roomCount = useMemo(() => {
+    const say = (n: number, one: string, many: string) => `${tally(n)} ${n === 1 ? one : many}`;
+    switch (activeTab) {
+      case 'archive':   return say(totalFilms, 'FILM', 'FILMS');
+      case 'ledger':    return say(totalLedger, 'ENTRY', 'ENTRIES');
+      case 'watchlist': return say(totalWatchlist, 'FILM', 'FILMS');
+      case 'lists':     return say(totalLists, 'STACK', 'STACKS');
+      case 'physical':  return say(totalVault, 'FILM', 'FILMS');
+      default:          return say(totalFilms, 'FILM', 'FILMS');
+    }
+  }, [activeTab, totalFilms, totalLedger, totalWatchlist, totalLists, totalVault]);
+
+  /**
+   * Leaving a room.
+   *
+   * The old header PUSHED `/user/:name` to go "back" — while opening a room
+   * pushed the same route with a tab param. So profile → Archive → back →
+   * Ledger → back left six entries in the history, and Android's system back
+   * button then walked the member through every one of them instead of leaving
+   * the profile. A room was pushed, so a room pops.
+   */
+  const handleRoomBack = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else (router.replace as any)(`/user/${username}` as never);
+  }, [router, username]);
+
+  /**
+   * Whether a room may describe its own contents yet.
+   *
+   * A room decided it was empty by asking whether its list was empty, and never
+   * whether the data had ARRIVED — so the first open of the Vault told a member
+   * with 286 discs that nothing was on the shelves. Own rooms hydrate from the
+   * local store before first paint, so they are ready immediately; a visitor's
+   * room is ready once its fetch has landed, which the reconciled count proves.
+   */
+  const roomReady = useMemo(() => {
+    if (isSelf) return true;
+    switch (activeTab) {
+      case 'archive':   return displayLogs.length > 0 || counts.logs === 0;
+      case 'ledger':    return displayLogs.length > 0 || counts.ledger === 0;
+      case 'watchlist': return displayWatchlist.length > 0 || counts.watchlist === 0;
+      case 'lists':     return displayLists.length > 0 || counts.lists === 0;
+      case 'physical':  return displayVault.length > 0 || counts.vault === 0;
+      default:          return true;
+    }
+  }, [isSelf, activeTab, displayLogs.length, displayWatchlist.length, displayLists.length, displayVault.length, counts]);
+
+  /**
+   * The six films the member rated highest.
+   *
+   * `.filter(r >= 4).slice(0, 6)` took the six most RECENTLY logged films that
+   * cleared four reels — which under a heading reading HIGHEST RATED is simply
+   * untrue for anyone with more than six of them. Rating first, then recency to
+   * settle a tie, so the card matches its own title.
+   */
+  const highestRated = useMemo(() => {
+    return displayLogs
+      .filter((l: ProfileLog) => l.rating >= 4)
+      .slice()
+      .sort((a: ProfileLog, b: ProfileLog) => {
+        if (b.rating !== a.rating) return b.rating - a.rating;
+        return String(b.watchedDate ?? b.createdAt ?? '').localeCompare(String(a.watchedDate ?? a.createdAt ?? ''));
+      })
+      .slice(0, 6);
+  }, [displayLogs]);
 
   // Group by month helper
   const groupByMonth = useCallback(<T extends ProfileLog | ProfileVaultItem>(items: T[], dateKey = 'watchedDate') => {
@@ -597,19 +685,38 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ════════════════════════════════════════════════════════════
   if (activeTab) {
     return (
-      <View style={s.container}>
-        {/* ── Tab Header ── */}
-        <View style={[s.tabPageHeader, { paddingTop: Math.max(insets.top + 10, 40) }]}>
-          <PressableScale onPress={() => (router.push as any)(`/user/${username}` as any)} style={s.topNavBtn} accessibilityRole="button" accessibilityLabel="Back to profile" hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic>
-            <ChevronLeft size={22} color={colors.sepia} />
-          </PressableScale>
-          <View style={s.tabHeaderTextWrap}>
-            <Text {...scaledTextProps} style={s.tabHeaderUsername} adjustsFontSizeToFit numberOfLines={1}>@{username}</Text>
-            <Text {...scaledTextProps} style={s.tabHeaderTitle} accessibilityRole="header" adjustsFontSizeToFit numberOfLines={1}>{TAB_TITLES[activeTab] ?? activeTab}</Text>
-          </View>
-        </View>
+      <View style={[s.container, { paddingTop: Math.max(insets.top + 6, 36) }]}>
+        {/* ── THE ROOM PLATE — one threshold for all six ── */}
+        <RoomPlate
+          /* Title case, not caps. The display face (Rye) is set title-case
+             everywhere else in the app — "The Projector Room", "Certificate of
+             Obsession" — and the ALL-CAPS treatment belongs to the sub face, on
+             the member-and-count line directly beneath. */
+          name={TAB_TITLES[activeTab] ?? activeTab}
+          member={heroName}
+          count={roomCount}
+          sealed={!!isPrivate}
+          tier={tier}
+          onBack={handleRoomBack}
+        />
 
-        {['archive', 'ledger', 'watchlist', 'lists', 'physical'].includes(activeTab) ? (
+        {/* ── THE SEALED ROOM ──
+            `if (activeTab)` returns before the profile's own privacy check, so
+            a private member's room rendered its ordinary empty state: "this
+            member hasn't watched any films yet", to a visitor looking at
+            someone with two thousand of them. No data ever leaked — the fetch
+            layer has a hard gate — but the sentence was false, and the counts
+            ARE fetched on the sealed path, so the plate above already knows the
+            truth. */}
+        {isPrivate ? (
+          // The seal is rendered straight into the container, not into a list,
+          // so it carries the room inset itself — every other room gets it from
+          // `r.listContent`.
+          <View style={s.sealedPad}>
+            <RoomSealed />
+            <RoomFoot tier={tier} />
+          </View>
+        ) :['archive', 'ledger', 'watchlist', 'lists', 'physical'].includes(activeTab) ? (
           <View style={{ flex: 1 }}>
             {/* ═══ ARCHIVE TAB ═══ */}
             {activeTab === 'archive' && (
@@ -621,7 +728,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 archiveFiltered={archiveFiltered}
                 renderPosterCard={renderPosterCard}
                 groupByMonth={groupByMonth}
-                POSTER_COL_4={POSTER_COL_4}
+                ready={roomReady}
+                tier={tier}
                 onLoadMore={(isSelf && archiveSieve === 'all') ? (filmStore.archiveHasMore ? loadMoreLogs : undefined) : (hasMoreArchiveLogs ? loadMoreLogs : undefined)}
                 isLoadingMore={(isSelf && archiveSieve === 'all') ? filmStore._fetchingLogs : isLoadingMore.logs_archive}
                 refreshing={refreshing}
@@ -640,9 +748,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 setLedgerRatingFilter={setLedgerRatingFilter}
                 ledgerFiltered={ledgerFiltered}
                 halfLifeMap={halfLifeMap}
-                renderPosterCard={renderPosterCard}
                 groupByMonth={groupByMonth}
-                POSTER_COL_4={POSTER_COL_4}
+                ready={roomReady}
+                tier={tier}
                 onLoadMore={(isSelf && ledgerSearch.trim() === '' && ledgerRatingFilter === 'all') ? (filmStore.logsHasMore ? loadMoreLogs : undefined) : (hasMoreLedgerLogs ? loadMoreLogs : undefined)}
                 isLoadingMore={(isSelf && ledgerSearch.trim() === '' && ledgerRatingFilter === 'all') ? filmStore._fetchingLogs : isLoadingMore.logs_ledger}
                 isSelf={isSelf}
@@ -662,7 +770,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 setWatchlistSort={setWatchlistSort}
                 watchlistFiltered={watchlistFiltered}
                 renderPosterCard={renderPosterCard}
-                POSTER_COL_3={POSTER_COL_3}
+                ready={roomReady}
+                tier={tier}
                 onLoadMore={(isSelf && watchlistSearch.trim() === '' && watchlistSort === 'default') ? (filmStore.watchlistHasMore ? loadMoreWatchlist : undefined) : (hasMoreWatchlist ? loadMoreWatchlist : undefined)}
                 isLoadingMore={(isSelf && watchlistSearch.trim() === '' && watchlistSort === 'default') ? filmStore._fetchingWatchlist : isLoadingMore.watchlist}
                 isSelf={isSelf}
@@ -675,8 +784,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
             {/* ═══ STACKS/LISTS TAB ═══ */}
             {activeTab === 'lists' && (
-              <ProfileListsTab 
-                lists={displayLists} 
+              <ProfileListsTab
+                lists={displayLists}
+                ready={roomReady}
+                tier={tier}
                 onLoadMore={hasMoreLists ? loadMoreLists : undefined}
                 isLoadingMore={isSelf ? filmStore._fetchingLists : isLoadingMore.lists}
                 hasMore={isSelf ? filmStore.listsHasMore : hasMoreLists}
@@ -697,10 +808,17 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   setPhysicalFilter={setPhysicalFilter}
                   physicalFormatCounts={physicalFormatCounts}
                   physicalFiltered={physicalFiltered}
-                  groupByMonth={groupByMonth}
-                  onLoadMore={(isSelf && physicalFilter === 'all') ? (filmStore.archiveHasMore ? loadMoreVault : undefined) : (hasMoreVault ? loadMoreVault : undefined)}
-                  isLoadingMore={(isSelf && physicalFilter === 'all') ? filmStore._fetchingArchive : isLoadingMore.vault}
-                  hasMore={(isSelf && physicalFilter === 'all') ? filmStore.archiveHasMore : hasMoreVault}
+                  ready={roomReady}
+                  tier={tier}
+                  /* `physicalFilter === 'all'` was never true: no filter is
+                     `null`, and 'all' is not a format. So the member's OWN
+                     vault took the visitor branch on all three of these — it
+                     paged through a fixed 150-item window and stopped, while
+                     the store had the rest. `!physicalFilter` is the state the
+                     chip actually sets. */
+                  onLoadMore={(isSelf && !physicalFilter) ? (filmStore.archiveHasMore ? loadMoreVault : undefined) : (hasMoreVault ? loadMoreVault : undefined)}
+                  isLoadingMore={(isSelf && !physicalFilter) ? filmStore._fetchingArchive : isLoadingMore.vault}
+                  hasMore={(isSelf && !physicalFilter) ? filmStore.archiveHasMore : hasMoreVault}
                   refreshing={refreshing}
                   onRefresh={onRefresh}
                   bottomInset={insets.bottom}
@@ -731,12 +849,11 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             {/* Analytics is a base feature (see the tiers page) — open to every member. */}
             {activeTab === 'projector' && (
                 <View style={s.projectorGap}>
-                  {/* Header */}
-                  <View style={s.projectorHeader}>
-                    <Text {...scaledTextProps} style={s.projectorSuper}>GLOBAL ANALYTICS</Text>
-                    <Text {...scaledTextProps} style={s.projectorTitle}>The Projector Room</Text>
-                    <Text {...scaledTextProps} style={s.projectorSub}>Lifetime cinematic data & achievements.</Text>
-                  </View>
+                  {/* The room used to announce itself TWICE: the header above
+                      already reads THE PROJECTOR ROOM, and this block repeated
+                      it in the display face directly underneath, with a third
+                      line of prose under that. Three lines of chrome before a
+                      single number. The plate says which room you are in. */}
 
                   {/* Cinema DNA CTA */}
                   <View style={s.tabContentPad}>
@@ -782,12 +899,17 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       <Achievements {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics} as any} />
                     </View>
 
-                    {/* Your Favourites */}
-                    {displayLogs.filter((l: ProfileLog) => l.rating >= 4).length > 0 && (
+                    {/* HIGHEST RATED — and now actually the highest rated.
+                        This took the first six logs rated 4 or better in the
+                        order they were LOGGED, so a member with two hundred
+                        five-star films was shown whichever six they happened
+                        to file most recently, under a heading promising the
+                        best. Sorted by rating, then by recency to break a tie. */}
+                    {highestRated.length > 0 && (
                       <View>
                         <SectionDivider label="HIGHEST RATED" />
                         <View style={s.card}>
-                          {displayLogs.filter((l: ProfileLog) => l.rating >= 4).slice(0, 6).map((log: ProfileLog) => {
+                          {highestRated.map((log: ProfileLog) => {
                             const posterUri = tmdb.poster(log.poster, 'w185');
                             return (
                               <PressableScale
@@ -805,13 +927,19 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                                 accessibilityRole="button"
                                 accessibilityLabel={`${log.title}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}
                               >
-                                {posterUri && <Image source={{ uri: posterUri }} style={s.favPosterThumb} transition={50} cachePolicy="memory-disk" />}
+                                {posterUri
+                                  ? <Image source={{ uri: posterUri }} style={s.favPosterThumb} transition={50} cachePolicy="memory-disk" />
+                                  /* An unposterd film used to collapse the row
+                                     to the text alone, so a card of six sat at
+                                     two different indents. */
+                                  : <View style={[s.favPosterThumb, s.favPosterEmpty]} />}
                                 <View style={s.favTextWrap}>
                                   <Text {...scaledTextProps} style={s.favTitle} numberOfLines={1}>{log.title}</Text>
                                   <View style={s.favRatingRow}>
                                     <ReelRating rating={log.rating} size={10} />
                                   </View>
                                 </View>
+                                {!!log.year && <Text {...scaledTextProps} style={s.favYear}>{String(log.year)}</Text>}
                               </PressableScale>
                             );
                           })}

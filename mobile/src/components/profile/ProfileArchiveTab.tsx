@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
-import { View, ScrollView, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Film as FilmIcon } from 'lucide-react-native';
 import { colors, fonts } from '../../theme/theme';
@@ -10,6 +10,18 @@ import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Eas
 import VaultLock from './VaultLock';
 import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
+import { r, posterColumns } from './roomStyles';
+import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
+
+/**
+ * THE ARCHIVE — every film, by the month it was seen.
+ *
+ * The Archive and the Ledger were twins: the same four-wide grid of the same
+ * posters, differing only in which subset of logs they were handed. A member
+ * had no way to tell which room they were standing in. The Archive keeps the
+ * grid — it is the room for SHEER VOLUME, the wall of everything — and takes
+ * the month rails as its structure. The Ledger stops being a grid entirely.
+ */
 
 interface ProfileArchiveTabProps {
   logs: ProfileLog[];
@@ -19,7 +31,9 @@ interface ProfileArchiveTabProps {
   archiveFiltered: ProfileLog[];
   renderPosterCard: (log: ProfileLog, width: number) => React.ReactNode;
   groupByMonth: (items: ProfileLog[], dateKey?: string) => Record<string, ProfileLog[]>;
-  POSTER_COL_4: number;
+  /** Has the data landed? A room must not describe itself before it knows. */
+  ready?: boolean;
+  tier?: string | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   refreshing?: boolean;
@@ -27,9 +41,16 @@ interface ProfileArchiveTabProps {
   bottomInset?: number;
 }
 
-type ArchiveItem = 
-  | { type: 'header'; title: string }
+type ArchiveItem =
+  | { type: 'header'; title: string; lead: string; count: string }
   | { type: 'row'; data: ProfileLog[]; id: string };
+
+const SIEVES = [
+  { id: 'all', label: 'ALL' },
+  { id: 'watched', label: 'WATCHED' },
+  { id: 'rewatched', label: 'REWATCHED' },
+  { id: 'abandoned', label: 'ABANDONED' },
+];
 
 export default function ProfileArchiveTab({
   logs,
@@ -39,7 +60,8 @@ export default function ProfileArchiveTab({
   archiveFiltered,
   renderPosterCard,
   groupByMonth,
-  POSTER_COL_4,
+  ready = true,
+  tier,
   onLoadMore,
   isLoadingMore,
   refreshing = false,
@@ -47,6 +69,9 @@ export default function ProfileArchiveTab({
   bottomInset
 }: ProfileArchiveTabProps) {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
+  const grid = useMemo(() => posterColumns(windowWidth, 4), [windowWidth]);
+
   // The Vault only guards the member's OWN archive, and only when they have
   // explicitly enabled the biometric lock in Settings.
   const biometricLock = useAuthStore((s) => s.user?.preferences?.biometric_lock === true);
@@ -79,62 +104,63 @@ export default function ProfileArchiveTab({
     setUnlocked(true);
   }, []);
 
-  // Flatten month groupings into a predictable FlashList array
   const flashData = useMemo(() => {
     if (archiveFiltered.length === 0) return [];
     const grouped = groupByMonth(archiveFiltered);
     const result: ArchiveItem[] = [];
-    
+
     Object.entries(grouped).forEach(([month, items]) => {
-      result.push({ type: 'header', title: month });
-      // Chunk items into rows of 4
+      // `groupByMonth` keys on "MARCH 2026". The year is set in the display
+      // face and the month in the sub — a date on a card catalogue divider,
+      // not a heading. Split from the END so a month name can never be
+      // mistaken for the year.
+      const cut = month.lastIndexOf(' ');
+      result.push({
+        type: 'header',
+        title: cut > 0 ? month.slice(0, cut) : month,
+        lead: cut > 0 ? month.slice(cut + 1) : '',
+        count: `${items.length} ${items.length === 1 ? 'FILM' : 'FILMS'}`,
+      });
       for (let i = 0; i < items.length; i += 4) {
-        result.push({ 
-          type: 'row', 
+        result.push({
+          type: 'row',
           data: items.slice(i, i + 4),
           id: `${month}-row-${i}`
         });
       }
     });
-    
+
     return result;
   }, [archiveFiltered, groupByMonth]);
 
   const renderItem = useCallback(({ item }: { item: ArchiveItem }) => {
     if (item.type === 'header') {
-      return <Text {...scaledTextProps} style={s.monthHeader}>{item.title}</Text>;
+      return <RoomRail lead={item.lead} label={item.title} count={item.count} />;
     }
     return (
-      <View style={s.grid4}>
+      <View style={[r.gridRow, { gap: grid.gap, marginBottom: 12 }]}>
         {item.data.map(log => (
-          <View key={log.id || log.filmId} style={{ width: POSTER_COL_4 }}>
-            {renderPosterCard(log, POSTER_COL_4)}
+          <View key={log.id || log.filmId} style={{ width: grid.width }}>
+            {renderPosterCard(log, grid.width)}
           </View>
         ))}
       </View>
     );
-  }, [renderPosterCard, POSTER_COL_4]);
+  }, [renderPosterCard, grid]);
 
   const ListHeaderComponent = useMemo(() => {
     if (logs.length === 0) return null;
     return (
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScrollMargin} contentContainerStyle={s.filterChipRow}>
-        {[{ id: 'all', label: 'All' }, { id: 'watched', label: 'Watched' }, { id: 'rewatched', label: 'Rewatched' }, { id: 'abandoned', label: 'Abandoned' }].map(sv => (
-          <PressableScale 
-            key={sv.id} 
-            style={[s.filterChip, archiveSieve === sv.id && s.filterChipActive]} 
-            onPress={() => { setArchiveSieve(sv.id); }} 
-            // filterChipRow gap 8: half of it each side, so two chips meet
-            // without overlapping. Vertical slop is free (nothing above or
-            // below in a horizontal scroller) and carries the chip past 44pt.
-            hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
-            haptic
-            accessibilityRole="button"
-            accessibilityLabel={`Filter the archive by ${sv.label}`}
-            accessibilityState={{ selected: archiveSieve === sv.id }}
-          >
-            <Text {...scaledTextProps} style={[s.filterChipText, archiveSieve === sv.id && s.filterChipTextActive]}>{sv.label}</Text>
-          </PressableScale>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={r.chipScroll} contentContainerStyle={r.chipRow}>
+        {SIEVES.map(sv => (
+          <RoomChip
+            key={sv.id}
+            label={sv.label}
+            on={archiveSieve === sv.id}
+            onPress={() => { setArchiveSieve(sv.id); }}
+            gap={8}
+            a11y={`Filter the archive by ${sv.label.toLowerCase()}`}
+          />
         ))}
       </ScrollView>
     );
@@ -143,13 +169,33 @@ export default function ProfileArchiveTab({
   const ListEmptyComponent = useMemo(() => {
     if (logs.length > 0 && archiveFiltered.length > 0) return null;
 
-    if (logs.length === 0 && isSelf) {
+    // Nothing true can be said about a room whose contents are still in transit.
+    if (!ready) return <RoomRetrieving room="the archive" />;
+
+    // A FILTER matched nothing. That is not an empty archive, and telling a
+    // member with 200 films that "the Archive is Empty" sends them hunting for
+    // a fault in their own account. The only way out offered is the way back.
+    if (logs.length > 0) {
+      const sieve = SIEVES.find(sv => sv.id === archiveSieve);
+      return (
+        <RoomEmpty
+          invite
+          icon={<FilmIcon size={28} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
+          title="Nothing under this heading"
+          body={`No films in the archive are marked ${(sieve?.label ?? archiveSieve).toLowerCase()}.`}
+          actionLabel="SHOW EVERYTHING"
+          onAction={() => setArchiveSieve('all')}
+        />
+      );
+    }
+
+    if (isSelf) {
       return (
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
-          <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-          <Text {...scaledTextProps} style={s.emptyTitleSelf}>The Archive Awaits</Text>
-          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Record a screening">
-            <Text {...scaledTextProps} style={s.ctaBtnText}>RECORD A SCREENING</Text>
+          <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={r.ownIcon} />
+          <Text {...scaledTextProps} style={r.ownTitle}>The Archive Awaits</Text>
+          <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Record a screening">
+            <Text {...scaledTextProps} style={r.ownActText}>RECORD A SCREENING</Text>
           </PressableScale>
 
           {/* The import signpost — the feature already lives in Settings; this
@@ -175,35 +221,44 @@ export default function ProfileArchiveTab({
     }
 
     return (
-      <View style={s.emptyState}>
-        <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-        <Text {...scaledTextProps} style={s.emptyTitle}>The Archive is Empty</Text>
-        <Text {...scaledTextProps} style={s.emptyDesc}>
-          {logs.length === 0 
-            ? "This member hasn't watched any films yet." 
-            : 'No films match this filter.'}
-        </Text>
-      </View>
+      <RoomEmpty
+        icon={<FilmIcon size={28} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
+        title="The Archive is Empty"
+        body="This member hasn’t filed a screening yet."
+      />
     );
-  }, [logs.length, archiveFiltered.length, isSelf, pulseStyle, router]);
+  }, [logs.length, archiveFiltered.length, isSelf, ready, archiveSieve, setArchiveSieve, pulseStyle, router]);
+
+  /**
+   * Derived, not guessed.
+   *
+   * The old 200 was a third too small at every width: a row is a poster at 3:2
+   * plus its title block plus the gap beneath it. Under-estimating makes
+   * FlashList render and re-measure more rows than it needs on every scroll.
+   */
+  const estimatedItemSize = Math.round(grid.width * 1.5) + 42;
 
   return (
-    <View style={s.container}>
+    <View style={r.container}>
       {requiresVault && !unlocked && <VaultLock onUnlocked={handleUnlocked} />}
       <CinematicFlashList
-        estimatedItemSize={200}
+        estimatedItemSize={estimatedItemSize}
         data={flashData}
         getItemType={(item: ArchiveItem) => item.type}
         renderItem={renderItem}
-        keyExtractor={(item: ArchiveItem) => item.type === 'header' ? `header-${item.title}` : `row-${item.id}`}
+        keyExtractor={(item: ArchiveItem) => item.type === 'header' ? `header-${item.lead}-${item.title}` : `row-${item.id}`}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
-        contentContainerStyle={s.listContent}
+        contentContainerStyle={r.listContent}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={isLoadingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null}
+        ListFooterComponent={
+          isLoadingMore
+            ? <RoomRetrieving room="more" />
+            : flashData.length > 0 ? <RoomFoot tier={tier} /> : null
+        }
         bottomInset={bottomInset}
       />
     </View>
@@ -211,28 +266,11 @@ export default function ProfileArchiveTab({
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1 },
-  listContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 },
-  filterScrollMargin: { marginBottom: 20 },
-  filterChipRow: { gap: 8, flexDirection: 'row', alignItems: 'center' },
-  filterChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', backgroundColor: 'transparent' },
-  filterChipActive: { backgroundColor: 'rgba(184,137,26,0.1)', borderColor: 'rgba(184,137,26,0.4)' },
-  filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
-  filterChipTextActive: { color: colors.sepia },
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, marginTop: 12 },
   emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderRadius: 4, marginTop: 12 },
-  emptyLockIcon: { marginBottom: 16, opacity: 0.8 },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
-  emptyTitleSelf: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 24, textAlign: 'center' },
-  emptyDesc: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone, opacity: 0.6, textAlign: 'center', lineHeight: 20 },
-  ctaBtn: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 2, backgroundColor: 'rgba(184,137,26,0.05)' },
-  ctaBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia },
   importDividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'stretch', marginTop: 20, marginBottom: 12, paddingHorizontal: 10 },
   importDividerLine: { flex: 1, height: 1, backgroundColor: colors.sepia, opacity: 0.2 },
   importDividerMark: { fontFamily: fonts.sub, fontSize: 7, color: colors.sepia, opacity: 0.7 },
   importLine: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone, opacity: 0.6, textAlign: 'center', lineHeight: 18, marginBottom: 12 },
   importBtn: { paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(184,137,26,0.45)', borderRadius: 2 },
   importBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
-  monthHeader: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, opacity: 0.8, marginBottom: 16, marginTop: 24 },
-  grid4: { flexDirection: 'row', gap: 8, marginBottom: 12 },
 });

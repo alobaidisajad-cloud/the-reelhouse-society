@@ -122,14 +122,17 @@ const RULES: Rule[] = [
   // These were missed by the last sweep for the same reason the accessibility
   // sweep missed 27 controls: this list is hand-written, and the rooms were
   // never added to it.
-  { file: 'src/components/profile/ProfileArchiveTab.tsx', style: 'filterChip', gap: { x: 8 },
-    note: 'archive sieve, filterChipRow gap 8' },
-  { file: 'src/components/profile/ProfileLedgerTab.tsx', style: 'filterChip', gap: { x: 6 },
-    note: 'ledger rating filter, filterChipRowTight gap 6' },
-  { file: 'src/components/profile/ProfilePhysicalTab.tsx', style: 'filterChip', gap: { x: 6 },
-    note: 'vault format filter, filterChipRowTight gap 6' },
-  { file: 'src/components/profile/ProfileWatchlistTab.tsx', style: 'filterChip', gap: { x: 4 },
-    note: 'watchlist sort, sortRow gap 4 — the tightest row on the page' },
+  // Those four `filterChip` rules — one per room, at four different gaps — are
+  // gone, and so are the four chips. The rooms share ONE chip now (RoomChip),
+  // and its slop is DERIVED from the gap it is handed rather than typed out, so
+  // there is no literal here to scan for: `hitSlop={chipSlop(gap)}`.
+  //
+  // A derived halo cannot be checked by reading numbers out of source, and a
+  // scanner that reads `left: side` matches no digits and scores the control at
+  // the full 15pt default — a false failure that teaches the next person to
+  // delete the rule. The arithmetic is unit-tested at its source instead, and
+  // every call site is checked to pass its container's real gap:
+  // see `rooms.test.tsx › a chip may never reach past half its gap`.
   { file: 'app/(modals)/vault-modal.tsx', style: 'formatBtn', gap: { y: 8 },
     note: 'export formats, marginBottom 8' },
   { file: 'src/components/PaywallModal.tsx', style: 'tierCard', gap: { y: 12 },
@@ -396,7 +399,160 @@ describe('the sweep: no repeated control may inherit the default halo', () => {
     }
 
     // A sweep that finds nothing to look at would pass while proving nothing.
-    expect(repeated).toBeGreaterThan(8);
+    //
+    // This floor USED to be 8 and it did its job: consolidating the six rooms
+    // onto one shared `RoomChip` dropped the count to 5, because a chip written
+    // as `<RoomChip …>` is no longer a raw pressable inside a `.map(` and this
+    // scan stopped being able to see it. The chips did not become unchecked —
+    // their halo moved INTO the shared component, where the sweep below now
+    // checks it — but the reachable population genuinely shrank, and lowering
+    // the number without saying why is how a guard quietly dies.
+    expect(repeated).toBeGreaterThan(4);
+    expect(bare).toEqual([]);
+  });
+
+  /**
+   * THE SECOND HALF — where a repeated control's halo actually lives.
+   *
+   * Consolidation moves the decision, it does not remove it. A chip rendered as
+   * `<RoomChip …>` is still adjacent to a copy of itself, but the only place
+   * its slop can be declared is inside `RoomChip` — so the sweep above, which
+   * looks for raw pressables inside a `.map(`, cannot see it any more. Same for
+   * every list cell: FlashList repeats a `renderItem` result, and there is no
+   * `.map(` anywhere near it.
+   *
+   * So: find the components that are ACTUALLY repeated — a custom tag inside a
+   * `.map(` span, or inside a `render…` callback — then require the pressables
+   * in THEIR definitions to declare a halo.
+   *
+   * The predicate has to be exact. A first attempt asked instead whether the
+   * file exported anything, which flagged twenty-one controls of which most
+   * were single buttons — an Import signpost, a Share button, a modal backdrop.
+   * An approximate guard that cries wolf is one the next person deletes. But it
+   * was not useless: among the noise sat ProfilePosterCard, the most-repeated
+   * control in the app, with no hitSlop at all — 15pt of inherited halo reaching
+   * 7pt onto the face of the next poster in every grid.
+   */
+  /**
+   * The balanced body of the first arrow function at or after `from`.
+   *
+   * The subtlety that cost two rounds here: `indexOf('=>')` finds the arrow
+   * inside a TYPE, not the one that opens the function. `TriptychResultRow` is
+   * declared as `React.memo(({ film, handleSetFilm }: { handleSetFilm: (f: T)
+   * => void }) => (`, and the first `=>` in it belongs to `handleSetFilm`'s
+   * signature. A type's arrow is followed by a type name; a function's is
+   * followed by the bracket that opens its body — so take the first arrow whose
+   * next non-space character is `{` or `(`.
+   */
+  function arrowBody(src: string, from: number): [number, number] | null {
+    let at = from;
+    for (;;) {
+      const arrow = src.indexOf('=>', at);
+      if (arrow === -1) return null;
+      const rest = src.slice(arrow + 2);
+      const off = rest.search(/\S/);
+      if (off === -1) return null;
+      const open = arrow + 2 + off;
+      const close = ({ '{': '}', '(': ')' } as Record<string, string>)[src[open]];
+      if (!close) { at = arrow + 2; continue; }   // a type's arrow — keep looking
+      let d = 0;
+      for (let j = open; j < src.length; j++) {
+        if (src[j] === src[open]) d++;
+        else if (src[j] === close) { d--; if (d === 0) return [open, j]; }
+      }
+      return null;
+    }
+  }
+
+  it('every REPEATED profile component declares its controls’ halos', () => {
+    /** Component tags rendered in a repeated position, anywhere in the sweep. */
+    const repeatedTags = new Set<string>();
+    for (const f of files) {
+      const src = read(f);
+      const spans = mapSpans(src);
+      // A `render…` callback — FlashList repeats its result, and there is no
+      // `.map(` in sight. The span must be the function's BODY: balancing from
+      // the first paren after the name lands on the end of the PARAMETER LIST
+      // instead, which is why a first version of this found RoomChip and
+      // VaultCase but missed LedgerRow, ProfileListCard and ProfilePosterCard —
+      // three of the four most-repeated controls on the page. Find the `=>`
+      // first, then balance whatever bracket opens the body.
+      for (const m of src.matchAll(/\brender[A-Z]\w*\s*[=:]/g)) {
+        const body = arrowBody(src, m.index!);
+        if (body) spans.push(body);
+      }
+      for (const [a, b] of spans) {
+        for (const t of src.slice(a, b).matchAll(/<([A-Z]\w*)/g)) repeatedTags.add(t[1]);
+      }
+    }
+
+    /**
+     * The component's OWN body — not its file.
+     *
+     * Scanning the whole file flagged six controls that are not repeated at
+     * all: the three empty-state CTAs (one per room, alone on the screen) and
+     * three modal backdrops, each of which merely shares a file with something
+     * that IS repeated. Same failure as the version before it, one level in.
+     */
+    function bodyOf(src: string, name: string): [number, number] | null {
+      // `function Name(params) { … }` — including inside a React.memo wrapper.
+      let m = new RegExp(`\\bfunction\\s+${name}\\s*\\(`).exec(src);
+      let open = -1;
+      if (m) {
+        let d = 0, j = m.index + m[0].length - 1;
+        for (; j < src.length; j++) {
+          if (src[j] === '(') d++;
+          else if (src[j] === ')') { d--; if (d === 0) break; }
+        }
+        open = src.indexOf('{', j);
+      } else {
+        // `const Name = … => { … }` / `= … => ( … )`
+        m = new RegExp(`\\bconst\\s+${name}\\s*=`).exec(src);
+        return m ? arrowBody(src, m.index) : null;
+      }
+      if (open === -1) return null;
+      const close = ({ '{': '}', '(': ')' } as Record<string, string>)[src[open]];
+      if (!close) return null;
+      let d = 0;
+      for (let j = open; j < src.length; j++) {
+        if (src[j] === src[open]) d++;
+        else if (src[j] === close) { d--; if (d === 0) return [open, j]; }
+      }
+      return null;
+    }
+
+    const bare: string[] = [];
+    const unresolved: string[] = [];
+    const checkedIn: string[] = [];
+    for (const f of files) {
+      const src = read(f);
+      for (const name of repeatedTags) {
+        if (!new RegExp(`\\b(?:function|const)\\s+${name}\\b`).test(src)) continue;
+        const span = bodyOf(src, name);
+        // A definition we cannot locate must NOT quietly read as checked —
+        // that is a pass for a control nobody looked at.
+        if (!span) { unresolved.push(`${f} :: ${name}`); continue; }
+        const body = src.slice(span[0], span[1]);
+        const before = src.slice(0, span[0]).split('\n').length - 1;
+        checkedIn.push(`${f} :: ${name}`);
+        for (const tag of ['PressableScale', 'Pressable', 'TouchableOpacity']) {
+          for (const t of scanTags(body, tag)) {
+            if (!/hitSlop\s*=/.test(t.attrs)) bare.push(`${f}:${before + t.line} <${tag}> in ${name}`);
+          }
+        }
+      }
+    }
+    expect(unresolved).toEqual([]);
+    const defining = checkedIn;
+
+    // The sweep must be finding real components, not an empty set. It resolves
+    // ~25 repeated tags down to the handful whose definitions live here: the
+    // Room chip and rail, the Ledger row, the stack card, the vault case, the
+    // poster card, the triptych's result row, the passport stamp, the
+    // follow-request row. If either number collapses, the scan has stopped
+    // reaching something rather than the app having got simpler.
+    expect(repeatedTags.size).toBeGreaterThan(15);
+    expect(defining.length).toBeGreaterThan(5);
     expect(bare).toEqual([]);
   });
 });

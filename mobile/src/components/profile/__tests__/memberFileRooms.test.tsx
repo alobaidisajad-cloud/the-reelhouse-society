@@ -134,11 +134,11 @@ describe('a filter says whether it is ON, not just what it is called', () => {
       watchlistFiltered: SHELF, renderPosterCard: () => null, POSTER_COL_3: 100,
     };
     const r = await mount(<ProfileWatchlistTab {...(props as any)} />);
-    const chips = r.queryAllByLabelText(/^Sort the watchlist: /);
+    const chips = r.queryAllByLabelText(/^Sort the queue: /);
     expect(chips.length).toBe(3);
     expect(chips.filter((c) => c.props.accessibilityState?.selected)).toHaveLength(1);
-    expect(selectedOf(r, 'Sort the watchlist: A-Z')).toBe(true);
-    expect(selectedOf(r, 'Sort the watchlist: RECENT')).toBe(false);
+    expect(selectedOf(r, 'Sort the queue: A–Z')).toBe(true);
+    expect(selectedOf(r, 'Sort the queue: RECENT')).toBe(false);
   });
 
   it('the ledger rating filter names the rating rather than reading out stars', async () => {
@@ -153,7 +153,7 @@ describe('a filter says whether it is ON, not just what it is called', () => {
     };
     const r = await mount(<ProfileLedgerTab {...(props as any)} />);
     expect(r.getByLabelText('Show every rating')).toBeTruthy();
-    expect(selectedOf(r, 'Show films rated 3 of 5')).toBe(true);
-    expect(selectedOf(r, 'Show films rated 5 of 5')).toBe(false);
+    expect(selectedOf(r, 'Show entries rated 3 of 5')).toBe(true);
+    expect(selectedOf(r, 'Show entries rated 5 of 5')).toBe(false);
   });
 });
