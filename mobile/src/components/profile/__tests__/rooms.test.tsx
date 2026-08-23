@@ -9,7 +9,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { posterColumns, roomTier, chipSlop, CHIP_SLOP_Y, ROOM_INSET, GRID_GAP_4, GRID_GAP_3 } from '../roomStyles';
+import { posterColumns, roomTier, chipSlop, CHIP_SLOP_Y, ROOM_INSET, GRID_GAP_4, GRID_GAP_3, EMBER_REST, EMBER_BEATS } from '../roomStyles';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
@@ -175,6 +175,56 @@ describe('a chip may never reach past half its gap', () => {
     }
     expect(seen).toBeGreaterThanOrEqual(4);   // every room with chips, at least
     expect(wrong).toEqual([]);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// NOTHING PULSES FOREVER
+// ════════════════════════════════════════════════════════════════════════════
+describe('an animation ends, and ends telling the truth', () => {
+  const ANIMATED_ROOMS = [
+    'src/components/profile/ProfileArchiveTab.tsx',
+    'src/components/profile/ProfileLedgerTab.tsx',
+    'src/components/profile/ProfileWatchlistTab.tsx',
+    'src/components/profile/ProfileListsTab.tsx',
+    'src/components/profile/ProfilePhysicalTab.tsx',
+  ];
+
+  it('no room repeats an animation forever', () => {
+    // The Vault looped on `-1` and that was fixed a batch ago — where it was
+    // FILED. The Ledger's and the Watchlist's search embers were the same
+    // defect two files away and survived, because a fix applied to the
+    // instance in front of you is not a fix applied to the class.
+    const offenders: string[] = [];
+    for (const f of ANIMATED_ROOMS) {
+      const src = code(read(f));
+      for (const m of src.matchAll(/withRepeat\([\s\S]{0,200}?\)/g)) {
+        if (/,\s*-1\s*,/.test(m[0])) offenders.push(`${f}: ${m[0].slice(0, 60)}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('the ember settles LIT, because an odd count reverses an odd number of times', () => {
+    // The trap in the fix itself. `withRepeat(…, n, reverse)` alternates
+    // direction each pass, so an EVEN count lands back where it started — the
+    // ember would have gone dark while the search was still on, which is worse
+    // than pulsing forever because it states something false.
+    expect(EMBER_BEATS % 2).toBe(1);
+    expect(EMBER_BEATS).toBeGreaterThan(1);
+  });
+
+  it('both embers read their rest value from one place', () => {
+    // The icon turns red when the value is ABOVE rest. Written as a literal
+    // 0.5 beside a constant that also happened to be 0.5, the two could drift
+    // and the icon would sit permanently red — or never light at all.
+    for (const f of ['src/components/profile/ProfileLedgerTab.tsx', 'src/components/profile/ProfileWatchlistTab.tsx']) {
+      const src = code(read(f));
+      expect(src).toMatch(/searchEmberOpacity\.value > EMBER_REST/);
+      expect(src).not.toMatch(/searchEmberOpacity\.value > 0\.\d/);
+    }
+    expect(EMBER_REST).toBeGreaterThan(0);
+    expect(EMBER_REST).toBeLessThan(1);
   });
 });
 

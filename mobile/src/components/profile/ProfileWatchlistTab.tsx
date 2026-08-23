@@ -7,11 +7,11 @@ import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
 import PressableScale from '../PressableScale';
-import type { ProfileWatchlistItem, WatchlistDecade } from '../../types';
+import type { ProfileWatchlistItem, WatchlistDecade, ShelfSort } from '../../types';
 import { decadeLabel } from '../../types';
 import { tmdb } from '../../lib/tmdb';
 import { scaledTextProps } from '@/src/constants/textScaling';
-import { r, posterColumns } from './roomStyles';
+import { r, posterColumns, EMBER_REST, EMBER_BEATS } from './roomStyles';
 import { RoomChip, RoomChipDivider, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
 
 /**
@@ -27,10 +27,10 @@ import { RoomChip, RoomChipDivider, RoomRetrieving, RoomEmpty, RoomFoot } from '
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
-const SORTS = [
-  { id: 'default' as const, label: 'RECENT' },
-  { id: 'az' as const, label: 'A–Z' },
-  { id: 'za' as const, label: 'Z–A' },
+const SORTS: { id: ShelfSort; label: string }[] = [
+  { id: 'default', label: 'RECENT' },
+  { id: 'az', label: 'A–Z' },
+  { id: 'za', label: 'Z–A' },
 ];
 
 interface ProfileWatchlistTabProps {
@@ -39,8 +39,8 @@ interface ProfileWatchlistTabProps {
   isSelf: boolean;
   watchlistSearch: string;
   setWatchlistSearch: (val: string) => void;
-  watchlistSort: 'default' | 'az' | 'za';
-  setWatchlistSort: (val: 'default' | 'az' | 'za') => void;
+  watchlistSort: ShelfSort;
+  setWatchlistSort: (val: ShelfSort) => void;
   watchlistDecade: WatchlistDecade;
   setWatchlistDecade: (val: WatchlistDecade) => void;
   /** The decades this queue spans, newest first — derived from what is loaded. */
@@ -99,19 +99,19 @@ export default function ProfileWatchlistTab({
   }));
 
   // Nitrate Noir Breathing Ember Protocol for Search
-  const searchEmberOpacity = useSharedValue(0.5);
+  const searchEmberOpacity = useSharedValue(EMBER_REST);
   useEffect(() => {
       if (watchlistSearch.length > 0) {
-          searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true, undefined, ReduceMotion.System);
+          searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), EMBER_BEATS, true, undefined, ReduceMotion.System);
       } else {
-          searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
+          searchEmberOpacity.value = withTiming(EMBER_REST, { duration: 300 });
       }
       return () => cancelAnimation(searchEmberOpacity);
   }, [watchlistSearch.length, searchEmberOpacity]);
 
   // Reanimated props must map from useSharedValue to prevent UI thread sync failures
   const animatedSearchProps = useAnimatedProps(() => ({
-      color: searchEmberOpacity.value > 0.5 ? colors.bloodReel : colors.fog,
+      color: searchEmberOpacity.value > EMBER_REST ? colors.bloodReel : colors.fog,
   }));
   const animatedSearchStyle = useAnimatedStyle(() => ({
       opacity: searchEmberOpacity.value,

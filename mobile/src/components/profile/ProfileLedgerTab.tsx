@@ -14,7 +14,7 @@ import type { ProfileLog, HalfLifeEntry, LedgerRating } from '../../types';
 import { LEDGER_HIGH_FLOOR } from '../../types';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
-import { r, rtlText } from './roomStyles';
+import { r, rtlText, EMBER_REST, EMBER_BEATS } from './roomStyles';
 import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
 
 /**
@@ -241,19 +241,19 @@ export default function ProfileLedgerTab({
   }));
 
   // Nitrate Noir Breathing Ember Protocol for Search
-  const searchEmberOpacity = useSharedValue(0.5);
+  const searchEmberOpacity = useSharedValue(EMBER_REST);
   useEffect(() => {
       if (ledgerSearch.length > 0) {
-          searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true, undefined, ReduceMotion.System);
+          searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), EMBER_BEATS, true, undefined, ReduceMotion.System);
       } else {
-          searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
+          searchEmberOpacity.value = withTiming(EMBER_REST, { duration: 300 });
       }
       return () => cancelAnimation(searchEmberOpacity);
   }, [ledgerSearch.length, searchEmberOpacity]);
 
   // Reanimated props must map from useSharedValue to prevent UI thread sync failures
   const animatedSearchProps = useAnimatedProps(() => ({
-      color: searchEmberOpacity.value > 0.5 ? colors.bloodReel : colors.fog,
+      color: searchEmberOpacity.value > EMBER_REST ? colors.bloodReel : colors.fog,
   }));
   const animatedSearchStyle = useAnimatedStyle(() => ({
       opacity: searchEmberOpacity.value,

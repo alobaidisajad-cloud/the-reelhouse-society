@@ -1045,7 +1045,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                  </AnimatedView>
               </View>
             ) : (
-              <View style={s.headerDarkBase} />
+              /* Inert in its own right, not merely by inheritance from the
+                 wash above it — a background that depends on an ancestor for
+                 that is one refactor from swallowing the hero's controls. */
+              <View style={s.headerDarkBase} pointerEvents="none" />
             )}
 
             {/* The projector's pool of light — true radial, tier-tinted */}

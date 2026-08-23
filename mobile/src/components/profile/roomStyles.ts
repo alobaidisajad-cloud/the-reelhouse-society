@@ -111,6 +111,29 @@ export const rtlText: TextStyle = { writingDirection: 'rtl', textAlign: 'right' 
  * Derived rather than written out, so respacing a row automatically respaces
  * its targets and the two can never drift apart again.
  */
+// ════════════════════════════════════════════════════════════════════════════
+// THE SEARCH EMBER
+// ════════════════════════════════════════════════════════════════════════════
+/**
+ * How long the search icon glows while a search is live.
+ *
+ * It used to be `-1` — forever. Type a word, leave it in the box, and the
+ * worklet pulsed for as long as the room stayed open, which is precisely what
+ * every other animation in these files caps at 20 repeats to avoid ("so the UI
+ * thread can idle"). The Vault had exactly this defect and it was fixed a batch
+ * ago; the Ledger's and the Watchlist's were the same class, two files away,
+ * and went unnoticed because that fix was applied where it was FILED.
+ *
+ * ODD, and that is the whole trick. `withRepeat(…, n, reverse)` alternates
+ * direction each pass, so an EVEN count lands back on the value it started
+ * from — the ember would have settled at REST while a search was still active,
+ * telling the member their filter was off. An odd count finishes on the bright
+ * end: it pulses for about thirteen seconds, makes its point, and then simply
+ * stays lit for as long as the search does.
+ */
+export const EMBER_REST = 0.5;
+export const EMBER_BEATS = 21;
+
 export const CHIP_SLOP_Y = 10;
 export function chipSlop(gap: number) {
   const side = Math.max(0, Math.floor(gap / 2));

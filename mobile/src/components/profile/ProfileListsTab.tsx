@@ -152,8 +152,8 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
     if (isSelf) {
       return (
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
-          <View style={s.dossierStackBg1} />
-          <View style={s.dossierStackBg2} />
+          <View style={s.dossierStackBg1} pointerEvents="none" />
+          <View style={s.dossierStackBg2} pointerEvents="none" />
           <View style={s.dossierFront}>
             <LayoutList size={32} color={colors.parchment} strokeWidth={1.5} style={r.ownIcon} />
             <Text {...scaledTextProps} style={r.ownTitle}>Uncharted Stacks</Text>

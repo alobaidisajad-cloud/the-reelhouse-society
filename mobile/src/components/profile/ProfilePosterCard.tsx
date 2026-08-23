@@ -195,7 +195,7 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
       <View style={s.mountBoard} pointerEvents="none" />
       {/* Bottom gradient overlay */}
       {(showRating || showTimeAgo) && (
-        <View style={s.posterBottomGrad}>
+        <View style={s.posterBottomGrad} pointerEvents="none">
           {showRating && log.rating > 0 && (
             <View style={s.posterRatingRow}>
               <ReelRating rating={log.rating} size={10} />
@@ -210,12 +210,12 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
       )}
       {/* Status badges */}
       {log.status === 'rewatched' && (
-        <View style={s.statusBadge}>
+        <View style={s.statusBadge} pointerEvents="none">
           <Sparkles size={7} color={colors.sepia} strokeWidth={1.5} />
         </View>
       )}
       {log.status === 'abandoned' && (
-        <View style={[s.statusBadge, s.statusBadgeAbandoned]}>
+        <View style={[s.statusBadge, s.statusBadgeAbandoned]} pointerEvents="none">
           <X size={7} color={colors.bloodReel} strokeWidth={2} />
         </View>
       )}

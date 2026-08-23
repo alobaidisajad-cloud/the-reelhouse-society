@@ -311,7 +311,7 @@ export default React.memo(function ProfilePhysicalTab({
     if (isSelf) {
       return (
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
-          <View style={s.vaultPattern} />
+          <View style={s.vaultPattern} pointerEvents="none" />
           <Disc size={36} color={colors.parchment} strokeWidth={1.5} style={r.ownIcon} />
           <Text {...scaledTextProps} style={r.ownTitle}>Empty Shelves</Text>
           <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Catalogue physical media">
