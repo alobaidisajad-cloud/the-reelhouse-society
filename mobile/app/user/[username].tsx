@@ -201,7 +201,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const ctrl = useProfileController(usernameOverride);
   const { nav, data } = ctrl;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, setTargetUser } = data;
+  const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, setTargetUser } = data;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists, setActiveTab } = ctrl;
   const { archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
@@ -467,6 +467,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     physicalFilter,
     physicalSort,
     listsSort,
+    serverDecades: analyticsShape?.watchlist_decades,
   });
 
   /**
@@ -734,6 +735,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 groupByMonth={groupByMonth}
                 ready={roomReady}
                 tier={tier}
+                monthCounts={analyticsShape?.monthly_activity}
                 onLoadMore={(isSelf && archiveSieve === 'all') ? (filmStore.archiveHasMore ? loadMoreLogs : undefined) : (hasMoreArchiveLogs ? loadMoreLogs : undefined)}
                 isLoadingMore={(isSelf && archiveSieve === 'all') ? filmStore._fetchingLogs : isLoadingMore.logs_archive}
                 refreshing={refreshing}
@@ -755,6 +757,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 groupByMonth={groupByMonth}
                 ready={roomReady}
                 tier={tier}
+                ratingCounts={analyticsShape?.rating_distribution}
                 onLoadMore={(isSelf && ledgerSearch.trim() === '' && ledgerRatingFilter === 'all') ? (filmStore.logsHasMore ? loadMoreLogs : undefined) : (hasMoreLedgerLogs ? loadMoreLogs : undefined)}
                 isLoadingMore={(isSelf && ledgerSearch.trim() === '' && ledgerRatingFilter === 'all') ? filmStore._fetchingLogs : isLoadingMore.logs_ledger}
                 isSelf={isSelf}
@@ -825,6 +828,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   physicalFiltered={physicalFiltered}
                   ready={roomReady}
                   tier={tier}
+                  totalVault={totalVault}
+                  vaultFormats={analyticsShape?.vault_formats}
                   /* `physicalFilter === 'all'` was never true: no filter is
                      `null`, and 'all' is not a format. So the member's OWN
                      vault took the visitor branch on all three of these — it
@@ -893,7 +898,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   )}
 
                   {/* Projector Room */}
-                  <ProjectorRoom stats={{ count: totalFilms, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} />
+                  <ProjectorRoom stats={{ count: totalFilms, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} record={analyticsShape} />
 
                   <View style={s.projectorSectionsWrap}>
                     {/* Taste DNA */}
@@ -911,7 +916,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     {/* Society Honors */}
                     <View>
                       <SectionDivider label="SOCIETY HONORS" />
-                      <Achievements {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics} as any} />
+                      <Achievements {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics, totalFilms} as any} />
                     </View>
 
                     {/* HIGHEST RATED — and now actually the highest rated.

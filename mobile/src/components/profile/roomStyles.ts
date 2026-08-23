@@ -134,6 +134,47 @@ export const rtlText: TextStyle = { writingDirection: 'rtl', textAlign: 'right' 
 export const EMBER_REST = 0.5;
 export const EMBER_BEATS = 21;
 
+// ════════════════════════════════════════════════════════════════════════════
+// A COUNT ONLY APPEARS WHEN IT IS COMPLETE
+// ════════════════════════════════════════════════════════════════════════════
+/**
+ * The one rule that keeps every number in these rooms honest.
+ *
+ * Six numbers on this page used to be counted from whatever had loaded — the
+ * app pages fifty rows at a time, so a month heading read "7 FILMS" when March
+ * held forty, and it CLIMBED as the member scrolled. A number that changes
+ * while you look at it is worse than no number: it teaches you not to trust
+ * any of them.
+ *
+ * The server sends the true shape of a collection on every profile load. When
+ * it is there, the count is stated. When it is not — the migration is not
+ * applied yet, or the viewer may not see this member, or a filter is on that
+ * the server was not asked about — this returns undefined and the room draws
+ * the heading with NO NUMBER AT ALL.
+ *
+ * Silence is a fine answer. A wrong number is not.
+ */
+export function completeCount(
+  shape: { count: number } | undefined | null,
+  /**
+   * False when something narrows the room that the server's figures do not
+   * know about — a status filter on the Archive, say. The shape describes the
+   * WHOLE collection, so under such a filter it cannot speak for what is on
+   * screen and must not try.
+   */
+  serverKnows: boolean,
+): number | undefined {
+  if (!serverKnows) return undefined;
+  if (!shape || typeof shape.count !== 'number' || shape.count < 0) return undefined;
+  return shape.count;
+}
+
+/** "40 FILMS" / "1 FILM" / undefined — never "0 FILMS" where 0 means unknown. */
+export function countLabel(n: number | undefined, one: string, many: string): string | undefined {
+  if (n === undefined) return undefined;
+  return `${n} ${n === 1 ? one : many}`;
+}
+
 export const CHIP_SLOP_Y = 10;
 export function chipSlop(gap: number) {
   const side = Math.max(0, Math.floor(gap / 2));
@@ -212,7 +253,19 @@ export const r = StyleSheet.create({
   railYear: { fontFamily: fonts.display, fontSize: 13, color: colors.silverScreen },
   railLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.15)' },
   railLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.4, color: colors.sepia },
-  railCount: { fontFamily: fonts.body, fontSize: 9, color: colors.fog, opacity: 0.7 },
+  /**
+   * 0.8, not 0.7. Measured against the page ground the old value came out at
+   * 3.75:1 — under the 4.5:1 needed for text this size. 0.79 reaches it; 0.8
+   * is the round number above.
+   */
+  railCount: { fontFamily: fonts.body, fontSize: 9, color: colors.fog, opacity: 0.8 },
+
+  // The rhythm bar — see RoomRail. Indented past the year so the bars line up
+  // with each other rather than with the varying width of "2026".
+  railWrap: { marginTop: 22, marginBottom: 12 },
+  railTight: { marginTop: 0, marginBottom: 0 },
+  rhythm: { height: 2, marginTop: 5, marginLeft: 34, backgroundColor: 'rgba(184,137,26,0.13)' },
+  rhythmFill: { height: 2, backgroundColor: colors.sepia, opacity: 0.5 },
 
   // ══════════════════════════════════════════════════════════════════════════
   // THE FRAME — bone, with the altarpiece's mount board

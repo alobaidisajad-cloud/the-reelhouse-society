@@ -77,18 +77,18 @@ describe('getCinephileStats — the standing shown on a profile', () => {
   };
 
   it('names each rank at its exact threshold', () => {
-    expect(statsFor(0).level).toBe('FIRST REEL');
-    expect(statsFor(1).level).toBe('THE INITIATE');
+    expect(statsFor(0).level).toBe('UNSEATED');
+    expect(statsFor(1).level).toBe('FIRST REEL');
     expect(statsFor(10).level).toBe('THE REGULAR');
-    expect(statsFor(25).level).toBe('THE DEVOTEE');
+    expect(statsFor(25).level).toBe('MIDNIGHT DEVOTEE');
     expect(statsFor(100).level).toBe('THE ORACLE');
   });
 
   it('does not promote one film early', () => {
     // Off-by-one here would show a member a rank they have not reached.
-    expect(statsFor(9).level).toBe('THE INITIATE');
+    expect(statsFor(9).level).toBe('FIRST REEL');
     expect(statsFor(24).level).toBe('THE REGULAR');
-    expect(statsFor(99).level).toBe('THE DEVOTEE');
+    expect(statsFor(99).level).toBe('MIDNIGHT DEVOTEE');
   });
 
   it('counts the real log array', () => {
@@ -110,7 +110,7 @@ describe('getCinephileStats — the standing shown on a profile', () => {
 
   it('an override count wins over the array — used for optimistic display', () => {
     useFilmStore.setState({ logs: [] } as never);
-    expect(useFilmStore.getState().getCinephileStats(42).level).toBe('THE DEVOTEE');
+    expect(useFilmStore.getState().getCinephileStats(42).level).toBe('MIDNIGHT DEVOTEE');
   });
 });
 

@@ -2,6 +2,7 @@ import * as Crypto from 'expo-crypto';
 import { Image } from 'expo-image';
 import { queryClient } from '../../../../lib/queryClient';
 import { supabase } from '../../../../lib/supabase';
+import { standingFor } from '@/src/constants/standing';
 import { colors } from '../../../../theme/theme';
 import type { DomainLog } from '../../../../types';
 import { LOG_SELECT_COLUMNS, mapLogRow, mapLogToDbPayload } from '../../../../utils/mappers';
@@ -651,19 +652,13 @@ export const unmarkWatchedOp = async (set: SetState, get: GetState, filmId: numb
 export const getCinephileStatsOp = (set: SetState, get: GetState, overrideCount?: number) => {
     const logs = get().logs;
         const count = overrideCount ?? logs.length;
-        let level = 'FIRST REEL';
-        let color: string = colors.fog;
-        if (count >= 100) { level = 'THE ORACLE'; color = colors.sepia; }
-        else if (count >= 25) { level = 'THE DEVOTEE'; color = colors.bloodReel; }
-        else if (count >= 10) { level = 'THE REGULAR'; color = colors.flicker; }
-        else if (count >= 1) { level = 'THE INITIATE'; color = colors.bone; }
-        // Progress toward NEXT tier: Initiate=1→10, Regular=10→25, Devotee=25→100, Oracle=100+
-        let progress = 0;
-        if (count >= 100) progress = 100; // Oracle — fully achieved
-        else if (count >= 25) progress = Math.round(((count - 25) / 75) * 100); // Devotee → Oracle
-        else if (count >= 10) progress = Math.round(((count - 10) / 15) * 100); // Regular → Devotee
-        else if (count >= 1) progress = Math.round(((count - 1) / 9) * 100);   // Initiate → Regular
-        return { count, level, color, progress };
+        // One ladder — see src/constants/standing.ts. The thresholds here were
+        // already the right ones (1 / 10 / 25 / 100, matching the badge grid),
+        // but two of the NAMES were this file's alone: THE INITIATE and THE
+        // DEVOTEE appeared nowhere else in the app, so the same member was
+        // called one thing here and another on their own profile.
+        const s = standingFor(count);
+        return { count, level: s.name, color: s.color, progress: s.progress };
 };
 
 export const updateLogOp = async (

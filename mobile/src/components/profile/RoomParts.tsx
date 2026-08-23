@@ -142,21 +142,49 @@ export function RoomChipDivider() {
 // ════════════════════════════════════════════════════════════════════════════
 // A RAIL — a month in the Archive, a shelf in the Vault
 // ════════════════════════════════════════════════════════════════════════════
-export function RoomRail({ lead, label, count, tint }: {
+export function RoomRail({ lead, label, count, tint, weight }: {
   /** The year, set in the display face — or nothing, for a shelf. */
   lead?: string;
   label: string;
-  /** How heavy this month was, or how many discs stand on this shelf. */
+  /**
+   * How heavy this month was, or how many discs stand on this shelf.
+   *
+   * UNDEFINED when the true figure is not knowable — see `completeCount`. The
+   * rail then simply has no number, rather than repeating the count of
+   * whichever rows happened to have loaded.
+   */
   count?: string;
   /** A shelf takes its FORMAT's colour; a month stays brass. */
   tint?: string;
+  /**
+   * 0–1: this month against the member's heaviest, ever.
+   *
+   * A hundred and eighty of these scroll past someone with fifteen years of
+   * viewing, and every one of them looked identical — a month they went three
+   * times a week read exactly like a month they went twice. One 2pt rule turns
+   * a list into a shape you can feel with your thumb.
+   *
+   * Omitted entirely when the counts are not knowable: a rhythm drawn from
+   * partial figures is a prettier lie than a wrong number.
+   */
+  weight?: number;
 }) {
+  const hasWeight = typeof weight === 'number' && weight > 0;
   return (
-    <View style={r.rail} accessibilityRole="header">
-      {!!lead && <Text {...scaledTextProps} style={r.railYear}>{lead}</Text>}
-      <View style={[r.railLine, tint ? { backgroundColor: tint, opacity: 0.45 } : null]} />
-      <Text {...scaledTextProps} style={[r.railLabel, tint ? { color: tint } : null]}>{label}</Text>
-      {!!count && <Text {...scaledTextProps} style={r.railCount}>{count}</Text>}
+    <View style={hasWeight ? r.railWrap : undefined}>
+      <View style={[r.rail, hasWeight && r.railTight]} accessibilityRole="header">
+        {!!lead && <Text {...scaledTextProps} style={r.railYear}>{lead}</Text>}
+        <View style={[r.railLine, tint ? { backgroundColor: tint, opacity: 0.45 } : null]} />
+        <Text {...scaledTextProps} style={[r.railLabel, tint ? { color: tint } : null]}>{label}</Text>
+        {!!count && <Text {...scaledTextProps} style={r.railCount}>{count}</Text>}
+      </View>
+      {hasWeight && (
+        // Decorative only — the count beside it already says the number, so a
+        // screen reader announcing this too would just repeat itself.
+        <View style={r.rhythm} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <View style={[r.rhythmFill, { width: `${Math.max(2, Math.min(100, weight * 100))}%` }]} />
+        </View>
+      )}
     </View>
   );
 }

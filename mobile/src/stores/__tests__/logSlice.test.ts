@@ -257,15 +257,15 @@ describe('logSlice', () => {
     // ── getCinephileStats ──
 
     describe('getCinephileStats', () => {
-        it('should return FIRST REEL for 0 logs', () => {
+        it('should be UNSEATED at 0 logs — FIRST REEL is earned at one', () => {
             const stats = useLogStore.getState().getCinephileStats(0);
-            expect(stats.level).toBe('FIRST REEL');
+            expect(stats.level).toBe('UNSEATED');
             expect(stats.progress).toBe(0);
         });
 
-        it('should return THE INITIATE for 1-9 logs', () => {
+        it('should be FIRST REEL for 1-9 logs, matching the badge', () => {
             const stats = useLogStore.getState().getCinephileStats(5);
-            expect(stats.level).toBe('THE INITIATE');
+            expect(stats.level).toBe('FIRST REEL');
             expect(stats.progress).toBe(Math.round(((5 - 1) / 9) * 100));
         });
 
@@ -274,9 +274,9 @@ describe('logSlice', () => {
             expect(stats.level).toBe('THE REGULAR');
         });
 
-        it('should return THE DEVOTEE for 25-99 logs', () => {
+        it('should be MIDNIGHT DEVOTEE for 25-99 logs, matching the badge', () => {
             const stats = useLogStore.getState().getCinephileStats(50);
-            expect(stats.level).toBe('THE DEVOTEE');
+            expect(stats.level).toBe('MIDNIGHT DEVOTEE');
         });
 
         it('should return THE ORACLE for 100+ logs with 100% progress', () => {
@@ -286,9 +286,9 @@ describe('logSlice', () => {
         });
 
         it('should use exact boundary values correctly', () => {
-            expect(useLogStore.getState().getCinephileStats(1).level).toBe('THE INITIATE');
+            expect(useLogStore.getState().getCinephileStats(1).level).toBe('FIRST REEL');
             expect(useLogStore.getState().getCinephileStats(10).level).toBe('THE REGULAR');
-            expect(useLogStore.getState().getCinephileStats(25).level).toBe('THE DEVOTEE');
+            expect(useLogStore.getState().getCinephileStats(25).level).toBe('MIDNIGHT DEVOTEE');
             expect(useLogStore.getState().getCinephileStats(100).level).toBe('THE ORACLE');
         });
     });

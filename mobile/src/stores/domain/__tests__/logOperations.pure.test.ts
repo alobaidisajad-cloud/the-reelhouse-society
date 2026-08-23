@@ -29,24 +29,24 @@ describe('getCinephileStatsOp', () => {
   const get = (count: number) => (() => ({ logs: Array.from({ length: count }) })) as any;
   const noopSet = (() => {}) as any;
 
-  it('is FIRST REEL with zero progress at 0 logs', () => {
+  it('is UNSEATED with zero progress at 0 logs', () => {
     const stats = getCinephileStatsOp(noopSet, get(0));
-    expect(stats).toMatchObject({ count: 0, level: 'FIRST REEL', progress: 0 });
+    expect(stats).toMatchObject({ count: 0, level: 'UNSEATED', progress: 0 });
   });
 
-  it('is THE INITIATE between 1 and 9 logs, progressing toward Regular', () => {
-    expect(getCinephileStatsOp(noopSet, get(1))).toMatchObject({ level: 'THE INITIATE', progress: 0 });
-    expect(getCinephileStatsOp(noopSet, get(5))).toMatchObject({ level: 'THE INITIATE', progress: 44 });
+  it('is FIRST REEL between 1 and 9 logs, progressing toward Regular', () => {
+    expect(getCinephileStatsOp(noopSet, get(1))).toMatchObject({ level: 'FIRST REEL', progress: 0 });
+    expect(getCinephileStatsOp(noopSet, get(5))).toMatchObject({ level: 'FIRST REEL', progress: 44 });
   });
 
-  it('is THE REGULAR between 10 and 24 logs, progressing toward Devotee', () => {
+  it('is THE REGULAR between 10 and 24 logs, progressing toward Midnight Devotee', () => {
     expect(getCinephileStatsOp(noopSet, get(10))).toMatchObject({ level: 'THE REGULAR', progress: 0 });
     expect(getCinephileStatsOp(noopSet, get(17))).toMatchObject({ level: 'THE REGULAR', progress: 47 });
   });
 
-  it('is THE DEVOTEE between 25 and 99 logs, progressing toward Oracle', () => {
-    expect(getCinephileStatsOp(noopSet, get(25))).toMatchObject({ level: 'THE DEVOTEE', progress: 0 });
-    expect(getCinephileStatsOp(noopSet, get(62))).toMatchObject({ level: 'THE DEVOTEE', progress: 49 });
+  it('is MIDNIGHT DEVOTEE between 25 and 99 logs, progressing toward Oracle', () => {
+    expect(getCinephileStatsOp(noopSet, get(25))).toMatchObject({ level: 'MIDNIGHT DEVOTEE', progress: 0 });
+    expect(getCinephileStatsOp(noopSet, get(62))).toMatchObject({ level: 'MIDNIGHT DEVOTEE', progress: 49 });
   });
 
   it('is THE ORACLE at 100+ logs, fully progressed', () => {

@@ -264,7 +264,9 @@ const s = StyleSheet.create({
    * screen was the largest. Two lines and an ellipsis, at one size, always.
    */
   stackTitle: { fontFamily: fonts.display, fontSize: 13, lineHeight: 17, color: colors.parchment, marginTop: 5 },
-  stackDesc: { fontFamily: fonts.bodyItalic, fontSize: 10.5, lineHeight: 15, color: colors.fog, opacity: 0.75, marginTop: 4 },
+  // 0.8, not 0.75 — measured at 4.16:1 against the page ground, under the
+  // 4.5:1 this size of text needs. 0.79 reaches it; 0.8 is the round number.
+  stackDesc: { fontFamily: fonts.bodyItalic, fontSize: 10.5, lineHeight: 15, color: colors.fog, opacity: 0.8, marginTop: 4 },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rankedBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(184,137,26,0.1)', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.3)' },
   rankedText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1, color: colors.sepia },

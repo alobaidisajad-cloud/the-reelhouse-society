@@ -19,6 +19,7 @@ import type { LogRow } from '../utils/mappers';
 import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, ShelfSort } from '../types';
 import { LEDGER_HIGH_FLOOR } from '../types';
 import { sortAxis, parseCursor, keysetFilter, buildCursor } from '../utils/keysetCursor';
+import type { AnalyticsShape } from '../hooks/useProfileData';
 import { ProfileUserSchema, type ValidatedProfileUser } from '../schemas/profile.schema';
 import { isArchivistPlusTier, isAuteurPlusTier } from '../utils/tier';
 import { buildSearchPattern } from '../utils/searchPattern';
@@ -678,15 +679,14 @@ export const ProfileDataService = {
         signal
       );
       if (!error && data) {
-        return data as {
-          total_logs: number;
-          avg_rating: number;
-          rating_distribution: { rating: number; count: number }[];
-          monthly_activity: { month: string; count: number }[];
-          current_streak: number;
-          longest_streak: number;
-          format_breakdown: { format: string; count: number }[];
-        };
+        const shape = data as AnalyticsShape;
+        // The function refuses a caller who may not see this member by
+        // returning `{ error: 'forbidden' }` rather than throwing. Handing that
+        // object back as if it were data would give every consumer an object
+        // full of `undefined` — and a room that reads `?? 0` would then print
+        // ZERO films for a private member instead of drawing nothing at all.
+        if (shape?.error) return null;
+        return shape;
       }
       logger.info('[ProfileDataService] get_user_analytics RPC unavailable');
     } catch {
@@ -704,13 +704,36 @@ export const ProfileDataService = {
     
     if (!isArchivistPlusTier(targetUser)) return [];
 
+    /**
+     * Bounded by the RANGE THE GRID DRAWS, not by a row count.
+     *
+     * It used to take the most recent 2,000 rows with a comment reading "Max
+     * 2000 rows for 5.5 years of daily viewing" — an assumption of roughly one
+     * film a day. The grid shows 52 weeks (NitrateCalendarGrid: `WEEKS = 52`),
+     * so a member averaging more than about five and a half films a day would
+     * quietly lose the far end of their own year, with nothing on screen to say
+     * so. Rare, but it is exactly the member this app is being built for.
+     *
+     * A range is the honest bound: it asks for what is drawn and nothing else,
+     * which is also LESS data than 2,000 rows for almost everyone.
+     *
+     * The remaining limit is a backstop, not the shape of the answer. Past
+     * roughly 5,000 logs in one year every cell in the grid is already
+     * saturated, so no further row could change a single pixel of it.
+     */
+    const CALENDAR_WEEKS = 52;
+    const from = new Date();
+    from.setDate(from.getDate() - (CALENDAR_WEEKS * 7 + 7));   // a week of slack for timezone edges
+    const fromKey = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-${String(from.getDate()).padStart(2, '0')}`;
+
     const { data, error } = await withAbortSignal(
       supabase.from('logs')
         .select('watched_date, rating, status')
         .eq('user_id', targetUser.id)
         .not('watched_date', 'is', null)
+        .gte('watched_date', fromKey)
         .order('watched_date', { ascending: false })
-        .limit(2000),
+        .limit(5000),
       signal
     );
     if (error) {

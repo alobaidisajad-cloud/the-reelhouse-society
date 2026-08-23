@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog, LedgerRating, WatchlistDecade, ShelfSort } from '@/src/types';
 import { LEDGER_HIGH_FLOOR, decadeOf } from '@/src/types';
+import { standingFor } from '@/src/constants/standing';
 import { ProfileTab } from '@/src/hooks/useProfileData';
 
 import { colors } from '@/src/theme/theme';
@@ -51,6 +52,14 @@ interface UseProfileComputedParams {
   physicalFilter: string | null;
   physicalSort: ShelfSort;
   listsSort: ShelfSort;
+  /**
+   * The TRUE decades of the WHOLE queue, from the server.
+   *
+   * Absent until the migration lands, in which case the derived (partial) list
+   * is used — an incomplete set of filters is a degraded feature; a wrong count
+   * is a lie, and the two get different treatment.
+   */
+  serverDecades?: { decade: number; count: number }[] | null;
 }
 
 /**
@@ -164,7 +173,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     counts, isArchivistPlus, isAuteurPlus, targetUser, serverStreak,
     archiveSieve, ledgerSearch, ledgerRatingFilter,
     watchlistSearch, watchlistSort, watchlistDecade,
-    physicalFilter, physicalSort, listsSort,
+    physicalFilter, physicalSort, listsSort, serverDecades,
   } = params;
 
   // Real-time synchronization for self-profile
@@ -211,11 +220,20 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   // believes they are covered.
   const totalFilms = reconcileCount(counts.logs, displayLogs.length, isSelf);
 
-  // Stats level — matches web's cineStats computation exactly
-  const statsLevel = totalFilms > 50 ? 'THE ORACLE' : totalFilms > 20 ? 'MIDNIGHT DEVOTEE' : totalFilms > 5 ? 'THE REGULAR' : 'FIRST REEL';
-  // crimson (not bloodReel) — the deep stamp red was near-invisible on ink
-  const statsColor = totalFilms > 50 ? colors.sepia : totalFilms > 20 ? colors.crimson : colors.flicker;
-  const statsProgress = (totalFilms % 20) * 5;
+  /**
+   * The member's standing — from the one ladder, not this file's own.
+   *
+   * This used to read `> 5 / > 20 / > 50`, which agreed with neither the badge
+   * grid (1 / 10 / 25 / 100) nor the film store. At sixty films it crowned a
+   * member THE ORACLE while the badge grid beneath showed The Oracle locked.
+   * And `statsProgress` was `(totalFilms % 20) * 5` — a sawtooth unrelated to
+   * any rank, which reset to zero every twenty films and so read EMPTY for a
+   * member with 2,481 of them.
+   */
+  const standing = useMemo(() => standingFor(totalFilms), [totalFilms]);
+  const statsLevel = standing.name;
+  const statsColor = standing.color;
+  const statsProgress = standing.progress;
 
   // Daily streak
   const streak = useMemo(() => {
@@ -317,6 +335,14 @@ export function useProfileComputed(params: UseProfileComputedParams) {
    */
   const decadeCountsRef = useRef<{ decade: number; count: number }[]>([]);
   const watchlistDecadeCounts = useMemo(() => {
+    // THE SERVER'S ANSWER FIRST. Derived from the loaded page, this list was
+    // wrong in the worse of the two possible ways: not just inaccurate counts,
+    // but MISSING CHIPS — a member whose only 1940s film sat on page eight had
+    // no 1940s filter at all and could never reach it. The server counts the
+    // whole queue, so both are fixed together.
+    if (Array.isArray(serverDecades) && serverDecades.length > 0) {
+      return [...serverDecades].sort((a, b) => b.decade - a.decade);
+    }
     if (watchlistDecade !== null) return decadeCountsRef.current;
     const tally: Record<number, number> = {};
     for (const film of displayWatchlist) {
@@ -329,7 +355,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
       .sort((a, b) => b.decade - a.decade);
     decadeCountsRef.current = computed;
     return computed;
-  }, [displayWatchlist, watchlistDecade]);
+  }, [displayWatchlist, watchlistDecade, serverDecades]);
 
   /**
    * Ordering a shelf, and a stack of dossiers.

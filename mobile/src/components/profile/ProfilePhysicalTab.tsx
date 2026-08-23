@@ -11,7 +11,7 @@ import type { ProfileVaultItem, FormatCount, ShelfSort } from '../../types';
 import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { FORMAT_META, shelfRank } from '@/src/constants/formats';
-import { r, posterColumns } from './roomStyles';
+import { r, posterColumns, countLabel } from './roomStyles';
 import { RoomChip, RoomChipDivider, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
 
 /**
@@ -52,6 +52,10 @@ interface ProfilePhysicalTabProps {
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
   tier?: string | null;
+  /** The server reconciled total — the same figure the plate shows. */
+  totalVault?: number;
+  /** TRUE copies per shelf, over the WHOLE collection. Absent = no counts. */
+  vaultFormats?: { format: string; count: number }[] | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   hasMore?: boolean;
@@ -140,6 +144,8 @@ export default React.memo(function ProfilePhysicalTab({
   physicalFiltered,
   ready = true,
   tier,
+  totalVault,
+  vaultFormats,
   onLoadMore,
   isLoadingMore,
   hasMore,
@@ -168,6 +174,39 @@ export default React.memo(function ProfilePhysicalTab({
     borderColor: `rgba(184,137,26,${0.2 + breatheAnim.value * 0.5})`,
     backgroundColor: `rgba(10,8,6,${0.9 + (breatheAnim.value * 0.1)})`,
   }));
+
+  /**
+   * The shelves a member actually owns, and how many stand on each.
+   *
+   * `physicalFormatCounts` derived both the LIST and the COUNTS from whichever
+   * page had loaded. Two separate failures in one: the counts were wrong, and a
+   * member whose only LaserDisc was catalogued two hundred items ago had **no
+   * LaserDisc chip at all** — a filter they could never reach.
+   *
+   * `vault_formats` is computed over the whole collection, so both are fixed at
+   * once. It arrives only after the migration; until then this falls back to
+   * the derived list WITHOUT counts — an incomplete set of filters is a
+   * degraded feature, but a wrong number is a lie, and the two deserve
+   * different treatment.
+   */
+  const shelfChips = useMemo(() => {
+    const real = new Map<string, number>();
+    for (const v of vaultFormats ?? []) {
+      if (v?.format && typeof v.count === 'number') real.set(v.format, v.count);
+    }
+
+    if (real.size > 0) {
+      return Array.from(real.entries())
+        .sort((a, b) => shelfRank(a[0]) - shelfRank(b[0]) || a[0].localeCompare(b[0]))
+        .map(([id, count]) => ({
+          id,
+          label: SHELF_LABEL[id] ?? FORMAT_META[id]?.label ?? id.toUpperCase(),
+          count: count as number | undefined,
+        }));
+    }
+
+    return physicalFormatCounts.map((f: FormatCount) => ({ id: f.id, label: f.label, count: undefined }));
+  }, [vaultFormats, physicalFormatCounts]);
 
   /**
    * The shelves.
@@ -226,10 +265,15 @@ export default React.memo(function ProfilePhysicalTab({
   const renderItem = useCallback(({ item }: { item: VaultListItem }) => {
     if (item.type === 'shelf') {
       const meta = FORMAT_META[item.format];
+      // `item.count` is how many of this shelf's copies have LOADED. The
+      // server knows how many stand on it altogether — prefer that, and say
+      // nothing at all when it has not arrived, rather than a figure that
+      // climbs as the member scrolls.
+      const real = shelfChips.find((c) => c.id === item.format)?.count;
       return (
         <RoomRail
           label={SHELF_LABEL[item.format] ?? (meta?.label ?? item.format).toUpperCase()}
-          count={`${item.count} ${item.count === 1 ? 'COPY' : 'COPIES'}`}
+          count={countLabel(real, 'COPY', 'COPIES')}
           tint={meta?.color}
         />
       );
@@ -245,21 +289,24 @@ export default React.memo(function ProfilePhysicalTab({
         <View style={r.shelfBoard} />
       </View>
     );
-  }, [grid]);
+  }, [grid, shelfChips]);
 
   const ListHeaderComponent = useMemo(() => {
     if (physicalFormatCounts.length === 0) return null;
     return (
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={r.chipScroll} contentContainerStyle={r.chipRow}>
+        {/* `vault.length` was the LOADED count — 50 on first open, whatever
+            had paged in after. `totalVault` is the server's own reconciled
+            figure, the same one printed on the plate above. */}
         <RoomChip
           label="ALL"
-          count={vault.length}
+          count={totalVault}
           on={!physicalFilter}
           onPress={() => setPhysicalFilter(null)}
           gap={8}
-          a11y={`Show the whole vault, ${vault.length} items`}
+          a11y={totalVault !== undefined ? `Show the whole vault, ${totalVault} copies` : 'Show the whole vault'}
         />
-        {physicalFormatCounts.map((f: FormatCount) => (
+        {shelfChips.map((f) => (
           <RoomChip
             key={f.id}
             label={f.label.toUpperCase()}
@@ -267,7 +314,7 @@ export default React.memo(function ProfilePhysicalTab({
             on={physicalFilter === f.id}
             onPress={() => setPhysicalFilter(physicalFilter === f.id ? null : f.id)}
             gap={8}
-            a11y={`Show only ${f.label}, ${f.count} items`}
+            a11y={f.count !== undefined ? `Show only ${f.label}, ${f.count} copies` : `Show only ${f.label}`}
           />
         ))}
         {/* WHICH shelves, then in what ORDER on them — one row, one hairline,
@@ -286,7 +333,7 @@ export default React.memo(function ProfilePhysicalTab({
         ))}
       </ScrollView>
     );
-  }, [physicalFormatCounts, physicalFilter, vault.length, setPhysicalFilter, physicalSort, setPhysicalSort]);
+  }, [shelfChips, physicalFormatCounts.length, physicalFilter, totalVault, setPhysicalFilter, physicalSort, setPhysicalSort]);
 
   const ListEmptyComponent = useMemo(() => {
     if (physicalFiltered.length > 0) return null;

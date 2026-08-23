@@ -11,6 +11,37 @@ import { readCachedCounts, writeCachedCounts } from '@/src/utils/profileCountsCa
 
 export type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
 
+/**
+ * The shape of a member's collection, pre-aggregated by the server.
+ *
+ * ── EVERY FIELD HERE IS ALREADY BEING FETCHED ────────────────────────────────
+ * `fetchAnalyticsSummary` runs on both the self and the visitor path of every
+ * profile load, and the app kept exactly one number out of it. These are the
+ * counts the rooms were computing from whichever page happened to have loaded —
+ * which is why a month heading said 7 films when March held 40, and why a
+ * member's only 1940s film could sit on page eight with no 1940s filter to
+ * reach it.
+ *
+ * `vault_formats` and `watchlist_decades` arrive only once the migration is
+ * applied; until then they are absent and the rooms simply draw no counts.
+ */
+export interface AnalyticsShape {
+  total_logs?: number;
+  avg_rating?: number | string | null;
+  rating_distribution?: { rating: number; count: number }[] | null;
+  /** The member's WHOLE history by month, `YYYY-MM`. */
+  monthly_activity?: { month: string; count: number }[] | null;
+  current_streak?: number | null;
+  longest_streak?: number | null;
+  /** `logs.format` — how a film was WATCHED. NOT the Vault. */
+  format_breakdown?: { format: string; count: number }[] | null;
+  /** `physical_archive.formats` — what the member OWNS. This is the Vault. */
+  vault_formats?: { format: string; count: number }[] | null;
+  watchlist_decades?: { decade: number; count: number }[] | null;
+  /** Present instead of the data when the viewer may not see this member. */
+  error?: string;
+}
+
 // ProfileUser now extends ValidatedProfileUser from the Zod schema.
 // This ensures the hook's interface stays in sync with the service boundary.
 export type ProfileUser = ValidatedProfileUser;
@@ -50,6 +81,18 @@ export interface ProfileState {
   counts: { logs: number; ledger: number; watchlist: number; vault: number; lists: number; followers?: number; following?: number };
   tabDataLoaded: Record<string, boolean>;
   serverStreak: number | null;
+  /**
+   * The whole pre-aggregated summary — month counts, format counts, rating
+   * spread, streaks, average mark — fetched on EVERY profile load and, until
+   * now, discarded except for one field. Real at any collection size, roughly
+   * 2KB, one round trip.
+   *
+   * Null when the RPC is unavailable or the viewer may not see this member, and
+   * every consumer is required to fall SILENT rather than guess: a count that
+   * cannot be known is not drawn at all. That rule is what makes this safe to
+   * wire up before the migration is applied.
+   */
+  analyticsShape: AnalyticsShape | null;
   activeFilters: {
     ledger?: { search?: string, rating?: LedgerRating, hasRatingOrReview?: boolean };
     watchlist?: { search?: string, sort?: ShelfSort, decade?: WatchlistDecade };
@@ -74,7 +117,7 @@ export type ProfileAction =
   | { type: 'SET_VAULT_PAGE'; items: ProfileVaultItem[]; cursor: string | null; append?: boolean }
   | { type: 'SET_LISTS_PAGE'; items: ProfileList[]; cursor: string | null; append?: boolean }
   | { type: 'SET_LOADING_MORE'; key: string; value: boolean }
-  | { type: 'USER_DATA_LOADED'; user: ProfileUser; counts: ProfileState['counts']; serverStreak: number | null; logs?: ProfileLog[]; logsCursor?: string | null }
+  | { type: 'USER_DATA_LOADED'; user: ProfileUser; counts: ProfileState['counts']; serverStreak: number | null; analyticsShape?: AnalyticsShape | null; logs?: ProfileLog[]; logsCursor?: string | null }
   | { type: 'SET_ACTIVE_FILTERS'; tab: 'archive' | 'ledger' | 'watchlist' | 'physical' | 'lists'; filters: any }
   | { type: 'RESET_STATE' };
 
@@ -108,6 +151,7 @@ export const initialState: ProfileState = {
   counts: { logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0 },
   tabDataLoaded: {},
   serverStreak: null,
+  analyticsShape: null,
   activeFilters: {
     archive: { status: 'all' },
     ledger: { search: '', rating: 'all', hasRatingOrReview: true },
@@ -186,6 +230,7 @@ export function profileReducer(state: ProfileState, action: ProfileAction): Prof
         targetUser: action.user,
         counts: action.counts,
         serverStreak: action.serverStreak,
+        analyticsShape: action.analyticsShape ?? state.analyticsShape,
         mainLogs: action.logs ?? state.mainLogs,
         archiveLogs: hasArchiveFilters ? state.archiveLogs : (action.logs ?? state.archiveLogs),
         ledgerLogs: hasLedgerFilters ? state.ledgerLogs : (action.logs ?? state.ledgerLogs),
@@ -323,7 +368,7 @@ export function useProfileData({
         // instead of counting the 150-entry window the film store persists.
         writeCachedCounts(typedProfile.id, countsResult);
         // T2-01: Single dispatch replaces 3 separate setState calls
-        dispatch({ type: 'USER_DATA_LOADED', user: typedProfile, counts: countsResult, serverStreak: analyticsSummary?.current_streak ?? null });
+        dispatch({ type: 'USER_DATA_LOADED', user: typedProfile, counts: countsResult, serverStreak: analyticsSummary?.current_streak ?? null, analyticsShape: analyticsSummary ?? null });
 
         // Background refresh: fetch fresh logs without blocking the spinner.
         // fetchLogs() has its own _fetchingLogs mutex so this is safe.
@@ -347,6 +392,7 @@ export function useProfileData({
         user: typedProfile,
         counts: countsResult,
         serverStreak: analyticsSummary?.current_streak ?? null,
+        analyticsShape: analyticsSummary ?? null,
         logs: result.items,
         logsCursor: result.nextCursor,
       });
@@ -585,7 +631,7 @@ export function useProfileData({
       dispatch({ type: 'SET_USER', payload: u });
     },
     loading: state.loading, error: state.error, refreshing: state.refreshing, setRefreshing: (v: boolean) => dispatch({ type: 'SET_REFRESHING', payload: v }),
-    mainLogs: state.mainLogs, archiveLogs: state.archiveLogs, ledgerLogs: state.ledgerLogs, analyticsLogs: state.analyticsLogs, calendarData: state.calendarData, serverAnalytics: state.serverAnalytics, serverStreak: state.serverStreak, watchlist: state.watchlist, vault: state.vault, lists: state.lists,
+    mainLogs: state.mainLogs, archiveLogs: state.archiveLogs, ledgerLogs: state.ledgerLogs, analyticsLogs: state.analyticsLogs, calendarData: state.calendarData, serverAnalytics: state.serverAnalytics, serverStreak: state.serverStreak, analyticsShape: state.analyticsShape, watchlist: state.watchlist, vault: state.vault, lists: state.lists,
     hasMoreMainLogs: state.hasMoreMainLogs, hasMoreArchiveLogs: state.hasMoreArchiveLogs, hasMoreLedgerLogs: state.hasMoreLedgerLogs, hasMoreWatchlist: state.hasMoreWatchlist, hasMoreVault: state.hasMoreVault, hasMoreLists: state.hasMoreLists,
     isLoadingMore: state.isLoadingMore,
     counts: state.counts, tabDataLoaded: state.tabDataLoaded, setTabDataLoaded: (v: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => {

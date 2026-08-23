@@ -14,7 +14,7 @@ import type { ProfileLog, HalfLifeEntry, LedgerRating } from '../../types';
 import { LEDGER_HIGH_FLOOR } from '../../types';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
-import { r, rtlText, EMBER_REST, EMBER_BEATS } from './roomStyles';
+import { r, rtlText, EMBER_REST, EMBER_BEATS, completeCount, countLabel } from './roomStyles';
 import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
 
 /**
@@ -62,6 +62,10 @@ interface ProfileLedgerTabProps {
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
   tier?: string | null;
+  /** TRUE entries-per-month from the server. Absent = draw no counts. */
+  monthCounts?: { month: string; count: number }[] | null;
+  /** TRUE films-per-rating from the server, for the chips. */
+  ratingCounts?: { rating: number; count: number }[] | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   isSelf?: boolean;
@@ -71,7 +75,7 @@ interface ProfileLedgerTabProps {
 }
 
 type LedgerItem =
-  | { type: 'header'; title: string; lead: string; count: string }
+  | { type: 'header'; title: string; lead: string; count?: string; weight?: number }
   | { type: 'entry'; log: ProfileLog };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -216,6 +220,8 @@ export default function ProfileLedgerTab({
   groupByMonth,
   ready = true,
   tier,
+  monthCounts,
+  ratingCounts,
   onLoadMore,
   isLoadingMore,
   isSelf,
@@ -278,6 +284,30 @@ export default function ProfileLedgerTab({
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
   }, []);
 
+  /**
+   * The server's month counts cover EVERY log — the Ledger holds only the ones
+   * that were rated or written about, so its months are a subset. Rather than
+   * state a number that counts films this room does not show, the Ledger takes
+   * no month counts at all and keeps only the rhythm's sibling: the heading.
+   *
+   * The rating chips are different — `rating_distribution` is exactly the
+   * question those chips ask, so those counts ARE real, and they are counts the
+   * chips never had.
+   */
+  const ratings = useMemo(() => {
+    const by = new Map<number, number>();
+    for (const rc of ratingCounts ?? []) {
+      if (typeof rc?.rating === 'number' && typeof rc?.count === 'number') by.set(rc.rating, rc.count);
+    }
+    return by;
+  }, [ratingCounts]);
+
+  /** Sum of several rungs — undefined if we know nothing, never a partial sum. */
+  const ratingTotal = useCallback((marks: number[]): number | undefined => {
+    if (ratings.size === 0) return undefined;
+    return marks.reduce((sum, m) => sum + (ratings.get(m) ?? 0), 0);
+  }, [ratings]);
+
   const flashData = useMemo(() => {
     if (ledgerFiltered.length === 0) return [];
     const grouped = groupByMonth(ledgerFiltered);
@@ -289,7 +319,18 @@ export default function ProfileLedgerTab({
         type: 'header',
         title: cut > 0 ? month.slice(0, cut) : month,
         lead: cut > 0 ? month.slice(cut + 1) : '',
-        count: `${items.length} ${items.length === 1 ? 'ENTRY' : 'ENTRIES'}`,
+        // NO COUNT, deliberately.
+        //
+        // `items.length` counted the loaded page, so a month holding forty
+        // entries announced seven and then climbed as you scrolled. And the
+        // server's month figures cannot replace it: they count EVERY log in
+        // March, while this room shows only the ones that were rated or written
+        // about. Stating either number here would describe something other than
+        // what is underneath the heading.
+        //
+        // The Archive carries the real counts; this room carries the writing.
+        // A month name on its own is the honest form.
+        count: undefined,
       });
       for (const log of items) result.push({ type: 'entry', log });
     });
@@ -316,7 +357,7 @@ export default function ProfileLedgerTab({
 
   const renderItem = useCallback(({ item }: { item: LedgerItem }) => {
     if (item.type === 'header') {
-      return <RoomRail lead={item.lead} label={item.title} count={item.count} />;
+      return <RoomRail lead={item.lead} label={item.title} count={item.count} weight={item.weight} />;
     }
     const log = item.log;
     return (
@@ -361,6 +402,15 @@ export default function ProfileLedgerTab({
               onPress={() => { setLedgerRatingFilter(v); }}
               gap={8}
               a11y={ratingSpoken(v)}
+              /* These chips carried no counts at all. `rating_distribution` is
+                 exactly the question they ask, computed over every log — so
+                 unlike the month headings, this one the server CAN answer.
+                 `4+` sums the top two rungs; ALL is the room's own total. */
+              count={
+                v === 'all' ? undefined
+                  : v === 'high' ? ratingTotal([4, 5])
+                  : ratings.get(v)
+              }
             >
               {typeof v === 'number' ? <ReelRating rating={v} size={8} /> : undefined}
             </RoomChip>

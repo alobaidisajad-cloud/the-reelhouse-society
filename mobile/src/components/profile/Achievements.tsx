@@ -5,6 +5,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import type { ProfileAnalyticsPayload } from './NoirPassport';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
+import { rungAt } from '@/src/constants/standing';
 
 interface AchievementLog {
     rating: number;
@@ -22,34 +23,70 @@ interface AchievementLog {
  */
 type Stamps = ProfileAnalyticsPayload['stamps'];
 
-const BADGES = [
+/**
+ * How many films this member has actually logged.
+ *
+ * ── THE BUG THIS CLOSES ──────────────────────────────────────────────────────
+ * The count badges read `s?.total_logs ?? logs.length`. Both halves fail for
+ * the person most likely to be looking:
+ *
+ *   • `stamps` only arrives for AUTEUR profiles — the client refuses to fetch
+ *     it for anyone else.
+ *   • `logs` for a VISITOR to a non-Auteur profile is the 50-row page that
+ *     happened to load, because the full history is only downloaded for
+ *     yourself or for an Auteur.
+ *
+ * So a member with 300 films saw their own honours correctly and every visitor
+ * saw THE ORACLE — LOCKED. Their record was wrong to everyone but themselves.
+ *
+ * `reconciled` is `totalFilms`: the server's own count, fetched for EVERY
+ * profile on every load, already reconciled against the local store, and
+ * already the number printed at the top of the page. Preferring it means the
+ * badge grid and the film count above it can never disagree — which was the
+ * other half of the same defect.
+ */
+function filmCount(logs: AchievementLog[], stamps?: Stamps, reconciled?: number): number {
+  if (typeof reconciled === 'number' && reconciled > 0) return reconciled;
+  if (typeof stamps?.total_logs === 'number') return stamps.total_logs;
+  return logs.length;
+}
+
+interface Badge {
+  id: string;
+  title: string;
+  desc: string;
+  glyph: string;
+  check: (logs: AchievementLog[], s?: Stamps, total?: number) => boolean;
+}
+
+const BADGES: Badge[] = [
   {
     id: 'first-reel',
     title: 'FIRST REEL',
     desc: 'Log your first film',
     glyph: '✦',
-    check: (logs: AchievementLog[], s?: Stamps) => (s?.total_logs ?? logs.length) >= 1,
+    check: (logs, s, total) => filmCount(logs, s, total) >= rungAt('FIRST REEL'),
   },
   {
     id: 'the-regular',
     title: 'THE REGULAR',
     desc: 'Log 10 films',
     glyph: '❖',
-    check: (logs: AchievementLog[], s?: Stamps) => (s?.total_logs ?? logs.length) >= 10,
+    check: (logs, s, total) => filmCount(logs, s, total) >= rungAt('THE REGULAR'),
   },
   {
     id: 'midnight-devotee',
     title: 'MIDNIGHT DEVOTEE',
     desc: 'Log 25 films',
     glyph: '◆',
-    check: (logs: AchievementLog[], s?: Stamps) => (s?.total_logs ?? logs.length) >= 25,
+    check: (logs, s, total) => filmCount(logs, s, total) >= rungAt('MIDNIGHT DEVOTEE'),
   },
   {
     id: 'the-oracle',
     title: 'THE ORACLE',
     desc: 'Log 100 films',
     glyph: '◈',
-    check: (logs: AchievementLog[], s?: Stamps) => (s?.total_logs ?? logs.length) >= 100,
+    check: (logs, s, total) => filmCount(logs, s, total) >= rungAt('THE ORACLE'),
   },
   {
     id: 'the-connoisseur',
@@ -122,11 +159,11 @@ const BADGES = [
   },
 ];
 
-export function Achievements({ logs, analytics }: { logs: AchievementLog[]; analytics?: ProfileAnalyticsPayload | null }) {
+export function Achievements({ logs, analytics, totalFilms }: { logs: AchievementLog[]; analytics?: ProfileAnalyticsPayload | null; totalFilms?: number }) {
   const stamps = analytics?.stamps;
   const earned = useMemo(() =>
-    BADGES.map(b => ({ ...b, unlocked: b.check(logs, stamps) })),
-    [logs, stamps]
+    BADGES.map(b => ({ ...b, unlocked: b.check(logs, stamps, totalFilms) })),
+    [logs, stamps, totalFilms]
   );
 
   const unlockedCount = earned.filter(b => b.unlocked).length;

@@ -10,7 +10,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Eas
 import VaultLock from './VaultLock';
 import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
-import { r, posterColumns } from './roomStyles';
+import { r, posterColumns, completeCount, countLabel } from './roomStyles';
 import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
 
 /**
@@ -34,6 +34,8 @@ interface ProfileArchiveTabProps {
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
   tier?: string | null;
+  /** The TRUE films-per-month, from the server. Absent = draw no counts. */
+  monthCounts?: { month: string; count: number }[] | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   refreshing?: boolean;
@@ -42,8 +44,13 @@ interface ProfileArchiveTabProps {
 }
 
 type ArchiveItem =
-  | { type: 'header'; title: string; lead: string; count: string }
+  | { type: 'header'; title: string; lead: string; count?: string; weight?: number }
   | { type: 'row'; data: ProfileLog[]; id: string };
+
+const MONTH_INDEX: Record<string, string> = {
+  JANUARY: '01', FEBRUARY: '02', MARCH: '03', APRIL: '04', MAY: '05', JUNE: '06',
+  JULY: '07', AUGUST: '08', SEPTEMBER: '09', OCTOBER: '10', NOVEMBER: '11', DECEMBER: '12',
+};
 
 const SIEVES = [
   { id: 'all', label: 'ALL' },
@@ -62,6 +69,7 @@ export default function ProfileArchiveTab({
   groupByMonth,
   ready = true,
   tier,
+  monthCounts,
   onLoadMore,
   isLoadingMore,
   refreshing = false,
@@ -104,6 +112,32 @@ export default function ProfileArchiveTab({
     setUnlocked(true);
   }, []);
 
+  /**
+   * The TRUE size of each month, and how heavy it was.
+   *
+   * `items.length` counted whatever had loaded — the app pages fifty rows at a
+   * time, so March said 7 when it held 40, and the number climbed as you
+   * scrolled. The server sends the real shape of the whole history on every
+   * profile load; it was being thrown away.
+   *
+   * Under a status filter the server's figures cannot speak for what is on
+   * screen (it counted every film in March, not every ABANDONED film in March),
+   * so `serverKnows` goes false and both the count and the rhythm disappear.
+   * A heading with no number is honest. A wrong one is not.
+   */
+  const months = useMemo(() => {
+    const by = new Map<string, number>();
+    let heaviest = 0;
+    for (const m of monthCounts ?? []) {
+      if (!m?.month || typeof m.count !== 'number') continue;
+      by.set(m.month, m.count);
+      if (m.count > heaviest) heaviest = m.count;
+    }
+    return { by, heaviest };
+  }, [monthCounts]);
+
+  const serverKnows = archiveSieve === 'all' && months.by.size > 0;
+
   const flashData = useMemo(() => {
     if (archiveFiltered.length === 0) return [];
     const grouped = groupByMonth(archiveFiltered);
@@ -115,11 +149,20 @@ export default function ProfileArchiveTab({
       // not a heading. Split from the END so a month name can never be
       // mistaken for the year.
       const cut = month.lastIndexOf(' ');
+      const name = cut > 0 ? month.slice(0, cut) : month;
+      const year = cut > 0 ? month.slice(cut + 1) : '';
+      // The server keys months as `YYYY-MM`; this room groups them by name.
+      // Rebuilding the key here rather than anywhere else keeps the two forms
+      // adjacent, because a silent mismatch would show every month as unknown.
+      const key = year && MONTH_INDEX[name] ? `${year}-${MONTH_INDEX[name]}` : '';
+      const real = completeCount({ count: months.by.get(key) ?? -1 }, serverKnows);
+
       result.push({
         type: 'header',
-        title: cut > 0 ? month.slice(0, cut) : month,
-        lead: cut > 0 ? month.slice(cut + 1) : '',
-        count: `${items.length} ${items.length === 1 ? 'FILM' : 'FILMS'}`,
+        title: name,
+        lead: year,
+        count: countLabel(real, 'FILM', 'FILMS'),
+        weight: real !== undefined && months.heaviest > 0 ? real / months.heaviest : undefined,
       });
       for (let i = 0; i < items.length; i += 4) {
         result.push({
@@ -131,11 +174,11 @@ export default function ProfileArchiveTab({
     });
 
     return result;
-  }, [archiveFiltered, groupByMonth]);
+  }, [archiveFiltered, groupByMonth, months, serverKnows]);
 
   const renderItem = useCallback(({ item }: { item: ArchiveItem }) => {
     if (item.type === 'header') {
-      return <RoomRail lead={item.lead} label={item.title} count={item.count} />;
+      return <RoomRail lead={item.lead} label={item.title} count={item.count} weight={item.weight} />;
     }
     return (
       <View style={[r.gridRow, { gap: grid.gap, marginBottom: 12 }]}>
