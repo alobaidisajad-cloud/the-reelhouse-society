@@ -56,6 +56,8 @@ CREATE OR REPLACE FUNCTION public.get_user_analytics(p_user_id uuid)
 AS $function$
 DECLARE
   result JSON;
+  v_vault JSON := '[]'::json;
+  v_decades JSON := '[]'::json;
 BEGIN
   -- THE GATE. The same one `get_profile_counts` and
   -- `get_public_profile_analytics` already use, so all three finally agree on
@@ -69,6 +71,75 @@ BEGIN
   IF NOT public.can_view_user_data(p_user_id) THEN
     RETURN json_build_object('error', 'forbidden');
   END IF;
+
+  -- ══════════════════════════════════════════════════════════════════════════
+  -- THE TWO NEW FIELDS, COMPUTED WHERE THEY CANNOT TAKE THE REST DOWN
+  -- ══════════════════════════════════════════════════════════════════════════
+  -- These are the only two expressions in this function that touch columns
+  -- nothing here has read before, and a failure in EITHER would abort the whole
+  -- payload — including `current_streak`, which is the one field the build
+  -- currently on TestFlight reads. One bad row would take analytics off every
+  -- profile.
+  --
+  -- ⚠️ AND `check_function_bodies` DOES NOT PROTECT AGAINST THIS. Proved on
+  -- PostgreSQL 18: with the setting ON, `CREATE FUNCTION` accepted a body that
+  -- unnested a plain `text` column, and accepted one referencing a column that
+  -- does not exist at all. Postgres validates plpgsql SYNTAX at creation; the
+  -- SQL inside is parsed at first EXECUTION. So "it would fail loudly when you
+  -- run the migration" is false — it would fail quietly, later, in front of a
+  -- member.
+  --
+  -- Falling back to an empty array is not hiding a fault: an empty array is
+  -- exactly what the rooms already treat as "the server did not answer", and
+  -- they respond by drawing no counts at all. The designed degradation.
+  BEGIN
+    SELECT COALESCE(json_agg(row_to_json(vf)), '[]'::json) INTO v_vault
+    FROM (
+      -- A copy is counted on EVERY shelf it belongs to, because `formats` is an
+      -- array and a Criterion Blu-ray genuinely stands on two. That is exactly
+      -- what the Vault room draws, so the chip and the shelf agree by
+      -- construction — and it means these counts SUM TO MORE than vault_count,
+      -- deliberately: they answer "how many on this shelf", not "how many discs".
+      --
+      -- LEFT JOIN LATERAL, not a plain unnest: unnesting an empty array yields
+      -- no rows, so every disc with no format recorded would vanish from a
+      -- member's own vault without trace. NULLIF collapses the empty array to
+      -- NULL, the LEFT JOIN keeps the row, and it lands on 'unfiled' — the shelf
+      -- the room already draws for exactly these.
+      SELECT COALESCE(f, 'unfiled') AS format, COUNT(*) AS count
+      FROM physical_archive pa
+      LEFT JOIN LATERAL unnest(NULLIF(pa.formats, '{}')) AS f ON TRUE
+      WHERE pa.user_id = p_user_id
+      GROUP BY 1
+      ORDER BY count DESC
+    ) vf;
+  EXCEPTION WHEN OTHERS THEN
+    v_vault := '[]'::json;
+  END;
+
+  BEGIN
+    SELECT COALESCE(json_agg(row_to_json(wd)), '[]'::json) INTO v_decades
+    FROM (
+      -- ⚠️ `{1,4}`, NOT `+`. A year is four digits; `^\d+$` also accepts
+      -- '12345678901234567890', and `::int` on that raises 22003 "out of range
+      -- for type integer" — which without this block would abort the entire
+      -- payload. Measured, not assumed: the unbounded pattern matches that
+      -- string and the cast does raise.
+      --
+      -- The regex is needed at all because the sibling function guards
+      -- `logs.year` the same way, which says the column has held non-numeric
+      -- values.
+      SELECT ((year::text)::int / 10) * 10 AS decade, COUNT(*) AS count
+      FROM watchlists
+      WHERE user_id = p_user_id
+        AND year::text ~ '^\d{1,4}$'
+        AND (year::text)::int > 0
+      GROUP BY 1
+      ORDER BY 1 DESC
+    ) wd;
+  EXCEPTION WHEN OTHERS THEN
+    v_decades := '[]'::json;
+  END;
 
   SELECT json_build_object(
     'total_logs', (
@@ -189,50 +260,9 @@ BEGIN
       ) fb
     ),
 
-    -- NEW — the Vault's actual shelves, from the actual table.
-    --
-    -- A copy is counted on EVERY shelf it belongs to, because `formats` is an
-    -- array and a Criterion Blu-ray genuinely stands on two. That is exactly
-    -- what the Vault room draws, so the chip and the shelf agree by
-    -- construction. It also means these counts SUM TO MORE than vault_count,
-    -- deliberately: they answer "how many on this shelf", not "how many discs".
-    --
-    -- LEFT JOIN LATERAL, not a plain unnest: an unnest of an empty array
-    -- produces no rows at all, so every disc with no format recorded would
-    -- vanish from a member's own vault without trace. NULLIF collapses the
-    -- empty array to NULL, the LEFT JOIN keeps the row, and it lands on
-    -- 'unfiled' — the shelf the room already draws for exactly these.
-    'vault_formats', (
-      SELECT COALESCE(json_agg(row_to_json(vf)), '[]'::json)
-      FROM (
-        SELECT COALESCE(f, 'unfiled') AS format, COUNT(*) AS count
-        FROM physical_archive pa
-        LEFT JOIN LATERAL unnest(NULLIF(pa.formats, '{}')) AS f ON TRUE
-        WHERE pa.user_id = p_user_id
-        GROUP BY 1
-        ORDER BY count DESC
-      ) vf
-    ),
-
-    -- NEW — every decade the member's queue actually spans.
-    --
-    -- The regex guard is not defensive padding: `get_public_profile_analytics`
-    -- already guards `logs.year` the same way, which says the column has held
-    -- non-numeric values. A bare `::int` would raise 22P02 and take the WHOLE
-    -- payload down — including current_streak, which the shipped app reads.
-    -- One malformed year would have broken the streak for everyone.
-    'watchlist_decades', (
-      SELECT COALESCE(json_agg(row_to_json(wd)), '[]'::json)
-      FROM (
-        SELECT ((year::text)::int / 10) * 10 AS decade, COUNT(*) AS count
-        FROM watchlists
-        WHERE user_id = p_user_id
-          AND year::text ~ '^\d+$'
-          AND (year::text)::int > 0
-        GROUP BY 1
-        ORDER BY 1 DESC
-      ) wd
-    )
+    -- The two computed above, where a failure could not reach the rest.
+    'vault_formats', v_vault,
+    'watchlist_decades', v_decades
   ) INTO result;
 
   RETURN result;
