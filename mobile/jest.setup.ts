@@ -349,10 +349,35 @@ jest.mock('react-native-reanimated', () => {
     // a component reaching for one nobody had needed yet — .easing() on a
     // Fade — threw the moment a test rendered it. The only reason that was
     // survivable is that the component using it had never been mounted.
-    ...Object.fromEntries(['FadeIn', 'FadeOut', 'FadeInUp', 'FadeOutUp', 'FadeInDown', 'FadeOutDown', 'SlideInRight', 'SlideOutLeft', 'SlideInLeft', 'SlideOutRight', 'Layout', 'LinearTransition'].map(name => {
-      const builder: any = new Proxy({}, { get: () => jest.fn(() => builder) });
-      return [name, builder];
-    })),
+    //
+    // The MODIFIERS were made chainable after being hand-listed. The BUILDER
+    // NAMES stayed a hand list, which is the same lesson one level up, and it
+    // bit exactly as you would expect: `FadeInRight` was not on it, so
+    // CinematicInsights — a component that has been in the app for months —
+    // could not be rendered by a test at all. `FadeInRight.delay is undefined`
+    // reads like a broken component, so the natural response is to stop writing
+    // the test rather than to fix the harness.
+    //
+    // Reanimated's builders follow a closed naming scheme, so generate it.
+    // Names the real library lacks are harmless here — a mock that offers an
+    // unused builder costs nothing, while a missing one silently costs a test.
+    // `tsc` is what catches a genuinely wrong import name.
+    ...Object.fromEntries((() => {
+      const names = ['Layout', 'LinearTransition', 'CurvedTransition', 'FadingTransition',
+        'SequencedTransition', 'JumpingTransition', 'EntryExitTransition'];
+      for (const family of ['Fade', 'Slide', 'Zoom', 'Bounce', 'Flip', 'Light',
+        'Pinwheel', 'Roll', 'Rotate', 'Stretch']) {
+        for (const dir of ['In', 'Out']) {
+          for (const edge of ['', 'Up', 'Down', 'Left', 'Right']) {
+            names.push(`${family}${dir}${edge}`);
+          }
+        }
+      }
+      return names.map(name => {
+        const builder: any = new Proxy({}, { get: () => jest.fn(() => builder) });
+        return [name, builder];
+      });
+    })()),
     cancelAnimation: jest.fn(),
     // scrollBridge.ts calls makeMutable(0) at MODULE load, so without this any
     // test that so much as imports TopNavBar threw before rendering a line.
@@ -398,15 +423,45 @@ jest.mock('./src/utils/imagePrefetcher', () => ({
     prefetchImage: jest.fn(),
   },
 }));
-jest.mock('./src/lib/tmdb', () => ({
-  tmdb: {
-    trending: jest.fn().mockResolvedValue({ results: [] }),
-    search: jest.fn().mockResolvedValue({ results: [] }),
-    movie: jest.fn().mockResolvedValue({}),
-    poster: jest.fn((path: string, size?: string) => path ? `https://image.tmdb.org/t/p/${size || 'w500'}${path}` : null),
-    backdrop: jest.fn((path: string, size?: string) => path ? `https://image.tmdb.org/t/p/${size || 'original'}${path}` : null),
-  },
-}));
+// The same hand-list problem as the reanimated builders above: this mock had
+// two of the real module's SIX pure URL builders, so a component reaching for
+// `tmdb.profile()` — the one that draws the faces in CinematicInsights — died
+// with "tmdb.profile is not a function" the moment a test rendered it. The URL
+// builders are pure string functions, so the mock implements them for real
+// rather than stubbing them; tmdbMockCoverage.test.ts re-derives the set the
+// app calls and fails if this falls behind again.
+jest.mock('./src/lib/tmdb', () => {
+  const IMG = 'https://image.tmdb.org/t/p';
+  return {
+    tmdb: {
+      // Each stub resolves to the SAME fallback the real module returns when a
+      // request fails, so a component rendered here behaves exactly as it does
+      // when TMDB is unreachable — a defined state the app already handles,
+      // rather than a shape invented for the test.
+      trending: jest.fn().mockResolvedValue({ results: [] }),
+      search: jest.fn().mockResolvedValue({ results: [] }),
+      movie: jest.fn().mockResolvedValue({}),
+      canon: jest.fn().mockResolvedValue({ results: [] }),
+      discover: jest.fn().mockResolvedValue({ results: [] }),
+      detail: jest.fn().mockResolvedValue(null),
+      person: jest.fn().mockResolvedValue(null),
+      personCredits: jest.fn().mockResolvedValue(null),
+      movieImages: jest.fn().mockResolvedValue({ posters: [], backdrops: [], logos: [] }),
+      // Synchronous in the real module — a cache peek, not a request. Returning
+      // a promise here would make `peekDetail(id)?.title` a truthy object.
+      peekDetail: jest.fn(() => undefined),
+      // poster/backdrop return `null` where the real module returns `undefined`.
+      // Kept as-is deliberately: tests have been asserting against it for a long
+      // time, and both are falsy everywhere the app checks them.
+      poster: jest.fn((path: string, size?: string) => path ? `${IMG}/${size || 'w500'}${path}` : null),
+      backdrop: jest.fn((path: string, size?: string) => path ? `${IMG}/${size || 'original'}${path}` : null),
+      profile: jest.fn((path?: string | null, size = 'w185') => path ? `${IMG}/${size}${path}` : undefined),
+      logo: jest.fn((path?: string | null, size = 'w45') => path ? `${IMG}/${size}${path}` : undefined),
+      posterThumb: jest.fn((path?: string | null) => path ? `${IMG}/w92${path}` : undefined),
+      youtubeThumbnail: jest.fn((key: string) => `https://img.youtube.com/vi/${key}/hqdefault.jpg`),
+    },
+  };
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock expo-notifications
