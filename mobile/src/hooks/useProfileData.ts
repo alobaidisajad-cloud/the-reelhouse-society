@@ -8,6 +8,7 @@ import { useSocialStore } from '@/src/stores/followStore';
 import { useAuthStore } from '@/src/stores/auth';
 import { isArchivistPlusTier } from '@/src/utils/tier';
 import { readCachedCounts, writeCachedCounts } from '@/src/utils/profileCountsCache';
+import type { TasteProfile } from '@/src/constants/taste';
 
 export type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
 
@@ -81,6 +82,8 @@ export interface ProfileState {
   counts: { logs: number; ledger: number; watchlist: number; vault: number; lists: number; followers?: number; following?: number };
   tabDataLoaded: Record<string, boolean>;
   serverStreak: number | null;
+  /** Genres, actors and directors over the WHOLE archive. Null = not read. */
+  taste: TasteProfile | null;
   /**
    * The whole pre-aggregated summary — month counts, format counts, rating
    * spread, streaks, average mark — fetched on EVERY profile load and, until
@@ -112,6 +115,7 @@ export type ProfileAction =
   | { type: 'SET_ANALYTICS'; payload: ProfileLog[] }
   | { type: 'SET_CALENDAR_DATA'; payload: { watchedDate: string; rating: number; status: string }[] }
   | { type: 'SET_SERVER_ANALYTICS'; payload: any }
+  | { type: 'SET_TASTE'; payload: TasteProfile | null }
   | { type: 'SET_LOGS_PAGE'; tab: 'main' | 'archive' | 'ledger'; items: ProfileLog[]; cursor: string | null; append?: boolean }
   | { type: 'SET_WATCHLIST_PAGE'; items: ProfileWatchlistItem[]; cursor: string | null; append?: boolean }
   | { type: 'SET_VAULT_PAGE'; items: ProfileVaultItem[]; cursor: string | null; append?: boolean }
@@ -151,6 +155,7 @@ export const initialState: ProfileState = {
   counts: { logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0 },
   tabDataLoaded: {},
   serverStreak: null,
+  taste: null,
   analyticsShape: null,
   activeFilters: {
     archive: { status: 'all' },
@@ -184,6 +189,7 @@ export function profileReducer(state: ProfileState, action: ProfileAction): Prof
     case 'SET_ANALYTICS': return { ...state, analyticsLogs: action.payload };
     case 'SET_CALENDAR_DATA': return { ...state, calendarData: action.payload };
     case 'SET_SERVER_ANALYTICS': return { ...state, serverAnalytics: action.payload };
+    case 'SET_TASTE': return { ...state, taste: action.payload };
     case 'SET_LOGS_PAGE': {
       if (action.tab === 'main') {
         const items = action.append ? (() => { const ids = new Set(state.mainLogs.map(p => p.id)); return [...state.mainLogs, ...action.items.filter(p => !ids.has(p.id))]; })() : action.items;
@@ -450,15 +456,22 @@ export function useProfileData({
         }
       } else if ((tab === 'projector' || tab === 'passport') && (!state.tabDataLoaded.analytics || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { analytics: true } });
-        const [parsedAnalytics, serverAnalyticsPayload] = await Promise.all([
+        const [parsedAnalytics, serverAnalyticsPayload, tastePayload] = await Promise.all([
           ProfileDataService.fetchAnalyticsLogs(state.targetUser, isSelf, _fetchAbortRef.current?.signal),
-          ProfileDataService.fetchProfileAnalytics(state.targetUser, _fetchAbortRef.current?.signal)
+          ProfileDataService.fetchProfileAnalytics(state.targetUser, _fetchAbortRef.current?.signal),
+          // Replaces dozens of TMDB round trips from the phone with one call.
+          ProfileDataService.fetchTasteProfile(state.targetUser, _fetchAbortRef.current?.signal),
         ]);
+        // "Something changed — read whatever is outstanding." Fire and forget:
+        // nothing on screen waits, and the function drains the whole backlog,
+        // so a lost ping costs nothing.
+        ProfileDataService.pingFilmSync();
         if (!isMounted.current || uid !== targetUserIdRef.current) return;
         dispatch({ type: 'SET_ANALYTICS', payload: parsedAnalytics });
         if (serverAnalyticsPayload) {
           dispatch({ type: 'SET_SERVER_ANALYTICS', payload: serverAnalyticsPayload });
         }
+        dispatch({ type: 'SET_TASTE', payload: tastePayload });
       } else if (tab === 'calendar' && (!state.tabDataLoaded.calendar || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { calendar: true } });
         // If analytics logs are already loaded (Auteur+), use them, save bandwidth
@@ -631,7 +644,7 @@ export function useProfileData({
       dispatch({ type: 'SET_USER', payload: u });
     },
     loading: state.loading, error: state.error, refreshing: state.refreshing, setRefreshing: (v: boolean) => dispatch({ type: 'SET_REFRESHING', payload: v }),
-    mainLogs: state.mainLogs, archiveLogs: state.archiveLogs, ledgerLogs: state.ledgerLogs, analyticsLogs: state.analyticsLogs, calendarData: state.calendarData, serverAnalytics: state.serverAnalytics, serverStreak: state.serverStreak, analyticsShape: state.analyticsShape, watchlist: state.watchlist, vault: state.vault, lists: state.lists,
+    mainLogs: state.mainLogs, archiveLogs: state.archiveLogs, ledgerLogs: state.ledgerLogs, analyticsLogs: state.analyticsLogs, calendarData: state.calendarData, serverAnalytics: state.serverAnalytics, serverStreak: state.serverStreak, analyticsShape: state.analyticsShape, taste: state.taste, watchlist: state.watchlist, vault: state.vault, lists: state.lists,
     hasMoreMainLogs: state.hasMoreMainLogs, hasMoreArchiveLogs: state.hasMoreArchiveLogs, hasMoreLedgerLogs: state.hasMoreLedgerLogs, hasMoreWatchlist: state.hasMoreWatchlist, hasMoreVault: state.hasMoreVault, hasMoreLists: state.hasMoreLists,
     isLoadingMore: state.isLoadingMore,
     counts: state.counts, tabDataLoaded: state.tabDataLoaded, setTabDataLoaded: (v: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => {

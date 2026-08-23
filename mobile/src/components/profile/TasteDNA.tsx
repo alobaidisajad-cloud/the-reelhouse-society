@@ -1,8 +1,25 @@
 /**
- * TasteDNA — Visual taste fingerprint display.
- * Shows genre preferences as a DNA-style bar visualization.
+ * TasteDNA — a member's genre fingerprint, over their WHOLE archive.
+ *
+ * ── WHAT THIS USED TO DO ─────────────────────────────────────────────────────
+ * It fetched films from TMDB one at a time, from the phone, in batches of four
+ * with a 400ms pause between them, and stopped at sixty:
+ *
+ *     const idsToFetch = filmIds.slice(0, 60);   // limit for mobile perf
+ *
+ * Sixty is roughly what a handset can pull before the page feels broken. So a
+ * member with five thousand films saw a "cinematic fingerprint" drawn from
+ * sixty of them, and nothing on screen said so. For a VISITOR looking at a
+ * non-Auteur profile it was worse: those sixty were drawn from the fifty logs
+ * that happened to have loaded.
+ *
+ * It cannot be fixed on the phone — the data has to be ours. It is now: the
+ * films table holds genres, and the server counts them across everything.
+ *
+ * The whole fetch-batch-cache-retry apparatus is gone. This component reads one
+ * number set and draws it.
  */
-import React, { memo, useState, useEffect, useMemo } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn, FadeInRight, runOnJS } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -10,141 +27,48 @@ import * as Sharing from 'expo-sharing';
 import { Share2 } from 'lucide-react-native';
 import ViewShot from 'react-native-view-shot';
 import { colors, fonts } from '@/src/theme/theme';
-import { tmdb } from '@/src/lib/tmdb';
-import { GLOBAL_TMDB_CACHE, INFLIGHT_TMDB_REQUESTS } from './CinematicInsights';
-import { FilmSchema } from '@/src/lib/schemas';
 import { TasteDNAExportCanvas } from './TasteDNAExportCanvas';
 import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { tally } from './profileComputed';
+import { tasteReadiness, coverageNote, type TasteProfile } from '@/src/constants/taste';
 
 // Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
 // TactileEngine.navigate would lose its `this` binding).
 function hapticLight() { TactileEngine.navigate(); }
 
-interface TasteDNALog {
-    filmId?: number;
-    film_id?: number;
-    genre_ids?: number[];
-}
-
 interface TasteDNAProps {
-    logs: TasteDNALog[];
+    /** The server's answer, over every film. Null = not read yet. */
+    taste?: TasteProfile | null;
     username?: string;
     /** Padded member serial — stamped on the shared export artifact. */
     memberNo?: string | null;
 }
 
-const GENRE_MAP: Record<number, string> = {
-    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy',
-    80: 'Crime', 99: 'Documentary', 18: 'Drama', 10751: 'Family',
-    14: 'Fantasy', 36: 'History', 27: 'Horror', 10402: 'Music',
-    9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
-    53: 'Thriller', 10752: 'War', 37: 'Western',
-};
-
-export const TasteDNA = memo(function TasteDNA({ logs, username, memberNo }: TasteDNAProps) {
-    const [computedGenres, setComputedGenres] = useState<[string, number][]>([]);
-    const [totalResolvedFilms, setTotalResolvedFilms] = useState(0);
+export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo }: TasteDNAProps) {
     const [isSharing, setIsSharing] = useState(false);
     const viewShotRef = React.useRef<ViewShot>(null);
 
-    const filmIds = useMemo(() => {
-        const ids = new Set<number>();
-        for (const log of logs) {
-            const fid = log.filmId ?? log.film_id;
-            if (fid) ids.add(Number(fid));
-        }
-        return Array.from(ids);
-    }, [logs]);
+    const ready = useMemo(() => tasteReadiness(taste), [taste]);
 
-    useEffect(() => {
-        if (filmIds.length < 5) {
-            setComputedGenres([]);
-            return;
-        }
+    /** Top six, as before — the shape of the strip is unchanged. */
+    const computedGenres = useMemo<[string, number][]>(
+        () => (taste?.genres ?? []).slice(0, 6).map((g) => [g.name, g.count] as [string, number]),
+        [taste],
+    );
 
-        let cancelled = false;
+    /**
+     * The denominator for the percentages.
+     *
+     * `films_known`, not the sum of genre counts: a film carries two or three
+     * genres, so summing them gives a number larger than the archive and every
+     * percentage comes out too small. It used to count "films we resolved",
+     * which meant the same thing for sixty films and nothing at all beyond.
+     */
+    const denominator = Math.max(ready.known, 1);
 
-        (async () => {
-            const idsToFetch = filmIds.slice(0, 60);
-            const BATCH_SIZE = 4;
-            const BATCH_DELAY = 400;
-
-            const idsToNetworkFetch: number[] = [];
-            for (const id of idsToFetch) {
-                if (!GLOBAL_TMDB_CACHE.has(id)) {
-                    idsToNetworkFetch.push(id);
-                }
-            }
-
-            for (let i = 0; i < idsToNetworkFetch.length; i += BATCH_SIZE) {
-                if (cancelled) return;
-                const batch = idsToNetworkFetch.slice(i, i + BATCH_SIZE);
-                const results = await Promise.allSettled(
-                    batch.map(id => {
-                        if (INFLIGHT_TMDB_REQUESTS.has(id)) {
-                            return INFLIGHT_TMDB_REQUESTS.get(id)!;
-                        }
-                        const promise = tmdb.detail(id).finally(() => {
-                            INFLIGHT_TMDB_REQUESTS.delete(id);
-                        });
-                        INFLIGHT_TMDB_REQUESTS.set(id, promise);
-                        return promise;
-                    })
-                );
-
-                for (let j = 0; j < results.length; j++) {
-                    const result = results[j];
-                    if (result.status === 'fulfilled' && result.value) {
-                        const parsed = FilmSchema.safeParse(result.value);
-                        if (parsed.success) {
-                            GLOBAL_TMDB_CACHE.set(batch[j], parsed.data as any); // using as any since map expects TMDBMovie, but FilmSchema is parsed safely. 
-                        } else {
-                            console.warn(`[TasteDNA] Malformed TMDB payload for ID ${batch[j]}`);
-                        }
-                    }
-                }
-                if (i + BATCH_SIZE < idsToNetworkFetch.length) {
-                    await new Promise(r => setTimeout(r, BATCH_DELAY));
-                }
-            }
-
-            if (cancelled) return;
-
-            const genreCounts = new Map<string, number>();
-            let resolvedCount = 0;
-            for (const id of idsToFetch) {
-                const movie = GLOBAL_TMDB_CACHE.get(id);
-                if (!movie) continue;
-                
-                let hasGenre = false;
-                if (movie.genres && movie.genres.length > 0) {
-                    hasGenre = true;
-                    for (const g of movie.genres) {
-                        genreCounts.set(g.name, (genreCounts.get(g.name) ?? 0) + 1);
-                    }
-                } else if (movie.genre_ids && movie.genre_ids.length > 0) {
-                    hasGenre = true;
-                    for (const gid of movie.genre_ids) {
-                        const name = GENRE_MAP[gid];
-                        if (name) genreCounts.set(name, (genreCounts.get(name) ?? 0) + 1);
-                    }
-                }
-                if (hasGenre) resolvedCount++;
-            }
-
-            const sorted = Array.from(genreCounts.entries())
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 6);
-
-            setComputedGenres(sorted);
-            setTotalResolvedFilms(resolvedCount);
-        })();
-
-        return () => { cancelled = true; };
-    }, [filmIds]);
-
-    if (computedGenres.length === 0) return null;
+    // Nothing logged, or nothing read yet — the parent decides what to say.
+    if (!ready.ready || computedGenres.length === 0) return null;
 
     const maxCount = computedGenres[0][1];
 
@@ -172,7 +96,13 @@ export const TasteDNA = memo(function TasteDNA({ logs, username, memberNo }: Tas
             <View style={s.headerRow}>
                 <View>
                     <Text {...scaledTextProps} style={s.title}>TASTE DNA</Text>
-                    <Text {...scaledTextProps} style={s.subtitle}>Your cinematic fingerprint</Text>
+                    {/* Says what it is drawn from while that is still less than
+                        everything, and stops saying it the moment it is not.
+                        A member should always be able to tell "your taste" from
+                        "your taste so far", and the line costs one row. */}
+                    <Text {...scaledTextProps} style={s.subtitle}>
+                        {coverageNote(ready, tally) ?? 'Your cinematic fingerprint'}
+                    </Text>
                 </View>
                 <PressableScale onPress={handleShare} style={s.shareBtn} haptic accessibilityRole="button" accessibilityLabel="Share your taste profile" accessibilityState={{ busy: isSharing }}>
                     <Share2 size={16} color={isSharing ? colors.sepia : colors.fog} />
@@ -181,7 +111,7 @@ export const TasteDNA = memo(function TasteDNA({ logs, username, memberNo }: Tas
 
             <View style={s.dnaStrip}>
                 {computedGenres.map(([genre, count], i) => {
-                    const pct = Math.round((count / Math.max(totalResolvedFilms, 1)) * 100);
+                    const pct = Math.round((count / denominator) * 100);
                     const barWidth = `${(count / maxCount) * 100}%`;
                     const anim = FadeInRight.delay(i * 60).duration(300).withCallback((finished) => {
                         if (finished) {

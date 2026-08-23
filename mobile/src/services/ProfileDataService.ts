@@ -20,6 +20,7 @@ import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, L
 import { LEDGER_HIGH_FLOOR } from '../types';
 import { sortAxis, parseCursor, keysetFilter, buildCursor } from '../utils/keysetCursor';
 import type { AnalyticsShape } from '../hooks/useProfileData';
+import type { TasteProfile } from '../constants/taste';
 import { ProfileUserSchema, type ValidatedProfileUser } from '../schemas/profile.schema';
 import { isArchivistPlusTier, isAuteurPlusTier } from '../utils/tier';
 import { buildSearchPattern } from '../utils/searchPattern';
@@ -718,6 +719,67 @@ export const ProfileDataService = {
       // RPC not deployed — caller should fall back to fetchAnalyticsLogs
     }
     return null;
+  },
+
+  /**
+   * A member's taste, computed over their WHOLE archive.
+   *
+   * ── WHAT THIS REPLACES ──────────────────────────────────────────────────────
+   * TasteDNA and CinematicInsights each fetched films from TMDB one at a time,
+   * from the phone, and gave up at sixty:
+   *
+   *     const idsToFetch = filmIds.slice(0, 60);   // limit for mobile perf
+   *
+   * Sixty is roughly what a handset can pull before the page feels broken. So a
+   * member with five thousand films got a section titled REAL ANALYTICS drawn
+   * from sixty of them, with nothing on screen saying so — and for a VISITOR to
+   * a non-Auteur profile those sixty came from the fifty logs that happened to
+   * have loaded.
+   *
+   * One call now. Roughly 2KB whether the member has fifty films or fifty
+   * thousand, and dozens of TMDB round trips disappear from the page.
+   *
+   * ── IT REPORTS ITS OWN COVERAGE ─────────────────────────────────────────────
+   * `films_total` and `films_known` come back with the answer, because the
+   * films table fills in over time and a fingerprint drawn from three known
+   * films would be exactly the confident falsehood this pass exists to remove.
+   * The screen shows what it is based on rather than implying everything.
+   */
+  async fetchTasteProfile(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<TasteProfile | null> {
+    try {
+      const { data, error } = await withAbortSignal(
+        supabase.rpc('get_taste_profile', { p_user_id: targetUser.id }),
+        signal
+      );
+      if (error) {
+        logger.warn('[ProfileDataService] get_taste_profile error:', error.message);
+        return null;
+      }
+      const shape = data as TasteProfile & { error?: string };
+      // Refused rather than empty — handing this back as data would give every
+      // consumer an object full of undefined, and a section reading `?? 0`
+      // would then draw a taste profile of nothing for a private member.
+      if (!shape || shape.error) return null;
+      return shape;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * "Something changed — read whatever is outstanding."
+   *
+   * Fire and forget, deliberately: nothing on screen waits for it, and it is
+   * not told WHICH film to read. The function drains the whole backlog, so a
+   * ping lost to a dropped connection costs nothing — the next one, from
+   * anybody, picks up what this one missed.
+   */
+  pingFilmSync(): void {
+    try {
+      void supabase.functions.invoke('sync-films').catch(() => { /* best effort */ });
+    } catch {
+      /* never let a background nicety reach the member */
+    }
   },
 
   /**

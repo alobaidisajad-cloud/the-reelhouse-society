@@ -3,234 +3,67 @@
  * Fetches TMDB credits to determine top actors, directors, and genres.
  * Nitrate Noir themed — matches the web exactly.
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
+// The URL builder only — the fetching half of this module is no longer used here.
 import { tmdb } from '@/src/lib/tmdb';
-import { FilmSchema } from '@/src/lib/schemas';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { tally } from './profileComputed';
+import { tasteReadiness, type TasteProfile } from '@/src/constants/taste';
 
-interface InsightLog {
-    filmId?: number;
-    film_id?: number;
-}
+/**
+ * Deleted with the TMDB fetch: a 19-entry GENRE_MAP that had to be kept in step
+ * with TMDB by hand, a hand-rolled LRUCache, and the two module-level caches it
+ * backed (GLOBAL_TMDB_CACHE, INFLIGHT_TMDB_REQUESTS). Both were exported, and
+ * nothing outside this file ever imported them — they existed to survive tab
+ * unmounts during a fetch storm that no longer happens. Genre names now arrive
+ * spelled out from the films table, so there is no id to map.
+ */
 
-interface TMDBMovieDetail {
-    genres?: { id: number; name: string }[];
-    genre_ids?: number[];
-    credits?: {
-        cast?: { id: number; name: string; profile_path?: string | null }[];
-        crew?: { id: number; name: string; profile_path?: string | null; job: string }[];
-    };
-}
+export function CinematicInsights({ taste }: { taste?: TasteProfile | null }) {
+    /**
+     * ── WHAT THIS USED TO DO ─────────────────────────────────────────────────
+     * Fetched every film's credits from TMDB, four at a time, 400ms apart, with
+     * an LRU cache and an in-flight map to survive it — and stopped at sixty:
+     *
+     *     const idsToFetch = filmIds.slice(0, 60);   // limit for mobile perf
+     *
+     * To its credit this panel DID say "BASED ON 58 OF 2481 LOGGED FILMS",
+     * which is more than TasteDNA managed. But honest about a bad answer is
+     * still a bad answer, and for a VISITOR to a non-Auteur profile those
+     * sixty were drawn from the fifty logs that happened to have loaded — so
+     * the denominator was wrong too.
+     *
+     * The server counts across everything now. The cache, the batching, the
+     * delays, the in-flight map and the abort handling are all gone: there is
+     * one payload and it is already here.
+     */
+    const ready = useMemo(() => tasteReadiness(taste), [taste]);
 
-const GENRE_MAP: Record<number, string> = {
-    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy',
-    80: 'Crime', 99: 'Documentary', 18: 'Drama', 10751: 'Family',
-    14: 'Fantasy', 36: 'History', 27: 'Horror', 10402: 'Music',
-    9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi', 10770: 'TV Movie',
-    53: 'Thriller', 10752: 'War', 37: 'Western',
-};
+    const topActors = taste?.actors ?? [];
+    const topDirectors = taste?.directors ?? [];
+    const topGenres = taste?.genres ?? [];
 
-interface PersonCount {
-    id: number;
-    name: string;
-    profile_path?: string | null;
-    count: number;
-}
+    /**
+     * No payload at all is NOT an empty archive — it is a page that has not
+     * finished loading, or a request that failed. Those are different claims and
+     * only one of them is ours to make.
+     *
+     * Without this the panel fell through to "READING YOUR ARCHIVE / Nothing
+     * catalogued yet." under a spinner that would never resolve: a member whose
+     * request had simply failed was told their archive was empty, in a room
+     * built to show them what they had watched. Render nothing and let the rest
+     * of the page speak.
+     */
+    if (!taste) return null;
 
-interface GenreCount {
-    name: string;
-    count: number;
-}
-
-interface Insights {
-    topActors: PersonCount[];
-    topDirectors: PersonCount[];
-    topGenres: GenreCount[];
-    totalFilms: number;
-    fetchedFilms: number;
-}
-
-// Bounded LRU Cache to prevent OOM
-class LRUCache<K, V> extends Map<K, V> {
-    constructor(private maxSize: number) {
-        super();
-    }
-    set(key: K, value: V) {
-        if (this.has(key)) {
-            this.delete(key);
-        } else if (this.size >= this.maxSize) {
-            const firstKey = this.keys().next().value;
-            if (firstKey !== undefined) {
-                this.delete(firstKey);
-            }
-        }
-        return super.set(key, value);
-    }
-    get(key: K) {
-        const value = super.get(key);
-        if (value !== undefined) {
-            this.delete(key);
-            super.set(key, value);
-        }
-        return value as V;
-    }
-}
-
-// Global cache to persist TMDB details across tab unmounts, drastically reducing network payloads.
-export const GLOBAL_TMDB_CACHE = new LRUCache<number, TMDBMovieDetail>(200);
-export const INFLIGHT_TMDB_REQUESTS = new Map<number, Promise<any>>();
-
-export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
-    const [insights, setInsights] = useState<Insights | null>(null);
-    const [loading, setLoading] = useState(false);
-
-    const filmIds = useMemo(() => {
-        const ids = new Set<number>();
-        for (const log of logs) {
-            const fid = log.filmId ?? log.film_id;
-            if (fid) ids.add(Number(fid));
-        }
-        return Array.from(ids);
-    }, [logs]);
-
-    useEffect(() => {
-        if (filmIds.length < 3) return;
-
-        let cancelled = false;
-        setLoading(true);
-
-        (async () => {
-            const idsToFetch = filmIds.slice(0, 60); // limit for mobile perf
-            const BATCH_SIZE = 4;
-            const BATCH_DELAY = 400;
-
-            const allMovies: TMDBMovieDetail[] = [];
-            const idsToNetworkFetch: number[] = [];
-
-            // Hydrate instantly from cache
-            for (const id of idsToFetch) {
-                if (GLOBAL_TMDB_CACHE.has(id)) {
-                    allMovies.push(GLOBAL_TMDB_CACHE.get(id)!);
-                } else {
-                    idsToNetworkFetch.push(id);
-                }
-            }
-
-            // Only fetch what isn't cached
-            for (let i = 0; i < idsToNetworkFetch.length; i += BATCH_SIZE) {
-                if (cancelled) return;
-                const batch = idsToNetworkFetch.slice(i, i + BATCH_SIZE);
-                const results = await Promise.allSettled(
-                    batch.map(id => {
-                        if (INFLIGHT_TMDB_REQUESTS.has(id)) {
-                            return INFLIGHT_TMDB_REQUESTS.get(id)!;
-                        }
-                        const promise = tmdb.detail(id).finally(() => {
-                            INFLIGHT_TMDB_REQUESTS.delete(id);
-                        });
-                        INFLIGHT_TMDB_REQUESTS.set(id, promise);
-                        return promise;
-                    })
-                );
-
-                for (let j = 0; j < results.length; j++) {
-                    const result = results[j];
-                    if (result.status === 'fulfilled' && result.value) {
-                        const parsed = FilmSchema.safeParse(result.value);
-                        if (parsed.success) {
-                            GLOBAL_TMDB_CACHE.set(batch[j], parsed.data as any);
-                            allMovies.push(parsed.data as any);
-                        } else {
-                            console.warn(`[CinematicInsights] Malformed TMDB payload for ID ${batch[j]}`);
-                        }
-                    }
-                }
-
-                if (i + BATCH_SIZE < idsToNetworkFetch.length) {
-                    await new Promise(r => setTimeout(r, BATCH_DELAY));
-                }
-            }
-
-            if (cancelled) return;
-
-            const actorMap = new Map<number, PersonCount>();
-            const directorMap = new Map<number, PersonCount>();
-            const genreMap = new Map<string, number>();
-
-            for (const movie of allMovies) {
-                // Genres
-                if (movie.genres) {
-                    for (const g of movie.genres) {
-                        genreMap.set(g.name, (genreMap.get(g.name) ?? 0) + 1);
-                    }
-                } else if (movie.genre_ids) {
-                    for (const gid of movie.genre_ids) {
-                        const name = GENRE_MAP[gid];
-                        if (name) genreMap.set(name, (genreMap.get(name) ?? 0) + 1);
-                    }
-                }
-
-                const credits = movie.credits;
-                if (!credits) continue;
-
-                // Top 5 billed actors per film
-                if (credits.cast) {
-                    for (const person of credits.cast.slice(0, 5)) {
-                        const existing = actorMap.get(person.id);
-                        if (existing) {
-                            existing.count++;
-                        } else {
-                            actorMap.set(person.id, {
-                                id: person.id,
-                                name: person.name,
-                                profile_path: person.profile_path,
-                                count: 1,
-                            });
-                        }
-                    }
-                }
-
-                // Directors
-                if (credits.crew) {
-                    for (const person of credits.crew) {
-                        if (person.job === 'Director') {
-                            const existing = directorMap.get(person.id);
-                            if (existing) {
-                                existing.count++;
-                            } else {
-                                directorMap.set(person.id, {
-                                    id: person.id,
-                                    name: person.name,
-                                    profile_path: person.profile_path,
-                                    count: 1,
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-
-            const topActors = Array.from(actorMap.values()).sort((a, b) => b.count - a.count).slice(0, 5);
-            const topDirectors = Array.from(directorMap.values()).sort((a, b) => b.count - a.count).slice(0, 5);
-            const topGenres = Array.from(genreMap.entries())
-                .map(([name, count]) => ({ name, count }))
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 8);
-
-            if (!cancelled) {
-                setInsights({ topActors, topDirectors, topGenres, totalFilms: idsToFetch.length, fetchedFilms: allMovies.length });
-                setLoading(false);
-            }
-        })();
-
-        return () => { cancelled = true; };
-    }, [filmIds]);
-
-    if (filmIds.length < 3) {
+    // Fewer than three films is not "still loading" — it is a member who has
+    // not logged enough for any of this to mean anything. Zero belongs here
+    // too: an empty archive is a finished answer, not a slow one.
+    if (ready.total < 3) {
         return (
             <View style={s.card}>
                 <Text {...scaledTextProps} style={s.sectionTitle}>CINEMATIC INSIGHTS</Text>
@@ -239,29 +72,52 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
         );
     }
 
-    if (loading || !insights) {
+    /**
+     * READING, not "analyzing".
+     *
+     * The films table fills in over time, so on the first day a member with two
+     * thousand films may have thirty read. Ranking those thirty would produce a
+     * confident and completely false portrait — the exact failure this whole
+     * pass exists to remove, in a new place. So below the coverage floor the
+     * panel says what it is doing, with the real progress.
+     */
+    if (!ready.ready) {
         return (
             <View style={s.card}>
-                <Text {...scaledTextProps} style={s.sectionTitle}>ANALYZING {filmIds.length} LOGGED FILMS</Text>
+                <Text {...scaledTextProps} style={s.sectionTitle}>READING YOUR ARCHIVE</Text>
                 <ActivityIndicator color={colors.sepia} style={s.loaderMargin} />
-                <Text {...scaledTextProps} style={s.emptyText}>Fetching credits from TMDB...</Text>
+                {/* An archive of 0, 1 or 2 films is handled above, so `total`
+                    is at least 3 by here and the count always says something. */}
+                <Text {...scaledTextProps} style={s.emptyText}>
+                    {`${tally(ready.known)} of ${tally(ready.total)} films catalogued so far.`}
+                </Text>
             </View>
         );
     }
 
-    const maxActorCount = insights.topActors[0]?.count ?? 1;
-    const maxDirectorCount = insights.topDirectors[0]?.count ?? 1;
-    const maxGenreCount = insights.topGenres[0]?.count ?? 1;
+    if (topActors.length === 0 && topDirectors.length === 0 && topGenres.length === 0) return null;
+
+    const maxActorCount = topActors[0]?.count ?? 1;
+    const maxDirectorCount = topDirectors[0]?.count ?? 1;
+    const maxGenreCount = topGenres[0]?.count ?? 1;
 
     return (
         <View style={s.container}>
-            <Text {...scaledTextProps} style={s.metaNote}>BASED ON {insights.fetchedFilms} OF {filmIds.length} LOGGED FILMS</Text>
+            {/* The old line read "BASED ON 58 OF 2481 LOGGED FILMS" — honest,
+                but about a sample of sixty. This one is drawn from everything
+                read so far, and once that is everything the line goes away
+                rather than restating what is now simply true. */}
+            {!ready.complete && (
+                <Text {...scaledTextProps} style={s.metaNote}>
+                    BASED ON {tally(ready.known)} OF {tally(ready.total)} FILMS
+                </Text>
+            )}
 
             {/* Top Actors */}
-            {insights.topActors.length > 0 && (
+            {topActors.length > 0 && (
                 <Animated.View entering={FadeIn.duration(500)} style={s.card}>
                     <Text {...scaledTextProps} style={s.sectionTitle}>✦ MOST WATCHED ACTORS</Text>
-                    {insights.topActors.map((actor, i) => (
+                    {topActors.map((actor, i) => (
                         <Animated.View key={actor.id} entering={FadeInRight.delay(i * 80).duration(400)} style={s.personRow}>
                             {/* Rank */}
                             <View style={[s.rankCircle, i === 0 && { backgroundColor: colors.sepia }]}>
@@ -270,7 +126,7 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
                             {/* Photo */}
                             <View style={[s.avatar, i === 0 && { borderColor: colors.sepia, borderWidth: 2 }]}>
                                 {actor.profile_path ? (
-                                <Image source={{ uri: `https://image.tmdb.org/t/p/w185${actor.profile_path}` }} style={s.avatarImg} cachePolicy="memory-disk" transition={150} />
+                                <Image source={{ uri: tmdb.profile(actor.profile_path) }} style={s.avatarImg} cachePolicy="memory-disk" transition={150} />
                                 ) : (
                                     <Text {...scaledTextProps} style={s.avatarFallback}>✦</Text>
                                 )}
@@ -290,17 +146,17 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
             )}
 
             {/* Top Directors */}
-            {insights.topDirectors.length > 0 && (
+            {topDirectors.length > 0 && (
                 <Animated.View entering={FadeIn.delay(200).duration(500)} style={s.card}>
                     <Text {...scaledTextProps} style={s.sectionTitle}>✦ MOST WATCHED DIRECTORS</Text>
-                    {insights.topDirectors.map((director, i) => (
+                    {topDirectors.map((director, i) => (
                         <Animated.View key={director.id} entering={FadeInRight.delay(i * 80).duration(400)} style={s.personRow}>
                             <View style={[s.rankCircle, i === 0 && { backgroundColor: colors.sepia }]}>
                                 <Text {...scaledTextProps} style={[s.rankText, i === 0 && { color: colors.ink }]}>{i + 1}</Text>
                             </View>
                             <View style={[s.avatar, i === 0 && { borderColor: colors.sepia, borderWidth: 2 }]}>
                                 {director.profile_path ? (
-                                <Image source={{ uri: `https://image.tmdb.org/t/p/w185${director.profile_path}` }} style={s.avatarImg} cachePolicy="memory-disk" transition={150} />
+                                <Image source={{ uri: tmdb.profile(director.profile_path) }} style={s.avatarImg} cachePolicy="memory-disk" transition={150} />
                                 ) : (
                                     <Text {...scaledTextProps} style={s.avatarFallback}>✦</Text>
                                 )}
@@ -318,11 +174,15 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
             )}
 
             {/* Genre Breakdown */}
-            {insights.topGenres.length > 0 && (
+            {topGenres.length > 0 && (
                 <Animated.View entering={FadeIn.delay(400).duration(500)} style={s.card}>
                     <Text {...scaledTextProps} style={s.sectionTitle}>✦ GENRE BREAKDOWN</Text>
-                    {insights.topGenres.map((genre, i) => {
-                        const pct = Math.round((genre.count / insights.totalFilms) * 100);
+                    {topGenres.map((genre, i) => {
+                        // Films READ, not films logged. A film carries two or
+                        // three genres, so the counts sum to more than the
+                        // archive — dividing by the archive would understate
+                        // every one of them.
+                        const pct = Math.round((genre.count / Math.max(ready.known, 1)) * 100);
                         return (
                             <Animated.View key={genre.name} entering={FadeInRight.delay(i * 50).duration(300)} style={s.genreRow}>
                                 <View style={s.genreHeader}>

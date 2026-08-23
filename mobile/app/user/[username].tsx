@@ -201,7 +201,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const ctrl = useProfileController(usernameOverride);
   const { nav, data } = ctrl;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, setTargetUser } = data;
+  const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, taste, setTargetUser } = data;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists, setActiveTab } = ctrl;
   const { archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setArchiveSearch, setListsSearch, setPhysicalSearch, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
@@ -915,13 +915,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     {/* Taste DNA */}
                     <View>
                       <SectionDivider label="TASTE FINGERPRINT" />
-                      <TasteDNA logs={(analyticsLogs.length > 0 ? analyticsLogs : displayLogs) as any} username={targetUser?.username || username} memberNo={memberNo} />
+                      <TasteDNA taste={taste} username={targetUser?.username || username} memberNo={memberNo} />
                     </View>
 
                     {/* Cinematic Insights */}
                     <View>
                       <SectionDivider label="REAL ANALYTICS" />
-                      <CinematicInsights {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs} as any} />
+                      <CinematicInsights taste={taste} />
                     </View>
 
                     {/* Society Honors */}

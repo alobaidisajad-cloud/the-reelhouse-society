@@ -23,6 +23,11 @@
     },
     "get_profile_counts",
     "get_public_profile_analytics",
+    {
+      "name": "get_taste_profile",
+      "signature": "get_taste_profile(p_user_id uuid)",
+      "why": "New in the taste pass. Signed rather than named because #24's lesson was 'signature-checked from here on', and a new function is the cheapest possible moment to pin one — it replaces the TMDB fetch that capped a member's fingerprint at 60 films, so a silent 404 here would not break the screen, it would quietly show a WRONG portrait."
+    },
     "get_report_evidence",
     "get_salon_member_faces",
     "get_user_analytics",
@@ -47,6 +52,7 @@
     "fetch-rss",
     "sign-in-with-username",
     "sync-entitlement",
+    "sync-films",
     "tmdb-proxy"
   ],
 
