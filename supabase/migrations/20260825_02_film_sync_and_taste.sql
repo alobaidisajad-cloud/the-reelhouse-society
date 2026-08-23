@@ -3,6 +3,11 @@
 -- question the reader's work makes answerable.
 -- ════════════════════════════════════════════════════════════════════════════
 
+-- One transaction. Nothing here can half-apply and leave a function that exists
+-- with privileges it should not have, or grants pointing at a function that was
+-- never created.
+BEGIN;
+
 -- ════════════════════════════════════════════════════════════════════════════
 -- claim_films_to_sync — take work, exactly once
 -- ════════════════════════════════════════════════════════════════════════════
@@ -205,3 +210,5 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_taste_profile(uuid) TO anon, authenticated;
+
+COMMIT;

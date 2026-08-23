@@ -39,6 +39,21 @@
 -- New table, new trigger, new functions. The shipped app knows none of it.
 -- ════════════════════════════════════════════════════════════════════════════
 
+-- ⚠️ ONE TRANSACTION, AND IT MATTERS MORE HERE THAN ANYWHERE ────────────────
+-- This migration puts an AFTER INSERT trigger on the four busiest tables in the
+-- app. If it applies HALFWAY — triggers created, table not — then note_film()
+-- raises "relation public.films does not exist" on every single insert, and
+-- logging a film, adding to a watchlist, shelving a disc and building a stack
+-- all break instantly, for everyone, including the build already on TestFlight.
+--
+-- Not hypothetical: it happened during rehearsal. A run without ON_ERROR_STOP
+-- created the function and all four triggers while the table was missing, and
+-- every INSERT died with exactly that error.
+--
+-- Every statement below is transactional DDL (no CREATE INDEX CONCURRENTLY), so
+-- the whole thing commits or none of it does.
+BEGIN;
+
 CREATE TABLE IF NOT EXISTS public.films (
   -- The TMDB id. Every one of our four tables already stores it, so this
   -- joins to what exists without a mapping table.
@@ -125,6 +140,12 @@ CREATE INDEX IF NOT EXISTS idx_films_unsynced
 ALTER TABLE public.films DROP CONSTRAINT IF EXISTS films_text_ceilings;
 ALTER TABLE public.films
   ADD CONSTRAINT films_text_ceilings CHECK (
+    -- ⚠️ 300 IS NOT A ROUND NUMBER, IT IS A MATCHED ONE. The trigger below
+    -- copies film_title straight into this column, and all four source tables
+    -- cap film_title at exactly 300 (verified live). Lower this and a member
+    -- with a long title cannot log a film at all — the CHECK would fail inside
+    -- the trigger and take the whole INSERT down with it. This ceiling may rise
+    -- but must never fall below the source tables'.
     char_length(title)            <= 300  AND
     char_length(poster_path)      <= 200  AND
     char_length(director)         <= 200  AND
@@ -263,3 +284,5 @@ FROM (
 -- it and obvious the moment you run it.
 ORDER BY film_id, NULLIF(film_title, '') NULLS LAST
 ON CONFLICT (id) DO NOTHING;
+
+COMMIT;
