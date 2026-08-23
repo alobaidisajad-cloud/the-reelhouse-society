@@ -53,6 +53,55 @@ export interface ProfileLog {
     createdAt: string;
 }
 
+/**
+ * What the Ledger's rating filter can be.
+ *
+ * Written out by hand as `number | 'all'` in SIX places — the controller's
+ * state, the computed props, the room's props twice, the data hook and the
+ * service's query options. Adding `'high'` to five of them would have compiled
+ * cleanly and quietly filtered nothing at the sixth. One type, imported.
+ *
+ * `'high'` is 4-or-better: the thing a member actually reaches for, and the one
+ * filter that cannot be expressed by picking a single rating. It is a SENTINEL,
+ * not a number, so it survives the round trip through the service without ever
+ * being mistaken for `.eq('rating', 4)`.
+ */
+export type LedgerRating = number | 'all' | 'high';
+
+/** 4 reels or better. Named so the query and the chip can never disagree. */
+export const LEDGER_HIGH_FLOOR = 4;
+
+/**
+ * The decade a queue is filtered to — `1990` means 1990–1999, `null` means all.
+ *
+ * A queue of two hundred films has exactly two ways in today: alphabetical, and
+ * a search box you have to already know the answer to type into. "What have I
+ * been meaning to watch from the seventies" is the question a member actually
+ * has, and `watchlists.year` has been sitting in the SELECT the whole time.
+ */
+export type WatchlistDecade = number | null;
+
+/**
+ * How a shelf of OBJECTS is read — the Vault's cases and the Stacks' volumes.
+ *
+ * The same three the Watchlist already offers, deliberately: a member should
+ * not have to learn a second vocabulary for "in what order" one room down. It
+ * runs all the way to the server, keyed cursor and all, so sorting a 300-disc
+ * vault sorts the vault and not the 150 rows that happen to be in hand.
+ */
+export type ShelfSort = 'default' | 'az' | 'za';
+
+/** Which decade a year belongs to, or null for a film with no year on record. */
+export function decadeOf(year: number | null | undefined): number | null {
+  if (typeof year !== 'number' || !Number.isFinite(year) || year <= 0) return null;
+  return Math.floor(year / 10) * 10;
+}
+
+/** "1990s". Never through Intl — Hermes may not carry it. */
+export function decadeLabel(decade: number): string {
+  return `${decade}s`;
+}
+
 export interface ProfileWatchlistItem {
     id: number;
     title: string;

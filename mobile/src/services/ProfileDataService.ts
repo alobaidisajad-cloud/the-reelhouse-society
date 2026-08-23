@@ -16,7 +16,9 @@ import { logger } from '../utils/logger';
 import { withAbortSignal } from '../utils/withAbortSignal';
 import { mapLogRow, PUBLIC_LOG_COLUMNS } from '../utils/mappers';
 import type { LogRow } from '../utils/mappers';
-import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList } from '../types';
+import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, ShelfSort } from '../types';
+import { LEDGER_HIGH_FLOOR } from '../types';
+import { sortAxis, parseCursor, keysetFilter, buildCursor } from '../utils/keysetCursor';
 import { ProfileUserSchema, type ValidatedProfileUser } from '../schemas/profile.schema';
 import { isArchivistPlusTier, isAuteurPlusTier } from '../utils/tier';
 import { buildSearchPattern } from '../utils/searchPattern';
@@ -301,7 +303,7 @@ export const ProfileDataService = {
    * Cursor-based keyset pagination replaces offset .range().
    * Compound cursor format: "created_at|id" for deterministic deep-scroll ordering.
    */
-  async fetchOtherUserLogs(userId: string, limit: number = 50, cursorString?: string, signal?: AbortSignal, options?: { search?: string, rating?: number | 'all', status?: string, hasRatingOrReview?: boolean }): Promise<{ items: ProfileLog[], nextCursor: string | null }> {
+  async fetchOtherUserLogs(userId: string, limit: number = 50, cursorString?: string, signal?: AbortSignal, options?: { search?: string, rating?: LedgerRating, status?: string, hasRatingOrReview?: boolean }): Promise<{ items: ProfileLog[], nextCursor: string | null }> {
     const fetchLimit = limit + 1;
     let query = supabase.from('logs')
       .select(PUBLIC_LOG_COLUMNS)
@@ -316,7 +318,12 @@ export const ProfileDataService = {
       if (pattern === null) return { items: [], nextCursor: null };
       query = query.or(`film_title.ilike.*${pattern}*,review.ilike.*${pattern}*`);
     }
-    if (options?.rating !== undefined && options.rating !== 'all') {
+    // `'high'` is a SENTINEL, not a rating — a range, which is the one thing an
+    // `.eq()` cannot express. Checked BEFORE the numeric branch, because
+    // `.eq('rating', 'high')` would be a 22P02 against an integer column.
+    if (options?.rating === 'high') {
+      query = query.gte('rating', LEDGER_HIGH_FLOOR);
+    } else if (options?.rating !== undefined && options.rating !== 'all') {
       query = query.eq('rating', options.rating);
     }
     if (options?.status && options.status !== 'all') {
@@ -371,7 +378,7 @@ export const ProfileDataService = {
   /**
    * Fetches cursor-paginated watchlist for another user's profile.
    */
-  async fetchOtherUserWatchlist(userId: string, limit: number = 50, cursor?: string, signal?: AbortSignal, options?: { search?: string, sort?: 'default' | 'az' | 'za' }): Promise<{ items: ProfileWatchlistItem[], nextCursor: string | null }> {
+  async fetchOtherUserWatchlist(userId: string, limit: number = 50, cursor?: string, signal?: AbortSignal, options?: { search?: string, sort?: ShelfSort, decade?: WatchlistDecade }): Promise<{ items: ProfileWatchlistItem[], nextCursor: string | null }> {
     const fetchLimit = limit + 1;
     let query = supabase.from('watchlists')
       .select('id, film_id, film_title, poster_path, year, created_at')
@@ -387,34 +394,24 @@ export const ProfileDataService = {
       query = query.ilike('film_title', `%${pattern}%`);
     }
 
-    if (options?.sort === 'az') {
-      query = query.order('film_title', { ascending: true }).order('id', { ascending: true });
-    } else if (options?.sort === 'za') {
-      query = query.order('film_title', { ascending: false }).order('id', { ascending: false });
-    } else {
-      query = query.order('created_at', { ascending: false }).order('id', { ascending: false });
+    // A DECADE is a half-open range, not an equality: 1990 means 1990–1999.
+    // Guarded on a finite number rather than truthiness — the year 0 is not a
+    // decade anyone filters by, but `if (options.decade)` would also drop a
+    // legitimate `0` silently, and the guard is free.
+    if (typeof options?.decade === 'number' && Number.isFinite(options.decade)) {
+      query = query.gte('year', options.decade).lt('year', options.decade + 10);
     }
-    
-    query = query.limit(fetchLimit);
 
-    if (cursor) {
-      const parts = cursor.split('|');
-      if (parts.length >= 2) {
-        // Multi-axis cursor parser for A-Z, Z-A, and chronological sorts
-        const primaryCursor = parts.slice(0, -1).join('|'); // film_title or created_at
-        const cursorId = parts[parts.length - 1];
-        const safeId = /^\d+$/.test(String(cursorId)) ? cursorId : `"${cursorId}"`;
-        const safePrimary = primaryCursor.includes('"') || primaryCursor.includes("'") ? `"${primaryCursor.replace(/"/g, '""')}"` : `"${primaryCursor}"`;
-        
-        if (options?.sort === 'az') {
-          query = query.or(`film_title.gt.${safePrimary},and(film_title.eq.${safePrimary},id.gt.${safeId})`);
-        } else if (options?.sort === 'za') {
-          query = query.or(`film_title.lt.${safePrimary},and(film_title.eq.${safePrimary},id.lt.${safeId})`);
-        } else {
-          query = query.or(`created_at.lt.${safePrimary},and(created_at.eq.${safePrimary},id.lt.${safeId})`);
-        }
-      }
-    }
+    // ONE axis decides the ORDER BY, the cursor filter and the cursor handed
+    // back. They used to be three separate ladders of if/else in this function,
+    // and naming three different columns between them is what silently
+    // duplicates rows on deep scroll.
+    const axis = sortAxis(options?.sort, 'film_title');
+    const asc = axis.direction === 'asc';
+    query = query.order(axis.column, { ascending: asc }).order('id', { ascending: asc }).limit(fetchLimit);
+
+    const keyset = keysetFilter(axis.column, parseCursor(cursor), axis.direction);
+    if (keyset) query = query.or(keyset);
 
     const { data, error } = await withAbortSignal(query, signal);
     if (error) {
@@ -429,21 +426,14 @@ export const ProfileDataService = {
     
     const items = validRows.map(w => ({ id: w.film_id, filmId: w.film_id, title: w.film_title, poster_path: w.poster_path ?? null, year: w.year ?? null }));
     const lastRow = paginatedRaw.length > 0 ? (paginatedRaw[paginatedRaw.length - 1] as any) : null;
-    let nextCursor = null;
-    if (hasMore && lastRow) {
-      if (options?.sort === 'az' || options?.sort === 'za') {
-        nextCursor = `${lastRow.film_title || ''}|${lastRow.id}`;
-      } else {
-        nextCursor = `${lastRow.created_at || ''}|${lastRow.id}`;
-      }
-    }
+    const nextCursor = hasMore && lastRow ? buildCursor(lastRow[axis.column], lastRow.id) : null;
     return { items, nextCursor };
   },
 
   /**
    * Fetches cursor-paginated vault items for another user's profile.
    */
-  async fetchOtherUserVault(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, limit: number = 50, cursor?: string, signal?: AbortSignal, options?: { filter?: string }): Promise<{ items: ProfileVaultItem[], nextCursor: string | null }> {
+  async fetchOtherUserVault(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, limit: number = 50, cursor?: string, signal?: AbortSignal, options?: { filter?: string, sort?: ShelfSort }): Promise<{ items: ProfileVaultItem[], nextCursor: string | null }> {
     
     if (!isArchivistPlusTier(targetUser)) return { items: [], nextCursor: null };
 
@@ -458,17 +448,20 @@ export const ProfileDataService = {
       query = query.contains('formats', [options.filter]);
     }
 
-    query = query.order('created_at', { ascending: false })
-      .order('id', { ascending: false })
+    // A shelf can be read in the order it was FILLED or alphabetically, which
+    // is how anyone actually arranges a shelf they own. Same one-axis rule as
+    // the Watchlist, through the same helper.
+    const axis = sortAxis(options?.sort, 'film_title');
+    const asc = axis.direction === 'asc';
+    query = query.order(axis.column, { ascending: asc })
+      .order('id', { ascending: asc })
       .limit(fetchLimit);
 
-    if (cursor) {
-      const [cursorDate, cursorId] = cursor.split('|');
-      if (cursorDate && cursorId) {
-        const safeId = /^\d+$/.test(String(cursorId)) ? cursorId : `"${cursorId}"`;
-        query = query.or(`created_at.lt."${cursorDate}",and(created_at.eq."${cursorDate}",id.lt.${safeId})`);
-      }
-    }
+    // The old cursor split on the FIRST `|` and quoted by hand. A film titled
+    // `Kill Bill: Vol. 1 "Extended"` ended the value early inside the `.or()`
+    // string and the rest was parsed as filter syntax.
+    const keyset = keysetFilter(axis.column, parseCursor(cursor), axis.direction);
+    if (keyset) query = query.or(keyset);
 
     const { data, error } = await withAbortSignal(query, signal);
     if (error) {
@@ -487,15 +480,17 @@ export const ProfileDataService = {
       created_at: v.created_at, createdAt: v.created_at,
     }));
     const lastRow = paginatedRaw.length > 0 ? (paginatedRaw[paginatedRaw.length - 1] as any) : null;
-    const nextCursor = hasMore && lastRow ? `${lastRow.created_at || ''}|${lastRow.id}` : null;
+    const nextCursor = hasMore && lastRow ? buildCursor(lastRow[axis.column], lastRow.id) : null;
     return { items, nextCursor };
   },
 
   /**
    * Fetches cursor-paginated lists with their items for another user's profile.
    */
-  async fetchOtherUserLists(userId: string, limit: number = 50, cursor?: string, signal?: AbortSignal): Promise<{ items: ProfileList[], nextCursor: string | null }> {
+  async fetchOtherUserLists(userId: string, limit: number = 50, cursor?: string, signal?: AbortSignal, options?: { sort?: ShelfSort }): Promise<{ items: ProfileList[], nextCursor: string | null }> {
     const fetchLimit = limit + 1;
+    const axis = sortAxis(options?.sort, 'title');
+    const asc = axis.direction === 'asc';
     let query = supabase.from('lists')
       // `film_count:list_items(count)` is a PostgREST aggregate embed: the TRUE size of
       // the stack, in the SAME round trip as the four posters.
@@ -514,19 +509,17 @@ export const ProfileDataService = {
       .select('id, title, description, is_ranked, is_private, created_at, list_items(list_id, film_id, film_title, poster_path), film_count:list_items(count)')
       .eq('user_id', userId)
       .eq('is_private', false)
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
+      .order(axis.column, { ascending: asc })
+      .order('id', { ascending: asc })
+      // The ITEMS inside each stack keep their own order regardless — that is
+      // `rank_position`, the member's chosen sequence, and it is not what the
+      // sort above reorders.
       .order('rank_position', { foreignTable: 'list_items', ascending: true })
       .limit(fetchLimit)
       .limit(4, { foreignTable: 'list_items' });
 
-    if (cursor) {
-      const [cursorDate, cursorId] = cursor.split('|');
-      if (cursorDate && cursorId) {
-        const safeId = /^\d+$/.test(String(cursorId)) ? cursorId : `"${cursorId}"`;
-        query = query.or(`created_at.lt."${cursorDate}",and(created_at.eq."${cursorDate}",id.lt.${safeId})`);
-      }
-    }
+    const keyset = keysetFilter(axis.column, parseCursor(cursor), axis.direction);
+    if (keyset) query = query.or(keyset);
 
     const { data: listsData, error } = await withAbortSignal(query, signal);
     if (error) {
@@ -555,7 +548,7 @@ export const ProfileDataService = {
         ?? l.list_items.length,
     }));
     const lastRow = paginatedRaw.length > 0 ? (paginatedRaw[paginatedRaw.length - 1] as any) : null;
-    const nextCursor = hasMore && lastRow ? `${lastRow.created_at || ''}|${lastRow.id}` : null;
+    const nextCursor = hasMore && lastRow ? buildCursor(lastRow[axis.column], lastRow.id) : null;
     return { items, nextCursor };
   },
 

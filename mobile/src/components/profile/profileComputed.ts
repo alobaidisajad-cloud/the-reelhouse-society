@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
-import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog } from '@/src/types';
+import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog, LedgerRating, WatchlistDecade, ShelfSort } from '@/src/types';
+import { LEDGER_HIGH_FLOOR, decadeOf } from '@/src/types';
 import { ProfileTab } from '@/src/hooks/useProfileData';
 
 import { colors } from '@/src/theme/theme';
@@ -43,10 +44,13 @@ interface UseProfileComputedParams {
   // Filter state
   archiveSieve: string;
   ledgerSearch: string;
-  ledgerRatingFilter: number | 'all';
+  ledgerRatingFilter: LedgerRating;
+  watchlistDecade: WatchlistDecade;
   watchlistSearch: string;
-  watchlistSort: 'default' | 'az' | 'za';
+  watchlistSort: ShelfSort;
   physicalFilter: string | null;
+  physicalSort: ShelfSort;
+  listsSort: ShelfSort;
 }
 
 /**
@@ -159,7 +163,8 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     mainLogs, archiveLogs, ledgerLogs, analyticsLogs, watchlist, vault, lists,
     counts, isArchivistPlus, isAuteurPlus, targetUser, serverStreak,
     archiveSieve, ledgerSearch, ledgerRatingFilter,
-    watchlistSearch, watchlistSort, physicalFilter,
+    watchlistSearch, watchlistSort, watchlistDecade,
+    physicalFilter, physicalSort, listsSort,
   } = params;
 
   // Real-time synchronization for self-profile
@@ -167,7 +172,12 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   // Memoized to prevent unnecessary re-computation on every render
   const hasArchiveSearch = archiveSieve !== 'all';
   const hasLedgerSearch = ledgerSearch.trim() !== '' || ledgerRatingFilter !== 'all';
-  const hasWatchlistSearch = watchlistSearch.trim() !== '' || watchlistSort !== 'default';
+  // The decade counts here too. Leaving it out would have been the quiet kind
+  // of bug: on your OWN profile this flag decides whether the room reads from
+  // the SERVER page (filtered) or the local store (unfiltered), so a decade
+  // filter would have been applied to the query, thrown away, and the room
+  // would have shown the whole queue while the chip said 1970s.
+  const hasWatchlistSearch = watchlistSearch.trim() !== '' || watchlistSort !== 'default' || watchlistDecade !== null;
   const hasPhysicalSearch = physicalFilter !== 'all';
 
   const displayLogs = useMemo(() => isSelf ? myLogs.map(toProfileLog) : mainLogs, [isSelf, myLogs, mainLogs]);
@@ -192,7 +202,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     return vault;
   }, [isSelf, hasPhysicalSearch, vault, myVault]);
 
-  const displayLists = useMemo(() => isSelf ? myLists.map(toProfileList) : lists, [isSelf, myLists, lists]);
+  const displayListsRaw = useMemo(() => isSelf ? myLists.map(toProfileList) : lists, [isSelf, myLists, lists]);
 
   // `hide_stats` used to blank this. It was removed deliberately — see the note at the
   // bottom of this file. Short version: it hid four digits while leaving the films they
@@ -227,7 +237,12 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   const ledgerFiltered = useMemo(() => {
     return displayLedgerLogs.filter(log => {
       if (!log.rating && !log.review) return false;
-      if (ledgerRatingFilter !== 'all' && log.rating !== ledgerRatingFilter) return false;
+      // `'high'` is a range, so it cannot be an equality check — and it has to
+      // be tested BEFORE the numeric one, or `log.rating !== 'high'` is true for
+      // every entry and the filter hides the whole ledger.
+      if (ledgerRatingFilter === 'high') {
+        if (!log.rating || log.rating < LEDGER_HIGH_FLOOR) return false;
+      } else if (ledgerRatingFilter !== 'all' && log.rating !== ledgerRatingFilter) return false;
       if (ledgerSearch.trim() && !(log.title || '').toLowerCase().includes(ledgerSearch.toLowerCase())) return false;
       return true;
     });
@@ -280,16 +295,78 @@ export function useProfileComputed(params: UseProfileComputedParams) {
       const q = watchlistSearch.toLowerCase();
       result = result.filter(f => (f.title ?? '').toLowerCase().includes(q));
     }
+    // A film with no year on record belongs to no decade, so a decade filter
+    // hides it — the same way the Vault's format filter hides an unfiled copy.
+    if (typeof watchlistDecade === 'number') {
+      result = result.filter(f => decadeOf(f.year) === watchlistDecade);
+    }
     if (watchlistSort === 'az') result.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''));
     else if (watchlistSort === 'za') result.sort((a, b) => (b.title ?? '').localeCompare(a.title ?? ''));
     return result;
-  }, [displayWatchlist, watchlistSearch, watchlistSort]);
+  }, [displayWatchlist, watchlistSearch, watchlistSort, watchlistDecade]);
+
+  /**
+   * The decades the queue actually spans, newest first, each with its count.
+   *
+   * Derived from what is LOADED, exactly as the Vault's format chips are — a
+   * visitor's queue is windowed at 150, so this is "the decades in the part we
+   * have" rather than a promise about the whole shelf. Held in a ref while a
+   * decade is selected, for the same reason the format counts are: the filtered
+   * page contains only one decade, so recomputing would collapse the row to a
+   * single chip and leave no way back to the others.
+   */
+  const decadeCountsRef = useRef<{ decade: number; count: number }[]>([]);
+  const watchlistDecadeCounts = useMemo(() => {
+    if (watchlistDecade !== null) return decadeCountsRef.current;
+    const tally: Record<number, number> = {};
+    for (const film of displayWatchlist) {
+      const d = decadeOf(film.year);
+      if (d === null) continue;
+      tally[d] = (tally[d] || 0) + 1;
+    }
+    const computed = Object.entries(tally)
+      .map(([decade, count]) => ({ decade: Number(decade), count }))
+      .sort((a, b) => b.decade - a.decade);
+    decadeCountsRef.current = computed;
+    return computed;
+  }, [displayWatchlist, watchlistDecade]);
+
+  /**
+   * Ordering a shelf, and a stack of dossiers.
+   *
+   * The same comparator for both, because "A–Z" has to mean one thing across
+   * the six rooms — and because it must match what the SERVER does, or a
+   * member's own vault (sorted here, from the local store) and a visitor's
+   * (sorted by Postgres) would disagree about where "Æon Flux" goes.
+   *
+   * `localeCompare` with no locale argument is what the Watchlist already uses
+   * and what Postgres's default collation approximates closely enough that no
+   * member will ever see the difference; going anywhere near `Intl` here is
+   * forbidden — Hermes may not carry it, and it fails by silently ignoring
+   * options rather than by throwing.
+   */
+  const byShelfSort = <T extends { title?: string | null }>(items: T[], sort: ShelfSort): T[] => {
+    if (sort === 'default') return items;
+    const out = [...items];
+    out.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''));
+    return sort === 'za' ? out.reverse() : out;
+  };
+
+  // The Stacks take the same three orders, through the same comparator.
+  const displayLists = useMemo(
+    () => byShelfSort(displayListsRaw, listsSort),
+     
+    [displayListsRaw, listsSort],
+  );
 
   // Physical archive filtering
   const physicalFiltered = useMemo(() => {
-    if (!physicalFilter) return displayVault;
-    return displayVault.filter((item: ProfileVaultItem) => item.formats?.includes(physicalFilter));
-  }, [displayVault, physicalFilter]);
+    const base = physicalFilter
+      ? displayVault.filter((item: ProfileVaultItem) => item.formats?.includes(physicalFilter))
+      : displayVault;
+    return byShelfSort(base, physicalSort);
+   
+  }, [displayVault, physicalFilter, physicalSort]);
 
   // Single-pass reduce replaces O(formats × items) nested .filter() loop
   const formatCountsRef = useRef<any[]>([]);
@@ -369,7 +446,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     streak, archiveFiltered, ledgerFiltered, halfLifeMap,
     // Exposed so the StatCards read the SAME reconciled numbers the pills do.
     totalWatchlist, totalLedger, totalLists, totalVault,
-    watchlistFiltered, physicalFiltered, physicalFormatCounts,
+    watchlistFiltered, watchlistDecadeCounts, physicalFiltered, physicalFormatCounts,
     recentLogs, socialLinks, COLLECTION_CARDS,
   };
 }

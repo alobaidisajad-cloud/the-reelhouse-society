@@ -1,7 +1,7 @@
 import { useReducer, useCallback, useEffect, useRef } from 'react';
 import { logger } from '@/src/utils/logger';
 import { useLogStore, useWatchlistStore, useArchiveStore, useListStore } from '@/src/stores/films';
-import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList } from '@/src/types';
+import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, ShelfSort } from '@/src/types';
 import { ProfileDataService } from '@/src/services/ProfileDataService';
 import type { ValidatedProfileUser } from '@/src/schemas/profile.schema';
 import { useSocialStore } from '@/src/stores/followStore';
@@ -51,10 +51,11 @@ export interface ProfileState {
   tabDataLoaded: Record<string, boolean>;
   serverStreak: number | null;
   activeFilters: {
-    ledger?: { search?: string, rating?: number | 'all', hasRatingOrReview?: boolean };
-    watchlist?: { search?: string, sort?: 'default' | 'az' | 'za' };
-    physical?: { filter?: string };
+    ledger?: { search?: string, rating?: LedgerRating, hasRatingOrReview?: boolean };
+    watchlist?: { search?: string, sort?: ShelfSort, decade?: WatchlistDecade };
+    physical?: { filter?: string, sort?: ShelfSort };
     archive?: { status?: string };
+    lists?: { sort?: ShelfSort };
   };
 }
 
@@ -74,7 +75,7 @@ export type ProfileAction =
   | { type: 'SET_LISTS_PAGE'; items: ProfileList[]; cursor: string | null; append?: boolean }
   | { type: 'SET_LOADING_MORE'; key: string; value: boolean }
   | { type: 'USER_DATA_LOADED'; user: ProfileUser; counts: ProfileState['counts']; serverStreak: number | null; logs?: ProfileLog[]; logsCursor?: string | null }
-  | { type: 'SET_ACTIVE_FILTERS'; tab: 'archive' | 'ledger' | 'watchlist' | 'physical'; filters: any }
+  | { type: 'SET_ACTIVE_FILTERS'; tab: 'archive' | 'ledger' | 'watchlist' | 'physical' | 'lists'; filters: any }
   | { type: 'RESET_STATE' };
 
 export const initialState: ProfileState = {
@@ -397,7 +398,7 @@ export function useProfileData({
         if (isSelf) {
           await fetchLists();
         } else {
-          const result = await ProfileDataService.fetchOtherUserLists(uid, undefined, undefined, _fetchAbortRef.current?.signal);
+          const result = await ProfileDataService.fetchOtherUserLists(uid, undefined, undefined, _fetchAbortRef.current?.signal, state.activeFilters.lists);
           if (uid !== targetUserIdRef.current) return;
           dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor });
         }
@@ -521,7 +522,7 @@ export function useProfileData({
     const uid = state.targetUser.id;
     dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: true });
     try {
-      const result = await ProfileDataService.fetchOtherUserLists(uid, 50, state.listsCursor ?? undefined, _fetchAbortRef.current?.signal);
+      const result = await ProfileDataService.fetchOtherUserLists(uid, 50, state.listsCursor ?? undefined, _fetchAbortRef.current?.signal, state.activeFilters.lists);
       if (uid !== targetUserIdRef.current) return;
       dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor, append: true });
     } catch (err) {
@@ -593,7 +594,7 @@ export function useProfileData({
     },
     fetchUserData, loadTabData,
     loadMoreLogs, loadMoreWatchlist, loadMoreVault, loadMoreLists,
-    refreshTabWithFilters: async (tab: 'archive' | 'ledger' | 'watchlist' | 'physical', filters: any, forceRefresh = false) => {
+    refreshTabWithFilters: async (tab: 'archive' | 'ledger' | 'watchlist' | 'physical' | 'lists', filters: any, forceRefresh = false) => {
       if (!state.targetUser) return;
       
       // Deep equality check mathematically guarantees zero redundant network calls 
@@ -646,6 +647,18 @@ export function useProfileData({
           logger.warn('[ProfileFetch] refreshTabWithFilters vault error:', err);
         } finally {
           if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: false });
+        }
+      } else if (tab === 'lists') {
+        dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: true });
+        try {
+          const result = await ProfileDataService.fetchOtherUserLists(uid, 50, undefined, controller.signal, filters);
+          if (!isMounted.current || uid !== targetUserIdRef.current) return;
+          dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor, append: false });
+        } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') return;
+          logger.warn('[ProfileFetch] refreshTabWithFilters lists error:', err);
+        } finally {
+          if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: false });
         }
       }
     }

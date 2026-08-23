@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, ScrollView, Text, TextInput, StyleSheet, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Bookmark, Search, X, Disc3, Sparkles } from 'lucide-react-native';
@@ -7,11 +7,12 @@ import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
 import PressableScale from '../PressableScale';
-import type { ProfileWatchlistItem } from '../../types';
+import type { ProfileWatchlistItem, WatchlistDecade } from '../../types';
+import { decadeLabel } from '../../types';
 import { tmdb } from '../../lib/tmdb';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, posterColumns } from './roomStyles';
-import { RoomChip, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
+import { RoomChip, RoomChipDivider, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
 
 /**
  * THE WATCHLIST — the queue, and the one room with a ritual in it.
@@ -40,6 +41,10 @@ interface ProfileWatchlistTabProps {
   setWatchlistSearch: (val: string) => void;
   watchlistSort: 'default' | 'az' | 'za';
   setWatchlistSort: (val: 'default' | 'az' | 'za') => void;
+  watchlistDecade: WatchlistDecade;
+  setWatchlistDecade: (val: WatchlistDecade) => void;
+  /** The decades this queue spans, newest first — derived from what is loaded. */
+  decades: { decade: number; count: number }[];
   setRouletteOpen: (val: boolean) => void;
   renderPosterCard: (item: ProfileWatchlistItem, width: number) => React.ReactNode;
   /** Has the data landed? A room must not describe itself before it knows. */
@@ -62,6 +67,9 @@ export default function ProfileWatchlistTab({
   setWatchlistSearch,
   watchlistSort,
   setWatchlistSort,
+  watchlistDecade,
+  setWatchlistDecade,
+  decades = [],
   setRouletteOpen,
   renderPosterCard,
   ready = true,
@@ -205,8 +213,10 @@ export default function ProfileWatchlistTab({
             </View>
             {/* The sort row used to sit BESIDE the search box, which left each
                 chip about 40pt wide with 4pt between them — three targets a
-                thumb could not separate. Its own line, at the shared gap. */}
-            <View style={r.chipRow}>
+                thumb could not separate. Its own line, at the shared gap.
+                The decades share that line rather than taking a third one:
+                header chrome is the loudest complaint about this app. */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={r.chipRow}>
               {SORTS.map(sv => (
                 <RoomChip
                   key={sv.id}
@@ -217,31 +227,68 @@ export default function ProfileWatchlistTab({
                   a11y={`Sort the queue: ${sv.label}`}
                 />
               ))}
-            </View>
+              {/* Only when there is a choice to make. One decade is not a filter. */}
+              {decades.length > 1 && (
+                <>
+                  <RoomChipDivider />
+                  <RoomChip
+                    label="ANY ERA"
+                    on={watchlistDecade === null}
+                    onPress={() => setWatchlistDecade(null)}
+                    gap={8}
+                    a11y="Show films from every decade"
+                  />
+                  {decades.map(d => (
+                    <RoomChip
+                      key={d.decade}
+                      label={decadeLabel(d.decade)}
+                      count={d.count}
+                      on={watchlistDecade === d.decade}
+                      onPress={() => setWatchlistDecade(watchlistDecade === d.decade ? null : d.decade)}
+                      gap={8}
+                      a11y={`Show only films from the ${decadeLabel(d.decade)}, ${d.count}`}
+                    />
+                  ))}
+                </>
+              )}
+            </ScrollView>
           </View>
         )}
       </>
     );
    
-  }, [watchlist.length, isSelf, setRouletteOpen, localSearch, handleSearchChange, setWatchlistSearch, watchlistSort, setWatchlistSort, animatedSearchProps, animatedSearchStyle]);
+  }, [watchlist.length, isSelf, setRouletteOpen, localSearch, handleSearchChange, setWatchlistSearch, watchlistSort, setWatchlistSort, watchlistDecade, setWatchlistDecade, decades, animatedSearchProps, animatedSearchStyle]);
 
   const ListEmptyComponent = useMemo(() => {
     if (watchlist.length > 0 && watchlistFiltered.length > 0) return null;
 
     if (!ready) return <RoomRetrieving room="the queue" />;
 
-    // A SEARCH found nothing. This used to be one grey line of italic text
+    // A FILTER found nothing. This used to be one grey line of italic text
     // floating in the middle of the page with no way out of it — the only
-    // "empty state" in the six rooms that was not a panel at all.
+    // "empty state" in the six rooms that was not a panel at all. And it has
+    // to name the RIGHT filter: with a search and a decade both live, telling a
+    // member to clear the search when it was the decade that emptied the room
+    // sends them round the loop again.
     if (watchlist.length > 0) {
+      const era = watchlistDecade !== null ? decadeLabel(watchlistDecade) : null;
       return (
         <RoomEmpty
           invite
           icon={<Search size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
-          title="Nothing under that name"
-          body={watchlistSearch ? `No film in the queue matches “${watchlistSearch}”.` : 'No films to show.'}
-          actionLabel="CLEAR THE SEARCH"
-          onAction={() => { setLocalSearch(''); setWatchlistSearch(''); }}
+          title={era && !watchlistSearch ? 'Nothing from that era' : 'Nothing under that name'}
+          body={
+            watchlistSearch && era ? `No film from the ${era} in the queue matches “${watchlistSearch}”.`
+              : watchlistSearch ? `No film in the queue matches “${watchlistSearch}”.`
+              : era ? `Nothing in the queue is from the ${era}.`
+              : 'No films to show.'
+          }
+          actionLabel={watchlistSearch ? 'CLEAR THE SEARCH' : era ? 'SHOW EVERY ERA' : undefined}
+          onAction={
+            watchlistSearch ? () => { setLocalSearch(''); setWatchlistSearch(''); }
+              : era ? () => setWatchlistDecade(null)
+              : undefined
+          }
         />
       );
     }
@@ -265,7 +312,7 @@ export default function ProfileWatchlistTab({
         body="This member hasn’t saved a film for later yet."
       />
     );
-  }, [watchlist.length, watchlistFiltered.length, isSelf, ready, watchlistSearch, setWatchlistSearch, pulseStyle, router]);
+  }, [watchlist.length, watchlistFiltered.length, isSelf, ready, watchlistSearch, setWatchlistSearch, watchlistDecade, setWatchlistDecade, pulseStyle, router]);
 
   return (
     <View style={r.container}>

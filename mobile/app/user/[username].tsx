@@ -204,7 +204,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, setTargetUser } = data;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists, setActiveTab } = ctrl;
-  const { archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, physicalFilter, setArchiveSieve, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setPhysicalFilter } = ctrl;
+  const { archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
 
   
   const filmStore = useFilmStore();
@@ -433,6 +433,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     ledgerFiltered,
     halfLifeMap,
     watchlistFiltered,
+    watchlistDecadeCounts,
     physicalFiltered,
     physicalFormatCounts,
     recentLogs,
@@ -462,7 +463,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     ledgerRatingFilter,
     watchlistSearch,
     watchlistSort,
+    watchlistDecade,
     physicalFilter,
+    physicalSort,
+    listsSort,
   });
 
   /**
@@ -768,12 +772,19 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 setWatchlistSearch={setWatchlistSearch}
                 watchlistSort={watchlistSort}
                 setWatchlistSort={setWatchlistSort}
+                watchlistDecade={watchlistDecade}
+                setWatchlistDecade={setWatchlistDecade}
+                decades={watchlistDecadeCounts}
                 watchlistFiltered={watchlistFiltered}
                 renderPosterCard={renderPosterCard}
                 ready={roomReady}
                 tier={tier}
-                onLoadMore={(isSelf && watchlistSearch.trim() === '' && watchlistSort === 'default') ? (filmStore.watchlistHasMore ? loadMoreWatchlist : undefined) : (hasMoreWatchlist ? loadMoreWatchlist : undefined)}
-                isLoadingMore={(isSelf && watchlistSearch.trim() === '' && watchlistSort === 'default') ? filmStore._fetchingWatchlist : isLoadingMore.watchlist}
+                /* The decade belongs in this guard for the same reason the sort
+                   does: with any filter live the room reads the SERVER page,
+                   so paging must come from the server's cursor and not from
+                   the unfiltered local store. */
+                onLoadMore={(isSelf && watchlistSearch.trim() === '' && watchlistSort === 'default' && watchlistDecade === null) ? (filmStore.watchlistHasMore ? loadMoreWatchlist : undefined) : (hasMoreWatchlist ? loadMoreWatchlist : undefined)}
+                isLoadingMore={(isSelf && watchlistSearch.trim() === '' && watchlistSort === 'default' && watchlistDecade === null) ? filmStore._fetchingWatchlist : isLoadingMore.watchlist}
                 isSelf={isSelf}
                 setRouletteOpen={setRouletteOpen}
                 refreshing={refreshing}
@@ -786,6 +797,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             {activeTab === 'lists' && (
               <ProfileListsTab
                 lists={displayLists}
+                listsSort={listsSort}
+                setListsSort={setListsSort}
                 ready={roomReady}
                 tier={tier}
                 onLoadMore={hasMoreLists ? loadMoreLists : undefined}
@@ -806,6 +819,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   vault={displayVault}
                   physicalFilter={physicalFilter}
                   setPhysicalFilter={setPhysicalFilter}
+                  physicalSort={physicalSort}
+                  setPhysicalSort={setPhysicalSort}
                   physicalFormatCounts={physicalFormatCounts}
                   physicalFiltered={physicalFiltered}
                   ready={roomReady}

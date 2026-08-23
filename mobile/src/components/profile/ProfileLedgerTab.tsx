@@ -10,7 +10,8 @@ import { tmdb } from '../../lib/tmdb';
 import PressableScale from '../PressableScale';
 import { ReelRating } from '../Decorative';
 import SpoilerVeil from '../SpoilerVeil';
-import type { ProfileLog, HalfLifeEntry } from '../../types';
+import type { ProfileLog, HalfLifeEntry, LedgerRating } from '../../types';
+import { LEDGER_HIGH_FLOOR } from '../../types';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
 import { r, rtlText } from './roomStyles';
@@ -51,8 +52,8 @@ interface ProfileLedgerTabProps {
   logs: ProfileLog[];
   ledgerSearch: string;
   setLedgerSearch: (val: string) => void;
-  ledgerRatingFilter: number | 'all';
-  setLedgerRatingFilter: (val: number | 'all') => void;
+  ledgerRatingFilter: LedgerRating;
+  setLedgerRatingFilter: (val: LedgerRating) => void;
   ledgerFiltered: ProfileLog[];
   halfLifeMap: Record<number, HalfLifeEntry>;
   // `renderPosterCard` is gone: the Ledger draws its own row now, because the
@@ -181,7 +182,28 @@ const LedgerRow = React.memo(function LedgerRow({
   );
 });
 
-const RATINGS = ['all', 1, 2, 3, 4, 5] as const;
+/**
+ * ALL · 4+ · one chip per rating.
+ *
+ * `4+` is the only filter here a member cannot already express by picking a
+ * single rating, and it is the one they actually reach for: "show me the ones
+ * I loved". Second in the row, because it is second in usefulness after ALL —
+ * and it runs as a `.gte()` all the way to the server, so on a visitor's
+ * profile it filters the whole ledger rather than the 150 rows in hand.
+ */
+const RATINGS: LedgerRating[] = ['all', 'high', 1, 2, 3, 4, 5];
+
+function ratingLabel(v: LedgerRating): string | undefined {
+  if (v === 'all') return 'ALL';
+  if (v === 'high') return `${LEDGER_HIGH_FLOOR}+`;
+  return undefined;   // the numbered chips draw reels, not text
+}
+
+function ratingSpoken(v: LedgerRating): string {
+  if (v === 'all') return 'Show every rating';
+  if (v === 'high') return `Show entries rated ${LEDGER_HIGH_FLOOR} of 5 or better`;
+  return `Show entries rated ${v} of 5`;
+}
 
 export default function ProfileLedgerTab({
   logs,
@@ -334,13 +356,13 @@ export default function ProfileLedgerTab({
           {RATINGS.map(v => (
             <RoomChip
               key={String(v)}
-              label={v === 'all' ? 'ALL' : undefined}
+              label={ratingLabel(v)}
               on={ledgerRatingFilter === v}
               onPress={() => { setLedgerRatingFilter(v); }}
               gap={8}
-              a11y={v === 'all' ? 'Show every rating' : `Show entries rated ${v} of 5`}
+              a11y={ratingSpoken(v)}
             >
-              {v === 'all' ? undefined : <ReelRating rating={v} size={8} />}
+              {typeof v === 'number' ? <ReelRating rating={v} size={8} /> : undefined}
             </RoomChip>
           ))}
         </ScrollView>
@@ -377,7 +399,9 @@ export default function ProfileLedgerTab({
           title="Nothing at that mark"
           body={ledgerRatingFilter === 'all'
             ? 'No entries to show.'
-            : `Nothing in the ledger is rated ${ledgerRatingFilter} of 5.`}
+            : ledgerRatingFilter === 'high'
+              ? `Nothing in the ledger is rated ${LEDGER_HIGH_FLOOR} of 5 or better.`
+              : `Nothing in the ledger is rated ${ledgerRatingFilter} of 5.`}
           actionLabel="SHOW EVERY RATING"
           onAction={() => setLedgerRatingFilter('all')}
         />

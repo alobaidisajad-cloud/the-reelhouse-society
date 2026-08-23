@@ -126,6 +126,19 @@ export function RoomChip({
   );
 }
 
+/**
+ * A hairline between two GROUPS of chips in one scroller.
+ *
+ * The Watchlist has to ask two different questions — in what ORDER, and WHICH
+ * ones — and the honest layout for that is two rows. But the loudest complaint
+ * about this app is header chrome: eight rows before content on the Stacks, and
+ * a search box plus two chip rows here would be three before a single poster.
+ * One row, two groups, a rule between them: the cost is 1pt.
+ */
+export function RoomChipDivider() {
+  return <View style={r.chipDivider} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />;
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // A RAIL — a month in the Archive, a shelf in the Vault
 // ════════════════════════════════════════════════════════════════════════════

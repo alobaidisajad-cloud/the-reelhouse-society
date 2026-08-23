@@ -179,6 +179,8 @@ export const r = StyleSheet.create({
    * signal for low vision; three signals cost nothing.
    */
   chipUnderline: { position: 'absolute' as const, left: 8, right: 8, bottom: 0, height: 2, backgroundColor: colors.sepia },
+  /** Separates two GROUPS of chips sharing one scroller — see RoomChipDivider. */
+  chipDivider: { width: 1, height: 16, backgroundColor: 'rgba(232,223,208,0.14)', alignSelf: 'center' as const },
 
   // ══════════════════════════════════════════════════════════════════════════
   // RAILS — a month, a shelf

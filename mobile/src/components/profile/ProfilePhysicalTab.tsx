@@ -7,12 +7,12 @@ import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
-import type { ProfileVaultItem, FormatCount } from '../../types';
+import type { ProfileVaultItem, FormatCount, ShelfSort } from '../../types';
 import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { FORMAT_META, shelfRank } from '@/src/constants/formats';
 import { r, posterColumns } from './roomStyles';
-import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
+import { RoomChip, RoomChipDivider, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
 
 /**
  * THE VAULT — a collection of OBJECTS, arranged the way objects are.
@@ -29,6 +29,13 @@ import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore }
  */
 
 const SHELF_LABEL: Record<string, string> = { '4k': '4K UHD', bluray: 'BLU-RAY', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LASERDISC', steelbook: 'STEELBOOK', criterion: 'CRITERION' };
+/** The same three the Watchlist offers — one vocabulary for 'in what order'. */
+const SHELF_SORTS: { id: ShelfSort; label: string }[] = [
+  { id: 'default', label: 'RECENT' },
+  { id: 'az', label: 'A–Z' },
+  { id: 'za', label: 'Z–A' },
+];
+
 const CASE_BADGE: Record<string, string> = { '4k': '4K', bluray: 'BD', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LD', steelbook: 'SB', criterion: 'CC' };
 
 interface ProfilePhysicalTabProps {
@@ -36,6 +43,8 @@ interface ProfilePhysicalTabProps {
   vault: ProfileVaultItem[];
   physicalFilter: string | null;
   setPhysicalFilter: (val: string | null) => void;
+  physicalSort: ShelfSort;
+  setPhysicalSort: (val: ShelfSort) => void;
   physicalFormatCounts: FormatCount[];
   physicalFiltered: ProfileVaultItem[];
   // `groupByMonth` is gone: a collection is shelved by carrier, not by the
@@ -125,6 +134,8 @@ export default React.memo(function ProfilePhysicalTab({
   vault,
   physicalFilter,
   setPhysicalFilter,
+  physicalSort = 'default',
+  setPhysicalSort,
   physicalFormatCounts,
   physicalFiltered,
   ready = true,
@@ -259,9 +270,23 @@ export default React.memo(function ProfilePhysicalTab({
             a11y={`Show only ${f.label}, ${f.count} items`}
           />
         ))}
+        {/* WHICH shelves, then in what ORDER on them — one row, one hairline,
+            because a third row of header chrome is worse than the choice is
+            worth. A shelf you own gets alphabetised; that is what shelves are. */}
+        <RoomChipDivider />
+        {SHELF_SORTS.map(sv => (
+          <RoomChip
+            key={sv.id}
+            label={sv.label}
+            on={physicalSort === sv.id}
+            onPress={() => setPhysicalSort(sv.id)}
+            gap={8}
+            a11y={`Arrange each shelf: ${sv.label}`}
+          />
+        ))}
       </ScrollView>
     );
-  }, [physicalFormatCounts, physicalFilter, vault.length, setPhysicalFilter]);
+  }, [physicalFormatCounts, physicalFilter, vault.length, setPhysicalFilter, physicalSort, setPhysicalSort]);
 
   const ListEmptyComponent = useMemo(() => {
     if (physicalFiltered.length > 0) return null;

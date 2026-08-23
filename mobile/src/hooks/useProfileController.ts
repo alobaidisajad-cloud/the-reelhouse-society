@@ -4,6 +4,7 @@ import { useIsFocused } from '@react-navigation/native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useAuthStore } from '@/src/stores/auth';
 import { useProfileData, ProfileTab } from '@/src/hooks/useProfileData';
+import type { LedgerRating, WatchlistDecade, ShelfSort } from '@/src/types';
 import { safeOpenURL, normalizeSocialUrl } from '@/src/utils/linking';
 import { useFilmStore } from '@/src/stores/films';
 import { useSocialStore } from '@/src/stores/socialStore';
@@ -56,10 +57,13 @@ export function useProfileController(usernameOverride?: string) {
   // Tab-specific filters
   const [archiveSieve, setArchiveSieve] = useState('all');
   const [ledgerSearch, setLedgerSearch] = useState('');
-  const [ledgerRatingFilter, setLedgerRatingFilter] = useState<number | 'all'>('all');
+  const [ledgerRatingFilter, setLedgerRatingFilter] = useState<LedgerRating>('all');
   const [watchlistSearch, setWatchlistSearch] = useState('');
   const [watchlistSort, setWatchlistSort] = useState<'default' | 'az' | 'za'>('default');
+  const [watchlistDecade, setWatchlistDecade] = useState<WatchlistDecade>(null);
   const [physicalFilter, setPhysicalFilter] = useState<string | null>(null);
+  const [physicalSort, setPhysicalSort] = useState<ShelfSort>('default');
+  const [listsSort, setListsSort] = useState<ShelfSort>('default');
 
   useEffect(() => {
     if (tab) {
@@ -281,14 +285,41 @@ export function useProfileController(usernameOverride?: string) {
         if (ledgerSearch || ledgerRatingFilter !== 'all') {
           await data.refreshTabWithFilters('ledger', { search: ledgerSearch, rating: ledgerRatingFilter, hasRatingOrReview: true }, true);
         }
+      // The Watchlist and the Vault fell through to the plain reload below,
+      // which fetches the tab UNFILTERED — so pulling to refresh a queue
+      // filtered to the 1970s silently refilled it with the whole queue while
+      // the 1970s chip stayed lit. Two of the four tabs that carry filters were
+      // handled and two were not; the sort was already live before this pass,
+      // so the bug is older than the decade filter that surfaced it.
+      } else if (activeTab === 'watchlist') {
+        if (watchlistSearch || watchlistSort !== 'default' || watchlistDecade !== null) {
+          await data.refreshTabWithFilters('watchlist', { search: watchlistSearch, sort: watchlistSort, decade: watchlistDecade }, true);
+        } else {
+          data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
+          await data.loadTabData(activeTab, true);
+        }
+      } else if (activeTab === 'physical') {
+        if (physicalFilter || physicalSort !== 'default') {
+          await data.refreshTabWithFilters('physical', { filter: physicalFilter, sort: physicalSort }, true);
+        } else {
+          data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
+          await data.loadTabData(activeTab, true);
+        }
+      } else if (activeTab === 'lists') {
+        if (listsSort !== 'default') {
+          await data.refreshTabWithFilters('lists', { sort: listsSort }, true);
+        } else {
+          data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
+          await data.loadTabData(activeTab, true);
+        }
       } else {
         data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
         await data.loadTabData(activeTab, true);
       }
     }
-    
+
     setRefreshingLocal(false);
-  }, [data, activeTab, archiveSieve, ledgerSearch, ledgerRatingFilter]);
+  }, [data, activeTab, archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort]);
 
   const toggleFollow = useCallback(async () => {
     if (!isAuthenticated) return (router.push as any)('/login' as any);
@@ -351,13 +382,15 @@ export function useProfileController(usernameOverride?: string) {
       } else if (activeTab === 'ledger') {
         refreshTabRef.current('ledger', { search: ledgerSearch, rating: ledgerRatingFilter, hasRatingOrReview: true });
       } else if (activeTab === 'watchlist') {
-        refreshTabRef.current('watchlist', { search: watchlistSearch, sort: watchlistSort });
+        refreshTabRef.current('watchlist', { search: watchlistSearch, sort: watchlistSort, decade: watchlistDecade });
       } else if (activeTab === 'physical') {
-        refreshTabRef.current('physical', { filter: physicalFilter });
+        refreshTabRef.current('physical', { filter: physicalFilter, sort: physicalSort });
+      } else if (activeTab === 'lists') {
+        refreshTabRef.current('lists', { sort: listsSort });
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, physicalFilter, activeTab, data.targetUser?.id]);
+  }, [archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, activeTab, data.targetUser?.id]);
 
   return {
     username,
@@ -385,6 +418,9 @@ export function useProfileController(usernameOverride?: string) {
     archiveSieve, setArchiveSieve,
     ledgerSearch, setLedgerSearch,
     ledgerRatingFilter, setLedgerRatingFilter,
+    watchlistDecade, setWatchlistDecade,
+    physicalSort, setPhysicalSort,
+    listsSort, setListsSort,
     watchlistSearch, setWatchlistSearch,
     watchlistSort, setWatchlistSort,
     physicalFilter, setPhysicalFilter,

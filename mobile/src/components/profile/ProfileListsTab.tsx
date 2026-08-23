@@ -7,11 +7,11 @@ import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
-import type { ProfileList, ProfileListFilm } from '../../types';
+import type { ProfileList, ProfileListFilm, ShelfSort } from '../../types';
 import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, roomTier, ROOM_INSET } from './roomStyles';
-import { RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
+import { RoomChip, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
 
 /**
  * THE STACKS — bound volumes, not thumbnails.
@@ -24,8 +24,17 @@ import { RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
  * yellow pill floating over the artwork.
  */
 
+/** The same three orders the Watchlist and the Vault offer. */
+const STACK_SORTS: { id: ShelfSort; label: string }[] = [
+  { id: 'default', label: 'RECENT' },
+  { id: 'az', label: 'A–Z' },
+  { id: 'za', label: 'Z–A' },
+];
+
 interface ProfileListsTabProps {
   lists: ProfileList[];
+  listsSort?: ShelfSort;
+  setListsSort?: (val: ShelfSort) => void;
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
   tier?: string | null;
@@ -110,7 +119,7 @@ const ProfileListCard = React.memo(({ list, router, edge }: { list: ProfileList,
   );
 });
 
-export default React.memo(function ProfileListsTab({ lists, ready = true, tier, onLoadMore, isLoadingMore, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
+export default React.memo(function ProfileListsTab({ lists, listsSort = 'default', setListsSort, ready = true, tier, onLoadMore, isLoadingMore, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
   const router = useRouter();
   const edge = useMemo(() => roomTier(tier).edge, [tier]);
 
@@ -170,6 +179,34 @@ export default React.memo(function ProfileListsTab({ lists, ready = true, tier, 
     );
   }, [lists.length, ready, isSelf, pulseStyle, router]);
 
+  /**
+   * The order the volumes stand in.
+   *
+   * Only when there are enough of them to matter. This room had NO header rows
+   * at all — the one of the six that didn't — and adding a chip row to reorder
+   * five stacks that already fit on a screen would be chrome bought with the
+   * thing that made the room good. Six is where a shelf stops being scannable.
+   */
+  const ListHeaderComponent = useMemo(() => {
+    if (lists.length < 6) return null;
+    return (
+      <View style={s.footWrap}>
+        <View style={r.chipRow}>
+          {STACK_SORTS.map(sv => (
+            <RoomChip
+              key={sv.id}
+              label={sv.label}
+              on={listsSort === sv.id}
+              onPress={() => setListsSort?.(sv.id)}
+              gap={8}
+              a11y={`Order the stacks: ${sv.label}`}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  }, [lists.length, listsSort, setListsSort]);
+
   const ListFooterComponent = useMemo(() => {
     if (lists.length === 0) return null;
     return (
@@ -187,6 +224,7 @@ export default React.memo(function ProfileListsTab({ lists, ready = true, tier, 
         renderItem={renderItem}
         keyExtractor={(item: ProfileList) => item.id}
         numColumns={2}
+        ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         estimatedItemSize={200}
