@@ -85,12 +85,40 @@ interface TmdbFilm {
   credits?: { cast?: TmdbPerson[]; crew?: TmdbPerson[] }
 }
 
+/**
+ * ── FITTING THE CEILINGS ────────────────────────────────────────────────────
+ * The films table caps every text column. The caps are generous enough that
+ * real data never approaches them — but "never" does a lot of work across a
+ * catalogue of a million rows, and the failure it guards against is nasty:
+ *
+ *   A CHECK violation is a 23514, not a 404. It is not a strike, so
+ *   mark_film_sync_failed is never called. The batch fails, the claim ages out
+ *   after ten minutes, the same film is claimed again and fails again. For
+ *   ever. One malformed record would quietly become the only work the sync
+ *   ever does.
+ *
+ * So the writer fits the data to the ceilings, and the ceilings become a
+ * backstop the normal path cannot reach — the only kind worth having.
+ */
+function cut(s: string | null | undefined, n: number): string | null {
+  const t = s?.trim()
+  return t ? t.slice(0, n) : null
+}
+
+/** Trim a list until it fits BOTH its item count and its joined length. The
+ *  join matches Postgres's `array_to_string(col, ',')` exactly. */
+function fit(xs: string[], maxItems: number, maxJoined: number): string[] {
+  const out = xs.slice(0, maxItems)
+  while (out.length > 0 && out.join(',').length > maxJoined) out.pop()
+  return out
+}
+
 /** What we keep. Everything else TMDB sends is thrown away here, not stored. */
 function shape(id: number, m: TmdbFilm) {
   const year = /^(\d{4})/.exec(m.release_date ?? '')?.[1]
   const director = (m.credits?.crew ?? []).find((c) => c.job === 'Director' && c.id && c.name)
 
-  const cast = (m.credits?.cast ?? [])
+  const billed = (m.credits?.cast ?? [])
     // TMDB usually returns cast in billing order, but `order` is the field that
     // actually MEANS it — sorting by it rather than trusting array position.
     .slice()
@@ -100,15 +128,36 @@ function shape(id: number, m: TmdbFilm) {
     .filter((c) => typeof c.id === 'number' && !!c.name?.trim())
     .slice(0, CAST_DEPTH)
 
+  /**
+   * Fit the cast by shrinking its DEPTH, never one array on its own.
+   *
+   * The three arrays are walked together by `unnest(a, b, c)`, which pads the
+   * short one with NULL and raises nothing (verified on PG18). Trimming
+   * cast_names alone to fit its ceiling would therefore not fail — it would
+   * quietly cost us the actors it truncated. Dropping the last-billed player
+   * from all three keeps them the same length and the same people.
+   */
+  let depth = billed.length
+  const joinedAt = (n: number, pick: (c: TmdbPerson) => string) =>
+    billed.slice(0, n).map(pick).join(',').length
+  while (
+    depth > 0 &&
+    (joinedAt(depth, (c) => (c.name as string).trim()) > 1000 ||
+      joinedAt(depth, (c) => c.profile_path ?? '') > 1000)
+  ) {
+    depth--
+  }
+  const cast = billed.slice(0, depth)
+
   return {
     id,
-    title: m.title?.trim() || null,
+    title: cut(m.title, 300),
     // A year outside this range is data we do not believe. Cinema starts in the
     // 1870s; anything past next decade is a typo or a placeholder.
     year: year && Number(year) >= 1870 && Number(year) <= 2100 ? Number(year) : null,
     runtime: typeof m.runtime === 'number' && m.runtime > 0 && m.runtime < 3000 ? m.runtime : null,
-    poster_path: m.poster_path ?? null,
-    genres: (m.genres ?? []).map((g) => g.name).filter(Boolean),
+    poster_path: cut(m.poster_path, 200),
+    genres: fit((m.genres ?? []).map((g) => g.name).filter(Boolean), 12, 300),
 
     // THREE ARRAYS, ONE SOURCE. The aggregation walks them together with
     // `unnest(a, b, c)`, so they must be the same length and in the same order.
@@ -123,10 +172,14 @@ function shape(id: number, m: TmdbFilm) {
     cast_profiles: cast.map((c) => c.profile_path ?? ''),
 
     director_id: director?.id ?? null,
-    director: director?.name?.trim() ?? null,
-    director_profile: director?.profile_path ?? null,
+    director: cut(director?.name, 200),
+    director_profile: cut(director?.profile_path, 200),
 
-    country_codes: (m.production_countries ?? []).map((c) => c.iso_3166_1).filter(Boolean),
+    country_codes: fit(
+      (m.production_countries ?? []).map((c) => c.iso_3166_1).filter(Boolean),
+      12,
+      200,
+    ),
     synced_at: new Date().toISOString(),
     sync_claimed_at: null,
     sync_failed: 0,

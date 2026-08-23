@@ -103,6 +103,64 @@ CREATE INDEX IF NOT EXISTS idx_films_unsynced
   WHERE synced_at IS NULL AND sync_failed < 3;
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- CEILINGS — because "every free-text column is bounded" is currently TRUE
+-- ════════════════════════════════════════════════════════════════════════════
+-- Checked live before writing this: of the text/jsonb columns without a length
+-- CHECK, every one is value-constrained instead (`status IN ('approved',…)`,
+-- `role IN (…)`) — which is stricter, not weaker. There is no free-text column
+-- in this database that can grow without limit. This table would have been the
+-- first, with eight of them.
+--
+-- The threat model is different here — TMDB writes these, not a member — so
+-- these are generous. That is the point: they bound a row and keep an invariant
+-- whole without ever rejecting a real film. An invariant with one exception
+-- stops being something you can rely on.
+--
+-- Arrays are measured with array_to_string; char_length on an array is an error,
+-- not a false pass, but only if you find that out before shipping it.
+-- DROP-then-ADD because Postgres has no `ADD CONSTRAINT IF NOT EXISTS`, and
+-- every other statement in this file is re-runnable. Caught by running the
+-- migration twice on a local Postgres: the second pass died here, which is
+-- exactly when you would be re-running it — after something else went wrong.
+ALTER TABLE public.films DROP CONSTRAINT IF EXISTS films_text_ceilings;
+ALTER TABLE public.films
+  ADD CONSTRAINT films_text_ceilings CHECK (
+    char_length(title)            <= 300  AND
+    char_length(poster_path)      <= 200  AND
+    char_length(director)         <= 200  AND
+    char_length(director_profile) <= 200  AND
+    char_length(array_to_string(genres,        ',')) <= 300  AND
+    char_length(array_to_string(cast_names,    ',')) <= 1000 AND
+    char_length(array_to_string(cast_profiles, ',')) <= 1000 AND
+    char_length(array_to_string(country_codes, ',')) <= 200
+  );
+
+-- ── ARRAY SHAPE: how many, and the three that must agree ────────────────────
+-- The three cast arrays are PARALLEL and that is load-bearing:
+-- `unnest(cast_ids, cast_names, cast_profiles)` walks all three together.
+--
+-- Verified on PG18 rather than assumed — `unnest(ARRAY[1,2,3], ARRAY['A','B'])`
+-- returns a third row of `(3, NULL)`. It pads the SHORT array at the end, and
+-- raises nothing. So a trailing mismatch costs us an actor (the aggregation's
+-- `name IS NOT NULL` filter drops them); a mismatch introduced in the MIDDLE —
+-- which is what building the three arrays in separate filter passes would do —
+-- shifts every later name and face onto the wrong person's id. The second is
+-- far worse than the bug this table exists to fix, and neither raises a thing.
+--
+-- The edge function builds all three from one filtered list so they cannot
+-- drift. This constraint is what makes that a guarantee rather than a promise,
+-- enforced where a future writer cannot talk its way past it.
+ALTER TABLE public.films DROP CONSTRAINT IF EXISTS films_array_shape;
+ALTER TABLE public.films
+  ADD CONSTRAINT films_array_shape CHECK (
+    cardinality(cast_ids) = cardinality(cast_names) AND
+    cardinality(cast_ids) = cardinality(cast_profiles) AND
+    cardinality(cast_ids) <= 10 AND
+    cardinality(genres) <= 12 AND
+    cardinality(country_codes) <= 12
+  );
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- WHO MAY WRITE: NOBODY
 -- ════════════════════════════════════════════════════════════════════════════
 -- This is reference data that everybody's analytics are computed from. If a
@@ -195,5 +253,13 @@ FROM (
   UNION ALL
   SELECT film_id, film_title FROM public.list_items       WHERE film_id > 0
 ) all_films
-ORDER BY film_id, film_title NULLS LAST
+-- Sort by the CLEANED title, not the raw column.
+--
+-- Caught by rehearsing this on a local Postgres: `ORDER BY film_title NULLS
+-- LAST` sorts '' before 'Fight Club', so DISTINCT ON picked the blank row and
+-- NULLIF then turned it into NULL — storing no title for a film four tables
+-- knew the name of. The NULLS LAST was there precisely to prefer a real title
+-- and it was being applied to the wrong expression, which is invisible reading
+-- it and obvious the moment you run it.
+ORDER BY film_id, NULLIF(film_title, '') NULLS LAST
 ON CONFLICT (id) DO NOTHING;
