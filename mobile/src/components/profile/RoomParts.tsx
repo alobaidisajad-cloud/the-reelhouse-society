@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, X } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
@@ -137,6 +137,69 @@ export function RoomChip({
  */
 export function RoomChipDivider() {
   return <View style={r.chipDivider} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SEARCH — the way IN, not a convenience
+// ════════════════════════════════════════════════════════════════════════════
+/**
+ * Three of the six rooms had no way to find anything.
+ *
+ * With 2,000 films in the Archive or 300 stacks on the shelf, scrolling is not
+ * navigation — it is the absence of it. Sorting A–Z means scrolling to "N" by
+ * hand. So this is not a nicety for large collections; past one screenful it is
+ * the primary control and everything else is secondary.
+ *
+ * Every term goes through `buildSearchPattern` at the call site — the one
+ * sanitiser in the app, hardened against a live injection that turned a search
+ * for four letters into "match every member". Nothing here builds a query.
+ *
+ * The debounce lives with the caller because each room's ANR budget differs;
+ * what lives here is the shape, so five rooms cannot end up with five search
+ * boxes that look and behave differently. They did once: two rooms had one,
+ * three had none, and the two that had one used different placeholder voices.
+ */
+export function RoomSearch({ value, onChange, onClear, placeholder, a11y, ember }: {
+  value: string;
+  onChange: (v: string) => void;
+  onClear: () => void;
+  placeholder: string;
+  a11y: string;
+  /** The breathing icon, animated by the room that owns the timing. */
+  ember?: React.ReactNode;
+}) {
+  return (
+    <View style={r.search}>
+      {ember}
+      <TextInput
+        style={r.searchInput}
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={colors.fog}
+        selectionColor={colors.sepia}
+        keyboardAppearance="dark"
+        accessibilityLabel={a11y}
+        returnKeyType="search"
+        autoCorrect={false}
+        autoCapitalize="none"
+        // A search box is not a place to be autocorrected into a different film.
+        spellCheck={false}
+      />
+      {value.length > 0 && (
+        <PressableScale
+          onPress={onClear}
+          style={r.searchClear}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          haptic
+          accessibilityRole="button"
+          accessibilityLabel="Clear the search"
+        >
+          <X size={14} color={colors.fog} strokeWidth={1.5} />
+        </PressableScale>
+      )}
+    </View>
+  );
 }
 
 // ════════════════════════════════════════════════════════════════════════════

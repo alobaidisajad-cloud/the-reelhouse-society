@@ -204,7 +204,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, setTargetUser } = data;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists, setActiveTab } = ctrl;
-  const { archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
+  const { archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setArchiveSearch, setListsSearch, setPhysicalSearch, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
 
   
   const filmStore = useFilmStore();
@@ -459,6 +459,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     username: typeof username === 'string' ? username : '',
     analyticsLogs,
     archiveSieve,
+    archiveSearch,
+    listsSearch,
+    physicalSearch,
     ledgerSearch,
     ledgerRatingFilter,
     watchlistSearch,
@@ -736,6 +739,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 ready={roomReady}
                 tier={tier}
                 monthCounts={analyticsShape?.monthly_activity}
+                totalFilms={totalFilms}
+                archiveSearch={archiveSearch}
+                setArchiveSearch={setArchiveSearch}
                 onLoadMore={(isSelf && archiveSieve === 'all') ? (filmStore.archiveHasMore ? loadMoreLogs : undefined) : (hasMoreArchiveLogs ? loadMoreLogs : undefined)}
                 isLoadingMore={(isSelf && archiveSieve === 'all') ? filmStore._fetchingLogs : isLoadingMore.logs_archive}
                 refreshing={refreshing}
@@ -802,6 +808,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 lists={displayLists}
                 listsSort={listsSort}
                 setListsSort={setListsSort}
+                listsSearch={listsSearch}
+                setListsSearch={setListsSearch}
+                totalLists={totalLists}
                 ready={roomReady}
                 tier={tier}
                 onLoadMore={hasMoreLists ? loadMoreLists : undefined}
@@ -830,6 +839,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   tier={tier}
                   totalVault={totalVault}
                   vaultFormats={analyticsShape?.vault_formats}
+                  physicalSearch={physicalSearch}
+                  setPhysicalSearch={setPhysicalSearch}
                   /* `physicalFilter === 'all'` was never true: no filter is
                      `null`, and 'all' is not a format. So the member's OWN
                      vault took the visitor branch on all three of these — it

@@ -9,7 +9,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { posterColumns, roomTier, chipSlop, CHIP_SLOP_Y, ROOM_INSET, GRID_GAP_4, GRID_GAP_3, EMBER_REST, EMBER_BEATS } from '../roomStyles';
+import { posterColumns, roomTier, chipSlop, CHIP_SLOP_Y, ROOM_INSET, GRID_GAP_4, GRID_GAP_3, EMBER_REST, EMBER_BEATS, completeCount, countLabel } from '../roomStyles';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
@@ -225,6 +225,157 @@ describe('an animation ends, and ends telling the truth', () => {
     }
     expect(EMBER_REST).toBeGreaterThan(0);
     expect(EMBER_REST).toBeLessThan(1);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// A COUNT ONLY APPEARS WHEN IT IS COMPLETE
+// ════════════════════════════════════════════════════════════════════════════
+describe('a number is stated only when it is knowable', () => {
+  it('says nothing when the server has not answered', () => {
+    // Before the migration lands, or for a member the viewer may not see, the
+    // shape is absent. A room must draw the heading with NO number rather than
+    // fall back to counting the page it happens to hold.
+    expect(completeCount(null, true)).toBeUndefined();
+    expect(completeCount(undefined, true)).toBeUndefined();
+  });
+
+  it('says nothing when a filter narrows the room past what the server knows', () => {
+    // The server counted every film in March. It did not count every ABANDONED
+    // film in March. Under that filter its figure describes something other
+    // than what is on screen, so it is not used.
+    expect(completeCount({ count: 40 }, false)).toBeUndefined();
+  });
+
+  it('states the figure when it is genuinely complete', () => {
+    expect(completeCount({ count: 40 }, true)).toBe(40);
+    expect(completeCount({ count: 0 }, true)).toBe(0);
+  });
+
+  it('treats a negative as unknown, not as a number', () => {
+    // The rooms use -1 as "this month is not in the server's answer". Printing
+    // "-1 FILMS" would be worse than printing nothing.
+    expect(completeCount({ count: -1 }, true)).toBeUndefined();
+  });
+
+  it('never renders a label for an unknown count', () => {
+    expect(countLabel(undefined, 'FILM', 'FILMS')).toBeUndefined();
+    expect(countLabel(40, 'FILM', 'FILMS')).toBe('40 FILMS');
+    expect(countLabel(1, 'FILM', 'FILMS')).toBe('1 FILM');
+    // 0 is a real answer — an empty month that the server confirms is empty.
+    expect(countLabel(0, 'FILM', 'FILMS')).toBe('0 FILMS');
+  });
+
+  it('no room counts a rail from the array it was handed', () => {
+    // The defect in one assertion. `items.length` on a month heading counted
+    // the loaded page, so March read 7 when it held 40 — and climbed as the
+    // member scrolled.
+    const offenders: string[] = [];
+    for (const f of [
+      'src/components/profile/ProfileArchiveTab.tsx',
+      'src/components/profile/ProfileLedgerTab.tsx',
+      'src/components/profile/ProfilePhysicalTab.tsx',
+    ]) {
+      const src = code(read(f));
+      // A count passed to a rail must not be derived from a local array length.
+      if (/count:\s*`\$\{items\.length\}/.test(src)) offenders.push(`${f}: rail counts items.length`);
+      if (/count=\{`\$\{item\.count\}/.test(src)) offenders.push(`${f}: rail counts the loaded slice`);
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// SEARCH IS THE WAY IN
+// ════════════════════════════════════════════════════════════════════════════
+describe('every room that can grow can be searched', () => {
+  const ROOMS = [
+    ['Archive', 'src/components/profile/ProfileArchiveTab.tsx'],
+    ['Ledger', 'src/components/profile/ProfileLedgerTab.tsx'],
+    ['Watchlist', 'src/components/profile/ProfileWatchlistTab.tsx'],
+    ['Stacks', 'src/components/profile/ProfileListsTab.tsx'],
+    ['Vault', 'src/components/profile/ProfilePhysicalTab.tsx'],
+  ] as const;
+
+  it.each(ROOMS)('%s has a search box', (_name, f) => {
+    // Three of the five had none. At 2,000 films or 300 stacks, scrolling is
+    // not navigation — it is the absence of it.
+    //
+    // `<RoomSearch`, not `RoomSearch`: a mutation pass replaced the JSX tag
+    // with a nonexistent component and this still passed, because the IMPORT
+    // line kept the name. Matching a name proves the name is present; only the
+    // opening angle bracket proves it is RENDERED.
+    expect(read(f)).toMatch(/<RoomSearch|<TextInput/);
+  });
+
+  it.each(ROOMS)('%s ends its debounce when the room closes', (_name, f) => {
+    const src = read(f);
+    if (!/searchTimeoutRef/.test(src)) return;   // no debounce, nothing to end
+    expect(src).toMatch(/useEffect\(\(\)\s*=>\s*\(\)\s*=>\s*\{[\s\S]{0,220}?clearTimeout\(searchTimeoutRef/);
+  });
+
+  it('every search box is gated on the REAL total, never the loaded array', () => {
+    // Gating on `logs.length` would make the box appear and vanish as a member
+    // scrolls — the same small-data mistake as counting a month from one page.
+    for (const [, f] of ROOMS) {
+      const src = code(read(f));
+      const gate = /const showSearch = ([^;]+);/.exec(src)?.[1];
+      if (!gate) continue;
+      expect(gate).toMatch(/total/i);
+    }
+  });
+
+  it('no room builds its own query string from a member’s search text', () => {
+    // Everything goes through `buildSearchPattern`, the one sanitiser — it was
+    // hardened after a live injection turned a four-letter search into "match
+    // every member". A room that interpolates its own filter bypasses it.
+    for (const [, f] of ROOMS) {
+      const src = code(read(f));
+      expect(src).not.toMatch(/\.ilike\(|\.or\(`/);
+    }
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// THE WRITING NOBODY COULD SEE
+// ════════════════════════════════════════════════════════════════════════════
+describe('what the member wrote reaches a screen', () => {
+  it('the Ledger shows the headline an Archivist paid for', () => {
+    // `editorial_header` is fetched on every log and was rendered in NO room.
+    expect(code(read('src/components/profile/ProfileLedgerTab.tsx'))).toMatch(/editorialHeader/);
+  });
+
+  it('the Ledger shows who they watched it with', () => {
+    expect(code(read('src/components/profile/ProfileLedgerTab.tsx'))).toMatch(/watchedWith/);
+  });
+
+  it('a walk-out reason has somewhere to live', () => {
+    // The Ledger holds only rated-or-reviewed films, and an abandoned one has
+    // neither — so this sentence had no home in the app at all.
+    const src = code(read('src/components/profile/ProfileArchiveTab.tsx'));
+    expect(src).toMatch(/abandonedReason/);
+    // DERIVED FROM THE SIEVE, not merely mentioned. A mutation pass set this to
+    // a flat `false` — the room silently went back to being a grid and the
+    // reasons vanished again, while a test looking for the identifier passed.
+    expect(src).toMatch(/const abandonedView = archiveSieve === 'abandoned'/);
+    // And the rows it switches to must actually be rendered.
+    expect(src).toMatch(/<WalkoutRow/);
+  });
+
+  it('every one of those is length-capped before it reaches a recycled row', () => {
+    // All three are free-text member input. Without a cut, a member who pastes
+    // four thousand characters leaves the whole string to be measured by the
+    // text engine on every pass of a recycled row.
+    const ledger = code(read('src/components/profile/ProfileLedgerTab.tsx'));
+    const archive = code(read('src/components/profile/ProfileArchiveTab.tsx'));
+    expect(ledger).toMatch(/truncateReview\([^)]*ROW_HEADER_CHARS/);
+    expect(ledger).toMatch(/truncateReview\([^)]*ROW_WITH_CHARS/);
+    expect(archive).toMatch(/truncateReview\(plain,\s*\d+\)/);
+  });
+
+  it('and passes through stripHTML — these arrive as markup', () => {
+    expect(code(read('src/components/profile/ProfileLedgerTab.tsx'))).toMatch(/stripHTML\(String\(log\.editorialHeader/);
+    expect(code(read('src/components/profile/ProfileArchiveTab.tsx'))).toMatch(/stripHTML\(String\(log\.abandonedReason/);
   });
 });
 

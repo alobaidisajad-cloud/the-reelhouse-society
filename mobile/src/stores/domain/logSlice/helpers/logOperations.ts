@@ -2,8 +2,9 @@ import * as Crypto from 'expo-crypto';
 import { Image } from 'expo-image';
 import { queryClient } from '../../../../lib/queryClient';
 import { supabase } from '../../../../lib/supabase';
+// The rank colours moved into the ladder with the rank names — this file no
+// longer decides what an Oracle looks like.
 import { standingFor } from '@/src/constants/standing';
-import { colors } from '../../../../theme/theme';
 import type { DomainLog } from '../../../../types';
 import { LOG_SELECT_COLUMNS, mapLogRow, mapLogToDbPayload } from '../../../../utils/mappers';
 import { captureError } from '../../../../lib/sentry';

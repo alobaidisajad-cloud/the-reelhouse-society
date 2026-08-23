@@ -96,9 +96,9 @@ export interface ProfileState {
   activeFilters: {
     ledger?: { search?: string, rating?: LedgerRating, hasRatingOrReview?: boolean };
     watchlist?: { search?: string, sort?: ShelfSort, decade?: WatchlistDecade };
-    physical?: { filter?: string, sort?: ShelfSort };
-    archive?: { status?: string };
-    lists?: { sort?: ShelfSort };
+    physical?: { filter?: string, sort?: ShelfSort, search?: string };
+    archive?: { status?: string, search?: string, titleOnly?: boolean };
+    lists?: { sort?: ShelfSort, search?: string };
   };
 }
 

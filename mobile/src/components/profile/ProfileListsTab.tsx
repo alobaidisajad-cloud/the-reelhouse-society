@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useState, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
-import { LayoutList, Lock, ListOrdered } from 'lucide-react-native';
+import { LayoutList, Lock, ListOrdered, Search } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
@@ -11,7 +11,7 @@ import type { ProfileList, ProfileListFilm, ShelfSort } from '../../types';
 import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, roomTier, ROOM_INSET } from './roomStyles';
-import { RoomChip, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
+import { RoomChip, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
 
 /**
  * THE STACKS — bound volumes, not thumbnails.
@@ -35,6 +35,10 @@ interface ProfileListsTabProps {
   lists: ProfileList[];
   listsSort?: ShelfSort;
   setListsSort?: (val: ShelfSort) => void;
+  listsSearch?: string;
+  setListsSearch?: (v: string) => void;
+  /** The reconciled total — decides whether search is worth a row. */
+  totalLists?: number;
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
   tier?: string | null;
@@ -119,7 +123,7 @@ const ProfileListCard = React.memo(({ list, router, edge }: { list: ProfileList,
   );
 });
 
-export default React.memo(function ProfileListsTab({ lists, listsSort = 'default', setListsSort, ready = true, tier, onLoadMore, isLoadingMore, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
+export default React.memo(function ProfileListsTab({ lists, listsSort = 'default', setListsSort, listsSearch, setListsSearch, totalLists, ready = true, tier, onLoadMore, isLoadingMore, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
   const router = useRouter();
   const edge = useMemo(() => roomTier(tier).edge, [tier]);
 
@@ -137,6 +141,26 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
     transform: [{ translateY: breatheAnim.value * -3 }],
     shadowOpacity: breatheAnim.value,
   }));
+
+  /**
+   * Search — the way IN. Shown past one screenful, measured on the REAL total
+   * rather than the rows that happen to have loaded, so the box cannot appear
+   * and vanish as a member scrolls.
+   */
+  const showSearch = (totalLists ?? lists.length) > 6;
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [localSearch, setLocalSearch] = useState(listsSearch ?? '');
+  const handleSearchChange = useCallback((val: string) => {
+    setLocalSearch(val);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => setListsSearch?.(val), 300);
+  }, [setListsSearch]);
+  // A pending debounce must not outlive the room.
+  useEffect(() => () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+  }, []);
+
+
 
   const renderItem = useCallback(({ item }: { item: ProfileList }) => {
     return (
@@ -188,9 +212,19 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
    * thing that made the room good. Six is where a shelf stops being scannable.
    */
   const ListHeaderComponent = useMemo(() => {
-    if (lists.length < 6) return null;
+    if (!showSearch) return null;
     return (
       <View style={s.footWrap}>
+        <View style={s.searchWrap}>
+          <RoomSearch
+            value={localSearch}
+            onChange={handleSearchChange}
+            onClear={() => { setLocalSearch(''); setListsSearch?.(''); }}
+            placeholder="Find a stack…"
+            a11y="Search the stacks by name or description"
+            ember={<Search size={13} color={colors.fog} strokeWidth={1.5} style={s.searchIcon} />}
+          />
+        </View>
         <View style={r.chipRow}>
           {STACK_SORTS.map(sv => (
             <RoomChip
@@ -205,7 +239,7 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
         </View>
       </View>
     );
-  }, [lists.length, listsSort, setListsSort]);
+  }, [showSearch, listsSort, setListsSort, localSearch, handleSearchChange, setListsSearch]);
 
   const ListFooterComponent = useMemo(() => {
     if (lists.length === 0) return null;
@@ -277,6 +311,8 @@ const s = StyleSheet.create({
    * because the other half lives on the cards. This is that other half.
    */
   footWrap: { paddingHorizontal: CARD_MARGIN },
+  searchWrap: { marginBottom: 12 },
+  searchIcon: { opacity: 0.6 },
 
   // ── your own empty stacks ──
   emptyStateSelf: { marginTop: 24, marginHorizontal: CARD_MARGIN, position: 'relative', shadowColor: 'rgba(0,0,0,0.8)', shadowOffset: { width: 0, height: 10 }, shadowRadius: 20 },

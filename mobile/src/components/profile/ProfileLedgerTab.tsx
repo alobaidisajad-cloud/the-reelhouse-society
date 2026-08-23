@@ -14,7 +14,7 @@ import type { ProfileLog, HalfLifeEntry, LedgerRating } from '../../types';
 import { LEDGER_HIGH_FLOOR } from '../../types';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
-import { r, rtlText, EMBER_REST, EMBER_BEATS, completeCount, countLabel } from './roomStyles';
+import { r, rtlText, EMBER_REST, EMBER_BEATS } from './roomStyles';
 import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
 
 /**
@@ -47,6 +47,10 @@ const PLATE_H = 63;
  * size, so the visible cut is always the layout's, never this one.
  */
 const ROW_REVIEW_CHARS = 180;
+/** A headline is a headline. Past this it is a paragraph wearing a hat. */
+const ROW_HEADER_CHARS = 60;
+/** Enough for a name or two; both of these are free-text member input. */
+const ROW_WITH_CHARS = 40;
 
 interface ProfileLedgerTabProps {
   logs: ProfileLog[];
@@ -99,6 +103,24 @@ const LedgerRow = React.memo(function LedgerRow({
     return plain ? truncateReview(plain.replace(/\s+/g, ' '), ROW_REVIEW_CHARS) : '';
   }, [log.pullQuote, log.review]);
   const rtl = useMemo(() => isRTLText(words), [words]);
+
+  /**
+   * Both of these are already fetched on every log and shown in NO room.
+   *
+   * Capped here, not only by `numberOfLines`: an editorial header is member
+   * input, and a member who pastes four thousand characters into it would
+   * otherwise leave that whole string to be measured by the text engine on
+   * every pass of a recycled row.
+   */
+  const header = useMemo(() => {
+    const h = stripHTML(String(log.editorialHeader ?? '')).replace(/\s+/g, ' ').trim();
+    return h ? truncateReview(h, ROW_HEADER_CHARS) : '';
+  }, [log.editorialHeader]);
+
+  const companion = useMemo(() => {
+    const w = String(log.watchedWith ?? '').replace(/\s+/g, ' ').trim();
+    return w ? truncateReview(w, ROW_WITH_CHARS).toUpperCase() : '';
+  }, [log.watchedWith]);
 
   return (
     <PressableScale
@@ -171,6 +193,24 @@ const LedgerRow = React.memo(function LedgerRow({
           )}
         </View>
 
+        {/**
+          * THE HEADLINE.
+          *
+          * `editorial_header` is written at the editorial desk — an
+          * Archivist-and-above feature, PAID FOR, and displayed in none of the
+          * six rooms until now. It is fetched on every log and was reaching the
+          * screen nowhere on the member's own profile.
+          *
+          * In champagne and above the quote, so it reads as a title rather than
+          * more of the review. One line: a headline that wraps to three is a
+          * paragraph wearing a hat.
+          */}
+        {!!header && (
+          <Text {...scaledTextProps} style={[s.rowHeadline, rtl && rtlText]} numberOfLines={1}>
+            {header}
+          </Text>
+        )}
+
         {!!words && (
           // The author always sees their own words; a visitor sees the veil.
           // `revealKey` is not optional on a recycled list — without it a
@@ -180,6 +220,19 @@ const LedgerRow = React.memo(function LedgerRow({
               {words}
             </Text>
           </SpoilerVeil>
+        )}
+
+        {/**
+          * WHO THEY SAW IT WITH.
+          *
+          * Set exactly as the log page already sets it — `♡ WITH SARAH` — so
+          * one fact does not get two different treatments in one app. Also
+          * unused in every room until now.
+          */}
+        {!!companion && (
+          <Text {...scaledTextProps} style={s.rowWith} numberOfLines={1}>
+            ♡ WITH <Text {...scaledTextProps} style={s.rowWithName}>{companion}</Text>
+          </Text>
         )}
       </View>
     </PressableScale>
@@ -419,7 +472,7 @@ export default function ProfileLedgerTab({
       </View>
     );
    
-  }, [logs.length, localSearch, handleSearchChange, setLedgerSearch, ledgerRatingFilter, setLedgerRatingFilter, animatedSearchProps, animatedSearchStyle]);
+  }, [logs.length, localSearch, handleSearchChange, setLedgerSearch, ledgerRatingFilter, setLedgerRatingFilter, ratings, ratingTotal, animatedSearchProps, animatedSearchStyle]);
 
   const ListEmptyComponent = useMemo(() => {
     if (logs.length > 0 && ledgerFiltered.length > 0) return null;
@@ -543,6 +596,10 @@ const s = StyleSheet.create({
    * never used to show.
    */
   rowWords: { fontFamily: fonts.bodyItalic, fontSize: 11.5, lineHeight: 17, color: colors.bone, opacity: 0.72, marginTop: 6 },
+  /** The editorial desk's headline — champagne, so it reads as a title. */
+  rowHeadline: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.champagne, marginTop: 6 },
+  rowWith: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.6, color: colors.fog, marginTop: 5 },
+  rowWithName: { color: colors.bone },
 
   // ── your own blank ledger ──
   emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, borderWidth: 1, borderRadius: 4, marginTop: 12 },

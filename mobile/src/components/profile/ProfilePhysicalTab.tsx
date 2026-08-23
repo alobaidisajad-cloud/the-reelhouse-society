@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useState, useRef } from 'react';
 import { View, ScrollView, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
-import { Disc, Film as FilmIcon } from 'lucide-react-native';
+import { Disc, Film as FilmIcon, Search } from 'lucide-react-native';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
 import { useRouter } from 'expo-router';
@@ -12,7 +12,7 @@ import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { FORMAT_META, shelfRank } from '@/src/constants/formats';
 import { r, posterColumns, countLabel } from './roomStyles';
-import { RoomChip, RoomChipDivider, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
+import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
 
 /**
  * THE VAULT — a collection of OBJECTS, arranged the way objects are.
@@ -56,6 +56,8 @@ interface ProfilePhysicalTabProps {
   totalVault?: number;
   /** TRUE copies per shelf, over the WHOLE collection. Absent = no counts. */
   vaultFormats?: { format: string; count: number }[] | null;
+  physicalSearch?: string;
+  setPhysicalSearch?: (v: string) => void;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   hasMore?: boolean;
@@ -146,6 +148,8 @@ export default React.memo(function ProfilePhysicalTab({
   tier,
   totalVault,
   vaultFormats,
+  physicalSearch,
+  setPhysicalSearch,
   onLoadMore,
   isLoadingMore,
   hasMore,
@@ -174,6 +178,26 @@ export default React.memo(function ProfilePhysicalTab({
     borderColor: `rgba(184,137,26,${0.2 + breatheAnim.value * 0.5})`,
     backgroundColor: `rgba(10,8,6,${0.9 + (breatheAnim.value * 0.1)})`,
   }));
+
+  /**
+   * Search — the way IN. Shown past one screenful, measured on the REAL total
+   * rather than the rows that happen to have loaded, so the box cannot appear
+   * and vanish as a member scrolls.
+   */
+  const showSearch = (totalVault ?? vault.length) > 12;
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [localSearch, setLocalSearch] = useState(physicalSearch ?? '');
+  const handleSearchChange = useCallback((val: string) => {
+    setLocalSearch(val);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => setPhysicalSearch?.(val), 300);
+  }, [setPhysicalSearch]);
+  // A pending debounce must not outlive the room.
+  useEffect(() => () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+  }, []);
+
+
 
   /**
    * The shelves a member actually owns, and how many stand on each.
@@ -294,6 +318,19 @@ export default React.memo(function ProfilePhysicalTab({
   const ListHeaderComponent = useMemo(() => {
     if (physicalFormatCounts.length === 0) return null;
     return (
+      <>
+        {showSearch && (
+          <View style={s.searchWrap}>
+            <RoomSearch
+              value={localSearch}
+              onChange={handleSearchChange}
+              onClear={() => { setLocalSearch(''); setPhysicalSearch?.(''); }}
+              placeholder="Find a copy…"
+              a11y="Search the vault by title or by your notes"
+              ember={<Search size={13} color={colors.fog} strokeWidth={1.5} style={s.searchIcon} />}
+            />
+          </View>
+        )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={r.chipScroll} contentContainerStyle={r.chipRow}>
         {/* `vault.length` was the LOADED count — 50 on first open, whatever
             had paged in after. `totalVault` is the server's own reconciled
@@ -332,8 +369,9 @@ export default React.memo(function ProfilePhysicalTab({
           />
         ))}
       </ScrollView>
+      </>
     );
-  }, [shelfChips, physicalFormatCounts.length, physicalFilter, totalVault, setPhysicalFilter, physicalSort, setPhysicalSort]);
+  }, [shelfChips, physicalFormatCounts.length, physicalFilter, totalVault, setPhysicalFilter, physicalSort, setPhysicalSort, showSearch, localSearch, handleSearchChange, setPhysicalSearch]);
 
   const ListEmptyComponent = useMemo(() => {
     if (physicalFiltered.length > 0) return null;
@@ -412,6 +450,8 @@ export default React.memo(function ProfilePhysicalTab({
 });
 
 const s = StyleSheet.create({
+  searchWrap: { marginBottom: 12 },
+  searchIcon: { opacity: 0.6 },
   // ── a cased copy ──
   /**
    * `maxWidth: '23.5%'` used to fight `flex: 1` inside a row with an 8pt gap —

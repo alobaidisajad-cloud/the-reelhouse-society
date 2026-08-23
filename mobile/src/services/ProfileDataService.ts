@@ -304,7 +304,7 @@ export const ProfileDataService = {
    * Cursor-based keyset pagination replaces offset .range().
    * Compound cursor format: "created_at|id" for deterministic deep-scroll ordering.
    */
-  async fetchOtherUserLogs(userId: string, limit: number = 50, cursorString?: string, signal?: AbortSignal, options?: { search?: string, rating?: LedgerRating, status?: string, hasRatingOrReview?: boolean }): Promise<{ items: ProfileLog[], nextCursor: string | null }> {
+  async fetchOtherUserLogs(userId: string, limit: number = 50, cursorString?: string, signal?: AbortSignal, options?: { search?: string, titleOnly?: boolean, rating?: LedgerRating, status?: string, hasRatingOrReview?: boolean }): Promise<{ items: ProfileLog[], nextCursor: string | null }> {
     const fetchLimit = limit + 1;
     let query = supabase.from('logs')
       .select(PUBLIC_LOG_COLUMNS)
@@ -317,7 +317,14 @@ export const ProfileDataService = {
     if (options?.search) {
       const pattern = buildSearchPattern(options.search);
       if (pattern === null) return { items: [], nextCursor: null };
-      query = query.or(`film_title.ilike.*${pattern}*,review.ilike.*${pattern}*`);
+      // The Archive and the Ledger share this query but ask different
+      // questions. The LEDGER is the room for writing, so searching it should
+      // reach into reviews. The ARCHIVE is the wall of everything watched, and
+      // there a search for "boring" returning films whose REVIEW says boring —
+      // with no indication why — is a bewildering result.
+      query = options.titleOnly
+        ? query.ilike('film_title', `%${pattern}%`)
+        : query.or(`film_title.ilike.*${pattern}*,review.ilike.*${pattern}*`);
     }
     // `'high'` is a SENTINEL, not a rating — a range, which is the one thing an
     // `.eq()` cannot express. Checked BEFORE the numeric branch, because
@@ -434,7 +441,7 @@ export const ProfileDataService = {
   /**
    * Fetches cursor-paginated vault items for another user's profile.
    */
-  async fetchOtherUserVault(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, limit: number = 50, cursor?: string, signal?: AbortSignal, options?: { filter?: string, sort?: ShelfSort }): Promise<{ items: ProfileVaultItem[], nextCursor: string | null }> {
+  async fetchOtherUserVault(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, limit: number = 50, cursor?: string, signal?: AbortSignal, options?: { filter?: string, sort?: ShelfSort, search?: string }): Promise<{ items: ProfileVaultItem[], nextCursor: string | null }> {
     
     if (!isArchivistPlusTier(targetUser)) return { items: [], nextCursor: null };
 
@@ -447,6 +454,15 @@ export const ProfileDataService = {
     if (options?.filter && options.filter !== 'all') {
       // physical_archive formats is text[]
       query = query.contains('formats', [options.filter]);
+    }
+
+    // A shelf of three hundred discs cannot be browsed by scrolling. Titles AND
+    // the member's own notes — "the one Dad gave me" is exactly how somebody
+    // looks for a disc, and the notes column is already in the SELECT.
+    if (options?.search) {
+      const pattern = buildSearchPattern(options.search);
+      if (pattern === null) return { items: [], nextCursor: null };
+      query = query.or(`film_title.ilike.*${pattern}*,notes.ilike.*${pattern}*`);
     }
 
     // A shelf can be read in the order it was FILLED or alphabetically, which
@@ -488,7 +504,7 @@ export const ProfileDataService = {
   /**
    * Fetches cursor-paginated lists with their items for another user's profile.
    */
-  async fetchOtherUserLists(userId: string, limit: number = 50, cursor?: string, signal?: AbortSignal, options?: { sort?: ShelfSort }): Promise<{ items: ProfileList[], nextCursor: string | null }> {
+  async fetchOtherUserLists(userId: string, limit: number = 50, cursor?: string, signal?: AbortSignal, options?: { sort?: ShelfSort, search?: string }): Promise<{ items: ProfileList[], nextCursor: string | null }> {
     const fetchLimit = limit + 1;
     const axis = sortAxis(options?.sort, 'title');
     const asc = axis.direction === 'asc';
@@ -518,6 +534,15 @@ export const ProfileDataService = {
       .order('rank_position', { foreignTable: 'list_items', ascending: true })
       .limit(fetchLimit)
       .limit(4, { foreignTable: 'list_items' });
+
+    // Three hundred stacks sorted A–Z still means scrolling to "N" by hand.
+    // Title and description, because a member names a stack one way and
+    // describes it another, and either is a fair way to look for it.
+    if (options?.search) {
+      const pattern = buildSearchPattern(options.search);
+      if (pattern === null) return { items: [], nextCursor: null };
+      query = query.or(`title.ilike.*${pattern}*,description.ilike.*${pattern}*`);
+    }
 
     const keyset = keysetFilter(axis.column, parseCursor(cursor), axis.direction);
     if (keyset) query = query.or(keyset);

@@ -44,6 +44,9 @@ interface UseProfileComputedParams {
   serverStreak: number | null;
   // Filter state
   archiveSieve: string;
+  archiveSearch?: string;
+  listsSearch?: string;
+  physicalSearch?: string;
   ledgerSearch: string;
   ledgerRatingFilter: LedgerRating;
   watchlistDecade: WatchlistDecade;
@@ -171,7 +174,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     isSelf, myLogs, myWatchlist, myVault, myLists,
     mainLogs, archiveLogs, ledgerLogs, analyticsLogs, watchlist, vault, lists,
     counts, isArchivistPlus, isAuteurPlus, targetUser, serverStreak,
-    archiveSieve, ledgerSearch, ledgerRatingFilter,
+    archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter,
     watchlistSearch, watchlistSort, watchlistDecade,
     physicalFilter, physicalSort, listsSort, serverDecades,
   } = params;
@@ -179,7 +182,11 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   // Real-time synchronization for self-profile
   // Type-safe mappers replace `as unknown as` double-casts
   // Memoized to prevent unnecessary re-computation on every render
-  const hasArchiveSearch = archiveSieve !== 'all';
+  // The search belongs in this flag for the same reason the sieve does: on
+  // your OWN profile it decides whether the room reads the SERVER page or the
+  // local store. Left out, a search would be sent to the query, thrown away,
+  // and the room would show the whole archive while the box held a term.
+  const hasArchiveSearch = archiveSieve !== 'all' || (archiveSearch?.trim() ?? '') !== '';
   const hasLedgerSearch = ledgerSearch.trim() !== '' || ledgerRatingFilter !== 'all';
   // The decade counts here too. Leaving it out would have been the quiet kind
   // of bug: on your OWN profile this flag decides whether the room reads from
@@ -187,7 +194,19 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   // filter would have been applied to the query, thrown away, and the room
   // would have shown the whole queue while the chip said 1970s.
   const hasWatchlistSearch = watchlistSearch.trim() !== '' || watchlistSort !== 'default' || watchlistDecade !== null;
-  const hasPhysicalSearch = physicalFilter !== 'all';
+  /**
+   * ⚠️ `physicalFilter !== 'all'` — but no filter is `null`, and 'all' is not a
+   * format, so this was ALWAYS true. The member's own Vault has therefore been
+   * reading the server page rather than the local store all along, which is
+   * harmless but wasteful. Corrected to the state the chips actually set, and
+   * the sort and search folded in for the same reason they are in the
+   * Watchlist's flag: each one decides whether the room reads the server or the
+   * store, and a filter left out is a filter applied to the query and then
+   * thrown away.
+   */
+  const hasPhysicalSearch = physicalFilter !== null
+    || physicalSort !== 'default'
+    || (physicalSearch?.trim() ?? '') !== '';
 
   const displayLogs = useMemo(() => isSelf ? myLogs.map(toProfileLog) : mainLogs, [isSelf, myLogs, mainLogs]);
   
@@ -244,9 +263,17 @@ export function useProfileComputed(params: UseProfileComputedParams) {
 
   // Archive filtering
   const archiveFiltered = useMemo(() => {
-    if (archiveSieve === 'all') return displayArchiveLogs;
-    return displayArchiveLogs.filter(l => l.status === archiveSieve);
-  }, [displayArchiveLogs, archiveSieve]);
+    let result = displayArchiveLogs;
+    if (archiveSieve !== 'all') result = result.filter(l => l.status === archiveSieve);
+    // TITLES ONLY, matching the server. The Ledger is the room for searching
+    // writing; here, a film surfacing because its REVIEW says "boring" — with
+    // nothing on screen explaining why — is a bewildering result.
+    if (archiveSearch?.trim()) {
+      const q = archiveSearch.trim().toLowerCase();
+      result = result.filter(l => (l.title ?? '').toLowerCase().includes(q));
+    }
+    return result;
+  }, [displayArchiveLogs, archiveSieve, archiveSearch]);
 
   // Ledger filtering (rated/reviewed only). Posterless logs are NOT excluded —
   // a member's review must never vanish because TMDB lacks art; the grid's
@@ -380,19 +407,35 @@ export function useProfileComputed(params: UseProfileComputedParams) {
 
   // The Stacks take the same three orders, through the same comparator.
   const displayLists = useMemo(
-    () => byShelfSort(displayListsRaw, listsSort),
+    () => byShelfSort(
+      listsSearch?.trim()
+        ? displayListsRaw.filter((l) => {
+            const q = listsSearch.trim().toLowerCase();
+            return (l.title ?? '').toLowerCase().includes(q)
+              || (l.description ?? '').toLowerCase().includes(q);
+          })
+        : displayListsRaw,
+      listsSort,
+    ),
      
-    [displayListsRaw, listsSort],
+    [displayListsRaw, listsSort, listsSearch],
   );
 
   // Physical archive filtering
   const physicalFiltered = useMemo(() => {
-    const base = physicalFilter
+    let base = physicalFilter
       ? displayVault.filter((item: ProfileVaultItem) => item.formats?.includes(physicalFilter))
       : displayVault;
+    // Title AND the member's own notes, matching the server exactly — "the one
+    // Dad gave me" is how somebody actually looks for a disc.
+    if (physicalSearch?.trim()) {
+      const q = physicalSearch.trim().toLowerCase();
+      base = base.filter((i) => (i.title ?? '').toLowerCase().includes(q)
+        || (i.notes ?? '').toLowerCase().includes(q));
+    }
     return byShelfSort(base, physicalSort);
    
-  }, [displayVault, physicalFilter, physicalSort]);
+  }, [displayVault, physicalFilter, physicalSort, physicalSearch]);
 
   // Single-pass reduce replaces O(formats × items) nested .filter() loop
   const formatCountsRef = useRef<any[]>([]);

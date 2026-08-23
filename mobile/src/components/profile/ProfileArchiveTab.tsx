@@ -1,8 +1,11 @@
-import React, { useMemo, useCallback, useEffect, useState } from 'react';
+import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { View, ScrollView, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
-import { Film as FilmIcon } from 'lucide-react-native';
-import { colors, fonts } from '../../theme/theme';
+import { Film as FilmIcon, Search, X } from 'lucide-react-native';
+import { Image } from 'expo-image';
+import { colors, fonts, SEPIA_HASH } from '../../theme/theme';
+import { tmdb } from '../../lib/tmdb';
+import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
 import PressableScale from '../PressableScale';
 import type { ProfileLog } from '../../types';
 import { useRouter } from 'expo-router';
@@ -10,8 +13,8 @@ import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Eas
 import VaultLock from './VaultLock';
 import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
-import { r, posterColumns, completeCount, countLabel } from './roomStyles';
-import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
+import { r, rtlText, posterColumns, completeCount, countLabel } from './roomStyles';
+import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
 
 /**
  * THE ARCHIVE — every film, by the month it was seen.
@@ -36,6 +39,10 @@ interface ProfileArchiveTabProps {
   tier?: string | null;
   /** The TRUE films-per-month, from the server. Absent = draw no counts. */
   monthCounts?: { month: string; count: number }[] | null;
+  /** The reconciled total — decides whether search is worth a row. */
+  totalFilms?: number;
+  archiveSearch?: string;
+  setArchiveSearch?: (v: string) => void;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   refreshing?: boolean;
@@ -45,7 +52,58 @@ interface ProfileArchiveTabProps {
 
 type ArchiveItem =
   | { type: 'header'; title: string; lead: string; count?: string; weight?: number }
-  | { type: 'row'; data: ProfileLog[]; id: string };
+  | { type: 'row'; data: ProfileLog[]; id: string }
+  | { type: 'walkout'; log: ProfileLog };
+
+/** A film the member left, and why. */
+const WalkoutRow = React.memo(function WalkoutRow({ log, onPress }: { log: ProfileLog; onPress: () => void }) {
+  const posterUri = tmdb.poster(log.altPoster ?? log.poster, 'w185');
+  const reason = useMemo(() => {
+    const plain = stripHTML(String(log.abandonedReason ?? '')).replace(/\s+/g, ' ').trim();
+    return plain ? truncateReview(plain, 180) : '';
+  }, [log.abandonedReason]);
+  const rtl = useMemo(() => isRTLText(reason), [reason]);
+
+  return (
+    <PressableScale
+      style={s.walkRow}
+      onPress={onPress}
+      // Rows stack with no gap, so there is no slack to claim — any at all and
+      // each row takes the tap belonging to its neighbour.
+      hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
+      haptic
+      accessibilityRole="button"
+      accessibilityLabel={[
+        log.title ?? 'Untitled film',
+        log.year ? String(log.year) : '',
+        'abandoned',
+        reason ? 'with a reason given' : 'no reason given',
+      ].filter(Boolean).join(', ')}
+      accessibilityHint="Opens the entry"
+    >
+      <View style={s.walkPlateWrap}>
+        {posterUri
+          ? <Image source={{ uri: posterUri }} style={s.walkPlate} recyclingKey={posterUri} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={180} />
+          : <View style={[s.walkPlate, s.walkPlateEmpty]} />}
+      </View>
+      <View style={s.walkBody}>
+        <View style={s.walkHead}>
+          <Text {...scaledTextProps} style={s.walkTitle} numberOfLines={1}>{log.title}</Text>
+          {!!log.year && <Text {...scaledTextProps} style={s.walkYear}>{String(log.year)}</Text>}
+        </View>
+        <View style={s.walkMark}>
+          <X size={8} color={colors.crimson} strokeWidth={2.5} />
+          <Text {...scaledTextProps} style={s.walkMarkText}>WALKED OUT</Text>
+        </View>
+        {reason
+          ? <Text {...scaledTextProps} style={[s.walkWords, rtl && rtlText]} numberOfLines={2}>{reason}</Text>
+          // Said plainly rather than left blank — a row with nothing under the
+          // mark reads as a rendering fault.
+          : <Text {...scaledTextProps} style={[s.walkWords, s.walkSilent]} numberOfLines={1}>no reason given</Text>}
+      </View>
+    </PressableScale>
+  );
+});
 
 const MONTH_INDEX: Record<string, string> = {
   JANUARY: '01', FEBRUARY: '02', MARCH: '03', APRIL: '04', MAY: '05', JUNE: '06',
@@ -70,6 +128,9 @@ export default function ProfileArchiveTab({
   ready = true,
   tier,
   monthCounts,
+  totalFilms,
+  archiveSearch,
+  setArchiveSearch,
   onLoadMore,
   isLoadingMore,
   refreshing = false,
@@ -113,6 +174,32 @@ export default function ProfileArchiveTab({
   }, []);
 
   /**
+   * Search — the way IN to two thousand films.
+   *
+   * Shown past ONE SCREENFUL, measured against the member's REAL total rather
+   * than the rows that happen to have loaded. Gating on the loaded array would
+   * make the box appear and disappear as a member scrolls, which is the same
+   * small-data mistake as counting a month from one page.
+   *
+   * Twelve is three rows of four — everything a phone shows at once. Below
+   * that, looking is faster than typing.
+   */
+  const showSearch = (totalFilms ?? logs.length) > 12;
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [localSearch, setLocalSearch] = useState(archiveSearch ?? '');
+
+  const handleSearchChange = useCallback((val: string) => {
+    setLocalSearch(val);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => setArchiveSearch?.(val), 300);
+  }, [setArchiveSearch]);
+
+  // A pending debounce must not outlive the room — see the Ledger.
+  useEffect(() => () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+  }, []);
+
+  /**
    * The TRUE size of each month, and how heavy it was.
    *
    * `items.length` counted whatever had loaded — the app pages fifty rows at a
@@ -136,10 +223,69 @@ export default function ProfileArchiveTab({
     return { by, heaviest };
   }, [monthCounts]);
 
-  const serverKnows = archiveSieve === 'all' && months.by.size > 0;
+  /**
+   * A search narrows the room in a way the server's figures know nothing about
+   * — they count every film in March, not every film in March matching
+   * "kubrick" — so counts and rhythm both stand down, exactly as under a
+   * status filter.
+   */
+  const searching = !!(archiveSearch && archiveSearch.trim());
+  /** Asking for "abandoned" is asking a question whose answer is words. */
+  const abandonedView = archiveSieve === 'abandoned' && !searching;
+  const serverKnows = archiveSieve === 'all' && !searching && months.by.size > 0;
 
   const flashData = useMemo(() => {
     if (archiveFiltered.length === 0) return [];
+
+    /**
+     * NO MONTH RAILS WHILE SEARCHING.
+     *
+     * Searching one director across fifteen years produces forty headings with
+     * one poster under each — the structure stops organising anything and
+     * becomes the noise between results. A search wants a flat wall.
+     */
+    if (searching) {
+      const flat: ArchiveItem[] = [];
+      for (let i = 0; i < archiveFiltered.length; i += 4) {
+        flat.push({ type: 'row', data: archiveFiltered.slice(i, i + 4), id: `found-${i}` });
+      }
+      return flat;
+    }
+
+    /**
+     * FILTERED TO ABANDONED, THE ROOM CHANGES SHAPE.
+     *
+     * A walk-out reason had nowhere to live in this app. The Ledger holds only
+     * films that were rated or written about, and an abandoned film has
+     * neither — so `abandoned_reason`, the most characterful sentence a member
+     * ever writes, was fetched on every log and displayed in no room at all.
+     *
+     * A poster grid has no room for a sentence. But asking for "abandoned" is
+     * asking a QUESTION, and the answer to it is the reasons, not the artwork.
+     * So the room answers in rows.
+     */
+    if (abandonedView) {
+      const rows: ArchiveItem[] = [];
+      let lastMonth = '';
+      for (const log of archiveFiltered) {
+        const month = Object.keys(groupByMonth([log]))[0] ?? '';
+        if (month && month !== lastMonth) {
+          const cut = month.lastIndexOf(' ');
+          rows.push({
+            type: 'header',
+            title: cut > 0 ? month.slice(0, cut) : month,
+            lead: cut > 0 ? month.slice(cut + 1) : '',
+            // No count: the server counts every film in March, not every
+            // abandoned one. Same rule as everywhere else.
+            count: undefined,
+          });
+          lastMonth = month;
+        }
+        rows.push({ type: 'walkout', log });
+      }
+      return rows;
+    }
+
     const grouped = groupByMonth(archiveFiltered);
     const result: ArchiveItem[] = [];
 
@@ -174,11 +320,19 @@ export default function ProfileArchiveTab({
     });
 
     return result;
-  }, [archiveFiltered, groupByMonth, months, serverKnows]);
+  }, [archiveFiltered, groupByMonth, months, serverKnows, searching, abandonedView]);
 
   const renderItem = useCallback(({ item }: { item: ArchiveItem }) => {
     if (item.type === 'header') {
       return <RoomRail lead={item.lead} label={item.title} count={item.count} weight={item.weight} />;
+    }
+    if (item.type === 'walkout') {
+      return (
+        <WalkoutRow
+          log={item.log}
+          onPress={() => { if (item.log.id) (router.push as any)(`/log/${item.log.id}` as never); }}
+        />
+      );
     }
     return (
       <View style={[r.gridRow, { gap: grid.gap, marginBottom: 12 }]}>
@@ -189,31 +343,61 @@ export default function ProfileArchiveTab({
         ))}
       </View>
     );
-  }, [renderPosterCard, grid]);
+  }, [renderPosterCard, grid, router]);
 
   const ListHeaderComponent = useMemo(() => {
     if (logs.length === 0) return null;
     return (
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={r.chipScroll} contentContainerStyle={r.chipRow}>
-        {SIEVES.map(sv => (
-          <RoomChip
-            key={sv.id}
-            label={sv.label}
-            on={archiveSieve === sv.id}
-            onPress={() => { setArchiveSieve(sv.id); }}
-            gap={8}
-            a11y={`Filter the archive by ${sv.label.toLowerCase()}`}
-          />
-        ))}
-      </ScrollView>
+      <>
+        {showSearch && (
+          <View style={s.searchWrap}>
+            <RoomSearch
+              value={localSearch}
+              onChange={handleSearchChange}
+              onClear={() => { setLocalSearch(''); setArchiveSearch?.(''); }}
+              placeholder="Find a film…"
+              a11y="Search the archive by title"
+              ember={<Search size={13} color={colors.fog} strokeWidth={1.5} style={s.searchIcon} />}
+            />
+          </View>
+        )}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={r.chipScroll} contentContainerStyle={r.chipRow}>
+          {SIEVES.map(sv => (
+            <RoomChip
+              key={sv.id}
+              label={sv.label}
+              on={archiveSieve === sv.id}
+              onPress={() => { setArchiveSieve(sv.id); }}
+              gap={8}
+              a11y={`Filter the archive by ${sv.label.toLowerCase()}`}
+            />
+          ))}
+        </ScrollView>
+      </>
     );
-  }, [logs.length, archiveSieve, setArchiveSieve]);
+  }, [logs.length, archiveSieve, setArchiveSieve, showSearch, localSearch, handleSearchChange, setArchiveSearch]);
 
   const ListEmptyComponent = useMemo(() => {
     if (logs.length > 0 && archiveFiltered.length > 0) return null;
 
     // Nothing true can be said about a room whose contents are still in transit.
     if (!ready) return <RoomRetrieving room="the archive" />;
+
+    // A SEARCH found nothing — checked BEFORE the filter case, because with
+    // both live the search is what the member just did and the one they will
+    // want undone.
+    if (logs.length > 0 && searching) {
+      return (
+        <RoomEmpty
+          invite
+          icon={<Search size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
+          title="Nothing under that name"
+          body={`No film in the archive matches “${archiveSearch}”.`}
+          actionLabel="CLEAR THE SEARCH"
+          onAction={() => { setLocalSearch(''); setArchiveSearch?.(''); }}
+        />
+      );
+    }
 
     // A FILTER matched nothing. That is not an empty archive, and telling a
     // member with 200 films that "the Archive is Empty" sends them hunting for
@@ -270,7 +454,7 @@ export default function ProfileArchiveTab({
         body="This member hasn’t filed a screening yet."
       />
     );
-  }, [logs.length, archiveFiltered.length, isSelf, ready, archiveSieve, setArchiveSieve, pulseStyle, router]);
+  }, [logs.length, archiveFiltered.length, isSelf, ready, archiveSieve, setArchiveSieve, searching, archiveSearch, setArchiveSearch, pulseStyle, router]);
 
   /**
    * Derived, not guessed.
@@ -279,7 +463,7 @@ export default function ProfileArchiveTab({
    * plus its title block plus the gap beneath it. Under-estimating makes
    * FlashList render and re-measure more rows than it needs on every scroll.
    */
-  const estimatedItemSize = Math.round(grid.width * 1.5) + 42;
+  const estimatedItemSize = abandonedView ? 88 : Math.round(grid.width * 1.5) + 42;
 
   return (
     <View style={r.container}>
@@ -289,7 +473,10 @@ export default function ProfileArchiveTab({
         data={flashData}
         getItemType={(item: ArchiveItem) => item.type}
         renderItem={renderItem}
-        keyExtractor={(item: ArchiveItem) => item.type === 'header' ? `header-${item.lead}-${item.title}` : `row-${item.id}`}
+        keyExtractor={(item: ArchiveItem) =>
+          item.type === 'header' ? `header-${item.lead}-${item.title}`
+            : item.type === 'walkout' ? `walk-${item.log.id}`
+            : `row-${item.id}`}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         contentContainerStyle={r.listContent}
@@ -309,6 +496,28 @@ export default function ProfileArchiveTab({
 }
 
 const s = StyleSheet.create({
+  searchWrap: { paddingHorizontal: 16, marginBottom: 12 },
+
+  // ── a walk-out, in rows ──
+  walkRow: {
+    flexDirection: 'row', gap: 12, minHeight: 64, paddingVertical: 11, paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(232,223,208,0.07)',
+  },
+  walkPlateWrap: { width: 42, height: 63 },
+  walkPlate: {
+    width: '100%', height: '100%', borderRadius: 2,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(232,223,208,0.14)',
+  },
+  walkPlateEmpty: { backgroundColor: colors.posterVoid },
+  walkBody: { flex: 1, minWidth: 0, justifyContent: 'center' },
+  walkHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  walkTitle: { flex: 1, fontFamily: fonts.display, fontSize: 14.5, lineHeight: 19, color: colors.parchment },
+  walkYear: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
+  walkMark: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 5 },
+  walkMarkText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.crimson },
+  walkWords: { fontFamily: fonts.bodyItalic, fontSize: 11.5, lineHeight: 17, color: colors.bone, opacity: 0.72, marginTop: 6 },
+  walkSilent: { opacity: 0.4 },
+  searchIcon: { opacity: 0.6 },
   emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderRadius: 4, marginTop: 12 },
   importDividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'stretch', marginTop: 20, marginBottom: 12, paddingHorizontal: 10 },
   importDividerLine: { flex: 1, height: 1, backgroundColor: colors.sepia, opacity: 0.2 },

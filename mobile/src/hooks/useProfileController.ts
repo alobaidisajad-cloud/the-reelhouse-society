@@ -56,6 +56,7 @@ export function useProfileController(usernameOverride?: string) {
 
   // Tab-specific filters
   const [archiveSieve, setArchiveSieve] = useState('all');
+  const [archiveSearch, setArchiveSearch] = useState('');
   const [ledgerSearch, setLedgerSearch] = useState('');
   const [ledgerRatingFilter, setLedgerRatingFilter] = useState<LedgerRating>('all');
   const [watchlistSearch, setWatchlistSearch] = useState('');
@@ -64,6 +65,8 @@ export function useProfileController(usernameOverride?: string) {
   const [physicalFilter, setPhysicalFilter] = useState<string | null>(null);
   const [physicalSort, setPhysicalSort] = useState<ShelfSort>('default');
   const [listsSort, setListsSort] = useState<ShelfSort>('default');
+  const [listsSearch, setListsSearch] = useState('');
+  const [physicalSearch, setPhysicalSearch] = useState('');
 
   useEffect(() => {
     if (tab) {
@@ -278,8 +281,8 @@ export function useProfileController(usernameOverride?: string) {
     
     if (activeTab) {
       if (activeTab === 'archive') {
-        if (archiveSieve !== 'all') {
-          await data.refreshTabWithFilters('archive', { status: archiveSieve }, true);
+        if (archiveSieve !== 'all' || archiveSearch) {
+          await data.refreshTabWithFilters('archive', { status: archiveSieve, search: archiveSearch, titleOnly: true }, true);
         }
       } else if (activeTab === 'ledger') {
         if (ledgerSearch || ledgerRatingFilter !== 'all') {
@@ -299,15 +302,15 @@ export function useProfileController(usernameOverride?: string) {
           await data.loadTabData(activeTab, true);
         }
       } else if (activeTab === 'physical') {
-        if (physicalFilter || physicalSort !== 'default') {
-          await data.refreshTabWithFilters('physical', { filter: physicalFilter, sort: physicalSort }, true);
+        if (physicalFilter || physicalSort !== 'default' || physicalSearch) {
+          await data.refreshTabWithFilters('physical', { filter: physicalFilter, sort: physicalSort, search: physicalSearch }, true);
         } else {
           data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
           await data.loadTabData(activeTab, true);
         }
       } else if (activeTab === 'lists') {
-        if (listsSort !== 'default') {
-          await data.refreshTabWithFilters('lists', { sort: listsSort }, true);
+        if (listsSort !== 'default' || listsSearch) {
+          await data.refreshTabWithFilters('lists', { sort: listsSort, search: listsSearch }, true);
         } else {
           data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
           await data.loadTabData(activeTab, true);
@@ -319,7 +322,7 @@ export function useProfileController(usernameOverride?: string) {
     }
 
     setRefreshingLocal(false);
-  }, [data, activeTab, archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort]);
+  }, [data, activeTab, archiveSieve, archiveSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, physicalSearch, listsSort, listsSearch]);
 
   const toggleFollow = useCallback(async () => {
     if (!isAuthenticated) return (router.push as any)('/login' as any);
@@ -378,19 +381,19 @@ export function useProfileController(usernameOverride?: string) {
   useEffect(() => {
     if (data.targetUser) {
       if (activeTab === 'archive') {
-        refreshTabRef.current('archive', { status: archiveSieve });
+        refreshTabRef.current('archive', { status: archiveSieve, search: archiveSearch, titleOnly: true });
       } else if (activeTab === 'ledger') {
         refreshTabRef.current('ledger', { search: ledgerSearch, rating: ledgerRatingFilter, hasRatingOrReview: true });
       } else if (activeTab === 'watchlist') {
         refreshTabRef.current('watchlist', { search: watchlistSearch, sort: watchlistSort, decade: watchlistDecade });
       } else if (activeTab === 'physical') {
-        refreshTabRef.current('physical', { filter: physicalFilter, sort: physicalSort });
+        refreshTabRef.current('physical', { filter: physicalFilter, sort: physicalSort, search: physicalSearch });
       } else if (activeTab === 'lists') {
-        refreshTabRef.current('lists', { sort: listsSort });
+        refreshTabRef.current('lists', { sort: listsSort, search: listsSearch });
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, activeTab, data.targetUser?.id]);
+  }, [archiveSieve, archiveSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, physicalSearch, listsSort, listsSearch, activeTab, data.targetUser?.id]);
 
   return {
     username,
@@ -420,7 +423,10 @@ export function useProfileController(usernameOverride?: string) {
     ledgerRatingFilter, setLedgerRatingFilter,
     watchlistDecade, setWatchlistDecade,
     physicalSort, setPhysicalSort,
+    physicalSearch, setPhysicalSearch,
     listsSort, setListsSort,
+    listsSearch, setListsSearch,
+    archiveSearch, setArchiveSearch,
     watchlistSearch, setWatchlistSearch,
     watchlistSort, setWatchlistSort,
     physicalFilter, setPhysicalFilter,
