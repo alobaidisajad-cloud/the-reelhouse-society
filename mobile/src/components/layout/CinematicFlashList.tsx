@@ -90,6 +90,7 @@ export const CinematicFlashList = React.forwardRef<any, CinematicFlashListProps<
         onScroll={onScroll}
         showsHorizontalScrollIndicator={false}
         overScrollMode="never"
+        keyboardShouldPersistTaps="handled"
         {...rest}
       />
     );
@@ -107,6 +108,24 @@ export const CinematicFlashList = React.forwardRef<any, CinematicFlashListProps<
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         overScrollMode="never"
+        /**
+         * ── THE DOUBLE TAP ───────────────────────────────────────────────────
+         * `keyboardShouldPersistTaps` defaults to 'never', which means a tap
+         * landing anywhere outside the focused input DISMISSES THE KEYBOARD AND
+         * IS THEN SWALLOWED. So in every room with a search box: type a title,
+         * see the film, tap it — the keyboard closes and nothing opens. Tap
+         * again and it works. It reads as the app ignoring you.
+         *
+         * Eight other places in this app already set 'handled'; the five
+         * profile rooms were the ones that never did, and they all reach the
+         * list through here. Set BEFORE {...rest} so any caller can still
+         * override it.
+         *
+         * 'on-drag' is the other half: scrolling a list of results while the
+         * keyboard covers half the screen should put the keyboard away.
+         */
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         {...rest}
       />
       <CinematicScrollbar
