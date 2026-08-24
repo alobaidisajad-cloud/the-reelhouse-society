@@ -1,7 +1,7 @@
 import { useReducer, useCallback, useEffect, useRef } from 'react';
 import { logger } from '@/src/utils/logger';
 import { useLogStore, useWatchlistStore, useArchiveStore, useListStore } from '@/src/stores/films';
-import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, ShelfSort } from '@/src/types';
+import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
 import { ProfileDataService } from '@/src/services/ProfileDataService';
 import type { ValidatedProfileUser } from '@/src/schemas/profile.schema';
 import { useSocialStore } from '@/src/stores/followStore';
@@ -38,7 +38,7 @@ export interface AnalyticsShape {
   format_breakdown?: { format: string; count: number }[] | null;
   /** `physical_archive.formats` — what the member OWNS. This is the Vault. */
   vault_formats?: { format: string; count: number }[] | null;
-  watchlist_decades?: { decade: number; count: number }[] | null;
+  watchlist_decades?: DecadeCount[] | null;
   /** Present instead of the data when the viewer may not see this member. */
   error?: string;
 }

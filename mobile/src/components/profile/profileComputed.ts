@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog, LedgerRating, WatchlistDecade, ShelfSort } from '@/src/types';
+import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
 import { LEDGER_HIGH_FLOOR, decadeOf } from '@/src/types';
 import { standingFor } from '@/src/constants/standing';
 import { ProfileTab } from '@/src/hooks/useProfileData';
@@ -62,7 +62,7 @@ interface UseProfileComputedParams {
    * is used — an incomplete set of filters is a degraded feature; a wrong count
    * is a lie, and the two get different treatment.
    */
-  serverDecades?: { decade: number; count: number }[] | null;
+  serverDecades?: DecadeCount[] | null;
 }
 
 /**
@@ -144,6 +144,7 @@ export function tally(n: number): string {
  *
  * `now` is injectable so the behaviour is testable without waiting for midnight.
  */
+
 export function computeDailyStreak(
   logs: { watchedDate?: string | null; createdAt?: string | null }[],
   now: Date = new Date(),
@@ -167,6 +168,49 @@ export function computeDailyStreak(
     else break;
   }
   return count;
+}
+
+/**
+ * The decades a queue spans, counted over the WHOLE queue when the server has
+ * answered and only over the loaded page when it has not.
+ *
+ * ── WHY THIS IS A NAMED FUNCTION AND NOT A LINE INSIDE A useMemo ────────────
+ * It used to be a line inside a useMemo, and a mutation pass proved the
+ * consequence: breaking it — making the page prefer its own partial counts —
+ * left all 2,939 tests passing. A rule with no guard behind it is a rule that
+ * silently stops being true.
+ *
+ * And this one matters more than a wrong number. Counting only the loaded page
+ * did not merely under-report, it DROPPED CHIPS: a member whose only 1940s film
+ * sat on page eight had no 1940s filter to press, and no way to reach it. The
+ * missing control is the bug; the count is the smaller half.
+ *
+ * An empty server array means "not answered" rather than "no decades" — the
+ * caller only reaches this with a non-empty queue, so a real answer always has
+ * at least one decade in it.
+ */
+export function decadeCounts(
+  server: DecadeCount[] | null | undefined,
+  fromLoadedPage: () => DecadeCount[],
+): DecadeCount[] {
+  if (Array.isArray(server) && server.length > 0) {
+    // Newest decade first. Sorted on a copy: the payload is shared state.
+    return [...server].sort((a, b) => b.decade - a.decade);
+  }
+  return fromLoadedPage();
+}
+
+/** Tally the decades present in a list of films, newest first. */
+export function decadesOfLoaded(films: { year?: number | null }[]): DecadeCount[] {
+  const tally: Record<number, number> = {};
+  for (const film of films) {
+    const d = decadeOf(film.year);
+    if (d === null) continue;
+    tally[d] = (tally[d] || 0) + 1;
+  }
+  return Object.entries(tally)
+    .map(([decade, count]) => ({ decade: Number(decade), count }))
+    .sort((a, b) => b.decade - a.decade);
 }
 
 export function useProfileComputed(params: UseProfileComputedParams) {
@@ -360,28 +404,28 @@ export function useProfileComputed(params: UseProfileComputedParams) {
    * page contains only one decade, so recomputing would collapse the row to a
    * single chip and leave no way back to the others.
    */
-  const decadeCountsRef = useRef<{ decade: number; count: number }[]>([]);
+  const decadeCountsRef = useRef<DecadeCount[]>([]);
   const watchlistDecadeCounts = useMemo(() => {
-    // THE SERVER'S ANSWER FIRST. Derived from the loaded page, this list was
-    // wrong in the worse of the two possible ways: not just inaccurate counts,
-    // but MISSING CHIPS — a member whose only 1940s film sat on page eight had
-    // no 1940s filter at all and could never reach it. The server counts the
-    // whole queue, so both are fixed together.
-    if (Array.isArray(serverDecades) && serverDecades.length > 0) {
-      return [...serverDecades].sort((a, b) => b.decade - a.decade);
-    }
-    if (watchlistDecade !== null) return decadeCountsRef.current;
-    const tally: Record<number, number> = {};
-    for (const film of displayWatchlist) {
-      const d = decadeOf(film.year);
-      if (d === null) continue;
-      tally[d] = (tally[d] || 0) + 1;
-    }
-    const computed = Object.entries(tally)
-      .map(([decade, count]) => ({ decade: Number(decade), count }))
-      .sort((a, b) => b.decade - a.decade);
-    decadeCountsRef.current = computed;
-    return computed;
+    /**
+     * ONE decision, made inside `decadeCounts`.
+     *
+     * This used to re-test `serverDecades.length > 0` here as well, and a
+     * mutation pass caught what that costs: breaking the copy in this memo left
+     * the extracted function — and its ten tests — completely untouched, so the
+     * guard passed while the screen took the wrong branch. Two places deciding
+     * the same thing means the tested one can be the one that does not run.
+     *
+     * The fallback is a thunk so it stays unevaluated when the server answered.
+     */
+    return decadeCounts(serverDecades, () => {
+      // Held in a ref while a decade is selected: the filtered page contains
+      // only that decade, so recomputing would collapse the row to a single
+      // chip and leave no way back to the others.
+      if (watchlistDecade !== null) return decadeCountsRef.current;
+      const computed = decadesOfLoaded(displayWatchlist);
+      decadeCountsRef.current = computed;
+      return computed;
+    });
   }, [displayWatchlist, watchlistDecade, serverDecades]);
 
   /**

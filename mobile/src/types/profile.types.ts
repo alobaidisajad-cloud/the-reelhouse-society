@@ -82,6 +82,21 @@ export const LEDGER_HIGH_FLOOR = 4;
 export type WatchlistDecade = number | null;
 
 /**
+ * One decade, and how many films the member has in it.
+ *
+ * Distinct from `WatchlistDecade`, which is the decade currently SELECTED —
+ * they are a filter value and a tally, and the two were easy to confuse
+ * because only one of them had a name. This shape was written out by hand in
+ * four places (the hook's params, its ref, the room's props, and the analytics
+ * payload), which is three chances for them to disagree about whether the
+ * count may be absent.
+ */
+export interface DecadeCount {
+  decade: number;
+  count: number;
+}
+
+/**
  * How a shelf of OBJECTS is read — the Vault's cases and the Stacks' volumes.
  *
  * The same three the Watchlist already offers, deliberately: a member should
