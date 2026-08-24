@@ -1,18 +1,18 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
-import { View, ScrollView, Text, TextInput, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
-import { Bookmark, Search, X, Disc3, Sparkles } from 'lucide-react-native';
+import { Bookmark, Search, Disc3, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
 import PressableScale from '../PressableScale';
-import type { ProfileWatchlistItem, WatchlistDecade, ShelfSort } from '../../types';
+import type { ProfileWatchlistItem, WatchlistDecade, DecadeCount, ShelfSort } from '../../types';
 import { decadeLabel } from '../../types';
 import { tmdb } from '../../lib/tmdb';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, posterColumns, EMBER_REST, EMBER_BEATS } from './roomStyles';
-import { RoomChip, RoomChipDivider, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
+import { RoomChip, RoomChipDivider, RoomRetrieving, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
 
 /**
  * THE WATCHLIST — the queue, and the one room with a ritual in it.
@@ -43,8 +43,17 @@ interface ProfileWatchlistTabProps {
   setWatchlistSort: (val: ShelfSort) => void;
   watchlistDecade: WatchlistDecade;
   setWatchlistDecade: (val: WatchlistDecade) => void;
-  /** The decades this queue spans, newest first — derived from what is loaded. */
-  decades: { decade: number; count: number }[];
+  /**
+   * The decades this queue spans, newest first — counted by the SERVER over the
+   * whole queue, falling back to the loaded page only if it has not answered.
+   *
+   * The comment here used to say "derived from what is loaded", which was true
+   * when it was written and is the bug that was fixed: a member whose only
+   * 1940s film sat on page eight got no 1940s chip at all and could never
+   * reach it. Corrected because a stale comment outlives the person who
+   * remembers it was stale.
+   */
+  decades: DecadeCount[];
   setRouletteOpen: (val: boolean) => void;
   renderPosterCard: (item: ProfileWatchlistItem, width: number) => React.ReactNode;
   /** Has the data landed? A room must not describe itself before it knows. */
@@ -192,25 +201,19 @@ export default function ProfileWatchlistTab({
         )}
         {watchlist.length > 5 && (
           <View style={s.controlCol}>
-            <View style={r.search}>
-              <AnimatedSearchIcon size={13} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />
-              <TextInput
-                style={r.searchInput}
-                value={localSearch}
-                onChangeText={handleSearchChange}
-                placeholder="Search the queue…"
-                placeholderTextColor={colors.fog}
-                selectionColor={colors.sepia}
-                keyboardAppearance="dark"
-                accessibilityLabel="Search the watchlist"
-                returnKeyType="search"
-              />
-              {localSearch.length > 0 && (
-                <PressableScale onPress={() => { setLocalSearch(''); setWatchlistSearch(''); }} style={r.searchClear} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic accessibilityRole="button" accessibilityLabel="Clear the search">
-                  <X size={14} color={colors.fog} strokeWidth={1.5} />
-                </PressableScale>
-              )}
-            </View>
+            {/* The SHARED search — see the note in the Ledger. This room kept
+                its own copy for the breathing icon alone, and the copy left
+                autoCorrect, autoCapitalize and spellCheck ON, so a queue
+                searched for "Kieślowski" could be corrected into a word the
+                queue does not contain. */}
+            <RoomSearch
+              value={localSearch}
+              onChange={handleSearchChange}
+              onClear={() => { setLocalSearch(''); setWatchlistSearch(''); }}
+              placeholder="Search the queue…"
+              a11y="Search the watchlist"
+              ember={<AnimatedSearchIcon size={13} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />}
+            />
             {/* The sort row used to sit BESIDE the search box, which left each
                 chip about 40pt wide with 4pt between them — three targets a
                 thumb could not separate. Its own line, at the shared gap.

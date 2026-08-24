@@ -1,8 +1,8 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
-import { View, ScrollView, Text, TextInput, StyleSheet } from 'react-native';
+import { View, ScrollView, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
-import { PenTool, Search, X, TrendingUp, TrendingDown, Minus, Stethoscope } from 'lucide-react-native';
+import { PenTool, Search, TrendingUp, TrendingDown, Minus, Stethoscope } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts, SEPIA_HASH } from '../../theme/theme';
@@ -15,7 +15,7 @@ import { LEDGER_HIGH_FLOOR } from '../../types';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
 import { r, rtlText, EMBER_REST, EMBER_BEATS } from './roomStyles';
-import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
+import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
 
 /**
  * THE LEDGER — what the member WROTE.
@@ -427,25 +427,23 @@ export default function ProfileLedgerTab({
     if (logs.length === 0) return null;
     return (
       <View style={s.filterGroupCol}>
-        <View style={r.search}>
-          <AnimatedSearchIcon size={13} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />
-          <TextInput
-            style={r.searchInput}
-            value={localSearch}
-            onChangeText={handleSearchChange}
-            placeholder="Search the ledger…"
-            placeholderTextColor={colors.fog}
-            selectionColor={colors.sepia}
-            keyboardAppearance="dark"
-            accessibilityLabel="Search the ledger by film or by what was written"
-            returnKeyType="search"
-          />
-          {localSearch.length > 0 && (
-            <PressableScale onPress={() => { setLocalSearch(''); setLedgerSearch(''); }} style={r.searchClear} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic accessibilityRole="button" accessibilityLabel="Clear the search">
-              <X size={14} color={colors.fog} strokeWidth={1.5} />
-            </PressableScale>
-          )}
-        </View>
+        {/* The SHARED search, not a local copy of it.
+            This room hand-rolled its own TextInput purely to place the
+            breathing icon — which RoomSearch already takes as `ember`. The copy
+            cost three input flags the shared one sets deliberately:
+            autoCorrect, autoCapitalize and spellCheck were all left ON, so iOS
+            would quietly turn "Nosferatu" into something else and the room
+            would answer "nothing under that name" for a film the member owns.
+            A search box is not a place to be autocorrected into a different
+            film — which is exactly what the shared component's comment says. */}
+        <RoomSearch
+          value={localSearch}
+          onChange={handleSearchChange}
+          onClear={() => { setLocalSearch(''); setLedgerSearch(''); }}
+          placeholder="Search the ledger…"
+          a11y="Search the ledger by film or by what was written"
+          ember={<AnimatedSearchIcon size={13} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />}
+        />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={r.chipRow}>
           {RATINGS.map(v => (
             <RoomChip
