@@ -238,7 +238,13 @@ export function RoomRail({ lead, label, count, tint, weight }: {
       <View style={[r.rail, hasWeight && r.railTight]} accessibilityRole="header">
         {!!lead && <Text {...scaledTextProps} style={r.railYear}>{lead}</Text>}
         <View style={[r.railLine, tint ? { backgroundColor: tint, opacity: 0.45 } : null]} />
-        <Text {...scaledTextProps} style={[r.railLabel, tint ? { color: tint } : null]}>{label}</Text>
+        {/* Bounded like the chip beside it. Most rails carry a month name or
+            one of seven shelf formats, but the Vault's label falls back to the
+            raw `format` string from the row, and that column is only capped at
+            5000 characters with no whitelist — so the one label on the page a
+            member can author is the one that could push the count off screen.
+            A header row should never wrap regardless of what reaches it. */}
+        <Text {...scaledTextProps} style={[r.railLabel, tint ? { color: tint } : null]} numberOfLines={1}>{label}</Text>
         {!!count && <Text {...scaledTextProps} style={r.railCount}>{count}</Text>}
       </View>
       {hasWeight && (

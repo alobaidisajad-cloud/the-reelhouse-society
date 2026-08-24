@@ -113,7 +113,18 @@ function StatDial({ count, color, progress, isHighest }: { count: number; color:
     );
 }
 
-export function ProjectorRoom({ stats, user, record }: { stats?: CinephileStats; user?: ProjectorUser; record?: ProjectorRecord | null }) {
+export function ProjectorRoom({ stats, user, record, streak }: {
+    stats?: CinephileStats;
+    user?: ProjectorUser;
+    record?: ProjectorRecord | null;
+    /**
+     * The run the member is on, already resolved by the screen: the server's
+     * figure, falling back to a local count when no analytics payload arrived.
+     * Passed in rather than read off `record` so there is ONE answer — the
+     * fallback exists precisely for the case where `record` is null.
+     */
+    streak?: number | null;
+}) {
     if (!stats) return null;
 
     const standing = standingFor(stats.count);
@@ -122,6 +133,33 @@ export function ProjectorRoom({ stats, user, record }: { stats?: CinephileStats;
     const avg = record?.avg_rating != null && Number(record.avg_rating) > 0
         ? Number(record.avg_rating).toFixed(1)
         : null;
+
+    /**
+     * THE RUN THE MEMBER IS ON RIGHT NOW.
+     *
+     * `current_streak` was declared on this component's props, carried through
+     * the hook as `serverStreak`, recomputed in profileComputed as `streak` —
+     * and then never destructured by the screen. It reached the phone and
+     * stopped. The SQL fix that made this number correct (it returned 1 or 0
+     * for every member in the app) was repairing something nobody could see.
+     *
+     * It sits HERE rather than as a fourth cell in the record below, for two
+     * reasons. A live streak is a different kind of fact from a historical
+     * one — it is the only number on this card a member can change tonight, and
+     * burying it beside AVERAGE MARK would say the opposite. And four cells at
+     * 320pt with Dynamic Type at its ceiling leaves ~54pt of text width for a
+     * label needing ~60pt, so "HEAVIEST" would clip mid-word.
+     *
+     * Prefers the resolved prop over the raw record: the screen already picks
+     * the server's figure and falls back to a local count, and a current run —
+     * unlike a taste fingerprint — IS computable from a window, because the
+     * window is newest-first and any real run is far shorter than it.
+     *
+     * Two nights, not one: a single logged evening is not a run, and
+     * "1 NIGHTS RUNNING" is not a sentence.
+     */
+    const runValue = typeof streak === 'number' ? streak : record?.current_streak;
+    const run = typeof runValue === 'number' && runValue >= 2 ? runValue : null;
     /** Nothing to say yet is better than three em dashes in a row. */
     const hasRecord = longest != null || avg != null || heaviest != null;
 
@@ -150,6 +188,17 @@ export function ProjectorRoom({ stats, user, record }: { stats?: CinephileStats;
                     <Text {...scaledTextProps} style={[s.rankValue, { color: standing.color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                         {standing.name}
                     </Text>
+
+                    {run !== null && (
+                        <Text
+                            {...scaledTextProps}
+                            style={s.runNote}
+                            numberOfLines={1}
+                            accessibilityLabel={`On a run of ${run} nights`}
+                        >
+                            {run} NIGHTS RUNNING
+                        </Text>
+                    )}
 
                     {standing.isHighest ? (
                         // NO BAR. There is nothing left to fill, and a full bar
@@ -244,6 +293,9 @@ const s = StyleSheet.create({
     rankLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog, marginBottom: 8 },
     rankValue: { fontFamily: fonts.display, fontSize: 26, textAlign: 'center' },
     rankNote: { fontFamily: fonts.bodyItalic, fontSize: 11, lineHeight: 16, color: colors.bone, opacity: 0.7, marginTop: 6, textAlign: 'center' },
+    // Deliberately quieter than the standing above it and louder than the track
+    // note below: a live fact, not a headline and not fine print.
+    runNote: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.2, color: colors.sepia, opacity: 0.85, marginTop: 7, textAlign: 'center' },
     progressTrack: { width: '100%', height: 4, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 2, overflow: 'hidden', marginTop: 18 },
     progressFill: { height: '100%', borderRadius: 2 },
     trackNote: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.6, color: colors.fog, marginTop: 9 },

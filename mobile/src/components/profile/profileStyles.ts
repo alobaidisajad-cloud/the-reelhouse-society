@@ -11,12 +11,12 @@ export const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
 
   // ── Top Navigation ──
-  topNav: { paddingTop: 56, paddingHorizontal: 16, paddingBottom: 8, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
+  topNav: { paddingTop: 56, paddingHorizontal: ROOM_INSET, paddingBottom: 8, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   topNavBtn: { width: 40, height: 40, justifyContent: 'center' },
 
   // ── Tab Page Header ──
   tabPageHeader: {
-    paddingTop: 56, paddingHorizontal: 16, paddingBottom: 12,
+    paddingTop: 56, paddingHorizontal: ROOM_INSET, paddingBottom: 12,
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: 'rgba(8,6,4,0.98)',
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.15)',
@@ -184,7 +184,7 @@ export const s = StyleSheet.create({
   tabScrollContent: { paddingBottom: 80, paddingTop: 8 },
   /** A sealed room, which has no list to inherit the room inset from. */
   sealedPad: { paddingHorizontal: ROOM_INSET },
-  tabContentPad: { paddingHorizontal: 16 },
+  tabContentPad: { paddingHorizontal: ROOM_INSET },
   filterGroupCol: { marginBottom: 16, gap: 10 },
   filterScrollMargin: { marginBottom: 16 },
   filterChipRow: { gap: 8 },
@@ -218,7 +218,7 @@ export const s = StyleSheet.create({
   // rows of chrome before a single number. `projectorHeader`, `projectorSuper`,
   // `projectorTitle` and `projectorSub` went with it.
   projectorGap: { gap: 32 },
-  projectorSectionsWrap: { paddingHorizontal: 16, gap: 32 },
+  projectorSectionsWrap: { paddingHorizontal: ROOM_INSET, gap: 32 },
 
   // ── Favourites ──
   favPosterThumb: { width: 28, height: 42, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(232,223,208,0.14)' },

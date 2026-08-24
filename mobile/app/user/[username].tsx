@@ -429,6 +429,12 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     statsLevel,
     statsColor,
     statsProgress,
+    // The run the member is on. This was computed here and thrown away: the
+    // hook fetched it, profileComputed resolved it against a local fallback,
+    // and no line of the screen ever asked for it — so the SQL fix that made
+    // `current_streak` correct (it returned 1 or 0 for every member) repaired a
+    // number nobody could see.
+    streak,
     archiveFiltered,
     ledgerFiltered,
     halfLifeMap,
@@ -908,8 +914,17 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     </View>
                   )}
 
-                  {/* Projector Room */}
-                  <ProjectorRoom stats={{ count: totalFilms, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} record={analyticsShape} />
+                  {/* Projector Room.
+                      It sat OUTSIDE any inset while the two buttons above and
+                      every section below sat 16pt in — so the one bordered card
+                      on the page ran edge to edge, 32pt wider than its
+                      neighbours, with its 3pt corner radius pressed flat
+                      against the screen. The dial inside is a fixed 140pt, so
+                      it clears the narrower box on the smallest phone we
+                      support with room to spare. */}
+                  <View style={s.tabContentPad}>
+                    <ProjectorRoom stats={{ count: totalFilms, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} record={analyticsShape} streak={streak} />
+                  </View>
 
                   <View style={s.projectorSectionsWrap}>
                     {/* Taste DNA */}

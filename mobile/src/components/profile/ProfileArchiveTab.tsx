@@ -13,7 +13,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Eas
 import VaultLock from './VaultLock';
 import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
-import { r, rtlText, posterColumns, completeCount, countLabel } from './roomStyles';
+import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET } from './roomStyles';
 import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
 
 /**
@@ -496,11 +496,11 @@ export default function ProfileArchiveTab({
 }
 
 const s = StyleSheet.create({
-  searchWrap: { paddingHorizontal: 16, marginBottom: 12 },
+  searchWrap: { paddingHorizontal: ROOM_INSET, marginBottom: 12 },
 
   // ── a walk-out, in rows ──
   walkRow: {
-    flexDirection: 'row', gap: 12, minHeight: 64, paddingVertical: 11, paddingHorizontal: 16,
+    flexDirection: 'row', gap: 12, minHeight: 64, paddingVertical: 11, paddingHorizontal: ROOM_INSET,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(232,223,208,0.07)',
   },
   walkPlateWrap: { width: 42, height: 63 },
