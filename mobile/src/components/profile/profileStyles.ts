@@ -382,7 +382,25 @@ export const s = StyleSheet.create({
   holdNameRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 5 },
   holdName: { fontFamily: fonts.sub, fontSize: 10.5, letterSpacing: 1.8, color: colors.silverScreen, flexShrink: 1 },
   holdBase: { flexDirection: 'row' as const, alignItems: 'flex-end' as const, gap: 6 },
-  holdSub: { fontFamily: fonts.body, fontSize: 9.5, color: colors.fog, opacity: 0.7, flexShrink: 0 },
+  /**
+   * ── THE PLAIN-ENGLISH GLOSS ─────────────────────────────────────────────────
+   * The word under each room name — *watched*, *to see*, *physical* — is what
+   * makes six invented room names legible to somebody who has just arrived. It
+   * had two problems, and both made it worse at exactly its job.
+   *
+   * IT COULD NOT SHRINK. `flexShrink: 0` beside a count that also cannot shrink
+   * means a long gloss does not ellipsis — it pushes out of the card. At
+   * maximum Dynamic Type on a 320pt phone the pair has about 8 characters of
+   * room, and nothing was stopping a longer one from overflowing. Now it yields
+   * first: the count is a number and must stay whole, the gloss is a word and
+   * can take an ellipsis.
+   *
+   * IT WAS BELOW THE READABLE FLOOR. fog at 0.7 is 3.75:1 on ink — under the
+   * 4.5 that 9.5pt text needs. The one line explaining the room was the least
+   * readable thing on the card. 0.8 gives 4.59:1 and clears it, which is the
+   * step theme.ts already documents as the last one that does.
+   */
+  holdSub: { fontFamily: fonts.body, fontSize: 9.5, color: colors.fog, opacity: 0.8, flexShrink: 1, minWidth: 0 },
   holdLeader: { flex: 1, minWidth: 8, marginBottom: 4, borderBottomWidth: 1, borderStyle: 'dotted' as const, borderBottomColor: 'rgba(184,137,26,0.30)' },
   holdCount: { fontFamily: fonts.display, fontSize: 14, lineHeight: 17, color: colors.sepia, flexShrink: 0, textShadowColor: 'rgba(184,137,26,0.3)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 },
   holdCountLock: { fontFamily: fonts.sub, fontSize: 11, color: 'rgba(184,137,26,0.5)', textShadowRadius: 0 },

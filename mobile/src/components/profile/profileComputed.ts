@@ -101,6 +101,43 @@ export function reconcileCount(serverCount: number, localLength: number, isSelf:
 }
 
 /**
+ * ── THE PLAIN WORD UNDER EACH ROOM NAME ──────────────────────────────────────
+ * ARCHIVE / *watched*, VAULT / *physical*. Six invented room names are what
+ * gives this app its voice; these six words are what stop a newcomer having to
+ * guess what is behind each door. Rendered lowercase, under the name.
+ *
+ * ── WHY THE LEDGER IS NO LONGER A "DIARY" ────────────────────────────────────
+ * On Letterboxd — where most of these members are arriving from — a diary is
+ * the list of films you watched, BY DATE. That is this app's Archive, which
+ * sits directly above the Ledger in the same column. The one word meant to
+ * explain the room was pointing at the room above it.
+ *
+ * Not "WRITTEN" either, tempting as the pairing with *watched* was. This room
+ * admits a film you RATED and never wrote a word about — `!log.rating &&
+ * !log.review` is the only thing it turns away — so *written* would be false
+ * for a good share of the rows in it. A mark is an opinion and so is a
+ * paragraph; "opinions" is the honest description of both.
+ *
+ * ── AND WHY IT IS ONE WORD ───────────────────────────────────────────────────
+ * The gloss shares a line with the room's count. At maximum Dynamic Type on a
+ * 320pt phone, beside a five-digit tally, the budget is about eight characters.
+ * "rated & written" is fifteen. holdingsFit.test.ts measures every one of these
+ * against every phone width and text size, so the ceiling is enforced rather
+ * than remembered.
+ */
+export const ROOM_GLOSS = {
+  archive: 'WATCHED',
+  ledger: 'OPINIONS',
+  watchlist: 'TO SEE',
+  lists: 'LISTS',
+  physical: 'PHYSICAL',
+  projector: 'ANALYTICS',
+} as const;
+
+/** Just the words, for the fit test — derived, never a second copy. */
+export const COLLECTION_CARD_GLOSSES = Object.values(ROOM_GLOSS);
+
+/**
  * How a holdings count is written on the page.
  *
  * An em dash for an empty room, never `0`. Two reasons, and the second is the
@@ -545,12 +582,12 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   const totalVault = reconcileCount(counts.vault, displayVault.length, isSelf);
 
   const COLLECTION_CARDS = useMemo(() => [
-    { id: 'archive' as ProfileTab, label: 'ARCHIVE', desc: 'WATCHED', count: tally(totalFilms), Icon: Archive, disabled: false, highlight: false, locked: false },
-    { id: 'ledger' as ProfileTab, label: 'LEDGER', desc: 'DIARY', count: tally(totalLedger), Icon: BookOpen, disabled: false, highlight: false, locked: false },
-    { id: 'watchlist' as ProfileTab, label: 'WATCHLIST', desc: 'TO SEE', count: tally(totalWatchlist), Icon: Bookmark, disabled: false, highlight: false, locked: false },
-    { id: 'lists' as ProfileTab, label: 'STACKS', desc: 'LISTS', count: tally(totalLists), Icon: LayoutList, disabled: false, highlight: false, locked: false },
-    { id: 'physical' as ProfileTab, label: 'VAULT', desc: 'PHYSICAL', count: isArchivistPlus ? tally(totalVault) : '✦', Icon: Disc, disabled: false, highlight: false, locked: !isArchivistPlus },
-    { id: 'projector' as ProfileTab, label: 'PROJECTOR', desc: 'ANALYTICS', count: '★', Icon: Projector, disabled: false, highlight: true, locked: false },
+    { id: 'archive' as ProfileTab, label: 'ARCHIVE', desc: ROOM_GLOSS.archive, count: tally(totalFilms), Icon: Archive, disabled: false, highlight: false, locked: false },
+    { id: 'ledger' as ProfileTab, label: 'LEDGER', desc: ROOM_GLOSS.ledger, count: tally(totalLedger), Icon: BookOpen, disabled: false, highlight: false, locked: false },
+    { id: 'watchlist' as ProfileTab, label: 'WATCHLIST', desc: ROOM_GLOSS.watchlist, count: tally(totalWatchlist), Icon: Bookmark, disabled: false, highlight: false, locked: false },
+    { id: 'lists' as ProfileTab, label: 'STACKS', desc: ROOM_GLOSS.lists, count: tally(totalLists), Icon: LayoutList, disabled: false, highlight: false, locked: false },
+    { id: 'physical' as ProfileTab, label: 'VAULT', desc: ROOM_GLOSS.physical, count: isArchivistPlus ? tally(totalVault) : '✦', Icon: Disc, disabled: false, highlight: false, locked: !isArchivistPlus },
+    { id: 'projector' as ProfileTab, label: 'PROJECTOR', desc: ROOM_GLOSS.projector, count: '★', Icon: Projector, disabled: false, highlight: true, locked: false },
   ], [totalLedger, totalWatchlist, totalLists, totalVault, isArchivistPlus, totalFilms]);
 
   return {
