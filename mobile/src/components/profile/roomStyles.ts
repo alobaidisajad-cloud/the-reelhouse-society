@@ -1,5 +1,5 @@
 import { StyleSheet, type TextStyle } from 'react-native';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, type } from '@/src/theme/theme';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 
 /**
@@ -135,6 +135,38 @@ export const EMBER_REST = 0.5;
 export const EMBER_BEATS = 21;
 
 // ════════════════════════════════════════════════════════════════════════════
+// A YEAR IS A BOUNDARY, NOT A LABEL
+// ════════════════════════════════════════════════════════════════════════════
+/**
+ * Print a year only on the rail where it CHANGES.
+ *
+ * Every rail used to carry one: JANUARY 2026, DECEMBER 2025, NOVEMBER 2025,
+ * OCTOBER 2025 — the same four digits read eleven more times, in the loudest
+ * face on the row, while the month that actually distinguishes one rail from
+ * the next was the quietest thing on it.
+ *
+ * Removing the repetition is better than shrinking it. Scrolling a long archive
+ * now passes a year only when a year turns over, which is the one moment it
+ * means something.
+ *
+ * The FIRST rail always keeps its year — the tracker starts empty, so the top
+ * of the list is a change — otherwise a member could scroll into a list with no
+ * year anywhere on it.
+ *
+ * A factory rather than a shared variable: the Archive and the Ledger build
+ * their lists independently and in the same render pass, and one memo must
+ * never see the other's last year.
+ */
+export function yearMarker(): (year: string) => string {
+  let last = '';
+  return (year: string) => {
+    if (!year || year === last) return '';
+    last = year;
+    return year;
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // A COUNT ONLY APPEARS WHEN IT IS COMPLETE
 // ════════════════════════════════════════════════════════════════════════════
 /**
@@ -250,9 +282,25 @@ export const r = StyleSheet.create({
   // RAILS — a month, a shelf
   // ══════════════════════════════════════════════════════════════════════════
   rail: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 9, marginTop: 22, marginBottom: 12 },
-  railYear: { fontFamily: fonts.display, fontSize: 13, color: colors.silverScreen },
+  /**
+   * ── THE RAIL, THE RIGHT WAY ROUND ──────────────────────────────────────────
+   * The year used to be the display face at 13 and the month the typewriter at
+   * 8.5. Within one archive the YEAR REPEATS across twelve rails and the month
+   * is the only thing telling them apart, so the loud token was the one
+   * carrying no information.
+   *
+   * Swapped. The month takes the display face and `type.rail`; the year becomes
+   * a quiet typewriter tag — and prints only where it CHANGES, so a year is a
+   * boundary marker rather than something read twelve times.
+   *
+   * No letter-spacing on the month: Rye is a display serif and already wide.
+   * Spacing it was what pushed the rail to within 19pt of the screen edge on a
+   * 320pt phone at maximum text size — see railFits.test.ts, which proves the
+   * whole rail at every width and every scale.
+   */
+  railYear: { fontFamily: fonts.sub, fontSize: type.label, letterSpacing: 1.4, color: colors.fog },
   railLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.15)' },
-  railLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.4, color: colors.sepia },
+  railLabel: { fontFamily: fonts.display, fontSize: type.rail, color: colors.sepia },
   /**
    * 0.8, not 0.7. Measured against the page ground the old value came out at
    * 3.75:1 — under the 4.5:1 needed for text this size. 0.79 reaches it; 0.8

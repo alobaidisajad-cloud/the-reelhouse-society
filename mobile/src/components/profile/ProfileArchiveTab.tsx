@@ -13,7 +13,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Eas
 import VaultLock from './VaultLock';
 import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
-import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET } from './roomStyles';
+import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET, yearMarker } from './roomStyles';
 import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
 
 /**
@@ -288,12 +288,13 @@ export default function ProfileArchiveTab({
 
     const grouped = groupByMonth(archiveFiltered);
     const result: ArchiveItem[] = [];
+    // A year prints only where it changes — see yearMarker.
+    const markYear = yearMarker();
 
     Object.entries(grouped).forEach(([month, items]) => {
-      // `groupByMonth` keys on "MARCH 2026". The year is set in the display
-      // face and the month in the sub — a date on a card catalogue divider,
-      // not a heading. Split from the END so a month name can never be
-      // mistaken for the year.
+      // `groupByMonth` keys on "MARCH 2026". The MONTH is the heading and takes
+      // the display face; the year is a quiet tag beside it. Split from the END
+      // so a month name can never be mistaken for the year.
       const cut = month.lastIndexOf(' ');
       const name = cut > 0 ? month.slice(0, cut) : month;
       const year = cut > 0 ? month.slice(cut + 1) : '';
@@ -306,7 +307,7 @@ export default function ProfileArchiveTab({
       result.push({
         type: 'header',
         title: name,
-        lead: year,
+        lead: markYear(year),
         count: countLabel(real, 'FILM', 'FILMS'),
         weight: real !== undefined && months.heaviest > 0 ? real / months.heaviest : undefined,
       });

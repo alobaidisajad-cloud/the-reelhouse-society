@@ -109,6 +109,56 @@ export const fonts = {
   // return through this door.
 } as const;
 
+/**
+ * ── THE TYPE SCALE ───────────────────────────────────────────────────────────
+ * Sizes by ROLE, not by number.
+ *
+ * The six profile rooms had TWENTY distinct font sizes across fifty-five
+ * declarations. That is not a scale, it is twenty separate decisions — and two
+ * of them had quietly inverted the hierarchy of the room they were in:
+ *
+ *   · The Ledger exists to show what a member WROTE, and set their words at
+ *     11.5 under a film title at 14.5. The smallest thing in the row was the
+ *     only thing the room was for.
+ *   · The Archive's month rail set the YEAR at 13 in the display face and the
+ *     MONTH at 8.5. Within one archive the year repeats across twelve rails;
+ *     the month is what tells them apart. The repeated token was the loud one.
+ *
+ * Neither is fixable by nudging a number, because nothing stops the next
+ * twenty. Naming the role is what makes size follow meaning — the same move
+ * that gave the rooms one page inset (ROOM_INSET), one rank ladder
+ * (STANDING_LADDER) and one search box (RoomSearch).
+ *
+ * A size is NOT a hierarchy on its own. `voice` sits one point under `title`
+ * and stays clearly subordinate to it, because they differ in face (Courier
+ * Prime Italic against Rye) and in colour (bone against parchment). Making the
+ * words tiny was never what separated them.
+ */
+export const type = {
+  /** The one number a room is about — the dial's film count. */
+  hero: 32,
+  /** The standing. One per screen, at most. */
+  display: 26,
+  /** A figure that has a caption under it: 31, 3.8. */
+  value: 18,
+  /** A film, a stack. */
+  title: 15,
+  /** THE MEMBER'S OWN WORDS. Reviews, descriptions — never below this. */
+  voice: 14,
+  /** A section heading: a month, a shelf. */
+  rail: 12,
+  /** A secondary sentence, or a live fact worth reading. */
+  meta: 11,
+  /** A chip, an eyebrow: ALL, RECENT, STANDING. */
+  label: 10,
+  /** The caption UNDER a value: LONGEST RUN. Small on purpose. */
+  caption: 8.5,
+  /** A corner badge whose meaning is already on screen: BD, RANKED. */
+  badge: 7.5,
+} as const;
+
+export type TypeRole = keyof typeof type;
+
 export const spacing = {
   xs: 4,
   sm: 8,

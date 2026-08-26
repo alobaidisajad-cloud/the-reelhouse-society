@@ -64,3 +64,4 @@ coverage/
 
 # Generated documentation
 docs/
+.mockup-preview/

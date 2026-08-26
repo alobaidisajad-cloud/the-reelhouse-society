@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Share } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, type } from '@/src/theme/theme';
 import PressableScale from '../PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
@@ -295,7 +295,7 @@ const s = StyleSheet.create({
     rankNote: { fontFamily: fonts.bodyItalic, fontSize: 11, lineHeight: 16, color: colors.bone, opacity: 0.7, marginTop: 6, textAlign: 'center' },
     // Deliberately quieter than the standing above it and louder than the track
     // note below: a live fact, not a headline and not fine print.
-    runNote: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.2, color: colors.sepia, opacity: 0.85, marginTop: 7, textAlign: 'center' },
+    runNote: { fontFamily: fonts.sub, fontSize: type.meta, letterSpacing: 2.4, color: colors.sepia, marginTop: 9, textAlign: 'center' },
     progressTrack: { width: '100%', height: 4, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 2, overflow: 'hidden', marginTop: 18 },
     progressFill: { height: '100%', borderRadius: 2 },
     trackNote: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.6, color: colors.fog, marginTop: 9 },

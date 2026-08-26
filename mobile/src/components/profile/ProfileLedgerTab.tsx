@@ -5,7 +5,7 @@ import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { PenTool, Search, TrendingUp, TrendingDown, Minus, Stethoscope } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
-import { colors, fonts, SEPIA_HASH } from '../../theme/theme';
+import { colors, fonts, type, SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
 import PressableScale from '../PressableScale';
 import { ReelRating } from '../Decorative';
@@ -14,7 +14,7 @@ import type { ProfileLog, HalfLifeEntry, LedgerRating } from '../../types';
 import { LEDGER_HIGH_FLOOR } from '../../types';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
-import { r, rtlText, EMBER_REST, EMBER_BEATS } from './roomStyles';
+import { r, rtlText, EMBER_REST, EMBER_BEATS, yearMarker } from './roomStyles';
 import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
 
 /**
@@ -47,6 +47,25 @@ const PLATE_H = 63;
  * size, so the visible cut is always the layout's, never this one.
  */
 const ROW_REVIEW_CHARS = 180;
+/**
+ * What a row is worth telling FlashList, derived from its parts rather than
+ * guessed at.
+ *
+ * It used to be `PLATE_H + 24` — 87 — which was close enough while the words
+ * were 11.5pt on a 17pt line. Raising them to `type.voice` on a 20pt line adds
+ * six points to every row that HAS words, and in the Ledger most rows do: that
+ * is what the room is for. Left at 87 the list would under-estimate every real
+ * row and hand the scrollbar a length it has to keep correcting.
+ *
+ *   padding 11 top and bottom       22
+ *   the title line                  20
+ *   the rating row, with its margin 19
+ *   two lines of voice, with margin 46
+ *
+ * A bare rated row with no writing still floors at `minHeight: 64`, so the true
+ * range is 64–107 and this sits where the common case does.
+ */
+const ROW_EST = 22 + 20 + 19 + 46;
 /** A headline is a headline. Past this it is a paragraph wearing a hat. */
 const ROW_HEADER_CHARS = 60;
 /** Enough for a name or two; both of these are free-text member input. */
@@ -365,13 +384,16 @@ export default function ProfileLedgerTab({
     if (ledgerFiltered.length === 0) return [];
     const grouped = groupByMonth(ledgerFiltered);
     const result: LedgerItem[] = [];
+    // A year prints only where it changes. Its own marker, not the Archive's —
+    // both rooms build their lists in the same render pass.
+    const markYear = yearMarker();
 
     Object.entries(grouped).forEach(([month, items]) => {
       const cut = month.lastIndexOf(' ');
       result.push({
         type: 'header',
         title: cut > 0 ? month.slice(0, cut) : month,
-        lead: cut > 0 ? month.slice(cut + 1) : '',
+        lead: markYear(cut > 0 ? month.slice(cut + 1) : ''),
         // NO COUNT, deliberately.
         //
         // `items.length` counted the loaded page, so a month holding forty
@@ -543,7 +565,7 @@ export default function ProfileLedgerTab({
         // A row is a 63pt plate plus its padding — measured, where the old 250
         // was a guess three times too large, which made FlashList reserve three
         // screens of blank space below the last entry on a short ledger.
-        estimatedItemSize={PLATE_H + 24}
+        estimatedItemSize={ROW_EST}
         contentContainerStyle={r.listContent}
         refreshing={refreshing}
         onRefresh={onRefresh}
@@ -583,7 +605,7 @@ const s = StyleSheet.create({
   plateEmpty: { backgroundColor: colors.posterVoid },
   rowBody: { flex: 1, minWidth: 0, justifyContent: 'center' },
   rowHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  rowTitle: { flex: 1, fontFamily: fonts.display, fontSize: 14.5, lineHeight: 19, color: colors.parchment },
+  rowTitle: { flex: 1, fontFamily: fonts.display, fontSize: type.title, lineHeight: 20, color: colors.parchment },
   rowYear: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
   rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 5, flexWrap: 'wrap' },
   rowUnrated: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.8, color: colors.fog, opacity: 0.7 },
@@ -593,7 +615,20 @@ const s = StyleSheet.create({
    * The member's own words — the reason this room exists, and the one thing it
    * never used to show.
    */
-  rowWords: { fontFamily: fonts.bodyItalic, fontSize: 11.5, lineHeight: 17, color: colors.bone, opacity: 0.72, marginTop: 6 },
+  /**
+   * ── THE POINT OF THIS ROOM ──────────────────────────────────────────────────
+   * The member's own words. They were 11.5pt at 0.72 opacity, under a film
+   * title at 14.5 — the smallest, faintest thing in a row, in the one room that
+   * exists to show them. The Ledger was built because a poster grid cannot show
+   * writing, and then set the writing like a footnote.
+   *
+   * `type.voice` sits ONE point under `type.title`, and that is deliberate: the
+   * separation between a film's name and a member's sentence is carried by FACE
+   * (Rye against Courier Prime Italic) and by COLOUR (parchment against bone),
+   * which is what was doing the work all along. Shrinking the words was never
+   * what made the title read first.
+   */
+  rowWords: { fontFamily: fonts.bodyItalic, fontSize: type.voice, lineHeight: 20, color: colors.bone, opacity: 0.82, marginTop: 6 },
   /** The editorial desk's headline — champagne, so it reads as a title. */
   rowHeadline: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.champagne, marginTop: 6 },
   rowWith: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.6, color: colors.fog, marginTop: 5 },
