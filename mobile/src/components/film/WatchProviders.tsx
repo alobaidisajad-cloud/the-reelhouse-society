@@ -143,22 +143,22 @@ export const WatchProviders = React.memo(function WatchProviders({ providers }: 
 });
 
 const s = StyleSheet.create({
+  /**
+   * ── UNBOXED, WITH THE REST OF THE PAGE ────────────────────────────────────
+   * The dossier and the synopsis lost their cards this pass, and leaving this
+   * one framed made WHERE IT PLAYS the last boxed block — which reads as an
+   * element imported from a different app rather than a deliberate emphasis.
+   *
+   * The provider chips are already bordered objects; a border around a group
+   * of borders is a box inside a box. The only cards left on this page are the
+   * critiques, and those are meant to look like cards.
+   */
   container: {
-    backgroundColor: 'rgba(8,6,4,0.98)',
-    borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.3)',
-    borderRadius: 4,
-    padding: 16,
-    marginVertical: 12,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 6,
+    marginTop: 4,
+    marginBottom: 12,
   },
   emptyState: {
-    padding: 24,
-    alignItems: 'center',
-    backgroundColor: 'rgba(8,6,4,0.98)',
-    borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.15)',
-    borderRadius: 4,
+    paddingVertical: 8,
   },
   emptyDisplay: {
     fontFamily: fonts.display,
@@ -170,7 +170,9 @@ const s = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 12,
     color: colors.fog,
-    textAlign: 'center',
+    // Left, with the rest of the page. It was centred because the box it sat
+    // in was centred; without the box, a centred line is the only centred
+    // thing between the hero and the shelf.
     lineHeight: 18,
   },
   section: {

@@ -47,7 +47,17 @@ const CastCard = memo(function CastCard({ item }: { item: CastMember }) {
                     </View>
                 )}
             </View>
-            <Text style={s.castName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.name}</Text>
+            {/**
+              * ── A BILLED ACTOR'S NAME IS NOT NEGOTIABLE ────────────────────
+              * One line in a 100pt card turned Anne Hathaway into "Anne
+              * Hatha…" — a truncation that reads as a bug, on the section
+              * whose entire job is naming people. Shrink-to-fit did not save
+              * it either: at 0.75 of 14pt the name still did not clear the
+              * card, so it shrank AND clipped.
+              *
+              * Two lines, and the rail pays for the second below.
+              */}
+            <Text style={s.castName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>{item.name}</Text>
             <Text style={s.castRole} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.character}</Text>
         </PressableScale>
     );
@@ -62,8 +72,11 @@ export const CastCarousel = memo(function CastCarousel({ cast }: { cast: CastMem
 
     if (!cast || cast.length === 0) return null;
 
+    // 195 fitted a one-line name exactly. A fixed rail does not grow to fit its
+    // contents, so the second line is paid for here or the names run into the
+    // section beneath. Derived in castRailFits.test.ts.
     return (
-        <View style={{ height: 195 }}>
+        <View style={{ height: 214 }}>
             <FlashList
                 data={cast}
                 horizontal
