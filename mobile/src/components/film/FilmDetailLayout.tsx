@@ -323,7 +323,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
             <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
         </Animated.View>
-        <FilmHeroSkeleton skeletonAnimStyle={skeletonAnimStyle} backdropHeight={BACKDROP_H} />
+        <FilmHeroSkeleton skeletonAnimStyle={skeletonAnimStyle} backdropHeight={BACKDROP_H} bottomInset={insets.bottom} />
       </View>
     );
   }
@@ -441,13 +441,27 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
 
         {isTransitionComplete && (
           <>
-            {/* SYNOPSIS */}
-            <Animated.View style={s.section}>
-              <FilmSectionHeader label="SYNOPSIS" />
-              <View style={s.synopsisWrap}>
-                <Text style={s.synopsis}>{film.overview ?? 'No synopsis available.'}</Text>
-              </View>
-            </Animated.View>
+            {/**
+              * ── A HEADING WITH NOTHING UNDER IT ─────────────────────────────
+              * `film.overview ?? '…'` only catches null. TMDB returns an EMPTY
+              * STRING for a film it has no synopsis for, which sailed past the
+              * `??` and drew the brass tick, the label and the rule over
+              * nothing at all — a dangling heading, on exactly the obscure
+              * films this app sends people to look for.
+              *
+              * The section omits itself, as the cast, the footage and the shelf
+              * already do. Those blocks say nothing when they have nothing; the
+              * ones that DO show an empty state — WHERE IT PLAYS, THE SOCIETY —
+              * are the two a member can act on. Nobody can write a synopsis.
+              */}
+            {film.overview ? (
+              <Animated.View style={s.section}>
+                <FilmSectionHeader label="SYNOPSIS" />
+                <View style={s.synopsisWrap}>
+                  <Text style={s.synopsis}>{film.overview}</Text>
+                </View>
+              </Animated.View>
+            ) : null}
 
             {/* ── YOURS, THEN THE HOUSE'S ──────────────────────────────────
                 Your own critique sits directly above the society's, wearing a

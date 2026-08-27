@@ -170,6 +170,23 @@ const STATES: [string, Record<string, unknown>, boolean][] = [
   ['film-built-tray-logged', { reviews: CRITIQUES, existingLog: MY_LOG, verdict: { avg_rating: 4.5, rating_count: 30, log_count: 37 } }, true],
   ['film-built-locked', { isArchivist: false }, true],
   ['film-built-noart', { film: { ...detail, backdrop_path: null, poster_path: null } }, false],
+
+  /**
+   * ── THE STATES NOTHING HAD EVER RENDERED ─────────────────────────────────
+   * Every defect on this page was found by looking at something for the first
+   * time. These five had never been drawn once — and the first two consume
+   * `backdropHeightRatio`, which this pass changed from 0.65 to 0.52.
+   */
+  ['film-built-loading', { loading: true }, false],
+  ['film-built-notfound', { film: null, validFilmId: false }, false],
+  ['film-built-error', { film: null, isError: true }, false],
+  // Archive-diving turns up films with almost nothing attached to them.
+  ['film-built-sparse', {
+    cast: [], videos: [], similarFilms: [], providers: null, directors: [], studios: [],
+    film: { ...detail, tagline: null, overview: '', release_dates: null },
+  }, false],
+  // Signed out: every act must route to the door rather than fail quietly.
+  ['film-built-signedout', { isAuthenticated: false, isArchivist: false, existingLog: null }, true],
 ];
 
 describe('film page generator', () => {
@@ -190,7 +207,14 @@ describe('film page generator', () => {
     console.log(`${name}:`, html.length, 'bytes |',
       (html.match(/<img /g) || []).length, 'images |',
       (html.match(/class="poster"/g) || []).length, 'empty frames');
-    expect(html.length).toBeGreaterThan(5000);
+    /**
+     * A floor, not a target. 5,000 was written when every state was a whole
+     * page; the skeleton and the two error screens are legitimately a few
+     * hundred bytes of chrome and nothing else. The point of the check is
+     * "something rendered", so each state gets the floor it can actually meet.
+     */
+    const CHROME_ONLY = ['film-built-loading', 'film-built-notfound', 'film-built-error'];
+    expect(html.length).toBeGreaterThan(CHROME_ONLY.includes(name) ? 1500 : 5000);
   });
 
   it('the tray really opens — otherwise every tray shot is a shut one', async () => {

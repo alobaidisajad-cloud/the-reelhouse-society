@@ -166,6 +166,37 @@ describe('the order of the page', () => {
   });
 });
 
+describe('the skeleton promises what actually arrives', () => {
+  const skeleton = code(read(join(FILM, 'FilmHeroSkeleton.tsx')));
+  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
+
+  /**
+   * A skeleton is a promise about the page that is coming. This one was
+   * promising the page that USED to exist: a full-width 48pt bar standing in
+   * for the retired console, and `marginTop: -80` — the poster's old lift,
+   * against a hero that now lifts 190 into a shorter backdrop. The poster
+   * landed some 110pt out, so the page jumped at the exact moment a member is
+   * watching it settle.
+   */
+  it('lifts the poster by the same token the page does', () => {
+    expect(skeleton).toMatch(/marginTop: -metrics\.posterLift/);
+    expect(layout).toMatch(/BACKDROP_H - metrics\.posterLift/);
+    // And no hardcoded lift left behind to drift again.
+    expect(skeleton).not.toMatch(/marginTop: -\d+/);
+  });
+
+  it('draws a docked plate, not the console that was retired', () => {
+    expect(skeleton).toMatch(/shimmerStub/);
+    expect(skeleton).toMatch(/height: STUB_HEIGHT/);
+    expect(skeleton).not.toMatch(/shimmerCta/);
+  });
+
+  it('and holds the dock at the height the real one will be', () => {
+    expect(skeleton).toMatch(/paddingTop: STUB_PAD_TOP/);
+    expect(skeleton).toMatch(/Math\.max\(bottomInset, 16\)/);
+  });
+});
+
 describe('what the scrim must cover, and what it must not', () => {
   const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
   const tray = code(read(join(FILM, 'FilmActionTray.tsx')));
