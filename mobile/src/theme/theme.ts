@@ -52,6 +52,13 @@ export const colors = {
   crimsonFaint: 'rgba(180, 45, 45, 0.1)',
   parchmentBright: '#F8F2E4',
   surface: '#14120D',
+  /**
+   * A sheet raised OVER the page, lit by the room rather than the page behind
+   * it — the film page's action tray. A hair above `ink` and a hair below
+   * `surface`: enough to read as a separate plane against the scrim, not
+   * enough to read as a grey card.
+   */
+  surfaceRaised: '#12100B',
   // Text-selection highlight — brand sepia at low alpha so selected text stays legible
   selection: 'rgba(184, 137, 26, 0.35)',
   // ── Semantic ──
@@ -266,7 +273,18 @@ export const metrics = {
   headerHeight: 64,
   bottomNavHeight: 80,
   screenWidth: 0,
-  backdropHeightRatio: 0.65,
+  /**
+   * ── HOW MUCH SCREEN THE BACKDROP RESERVES ─────────────────────────────────
+   * 0.65 was two thirds of the phone spent on a decorative still before the
+   * film's own title. With the six-control console gone from beneath the hero
+   * there is no longer anything to justify it: the reservation drops and the
+   * poster rises INTO the image rather than sitting below it, which is both
+   * shorter and better — a poster mounted on its own backdrop rather than
+   * stacked under one.
+   */
+  backdropHeightRatio: 0.52,
+  /** How far the poster climbs into that reservation. Was 80. */
+  posterLift: 190,
 } as const;
 
 export const physics = {

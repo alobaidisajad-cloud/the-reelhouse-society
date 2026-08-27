@@ -67,10 +67,22 @@ export function useFilmAnimations({ isFocused, scrollY, backdropHeight }: UseFil
     transform: [{ scale: bookmarkScale.value }],
   }));
 
+  /**
+   * ── THE FADE HAS TO COMPLETE ──────────────────────────────────────────────
+   * This used to settle at `0.3` and stop there, which meant the backdrop —
+   * a photograph — sat behind the synopsis, the provider chips, the ledger and
+   * every critique for the whole two-thousand-point scroll. Body text at
+   * reduced contrast over a picture, permanently, for no gain: it was visible
+   * in every screenshot once anyone actually scrolled the page.
+   *
+   * Now it reaches zero across the backdrop's own height. The atmosphere
+   * belongs to the hero; below it the page is ink and every section reads at
+   * full strength.
+   */
   const backdropAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: interpolate(scrollY.value, [0, backdropHeight], [0, backdropHeight * 0.4], Extrapolation.CLAMP) }],
-      opacity: interpolate(scrollY.value, [0, backdropHeight * 0.6], [1, 0.3], Extrapolation.CLAMP)
+      opacity: interpolate(scrollY.value, [0, backdropHeight * 0.85], [1, 0], Extrapolation.CLAMP),
     };
   });
 
@@ -81,6 +93,19 @@ export function useFilmAnimations({ isFocused, scrollY, backdropHeight }: UseFil
     };
   });
 
+  /**
+   * The header is the exact inverse of the floating back button, over the same
+   * fifty points. Written as `1 - immersive` in spirit but computed from the
+   * same clamp so the two can never drift apart and leave a window with no way
+   * back on screen at all.
+   */
+  const scrollHeaderStyle = useAnimatedStyle(() => {
+    const clampY = Math.min(Math.max(scrollY.value - backdropHeight, 0), 50);
+    return {
+      opacity: interpolate(clampY, [0, 50], [0, 1], Extrapolation.CLAMP)
+    };
+  });
+
   return {
     posterGlowStyle,
     whisperPulseStyle,
@@ -88,6 +113,7 @@ export function useFilmAnimations({ isFocused, scrollY, backdropHeight }: UseFil
     bookmarkAnimStyle,
     backdropAnimatedStyle,
     immersiveAnimatedStyle,
+    scrollHeaderStyle,
     skeletonOpacity,
     bookmarkScale,
   };

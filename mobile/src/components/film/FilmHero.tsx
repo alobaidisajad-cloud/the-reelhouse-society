@@ -2,10 +2,12 @@ import { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
-import { Clock, Globe, Film as FilmIcon } from 'lucide-react-native';
+import { Film as FilmIcon } from 'lucide-react-native';
 import { tmdb, formatRuntime, getYear } from '@/src/lib/tmdb';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
+import { scaledTextProps } from '@/src/constants/textScaling';
+import type { FilmVerdict } from '@/src/services/FilmService';
 
 import type { TMDBMovieDetail } from '@/src/lib/tmdb';
 import type { StyleProp, ViewStyle } from 'react-native';
@@ -20,6 +22,8 @@ interface FilmHeroProps {
   existingLog: { status?: string; rating?: number; viewCount?: number } | null;
   score: number;
   studios: { name?: string }[];
+  /** What the members of this house made of it — never TMDB. */
+  verdict: FilmVerdict | null;
   posterGlowStyle: StyleProp<ViewStyle>;
   statusConfig: Record<string, { text: string; Icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }> }>;
 }
@@ -49,20 +53,16 @@ const ObscurityBadge = memo(function ObscurityBadge({ score }: { score: number }
   );
 });
 
-const GenreTag = memo(function GenreTag({ name }: { name: string }) {
-  return (
-    <View style={styles.genreTag}>
-      <Text style={styles.genreText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{(name || '').toUpperCase()}</Text>
-    </View>
-  );
-});
+// GenreTag is gone with the chip row it drew. Genres are now a plain
+// letterspaced line: three bordered boxes were three pieces of chrome around
+// three words, on a page whose whole revision was about removing exactly that.
 
 export const FilmHero = memo(function FilmHero({
   film,
-  reviews,
   existingLog,
   score,
   studios,
+  verdict,
   posterGlowStyle,
   statusConfig
 }: FilmHeroProps) {
@@ -107,44 +107,70 @@ export const FilmHero = memo(function FilmHero({
       <View style={styles.infoBlock}>
         <PrestigeBadge companies={studios} />
 
-        {(film.genres?.length ?? 0) > 0 && (
-          <View style={styles.genreRow}>
-            {film?.genres?.slice(0, 3).map((g: { id: number; name: string }) => <GenreTag key={g.id} name={g.name} />)}
-          </View>
-        )}
-
         <Text style={styles.filmTitle} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.7}>{film.title}</Text>
 
         {film.tagline ? <Text style={styles.tagline} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>&ldquo;{film.tagline}&rdquo;</Text> : null}
 
-        {/* Meta strip */}
-        <View style={styles.metaStrip}>
-          <View style={styles.metaItem}>
-            <Clock size={10} color={colors.fog} strokeWidth={1.5} />
-            <Text style={styles.metaText}>{formatRuntime(film.runtime)}</Text>
-          </View>
-          <Text style={styles.metaDot}>·</Text>
-          <Text style={styles.metaText}>{getYear(film.release_date)}</Text>
-          {film.production_countries?.[0] && (
-            <>
-              <Text style={styles.metaDot}>·</Text>
-              <View style={styles.metaItem}>
-                <Globe size={10} color={colors.fog} strokeWidth={1.5} />
-                <Text style={styles.metaText}>{film.production_countries[0].iso_3166_1}</Text>
-              </View>
-            </>
-          )}
-        </View>
-
-        {/* Rating */}
-        <View style={styles.ratingRow}>
-          <ReelRating rating={Math.round(film.vote_average ?? 0) / 2} size={18} />
-          <Text style={styles.ratingText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-            {(film.vote_average ?? 0).toFixed(1)} · {reviews.length > 0 ? `${reviews.length}${reviews.length >= 10 ? '+' : ''} SOCIETY REVIEW${reviews.length === 1 ? '' : 'S'}` : (film.vote_count ?? 0) > 0 ? `${(film.vote_count ?? 0).toLocaleString()} GLOBAL` : 'AWAITING RATINGS'}
+        {/**
+          * ── TWO LINES, NOT ONE, AND NOT THREE ──────────────────────────────
+          * This was a row of bordered genre chips above a strip of icon-and-
+          * label pairs: three rows of chrome for six words of fact. Merged into
+          * a single run it read as "FANTASY 2H 53M" — one item — because the
+          * only thing dividing the genres from the particulars was a space.
+          *
+          * Two lines, then: what KIND of film, and then its particulars, the
+          * genres carrying a touch more presence so the eye reads them as
+          * different kinds of fact rather than one long string.
+          */}
+        {(film.genres?.length ?? 0) > 0 && (
+          <Text {...scaledTextProps} style={styles.genreLine} numberOfLines={1}>
+            {film.genres!.slice(0, 3).map((g: { name: string }) => g.name.toUpperCase()).join('  ·  ')}
           </Text>
-        </View>
+        )}
 
-        <ObscurityBadge score={score} />
+        <Text {...scaledTextProps} style={styles.metaLine} numberOfLines={1}>
+          {formatRuntime(film.runtime).toUpperCase()}
+          {'  ·  '}{getYear(film.release_date)}
+          {film.production_countries?.[0] ? `  ·  ${film.production_countries[0].iso_3166_1}` : ''}
+          {/**
+            * TMDB's score is a PARTICULAR, and it sits with the runtime and
+            * the year where a particular belongs. It used to wear four brass
+            * reels — the house's own language — with `2,317 GLOBAL` beside it,
+            * and no member could tell whose verdict either one was.
+            */}
+          {(film.vote_average ?? 0) > 0 ? `  ·  TMDB ${(film.vote_average ?? 0).toFixed(1)}` : ''}
+        </Text>
+
+        {/**
+          * ── THE REELS BELONG TO THE HOUSE ──────────────────────────────────
+          * They appear only when the house has actually spoken, and when it
+          * has not the page SAYS SO — ruled like a title card, which is
+          * dignified, and which sets up the invitation further down the page.
+          */}
+        {verdict?.avg_rating ? (
+          <View style={styles.verdictRow}>
+            <ReelRating rating={verdict.avg_rating} size={18} />
+            <Text {...scaledTextProps} style={styles.verdictScore}>{verdict.avg_rating.toFixed(1)}</Text>
+            <Text {...scaledTextProps} style={styles.verdictWho} numberOfLines={1}>
+              THE HOUSE · {verdict.log_count} LOG{verdict.log_count === 1 ? '' : 'S'}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.silentRow}>
+            <View style={styles.silentRule} />
+            <Text {...scaledTextProps} style={styles.silentText} numberOfLines={1}>THE HOUSE HAS NOT SPOKEN</Text>
+            <View style={styles.silentRule} />
+          </View>
+        )}
+
+        {/**
+          * The rarity stamp, only where it means something. At 26 it reads
+          * KNOWN, which tells a member nothing and spends a row saying it.
+          * Above 40 it reads INDIE, DEEP CUT, GHOST REEL — and for an app
+          * about archive-diving that is one of the most distinctive things on
+          * the page. Deleting it outright was over-eager; gating it is right.
+          */}
+        {score > 40 && <ObscurityBadge score={score} />}
       </View>
     </Animated.View>
   );
@@ -187,13 +213,6 @@ const styles = StyleSheet.create({
   loggedBadgeContent: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   loggedBadgeText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.ink },
   infoBlock: { alignItems: 'center', paddingHorizontal: 8, width: '100%' },
-  genreRow: { flexDirection: 'row', gap: 6, marginBottom: 12, flexWrap: 'wrap', justifyContent: 'center' },
-  genreTag: {
-    paddingHorizontal: 8, paddingVertical: 4,
-    borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2,
-    backgroundColor: colors.surface,
-  },
-  genreText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia },
   filmTitle: {
     includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.display, fontSize: 26, color: colors.parchment,
     textAlign: 'center', lineHeight: 32, marginBottom: 6,
@@ -202,12 +221,34 @@ const styles = StyleSheet.create({
     includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.bone,
     textAlign: 'center', marginBottom: 14, opacity: 0.75,
   },
-  metaStrip: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog },
-  metaDot: { fontSize: 8, color: colors.sepiaBorderStrong },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
-  ratingText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.7 },
+  /** Genres carry a touch more presence than the particulars beneath them —
+      that difference is what tells the eye they are two kinds of fact. */
+  genreLine: {
+    includeFontPadding: false, textAlignVertical: 'center',
+    fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 1.6, color: colors.bone,
+    textAlign: 'center', lineHeight: 15, marginBottom: 5, opacity: 0.85,
+  },
+  metaLine: {
+    includeFontPadding: false, textAlignVertical: 'center',
+    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog,
+    textAlign: 'center', lineHeight: 15, marginBottom: 12,
+  },
+
+  /** The house's verdict. Nothing else in the app wears these reels. */
+  verdictRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  verdictScore: { includeFontPadding: false, fontFamily: fonts.body, fontSize: 13, color: colors.parchment },
+  verdictWho: { includeFontPadding: false, fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.4, color: colors.fog },
+
+  /** And when it has not spoken: a statement, ruled like a title card. */
+  silentRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    alignSelf: 'stretch', paddingHorizontal: 18, marginBottom: 10,
+  },
+  silentRule: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.22)' },
+  silentText: {
+    includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.2, color: colors.fog,
+  },
 });
 
 const sub = StyleSheet.create({
