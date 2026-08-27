@@ -54,6 +54,29 @@ describe('the numeric that arrives as a string', () => {
   });
 });
 
+describe('a verdict the reels could not draw', () => {
+  /**
+   * `logs.rating` carries NO check constraint in the database. The app has
+   * always written 0-5, but one bad row from an import or a future scale
+   * change would otherwise put fifty reels in the hero.
+   *
+   * The COLUMN is deliberately unbounded `numeric` so the WRITE can never
+   * overflow and take every log insert down with it. This is the other half of
+   * that pair: unbounded on the way in, clamped on the way out.
+   */
+  it('clamps an out-of-range average to the scale the reels can draw', async () => {
+    mockRow({ data: { avg_rating: '50.00', rating_count: 1, log_count: 1 } });
+    const v = await FilmService.getFilmVerdict(1);
+    expect(v.avg_rating).toBe(5);
+  });
+
+  it('leaves an ordinary average exactly where it is', async () => {
+    mockRow({ data: { avg_rating: '4.33', rating_count: 3, log_count: 3 } });
+    const v = await FilmService.getFilmVerdict(1);
+    expect(v.avg_rating).toBe(4.33);
+  });
+});
+
 describe('a film nobody has touched', () => {
   it('has no row, and that is not a failure', async () => {
     // The commonest case in an archive of a million titles.

@@ -38,7 +38,13 @@ const FilmVerdictSchema = z.object({
     .transform((v) => {
       if (v === null || v === undefined) return null;
       const n = typeof v === 'number' ? v : Number(v);
-      return Number.isFinite(n) && n > 0 ? n : null;
+      if (!Number.isFinite(n) || n <= 0) return null;
+      // Clamped to the scale the reels can draw. `logs.rating` carries NO
+      // check constraint in the database — the app has always written 0-5, but
+      // one bad row from an import or a future scale change would otherwise
+      // put fifty reels in the hero. The column is unbounded so the WRITE can
+      // never fail; this is the other half, so the READ can never be absurd.
+      return Math.min(n, 5);
     }),
   rating_count: z.number().nullable().optional().transform((v) => v ?? 0),
   log_count: z.number().nullable().optional().transform((v) => v ?? 0),

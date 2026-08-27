@@ -29,8 +29,35 @@
 
 BEGIN;
 
+-- ── SAFETY, BEFORE ANYTHING TAKES A LOCK ────────────────────────────────────
+-- CREATE TRIGGER takes an ACCESS EXCLUSIVE lock on `logs`, and ALTER TABLE
+-- takes one on `films`. If another transaction is holding a lock on either,
+-- this would WAIT — and while it waits it queues EVERY other query on that
+-- table behind it. On a live app that is an outage caused by a migration that
+-- was only trying to be careful.
+--
+-- With a lock timeout it gives up after five seconds and changes nothing:
+-- BEGIN/COMMIT means a migration that fails to start is free. Run it again in
+-- a quieter moment.
+--
+-- These are SET LOCAL, so they last exactly as long as this transaction and
+-- cannot leak into the session that ran it. (They must be INSIDE the
+-- transaction to have any effect at all — `SET LOCAL` before `BEGIN` is a
+-- no-op with a warning, which is a safety net that silently is not there.)
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '120s';
+
+-- ── WHY `numeric` AND NOT `numeric(3,2)` ────────────────────────────────────
+-- `logs.rating` is `NUMERIC(3,1) DEFAULT 0` with NO CHECK constraint bounding
+-- it. The app writes 0-5 and always has, but the DATABASE does not enforce
+-- that — and `numeric(3,2)` tops out at 9.99. One bad row from an import, a
+-- script or a future scale change, and the average overflows the column, the
+-- trigger raises, and EVERY LOG INSERT IN THE APP FAILS.
+--
+-- An unbounded numeric cannot overflow. It costs nothing here, and the failure
+-- it removes is the worst one available: a member unable to log a film.
 ALTER TABLE public.films
-  ADD COLUMN IF NOT EXISTS avg_rating   numeric(3,2),
+  ADD COLUMN IF NOT EXISTS avg_rating   numeric,
   ADD COLUMN IF NOT EXISTS rating_count integer NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS log_count    integer NOT NULL DEFAULT 0;
 
