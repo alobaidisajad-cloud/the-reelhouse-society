@@ -10,6 +10,11 @@ import React, { act } from 'react';
 import { render } from '@testing-library/react-native';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { toHtml } from './zz-render.lib';
+import { POSTERS, POSTER_PATHS, POSTER_TITLES, LOCAL_ART } from './zz-art.gen';
+
+const ART = { posters: POSTERS, local: LOCAL_ART };
+
 import UserProfileScreen from '@/app/user/[username]';
 
 const OUT = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/mockups';
@@ -47,96 +52,17 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('@/src/lib/supabase', () => ({ supabase: { rpc: jest.fn(() => Promise.resolve({ error: null })), from: jest.fn() } }));
 
-// ── the html conversion (same rules as the rooms generator) ─────────────────
-const PX = new Set(['width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
-  'top', 'bottom', 'left', 'right', 'margin', 'marginTop', 'marginBottom', 'marginLeft',
-  'marginRight', 'marginHorizontal', 'marginVertical', 'padding', 'paddingTop',
-  'paddingBottom', 'paddingLeft', 'paddingRight', 'paddingHorizontal', 'paddingVertical',
-  'borderWidth', 'borderRadius', 'borderTopWidth', 'borderBottomWidth', 'borderLeftWidth',
-  'borderRightWidth', 'fontSize', 'lineHeight', 'letterSpacing', 'gap', 'rowGap', 'columnGap']);
-const DIRECT = new Set(['color', 'backgroundColor', 'opacity', 'borderColor', 'borderTopColor',
-  'borderBottomColor', 'borderLeftColor', 'borderRightColor', 'textAlign', 'fontWeight',
-  'fontStyle', 'position', 'zIndex', 'overflow', 'flex', 'flexDirection', 'alignItems',
-  'justifyContent', 'flexWrap', 'alignSelf', 'textTransform', 'flexGrow', 'flexShrink', 'aspectRatio']);
-const kebab = (k: string) => k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
-const FONT_MAP: Record<string, string> = {
-  Rye_400Regular: "'Rye', serif",
-  SpecialElite_400Regular: "'Special Elite', monospace",
-  CourierPrime_400Regular: "'Courier Prime', monospace",
-  CourierPrime_700Bold: "'Courier Prime', monospace",
-  CourierPrime_400Regular_Italic: "'Courier Prime', monospace",
-  Spectral_400Regular: "'Spectral', serif",
-  Spectral_500Medium: "'Spectral', serif",
-  Spectral_400Regular_Italic: "'Spectral', serif",
-};
-const flat = (s: unknown): Record<string, unknown> => {
-  if (!s) return {};
-  if (Array.isArray(s)) return s.reduce<Record<string, unknown>>((a, x) => ({ ...a, ...flat(x) }), {});
-  return s as Record<string, unknown>;
-};
-function css(st: Record<string, unknown>, isText: boolean): string {
-  const out: string[] = [];
-  if (!isText) { out.push('display:flex', `flex-direction:${(st.flexDirection as string) || 'column'}`); }
-  for (const [k, v] of Object.entries(st)) {
-    if (v === undefined || v === null) continue;
-    if (k === 'fontFamily') {
-      out.push(`font-family:${FONT_MAP[String(v)] || 'monospace'}`);
-      if (String(v).includes('Italic')) out.push('font-style:italic');
-      if (String(v).includes('700Bold')) out.push('font-weight:700');
-      continue;
-    }
-    if (k === 'marginHorizontal') { out.push(`margin-left:${v}px`, `margin-right:${v}px`); continue; }
-    if (k === 'marginVertical') { out.push(`margin-top:${v}px`, `margin-bottom:${v}px`); continue; }
-    if (k === 'paddingHorizontal') { out.push(`padding-left:${v}px`, `padding-right:${v}px`); continue; }
-    if (k === 'paddingVertical') { out.push(`padding-top:${v}px`, `padding-bottom:${v}px`); continue; }
-    if (k === 'flexDirection') continue;
-    if (k === 'flex' && v === 1) { out.push('flex:1 1 0%', 'min-width:0'); continue; }
-    if (['shadowColor', 'shadowOffset', 'shadowRadius', 'elevation'].includes(k)) continue;
-    if (k === 'transform') {
-      const t = (v as Record<string, string | number>[]).map((o) =>
-        Object.entries(o).map(([tk, tv]) =>
-          `${tk}(${tv}${typeof tv === 'number' ? (tk.startsWith('rotate') ? 'deg' : 'px') : ''})`).join(' ')).join(' ');
-      out.push(`transform:${t}`);
-      continue;
-    }
-    if (PX.has(k)) { out.push(`${kebab(k)}:${typeof v === 'number' ? v + 'px' : v}`); continue; }
-    if (DIRECT.has(k)) { out.push(`${kebab(k)}:${v}`); continue; }
-  }
-  return out.join(';');
-}
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-interface N { type?: string; props?: Record<string, unknown>; children?: unknown[] }
-function toHtml(node: unknown): string {
-  if (node === null || node === undefined) return '';
-  if (typeof node === 'string') return esc(node);
-  if (typeof node === 'number') return String(node);
-  if (Array.isArray(node)) return node.map(toHtml).join('');
-  const n = node as N;
-  const st = flat(n.props?.style);
-  const kids = (n.children || []).map(toHtml).join('');
-  const t = String(n.type || '');
-  if (/^(Image|ExpoImage)$/i.test(t)) return `<div class="poster" style="${css(st, false)}"></div>`;
-  if (t === 'Text') return `<span style="${css(st, true)}">${kids}</span>`;
-  if (/^Svg$/i.test(t)) {
-    const w = n.props?.width; const h = n.props?.height;
-    const num = (x: unknown) => (typeof x === 'number' ? `${x}px` : String(x ?? '100%'));
-    return `<div class="svgart" style="width:${num(w)};height:${num(h)}"></div>`;
-  }
-  if (/^(Circle|Path|Rect|G|Line|Defs|Ellipse|Stop|LinearGradient|RadialGradient|SvgRadialGradient|Polygon|Text)$/i.test(t)) return '';
-  if (t === 'ActivityIndicator') return '<div class="spinner"></div>';
-  return `<div style="${css(st, false)}">${kids}</div>`;
-}
-
 // ── a member worth looking at ───────────────────────────────────────────────
 const FAVOURITES = [
-  { id: 389, title: '12 Angry Men', poster_path: '/a.jpg', release_date: '1957-04-10' },
-  { id: 240, title: 'The Godfather Part II', poster_path: '/b.jpg', release_date: '1974-12-20' },
-  { id: 429, title: 'The Good, the Bad and the Ugly', poster_path: '/c.jpg', release_date: '1966-12-23' },
+  { id: 389, title: '12 Angry Men', poster_path: POSTER_PATHS[8], release_date: '1957-04-10' },
+  { id: 240, title: 'The Godfather Part II', poster_path: POSTER_PATHS[9], release_date: '1974-12-20' },
+  { id: 429, title: 'The Good, the Bad and the Ugly', poster_path: POSTER_PATHS[10], release_date: '1966-12-23' },
 ];
-const TITLES = ['Stalker', 'In the Mood for Love', 'Tokyo Story', 'Come and See', 'Persona'];
+const TITLES = POSTER_TITLES;
 const recent = (i: number) => ({
-  id: `l${i}`, filmId: 500 + i, title: TITLES[i % TITLES.length], poster: '/p.jpg',
-  poster_path: '/p.jpg', year: 1962 + i * 6, rating: 5 - (i % 3), status: i === 1 ? 'rewatched' : 'watched',
+  id: `l${i}`, filmId: 500 + i, title: TITLES[i % TITLES.length],
+  poster: POSTER_PATHS[i % POSTER_PATHS.length],
+  poster_path: POSTER_PATHS[i % POSTER_PATHS.length], year: 1962 + i * 6, rating: 5 - (i % 3), status: i === 1 ? 'rewatched' : 'watched',
   watchedDate: `2026-01-${20 - i}`, createdAt: `2026-01-${20 - i}T20:00:00Z`,
   review: 'Held its nerve to the last frame.', formats: [], notes: '', condition: 'good',
 });
@@ -219,7 +145,7 @@ gate('member file generator', () => {
     mockCtl = ctl;
     let r!: ReturnType<typeof render>;
     await act(async () => { r = render(<UserProfileScreen />); });
-    const html = toHtml(r.toJSON());
+    const html = toHtml(r.toJSON(), ART);
     writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
     // eslint-disable-next-line no-console
     console.log(`WROTE ${name}: ${html.length} bytes`);

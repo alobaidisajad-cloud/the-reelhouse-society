@@ -10,6 +10,11 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { toHtml } from './zz-render.lib';
+import { POSTERS, POSTER_PATHS, POSTER_TITLES, LOCAL_ART, FACE_PATHS } from './zz-art.gen';
+
+const ART = { posters: POSTERS, local: LOCAL_ART };
+
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
@@ -87,126 +92,13 @@ jest.mock('@shopify/flash-list', () => {
 
 const OUT = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/mockups';
 
-// ── style translation ───────────────────────────────────────────────────────
-const PX = new Set([
-  'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
-  'top', 'bottom', 'left', 'right', 'margin', 'marginTop', 'marginBottom',
-  'marginLeft', 'marginRight', 'marginHorizontal', 'marginVertical',
-  'padding', 'paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight',
-  'paddingHorizontal', 'paddingVertical', 'borderWidth', 'borderRadius',
-  'borderTopWidth', 'borderBottomWidth', 'borderLeftWidth', 'borderRightWidth',
-  'fontSize', 'lineHeight', 'letterSpacing', 'gap', 'rowGap', 'columnGap',
-]);
-const DIRECT = new Set([
-  'color', 'backgroundColor', 'opacity', 'borderColor', 'borderTopColor',
-  'borderBottomColor', 'borderLeftColor', 'borderRightColor', 'textAlign',
-  'fontWeight', 'fontStyle', 'position', 'zIndex', 'overflow', 'flex',
-  'flexDirection', 'alignItems', 'justifyContent', 'flexWrap', 'alignSelf',
-  'textTransform', 'flexGrow', 'flexShrink', 'aspectRatio',
-]);
-
-const kebab = (k: string) => k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
-
-const FONT_MAP: Record<string, string> = {
-  Rye_400Regular: "'Rye', serif",
-  SpecialElite_400Regular: "'Special Elite', monospace",
-  CourierPrime_400Regular: "'Courier Prime', monospace",
-  CourierPrime_700Bold: "'Courier Prime', monospace",
-  CourierPrime_400Regular_Italic: "'Courier Prime', monospace",
-  Spectral_400Regular: "'Spectral', serif",
-  Spectral_500Medium: "'Spectral', serif",
-  Spectral_400Regular_Italic: "'Spectral', serif",
-};
-
-const flat = (s: unknown): Record<string, unknown> => {
-  if (!s) return {};
-  if (Array.isArray(s)) return s.reduce<Record<string, unknown>>((a, x) => ({ ...a, ...flat(x) }), {});
-  return s as Record<string, unknown>;
-};
-
-function css(styleIn: Record<string, unknown>, isText: boolean): string {
-  const st = { ...styleIn };
-  const out: string[] = [];
-
-  // React Native lays out in COLUMN by default; CSS defaults to row.
-  if (!isText) {
-    out.push('display:flex');
-    out.push(`flex-direction:${(st.flexDirection as string) || 'column'}`);
-  }
-
-  for (const [k, v] of Object.entries(st)) {
-    if (v === undefined || v === null) continue;
-    if (k === 'fontFamily') {
-      out.push(`font-family:${FONT_MAP[String(v)] || 'monospace'}`);
-      if (String(v).includes('Italic')) out.push('font-style:italic');
-      if (String(v).includes('700Bold')) out.push('font-weight:700');
-      continue;
-    }
-    if (k === 'marginHorizontal') { out.push(`margin-left:${v}px`, `margin-right:${v}px`); continue; }
-    if (k === 'marginVertical') { out.push(`margin-top:${v}px`, `margin-bottom:${v}px`); continue; }
-    if (k === 'paddingHorizontal') { out.push(`padding-left:${v}px`, `padding-right:${v}px`); continue; }
-    if (k === 'paddingVertical') { out.push(`padding-top:${v}px`, `padding-bottom:${v}px`); continue; }
-    if (k === 'flexDirection') continue; // handled above
-    if (k === 'flex' && v === 1) { out.push('flex:1 1 0%'); out.push('min-width:0'); continue; }
-    if (k === 'shadowColor' || k === 'shadowOffset' || k === 'shadowRadius' || k === 'elevation') continue;
-    if (k === 'transform') {
-      const t = (v as Record<string, string | number>[])
-        .map((o) => Object.entries(o).map(([tk, tv]) => `${tk}(${typeof tv === 'number' && tk.startsWith('rotate') ? tv + 'deg' : tv}${typeof tv === 'number' && !tk.startsWith('rotate') ? 'px' : ''})`).join(' '))
-        .join(' ');
-      out.push(`transform:${t}`);
-      continue;
-    }
-    if (PX.has(k)) { out.push(`${kebab(k)}:${typeof v === 'number' ? v + 'px' : v}`); continue; }
-    if (DIRECT.has(k)) { out.push(`${kebab(k)}:${v}`); continue; }
-  }
-  return out.join(';');
-}
-
-const esc = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-interface Node { type?: string; props?: Record<string, unknown>; children?: unknown[] }
-
-function toHtml(node: unknown, depth = 0): string {
-  if (node === null || node === undefined) return '';
-  if (typeof node === 'string') return esc(node);
-  if (typeof node === 'number') return String(node);
-  if (Array.isArray(node)) return node.map((c) => toHtml(c, depth)).join('');
-
-  const n = node as Node;
-  const st = flat(n.props?.style);
-  const kids = (n.children || []).map((c) => toHtml(c, depth + 1)).join('');
-  const type = String(n.type || '');
-
-  // An image well — the real posters are remote and the artifact CSP blocks
-  // them, so this draws the same box with the app's own placeholder shade.
-  if (/^(Image|ExpoImage)$/i.test(type)) {
-    return `<div class="poster" style="${css(st, false)}"></div>`;
-  }
-  if (type === 'Text') {
-    return `<span style="${css(st, true)}">${kids}</span>`;
-  }
-  if (/^(Svg|Circle|Path|Rect|G|Line|Defs|LinearGradient|Stop)$/i.test(type)) {
-    // SVG art (the dial) — represented as its bounding box, labelled.
-    if (/^Svg$/i.test(type)) {
-      const w = n.props?.width ?? 0;
-      const h = n.props?.height ?? 0;
-      return `<div class="dial" style="width:${w}px;height:${h}px"></div>`;
-    }
-    return '';
-  }
-  if (type === 'ActivityIndicator') return '<div class="spinner"></div>';
-
-  return `<div style="${css(st, false)}">${kids}</div>`;
-}
-
 // ── fixtures ────────────────────────────────────────────────────────────────
-const TITLES = ['Stalker', 'Chungking Express', 'In the Mood for Love', 'Persona',
-  'Tokyo Story', 'Come and See', 'The Third Man', 'Wings of Desire', 'Cléo from 5 to 7'];
+const TITLES = POSTER_TITLES;
 
 const film = (i: number, o: Record<string, unknown> = {}) => ({
-  id: `l${i}`, filmId: 400 + i, title: TITLES[i % TITLES.length], poster: '/p.jpg',
-  poster_path: '/p.jpg', year: 1960 + ((i * 7) % 45), rating: (i % 5) + 1,
+  id: `l${i}`, filmId: 400 + i, title: TITLES[i % TITLES.length],
+  poster: POSTER_PATHS[i % POSTER_PATHS.length],
+  poster_path: POSTER_PATHS[i % POSTER_PATHS.length], year: 1960 + ((i * 7) % 45), rating: (i % 5) + 1,
   status: 'watched', formats: [['bluray', 'dvd', '4k', 'vhs'][i % 4]], notes: '',
   condition: 'good', createdAt: '2026-01-01T00:00:00Z',
   review: 'A slow burn that earns every minute of its length, and then asks for one more.',
@@ -217,7 +109,7 @@ const SHELF = Array.from({ length: 9 }, (_, i) => film(i)) as never[];
 const MONTHS = (items: unknown[]) => ({ 'JANUARY 2026': items.slice(0, 5), 'DECEMBER 2025': items.slice(5) });
 
 /** A stack card draws a strip of up to three posters behind its title. */
-const POSTERS = [{ poster: '/a.jpg' }, { poster: '/b.jpg' }, { poster: '/c.jpg' }];
+const STACK_POSTERS = POSTER_PATHS.slice(0, 3).map((p) => ({ poster: p }));
 
 const ROOMS: [string, string, () => React.ReactElement][] = [
   ['plate', 'The Room Plate', () => {
@@ -261,10 +153,10 @@ const ROOMS: [string, string, () => React.ReactElement][] = [
   ['stacks', 'The Stacks', () => {
     const T = require('../ProfileListsTab').default;
     const lists = [
-      { id: '1', title: 'Neon and Rain', description: 'Cities that only exist after midnight.', isRanked: true, isPrivate: false, createdAt: '2026-01-01', filmCount: 24, films: POSTERS },
-      { id: '2', title: 'The Long Take', description: 'One shot, no mercy.', isRanked: false, isPrivate: false, createdAt: '2026-01-01', filmCount: 11, films: POSTERS },
-      { id: '3', title: 'Grief, Handled Well', description: '', isRanked: false, isPrivate: true, createdAt: '2026-01-01', filmCount: 8, films: POSTERS },
-      { id: '4', title: 'Kurosawa, In Order', description: 'Chronological. No exceptions.', isRanked: true, isPrivate: false, createdAt: '2026-01-01', filmCount: 30, films: POSTERS },
+      { id: '1', title: 'Neon and Rain', description: 'Cities that only exist after midnight.', isRanked: true, isPrivate: false, createdAt: '2026-01-01', filmCount: 24, films: STACK_POSTERS },
+      { id: '2', title: 'The Long Take', description: 'One shot, no mercy.', isRanked: false, isPrivate: false, createdAt: '2026-01-01', filmCount: 11, films: STACK_POSTERS },
+      { id: '3', title: 'Grief, Handled Well', description: '', isRanked: false, isPrivate: true, createdAt: '2026-01-01', filmCount: 8, films: STACK_POSTERS },
+      { id: '4', title: 'Kurosawa, In Order', description: 'Chronological. No exceptions.', isRanked: true, isPrivate: false, createdAt: '2026-01-01', filmCount: 30, films: STACK_POSTERS },
     ];
     return <T lists={lists as never} totalLists={4} isSelf ready listsSearch="" setListsSearch={jest.fn()}
       listsSort="default" setListsSort={jest.fn()} />;
@@ -279,13 +171,13 @@ const ROOMS: [string, string, () => React.ReactElement][] = [
         { name: 'Comedy', count: 201 }, { name: 'Horror', count: 164 },
         { name: 'Romance', count: 143 }, { name: 'Science Fiction', count: 121 }],
       actors: [
-        { id: 1, name: 'Toshiro Mifune', profile_path: '/a.jpg', count: 31 },
-        { id: 2, name: 'Setsuko Hara', profile_path: '/b.jpg', count: 22 },
-        { id: 3, name: 'Maggie Cheung', profile_path: '/c.jpg', count: 18 },
+        { id: 1, name: 'Toshiro Mifune', profile_path: FACE_PATHS[0], count: 31 },
+        { id: 2, name: 'Setsuko Hara', profile_path: FACE_PATHS[1], count: 22 },
+        { id: 3, name: 'Maggie Cheung', profile_path: FACE_PATHS[2], count: 18 },
       ],
       directors: [
-        { id: 9, name: 'Akira Kurosawa', profile_path: '/d.jpg', count: 26 },
-        { id: 10, name: 'Wong Kar-wai', profile_path: '/e.jpg', count: 14 },
+        { id: 9, name: 'Akira Kurosawa', profile_path: FACE_PATHS[3], count: 26 },
+        { id: 10, name: 'Wong Kar-wai', profile_path: FACE_PATHS[4], count: 14 },
       ],
       countries: [{ code: 'JP', count: 300 }], total_runtime: 128400,
     };
@@ -311,7 +203,7 @@ gate('mockup generator', () => {
     mkdirSync(OUT, { recursive: true });
     const manifest: { id: string; label: string; bytes: number }[] = [];
     for (const [id, label, build] of ROOMS) {
-      const html = toHtml(render(build()).toJSON());
+      const html = toHtml(render(build()).toJSON(), ART);
       writeFileSync(join(OUT, `${id}.html`), html, 'utf8');
       manifest.push({ id, label, bytes: html.length });
     }

@@ -385,7 +385,34 @@ jest.mock('react-native-reanimated', () => {
     makeMutable: jest.fn((v: any) => ({ value: v })),
     runOnJS: jest.fn((fn: any) => fn),
     runOnUI: jest.fn((fn: any) => fn),
-    interpolate: jest.fn((v: any) => v),
+    /**
+     * ── A STUB THAT RETURNED ITS INPUT WAS ANSWERING WRONG, NOT ABSTAINING ──
+     * `(v) => v` handed back the scroll offset in place of the mapped value, so
+     * every resting style resolved to whatever the input happened to be. At
+     * scroll 0 that is 0 — and `interpolate(0, [0, h], [1, 0.3])`, which is an
+     * OPAQUE backdrop, came out as `opacity: 0`. The film page's backdrop and
+     * its floating back button were both invisible in a render, and nothing
+     * failed, because a transform of 0 at rest is also 0 and looked correct.
+     *
+     * The real function is a piecewise linear map, so it is implemented here.
+     * `extend` is reanimated's default; `clamp` and `identity` are honoured.
+     */
+    interpolate: jest.fn((v: any, input?: any, output?: any, extrapolate?: any) => {
+      if (!Array.isArray(input) || !Array.isArray(output)) return v;
+      const n = Math.min(input.length, output.length);
+      if (n < 2 || typeof v !== 'number') return v;
+      const mode = typeof extrapolate === 'string' ? extrapolate : extrapolate?.extrapolateLeft ?? 'extend';
+      const seg = (i: number) => {
+        const span = input[i + 1] - input[i];
+        const t = span === 0 ? 0 : (v - input[i]) / span;
+        return output[i] + t * (output[i + 1] - output[i]);
+      };
+      if (mode === 'identity') return v;
+      if (v <= input[0]) return mode === 'clamp' ? output[0] : seg(0);
+      if (v >= input[n - 1]) return mode === 'clamp' ? output[n - 1] : seg(n - 2);
+      for (let i = 0; i < n - 1; i++) if (v <= input[i + 1]) return seg(i);
+      return output[n - 1];
+    }),
     Extrapolate: { CLAMP: 'clamp', EXTEND: 'extend' },
     // `Extrapolation` is the current name; `Extrapolate` is the deprecated one.
     // Only the old name was here, so a component using the current API would
@@ -459,6 +486,35 @@ jest.mock('./src/lib/tmdb', () => {
       logo: jest.fn((path?: string | null, size = 'w45') => path ? `${IMG}/${size}${path}` : undefined),
       posterThumb: jest.fn((path?: string | null) => path ? `${IMG}/w92${path}` : undefined),
       youtubeThumbnail: jest.fn((key: string) => `https://img.youtube.com/vi/${key}/hqdefault.jpg`),
+    },
+
+    /**
+     * ── THE MODULE'S OTHER EXPORTS ─────────────────────────────────────────
+     * `src/lib/tmdb` exports three plain functions beside the `tmdb` object,
+     * and this mock carried none of them. Any component importing one was
+     * unmountable — `formatRuntime is not a function`, thrown at render.
+     *
+     * That is SIX files, including FilmHero, FilmDossier and FilmDetailLayout:
+     * the entire core of the film page. It has no tests not through neglect
+     * but because the door was locked, and the error names a function rather
+     * than a mock, so it reads as a broken component every time.
+     *
+     * Implemented for real rather than stubbed. They are pure formatters, and
+     * a stub returning undefined would print "undefined" into a rendered page
+     * and let a passing test call it correct.
+     */
+    formatRuntime: (minutes?: number | null) => {
+      if (!minutes) return '—';
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      return h ? `${h}h ${m}m` : `${m}m`;
+    },
+    getYear: (dateStr?: string | null) => (dateStr ? String(dateStr).slice(0, 4) : ''),
+    obscurityScore: (movie: { popularity?: number }) => {
+      const pop = movie?.popularity || 0;
+      if (pop <= 0) return 99;
+      const score = Math.round(100 - (Math.log10(Math.max(pop, 1)) / Math.log10(5000)) * 98);
+      return Math.max(2, Math.min(99, score));
     },
   };
 });
