@@ -4,12 +4,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import { ArrowLeft, AlertTriangle, Film as FilmIcon, RotateCcw, Check, XCircle, ArrowUpRight } from 'lucide-react-native';
+// ArrowUpRight went with the director card's chevron — a credit does not
+// carry one, and `↗` now means "this leaves the page" and nothing else.
+import { ArrowLeft, AlertTriangle, Film as FilmIcon, RotateCcw, Check, XCircle } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH, metrics } from '@/src/theme/theme';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { tmdb, getYear, formatRuntime } from '@/src/lib/tmdb';
-import { formatDate } from '@/src/utils/timeAgo';
+import { formatDate, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { stripHtml } from '@/src/utils/html';
 
 
@@ -174,11 +175,28 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     handleOpenLounge();
   }, [isAuthenticated, isArchivist, handleOpenLounge]);
 
-  /** Dates are formatted HERE. No component below touches one. */
-  const watchedLabel = useMemo(
-    () => (existingLog?.watchedDate ? formatDate(existingLog.watchedDate) : null),
-    [existingLog?.watchedDate],
-  );
+  /**
+   * ── THE STUB'S DATE IS THE SHORT ONE ──────────────────────────────────────
+   * Dates are formatted HERE; no component below touches one.
+   *
+   * `SEEN ×2 · ★★★★☆ · JUL 21, 2026` is the busiest row in the app, and on a
+   * 375pt screen it does not fit — the date is clipped or the chevron is
+   * pushed off the plate. So the stub gets `JUL 21`, and the year appears only
+   * when the film was watched in a DIFFERENT year, which is the one case where
+   * the year is the interesting part.
+   */
+  const watchedLabel = useMemo(() => {
+    if (!existingLog?.watchedDate) return null;
+    const watched = new Date(existingLog.watchedDate);
+    if (Number.isNaN(watched.getTime())) return null;
+    // Watched this year, the DAY is what a member is placing. Watched years
+    // ago, the YEAR is the whole point and the day is noise. Both forms are
+    // short, which is what lets the row survive a rewatch count and five reels
+    // beside them — `JUL 21, 2025` did not.
+    return watched.getFullYear() === new Date().getFullYear()
+      ? formatDateMonthDay(existingLog.watchedDate).toUpperCase()
+      : String(watched.getFullYear());
+  }, [existingLog?.watchedDate]);
 
   const trayActs = useMemo<TrayAct[]>(() => {
     const acts: TrayAct[] = [
@@ -210,6 +228,9 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
       onPress: toggleWatchlist,
       brass: isWatchlisted,
       chip: isWatchlisted ? 'SAVED' : undefined,
+      // The one act that resolves without the tray closing, so its feedback
+      // has to happen in place: the bookmark springs under your finger.
+      iconStyle: bookmarkAnimStyle,
     });
     if (trailer) {
       acts.push({
@@ -241,6 +262,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   }, [
     existingLog, isWatchlisted, trailer, isArchivist,
     actThenClose, handleLog, handleRewatch, toggleWatchlist, handleOpenTrailer, handleOpenShare, openLounge,
+    bookmarkAnimStyle,
   ]);
 
   const traySubtitle = useMemo(() => {
@@ -314,7 +336,10 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   return (
     <View style={s.container}>
       {/* Parallax Backdrop */}
-      <Animated.View style={[s.backdropWrap, { height: BACKDROP_H }, backdropAnimatedStyle]}>
+      {/* testID so a static render can be driven through the fade — it is the
+          only way to SEE that the backdrop leaves rather than ghosting behind
+          every section, on a page nobody can build to a device yet. */}
+      <Animated.View testID="film-backdrop" style={[s.backdropWrap, { height: BACKDROP_H }, backdropAnimatedStyle]}>
         {film.backdrop_path ? (
           <Image source={{ uri: tmdb.backdrop(film.backdrop_path) }} style={s.backdrop} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
         ) : (
@@ -359,7 +384,6 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         {/* HERO */}
         <FilmHero
           film={film}
-          reviews={reviews}
           existingLog={existingLog}
           score={score}
           studios={studios}
@@ -457,7 +481,6 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
                 from the two rails this retires. */}
             <FilmDossier
               film={film}
-              formatRuntime={formatRuntime}
               studios={studios}
               certificate={certificate}
             />

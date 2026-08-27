@@ -8,6 +8,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 
@@ -38,10 +39,18 @@ const VideoThumb = memo(function VideoThumb({ video, onPlay }: VideoThumbProps) 
         </View>
       </View>
       <View style={sub.videoLabelWrap}>
-        <Text style={sub.videoType}>{video.type?.toUpperCase() ?? 'VIDEO'}</Text>
+        {/**
+          * ── A FIXED-HEIGHT RAIL HAS TO CAP ITS TYPE ────────────────────────
+          * React Native scales text with the system setting and does NOT cap it
+          * unless asked. At iOS's larger accessibility sizes an 11pt caption
+          * becomes 30-odd, and this rail is a FIXED 176pt that cannot grow: the
+          * captions would run straight into the section beneath. Two lines made
+          * that twice as likely, so both lines are capped at the app's own 1.35.
+          */}
+        <Text {...scaledTextProps} style={sub.videoType}>{video.type?.toUpperCase() ?? 'VIDEO'}</Text>
         {/* Two lines. One cut a caption mid-word — "A moment for this cinematic
             d…" — which tells a member less than no caption at all. */}
-        <Text style={sub.videoName} numberOfLines={2}>{video.name}</Text>
+        <Text {...scaledTextProps} style={sub.videoName} numberOfLines={2}>{video.name}</Text>
       </View>
     </PressableScale>
   );

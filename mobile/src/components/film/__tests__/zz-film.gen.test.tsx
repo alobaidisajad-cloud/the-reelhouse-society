@@ -187,7 +187,6 @@ describe('film page generator', () => {
     }
     const html = toHtml(r.toJSON(), { posters, local: LOCAL_ART });
     writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
-    // eslint-disable-next-line no-console
     console.log(`${name}:`, html.length, 'bytes |',
       (html.match(/<img /g) || []).length, 'images |',
       (html.match(/class="poster"/g) || []).length, 'empty frames');

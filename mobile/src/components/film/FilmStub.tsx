@@ -90,7 +90,10 @@ export const FilmStub = memo(function FilmStub({
 
   const inviting = (state === 'unseen' || state === 'shelved') && !open;
 
-  const label = state === 'rewatched' ? `SEEN ×${existingLog?.viewCount ?? 2}`
+  // Capped so the label has a WORST CASE. Without it a corrupt or absurd count
+  // sets the width of a row that also has to hold five reels and a date.
+  const views = Math.min(existingLog?.viewCount ?? 2, 99);
+  const label = state === 'rewatched' ? `SEEN ×${views}`
     : state === 'abandoned' ? 'ABANDONED'
     : state === 'seen' ? 'SEEN'
     : state === 'shelved' ? 'ON THE WATCHLIST'
@@ -154,6 +157,14 @@ export const FilmStub = memo(function FilmStub({
       <View style={[s.tear, { borderLeftColor: 'rgba(184,137,26,0.4)' }]} />
       <Text {...scaledTextProps} style={s.recordLabel} numberOfLines={1}>{label}</Text>
       {logged && rating > 0 && <ReelRating rating={rating} size={13} />}
+      {/**
+        * The date stays, because it now FITS. The reels do not scale with the
+        * type and the words do, and `SEEN ×2 · ★★★★☆ · JUL 21, 2026` ran off a
+        * 375pt plate at ordinary size. It was the DATE FORM that was wrong,
+        * not the presence of a date: the caller sends `JUL 21` for this year
+        * and `2025` for any other, and both survive the widest label at 1.35.
+        * Measured in stubFits.test.ts, per state, rather than assumed.
+        */}
       {logged && watchedLabel ? (
         <Text {...scaledTextProps} style={s.recordDate} numberOfLines={1}>{watchedLabel}</Text>
       ) : null}

@@ -128,6 +128,23 @@ describe('the stub stays put when the tray is up', () => {
   });
 });
 
+describe('nothing was left computing into the void', () => {
+  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
+
+  /**
+   * The bookmark bounce survived the console's removal by accident: the style
+   * was still being computed and had nothing rendering it. A dead animation
+   * raises nothing and shows nothing — it just stops moving.
+   */
+  it('the bookmark bounce is still wired to something that draws it', () => {
+    expect(layout).toMatch(/iconStyle: bookmarkAnimStyle/);
+  });
+
+  it('and the toggle still drives it', () => {
+    expect(layout).toMatch(/handleWatchlistToggled\(\)/);
+  });
+});
+
 describe('the page must not scroll behind an open tray', () => {
   const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
   it('freezes its own scroll, which a Modal would have done for it', () => {

@@ -68,6 +68,20 @@ describe('what the tray shows', () => {
     const t = render(<FilmActionTray {...base} acts={[act({ chip: 'SAVED' })]} />);
     expect(t.getByText('SAVED')).toBeTruthy();
   });
+
+  /**
+   * The watchlist is the only act that resolves WITHOUT the tray closing, so it
+   * is the only one whose feedback has to happen in place. This bounce already
+   * existed in the app and was very nearly lost with the console it lived on:
+   * the animated style was still being computed and simply had nothing left
+   * rendering it. Nothing failed, and the toggle just quietly stopped moving.
+   */
+  it('applies an act\'s animated style to its glyph', () => {
+    const t = render(<FilmActionTray {...base} acts={[
+      act({ iconStyle: { transform: [{ scale: 1.3 }] } }),
+    ]} />);
+    expect(JSON.stringify(t.toJSON())).toContain('"scale":1.3');
+  });
 });
 
 describe('the three things an overlay has to earn', () => {

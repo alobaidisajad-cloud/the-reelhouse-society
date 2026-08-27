@@ -18,7 +18,10 @@ const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
 
 interface FilmHeroProps {
   film: TMDBMovieDetail;
-  reviews: { id: string; author?: string; content?: string }[];
+  // `reviews` is gone: the hero used it only to print "N SOCIETY REVIEWS"
+  // beside a stranger's score. What the house made of a film now arrives as
+  // `verdict`, which is an average and a real count rather than the length of
+  // whichever page of written critiques happened to load.
   existingLog: { status?: string; rating?: number; viewCount?: number } | null;
   score: number;
   studios: { name?: string }[];

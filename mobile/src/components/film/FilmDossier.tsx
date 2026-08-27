@@ -68,7 +68,9 @@ interface FilmDossierProps {
     budget?: number;
     revenue?: number;
   } | null;
-  formatRuntime: (runtime: number | null | undefined) => string;
+  // `formatRuntime` is gone with the RUNTIME row it fed — the hero says it,
+  // four hundred points up, and saying it twice was half the point of this
+  // section's revision.
   /** Absorbed from the retired FilmStudios rail. */
   studios?: { name?: string }[];
   /** Absorbed from the retired CountryReleases section, region and all. */

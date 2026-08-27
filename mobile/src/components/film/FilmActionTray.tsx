@@ -30,6 +30,7 @@
  */
 import React, { memo, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, BackHandler, Pressable, ScrollView } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, ReduceMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -62,6 +63,16 @@ export interface TrayAct {
   travels?: boolean;
   /** State read at a glance rather than by re-reading the label. */
   chip?: string;
+  /**
+   * An animated style for this act's glyph.
+   *
+   * The watchlist is the one act that resolves WITHOUT the tray closing, so it
+   * is also the only one whose feedback has to happen in place. The bookmark
+   * springs under the member's finger. Without this the toggle would change a
+   * label and a chip and nothing would move — and the bounce that already
+   * existed in the app would have been quietly lost with the console.
+   */
+  iconStyle?: StyleProp<ViewStyle>;
 }
 
 interface FilmActionTrayProps {
@@ -112,7 +123,11 @@ const ActRow = memo(function ActRow({ act }: { act: TrayAct }) {
       style={[s.row, act.primary && s.rowPrimary]}
     >
       {act.primary && <BrassFace />}
-      <View style={s.rowIcon}><act.Icon size={16} color={tint} strokeWidth={1.75} /></View>
+      <View style={s.rowIcon}>
+        <Animated.View style={act.iconStyle}>
+          <act.Icon size={16} color={tint} strokeWidth={1.75} />
+        </Animated.View>
+      </View>
       {/* The perforation, rhyming with the stub's tear so the two read as one
           torn ticket rather than a sheet and a bar. */}
       <View style={[s.perfRule, act.primary && { borderLeftColor: ON_BRASS_RULE }]} />
