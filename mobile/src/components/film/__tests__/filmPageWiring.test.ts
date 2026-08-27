@@ -113,6 +113,60 @@ describe('the order of the page', () => {
   });
 });
 
+describe('what the scrim must cover, and what it must not', () => {
+  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
+  const tray = code(read(join(FILM, 'FilmActionTray.tsx')));
+  const header = code(read(join(FILM, 'FilmScrollHeader.tsx')));
+  const stub = code(read(join(FILM, 'FilmStub.tsx')));
+  const zOf = (src: string, re = /zIndex:\s*(\d+)/) => Number(re.exec(src)?.[1]);
+
+  /**
+   * The floating back sat at 100 — above the tray at 60 AND the stub at 70.
+   * Opening the tray left a brass-ringed disc hovering over the scrim, still
+   * tappable, offering to leave the film while its actions were open.
+   */
+  it('the back control does not float above the tray', () => {
+    const back = Number(/floatingBack: \{[^}]*zIndex: (\d+)/.exec(layout)?.[1]);
+    expect(back).toBeLessThan(zOf(tray));
+  });
+
+  it('nor does the header it hands over to', () => {
+    expect(zOf(header)).toBeLessThan(zOf(tray));
+  });
+
+  it('but the stub does, because it is the handle', () => {
+    expect(zOf(stub)).toBeGreaterThan(zOf(tray));
+  });
+});
+
+describe('a modal that cannot be talked around', () => {
+  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
+  const header = code(read(join(FILM, 'FilmScrollHeader.tsx')));
+
+  /**
+   * `accessibilityViewIsModal` is iOS-ONLY. The tray sets it and its own
+   * comment claimed the page beneath was hidden — on Android that promise was
+   * simply never kept, and TalkBack would read straight through an open tray
+   * into the whole page behind it.
+   */
+  it('hides the page from a screen reader while the tray is open', () => {
+    expect(layout).toMatch(/importantForAccessibility=\{trayOpen \? 'no-hide-descendants' : 'auto'\}/);
+  });
+
+  it('hides both back controls with it', () => {
+    // The scroll view, the floating back, and the header: three siblings, all
+    // reachable to TalkBack unless each is hidden.
+    expect((layout.match(/importantForAccessibility=\{trayOpen/g) || []).length).toBe(2);
+    expect(layout).toMatch(/hiddenFromReader=\{trayOpen\}/);
+    expect(header).toMatch(/importantForAccessibility=\{hiddenFromReader/);
+  });
+
+  it('leaves a way out INSIDE the region, since the stub is hidden on iOS', () => {
+    const tray = read(join(FILM, 'FilmActionTray.tsx'));
+    expect(tray).toMatch(/accessibilityLabel="Close film actions"/);
+  });
+});
+
 describe('the stub stays put when the tray is up', () => {
   /**
    * The bug this pins: the tray layer sits at 60 and the dock sat at 40, so

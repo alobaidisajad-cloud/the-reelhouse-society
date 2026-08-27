@@ -175,7 +175,22 @@ export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, review
             pressedScale={0.97} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             accessibilityLabel="Read all logs"
           >
-            <Text style={s.readAllText}>READ ALL {communityReviews.length} LOGS →</Text>
+            {/**
+              * ── A NUMBER YOU CANNOT KNOW MUST NOT BE PRINTED ────────────────
+              * This read `READ ALL {communityReviews.length} LOGS`, and both
+              * halves were false.
+              *
+              * The COUNT came from a fetch capped at ten, so a film with two
+              * hundred and forty-seven critiques invited you to read all ten
+              * of them. And the NOUN was wrong: these are written critiques,
+              * not logs — a member can log a film without writing a word, and
+              * the screen this opens lists only the writing.
+              *
+              * The count is not available here and adding a column to carry it
+              * would be a migration to print a number nobody asked for. So the
+              * false precision goes and the true invitation stays.
+              */}
+            <Text style={s.readAllText}>READ EVERY CRITIQUE →</Text>
           </PressableScale>
         )}
       </Animated.View>
@@ -217,13 +232,24 @@ const s = StyleSheet.create({
   readFullText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
   openLogText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.sepia, opacity: 0.8, includeFontPadding: false },
 
+  /**
+   * ── UNBOXED, WITH EVERY OTHER EMPTY STATE ON THIS PAGE ────────────────────
+   * The dossier, the synopsis and WHERE IT PLAYS all lost their frames this
+   * pass. This was the last one left, which made an ABSENCE the most heavily
+   * framed thing on the page — a bordered, shadowed, centred box announcing
+   * that there is nothing here.
+   *
+   * The writing is good enough to stand on the ground. The only boxes left are
+   * the critique cards themselves, and those are meant to look like cards.
+   */
   emptyReviewBox: {
-    padding: 24, borderWidth: 1, borderColor: colors.sepiaBorder,
-    borderRadius: 2, alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.98)',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 4,
+    paddingVertical: 4,
   },
   emptyReviewTitle: { fontFamily: fonts.display, fontSize: 16, letterSpacing: 1, color: colors.sepia, marginBottom: 8 },
-  emptyReviewBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, fontStyle: 'italic', textAlign: 'center', lineHeight: 20, opacity: 0.5 },
+  // Left, and readable. It was centred because the box it sat in was centred,
+  // and at 0.5 opacity the one line inviting a member to be the first voice
+  // here was the faintest text on the page.
+  emptyReviewBody: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, fontStyle: 'italic', lineHeight: 20 },
 
   readAllBtn: {
     marginTop: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center',

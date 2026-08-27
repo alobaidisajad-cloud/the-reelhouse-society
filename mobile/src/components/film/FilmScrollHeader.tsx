@@ -34,14 +34,21 @@ interface FilmScrollHeaderProps {
   topInset: number;
   /** Drives the cross-fade with the floating back button. */
   animatedStyle: StyleProp<ViewStyle>;
+  /**
+   * True while the action tray is open. The tray sets
+   * `accessibilityViewIsModal`, which is iOS-only — on Android a screen reader
+   * would otherwise talk straight past an open modal to this back button.
+   */
+  hiddenFromReader?: boolean;
 }
 
 export const FilmScrollHeader = memo(function FilmScrollHeader({
-  title, onBack, topInset, animatedStyle,
+  title, onBack, topInset, animatedStyle, hiddenFromReader = false,
 }: FilmScrollHeaderProps) {
   return (
     <Animated.View
       testID="film-scroll-header"
+      importantForAccessibility={hiddenFromReader ? 'no-hide-descendants' : 'auto'}
       style={[s.header, { paddingTop: topInset, height: topInset + HEADER_BAR_HEIGHT }, animatedStyle]}
       // While it is faded out it must not swallow taps meant for the page
       // beneath it — the whole top of the film's backdrop lives under here.

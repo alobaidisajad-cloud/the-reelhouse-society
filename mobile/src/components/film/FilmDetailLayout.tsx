@@ -353,8 +353,13 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         />
       </Animated.View>
 
-      {/* Floating Back — hands over to the header as the hero leaves. */}
-      <Animated.View style={[s.floatingBack, { top: Math.max(insets.top + 10, 20) }, immersiveAnimatedStyle]}>
+      {/* Floating Back — hands over to the header as the hero leaves. Both are
+          hidden from the reader while the tray is up, for the same reason the
+          page beneath is: a modal that can be talked around is not modal. */}
+      <Animated.View
+        style={[s.floatingBack, { top: Math.max(insets.top + 10, 20) }, immersiveAnimatedStyle]}
+        importantForAccessibility={trayOpen ? 'no-hide-descendants' : 'auto'}
+      >
         <PressableScale onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
         </PressableScale>
@@ -366,6 +371,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         onBack={goBack}
         topInset={Math.max(insets.top, 20)}
         animatedStyle={scrollHeaderStyle}
+        hiddenFromReader={trayOpen}
       />
 
       <Animated.ScrollView
@@ -376,6 +382,18 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         // The page must not scroll behind an open tray. A Modal would have
         // blocked this for us; an overlay has to say so.
         scrollEnabled={!trayOpen}
+        /**
+         * ── accessibilityViewIsModal IS iOS-ONLY ──────────────────────────
+         * The tray sets it, and its own comment says the page beneath is
+         * hidden from a screen reader. On iOS that is true. On ANDROID it does
+         * nothing at all — TalkBack would read straight through an open tray
+         * into the whole page behind it, and the promise in that comment was
+         * simply not kept on half the devices we ship to.
+         *
+         * The stub is deliberately NOT hidden: it stays the visible close
+         * control, and on Android it remains reachable.
+         */
+        importantForAccessibility={trayOpen ? 'no-hide-descendants' : 'auto'}
       >
         {/* The poster rises INTO the backdrop rather than sitting below it. */}
         <View style={[s.backdropSpacer, { height: BACKDROP_H - metrics.posterLift }]} />
@@ -530,7 +548,16 @@ const s = StyleSheet.create({
   backdropWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 0 },
   backdrop: { width: '100%', height: '100%' },
   sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.35)' },
-  floatingBack: { position: 'absolute', top: 54, left: 16, zIndex: 100, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.sepiaBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8, alignItems: 'center', justifyContent: 'center' },
+  /**
+   * z-index 50, the SAME level as the header it hands over to — they are two
+   * forms of one control and must sit at one height.
+   *
+   * At 100 it outranked the tray (60) and the stub (70): opening the tray left
+   * a brass-ringed disc floating over the scrim, still tappable, offering to
+   * leave the film while the actions for it were open. The scrim is supposed
+   * to cover everything except the tray and the handle that raised it.
+   */
+  floatingBack: { position: 'absolute', top: 54, left: 16, zIndex: 50, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.sepiaBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8, alignItems: 'center', justifyContent: 'center' },
   /** Your own critique: a brass edge rather than a box, so it reads as yours
       at a glance without needing a second label to say so. */
   mine: { paddingLeft: 17, paddingRight: 4, paddingVertical: 2, overflow: 'hidden' },
