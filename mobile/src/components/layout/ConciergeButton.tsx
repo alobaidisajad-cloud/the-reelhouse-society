@@ -55,6 +55,7 @@ import { displayTextProps } from '@/src/constants/textScaling';
 import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
 import { NAV_BTN_SIZE, NAV_H_PADDING, navButtonTop, navButtonBottom } from './navMetrics';
+import { BRASS, BRASS_STOPS, BRASS_START, BRASS_END, CROWN, RIM } from '@/src/theme/brass';
 
 const OPEN_MS = 200;
 const CLOSE_MS = 160;
@@ -64,16 +65,10 @@ const CARD_GAP = 12;
 /** Side of the notch square before it is turned 45°. */
 const NOTCH = 12;
 
-// The brass ramp, light to aged. All four are Shade Ledger tokens — this is
-// the house's own brass, not a new colour.
-const BRASS = [colors.marqueeGold, colors.champagne, colors.sepia, colors.tarnish] as const;
-const BRASS_STOPS = [0, 0.34, 0.62, 1] as const;
-// The crown: `flicker`, the palette's candlelight, falling off over the top of
-// the disc — where a convex metal face catches a room's light.
-const CROWN = ['rgba(240,232,176,0.40)', 'rgba(240,232,176,0.10)', 'transparent'] as const;
-// The machined edge. Bright rather than dark: against near-black chrome a dark
-// rim is simply invisible, and real brass hardware catches light all the way round.
-const RIM = 'rgba(240,232,176,0.30)';
+// The brass ramp now lives in `@/src/theme/brass` — see the import above. It
+// moved there when the film page's stub became the app's second brass object:
+// two copies would agree today and drift the first time either was touched.
+// Nothing about the disc changed.
 
 /**
  * Where everything lands, in screen coordinates.
@@ -126,8 +121,8 @@ const BrassDisc = memo(function BrassDisc({ rotation }: { rotation: SharedValue<
       <LinearGradient
         colors={BRASS}
         locations={BRASS_STOPS}
-        start={{ x: 0.15, y: 0 }}
-        end={{ x: 0.85, y: 1 }}
+        start={BRASS_START}
+        end={BRASS_END}
         style={StyleSheet.absoluteFill}
       />
       <LinearGradient
