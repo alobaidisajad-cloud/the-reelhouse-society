@@ -55,6 +55,17 @@ describe('the rail reserves what it draws', () => {
     expect(needed(nameLines)).toBeLessThanOrEqual(railHeight);
   });
 
+  /**
+   * A one-line name and a two-line name in the same row put their roles on
+   * different baselines — three cards with their roles at two heights, which
+   * reads as a rendering fault rather than a rail. The reserved height is what
+   * makes them line up, so it must match what two lines actually need.
+   */
+  it('reserves the same height whether a name wraps or not', () => {
+    const reserved = num(/castName: \{[^}]*minHeight: (\d+)/);
+    expect(reserved).toBe(Math.ceil(nameSize * LINE) * nameLines);
+  });
+
   it('would fail if the name grew again without the rail growing', () => {
     // Proving the instrument rather than trusting a pass.
     expect(needed(nameLines + 1)).toBeGreaterThan(railHeight);

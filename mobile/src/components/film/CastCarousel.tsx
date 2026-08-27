@@ -99,6 +99,16 @@ const s = StyleSheet.create({
     sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.12)', zIndex: 1 },
     castPhotoPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
     castPhotoPlaceholderText: { fontFamily: fonts.display, fontSize: 32, color: colors.fog },
-    castName: { fontFamily: fonts.display, fontSize: 14, color: colors.parchment, marginBottom: 2 },
+    /**
+     * ── THE ROLES HAVE TO LINE UP ─────────────────────────────────────────
+     * With the name free to be one line or two, "Odysseus" sat a full line
+     * higher than "Penelope" — three cards in a row with their roles at two
+     * different heights, which reads as a rendering fault rather than a rail.
+     *
+     * A fixed two lines' worth reserves the same space whether the name needs
+     * it or not, so every role starts on the same baseline. 14pt at React
+     * Native's default 1.27 line height, doubled.
+     */
+    castName: { fontFamily: fonts.display, fontSize: 14, color: colors.parchment, marginBottom: 2, minHeight: 36 },
     castRole: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 0.5 }
 });

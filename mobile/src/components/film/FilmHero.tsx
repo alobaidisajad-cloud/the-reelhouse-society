@@ -2,11 +2,13 @@ import { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Film as FilmIcon } from 'lucide-react-native';
 import { tmdb, formatRuntime, getYear } from '@/src/lib/tmdb';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { BRASS, BRASS_STOPS, BRASS_START, BRASS_END, ON_BRASS } from '@/src/theme/brass';
 import type { FilmVerdict } from '@/src/services/FilmService';
 
 import type { TMDBMovieDetail } from '@/src/lib/tmdb';
@@ -103,17 +105,38 @@ export const FilmHero = memo(function FilmHero({
         )}
         <View style={styles.scanlines} />
         {existingLog && (
+          /**
+           * ── THE LAST FLAT BRASS ON THE PAGE ──────────────────────────────
+           * This stamp was `backgroundColor: colors.sepia` — a flat gold pill,
+           * and the only brass object left that was not the house's ramp once
+           * the stub and the tray adopted it. Brass is four golds on a
+           * diagonal, lit from the top left; a flat fill reads as plastic
+           * beside the real thing, and the two sit within an inch of each
+           * other in the hero.
+           *
+           * Two views, for the same reason the stub needs two: a view that
+           * CLIPS a gradient to its corners cannot also cast a shadow on iOS.
+           */
           <View style={styles.loggedBadgeOnPoster}>
-            {(() => {
-              const cfg = statusConfig[existingLog.status ?? 'watched'];
-              const Icon = cfg?.Icon;
-              return (
-                <View style={styles.loggedBadgeContent}>
-                  {Icon && <Icon size={8} color={colors.ink} strokeWidth={2.5} />}
-                  <Text style={styles.loggedBadgeText}>{cfg?.text ?? 'LOGGED'}</Text>
-                </View>
-              );
-            })()}
+            <View style={styles.loggedBadgeFace}>
+              <LinearGradient
+                colors={BRASS}
+                locations={BRASS_STOPS}
+                start={BRASS_START}
+                end={BRASS_END}
+                style={StyleSheet.absoluteFill}
+              />
+              {(() => {
+                const cfg = statusConfig[existingLog.status ?? 'watched'];
+                const Icon = cfg?.Icon;
+                return (
+                  <View style={styles.loggedBadgeContent}>
+                    {Icon && <Icon size={8} color={ON_BRASS} strokeWidth={2.5} />}
+                    <Text style={styles.loggedBadgeText}>{cfg?.text ?? 'LOGGED'}</Text>
+                  </View>
+                );
+              })()}
+            </View>
           </View>
         )}
       </View>
@@ -235,12 +258,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)',
   },
+  // The host carries the glow; it must not clip, or the shadow is lost on iOS.
   loggedBadgeOnPoster: {
-    position: 'absolute', bottom: -12, alignSelf: 'center',
-    paddingHorizontal: 14, paddingVertical: 5, borderRadius: 3,
-    backgroundColor: colors.sepia,
+    position: 'absolute', bottom: -12, alignSelf: 'center', borderRadius: 3,
     shadowColor: colors.sepia, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10,
     elevation: 8,
+  },
+  // The face clips the ramp to the pill's own corners.
+  loggedBadgeFace: {
+    paddingHorizontal: 14, paddingVertical: 5, borderRadius: 3, overflow: 'hidden',
   },
   loggedBadgeContent: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   loggedBadgeText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.ink },
