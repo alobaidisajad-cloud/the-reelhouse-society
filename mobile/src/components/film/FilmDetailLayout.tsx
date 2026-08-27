@@ -19,15 +19,18 @@ import { ReelRating } from '@/src/components/Decorative';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { WatchProviders } from '@/src/components/film/WatchProviders';
 import { CastCarousel } from '@/src/components/film/CastCarousel';
-import CountryReleases from '@/src/components/film/CountryReleases';
 import { FilmHero } from '@/src/components/film/FilmHero';
 import { FilmHeroSkeleton } from '@/src/components/film/FilmHeroSkeleton';
 import { FilmReviews } from '@/src/components/film/FilmReviews';
 import { FilmDossier } from '@/src/components/film/FilmDossier';
-import { FilmStudios } from '@/src/components/film/FilmStudios';
 import { FilmSimilar } from '@/src/components/film/FilmSimilar';
 import { FilmMediaCarousel } from '@/src/components/film/FilmMediaCarousel';
-import { FilmActionRow } from '@/src/components/film/FilmActionRow';
+import { FilmStub } from '@/src/components/film/FilmStub';
+import { FilmActionTray, TrayIcons, type TrayAct } from '@/src/components/film/FilmActionTray';
+import { FilmScrollHeader } from '@/src/components/film/FilmScrollHeader';
+import { dockHeight, scrollReserve } from '@/src/components/film/filmStubMetrics';
+import { pickCertificate } from '@/src/components/film/pickCertificate';
+import { useFilmStore } from '@/src/stores/films';
 import { useFilmAnimations } from '@/src/hooks/useFilmAnimations';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
@@ -40,39 +43,35 @@ const STATUS_CONFIG = {
   abandoned: { text: 'ABANDONED', Icon: XCircle },
 };
 
+/**
+ * ── A CREDIT, SET AS ONE ────────────────────────────────────────────────────
+ * This was a bordered card with a round avatar and a chevron — indistinguishable
+ * from a settings row, and the least 1924 thing on the page. A director is a
+ * film CREDIT, so it is set like one: the name alone, in the display face,
+ * centred, over a brass signature rule. The rule is also what says it is
+ * pressable, without borrowing a chevron that means "go deeper" everywhere else.
+ *
+ * The photograph goes with the card. A title card has never had one.
+ */
 const DirectorCard = memo(function DirectorCard({ director }: { director: { id: number; name: string; profile_path?: string | null } }) {
-  const photoUri = director?.profile_path
-    ? tmdb.profile(director.profile_path)
-    : null;
-
   return (
     <PressableScale
-      style={s.directorCard}
       onPress={() => { TactileEngine.selection(); nav.push(`/person/${director.id}`); }}
       pressedScale={0.98}
-      accessibilityLabel={`Directed by ${director?.name}`}
+      hitSlop={{ top: 8, bottom: 8, left: 20, right: 20 }}
+      accessibilityRole="button"
+      accessibilityLabel={`Directed by ${director?.name}. Opens their filmography.`}
     >
-      {photoUri ? (
-        <Image source={{ uri: photoUri }} style={s.directorPhoto} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
-      ) : (
-        <View style={[s.directorPhoto, s.directorPhotoPlaceholder]}>
-          <Text style={s.directorPhotoInitial}>
-            {director?.name?.charAt(0)?.toUpperCase() || '?'}
-          </Text>
-        </View>
-      )}
-      <View style={s.directorInfo}>
-        <Text style={s.directorLabel}>DIRECTED BY</Text>
-        <Text style={s.directorName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{director?.name}</Text>
-      </View>
-      <ArrowUpRight size={14} color={colors.fog} strokeWidth={1.5} />
+      <Text style={s.creditName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {director?.name}
+      </Text>
     </PressableScale>
   );
 });
 
 export const FilmDetailLayout = memo(function FilmDetailLayout() {
   const {
-    film, reviews, reviewsError, similarFilms, directors, cast, videos, trailer, score, providers, studios,
+    film, reviews, reviewsError, similarFilms, directors, cast, videos, trailer, score, providers, studios, verdict,
     existingLog, isAuthenticated, isArchivist, user,
     validFilmId, loading, isError, isFocused,
     goBack, handleLog, handleRewatch, handleOpenTrailer,
@@ -105,6 +104,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     bookmarkAnimStyle,
     backdropAnimatedStyle,
     immersiveAnimatedStyle,
+    scrollHeaderStyle,
     bookmarkScale
   } = useFilmAnimations({ isFocused, scrollY, backdropHeight: BACKDROP_H });
 
@@ -118,6 +118,152 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
       withSpring(1, { damping: 12, stiffness: 200 })
     );
   }, [bookmarkScale]);
+
+  // ── THE STUB AND ITS TRAY ───────────────────────────────────────────────────
+  const [trayOpen, setTrayOpen] = useState(false);
+  const closeTray = useCallback(() => setTrayOpen(false), []);
+  const toggleTray = useCallback(() => {
+    TactileEngine.selection();
+    setTrayOpen((v) => !v);
+  }, []);
+
+  const isWatchlisted = useFilmStore((state) => !!state._watchlistIndex[film?.id ?? -1]);
+  const addToWatchlist = useFilmStore((state) => state.addToWatchlist);
+  const removeFromWatchlist = useFilmStore((state) => state.removeFromWatchlist);
+
+  /**
+   * Every act but this one lets the tray close first, then travels. Four of the
+   * six present a view controller, and stacking one on a sheet that is still on
+   * screen is the conflict that broke the old FAB. The tray is a View rather
+   * than a Modal so this is belt AND braces, not the only defence.
+   */
+  const actThenClose = useCallback((run: () => void) => () => {
+    setTrayOpen(false);
+    run();
+  }, []);
+
+  /**
+   * The deliberate exception. The watchlist changes state without presenting
+   * anything, and closing the tray would hide the very confirmation the member
+   * pressed for — the row turns brass and the chip appears under their finger.
+   */
+  const toggleWatchlist = useCallback(() => {
+    if (!isAuthenticated) { nav.push('/login'); return; }
+    if (!film?.id) return;
+    TactileEngine.selection();
+    if (isWatchlisted) {
+      removeFromWatchlist(film.id);
+    } else {
+      addToWatchlist({
+        id: film.id,
+        title: film.title,
+        poster_path: film.poster_path,
+        release_date: film.release_date,
+      });
+    }
+    handleWatchlistToggled();
+  }, [isAuthenticated, film, isWatchlisted, addToWatchlist, removeFromWatchlist, handleWatchlistToggled]);
+
+  /**
+   * The velvet rope is never a dead end: an archivist enters the salon, and a
+   * cinephile is walked to the gate that shows them how to earn the room.
+   */
+  const openLounge = useCallback(() => {
+    if (!isAuthenticated) { nav.push('/login'); return; }
+    if (!isArchivist) { TactileEngine.navigate(); nav.push('/lounge'); return; }
+    handleOpenLounge();
+  }, [isAuthenticated, isArchivist, handleOpenLounge]);
+
+  /** Dates are formatted HERE. No component below touches one. */
+  const watchedLabel = useMemo(
+    () => (existingLog?.watchedDate ? formatDate(existingLog.watchedDate) : null),
+    [existingLog?.watchedDate],
+  );
+
+  const trayActs = useMemo<TrayAct[]>(() => {
+    const acts: TrayAct[] = [
+      {
+        key: 'log',
+        Icon: existingLog ? TrayIcons.Pencil : TrayIcons.Plus,
+        label: existingLog ? 'EDIT YOUR LOG' : 'LOG THIS FILM',
+        gloss: existingLog ? 'Change the rating, or say more.' : 'Set it down in your Ledger.',
+        onPress: actThenClose(handleLog),
+        primary: true,
+      },
+    ];
+    // Absent, not disabled: a rewatch row on a film you have never seen is a
+    // control that means nothing.
+    if (existingLog) {
+      acts.push({
+        key: 'rewatch',
+        Icon: TrayIcons.RotateCcw,
+        label: 'LOG A REWATCH',
+        gloss: 'The second time is a different film.',
+        onPress: actThenClose(handleRewatch),
+      });
+    }
+    acts.push({
+      key: 'watchlist',
+      Icon: TrayIcons.Bookmark,
+      label: isWatchlisted ? 'ON THE WATCHLIST' : 'ADD TO THE WATCHLIST',
+      gloss: isWatchlisted ? 'Take it off the shelf.' : 'Keep it where you can find it.',
+      onPress: toggleWatchlist,
+      brass: isWatchlisted,
+      chip: isWatchlisted ? 'SAVED' : undefined,
+    });
+    if (trailer) {
+      acts.push({
+        key: 'trailer',
+        Icon: TrayIcons.Play,
+        label: 'PLAY THE TRAILER',
+        gloss: 'From the studio.',
+        onPress: actThenClose(handleOpenTrailer),
+      });
+    }
+    acts.push({
+      key: 'nitrate',
+      Icon: TrayIcons.Share2,
+      label: 'THE NITRATE FILE',
+      gloss: 'A card worth sending.',
+      onPress: actThenClose(handleOpenShare),
+      travels: true,
+    });
+    acts.push({
+      key: 'lounge',
+      Icon: isArchivist ? TrayIcons.MessageCircle : TrayIcons.KeyRound,
+      label: 'THE LOUNGE',
+      gloss: isArchivist ? 'Talk about it with the house.' : 'Archivists and above.',
+      onPress: actThenClose(openLounge),
+      brass: true,
+      travels: true,
+    });
+    return acts;
+  }, [
+    existingLog, isWatchlisted, trailer, isArchivist,
+    actThenClose, handleLog, handleRewatch, toggleWatchlist, handleOpenTrailer, handleOpenShare, openLounge,
+  ]);
+
+  const traySubtitle = useMemo(() => {
+    if (!film) return '';
+    const year = getYear(film.release_date);
+    const runtime = formatRuntime(film.runtime).toUpperCase();
+    return [year, runtime].filter(Boolean).join('  ·  ');
+  }, [film]);
+
+  const dockH = useMemo(() => dockHeight(insets.bottom), [insets.bottom]);
+
+  /**
+   * The certificate, with the region it belongs to. Absorbed from the
+   * international-releases rail this revision retires.
+   */
+  const certificate = useMemo(
+    () => pickCertificate(
+      film?.release_dates as any,
+      film?.production_countries?.[0]?.iso_3166_1,
+      null,
+    ),
+    [film?.release_dates, film?.production_countries],
+  );
 
 
 
@@ -182,80 +328,51 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         />
       </Animated.View>
 
-      {/* Floating Back */}
+      {/* Floating Back — hands over to the header as the hero leaves. */}
       <Animated.View style={[s.floatingBack, { top: Math.max(insets.top + 10, 20) }, immersiveAnimatedStyle]}>
         <PressableScale onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
         </PressableScale>
       </Animated.View>
 
+      {/* ...and takes over from it, over the same fifty points. */}
+      <FilmScrollHeader
+        title={film.title ?? ''}
+        onBack={goBack}
+        topInset={Math.max(insets.top, 20)}
+        animatedStyle={scrollHeaderStyle}
+      />
+
       <Animated.ScrollView
-        contentContainerStyle={[s.scrollContent, { paddingBottom: Math.max(insets.bottom, 100) }]}
+        contentContainerStyle={[s.scrollContent, { paddingBottom: scrollReserve(insets.bottom) }]}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
+        // The page must not scroll behind an open tray. A Modal would have
+        // blocked this for us; an overlay has to say so.
+        scrollEnabled={!trayOpen}
       >
-        <View style={[s.backdropSpacer, { height: BACKDROP_H - 80 }]} />
+        {/* The poster rises INTO the backdrop rather than sitting below it. */}
+        <View style={[s.backdropSpacer, { height: BACKDROP_H - metrics.posterLift }]} />
 
 
         {/* HERO */}
-        <FilmHero 
-          film={film} 
-          reviews={reviews} 
-          existingLog={existingLog} 
-          score={score} 
-          studios={studios} 
-          posterGlowStyle={posterGlowStyle} 
-          statusConfig={STATUS_CONFIG} 
-        />
-
-        {/* ACTION ROW */}
-        <FilmActionRow
-          filmId={film.id}
+        <FilmHero
           film={film}
+          reviews={reviews}
           existingLog={existingLog}
-          isAuthenticated={isAuthenticated}
-          isArchivist={isArchivist}
-          bookmarkAnimStyle={bookmarkAnimStyle}
-          handleLog={handleLog}
-          handleRewatch={handleRewatch}
-          onWatchlistToggled={handleWatchlistToggled}
-          handleOpenTrailer={handleOpenTrailer}
-          handleOpenShare={handleOpenShare}
-          handleOpenLounge={handleOpenLounge}
-          hasTrailer={!!trailer}
+          score={score}
+          studios={studios}
+          verdict={verdict}
+          posterGlowStyle={posterGlowStyle}
+          statusConfig={STATUS_CONFIG}
         />
 
-        {/* YOUR LOG */}
+        {/* The six-control console is gone. Its acts live in the tray raised by
+            the docked stub at the foot of this screen. */}
+
         {isTransitionComplete && (
           <>
-            {existingLog && (
-              <Animated.View style={s.yourLogWrap}>
-                <View style={s.yourLogHeader}>
-                  {(existingLog.rating ?? 0) > 0 && <ReelRating rating={existingLog.rating ?? 0} size={14} />}
-                  <View style={s.yourLogMetaRow}>
-                    {existingLog.watchedDate && <Text style={s.yourLogMetaText}>{formatDate(existingLog.watchedDate)}</Text>}
-                    {(existingLog.viewCount ?? 1) > 1 && (
-                      <View style={s.yourLogViewings}>
-                        <RotateCcw size={7} color={colors.fog} />
-                        <Text style={s.yourLogMetaText}>{existingLog.viewCount} viewings</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-                {existingLog.review ? (
-                  <PressableScale onPress={handleReadFullLog} pressedScale={0.98} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} accessibilityLabel="Read full critique">
-                    <Text numberOfLines={2} ellipsizeMode="tail" style={s.yourLogReview}>
-                      {stripHtml(existingLog.review ?? '')}
-                    </Text>
-                    {stripHtml(existingLog.review ?? '').length > 100 && (
-                      <Text style={s.yourLogReadMore}>READ FULL CRITIQUE →</Text>
-                    )}
-                  </PressableScale>
-                ) : null}
-              </Animated.View>
-            )}
-
             {/* SYNOPSIS */}
             <Animated.View style={s.section}>
               <FilmSectionHeader label="SYNOPSIS" />
@@ -264,14 +381,61 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
               </View>
             </Animated.View>
 
-            {/* DIRECTOR CARDS */}
-            {directors.length > 0 && (
+            {/* ── YOURS, THEN THE HOUSE'S ──────────────────────────────────
+                Your own critique sits directly above the society's, wearing a
+                brass edge so it reads as yours without a second label. It used
+                to sit under the console at the top of the page, which put your
+                own writing above the film's synopsis. */}
+            {existingLog && (
               <Animated.View style={s.section}>
-                <View style={{ gap: 10 }}>
-                  {directors.map((dir: any, idx: number) => (
-                    <DirectorCard key={dir.id || idx} director={dir} />
-                  ))}
+                <FilmSectionHeader label="YOURS" />
+                <View style={s.mine}>
+                  <LinearGradient
+                    colors={[colors.champagne, colors.sepia, colors.tarnishDeep]}
+                    start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+                    style={s.mineEdge}
+                  />
+                  <View style={s.mineHead}>
+                    {(existingLog.rating ?? 0) > 0 && <ReelRating rating={existingLog.rating ?? 0} size={14} />}
+                    <Text style={s.mineMeta} numberOfLines={1}>
+                      {[
+                        existingLog.watchedDate ? formatDate(existingLog.watchedDate) : null,
+                        (existingLog.viewCount ?? 1) > 1 ? `${existingLog.viewCount} VIEWINGS` : null,
+                      ].filter(Boolean).join('  ·  ')}
+                    </Text>
+                  </View>
+                  {/* A log with a rating and no words collapses to the line
+                      above rather than framing an empty space. */}
+                  {existingLog.review ? (
+                    <PressableScale onPress={handleReadFullLog} pressedScale={0.98}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      accessibilityRole="button" accessibilityLabel="Read your full critique">
+                      <Text numberOfLines={3} ellipsizeMode="tail" style={s.mineBody}>
+                        {stripHtml(existingLog.review ?? '')}
+                      </Text>
+                      {stripHtml(existingLog.review ?? '').length > 100 && (
+                        <Text style={s.mineMore}>READ FULL CRITIQUE →</Text>
+                      )}
+                    </PressableScale>
+                  ) : null}
                 </View>
+              </Animated.View>
+            )}
+
+            {/* THE SOCIETY — the emotional peak, and the only block given more
+                air than the utility sections around it. */}
+            <View style={s.societyAir}>
+              <FilmReviews filmId={Number(film.id)} filmTitle={film.title} reviews={reviews} reviewsError={reviewsError} excludeUserId={user?.id ?? null} />
+            </View>
+
+            {/* THE CREDIT — a film credit, set as one. */}
+            {directors.length > 0 && (
+              <Animated.View style={s.credit}>
+                <Text style={s.creditRole}>DIRECTED BY</Text>
+                {directors.map((dir: any, idx: number) => (
+                  <DirectorCard key={dir.id || idx} director={dir} />
+                ))}
+                <View style={s.creditRule} />
               </Animated.View>
             )}
 
@@ -283,35 +447,52 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
               </Animated.View>
             )}
 
-            {/* VIDEOS */}
             <FilmMediaCarousel videos={videos} onPlayVideo={handlePlayVideo} />
 
-            {/* SOCIETY CRITIQUES — community above commerce */}
-            <FilmReviews filmId={Number(film.id)} filmTitle={film.title} reviews={reviews} reviewsError={reviewsError} excludeUserId={user?.id ?? null} />
-
-            {/* WATCH PROVIDERS */}
             <Animated.View style={s.section}>
               <WatchProviders providers={providers as any} />
             </Animated.View>
 
-            {/* DOSSIER */}
-            <FilmDossier film={film} formatRuntime={formatRuntime} />
+            {/* THE PARTICULARS — absorbing the studio marks and the certificate
+                from the two rails this retires. */}
+            <FilmDossier
+              film={film}
+              formatRuntime={formatRuntime}
+              studios={studios}
+              certificate={certificate}
+            />
 
-            {/* STUDIOS */}
-            <FilmStudios studios={studios} />
+            {/* The international-releases rail is retired: it existed to carry
+                the CERTIFICATE, which now sits in the particulars where a
+                member looks for it — beside the runtime and the language. */}
 
-            {/* INTERNATIONAL RELEASES */}
-            {film.release_dates && (
-              <Animated.View style={s.section}>
-                <CountryReleases releaseDates={film.release_dates as { results: { iso_3166_1: string; release_dates: { release_date: string; type: number; certification?: string }[] }[] } | null} />
-              </Animated.View>
-            )}
-
-            {/* SIMILAR FILMS */}
             <FilmSimilar similarFilms={similarFilms} />
           </>
         )}
       </Animated.ScrollView>
+
+      {/* ── ONE CONTROL, DOCKED ────────────────────────────────────────────────
+          It mounts only once the film has resolved: a stub over a skeleton, or
+          over "Not in the Archive", would be a control offering to log a film
+          that is not there. Both of those paths return earlier. */}
+      <FilmStub
+        existingLog={existingLog}
+        isWatchlisted={isWatchlisted}
+        watchedLabel={watchedLabel}
+        open={trayOpen}
+        onPress={toggleTray}
+        bottomInset={insets.bottom}
+      />
+
+      <FilmActionTray
+        visible={trayOpen}
+        onDismiss={closeTray}
+        film={film}
+        subtitle={traySubtitle}
+        acts={trayActs}
+        windowHeight={windowHeight}
+        dockHeight={dockH}
+      />
     </View>
   );
 });
@@ -327,24 +508,35 @@ const s = StyleSheet.create({
   backdrop: { width: '100%', height: '100%' },
   sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.35)' },
   floatingBack: { position: 'absolute', top: 54, left: 16, zIndex: 100, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.sepiaBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8, alignItems: 'center', justifyContent: 'center' },
-  yourLogWrap: { marginHorizontal: 24, marginBottom: 20, padding: 16, backgroundColor: 'rgba(8,6,4,0.6)', borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2 },
-  yourLogHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  yourLogMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  yourLogMetaText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, letterSpacing: 1, includeFontPadding: false },
-  yourLogViewings: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 2 },
-  yourLogReview: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.9 },
-  yourLogReadMore: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 1.5, marginTop: 8, includeFontPadding: false },
+  /** Your own critique: a brass edge rather than a box, so it reads as yours
+      at a glance without needing a second label to say so. */
+  mine: { paddingLeft: 17, paddingRight: 4, paddingVertical: 2, overflow: 'hidden' },
+  mineEdge: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 3 },
+  mineHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 9 },
+  mineMeta: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, letterSpacing: 1.3, includeFontPadding: false },
+  mineBody: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 22 },
+  mineMore: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 1.6, marginTop: 9, includeFontPadding: false },
+
+  /** The crescendo, made of space: the one block where members talk to each
+      other gets more air than the utility sections around it. */
+  societyAir: { marginTop: 14, marginBottom: 44 },
+
+  credit: { alignItems: 'center', marginBottom: 30, paddingHorizontal: 24 },
+  creditRole: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 3, color: colors.fog, marginBottom: 7, includeFontPadding: false },
+  creditName: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, textAlign: 'center', includeFontPadding: false },
+  creditRule: { width: 96, height: 1, backgroundColor: colors.sepia, marginTop: 9, opacity: 0.65 },
   section: { marginBottom: 30, paddingHorizontal: 24 },
-  synopsisWrap: { backgroundColor: 'rgba(8,6,4,0.4)', padding: 16, borderWidth: 1, borderColor: 'rgba(215,205,190,0.05)', borderRadius: 2 },
+  /**
+   * Unboxed with the particulars. Once the dossier's card came off, this was
+   * the last framed block on an open page — and framing the SYNOPSIS is the
+   * wrong choice twice over: it is the studio's copy, not the house's, and
+   * plainness is exactly what marks it as somebody else's voice. The critiques
+   * are the only cards on this page now, and they are meant to look like cards.
+   */
+  synopsisWrap: {},
   // The house prose hand — Courier, like every review and dossier line.
   synopsis: { fontFamily: fonts.body, fontSize: 13.5, color: colors.bone, lineHeight: 23, letterSpacing: 0.2 },
-  directorCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.6)', padding: 12, borderWidth: 1, borderColor: 'rgba(215,205,190,0.1)', borderRadius: 2 },
-  directorPhoto: { width: 44, height: 44, borderRadius: 22, marginRight: 14 },
-  directorPhotoPlaceholder: { backgroundColor: 'rgba(184,137,26,0.1)', alignItems: 'center', justifyContent: 'center' },
-  directorPhotoInitial: { fontFamily: fonts.display, fontSize: 18, color: colors.sepia },
-  directorInfo: { flex: 1 },
-  directorLabel: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, letterSpacing: 2, marginBottom: 3, includeFontPadding: false },
-  directorName: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.bone, letterSpacing: -0.5 },
+  // The director card's styles went with the card — see DirectorCard above.
   backBtn: { backgroundColor: 'rgba(8,6,4,0.8)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(215,205,190,0.1)', marginTop: 24 },
   backBtnText: { fontFamily: fonts.sub, fontSize: 10, color: colors.bone, letterSpacing: 1.5, includeFontPadding: false },
   ctaIconRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },

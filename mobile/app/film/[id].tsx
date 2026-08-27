@@ -93,13 +93,24 @@ export default function FilmDetailScreen() {
     }
   }, [existingLog, router]);
 
+  /**
+   * ── A ROW THAT SAYS TRAILER MUST OPEN A TRAILER ────────────────────────────
+   * This used to fall through to `videos[0]` — ANY video of any kind. A film
+   * with nothing but press-junket featurettes still showed a control promising
+   * a trailer and delivered an interview clip. The old console could get away
+   * with it; a tray row that reads PLAY THE TRAILER cannot.
+   *
+   * So the fallback stops at a teaser, which is still a trailer in every sense
+   * a member cares about. Past that there is no trailer, `hasTrailer` is false,
+   * and the row is simply ABSENT — which is the honest answer.
+   */
   const trailer = useMemo(() => {
     const rawVideos = data?.detail?.videos?.results ?? [];
     const videos = rawVideos.filter((v: any) => v.site === 'YouTube');
     const official = videos.find((v: any) => v.type === 'Trailer' && v.name?.toLowerCase().includes('official'));
     const anyTrailer = videos.find((v: any) => v.type === 'Trailer');
     const teaser = videos.find((v: any) => v.type === 'Teaser');
-    return official || anyTrailer || teaser || videos[0] || null;
+    return official || anyTrailer || teaser || null;
   }, [data?.detail?.videos?.results]);
 
   const handleOpenTrailer = useCallback(() => {
@@ -143,7 +154,12 @@ export default function FilmDetailScreen() {
     const filtered = filterUnseenFilms(data?.similar as any[] | undefined, loggedIndex);
     const similarFilms = filtered.length > 0 ? filtered : EMPTY_ARRAY;
 
-    return { film, videos, directors, cast, score, providers, studios, reviews, similarFilms };
+    // What the HOUSE made of it. Never derived from `reviews` — that is a
+    // page of WRITTEN critiques, capped at ten, and using its length as a log
+    // count is how a film with four hundred logs comes to claim it has two.
+    const verdict = data?.verdict ?? null;
+
+    return { film, videos, directors, cast, score, providers, studios, reviews, similarFilms, verdict };
   }, [data, loggedIndex]);
 
   const providerValue = useMemo<FilmDetailContextValue>(() => {
@@ -157,6 +173,7 @@ export default function FilmDetailScreen() {
       score: derivedData.score,
       providers: derivedData.providers,
       studios: derivedData.studios,
+      verdict: derivedData.verdict,
       trailer,
       existingLog,
       isAuthenticated,

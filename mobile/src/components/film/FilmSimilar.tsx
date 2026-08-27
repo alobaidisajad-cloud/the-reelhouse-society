@@ -68,7 +68,10 @@ export const FilmSimilar = memo(function FilmSimilar({ similarFilms }: FilmSimil
     <SectionErrorBoundary fallbackMessage="Similar films could not be loaded.">
       <Animated.View style={s.sectionFlush}>
         <View style={s.sectionPadded}>
-          <FilmSectionHeader label="YOU MAY ALSO LIKE" />
+          {/* Was YOU MAY ALSO LIKE — shop language on a page that otherwise
+              speaks the house's. The Archive is a shelf; this is what else is
+              on it. */}
+          <FilmSectionHeader label="FROM THE SAME SHELF" />
         </View>
         <View style={s.similarListContainer}>
           <FlashList

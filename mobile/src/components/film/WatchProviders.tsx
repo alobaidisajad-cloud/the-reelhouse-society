@@ -85,7 +85,7 @@ export const WatchProviders = React.memo(function WatchProviders({ providers }: 
 
   return (
     <View style={s.container}>
-      <FilmSectionHeader label="WHERE TO WATCH" />
+      <FilmSectionHeader label="WHERE IT PLAYS" />
 
       {!hasAny ? (
         <View style={s.emptyState}>
