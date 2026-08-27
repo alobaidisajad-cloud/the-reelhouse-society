@@ -2,6 +2,7 @@ import React, { createContext, useContext } from 'react';
 import { DomainLog } from '@/src/types';
 import type { TMDBMovieDetail } from '@/src/lib/tmdb';
 import { User } from '@/src/schemas/user';
+import type { FilmVerdict } from '@/src/services/FilmService';
 
 /** Shape of a community review as returned by useFilmDetail's Supabase join. */
 export interface FilmReviewItem {
@@ -31,6 +32,12 @@ export interface FilmDetailContextValue {
   score: number;
   providers: Record<string, unknown>;
   studios: any[];
+  /**
+   * What the members of this house made of the film — an average and a log
+   * count maintained server-side. NEVER computed from `reviews`, which is a
+   * page of written critiques and knows nothing about how many people logged it.
+   */
+  verdict: FilmVerdict | null;
   existingLog: DomainLog | null;
   isAuthenticated: boolean;
   isArchivist: boolean;

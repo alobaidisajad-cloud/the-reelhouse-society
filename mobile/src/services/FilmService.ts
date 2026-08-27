@@ -26,6 +26,30 @@ const FilmReviewRowSchema = z.object({
 });
 
 /**
+ * What the house made of a film. Maintained server-side by a trigger on `logs`
+ * so it is never derived from whichever page of reviews happens to be loaded.
+ *
+ * Postgres returns `numeric` as a STRING through PostgREST, which is why the
+ * average is coerced rather than trusted — reading it as a number would give
+ * `NaN` and render an empty reel rail with no error anywhere.
+ */
+const FilmVerdictSchema = z.object({
+  avg_rating: z.union([z.number(), z.string()]).nullable().optional()
+    .transform((v) => {
+      if (v === null || v === undefined) return null;
+      const n = typeof v === 'number' ? v : Number(v);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    }),
+  rating_count: z.number().nullable().optional().transform((v) => v ?? 0),
+  log_count: z.number().nullable().optional().transform((v) => v ?? 0),
+});
+
+export type FilmVerdict = z.infer<typeof FilmVerdictSchema>;
+
+/** No row, no rating, no error: the state of most films most of the time. */
+const EMPTY_VERDICT: FilmVerdict = { avg_rating: null, rating_count: 0, log_count: 0 };
+
+/**
  * Return type for cursor-based film reviews.
  * Consumers receive both the items and the cursor for next-page fetching.
  */
@@ -95,5 +119,42 @@ export const FilmService = {
     const nextCursor = hasMore && lastRaw?.created_at && lastRaw?.id ? `${lastRaw.created_at}|${lastRaw.id}` : null;
 
     return { items: visibleItems, nextCursor };
-  }
+  },
+
+  /**
+   * ── THE HOUSE'S VERDICT ────────────────────────────────────────────────────
+   * What the members of this house made of a film, as opposed to what the
+   * internet did.
+   *
+   * This exists because `getFilmReviews` above cannot answer the question. It
+   * returns logs that have WRITING, capped at a page — so its count is
+   * "critiques on this page", never "how many people logged this", and it has
+   * no average at all. The film page used to paper over that by rendering
+   * TMDB's score in the house's own brass reels, which is the one thing a
+   * members' club must not do.
+   *
+   * `avg_rating` is NULL when nobody has rated it. Not zero — zero is a number
+   * and would draw as a verdict of no reels. NULL is the absence of a verdict,
+   * which is what the hero needs in order to say so out loud.
+   */
+  async getFilmVerdict(filmId: number, signal?: AbortSignal): Promise<FilmVerdict> {
+    if (!Number.isFinite(filmId) || filmId <= 0) return EMPTY_VERDICT;
+
+    const query = supabase
+      .from('films')
+      .select('avg_rating, rating_count, log_count')
+      .eq('id', filmId)
+      .maybeSingle();
+
+    const { data, error } = await withAbortSignal(query, signal);
+
+    // A film nobody has touched yet has no row at all, and that is not a
+    // failure — it is the commonest case in an archive of a million titles.
+    // supabase-js RESOLVES errors rather than throwing, so this branch is the
+    // only thing standing between a network blip and a fabricated verdict.
+    if (error || !data) return EMPTY_VERDICT;
+
+    const parsed = FilmVerdictSchema.safeParse(data);
+    return parsed.success ? parsed.data : EMPTY_VERDICT;
+  },
 };
