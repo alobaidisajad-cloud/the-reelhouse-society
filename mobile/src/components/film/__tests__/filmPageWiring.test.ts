@@ -97,19 +97,72 @@ describe('the order of the page', () => {
 
   it('puts YOURS above the house, and both above the credit', () => {
     expect(at('label="YOURS"')).toBeGreaterThan(-1);
-    expect(at('label="YOURS"')).toBeLessThan(at('<FilmReviews'));
-    expect(at('<FilmReviews')).toBeLessThan(at('DIRECTED BY'));
+    expect(at('label="YOURS"')).toBeLessThan(at('{hasSociety && <TheSociety />}'));
+    expect(at('{hasSociety && <TheSociety />}')).toBeLessThan(at('DIRECTED BY'));
   });
 
   it('puts the house above the utility sections, not below the videos', () => {
-    expect(at('<FilmReviews')).toBeLessThan(at('<WatchProviders'));
-    expect(at('<FilmReviews')).toBeLessThan(at('<FilmDossier'));
-    expect(at('<FilmReviews')).toBeLessThan(at('<FilmMediaCarousel'));
+    const spoken = at('{hasSociety && <TheSociety />}');
+    expect(spoken).toBeLessThan(at('<WatchProviders'));
+    expect(spoken).toBeLessThan(at('<FilmDossier'));
+    expect(spoken).toBeLessThan(at('<FilmMediaCarousel'));
   });
 
-  it('gives the house more air than the utility sections around it', () => {
-    expect(layout).toMatch(/societyAir/);
-    expect(layout).toMatch(/marginBottom: 44/);
+  /**
+   * ── THE PAGE TAKES THE SHAPE OF WHAT IS TRUE ──────────────────────────────
+   * This was in the plan from the beginning and was never built: the section
+   * sat third unconditionally, so a film nobody had written about opened with
+   * an empty box directly under its synopsis. With 288 logs across 250 films
+   * that is not an edge case — it is nearly every film in the archive.
+   */
+  it('drops the house below the footage when it has not spoken', () => {
+    const silent = at('{!hasSociety && <TheSociety />}');
+    expect(silent).toBeGreaterThan(-1);
+    expect(silent).toBeGreaterThan(at('<FilmMediaCarousel'));
+    expect(silent).toBeGreaterThan(at('label="THE PLAYERS"'));
+  });
+
+  it('renders it in one place or the other, never both', () => {
+    expect((layout.match(/<TheSociety \/>/g) || []).length).toBe(2);
+    expect(layout).toMatch(/\{hasSociety && <TheSociety \/>\}/);
+    expect(layout).toMatch(/\{!hasSociety && <TheSociety \/>\}/);
+  });
+
+  it('and asks the question of the same list the section renders', () => {
+    // Not of a count from somewhere else — `reviews` minus your own entry is
+    // exactly what FilmReviews will show.
+    expect(layout).toMatch(/reviews\.some\(/);
+    expect(layout).toMatch(/r\.user_id !== \(user\?\.id \?\? null\)/);
+  });
+
+  /**
+   * ── MARGINS STACK; THEY DO NOT REPLACE EACH OTHER ─────────────────────────
+   * The old version of this test asserted that `marginBottom: 44` appeared
+   * somewhere in the file. It passed while the real gap was 68 — because
+   * FilmReviews carries 24 of its own and the wrapper added 44 on top. A guard
+   * that reads one number and calls it the answer is not measuring the layout.
+   *
+   * This computes the total from BOTH files, which is what a member sees.
+   */
+  it('gives the house more air than the utility sections — and it adds up', () => {
+    const num = (src: string, re: RegExp) => {
+      const m = re.exec(src);
+      if (!m) throw new Error(`could not read ${re} — this guard measures nothing`);
+      return Number(m[1]);
+    };
+    const reviews = read(join(FILM, 'FilmReviews.tsx'));
+
+    const wrapperTop = num(layout, /societyAir: \{ marginTop: (\d+)/);
+    const wrapperBottom = num(layout, /societyAir: \{[^}]*marginBottom: (\d+)/);
+    const ownBottom = num(reviews, /^\s{2}section: \{[^}]*marginBottom: (\d+)/m);
+    const utility = num(layout, /^\s{2}section: \{ marginBottom: (\d+)/m);
+
+    // Above: the preceding section's own bottom margin, plus the wrapper's top.
+    expect(utility + wrapperTop).toBe(44);
+    // Below: the wrapper's bottom, plus the margin FilmReviews already had.
+    expect(wrapperBottom + ownBottom).toBe(44);
+    // And the whole point: more than the sections around it.
+    expect(wrapperBottom + ownBottom).toBeGreaterThan(utility);
   });
 });
 

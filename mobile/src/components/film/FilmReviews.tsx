@@ -76,7 +76,20 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
 
   return (
     <View style={s.reviewCard}>
-      <Text style={s.reviewQuote}>&ldquo;</Text>
+      {/**
+        * ── THE QUOTE MARK IS GONE ────────────────────────────────────────────
+        * It was a 60pt opening quote at `bottom: -22` on a card with
+        * `overflow: hidden`: the wrong glyph for the end of a passage, clipped
+        * in half, and sitting under OPEN LOG →. Corrected to a whole closing
+        * quote it then landed on the words themselves — because this card has
+        * no whitespace to host a watermark. Every position is on top of
+        * something.
+        *
+        * So it goes. The card already carries a drop cap, a brass border, an
+        * avatar, a rule and the reels; the drop cap alone says "these are
+        * somebody's own words". An ornament that can only be placed over the
+        * writing is not an ornament on the block that IS the writing.
+        */}
 
       {/* The ledger row — the Reel's own handwriting */}
       <UserAttributionRow
@@ -207,10 +220,6 @@ const s = StyleSheet.create({
     borderLeftWidth: 3, borderLeftColor: 'rgba(184,137,26,0.4)',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8,
     position: 'relative', overflow: 'hidden',
-  },
-  reviewQuote: {
-    position: 'absolute', bottom: -22, right: 10, fontSize: 60,
-    fontFamily: fonts.display, color: colors.sepia, opacity: 0.12,
   },
   verdictRow: {
     flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',

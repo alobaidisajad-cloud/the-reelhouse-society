@@ -287,7 +287,33 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     [film?.release_dates, film?.production_countries],
   );
 
+  /**
+   * ── WHERE THE HOUSE'S VOICES SIT ──────────────────────────────────────────
+   * `reviews` excludes nobody yet — YOURS below removes the member's own — so
+   * "has the house spoken" is asked of the same list the section will render,
+   * not of a count from somewhere else.
+   */
+  const hasSociety = useMemo(
+    () => reviews.some((r: { user_id?: string | null }) => r.user_id !== (user?.id ?? null)),
+    [reviews, user?.id],
+  );
 
+  /**
+   * One block, rendered in one of two places. Written once so the two call
+   * sites cannot drift into two different sections — which is exactly how a
+   * page ends up showing the same thing twice.
+   */
+  const TheSociety = useCallback(() => (
+    <View style={s.societyAir}>
+      <FilmReviews
+        filmId={Number(film?.id)}
+        filmTitle={film?.title ?? ''}
+        reviews={reviews}
+        reviewsError={reviewsError}
+        excludeUserId={user?.id ?? null}
+      />
+    </View>
+  ), [film?.id, film?.title, reviews, reviewsError, user?.id]);
 
   if (loading && validFilmId) {
     return (
@@ -464,11 +490,18 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
               </Animated.View>
             )}
 
-            {/* THE SOCIETY — the emotional peak, and the only block given more
-                air than the utility sections around it. */}
-            <View style={s.societyAir}>
-              <FilmReviews filmId={Number(film.id)} filmTitle={film.title} reviews={reviews} reviewsError={reviewsError} excludeUserId={user?.id ?? null} />
-            </View>
+            {/* ── THE PAGE TAKES THE SHAPE OF WHAT IS TRUE ────────────────────
+                THE SOCIETY sits third — directly under the synopsis, the
+                emotional peak, and the only block given more air than the
+                utility sections around it — WHEN THERE IS SOMETHING TO READ.
+
+                When there is not, it drops below the players and the footage.
+                An empty box in the third slot on every film says "nobody has
+                been here" before a member has seen a single thing about the
+                film; the same block low down says "be the first voice" and
+                reads as an invitation. With 288 logs across 250 films, the
+                empty case is not the edge — it is nearly every film. */}
+            {hasSociety && <TheSociety />}
 
             {/* THE CREDIT — a film credit, set as one. */}
             {directors.length > 0 && (
@@ -490,6 +523,10 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
             )}
 
             <FilmMediaCarousel videos={videos} onPlayVideo={handlePlayVideo} />
+
+            {/* ...and here it is when nobody has written yet: after the film
+                has been shown to you, where the invitation can land. */}
+            {!hasSociety && <TheSociety />}
 
             <Animated.View style={s.section}>
               <WatchProviders providers={providers as any} />
@@ -569,7 +606,17 @@ const s = StyleSheet.create({
 
   /** The crescendo, made of space: the one block where members talk to each
       other gets more air than the utility sections around it. */
-  societyAir: { marginTop: 14, marginBottom: 44 },
+  /**
+   * ── AIR THAT ADDS UP TO WHAT WAS INTENDED ─────────────────────────────────
+   * The house gets 44pt where the utility sections get 30. But FilmReviews
+   * already carries `marginBottom: 24` of its own, so a flat 44 here made the
+   * gap below it 68 — a third more than designed, and visibly a cavern before
+   * DIRECTED BY. Margins do not replace each other; they stack.
+   *
+   * Above:  30 (the section before) + 14 = 44.
+   * Below:  20 + 24 (the component's own) = 44.
+   */
+  societyAir: { marginTop: 14, marginBottom: 20 },
 
   credit: { alignItems: 'center', marginBottom: 30, paddingHorizontal: 24 },
   creditRole: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 3, color: colors.fog, marginBottom: 7, includeFontPadding: false },
