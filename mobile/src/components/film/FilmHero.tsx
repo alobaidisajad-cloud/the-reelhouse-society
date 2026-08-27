@@ -31,6 +31,18 @@ interface FilmHeroProps {
   statusConfig: Record<string, { text: string; Icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }> }>;
 }
 
+/**
+ * How many members have to have rated a film before the page will call their
+ * average "the house".
+ *
+ * Three is the smallest number that can disagree with itself. One is a member;
+ * two is a pair; three is the first point at which an average is describing a
+ * body of opinion rather than adding up a couple of people. Below it the line
+ * names what it actually is, and the reels still show — a first voice is worth
+ * seeing, it just is not a consensus.
+ */
+export const HOUSE_QUORUM = 3;
+
 const PRESTIGE_STUDIOS = ['A24', 'NEON', 'MUBI', 'Criterion', 'Janus Films', 'Oscilloscope', 'Kino Lorber'];
 
 const PrestigeBadge = memo(function PrestigeBadge({ companies }: { companies: { name?: string }[] }) {
@@ -149,13 +161,30 @@ export const FilmHero = memo(function FilmHero({
           * They appear only when the house has actually spoken, and when it
           * has not the page SAYS SO — ruled like a title card, which is
           * dignified, and which sets up the invitation further down the page.
+          *
+          * ── AND "THE HOUSE" HAS TO MEAN MORE THAN ONE PERSON ───────────────
+          * This said `THE HOUSE · 1 LOG`, which is the SAME untruth this whole
+          * change was made to remove: a single member's opinion wearing the
+          * house's name. The live database has 288 logs across 250 films —
+          * barely more than one apiece — so that would have been the state of
+          * very nearly every film in the archive.
+          *
+          * Below a quorum the line names what it actually is: one voice, or
+          * two. The reels still show, because a first voice IS worth showing —
+          * it just is not a consensus, and must not claim to be one.
+          *
+          * The count is RATING_COUNT, not log_count. The reels are an average
+          * over the people who RATED it; attributing them to everyone who
+          * logged it would overstate the very number they rest on.
           */}
         {verdict?.avg_rating ? (
           <View style={styles.verdictRow}>
             <ReelRating rating={verdict.avg_rating} size={18} />
             <Text {...scaledTextProps} style={styles.verdictScore}>{verdict.avg_rating.toFixed(1)}</Text>
             <Text {...scaledTextProps} style={styles.verdictWho} numberOfLines={1}>
-              THE HOUSE · {verdict.log_count} LOG{verdict.log_count === 1 ? '' : 'S'}
+              {verdict.rating_count >= HOUSE_QUORUM
+                ? `THE HOUSE · ${verdict.rating_count} VOICES`
+                : verdict.rating_count === 1 ? 'ONE VOICE' : `${verdict.rating_count} VOICES`}
             </Text>
           </View>
         ) : (

@@ -72,15 +72,50 @@ describe('the reels belong to the house and nobody else', () => {
   });
 
   it('draws them once the house HAS spoken, and names whose they are', () => {
-    const t = render(<FilmHero {...base} verdict={{ avg_rating: 4.5, rating_count: 30, log_count: 37 }} />);
+    const t = render(<FilmHero {...base} verdict={{ avg_rating: 4.5, rating_count: 37, log_count: 52 }} />);
     expect(reelCount(t)).toBeGreaterThan(0);
     expect(t.getByText('4.5')).toBeTruthy();
-    expect(t.getByText(/THE HOUSE · 37 LOGS/)).toBeTruthy();
+    expect(t.getByText(/THE HOUSE · 37 VOICES/)).toBeTruthy();
   });
 
-  it('counts one log as a LOG, not LOGS', () => {
+  /**
+   * ── "THE HOUSE" HAS TO MEAN MORE THAN ONE PERSON ─────────────────────────
+   * This line used to read `THE HOUSE · 1 LOG` — the SAME untruth the reels
+   * were taken off TMDB to remove, just with a different stranger wearing the
+   * house's name. And it is not a rare edge: the live database holds 288 logs
+   * across 250 films, so almost every film in the archive would have said it.
+   */
+  it('does not call one member the house', () => {
     const t = render(<FilmHero {...base} verdict={{ avg_rating: 5, rating_count: 1, log_count: 1 }} />);
-    expect(t.getByText(/THE HOUSE · 1 LOG$/)).toBeTruthy();
+    expect(t.getByText('ONE VOICE')).toBeTruthy();
+    expect(t.queryByText(/THE HOUSE ·/)).toBeNull();
+  });
+
+  it('nor two of them', () => {
+    const t = render(<FilmHero {...base} verdict={{ avg_rating: 4, rating_count: 2, log_count: 6 }} />);
+    expect(t.getByText('2 VOICES')).toBeTruthy();
+    expect(t.queryByText(/THE HOUSE ·/)).toBeNull();
+  });
+
+  it('but three is a body of opinion', () => {
+    const t = render(<FilmHero {...base} verdict={{ avg_rating: 4, rating_count: 3, log_count: 3 }} />);
+    expect(t.getByText(/THE HOUSE · 3 VOICES/)).toBeTruthy();
+  });
+
+  it('still shows the reels for a single voice — it just does not claim consensus', () => {
+    const t = render(<FilmHero {...base} verdict={{ avg_rating: 5, rating_count: 1, log_count: 1 }} />);
+    expect(t.queryByText('THE HOUSE HAS NOT SPOKEN')).toBeNull();
+    expect(t.getByText('5.0')).toBeTruthy();
+  });
+
+  /**
+   * The reels are an average over the people who RATED it. Counting everyone
+   * who logged it would overstate the very number the reels rest on.
+   */
+  it('counts the people who rated it, not everyone who logged it', () => {
+    const t = render(<FilmHero {...base} verdict={{ avg_rating: 4.5, rating_count: 12, log_count: 400 }} />);
+    expect(t.getByText(/THE HOUSE · 12 VOICES/)).toBeTruthy();
+    expect(t.queryByText(/400/)).toBeNull();
   });
 
   /**
