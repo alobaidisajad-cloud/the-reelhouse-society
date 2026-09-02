@@ -49,6 +49,58 @@ export const colors = {
   // either bloodReel (deep stamp) or crimson (legible accent).
   crimson: '#B42D2D',
   crimsonBorder: 'rgba(180, 45, 45, 0.3)',
+  // ── CRIMSON FOR MARKS, CRIMSON INK FOR WORDS ─────────────────────────────
+  // `crimson` as TEXT composites to 2.49:1 on an Auteur's byline and 2.72:1 on
+  // a certified count — both far under the 4.5 floor, and both on almost every
+  // screen, so the least readable type in the app was the type marking its
+  // paying members and its best posts.
+  //
+  // A fill and a letterform are not the same problem: a filled heart at that
+  // size is a shape and reads on any ground, a 7.5pt word does not. So the
+  // pigment above stays for marks — rings, filled hearts, a ballot's cross —
+  // and words that must be crimson use this, at 5.4:1, unmistakably the same
+  // family. The same 2.7:1 label is on the log deck today.
+  crimsonInk: '#E2564F',
+
+  // ── THE DISPATCH'S FIVE DEPARTMENTS ──────────────────────────────────────
+  // A filing's kind carries a hue, and the WORD wears it — the way a Darkroom
+  // mood is itself the colour it filters by, so the name teaches the code the
+  // first time you see it and nobody has to decode a stripe.
+  //
+  // Chosen for distinctness first: red, violet, blue, green, silver. Two notes
+  // on why they are not the obvious picks:
+  //
+  //   take    — was `crimson`, which is EXACTLY the Auteur ring, so a take by
+  //             an Auteur printed the same red twice for two unrelated things.
+  //             Vermilion leans orange where crimson has equal green and blue,
+  //             so the two never read as the same mark.
+  //   seeking — was `sepia`, the brass that every rule, hairline, plate rim and
+  //             index tick on that page is already made of. A code printed in
+  //             the colour of the furniture around it is not a code. Violet is
+  //             the one hue no other kind and no piece of chrome uses, and it
+  //             is the right one: small ads were run off on a spirit
+  //             duplicator, and duplicator ink was violet. A member asking the
+  //             house for a film is placing a want-ad.
+  //
+  // They are brighter than the Darkroom's mood accents on purpose. The first
+  // set borrowed those verbatim and was effectively invisible: the Darkroom
+  // uses them as fills behind whole cards, where a large dark area is legible.
+  // Three points of the same colour against near-black is not.
+  //
+  // `dossier` is silverNitrate and is written as the token, not a copy of its
+  // value — the silver screen, the most considered form.
+  dispatchTake: '#D9633A',
+  dispatchSeeking: '#A07CBE',
+  dispatchWire: '#5FA3B8',
+  dispatchBallot: '#6FA855',
+
+  // The ground inside a keyboard well — a clear step above `ink` so the well
+  // reads as a surface rather than a hole punched in the page, the same reason
+  // `frame` exists and is not `soot`.
+  keyWell: '#171613',
+  // The ground of an exported story card. Deeper than `ink` because it is seen
+  // on someone else's feed, against their app's white, and not in the booth.
+  storyGround: '#0B0907',
   crimsonFaint: 'rgba(180, 45, 45, 0.1)',
   parchmentBright: '#F8F2E4',
   surface: '#14120D',
