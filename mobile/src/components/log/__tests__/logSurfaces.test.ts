@@ -470,8 +470,12 @@ describe('a control that erases something looks like one', () => {
     // These two rows are the same control with the same name and size. One of
     // them was changed alone and they drifted — crimson on the dossier, body
     // text on the log. Whatever the colour is, it has to be one colour.
+    // The dossier reader's DELETE became the Dispatch's WITHDRAW, in
+    // `critiqueWithdraw`. It is the same control — a member taking back their
+    // own comment — so it stays held to the same colour as the log's, which is
+    // the whole point of this check: the two drifted apart once already.
     const log = style(read(STYLES), 'commDelete');
-    const dossier = style(read('app/dossier/[id].tsx'), 'commDelete');
+    const dossier = style(read('src/components/dispatch/paper/paperStyles.ts'), 'critiqueWithdraw');
     const colourOf = (b: string) => b.match(/color:\s*colors\.(\w+)/)![1];
     expect(colourOf(log)).toBe(colourOf(dossier));
     // …and not a neutral. bone/fog/parchment are what prose is set in.

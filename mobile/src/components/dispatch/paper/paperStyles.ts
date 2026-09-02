@@ -520,6 +520,18 @@ export const p = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     marginTop: 0, marginBottom: 8,
   },
+  /**
+   * WITHDRAW, on your own critique.
+   *
+   * `danger` and 9pt at 1 of tracking, which is exactly `commDelete` on a log —
+   * the same control, doing the same thing, on a different page. Those two
+   * drifted apart once (crimson on one, body text on the other) and a guard now
+   * holds them to one colour, so this is written to MATCH rather than chosen.
+   */
+  critiqueWithdraw: {
+    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1,
+    color: colors.danger, includeFontPadding: false,
+  },
   // (bylineFlush removed: it set paddingLeft: 0 on a row that has no padding, and
   // the `flush` prop meant to apply it was never accepted by Byline. A ballot's
   // byline is centred by its wrapper, which is what was doing the work all along.)
@@ -967,6 +979,9 @@ export const p = StyleSheet.create({
   /** The back arrow is its own target inside the one bar, divided from the rest
    *  by a hairline so a thumb aiming to LEAVE never lands on "scroll to top". */
   spineBack: { paddingRight: 8, marginRight: 2, borderRightWidth: 1, borderRightColor: 'rgba(184,137,26,0.25)' },
+  // Mirrors spineBack on the other end — the same hairline, facing the other
+  // way, so the bar reads as three parts rather than two and a stray icon.
+  spineMore: { paddingLeft: 8, marginLeft: 2, borderLeftWidth: 1, borderLeftColor: 'rgba(184,137,26,0.25)' },
   spineBody: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   spineKind: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false },
   spineText: { fontFamily: fonts.serifItalic, fontSize: 12.5, color: colors.bone, flex: 1 },

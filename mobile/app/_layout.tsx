@@ -243,6 +243,12 @@ export default function RootLayout() {
             <Stack.Screen name="year-in-cinema" options={{ animation: 'none' }} />
             <Stack.Screen name="stacks/[id]" options={{ animation: 'none' }} />
             <Stack.Screen name="film-reviews/[id]" options={{ animation: 'none' }} />
+            {/* The Dispatch's reader. `dossier/[id]` stays registered beside it
+                and redirects here — every notification already written, every
+                lounge message quoting a dossier and every share card in the
+                world carries that address. Shutter-cut, like every other route
+                in this app. */}
+            <Stack.Screen name="dispatch/[id]" options={{ animation: 'none' }} />
             <Stack.Screen name="dossier/[id]" options={{ animation: 'none' }} />
             <Stack.Screen name="edit-profile" options={{ animation: 'none' }} />
             <Stack.Screen name="dispatch/compose" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />

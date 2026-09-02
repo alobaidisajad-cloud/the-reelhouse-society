@@ -12,7 +12,7 @@ import { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight, ChevronUp, Search, ArrowLeft, Lock, ExternalLink } from 'lucide-react-native';
+import { ChevronRight, ChevronUp, Search, ArrowLeft, Lock, ExternalLink, MoreHorizontal } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
@@ -976,8 +976,8 @@ export const PaperEvent = memo(function PaperEvent({
 
 /** A plain screen head for the pages reached from somewhere else. */
 export const PaperBack = memo(function PaperBack({
-  label, onBack,
-}: { label: string; onBack?: () => void }) {
+  label, onBack, onMore,
+}: { label: string; onBack?: () => void; onMore?: () => void }) {
   return (
     <View style={m.back}>
       <PressableScale hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} haptic="selection"
@@ -986,7 +986,19 @@ export const PaperBack = memo(function PaperBack({
         <ArrowLeft size={15} strokeWidth={2} color={colors.sepia} />
       </PressableScale>
       <Text style={m.backLabel} {...decorativeTextProps}>{label}</Text>
-      <View style={{ width: 15 }} />
+      {/* The spacer on the right existed to keep the label optically centred
+          against the arrow. It is the same width as a control, so when there is
+          more to do with this filing the control simply takes its place and the
+          centring is unchanged. */}
+      {onMore ? (
+        <PressableScale hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} haptic="selection"
+          onPress={onMore}
+          accessibilityRole="button" accessibilityLabel="More, for this filing">
+          <MoreHorizontal size={15} strokeWidth={2} color={colors.sepia} />
+        </PressableScale>
+      ) : (
+        <View style={{ width: 15 }} />
+      )}
     </View>
   );
 });

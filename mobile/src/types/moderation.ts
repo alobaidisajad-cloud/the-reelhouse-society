@@ -22,6 +22,18 @@ export const ReportableContentType = z.enum([
   'lounge_message',
   'lounge',
   'profile',
+  // ── THE DISPATCH ─────────────────────────────────────────────────────────
+  // A filing of any kind, and a critique under one. The database's CHECK on
+  // `reports.content_type` accepts both (20260902_01), and this list is what
+  // the app validates against before it inserts — so a value in one and not the
+  // other is a report that either cannot be made or is silently refused.
+  //
+  // That is not hypothetical: `lounge` was in this list and NOT in the
+  // constraint, and reporting a room had been failing in production ever since,
+  // with the client validating it happily and the insert dying on the CHECK.
+  // The two lists have to be added to together, and this is the second half.
+  'dispatch_post',
+  'dispatch_comment',
 ]);
 /** Union type of all reportable content surfaces. */
 export type ReportableContentType = z.infer<typeof ReportableContentType>;

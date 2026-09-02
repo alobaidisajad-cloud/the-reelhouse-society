@@ -443,7 +443,11 @@ describe('the composers agree with the limits they write to', () => {
    */
   const COMPOSERS: [string, keyof typeof MAX_LENGTHS][] = [
     ['src/components/log/LogComments.tsx', 'logComment'],
-    ['app/dossier/[id].tsx', 'dossierComment'],
+    // The dossier reader became the Dispatch's reader, and the box a member
+    // types a critique into moved with it. The guarantee did not change — the
+    // field is still wired to the constant it writes through — so the guard
+    // follows the box rather than being deleted with the file it used to be in.
+    ['src/components/dispatch/paper/PaperCritiques.tsx', 'critique'],
     ['app/lounge/[id].tsx', 'loungeMessage'],
     ['app/stacks/[id].tsx', 'listComment'],
     ['src/components/ShareToLoungeModal.tsx', 'loungeMessage'],

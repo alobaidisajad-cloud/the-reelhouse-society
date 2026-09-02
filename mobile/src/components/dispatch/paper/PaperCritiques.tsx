@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import { View, Text, ActivityIndicator, TextInput } from 'react-native';
 import { Image } from 'expo-image';
-import { ArrowLeft, ChevronUp, Heart, MessageSquare, Share2, Bookmark } from 'lucide-react-native';
+import { ArrowLeft, ChevronUp, Heart, MessageSquare, MoreHorizontal, Share2, Bookmark } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
@@ -66,8 +66,11 @@ export interface Critique {
  * where a string cut in advance is only ever right at one.
  */
 export const CritiqueSpine = memo(function CritiqueSpine({
-  kind, opening, count, onTop, onBack,
-}: { kind: string; opening: string; count: number; onTop?: () => void; onBack?: () => void }) {
+  kind, opening, count, onTop, onBack, onMore,
+}: {
+  kind: string; opening: string; count: number;
+  onTop?: () => void; onBack?: () => void; onMore?: () => void;
+}) {
   return (
     <View style={p.spine}>
       <PressableScale
@@ -88,6 +91,19 @@ export const CritiqueSpine = memo(function CritiqueSpine({
         <Text style={p.spineText} numberOfLines={1} {...scaledTextProps}>{opening}</Text>
         <Text style={p.spineCount} {...scaledTextProps}>{formatCount(count) ?? ''}</Text>
       </PressableScale>
+      {/* A THIRD target on the same bar, and the reason it is safe: the two
+          beside it each declare zero slop on the side that faces it, so the
+          three do not reach into one another. The bar was already divided into
+          "leave" and "go to the top"; this is "do something to it". */}
+      {onMore ? (
+        <PressableScale
+          style={p.spineMore} onPress={onMore} haptic="selection"
+          hitSlop={{ top: 8, bottom: 8, left: 0, right: 6 }}
+          accessibilityRole="button" accessibilityLabel="More, for this filing"
+        >
+          <MoreHorizontal size={15} strokeWidth={2} color={colors.sepia} />
+        </PressableScale>
+      ) : null}
     </View>
   );
 });
@@ -125,12 +141,15 @@ export const CritiqueHead = memo(function CritiqueHead({
  * hiding a button is never the only thing standing in the way.
  */
 export const CritiqueRow = memo(function CritiqueRow({
-  c, canTake, top, onCertify, onTake, onAuthor,
+  c, canTake, top, onCertify, onTake, onAuthor, onDelete, onReport,
 }: {
   c: Critique; canTake?: boolean; top?: boolean;
   onCertify?: (next: boolean) => void;
   onTake?: () => void;
   onAuthor?: () => void;
+  /** Yours to withdraw. Absent on anyone else's, where REPORT takes its place. */
+  onDelete?: () => void;
+  onReport?: () => void;
 }) {
   const n = formatCount(c.certifyCount);
   return (
@@ -185,6 +204,39 @@ export const CritiqueRow = memo(function CritiqueRow({
               <Text style={[p.commentMeta, { marginTop: 0, color: colors.sepia, letterSpacing: 1.6 }]} {...scaledTextProps}>
                 TAKE THIS ONE
               </Text>
+            </PressableScale>
+          ) : null}
+
+          {/* ── AND THE WAY OUT OF WHAT YOU WROTE ──────────────────────────
+              A critique with no way to withdraw it is a thing a member cannot
+              take back, and the row that carries it is the only place the
+              control belongs. Yours reads WITHDRAW; anyone else's reads REPORT,
+              and one is never shown in place of the other.
+
+              `danger`, the same red as DELETE on a log — a control that erases
+              something looks like one, on every page that has one. */}
+          <View style={{ flex: 1 }} />
+          {c.mine && onDelete ? (
+            <PressableScale
+              style={{ paddingVertical: 8, paddingHorizontal: 8, marginRight: -8 }}
+              // `medium`, not a warning tap. The confirmation is where the
+              // weight belongs; this control only opens it, and a heavy knock
+              // for opening a question the member can still answer "keep it" to
+              // would be the app flinching before anything has happened.
+              hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic="medium"
+              onPress={onDelete}
+              accessibilityRole="button" accessibilityLabel="Withdraw this critique"
+            >
+              <Text style={p.critiqueWithdraw} {...scaledTextProps}>WITHDRAW</Text>
+            </PressableScale>
+          ) : !c.mine && onReport ? (
+            <PressableScale
+              style={{ paddingVertical: 8, paddingHorizontal: 8, marginRight: -8 }}
+              hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic
+              onPress={onReport}
+              accessibilityRole="button" accessibilityLabel="Report this critique"
+            >
+              <Text style={[p.commentMeta, { marginTop: 0 }]} {...scaledTextProps}>REPORT</Text>
             </PressableScale>
           ) : null}
         </View>

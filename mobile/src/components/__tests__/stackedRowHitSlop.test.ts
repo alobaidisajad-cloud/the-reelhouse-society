@@ -79,8 +79,19 @@ const RULES: Rule[] = [
     note: 'four flex:1 actions, flush' },
   { file: 'app/stacks/[id].tsx', style: 'actionItem', gap: { x: 1 },
     note: 'action bar split by a 1pt divider' },
-  { file: 'app/dossier/[id].tsx', style: 'actionItem', gap: { x: 1 },
-    note: 'action bar split by a 1pt divider' },
+  // ── The Dispatch ──────────────────────────────────────────────────────────
+  // The dossier reader's action bar became the Dispatch's four marks, and they
+  // are drawn in TWO places — docked under the reader, and under every entry in
+  // the feed. Both are four flush actions with no divider, so the gap is 0 and
+  // the horizontal slop must be too.
+  //
+  // Both are listed, not one: the styles live in a shared file and the tags do
+  // not, so a rule pointed at the stylesheet finds no tags at all and passes
+  // while proving nothing. Each file that MOUNTS the control is checked.
+  { file: 'src/components/dispatch/paper/PaperCritiques.tsx', style: 'action', gap: { x: 0 },
+    note: 'the docked bar under the reader — four flush marks' },
+  { file: 'src/components/dispatch/paper/PaperPost.tsx', style: 'action', gap: { x: 0 },
+    note: 'the stamp bar under every entry — four flush marks' },
   // ── The member file, rebuilt 2026-08-21 ────────────────────────────────────
   // `accountRow` used to be listed here. That row is gone (the account section
   // became THE DESK, and "at the door" moved to Notices), and the new layout
