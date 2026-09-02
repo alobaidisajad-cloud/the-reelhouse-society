@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FilmIcon, ImageIcon, AlertTriangle } from 'lucide-react-native';
@@ -41,6 +41,7 @@ import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
  */
 export const PaperComposer = memo(function PaperComposer({
   kind, me, hour, body, film, remaining, spoiler,
+  onBody, onBack, onFile, onFilm, onStill, onSpoiler, ready, sending,
 }: {
   kind: string;
   me: PaperAuthor;
@@ -51,17 +52,48 @@ export const PaperComposer = memo(function PaperComposer({
   film?: PaperFilm | null;
   remaining: number;
   spoiler?: boolean;
+  /**
+   * Absent in the render harness, which draws a fixed draft. Present in the app,
+   * where this is the field the member actually types into — so the desk that
+   * says "this is how it prints" is the same surface that takes the writing,
+   * rather than a picture of one.
+   */
+  onBody?: (text: string) => void;
+  onBack?: () => void;
+  onFile?: () => void;
+  onFilm?: () => void;
+  onStill?: () => void;
+  onSpoiler?: () => void;
+  /** FILE IT is lit only when there is something to file and room to file it. */
+  ready?: boolean;
+  sending?: boolean;
 }) {
   const tier = me.tier;
+  // Live in the app, drawn in the harness. `onBody` is what decides which, so a
+  // screenshot never has to pretend to hold state and the app never has to
+  // render a control that refuses to type.
+  const live = !!onBody;
+  const canFile = ready !== undefined ? ready : body.trim().length > 0 && remaining >= 0;
+  const blocked = !canFile || !!sending;
   return (
     <View style={p.screen}>
       <View style={p.ch}>
-        <PressableScale hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
+        <PressableScale onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
           <Text style={p.chs} {...scaledTextProps}>BACK</Text>
         </PressableScale>
         <Text style={p.chm} {...decorativeTextProps}>{kind.toUpperCase()}</Text>
-        <PressableScale hitSlop={{ top: 12, bottom: 12, left: 8, right: 0 }} haptic="medium" accessibilityRole="button" accessibilityLabel="File it">
-          <Text style={[p.chs, p.chsGo]} {...scaledTextProps}>FILE IT</Text>
+        {/* Lit only when the form is ready. A permanently bright confirm on an
+            unfinished draft is a button that lies about being ready — the same
+            rule DeskHead already follows, applied here so the two desks agree. */}
+        <PressableScale
+          onPress={blocked ? undefined : onFile} disabled={blocked}
+          hitSlop={{ top: 12, bottom: 12, left: 8, right: 0 }} haptic="medium"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: blocked }}
+          accessibilityLabel={canFile ? 'File it' : 'File it. Not ready yet'}>
+          <Text style={[p.chs, canFile && p.chsGo, blocked && { opacity: 0.4 }]} {...scaledTextProps}>
+            {sending ? 'FILING…' : 'FILE IT'}
+          </Text>
         </PressableScale>
       </View>
 
@@ -99,20 +131,56 @@ export const PaperComposer = memo(function PaperComposer({
                 are typing into is the shape it will take on the page. Without
                 this the desk promised "this is how it prints" and then printed
                 something else. */}
-            {kind === "seeking" ? (
-              <Text style={p.seeking} {...scaledTextProps}>
-                <Text style={p.seekingLead}>SEEKING — </Text>{body}<Text style={p.caret} {...UNSPOKEN}>|</Text>
+            {/* ── THE LEAD-IN IS THE HOUSE, THE REST IS THE MEMBER ──────────
+                The lead-in cannot live inside the input: it is not the member's
+                text, and putting it there would let them delete it, select it,
+                or type before it. So it is printed, and the field sets itself
+                immediately after — which is also what makes the desk print the
+                same shape the page will.
+
+                In the harness there is no `onBody`, so this stays a Text with
+                the drawn caret and every screenshot is unchanged. */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <Text
+                style={
+                  kind === 'seeking' ? p.seekingLead
+                    : kind === 'wire' ? p.wireDateline
+                      : [p.leadIn, { color: KIND_RULE.take }]
+                }
+                {...decorativeTextProps}
+              >
+                {kind === 'seeking' ? 'SEEKING — ' : kind === 'wire' ? 'SOURCE — ' : 'TAKE — '}
               </Text>
-            ) : kind === "wire" ? (
-              <Text style={p.wire} {...scaledTextProps}>
-                <Text style={p.wireDateline}>SOURCE — </Text>{body}<Text style={p.caret} {...UNSPOKEN}>|</Text>
-              </Text>
-            ) : (
-              <Text style={p.take} {...scaledTextProps}>
-                <Text style={[p.leadIn, { color: KIND_RULE.take }]}>TAKE — </Text>
-                {body}<Text style={p.caret} {...UNSPOKEN}>|</Text>
-              </Text>
-            )}
+              {live ? (
+                <TextInput
+                  style={[
+                    kind === 'seeking' ? p.seeking : kind === 'wire' ? p.wire : p.take,
+                    { flex: 1, minWidth: 0, padding: 0 },
+                  ]}
+                  value={body}
+                  onChangeText={onBody}
+                  multiline
+                  autoFocus
+                  selectionColor={colors.sepia}
+                  // No maxLength. The composer must let a member finish a
+                  // sentence and then say it is over by how much — a field that
+                  // silently stops accepting characters mid-word is how the
+                  // dossier composer used to destroy a draft.
+                  accessibilityLabel={`Your ${kind}`}
+                  {...scaledTextProps}
+                />
+              ) : (
+                <Text
+                  style={[
+                    kind === 'seeking' ? p.seeking : kind === 'wire' ? p.wire : p.take,
+                    { flex: 1, minWidth: 0 },
+                  ]}
+                  {...scaledTextProps}
+                >
+                  {body}<Text style={p.caret} {...UNSPOKEN}>|</Text>
+                </Text>
+              )}
+            </View>
 
             {film ? <Credit film={film} /> : null}
           </View>
@@ -122,15 +190,15 @@ export const PaperComposer = memo(function PaperComposer({
       {/* Tools and the count on one rail — the count now has something to
           belong to instead of floating in the middle of the page. */}
       <View style={p.rail}>
-        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} accessibilityRole="button" accessibilityLabel="Name a film">
+        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onFilm} accessibilityRole="button" accessibilityState={{ selected: !!film }} accessibilityLabel="Name a film">
           <FilmIcon size={13} strokeWidth={2} color={film ? colors.sepia : colors.bone} />
           <Text style={[p.rl, film && { color: colors.sepia }]} {...scaledTextProps}>FILM</Text>
         </PressableScale>
-        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} accessibilityRole="button" accessibilityLabel="Add a still">
+        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onStill} accessibilityRole="button" accessibilityLabel="Add a still">
           <ImageIcon size={13} strokeWidth={2} color={colors.bone} />
           <Text style={p.rl} {...scaledTextProps}>STILL</Text>
         </PressableScale>
-        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} accessibilityRole="button" accessibilityLabel="Mark a spoiler">
+        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onSpoiler} accessibilityRole="button" accessibilityState={{ selected: !!spoiler }} accessibilityLabel="Mark a spoiler">
           <AlertTriangle size={13} strokeWidth={2} color={spoiler ? colors.crimson : colors.bone} />
           <Text style={[p.rl, spoiler && { color: CRIMSON_INK }]} {...scaledTextProps}>SPOILER</Text>
         </PressableScale>

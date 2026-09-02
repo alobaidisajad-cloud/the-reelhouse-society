@@ -35,6 +35,12 @@ const SLICES = [
   'src/stores/blockStore.ts',
   'src/stores/lounge.ts',
   'src/stores/content.ts',
+  // The Dispatch. It registers a logout reset like the rest, and it is the
+  // sharpest case since content.ts: a feed, a per-viewer set of certified and
+  // saved ids, and six acts that each await a write. This test found it the day
+  // the file was written, which is the whole point of enumerating rather than
+  // listing what somebody noticed.
+  'src/stores/dispatch.ts',
 ];
 
 const stripComments = (s: string) =>

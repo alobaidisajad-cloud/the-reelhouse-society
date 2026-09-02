@@ -30,11 +30,11 @@ import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 
 /** The head every desk wears. One component so three desks cannot drift. */
 export const DeskHead = memo(function DeskHead({
-  kind, ready,
-}: { kind: string; ready?: boolean }) {
+  kind, ready, onBack, onFile,
+}: { kind: string; ready?: boolean; onBack?: () => void; onFile?: () => void }) {
   return (
     <View style={p.ch}>
-      <PressableScale hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
+      <PressableScale onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
         <Text style={p.chs} {...scaledTextProps}>BACK</Text>
       </PressableScale>
       <Text style={[p.chm, { color: KIND_RULE[kind.toLowerCase() as keyof typeof KIND_RULE] ?? colors.sepia }]}
@@ -43,7 +43,7 @@ export const DeskHead = memo(function DeskHead({
       </Text>
       {/* FILE IT is lit only when the form is complete. A permanently bright
           confirm on an unfinished form is a button that lies about being ready. */}
-      <PressableScale hitSlop={{ top: 12, bottom: 12, left: 8, right: 0 }} haptic="medium" disabled={!ready}
+      <PressableScale onPress={ready ? onFile : undefined} hitSlop={{ top: 12, bottom: 12, left: 8, right: 0 }} haptic="medium" disabled={!ready}
         accessibilityRole="button"
         accessibilityLabel={ready ? 'File it' : 'File it. Not ready yet'}
         accessibilityState={{ disabled: !ready }}>
@@ -57,8 +57,12 @@ export const DeskHead = memo(function DeskHead({
 
 /** The rail every desk stands on. `count` appears only when it could matter. */
 export const DeskRail = memo(function DeskRail({
-  tools, remaining,
-}: { tools: Array<{ icon: 'film' | 'still' | 'spoiler' | 'date'; label: string; on?: boolean }>; remaining?: number }) {
+  tools, remaining, onTool,
+}: {
+  tools: Array<{ icon: 'film' | 'still' | 'spoiler' | 'date'; label: string; on?: boolean }>;
+  remaining?: number;
+  onTool?: (icon: 'film' | 'still' | 'spoiler' | 'date') => void;
+}) {
   const I = { film: FilmIcon, still: ImageIcon, spoiler: AlertTriangle, date: Calendar };
   return (
     <View style={p.rail}>
@@ -66,7 +70,8 @@ export const DeskRail = memo(function DeskRail({
         const Icon = I[t.icon];
         return (
           <PressableScale key={t.label} style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
-            accessibilityRole="button" accessibilityLabel={t.label.toLowerCase()}>
+            onPress={() => onTool?.(t.icon)}
+            accessibilityRole="button" accessibilityState={{ selected: !!t.on }} accessibilityLabel={t.label.toLowerCase()}>
             <Icon size={13} strokeWidth={2} color={t.on ? colors.sepia : colors.bone} />
             <Text style={[p.rl, t.on && { color: colors.sepia }]} {...scaledTextProps}>{t.label}</Text>
           </PressableScale>
@@ -135,9 +140,16 @@ export const WireDesk = memo(function WireDesk({
  */
 export const BallotDesk = memo(function BallotDesk({
   me, hour, question, options, closes,
+  onRemove, onChoose, onCloses, onBack, onFile, ready,
 }: {
   me: PaperAuthor; hour: string; question: string;
   options: Array<PaperFilm | null>; closes: string;
+  onRemove?: (index: number) => void;
+  onChoose?: (index: number) => void;
+  onCloses?: (choice: string) => void;
+  onBack?: () => void;
+  onFile?: () => void;
+  ready?: boolean;
 }) {
   const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
   const filled = options.filter(Boolean).length;
@@ -174,12 +186,14 @@ export const BallotDesk = memo(function BallotDesk({
                         <Text style={d.slotMeta} numberOfLines={1} {...scaledTextProps}>{o.year}</Text>
                       </View>
                       <PressableScale hitSlop={{ top: 4, bottom: 4, left: 8, right: 0 }} haptic
+                        onPress={() => onRemove?.(i)}
                         accessibilityRole="button" accessibilityLabel={`Remove ${o.title}`}>
                         <X size={13} strokeWidth={2} color={colors.fog} />
                       </PressableScale>
                     </>
                   ) : (
                     <PressableScale style={d.slotEmpty} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
+                      onPress={() => onChoose?.(i)}
                       accessibilityRole="button" accessibilityLabel={`Choose film ${i + 1}`}>
                       <Plus size={12} strokeWidth={2} color={colors.sepia} />
                       <Text style={d.slotAdd} {...scaledTextProps}>
@@ -196,6 +210,7 @@ export const BallotDesk = memo(function BallotDesk({
               <View style={d.closesChoices}>
                 {['1 DAY', '2 DAYS', '1 WEEK'].map((c) => (
                   <PressableScale key={c} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} haptic="selection"
+                    onPress={() => onCloses?.(c)}
                     accessibilityRole="button" accessibilityState={{ selected: c === closes }}
                     accessibilityLabel={`Closes in ${c.toLowerCase()}`}>
                     <Text style={[d.choice, c === closes && d.choiceOn]} {...scaledTextProps}>{c}</Text>
@@ -223,11 +238,15 @@ export const BallotDesk = memo(function BallotDesk({
  * has ever wanted to know they have 21,400 characters left.
  */
 export const DossierDesk = memo(function DossierDesk({
-  title, body, words, series,
-}: { title: string; body: string; words: number; series?: string }) {
+  title, body, words, series, onSeries, onFilm, onCover, onBack, onFile,
+}: {
+  title: string; body: string; words: number; series?: string;
+  onSeries?: () => void; onFilm?: () => void; onCover?: () => void;
+  onBack?: () => void; onFile?: () => void;
+}) {
   return (
     <View style={p.screen}>
-      <DeskHead kind="dossier" ready={!!title && words > 0} />
+      <DeskHead kind="dossier" ready={!!title && words > 0} onBack={onBack} onFile={onFile} />
       <View style={[p.deskDoc, { paddingTop: 16 }]}>
         <Text style={d.dossierTitle} {...displayTextProps}>
           {title || 'Title'}
@@ -236,7 +255,7 @@ export const DossierDesk = memo(function DossierDesk({
         {series ? (
           <Text style={d.dossierSeries} numberOfLines={1} {...scaledTextProps}>{series.toUpperCase()}</Text>
         ) : (
-          <PressableScale style={{ paddingVertical: 6 }} haptic="selection"
+          <PressableScale style={{ paddingVertical: 6 }} haptic="selection" onPress={onSeries}
             accessibilityRole="button" accessibilityLabel="Make this part of a series">
             <Text style={d.dossierAdd} {...scaledTextProps}>+ PART OF A SERIES</Text>
           </PressableScale>
@@ -245,12 +264,12 @@ export const DossierDesk = memo(function DossierDesk({
         <Text style={d.dossierBody} {...scaledTextProps}>{body}<Text style={p.caret} {...UNSPOKEN}>|</Text></Text>
       </View>
       <View style={p.rail}>
-        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
+        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onFilm}
           accessibilityRole="button" accessibilityLabel="Name a film">
           <FilmIcon size={13} strokeWidth={2} color={colors.bone} />
           <Text style={p.rl} {...scaledTextProps}>FILM</Text>
         </PressableScale>
-        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
+        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onCover}
           accessibilityRole="button" accessibilityLabel="Choose a cover">
           <ImageIcon size={13} strokeWidth={2} color={colors.bone} />
           <Text style={p.rl} {...scaledTextProps}>COVER</Text>
@@ -274,8 +293,8 @@ export const DossierDesk = memo(function DossierDesk({
  * read rather than a list you pick from.
  */
 export const FilmFinder = memo(function FilmFinder({
-  query, results,
-}: { query: string; results: PaperFilm[] }) {
+  query, results, onPick,
+}: { query: string; results: PaperFilm[]; onPick?: (film: PaperFilm) => void }) {
   return (
     <View style={d.sheet}>
       <View style={d.grab} />
@@ -289,6 +308,7 @@ export const FilmFinder = memo(function FilmFinder({
         <View key={f.title}>
           {i > 0 && <View style={p.hair} />}
           <PressableScale style={d.result} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
+            onPress={() => onPick?.(f)}
             accessibilityRole="button" accessibilityLabel={`${f.title}, ${f.year}`}>
             <View style={d.resultArt}>
               {f.posterPath ? (
@@ -321,8 +341,12 @@ export const FilmFinder = memo(function FilmFinder({
  * that teaches members the wrong rules.
  */
 export const ReportSheet = memo(function ReportSheet({
-  reasons, chosen,
-}: { reasons: string[]; chosen?: string }) {
+  reasons, chosen, onChoose, onReport,
+}: {
+  reasons: string[]; chosen?: string;
+  onChoose?: (reason: string) => void;
+  onReport?: () => void;
+}) {
   return (
     <View style={d.sheet}>
       <View style={d.grab} />
@@ -333,6 +357,7 @@ export const ReportSheet = memo(function ReportSheet({
         <View key={r}>
           {i > 0 && <View style={p.hair} />}
           <PressableScale style={d.reason} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
+            onPress={() => onChoose?.(r)}
             accessibilityRole="radio" accessibilityState={{ checked: r === chosen }}
             accessibilityLabel={r}>
             <View style={[d.box, r === chosen && { borderColor: colors.crimson }]}>
@@ -353,7 +378,9 @@ export const ReportSheet = memo(function ReportSheet({
         and the member is never told who reported them.
       </Text>
       <PressableScale style={[p.btn, d.reportBtn]} haptic="medium" disabled={!chosen}
-        accessibilityRole="button" accessibilityLabel="Report this filing">
+        onPress={chosen ? onReport : undefined}
+        accessibilityRole="button" accessibilityState={{ disabled: !chosen }}
+        accessibilityLabel={chosen ? "Report this filing" : "Report this filing. Choose a reason first"}>
         <Text style={[p.btnText, { color: chosen ? CRIMSON_INK : colors.fog }]} {...scaledTextProps}>
           REPORT IT
         </Text>
@@ -371,8 +398,10 @@ export const ReportSheet = memo(function ReportSheet({
  * page pretending to be the app.
  */
 export const ShareSheet = memo(function ShareSheet({
-  preview, card,
+  preview, card, onDest,
 }: {
+  /** Which destination was chosen, by its label — the row's own words. */
+  onDest?: (label: string) => void;
   preview: React.ReactNode;
   /**
    * Whether this filing HAS a card to save.
@@ -416,6 +445,7 @@ export const ShareSheet = memo(function ShareSheet({
         <View key={label}>
           {i > 0 && <View style={p.hair} />}
           <PressableScale style={d.dest} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
+            onPress={() => onDest?.(String(label))}
             accessibilityRole="button" accessibilityLabel={`${label}. ${sub}.`}>
             <Icon size={15} strokeWidth={2} color={colors.sepia} />
             <View style={{ flex: 1, minWidth: 0 }}>
@@ -469,7 +499,12 @@ const d = StyleSheet.create({
   // ── the ballot desk ───────────────────────────────────────────────────────
   ballotQ: { fontFamily: fonts.display, fontSize: 16.5, lineHeight: 28, color: colors.parchment },
   slot: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
-  slotNo: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, width: 17, includeFontPadding: false },
+  // 21, matching `optionNo` on the ballot itself and for the same measured
+  // reason: `III.` needs 19pt at 8.5pt in the sub face and was being cut by two.
+  // The desk numbers the same six options the ballot prints, so a member choosing
+  // the third film saw `III` here and `III` there — the same fault twice, because
+  // the two rows were styled separately.
+  slotNo: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, width: 21, includeFontPadding: false },
   slotArt: {
     width: 26, height: 39, borderRadius: 1, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.18)', backgroundColor: 'rgba(20,16,11,0.9)',

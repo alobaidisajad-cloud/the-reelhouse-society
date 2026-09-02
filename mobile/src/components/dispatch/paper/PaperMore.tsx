@@ -52,7 +52,9 @@ export const FORMS: Form[] = [
   { kind: 'dossier', name: 'DOSSIER', line: 'An essay, at length, in parts if you like.', locked: true },
 ];
 
-export const PaperPicker = memo(function PaperPicker({ forms = FORMS }: { forms?: Form[] }) {
+export const PaperPicker = memo(function PaperPicker({
+  forms = FORMS, onPick,
+}: { forms?: Form[]; onPick?: (kind: Form['kind']) => void }) {
   return (
     <View style={m.sheet}>
       <View style={m.grab} />
@@ -65,6 +67,7 @@ export const PaperPicker = memo(function PaperPicker({ forms = FORMS }: { forms?
           <PressableScale
             style={[m.formRow, f.locked && { opacity: 0.85 }]}
             hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
+            onPress={() => onPick?.(f.kind)}
             haptic="medium" disabled={f.locked}
             accessibilityRole="button"
             accessibilityState={{ disabled: !!f.locked }}
@@ -101,8 +104,11 @@ export const PaperPicker = memo(function PaperPicker({ forms = FORMS }: { forms?
  * the same job — so "three of five" is a length before it is a number.
  */
 export const PaperDoor = memo(function PaperDoor({
-  films, filmsNeeded, days, daysNeeded,
-}: { films: number; filmsNeeded: number; days: number; daysNeeded: number }) {
+  films, filmsNeeded, days, daysNeeded, onLog,
+}: {
+  films: number; filmsNeeded: number; days: number; daysNeeded: number;
+  onLog?: () => void;
+}) {
   // The return type is written out because a template literal widens to `string`,
   // and React Native's DimensionValue accepts `${number}%` but not `string` — so
   // an untyped version is a type error at every call site rather than here.
@@ -148,7 +154,7 @@ export const PaperDoor = memo(function PaperDoor({
 
       {/* One act, and it is the one that moves the count. A button that merely
           dismissed this would be a button that changed nothing. */}
-      <PressableScale style={[p.btn, { marginTop: 24 }]} haptic="medium"
+      <PressableScale style={[p.btn, { marginTop: 24 }]} haptic="medium" onPress={onLog}
         accessibilityRole="button" accessibilityLabel="Go and log a film">
         <Text style={p.btnText} {...scaledTextProps}>LOG A FILM</Text>
       </PressableScale>
@@ -276,8 +282,9 @@ export const PaperRoom = memo(function PaperRoom({
  * verdict easier than the other is not a docket.
  */
 export const PaperCase = memo(function PaperCase({
-  reports, reasons, kind, body, author, age,
+  reports, reasons, kind, body, author, age, onStand, onStrike, onAuthor,
 }: {
+  onStand?: () => void; onStrike?: () => void; onAuthor?: () => void;
   reports: number; reasons: string; kind: keyof typeof KIND_RULE;
   body: string; author: PaperAuthor; age: string;
 }) {
@@ -302,10 +309,12 @@ export const PaperCase = memo(function PaperCase({
       </View>
       <View style={m.verdicts}>
         <PressableScale style={m.verdict} haptic hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
+          onPress={onStand}
           accessibilityRole="button" accessibilityLabel="Let this filing stand">
           <Text style={m.verdictText} {...scaledTextProps}>LET IT STAND</Text>
         </PressableScale>
         <PressableScale style={[m.verdict, m.verdictStrike]} haptic="medium" hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
+          onPress={onStrike}
           accessibilityRole="button" accessibilityLabel="Strike this filing">
           <Text style={[m.verdictText, { color: CRIMSON_INK }]} {...scaledTextProps}>STRIKE IT</Text>
         </PressableScale>
@@ -478,7 +487,7 @@ const fitTitle = (t: string) => {
    padding the card sets ~44 characters a line rather than ~38, and an opening
    cut to the old numbers would leave the card half empty — which is the same
    fault as before wearing the opposite face. */
-const openingRoom = (titleLen: number, lead = 1) => {
+const openingRoom = (titleLen: number, lead = 1, ratio = 4 / 5) => {
   const base = titleLen <= 26 ? { max: 210, lines: 5 }
     : titleLen <= 44 ? { max: 165, lines: 4 }
     : { max: 125, lines: 3 };
@@ -496,8 +505,32 @@ const openingRoom = (titleLen: number, lead = 1) => {
    *
    * One line of the title's own leading, taken out of the opening's.
    */
-  if (lead <= 1) return base;
-  return { max: Math.round(base.max * 0.7), lines: Math.max(2, base.lines - 1) };
+  const forLead = lead <= 1
+    ? base
+    : { max: Math.round(base.max * 0.7), lines: Math.max(2, base.lines - 1) };
+
+  /**
+   * ── AND THE CARD'S SHAPE, WHICH THESE NUMBERS NEVER KNEW ───────────────────
+   * Every number above was measured on the 4:5 portrait card. The same budget
+   * was then handed to the square and to the 5:4 landscape, which at the same
+   * width are 80% and 64% as TALL — and the middle of the card is `flex: 1`, so
+   * when the writing needed more room than the card had, it did not overflow.
+   * It SHRANK, to nothing. Measured on the rendered card: the title and the
+   * opening of the 5:4 export both came out zero points high. An export whose
+   * whole job is to carry an essay out into the world was carrying a masthead,
+   * a signature, and no essay.
+   *
+   * So the budget scales with the height the ratio actually leaves, and the
+   * title's line count comes down with it — a landscape card is a wide, short
+   * thing and cannot hold four lines of 32pt display type whatever the title
+   * says.
+   */
+  const h = (4 / 5) / ratio;
+  return {
+    max: Math.round(forLead.max * h),
+    lines: Math.max(1, Math.floor(forLead.lines * h)),
+    titleLines: h >= 0.95 ? 4 : h >= 0.75 ? 3 : 2,
+  };
 };
 
 /**
@@ -583,7 +616,7 @@ export const DossierShareCard = memo(function DossierShareCard({
   const head = fitTitle(title);
   // visualLen, not .length — the same measure the ladder uses, so the room the
   // title leaves is reckoned in the width it actually took, in any script.
-  const room = openingRoom(visualLen(head), titleFace(head).lead);
+  const room = openingRoom(visualLen(head), titleFace(head).lead, ratio);
   const cut = clipToSentence(opening, max ?? room.max);
   return (
     <View style={[m.share, { aspectRatio: ratio }, width !== undefined && { width }]}>
@@ -630,7 +663,7 @@ export const DossierShareCard = memo(function DossierShareCard({
             title came out cut to `…Refuses to Do, an…` rather than set smaller.
             A ladder off the character count is deterministic, is the same on both
             platforms, and cannot truncate what it can simply set smaller. */}
-        <Text style={[m.shareTitle, titleSet(head)]} numberOfLines={4} {...decorativeTextProps}>
+        <Text style={[m.shareTitle, titleSet(head)]} numberOfLines={room.titleLines} {...decorativeTextProps}>
           {head}
         </Text>
 
@@ -735,8 +768,9 @@ export const StoryFrame = memo(function StoryFrame({
  */
 export const LoungeCard = memo(function LoungeCard({
   kind, body, author, certifyCount, commentCount,
-  title, source, result, answered, ended,
+  title, source, result, answered, ended, onOpen,
 }: {
+  onOpen?: () => void;
   kind: keyof typeof KIND_RULE; body: string;
   /** NULL once the member has closed their account — same law as the page. */
   author: PaperAuthor | null;
@@ -765,7 +799,7 @@ export const LoungeCard = memo(function LoungeCard({
      the page and its critiques are not. */
   if (ended) {
     return (
-      <PressableScale style={[m.bubble, m.bubbleEnded]} haptic="selection" pressedScale={0.98}
+      <PressableScale style={[m.bubble, m.bubbleEnded]} haptic="selection" pressedScale={0.98} onPress={onOpen}
         accessibilityRole="button" accessibilityLabel="Open this filing">
         <View style={[m.loungeRule, { backgroundColor: colors.fog, opacity: 0.4 }]} />
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -780,7 +814,7 @@ export const LoungeCard = memo(function LoungeCard({
   }
 
   return (
-    <PressableScale style={m.bubble} haptic="selection" pressedScale={0.98}
+    <PressableScale style={m.bubble} haptic="selection" pressedScale={0.98} onPress={onOpen}
       accessibilityRole="button"
       accessibilityLabel={`Open this ${kind}${title ? `: ${title}` : ''}${author ? `, by ${author.name}` : ''}`}>
       <View style={[m.loungeRule, { backgroundColor: ink }]} />
@@ -868,10 +902,12 @@ export const LoungeCard = memo(function LoungeCard({
  *  are held, so the pill never covers an entry. 31pt of pill plus 10pt clear. */
 export const NEW_FILINGS_ROOM = 41;
 
-export const NewFilings = memo(function NewFilings({ count }: { count: number }) {
+export const NewFilings = memo(function NewFilings({
+  count, onPress,
+}: { count: number; onPress?: () => void }) {
   return (
     <View style={m.newWrap} pointerEvents="box-none">
-      <PressableScale style={m.newPill} haptic="medium"
+      <PressableScale style={m.newPill} haptic="medium" onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={`${count} new filings. Go to the top.`}>
         <ChevronUp size={11} strokeWidth={2.5} color={colors.ink} />
@@ -895,8 +931,9 @@ export const NewFilings = memo(function NewFilings({ count }: { count: number })
  * you catch up.
  */
 export const PaperEvent = memo(function PaperEvent({
-  actor, verb, kind, opening, hour, unread,
+  actor, verb, kind, opening, hour, unread, onOpen,
 }: {
+  onOpen?: () => void;
   actor: PaperAuthor; verb: string; kind: keyof typeof KIND_RULE;
   opening: string; hour: string; unread?: boolean;
 }) {
@@ -938,10 +975,13 @@ export const PaperEvent = memo(function PaperEvent({
 });
 
 /** A plain screen head for the pages reached from somewhere else. */
-export const PaperBack = memo(function PaperBack({ label }: { label: string }) {
+export const PaperBack = memo(function PaperBack({
+  label, onBack,
+}: { label: string; onBack?: () => void }) {
   return (
     <View style={m.back}>
       <PressableScale hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} haptic="selection"
+        onPress={onBack}
         accessibilityRole="button" accessibilityLabel="Back">
         <ArrowLeft size={15} strokeWidth={2} color={colors.sepia} />
       </PressableScale>
@@ -1177,6 +1217,15 @@ const m = StyleSheet.create({
     fontFamily: fonts.display,
     color: colors.parchmentBright, textAlign: 'center',
     marginTop: 8, includeFontPadding: false,
+    // ── FAIL LOUDLY, NEVER SILENTLY ──────────────────────────────────────────
+    // The middle of the card is `flex: 1`, and a flex child shrinks before it
+    // overflows — so when the budget above was wrong, this text did not spill
+    // past the card where anyone would notice. It measured zero and disappeared.
+    //
+    // The budget is now right for every ratio the card ships. This is the
+    // backstop: if it is ever wrong again, the card overflows, the layout audit
+    // catches it, and nobody exports an empty nameplate.
+    flexShrink: 0,
   },
   /**
    * ── THE PASSAGE IS SET LEFT, NOT CENTRED ───────────────────────────────────
@@ -1196,6 +1245,7 @@ const m = StyleSheet.create({
   shareBody: {
     fontFamily: fonts.serifItalic, fontSize: 15.5, lineHeight: 25,
     color: colors.parchment, textAlign: 'left', marginTop: 14,
+    flexShrink: 0,   // same reason as shareTitle above
   },
   shareMore: { alignItems: 'center', marginTop: 12 },
   shareOrn: { flexDirection: 'row', alignItems: 'center', gap: 9 },

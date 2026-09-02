@@ -37,10 +37,11 @@ import { softBreak } from './paperText';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 
 export const EssayHead = memo(function EssayHead({
-  title, series, author, readTime, filed, film,
+  title, series, author, readTime, filed, film, onSeries, onAuthor, onFilm,
 }: {
   title: string; series?: string; author: PaperAuthor;
   readTime: string; filed: string; film?: PaperFilm | null;
+  onSeries?: () => void; onAuthor?: () => void; onFilm?: () => void;
 }) {
   return (
     <View>
@@ -65,7 +66,7 @@ export const EssayHead = memo(function EssayHead({
       <Text style={e.title} accessibilityRole="header" {...displayTextProps}>{title}</Text>
 
       {series ? (
-        <PressableScale style={e.seriesRow} haptic="selection"
+        <PressableScale style={e.seriesRow} haptic="selection" onPress={onSeries}
           accessibilityRole="button" accessibilityLabel={`${series}. Open the series.`}>
           <Text style={e.series} numberOfLines={1} {...scaledTextProps}>{series.toUpperCase()}</Text>
           <ChevronRight size={12} strokeWidth={2} color={colors.sepia} />
@@ -73,9 +74,9 @@ export const EssayHead = memo(function EssayHead({
       ) : null}
 
       <View style={e.bylineRow}>
-        <Byline author={author} trailing={`${readTime} · ${filed}`} />
+        <Byline author={author} onPress={onAuthor} trailing={`${readTime} · ${filed}`} />
       </View>
-      {film ? <View style={{ marginTop: 4 }}><Credit film={film} /></View> : null}
+      {film ? <View style={{ marginTop: 4 }}><Credit film={film} onPress={onFilm} /></View> : null}
       <View style={[p.hair, { marginTop: 16, marginBottom: 16 }]} />
     </View>
   );
@@ -114,10 +115,10 @@ export const EssayBreak = memo(function EssayBreak() {
 /** The foot of a part: what comes next, by name. An essay in four parts that
  *  ends with nothing is an essay the reader has to go and hunt for. */
 export const EssayNext = memo(function EssayNext({
-  label, title, readTime,
-}: { label: string; title: string; readTime: string }) {
+  label, title, readTime, onPress,
+}: { label: string; title: string; readTime: string; onPress?: () => void }) {
   return (
-    <PressableScale style={e.next} haptic="medium"
+    <PressableScale style={e.next} haptic="medium" onPress={onPress}
       accessibilityRole="button" accessibilityLabel={`${label}. ${title}. ${readTime}.`}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={e.nextLabel} {...decorativeTextProps}>{label}</Text>
@@ -144,14 +145,19 @@ export interface Part {
 }
 
 export const SeriesList = memo(function SeriesList({
-  title, author, parts,
-}: { title: string; author: PaperAuthor; parts: Part[] }) {
+  title, author, parts, onPart, onAuthor,
+}: {
+  title: string; author: PaperAuthor; parts: Part[];
+  /** A part that is not yet written has nowhere to go, and says so instead. */
+  onPart?: (part: Part) => void;
+  onAuthor?: () => void;
+}) {
   const done = parts.filter((x) => !x.toCome).length;
   return (
     <View>
       <Text style={e.seriesTitle} accessibilityRole="header" {...displayTextProps}>{title}</Text>
       <View style={e.seriesMetaRow}>
-        <Byline author={author} />
+        <Byline author={author} onPress={onAuthor} />
         <Text style={e.seriesCount} {...decorativeTextProps}>
           {done} OF {parts.length}
         </Text>
@@ -163,6 +169,7 @@ export const SeriesList = memo(function SeriesList({
           {i > 0 && <View style={p.hair} />}
           <PressableScale
             style={[e.part, x.toCome && { opacity: 0.78 }]}
+            onPress={() => onPart?.(x)}
             disabled={x.toCome} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
             accessibilityRole="button"
             accessibilityState={{ disabled: !!x.toCome, selected: !!x.current }}

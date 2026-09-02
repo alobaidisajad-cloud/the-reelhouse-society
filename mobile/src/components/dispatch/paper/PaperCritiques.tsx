@@ -1,5 +1,5 @@
-import { memo } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { memo, useState } from 'react';
+import { View, Text, ActivityIndicator, TextInput } from 'react-native';
 import { Image } from 'expo-image';
 import { ArrowLeft, ChevronUp, Heart, MessageSquare, Share2, Bookmark } from 'lucide-react-native';
 
@@ -10,6 +10,7 @@ import { p } from './paperStyles';
 import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
 import { softBreak } from './paperText';
 import { isRTLText } from '@/src/utils/text';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 
 export interface Critique {
@@ -124,8 +125,13 @@ export const CritiqueHead = memo(function CritiqueHead({
  * hiding a button is never the only thing standing in the way.
  */
 export const CritiqueRow = memo(function CritiqueRow({
-  c, canTake, top,
-}: { c: Critique; canTake?: boolean; top?: boolean }) {
+  c, canTake, top, onCertify, onTake, onAuthor,
+}: {
+  c: Critique; canTake?: boolean; top?: boolean;
+  onCertify?: (next: boolean) => void;
+  onTake?: () => void;
+  onAuthor?: () => void;
+}) {
   const n = formatCount(c.certifyCount);
   return (
     <View style={[p.comment, c.mine && p.commentMine]}>
@@ -157,7 +163,9 @@ export const CritiqueRow = memo(function CritiqueRow({
           <PressableScale
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 8, marginLeft: -8 }}
             hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic
+            onPress={() => onCertify?.(!c.certified)}
             accessibilityRole="button"
+            accessibilityState={{ selected: !!c.certified }}
             accessibilityLabel={c.certified ? 'Certified' : 'Certify this critique'}
           >
             <Heart size={12} strokeWidth={2}
@@ -171,6 +179,7 @@ export const CritiqueRow = memo(function CritiqueRow({
           {canTake && !c.mine ? (
             <PressableScale
               style={{ paddingVertical: 8 }} hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic="medium"
+              onPress={onTake}
               accessibilityRole="button" accessibilityLabel={`Take ${c.film?.title} as your answer`}
             >
               <Text style={[p.commentMeta, { marginTop: 0, color: colors.sepia, letterSpacing: 1.6 }]} {...scaledTextProps}>
@@ -218,10 +227,41 @@ export const CritiqueFooter = memo(function CritiqueFooter({
   );
 });
 
-/** One docked thing, ever — this REPLACES the action bar rather than stacking. */
+/**
+ * One docked thing, ever — this REPLACES the action bar rather than stacking.
+ *
+ * ── WHAT MAKES THIS A REAL COMPOSER AND NOT A DRAWING ──────────────────────
+ * `value`/`onChangeText` are optional so the render harness can still draw the
+ * state without owning it; when they are absent the input keeps its own text,
+ * so it is never a control that refuses to type.
+ *
+ * FILE is disabled on an empty draft rather than hidden — a control that
+ * appears and disappears under your thumb is worse than one that is plainly not
+ * yet available. Whitespace alone counts as empty, because it is: `cleanForStorage`
+ * trims it and the row would be refused by `published_has_body`.
+ *
+ * The counter appears only in the last 200 characters. A counter that is always
+ * on is a limit the member is asked to think about while writing; one that
+ * arrives near the end is a warning.
+ */
 export const CritiqueComposer = memo(function CritiqueComposer({
   me, placeholder = 'Say what you think…', bottomInset = 26,
-}: { me: PaperAuthor; placeholder?: string; bottomInset?: number }) {
+  value, onChangeText, onFile, sending,
+}: {
+  me: PaperAuthor; placeholder?: string; bottomInset?: number;
+  value?: string;
+  onChangeText?: (t: string) => void;
+  onFile?: () => void;
+  sending?: boolean;
+}) {
+  const [own, setOwn] = useState('');
+  const text = value ?? own;
+  const setText = onChangeText ?? setOwn;
+
+  const left = MAX_LENGTHS.critique - text.length;
+  const empty = text.trim().length === 0;
+  const blocked = empty || !!sending;
+
   return (
     <View style={[p.dockCompose, { paddingBottom: bottomInset }]}>
       <View style={p.avatar}>
@@ -229,13 +269,37 @@ export const CritiqueComposer = memo(function CritiqueComposer({
           <Image source={{ uri: me.avatar }} style={p.plateArt} contentFit="cover" />
         ) : <Text style={p.avatarNo} {...decorativeTextProps}>{me.memberNo}</Text>}
       </View>
-      <Text style={p.dockInput} numberOfLines={1} {...scaledTextProps}>{placeholder}</Text>
+      <TextInput
+        style={p.dockInput}
+        value={text}
+        onChangeText={setText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.fog}
+        multiline
+        // The same ceiling the column carries, so the keyboard stops where the
+        // database would have refused — rather than letting a member write past
+        // it and be told afterwards.
+        maxLength={MAX_LENGTHS.critique}
+        selectionColor={colors.sepia}
+        accessibilityLabel="Your critique"
+        {...scaledTextProps}
+      />
+      {left <= 200 ? (
+        <Text style={[p.commentMeta, { marginTop: 0 }, left < 0 && { color: CRIMSON_INK }]} {...scaledTextProps}>
+          {left}
+        </Text>
+      ) : null}
       <PressableScale
-        style={[p.btn, { paddingVertical: 8, paddingHorizontal: 12 }]} haptic="medium"
+        style={[p.btn, { paddingVertical: 8, paddingHorizontal: 12 }, blocked && { opacity: 0.4 }]}
+        haptic="medium"
         hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
-        accessibilityRole="button" accessibilityLabel="File this critique"
+        onPress={blocked ? undefined : onFile}
+        disabled={blocked}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: blocked }}
+        accessibilityLabel={empty ? 'File this critique. Write something first.' : 'File this critique'}
       >
-        <Text style={p.btnText} {...scaledTextProps}>FILE</Text>
+        <Text style={p.btnText} {...scaledTextProps}>{sending ? '…' : 'FILE'}</Text>
       </PressableScale>
     </View>
   );
@@ -244,30 +308,39 @@ export const CritiqueComposer = memo(function CritiqueComposer({
 /** The action bar, docked. Present until the composer takes its place. */
 export const PostDock = memo(function PostDock({
   certifyCount, commentCount, certified, saved, bottomInset = 28,
+  onCertify, onCritique, onShare, onSave,
 }: {
   certifyCount: number; commentCount: number;
   certified?: boolean; saved?: boolean; bottomInset?: number;
+  onCertify?: (next: boolean) => void;
+  onCritique?: () => void;
+  onShare?: () => void;
+  onSave?: (next: boolean) => void;
 }) {
   const c = formatCount(certifyCount);
   const k = formatCount(commentCount);
   const SLOP = { top: 6, bottom: 6, left: 0, right: 0 };
   return (
     <View style={[p.dock, { paddingBottom: bottomInset }]}>
-      <PressableScale style={p.action} hitSlop={SLOP} haptic accessibilityRole="button" accessibilityLabel="Certify">
+      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={() => onCertify?.(!certified)}
+        accessibilityRole="button" accessibilityState={{ selected: !!certified }} accessibilityLabel="Certify">
         <Heart size={15} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} />
         <Text style={[p.actionLabel, certified && p.actionLabelOn]} {...actionLabelProps}>
           {certified ? 'CERTIFIED' : 'CERTIFY'}{c ? ` ${c}` : ''}
         </Text>
       </PressableScale>
-      <PressableScale style={p.action} hitSlop={SLOP} haptic accessibilityRole="button" accessibilityLabel="Write a critique">
+      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={onCritique}
+        accessibilityRole="button" accessibilityLabel="Write a critique">
         <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
         <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE{k ? ` ${k}` : ''}</Text>
       </PressableScale>
-      <PressableScale style={p.action} hitSlop={SLOP} haptic accessibilityRole="button" accessibilityLabel="Share">
+      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={onShare}
+        accessibilityRole="button" accessibilityLabel="Share">
         <Share2 size={14} strokeWidth={2} color={colors.fog} />
         <Text style={p.actionLabel} {...actionLabelProps}>SHARE</Text>
       </PressableScale>
-      <PressableScale style={p.action} hitSlop={SLOP} haptic accessibilityRole="button" accessibilityLabel={saved ? 'Saved' : 'Save'}>
+      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={() => onSave?.(!saved)}
+        accessibilityRole="button" accessibilityState={{ selected: !!saved }} accessibilityLabel={saved ? 'Saved' : 'Save'}>
         <Bookmark size={15} strokeWidth={2} color={saved ? colors.sepia : colors.fog} fill={saved ? colors.sepia : 'transparent'} />
         <Text style={[p.actionLabel, saved && p.actionLabelSaved]} {...actionLabelProps}>{saved ? 'SAVED' : 'SAVE'}</Text>
       </PressableScale>

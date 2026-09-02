@@ -85,11 +85,38 @@ const W = 390;
 const M = measure(W);
 const COL = columnWidth(W);
 
-// ── real artwork ────────────────────────────────────────────────────────────
-const ART = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/art';
-const POSTERS = JSON.parse(readFileSync(join(ART, 'posters.json'), 'utf8')) as
-  Record<string, { title: string; data: string }>;
-const ODYSSEY = JSON.parse(readFileSync(join(ART, 'odyssey-art.json'), 'utf8')) as Record<string, string>;
+/**
+ * ── REAL ARTWORK, IF IT IS STILL THERE ──────────────────────────────────────
+ * The posters are film stills fetched once into a scratch directory. They are
+ * decoration for the screenshots — they are not part of the components and are
+ * deliberately NOT committed, because they are somebody else's copyright.
+ *
+ * They were also a hard dependency, read with a bare `readFileSync` at module
+ * load. When Windows cleaned that temp directory the whole harness stopped
+ * running — and because a failing suite still prints "Ran all test suites", it
+ * looked like a pass while measuring a render that had not happened. Two audits
+ * came back with identical numbers before that was noticed.
+ *
+ * So the art is now OPTIONAL. Missing, the screens render with empty plates,
+ * which is exactly the state `b7-plate-no-art` exists to check anyway — and
+ * every measurement this harness feeds (boxes, overflow, contrast of type) is
+ * about layout, not pictures.
+ */
+const ART = process.env.PAPER_ART
+  ?? 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/art';
+
+const readArt = <T,>(file: string, fallback: T): T => {
+  try {
+    return JSON.parse(readFileSync(join(ART, file), 'utf8')) as T;
+  } catch {
+    // eslint-disable-next-line no-console
+    console.warn(`[paper] ${file} not found — rendering with empty plates.`);
+    return fallback;
+  }
+};
+
+const POSTERS = readArt<Record<string, { title: string; data: string }>>('posters.json', {});
+const ODYSSEY = readArt<Record<string, string>>('odyssey-art.json', {});
 
 const IMAGES: Record<string, { title: string; data: string }> = { ...POSTERS };
 for (const [path, data] of Object.entries(ODYSSEY)) IMAGES[path] = { title: '', data };

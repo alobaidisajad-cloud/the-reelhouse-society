@@ -44,11 +44,22 @@ export interface PaperFilm {
  * when the join returns nothing there is one fallback for the whole app.
  */
 export const Byline = memo(function Byline({
-  author, trailing,
-}: { author: PaperAuthor | null; trailing?: string }) {
+  author, trailing, onPress,
+}: { author: PaperAuthor | null; trailing?: string; onPress?: () => void }) {
   const departed = !author;
+  // A departed member has no page to open, so the name is not a control. The
+  // words stay and the destination goes, which is what the erasure means.
+  const Row: React.ComponentType<any> = onPress && !departed ? PressableScale : View;
+  const rowProps = onPress && !departed
+    ? {
+      onPress, haptic: 'selection' as const,
+      hitSlop: { top: 4, bottom: 4, left: 0, right: 0 },
+      accessibilityRole: 'link' as const,
+      accessibilityLabel: `${author.name}. Open their room.`,
+    }
+    : {};
   return (
-    <View style={p.byline}>
+    <Row style={p.byline} {...rowProps}>
       {/* The ring carries the tier — brass for an Archivist, crimson for an
           Auteur. It belongs to the member, not to the post they wrote. */}
       <View style={[
@@ -83,7 +94,7 @@ export const Byline = memo(function Byline({
           {`· ${trailing}`}
         </Text>
       ) : null}
-    </View>
+    </Row>
   );
 });
 
@@ -109,20 +120,42 @@ export const Byline = memo(function Byline({
  * that separates a remake from the film it remade. Two boxes now: the title
  * yields, the year is fixed.
  */
+/**
+ * The film a filing is about, named.
+ *
+ * It is a destination when there is somewhere to go — a filing carries the
+ * film's id, so the credit opens the film's page — and plain text when there is
+ * not. Rendering a control that leads nowhere would be a dead end wearing the
+ * costume of a link, which is worse than a label.
+ */
 export const Credit = memo(function Credit({
-  film, bare,
-}: { film: PaperFilm; bare?: boolean }) {
-  return (
-    <View style={p.credit}>
-      <View style={p.creditWords}>
-        <Text style={p.creditText} numberOfLines={1} {...scaledTextProps}>
-          {film.title.toUpperCase()}
-        </Text>
-        {film.year ? (
-          <Text style={p.creditYear} {...scaledTextProps}>{'· '}{film.year}</Text>
-        ) : null}
-      </View>
+  film, bare, onPress,
+}: { film: PaperFilm; bare?: boolean; onPress?: () => void }) {
+  const words = (
+    <View style={p.creditWords}>
+      <Text style={p.creditText} numberOfLines={1} {...scaledTextProps}>
+        {film.title.toUpperCase()}
+      </Text>
+      {film.year ? (
+        <Text style={p.creditYear} {...scaledTextProps}>{'· '}{film.year}</Text>
+      ) : null}
     </View>
+  );
+
+  if (!onPress) return <View style={p.credit}>{words}</View>;
+
+  return (
+    <PressableScale
+      style={p.credit} onPress={onPress} haptic="selection"
+      // No horizontal slop. The credit sits directly above the stamp bar, and
+      // PressableScale's 15pt default would reach into CERTIFY — where the
+      // later sibling wins the touch and a member certifies by aiming at a film.
+      hitSlop={{ top: 4, bottom: 0, left: 0, right: 0 }}
+      accessibilityRole="link"
+      accessibilityLabel={`${film.title}${film.year ? `, ${film.year}` : ''}. Open the film.`}
+    >
+      {words}
+    </PressableScale>
   );
 });
 
@@ -164,15 +197,33 @@ export const Credit = memo(function Credit({
  */
 const SLOP = { top: 7, bottom: 0, left: 0, right: 0 };
 
+/**
+ * The four marks under a filing.
+ *
+ * Every handler is optional so this still draws in the render harness with
+ * nothing behind it — but a control with no handler is a dead end in the app,
+ * so `dispatchNoDeadControls.test.ts` requires each of the four to be passed one
+ * everywhere this is mounted for real.
+ *
+ * CERTIFY and SAVE take the state they are moving TO rather than toggling, for
+ * the same reason the mutations do: a toggle replayed from an offline queue
+ * lands on whichever side of the coin the delay leaves it.
+ */
 export const PaperActions = memo(function PaperActions({
   certifyCount = 0, commentCount = 0, certified, saved, dimmed,
+  onCertify, onCritique, onShare, onSave,
 }: {
   certifyCount?: number; commentCount?: number;
   certified?: boolean; saved?: boolean; dimmed?: boolean;
+  onCertify?: (next: boolean) => void;
+  onCritique?: () => void;
+  onShare?: () => void;
+  onSave?: (next: boolean) => void;
 }) {
   return (
     <View style={p.actions}>
       <PressableScale style={p.action} hitSlop={SLOP} haptic pressedScale={0.92}
+        onPress={() => onCertify?.(!certified)}
         accessibilityRole="button" accessibilityState={{ selected: !!certified }}
         accessibilityLabel={certified ? `Certified. ${certifyCount} members have certified this` : 'Certify this'}>
         <Heart size={15} strokeWidth={2}
@@ -184,18 +235,21 @@ export const PaperActions = memo(function PaperActions({
       </PressableScale>
 
       <PressableScale style={p.action} hitSlop={SLOP} haptic
+        onPress={onCritique}
         accessibilityRole="button" accessibilityLabel={`Critique. ${commentCount} critiques`}>
         <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
         <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE</Text>
       </PressableScale>
 
       <PressableScale style={p.action} hitSlop={SLOP} haptic
+        onPress={onShare}
         accessibilityRole="button" accessibilityLabel="Share this filing">
         <Share2 size={15} strokeWidth={2} color={colors.fog} />
         <Text style={p.actionLabel} {...actionLabelProps}>SHARE</Text>
       </PressableScale>
 
       <PressableScale style={p.action} hitSlop={SLOP} haptic pressedScale={0.92}
+        onPress={() => onSave?.(!saved)}
         accessibilityRole="button" accessibilityState={{ selected: !!saved }}
         accessibilityLabel={saved ? 'Saved' : 'Save this'}>
         <Bookmark size={15} strokeWidth={2}
@@ -251,6 +305,7 @@ export const PaperPost = memo(function PaperPost({
   kind, author, body, headline, source, film, still, order, measureWidth,
   certifyCount, commentCount, certified, saved,
   answer, answered, spoiler, withheld, ended, edited, series, readTime, noByline, pending,
+  onOpen, onCertify, onCritique, onShare, onSave, onFilm, onAuthor,
 }: {
   kind: PaperKind;
   author: PaperAuthor | null;
@@ -293,6 +348,26 @@ export const PaperPost = memo(function PaperPost({
    * that takes writing can do; so is one that pretends it went.
    */
   pending?: boolean;
+  /**
+   * What the entry does when it is touched.
+   *
+   * `onOpen` is the whole card — the filing, its critiques, its ballot. The four
+   * marks get their own so a member can certify without leaving the page, which
+   * is the point of having them on the card at all.
+   *
+   * All optional, because the render harness mounts this with nothing behind it.
+   * In the app they are required, and a test enforces that rather than trusting
+   * whoever adds the next mount to remember.
+   */
+  onOpen?: () => void;
+  onCertify?: (next: boolean) => void;
+  onCritique?: () => void;
+  onShare?: () => void;
+  onSave?: (next: boolean) => void;
+  /** The film named in the credit line, which is its own destination. */
+  onFilm?: () => void;
+  /** The byline. A member's name leads to that member. */
+  onAuthor?: () => void;
 }) {
   const tier = author?.tier ?? 'free';
 
@@ -355,6 +430,7 @@ export const PaperPost = memo(function PaperPost({
             So: one control, and it says how many. */}
         <View style={p.actions}>
           <PressableScale style={p.action} hitSlop={SLOP} haptic
+            onPress={onCritique}
             accessibilityRole="button"
             accessibilityLabel={`Critique. ${commentCount ?? 0} critiques remain under this filing`}>
             <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
@@ -443,6 +519,7 @@ export const PaperPost = memo(function PaperPost({
                 {noByline ? null : (
                   <Byline
                     author={author}
+                    onPress={onAuthor}
                     /**
                      * ── ONE SLOT, AND THE KIND CHOOSES WHAT GOES IN IT ─────
                      * The stamp bar cannot carry counts — four equal quarters
@@ -479,6 +556,24 @@ export const PaperPost = memo(function PaperPost({
             </View>
           )}
 
+          {/* ── THE WRITING IS THE DOOR ──────────────────────────────────────
+              The entry opens by touching what it says, not by a control added
+              beside it. Three SIBLING targets, never nested: the writing opens
+              the filing, the credit opens the film, the byline opens the member.
+              Nesting them would make the outer one swallow the inner on some
+              platforms, and this app has already been bitten by two touch
+              targets that overlap and let the later sibling win.
+
+              A veiled post's target is the same one — UNCOVER IT and READ IT are
+              the same act, so a spoiler is one tap to open and not two. */}
+          <PressableScale
+            onPress={onOpen} haptic="selection" pressedScale={0.995}
+            // Zero horizontal slop: the entry already spans the column, and the
+            // 15pt default would reach under the rank rule and the margin.
+            hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
+            accessibilityRole="button"
+            accessibilityLabel={spoiler ? `Uncover: ${spoiler}` : 'Open this filing'}
+          >
           {spoiler ? (
             <View style={p.veil}>
               <Text style={p.veilText} {...scaledTextProps}>{spoiler.toUpperCase()}</Text>
@@ -543,9 +638,10 @@ export const PaperPost = memo(function PaperPost({
               )}
             </>
           )}
+          </PressableScale>
 
-          {film && !spoiler ? <Credit film={film} bare={!!still} /> : null}
-          {spoiler && film ? <Credit film={film} /> : null}
+          {film && !spoiler ? <Credit film={film} bare={!!still} onPress={onFilm} /> : null}
+          {spoiler && film ? <Credit film={film} onPress={onFilm} /> : null}
 
           {/* The source moved up into the byline, where a dateline belongs.
               It printed here as a fourth orphaned line under the credit — the
@@ -594,6 +690,8 @@ export const PaperPost = memo(function PaperPost({
         <PaperActions
           certifyCount={certifyCount} commentCount={commentCount}
           certified={certified} saved={saved} dimmed={pending}
+          onCertify={onCertify} onCritique={onCritique}
+          onShare={onShare} onSave={onSave}
         />
       )}
 

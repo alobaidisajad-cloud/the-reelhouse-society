@@ -794,6 +794,16 @@ export const p = StyleSheet.create({
   stamp: {
     borderRadius: 2, paddingVertical: 4, paddingHorizontal: 8,
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.32)',
+    // ── A ROTATED BOX IS WIDER THAN ITS LAYOUT BOX ─────────────────────────
+    // The 6-degree tilt is what makes this a struck plate rather than a chip,
+    // but layout reserves the UNROTATED rectangle — so the plate's corners
+    // painted 0.8pt into the byline beside it and 0.8pt past the column's edge.
+    // Measured, not estimated: a 20pt-tall plate at 6 degrees grows by
+    // (h / 2) x sin 6 ~ 1pt on each side.
+    //
+    // Two points of margin, which is that growth plus slack, and the tilt keeps
+    // its room instead of borrowing its neighbour's.
+    marginHorizontal: 2,
     transform: [{ rotate: '-6deg' }], overflow: 'hidden',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
@@ -821,7 +831,16 @@ export const p = StyleSheet.create({
    *  not in a chip off to one side that read as chrome rather than as the code. */
   ballotLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.ballot },
   option: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
-  optionNo: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, width: 17, includeFontPadding: false },
+  // ── THE WIDEST NUMERAL, NOT THE COMMONEST ────────────────────────────────
+  // 17pt fitted `I.` and `V.` and cut `III.` by two points on every ballot with
+  // three or more options — which is most of them, since the form asks for two
+  // to six. A ballot's third choice printed as `III` with the full stop shaved
+  // off, in a column whose whole job is to number things.
+  //
+  // 21 is measured against `III.`, the widest of the six (I, II, III, IV, V, VI)
+  // at 8.5pt in the sub face, with the point of slack that keeps a rendering
+  // difference between platforms from bringing the clip back.
+  optionNo: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, width: 21, includeFontPadding: false },
   box: { width: 13, height: 13, borderRadius: 1, borderWidth: 1.4, borderColor: KIND_RULE.ballot, alignItems: 'center', justifyContent: 'center' },
   boxMark: { fontFamily: fonts.sub, fontSize: 12.5, color: CRIMSON_INK, marginTop: -2, includeFontPadding: false },
   optionPoster: { overflow: 'hidden',

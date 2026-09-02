@@ -56,7 +56,19 @@ const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
 export const PaperBallot = memo(function PaperBallot({
   question, author, options, myVote, closed, closesLabel,
   certifyCount, commentCount, certified, saved, showKind = true,
+  onVote, onCertify, onCritique, onShare, onSave, onAuthor,
 }: {
+  /**
+   * A vote is cast once and never changed — the database enforces it with
+   * UNIQUE (post_id, user_id). So the options stop being controls the moment
+   * one is marked, rather than inviting a second tap the house will refuse.
+   */
+  onVote?: (index: number) => void;
+  onCertify?: (next: boolean) => void;
+  onCritique?: () => void;
+  onShare?: () => void;
+  onSave?: (next: boolean) => void;
+  onAuthor?: () => void;
   question: string;
   author: PaperAuthor | null;
   options: BallotOption[];
@@ -100,7 +112,7 @@ export const PaperBallot = memo(function PaperBallot({
 
       {!closed && (
         <View style={{ alignItems: 'center' }}>
-          <Byline author={author} />
+          <Byline author={author} onPress={onAuthor} />
         </View>
       )}
 
@@ -146,9 +158,17 @@ export const PaperBallot = memo(function PaperBallot({
               style={[p.option, closed && { opacity: 0.82 }]}
               hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
               haptic
-              disabled={closed}
+              onPress={() => onVote?.(i)}
+              // Closed, or already marked. The second is the important one: a
+              // ballot you have voted in is a result to read, not a form to fill
+              // again, and the row the server would refuse must not look pressable.
+              disabled={closed || myVote != null}
               accessibilityRole="radio"
-              accessibilityState={{ checked: marked, disabled: !!closed }}
+              // The state a reader announces has to match the state the control
+              // is actually in. It said `disabled: closed` while the row was ALSO
+              // disabled once you had voted — so after marking a ballot, every
+              // other option announced itself as available to press.
+              accessibilityState={{ checked: marked, disabled: !!closed || myVote != null }}
               accessibilityLabel={
                 showPercent
                   ? `Option ${i + 1} of ${options.length}. ${o.title}. ${pct[i]} percent, ${o.votes} ballots.${marked ? ' Your mark.' : ''}`
@@ -211,11 +231,13 @@ export const PaperBallot = memo(function PaperBallot({
             : 'MARK YOUR BALLOT'}
       </Text>
 
-      {closed && <View style={{ alignItems: 'center', marginTop: 8 }}><Byline author={author} /></View>}
+      {closed && <View style={{ alignItems: 'center', marginTop: 8 }}><Byline author={author} onPress={onAuthor} /></View>}
 
       <PaperActions
         certifyCount={certifyCount} commentCount={commentCount}
         certified={certified} saved={saved}
+        onCertify={onCertify} onCritique={onCritique}
+        onShare={onShare} onSave={onSave}
       />
     </View>
   );
