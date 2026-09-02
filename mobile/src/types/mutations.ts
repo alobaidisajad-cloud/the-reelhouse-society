@@ -116,4 +116,68 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   delete_dossier_comment: z.object({ comment_id: z.string(), user_id: z.string() }).passthrough(),
   toggle_dossier_certify: z.object({ dossier_uuid: z.string() }).passthrough(),
   increment_dossier_views: z.object({ dossier_uuid: z.string() }),
+
+  // ── The Dispatch ──
+  //
+  // ⚠️ A MISSING ENTRY HERE IS NOT A COMPILE ERROR AND NOT A RUNTIME ERROR.
+  // The flush reads `const schema = MutationSchemaMap[type]; if (schema) { … }`
+  // — so a type with no schema is executed with NO validation at all, quietly.
+  // Every Dispatch type therefore has an entry, and
+  // dispatchMutationRegistry.test.ts fails the build if one is ever missing.
+  //
+  // `user_id` is required wherever the row is owned, for the reason spelled out
+  // above sync_entitlement: the queue partitions pending work by payload.user_id
+  // and treats a payload WITHOUT one as session-scoped and safe to run for
+  // whoever is signed in when the network returns. A filing is not session-
+  // scoped. The two that legitimately omit it are the toggles, which derive the
+  // member from auth.uid() inside the RPC and so have nothing to spoof.
+
+  // kind is validated as an enum because it decides which CHECK constraints the
+  // row must satisfy, and a corrupted kind is the difference between a 2000-
+  // character body being accepted and being refused.
+  add_filing: z.object({
+    _tempId: z.string(),
+    user_id: z.string(),
+    kind: z.enum(['take', 'seeking', 'wire', 'ballot', 'dossier']),
+  }).passthrough(),
+  // kind is REQUIRED on an edit as well as on a filing, and it is not
+  // bookkeeping: cleanFiling chooses the body's cap from it — 500 for a
+  // dossier's excerpt, 2000 for everything else. Without it an edited excerpt
+  // would be capped at 2000, sail past the app, and be refused by the 500 fence
+  // at the database, losing the edit the member had just made. The caller always
+  // knows the kind; it is drawing the filing.
+  update_filing: z.object({
+    id: z.string(),
+    user_id: z.string(),
+    kind: z.enum(['take', 'seeking', 'wire', 'ballot', 'dossier']),
+  }).passthrough(),
+  // No body: ending a filing erases it, and the erasure is written by the
+  // server. `by` is 'author' here always — the house's own path is the Tribunal.
+  end_filing: z.object({ id: z.string(), user_id: z.string() }).passthrough(),
+
+  add_critique: z.object({
+    _tempId: z.string(), post_id: z.string(), user_id: z.string(), body: z.string(),
+  }).passthrough(),
+  update_critique: z.object({ id: z.string(), user_id: z.string(), body: z.string() }).passthrough(),
+  remove_critique: z.object({ id: z.string(), user_id: z.string() }).passthrough(),
+
+  // desired_state, not a toggle: a toggle replayed from a queue lands on
+  // whichever side of the coin the delay leaves it. The handler reads the
+  // server's current state and acts only if it disagrees, so a flush is
+  // idempotent however many times it runs — the pattern toggle_dossier_certify
+  // already uses.
+  certify_filing: z.object({ post_id: z.string(), desired_state: z.boolean() }).passthrough(),
+  certify_critique: z.object({ comment_id: z.string(), desired_state: z.boolean() }).passthrough(),
+
+  cast_vote: z.object({
+    post_id: z.string(), user_id: z.string(), option_index: z.number().int().min(0).max(5),
+  }).passthrough(),
+  // Both ids matter: the post whose answer is being set, and the critique being
+  // named. answer_id may be null — taking the answer back is the same mutation.
+  take_answer: z.object({
+    post_id: z.string(), user_id: z.string(), answer_id: z.string().nullable(),
+  }).passthrough(),
+
+  save_filing: z.object({ post_id: z.string(), user_id: z.string() }).passthrough(),
+  unsave_filing: z.object({ post_id: z.string(), user_id: z.string() }).passthrough(),
 };

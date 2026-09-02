@@ -9,6 +9,10 @@
     "decline_follow_request",
     "decline_lounge_member",
     "delete_list_cascade",
+    {
+      "name": "end_filing",
+      "signature": "end_filing(p_post uuid, p_by text)"
+    },
     "get_community_feed_auth_cursor",
     "get_dispatch_feed",
     "get_featured_critique",

@@ -19,7 +19,7 @@ import { useAuthStore } from '../stores/auth';
 import { InteractionService } from '../services/InteractionService';
 import { logger } from './logger';
 import type { QueuedMutation } from './offlineQueue';
-import { sanitizeInput } from './sanitizeInput';
+import { sanitizeInput, type FieldType } from './sanitizeInput';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -142,6 +142,57 @@ function cleanDossier<T extends Record<string, unknown>>(o: T): T {
     if (typeof w.title === 'string') w.title = sanitizeInput(w.title, 'dossierTitle');
     if (typeof w.excerpt === 'string') w.excerpt = sanitizeInput(w.excerpt, 'dossierExcerpt');
     if (typeof w.full_content === 'string') w.full_content = sanitizeInput(w.full_content, 'dossierContent');
+    return o;
+}
+
+/**
+ * The Dispatch's equivalent, and the last gate a filing passes before Postgres.
+ *
+ * Every field here maps to exactly one CHECK constraint on dispatch_posts. That
+ * is the whole point: if a string arrives longer than its column allows, the
+ * insert fails at the database and the member sees a constraint error naming a
+ * column they have never heard of — after pressing FILE, with their words gone.
+ * Capping here turns that into a quiet trim.
+ *
+ * ── WHY THE BODY'S CAP IS NOT A CONSTANT ───────────────────────────────────
+ * `body` is 2000 for a take, a seeking, a wire and a ballot, and 500 for a
+ * dossier — where it is the excerpt and the essay lives in full_content. That is
+ * two constraints on one column (body_ceiling and excerpt_ceiling), so the cap
+ * has to be chosen per row. A single number would either refuse 1500 characters
+ * a take is entitled to, or let a dossier excerpt through to be refused by the
+ * database.
+ *
+ * ── AND WHY THE OPTIONS ARE WALKED ─────────────────────────────────────────
+ * A ballot's options are a jsonb array of films, and the column is fenced on the
+ * SERIALISED length of the whole array. Capping each title is what keeps six of
+ * them inside that fence, and it is the only field in the app where a member's
+ * text reaches the database inside a structure rather than as a column.
+ */
+function cleanFiling<T extends Record<string, unknown>>(o: T): T {
+    const w = o as Record<string, unknown>;
+    const cap = (k: string, f: FieldType) => {
+        if (typeof w[k] === 'string') w[k] = sanitizeInput(w[k] as string, f);
+    };
+
+    cap('title', 'filingTitle');
+    cap('body', w.kind === 'dossier' ? 'filingExcerpt' : 'filingBody');
+    cap('full_content', 'filingEssay');
+    cap('source', 'wireSource');
+    cap('source_url', 'sourceUrl');
+    cap('spoiler_label', 'spoilerLabel');
+    cap('series_title', 'seriesTitle');
+    cap('subject_title', 'subjectTitle');
+    cap('subject_sub', 'subjectSub');
+    cap('subject_image', 'subjectImage');
+
+    if (Array.isArray(w.options)) {
+        w.options = (w.options as unknown[]).map((opt) => {
+            if (!opt || typeof opt !== 'object') return opt;
+            const o2 = { ...(opt as Record<string, unknown>) };
+            if (typeof o2.title === 'string') o2.title = sanitizeInput(o2.title, 'ballotOption');
+            return o2;
+        });
+    }
     return o;
 }
 
@@ -796,6 +847,196 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         return {};
     },
 
+    // ── The Dispatch ────────────────────────────────────────────────────────
+    // Five kinds of filing share one table, so these handlers are written
+    // against the table and not against the kind: the database's own CHECK
+    // constraints are what decide that a wire has a source and a ballot has
+    // options, and duplicating that judgement here would be a second opinion
+    // that can drift from the first.
+    add_filing: async (p: any) => {
+        const { _tempId, _fakeId, ...raw } = p;
+        const dbPayload = {
+            // The id the optimistic row already carries, for the same reason
+            // add_dossier supplies one: without it a transient failure retries
+            // and each attempt files ANOTHER copy. With it, a retry hits the
+            // primary key, the queue reads 23505 as "the write landed", and the
+            // mutation is dropped.
+            id: _tempId,
+            kind: raw.kind,
+            user_id: raw.user_id,
+            // NOT NULL, so something must be sent — but the database derives the
+            // real handle from profiles on write (trg_derive_username), so
+            // whatever is sent here is overwritten. It is a placeholder, not a
+            // claim, and that is why an empty string is a safe default.
+            author_username: raw.author_username ?? '',
+            subject_kind: raw.subject_kind, subject_id: raw.subject_id,
+            subject_title: raw.subject_title, subject_sub: raw.subject_sub,
+            subject_image: raw.subject_image,
+            title: raw.title, body: raw.body, full_content: raw.full_content,
+            source: raw.source, source_url: raw.source_url,
+            options: raw.options, closes_at: raw.closes_at,
+            series_id: raw.series_id, series_title: raw.series_title,
+            part_number: raw.part_number,
+            spoiler_label: raw.spoiler_label,
+            is_published: raw.is_published,
+            created_at: raw.created_at,
+        };
+        const cleaned = cleanFiling(Object.fromEntries(Object.entries(dbPayload).filter(([, v]) => v !== undefined)));
+        const result = throwIfError(await supabase.from('dispatch_posts').insert([cleaned]).select('id').maybeSingle());
+        if (_tempId && result.data) {
+            return { newId: (result.data as { id: string }).id, fakeId: _tempId as string };
+        }
+        return {};
+    },
+
+    // A WHITELIST, not a blacklist. The row carries columns a member must never
+    // set from the client — the counters, the tombstone, a ballot's frozen
+    // result, the moderator's withheld_at — and a blacklist is a list of what
+    // has been thought of so far. Anything not named here is dropped.
+    //
+    // `options` and `closes_at` are deliberately absent: changing a ballot's
+    // choices or its deadline after votes are cast would silently reinterpret
+    // votes people already gave. A ballot is filed once.
+    update_filing: async (p: any) => {
+        const { id, user_id, updates } = p;
+        const ALLOWED = ['title', 'body', 'full_content', 'source', 'source_url',
+            'spoiler_label', 'subject_kind', 'subject_id', 'subject_title',
+            'subject_sub', 'subject_image', 'series_id', 'series_title',
+            'part_number', 'is_published'] as const;
+        const u = (updates ?? {}) as Record<string, unknown>;
+        const safe: Record<string, unknown> = {};
+        for (const k of ALLOWED) if (u[k] !== undefined) safe[k] = u[k];
+        // cleanFiling picks the body's cap from the kind — 500 for a dossier's
+        // excerpt, 2000 otherwise — so the kind is lent to it for the call and
+        // taken straight back. It is never written: changing a take into a
+        // dossier would change which CHECK constraints the row must satisfy,
+        // retrospectively, on text already written under the other rules.
+        //
+        // The schema makes kind REQUIRED on this mutation, so it is present. If
+        // it somehow is not, the tighter cap is used rather than the looser one:
+        // a wrongly-trimmed body is recoverable and a rejected write is not.
+        safe.kind = p.kind ?? 'dossier';
+        cleanFiling(safe);
+        delete safe.kind;
+        if (Object.keys(safe).length === 0) return {};
+        safe.updated_at = new Date().toISOString();
+        safe.edited_at = safe.updated_at;
+        throwIfError(await supabase.from('dispatch_posts').update(safe).eq('id', id).eq('user_id', user_id));
+        return {};
+    },
+
+    // Not a delete. `end_filing` erases the text and leaves the row, so the
+    // critiques other members wrote underneath it survive — and the RPC checks
+    // ownership itself, which is why no user_id is sent to be trusted.
+    end_filing: async (p: any) => {
+        throwIfError(await supabase.rpc('end_filing', { p_post: p.id, p_by: 'author' }));
+        return {};
+    },
+
+    add_critique: async (p: any) => {
+        const { _tempId, post_id, user_id, author_username, body } = p;
+        const result = throwIfError(await supabase.from('dispatch_comments').insert([{
+            id: _tempId,
+            post_id,
+            user_id,
+            author_username: author_username ?? '',   // derived server-side; see add_filing
+            body: sanitizeInput(body as string, 'critique'),
+        }]).select('id').maybeSingle());
+        if (_tempId && result.data) {
+            return { newId: (result.data as { id: string }).id, fakeId: _tempId as string };
+        }
+        return {};
+    },
+
+    update_critique: async (p: any) => {
+        const { id, user_id, body } = p;
+        throwIfError(await supabase.from('dispatch_comments').update({
+            body: sanitizeInput(body as string, 'critique'),
+            edited_at: new Date().toISOString(),
+        }).eq('id', id).eq('user_id', user_id));
+        return {};
+    },
+
+    remove_critique: async (p: any) => {
+        const { id, user_id } = p;
+        throwIfError(await supabase.from('dispatch_comments').delete().eq('id', id).eq('user_id', user_id));
+        return {};
+    },
+
+    // Both certifications reconcile to a DESIRED STATE rather than flipping.
+    // A queued toggle flushed after the member already tapped again on another
+    // device lands on the wrong side; reading the server first and acting only
+    // on a disagreement makes the flush idempotent no matter how often it runs
+    // or how stale it is. The counter is maintained by trigger, so nothing here
+    // touches a number.
+    certify_filing: async (p: any) => {
+        const { post_id, desired_state } = p;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) return {};
+        const { data: current } = await supabase.from('dispatch_certifications')
+            .select('id').eq('post_id', post_id).eq('user_id', session.user.id).maybeSingle();
+        if (!!current === desired_state) return {};
+        if (desired_state) {
+            throwIfError(await supabase.from('dispatch_certifications')
+                .insert([{ user_id: session.user.id, post_id }]));
+        } else {
+            throwIfError(await supabase.from('dispatch_certifications')
+                .delete().eq('post_id', post_id).eq('user_id', session.user.id));
+        }
+        return {};
+    },
+
+    certify_critique: async (p: any) => {
+        const { comment_id, desired_state } = p;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) return {};
+        const { data: current } = await supabase.from('dispatch_certifications')
+            .select('id').eq('comment_id', comment_id).eq('user_id', session.user.id).maybeSingle();
+        if (!!current === desired_state) return {};
+        if (desired_state) {
+            throwIfError(await supabase.from('dispatch_certifications')
+                .insert([{ user_id: session.user.id, comment_id }]));
+        } else {
+            throwIfError(await supabase.from('dispatch_certifications')
+                .delete().eq('comment_id', comment_id).eq('user_id', session.user.id));
+        }
+        return {};
+    },
+
+    // One vote per member per ballot is a UNIQUE constraint, so a replayed vote
+    // raises 23505 and the queue reads that as "already landed" and drops it.
+    // The deadline is enforced by RLS (votes_still_open), not here: a ballot that
+    // closed while the phone was offline must refuse the vote, and a check in
+    // this process would be a check against a clock that was wrong.
+    cast_vote: async (p: any) => {
+        const { post_id, user_id, option_index } = p;
+        throwIfError(await supabase.from('dispatch_votes')
+            .insert([{ post_id, user_id, option_index }]));
+        return {};
+    },
+
+    // answer_id may be null: taking the answer back is the same act, undone.
+    take_answer: async (p: any) => {
+        const { post_id, user_id, answer_id } = p;
+        throwIfError(await supabase.from('dispatch_posts')
+            .update({ answer_id }).eq('id', post_id).eq('user_id', user_id));
+        return {};
+    },
+
+    save_filing: async (p: any) => {
+        const { post_id, user_id } = p;
+        throwIfError(await supabase.from('dispatch_saves')
+            .insert([{ user_id, post_id }]));
+        return {};
+    },
+
+    unsave_filing: async (p: any) => {
+        const { post_id, user_id } = p;
+        throwIfError(await supabase.from('dispatch_saves')
+            .delete().eq('post_id', post_id).eq('user_id', user_id));
+        return {};
+    },
+
     // ── Moderation ──
     submit_report: async (p: any) => {
         const { reporter_id, content_id, content_type, reason, details, target_user_id } = p;
@@ -834,6 +1075,14 @@ export function applyIdMapToPayload(payload: Record<string, unknown>, idMap: Rec
     const payloadCommentId = mapped.comment_id as string | undefined;
     const payloadMessageId = mapped.message_id as string | undefined;
     const payloadReplyToId = mapped.reply_to_id as string | undefined;
+    // ── The Dispatch ──
+    // A critique, a certification, a vote, a save and an answer are all written
+    // against a filing that may itself still be queued — filed and critiqued in
+    // the same offline stretch. Without these two lines the dependent mutation
+    // carries the temporary id past the point where the real one is known, and
+    // the write fails a foreign key for a row that does exist.
+    const payloadPostId = mapped.post_id as string | undefined;
+    const payloadAnswerId = mapped.answer_id as string | undefined;
 
     if (payloadId && Object.prototype.hasOwnProperty.call(idMap, payloadId)) mapped.id = idMap[payloadId];
     if (payloadLogId && Object.prototype.hasOwnProperty.call(idMap, payloadLogId)) mapped.log_id = idMap[payloadLogId];
@@ -846,6 +1095,8 @@ export function applyIdMapToPayload(payload: Record<string, unknown>, idMap: Rec
     if (payloadCommentId && Object.prototype.hasOwnProperty.call(idMap, payloadCommentId)) mapped.comment_id = idMap[payloadCommentId];
     if (payloadMessageId && Object.prototype.hasOwnProperty.call(idMap, payloadMessageId)) mapped.message_id = idMap[payloadMessageId];
     if (payloadReplyToId && Object.prototype.hasOwnProperty.call(idMap, payloadReplyToId)) mapped.reply_to_id = idMap[payloadReplyToId];
+    if (payloadPostId && Object.prototype.hasOwnProperty.call(idMap, payloadPostId)) mapped.post_id = idMap[payloadPostId];
+    if (payloadAnswerId && Object.prototype.hasOwnProperty.call(idMap, payloadAnswerId)) mapped.answer_id = idMap[payloadAnswerId];
 
     return mapped;
 }

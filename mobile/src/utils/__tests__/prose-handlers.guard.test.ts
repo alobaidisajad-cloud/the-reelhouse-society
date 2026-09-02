@@ -55,7 +55,11 @@ const CLEARED: Record<string, string> = {
   mark_watched:           'delegates to insertLog, which cleans',
 };
 
-const SANITISERS = /sanitizeInput|cleanProse|cleanDossier/;
+// cleanFiling is the Dispatch's member-prose gate — the same role as cleanProse
+// and cleanDossier, over dispatch_posts. Added here rather than exempting
+// add_filing and update_filing in CLEARED, because they DO carry member text and
+// an exemption would say the opposite.
+const SANITISERS = /sanitizeInput|cleanProse|cleanDossier|cleanFiling/;
 
 function handlerBodies(src: string): { name: string; body: string }[] {
   const out: { name: string; body: string }[] = [];

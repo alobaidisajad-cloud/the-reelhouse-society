@@ -85,6 +85,54 @@ export const MAX_LENGTHS = {
   // fixed instead: the composer now refuses to file, keeps every word, and says
   // by how much.
   dossierContent: 25000,
+
+  // ── THE DISPATCH ─────────────────────────────────────────────────────────
+  // One entry per text column the client can write on dispatch_posts and
+  // dispatch_comments, and every number is the live CHECK constraint on that
+  // column rather than a fresh judgement.
+  //
+  // ── WHY EVERY COLUMN AND NOT JUST THE PROSE ──────────────────────────────
+  // A cap here is not only an editorial limit; it is what stops a member losing
+  // their filing. Without it the string travels to Postgres, fails the CHECK,
+  // and the write comes back as a constraint error naming a column the member
+  // has never heard of — after they pressed FILE. So the rule is: every column
+  // the client writes has a cap here, and that cap is at or below the fence.
+  // No exceptions, because dispatchFieldCaps.test.ts checks the whole class and
+  // a rule with an exception is a rule it could not check.
+  //
+  // `seriesTitle` is the one deliberately TIGHTER than its fence (200 against
+  // 300): a series name sits under a dossier title on the card, and a title is
+  // already capped at 200, so a longer series name than title would look wrong
+  // long before the database minded.
+  filingTitle:   200,    // dispatch_posts.title          — title_ceiling
+  filingBody:    2000,   // dispatch_posts.body           — body_ceiling
+  filingExcerpt: 500,    // ditto, when kind = 'dossier'  — excerpt_ceiling
+  // The same 25,000 as dossierContent, for the same reason and not by accident:
+  // it is the markdown RENDER cap as well as the write cap, and two markdown
+  // rules are quadratic. See the note above dossierContent before moving either.
+  filingEssay:   25000,  // dispatch_posts.full_content   — essay_ceiling
+  wireSource:    100,    // dispatch_posts.source         — source_ceiling
+  sourceUrl:     2048,   // dispatch_posts.source_url     — source_url_ceiling
+  spoilerLabel:  80,     // dispatch_posts.spoiler_label  — spoiler_ceiling
+  seriesTitle:   200,    // dispatch_posts.series_title   — series_title_ceiling (300)
+  subjectTitle:  300,    // dispatch_posts.subject_title  — subject_title_ceiling
+  subjectSub:    300,    // dispatch_posts.subject_sub    — subject_sub_ceiling
+  subjectImage:  2048,   // dispatch_posts.subject_image  — subject_image_ceiling
+  // Per OPTION, not per ballot — the column's fence is on the SERIALISED length
+  // of the whole jsonb array, and each option carries a film's id, title and
+  // poster path.
+  //
+  // 150 was the first number here and it was wrong: dispatchFieldCaps.test.ts
+  // builds the worst honest ballot and measured 1399 bytes against a 1200 fence,
+  // so a member filing six films with ordinary titles would have been refused
+  // after pressing FILE. The fence moved to 4000 (migration 03) and the title
+  // cap to 200; six at 200 is about 1720. The test reconciles the two, so
+  // neither can move alone again.
+  ballotOption:  200,    // dispatch_posts.options        — options_ceiling (4000 total)
+  // dispatch_comments.body — critique_ceiling. Deliberately its own entry rather
+  // than reusing dossierComment: the two are the same number today but on
+  // different tables, and dossierComment retires with the old reader in step 3.
+  critique:      2000,
 } as const;
 
 export type FieldType = keyof typeof MAX_LENGTHS;

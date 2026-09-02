@@ -36,7 +36,20 @@ export interface QueuedMutation {
         // those deletions complete as withdrawals instead of being lost.
         | 'delete_lounge_message'
         | 'sync_entitlement' | 'add_dossier' | 'update_dossier' | 'delete_dossier' | 'add_dossier_comment' | 'update_dossier_comment' | 'delete_dossier_comment' | 'toggle_dossier_certify' | 'increment_dossier_views' | 'add_log_comment' | 'remove_log_comment' | 'add_list_comment' | 'remove_list_comment'
-        | 'submit_report';
+        | 'submit_report'
+        // ── The Dispatch ──
+        // Adding a type here is not one edit but FOUR: this union, the schema in
+        // types/mutations.ts, the handler in mutationExecutor.ts, and — if the
+        // payload carries an id that can be a temporary offline one — a line in
+        // applyIdMapToPayload. Only the handler is checked by the compiler; the
+        // schema is checked by `if (schema)` below, which SKIPS validation when
+        // there is none, so a forgotten schema fails silently. That is why
+        // dispatchMutationRegistry.test.ts enumerates all four.
+        | 'add_filing' | 'update_filing' | 'end_filing'
+        | 'add_critique' | 'update_critique' | 'remove_critique'
+        | 'certify_filing' | 'certify_critique'
+        | 'cast_vote' | 'take_answer'
+        | 'save_filing' | 'unsave_filing';
     payload: Record<string, unknown>;
     timestamp: number;
     /**
