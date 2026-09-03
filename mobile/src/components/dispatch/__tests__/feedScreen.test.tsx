@@ -97,7 +97,9 @@ const put = (over: Record<string, unknown>) => {
 
 const mount = async () => {
   const r = render(<FeedScreen />);
-  await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+  // To a macrotask, so FlashList's own load callback settles inside the act
+  // scope rather than after it.
+  await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
   return r;
 };
 

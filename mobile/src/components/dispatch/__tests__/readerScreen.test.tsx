@@ -31,8 +31,9 @@ let mockRow: Record<string, unknown> | null = null;
 let mockCritiqueRows: unknown[] = [];
 const mockPushed: string[] = [];
 
+const mockBack = jest.fn();
 jest.mock('@/src/utils/typedRouter', () => ({
-  nav: { push: (p: string) => { mockPushed.push(p); }, replace: jest.fn(), back: jest.fn() },
+  nav: { push: (p: string) => { mockPushed.push(p); }, replace: jest.fn(), back: () => mockBack() },
 }));
 let mockUser: { id: string; username: string } | null = { id: 'u1', username: 'me' };
 
@@ -104,6 +105,16 @@ jest.mock('@/src/components/moderation/ContentActionSheet', () => ({
   },
 }));
 
+/** The Tribunal's report sheet, stubbed for the same reason as the action sheet. */
+const mockReportProps: Array<Record<string, unknown>> = [];
+jest.mock('@/src/components/moderation/ReportSheet', () => ({
+  __esModule: true,
+  default: (props: Record<string, unknown>) => {
+    if (props.visible) mockReportProps.push(props);
+    return null;
+  },
+}));
+
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
@@ -130,9 +141,12 @@ const at = (params: Record<string, string>) =>
 
 const mount = async () => {
   const r = render(<FilingReader />);
-  await act(async () => {
-    await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
-  });
+  // Drained to a MACROtask, not three microtasks. The screen hydrates and then
+  // fetches its critiques, so a fixed number of `Promise.resolve()`s leaves the
+  // last of those settling after the act scope closes — which React reports as
+  // "an update was not wrapped in act", and which means the assertions run
+  // against a render that is still one step behind.
+  await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
   return r;
 };
 
@@ -142,6 +156,8 @@ beforeEach(() => {
   mockCritiqueRows = [];
   mockPushed.length = 0;
   mockSheetProps.length = 0;
+  mockReportProps.length = 0;
+  mockBack.mockClear();
   at({ id: 'f1' });
   useDispatch.setState({
     filings: [], opened: {}, critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
@@ -407,6 +423,104 @@ describe('the reader', () => {
     mockPushed.length = 0;
     await act(async () => { fireEvent.press(getByLabelText(/Tokyo Story/)); });
     expect(mockPushed).toContain('/film/42');
+  });
+
+  it('carries the same four marks on a ballot and on a short filing', async () => {
+    // Three kinds draw three different components — PaperBallot, PaperPost and
+    // the essay — and each mounts its own copy of the acts. A mark that works on
+    // one and not the others is the page behaving differently for no reason the
+    // member can see.
+    for (const over of [
+      { kind: 'ballot', options: [{ film_id: 1, title: 'Tokyo Story', poster_path: null }, { film_id: 2, title: 'Late Spring', poster_path: null }], closes_at: new Date(Date.now() + 86_400_000).toISOString() },
+      { kind: 'take', title: null, full_content: null, body: 'A take.' },
+    ]) {
+      useDispatch.setState({ certifiedIds: new Set(), savedIds: new Set(), opened: {} } as never);
+      mockRow = row(over as Record<string, unknown>);
+      const { getByLabelText, unmount } = await mount();
+
+      await act(async () => { fireEvent.press(getByLabelText('Certify this')); });
+      expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
+      await act(async () => { fireEvent.press(getByLabelText('Save this')); });
+      expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
+
+      // Torn down before the next kind mounts. Two live trees in one test leave
+      // the first one's pending updates to land after the act scope closes,
+      // which React reports as an unwrapped update.
+      await act(async () => { unmount(); });
+    }
+  });
+
+  it('certifies a critique', async () => {
+    mockCritiqueRows = [{
+      id: 'c1', post_id: 'f1', user_id: 'u3', author_username: 'someone',
+      body: 'A critique.', certify_count: 2,
+      created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
+    }];
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Certify this critique')); });
+    expect(useDispatch.getState().certifiedCritiqueIds.has('c1')).toBe(true);
+    expect(useDispatch.getState().critiques.f1[0].certifyCount).toBe(3);
+  });
+
+  it('reports a critique to the Tribunal, and only somebody else’s', async () => {
+    mockCritiqueRows = [
+      {
+        id: 'c1', post_id: 'f1', user_id: 'u3', author_username: 'someone',
+        body: 'Theirs.', certify_count: 0, created_at: '2026-08-28T22:00:00Z',
+        edited_at: null, profiles: null,
+      },
+      {
+        id: 'c2', post_id: 'f1', user_id: 'u1', author_username: 'me',
+        body: 'Mine.', certify_count: 0, created_at: '2026-08-28T23:00:00Z',
+        edited_at: null, profiles: null,
+      },
+    ];
+    const { getAllByLabelText, getByLabelText } = await mount();
+    // One reportable critique, not two: you cannot report your own.
+    expect(getAllByLabelText('Report this critique')).toHaveLength(1);
+
+    await act(async () => { fireEvent.press(getByLabelText('Report this critique')); });
+    // A critique is reported as a CRITIQUE, not as the filing it sits under —
+    // the Tribunal has to be shown the line that was reported.
+    expect(mockReportProps[0].contentType).toBe('dispatch_comment');
+    expect(mockReportProps[0].contentId).toBe('c1');
+  });
+
+  it('fetches another page of critiques from the foot', async () => {
+    mockCritiqueRows = Array.from({ length: 30 }, (_, i) => ({
+      id: 'c' + i, post_id: 'f1', user_id: 'u3', author_username: 'someone',
+      body: 'Critique ' + i, certify_count: 0,
+      created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
+    }));
+    mockRow = row({ comment_count: 200 });
+    const { getByLabelText } = await mount();
+
+    await act(async () => { fireEvent.press(getByLabelText(/more critiques/)); });
+    await act(async () => { await Promise.resolve(); });
+    // 30 came back a second time under different ids — the merge de-duplicates
+    // by id, so the count is what actually arrived.
+    expect(useDispatch.getState().critiques.f1.length).toBeGreaterThanOrEqual(30);
+  });
+
+  it('leaves the page when the reader blocks its author', async () => {
+    // Blocking removes their filings from every feed, including this one, so
+    // staying would leave the member looking at a filing they just said they
+    // did not want.
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    await act(async () => { (mockSheetProps[0].onBlock as () => void)(); });
+    expect(mockBack).toHaveBeenCalled();
+  });
+
+  it('carries a report from the sheet into the report sheet', async () => {
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    await act(async () => { (mockSheetProps[0].onReport as () => void)(); });
+    expect(mockReportProps[0].contentType).toBe('dispatch_post');
+    expect(mockReportProps[0].contentId).toBe('f1');
+    // And the action sheet closes behind it: two sheets over one page is one
+    // thing too many to dismiss.
+    expect(mockSheetProps).toHaveLength(1);
   });
 
   it('asks for the critiques in the order its own header shows', async () => {

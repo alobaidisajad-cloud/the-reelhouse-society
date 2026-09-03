@@ -32,12 +32,13 @@ import SeriesScreen from '@/app/dispatch/series/[id]';
 // `mock`-prefixed, because jest hoists these factories above every import and
 // refuses any other out-of-scope name.
 const mockPushed: string[] = [];
+const mockBack = jest.fn();
 
 jest.mock('@/src/utils/typedRouter', () => ({
   nav: {
     push: (path: string) => { mockPushed.push(path); },
     replace: jest.fn(),
-    back: jest.fn(),
+    back: () => mockBack(),
   },
 }));
 
@@ -110,6 +111,7 @@ beforeEach(() => {
   mockReadError = null;
   mockTotal = null;
   mockPushed.length = 0;
+  mockBack.mockClear();
   at({ id: 's1' });
 });
 
@@ -219,6 +221,52 @@ describe('the series page', () => {
     mockRows = [];
     const { getByText } = await mount();
     expect(getByText('Nothing is left of this series.')).toBeTruthy();
+  });
+
+  it('draws a departed member’s series without a name to open', async () => {
+    // The row keeps the words and not the name. A byline that is not a member
+    // must not be a control, or the tap opens `/user/[deleted]`.
+    mockRows = [part({ user_id: null, profiles: null })];
+    const { getByText, queryByText } = await mount();
+    expect(getByText('The Empty Room')).toBeTruthy();
+    expect(queryByText(/tomasreyes/i)).toBeNull();
+  });
+
+  it('numbers a part the member left unnumbered by its position', async () => {
+    // Roman-numbered margins are the design; an empty margin is not.
+    mockRows = [
+      part({ id: 'p1', part_number: null, title: 'First' }),
+      part({ id: 'p2', part_number: null, title: 'Second' }),
+    ];
+    const { getByText } = await mount();
+    expect(getByText('1')).toBeTruthy();
+    expect(getByText('2')).toBeTruthy();
+  });
+
+  it('falls back to a plain heading when the series has no title', async () => {
+    mockRows = [part({ series_title: null })];
+    const { getByText } = await mount();
+    expect(getByText('A SERIES')).toBeTruthy();
+  });
+
+  it('goes back from the head, on a full page and an empty one', async () => {
+    mockRows = [part()];
+    const full = await mount();
+    await act(async () => { fireEvent.press(full.getByLabelText('Back')); });
+    expect(mockBack).toHaveBeenCalled();
+
+    mockBack.mockClear();
+    mockRows = [];
+    const empty = await mount();
+    await act(async () => { fireEvent.press(empty.getByLabelText('Back')); });
+    expect(mockBack).toHaveBeenCalled();
+  });
+
+  it('does nothing at all without a series to open', async () => {
+    at({ id: '' });
+    await mount();
+    // No id, no read — rather than asking the database for `series_id = ''`.
+    expect(mockAsked.eq.series_id).toBeUndefined();
   });
 
   it('says the same when the read itself fails', async () => {
