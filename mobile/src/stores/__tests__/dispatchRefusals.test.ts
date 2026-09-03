@@ -129,7 +129,7 @@ const fullPage = () => Array.from({ length: PAGE_SIZE }, (_, i) => rowOf(i));
 
 const reset = (over: Record<string, unknown> = {}) => {
   useDispatch.setState({
-    filings: [], section: 'ALL', sort: 'LATEST', savedOnly: false,
+    filings: [], opened: {}, section: 'ALL', sort: 'LATEST', savedOnly: false,
     loading: false, loadingMore: false, hasMore: false, newCount: 0, droppedRows: 0,
     certifiedIds: new Set(), savedIds: new Set(), myVotes: {},
     critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},

@@ -86,7 +86,7 @@ const filing = (over: Partial<Filing> = {}): Filing => ({
 
 const reset = (over: Record<string, unknown> = {}) => {
   useDispatch.setState({
-    filings: [filing()], section: 'ALL', sort: 'LATEST', savedOnly: false,
+    filings: [filing()], opened: {}, section: 'ALL', sort: 'LATEST', savedOnly: false,
     loading: false, loadingMore: false, hasMore: false, newCount: 0, droppedRows: 0,
     certifiedIds: new Set(), savedIds: new Set(), myVotes: {},
     critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},

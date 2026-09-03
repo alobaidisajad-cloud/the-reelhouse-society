@@ -70,6 +70,7 @@ export default function FilingReader() {
 
   const filings = useDispatch((s) => s.filings);
   const critiques = useDispatch((s) => s.critiques);
+  const opened = useDispatch((s) => s.opened);
   const critiquesLoading = useDispatch((s) => s.critiquesLoading);
   const critiquesLoadingMore = useDispatch((s) => s.critiquesLoadingMore);
   const certifiedIds = useDispatch((s) => s.certifiedIds);
@@ -109,7 +110,16 @@ export default function FilingReader() {
   // The store's copy is authoritative once it has one — an act performed on this
   // screen updates the store, and reading through it is what keeps the number
   // under the thumb and the number in the feed the same number.
-  const live = filings.find((f) => f.id === id) ?? filing;
+  /**
+   * The feed's copy, then the store's record of what was opened, then this
+   * screen's own.
+   *
+   * The middle one is what makes an act VISIBLE here after a cold open. Reached
+   * from a notification the filing is not in the feed, so every optimistic
+   * update landed somewhere this screen was not looking and the page sat
+   * unchanged while the write went through.
+   */
+  const live = filings.find((f) => f.id === id) ?? opened[id] ?? filing;
 
   useEffect(() => {
     if (!id) return;

@@ -96,6 +96,25 @@ const gotFullPage = (n: number) => n === PAGE;
 
 export interface DispatchState {
   filings: Filing[];
+  /**
+   * Filings opened by their own address, which the FEED does not hold.
+   *
+   * ── WHY THIS HAD TO EXIST ──────────────────────────────────────────────────
+   * `filings` is the page, not a cache of everything — so a filing opened from a
+   * notification, a share link or a lounge quote was never in it. Three acts
+   * looked the filing up there before doing anything:
+   *
+   *     const filing = get().filings.find((f) => f.id === id);
+   *     if (!user || !filing) return;
+   *
+   * so on a cold open WITHDRAW did nothing, silently, and AMEND did nothing
+   * while the writing room said "Dossier updated" and navigated away. An edit
+   * reported as saved and discarded is the worst failure this app has.
+   *
+   * `hydrate` records what it read here, every act keeps the two in step, and
+   * the reader reads whichever holds the filing.
+   */
+  opened: Record<string, Filing>;
   /** Filed by this member and not yet acknowledged by the server. */
   section: Section;
   sort: Sort;
@@ -229,8 +248,62 @@ const invalidateInflight = () => {
   inflight = null;
 };
 
+/**
+ * How many opened filings are kept.
+ *
+ * Twelve, because the only thing this map is for is letting an act find the row
+ * the member is looking at — and nobody acts on the twelfth filing back. A
+ * dossier holds up to 25,000 characters, so an unbounded map is an evening's
+ * reading held in memory for no reason.
+ */
+const OPENED_KEPT = 12;
+
+/** Insertion-ordered, oldest dropped. `delete` first so a re-open moves to the end. */
+function capOpened(
+  opened: Record<string, Filing>,
+  id: string,
+  one: Filing,
+): Record<string, Filing> {
+  const next = { ...opened };
+  delete next[id];
+  next[id] = one;
+  const keys = Object.keys(next);
+  for (let i = 0; i < keys.length - OPENED_KEPT; i++) delete next[keys[i]];
+  return next;
+}
+
+/**
+ * The filing, wherever it is being held.
+ *
+ * The feed when the member scrolled to it, the opened map when they arrived by
+ * its address. Every act that needs the ROW — rather than only its id — asks
+ * here, so none of them can quietly do nothing again.
+ */
+const heldFiling = (st: DispatchState, id: string): Filing | null =>
+  st.filings.find((f) => f.id === id) ?? st.opened[id] ?? null;
+
+/**
+ * Change a filing in BOTH places at once.
+ *
+ * Written once because every optimistic update and every rollback has to touch
+ * the pair, and a version that updated only `filings` would leave the reader —
+ * which falls back to `opened` — showing the state before the act.
+ */
+const patchFiling = (
+  st: DispatchState,
+  id: string,
+  next: (f: Filing) => Filing,
+): Pick<DispatchState, 'filings' | 'opened'> => {
+  const held = st.opened[id];
+  return {
+    filings: st.filings.map((f) => (f.id === id ? next(f) : f)),
+    opened: held ? { ...st.opened, [id]: next(held) } : st.opened,
+  };
+};
+
 const emptyState = () => ({
   filings: [] as Filing[],
+  opened: {} as Record<string, Filing>,
   section: 'ALL' as Section,
   sort: 'LATEST' as Sort,
   savedOnly: false,
@@ -403,6 +476,12 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         filings: st.filings.some((f) => f.id === id)
           ? st.filings.map((f) => (f.id === id ? one : f))
           : st.filings,
+        // Recorded whether or not the feed holds it, so the acts that need the
+        // ROW can find it after a cold open — and BOUNDED, because a dossier
+        // carries up to 25,000 characters and a member reading for an evening
+        // would otherwise accumulate every one of them for the life of the
+        // process. The most recent handful is all any act needs.
+        opened: capOpened(st.opened, id, one),
       }));
       await loadViewerState([one], set, startedAs);
       return one;
@@ -494,7 +573,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
   amend: async (id, updates) => {
     const user = useAuthStore.getState().user;
-    const filing = get().filings.find((f) => f.id === id);
+    // Wherever it is held. This read the feed alone, so amending a filing
+    // opened by its own address did nothing while the writing room reported
+    // success and navigated away.
+    const filing = heldFiling(get(), id);
     if (!user || !filing) return;
     const startedAs = user.id;
 
@@ -502,22 +584,16 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const before = filing;
     const now = new Date().toISOString();
 
-    set((st) => ({
-      filings: st.filings.map((f) =>
-        f.id === id
-          ? {
-            ...f,
-            title: clean.title !== undefined ? clean.title : f.title,
-            body: clean.body !== undefined ? clean.body : f.body,
-            fullContent: clean.fullContent !== undefined ? clean.fullContent : f.fullContent,
-            source: clean.source !== undefined ? clean.source : f.source,
-            sourceUrl: clean.sourceUrl !== undefined ? clean.sourceUrl : f.sourceUrl,
-            spoilerLabel: clean.spoilerLabel !== undefined ? clean.spoilerLabel : f.spoilerLabel,
-            editedAt: now,
-          }
-          : f,
-      ),
-    }));
+    set((st) => patchFiling(st, id, (f) => ({
+      ...f,
+      title: clean.title !== undefined ? clean.title : f.title,
+      body: clean.body !== undefined ? clean.body : f.body,
+      fullContent: clean.fullContent !== undefined ? clean.fullContent : f.fullContent,
+      source: clean.source !== undefined ? clean.source : f.source,
+      sourceUrl: clean.sourceUrl !== undefined ? clean.sourceUrl : f.sourceUrl,
+      spoilerLabel: clean.spoilerLabel !== undefined ? clean.spoilerLabel : f.spoilerLabel,
+      editedAt: now,
+    })));
 
     const dbUpdates = toUpdateRow(clean);
     try {
@@ -537,7 +613,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         return { offline: true };
       }
       if (memberUnchanged(startedAs)) {
-        set((st) => ({ filings: st.filings.map((f) => (f.id === id ? before : f)) }));
+        set((st) => patchFiling(st, id, () => before));
       }
       throw e;
     }
@@ -552,7 +628,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
    */
   end: async (id) => {
     const user = useAuthStore.getState().user;
-    const before = get().filings.find((f) => f.id === id);
+    // Wherever it is held — the feed, or the map of what has been opened by its
+    // own address. This read the feed alone, so WITHDRAW on a filing reached
+    // from a notification did nothing at all, and said nothing about it.
+    const before = heldFiling(get(), id);
     if (!user || !before) return;
     const startedAs = user.id;
 
@@ -561,7 +640,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       body: '', fullContent: null, title: null, source: null, spoilerLabel: null,
       endedAt: new Date().toISOString(), endedBy: 'author',
     };
-    set((st) => ({ filings: st.filings.map((f) => (f.id === id ? ended : f)) }));
+    set((st) => patchFiling(st, id, () => ended));
 
     try {
       const { error } = await supabase.rpc('end_filing', { p_post: id, p_by: 'author' });
@@ -573,7 +652,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         return { offline: true };
       }
       if (memberUnchanged(startedAs)) {
-        set((st) => ({ filings: st.filings.map((f) => (f.id === id ? before : f)) }));
+        set((st) => patchFiling(st, id, () => before));
       }
       throw e;
     }
@@ -594,9 +673,9 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       next ? ids.add(id) : ids.delete(id);
       return {
         certifiedIds: ids,
-        filings: st.filings.map((f) =>
-          f.id === id ? { ...f, certifyCount: Math.max(0, f.certifyCount + (next ? 1 : -1)) } : f,
-        ),
+        ...patchFiling(st, id, (f) => ({
+          ...f, certifyCount: Math.max(0, f.certifyCount + (next ? 1 : -1)),
+        })),
       };
     });
 
@@ -616,9 +695,9 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         next ? ids.delete(id) : ids.add(id);
         return {
           certifiedIds: ids,
-          filings: st.filings.map((f) =>
-            f.id === id ? { ...f, certifyCount: Math.max(0, f.certifyCount + (next ? -1 : 1)) } : f,
-          ),
+          ...patchFiling(st, id, (f) => ({
+            ...f, certifyCount: Math.max(0, f.certifyCount + (next ? -1 : 1)),
+          })),
         };
         });
       },
@@ -718,12 +797,11 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
   takeAnswer: (postId, critiqueId) => {
     const user = useAuthStore.getState().user;
-    const before = get().filings.find((f) => f.id === postId);
+    // Wherever it is held, for the same reason as `end` and `amend`.
+    const before = heldFiling(get(), postId);
     if (!user || !before) return;
 
-    set((st) => ({
-      filings: st.filings.map((f) => (f.id === postId ? { ...f, answerId: critiqueId } : f)),
-    }));
+    set((st) => patchFiling(st, postId, (f) => ({ ...f, answerId: critiqueId })));
 
     void writeThrough(
       async () => {
@@ -738,7 +816,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       () => {
         if (!memberUnchanged(user.id)) return;
         set((st) => ({
-          filings: st.filings.map((f) => (f.id === postId ? { ...f, answerId: before.answerId } : f)),
+          ...patchFiling(st, postId, (f) => ({ ...f, answerId: before.answerId })),
         }));
       },
       'dispatch.takeAnswer',
@@ -808,7 +886,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     set((st) => ({
       critiques: { ...st.critiques, [postId]: [optimistic, ...(st.critiques[postId] ?? [])] },
-      filings: st.filings.map((f) => (f.id === postId ? { ...f, commentCount: f.commentCount + 1 } : f)),
+      ...patchFiling(st, postId, (f) => ({ ...f, commentCount: f.commentCount + 1 })),
     }));
 
     const row = { id, post_id: postId, user_id: user.id, author_username: user.username ?? '', body: clean };
@@ -824,9 +902,9 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       if (memberUnchanged(startedAs)) {
         set((st) => ({
           critiques: { ...st.critiques, [postId]: (st.critiques[postId] ?? []).filter((c) => c.id !== id) },
-          filings: st.filings.map((f) =>
-            f.id === postId ? { ...f, commentCount: Math.max(0, f.commentCount - 1) } : f,
-          ),
+          ...patchFiling(st, postId, (f) => ({
+            ...f, commentCount: Math.max(0, f.commentCount - 1),
+          })),
         }));
       }
       throw e;
@@ -886,9 +964,9 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     set((st) => ({
       critiques: { ...st.critiques, [postId]: (st.critiques[postId] ?? []).filter((c) => c.id !== id) },
-      filings: st.filings.map((f) =>
-        f.id === postId ? { ...f, commentCount: Math.max(0, f.commentCount - 1) } : f,
-      ),
+      ...patchFiling(st, postId, (f) => ({
+        ...f, commentCount: Math.max(0, f.commentCount - 1),
+      })),
     }));
 
     try {
@@ -912,9 +990,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
           next.splice(Math.min(at, next.length), 0, before);
           return {
             critiques: { ...st.critiques, [postId]: next },
-            filings: st.filings.map((f) =>
-              f.id === postId ? { ...f, commentCount: f.commentCount + 1 } : f,
-            ),
+            ...patchFiling(st, postId, (f) => ({ ...f, commentCount: f.commentCount + 1 })),
           };
         });
       }
