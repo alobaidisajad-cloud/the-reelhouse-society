@@ -227,12 +227,38 @@ export const PaperActions = memo(function PaperActions({
   onShare?: () => void;
   onSave?: (next: boolean) => void;
 }) {
+  /**
+   * ── A HANDLER THAT IS ABSENT IS NOT A CONTROL ──────────────────────────────
+   * The feed passes `onCertify={me ? … : undefined}`, because certifying needs
+   * an account. The press here was `() => onCertify?.(!certified)`, which turns
+   * a missing handler into a tap that silently does nothing — and reads as
+   * enabled to a sighted member and to a screen reader alike.
+   *
+   * It also passed the dead-control audit: that guard requires an `onPress` to
+   * EXIST, and this one existed. The optional call inside it is what made the
+   * control dead, and no scan of the tag would ever see that.
+   *
+   * The reader screen already gets this right — it offers a signed-out reader
+   * nothing rather than something that bounces. The card now agrees: the mark
+   * is dimmed, announced as unavailable, and cannot be pressed. CRITIQUE and
+   * SHARE stay live for everyone, because both simply open the filing, and the
+   * filing is public to read.
+   */
+  const canMark = !!onCertify;
+  const canKeep = !!onSave;
+
   return (
     <View style={p.actions}>
-      <PressableScale style={p.action} hitSlop={SLOP} haptic pressedScale={0.92}
-        onPress={() => onCertify?.(!certified)}
-        accessibilityRole="button" accessibilityState={{ selected: !!certified }}
-        accessibilityLabel={certified ? `Certified. ${certifyCount} members have certified this` : 'Certify this'}>
+      <PressableScale style={[p.action, !canMark && p.actionOff]} hitSlop={SLOP} haptic pressedScale={0.92}
+        onPress={canMark ? () => onCertify(!certified) : undefined}
+        disabled={!canMark}
+        accessibilityRole="button"
+        accessibilityState={{ selected: !!certified, disabled: !canMark }}
+        accessibilityLabel={
+          !canMark ? 'Certify this. Members only'
+            : certified ? `Certified. ${certifyCount} members have certified this`
+              : 'Certify this'
+        }>
         <Heart size={15} strokeWidth={2}
           color={certified ? colors.crimson : colors.fog}
           fill={certified ? colors.crimson : 'transparent'} />
@@ -255,10 +281,12 @@ export const PaperActions = memo(function PaperActions({
         <Text style={p.actionLabel} {...actionLabelProps}>SHARE</Text>
       </PressableScale>
 
-      <PressableScale style={p.action} hitSlop={SLOP} haptic pressedScale={0.92}
-        onPress={() => onSave?.(!saved)}
-        accessibilityRole="button" accessibilityState={{ selected: !!saved }}
-        accessibilityLabel={saved ? 'Saved' : 'Save this'}>
+      <PressableScale style={[p.action, !canKeep && p.actionOff]} hitSlop={SLOP} haptic pressedScale={0.92}
+        onPress={canKeep ? () => onSave(!saved) : undefined}
+        disabled={!canKeep}
+        accessibilityRole="button"
+        accessibilityState={{ selected: !!saved, disabled: !canKeep }}
+        accessibilityLabel={!canKeep ? 'Save this. Members only' : saved ? 'Saved' : 'Save this'}>
         <Bookmark size={15} strokeWidth={2}
           color={saved ? colors.sepia : colors.fog}
           fill={saved ? colors.sepia : 'transparent'} />

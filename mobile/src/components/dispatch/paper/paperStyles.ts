@@ -750,6 +750,16 @@ export const p = StyleSheet.create({
     flex: 1, paddingBottom: 8,
     alignItems: 'center', justifyContent: 'center', gap: 4,
   },
+  /**
+   * A mark a signed-out reader cannot make.
+   *
+   * Dimmed rather than removed: the four marks divide the row evenly, so taking
+   * two away would leave a card whose foot is a different shape depending on
+   * who is looking at it. Dimmed and disabled says "this exists, and it is for
+   * members" — which is true, and is the one thing a visitor to a members' club
+   * should be able to see.
+   */
+  actionOff: { opacity: 0.38 },
   /** Lower contrast than the writing it sits under. These are controls, and a
    *  control that shouts as loud as the sentence above it is a control that has
    *  been given more importance than the sentence. */

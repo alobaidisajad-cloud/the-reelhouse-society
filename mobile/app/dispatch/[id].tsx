@@ -330,11 +330,21 @@ export default function FilingReader() {
               commentCount={live.commentCount}
               certified={certified}
               saved={saved}
-              onVote={(i) => useDispatch.getState().vote(live.id, i)}
-              onCertify={(next) => useDispatch.getState().certify(live.id, next)}
-              onCritique={() => setComposing(true)}
+              // ── EVERY ACT IS GATED ON THERE BEING A MEMBER ─────────────────
+              // This screen already says a signed-out reader is offered nothing
+              // to do TO the filing, and then applied that to the More menu
+              // alone. These four were passed unconditionally, and each fails
+              // silently without an account: `vote` and `certify` return on
+              // their first line, and `setComposing(true)` sets a flag whose
+              // composer is itself behind `{me ? …}`. Four controls that looked
+              // live and answered a press with nothing.
+              // SHARE, the byline and the film stay open to everyone — none of
+              // them need an account, and the page is public to read.
+              onVote={me ? (i) => useDispatch.getState().vote(live.id, i) : undefined}
+              onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
+              onCritique={me ? () => setComposing(true) : undefined}
               onShare={() => setSharing(true)}
-              onSave={(next) => useDispatch.getState().save(live.id, next)}
+              onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
               onAuthor={() => openAuthor(author?.name)}
             />
           ) : (
@@ -359,10 +369,11 @@ export default function FilingReader() {
               withheld={!!live.withheldAt}
               ended={live.endedBy ?? undefined}
               edited={!!live.editedAt}
-              onCertify={(next) => useDispatch.getState().certify(live.id, next)}
-              onCritique={() => setComposing(true)}
+              // Gated on a member, for the reason given on the ballot above.
+              onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
+              onCritique={me ? () => setComposing(true) : undefined}
               onShare={() => setSharing(true)}
-              onSave={(next) => useDispatch.getState().save(live.id, next)}
+              onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
               onAuthor={() => openAuthor(author?.name)}
               onFilm={live.subjectId ? openFilm : undefined}
             />
@@ -404,7 +415,10 @@ export default function FilingReader() {
               // thing standing in the way.
               canTake={live.kind === 'seeking' && mine && !ended}
               onTake={() => useDispatch.getState().takeAnswer(live.id, c.id)}
-              onCertify={(next) => useDispatch.getState().certifyCritique(c.id, live.id, next)}
+              // Gated like every other act. Without an account `certifyCritique`
+              // returns on its first line, so the mark under each critique was
+              // live-looking and inert for a signed-out reader.
+              onCertify={me ? (next) => useDispatch.getState().certifyCritique(c.id, live.id, next) : undefined}
               onAuthor={() => openAuthor(c.author?.name)}
               onDelete={
                 me && c.authorId === me.id

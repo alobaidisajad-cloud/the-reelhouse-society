@@ -158,17 +158,26 @@ export const PaperBallot = memo(function PaperBallot({
               style={[p.option, closed && { opacity: 0.82 }]}
               hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
               haptic
-              onPress={() => onVote?.(i)}
-              // Closed, or already marked. The second is the important one: a
-              // ballot you have voted in is a result to read, not a form to fill
-              // again, and the row the server would refuse must not look pressable.
-              disabled={closed || myVote != null}
+              onPress={onVote ? () => onVote(i) : undefined}
+              // Closed, already marked, or nobody signed in. The second is the
+              // important one: a ballot you have voted in is a result to read,
+              // not a form to fill again, and the row the server would refuse
+              // must not look pressable.
+              //
+              // The third was missing. `onVote?.(i)` turned an absent handler
+              // into a tap that did nothing, so a signed-out reader could mark a
+              // ballot all day and watch the page ignore them.
+              disabled={closed || myVote != null || !onVote}
               accessibilityRole="radio"
               // The state a reader announces has to match the state the control
               // is actually in. It said `disabled: closed` while the row was ALSO
               // disabled once you had voted — so after marking a ballot, every
               // other option announced itself as available to press.
-              accessibilityState={{ checked: marked, disabled: !!closed || myVote != null }}
+              // The same three reasons as `disabled` above, and the same value —
+              // this line already had to be corrected once for announcing an
+              // available control that was not, so it is written from the same
+              // expression rather than restated.
+              accessibilityState={{ checked: marked, disabled: !!closed || myVote != null || !onVote }}
               accessibilityLabel={
                 showPercent
                   ? `Option ${i + 1} of ${options.length}. ${o.title}. ${pct[i]} percent, ${o.votes} ballots.${marked ? ' Your mark.' : ''}`

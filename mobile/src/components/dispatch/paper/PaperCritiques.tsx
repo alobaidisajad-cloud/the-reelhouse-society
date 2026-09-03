@@ -182,10 +182,16 @@ export const CritiqueRow = memo(function CritiqueRow({
           <PressableScale
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 8, marginLeft: -8 }}
             hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic
-            onPress={() => onCertify?.(!c.certified)}
+            // Absent for a signed-out reader, and an absent handler is not a
+            // control: `onCertify?.()` made this look live and do nothing.
+            onPress={onCertify ? () => onCertify(!c.certified) : undefined}
+            disabled={!onCertify}
             accessibilityRole="button"
-            accessibilityState={{ selected: !!c.certified }}
-            accessibilityLabel={c.certified ? 'Certified' : 'Certify this critique'}
+            accessibilityState={{ selected: !!c.certified, disabled: !onCertify }}
+            accessibilityLabel={
+              !onCertify ? 'Certify this critique. Members only'
+                : c.certified ? 'Certified' : 'Certify this critique'
+            }
           >
             <Heart size={12} strokeWidth={2}
               color={c.certified ? colors.crimson : colors.fog}
