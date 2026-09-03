@@ -12,6 +12,7 @@ import {
 } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { formatCount, stillHeight, KIND_RULE, RULE_W, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { PaperStrike } from './PaperStrike';
 import { softBreak } from './paperText';
 import { isRTLText } from '@/src/utils/text';
 
@@ -259,9 +260,11 @@ export const PaperActions = memo(function PaperActions({
             : certified ? `Certified. ${certifyCount} members have certified this`
               : 'Certify this'
         }>
-        <Heart size={15} strokeWidth={2}
-          color={certified ? colors.crimson : colors.fog}
-          fill={certified ? colors.crimson : 'transparent'} />
+        <PaperStrike on={certified}>
+          <Heart size={15} strokeWidth={2}
+            color={certified ? colors.crimson : colors.fog}
+            fill={certified ? colors.crimson : 'transparent'} />
+        </PaperStrike>
         <Text style={[p.actionLabel, certified && p.actionLabelOn]} {...actionLabelProps}>
           {certified ? 'CERTIFIED' : 'CERTIFY'}
         </Text>
@@ -287,9 +290,11 @@ export const PaperActions = memo(function PaperActions({
         accessibilityRole="button"
         accessibilityState={{ selected: !!saved, disabled: !canKeep }}
         accessibilityLabel={!canKeep ? 'Save this. Members only' : saved ? 'Saved' : 'Save this'}>
-        <Bookmark size={15} strokeWidth={2}
-          color={saved ? colors.sepia : colors.fog}
-          fill={saved ? colors.sepia : 'transparent'} />
+        <PaperStrike on={saved}>
+          <Bookmark size={15} strokeWidth={2}
+            color={saved ? colors.sepia : colors.fog}
+            fill={saved ? colors.sepia : 'transparent'} />
+        </PaperStrike>
         <Text style={[p.actionLabel, saved && p.actionLabelSaved]} {...actionLabelProps}>
           {saved ? 'SAVED' : 'SAVE'}
         </Text>

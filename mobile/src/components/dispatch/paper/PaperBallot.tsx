@@ -9,6 +9,7 @@ import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { BALLOT_PERCENT_FLOOR, UNSPOKEN } from './paperMetrics';
+import { PaperFill } from './PaperFill';
 import { Byline, PaperActions, type PaperAuthor, type PaperFilm } from './PaperPost';
 
 export interface BallotOption extends PaperFilm { votes: number }
@@ -207,13 +208,10 @@ export const PaperBallot = memo(function PaperBallot({
                       )}
                     </View>
                     {showPercent && !closed && (
-                      <View style={p.fillTrack}>
-                        <LinearGradient
-                          colors={BRASS} locations={BRASS_STOPS}
-                          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                          style={[p.fillBar, { width: `${pct[i]}%` }]}
-                        />
-                      </View>
+                      // Filled, not drawn. The result being revealed is the one
+                      // deliberately theatrical moment `paperMotion` allows this
+                      // page, and it was specified and never built.
+                      <PaperFill percent={pct[i]} index={i} />
                     )}
                   </>
                 ) : (

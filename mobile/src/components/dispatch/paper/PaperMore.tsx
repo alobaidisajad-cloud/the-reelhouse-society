@@ -10,6 +10,7 @@
  */
 import { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Animated, { FadeInUp, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, ChevronUp, Search, ArrowLeft, Lock, ExternalLink, MoreHorizontal } from 'lucide-react-native';
@@ -20,6 +21,7 @@ import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
 import { KIND_RULE, MARGIN_W, RULE_W, RULE_GAP, AVATAR, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { MS, PILL_Y } from './paperMotion';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { clipToSentence } from './paperText';
 
@@ -905,16 +907,35 @@ export const NEW_FILINGS_ROOM = 41;
 export const NewFilings = memo(function NewFilings({
   count, onPress,
 }: { count: number; onPress?: () => void }) {
+  /**
+   * ── IN WITH MOVEMENT, OUT WITHOUT ─────────────────────────────────────────
+   * `paperMotion` again, and the asymmetry is the point:
+   *
+   *     In: opacity and translateY -8 → 0 over `base`. Out: opacity over
+   *     `quick`, no movement, because it leaves at the same moment the list
+   *     jumps to the top and two motions at once is one too many to follow.
+   *
+   * Reduced motion collapses both to their end state; the pill still appears
+   * and still goes, it simply does not travel.
+   */
+  const reduced = useReducedMotion();
   return (
     <View style={m.newWrap} pointerEvents="box-none">
-      <PressableScale style={m.newPill} haptic="medium" onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={`${count} new filings. Go to the top.`}>
-        <ChevronUp size={11} strokeWidth={2.5} color={colors.ink} />
-        <Text style={m.newText} {...decorativeTextProps}>
-          {count} NEW {count === 1 ? 'FILING' : 'FILINGS'}
-        </Text>
-      </PressableScale>
+      <Animated.View
+        entering={reduced ? undefined : FadeInUp.duration(MS.base).withInitialValues({
+          transform: [{ translateY: -PILL_Y }],
+        })}
+        exiting={reduced ? undefined : FadeOut.duration(MS.quick)}
+      >
+        <PressableScale style={m.newPill} haptic="medium" onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`${count} new filings. Go to the top.`}>
+          <ChevronUp size={11} strokeWidth={2.5} color={colors.ink} />
+          <Text style={m.newText} {...decorativeTextProps}>
+            {count} NEW {count === 1 ? 'FILING' : 'FILINGS'}
+          </Text>
+        </PressableScale>
+      </Animated.View>
     </View>
   );
 });

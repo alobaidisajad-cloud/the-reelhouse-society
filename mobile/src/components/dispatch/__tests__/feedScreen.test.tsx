@@ -13,7 +13,7 @@
  * running head above already names it.
  */
 import React, { act } from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 
 import FeedScreen from '@/app/(tabs)/dispatch';
 import { useDispatch } from '@/src/stores/dispatch';
@@ -36,6 +36,11 @@ jest.mock('@/src/stores/auth', () => ({
 // hook the screen uses is all that needs to exist.
 jest.mock('@react-navigation/native', () => ({ useScrollToTop: jest.fn() }));
 
+const mockPushed: string[] = [];
+jest.mock('@/src/utils/typedRouter', () => ({
+  nav: { push: (p: string) => { mockPushed.push(p); }, replace: jest.fn(), back: jest.fn() },
+}));
+
 jest.mock('@/src/lib/supabase', () => ({
   supabase: {
     from: () => {
@@ -45,6 +50,13 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.eq = () => self(); chain.is = () => self(); chain.order = () => self();
       chain.in = () => Promise.resolve({ data: [], error: null });
       chain.limit = () => { const r = Promise.resolve({ data: [], error: null }); return Object.assign(r, { abortSignal: () => r }); };
+      // The writes. Without them `.insert()` was undefined, every mark threw,
+      // and `writeThrough` rolled it back — so a certify looked as though it had
+      // never happened.
+      chain.insert = () => Promise.resolve({ data: [], error: null });
+      chain.update = () => self();
+      chain.delete = () => self();
+      chain.then = (res: (v: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(res);
       return chain;
     },
     rpc: () => Promise.resolve({ data: null, error: null }),
@@ -89,7 +101,7 @@ const mount = async () => {
   return r;
 };
 
-beforeEach(() => { mockUser = { id: 'u1', username: 'me' }; put({}); });
+beforeEach(() => { mockUser = { id: 'u1', username: 'me' }; mockPushed.length = 0; put({}); });
 
 describe('the Dispatch feed', () => {
   it('prints a filing, with the hour in the margin under LATEST', async () => {
@@ -172,6 +184,80 @@ describe('the Dispatch feed', () => {
     // the filing is public to read.
     expect(getByLabelText(/^Critique\./).props.accessibilityState?.disabled).toBeFalsy();
     expect(getByLabelText('Share this filing').props.accessibilityState?.disabled).toBeFalsy();
+  });
+
+  it('opens a filing from its writing, its marks and its share', async () => {
+    put({ filings: [filing()] });
+    const { getByLabelText } = await mount();
+    for (const label of ['Open this filing', /^Critique\./, 'Share this filing']) {
+      mockPushed.length = 0;
+      await act(async () => { fireEvent.press(getByLabelText(label as never)); });
+      // Share and the film both open from the READER, where the sheet and the
+      // film page have room. On a card the four marks are already the row's
+      // full width; a fifth destination would be a target nobody can hit.
+      expect(mockPushed).toEqual(['/dispatch/f1']);
+    }
+  });
+
+  it('opens the film and the member from a card', async () => {
+    put({ filings: [filing({ subjectId: 42, film: { title: 'Tokyo Story', posterPath: null } })] });
+    const { getByLabelText } = await mount();
+
+    await act(async () => { fireEvent.press(getByLabelText(/Tokyo Story/)); });
+    expect(mockPushed).toContain('/film/42');
+
+    mockPushed.length = 0;
+    await act(async () => { fireEvent.press(getByLabelText(/Open their room/)); });
+    expect(mockPushed).toEqual(['/user/tomasreyes']);
+  });
+
+  it('moves the marks from a card', async () => {
+    put({ filings: [filing()] });
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Certify this')); });
+    expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
+    await act(async () => { fireEvent.press(getByLabelText('Save this')); });
+    expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
+  });
+
+  it('changes department, order and the kept page from the chrome', async () => {
+    put({ filings: [filing()] });
+    const { getByLabelText } = await mount();
+
+    await act(async () => { fireEvent.press(getByLabelText(/WIRE section/i)); });
+    expect(useDispatch.getState().section).toBe('WIRE');
+
+    await act(async () => { fireEvent.press(getByLabelText(/Sorted by latest/i)); });
+    expect(useDispatch.getState().sort).toBe('CERTIFIED');
+
+    await act(async () => { fireEvent.press(getByLabelText(/Your saved filings/i)); });
+    expect(useDispatch.getState().savedOnly).toBe(true);
+  });
+
+  it('opens the writing room from an empty department', async () => {
+    // The only place this screen offers the act: an empty TAKES page invites
+    // one. The Concierge carries it everywhere else.
+    put({ filings: [], loading: false, section: 'TAKES' });
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('SAY IT')); });
+    expect(mockPushed).toContain('/dispatch/compose');
+  });
+
+  it('offers the new paper, and takes the reader to it', async () => {
+    // A HEAD count, not a socket — the pill's whole job is "there is new paper",
+    // and pressing it goes to the top and re-reads rather than splicing rows in
+    // above whatever somebody is reading.
+    put({ filings: [filing()], newCount: 3 });
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('3 new filings. Go to the top.')); });
+    await act(async () => { await Promise.resolve(); });
+    expect(useDispatch.getState().newCount).toBe(0);
+  });
+
+  it('shows no pill when nothing has arrived', async () => {
+    put({ filings: [filing()], newCount: 0 });
+    const { queryByLabelText } = await mount();
+    expect(queryByLabelText(/new filings/)).toBeNull();
   });
 
   it('gives a member the live marks', async () => {

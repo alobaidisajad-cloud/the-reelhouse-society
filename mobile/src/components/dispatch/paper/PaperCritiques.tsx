@@ -8,6 +8,7 @@ import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { PaperStrike } from './PaperStrike';
 import { softBreak } from './paperText';
 import { isRTLText } from '@/src/utils/text';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -413,7 +414,12 @@ export const PostDock = memo(function PostDock({
     <View style={[p.dock, { paddingBottom: bottomInset }]}>
       <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={() => onCertify?.(!certified)}
         accessibilityRole="button" accessibilityState={{ selected: !!certified }} accessibilityLabel="Certify">
-        <Heart size={15} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} />
+        {/* The same pulse as the card's. The dock and the card are two places a
+            member makes one mark, and a mark that behaves differently depending
+            on which of them they used is the app feeling assembled. */}
+        <PaperStrike on={certified}>
+          <Heart size={15} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} />
+        </PaperStrike>
         <Text style={[p.actionLabel, certified && p.actionLabelOn]} {...actionLabelProps}>
           {certified ? 'CERTIFIED' : 'CERTIFY'}{c ? ` ${c}` : ''}
         </Text>
@@ -430,7 +436,9 @@ export const PostDock = memo(function PostDock({
       </PressableScale>
       <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={() => onSave?.(!saved)}
         accessibilityRole="button" accessibilityState={{ selected: !!saved }} accessibilityLabel={saved ? 'Saved' : 'Save'}>
-        <Bookmark size={15} strokeWidth={2} color={saved ? colors.sepia : colors.fog} fill={saved ? colors.sepia : 'transparent'} />
+        <PaperStrike on={saved}>
+          <Bookmark size={15} strokeWidth={2} color={saved ? colors.sepia : colors.fog} fill={saved ? colors.sepia : 'transparent'} />
+        </PaperStrike>
         <Text style={[p.actionLabel, saved && p.actionLabelSaved]} {...actionLabelProps}>{saved ? 'SAVED' : 'SAVE'}</Text>
       </PressableScale>
     </View>

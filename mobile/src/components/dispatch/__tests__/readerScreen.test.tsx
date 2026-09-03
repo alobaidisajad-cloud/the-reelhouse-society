@@ -19,7 +19,7 @@
  * than the store.
  */
 import React, { act } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Share } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -28,6 +28,7 @@ import { useDispatch } from '@/src/stores/dispatch';
 import type { Filing } from '@/src/stores/dispatchTypes';
 
 let mockRow: Record<string, unknown> | null = null;
+let mockCritiqueRows: unknown[] = [];
 const mockPushed: string[] = [];
 
 jest.mock('@/src/utils/typedRouter', () => ({
@@ -56,8 +57,11 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.is = () => self();
       chain.in = () => Promise.resolve({ data: [], error: null });
       chain.order = () => self();
+      // The critiques come through HERE, not through `setState` before the
+      // mount: the reader fetches them on open, and that fetch replaces
+      // whatever the test had put in the store.
       chain.range = () => {
-        const r = Promise.resolve({ data: [], error: null });
+        const r = Promise.resolve({ data: mockCritiqueRows, error: null });
         return Object.assign(r, { abortSignal: () => r });
       };
       // Every read in the store goes through `withAbortSignal`, which calls
@@ -135,6 +139,7 @@ const mount = async () => {
 beforeEach(() => {
   mockUser = { id: 'u1', username: 'me' };
   mockRow = row();
+  mockCritiqueRows = [];
   mockPushed.length = 0;
   mockSheetProps.length = 0;
   at({ id: 'f1' });
@@ -326,6 +331,82 @@ describe('the reader', () => {
     // a feed they are not looking at.
     expect(queryByText('The Empty Room')).toBeNull();
     spy.mockRestore();
+  });
+
+  it('shares to the lounge, or to anywhere the phone can send', async () => {
+    // Two destinations, not one. The Lounge first because it is the house's own
+    // room, and elsewhere second because a link out of the app is a different
+    // act from quoting it to the members.
+    const shared: unknown[] = [];
+    const spy = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
+      shared.push(c); return { action: 'sharedAction' } as never;
+    });
+
+    const { getByLabelText, queryByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+
+    await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+    expect(shared).toHaveLength(1);
+    // The sheet closes behind it: a share sheet still standing over the page
+    // after the system sheet has been used is a second thing to dismiss.
+    expect(queryByLabelText(/ELSEWHERE/)).toBeNull();
+    spy.mockRestore();
+  });
+
+  it('closes the share sheet from the ground behind it', async () => {
+    const { getByLabelText, queryByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    expect(getByLabelText(/ELSEWHERE/)).toBeTruthy();
+
+    await act(async () => { fireEvent.press(getByLabelText(/Close|Dismiss/i)); });
+    expect(queryByLabelText(/ELSEWHERE/)).toBeNull();
+  });
+
+  it('takes an answer, but only on a seeking and only for the member who asked', async () => {
+    mockUser = { id: 'u2', username: 'tomasreyes' };
+    mockRow = row({ kind: 'seeking', title: null, full_content: null, body: 'What tonight?' });
+    mockCritiqueRows = [{
+      id: 'c1', post_id: 'f1', user_id: 'u3', author_username: 'someone',
+      body: 'Tokyo Story.', certify_count: 0,
+      created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
+    }];
+
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText(/Take .* as your answer/)); });
+    expect(useDispatch.getState().opened.f1?.answerId).toBe('c1');
+  });
+
+  it('withdraws a critique, after asking', async () => {
+    const alerts: Array<[string, string, Array<{ text: string; onPress?: () => void }>]> = [];
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(
+      ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
+    );
+    mockCritiqueRows = [{
+      id: 'c1', post_id: 'f1', user_id: 'u1', author_username: 'me',
+      body: 'My own critique.', certify_count: 0,
+      created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
+    }];
+
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Withdraw this critique')); });
+    expect(alerts[0][0]).toBe('Withdraw this critique?');
+
+    await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
+    await act(async () => { await Promise.resolve(); });
+    expect(useDispatch.getState().critiques.f1).toHaveLength(0);
+    spy.mockRestore();
+  });
+
+  it('opens the film and the member from the page', async () => {
+    mockRow = row({ subject_kind: 'film', subject_id: 42, subject_title: 'Tokyo Story' });
+    const { getByLabelText } = await mount();
+
+    await act(async () => { fireEvent.press(getByLabelText(/Open their room/)); });
+    expect(mockPushed).toContain('/user/tomasreyes');
+
+    mockPushed.length = 0;
+    await act(async () => { fireEvent.press(getByLabelText(/Tokyo Story/)); });
+    expect(mockPushed).toContain('/film/42');
   });
 
   it('asks for the critiques in the order its own header shows', async () => {
