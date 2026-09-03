@@ -29,6 +29,7 @@ import { ContentActionSheet } from '@/src/components/moderation/ContentActionShe
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import { ShareSheet } from '@/src/components/dispatch/paper/PaperDesk';
 import { EssayBody } from '@/src/components/dispatch/EssayBody';
+import { readTimeOf } from '@/src/components/dispatch/readTime';
 import { PaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
 import {
   CritiqueComposer, CritiqueFooter, CritiqueHead, CritiqueRow, CritiqueSpine, PostDock,
@@ -53,15 +54,6 @@ const hourOf = (iso: string) => {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
-
-/**
- * A dossier's read time, from the words it actually has.
- *
- * 200 words a minute is the figure this app already uses, and the floor is one
- * minute — `0 MIN` on an essay somebody wrote is worse than a rounding error.
- */
-const readTimeOf = (body: string) =>
-  `${Math.max(1, Math.round(body.trim().split(/\s+/).filter(Boolean).length / 200))} MIN`;
 
 export default function FilingReader() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -294,7 +286,11 @@ export default function FilingReader() {
                 film={live.film}
                 onAuthor={() => openAuthor(author?.name)}
                 onFilm={live.subjectId ? openFilm : undefined}
-                onSeries={live.seriesId ? () => nav.push(`/dispatch/series/${live.seriesId}`) : undefined}
+                // `from` is this part, so the series page marks where the reader
+                // already is instead of making them find it.
+                onSeries={live.seriesId
+                  ? () => nav.push(`/dispatch/series/${live.seriesId}?from=${live.id}`)
+                  : undefined}
               />
               <EssayBody text={live.fullContent ?? live.body} />
             </>

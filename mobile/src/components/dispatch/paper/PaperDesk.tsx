@@ -367,7 +367,10 @@ export const FilmFinder = memo(function FilmFinder({
         )}
       </View>
       {results.map((f, i) => (
-        <View key={f.title}>
+        // By POSITION, not by title. Search "Suspiria" and TMDB returns 1977 and
+        // 2018 — two results, one key, and React silently drops a row from a
+        // list whose whole purpose is picking between them.
+        <View key={i}>
           {i > 0 && <View style={p.hair} />}
           <PressableScale style={d.result} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
             onPress={() => onPick?.(f)}

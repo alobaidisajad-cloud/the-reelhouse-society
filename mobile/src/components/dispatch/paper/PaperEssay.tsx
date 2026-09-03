@@ -156,16 +156,33 @@ export const SeriesList = memo(function SeriesList({
   return (
     <View>
       <Text style={e.seriesTitle} accessibilityRole="header" {...displayTextProps}>{title}</Text>
+      {/* ── THE COUNT DOES NOT GIVE WAY, THE NAME DOES ────────────────────
+          The byline's NAME already sets flexShrink, and in a space-between row
+          that is inert: Yoga shrinks a child only if the CHILD's own flexShrink
+          is non-zero, and the byline row's is 0. Measured, at the 30-character
+          handle both clients accept: the count was pushed 104pt past the right
+          edge of a 390pt sheet at normal text size, and 290pt on a 320pt phone
+          at 1.35x — clipped off the page entirely, every time.
+
+          So the shrink lives on the wrapper, and the count is pinned. Of the
+          two, the name is the one that can be read again three lines below. */}
       <View style={e.seriesMetaRow}>
-        <Byline author={author} onPress={onAuthor} />
-        <Text style={e.seriesCount} {...decorativeTextProps}>
+        <View style={e.seriesByline}>
+          <Byline author={author} onPress={onAuthor} />
+        </View>
+        <Text style={e.seriesCount} numberOfLines={1} {...decorativeTextProps}>
           {done} OF {parts.length}
         </Text>
       </View>
       <View style={[p.hair, { marginTop: 12 }]} />
 
       {parts.map((x, i) => (
-        <View key={x.n}>
+        // Keyed by POSITION, not by the printed number. `n` is whatever the
+        // member typed into `part_number`, and nothing stops two parts of a
+        // series carrying `2` — which made two rows share a key, and React
+        // omits or duplicates rows when they collide. The list is built in one
+        // order and never reordered in place, so the index is stable.
+        <View key={i}>
           {i > 0 && <View style={p.hair} />}
           <PressableScale
             style={[e.part, x.toCome && { opacity: 0.78 }]}
@@ -253,9 +270,13 @@ const e = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     gap: 12, marginTop: 12,
   },
+  /** Where the shrink has to live for the name's own flexShrink to mean anything. */
+  seriesByline: { flexShrink: 1, minWidth: 0 },
   seriesCount: {
     fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia,
     includeFontPadding: false,
+    /** Explicit, not inherited: this is the half of the row that must not move. */
+    flexShrink: 0,
   },
   part: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 12 },
   partTitle: { fontFamily: fonts.display, fontSize: 16.5, lineHeight: 22, color: colors.parchment },
