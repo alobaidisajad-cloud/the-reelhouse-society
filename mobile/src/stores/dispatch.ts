@@ -205,6 +205,30 @@ export type FilingUpdate = Partial<Omit<FilingDraft, 'kind' | 'options' | 'close
 let inflight: Promise<void> | null = null;
 let generation = 0;
 
+/**
+ * What the page is asking for has changed; the answer on its way is not it.
+ *
+ * ── THIS DID NOT EXIST, AND THE COMMENT ABOVE SAID IT DID ──────────────────
+ * `fetch` opens with `if (inflight) return inflight`, and the three index
+ * controls did not touch `inflight` — so tapping WIRE while the first page was
+ * still loading handed back the ALL request, and:
+ *
+ *   · that response passed its generation check and painted takes into WIRE,
+ *   · and no request for WIRE was ever issued at all,
+ *
+ * so the member sat on a department showing another department's filings until
+ * they pulled to refresh. It only happens during the first seconds after a cold
+ * open, which is exactly when somebody is most likely to be tapping around.
+ *
+ * Bumping the generation alone would have discarded the stale answer and left
+ * the page empty forever, because the new `fetch` would still return the same
+ * in-flight promise. Both have to go.
+ */
+const invalidateInflight = () => {
+  generation++;
+  inflight = null;
+};
+
 const emptyState = () => ({
   filings: [] as Filing[],
   section: 'ALL' as Section,
@@ -236,16 +260,19 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   setSection: (s) => {
     if (get().section === s) return;
     set({ section: s, filings: [], hasMore: true, newCount: 0 });
+    invalidateInflight();
     void get().fetch();
   },
   setSort: (s) => {
     if (get().sort === s) return;
     set({ sort: s, filings: [], hasMore: true, newCount: 0 });
+    invalidateInflight();
     void get().fetch();
   },
   setSavedOnly: (on) => {
     if (get().savedOnly === on) return;
     set({ savedOnly: on, filings: [], hasMore: true, newCount: 0 });
+    invalidateInflight();
     void get().fetch();
   },
 
@@ -271,8 +298,14 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         if (!isNetworkError(e)) captureError(e, { where: 'dispatch.fetch' });
         throw e;
       } finally {
-        if (gen === generation) set({ loading: false });
-        inflight = null;
+        // BOTH guarded by the generation. Clearing `inflight` unconditionally
+        // meant a superseded request could null out the slot holding the one
+        // that replaced it — and the next call would then issue a second query
+        // for a page already on its way.
+        if (gen === generation) {
+          set({ loading: false });
+          inflight = null;
+        }
       }
     })();
 
