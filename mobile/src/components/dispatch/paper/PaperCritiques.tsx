@@ -250,9 +250,28 @@ export const CritiqueRow = memo(function CritiqueRow({
  * thousand critiques it says what remains, which is honest and stops the member
  * scrolling in hope.
  */
+/**
+ * The foot of the critiques: the ornament when they have all been read, and the
+ * way to read the rest when they have not.
+ *
+ * ── `onMore` IS REQUIRED ───────────────────────────────────────────────────
+ * For the reason `BrassButton.onPress` is. This printed `162 MORE · 30 AT A
+ * TIME` as a plain Text — an offer nobody could accept, under a filing whose
+ * critiques stopped at the fiftieth. Making the handler optional is what allowed
+ * the screen to mount it without one; making it required is a compile error
+ * rather than a line of text somebody has to notice.
+ *
+ * `loadingMore` is separate from `loading`. The first page replaces the list and
+ * shows a spinner in its place; a later page is added BELOW rows the member is
+ * reading, and replacing those with a spinner would throw away their position.
+ */
 export const CritiqueFooter = memo(function CritiqueFooter({
-  shown, total, loading,
-}: { shown: number; total: number; loading?: boolean }) {
+  shown, total, loading, loadingMore, onMore,
+}: {
+  shown: number; total: number;
+  loading?: boolean; loadingMore?: boolean;
+  onMore: () => void;
+}) {
   const left = Math.max(0, total - shown);
   if (loading) {
     return (
@@ -271,11 +290,23 @@ export const CritiqueFooter = memo(function CritiqueFooter({
     );
   }
   return (
-    <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-      <Text style={p.ballotFoot} {...scaledTextProps}>
-        {formatCount(left)} MORE · {COMMENT_PAGE_SIZE} AT A TIME
-      </Text>
-    </View>
+    <PressableScale
+      style={{ paddingVertical: 16, alignItems: 'center' }}
+      onPress={loadingMore ? undefined : onMore}
+      haptic="selection"
+      disabled={!!loadingMore}
+      accessibilityRole="button"
+      accessibilityState={{ busy: !!loadingMore }}
+      accessibilityLabel={`Read ${left} more critiques`}
+    >
+      {loadingMore ? (
+        <ActivityIndicator size="small" color={colors.sepia} />
+      ) : (
+        <Text style={p.ballotFoot} {...scaledTextProps}>
+          {formatCount(left)} MORE · {COMMENT_PAGE_SIZE} AT A TIME
+        </Text>
+      )}
+    </PressableScale>
   );
 });
 

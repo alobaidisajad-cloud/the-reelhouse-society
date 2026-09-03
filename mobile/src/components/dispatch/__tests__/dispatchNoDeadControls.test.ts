@@ -58,11 +58,31 @@ function tagsOf(src: string, name: string, file: string): Tag[] {
   return out;
 }
 
+/**
+ * The SCREENS too, not only the components.
+ *
+ * This scanned `paper/` alone, which is where the controls were DRAWN — and a
+ * screen is perfectly capable of mounting its own `PressableScale`. Auditing
+ * where a class of defect was first found, rather than everywhere it can occur,
+ * is this project's most repeated mistake.
+ */
+const SCREENS = path.join(__dirname, '..', '..', '..', '..', 'app', 'dispatch');
+const screenFiles = fs.existsSync(SCREENS)
+  ? fs.readdirSync(SCREENS, { recursive: true, encoding: 'utf8' })
+    .filter((f) => f.endsWith('.tsx'))
+    .map((f) => path.join(SCREENS, f))
+  : [];
+
 const files = fs.readdirSync(DIR).filter((f) => f.endsWith('.tsx'));
 const all: Tag[] = [];
 for (const f of files) {
   const src = fs.readFileSync(path.join(DIR, f), 'utf8');
   for (const name of TOUCHABLES) all.push(...tagsOf(src, name, f));
+}
+for (const full of screenFiles) {
+  const src = fs.readFileSync(full, 'utf8');
+  const label = 'app/dispatch/' + path.relative(SCREENS, full).replace(/\\/g, '/');
+  for (const name of TOUCHABLES) all.push(...tagsOf(src, name, label));
 }
 
 describe('the Dispatch has no dead controls', () => {
@@ -70,6 +90,9 @@ describe('the Dispatch has no dead controls', () => {
     // The guard on the guard. If the tag walker breaks, every assertion below
     // becomes vacuously true against an empty list.
     expect(files.length).toBeGreaterThanOrEqual(9);
+    // And the screens were actually reached — an empty `screenFiles` would make
+    // the whole extension above silently do nothing.
+    expect(screenFiles.length).toBeGreaterThanOrEqual(3);
     expect(all.length).toBeGreaterThan(40);
   });
 

@@ -25,7 +25,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
-import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, groupDigits } from './paperMetrics';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 
@@ -319,7 +319,7 @@ export const DossierDesk = memo(function DossierDesk({
         {/* Words, and the read time it implies — the two facts a writer of a
             long piece actually watches. */}
         <Text style={p.rl} {...scaledTextProps}>
-          {words.toLocaleString()} WORDS · {Math.max(1, Math.round(words / 220))} MIN
+          {groupDigits(words)} WORDS · {Math.max(1, Math.round(words / 220))} MIN
         </Text>
       </View>
       <View style={p.kbd}><Text style={p.kbdLabel} {...decorativeTextProps}>KEYBOARD</Text></View>

@@ -18,6 +18,30 @@ import type { PaperAuthor, PaperFilm, PaperKind, PaperTier } from '@/src/compone
 
 export type FilingKind = PaperKind;
 
+/**
+ * How many rows a read asks for.
+ *
+ * ── ONE NUMBER, BECAUSE TWO DISAGREED ──────────────────────────────────────
+ * These lived in `paperMetrics.ts`, next to the components that PRINT them,
+ * while the store that ISSUES the query carried its own. The comment size said
+ * 30 and the query asked for 50, so the footer under a long filing offered
+ * `162 MORE · 30 AT A TIME` — a page size nothing used, about a page nothing
+ * could load. `paperMetrics` now re-exports these rather than restating them,
+ * which makes the two literally the same binding instead of two numbers that
+ * agree today.
+ */
+export const PAGE_SIZE = 20;
+export const COMMENT_PAGE_SIZE = 30;
+
+/**
+ * How a filing's critiques are ordered — and it is the SERVER that orders them.
+ *
+ * Sorting on the device only ever sorted what had been loaded, so CERTIFIED
+ * ranked the newest page and presented it as the most certified of the filing.
+ * Changing this re-reads from the first page.
+ */
+export type CritiqueOrder = 'NEWEST' | 'CERTIFIED';
+
 /** One choice on a ballot. Two to six of them, and every one is a film. */
 export interface BallotOption {
   film_id: number;

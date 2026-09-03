@@ -42,12 +42,20 @@ import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { measure } from '@/src/components/dispatch/paper/paperMetrics';
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
-import type { Filing } from '@/src/stores/dispatchTypes';
+import type { CritiqueOrder, Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
 import { timeAgo, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { scaledTextProps } from '@/src/constants/textScaling';
+
+/**
+ * How a filing's critiques are ordered before anyone chooses.
+ *
+ * Named, and used in both places, because the two places used to hold their own
+ * answer and gave different ones.
+ */
+const FIRST_ORDER: CritiqueOrder = 'CERTIFIED';
 
 /** How the margin prints an hour. Set once, not on a timer. */
 const hourOf = (iso: string) => {
@@ -63,6 +71,7 @@ export default function FilingReader() {
   const filings = useDispatch((s) => s.filings);
   const critiques = useDispatch((s) => s.critiques);
   const critiquesLoading = useDispatch((s) => s.critiquesLoading);
+  const critiquesLoadingMore = useDispatch((s) => s.critiquesLoadingMore);
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const certifiedCritiqueIds = useDispatch((s) => s.certifiedCritiqueIds);
   const savedIds = useDispatch((s) => s.savedIds);
@@ -70,7 +79,14 @@ export default function FilingReader() {
 
   const [filing, setFiling] = useState<Filing | null>(() => filings.find((f) => f.id === id) ?? null);
   const [loading, setLoading] = useState(!filing);
-  const [order, setOrder] = useState<'NEWEST' | 'CERTIFIED'>('CERTIFIED');
+  /**
+   * The house shows the most certified first. ONE constant, used by both the
+   * state and the first read — they were written separately and disagreed:
+   * `useState('CERTIFIED')` beside a `fetchCritiques(id)` that defaulted to
+   * NEWEST. The header lit CERTIFIED over a list ordered by date, and pressing
+   * CERTIFIED did nothing, because it was already the selected value.
+   */
+  const [order, setOrder] = useState<CritiqueOrder>(FIRST_ORDER);
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -103,21 +119,22 @@ export default function FilingReader() {
       if (cancelled) return;
       setFiling(got);
       setLoading(false);
-      void useDispatch.getState().fetchCritiques(id);
+      void useDispatch.getState().fetchCritiques(id, FIRST_ORDER);
     })();
     return () => { cancelled = true; };
   }, [id]);
 
-  const rows = useMemo(() => {
-    const list = critiques[id] ?? [];
-    // Ordered here rather than re-fetched: the whole page is already loaded, and
-    // a network round trip to re-sort thirty rows the device is holding would be
-    // slower and would lose an optimistic critique that has not landed yet.
-    const sorted = [...list];
-    if (order === 'CERTIFIED') sorted.sort((a, b) => b.certifyCount - a.certifyCount);
-    else sorted.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-    return sorted;
-  }, [critiques, id, order]);
+  /**
+   * ── THE ORDER IS THE SERVER'S NOW ─────────────────────────────────────────
+   * This used to sort on the device, over whatever had been loaded. That was
+   * defensible while the whole list arrived at once, and it stopped being true
+   * the moment critiques were paged: CERTIFIED would have ranked the newest
+   * thirty and presented them as the most certified of the filing.
+   *
+   * So the list is taken exactly as the store holds it, and changing the order
+   * re-reads from the first page.
+   */
+  const rows = critiques[id] ?? [];
 
   const openAuthor = useCallback((username?: string | null) => {
     if (username) nav.push(`/user/${username}`);
@@ -354,7 +371,18 @@ export default function FilingReader() {
           {/* ── THE CRITIQUES ──────────────────────────────────────────────
               They survive the filing they sit under, so this is drawn for an
               ended filing too. */}
-          <CritiqueHead count={live.commentCount} order={order} onOrder={setOrder} />
+          {/* Changing the order re-reads from the first page, because the order
+              is the server's. Setting the state alone would leave the old
+              order's rows on screen under the new label. */}
+          <CritiqueHead
+            count={live.commentCount}
+            order={order}
+            onOrder={(o) => {
+              if (o === order) return;
+              setOrder(o);
+              void useDispatch.getState().fetchCritiques(live.id, o);
+            }}
+          />
 
           {rows.map((c, i) => (
             <CritiqueRow
@@ -417,6 +445,8 @@ export default function FilingReader() {
             shown={rows.length}
             total={live.commentCount}
             loading={!!critiquesLoading[id]}
+            loadingMore={!!critiquesLoadingMore[id]}
+            onMore={() => useDispatch.getState().loadMoreCritiques(live.id)}
           />
         </PaperSheet>
       </ScrollView>

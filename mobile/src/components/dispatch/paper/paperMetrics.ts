@@ -220,9 +220,16 @@ export const BALLOT_MAX = 6;
 /** Percentages are hidden until a ballot has enough votes to mean anything. */
 export const BALLOT_PERCENT_FLOOR = 10;
 
-/** Feed and comment paging. */
-export const PAGE_SIZE = 20;
-export const COMMENT_PAGE_SIZE = 30;
+/**
+ * Feed and comment paging — RE-EXPORTED, never redeclared.
+ *
+ * These used to be their own numbers here. `COMMENT_PAGE_SIZE` said 30 while the
+ * store fetched 50, so the footer under a long filing promised `162 MORE · 30 AT
+ * A TIME` about a page size that did not exist — and, since nothing could load
+ * more anyway, nobody could tell. A component that prints a number about a query
+ * must not own that number: it belongs to whoever issues the query.
+ */
+export { PAGE_SIZE, COMMENT_PAGE_SIZE } from '@/src/stores/dispatchTypes';
 
 /** Never more than four skeletons: four reads as loading, twelve as a slot machine. */
 export const SKELETON_COUNT = 4;
@@ -322,6 +329,34 @@ export const SECTION_COLOR: Record<string, string> = {
 };
 
 /** `12` · `1.2K` · `1M` — and nothing at all at zero, which is the point. */
+/**
+ * `25000` → `25,000`. A grouped number, not an abbreviated one.
+ *
+ * ── WHY NOT `toLocaleString()` ──────────────────────────────────────────────
+ * Three places in the Dispatch called it, and every one of them was right in
+ * every test and wrong on every phone. Node has a full Intl, so a test sees
+ * `25,000`. Hermes ships without one and this app carries no polyfill, so
+ * `Number.prototype.toLocaleString` falls back to `toString` and the separator
+ * simply does not appear — no error, no warning, nothing to notice. The word
+ * count under a dossier read `24310`.
+ *
+ * It is the same trap `dayLabel.ts` was written to avoid, and it caught the
+ * numbers after the dates because nothing had looked at the numbers.
+ *
+ * Grouped by hand rather than by regex: a lookahead like `\B(?=(\d{3})+(?!\d))`
+ * is the usual one-liner and it also groups the digits after a decimal point.
+ */
+export const groupDigits = (n: number): string => {
+  const negative = n < 0;
+  const digits = String(Math.trunc(Math.abs(n)));
+  let out = '';
+  for (let i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 === 0) out += ',';
+    out += digits[i];
+  }
+  return negative ? '-' + out : out;
+};
+
 export const formatCount = (n: number): string | null => {
   if (!n || n < 1) return null;
   if (n < COUNT_EXACT_BELOW) return String(n);

@@ -39,13 +39,16 @@ import { useAuthStore } from './auth';
 import { memberUnchanged } from './domain/helpers/sessionGuard';
 import { registerStoreReset } from './resetAllStores';
 import {
+  COMMENT_PAGE_SIZE,
   CRITIQUE_COLUMNS,
   FILING_CARD_COLUMNS,
   FILING_FULL_COLUMNS,
+  PAGE_SIZE,
   parseCritiqueRows,
   parseFilingRows,
   type BallotOption,
   type Critique,
+  type CritiqueOrder,
   type Filing,
   type FilingKind,
 } from './dispatchTypes';
@@ -70,8 +73,14 @@ const SECTION_KIND: Record<Section, FilingKind | null> = {
   DOSSIER: 'dossier',
 };
 
-/** One page. Twenty is what the old feed asked for and what the RPC still caps. */
-const PAGE = 20;
+/**
+ * One page. Twenty is what the old feed asked for and what the RPC still caps.
+ *
+ * Taken from `dispatchTypes` rather than declared here, because the empty state
+ * and the skeleton row in `paperMetrics` print numbers about this page and used
+ * to hold their own copy of it. One binding, so they cannot drift.
+ */
+const PAGE = PAGE_SIZE;
 
 /**
  * Every read is bounded AND its cursor is derived from the same bound.
@@ -105,6 +114,12 @@ export interface DispatchState {
 
   critiques: Record<string, Critique[]>;
   critiquesLoading: Record<string, boolean>;
+  /** Fetching the NEXT page, which is a different state from fetching the first. */
+  critiquesLoadingMore: Record<string, boolean>;
+  /** Whether the server has more beyond what has been asked for. */
+  critiquesHasMore: Record<string, boolean>;
+  /** The order the loaded pages were fetched IN, so a page can be continued. */
+  critiquesOrder: Record<string, CritiqueOrder>;
   certifiedCritiqueIds: Set<string>;
 
   setSection: (s: Section) => void;
@@ -149,7 +164,17 @@ export interface DispatchState {
   vote: (id: string, optionIndex: number) => void;
   takeAnswer: (postId: string, critiqueId: string | null) => void;
 
-  fetchCritiques: (postId: string) => Promise<void>;
+  /**
+   * `order` is REQUIRED, not defaulted.
+   *
+   * It had a default of NEWEST, and the reader's own state started at CERTIFIED.
+   * Two defaults, in two files, and they disagreed: the header lit CERTIFIED
+   * over a list ordered by date, and pressing CERTIFIED changed nothing because
+   * it was already selected. A default here is a second opinion about something
+   * the screen already knows.
+   */
+  fetchCritiques: (postId: string, order: CritiqueOrder) => Promise<void>;
+  loadMoreCritiques: (postId: string) => Promise<void>;
   addCritique: (postId: string, body: string) => Promise<void | { offline: boolean }>;
   amendCritique: (id: string, postId: string, body: string) => Promise<void>;
   removeCritique: (id: string, postId: string) => Promise<void>;
@@ -195,6 +220,9 @@ const emptyState = () => ({
   myVotes: {} as Record<string, number>,
   critiques: {} as Record<string, Critique[]>,
   critiquesLoading: {} as Record<string, boolean>,
+  critiquesLoadingMore: {} as Record<string, boolean>,
+  critiquesHasMore: {} as Record<string, boolean>,
+  critiquesOrder: {} as Record<string, CritiqueOrder>,
   certifiedCritiqueIds: new Set<string>(),
 });
 
@@ -668,33 +696,39 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   },
 
   // ── CRITIQUES ─────────────────────────────────────────────────────────────
-  fetchCritiques: async (postId) => {
-    const startedAs = useAuthStore.getState().user?.id ?? null;
-    set((st) => ({ critiquesLoading: { ...st.critiquesLoading, [postId]: true } }));
-    try {
-      const { data, error } = await timed(
-        (signal) =>
-          withAbortSignal(
-            supabase
-              .from('dispatch_comments')
-              .select(CRITIQUE_COLUMNS)
-              .eq('post_id', postId)
-              .order('created_at', { ascending: false })
-              .limit(50),
-            signal,
-          ),
-        'dispatch.fetchCritiques',
-      );
-      if (error) throw error;
-      if (!memberUnchanged(startedAs)) return;
-      const { critiques } = parseCritiqueRows(data ?? []);
-      set((st) => ({ critiques: { ...st.critiques, [postId]: critiques } }));
-      await loadCritiqueCertifications(critiques, set, startedAs);
-    } catch (e) {
-      if (!isNetworkError(e)) captureError(e, { where: 'dispatch.fetchCritiques' });
-    } finally {
-      set((st) => ({ critiquesLoading: { ...st.critiquesLoading, [postId]: false } }));
-    }
+  fetchCritiques: async (postId, order) => {
+    set((st) => ({
+      critiquesLoading: { ...st.critiquesLoading, [postId]: true },
+      critiquesOrder: { ...st.critiquesOrder, [postId]: order },
+    }));
+    await readCritiquePage(postId, order, 0, set);
+    set((st) => ({ critiquesLoading: { ...st.critiquesLoading, [postId]: false } }));
+  },
+
+  /**
+   * The next page of critiques.
+   *
+   * ── WHY THIS EXISTS ────────────────────────────────────────────────────────
+   * It did not, and the page said it did. `CritiqueFooter` printed
+   * `162 MORE · 30 AT A TIME` under a filing whose critiques stopped at the
+   * fiftieth, and that line was a Text — not a control, not a spinner, nothing
+   * to press. A hundred and sixty-two critiques a member could see counted and
+   * could not reach, with the page telling them so.
+   *
+   * Two numbers were wrong at once, which is how it stayed hidden: the store
+   * fetched 50 and the footer promised 30. Both now come from COMMENT_PAGE_SIZE,
+   * so there is one number and no way for them to disagree again.
+   */
+  loadMoreCritiques: async (postId) => {
+    const st0 = get();
+    if (st0.critiquesLoading[postId] || st0.critiquesLoadingMore[postId]) return;
+    if (!st0.critiquesHasMore[postId]) return;
+
+    const order = st0.critiquesOrder[postId] ?? 'NEWEST';
+    const from = (st0.critiques[postId] ?? []).length;
+    set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: true } }));
+    await readCritiquePage(postId, order, from, set);
+    set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: false } }));
   },
 
   addCritique: async (postId, body) => {
@@ -1025,6 +1059,79 @@ async function loadViewerState(
     // A page that draws without the member's own marks is still a readable page.
     // Failing the whole feed because the marks did not arrive would be worse.
     if (!isNetworkError(e)) captureError(e, { where: 'dispatch.viewerState' });
+  }
+}
+
+/**
+ * One page of critiques, in one order, merged into what is already there.
+ *
+ * ── OFFSET, NOT KEYSET, AND WHY THAT IS RIGHT HERE ─────────────────────────
+ * The FEED pages by keyset, because a feed is unbounded and a member scrolls it
+ * for a long time while new filings land at the top. A filing's critiques are
+ * neither: they are tens, occasionally hundreds, read in one sitting. `.range()`
+ * costs nothing at that size and — the part that matters — it works IDENTICALLY
+ * for both orders. A keyset over `certify_count` needs a three-column cursor
+ * with a tiebreaker, and a wrong one silently skips rows rather than failing.
+ *
+ * ── THE ORDER IS THE SERVER'S ──────────────────────────────────────────────
+ * It used to be done on the device, over whatever had been loaded. That is fine
+ * when everything is loaded and a lie the moment it is not: CERTIFIED would have
+ * ranked the fifty newest and called them the most certified. Ordering here means
+ * both orders are true about the whole filing, and changing order re-reads from
+ * the first page — which is why `critiquesOrder` is recorded.
+ *
+ * A page is merged rather than appended, keyed by id: an optimistic critique the
+ * member has just written is already at the top, and the server will hand it back
+ * in a later page.
+ */
+async function readCritiquePage(
+  postId: string,
+  order: CritiqueOrder,
+  from: number,
+  set: (fn: (st: DispatchState) => Partial<DispatchState>) => void,
+): Promise<void> {
+  const startedAs = useAuthStore.getState().user?.id ?? null;
+  try {
+    let q = supabase
+      .from('dispatch_comments')
+      .select(CRITIQUE_COLUMNS)
+      .eq('post_id', postId);
+
+    q = order === 'CERTIFIED'
+      // `created_at` is the tiebreaker, so two critiques on the same count keep
+      // a stable order between pages instead of drifting and duplicating.
+      ? q.order('certify_count', { ascending: false }).order('created_at', { ascending: false })
+      : q.order('created_at', { ascending: false });
+
+    const { data, error } = await timed(
+      (signal) => withAbortSignal(q.range(from, from + COMMENT_PAGE_SIZE - 1), signal),
+      from === 0 ? 'dispatch.fetchCritiques' : 'dispatch.moreCritiques',
+    );
+    if (error) throw error;
+    if (!memberUnchanged(startedAs)) return;
+
+    const { critiques } = parseCritiqueRows(data ?? []);
+
+    set((st) => {
+      const existing = from === 0 ? [] : (st.critiques[postId] ?? []);
+      const seen = new Set(existing.map((c) => c.id));
+      const merged = [...existing, ...critiques.filter((c) => !seen.has(c.id))];
+      return {
+        critiques: { ...st.critiques, [postId]: merged },
+        // A short page is the end of the list. A full one MIGHT be, and the next
+        // press finds out — which costs one query and never hides a critique.
+        critiquesHasMore: {
+          ...st.critiquesHasMore,
+          [postId]: critiques.length === COMMENT_PAGE_SIZE,
+        },
+      };
+    });
+    await loadCritiqueCertifications(critiques, set, startedAs);
+  } catch (e) {
+    // The footer keeps its control, so a failed page can simply be pressed
+    // again. Marking it as "no more" would turn one bad request into a
+    // permanent dead end.
+    if (!isNetworkError(e)) captureError(e, { where: 'dispatch.readCritiquePage' });
   }
 }
 

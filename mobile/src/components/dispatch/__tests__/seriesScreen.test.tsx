@@ -52,6 +52,7 @@ interface Asked {
 let mockAsked: Asked = { columns: '', eq: {}, is: {} };
 let mockRows: unknown[] = [];
 let mockReadError: unknown = null;
+let mockTotal: number | null = null;
 
 jest.mock('@/src/lib/supabase', () => ({
   supabase: {
@@ -64,7 +65,13 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.order = (k: string, o: unknown) => { mockAsked.order = [k, o]; return self(); };
       chain.limit = (n: number) => {
         mockAsked.limit = n;
-        return Promise.resolve({ data: mockRows, error: mockReadError });
+        return Promise.resolve({
+          data: mockRows, error: mockReadError,
+          // What PostgREST returns when asked for an exact count. `mockTotal`
+          // lets a test say "there are more than these", which is the case the
+          // page must not paper over.
+          count: mockTotal ?? (mockRows as unknown[]).length,
+        });
       };
       return chain;
     },
@@ -101,6 +108,7 @@ beforeEach(() => {
   mockAsked = { columns: '', eq: {}, is: {} };
   mockRows = [];
   mockReadError = null;
+  mockTotal = null;
   mockPushed.length = 0;
   at({ id: 's1' });
 });
@@ -186,6 +194,25 @@ describe('the series page', () => {
     const { getByText } = await mount();
     await act(async () => { fireEvent.press(getByText(/tomasreyes/i)); });
     expect(mockPushed).toEqual(['/user/tomasreyes']);
+  });
+
+  it('does not call the first 24 of 40 “24 OF 24”', async () => {
+    // The list is bounded, so a series longer than the bound is listed in part.
+    // `SeriesList` derives its count from the array it holds, which would make
+    // that count a lie — the same defect as a footer offering a page it cannot
+    // fetch, and it would be silent.
+    mockRows = Array.from({ length: 24 }, (_, i) =>
+      part({ id: 'p' + i, part_number: i + 1, title: 'Part ' + (i + 1) }));
+    mockTotal = 40;
+    const { getByText } = await mount();
+    expect(getByText('THE FIRST 24 OF 40 PARTS')).toBeTruthy();
+  });
+
+  it('says nothing extra when the list IS the series', async () => {
+    mockRows = [part({ id: 'p1', part_number: 1 })];
+    mockTotal = 1;
+    const { queryByText } = await mount();
+    expect(queryByText(/THE FIRST/)).toBeNull();
   });
 
   it('says so when there is nothing left, rather than showing an empty frame', async () => {

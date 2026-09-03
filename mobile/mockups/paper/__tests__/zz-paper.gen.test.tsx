@@ -13,6 +13,11 @@ import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 import { LOCAL_ART } from '../../../src/components/profile/__tests__/zz-art.gen';
 
+/** Nothing is pressed in a still. Present because the prop is REQUIRED — which
+ *  is the point of it being required: the app cannot mount one without a
+ *  handler, and this harness has to say out loud that it is a drawing. */
+const NOOP = () => {};
+
 import { PaperPost, PaperActions, type PaperAuthor } from '@/src/components/dispatch/paper/PaperPost';
 import { PaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
 import { PaperComposer } from '@/src/components/dispatch/paper/PaperComposer';
@@ -580,7 +585,7 @@ add('c1-critiques-scale', (
       <CritiqueHead count={5218} order="CERTIFIED" />
       {CRITS.map((c, i) => <CritiqueRow key={c.id} c={c} top={i === 0} />)}
       <View style={p.fill} />
-      <CritiqueFooter shown={30} total={5218} />
+      <CritiqueFooter shown={30} total={5218} onMore={NOOP} />
     </PaperSheet>
     <PostDock certifyCount={2140} commentCount={5218} certified />
   </View>
@@ -606,7 +611,7 @@ add('c3-answers-seeking', (
       <CritiqueRow canTake top c={{ id: 'a1', author: MIRA, film: COME, body: 'Two hours twenty, and you will not want company afterwards. That is the point.', certifyCount: 61, certified: true, age: '3 HR' }} />
       <CritiqueRow canTake c={{ id: 'a2', author: SAM, film: STALKER, body: 'Not what you asked for. Put it on anyway.', certifyCount: 8, age: '4 HR' }} />
       <View style={p.fill} />
-      <CritiqueFooter shown={22} total={22} />
+      <CritiqueFooter shown={22} total={22} onMore={NOOP} />
     </PaperSheet>
     <PostDock certifyCount={47} commentCount={22} />
   </View>
@@ -1196,7 +1201,7 @@ add('z4-critiques-loading-more', (
     <PaperSheet>
       <CritiqueHead count={5218} order="NEWEST" />
       {CRITS.slice(0, 2).map((c) => <CritiqueRow key={c.id} c={c} />)}
-      <CritiqueFooter shown={30} total={5218} loading />
+      <CritiqueFooter shown={30} total={5218} loading onMore={NOOP} />
     </PaperSheet>
     <PostDock certifyCount={2140} commentCount={5218} certified saved />
   </View>

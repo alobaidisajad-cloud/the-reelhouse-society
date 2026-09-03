@@ -34,6 +34,8 @@ import { render, fireEvent } from '@testing-library/react-native';
 
 import { FilmFinder } from '@/src/components/dispatch/paper/PaperDesk';
 import { SeriesList } from '@/src/components/dispatch/paper/PaperEssay';
+import { CritiqueFooter } from '@/src/components/dispatch/paper/PaperCritiques';
+import { COMMENT_PAGE_SIZE } from '@/src/stores/dispatchTypes';
 
 const author = { name: 'tomasreyes', memberNo: 147, tier: 'auteur' as const };
 
@@ -153,5 +155,47 @@ describe('the series meta row under a long handle', () => {
     // Its first child is the box the byline sits in, and that is what gives way.
     const first = rows[0].children?.[0] as { props?: { style?: unknown } };
     expect(StyleSheet.flatten(first.props?.style)).toMatchObject({ flexShrink: 1, minWidth: 0 });
+  });
+});
+
+/**
+ * ── AND THE LINE THAT OFFERED SOMETHING IT COULD NOT GIVE ───────────────────
+ * `162 MORE · 30 AT A TIME` was a Text. Not a button, not a link — a sentence
+ * describing critiques the reader could count and could not reach, because
+ * nothing in the app fetched a second page and the page size it named was not
+ * the one the store used.
+ *
+ * Nothing about that is visible in a screenshot: it looks exactly like the
+ * working version. What separates them is whether pressing it does anything.
+ */
+describe('the foot of the critiques', () => {
+  it('is a control when there are more, and says how many', () => {
+    const asked: number[] = [];
+    const { getByLabelText, getByText } = render(
+      <CritiqueFooter shown={30} total={192} onMore={() => asked.push(1)} />,
+    );
+
+    expect(getByText(new RegExp(String(COMMENT_PAGE_SIZE) + ' AT A TIME'))).toBeTruthy();
+    fireEvent.press(getByLabelText('Read 162 more critiques'));
+    expect(asked).toHaveLength(1);
+  });
+
+  it('will not fire again while a page is already on its way', () => {
+    const asked: number[] = [];
+    const { getByLabelText } = render(
+      <CritiqueFooter shown={30} total={192} loadingMore onMore={() => asked.push(1)} />,
+    );
+    fireEvent.press(getByLabelText('Read 162 more critiques'));
+    expect(asked).toHaveLength(0);
+  });
+
+  it('is the ornament, not a control, once they have all been read', () => {
+    const asked: number[] = [];
+    const { queryByLabelText } = render(
+      <CritiqueFooter shown={22} total={22} onMore={() => asked.push(1)} />,
+    );
+    // Nothing to press, because there is nothing left to fetch — a live control
+    // here would be its own small dead end.
+    expect(queryByLabelText(/more critiques/)).toBeNull();
   });
 });

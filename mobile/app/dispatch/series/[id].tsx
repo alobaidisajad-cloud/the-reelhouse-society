@@ -49,6 +49,17 @@ export default function SeriesScreen() {
   const insets = useSafeAreaInsets();
 
   const [parts, setParts] = useState<Filing[]>([]);
+  /**
+   * How many parts the SERVER says there are, which is not always how many are
+   * listed. `SeriesList` prints `3 OF 3` from the array it was handed, so a
+   * series longer than the bound would have shown `24 OF 24` and called that the
+   * whole thing — the same defect as the critique footer promising a page it
+   * could not fetch, in my own code, three files away from where I found it.
+   *
+   * A twenty-five part essay series is not going to happen. That is not a reason
+   * to print a number that would be wrong if it did.
+   */
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,9 +67,11 @@ export default function SeriesScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error, count } = await supabase
           .from('dispatch_posts')
-          .select(FILING_FULL_COLUMNS)
+          // `exact`, so the page knows the difference between "these are all of
+          // them" and "these are the first of them".
+          .select(FILING_FULL_COLUMNS, { count: 'exact' })
           .eq('series_id', id)
           // The feed's own two gates, so a part cannot appear here that the
           // Dispatch itself would not show.
@@ -75,7 +88,11 @@ export default function SeriesScreen() {
           .limit(MOST_PARTS);
         if (error) throw error;
         if (cancelled) return;
-        setParts(parseFilingRows(data ?? []).filings);
+        const got = parseFilingRows(data ?? []).filings;
+        setParts(got);
+        // `count` is null when the server does not send one. Falling back to the
+        // rows in hand is the only honest default: it claims nothing extra.
+        setTotal(count ?? got.length);
       } catch {
         // Falls through to the empty page below, which is honest about a series
         // it cannot show. There is nothing to retry INTO — no cache, no partial
@@ -160,6 +177,13 @@ export default function SeriesScreen() {
             }}
             onAuthor={author ? () => nav.push(`/user/${author.name}`) : undefined}
           />
+          {/* Said out loud rather than swallowed. The alternative is a page that
+              lists twenty-four parts, prints `24 OF 24`, and is wrong. */}
+          {total > parts.length ? (
+            <Text style={p.ballotFoot} {...scaledTextProps}>
+              {`THE FIRST ${parts.length} OF ${total} PARTS`}
+            </Text>
+          ) : null}
         </PaperSheet>
       </ScrollView>
     </View>

@@ -21,6 +21,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { ComposeBallotScreen, ComposeShortScreen } from '@/src/components/dispatch/ComposeDesks';
 import { FORMS, PaperPicker } from '@/src/components/dispatch/paper/PaperMore';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { groupDigits } from '@/src/components/dispatch/paper/paperMetrics';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
 
@@ -254,7 +255,7 @@ function ComposeDossierScreen() {
         // gone" to "this cannot be filed yet, and every word is still here".
         if (limit.over) {
             reelToast.error(
-                `This dossier is ${Math.abs(limit.remaining).toLocaleString()} characters over the limit. Trim it and file again — nothing has been lost.`
+                `This dossier is ${groupDigits(Math.abs(limit.remaining))} characters over the limit. Trim it and file again — nothing has been lost.`
             );
             return;
         }
@@ -316,7 +317,9 @@ function ComposeDossierScreen() {
                     } else {
                         router.back();
                     }
-                }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic>
+                }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel, and leave the writing room">
                     <Text style={styles.cancelBtn} numberOfLines={1}>CANCEL</Text>
                 </PressableScale>
                 <Text style={styles.headerTitle} numberOfLines={1}>THE WRITING ROOM</Text>
@@ -325,6 +328,12 @@ function ComposeDossierScreen() {
                         setIsPreview(!isPreview);
                     }}
                     haptic="medium"
+                    accessibilityRole="button"
+                    // The label says what the press DOES, and the state says
+                    // where you are. A control announced only as "Preview" gives
+                    // a reader no way to know it is already showing one.
+                    accessibilityState={{ selected: isPreview }}
+                    accessibilityLabel={isPreview ? 'Back to editing' : 'Preview the dossier'}
                 >
                     <Text style={styles.previewBtn} numberOfLines={1}>{isPreview ? 'EDIT' : 'PREVIEW'}</Text>
                 </PressableScale>
@@ -412,7 +421,7 @@ function ComposeDossierScreen() {
                                 <Text style={[styles.statText, limit.over && styles.statOver]} numberOfLines={1}>
                                     {limit.over ? 'OVER BY ' : 'LEFT '}
                                     <Text style={[styles.statVal, limit.over && styles.statOver]}>
-                                        {Math.abs(limit.remaining).toLocaleString()}
+                                        {groupDigits(Math.abs(limit.remaining))}
                                     </Text>
                                 </Text>
                             ) : null}
@@ -422,6 +431,17 @@ function ComposeDossierScreen() {
                             disabled={!title || !content || isPublishing}
                             onPress={handlePublish}
                             haptic="medium"
+                            accessibilityRole="button"
+                            // Disabled is ANNOUNCED, not merely applied. Without
+                            // it the control reads as available and answers a
+                            // press with nothing, which is the exact experience
+                            // this whole audit exists to prevent.
+                            accessibilityState={{ disabled: !title || !content || isPublishing, busy: isPublishing }}
+                            accessibilityLabel={
+                                isPublishing ? 'Filing the dossier'
+                                    : !title || !content ? 'File the dossier. Not ready yet — it needs a title and a body'
+                                        : edit ? 'Re-file the dossier' : 'File the dossier'
+                            }
                         >
                             <Text style={styles.publishBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE DOSSIER' : 'FILE THE DOSSIER')}</Text>
                         </PressableScale>
