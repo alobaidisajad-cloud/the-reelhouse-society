@@ -22,6 +22,7 @@ import { ComposeBallotScreen, ComposeShortScreen } from '@/src/components/dispat
 import { FORMS, PaperPicker } from '@/src/components/dispatch/paper/PaperMore';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { groupDigits } from '@/src/components/dispatch/paper/paperMetrics';
+import { excerptFor } from '@/src/components/dispatch/excerpt';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
 
@@ -264,9 +265,11 @@ function ComposeDossierScreen() {
         setIsPublishing(true);
 
         try {
-            // Strip markdown formatting for the clean plaintext excerpt
-            const plainText = content.replace(/[#*_[\]()>-]/g, '').replace(/\n+/g, ' ').trim();
-            const excerpt = plainText.substring(0, 150) + (plainText.length > 150 ? '...' : '');
+            // The card's opening, as prose. `excerptFor` unwraps markdown rather
+            // than deleting its characters wherever they appear: the old line
+            // turned `a well-made film (see below)` into `a wellmade film see
+            // below`, and turned a link into its own URL.
+            const excerpt = excerptFor(content);
 
             if (edit) {
                 await useDispatch.getState().amend(edit, {
