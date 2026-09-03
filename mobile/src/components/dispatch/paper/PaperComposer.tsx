@@ -11,6 +11,7 @@ import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScalin
 import { p } from './paperStyles';
 import { COUNTER_SHOWS_AT, KIND_RULE, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
 import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 /**
  * ── THE COPY DESK ────────────────────────────────────────────────────────────
@@ -40,11 +41,15 @@ import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
  * type, the point is already made.
  */
 export const PaperComposer = memo(function PaperComposer({
-  kind, me, hour, body, film, remaining, spoiler,
-  onBody, onBack, onFile, onFilm, onStill, onSpoiler, ready, sending,
+  kind, me, hour, body, film, remaining, spoiler, source,
+  onBody, onBack, onFile, onFilm, onStill, onSpoiler, onSource, ready, sending,
 }: {
   kind: string;
   me: PaperAuthor;
+  /** A wire's provenance. Ignored by every other kind, required by this one. */
+  source?: string;
+  /** Absent in the harness, like `onBody` — then the field is drawn, not typed. */
+  onSource?: (text: string) => void;
   /** Set when the desk OPENS — never on a timer, which would re-render the
    *  composer every sixty seconds while somebody is typing. */
   hour: string;
@@ -149,7 +154,14 @@ export const PaperComposer = memo(function PaperComposer({
                 }
                 {...decorativeTextProps}
               >
-                {kind === 'seeking' ? 'SEEKING — ' : kind === 'wire' ? 'SOURCE — ' : 'TAKE — '}
+                {/* `WIRE — `, not `SOURCE — `. The card prints `WIRE — ` here
+                    (PaperPost's wire branch) and prints the SOURCE beside the
+                    byline as a dateline. This label said the field below it was
+                    the source, which is the one thing this component exists to
+                    prevent: its own note two paragraphs up says a desk that
+                    promises "this is how it prints" and then prints something
+                    else is the defect. */}
+                {kind === 'seeking' ? 'SEEKING — ' : kind === 'wire' ? 'WIRE — ' : 'TAKE — '}
               </Text>
               {live ? (
                 <TextInput
@@ -181,6 +193,46 @@ export const PaperComposer = memo(function PaperComposer({
                 </Text>
               )}
             </View>
+
+            {/* ── A WIRE CARRIES ITS SOURCE ──────────────────────────────────
+                The picker promises "News from elsewhere, carrying its source",
+                the database refuses a wire without one, and the card prints it
+                as the dateline beside the byline — and there was nowhere to
+                type it. The desk asked for a FILM instead and filed the film's
+                TITLE as the source, so a wire's provenance read `TOKYO STORY`.
+
+                It sits on the paper as part of the form, not behind a tool,
+                because a required field hidden behind a control is a member
+                being refused at the end by a rule they were never shown. */}
+            {kind === 'wire' ? (
+              <View style={p.field}>
+                <Text style={p.fieldLabel} {...decorativeTextProps}>SOURCE — REQUIRED</Text>
+                {onSource ? (
+                  <TextInput
+                    style={[p.fieldValue, { padding: 0 }]}
+                    value={source ?? ''}
+                    onChangeText={onSource}
+                    placeholder="where did this come from?"
+                    placeholderTextColor={colors.fog}
+                    autoCorrect={false}
+                    selectionColor={colors.sepia}
+                    // The only maxLength on this desk. The body has none on
+                    // purpose — a member must be able to finish a sentence and
+                    // be told by how much they are over. A source is a name or a
+                    // URL: there is no sentence to finish, and the column simply
+                    // will not take more than a hundred characters.
+                    maxLength={MAX_LENGTHS.wireSource}
+                    accessibilityLabel="Where this came from"
+                    {...scaledTextProps}
+                  />
+                ) : (
+                  <Text style={[p.fieldValue, !source && { color: colors.fog, opacity: 0.6 }]}
+                    numberOfLines={1} {...scaledTextProps}>
+                    {source || 'where did this come from?'}
+                  </Text>
+                )}
+              </View>
+            ) : null}
 
             {film ? <Credit film={film} /> : null}
           </View>

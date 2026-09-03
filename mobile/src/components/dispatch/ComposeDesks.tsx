@@ -60,6 +60,15 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   const hour = useOpeningHour();
 
   const [body, setBody] = useState('');
+  /**
+   * A wire's provenance, typed by the member.
+   *
+   * There was no such field. `source` was filled with the FILM's title, and the
+   * desk required a film to make a wire fileable — so the picker's promise,
+   * "News from elsewhere, carrying its source", produced a filing whose source
+   * read `TOKYO STORY`, printed as the dateline beside the byline.
+   */
+  const [source, setSource] = useState('');
   const [film, setFilm] = useState<PaperFilm | null>(null);
   const [filmId, setFilmId] = useState<number | null>(null);
   const [spoiler, setSpoiler] = useState(false);
@@ -74,7 +83,8 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
    * IT stays unlit until the film is named, rather than letting somebody write
    * a wire and be refused at the end by a constraint they cannot see.
    */
-  const ready = body.trim().length > 0 && remaining >= 0 && (kind !== 'wire' || !!film);
+  const ready = body.trim().length > 0 && remaining >= 0
+    && (kind !== 'wire' || source.trim().length > 0);
 
   const onFile = useCallback(async () => {
     if (!ready || sending) return;
@@ -84,7 +94,9 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
         kind,
         body: body.trim(),
         spoilerLabel: spoiler ? 'SPOILERS' : null,
-        source: kind === 'wire' ? (film?.title ?? null) : null,
+        // Where it came from, as the member wrote it — not the film's title,
+        // which is already carried as the subject.
+        source: kind === 'wire' ? (source.trim() || null) : null,
         film: film && filmId
           ? {
             id: filmId,
@@ -101,7 +113,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
     } finally {
       setSending(false);
     }
-  }, [ready, sending, kind, body, spoiler, film, filmId]);
+  }, [ready, sending, kind, body, spoiler, film, filmId, source]);
 
   if (!me) return null;
 
@@ -118,6 +130,8 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
         spoiler={spoiler}
         ready={ready}
         sending={sending}
+        source={source}
+        onSource={kind === 'wire' ? setSource : undefined}
         onBody={setBody}
         // BACK clears the KIND rather than leaving the modal, so a member who
         // picked WIRE by mistake is one tap from picking again instead of

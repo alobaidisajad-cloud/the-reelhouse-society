@@ -751,6 +751,23 @@ export const p = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', gap: 4,
   },
   /**
+   * A labelled field on a desk — the wire's SOURCE, the ballot's CLOSES.
+   *
+   * Shared rather than local to one desk, because the wire composer and the
+   * design's own wire desk must draw the identical field; two definitions of
+   * one thing is how the comment page size came to say 30 while the query asked
+   * for 50.
+   */
+  field: {
+    marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', paddingTop: 12,
+  },
+  fieldLabel: {
+    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    opacity: 0.85, marginBottom: 6, includeFontPadding: false,
+  },
+  fieldValue: { fontFamily: fonts.body, fontSize: 12.5, color: colors.parchment },
+
+  /**
    * A mark a signed-out reader cannot make.
    *
    * Dimmed rather than removed: the four marks divide the row evenly, so taking
