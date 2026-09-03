@@ -36,6 +36,7 @@ import { NewFilings } from '@/src/components/dispatch/paper/PaperMore';
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth, formatCount, PAPER_MAX } from '@/src/components/dispatch/paper/paperMetrics';
+import { itemType } from '@/src/components/dispatch/paper/paperPerf';
 import { dayKey, dayLabel, hourLabel } from '@/src/components/dispatch/dayLabel';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useAuthStore } from '@/src/stores/auth';
@@ -197,6 +198,31 @@ export default function DispatchScreen() {
     nav.push('/dispatch/compose');
   }, []);
 
+  /**
+   * ── RECYCLE LIKE INTO LIKE ────────────────────────────────────────────────
+   * FlashList reuses a row's mounted tree for the next row of the same type.
+   * With no `getItemType` there is exactly one type, so a ballot's tree — six
+   * posters, six boxes — is torn down and a take's single sentence is built in
+   * its place, on a scroll frame, both ways, forever.
+   *
+   * `paperPerf.ts` calls this "the single largest win available on this screen
+   * and it costs one function". It had been written and never wired: nothing in
+   * the app imported that module at all, so the whole file was documentation of
+   * an optimisation nobody had applied.
+   *
+   * The type has to include anything that changes the SHAPE, not just the kind:
+   * a filing with film art is a different tree from one without, and an ended
+   * filing is a tombstone rather than a post.
+   */
+  const getItemType = useCallback(
+    (r: Row) => (r.type === 'day' ? 'day' : itemType({
+      kind: r.filing.kind,
+      still: !!r.filing.film,
+      removed: !!r.filing.endedAt || !!r.filing.withheldAt,
+    })),
+    [],
+  );
+
   const renderItem = useCallback(({ item }: { item: Row }) => {
     if (item.type === 'day') return <DayDivider label={item.label} />;
 
@@ -288,6 +314,7 @@ export default function DispatchScreen() {
               ref={listRef}
               data={rows}
               keyExtractor={(r: Row) => r.key}
+              getItemType={getItemType}
               estimatedItemSize={190}
               scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
               onScroll={onScroll}

@@ -599,6 +599,18 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     if (!user) return;
     if (get().savedIds.has(id) === next) return;
 
+    /**
+     * Where it was, so it can go back there.
+     *
+     * The optimistic step below takes the card off the saved page, and the undo
+     * used to restore only `savedIds` — so a REFUSED unsave left the filing
+     * saved according to the store and gone from the screen, the two disagreeing
+     * silently until the next refresh. Every other act in this file rolls back
+     * everything it moved; this one moved two things and put back one.
+     */
+    const removedAt = get().filings.findIndex((f) => f.id === id);
+    const removed = removedAt >= 0 ? get().filings[removedAt] : null;
+
     set((st) => {
       const ids = new Set(st.savedIds);
       next ? ids.add(id) : ids.delete(id);
@@ -622,7 +634,13 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         set((st) => {
           const ids = new Set(st.savedIds);
           next ? ids.delete(id) : ids.add(id);
-          return { savedIds: ids };
+          // Back where it was, not at the top — the same rule `removeCritique`
+          // already follows. A card that jumps to the front because the network
+          // failed is the app rewriting the page's order.
+          const gone = removed && !st.filings.some((f) => f.id === id);
+          const filings = gone ? [...st.filings] : st.filings;
+          if (gone) filings.splice(Math.min(removedAt, filings.length), 0, removed);
+          return { savedIds: ids, filings };
         });
       },
       'dispatch.save',

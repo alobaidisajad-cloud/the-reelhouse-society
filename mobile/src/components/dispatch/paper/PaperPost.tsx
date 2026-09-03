@@ -67,8 +67,15 @@ export const Byline = memo(function Byline({
         author?.tier === 'archivist' && p.avatarArchivist,
         author?.tier === 'auteur' && p.avatarAuteur,
       ]}>
+        {/* `recyclingKey` on the avatar because this byline sits in EVERY row of
+            a recycling list. Without it FlashList hands the reused <Image> the
+            next member's uri while the previous member's bitmap is still
+            mounted, and the row shows the wrong face for a frame — the most
+            visible artefact a recycling list produces, on the one element that
+            says who wrote the thing. */}
         {!departed && author.avatar ? (
-          <Image source={{ uri: author.avatar }} style={p.plateArt} contentFit="cover" />
+          <Image source={{ uri: author.avatar }} style={p.plateArt} contentFit="cover"
+            recyclingKey={author.avatar} transition={0} cachePolicy="memory-disk" />
         ) : !departed ? (
           <Text style={p.avatarNo} {...decorativeTextProps}>{author.memberNo}</Text>
         ) : null}
@@ -656,7 +663,8 @@ export const PaperPost = memo(function PaperPost({
             <View style={p.answer}>
               <View style={p.creditArt}>
                 {answer.film.posterPath ? (
-                  <Image source={{ uri: answer.film.posterPath }} style={p.plateArt} contentFit="cover" />
+                  <Image source={{ uri: answer.film.posterPath }} style={p.plateArt} contentFit="cover"
+                    recyclingKey={answer.film.posterPath} transition={0} cachePolicy="memory-disk" />
                 ) : null}
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>

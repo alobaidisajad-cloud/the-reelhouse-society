@@ -59,6 +59,33 @@ const essayMarkdown = {
   hr: { height: 0, backgroundColor: 'transparent' },
 };
 
+/**
+ * The paragraph's words, when the paragraph is nothing but words.
+ *
+ * ── WHY THIS IS NOT `node.children[0].content` ─────────────────────────────
+ * Because that is `undefined`, always. `react-native-markdown-display` does not
+ * hang text off a paragraph: it wraps every run of inline content in a
+ * `textgroup` first, so the words live at `children[0].children[n].content`.
+ * Reading one level too shallow returned null for every paragraph ever written,
+ * the rule fell through to its ordinary branch, and the drop cap — the mark the
+ * design uses to say the reading starts here — never once appeared in the app.
+ *
+ * It appeared in the mockups, which is how it survived: those call `EssayOpening`
+ * directly and never go through this rule at all.
+ *
+ * Null when the paragraph carries anything but text — an emphasis, a link, a
+ * code span. That is the existing intent: the cap needs a bare letter, and
+ * breaking the markup to get one would print the asterisks.
+ */
+function plainTextOf(node: any): string | null {
+  const kids = node?.children ?? [];
+  if (kids.length !== 1 || kids[0]?.type !== 'textgroup') return null;
+  const inner = kids[0].children ?? [];
+  if (inner.length === 0) return null;
+  if (inner.some((c: any) => c?.type !== 'text' || typeof c.content !== 'string')) return null;
+  return inner.map((c: any) => c.content).join('');
+}
+
 export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
   /**
    * The cap is applied ONCE per body rather than per render. It is a scan of up
@@ -73,43 +100,46 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
    * `react-native-markdown-display` walks the tree top-down and calls the
    * paragraph rule in document order, so the first call is the first paragraph.
    * Held in state it would survive a re-render and the drop cap would migrate
-   * down the essay; held in a ref it would never reset. A `let` closed over by
-   * the rules object, rebuilt each render, is the only version that is right
-   * every time.
+   * down the essay; held in a ref it would never reset.
+   *
+   * ── AND IT MUST NOT BE MEMOISED ────────────────────────────────────────────
+   * This sat inside a `useMemo` keyed on the body text, directly under the
+   * paragraph above explaining why a surviving counter is wrong. The text does
+   * not change, so the closure — and the counter in it — was reused on every
+   * re-render, and the reader re-renders whenever a critique arrives. The cap
+   * would have appeared once and then left the page.
+   *
+   * Rebuilt each render, which is what the paragraph above always described.
    */
-  const rules = useMemo(() => {
-    let seen = 0;
-    return {
-      paragraph: (node: any, children: React.ReactNode) => {
-        const first = seen === 0;
-        seen += 1;
-        if (!first) {
-          return (
-            <Text key={node.key} style={[essayMarkdown.body, essayMarkdown.paragraph]} {...scaledTextProps}>
-              {children}
-            </Text>
-          );
-        }
-        // The drop cap needs the letter as a STRING, and `children` here is a
-        // React tree. When the first paragraph is plain text the design's own
-        // opening is used; when it carries emphasis or a link, the cap is not
-        // worth breaking the markup for, so it sets as an ordinary paragraph.
-        const plain = typeof node?.children?.[0]?.content === 'string' && node.children.length === 1
-          ? (node.children[0].content as string)
-          : null;
-        if (plain && plain.trim().length > 1) {
-          return <EssayOpening key={node.key} text={plain} />;
-        }
+  let seen = 0;
+  const rules = {
+    paragraph: (node: any, children: React.ReactNode) => {
+      const first = seen === 0;
+      seen += 1;
+      if (!first) {
         return (
           <Text key={node.key} style={[essayMarkdown.body, essayMarkdown.paragraph]} {...scaledTextProps}>
             {children}
           </Text>
         );
-      },
-      // A rule between sections is the house's printed ornament, not a line.
-      hr: (node: any) => <EssayBreak key={node.key} />,
-    };
-  }, [safe]);
+      }
+      // The drop cap needs the letter as a STRING, and `children` here is a
+      // React tree. When the first paragraph is plain text the design's own
+      // opening is used; when it carries emphasis or a link, the cap is not
+      // worth breaking the markup for, so it sets as an ordinary paragraph.
+      const plain = plainTextOf(node);
+      if (plain && plain.trim().length > 1) {
+        return <EssayOpening key={node.key} text={plain} />;
+      }
+      return (
+        <Text key={node.key} style={[essayMarkdown.body, essayMarkdown.paragraph]} {...scaledTextProps}>
+          {children}
+        </Text>
+      );
+    },
+    // A rule between sections is the house's printed ornament, not a line.
+    hr: (node: any) => <EssayBreak key={node.key} />,
+  };
 
   if (!safe.trim()) return null;
 
