@@ -236,6 +236,18 @@ export function ComposeBallotScreen() {
         visible={finding !== null}
         onClose={() => setFinding(null)}
         onPick={(f, id) => {
+          // ── THE SAME FILM CANNOT STAND TWICE ─────────────────────────────
+          // Nothing stopped it. The ballot would have opened with `Tokyo Story`
+          // in two slots, splitting its own vote between them and producing a
+          // result that means nothing — and `ballot_options` only counts the
+          // options, so the database would have accepted it.
+          //
+          // Refused with a word rather than silently ignored: a tap that does
+          // nothing is the member wondering whether the app heard them.
+          if (slots.some((s, n) => s?.id === id && n !== finding)) {
+            reelToast.error('That film is already on this ballot.');
+            return;
+          }
           setSlots((prev) => prev.map((s, n) => (n === finding ? { film: f, id } : s)));
           setFinding(null);
         }}
@@ -331,8 +343,12 @@ export function FilmPicker({
           query={query}
           onQuery={setQuery}
           results={results.map((r) => r.film)}
-          onPick={(f) => {
-            const hit = results.find((r) => r.film.title === f.title && r.film.year === f.year);
+          // By POSITION. Searching `results` for a matching title and year
+          // returns the FIRST match, so two entries sharing both — a
+          // re-release, a duplicate TMDB record — gave the member a film they
+          // did not choose, and its id went into the row.
+          onPick={(_f, i) => {
+            const hit = results[i];
             if (hit) onPick(hit.film, hit.id);
           }}
         />

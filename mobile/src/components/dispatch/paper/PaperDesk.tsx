@@ -337,7 +337,18 @@ export const FilmFinder = memo(function FilmFinder({
   query, results, onPick, onQuery,
 }: {
   query: string; results: PaperFilm[];
-  onPick?: (film: PaperFilm) => void;
+  /**
+   * The INDEX comes too, and the caller must use it.
+   *
+   * The film alone is not an identity: the caller has to map it back to the
+   * TMDB id it carries, and doing that by title and year picks the FIRST result
+   * that matches — so two entries sharing both (a re-release, a duplicate TMDB
+   * record) resolve to the wrong id, and the wrong film is persisted as the
+   * filing's subject. The row is then correct-looking and wrong.
+   *
+   * This is the same defect as keying the rows by title, one layer up.
+   */
+  onPick?: (film: PaperFilm, index: number) => void;
   /** Absent in the harness, where the query is a drawn line with a caret. */
   onQuery?: (text: string) => void;
 }) {
@@ -373,7 +384,7 @@ export const FilmFinder = memo(function FilmFinder({
         <View key={i}>
           {i > 0 && <View style={p.hair} />}
           <PressableScale style={d.result} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
-            onPress={() => onPick?.(f)}
+            onPress={() => onPick?.(f, i)}
             accessibilityRole="button" accessibilityLabel={`${f.title}, ${f.year}`}>
             <View style={d.resultArt}>
               {f.posterPath ? (
