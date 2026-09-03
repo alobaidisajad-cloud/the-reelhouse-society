@@ -63,12 +63,29 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
     if (!isRead) {
       useNotificationStore.getState().markRead(item.id);
     }
-    // Navigate to film or user if available (with strict modal teardown)
-    // FIX #6: Use dismissAll to prevent stack corruption when navigating from notifications
-    if (item.film_id) {
+    // ── WHAT IT IS ABOUT, THEN WHO DID IT ──────────────────────────────────
+    // This routed on `film_id`, then fell back to the actor's profile. So every
+    // notice about a thing WITHOUT a film — a stack, a dossier, and now every
+    // filing in the Dispatch — took the member to the profile of whoever acted
+    // instead of to the thing they acted on. "Left a critique on your dossier"
+    // opened the critic's room.
+    //
+    // The group key already says what the notice is about; the server declares
+    // it and #73 exists because the client used to infer it. The same key
+    // answers here, so a grouped tap and a single tap land in the same place by
+    // construction rather than by two functions agreeing.
+    //
+    // FIX #6: back() before push, to keep the modal stack from corrupting.
+    const about = groupRoute(parseGroupKey(item.group_key), item.film_id);
+    if (about) {
+      nav.back();
+      InteractionManager.runAfterInteractions(() => nav.push(about as never));
+    } else if (item.film_id) {
       nav.back();
       InteractionManager.runAfterInteractions(() => nav.push(`/film/${item.film_id}`));
     } else if (item.from_username) {
+      // A follow has no object but a person, so this is the right destination
+      // for it — it is the FALLBACK that was wrong, not the route.
       nav.back();
       InteractionManager.runAfterInteractions(() => nav.push(`/user/${item.from_username}`));
     }

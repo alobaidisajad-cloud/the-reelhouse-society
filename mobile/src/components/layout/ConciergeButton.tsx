@@ -48,7 +48,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useRouter, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Plus, Film, ListPlus } from 'lucide-react-native';
+import { Plus, Film, ListPlus, PenLine } from 'lucide-react-native';
 
 import { colors, fonts } from '@/src/theme/theme';
 import { displayTextProps } from '@/src/constants/textScaling';
@@ -207,6 +207,17 @@ export const ConciergeButton = memo(function ConciergeButton() {
 
   const onLog = useCallback(() => handleAction('/log-modal' as Href), [handleAction]);
   const onStack = useCallback(() => handleAction('/list-modal' as Href), [handleAction]);
+  /**
+   * The third act. It opens the picker rather than a desk, because "file to the
+   * Dispatch" is five things and the concierge's job is to hand you the right
+   * form — the same reason the other two rows open a modal rather than a field.
+   *
+   * No tier check here. Every member can file a take, a seeking and a wire; the
+   * picker shows the two AUTEURS forms locked, so a member learns the house has
+   * a long form and a ballot before they can use them. Gating the whole row
+   * would hide the tier's value from exactly the people it is sold to.
+   */
+  const onFile = useCallback(() => handleAction('/dispatch/compose' as Href), [handleAction]);
 
   const backdropStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
 
@@ -316,6 +327,21 @@ export const ConciergeButton = memo(function ConciergeButton() {
                 <View style={s.actionTextCol}>
                   <Text style={s.actionTitle} {...displayTextProps}>Curate a Stack</Text>
                   <Text style={s.actionDesc} {...displayTextProps}>Gather films under one theme.</Text>
+                </View>
+              </PressableScale>
+
+              <View style={s.rowDivider} />
+
+              {/* hitSlop null, for the reason two rows above: three rows a
+                  hairline apart, each 66pt tall, and the default 15pt would make
+                  every pair overlap by 30 with the later one winning. */}
+              <PressableScale style={s.actionRow} onPress={onFile} hitSlop={null} accessibilityLabel="File to the Dispatch">
+                <View style={[s.actionIconWrap, s.actionIconFile]}>
+                  <PenLine size={18} color={colors.parchment} strokeWidth={1.5} />
+                </View>
+                <View style={s.actionTextCol}>
+                  <Text style={s.actionTitle} {...displayTextProps}>File to the Dispatch</Text>
+                  <Text style={s.actionDesc} {...displayTextProps}>Say it to the whole house.</Text>
                 </View>
               </PressableScale>
             </View>
@@ -480,6 +506,9 @@ const s = StyleSheet.create({
   },
   actionIconLog: { backgroundColor: colors.sepiaFaint, borderColor: 'rgba(184,137,26,0.35)' },
   actionIconStack: { backgroundColor: 'rgba(232,223,200,0.06)', borderColor: 'rgba(215,205,190,0.2)' },
+  // The third act wears the Dispatch's own ink — the take's vermilion, which is
+  // the first thing the picker offers and the commonest thing anyone files.
+  actionIconFile: { backgroundColor: 'rgba(217,99,58,0.10)', borderColor: 'rgba(217,99,58,0.34)' },
   actionTextCol: { flex: 1, minWidth: 0 },
   actionTitle: {
     fontFamily: fonts.display, fontSize: 15, color: colors.parchment, marginBottom: 3,

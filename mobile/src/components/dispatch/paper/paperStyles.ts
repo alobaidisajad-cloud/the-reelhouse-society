@@ -982,6 +982,18 @@ export const p = StyleSheet.create({
   // Mirrors spineBack on the other end — the same hairline, facing the other
   // way, so the bar reads as three parts rather than two and a stray icon.
   spineMore: { paddingLeft: 8, marginLeft: 2, borderLeftWidth: 1, borderLeftColor: 'rgba(184,137,26,0.25)' },
+
+  // ── A SHEET AND THE GROUND IT SITS ON ──────────────────────────────────────
+  // The ground is a control, not a scrim: every other sheet in this app closes
+  // when you touch outside it, and one that traps you until you choose a
+  // destination punishes changing your mind.
+  sheetHost: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'flex-end' },
+  sheetGround: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(4,3,2,0.72)' },
+  /** What is being shared, named, so the sheet is about a thing and not a verb. */
+  sharePreview: {
+    fontFamily: fonts.serifItalic, fontSize: 14, lineHeight: 21,
+    color: colors.parchment, opacity: 0.9, paddingHorizontal: 4,
+  },
   spineBody: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   spineKind: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false },
   spineText: { fontFamily: fonts.serifItalic, fontSize: 12.5, color: colors.bone, flex: 1 },

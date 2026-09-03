@@ -135,15 +135,23 @@ export const PLATE_MINI_H = 51;
 export const stillHeight = (m: number) => Math.min(Math.round(m * 0.5625), 108);
 
 /** Caps, as settled. Counted in code points so JS and Postgres agree. */
-export const CAPS = {
-  take: 280,
-  seeking: 280,
-  wireHeadline: 100,
-  wireBody: 280,
-  ballotQuestion: 140,
-  ballotOption: 60,
-  comment: 2000,
-} as const;
+/**
+ * ── THERE IS NO SECOND TABLE OF LIMITS ───────────────────────────────────────
+ * `CAPS` lived here with its own numbers — take 280, wire body 280, ballot
+ * question 140 — and every one of them was WRONG against the app that shipped:
+ * a take is 2,000 like any other filing (`MAX_LENGTHS.filingBody`), which was
+ * settled explicitly, and the 280 survived here as a leftover from a draft that
+ * had a character rule we decided not to make.
+ *
+ * It was not decorative. `DeskRail` counted down from `CAPS.wireBody`, so the
+ * wire desk would have shown a member 280 characters of room on a field that
+ * takes 2,000 — and the ballot's own field would have stopped accepting text at
+ * 140 while the column allows 200.
+ *
+ * The limits live in ONE place, `MAX_LENGTHS`, which `dispatchFieldCaps.test.ts`
+ * reconciles against the live CHECK constraints. A second table cannot be
+ * reconciled against anything; it can only disagree.
+ */
 
 /**
  * ── A ROW OF MARKS CAPS AT 1.2, NOT 1.35 ─────────────────────────────────────

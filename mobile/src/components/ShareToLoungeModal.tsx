@@ -31,6 +31,8 @@ interface ShareToLoungeProps {
     dossierId?: string;
     dossierTitle?: string;
     dossierAuthor?: string;
+    /** Which of the five forms it is, so the lounge card labels it correctly. */
+    dossierKind?: string;
 }
 
 interface _LoungeMemberRow {
@@ -75,7 +77,7 @@ LoungeItem.displayName = 'LoungeItem';
 export default function ShareToLoungeModal({ 
     visible, onClose, filmTitle, filmId, posterPath, logId, ownerUsername,
     listId, listTitle, listFilmCount, listCurator, listTopPosters,
-    dossierId, dossierTitle, dossierAuthor
+    dossierId, dossierTitle, dossierAuthor, dossierKind
 }: ShareToLoungeProps) {
     const { user } = useAuthStore();
     const allLounges = useLoungeStore(s => s.lounges);
@@ -129,7 +131,13 @@ export default function ShareToLoungeModal({
             // essay's headline; everything else rides the metadata jsonb.
             payload = {
                 film_title: dossierTitle ?? null,
-                metadata: { dossier_id: dossierId, author_username: dossierAuthor }
+                // `kind` is new and OPTIONAL, so every message already in every
+                // room keeps rendering exactly as it did. The Dispatch shares
+                // five kinds of filing through this one path — the metadata key
+                // and the message type stay `dossier` because changing either
+                // would orphan the messages already sent — and the card reads
+                // this to label a take as a TAKE instead of as a DOSSIER.
+                metadata: { dossier_id: dossierId, author_username: dossierAuthor, kind: dossierKind ?? null },
             };
         } else if (shareType === 'list_share') {
             payload = {

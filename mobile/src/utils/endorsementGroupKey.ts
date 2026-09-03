@@ -27,7 +27,17 @@
  * them, label them, and route a tap to the right screen. One stored value, three
  * correct behaviours, and no branch anyone can forget to add.
  */
-export type EndorseKind = 'log' | 'list' | 'dossier';
+/**
+ * `post` is the Dispatch: one table holds all five kinds of filing, so the key
+ * cannot name the kind — a take, a seeking, a wire, a ballot and a dossier all
+ * live at the same address and the group is about the FILING, not its form.
+ *
+ * `dossier` stays. Every notification written before the Dispatch shipped
+ * carries `endorse:dossier:<id>`, and those are on members' devices — dropping
+ * it would turn each one into a dead tap. It routes to the same reader by way of
+ * the redirect that address already has.
+ */
+export type EndorseKind = 'log' | 'list' | 'dossier' | 'post';
 
 export interface EndorseTarget {
   kind: EndorseKind;
@@ -35,7 +45,9 @@ export interface EndorseTarget {
   id: string;
 }
 
-const KINDS: Record<string, EndorseKind> = { log: 'log', list: 'list', dossier: 'dossier' };
+const KINDS: Record<string, EndorseKind> = {
+  log: 'log', list: 'list', dossier: 'dossier', post: 'post',
+};
 
 /**
  * `endorse:log:<uuid>` → `{ kind: 'log', id: '<uuid>' }`
@@ -70,6 +82,11 @@ export function describeGroup(count: number, kind: EndorseKind, title?: string):
   switch (kind) {
     case 'list':
       return named ? `${people} certified your stack “${named}”` : `${people} certified your stack`;
+    case 'post':
+      // The kind is not in the key — five forms share one table — so the group
+      // says "filing" unless the title names the thing, which for a dossier and
+      // a ballot it does.
+      return named ? `${people} certified your filing “${named}”` : `${people} certified your filing`;
     case 'dossier':
       return named ? `${people} certified your dossier “${named}”` : `${people} certified your dossier`;
     case 'log':
@@ -96,7 +113,14 @@ export function groupRoute(target: EndorseTarget | null, filmId?: number): strin
       return filmId ? `/film/${filmId}` : null;
     case 'list':
       return `/stacks/${target.id}`;
+    case 'post':
+      return `/dispatch/${target.id}`;
     case 'dossier':
+      // The old address, which redirects. Kept rather than rewritten to
+      // `/dispatch/` here: every notification carrying this key was written
+      // before the reader moved, and the redirect is what makes those work — so
+      // this route is exercised by real taps rather than being a door nobody
+      // uses, which is how a redirect quietly rots.
       return `/dossier/${target.id}`;
     default:
       return null;

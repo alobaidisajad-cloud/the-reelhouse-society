@@ -978,13 +978,14 @@ add('h2-series', (
 ));
 
 add('h3-desk-wire', (
-  <WireDesk me={ANA} hour="23:41" source="bfi.org.uk"
+  /* a screenshot: nothing to do, said out loud rather than left out */
+  <WireDesk onBack={() => {}} onFile={() => {}} me={ANA} hour="23:41" source="bfi.org.uk"
     headline="NAPOLEON restored, and touring"
     body="The restored NAPOLEON will tour eleven cities before it reaches any streaming service." />
 ));
 
 add('h4-desk-ballot', (
-  <BallotDesk me={ANA} hour="18:02" question="Which do we project tonight?" closes="2 DAYS"
+  <BallotDesk onBack={() => {}} onFile={() => {}} me={ANA} hour="18:02" question="Which do we project tonight?" closes="2 DAYS"
     options={[
       film('The Third Man', 1949, 'Carol Reed'),
       film('Stalker', 1979, 'Tarkovsky'),
@@ -993,7 +994,7 @@ add('h4-desk-ballot', (
 ));
 
 add('h5-desk-dossier', (
-  <DossierDesk title="The Long Silence in Ozu" words={2140} series="Part II of Ozu, in four parts"
+  <DossierDesk onBack={() => {}} onFile={() => {}} title="The Long Silence in Ozu" words={2140} series="Part II of Ozu, in four parts"
     body="There is a shot in Tokyo Story that lasts eleven seconds after everyone has left the frame, and for years I thought it was a mistake of the print. It is not. Ozu holds the room because the room is what the film is about." />
 ));
 

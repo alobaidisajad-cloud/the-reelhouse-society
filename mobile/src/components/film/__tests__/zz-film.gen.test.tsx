@@ -95,10 +95,40 @@ jest.mock('@shopify/flash-list', () => {
   return { FlashList: Mocked, FlashListProps: {} };
 });
 
-const detail = JSON.parse(readFileSync(join(ART, 'odyssey.json'), 'utf8'));
-const rawArt = JSON.parse(readFileSync(join(ART, 'odyssey-art.json'), 'utf8')) as Record<string, string>;
-const posters: Record<string, { title: string; data: string }> = {};
-for (const [p, data] of Object.entries(rawArt)) posters[p] = { title: '', data };
+/**
+ * ── THE FIXTURE LIVES IN A DIRECTORY THE OS DELETES ─────────────────────────
+ * `odyssey.json` is a TMDB film fetched once into a scratch directory. It is not
+ * decoration — it is the film this generator draws — so without it there is
+ * nothing to render.
+ *
+ * It was read with a bare `readFileSync` at module load, so when Windows cleaned
+ * that temp folder the suite failed with an ENOENT stack that reads exactly like
+ * a broken import. It is not a code fault and it must not look like one.
+ *
+ * So the fixture is OPTIONAL and its absence is announced. The generator skips
+ * with a reason a human can act on, rather than going red for a file that has
+ * nothing to do with the code under it — and rather than being silently `.skip`,
+ * which is the other way to make a suite stop telling the truth.
+ *
+ * The permanent fix is for this fixture to live in the repo. It cannot be
+ * regenerated here: the TMDB key is server-side only by design.
+ */
+let detail: any = null;
+let posters: Record<string, { title: string; data: string }> = {};
+let fixtureMissing = '';
+try {
+  detail = JSON.parse(readFileSync(join(ART, 'odyssey.json'), 'utf8'));
+  const rawArt = JSON.parse(readFileSync(join(ART, 'odyssey-art.json'), 'utf8')) as Record<string, string>;
+  for (const [p, data] of Object.entries(rawArt)) posters[p] = { title: '', data };
+} catch (e) {
+  fixtureMissing = `${ART} — ${(e as Error).message}`;
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[film generator] fixture missing, skipping. It lives in a temp directory the ' +
+    'OS clears; re-fetch it or move it into the repo to make this permanent.\n  ' + fixtureMissing,
+  );
+  detail = { id: 0, title: '', credits: { crew: [], cast: [] }, images: {}, videos: { results: [] } };
+}
 
 /** Derived exactly as app/film/[id].tsx derives it. */
 const crew = detail.credits?.crew ?? [];
@@ -189,7 +219,11 @@ const STATES: [string, Record<string, unknown>, boolean][] = [
   ['film-built-signedout', { isAuthenticated: false, isArchivist: false, existingLog: null }, true],
 ];
 
-describe('film page generator', () => {
+// `describe` either way, so the run REPORTS the skip and its reason rather than
+// the suite quietly not existing.
+const generator = fixtureMissing ? describe.skip : describe;
+
+generator('film page generator', () => {
   it.each(STATES)('writes %s from the built page', async (name, over, openTray) => {
     mkdirSync(OUT, { recursive: true });
     const r = render(

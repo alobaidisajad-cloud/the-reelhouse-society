@@ -10,7 +10,6 @@ import Markdown from 'react-native-markdown-display';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
 
 import { useAuthStore } from '@/src/stores/auth';
-import { useDispatchStore } from '@/src/stores/content';
 import { storage } from '@/src/stores/mmkv-storage';
 import { isAuteurPlusTier } from '@/src/utils/tier';
 import { colors, fonts } from '@/src/theme/theme';
@@ -19,6 +18,11 @@ import reelToast from '@/src/utils/reelToast';
 // screen is the one that needed them.
 import { isOverLimit, remainingChars, MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import PressableScale from '@/src/components/PressableScale';
+import { ComposeBallotScreen, ComposeShortScreen } from '@/src/components/dispatch/ComposeDesks';
+import { FORMS, PaperPicker } from '@/src/components/dispatch/paper/PaperMore';
+import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { useDispatch } from '@/src/stores/dispatch';
+import type { FilingKind } from '@/src/stores/dispatchTypes';
 
 // A long essay must survive a background-kill. Drafts persist here, new-dossiers only.
 const DRAFT_KEY = 'reelhouse_dispatch_draft';
@@ -33,7 +37,68 @@ const DRAFT_KEY = 'reelhouse_dispatch_draft';
  */
 const LIMIT_WARNING_CHARS = 5000;
 
-export default function ComposeDossierScreen() {
+/**
+ * ── THE DESK YOU ARE SENT TO ─────────────────────────────────────────────────
+ * One route, five desks. `?kind=` decides which; with no kind the picker asks.
+ *
+ * ── WHY ONE ROUTE AND NOT FIVE ──────────────────────────────────────────────
+ * The picker and the desk are one act — choose a form, fill it in — and putting
+ * them on two routes means the back gesture from a desk returns to a picker the
+ * member has already answered, which they then have to dismiss twice. Setting a
+ * param keeps it one screen with one way out, and the desk's own BACK clears the
+ * kind rather than leaving the modal, so a member who picked WIRE by mistake is
+ * one tap from picking again.
+ *
+ * The AUTEURS gate is checked HERE, once, rather than in each desk: a ballot and
+ * a dossier need the tier, a take, a seeking and a wire do not, and a member who
+ * cannot file one must never reach its desk to find out at the end.
+ */
+export default function ComposeScreen() {
+    const params = useLocalSearchParams<{ kind?: string; edit?: string }>();
+    const user = useAuthStore((s) => s.user);
+    const kind = (params.kind ?? (params.edit ? 'dossier' : '')) as FilingKind | '';
+
+    // An unrecognised kind in a link is not a crash and not a blank screen; it
+    // is somebody arriving without having chosen, which is what the picker is.
+    const known = (['take', 'seeking', 'wire', 'ballot', 'dossier'] as const)
+        .includes(kind as FilingKind);
+
+    if (!known) return <KindPicker />;
+    if (kind === 'dossier') return <ComposeDossierScreen />;
+    if (kind === 'ballot') return <ComposeBallotScreen />;
+    return <ComposeShortScreen kind={kind as 'take' | 'seeking' | 'wire'} />;
+}
+
+/**
+ * WHAT ARE YOU FILING? — the five forms, with the two AUTEURS ones locked for
+ * anyone who cannot file them.
+ *
+ * The lock is shown rather than the row hidden. A member should know the house
+ * has a long form and a ballot before they can use them; a menu that silently
+ * grows when you pay is a menu that told you nothing about what you were buying.
+ */
+function KindPicker() {
+    const user = useAuthStore((s) => s.user);
+    const auteur = isAuteurPlusTier(user);
+    const insets = useSafeAreaInsets();
+
+    return (
+        <View style={[p.screen, { justifyContent: 'flex-end' }]}>
+            <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
+            <View style={{ paddingBottom: insets.bottom }}>
+                <PaperPicker
+                    forms={FORMS.map((f) => ({
+                        ...f,
+                        locked: f.locked ? !auteur : false,
+                    }))}
+                    onPick={(k) => router.setParams({ kind: k })}
+                />
+            </View>
+        </View>
+    );
+}
+
+function ComposeDossierScreen() {
     const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
     const { user } = useAuthStore();
     const insets = useSafeAreaInsets();
@@ -145,14 +210,14 @@ export default function ComposeDossierScreen() {
      */
     const limit = useMemo(() => {
         const trimmed = content.trim();
-        const remaining = remainingChars(trimmed, 'dossierContent');
+        const remaining = remainingChars(trimmed, 'filingEssay');
         return {
-            over: isOverLimit(trimmed, 'dossierContent'),
+            over: isOverLimit(trimmed, 'filingEssay'),
             remaining,
             // Quiet until it could plausibly matter — a counter on a 400-word
             // piece is noise, and this fence is meant never to be felt.
             show: remaining <= LIMIT_WARNING_CHARS,
-            max: MAX_LENGTHS.dossierContent,
+            max: MAX_LENGTHS.filingEssay,
         };
     }, [content]);
 
@@ -203,20 +268,27 @@ export default function ComposeDossierScreen() {
             const excerpt = plainText.substring(0, 150) + (plainText.length > 150 ? '...' : '');
 
             if (edit) {
-                await useDispatchStore.getState().updateDossier(edit, {
+                await useDispatch.getState().amend(edit, {
                     title: title.trim(),
-                    excerpt,
+                    body: excerpt,
                     fullContent: content.trim(),
                 });
                 reelToast.success('Dossier updated');
             } else {
-                await useDispatchStore.getState().addDossier({
+                const filed = await useDispatch.getState().file({
+                    kind: 'dossier',
                     title: title.trim(),
-                    excerpt,
+                    // For a dossier the BODY is the excerpt — one column, two
+                    // meanings, and the database enforces the tighter 500 on it.
+                    body: excerpt,
                     fullContent: content.trim(),
                 });
-                storage.delete(DRAFT_KEY);
-                reelToast.success('Dossier filed');
+                // The draft is deleted only after the write is accepted. It used
+                // to be deleted on the strength of a success that a silent
+                // truncation had already spoiled; now nothing is thrown away
+                // until there is a row to throw it away for.
+                if (filed) storage.delete(DRAFT_KEY);
+                reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Dossier filed');
             }
             router.replace('/(tabs)/dispatch');
 

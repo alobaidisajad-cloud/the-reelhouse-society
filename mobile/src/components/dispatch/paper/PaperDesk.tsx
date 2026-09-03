@@ -12,7 +12,7 @@
  * the page opens on somebody else's filing (report it).
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -25,13 +25,23 @@ import { colors, fonts } from '@/src/theme/theme';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
-import { KIND_RULE, CAPS, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 
 /** The head every desk wears. One component so three desks cannot drift. */
+/**
+ * BACK and FILE IT are REQUIRED, for the reason BrassButton's onPress is.
+ *
+ * `BallotDesk` mounted this with neither, so the ballot desk had a back arrow
+ * that did not go back and a FILE IT that did not file — on the one screen where
+ * a member has just spent a minute choosing six films. Optional handlers on a
+ * header whose entire content is two controls is a dead end waiting to be
+ * written; required ones are a compile error the moment it is.
+ */
 export const DeskHead = memo(function DeskHead({
   kind, ready, onBack, onFile,
-}: { kind: string; ready?: boolean; onBack?: () => void; onFile?: () => void }) {
+}: { kind: string; ready?: boolean; onBack: () => void; onFile: () => void }) {
   return (
     <View style={p.ch}>
       <PressableScale onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
@@ -94,11 +104,14 @@ export const DeskRail = memo(function DeskRail({
  * — and FILE IT stays unlit until it is there.
  */
 export const WireDesk = memo(function WireDesk({
-  me, hour, headline, body, source,
-}: { me: PaperAuthor; hour: string; headline: string; body: string; source?: string }) {
+  me, hour, headline, body, source, onBack, onFile,
+}: {
+  me: PaperAuthor; hour: string; headline: string; body: string; source?: string;
+  onBack: () => void; onFile: () => void;
+}) {
   return (
     <View style={p.screen}>
-      <DeskHead kind="wire" ready={!!source && !!headline} />
+      <DeskHead kind="wire" ready={!!source && !!headline} onBack={onBack} onFile={onFile} />
       <View style={p.deskDoc}>
         <View style={p.postRow}>
           <View style={p.margin}>
@@ -122,7 +135,7 @@ export const WireDesk = memo(function WireDesk({
           </View>
         </View>
       </View>
-      <DeskRail tools={[{ icon: 'film', label: 'FILM' }]} remaining={CAPS.wireBody - body.length} />
+      <DeskRail tools={[{ icon: 'film', label: 'FILM' }]} remaining={MAX_LENGTHS.filingBody - body.length} />
       <View style={p.kbd}><Text style={p.kbdLabel} {...decorativeTextProps}>KEYBOARD</Text></View>
     </View>
   );
@@ -140,22 +153,24 @@ export const WireDesk = memo(function WireDesk({
  */
 export const BallotDesk = memo(function BallotDesk({
   me, hour, question, options, closes,
-  onRemove, onChoose, onCloses, onBack, onFile, ready,
+  onQuestion, onRemove, onChoose, onCloses, onBack, onFile, ready,
 }: {
   me: PaperAuthor; hour: string; question: string;
   options: Array<PaperFilm | null>; closes: string;
+  /** Absent in the harness, where the question is a drawn line. */
+  onQuestion?: (text: string) => void;
   onRemove?: (index: number) => void;
   onChoose?: (index: number) => void;
   onCloses?: (choice: string) => void;
-  onBack?: () => void;
-  onFile?: () => void;
+  onBack: () => void;
+  onFile: () => void;
   ready?: boolean;
 }) {
   const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
   const filled = options.filter(Boolean).length;
   return (
     <View style={p.screen}>
-      <DeskHead kind="ballot" ready={filled >= 2 && !!question} />
+      <DeskHead kind="ballot" ready={ready ?? (filled >= 2 && !!question)} onBack={onBack} onFile={onFile} />
       <View style={p.deskDoc}>
         <View style={p.postRow}>
           <View style={p.margin}>
@@ -163,10 +178,36 @@ export const BallotDesk = memo(function BallotDesk({
           </View>
           <View style={p.column}>
             <Byline author={me} />
-            <Text style={d.ballotQ} {...displayTextProps}>
-              <Text style={[p.leadIn, { color: KIND_RULE.ballot }]}>BALLOT — </Text>
-              {question}<Text style={p.caret} {...UNSPOKEN}>|</Text>
-            </Text>
+            {/* The lead-in is the HOUSE and cannot live inside the field: it is
+                not the member's text, and putting it there would let them
+                delete it or type before it. Printed, with the field set
+                immediately after — which is also what makes the desk print the
+                shape the page will.
+
+                No `onQuestion` means the harness, where this stays a drawn line
+                with a drawn caret and every screenshot is unchanged. */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <Text style={[p.leadIn, { color: KIND_RULE.ballot }]} {...decorativeTextProps}>BALLOT — </Text>
+              {onQuestion ? (
+                <TextInput
+                  style={[d.ballotQ, { flex: 1, minWidth: 0, padding: 0 }]}
+                  value={question}
+                  onChangeText={onQuestion}
+                  placeholder="What are you asking?"
+                  placeholderTextColor={colors.fog}
+                  multiline
+                  autoFocus
+                  maxLength={MAX_LENGTHS.filingTitle}
+                  selectionColor={colors.sepia}
+                  accessibilityLabel="Your question"
+                  {...scaledTextProps}
+                />
+              ) : (
+                <Text style={[d.ballotQ, { flex: 1, minWidth: 0 }]} {...displayTextProps}>
+                  {question}<Text style={p.caret} {...UNSPOKEN}>|</Text>
+                </Text>
+              )}
+            </View>
 
             <View style={{ marginTop: 16 }}>
               {options.map((o, i) => (
@@ -222,7 +263,7 @@ export const BallotDesk = memo(function BallotDesk({
         </View>
       </View>
       <DeskRail tools={[{ icon: 'date', label: 'CLOSES', on: true }]}
-        remaining={CAPS.ballotQuestion - question.length} />
+        remaining={MAX_LENGTHS.filingTitle - question.length} />
       <View style={p.kbd}><Text style={p.kbdLabel} {...decorativeTextProps}>KEYBOARD</Text></View>
     </View>
   );
@@ -242,7 +283,7 @@ export const DossierDesk = memo(function DossierDesk({
 }: {
   title: string; body: string; words: number; series?: string;
   onSeries?: () => void; onFilm?: () => void; onCover?: () => void;
-  onBack?: () => void; onFile?: () => void;
+  onBack: () => void; onFile: () => void;
 }) {
   return (
     <View style={p.screen}>
@@ -293,16 +334,37 @@ export const DossierDesk = memo(function DossierDesk({
  * read rather than a list you pick from.
  */
 export const FilmFinder = memo(function FilmFinder({
-  query, results, onPick,
-}: { query: string; results: PaperFilm[]; onPick?: (film: PaperFilm) => void }) {
+  query, results, onPick, onQuery,
+}: {
+  query: string; results: PaperFilm[];
+  onPick?: (film: PaperFilm) => void;
+  /** Absent in the harness, where the query is a drawn line with a caret. */
+  onQuery?: (text: string) => void;
+}) {
   return (
     <View style={d.sheet}>
       <View style={d.grab} />
       <View style={d.search}>
         <Search size={13} strokeWidth={2} color={colors.sepia} />
-        <Text style={d.searchText} numberOfLines={1} {...scaledTextProps}>
-          {query}<Text style={p.caret} {...UNSPOKEN}>|</Text>
-        </Text>
+        {onQuery ? (
+          <TextInput
+            style={[d.searchText, { flex: 1, minWidth: 0, padding: 0 }]}
+            value={query}
+            onChangeText={onQuery}
+            placeholder="Name a film"
+            placeholderTextColor={colors.fog}
+            autoFocus
+            autoCorrect={false}
+            returnKeyType="search"
+            selectionColor={colors.sepia}
+            accessibilityLabel="Search for a film"
+            {...scaledTextProps}
+          />
+        ) : (
+          <Text style={d.searchText} numberOfLines={1} {...scaledTextProps}>
+            {query}<Text style={p.caret} {...UNSPOKEN}>|</Text>
+          </Text>
+        )}
       </View>
       {results.map((f, i) => (
         <View key={f.title}>

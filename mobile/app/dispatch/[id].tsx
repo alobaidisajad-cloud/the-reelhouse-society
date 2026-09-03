@@ -23,8 +23,11 @@ import { ActivityIndicator, Alert, ScrollView, Share, Text, View } from 'react-n
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import PressableScale from '@/src/components/PressableScale';
+import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
+import { ShareSheet } from '@/src/components/dispatch/paper/PaperDesk';
 import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import { PaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
 import {
@@ -89,6 +92,8 @@ export default function FilingReader() {
    * critique on a page must not silently report the page.
    */
   const [actions, setActions] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [toLounge, setToLounge] = useState(false);
   const [report, setReport] = useState<
     { type: 'dispatch_post' | 'dispatch_comment'; id: string; userId: string; username: string } | null
   >(null);
@@ -130,8 +135,16 @@ export default function FilingReader() {
     if (live?.subjectId) nav.push(`/film/${live.subjectId}`);
   }, [live?.subjectId]);
 
-  const onShare = useCallback(async () => {
+  /**
+   * ── SHARE IS TWO DESTINATIONS, NOT ONE ────────────────────────────────────
+   * The design's sheet offers the LOUNGE first and everywhere else second,
+   * because the first is the house and the second is the world. Handing this
+   * straight to the OS sheet would have made the salons — the thing the app is
+   * for — one row down a list of messaging apps.
+   */
+  const shareElsewhere = useCallback(async () => {
     if (!live) return;
+    setSharing(false);
     try {
       await Share.share({
         message: `${live.title || live.body}\n\nThe Dispatch — reelhouse://dispatch/${live.id}`,
@@ -307,7 +320,7 @@ export default function FilingReader() {
               onVote={(i) => useDispatch.getState().vote(live.id, i)}
               onCertify={(next) => useDispatch.getState().certify(live.id, next)}
               onCritique={() => setComposing(true)}
-              onShare={onShare}
+              onShare={() => setSharing(true)}
               onSave={(next) => useDispatch.getState().save(live.id, next)}
               onAuthor={() => openAuthor(author?.name)}
             />
@@ -335,7 +348,7 @@ export default function FilingReader() {
               edited={!!live.editedAt}
               onCertify={(next) => useDispatch.getState().certify(live.id, next)}
               onCritique={() => setComposing(true)}
-              onShare={onShare}
+              onShare={() => setSharing(true)}
               onSave={(next) => useDispatch.getState().save(live.id, next)}
               onAuthor={() => openAuthor(author?.name)}
               onFilm={live.subjectId ? openFilm : undefined}
@@ -440,7 +453,7 @@ export default function FilingReader() {
             bottomInset={insets.bottom + 12}
             onCertify={(next) => useDispatch.getState().certify(live.id, next)}
             onCritique={() => setComposing(true)}
-            onShare={onShare}
+            onShare={() => setSharing(true)}
             onSave={(next) => useDispatch.getState().save(live.id, next)}
           />
         )
@@ -483,6 +496,44 @@ export default function FilingReader() {
         targetUserId={report?.userId ?? ''}
         targetUsername={report?.username ?? ''}
         onDismiss={() => setReport(null)}
+      />
+
+      {/* ── WHERE IT GOES ──────────────────────────────────────────────────
+          The house first, the world second. SAVE THE CARD is offered only for
+          a dossier, because the card is an essay's card — a take has nothing
+          to set in it, and a row that produces an empty picture is worse than
+          a row that is not there. */}
+      {sharing ? (
+        <View style={[p.sheetHost, { paddingBottom: insets.bottom }]}>
+          <PressableScale
+            style={p.sheetGround}
+            onPress={() => setSharing(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close, without sharing"
+          />
+          <ShareSheet
+            preview={<Text style={p.sharePreview} numberOfLines={2} {...scaledTextProps}>
+              {live.title || live.body}
+            </Text>}
+            onDest={(label) => {
+              if (label === 'TO THE LOUNGE') { setSharing(false); setToLounge(true); }
+              else void shareElsewhere();
+            }}
+          />
+        </View>
+      ) : null}
+
+      <ShareToLoungeModal
+        visible={toLounge}
+        onClose={() => setToLounge(false)}
+        // The Dispatch shares every kind down this one path. The prop names say
+        // "dossier" because the message type and its metadata key do, and both
+        // have to stay for the messages already sitting in rooms; `dossierKind`
+        // is what makes the card say TAKE when it is a take.
+        dossierId={live.id}
+        dossierTitle={live.title || live.body}
+        dossierAuthor={author?.name}
+        dossierKind={live.kind}
       />
     </View>
   );

@@ -14,7 +14,6 @@
       "signature": "end_filing(p_post uuid, p_by text)"
     },
     "get_community_feed_auth_cursor",
-    "get_dispatch_feed",
     "get_featured_critique",
     "get_filtered_stacks_auth_cursor_v2",
     "get_following_feed_auth_cursor",
@@ -52,7 +51,7 @@
     "update_my_preferences",
     "withdraw_lounge_message"
   ],
-  "_edgeFunctionsNote": "fetch-rss was removed on 2026-09-03: the Global Wire left the Dispatch and NewsService with it, so this app no longer calls it. The FUNCTION is deliberately still deployed — the web app is a separate tree on the same project and this contract only describes what MOBILE depends on. Removing it from here is not a signal to undeploy it.",
+  "_removedNote": "TWO entries left this contract on 2026-09-03, and NEITHER is a signal to undeploy anything. This file describes what the CURRENT mobile source calls; it is not an inventory of what production must keep. (1) fetch-rss — the Global Wire left the Dispatch and NewsService with it. (2) get_dispatch_feed — the Dispatch store now reads dispatch_posts directly. That RPC MUST STAY DEPLOYED: the build in members' hands on TestFlight calls it, and so does the web app, which is a separate tree on the same project. Step one's compatibility layer exists precisely so those keep working.",
   "edgeFunctions": [
     "sign-in-with-username",
     "sync-entitlement",
