@@ -203,56 +203,13 @@ describe('ModerationService', () => {
 });
 
 // ════════════════════════════════════════════════════════════════════
-// NEWS SERVICE
+// NEWS SERVICE — REMOVED
+//
+// The Global Wire is gone from the Dispatch and NewsService with it. It
+// fetched RSS from outside the house and printed it as if the house had said
+// it; a wire is now a filing a MEMBER brings, with their name on it.
 // ════════════════════════════════════════════════════════════════════
 
-describe('NewsService (getNews)', () => {
-    let getNews: typeof import('@/src/services/NewsService').getNews;
-
-    beforeAll(() => {
-        getNews = require('@/src/services/NewsService').getNews;
-    });
-
-    const originalEnv = process.env;
-
-    beforeEach(() => {
-        process.env = { ...originalEnv, EXPO_PUBLIC_SUPABASE_URL: 'https://test.supabase.co' };
-    });
-    afterEach(() => { process.env = originalEnv; });
-
-    it('returns fallback news when fetch fails', async () => {
-        global.fetch = jest.fn().mockRejectedValue(new Error('Network down'));
-        const result = await getNews();
-        expect(result).toEqual([]);
-    });
-
-    it('returns fallback news when RSS returns empty', async () => {
-        global.fetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [] }) });
-        const result = await getNews();
-        expect(result).toEqual([]);
-    });
-
-    it('parses RSS items when available', async () => {
-        const rssItems = [
-            { guid: 'g1', title: 'Film &amp; Art', pubDate: '2024-06-01T00:00:00Z', description: '<p>A review</p>', link: 'https://example.com' },
-        ];
-        global.fetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: rssItems }) });
-        const result = await getNews();
-        // Live items only — stale fallback is NOT appended to a live feed (SVC-2)
-        expect(result.length).toBe(1);
-        expect(result[0].title).toBe('Film & Art'); // HTML entity decoded
-    });
-
-    it('strips HTML tags from description', async () => {
-        const rssItems = [
-            { guid: 'g1', title: 'Test', pubDate: '2024-06-01T00:00:00Z', description: '<p>Clean <b>text</b></p>', link: '#' },
-        ];
-        global.fetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: rssItems }) });
-        const result = await getNews();
-        expect(result[0].excerpt).not.toContain('<p>');
-        expect(result[0].excerpt).toContain('Clean text');
-    });
-});
 
 // ════════════════════════════════════════════════════════════════════
 // BOOT SERVICE — REMOVED

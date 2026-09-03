@@ -249,9 +249,21 @@ export const DayDivider = memo(function DayDivider({ label }: { label: string })
  */
 
 /** A brass face: the shared ramp with its crown, never a flat gold rectangle. */
+/**
+ * `onPress` is REQUIRED, and that is the whole point.
+ *
+ * This component exists only to be pressed. With an optional handler it was
+ * mounted without one — `PaperEmpty` rendered `<BrassButton label={action} />`
+ * on the day-one screen and on every empty department, so the one control a new
+ * member is offered in their first minute did nothing at all.
+ *
+ * A test could catch that. A required prop makes it impossible, which is better:
+ * the compiler is checked on every build and by every editor, and it names the
+ * line rather than a file.
+ */
 export const BrassButton = memo(function BrassButton({
   label, onPress,
-}: { label: string; onPress?: () => void }) {
+}: { label: string; onPress: () => void }) {
   return (
     <PressableScale
       style={[p.btn, p.btnBrass]} onPress={onPress} haptic="medium"
@@ -293,12 +305,31 @@ const Ruling = ({ ops }: { ops: number[] }) => (
   </View>
 );
 
+/**
+ * ── AN EMPTY PAGE STILL OFFERS A WAY FORWARD ────────────────────────────────
+ * `action` and `onAction` are a PAIR, expressed as a union so the type system
+ * refuses one without the other. An empty state whose only button does nothing
+ * is worse than an empty state with no button: the member is told there is
+ * something they can do, and then finds there is not.
+ *
+ * `quiet` is the same pair, one weight down — a line of small caps that is a
+ * link when it leads somewhere ("WHAT AN AUTEUR CAN DO →") and plain type when
+ * it is only a reassurance ("NOTHING IS HIDDEN FROM YOU MEANWHILE").
+ */
+type EmptyAction =
+  | { action: string; onAction: () => void }
+  | { action?: undefined; onAction?: undefined };
+
+type EmptyQuiet =
+  | { quiet: string; onQuiet?: () => void }
+  | { quiet?: undefined; onQuiet?: undefined };
+
 export const PaperEmpty = memo(function PaperEmpty({
-  title, body, action, quiet, end,
+  title, body, action, quiet, end, onAction, onQuiet,
 }: {
-  title: string; body: string; action?: string; quiet?: string;
+  title: string; body: string;
   end?: boolean;
-}) {
+} & EmptyAction & EmptyQuiet) {
   return (
     <View style={p.empty}>
       <Ruling ops={RULED_ABOVE} />
@@ -308,8 +339,20 @@ export const PaperEmpty = memo(function PaperEmpty({
           department offered an outline — the same act, drawn two ways, on two
           screens a member sees within a minute of each other. Two treatments of
           one control is how an app stops feeling like one app. */}
-      {action ? <BrassButton label={action} /> : null}
-      {quiet ? <Text style={p.quiet} {...scaledTextProps}>{quiet}</Text> : null}
+      {action && onAction ? <BrassButton label={action} onPress={onAction} /> : null}
+      {quiet ? (
+        onQuiet ? (
+          <PressableScale
+            onPress={onQuiet} haptic="selection"
+            hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
+            accessibilityRole="link" accessibilityLabel={quiet}
+          >
+            <Text style={[p.quiet, { color: colors.sepia }]} {...scaledTextProps}>{quiet}</Text>
+          </PressableScale>
+        ) : (
+          <Text style={p.quiet} {...scaledTextProps}>{quiet}</Text>
+        )
+      ) : null}
       {end ? (
         <View style={p.endRow}>
           <View style={p.endLine} />

@@ -356,7 +356,9 @@ add('a3-day-one', (
       <Ornament />
       <PaperEmpty title="Nothing has been filed yet."
         body="Ask what to watch. Say the thing nobody else will. Bring the news."
-        action="FILE THE FIRST" quiet="OR JUST LOOK AROUND" />
+        action="FILE THE FIRST" quiet="OR JUST LOOK AROUND"
+        /* a screenshot: nothing to do, said out loud rather than left out */
+        onAction={() => {}} />
     </PaperSheet>
   </View>
 ));
@@ -374,7 +376,9 @@ add('a4-empty-seeking', (
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperEmpty title="No one is asking."
         body="Tell the house what you need tonight. Someone always knows."
-        action="ASK THE HOUSE" />
+        action="ASK THE HOUSE"
+        /* a screenshot: nothing to do, said out loud rather than left out */
+        onAction={() => {}} />
     </PaperSheet>
   </View>
 ));
@@ -416,7 +420,9 @@ add('a7-end-signed-out', (
         body="Chungking Express gets better every year and I no longer trust anyone who disagrees."
         certifyCount={88} commentCount={12} />
       <PaperEmpty title="The house is open to read."
-        body="Filing is for members." action="JOIN THE SOCIETY" end />
+        body="Filing is for members." action="JOIN THE SOCIETY" end
+        /* a screenshot: nothing to do, said out loud rather than left out */
+        onAction={() => {}} />
     </PaperSheet>
   </View>
 ));
@@ -1033,7 +1039,9 @@ add('g1-wire-down', (
           special-cased, which is why it cannot look like a crash. */}
       <PaperEmpty title="The wire is down."
         body="The house is still here. The connection is not."
-        action="TRY AGAIN" quiet="WHAT YOU SAVED IS STILL READABLE" />
+        action="TRY AGAIN" quiet="WHAT YOU SAVED IS STILL READABLE"
+        /* a screenshot: nothing to do, said out loud rather than left out */
+        onAction={() => {}} />
     </PaperSheet>
   </View>
 ));

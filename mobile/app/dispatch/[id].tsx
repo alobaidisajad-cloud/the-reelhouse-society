@@ -326,6 +326,11 @@ export default function FilingReader() {
               saved={saved}
               answered={!!live.answerId}
               spoiler={live.spoilerLabel}
+              // Only its author can be looking at a withheld filing — the feed
+              // excludes them and RLS refuses everyone else — so the plate is
+              // telling the one person entitled to know that the house is
+              // reading it, rather than that it has gone.
+              withheld={!!live.withheldAt}
               ended={live.endedBy ?? undefined}
               edited={!!live.editedAt}
               onCertify={(next) => useDispatch.getState().certify(live.id, next)}

@@ -59,7 +59,6 @@ const KNOWN_UNPARKED: Record<string, string> = {
     // ── Pending their own page's polish pass ──────────────────────────────
     // Each is a genuine session-length loop. They are scheduled with the page
     // they live on; delete the entry when that page is polished.
-    'src/components/dispatch/NightlyTransmission.tsx': 'pending Dispatch polish',
     'src/components/log/LogSearchEngine.tsx': 'pending Log-modal polish',
     'src/components/person/PersonOrnaments.tsx': 'pending Person polish',
     'src/components/profile/NitrateCalendarGrid.tsx': 'pending Profile polish',

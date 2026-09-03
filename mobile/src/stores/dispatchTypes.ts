@@ -68,6 +68,16 @@ export interface Filing {
   partNumber: number | null;
 
   spoilerLabel: string | null;
+  /**
+   * Under review by the house.
+   *
+   * A withheld filing is filtered out of the feed for everyone — but its AUTHOR
+   * can still open it by its address, because RLS lets them read their own, and
+   * a page that says "no longer here" about something merely under review would
+   * be the app lying to the person most entitled to the truth. The reader prints
+   * the WITHHELD plate instead.
+   */
+  withheldAt: string | null;
   /** Set means the filing has been ended; its text is already gone from the row. */
   endedAt: string | null;
   endedBy: 'author' | 'house' | null;
@@ -149,6 +159,7 @@ export const FilingRowSchema = z.object({
   part_number: z.number().nullable().optional(),
 
   spoiler_label: z.string().nullable().optional(),
+  withheld_at: z.string().nullable().optional(),
   ended_at: z.string().nullable().optional(),
   ended_by: z.enum(['author', 'house']).nullable().optional(),
 
@@ -263,6 +274,7 @@ export function toFiling(row: FilingRow): Filing {
     seriesTitle: row.series_title ?? null,
     partNumber: row.part_number ?? null,
     spoilerLabel: row.spoiler_label ?? null,
+    withheldAt: row.withheld_at ?? null,
     endedAt: row.ended_at ?? null,
     endedBy: row.ended_by ?? null,
     certifyCount: row.certify_count,
@@ -328,7 +340,7 @@ export const FILING_CARD_COLUMNS =
   'id, kind, user_id, author_username, subject_kind, subject_id, subject_title, ' +
   'subject_sub, subject_image, title, body, source, source_url, options, closes_at, ' +
   'frozen_totals, answer_id, series_id, series_title, part_number, spoiler_label, ' +
-  'ended_at, ended_by, certify_count, comment_count, created_at, edited_at, ' +
+  'withheld_at, ended_at, ended_by, certify_count, comment_count, created_at, edited_at, ' +
   'profiles!dispatch_posts_profile_fkey(username, avatar_url, member_no, tier, role, is_founding)';
 
 /** The same, plus the essay — one filing, once, when it is opened. */

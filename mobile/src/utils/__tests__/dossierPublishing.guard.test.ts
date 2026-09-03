@@ -115,28 +115,51 @@ describe('#12 · the zip guard fails closed on ANY unmeasurable entry', () => {
   });
 });
 
+/**
+ * The same two guarantees, at the addresses they moved to.
+ *
+ * The dossier feed became the Dispatch feed, `content.ts` became `dispatch.ts`,
+ * and `ArticleReaderModal` became `app/dispatch/[id].tsx`. Neither guarantee
+ * stopped mattering — an essay is still 25,000 characters that a card renders
+ * 500 of, and a body still has to land on the store row rather than in a
+ * component that will discard it on the next render.
+ */
 describe('the Dispatch feed stops carrying essay bodies', () => {
-  const store = stripComments(read('src/stores/content.ts'));
+  const types = stripComments(read('src/stores/dispatchTypes.ts'));
+  const store = stripComments(read('src/stores/dispatch.ts'));
 
-  it('the feed reads the function, not select(*)', () => {
-    // select('*') includes full_content — 83% of the payload on one essay, and
-    // the card renders only the excerpt.
-    expect(store).toMatch(/rpc\('get_dispatch_feed'/);
-    const feedRegion = store.slice(store.indexOf('fetchDossiers'), store.indexOf('addDossier'));
-    expect(feedRegion).not.toMatch(/from\('dispatch_dossiers'\)\s*\.select\('\*'\)/);
+  it('the card columns do not include the essay', () => {
+    // Asking for full_content on a twenty-row page is 83% payload nobody draws.
+    // The columns are named explicitly, so this reads the list rather than
+    // trusting a comment about it.
+    const cards = types.slice(
+      types.indexOf('FILING_CARD_COLUMNS'),
+      types.indexOf('FILING_FULL_COLUMNS'),
+    );
+    expect(cards.length).toBeGreaterThan(100);
+    expect(cards).not.toMatch(/full_content/);
   });
 
-  it('both pages use it — the first and the cursor', () => {
-    expect((store.match(/rpc\('get_dispatch_feed'/g) ?? []).length).toBe(2);
+  it('and the reader asks for it separately, once', () => {
+    expect(types).toMatch(/FILING_FULL_COLUMNS[\s\S]{0,200}full_content/);
+    expect(store).toMatch(/FILING_FULL_COLUMNS/);
   });
 
   it('the body lands on the STORE row, not in the reader component', () => {
-    // The reader renders `globalDossiers.find(...) ?? base`, so a body held in
-    // component state would be discarded on the next render and the essay would
-    // quietly become its 150-character excerpt.
-    expect(store).toMatch(/hydrateDossierBody/);
-    const reader = stripComments(read('src/components/dispatch/ArticleReaderModal.tsx'));
-    expect(reader).toMatch(/hydrateDossierBody\(targetId\)/);
-    expect(reader).not.toMatch(/setLocalArticle\([^)]*full_content/);
+    // The reader renders the store's copy — `filings.find(...) ?? filing` — so a
+    // body held only in component state would be discarded on the next render
+    // and the essay would quietly become its 500-character opening.
+    // Anchored on the IMPLEMENTATION, not on `hydrate:` — the first match for
+    // that is the type declaration in the interface, and a slice starting there
+    // measures a signature rather than a body. It would then fail (as it did)
+    // or, worse, pass because some unrelated code happened to fall inside it.
+    const start = store.indexOf('hydrate: async (id)');
+    expect(start).toBeGreaterThan(-1);
+    const hydrate = store.slice(start, store.indexOf('file: async (draft)'));
+    expect(hydrate).toMatch(/set\(\(st\)/);
+
+    const reader = stripComments(read('app/dispatch/[id].tsx'));
+    expect(reader).toMatch(/hydrate\(id\)/);
+    expect(reader).toMatch(/filings\.find\(/);
   });
 });

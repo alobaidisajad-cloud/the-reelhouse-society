@@ -52,8 +52,8 @@
     "update_my_preferences",
     "withdraw_lounge_message"
   ],
+  "_edgeFunctionsNote": "fetch-rss was removed on 2026-09-03: the Global Wire left the Dispatch and NewsService with it, so this app no longer calls it. The FUNCTION is deliberately still deployed — the web app is a separate tree on the same project and this contract only describes what MOBILE depends on. Removing it from here is not a signal to undeploy it.",
   "edgeFunctions": [
-    "fetch-rss",
     "sign-in-with-username",
     "sync-entitlement",
     "sync-films",

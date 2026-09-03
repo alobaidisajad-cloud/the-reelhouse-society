@@ -150,8 +150,8 @@ const RULES: Rule[] = [
     note: 'tier choice, marginBottom 12' },
   { file: 'src/components/profile/AvatarCropSheet.tsx', style: 'actionCard', gap: { x: 16 },
     note: 'camera / library, gap 16' },
-  { file: 'src/components/dispatch/ArticleReaderModal.tsx', style: 'readerActionBtn', gap: { x: 16, y: 16 },
-    note: 'wrapping action row, gap 16' },
+  // (ArticleReaderModal's wrapping action row is gone with the modal itself —
+  //  the reader is a route now and its marks are the docked bar above.)
   { file: 'src/components/profile/ProfileListsTab.tsx', style: 'stackCard', gap: { x: 16, y: 16 },
     note: 'stack grid' },
   { file: 'src/components/reels/ReelsHeader.tsx', style: 'tabButton', gap: { x: 0 },

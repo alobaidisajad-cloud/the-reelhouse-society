@@ -328,6 +328,9 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       seriesTitle: clean.seriesTitle ?? null,
       partNumber: clean.partNumber ?? null,
       spoilerLabel: clean.spoilerLabel ?? null,
+      // Nothing the member has just written is under review. The house has not
+      // seen it yet.
+      withheldAt: null,
       endedAt: null,
       endedBy: null,
       certifyCount: 0,
