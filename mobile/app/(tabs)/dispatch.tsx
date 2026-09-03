@@ -98,6 +98,7 @@ export default function DispatchScreen() {
   const savedOnly = useDispatch((s) => s.savedOnly);
   const loading = useDispatch((s) => s.loading);
   const loadingMore = useDispatch((s) => s.loadingMore);
+  const newCount = useDispatch((s) => s.newCount);
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const savedIds = useDispatch((s) => s.savedIds);
 
@@ -133,6 +134,29 @@ export default function DispatchScreen() {
 
   useEffect(() => {
     if (useDispatch.getState().filings.length === 0) void useDispatch.getState().fetch();
+  }, []);
+
+  /**
+   * ── IS THERE NEW PAPER? ───────────────────────────────────────────────────
+   * Asked when the tab regains focus, and every ninety seconds while it is
+   * focused — never while it is not. A check that keeps running on a screen
+   * nobody is looking at is a request the member pays for and cannot see.
+   *
+   * The interval is cleared by the same cleanup that runs on blur, so leaving
+   * the tab stops it in the same breath rather than one tick later.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      void useDispatch.getState().checkForNew();
+      const t = setInterval(() => { void useDispatch.getState().checkForNew(); }, 90_000);
+      return () => clearInterval(t);
+    }, []),
+  );
+
+  const takeTheNew = useCallback(() => {
+    TactileEngine.navigate();
+    listRef.current?.scrollToOffset?.({ offset: 0, animated: true });
+    void useDispatch.getState().fetch();
   }, []);
 
   /**
@@ -331,6 +355,15 @@ export default function DispatchScreen() {
             />
           </View>
         </View>
+
+        {/* ── NEW PAPER ──────────────────────────────────────────────────────
+            Above the list, never IN it. Splicing arrivals into a feed somebody
+            is reading moves the words under their thumb — so the page stays
+            exactly where they left it and offers to go and get them.
+
+            It is drawn only while there is something to fetch: a pill announcing
+            nothing is chrome. */}
+        {newCount > 0 ? <NewFilings count={newCount} onPress={takeTheNew} /> : null}
       </View>
     </FrozenTab>
   );

@@ -111,8 +111,32 @@ export interface DispatchState {
   setSort: (s: Sort) => void;
   setSavedOnly: (on: boolean) => void;
 
+  /** How many filings have arrived above the page since it was drawn. */
+  newCount: number;
+
   fetch: () => Promise<void>;
   loadMore: () => Promise<void>;
+  /**
+   * Is there new paper above what is on screen?
+   *
+   * ── WHY A COUNT AND NOT A SOCKET ─────────────────────────────────────────
+   * The obvious build is a realtime subscription. It is the wrong tool here for
+   * three reasons, and each one is a cost the member pays:
+   *
+   *   · it needs `dispatch_posts` in the realtime publication, so EVERY write
+   *     to the table — every certify, every counter tick — is replicated to
+   *     every subscriber, to answer a question asked once a minute;
+   *   · it is a second persistent connection on the app's main tab, beside the
+   *     one the Lounge already holds for chat, which genuinely needs it;
+   *   · a feed that gains a few filings an hour is not a chat. The pill's whole
+   *     job is "there is new paper", and a HEAD count answers that exactly as
+   *     well for the price of one bounded query.
+   *
+   * It is RLS-filtered like any other read, so a filing from somebody the member
+   * has blocked is not counted — a pill that promises three and delivers two is
+   * the page lying about something the member can check in one tap.
+   */
+  checkForNew: () => Promise<void>;
   /** One filing, with its essay, for the reader. */
   hydrate: (id: string) => Promise<Filing | null>;
 
@@ -165,6 +189,7 @@ const emptyState = () => ({
   loadingMore: false,
   hasMore: true,
   droppedRows: 0,
+  newCount: 0,
   certifiedIds: new Set<string>(),
   savedIds: new Set<string>(),
   myVotes: {} as Record<string, number>,
@@ -182,17 +207,17 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   // call it the TAKES department.
   setSection: (s) => {
     if (get().section === s) return;
-    set({ section: s, filings: [], hasMore: true });
+    set({ section: s, filings: [], hasMore: true, newCount: 0 });
     void get().fetch();
   },
   setSort: (s) => {
     if (get().sort === s) return;
-    set({ sort: s, filings: [], hasMore: true });
+    set({ sort: s, filings: [], hasMore: true, newCount: 0 });
     void get().fetch();
   },
   setSavedOnly: (on) => {
     if (get().savedOnly === on) return;
-    set({ savedOnly: on, filings: [], hasMore: true });
+    set({ savedOnly: on, filings: [], hasMore: true, newCount: 0 });
     void get().fetch();
   },
 
@@ -208,7 +233,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         const rows = await pageQuery(get(), null);
         if (gen !== generation || !memberUnchanged(startedAs)) return;
         const { filings, dropped } = parseFilingRows(rows);
-        set({ filings, hasMore: gotFullPage(rows.length), droppedRows: dropped });
+        set({ filings, hasMore: gotFullPage(rows.length), droppedRows: dropped, newCount: 0 });
         if (dropped > 0) {
           logger.warn(`[dispatch] dropped ${dropped} malformed filing row(s)`);
         }
@@ -225,6 +250,45 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     inflight = run;
     return run;
+  },
+
+  checkForNew: async () => {
+    const s = get();
+    // Only under LATEST, and only once there is a page to be newer THAN.
+    //
+    // Under CERTIFIED the list is not chronological, so "new above you" names a
+    // position that does not exist — a filing certified once an hour from now
+    // belongs in the middle of the page, not at the top. And the saved page is
+    // not an edition: nothing arrives on it that the member did not put there.
+    if (s.sort !== 'LATEST' || s.savedOnly || s.filings.length === 0) return;
+    if (s.loading || s.loadingMore) return;
+
+    const newest = s.filings[0].createdAt;
+    const kind = SECTION_KIND[s.section];
+    const startedAs = useAuthStore.getState().user?.id ?? null;
+
+    try {
+      let q = supabase
+        .from('dispatch_posts')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_published', true)
+        .is('withheld_at', null)
+        .gt('created_at', newest);
+      if (kind) q = q.eq('kind', kind);
+
+      const { count, error } = await timed((sig) => withAbortSignal(q, sig), 'dispatch.checkForNew');
+      if (error) throw error;
+      if (!memberUnchanged(startedAs)) return;
+      // The generation guard matters here too: a check begun under TAKES that
+      // lands after the member moved to WIRE would announce takes on a page of
+      // wires.
+      if (get().sort !== 'LATEST' || get().savedOnly) return;
+      set({ newCount: count ?? 0 });
+    } catch (e) {
+      // A pill that could not be counted simply does not appear. Failing the
+      // feed over an ornament would be the wrong trade.
+      if (!isNetworkError(e)) captureError(e, { where: 'dispatch.checkForNew' });
+    }
   },
 
   loadMore: async () => {

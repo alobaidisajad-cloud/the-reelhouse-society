@@ -60,7 +60,18 @@ SET LOCAL check_function_bodies = on;
 CREATE OR REPLACE FUNCTION pg_temp.splice_after_dossier_comment(
   p_signature text, p_insert text
 ) RETURNS text
-LANGUAGE plpgsql AS $splice$
+LANGUAGE plpgsql
+-- Pinned like every other function this project has written since batch 29.
+--
+-- The risk here is genuinely nil — it lives in pg_temp, it is not SECURITY
+-- DEFINER so it runs as whoever ran the migration, and everything it calls is a
+-- pg_catalog builtin that pg_temp cannot shadow. It is pinned anyway, because
+-- `searchPathHardening.test.ts` enumerates every function from batch 29 onward
+-- and an exemption for "this one is obviously safe" is how the rule stops being
+-- checkable. The guard found this within a minute of the file existing, which is
+-- the argument for the rule being absolute.
+SET search_path = public, pg_temp
+AS $splice$
 DECLARE
   def text;
   anchor constant text := '''dossier_comment''';
