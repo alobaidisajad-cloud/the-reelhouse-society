@@ -18,6 +18,7 @@
  * find that out at the end.
  */
 import React, { act } from 'react';
+import { Alert } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -219,6 +220,75 @@ describe('the writing room', () => {
     await type(getByLabelText("Dossier content body"), 'Ozu frames a room.');
     await press(getByLabelText('Preview the dossier'));
     expect(getByLabelText('Back to editing')).toBeTruthy();
+  });
+});
+
+describe('the formatting toolbar', () => {
+  const open = () => { at({ kind: 'dossier' }); return render(<ComposeScreen />); };
+
+  it('wraps the selection, and leaves the caret after it', async () => {
+    const { getByLabelText } = open();
+    const body = getByLabelText('Dossier content body');
+    await type(body, 'Ozu frames a room.');
+
+    // The member selects "Ozu" and presses Bold.
+    await act(async () => {
+      fireEvent(body, 'selectionChange', { nativeEvent: { selection: { start: 0, end: 3 } } });
+    });
+    await press(getByLabelText('Bold'));
+
+    expect(getByLabelText('Dossier content body').props.value).toBe('**Ozu** frames a room.');
+  });
+
+  it('puts the caret BETWEEN the marks when nothing is selected', async () => {
+    // Pressing Bold with no selection should leave somebody ready to type
+    // inside the emphasis, not after it.
+    const { getByLabelText } = open();
+    const body = getByLabelText('Dossier content body');
+    await type(body, 'Ozu');
+    await act(async () => {
+      fireEvent(body, 'selectionChange', { nativeEvent: { selection: { start: 3, end: 3 } } });
+    });
+    await press(getByLabelText('Italic'));
+
+    expect(getByLabelText('Dossier content body').props.value).toBe('Ozu**');
+    expect(getByLabelText('Dossier content body').props.selection).toEqual({ start: 4, end: 4 });
+  });
+
+  it('carries every mark the desk offers', async () => {
+    const { getByLabelText } = open();
+    for (const label of ['Bold', 'Italic', 'Heading', 'Block quote', 'Horizontal rule', 'Insert link']) {
+      expect(getByLabelText(label)).toBeTruthy();
+    }
+  });
+});
+
+describe('leaving the room', () => {
+  const open = () => { at({ kind: 'dossier' }); return render(<ComposeScreen />); };
+
+  it('asks before discarding words', async () => {
+    const alerts: Array<[string, string, Array<{ text: string; onPress?: () => void }>]> = [];
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(
+      ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
+    );
+    const { getByLabelText } = open();
+    await type(getByLabelText('Dossier content body'), 'An opening line.');
+    await press(getByLabelText(/Cancel/));
+
+    expect(alerts[0][0]).toBe('Discard Draft?');
+    spy.mockRestore();
+  });
+
+  it('leaves without asking when there is nothing to lose', async () => {
+    const alerts: unknown[] = [];
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(
+      ((t: string) => { alerts.push(t); }) as never,
+    );
+    const { getByLabelText } = open();
+    await press(getByLabelText(/Cancel/));
+    // A confirmation over an empty page is a dialog that exists to be dismissed.
+    expect(alerts).toHaveLength(0);
+    spy.mockRestore();
   });
 });
 

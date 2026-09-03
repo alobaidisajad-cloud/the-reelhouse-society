@@ -148,6 +148,22 @@ describe('the pieces that move', () => {
     }
   });
 
+  it('arrives at its end state for a member who asked for less motion', () => {
+    // Nothing is REMOVED under reduced motion — the result is still revealed
+    // and the mark is still made, they simply do not travel. A version that
+    // skipped the animation AND the end state would leave a ballot with empty
+    // rules and a heart that never fills.
+    const reanimated = require('react-native-reanimated');
+    const spy = jest.spyOn(reanimated, 'useReducedMotion').mockReturnValue(true);
+
+    expect(() => render(<PaperFill percent={42} index={2} />)).not.toThrow();
+    expect(() => render(<PaperStrike on><Text>HEART</Text></PaperStrike>)).not.toThrow();
+
+    const { getByText } = render(<PaperStrike on={false}><Text>MARK</Text></PaperStrike>);
+    expect(getByText('MARK')).toBeTruthy();
+    spy.mockRestore();
+  });
+
   it('the mark renders what it is given, and nothing else', () => {
     // A bare string child needs a Text around it in React Native; the point of
     // the assertion is that the wrapper passes its child through untouched.

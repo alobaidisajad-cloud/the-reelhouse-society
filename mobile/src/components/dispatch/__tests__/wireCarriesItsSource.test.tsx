@@ -45,13 +45,26 @@ jest.mock('@/src/stores/dispatch', () => ({
   },
 }));
 
-jest.mock('@/src/lib/tmdb', () => ({ tmdb: { searchMovies: async () => [] } }));
+// `search`, which is what FilmPicker calls — `searchMovies` was a guess, and a
+// mock that names a method the code never calls silently provides nothing.
+let mockResults: Array<Record<string, unknown>> = [];
+jest.mock('@/src/lib/tmdb', () => ({ tmdb: { search: async () => ({ results: mockResults }) } }));
+const mockToast = { error: jest.fn(), success: jest.fn() };
 jest.mock('@/src/utils/reelToast', () => {
-  const fn = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn() });
+  const fn = Object.assign(jest.fn(), {
+    error: (...a: unknown[]) => mockToast.error(...a),
+    success: (...a: unknown[]) => mockToast.success(...a),
+  });
   return { __esModule: true, default: fn };
 });
 
-beforeEach(() => { mockFiled.length = 0; });
+beforeEach(() => {
+  mockFiled.length = 0;
+  mockResults = [];
+  mockToast.error.mockClear(); mockToast.success.mockClear();
+  jest.useFakeTimers({ doNotFake: ['nextTick'] });
+});
+afterEach(() => { jest.useRealTimers(); });
 
 /**
  * Typing, flushed.
@@ -116,6 +129,32 @@ describe('the wire desk', () => {
     const { getByLabelText } = render(<ComposeShortScreen kind="wire" />);
     expect(getByLabelText('Where this came from').props.maxLength).toBe(MAX_LENGTHS.wireSource);
     expect(getByLabelText('Your wire').props.maxLength).toBeUndefined();
+  });
+
+  it('carries the film as the SUBJECT, and a spoiler when marked', async () => {
+    const { getByLabelText } = render(<ComposeShortScreen kind="take" />);
+    await type(getByLabelText('Your take'), 'The ending is the whole film.');
+    await press(getByLabelText(/Mark a spoiler/i));
+
+    await press(getByLabelText('Name a film'));
+    mockResults = [{ id: 42, title: 'Tokyo Story', release_date: '1953-01-01', media_type: 'movie', poster_path: '/p.jpg' }];
+    await type(getByLabelText('Search for a film'), 'tokyo');
+    await act(async () => { jest.advanceTimersByTime(400); await Promise.resolve(); });
+    await press(getByLabelText('Tokyo Story, 1953'));
+
+    await press(getByLabelText('File it'));
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockFiled[0].spoilerLabel).toBe('SPOILERS');
+    expect(mockFiled[0].film).toMatchObject({ id: 42, title: 'Tokyo Story', sub: '1953' });
+  });
+
+  it('refuses a still until a film is named', async () => {
+    // A still belongs to a film. Offering the control before one is named would
+    // open a picker with nothing to pick from.
+    const { getByLabelText } = render(<ComposeShortScreen kind="take" />);
+    await press(getByLabelText(/Add a still/i));
+    expect(String(mockToast.error.mock.calls[0][0])).toMatch(/Name a film first/);
   });
 
   it('asks a take for no source at all', async () => {
