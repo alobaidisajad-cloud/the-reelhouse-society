@@ -976,7 +976,16 @@ export default function TribunalScreen() {
                             the server refuses it, and a button that cannot work
                             should never be offered. Still shown when the member
                             has left, because their content can outlive them. */}
-                        {item.content_type !== 'profile' && (
+                        {/* A LOUNGE joins `profile` here. Step one added
+                            `lounge` to the reports CHECK — reporting a room had
+                            been failing silently in production until then — and
+                            the moment it became reportable, this button became
+                            offerable for it. A room is a PLACE, not a piece:
+                            removing it would take every message anyone ever left
+                            in it, which is not what "remove the reported
+                            content" means, and the server refuses the type
+                            anyway. The act on a bad room is on its owner. */}
+                        {item.content_type !== 'profile' && item.content_type !== 'lounge' && (
                           <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
                             onPress={() => openActionModal('delete_content', item)}

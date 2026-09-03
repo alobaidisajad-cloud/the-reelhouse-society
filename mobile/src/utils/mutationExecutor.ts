@@ -752,9 +752,24 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         }
     },
 
-    // ── Dossiers (P0-DOSSIER FIX) ──
-    // Previously, dossier offline mutations reused archive types, causing them
-    // to execute against supabase.from('physical_archive') — the wrong table.
+    // ── Dossiers ────────────────────────────────────────────────────────────
+    // ⚠️ THESE STAY, AND THEY MUST. The Dispatch replaced them with add_filing,
+    // add_critique and certify_filing — but this queue PERSISTS IN MMKV, and the
+    // build in members' hands right now writes THESE types. An entry queued
+    // today flushes after the launch build lands, and a handler that no longer
+    // exists is an UnknownMutationError and a member's essay in a dead letter.
+    //
+    // They still work, deliberately: every table named below is now a view over
+    // dispatch_posts / dispatch_comments with an INSTEAD OF trigger behind it,
+    // which is the entire reason step one built a compatibility layer instead of
+    // renaming and moving on. Same reasoning as `delete_lounge_message` above.
+    //
+    // They can be deleted when no device can still be holding one — which is
+    // after the launch build has been out longer than the queue's 24h staleness
+    // window, not before.
+    //
+    // (P0-DOSSIER FIX) Previously, dossier offline mutations reused archive
+    // types, executing against supabase.from('physical_archive') — wrong table.
     add_dossier: async (p: any) => {
         const dbPayload = {
             // The SAME id the optimistic row already carries.
