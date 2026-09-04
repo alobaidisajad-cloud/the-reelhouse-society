@@ -90,6 +90,20 @@ export function softBreak(text: string, run: number = MAX_RUN): string {
  * whether to print the continuation mark, because an essay short enough to fit
  * whole must not claim to run on.
  */
+/**
+ * Words that end in a stop without ending a sentence.
+ *
+ * Deliberately short. This is an excerpt on a card, not a parser: the cost of
+ * missing one is a slightly early cut, and the cost of a long list is a rule
+ * nobody can hold in their head. What a film essay actually contains is titles,
+ * `No.`, and initials — and initials are covered by the single-letter rule
+ * rather than by naming every letter here.
+ */
+const ABBREVIATIONS = new Set([
+  'mr', 'mrs', 'ms', 'dr', 'prof', 'st', 'jr', 'sr', 'no', 'vs', 'etc',
+  'ie', 'eg', 'ca', 'approx', 'dir', 'ed', 'vol', 'pt', 'us', 'uk',
+]);
+
 export function clipToSentence(text: string, max: number): { text: string; clipped: boolean } {
   const whole = (text ?? '').trim();
   if (whole.length <= max) return { text: whole, clipped: false };
@@ -110,9 +124,39 @@ export function clipToSentence(text: string, max: number): { text: string; clipp
     // A stop only ends a sentence if whitespace follows it. Tested against the
     // WHOLE essay, not the window: a stop sitting on the window's last character
     // may be `Mr.` with the rest of the name just past the cut, and the window
-    // alone cannot tell. This is also what keeps `No. 17` and `U.S.` from
-    // reading as endings.
+    // alone cannot tell.
     if (end < whole.length && !/\s/.test(whole[end])) continue;
+
+    /**
+     * ── AND THE COMMENT HERE USED TO CLAIM MORE THAN THE CODE DID ────────────
+     * It said this "keeps `No. 17` and `U.S.` from reading as endings". It did
+     * not. Whitespace follows the stop in `No. 17`, `Mr. Ozu` and `U.S. desk`
+     * exactly as it follows a real ending, so all three were cuts. Measured,
+     * the excerpts this produced were:
+     *
+     *     "Ballot No."
+     *     "J. L."
+     *     "Filed by Mr. Ozu of the U.S."
+     *
+     * The first two are a card printing nothing but an abbreviation.
+     *
+     * Two more conditions, both cheap, and neither needing to know English:
+     *
+     *   WHAT FOLLOWS BEGINS A SENTENCE. A real ending is followed by a capital
+     *   or by the end of the essay. `No. 17` and `U.S. desk` are followed by a
+     *   digit and a lowercase letter, so they are not endings.
+     *
+     *   WHAT PRECEDES IS NOT AN ABBREVIATION. `Mr. Ozu` and `J. L. Godard` ARE
+     *   followed by capitals, so the first rule cannot see them. A short list
+     *   of titles, and any single letter, covers what a film essay actually
+     *   contains.
+     */
+    const after = whole.slice(end).replace(/^\s+/, '');
+    if (after && !/^[A-Z«“"'([]/.test(after[0] + (after[1] ?? ''))) continue;
+
+    const word = /([A-Za-z.]+)$/.exec(window.slice(0, i))?.[1] ?? '';
+    const bare = word.replace(/\./g, '');
+    if (bare.length === 1 || ABBREVIATIONS.has(bare.toLowerCase())) continue;
 
     return { text: window.slice(0, end), clipped: true };
   }
