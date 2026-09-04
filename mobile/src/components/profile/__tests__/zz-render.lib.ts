@@ -454,7 +454,33 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
       : lines > 1
         ? `;display:-webkit-box;-webkit-line-clamp:${lines};-webkit-box-orient:vertical;overflow:hidden`
         : '';
-    return `<span style="${css(st, true)}${clamp}">${(n.children || []).map((c) => toHtml(c, opts, inSvg)).join('')}</span>`;
+    /**
+     * ── AND HOW FAR IT IS ALLOWED TO GROW ──────────────────────────────────
+     * `allowFontScaling` and `maxFontSizeMultiplier` are the only record of
+     * whether a given Text answers the member's type-size setting, and the HTML
+     * carried neither — so an audit that scaled the page had to scale
+     * EVERYTHING, and reported a decorative stamp overflowing as though it were
+     * a real fault. Emitted as a data attribute so a measurement at
+     * accessibility sizes can apply each element's own cap.
+     *
+     * Absent `allowFontScaling` means RN scales it: the default is true.
+     */
+    const cap = p.allowFontScaling === false
+      ? 1
+      : (typeof p.maxFontSizeMultiplier === 'number' ? p.maxFontSizeMultiplier : 0);
+    /**
+     * And whether it SHRINKS rather than overflows.
+     *
+     * `adjustsFontSizeToFit` has no CSS equivalent, so a measurement of this
+     * HTML sees a label escaping its column where the real app quietly reduces
+     * it. Emitting the floor lets an audit model the shrink and report only the
+     * case where even the floor is not enough — which is the case that matters.
+     */
+    const fit = p.adjustsFontSizeToFit === true
+      ? (typeof p.minimumFontScale === 'number' ? p.minimumFontScale : 0.5)
+      : 0;
+    const capAttr = ` data-scale-cap="${cap}"${fit ? ` data-fit-min="${fit}"` : ''}`;
+    return `<span${capAttr} style="${css(st, true)}${clamp}">${(n.children || []).map((c) => toHtml(c, opts, inSvg)).join('')}</span>`;
   }
   if (t === 'ActivityIndicator') return '<div class="spinner"></div>';
 

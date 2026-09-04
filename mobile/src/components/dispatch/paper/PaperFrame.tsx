@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Bookmark, ChevronsUpDown } from 'lucide-react-native';
 
@@ -65,7 +65,27 @@ export const PaperChrome = memo(function PaperChrome({
           pointerEvents="none"
           style={p.chromeFade}
         />
-        <View style={p.chromeRow}>
+        {/* ── AND IT ACTUALLY SCROLLS ────────────────────────────────────────
+            The note at the top of this file has always said "the index
+            scrolls", the fade above says "there is more this way", and
+            `chromeIndex` carries `overflow: hidden` to clip it — and the row
+            was a plain View. Nothing scrolled.
+
+            At normal type all six departments fit, so it never showed. At 1.35
+            the row overflows by 5.2pt, measured across all 66 screens, and
+            DOSSIER is cut against the tools: a member who turns type up loses a
+            whole department and has no way to reach it — a dead end that only
+            appears for the people most likely to hit it.
+
+            `alwaysBounceHorizontal` off, so a row that DOES fit does not rubber
+            band and imply there is something past the end. */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          alwaysBounceHorizontal={false}
+          contentContainerStyle={p.chromeRow}
+          accessibilityRole="tablist"
+        >
           {SECTIONS.map((s, i) => (
             <View key={s} style={p.chromeRow}>
               {i > 0 && <Text style={p.indexDot} {...decorativeTextProps}>·</Text>}
@@ -86,7 +106,12 @@ export const PaperChrome = memo(function PaperChrome({
               >
                 {/* Lit only when chosen — the Darkroom lights the mood you pick
                     rather than painting all six at once. Six coloured words in a
-                    row all the time is a legend, not navigation. */}
+                    row all the time is a legend, not navigation.
+
+                    The label keeps `scaledTextProps` and does NOT shrink to fit.
+                    Shrinking the type of a member who asked for larger type is
+                    the wrong answer to running out of room; the row scrolls
+                    instead. See the ScrollView above. */}
                 <Text
                   style={[
                     p.indexLabel,
@@ -101,7 +126,7 @@ export const PaperChrome = memo(function PaperChrome({
               </PressableScale>
             </View>
           ))}
-        </View>
+        </ScrollView>
       </View>
       </View>
     </View>

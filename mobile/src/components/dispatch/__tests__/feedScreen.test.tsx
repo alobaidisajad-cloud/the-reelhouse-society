@@ -262,6 +262,30 @@ describe('the Dispatch feed', () => {
     expect(queryByLabelText(/new filings/)).toBeNull();
   });
 
+  it('lets the index scroll, so no department is unreachable at large type', async () => {
+    // The file's own note has always said "the index scrolls", the fade at its
+    // trailing edge says "there is more this way", and `chromeIndex` clips with
+    // `overflow: hidden` — and the row was a plain View. At normal type all six
+    // fit, so nothing showed; measured at 1.35 the row overflows by 5.2pt and
+    // DOSSIER is cut against the tools, unreachable for exactly the members most
+    // likely to need larger type.
+    put({ filings: [filing()] });
+    const { getByLabelText } = await mount();
+    for (const s of ['ALL', 'TAKES', 'SEEKING', 'WIRE', 'BALLOTS', 'DOSSIER']) {
+      expect(getByLabelText(`${s} section`)).toBeTruthy();
+    }
+
+    // And the row they sit in scrolls. Read from source rather than from
+    // `toJSON()`, which cannot be serialised on this screen — FlashList's
+    // internals carry a circular fiber reference.
+    const src = require('fs').readFileSync(
+      require('path').join(__dirname, '..', 'paper', 'PaperFrame.tsx'), 'utf8',
+    );
+    expect(src).toMatch(/<ScrollView\s+horizontal/);
+    // Not bouncing, so a row that DOES fit never implies there is more past it.
+    expect(src).toMatch(/alwaysBounceHorizontal=\{false\}/);
+  });
+
   it('gives a member the live marks', async () => {
     put({ filings: [filing()] });
     const { getByLabelText } = await mount();

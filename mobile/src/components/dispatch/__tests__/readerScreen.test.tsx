@@ -29,6 +29,16 @@ import type { Filing } from '@/src/stores/dispatchTypes';
 
 let mockRow: Record<string, unknown> | null = null;
 let mockCritiqueRows: unknown[] = [];
+let mockNextRows: unknown[] = [];
+let mockWriteFails = false;
+const mockToastError = jest.fn();
+jest.mock('@/src/utils/reelToast', () => {
+  const fn = Object.assign(jest.fn(), {
+    error: (...a: unknown[]) => mockToastError(...a),
+    success: jest.fn(),
+  });
+  return { __esModule: true, default: fn };
+});
 const mockPushed: string[] = [];
 
 const mockBack = jest.fn();
@@ -56,6 +66,10 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.select = () => self();
       chain.eq = () => self();
       chain.is = () => self();
+      // `gt` — the next-part read uses it. Without it the chain threw, the
+      // screen's own catch swallowed it, and "there is no next part" and "the
+      // mock is missing a method" looked identical.
+      chain.gt = () => self();
       chain.in = () => Promise.resolve({ data: [], error: null });
       chain.order = () => self();
       // The critiques come through HERE, not through `setState` before the
@@ -75,11 +89,15 @@ jest.mock('@/src/lib/supabase', () => ({
         return Object.assign(r, { abortSignal: () => r });
       };
       chain.maybeSingle = () => builder(mockRow);
-      chain.limit = () => builder([]);
+      // `.limit()` is the NEXT-PART read; the critiques use `.range()`. Keeping
+      // them apart is what lets a test say "there is a part after this one".
+      chain.limit = () => builder(mockNextRows);
       // The WRITES, which this mock did not have. Without them `.insert()` was
       // undefined, every act threw, `writeThrough` treated it as a refusal and
       // rolled back — so the marks looked as though they had never been made.
-      chain.insert = () => Promise.resolve({ data: [], error: null });
+      chain.insert = () => (mockWriteFails
+        ? Promise.resolve({ data: null, error: { message: 'refused', code: '42501' } })
+        : Promise.resolve({ data: [], error: null }));
       chain.update = () => self();
       chain.delete = () => self();
       chain.then = (res: (v: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(res);
@@ -146,6 +164,10 @@ const mount = async () => {
   // last of those settling after the act scope closes — which React reports as
   // "an update was not wrapped in act", and which means the assertions run
   // against a render that is still one step behind.
+  // TWICE. Hydrate resolves on the first drain and only then does the
+  // next-part effect fire, so a single drain leaves that second round trip
+  // settling after the assertions — which reads as "there is no next part".
+  await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
   await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
   return r;
 };
@@ -154,6 +176,9 @@ beforeEach(() => {
   mockUser = { id: 'u1', username: 'me' };
   mockRow = row();
   mockCritiqueRows = [];
+  mockNextRows = [];
+  mockWriteFails = false;
+  mockToastError.mockClear();
   mockPushed.length = 0;
   mockSheetProps.length = 0;
   mockReportProps.length = 0;
@@ -576,6 +601,92 @@ describe('the reader', () => {
     // And the action sheet closes behind it: two sheets over one page is one
     // thing too many to dismiss.
     expect(mockSheetProps).toHaveLength(1);
+  });
+
+  it('ends a part with the one after it, by name', async () => {
+    // "An essay in four parts that ends with nothing is an essay the reader has
+    // to go and hunt for." `EssayNext` was built for this and never mounted
+    // until now — so this is the first test of it.
+    mockRow = row({ series_id: 's1', series_title: 'Ozu, in four parts', part_number: 2 });
+    mockNextRows = [{
+      ...row({ id: 'p3', part_number: 3, title: 'Nobody Comes Back' }),
+      series_id: 's1', series_title: 'Ozu, in four parts',
+    }];
+
+    const { getByLabelText } = await mount();
+    const foot = getByLabelText(/NEXT IN THE SERIES. Nobody Comes Back/);
+    expect(foot).toBeTruthy();
+
+    await act(async () => { fireEvent.press(foot); });
+    expect(mockPushed).toContain('/dispatch/p3');
+  });
+
+  it('ends the LAST part with nothing at all', async () => {
+    // A control that says NEXT and opens nothing is worse than an essay that
+    // simply ends.
+    mockRow = row({ series_id: 's1', series_title: 'Ozu, in four parts', part_number: 4 });
+    mockNextRows = [];
+    const { queryByLabelText } = await mount();
+    expect(queryByLabelText(/NEXT IN THE SERIES/)).toBeNull();
+  });
+
+  it('offers no next part on a filing that is not in a series', async () => {
+    const { queryByLabelText } = await mount();
+    expect(queryByLabelText(/NEXT IN THE SERIES/)).toBeNull();
+  });
+
+  it('shares an essay as a captured clipping, not as a line', async () => {
+    const shots: unknown[] = [];
+    const viewShot = require('react-native-view-shot');
+    const sharing = require('expo-sharing');
+    const capture = jest.spyOn(viewShot, 'captureRef').mockResolvedValue('file:///clipping.png');
+    const available = jest.spyOn(sharing, 'isAvailableAsync').mockResolvedValue(true);
+    const shareAsync = jest.spyOn(sharing, 'shareAsync').mockImplementation(async (u: unknown) => {
+      shots.push(u);
+    });
+    const plain = jest.spyOn(Share, 'share');
+
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+
+    expect(shots).toEqual(['file:///clipping.png']);
+    // And no text share alongside it — one share, not two.
+    expect(plain).not.toHaveBeenCalled();
+    capture.mockRestore(); available.mockRestore(); shareAsync.mockRestore(); plain.mockRestore();
+  });
+
+  it('falls back to the line when the clipping cannot be captured', async () => {
+    // A capture that failed must not cost the member the share.
+    const viewShot = require('react-native-view-shot');
+    const capture = jest.spyOn(viewShot, 'captureRef').mockRejectedValue(new Error('no surface'));
+    const shared: Array<{ message?: string }> = [];
+    const spy = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
+      shared.push(c as { message?: string }); return { action: 'sharedAction' } as never;
+    });
+
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+
+    expect(shared[0].message).toContain('https://reelhouse.app/dispatch');
+    capture.mockRestore(); spy.mockRestore();
+  });
+
+  it('says so when a critique will not go, and keeps what was written', async () => {
+    mockWriteFails = true;
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Write a critique')); });
+    await act(async () => {
+      fireEvent.changeText(getByLabelText('Your critique'), 'That is the argument.');
+    });
+    await act(async () => { fireEvent.press(getByLabelText('File this critique')); });
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockToastError).toHaveBeenCalledWith('That critique did not go.');
+    // The text survives, so the member can try again with what they wrote
+    // rather than retyping it.
+    expect(getByLabelText('Your critique').props.value).toBe('That is the argument.');
   });
 
   it('asks for the critiques in the order its own header shows', async () => {
