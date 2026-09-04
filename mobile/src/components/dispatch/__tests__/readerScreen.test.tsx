@@ -942,3 +942,80 @@ describe('the reader, read aloud', () => {
     });
   }
 });
+
+/**
+ * ── THE LAST DARK CORNERS OF THIS SCREEN ────────────────────────────────────
+ * The back controls, the byline's destination, the guard on re-ordering the
+ * critiques, and both "it could not be withdrawn" paths. None had ever run.
+ *
+ * A back control that does nothing is a dead end with a label on it, and a
+ * withdrawal that fails silently is worse than one that fails — the member
+ * believes their words are gone and they are still on the page.
+ */
+describe('the ways out, and the ways it fails', () => {
+  it('goes back from EVERY back control on the page, not just the first', async () => {
+    // There is more than one — the head's and the spine's — and pressing only
+    // the first would leave the other unproven. A back control that does
+    // nothing is a dead end with a label on it.
+    //
+    // Matched EXACTLY, not on /Back/i: the spine also carries "Back to the top
+    // of the dossier", which scrolls rather than navigating. A loose pattern
+    // swept it in and reported the screen broken when the test was.
+    for (const over of [{}, { kind: 'take', title: null, full_content: null, body: 'A take.' }]) {
+      mockRow = row(over);
+      const { getAllByLabelText } = await mount();
+      const backs = getAllByLabelText('Back');
+      expect(backs.length).toBeGreaterThan(0);
+      for (const b of backs) {
+        mockBack.mockClear();
+        await act(async () => { fireEvent.press(b); });
+        expect(mockBack).toHaveBeenCalled();
+      }
+    }
+  });
+
+  it('opens the author’s room from the byline', async () => {
+    mockPushed.length = 0;
+    const { getAllByLabelText } = await mount();
+    await act(async () => {
+      fireEvent.press(getAllByLabelText(/Open their room/i)[0]);
+    });
+    expect(mockPushed).toContain('/user/tomasreyes');
+  });
+
+  it('offers no room to open for a member who has gone', async () => {
+    // A departed member has no page. Rendering a link to one would be a dead
+    // end wearing the costume of a control.
+    mockRow = row({ profiles: null, author_username: null });
+    const { queryAllByLabelText } = await mount();
+    expect(queryAllByLabelText(/Open their room/i)).toEqual([]);
+  });
+
+  it('does not re-read the critiques when the order is already that', async () => {
+    // Pressing the lit control must be free. Without the guard it re-fetches
+    // the first page and the list flashes for nothing.
+    const { getByLabelText } = await mount();
+    const before = useDispatch.getState().critiquesOrder.f1;
+    await act(async () => { fireEvent.press(getByLabelText(/CERTIFIED/i)); });
+    expect(useDispatch.getState().critiquesOrder.f1).toBe(before);
+  });
+
+  it('says so when a filing will not withdraw', async () => {
+    // Silence here is the worst outcome: the member believes the words are
+    // gone and they are still on the page.
+    mockUser = { id: 'u2', username: 'tomasreyes' };
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+      const withdraw = (buttons ?? []).find((b) => b.text === 'Withdraw');
+      void withdraw?.onPress?.();
+    });
+    const end = jest.spyOn(useDispatch.getState(), 'end')
+      .mockRejectedValue(new Error('refused'));
+
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText(/More/i)); });
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockToastError).toHaveBeenCalledWith('It could not be withdrawn.');
+    alert.mockRestore(); end.mockRestore();
+  });
+});
