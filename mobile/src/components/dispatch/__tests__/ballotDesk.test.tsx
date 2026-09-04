@@ -119,6 +119,62 @@ describe('the film picker', () => {
     expect(getByLabelText('Tokyo Story, 1953')).toBeTruthy();
   });
 
+  it('shows the LAST query’s results, not whichever reply arrives last', async () => {
+    /**
+     * Typing "the godfather" is thirteen keystrokes. The debounce collapses
+     * those, and the sequence number handles what the debounce cannot: two
+     * requests in flight, the earlier one answering later. Without it a member
+     * taps a film from a list belonging to a query they have already replaced —
+     * and they did nothing wrong.
+     */
+    const slow = { id: 1, title: 'Solaris', release_date: '1972-01-01', media_type: 'movie', poster_path: null };
+    const fast = { id: 2, title: 'Stalker', release_date: '1979-01-01', media_type: 'movie', poster_path: null };
+
+    let resolveFirst: ((v: unknown) => void) | null = null;
+    const tmdb = require('@/src/lib/tmdb').tmdb;
+    const search = jest.spyOn(tmdb, 'search')
+      .mockImplementationOnce(() => new Promise((res) => { resolveFirst = res; }))
+      .mockImplementationOnce(async () => ({ results: [fast] }));
+
+    const { getByLabelText, queryByLabelText } = render(
+      <FilmPicker visible onClose={() => {}} bottomInset={0} onPick={() => {}} />,
+    );
+
+    // First query goes out and hangs.
+    await type(getByLabelText('Search for a film'), 'sol');
+    await act(async () => { jest.advanceTimersByTime(400); });
+
+    // The member types something else; the second query answers immediately.
+    await type(getByLabelText('Search for a film'), 'stalker');
+    await act(async () => { jest.advanceTimersByTime(400); await Promise.resolve(); });
+    expect(getByLabelText('Stalker, 1979')).toBeTruthy();
+
+    // NOW the first one comes back. It must not paint over the second.
+    await act(async () => { resolveFirst?.({ results: [slow] }); await Promise.resolve(); });
+    expect(queryByLabelText('Solaris, 1972')).toBeNull();
+    expect(getByLabelText('Stalker, 1979')).toBeTruthy();
+    search.mockRestore();
+  });
+
+  it('empties the field when the sheet closes', async () => {
+    // So the next film is searched from an empty field rather than from whatever
+    // the last desk was looking for.
+    mockResults = [tmdbFilm(1, 'Tokyo Story', '1953')];
+    const { getByLabelText, rerender, queryByLabelText } = render(
+      <FilmPicker visible onClose={() => {}} bottomInset={0} onPick={() => {}} />,
+    );
+    await search(getByLabelText as never, 'tokyo');
+    expect(getByLabelText('Tokyo Story, 1953')).toBeTruthy();
+
+    await act(async () => {
+      rerender(<FilmPicker visible={false} onClose={() => {}} bottomInset={0} onPick={() => {}} />);
+    });
+    await act(async () => {
+      rerender(<FilmPicker visible onClose={() => {}} bottomInset={0} onPick={() => {}} />);
+    });
+    expect(queryByLabelText('Tokyo Story, 1953')).toBeNull();
+  });
+
   it('closes from the ground behind it', async () => {
     let closed = false;
     const { getByLabelText } = render(

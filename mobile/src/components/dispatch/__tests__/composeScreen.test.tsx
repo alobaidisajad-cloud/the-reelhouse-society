@@ -18,8 +18,28 @@
  * find that out at the end.
  */
 import React, { act } from 'react';
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
+
+/**
+ * The router, with `setParams` — which the shared setup mock does not carry, so
+ * it cannot be spied on. This screen is ONE route for five desks and changes
+ * desk by setting `?kind=`, so that call is the picker's entire behaviour.
+ */
+const mockParams: Array<Record<string, string>> = [];
+jest.mock('expo-router', () => {
+  const React = require('react');
+  return {
+    router: {
+      push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(),
+      setParams: (p: Record<string, string>) => { mockParams.push(p); },
+    },
+    useLocalSearchParams: jest.fn(() => ({})),
+    Stack: { Screen: () => null },
+    useFocusEffect: jest.fn(),
+    Link: ({ children }: { children?: unknown }) => React.createElement(React.Fragment, null, children),
+  };
+});
 import { useLocalSearchParams } from 'expo-router';
 
 import ComposeScreen from '@/app/dispatch/compose';
@@ -78,6 +98,19 @@ jest.mock('@/src/utils/reelToast', () => {
 const at = (params: Record<string, string | undefined>) =>
   (useLocalSearchParams as unknown as jest.Mock).mockReturnValue(params);
 
+/**
+ * A stand-in for the OS telling the app it is going away.
+ *
+ * `AppState.addEventListener` is what the screen subscribes to for its
+ * background flush — the one path that decides whether an essay survives being
+ * killed while somebody takes a phone call.
+ */
+const mockAppState = {
+  listeners: [] as Array<(s: string) => void>,
+  fire(state: string) { for (const l of [...this.listeners]) l(state); },
+  reset() { this.listeners.length = 0; },
+};
+
 const type = async (field: unknown, text: string) => {
   await act(async () => { fireEvent.changeText(field as never, text); });
 };
@@ -92,9 +125,17 @@ beforeEach(() => {
   mockStore.clear();
   mockToast.error.mockClear(); mockToast.success.mockClear();
   at({});
+  mockParams.length = 0;
+  mockAppState.reset();
+  jest.spyOn(AppState, 'addEventListener').mockImplementation(
+    ((_type: string, handler: (s: string) => void) => {
+      mockAppState.listeners.push(handler);
+      return { remove: () => { mockAppState.listeners = mockAppState.listeners.filter((l) => l !== handler); } };
+    }) as never,
+  );
   jest.useFakeTimers({ doNotFake: ['nextTick'] });
 });
-afterEach(() => { jest.useRealTimers(); });
+afterEach(() => { jest.useRealTimers(); jest.restoreAllMocks(); });
 
 describe('the door', () => {
   it('asks which form when no kind is chosen', () => {
@@ -220,6 +261,65 @@ describe('the writing room', () => {
     await type(getByLabelText("Dossier content body"), 'Ozu frames a room.');
     await press(getByLabelText('Preview the dossier'));
     expect(getByLabelText('Back to editing')).toBeTruthy();
+  });
+});
+
+describe('the door sends you to the right desk', () => {
+  it('opens the ballot desk for a ballot and the short desk for the rest', () => {
+    at({ kind: 'ballot' });
+    expect(render(<ComposeScreen />).getByLabelText('Your question')).toBeTruthy();
+
+    for (const kind of ['take', 'seeking', 'wire'] as const) {
+      at({ kind });
+      const { getByLabelText } = render(<ComposeScreen />);
+      expect(getByLabelText(`Your ${kind}`)).toBeTruthy();
+    }
+  });
+
+  it('picking a form sets the kind rather than pushing a second route', async () => {
+    // The picker and the desk are one act. Two routes would mean the back
+    // gesture from a desk returns to a picker already answered, to be dismissed
+    // twice.
+    at({});
+    const { getByText } = render(<ComposeScreen />);
+    await press(getByText('TAKE'));
+    expect(mockParams).toContainEqual({ kind: 'take' });
+  });
+});
+
+describe('an evening of writing survives the app going away', () => {
+  it('flushes the draft the moment the app leaves the foreground', async () => {
+    // The debounce is a second long. A background-kill does not wait for it, so
+    // the last thing typed would be the thing lost — which on this screen is an
+    // essay.
+    at({ kind: 'dossier' });
+    const { getByLabelText } = render(<ComposeScreen />);
+    await type(getByLabelText('Dossier headline'), 'The Empty Room');
+    await type(getByLabelText('Dossier content body'), 'The very last sentence.');
+
+    // Straight to background, with no time for the timer.
+    await act(async () => { mockAppState.fire('background'); });
+
+    const saved = JSON.parse(mockStore.get(DRAFT_KEY)!);
+    expect(saved.title).toBe('The Empty Room');
+    expect(saved.content).toBe('The very last sentence.');
+  });
+
+  it('writes nothing when there is nothing to write', async () => {
+    at({ kind: 'dossier' });
+    render(<ComposeScreen />);
+    await act(async () => { mockAppState.fire('background'); });
+    // An empty draft saved on every backgrounding is a file that outlives the
+    // intent to write.
+    expect(mockStore.has(DRAFT_KEY)).toBe(false);
+  });
+
+  it('does not flush while the app is still in front', async () => {
+    at({ kind: 'dossier' });
+    const { getByLabelText } = render(<ComposeScreen />);
+    await type(getByLabelText('Dossier headline'), 'Still writing');
+    await act(async () => { mockAppState.fire('active'); });
+    expect(mockStore.has(DRAFT_KEY)).toBe(false);
   });
 });
 
