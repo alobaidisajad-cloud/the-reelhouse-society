@@ -79,7 +79,11 @@ export const Byline = memo(function Byline({
           <Image source={{ uri: author.avatar }} style={p.plateArt} contentFit="cover"
             recyclingKey={author.avatar} transition={0} cachePolicy="memory-disk" />
         ) : !departed ? (
-          <Text style={p.avatarNo} {...decorativeTextProps}>{author.memberNo}</Text>
+          // UNSPOKEN. The number stands in for a face a member has not set, and
+          // the byline directly beside it already says `· No. 147` — so read
+          // aloud this row was "147. TOMASREYES · No. 147", the same number
+          // twice with the first one meaning nothing on its own.
+          <Text style={p.avatarNo} {...UNSPOKEN} {...decorativeTextProps}>{author.memberNo}</Text>
         ) : null}
       </View>
       {/* ── THE TRAILING FACTS ARE NOT PART OF THE NAME ────────────────────

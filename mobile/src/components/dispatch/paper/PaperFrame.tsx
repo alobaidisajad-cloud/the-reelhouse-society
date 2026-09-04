@@ -88,7 +88,17 @@ export const PaperChrome = memo(function PaperChrome({
         >
           {SECTIONS.map((s, i) => (
             <View key={s} style={p.chromeRow}>
-              {i > 0 && <Text style={p.indexDot} {...decorativeTextProps}>·</Text>}
+              {/* UNSPOKEN, because this is a rule made out of a character. The
+                  index is a TABLIST: without it a member using VoiceOver hears
+                  "ALL, middle dot, TAKES, middle dot, SEEKING, middle dot…" —
+                  five interruptions between six departments, in the one control
+                  that decides what the whole page is.
+
+                  `decorativeTextProps` alone does NOT do this. It sets
+                  `allowFontScaling: false` and nothing else; its name promises
+                  the ear and delivers only the eye, which is exactly why this
+                  mark was left spoken. */}
+              {i > 0 && <Text style={p.indexDot} {...UNSPOKEN} {...decorativeTextProps}>·</Text>}
               {/* Each department wears its own colour, the way a Darkroom mood
                   does — dimmed until you choose it, full strength and underlined
                   in the same hue once you have. The word teaches the code. */}
