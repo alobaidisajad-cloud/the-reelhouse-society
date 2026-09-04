@@ -328,3 +328,133 @@ describe('when the wire is down', () => {
     expect(mockQueued[0].type).toBe('end_filing');
   });
 });
+
+describe('what the store keeps of what has been opened', () => {
+  it('holds the last twelve, and drops the oldest rather than growing forever', async () => {
+    // `opened` is what lets a filing reached by its own address be amended and
+    // withdrawn. Unbounded it is a memory leak that grows with every tap; the
+    // cap is what makes it a cache instead.
+    reset();
+    for (let i = 1; i <= 14; i++) {
+      mockRow = row({ id: `f${i}` });
+      await useDispatch.getState().hydrate(`f${i}`);
+    }
+    const held = Object.keys(useDispatch.getState().opened);
+    expect(held).toHaveLength(12);
+    // The oldest two are gone; the newest are kept.
+    expect(held).not.toContain('f1');
+    expect(held).not.toContain('f2');
+    expect(held).toContain('f14');
+  });
+
+  it('moves a re-opened filing to the end rather than ageing it out', async () => {
+    reset();
+    for (let i = 1; i <= 12; i++) {
+      mockRow = row({ id: `f${i}` });
+      await useDispatch.getState().hydrate(`f${i}`);
+    }
+    // Re-open the oldest, then push one more past the cap.
+    mockRow = row({ id: 'f1' });
+    await useDispatch.getState().hydrate('f1');
+    mockRow = row({ id: 'f13' });
+    await useDispatch.getState().hydrate('f13');
+
+    const held = Object.keys(useDispatch.getState().opened);
+    expect(held).toContain('f1');
+    expect(held).not.toContain('f2');
+  });
+});
+
+/**
+ * ── THE SESSION GUARD, WHERE IT CAN ACTUALLY BE SEEN ────────────────────────
+ * Every optimistic act rolls back after an `await`. If the member signed out
+ * during that await the store has already been cleared by the logout reset, so
+ * an unguarded rollback writes the PREVIOUS member's state into the NEXT
+ * member's session — and a store change triggers a disk write, which can
+ * re-create the persisted copy the reset exists to delete.
+ *
+ * ⚠️ THE FIRST VERSION OF THIS BLOCK PROVED NOTHING. It ran five acts in the
+ * direction where the rollback DELETES from a set — and deleting from a store
+ * that has just been emptied is a no-op, so removing every guard in the store
+ * left all five green. A test that cannot see the thing it is about is worse
+ * than no test, because it reads as coverage.
+ *
+ * The direction that can be seen is the one where the rollback ADDS. Undoing a
+ * mark restores it; and undoing a SAVE on the kept page puts the whole filing
+ * back onto the list, which is the leak at its plainest: another member's
+ * writing reappearing on a page that is not theirs.
+ *
+ * `vote` and `takeAnswer` are deliberately absent. Their rollbacks only touch a
+ * vote and a filing that an emptied store no longer holds, so there is nothing
+ * they could write into the next session — the guard there is belt and braces,
+ * and pretending otherwise would be another test that cannot fail.
+ *
+ * ── AND THE PROTECTION IS DOUBLED, WHICH TOOK FOUR MUTATIONS TO ESTABLISH ───
+ * `writeThrough` checks the session before calling `undo`, AND each `undo`
+ * checks again inside itself. Removing either layer alone changes nothing,
+ * because the other one holds — so the first three mutations all came back
+ * green and looked exactly like a test that proves nothing.
+ *
+ * It only shows when BOTH go, and then all three of these fail. The fourth
+ * mutation also had to cover the second SPELLING: `certifyCritique` writes its
+ * guard positively, `if (memberUnchanged(...)) move(...)`, so a blanket removal
+ * of `if (!memberUnchanged(...)) return;` walked straight past it and left that
+ * test looking weak when it was the mutation that was incomplete.
+ *
+ * The lesson is not about this guard. A mutation that leaves a second layer
+ * standing has not tested anything, and it is indistinguishable from a guard
+ * that works.
+ */
+describe('the session guard, where a rollback would ADD something', () => {
+  const armed = () => {
+    mockOutcome = 'refused';
+    reset({
+      filings: [filing({ certifyCount: 10 })],
+      certifiedIds: new Set(['f1']),
+      savedIds: new Set(['f1']),
+      certifiedCritiqueIds: new Set(['c1']),
+      critiques: {
+        f1: [{
+          id: 'c1', postId: 'f1', authorId: 'u2', author: null,
+          body: 'A critique.', certifyCount: 3,
+          createdAt: '2026-08-28T21:00:00Z', editedAt: null,
+        }],
+      },
+    });
+  };
+
+  /** They sign out mid-flight and the logout reset empties everything. */
+  const signOut = () => {
+    mockUser = null;
+    reset({ filings: [], certifiedIds: new Set(), savedIds: new Set(), certifiedCritiqueIds: new Set() });
+  };
+
+  it('un-certifying does not put the mark back into the next session', async () => {
+    armed();
+    useDispatch.getState().certify('f1', false);
+    signOut();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(useDispatch.getState().certifiedIds.size).toBe(0);
+  });
+
+  it('un-saving does not put the mark OR the filing back', async () => {
+    // The strongest case: on the kept page an un-save removes the row, so the
+    // rollback splices the whole filing back in. Unguarded, the previous
+    // member's writing reappears on a page belonging to somebody else.
+    armed();
+    useDispatch.setState({ savedOnly: true } as never);
+    useDispatch.getState().save('f1', false);
+    signOut();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(useDispatch.getState().savedIds.size).toBe(0);
+    expect(useDispatch.getState().filings).toHaveLength(0);
+  });
+
+  it('un-certifying a critique does not put that mark back either', async () => {
+    armed();
+    useDispatch.getState().certifyCritique('c1', 'f1', false);
+    signOut();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(useDispatch.getState().certifiedCritiqueIds.size).toBe(0);
+  });
+});
