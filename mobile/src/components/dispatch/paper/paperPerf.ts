@@ -132,8 +132,19 @@ export const TMDB = { backdrop: 'w780', poster: 'w185', avatar: 'w92' } as const
 /**
  * ── SEVEN: WHAT THE FIRST SCREEN COSTS ───────────────────────────────────────
  * One request returns the page: twenty rows, each with its author's name and
- * avatar path and its film's title, year and art paths, joined server-side by
- * `get_dispatch_paper` — never twenty follow-up lookups from the client.
+ * avatar path and its film's title, year and art paths, joined server-side —
+ * never twenty follow-up lookups from the client.
+ *
+ * This once said the join was done by a database function, and named one.
+ * THERE IS NO SUCH FUNCTION — probed live it answers 404, and nothing in the
+ * app has ever called an RPC by that name. The claim itself is true:
+ * `FILING_CARD_COLUMNS` ends with `profiles!dispatch_posts_profile_fkey(…)`, so
+ * PostgREST does the join and one request returns the page, verified against
+ * production. But the sentence named a function that does not exist, which is
+ * how somebody ends up hunting for it, or writing it.
+ *
+ * A guard in `feedRowIsRecyclable.test.ts` now checks every function-shaped
+ * name in these files against the app's real `supabase.rpc(...)` call sites.
  *
  * Four skeletons while it lands, shaped exactly like the posts that replace
  * them, so the first paint and the first content share one layout and nothing

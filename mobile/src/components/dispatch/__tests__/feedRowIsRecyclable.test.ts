@@ -155,6 +155,50 @@ describe('paperPerf is wired, all of it', () => {
     expect(dead).toEqual([]);
   });
 
+  it('names no database function the app does not call', () => {
+    /**
+     * ── THE FOURTH WRONG SENTENCE IN THIS FILE ───────────────────────────────
+     * paperPerf said the feed's page is "joined server-side by
+     * `get_dispatch_paper`". Probed against production: 404, PGRST202, and
+     * nothing in the app has ever called an RPC by that name.
+     *
+     * The CLAIM was true — `FILING_CARD_COLUMNS` ends with an embedded
+     * `profiles!…_fkey(…)`, so PostgREST does the join and one request returns
+     * the page — but a sentence naming a function that does not exist is how
+     * somebody ends up hunting for it, or writing it.
+     *
+     * So: any `snake_case` identifier in these files that LOOKS like a database
+     * function must be one the app actually calls. Checked against the real
+     * `supabase.rpc(...)` call sites, so this cannot be satisfied by adding the
+     * name to a list.
+     */
+    const called = new Set<string>();
+    const walk = (dir: string) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) { if (e.name !== '__tests__') walk(full); continue; }
+        if (!/\.tsx?$/.test(e.name)) continue;
+        const src = fs.readFileSync(full, 'utf8');
+        for (const m of src.matchAll(/\.rpc\(\s*['"]([a-z0-9_]+)['"]/g)) called.add(m[1]);
+      }
+    };
+    walk(path.join(__dirname, '..', '..', '..'));
+    walk(path.join(__dirname, '..', '..', '..', '..', 'app'));
+
+    // The probe must be able to say no: the app does call at least one.
+    expect(called.size).toBeGreaterThan(0);
+
+    /** Verb-shaped snake_case in backticks — how this file names a function. */
+    const phantom: string[] = [];
+    for (const f of fs.readdirSync(DIR).filter((n) => /\.tsx?$/.test(n))) {
+      const src = fs.readFileSync(path.join(DIR, f), 'utf8');
+      for (const m of src.matchAll(/`((?:get|set|end|add|is|has|make|fetch|grant|revoke)_[a-z0-9_]+)`/g)) {
+        if (!called.has(m[1])) phantom.push(`${f}: \`${m[1]}\``);
+      }
+    }
+    expect(phantom).toEqual([]);
+  });
+
   describe('Android font padding, which the harness can never see', () => {
     /**
      * The web render harness has no Android font padding, so no screenshot and
