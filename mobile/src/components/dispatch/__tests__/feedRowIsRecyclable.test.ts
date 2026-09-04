@@ -155,6 +155,61 @@ describe('paperPerf is wired, all of it', () => {
     expect(dead).toEqual([]);
   });
 
+  describe('Android font padding, which the harness can never see', () => {
+    /**
+     * The web render harness has no Android font padding, so no screenshot and
+     * no layout audit in this repo can catch this — it is only checkable from
+     * the source, which is why it is here rather than measured.
+     *
+     * The rule is per-FACE, and that is the finding. It had been applied to 48
+     * of the 54 styles in the label face and to NONE of the 22 reading styles.
+     * Six labels were missed, `leadIn` among them — the `TAKE — ` printed inline
+     * on a feed row, where its padding sets the row's first line height.
+     */
+    const styles = (() => {
+      const src = fs.readFileSync(path.join(DIR, 'paperStyles.ts'), 'utf8');
+      const pad = (s: string) => s.replace(/[^\n]/g, ' ');
+      const code = src.replace(/\/\*[\s\S]*?\*\//g, pad).replace(/\/\/[^\n]*/g, pad);
+      const out: { name: string; body: string }[] = [];
+      const re = /^ {2}([A-Za-z_]\w*):\s*\{/gm;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(code))) {
+        let i = m.index + m[0].length - 1; let depth = 0; let j = i;
+        for (; j < code.length; j++) {
+          if (code[j] === '{') depth++;
+          else if (code[j] === '}') { depth--; if (!depth) break; }
+        }
+        out.push({ name: m[1], body: code.slice(i, j + 1) });
+      }
+      return out.filter((e) => /\bfontSize\s*:/.test(e.body));
+    })();
+
+    const faceOf = (b: string) => (b.match(/fontFamily:\s*fonts\.(\w+)/) ?? [, '(none)'])[1];
+
+    it('parsed the sheet, and found both kinds of style in it', () => {
+      expect(styles.length).toBeGreaterThan(60);
+      expect(styles.filter((s) => faceOf(s.body) === 'sub').length).toBeGreaterThan(40);
+      expect(styles.filter((s) => faceOf(s.body) !== 'sub').length).toBeGreaterThan(15);
+    });
+
+    it('every style in the LABEL face kills it', () => {
+      const bare = styles
+        .filter((s) => faceOf(s.body) === 'sub' && !/includeFontPadding/.test(s.body))
+        .map((s) => s.name);
+      expect(bare).toEqual([]);
+    });
+
+    it('and no READING face does, because this app renders Arabic', () => {
+      // Not an oversight to be tidied up later: stripping the padding from
+      // multi-line serif or display text is how tall glyphs clip on Android,
+      // and there is no Android device here to prove otherwise on.
+      const stripped = styles
+        .filter((s) => faceOf(s.body) !== 'sub' && /includeFontPadding/.test(s.body))
+        .map((s) => s.name);
+      expect(stripped).toEqual([]);
+    });
+  });
+
   it('and no row builds the per-kind style LEAD_STYLE exists to replace', () => {
     // `{ color: KIND_RULE[kind] }` written inline is a fresh object per render.
     // The frozen constants are one per kind for the life of the process.

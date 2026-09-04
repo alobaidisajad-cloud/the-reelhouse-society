@@ -469,12 +469,13 @@ export const p = StyleSheet.create({
    */
   leadIn: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, fontStyle: 'normal',
+    includeFontPadding: false,
   },
-  seekingLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.seeking },
+  seekingLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.seeking, includeFontPadding: false },
   wire: { fontFamily: fonts.body, fontSize: 13.5, lineHeight: 20.5, color: colors.parchment },
   /** The dateline is GENERATED — a free-text city here would be the most
    *  authoritative position on the page handed to anyone who wanted it. */
-  wireDateline: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.wire },
+  wireDateline: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.wire, includeFontPadding: false },
   wireSource: {
     fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog,
     marginTop: 8, paddingLeft: BYLINE_INDENT, includeFontPadding: false,
@@ -879,7 +880,7 @@ export const p = StyleSheet.create({
   },
   /** The ballot names itself where the other four do — on the line it prints,
    *  not in a chip off to one side that read as chrome rather than as the code. */
-  ballotLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.ballot },
+  ballotLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.ballot, includeFontPadding: false },
   option: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
   // ── THE WIDEST NUMERAL, NOT THE COMMONEST ────────────────────────────────
   // 17pt fitted `I.` and `V.` and cut `III.` by two points on every ballot with
@@ -927,7 +928,7 @@ export const p = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(232,223,208,0.09)',
   },
   dossierTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment, marginBottom: 8 },
-  dossierLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.dossier },
+  dossierLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.dossier, includeFontPadding: false },
   series: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, opacity: 0.85, marginTop: 8, includeFontPadding: false },
   excerptRow: { flexDirection: 'row', marginTop: 4 },
   dropCap: { fontFamily: fonts.display, fontSize: 38, lineHeight: 34, color: KIND_RULE.dossier, paddingRight: 8, opacity: 0.9 },
@@ -943,7 +944,7 @@ export const p = StyleSheet.create({
     width: 2.5, height: 12, borderRadius: 1.5, marginRight: 8,
     shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 4,
   },
-  headLabel: { fontFamily: fonts.sub, fontSize: 12.5, letterSpacing: 2.2 },
+  headLabel: { fontFamily: fonts.sub, fontSize: 12.5, letterSpacing: 2.2, includeFontPadding: false },
   headRule: { flex: 1, height: 1, marginLeft: 12 },
   sectionTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 6, textAlign: 'center' },
   sectionSub: { fontFamily: fonts.bodyItalic, fontSize: 12.5, color: colors.bone, opacity: QUIET, marginTop: -6, marginBottom: 6 },

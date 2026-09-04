@@ -98,8 +98,22 @@ export const TMDB = { backdrop: 'w780', poster: 'w185', avatar: 'w92' } as const
  *   · `overflow: 'hidden'` clips, which also costs. It is on the index scroller
  *     and on image frames, where it is doing real work, and nowhere else.
  *   · Gradients: at most one per row, and only on rows that carry art.
- *   · `includeFontPadding: false` on every label — Android's default padding
- *     silently changes row heights and forces re-layout on font load.
+ *   · `includeFontPadding: false` on every style in the LABEL face — Android's
+ *     default padding silently changes row heights and forces re-layout on font
+ *     load. `leadIn` is the one that proves it: `TAKE — ` is printed inline with
+ *     the body on a feed row, so its padding sets that row's first line height.
+ *
+ *     This said "every label" and meant it, and six of the fifty-four styles in
+ *     that face had been missed — including `leadIn`. They are set now.
+ *
+ *     THE READING FACES ARE DELIBERATELY EXEMPT, all twenty-two of them. This
+ *     app renders Arabic, and stripping Android's font padding from multi-line
+ *     text in a serif or display face is how tall ascenders and descenders get
+ *     clipped; sixteen of the twenty-two are multi-line. A label is one line of
+ *     small caps and has no such risk, which is the whole reason the rule can be
+ *     absolute for one face and wrong for the others. Applying it everywhere
+ *     would be a bulk Android change made without an Android device, which is
+ *     how this project has been bitten before.
  */
 
 /**
