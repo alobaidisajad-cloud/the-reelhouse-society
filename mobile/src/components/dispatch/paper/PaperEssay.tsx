@@ -144,6 +144,25 @@ export interface Part {
   current?: boolean; toCome?: boolean;
 }
 
+/**
+ * How far a part that is not out yet is dimmed.
+ *
+ * It was 0.78, which put the part NUMERAL at 4.21:1 and its TO COME at 4.45:1
+ * against the sheet — both under the 4.5 a reader is owed. The disabled-control
+ * exemption does not cover this: the row is a control, but what it carries is
+ * the SHAPE OF THE SERIES, and a reader deciding whether to start a four-part
+ * essay is reading it, not operating it.
+ *
+ * 0.84 is the value, not a rounder number, because it is where both clear:
+ * `fog` reaches 5.02 and `sepia` 4.75 over the sheet's ground. A part that is
+ * not out yet still reads as quieter than the parts that are — the dimming does
+ * its job, it simply stops short of illegible.
+ *
+ * The ratio is recomputed FROM THE TOKENS in `seriesScreen.test.tsx` rather than
+ * written down here, so it stays true if any of the three shades is re-cut.
+ */
+export const TO_COME_DIM = 0.84;
+
 export const SeriesList = memo(function SeriesList({
   title, author, parts, onPart, onAuthor,
 }: {
@@ -185,7 +204,7 @@ export const SeriesList = memo(function SeriesList({
         <View key={i}>
           {i > 0 && <View style={p.hair} />}
           <PressableScale
-            style={[e.part, x.toCome && { opacity: 0.78 }]}
+            style={[e.part, x.toCome && { opacity: TO_COME_DIM }]}
             onPress={() => onPart?.(x)}
             disabled={x.toCome} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
             accessibilityRole="button"

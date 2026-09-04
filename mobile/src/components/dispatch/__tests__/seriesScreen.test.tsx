@@ -22,11 +22,16 @@
  *   AN EMPTY SERIES must be a page, not a header over nothing — which is what
  *   a screen that failed to load looks like.
  */
+import fs from 'fs';
+import path from 'path';
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 import SeriesScreen from '@/app/dispatch/series/[id]';
+import { TO_COME_DIM } from '@/src/components/dispatch/paper/PaperEssay';
+import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { colors } from '@/src/theme/theme';
 
 // ── what the router heard ───────────────────────────────────────────────────
 // `mock`-prefixed, because jest hoists these factories above every import and
@@ -275,5 +280,66 @@ describe('the series page', () => {
     // Not a blank page, and not a crash. There is no cache to fall back to and
     // nothing partial to show, so the honest page is the empty one.
     expect(getByText('Nothing is left of this series.')).toBeTruthy();
+  });
+});
+
+describe('a part that is not out yet is still legible', () => {
+  /**
+   * A contrast sweep over the rendered page found the part NUMERAL at 4.21:1
+   * and its TO COME at 4.45:1 — both under the 4.5 a reader is owed, because
+   * the row is dimmed to say it has not been published.
+   *
+   * The disabled-control exemption does not cover it. The row IS a disabled
+   * control, but what it carries is the shape of the series, and somebody
+   * deciding whether to start a four-part essay is READING that, not operating
+   * it.
+   *
+   * This is computed from the tokens rather than pinned at 0.84, so it stays
+   * true if `fog`, `sepia` or the sheet's ground is ever re-cut — which is the
+   * way this would actually regress.
+   */
+  const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.substr(i, 2), 16));
+  const lum = (c: number[]) => {
+    const s = c.map((v) => {
+      const u = v / 255;
+      return u <= 0.03928 ? u / 12.92 : ((u + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * s[0] + 0.7152 * s[1] + 0.0722 * s[2];
+  };
+  const ratio = (fg: number[], bg: number[]) => {
+    const a = lum(fg); const b = lum(bg);
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  };
+  /** What the eye receives once the row's opacity has composited it. */
+  const over = (hex: string, ground: number[], alpha: number) =>
+    ratio(rgb(hex).map((v, i) => alpha * v + (1 - alpha) * ground[i]), ground);
+
+  /**
+   * Read off `p.sheet` rather than typed in, for the same reason the shades
+   * are: a ground written down here would go stale the moment the sheet was
+   * re-cut, and the test would keep passing against the old one.
+   */
+  const SHEET = (() => {
+    const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(String(p.sheet.backgroundColor));
+    if (!m) throw new Error('the sheet stopped being an rgb ground: ' + p.sheet.backgroundColor);
+    return [Number(m[1]), Number(m[2]), Number(m[3])];
+  })();
+
+  it('clears 4.5:1 for both runs the dimming touches', () => {
+    expect(over(colors.sepia, SHEET, TO_COME_DIM)).toBeGreaterThanOrEqual(4.5);
+    expect(over(colors.fog, SHEET, TO_COME_DIM)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('and is still visibly quieter than a part that IS out', () => {
+    // The fix must not simply delete the signal it was dimming to send.
+    expect(TO_COME_DIM).toBeLessThan(0.95);
+  });
+
+  it('is the value the row actually uses', async () => {
+    // Pinning the constant is worthless if the row stopped reading it.
+    const src = fs.readFileSync(
+      path.join(__dirname, '..', 'paper', 'PaperEssay.tsx'), 'utf8',
+    );
+    expect(src).toContain('x.toCome && { opacity: TO_COME_DIM }');
   });
 });
