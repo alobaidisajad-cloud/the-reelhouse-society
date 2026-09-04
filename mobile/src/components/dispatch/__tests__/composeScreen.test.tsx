@@ -430,3 +430,90 @@ describe('amending a dossier that already exists', () => {
     expect(mockStore.has(DRAFT_KEY)).toBe(true);
   });
 });
+
+/**
+ * ── THE MARKDOWN TOOLBAR ────────────────────────────────────────────────────
+ * Six controls, and not one statement behind them had ever run. They are how a
+ * member sets a heading, a rule and a quotation in an essay, and every one of
+ * them edits the text the member is writing — so a wrong marker or a caret left
+ * in the wrong place is the app corrupting somebody's work in front of them.
+ *
+ * Both cases are checked for each: wrapping a SELECTION, and inserting into an
+ * empty caret. They take different paths, and the caret rule is the opposite in
+ * each — after the wrap when something was selected, between the markers when
+ * nothing was, so a member can carry on typing inside what they just opened.
+ */
+describe('the tools that edit what the member wrote', () => {
+  const open = () => { at({ kind: 'dossier' }); return render(<ComposeScreen />); };
+
+  const write = async (r: ReturnType<typeof render>, text: string) => {
+    await act(async () => {
+      fireEvent.changeText(r.getByLabelText('Dossier content body'), text);
+    });
+  };
+  const selectRange = async (r: ReturnType<typeof render>, start: number, end: number) => {
+    await act(async () => {
+      fireEvent(r.getByLabelText('Dossier content body'), 'selectionChange', {
+        nativeEvent: { selection: { start, end } },
+      });
+    });
+  };
+  const tap = async (r: ReturnType<typeof render>, label: string) => {
+    await act(async () => { fireEvent.press(r.getByLabelText(label)); });
+  };
+  const textNow = (r: ReturnType<typeof render>) =>
+    r.getByLabelText('Dossier content body').props.value;
+
+  const TOOLS: [string, string, string][] = [
+    ['Bold', '**', '**'],
+    ['Italic', '*', '*'],
+    ['Heading', '\n## ', '\n'],
+    ['Block quote', '\n> ', '\n'],
+    ['Horizontal rule', '\n---\n', ''],
+    ['Insert link', '[', '](url)'],
+  ];
+
+  for (const [label, before, after] of TOOLS) {
+    it(`${label} — wraps what is selected, and leaves it selected-through`, async () => {
+      const r = open();
+      await write(r, 'Ozu never once stood up.');
+      await selectRange(r, 0, 3); // "Ozu"
+      await tap(r, label);
+      expect(textNow(r)).toBe(`${before}Ozu${after} never once stood up.`);
+    });
+
+    it(`${label} — opens the markers and puts the caret INSIDE them`, async () => {
+      // With nothing selected the caret belongs between the markers, so the
+      // member types into what they just opened rather than after it.
+      const r = open();
+      await write(r, 'AB');
+      await selectRange(r, 1, 1);
+      await tap(r, label);
+      expect(textNow(r)).toBe(`A${before}${after}B`);
+      expect(r.getByLabelText('Dossier content body').props.selection)
+        .toEqual({ start: 1 + before.length, end: 1 + before.length });
+    });
+  }
+
+  it('the caret after a wrap sits past the whole thing, not inside it', async () => {
+    const r = open();
+    await write(r, 'Ozu');
+    await selectRange(r, 0, 3);
+    await tap(r, 'Bold');
+    expect(r.getByLabelText('Dossier content body').props.selection)
+      .toEqual({ start: 7, end: 7 }); // ** + Ozu + ** === 7
+  });
+
+  it('releases the caret once the member moves it themselves', async () => {
+    // The forced selection is programmatic control of somebody's cursor. Held
+    // one render too long it fights them: they tap elsewhere and are dragged
+    // back. It is released on the next selection change.
+    const r = open();
+    await write(r, 'Ozu');
+    await selectRange(r, 0, 3);
+    await tap(r, 'Bold');
+    expect(r.getByLabelText('Dossier content body').props.selection).toBeTruthy();
+    await selectRange(r, 1, 1);
+    expect(r.getByLabelText('Dossier content body').props.selection).toBeUndefined();
+  });
+});
