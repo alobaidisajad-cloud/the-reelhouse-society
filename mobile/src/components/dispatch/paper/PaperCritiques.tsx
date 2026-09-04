@@ -9,7 +9,7 @@ import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScalin
 import { p } from './paperStyles';
 import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
 import { PaperStrike } from './PaperStrike';
-import { softBreak } from './paperText';
+import { softBreak, counted } from './paperText';
 import { isRTLText } from '@/src/utils/text';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
@@ -85,7 +85,7 @@ export const CritiqueSpine = memo(function CritiqueSpine({
         style={p.spineBody} onPress={onTop} haptic="selection"
         hitSlop={{ top: 8, bottom: 8, left: 0, right: 6 }}
         accessibilityRole="button"
-        accessibilityLabel={`Back to the top of the ${kind.toLowerCase()}. ${count} critiques.`}
+        accessibilityLabel={`Back to the top of the ${kind.toLowerCase()}. ${counted(count ?? 0, 'critique', 'critiques')}.`}
       >
         <ChevronUp size={13} strokeWidth={2} color={colors.sepia} />
         <Text style={p.spineKind} {...decorativeTextProps}>{kind.toUpperCase()}</Text>

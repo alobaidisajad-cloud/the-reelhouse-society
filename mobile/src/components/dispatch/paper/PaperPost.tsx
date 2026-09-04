@@ -14,7 +14,7 @@ import { p } from './paperStyles';
 import { formatCount, stillHeight, KIND_RULE, RULE_W, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
-import { softBreak } from './paperText';
+import { softBreak, counted } from './paperText';
 import { isRTLText } from '@/src/utils/text';
 
 export type PaperKind = 'take' | 'seeking' | 'wire' | 'ballot' | 'dossier';
@@ -258,7 +258,8 @@ export const PaperActions = memo(function PaperActions({
         accessibilityState={{ selected: !!certified, disabled: !canMark }}
         accessibilityLabel={
           !canMark ? 'Certify this. Members only'
-            : certified ? `Certified. ${certifyCount} members have certified this`
+            : certified
+              ? `Certified. ${counted(certifyCount ?? 0, 'member has', 'members have')} certified this`
               : 'Certify this'
         }>
         <PaperStrike on={certified}>
@@ -273,7 +274,7 @@ export const PaperActions = memo(function PaperActions({
 
       <PressableScale style={p.action} hitSlop={SLOP} haptic
         onPress={onCritique}
-        accessibilityRole="button" accessibilityLabel={`Critique. ${commentCount} critiques`}>
+        accessibilityRole="button" accessibilityLabel={`Critique. ${counted(commentCount ?? 0, 'critique', 'critiques')}`}>
         <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
         <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE</Text>
       </PressableScale>
@@ -473,10 +474,14 @@ export const PaperPost = memo(function PaperPost({
           <PressableScale style={p.action} hitSlop={SLOP} haptic
             onPress={onCritique}
             accessibilityRole="button"
-            accessibilityLabel={`Critique. ${commentCount ?? 0} critiques remain under this filing`}>
+            accessibilityLabel={
+              `Critique. ${counted(commentCount ?? 0, 'critique remains', 'critiques remain')} under this filing`
+            }>
             <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
             <Text style={p.actionLabel} {...actionLabelProps}>
-              {formatCount(commentCount ?? 0) ? `${formatCount(commentCount ?? 0)} CRITIQUES` : 'CRITIQUE'}
+              {formatCount(commentCount ?? 0)
+                ? counted(commentCount ?? 0, 'CRITIQUE', 'CRITIQUES', formatCount)
+                : 'CRITIQUE'}
             </Text>
           </PressableScale>
         </View>
@@ -587,7 +592,7 @@ export const PaperPost = memo(function PaperPost({
                     trailing={[
                       kind === 'wire' ? source?.toUpperCase()
                         : kind === 'dossier' ? readTime
-                        : commentCount ? `${formatCount(commentCount)} CRITIQUES` : null,
+                        : commentCount ? counted(commentCount, 'CRITIQUE', 'CRITIQUES', formatCount) : null,
                       edited ? 'EDITED' : null,
                     ].filter(Boolean).join(' · ') || undefined}
                   />
@@ -667,6 +672,28 @@ export const PaperPost = memo(function PaperPost({
                 </Text>
               )}
 
+              {/* ── THE BALLOTS DEPARTMENT PRINTED NOTHING ────────────────
+                  There were four branches here — take, seeking, wire, dossier —
+                  and no ballot. The feed carries ballots (BALLOTS is one of the
+                  six departments in the index, and ALL filters by no kind at
+                  all), so every ballot card in the paper showed a byline, four
+                  marks and NO QUESTION. An entire department of blank entries.
+
+                  The desk files the question into `title` and `body` both, so
+                  the words were always on the card — nothing was ever asked to
+                  print them.
+
+                  The options are not here on purpose: the card carries the
+                  question and the whole card opens the ballot, which is what
+                  this component's own note about `onOpen` already said it does.
+                  A take card shows the take and you tap to critique; a ballot
+                  card shows the question and you tap to vote. */}
+              {kind === 'ballot' && (
+                <Text style={[p.cardBallotQ, rtl && p.rtlText]} numberOfLines={3} {...displayTextProps}>
+                  <Text style={p.ballotLead}>BALLOT — </Text>{softBreak(body)}
+                </Text>
+              )}
+
               {kind === 'dossier' && (
                 <>
                   <Text style={[p.dossierTitle, rtl && p.rtlText]} numberOfLines={3} {...displayTextProps}>
@@ -684,14 +711,14 @@ export const PaperPost = memo(function PaperPost({
           {film && !spoiler ? <Credit film={film} bare={!!still} onPress={onFilm} /> : null}
           {spoiler && film ? <Credit film={film} onPress={onFilm} /> : null}
 
-          {/* The source moved up into the byline, where a dateline belongs.
-              It printed here as a fourth orphaned line under the credit — the
-              exact "debris at the foot" this design already fixed once for the
-              read time, and I had left the wire doing it. */}
+          {/* The source moved up into the byline, where a dateline belongs. It
+              printed here as a fourth orphaned line under the credit — the exact
+              "debris at the foot" this design already fixed once for the read
+              time, and I had left the wire doing it.
 
-          {false ? (
-            <Text style={p.wireSource} numberOfLines={1} {...scaledTextProps}>{readTime}</Text>
-          ) : null}
+              It was left as `{false ? … : null}`, which is a branch that can
+              never run sitting in the app's most recycled component. The note is
+              worth keeping; the corpse is not. */}
 
           {answer ? (
             <View style={p.answer}>

@@ -24,7 +24,7 @@ import { KIND_RULE, MARGIN_W, RULE_W, RULE_GAP, AVATAR, CRIMSON_INK, UNSPOKEN } 
 import { LEAD_STYLE } from './paperPerf';
 import { MS, PILL_Y } from './paperMotion';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
-import { clipToSentence } from './paperText';
+import { clipToSentence, counted } from './paperText';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
  * The brass ＋ opens this. Five forms, each named in its own ink with one line
@@ -885,7 +885,7 @@ export const LoungeCard = memo(function LoungeCard({
         </View>
 
         <Text style={m.loungeMeta} numberOfLines={1} {...decorativeTextProps}>
-          {`${certifyCount} CERTIFIED · ${commentCount} CRITIQUES`}
+          {`${certifyCount} CERTIFIED · ${counted(commentCount ?? 0, 'CRITIQUE', 'CRITIQUES')}`}
         </Text>
       </View>
     </PressableScale>

@@ -928,6 +928,15 @@ export const p = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(232,223,208,0.09)',
   },
   dossierTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment, marginBottom: 8 },
+  /**
+   * A ballot's question ON A CARD.
+   *
+   * Not `ballotQ`: that one is the READER's, centred over its options, and a
+   * centred line on a card would be the only centred thing in a column where
+   * everything else is set to the rule. Same face, size and leading as a
+   * dossier's title, because both are a heading you tap to open.
+   */
+  cardBallotQ: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment, marginBottom: 8 },
   dossierLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.dossier, includeFontPadding: false },
   series: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, opacity: 0.85, marginTop: 8, includeFontPadding: false },
   excerptRow: { flexDirection: 'row', marginTop: 4 },

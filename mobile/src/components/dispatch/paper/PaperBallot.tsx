@@ -8,6 +8,7 @@ import { colors } from '@/src/theme/theme';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
+import { counted } from './paperText';
 import { BALLOT_PERCENT_FLOOR, UNSPOKEN } from './paperMetrics';
 import { PaperFill } from './PaperFill';
 import { Byline, PaperActions, type PaperAuthor, type PaperFilm } from './PaperPost';
@@ -137,7 +138,7 @@ export const PaperBallot = memo(function PaperBallot({
             {[options[top].year, options[top].director?.toUpperCase()].filter(Boolean).join(' · ')}
           </Text>
           <Text style={[p.wonMeta, { marginTop: 8, color: colors.sepia }]} {...scaledTextProps}>
-            {pct[top]}% OF {total} BALLOTS
+            {pct[top]}% OF {counted(total, 'BALLOT', 'BALLOTS')}
           </Text>
           <View style={[p.hair, { marginTop: 16, alignSelf: 'stretch' }]} />
         </View>
@@ -181,7 +182,7 @@ export const PaperBallot = memo(function PaperBallot({
               accessibilityState={{ checked: marked, disabled: !!closed || myVote != null || !onVote }}
               accessibilityLabel={
                 showPercent
-                  ? `Option ${i + 1} of ${options.length}. ${o.title}. ${pct[i]} percent, ${o.votes} ballots.${marked ? ' Your mark.' : ''}`
+                  ? `Option ${i + 1} of ${options.length}. ${o.title}. ${pct[i]} percent, ${counted(o.votes ?? 0, 'ballot', 'ballots')}.${marked ? ' Your mark.' : ''}`
                   : `Option ${i + 1} of ${options.length}. ${o.title}. Mark this.`
               }
             >
@@ -234,7 +235,7 @@ export const PaperBallot = memo(function PaperBallot({
         {closed
           ? ''
           : revealed
-            ? `${total} BALLOTS CAST`
+            ? counted(total, 'BALLOT CAST', 'BALLOTS CAST')
             : 'MARK YOUR BALLOT'}
       </Text>
 
