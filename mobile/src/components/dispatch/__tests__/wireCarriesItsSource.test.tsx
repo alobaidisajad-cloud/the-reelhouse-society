@@ -29,6 +29,9 @@ const mockFiled: Array<Record<string, unknown>> = [];
 
 /** Flipped by the signed-out block at the foot of this file. */
 let mockSignedOut = false;
+/** The two ways filing does not simply succeed. Both were dark. */
+let mockFileFails = false;
+let mockFileOffline = false;
 
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: Object.assign(
@@ -47,7 +50,11 @@ jest.mock('@/src/stores/auth', () => ({
 jest.mock('@/src/stores/dispatch', () => ({
   useDispatch: {
     getState: () => ({
-      file: async (draft: Record<string, unknown>) => { mockFiled.push(draft); return { id: 'new' }; },
+      file: async (draft: Record<string, unknown>) => {
+        mockFiled.push(draft);
+        if (mockFileFails) throw new Error('refused');
+        return mockFileOffline ? { id: 'new', offline: true } : { id: 'new' };
+      },
     }),
   },
 }));
@@ -329,4 +336,66 @@ describe('a signed-out reader who reaches a desk', () => {
       expect(String(mockToast.error.mock.calls[0]?.[0])).toBe('Filing is for members.');
     });
   }
+});
+
+/**
+ * ── WHEN FILING DOES NOT SIMPLY SUCCEED ─────────────────────────────────────
+ * Both other endings were dark: no test had ever run the `catch` that says a
+ * filing was refused, or the branch that says it will go when the wire is back.
+ *
+ * The one that matters is what happens to the WRITING. A desk that clears the
+ * field on a failure has taken somebody's sentence and given them an error in
+ * exchange, which is the single worst outcome a page that accepts writing can
+ * produce.
+ */
+describe('a filing that does not go', () => {
+  afterEach(() => { mockFileFails = false; mockFileOffline = false; });
+
+  const typeAndFile = async (r: ReturnType<typeof render>, kind: string) => {
+    await act(async () => {
+      fireEvent.changeText(r.getByLabelText(`Your ${kind}`), 'Ozu never once stood up.');
+    });
+    if (kind === 'wire') {
+      await act(async () => {
+        fireEvent.changeText(r.getByLabelText('Where this came from'), 'Sight & Sound');
+      });
+    }
+    await act(async () => { fireEvent.press(r.getByLabelText('File it')); });
+    await act(async () => { await Promise.resolve(); });
+  };
+
+  it('says so, and KEEPS what was written', async () => {
+    mockFileFails = true;
+    const r = render(<ComposeShortScreen kind="take" />);
+    await typeAndFile(r, 'take');
+
+    expect(String(mockToast.error.mock.calls[0]?.[0])).toBe('It could not be filed.');
+    // The sentence survives. Without this the member types it again from memory.
+    expect(r.getByLabelText('Your take').props.value).toBe('Ozu never once stood up.');
+    // And they are still at the desk — no navigation on a failure.
+    expect(mockToast.success).not.toHaveBeenCalled();
+  });
+
+  it('lets them try again rather than locking the desk', async () => {
+    // `finally { setSending(false) }` is what makes this true. Without it FILE
+    // IT stays disabled after one failure and the desk is dead.
+    mockFileFails = true;
+    const r = render(<ComposeShortScreen kind="take" />);
+    await typeAndFile(r, 'take');
+    expect(r.getByLabelText('File it').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('promises the wire will carry it later, when there is no signal', async () => {
+    mockFileOffline = true;
+    const r = render(<ComposeShortScreen kind="take" />);
+    await typeAndFile(r, 'take');
+    expect(String(mockToast.success.mock.calls[0]?.[0]))
+      .toBe('Filed. It goes out when the wire is back.');
+  });
+
+  it('says plainly when it went', async () => {
+    const r = render(<ComposeShortScreen kind="take" />);
+    await typeAndFile(r, 'take');
+    expect(String(mockToast.success.mock.calls[0]?.[0])).toBe('Filed');
+  });
 });
