@@ -1212,6 +1212,78 @@ add('d2-composer-seeking', (
     body="any good horror movies? nothing with gore, nothing with jump scares, something that actually gets under the skin and stays there for a week afterwards" />
 ));
 
+/* ── THE NARROW SCREEN, BEYOND THE FEED ──────────────────────────────────────
+ * `t2-iphone-se` drew the FEED at 320pt and nothing else did. The reader, the
+ * ballot, the critiques, a desk and the series list — five whole surfaces — had
+ * only ever been measured at 390, on the tacit assumption that a single column
+ * narrows cleanly.
+ *
+ * It does not, everywhere: a row with two things in it and no room to shrink is
+ * the shape that breaks, and every one of these has at least one. The longest
+ * available strings are used deliberately — the point of a narrow draw is the
+ * worst case, not a representative one.
+ */
+add('t5-se-reader', (
+  <View style={[p.screen, { width: SE }]}>
+    <PaperBack label="DOSSIER" onMore={NOOP} />
+    <PaperSheet>
+      <EssayHead title="The Long Silence in Ozu, and What the House Remembers"
+        series="Part II of Ozu, in four parts"
+        author={LONGNAME} readTime="12 MIN" filed="AUGUST 24" film={TOKYO} />
+      <EssayOpening text="There is a shot in Tokyo Story that lasts eleven seconds after everyone has left the frame, and for years I thought it was a mistake of the print." />
+      <EssayPara>
+        It is not. Ozu holds the room because the room is what the film is about.
+      </EssayPara>
+      <EssayNext label="NEXT IN THE SERIES" title="What the Camera Refuses to Do" readTime="9 MIN" onPress={NOOP} />
+    </PaperSheet>
+    <PostDock certifyCount={2140} commentCount={5218} certified />
+  </View>
+));
+
+add('t6-se-ballot', (
+  <View style={[p.screen, { width: SE }]}>
+    <PaperSheet top>
+      <PaperBallot question="Which do we project tonight, and why that one?" author={LONGNAME}
+        options={OPTS} myVote={0} closesLabel="closes in 2 days"
+        certifyCount={2140} commentCount={5218} />
+    </PaperSheet>
+  </View>
+));
+
+add('t7-se-critiques', (
+  <View style={[p.screen, { width: SE }]}>
+    <CritiqueSpine kind="TAKE" opening={LONGEST} count={5218} />
+    <PaperSheet>
+      <CritiqueHead count={5218} order="CERTIFIED" />
+      {CRITS.map((c, i) => <CritiqueRow key={c.id} c={c} top={i === 0} />)}
+      <CritiqueFooter shown={30} total={5218} onMore={NOOP} />
+    </PaperSheet>
+    <PostDock certifyCount={2140} commentCount={5218} certified saved />
+  </View>
+));
+
+add('t8-se-series', (
+  <View style={[p.screen, { width: SE }]}>
+    <PaperBack label="SERIES" />
+    <PaperSheet>
+      <SeriesList title="Ozu, in four parts" author={LONGNAME} parts={[
+        { n: 'I', title: 'The Low Camera', readTime: '8 MIN', certified: 412 },
+        { n: 'II', title: 'The Long Silence in Ozu, and What the House Remembers', readTime: '12 MIN', certified: 61, current: true },
+        { n: 'III', title: 'What the Camera Refuses to Do', readTime: '9 MIN', certified: 88 },
+      ]} />
+    </PaperSheet>
+  </View>
+));
+
+add('t9-se-desk', (
+  <View style={{ width: SE }}>
+    <PaperComposer kind="wire" me={LONGNAME} hour="21:40" remaining={40}
+      source="Sight & Sound, the 2032 poll" ready
+      body="The poll has been redone and the top ten has changed for the first time in a decade." />
+  </View>
+));
+
+
 describe('paper mockups', () => {
   it('renders every screen to html', () => {
     mkdirSync(OUT, { recursive: true });

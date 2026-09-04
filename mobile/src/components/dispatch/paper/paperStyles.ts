@@ -775,8 +775,19 @@ export const p = StyleSheet.create({
    * who is looking at it. Dimmed and disabled says "this exists, and it is for
    * members" — which is true, and is the one thing a visitor to a members' club
    * should be able to see.
+   *
+   * ── 0.62, NOT 0.38 ─────────────────────────────────────────────────────────
+   * Measured against the paper ground, composited properly: `fog` at 0.38 is
+   * 1.85:1, and at 0.62 it is 3.13:1 — the 3:1 a UI component needs. A live
+   * mark is 6.78:1, so it still reads as unmistakably the quieter of the two.
+   *
+   * WCAG exempts a disabled control from any minimum, so this is not compliance
+   * — it is the house's own standard, already set once. `PaperChrome`'s note
+   * says: "Inactive labels are `bone` at 0.6 (~4.8:1), NOT `fog` at 0.45
+   * (~2.2:1) — navigation you cannot read is not navigation." 0.38 was BELOW
+   * the value that note rejected.
    */
-  actionOff: { opacity: 0.38 },
+  actionOff: { opacity: 0.62 },
   /** Lower contrast than the writing it sits under. These are controls, and a
    *  control that shouts as loud as the sentence above it is a control that has
    *  been given more importance than the sentence. */
