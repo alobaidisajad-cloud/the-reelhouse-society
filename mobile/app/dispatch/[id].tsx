@@ -233,7 +233,31 @@ export default function FilingReader() {
      * shared as a poster is a poster of somebody's opinion, and a seeking is a
      * poster of somebody's question. Nobody makes those.
      */
-    const link = `https://reelhouse.app/dispatch/${live.id}`;
+    /**
+     * ── WHERE THIS CAME FROM, NOT A LINK TO NOWHERE ────────────────────────
+     * Three URLs were considered and two of them are broken:
+     *
+     *   reelhouse://dispatch/<id>          the original. A custom scheme opens
+     *                                      nothing for anyone without the app —
+     *                                      which is everyone a share reaches —
+     *                                      and many clients strip it outright.
+     *   https://reelhouse.app/dispatch/<id>  what I replaced it with, and it is
+     *                                      a 404: the web app routes /dispatch
+     *                                      and /dispatch/compose and has no page
+     *                                      for one filing, and `app.json` claims
+     *                                      no associated domain, so it does not
+     *                                      open the app either.
+     *
+     * So the link is the DEPARTMENT, which exists and renders. That is coherent
+     * with what now goes out beside it: for an essay the clipping carries the
+     * masthead, the title, the opening and the byline — a stranger reads the
+     * writing from the image and follows the link to the house.
+     *
+     * A per-filing web page would be better and is a change to the WEB app, not
+     * this one. Recorded in DEFERRED-ACTIONS.md rather than papered over with a
+     * URL that does not resolve.
+     */
+    const link = 'https://reelhouse.app/dispatch';
     if (live.kind === 'dossier' && cardRef.current) {
       try {
         const uri = await captureRef(cardRef, { format: 'png', quality: 1, result: 'tmpfile' });

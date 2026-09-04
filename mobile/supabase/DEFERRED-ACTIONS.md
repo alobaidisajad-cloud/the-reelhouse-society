@@ -110,3 +110,41 @@ to `{authenticated}`, every code was readable by anyone holding the app's public
 anon key — and web's `joinByInviteCode` would redeem one straight into a private
 room. Probed live: two private salons' codes came back to an unauthenticated
 caller.
+
+---
+
+## A web page for one filing — `/dispatch/:id`
+
+**Where:** the web app, `src/App.tsx` and a new page beside `DispatchPage.tsx`.
+**Not the mobile app.** Nothing here is blocked on it.
+
+**What is missing.** The web app routes `/dispatch` and `/dispatch/compose` and
+nothing else: a dossier is opened in a MODAL over the index, so no filing has a
+web address. The web's own share button reflects that — it sends
+`${origin}/dispatch`, the department, never the essay.
+
+**Why it came up.** Sharing an essay out of the mobile app should let a stranger
+read it. The mobile share now sends a clipping — an image carrying the masthead,
+the title, the opening and the byline — plus a link. That link was
+`reelhouse://dispatch/<id>`, which opens nothing for anybody without the app, and
+briefly `https://reelhouse.app/dispatch/<id>`, which is a 404. It is now
+`https://reelhouse.app/dispatch`, which exists.
+
+So the share works and is honest. What it cannot yet do is take somebody to the
+essay itself.
+
+**What it needs, in order:**
+
+1. A web route `/dispatch/:id` reading one row from `dispatch_posts` — the same
+   table the mobile reader uses, so no new backend.
+2. `DispatchPage`'s share sending that URL instead of the index.
+3. `associatedDomains` (iOS) and `intentFilters` (Android) in `mobile/app.json`
+   for `reelhouse.app`, so the link opens the APP for members who have it and the
+   page for everyone else. Requires an `apple-app-site-association` file and an
+   `assetlinks.json` served from the domain.
+4. Then, and only then, point the mobile share at `/dispatch/<id>`. The test
+   `readerScreen.test.tsx › sends a WEB link` asserts the current behaviour and
+   will need its expectation moved in the same change.
+
+**Until then** the mobile share is correct as it stands: the image carries the
+writing, the link carries the house.

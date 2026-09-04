@@ -383,8 +383,12 @@ describe('the reader', () => {
     await act(async () => { fireEvent.press(getByLabelText('Share')); });
     await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
 
-    expect(shared[0].message).toContain('https://reelhouse.app/dispatch/f1');
+    expect(shared[0].message).toContain('https://reelhouse.app/dispatch');
     expect(shared[0].message).not.toContain('reelhouse://');
+    // And NOT a per-filing path: the web app has no page for one filing, so
+    // `/dispatch/<id>` is a 404 — a link that resolves is worth more than a
+    // link that is specific.
+    expect(shared[0].message).not.toMatch(/dispatch\/[0-9a-f-]{8}/);
     spy.mockRestore();
   });
 
