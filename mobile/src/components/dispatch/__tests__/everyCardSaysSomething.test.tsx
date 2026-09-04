@@ -93,9 +93,14 @@ const draw = (kind: PaperKind, props: Record<string, unknown>) => wordsOf(
 
 describe('every kind, in every state the card branches on', () => {
   it('the matrix is the whole matrix', () => {
-    // If a sixth kind is added to the union and not to KINDS, this fails rather
-    // than quietly testing five of six.
-    expect(KINDS).toHaveLength(5);
+    // Checked against a RUNTIME table keyed by kind, not a length. `PaperKind`
+    // is a type union and types do not exist at run time — which is exactly why
+    // a missing branch was invisible in the first place. `KIND_RULE` is what
+    // the app itself reads to colour a filing, so a sixth kind cannot be added
+    // without showing up here.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { KIND_RULE } = require('@/src/components/dispatch/paper/paperMetrics');
+    expect([...KINDS].sort()).toEqual(Object.keys(KIND_RULE).sort());
     expect(STATES.length).toBeGreaterThan(10);
   });
 

@@ -698,3 +698,65 @@ describe('the reader', () => {
     expect(useDispatch.getState().critiquesOrder.f1).toBe('CERTIFIED');
   });
 });
+
+/**
+ * ── THE SAME MATRIX, ON THE SECOND SURFACE ───────────────────────────────────
+ * A ballot card in the FEED printed a byline, four marks and no question, and
+ * three thousand seven hundred tests missed it, because each asserted something
+ * specific about a state somebody had thought of. `everyCardSaysSomething`
+ * closed that for the card. This closes it for the reader.
+ *
+ * The reader is a ternary chain — dossier, then ballot, then everything else to
+ * `PaperPost` — so a kind can fall through it just as quietly. `wire` was the
+ * one no test above ever opened.
+ */
+describe('every kind opens, and says its own words', () => {
+  const OPENS: Record<string, Record<string, unknown>> = {
+    take: { kind: 'take', title: null, full_content: null, body: 'A take, and its whole argument.' },
+    seeking: { kind: 'seeking', title: null, full_content: null, body: 'What should the house watch tonight?' },
+    wire: {
+      kind: 'wire', title: null, full_content: null,
+      body: 'Sight and Sound has redone the poll.', source: 'SIGHT & SOUND',
+    },
+    ballot: {
+      kind: 'ballot', title: 'Which Ozu?', body: 'Which Ozu?',
+      options: [
+        { film_id: 1, title: 'Tokyo Story', poster_path: null },
+        { film_id: 2, title: 'Late Spring', poster_path: null },
+      ],
+      closes_at: new Date(Date.now() + 86_400_000).toISOString(),
+    },
+    dossier: {}, // the default row IS a dossier
+  };
+
+  it('covers every kind the app knows about', () => {
+    // Hand-listing the kinds is how `wire` came to have no reader test at all,
+    // so the list is checked against a runtime table keyed by kind rather than
+    // trusted. `KIND_RULE` is the one the app itself reads to colour a filing,
+    // so a sixth kind cannot be added without appearing here. A type union
+    // would be no use — it does not exist at run time, which is precisely why
+    // a missing branch is invisible.
+    const { KIND_RULE } = require('@/src/components/dispatch/paper/paperMetrics');
+    expect(Object.keys(OPENS).sort()).toEqual(Object.keys(KIND_RULE).sort());
+  });
+
+  for (const [kind, over] of Object.entries(OPENS)) {
+    it(`${kind} — opens and prints the writing`, async () => {
+      mockRow = row(over);
+      const { toJSON } = await mount();
+      const said: string[] = [];
+      const walk = (n: any) => {
+        if (n == null) return;
+        if (typeof n === 'string') { if (n.trim()) said.push(n); return; }
+        if (Array.isArray(n)) { n.forEach(walk); return; }
+        walk(n.children);
+      };
+      walk(toJSON());
+
+      // The words the member wrote, whichever column this kind keeps them in.
+      const written = String(over.full_content ?? over.title ?? over.body
+        ?? 'That is the argument.');
+      expect(said.some((w) => w.includes(written.slice(0, 24)))).toBe(true);
+    });
+  }
+});
