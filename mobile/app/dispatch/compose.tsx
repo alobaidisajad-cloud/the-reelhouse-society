@@ -60,6 +60,39 @@ export default function ComposeScreen() {
     const user = useAuthStore((s) => s.user);
     const kind = (params.kind ?? (params.edit ? 'dossier' : '')) as FilingKind | '';
 
+    /**
+     * ── NOBODY IS SIGNED IN ──────────────────────────────────────────────────
+     * Answered HERE, before the picker draws, rather than at each desk.
+     *
+     * The brass Concierge sits in the nav bar for everyone and its "File to the
+     * Dispatch" row is not gated, so a signed-out reader reached this route,
+     * was shown all five forms, tapped one — and the desk rendered NOTHING. Read
+     * back off the tree, the whole screen was `[]`: no header, no back, no
+     * sentence.
+     *
+     * Locking the rows instead would have been a lie. The picker's lock says
+     * AUTEURS, which is a different reason and the wrong one; being told the
+     * long form is for auteurs when the real answer is "you are not a member"
+     * teaches somebody something untrue about what membership costs.
+     *
+     * So: the same sentence the feed already gives a signed-out reader, and the
+     * way back, before any form is offered.
+     */
+    const isMounted = useRef(true);
+    useEffect(() => {
+        isMounted.current = true;
+        return () => { isMounted.current = false; };
+    }, []);
+    useEffect(() => {
+        if (user) return;
+        reelToast.error('Filing is for members.');
+        // The wait matters: this fires while the modal is still animating in,
+        // and unguarded both pops land, costing two screens instead of one.
+        InteractionManager.runAfterInteractions(() => {
+            if (isMounted.current) router.back();
+        });
+    }, [user]);
+
     // An unrecognised kind in a link is not a crash and not a blank screen; it
     // is somebody arriving without having chosen, which is what the picker is.
     const known = (['take', 'seeking', 'wire', 'ballot', 'dossier'] as const)

@@ -27,13 +27,20 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 const mockFiled: Array<Record<string, unknown>> = [];
 
+/** Flipped by the signed-out block at the foot of this file. */
+let mockSignedOut = false;
+
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: Object.assign(
     (sel?: (s: unknown) => unknown) => {
-      const state = { user: { id: 'u1', username: 'me', member_no: 7, avatar_url: null } };
+      const state = {
+        user: mockSignedOut
+          ? null
+          : { id: 'u1', username: 'me', member_no: 7, avatar_url: null },
+      };
       return typeof sel === 'function' ? sel(state) : state;
     },
-    { getState: () => ({ user: { id: 'u1', username: 'me' } }) },
+    { getState: () => ({ user: mockSignedOut ? null : { id: 'u1', username: 'me' } }) },
   ),
 }));
 
@@ -273,6 +280,53 @@ describe('the desks, read aloud', () => {
         }
         expect(echoed).toEqual([]);
       });
+    });
+  }
+});
+
+/**
+ * ── A DESK WITH NOBODY AT IT ────────────────────────────────────────────────
+ * Both short desks ended `if (!me) return null` — a screen that renders NOTHING.
+ * Rendered and read back, the whole tree was `[]`.
+ *
+ * And it was reachable, not theoretical: the brass Concierge is in the nav bar
+ * for everyone, its "File to the Dispatch" row is not gated, and the picker
+ * offered all five forms to a signed-out reader. Tap one and you got an empty
+ * modal — no header, no back control, no sentence.
+ *
+ * A blank screen is the worst answer an app can give. It says nothing about
+ * what happened, what to do, or that anything happened at all.
+ */
+describe('a signed-out reader who reaches a desk', () => {
+  const noBody = (tree: unknown) => {
+    const out: string[] = [];
+    const walk = (n: any) => {
+      if (n == null) return;
+      if (typeof n === 'string') { if (n.trim()) out.push(n.trim()); return; }
+      if (Array.isArray(n)) { n.forEach(walk); return; }
+      walk(n.children);
+    };
+    walk(tree);
+    return out;
+  };
+
+  beforeEach(() => { mockSignedOut = true; });
+  afterEach(() => { mockSignedOut = false; });
+
+  for (const [name, el] of [
+    ['a take', <ComposeShortScreen kind="take" />],
+    ['a seeking', <ComposeShortScreen kind="seeking" />],
+    ['a wire', <ComposeShortScreen kind="wire" />],
+    ['a ballot', <ComposeBallotScreen />],
+  ] as const) {
+    it(`${name} — is told why, and taken back`, async () => {
+      const { toJSON } = render(el as React.ReactElement);
+      await act(async () => { await Promise.resolve(); });
+
+      // Still nothing drawn — but that is now ONE frame before the pop, with a
+      // sentence already on screen, rather than a screen a member is left on.
+      expect(noBody(toJSON())).toEqual([]);
+      expect(String(mockToast.error.mock.calls[0]?.[0])).toBe('Filing is for members.');
     });
   }
 });

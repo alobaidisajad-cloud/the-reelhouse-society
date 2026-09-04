@@ -14,9 +14,20 @@
  * later into a desk somebody opened for something else is the app putting words
  * in their mouth — and the member cannot tell whether they wrote it or the app
  * did.
+ *
+ * ── A DESK WITH NOBODY AT IT ────────────────────────────────────────────────
+ * Both desks used to end `if (!me) return null` — a screen that renders NOTHING.
+ * Reachable: the brass Concierge is in the nav bar for everyone, "File to the
+ * Dispatch" opens the picker, the picker offers all five forms to a signed-out
+ * reader, and tapping one gave them an empty modal with no header, no back and
+ * no sentence. Rendered and read back, the whole tree was `[]`.
+ *
+ * The dossier desk already answered this properly — it says why and takes them
+ * back — so the other two now do the same thing rather than a third behaviour.
+ * `sendBackIfNotAMember` is that one answer, written once.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { InteractionManager, StyleSheet, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -53,10 +64,38 @@ function useMe() {
   } : null), [user]);
 }
 
+/**
+ * Nobody is signed in, so there is nothing to file — say it and go back.
+ *
+ * The one answer for all three desks, taken from the one the dossier desk
+ * already gave, down to the `isMounted` guard: this fires while the modal is
+ * still animating in, and unguarded both pops land, so the member loses two
+ * screens instead of one.
+ *
+ * A sentence and a way out, never `return null`. An empty screen is the worst
+ * answer an app can give, because it tells the member nothing at all — not what
+ * happened, not what to do, not even that anything happened.
+ */
+function useSendBackIfNotAMember(me: unknown) {
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
+  useEffect(() => {
+    if (me) return;
+    reelToast.error('Filing is for members.');
+    InteractionManager.runAfterInteractions(() => {
+      if (isMounted.current) router.back();
+    });
+  }, [me]);
+}
+
 // ── THE SHORT DESKS ─────────────────────────────────────────────────────────
 
 export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire' }) {
   const me = useMe();
+  useSendBackIfNotAMember(me);
   const insets = useSafeAreaInsets();
   const hour = useOpeningHour();
 
@@ -116,6 +155,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
     }
   }, [ready, sending, kind, body, spoiler, film, filmId, source]);
 
+  // Sent back by the hook above; this render is the one frame before it lands.
   if (!me) return null;
 
   return (
@@ -161,6 +201,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
 
 export function ComposeBallotScreen() {
   const me = useMe();
+  useSendBackIfNotAMember(me);
   const insets = useSafeAreaInsets();
   const hour = useOpeningHour();
 
@@ -220,6 +261,7 @@ export function ComposeBallotScreen() {
     }
   }, [ready, question, slots, closes]);
 
+  // Sent back by the hook above; this render is the one frame before it lands.
   if (!me) return null;
 
   return (
