@@ -24,6 +24,18 @@
  * top, or `zIndex` — those relayout every frame, and animating `zIndex` is what
  * produced this app's own worst visual bug once already.
  *
+ * ONE EXCEPTION, AND ONLY ONE: reserving the room the KEYBOARD takes. That is a
+ * height, it cannot be a transform — sliding the content up instead would carry
+ * the desk's header off the top of the screen — and there is no version of
+ * keyboard avoidance that does not change layout. It is also not the case the
+ * law is about: it happens once when the keyboard opens, on a screen nobody is
+ * scrolling, driven by the OS rather than by a list. `compose.tsx` has always
+ * done it this way with `useAnimatedKeyboard`, and `PaperKeyWell` now does the
+ * same for the other desks.
+ *
+ * The guard permits an animated style ONLY when it reads `keyboard.height`, so
+ * a height animated for any other reason still fails.
+ *
  * ── THE FOURTH LAW ───────────────────────────────────────────────────────────
  * `useReducedMotion()` collapses every duration to zero and every transform to
  * its end state. Nothing is *removed* under reduced motion — the state still

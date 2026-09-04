@@ -28,6 +28,7 @@ import { p, QUIET } from './paperStyles';
 import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, groupDigits } from './paperMetrics';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { PaperKeyWell } from './PaperKeyWell';
 
 /** The head every desk wears. One component so three desks cannot drift. */
 /**
@@ -264,7 +265,11 @@ export const BallotDesk = memo(function BallotDesk({
       </View>
       <DeskRail tools={[{ icon: 'date', label: 'CLOSES', on: true }]}
         remaining={MAX_LENGTHS.filingTitle - question.length} />
-      <View style={p.kbd}><Text style={p.kbdLabel} {...decorativeTextProps}>KEYBOARD</Text></View>
+      {/* Drawn in the harness, where `onQuestion` is absent; the keyboard's real
+          height in the app, where it is not. A fixed 210pt block was neither —
+          it left the tool rail under the keyboard AND put the word KEYBOARD on
+          a member's screen. */}
+      <PaperKeyWell drawn={!onQuestion} />
     </View>
   );
 });

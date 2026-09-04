@@ -90,6 +90,18 @@ describe('the three laws', () => {
     for (const s of sources) {
       // Only inside an animated style, which is where it would cost anything.
       for (const m of s.code.matchAll(/useAnimatedStyle\(\(\)\s*=>\s*\(\{([\s\S]*?)\}\)\)/g)) {
+        /**
+         * The one exception the law allows, and it is narrow: reserving the room
+         * the KEYBOARD takes is a height by necessity — sliding the content up
+         * with a transform instead would carry the desk's header off the top of
+         * the screen, and there is no keyboard avoidance that does not change
+         * layout. It also is not the case the law is about: once, on open, on a
+         * screen nobody is scrolling, driven by the OS.
+         *
+         * Permitted only when the style actually READS the keyboard height, so a
+         * height animated for any other reason still fails here.
+         */
+        if (/keyboard\.height/.test(m[1])) continue;
         for (const prop of banned) {
           if (new RegExp('\\b' + prop + '\\s*:').test(m[1])) offenders.push(s.name + ' → ' + prop);
         }

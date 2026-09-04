@@ -22,7 +22,7 @@
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
-import { ComposeShortScreen } from '@/src/components/dispatch/ComposeDesks';
+import { ComposeShortScreen, ComposeBallotScreen } from '@/src/components/dispatch/ComposeDesks';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 const mockFiled: Array<Record<string, unknown>> = [];
@@ -155,6 +155,25 @@ describe('the wire desk', () => {
     const { getByLabelText } = render(<ComposeShortScreen kind="take" />);
     await press(getByLabelText(/Add a still/i));
     expect(String(mockToast.error.mock.calls[0][0])).toMatch(/Name a film first/);
+  });
+
+  it('does not put the word KEYBOARD on a member’s screen', async () => {
+    /**
+     * Every desk ended with a 210pt block containing the word KEYBOARD — a
+     * DRAWING device, so a mockup shows the composer at its real height. Two of
+     * the desks that render it are mounted by the app, so the app shipped it.
+     *
+     * A contrast sweep found the label at 2.71:1 and I went looking for why a
+     * label was that quiet; it was quiet because nobody was ever meant to read
+     * it. And a fixed 210pt is not keyboard avoidance either — the keyboard's
+     * height is not knowable in advance, so it left the tool rail underneath it.
+     */
+    for (const kind of ['take', 'seeking', 'wire'] as const) {
+      const { queryByText } = render(<ComposeShortScreen kind={kind} />);
+      expect(queryByText('KEYBOARD')).toBeNull();
+    }
+    const ballot = render(<ComposeBallotScreen />);
+    expect(ballot.queryByText('KEYBOARD')).toBeNull();
   });
 
   it('asks a take for no source at all', async () => {

@@ -18,8 +18,36 @@ import { LOCAL_ART } from '../../../src/components/profile/__tests__/zz-art.gen'
  *  handler, and this harness has to say out loud that it is a drawing. */
 const NOOP = () => {};
 
-import { PaperPost, PaperActions, type PaperAuthor } from '@/src/components/dispatch/paper/PaperPost';
-import { PaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
+/**
+ * ── THE SHEETS DRAW A MEMBER'S PAGE, NOT A STRANGER'S ───────────────────────
+ * A mark with no handler is now DISABLED — dimmed to 0.62 and announced as
+ * "Members only" — which is right in the app and wrong in a design record. The
+ * generator passed no handlers, so every one of these screens was silently
+ * drawn in the signed-out state: forty-five cards and six docks showing marks
+ * that a member never sees that way.
+ *
+ * A contrast sweep caught it, measuring CERTIFY at 3.17:1 and finding an
+ * effective opacity of 0.62 on a page nobody had asked to be dimmed.
+ *
+ * These wrappers hand every draw a handler, so the sheets show the page the
+ * design is FOR. `a7-end-signed-out` is the one screen that deliberately shows
+ * the other state, and it passes its own props.
+ */
+const PaperPost = (props: React.ComponentProps<typeof RawPaperPost>) => (
+  <RawPaperPost onCertify={NOOP} onSave={NOOP} {...props} />
+);
+const PaperBallot = (props: React.ComponentProps<typeof RawPaperBallot>) => (
+  <RawPaperBallot onCertify={NOOP} onSave={NOOP} onVote={NOOP} {...props} />
+);
+const PostDock = (props: React.ComponentProps<typeof RawPostDock>) => (
+  <RawPostDock onCertify={NOOP} onSave={NOOP} {...props} />
+);
+const PaperActions = (props: React.ComponentProps<typeof RawPaperActions>) => (
+  <RawPaperActions onCertify={NOOP} onSave={NOOP} {...props} />
+);
+
+import { PaperPost as RawPaperPost, PaperActions as RawPaperActions, type PaperAuthor } from '@/src/components/dispatch/paper/PaperPost';
+import { PaperBallot as RawPaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
 import { PaperComposer } from '@/src/components/dispatch/paper/PaperComposer';
 import {
   PaperChrome, PaperMasthead, PaperEmpty, PaperSkeletons,
@@ -27,7 +55,7 @@ import {
 } from '@/src/components/dispatch/paper/PaperFrame';
 import {
   CritiqueSpine, CritiqueHead, CritiqueRow, CritiqueFooter,
-  CritiqueComposer, PostDock, type Critique,
+  CritiqueComposer, PostDock as RawPostDock, type Critique,
 } from '@/src/components/dispatch/paper/PaperCritiques';
 import {
   PaperPicker, PaperDoor, PaperRules, PaperArchive, PaperRoom,

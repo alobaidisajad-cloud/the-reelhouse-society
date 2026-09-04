@@ -12,6 +12,7 @@ import { p } from './paperStyles';
 import { COUNTER_SHOWS_AT, KIND_RULE, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
 import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { PaperKeyWell } from './PaperKeyWell';
 
 /**
  * ── THE COPY DESK ────────────────────────────────────────────────────────────
@@ -263,7 +264,9 @@ export const PaperComposer = memo(function PaperComposer({
           </Text>
         ) : null}
       </View>
-      <View style={p.kbd}><Text style={p.kbdLabel}>KEYBOARD</Text></View>
+      {/* Drawn in the harness, where `onBody` is absent; the keyboard's real
+          height in the app, where it is not. See PaperKeyWell. */}
+      <PaperKeyWell drawn={!live} />
     </View>
   );
 });
