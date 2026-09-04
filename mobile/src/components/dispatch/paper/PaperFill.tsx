@@ -41,7 +41,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { p } from './paperStyles';
-import { MS, STAGGER_MS } from './paperMotion';
+import { MS, EASE, STAGGER_MS } from './paperMotion';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -63,8 +63,10 @@ export const PaperFill = memo(function PaperFill({
     if (reduced) { grown.value = target; return; }
     grown.value = withDelay(
       index * STAGGER_MS,
-      // Linear, because a tally that eases is a tally that looks estimated.
-      withTiming(target, { duration: MS.considered, easing: Easing.linear }),
+      // Linear, because a tally that eases is a tally that looks estimated —
+      // and taken from the palette rather than written as `Easing.linear`, so
+      // there is one definition of the house's curves and not two.
+      withTiming(target, { duration: MS.considered, easing: Easing.bezier(...EASE.flat) }),
     );
   }, [target, index, reduced, grown]);
 

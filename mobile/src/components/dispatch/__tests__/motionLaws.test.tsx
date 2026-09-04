@@ -33,7 +33,7 @@ import { render } from '@testing-library/react-native';
 
 import { PaperFill } from '@/src/components/dispatch/paper/PaperFill';
 import { PaperStrike } from '@/src/components/dispatch/paper/PaperStrike';
-import { MS, EASE, STRIKE_SCALE, STAGGER_MS, PILL_Y, ARRIVE_Y } from '@/src/components/dispatch/paper/paperMotion';
+import { MS, EASE, STRIKE_SCALE, STAGGER_MS, PILL_Y } from '@/src/components/dispatch/paper/paperMotion';
 
 const DIR = path.join(__dirname, '..', 'paper');
 
@@ -120,10 +120,18 @@ describe('the numbers themselves', () => {
   });
 
   it('move things in POINTS, not fractions of a screen', () => {
-    // Six points, not twenty: ink settling, rather than a card flying in.
-    expect(ARRIVE_Y).toBeLessThanOrEqual(8);
     expect(PILL_Y).toBeLessThanOrEqual(12);
     expect(STAGGER_MS).toBeLessThan(MS.strike);
+  });
+
+  it('keeps no constant for a decision that was struck', () => {
+    // `ARRIVE_Y` existed for the arriving-filing animation, which was struck:
+    // no app of this class animates rows into a feed, and a member does not
+    // watch their own filing arrive — they are sent back to a page it is
+    // already on. A constant kept for a struck decision is the next audit's
+    // phantom finding, so it went with it.
+    const motion = require('@/src/components/dispatch/paper/paperMotion');
+    expect(motion.ARRIVE_Y).toBeUndefined();
   });
 
   it('carry two curves and one straight line', () => {

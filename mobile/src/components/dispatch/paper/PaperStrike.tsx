@@ -24,7 +24,7 @@ import Animated, {
   Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming,
 } from 'react-native-reanimated';
 
-import { MS, STRIKE_SCALE } from './paperMotion';
+import { MS, EASE, STRIKE_SCALE } from './paperMotion';
 
 export const PaperStrike = memo(function PaperStrike({
   on, children,
@@ -45,8 +45,8 @@ export const PaperStrike = memo(function PaperStrike({
     // Out and back. It returns to exactly 1 — this is a pulse, not a spring,
     // and this app has no bounce anywhere.
     scale.value = withSequence(
-      withTiming(STRIKE_SCALE, { duration: MS.strike / 2, easing: Easing.out(Easing.cubic) }),
-      withTiming(1, { duration: MS.strike / 2, easing: Easing.out(Easing.cubic) }),
+      withTiming(STRIKE_SCALE, { duration: MS.strike / 2, easing: Easing.bezier(...EASE.in) }),
+      withTiming(1, { duration: MS.strike / 2, easing: Easing.bezier(...EASE.in) }),
     );
   }, [on, reduced, scale]);
 

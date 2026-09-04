@@ -80,11 +80,24 @@ export const EASE = {
  *   here and it is not tuned per screen; that is what makes the whole app feel
  *   like one hand made it.
  *
- * A FILING ARRIVING (your own, at the top of NEWEST)
- *   Opacity 0 → 1 and translateY 6 → 0 over `base`. Six points, not twenty: it
- *   should read as ink settling, not as a card flying in. The entries below it
- *   do NOT animate down — a list that reflows around an insertion moves the
- *   thing somebody was reading.
+ * A FILING ARRIVING — STRUCK, and not built. 2026-09-04.
+ *   The entry read: opacity 0 → 1 and translateY 6 → 0 over `base`, for your
+ *   own filing at the top of NEWEST.
+ *
+ *   It is struck for two reasons, and the first is the honest one: NO APP OF
+ *   THIS CLASS ANIMATES ROWS INTO A FEED. Instagram, Letterboxd and X all
+ *   prepend without a transition, because a row that fades in as it appears is
+ *   the single most reliable way to make a list feel cheap — and once one row
+ *   animates, a member cannot tell "my post arrived" from "the list is
+ *   redrawing", which is the opposite of what the entry wanted.
+ *
+ *   The second is that a member does not WATCH their filing arrive: they are
+ *   sent back to the feed from a desk, and it is already there. The entry was
+ *   describing a moment that does not happen.
+ *
+ *   What actually earns motion in a feed is what this file already specifies
+ *   and the app now does: the MARK under the thumb, and the PILL. Both are
+ *   things the member caused and is looking at.
  *
  * HELD FILINGS (the pill)
  *   In: opacity and translateY -8 → 0 over `base`. Out: opacity over `quick`,
@@ -133,6 +146,11 @@ export const STAGGER_MS = 40;
  *  scale pulse, not a spring, and it returns to exactly 1. */
 export const STRIKE_SCALE = 1.18;
 
-/** How far an arriving entry travels. Points, not a fraction of the screen. */
-export const ARRIVE_Y = 6;
+/**
+ * How far the pill travels. Points, not a fraction of the screen.
+ *
+ * `ARRIVE_Y` stood beside this for the arriving-filing entry, and went with it
+ * — a constant kept for a decision that was struck is the next audit's phantom
+ * finding.
+ */
 export const PILL_Y = 8;
