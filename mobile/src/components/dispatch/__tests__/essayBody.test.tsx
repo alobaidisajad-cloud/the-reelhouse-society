@@ -99,3 +99,116 @@ describe('the essay body', () => {
     expect(src).toMatch(/onLinkPress=\{onMarkdownLinkPress\}/);
   });
 });
+
+/**
+ * ── THE BRANCHES THE DROP CAP DEPENDS ON ────────────────────────────────────
+ * `plainTextOf` decides whether a paragraph can take a drop cap. It returned
+ * null for every paragraph once already — the drop cap had NEVER rendered — so
+ * the three ways it says no are worth entering deliberately rather than
+ * trusting.
+ *
+ * And the horizontal rule, which is the house's printed ornament between
+ * sections and had no test at all.
+ */
+describe('the essay’s ornaments and its refusals', () => {
+  const draw = (text: string) => {
+    const { toJSON } = render(<EssayBody text={text} />);
+    return JSON.stringify(toJSON());
+  };
+
+  /**
+   * A drop cap, found by its SHAPE rather than by a style name.
+   *
+   * Style names do not survive into the rendered tree — RN flattens them to
+   * values — so asserting on the string "dropCap" passes for nothing and fails
+   * for everything. It failed here on a cap that renders correctly, which is
+   * the test being wrong, not the essay.
+   *
+   * What a cap actually is: a Text whose entire content is ONE character, set
+   * much larger than the prose beside it.
+   */
+  const hasDropCap = (text: string): boolean => {
+    const { toJSON } = render(<EssayBody text={text} />);
+    let found = false;
+    const walk = (n: any) => {
+      if (n == null || typeof n === 'string' || found) return;
+      if (Array.isArray(n)) { n.forEach(walk); return; }
+      const kids = n.children ?? [];
+      const size = Number(n.props?.style?.fontSize ?? 0);
+      if (
+        n.type === 'Text' && size >= 40
+        && kids.length === 1 && typeof kids[0] === 'string' && kids[0].length === 1
+      ) { found = true; return; }
+      walk(kids);
+    };
+    walk(toJSON());
+    return found;
+  };
+
+  it('sets a section rule as the ornament, not a line', () => {
+    // `---` in an essay is the ✦ break, drawn by EssayBreak. It had never run.
+    const out = draw('An opening paragraph that runs on for a while.\n\n---\n\nAnd then the next.');
+    expect(out).toContain('✦');
+  });
+
+  it('draws a drop cap on an opening that is plain prose', () => {
+    expect(hasDropCap('Ozu frames a room and then he leaves it entirely alone for a while.'))
+      .toBe(true);
+  });
+
+  it('refuses one where the opening is not plain text', () => {
+    /**
+     * Three refusals, and each is a real shape a member can type:
+     *   · a paragraph whose first child is not a text group — an image
+     *   · one with mixed inline nodes — bold in the first words
+     *   · an empty one
+     * A cap taken from any of these would print the markup's characters.
+     */
+    expect(hasDropCap('**Ozu** frames a room and then leaves it entirely alone.')).toBe(false);
+    expect(hasDropCap('![a still](https://example.com/x.png)')).toBe(false);
+  });
+
+  it('draws nothing at all for an essay with no words in it', () => {
+    const { toJSON } = render(<EssayBody text="   " />);
+    expect(toJSON()).toBeNull();
+  });
+});
+
+describe('an essay does not fetch from strangers', () => {
+  /**
+   * `![](https://anywhere/x.png)` in a dossier reached the markdown library's
+   * default image rule, which renders an <Image> and LOADS the URL —
+   * automatically, on render, with no tap and no allowlist.
+   *
+   * That is a tracking pixel. The author of an essay learns the address of
+   * everybody who reads it, and what sits at the far end can be changed after
+   * the Tribunal has read the words. This app has a whole module about that
+   * risk for LINKS, whose docstring calls `safeOpenURL` "the single choke-point
+   * every externally-sourced link must pass through" — and an image is worse,
+   * because a link at least needs a tap.
+   *
+   * How it surfaced: an image in a test CRASHED the renderer, which is what
+   * proved the library was really trying to load one.
+   */
+  const treeOf = (text: string) => JSON.stringify(render(<EssayBody text={text} />).toJSON());
+
+  it('loads no remote image, and mounts no Image at all', () => {
+    const out = treeOf('An opening line here.\n\n![a still](https://tracker.example/pixel.png)');
+    expect(out).not.toContain('tracker.example');
+    expect(out).not.toContain('"Image"');
+  });
+
+  it('says what was there, using the words the member wrote', () => {
+    const { getByText } = render(
+      <EssayBody text={'An opening line here.\n\n![the last shot](https://x.example/a.png)'} />,
+    );
+    expect(getByText('[image: the last shot]')).toBeTruthy();
+  });
+
+  it('still says something when there is no alt text to use', () => {
+    const { getByText } = render(
+      <EssayBody text={'An opening line here.\n\n![](https://x.example/a.png)'} />,
+    );
+    expect(getByText('[image]')).toBeTruthy();
+  });
+});

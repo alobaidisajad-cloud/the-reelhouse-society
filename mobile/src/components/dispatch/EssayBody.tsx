@@ -45,6 +45,12 @@ const essayMarkdown = {
   strong: { fontFamily: fonts.serifMedium, color: colors.parchment, opacity: 1 },
   em: { fontFamily: fonts.serifItalic },
   link: { color: colors.sepia, textDecorationLine: 'underline' as const },
+  /** What stands where a pasted remote image was. Set as apparatus, not prose:
+   *  it is the page saying something was here, not the member's own writing. */
+  imageNote: {
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4,
+    color: colors.fog, marginTop: 16, includeFontPadding: false,
+  },
   blockquote: {
     borderLeftWidth: 1.5, borderLeftColor: colors.sepiaBorder,
     paddingLeft: 14, marginTop: 18, marginLeft: 0,
@@ -139,6 +145,34 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
     },
     // A rule between sections is the house's printed ornament, not a line.
     hr: (node: any) => <EssayBreak key={node.key} />,
+
+    /**
+     * ── AN ESSAY DOES NOT FETCH FROM STRANGERS ──────────────────────────────
+     * `![](https://anywhere/x.png)` in a dossier reached the library's default
+     * image rule, which renders an <Image> and loads the URL — automatically,
+     * on render, with no tap and no allowlist.
+     *
+     * That is a tracking pixel. The author of an essay learns the address of
+     * everybody who reads it, and the content at the far end can be changed
+     * after the Tribunal has looked at the words. This app has a whole module
+     * about exactly this risk for LINKS, whose docstring calls `safeOpenURL`
+     * "the single choke-point every externally-sourced link must pass through"
+     * — and an image is strictly worse, because a link at least needs a tap.
+     *
+     * The house's imagery is the STILL: attached to a film, from TMDB, chosen
+     * from a picker. A pasted URL is outside that design and always was.
+     *
+     * So the alt text prints in its place. Nothing a member wrote is lost, the
+     * reader is told something was there, and no device calls a stranger.
+     */
+    image: (node: any) => {
+      const alt = String(node?.attributes?.alt ?? '').trim();
+      return (
+        <Text key={node.key} style={[essayMarkdown.body, essayMarkdown.imageNote]} {...scaledTextProps}>
+          {alt ? `[image: ${alt}]` : '[image]'}
+        </Text>
+      );
+    },
   };
 
   if (!safe.trim()) return null;
