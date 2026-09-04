@@ -137,8 +137,23 @@ export const PaperBallot = memo(function PaperBallot({
           <Text style={p.wonMeta} {...scaledTextProps}>
             {[options[top].year, options[top].director?.toUpperCase()].filter(Boolean).join(' · ')}
           </Text>
+          {/* ── HIDING A PERCENTAGE IS NOT PRINTING ZERO ─────────────────────
+              This read `{pct[top]}% OF …` unconditionally. Below
+              BALLOT_PERCENT_FLOOR the whole `pct` array is zeros — that is how
+              percentages are suppressed on a ballot too small for one to mean
+              anything — so a closed ballot with nine votes printed
+
+                  0% OF 9 BALLOTS
+
+              under the film the house had just chosen with seven of them. A
+              false number, set as the permanent record of a decision.
+
+              Below the floor the honest line is the COUNT, which says the same
+              thing and cannot be wrong: 7 OF 9 BALLOTS. */}
           <Text style={[p.wonMeta, { marginTop: 8, color: colors.sepia }]} {...scaledTextProps}>
-            {pct[top]}% OF {counted(total, 'BALLOT', 'BALLOTS')}
+            {showPercent
+              ? `${pct[top]}% OF ${counted(total, 'BALLOT', 'BALLOTS')}`
+              : `${votes[top]} OF ${counted(total, 'BALLOT', 'BALLOTS')}`}
           </Text>
           <View style={[p.hair, { marginTop: 16, alignSelf: 'stretch' }]} />
         </View>

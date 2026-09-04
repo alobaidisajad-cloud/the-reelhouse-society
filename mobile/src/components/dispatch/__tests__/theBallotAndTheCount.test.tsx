@@ -22,7 +22,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
-import { PaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
+import { PaperBallot, shares } from '@/src/components/dispatch/paper/PaperBallot';
 import { counted } from '@/src/components/dispatch/paper/paperText';
 import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
 
@@ -166,5 +166,94 @@ describe('nothing in the feature glues a count to a plural again', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+/**
+ * ── A BALLOT AFTER IT CLOSES ────────────────────────────────────────────────
+ * The whole second half of this component was dark. A ballot has three states
+ * and only the open one had ever been drawn:
+ *
+ *   open, unvoted   empty boxes, no numbers — you cannot see the result until
+ *                   you mark it, which is the engine of the thing
+ *   open, voted     your ✗, and the rules fill
+ *   closed          the winner lifted out and set large, the rest beneath
+ *
+ * The closed state is the one that becomes a permanent record of what the
+ * house decided, and nothing had ever rendered it.
+ */
+describe('a ballot that has closed', () => {
+  const author = { name: 'ozu', memberNo: 7, tier: 'free' as const, avatar: null };
+  const said = (node: any, out: string[] = []): string[] => {
+    if (node == null) return out;
+    if (typeof node === 'string') { if (node.trim()) out.push(node.trim()); return out; }
+    if (Array.isArray(node)) { for (const n of node) said(n, out); return out; }
+    said(node.children, out);
+    return out;
+  };
+
+  const closed = (votes: number[]) => render(
+    <PaperBallot
+      question="Which Ozu?" author={author} closed closesLabel=""
+      options={[
+        { title: 'Tokyo Story', year: 1953, posterPath: '/a.jpg', votes: votes[0] },
+        { title: 'Late Spring', year: 1949, posterPath: '/b.jpg', votes: votes[1] },
+      ]}
+    />,
+  );
+
+  it('lifts the winner out and names it', () => {
+    const words = said(closed([7, 2]).toJSON());
+    expect(words).toContain('THE HOUSE CHOSE');
+    expect(words).toContain('TOKYO STORY');
+  });
+
+  it('prints the share it won once there are enough votes for one to mean anything', () => {
+    // 8 of 12 is 67% under largest-remainder, and the noun agrees with the count.
+    expect(said(closed([8, 4]).toJSON()).join(' ')).toMatch(/67% OF 12 BALLOTS/);
+  });
+
+  it('prints the COUNT below the floor, never a zero percent', () => {
+    /**
+     * ── THIS FOUND A REAL ONE ───────────────────────────────────────────────
+     * The line was `{pct[top]}% OF …` unconditionally. Below
+     * BALLOT_PERCENT_FLOOR the whole `pct` array is zeros — that is HOW a
+     * percentage is suppressed on a ballot too small for one to mean anything
+     * — so a closed ballot with nine votes printed
+     *
+     *     0% OF 9 BALLOTS
+     *
+     * under the film the house had just chosen with seven of them. A false
+     * number, set as the permanent record of a decision.
+     */
+    const words = said(closed([7, 2]).toJSON()).join(' ');
+    expect(words).toMatch(/7 OF 9 BALLOTS/);
+    expect(words).not.toMatch(/0% OF/);
+  });
+
+  it('says one ballot, not one ballots, when one was cast', () => {
+    expect(said(closed([1, 0]).toJSON()).join(' ')).toMatch(/1 OF 1 BALLOT\b/);
+  });
+
+  it('says plainly that nobody voted, rather than showing a winner', () => {
+    // A ballot nobody marked has no winner. Picking index 0 anyway would print
+    // a film as "the house's choice" that the house never chose.
+    const words = said(closed([0, 0]).toJSON());
+    expect(words).toContain('NO BALLOTS WERE CAST');
+    expect(words).not.toContain('THE HOUSE CHOSE');
+  });
+
+  it('divides nothing by nothing without inventing a percentage', () => {
+    // `shares([])` on a zero total. Every option is 0%, not NaN%.
+    expect(shares([0, 0, 0])).toEqual([0, 0, 0]);
+    expect(shares([])).toEqual([]);
+  });
+
+  it('always adds to exactly a hundred', () => {
+    // Rounding three shares independently gives 99 or 101, which is the kind of
+    // detail that quietly tells a member the app is careless.
+    for (const v of [[1, 1, 1], [2, 3, 4], [1, 0, 0], [5, 5, 1], [10, 3, 3, 3]]) {
+      expect(shares(v).reduce((a, b) => a + b, 0)).toBe(100);
+    }
   });
 });
