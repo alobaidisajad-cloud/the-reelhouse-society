@@ -760,3 +760,109 @@ describe('every kind opens, and says its own words', () => {
     });
   }
 });
+
+/**
+ * ── THE READER, READ ALOUD ──────────────────────────────────────────────────
+ * The same sweep that found the index saying "ALL, middle dot, TAKES, middle
+ * dot…" and every card opening "147. TOMASREYES · No. 147". Those were on the
+ * feed. This is the other screen a member spends time on, and it carries things
+ * the feed does not: the ballot's options, the critique composer, the essay.
+ *
+ * Judged on the rendered tree, because that is what reaches the ear. A source
+ * sweep for the same thing returned fifteen findings of which thirteen were
+ * artefacts of stripping interpolations out of JSX.
+ */
+describe('the reader, read aloud', () => {
+  /** Hiding is INHERITED — the flag travels down, it is not read per node. */
+  const spokenStrings = (node: any, off = false, out: string[] = []): string[] => {
+    if (node == null || typeof node === 'string') return out;
+    if (Array.isArray(node)) { for (const n of node) spokenStrings(n, off, out); return out; }
+    const p = node.props ?? {};
+    const hidden = off
+      || p.accessibilityElementsHidden === true
+      || p.importantForAccessibility === 'no-hide-descendants'
+      || p.accessible === false;
+    const own = (node.children ?? []).filter((c: any) => typeof c === 'string').join('').trim();
+    if (own && !hidden) out.push(own);
+    spokenStrings(node.children, hidden, out);
+    return out;
+  };
+
+  /** A repeat has to land on word boundaries: CRITIQUE sits inside CRITIQUES
+   *  and is a different word — the dock button above the section heading. */
+  const echoes = (a: string, b: string): boolean => {
+    const at = b.indexOf(a);
+    if (at === -1) return false;
+    const wordish = /[A-Za-z0-90600-06FF]/;
+    const before = b[at - 1]; const after = b[at + a.length];
+    return !(before && wordish.test(before)) && !(after && wordish.test(after));
+  };
+
+  const controls = (node: any, out: { role?: string; label?: string; text: string }[] = []) => {
+    if (node == null || typeof node === 'string') return out;
+    if (Array.isArray(node)) { for (const n of node) controls(n, out); return out; }
+    const p = node.props ?? {};
+    const pressable = typeof p.onStartShouldSetResponder === 'function';
+    if (pressable || p.accessibilityRole) {
+      const text: string[] = [];
+      const walk = (n: any) => {
+        if (n == null) return;
+        if (typeof n === 'string') { if (n.trim()) text.push(n.trim()); return; }
+        if (Array.isArray(n)) { n.forEach(walk); return; }
+        walk(n.children);
+      };
+      walk(node);
+      out.push({ role: p.accessibilityRole, label: p.accessibilityLabel, text: text.join(' ') });
+    }
+    controls(node.children, out);
+    return out;
+  };
+
+  const SCENES: Record<string, Record<string, unknown>> = {
+    'a dossier': {},
+    'a take': { kind: 'take', title: null, full_content: null, body: 'A take.' },
+    'an open ballot': {
+      kind: 'ballot', title: 'Which Ozu?', body: 'Which Ozu?',
+      options: [
+        { film_id: 1, title: 'Tokyo Story', poster_path: null },
+        { film_id: 2, title: 'Late Spring', poster_path: null },
+      ],
+      closes_at: new Date(Date.now() + 86_400_000).toISOString(),
+    },
+    'a veiled filing': { kind: 'take', title: null, full_content: null, body: 'A take.', spoiler_label: 'SPOILERS' },
+    'a struck filing': { kind: 'take', title: null, full_content: null, body: '', ended_at: new Date().toISOString(), ended_by: 'house' },
+  };
+
+  for (const [name, over] of Object.entries(SCENES)) {
+    describe(name, () => {
+      let tree: unknown = null;
+      beforeEach(async () => { mockRow = row(over); tree = (await mount()).toJSON(); });
+
+      it('has controls at all — or this proves nothing', () => {
+        expect(controls(tree).length).toBeGreaterThan(0);
+      });
+
+      it('names every control', () => {
+        const nameless = controls(tree)
+          .filter((c) => !(c.label ?? '').trim() && !c.text.trim())
+          .map((c) => c.role ?? '(no role)');
+        expect(nameless).toEqual([]);
+      });
+
+      it('reads out no ornament, separator or rule', () => {
+        const ornamental = spokenStrings(tree).filter((s) => !/[A-Za-z0-9؀-ۿ]/.test(s));
+        expect(ornamental).toEqual([]);
+      });
+
+      it('never says the same thing twice in a row', () => {
+        const said = spokenStrings(tree);
+        const echoed: string[] = [];
+        for (let i = 0; i + 1 < said.length; i++) {
+          const a = said[i]; const b = said[i + 1];
+          if (a.length >= 2 && a !== b && echoes(a, b)) echoed.push(`"${a}" then "${b}"`);
+        }
+        expect(echoed).toEqual([]);
+      });
+    });
+  }
+});

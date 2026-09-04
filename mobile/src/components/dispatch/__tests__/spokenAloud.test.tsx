@@ -155,6 +155,23 @@ const operable = (cs: Control[]) => cs.filter(
 );
 
 /**
+ * Does `b` repeat `a` whole?
+ *
+ * Substring containment is not enough and the reader proved it: the dock's
+ * CRITIQUE button sits directly above the CRITIQUES heading, and "CRITIQUE" is
+ * inside "CRITIQUES" while being an entirely different word. A repeat has to
+ * land on word boundaries to be a repeat.
+ */
+export const echoes = (a: string, b: string): boolean => {
+  const at = b.indexOf(a);
+  if (at === -1) return false;
+  const before = b[at - 1];
+  const after = b[at + a.length];
+  const wordish = /[A-Za-z0-9؀-ۿ]/;
+  return !(before && wordish.test(before)) && !(after && wordish.test(after));
+};
+
+/**
  * Every string a screen reader would actually utter — the tree minus whatever
  * sits under something hidden from the accessibility layer.
  *
@@ -281,7 +298,7 @@ describe('the Dispatch, read aloud', () => {
         const echoed: string[] = [];
         for (let i = 0; i + 1 < spoken.length; i++) {
           const a = spoken[i]; const b = spoken[i + 1];
-          if (a.length >= 2 && a !== b && b.includes(a)) echoed.push(`"${a}" then "${b}"`);
+          if (a.length >= 2 && a !== b && echoes(a, b)) echoed.push(`"${a}" then "${b}"`);
         }
         expect(echoed).toEqual([]);
       });
