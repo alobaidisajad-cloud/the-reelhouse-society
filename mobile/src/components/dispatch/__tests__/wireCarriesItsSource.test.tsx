@@ -183,3 +183,96 @@ describe('the wire desk', () => {
     expect(getByLabelText('File it').props.accessibilityState.disabled).toBe(false);
   });
 });
+
+/**
+ * ── THE DESKS, READ ALOUD ───────────────────────────────────────────────────
+ * The third surface. The feed sweep found the index saying "ALL, middle dot,
+ * TAKES, middle dot…" and every card opening "147. TOMASREYES · No. 147"; the
+ * reader came back clean. A desk is where a member WRITES, so a mark read out
+ * in the middle of their own sentence is the worst place for one — and the
+ * composer draws a caret, which is a picture made out of a character.
+ */
+describe('the desks, read aloud', () => {
+  const spokenStrings = (node: any, off = false, out: string[] = []): string[] => {
+    if (node == null || typeof node === 'string') return out;
+    if (Array.isArray(node)) { for (const n of node) spokenStrings(n, off, out); return out; }
+    const p = node.props ?? {};
+    // Hiding is INHERITED — the flag travels down, it is not read per node.
+    const hidden = off
+      || p.accessibilityElementsHidden === true
+      || p.importantForAccessibility === 'no-hide-descendants'
+      || p.accessible === false;
+    const own = (node.children ?? []).filter((c: any) => typeof c === 'string').join('').trim();
+    if (own && !hidden) out.push(own);
+    spokenStrings(node.children, hidden, out);
+    return out;
+  };
+
+  const controls = (node: any, out: { role?: string; label?: string; text: string }[] = []) => {
+    if (node == null || typeof node === 'string') return out;
+    if (Array.isArray(node)) { for (const n of node) controls(n, out); return out; }
+    const p = node.props ?? {};
+    // `onPress` is consumed by Pressability and never reaches a host node.
+    if (typeof p.onStartShouldSetResponder === 'function' || p.accessibilityRole) {
+      const text: string[] = [];
+      const walk = (n: any) => {
+        if (n == null) return;
+        if (typeof n === 'string') { if (n.trim()) text.push(n.trim()); return; }
+        if (Array.isArray(n)) { n.forEach(walk); return; }
+        walk(n.children);
+      };
+      walk(node);
+      out.push({ role: p.accessibilityRole, label: p.accessibilityLabel, text: text.join(' ') });
+    }
+    controls(node.children, out);
+    return out;
+  };
+
+  const echoes = (a: string, b: string): boolean => {
+    const at = b.indexOf(a);
+    if (at === -1) return false;
+    const wordish = /[A-Za-z0-9\u0600-\u06FF]/;
+    const before = b[at - 1]; const after = b[at + a.length];
+    return !(before && wordish.test(before)) && !(after && wordish.test(after));
+  };
+
+  const DESKS: [string, () => React.ReactElement][] = [
+    ['a take', () => <ComposeShortScreen kind="take" />],
+    ['a seeking', () => <ComposeShortScreen kind="seeking" />],
+    ['a wire', () => <ComposeShortScreen kind="wire" />],
+    ['a ballot', () => <ComposeBallotScreen />],
+  ];
+
+  for (const [name, mount] of DESKS) {
+    describe(name, () => {
+      let tree: unknown = null;
+      beforeEach(() => { tree = render(mount()).toJSON(); });
+
+      it('has controls at all — or this proves nothing', () => {
+        expect(controls(tree).length).toBeGreaterThan(0);
+      });
+
+      it('names every control', () => {
+        const nameless = controls(tree)
+          .filter((c) => !(c.label ?? '').trim() && !c.text.trim())
+          .map((c) => c.role ?? '(no role)');
+        expect(nameless).toEqual([]);
+      });
+
+      it('reads out no ornament, separator or rule', () => {
+        const ornamental = spokenStrings(tree).filter((s) => !/[A-Za-z0-9\u0600-\u06FF]/.test(s));
+        expect(ornamental).toEqual([]);
+      });
+
+      it('never says the same thing twice in a row', () => {
+        const said = spokenStrings(tree);
+        const echoed: string[] = [];
+        for (let i = 0; i + 1 < said.length; i++) {
+          const a = said[i]; const b = said[i + 1];
+          if (a.length >= 2 && a !== b && echoes(a, b)) echoed.push(`"${a}" then "${b}"`);
+        }
+        expect(echoed).toEqual([]);
+      });
+    });
+  }
+});
