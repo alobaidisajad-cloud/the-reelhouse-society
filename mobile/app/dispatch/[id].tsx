@@ -19,7 +19,7 @@
  * phone's screen and leave the writing in a slot.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, Share, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, ScrollView, Share, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -261,11 +261,33 @@ export default function FilingReader() {
     if (live.kind === 'dossier' && cardRef.current) {
       try {
         const uri = await captureRef(cardRef, { format: 'png', quality: 1, result: 'tmpfile' });
+        /**
+         * ── THE LINK WAS BEING DROPPED ON THE PATH THAT ACTUALLY RUNS ───────
+         * This tried `Sharing.shareAsync` FIRST, and on iOS that always
+         * succeeds — so iOS always took it. `shareAsync` sends a FILE and
+         * nothing else: its only options are a mime type and an Android dialog
+         * title, neither of which travels with the image. The link never left
+         * the phone.
+         *
+         * Which defeats the whole point stated three paragraphs above: "a
+         * stranger reads the writing from the image and FOLLOWS THE LINK to the
+         * house." They got a picture and no way back.
+         *
+         * React Native's `Share.share({ url, message })` carries both on iOS,
+         * so that is the path now. It is genuinely iOS-only: on Android `Share`
+         * ignores `url` entirely and would send the text while silently losing
+         * the clipping, so Android keeps `shareAsync` and sends the image —
+         * which is the best either API can do there, and is what it did before.
+         */
+        if (Platform.OS === 'ios') {
+          await Share.share({ url: uri, message: `${live.title ?? ''}\n\n${link}` });
+          return;
+        }
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: live.title ?? 'A dossier' });
           return;
         }
-        await Share.share({ url: uri, message: `${live.title ?? ''}\n\n${link}` });
+        await Share.share({ message: `${live.title ?? ''}\n\n${link}` });
         return;
       } catch {
         // Falls through to the line below. A capture that failed must not cost

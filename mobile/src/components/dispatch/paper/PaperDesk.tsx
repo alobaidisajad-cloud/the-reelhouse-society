@@ -496,6 +496,24 @@ export const ShareSheet = memo(function ShareSheet({
    *
    * Every kind keeps the other three — a lounge, a link and the system sheet —
    * because pointing at a filing is useful whatever kind it is.
+   *
+   * ⚠️ NOTHING PASSES THIS, AND THAT IS DELIBERATE — 2026-09-04.
+   * The reader is the only screen that mounts this sheet and it never sets
+   * `card`, so the row has never appeared. Two reasons, and the second is the
+   * one that decides it:
+   *
+   *   · A DIRECT SAVE IS NOT AVAILABLE. "To your photos" means writing to the
+   *     photo library, which needs `expo-media-library`. It is not a dependency
+   *     of this app, and adding one needs a native build — which the release is
+   *     frozen against.
+   *   · WITHOUT IT THE ROW IS A DUPLICATE. ELSEWHERE already captures a
+   *     dossier's clipping and hands it to the system sheet, where "Save Image"
+   *     is one tap. Offering a second row that does exactly the same thing is
+   *     worse than offering one, and a row promising the photo library while
+   *     opening a share sheet is worse still.
+   *
+   * So the prop stays, unset, with the reason written down — and the work is in
+   * DEFERRED-ACTIONS.md rather than half-built behind a label that overpromises.
    */
   card?: boolean;
 }) {

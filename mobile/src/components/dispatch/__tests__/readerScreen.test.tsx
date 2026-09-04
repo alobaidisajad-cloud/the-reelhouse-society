@@ -635,12 +635,62 @@ describe('the reader', () => {
     expect(queryByLabelText(/NEXT IN THE SERIES/)).toBeNull();
   });
 
-  it('shares an essay as a captured clipping, not as a line', async () => {
-    const shots: unknown[] = [];
+  it('shares an essay as a clipping AND the link, in one share', async () => {
+    /**
+     * ── THE LINK USED TO BE DROPPED, AND A TEST HELD IT THERE ────────────────
+     * This asserted that `Sharing.shareAsync` got the file and `Share.share`
+     * was never called — "one share, not two". That was true, and it was the
+     * bug: `shareAsync` sends a FILE and nothing else. Its only options are a
+     * mime type and an Android dialog title, neither of which travels.
+     *
+     * So a member shared an essay and the recipient got a picture with no way
+     * back to the house — defeating the reason the clipping exists, which the
+     * screen states in its own words: "a stranger reads the writing from the
+     * image and follows the link to the house."
+     *
+     * On iOS `Share.share({ url, message })` carries both. It really is one
+     * share; it was one share before, and it was missing half its payload.
+     */
     const viewShot = require('react-native-view-shot');
     const sharing = require('expo-sharing');
     const capture = jest.spyOn(viewShot, 'captureRef').mockResolvedValue('file:///clipping.png');
     const available = jest.spyOn(sharing, 'isAvailableAsync').mockResolvedValue(true);
+    const shareAsync = jest.spyOn(sharing, 'shareAsync').mockResolvedValue(undefined as never);
+    const shared: Array<{ url?: string; message?: string }> = [];
+    const plain = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
+      shared.push(c as { url?: string; message?: string });
+      return { action: 'sharedAction' } as never;
+    });
+
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+
+    expect(shared).toHaveLength(1);
+    expect(shared[0].url).toBe('file:///clipping.png');
+    expect(shared[0].message).toContain('https://reelhouse.app/dispatch');
+    // One share, not two: the file-only path is not also taken.
+    expect(shareAsync).not.toHaveBeenCalled();
+
+    capture.mockRestore(); available.mockRestore(); shareAsync.mockRestore(); plain.mockRestore();
+  });
+
+  it('sends the clipping on Android, where a file and a message cannot travel together', async () => {
+    // `Share.share` on Android ignores `url` outright. Taking the iOS path
+    // there would send the text and silently lose the picture, so Android keeps
+    // the file — the best either API can do, and stated rather than assumed.
+    // `Platform.OS` is a plain property in this environment, not a getter, so
+    // `jest.spyOn(…, 'get')` throws "does not have access type get". Set and
+    // restore it directly.
+    const RN = require('react-native');
+    const realOS = RN.Platform.OS;
+    Object.defineProperty(RN.Platform, 'OS', { value: 'android', configurable: true });
+    const os = { mockRestore: () => Object.defineProperty(RN.Platform, 'OS', { value: realOS, configurable: true }) };
+    const viewShot = require('react-native-view-shot');
+    const sharing = require('expo-sharing');
+    const capture = jest.spyOn(viewShot, 'captureRef').mockResolvedValue('file:///clipping.png');
+    const available = jest.spyOn(sharing, 'isAvailableAsync').mockResolvedValue(true);
+    const shots: unknown[] = [];
     const shareAsync = jest.spyOn(sharing, 'shareAsync').mockImplementation(async (u: unknown) => {
       shots.push(u);
     });
@@ -651,9 +701,35 @@ describe('the reader', () => {
     await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
 
     expect(shots).toEqual(['file:///clipping.png']);
-    // And no text share alongside it — one share, not two.
     expect(plain).not.toHaveBeenCalled();
+
+    os.mockRestore();
     capture.mockRestore(); available.mockRestore(); shareAsync.mockRestore(); plain.mockRestore();
+  });
+
+  it('opens the lounge from the sheet, rather than the world', async () => {
+    // The design puts the house first: TO THE LOUNGE is the top row, and it
+    // must open the salon picker rather than falling through to the OS sheet
+    // like every other destination. This branch had never run.
+    const plain = jest.spyOn(Share, 'share');
+    const { getByLabelText, queryByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { fireEvent.press(getByLabelText(/TO THE LOUNGE/)); });
+
+    // The share sheet closes and nothing is handed to the operating system.
+    expect(queryByLabelText(/ELSEWHERE/)).toBeNull();
+    expect(plain).not.toHaveBeenCalled();
+    plain.mockRestore();
+  });
+
+  it('offers no SAVE THE CARD row, because nothing can save one', async () => {
+    // `ShareSheet` takes a `card` prop and the reader never sets it. Deliberate:
+    // a direct save needs expo-media-library, which is not a dependency, and
+    // without it the row would duplicate ELSEWHERE under a label promising the
+    // photo library. Pinned so it is a decision on the record, not a gap.
+    const { getByLabelText, queryByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    expect(queryByLabelText(/SAVE THE CARD/)).toBeNull();
   });
 
   it('falls back to the line when the clipping cannot be captured', async () => {

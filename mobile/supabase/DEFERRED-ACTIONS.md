@@ -193,3 +193,38 @@ reason: the offline queue carries `update_filing` and `update_critique`, and
 removing the path that drains them is only safe once nothing can have enqueued
 one. It is documented at `amend` in `src/stores/dispatch.ts` so the next sweep
 finds the decision instead of re-finding the dead code.
+
+---
+
+## SAVE THE CARD — a row that needs a native dependency
+
+**Found 2026-09-04**, coverage-mapping the reader's dark statements.
+
+`ShareSheet` takes a `card` prop that adds a SAVE THE CARD row, described as
+"A picture, to your photos". The reader is the only screen that mounts the
+sheet and never sets it, so the row has never appeared.
+
+**Two reasons, and the second decides it:**
+
+1. A direct save means writing to the photo library, which needs
+   `expo-media-library`. It is not a dependency of this app, and adding one
+   needs a native build — which the release is frozen against.
+2. Without a direct save the row would DUPLICATE `ELSEWHERE`, which already
+   captures a dossier's clipping and hands it to the system sheet where "Save
+   Image" is one tap. Two rows doing one thing is worse than one, and a row
+   promising the photo library while opening a share sheet is worse still.
+
+**If it is wanted, in order:**
+
+1. `expo-media-library` as a dependency, and a new native build.
+2. `MediaLibrary.requestPermissionsAsync()` before the first save, with the
+   refusal handled — a member who says no must get a sentence, not a silent
+   failure.
+3. `card={live.kind === 'dossier'}` on the `ShareSheet` in `app/dispatch/[id].tsx`.
+4. A `SAVE THE CARD` branch in `onDest` that calls `MediaLibrary.saveToLibraryAsync`
+   on the captured file, rather than falling through to `shareElsewhere`.
+5. The test `readerScreen.test.tsx › offers no SAVE THE CARD row` pins the
+   current behaviour and will need its expectation moved in the same change.
+
+**Until then** the prop stays unset with the reason written at its declaration,
+so the next sweep finds a decision rather than re-finding a gap.

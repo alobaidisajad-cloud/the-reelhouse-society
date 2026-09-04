@@ -293,3 +293,131 @@ describe('the Dispatch feed', () => {
     expect(getByLabelText('Save this').props.accessibilityState.disabled).toBe(false);
   });
 });
+
+/**
+ * ── THE EMPTY PAGES, AND THE CONTROLS ON THEM ───────────────────────────────
+ * Every one of these was dark. Not one statement in the `ListEmptyComponent`
+ * chain had ever run, so the five different empty pages the feed can show — and
+ * the four controls on them — were unproven, on the screen a member who has
+ * just joined sees FIRST.
+ *
+ * This mounts each one and PRESSES the control, checking where it goes. A
+ * control that renders is not a control that works: the blank ballot card
+ * rendered perfectly for months.
+ */
+describe('an empty page, in every shape it takes', () => {
+  const pressIt = async (el: unknown) => {
+    await act(async () => { fireEvent.press(el as never); });
+  };
+
+  it('what you kept, when you have kept nothing — and the way back out', async () => {
+    put({ filings: [], savedOnly: true });
+    const { getByText, getByLabelText } = await mount();
+    expect(getByText('You have kept nothing yet.')).toBeTruthy();
+
+    // The way out of a filter that is hiding everything. Without it a member is
+    // looking at an empty page with no visible cause.
+    await pressIt(getByLabelText('TAP THE BOOKMARK ABOVE TO GO BACK'));
+    expect(useDispatch.getState().savedOnly).toBe(false);
+  });
+
+  it('signed out — the house is open to read, and joining is the one act', async () => {
+    mockUser = null;
+    put({ filings: [] });
+    const { getByText, getByLabelText } = await mount();
+    expect(getByText('The house is open to read.')).toBeTruthy();
+    await pressIt(getByLabelText('JOIN THE SOCIETY'));
+    expect(mockPushed).toEqual(['/(modals)/membership']);
+  });
+
+  for (const [section, title, action] of [
+    ['ALL', 'Nothing has been filed yet.', 'FILE THE FIRST'],
+    ['TAKES', 'No one has said anything yet.', 'SAY IT'],
+    ['SEEKING', 'No one is asking.', 'ASK THE HOUSE'],
+    ['WIRE', 'The wire is quiet.', 'BRING THE NEWS'],
+  ] as const) {
+    it(`${section} — invites the first filing, and opens the desk`, async () => {
+      put({ filings: [], section });
+      const { getByText, getByLabelText } = await mount();
+      expect(getByText(title)).toBeTruthy();
+      await pressIt(getByLabelText(action));
+      expect(mockPushed).toEqual(['/dispatch/compose']);
+    });
+  }
+
+  for (const [section, title] of [
+    ['BALLOTS', 'No ballot is open.'],
+    ['DOSSIER', 'No essays yet.'],
+  ] as const) {
+    it(`${section} — offers no act the door would refuse, and explains instead`, async () => {
+      // These two are AUTEURS-only to file. A button that exists to say no is
+      // worse than a sentence, so the quiet line is a LINK to what an auteur can
+      // do — and it has to actually go there.
+      put({ filings: [], section });
+      const { getByText, queryByLabelText, getByLabelText } = await mount();
+      expect(getByText(title)).toBeTruthy();
+      expect(queryByLabelText('FILE THE FIRST')).toBeNull();
+      await pressIt(getByLabelText('WHAT AN AUTEUR CAN DO →'));
+      expect(mockPushed).toEqual(['/(modals)/membership']);
+    });
+  }
+
+  it('draws the skeletons while it is still loading, and no empty page', async () => {
+    /**
+     * "Nothing here" and "not here yet" are different sentences, and showing
+     * the first while the second is true is how a member decides the house is
+     * dead on their first morning.
+     *
+     * ⚠️ Asserted BEFORE the flush, on purpose. The screen fetches itself when
+     * it opens with no filings, and against this mock that fetch resolves
+     * immediately and clears `loading` — so the shared `mount()`, which drains a
+     * macrotask, always arrives after the loading state is over. The first
+     * version of this test put `loading: true`, flushed, and reported the empty
+     * page as a bug in the screen. It was a bug in the test.
+     */
+    put({ filings: [], loading: true });
+    const { queryByText, queryByLabelText } = render(<FeedScreen />);
+    expect(queryByText('Nothing has been filed yet.')).toBeNull();
+    // And the skeletons stand in its place, rather than a blank screen — which
+    // is the other way to get this wrong. Found by its own label, not by
+    // stringifying the tree: before the flush `toJSON()` still carries fibers
+    // and JSON.stringify throws on the cycle.
+    expect(queryByLabelText('Loading filings')).toBeTruthy();
+
+    // Then, once it has landed with nothing, the empty page is correct.
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    expect(queryByText('Nothing has been filed yet.')).toBeTruthy();
+  });
+});
+
+describe('the page keeps itself current', () => {
+  it('asks for new filings on focus, and every ninety seconds after', async () => {
+    // The poll was entirely dark. If it never runs, the held-filings pill never
+    // appears and the feed silently goes stale while a member reads it.
+    //
+    // ⚠️ The shared `mount()` cannot be used here. It flushes with a REAL
+    // `setTimeout(0)`, and under fake timers that callback is never delivered —
+    // the suite simply hangs until the runner kills it, which is exactly what
+    // the first version of this test did. So the mount is done here and the
+    // clock is advanced deliberately instead.
+    const spy = jest.spyOn(useDispatch.getState(), 'checkForNew')
+      .mockImplementation(async () => {});
+    jest.useFakeTimers({ doNotFake: ['nextTick'] });
+    put({ filings: [filing()] });
+
+    render(<FeedScreen />);
+    await act(async () => { jest.advanceTimersByTime(0); });
+    // Once on focus — a member returning to the tab wants the page current
+    // before they have to wait a minute and a half for it.
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    await act(async () => { jest.advanceTimersByTime(90_000); });
+    expect(spy).toHaveBeenCalledTimes(2);
+
+    await act(async () => { jest.advanceTimersByTime(180_000); });
+    expect(spy).toHaveBeenCalledTimes(4);
+
+    jest.useRealTimers();
+    spy.mockRestore();
+  });
+});
