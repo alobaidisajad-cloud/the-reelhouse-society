@@ -421,3 +421,75 @@ describe('the page keeps itself current', () => {
     spy.mockRestore();
   });
 });
+
+
+
+/**
+ * ── THE REST OF WHAT THE PAGE DOES ──────────────────────────────────────────
+ * The last dark statements on this screen that a test can actually reach.
+ *
+ * ⚠️ THREE THAT CANNOT BE REACHED HERE, SAID RATHER THAN FAKED:
+ *
+ *   THE SCROLL HANDLER is four reanimated worklets. They run on the UI thread
+ *   and do not execute in this environment at all.
+ *
+ *   THE INTERVAL'S CLEANUP is returned from `useFocusEffect`, which needs a real
+ *   navigator to decide when a screen loses focus. There is none here, so
+ *   unmounting does not run it. A test asserting the poll stops was written; it
+ *   reported the poll still firing afterwards, and that was the harness rather
+ *   than a leak, so it is gone rather than left as a false alarm.
+ *
+ *   PULL TO REFRESH. `RCTRefreshControl` renders, but no node in the tree
+ *   carries `onRefresh` — the prop does not survive to the host element — and
+ *   the control has no label or text to find it by. What it calls, `fetch`, is
+ *   covered directly elsewhere.
+ */
+describe('the page, in the rest of its states', () => {
+  /** Every element type in the tree. Walked, never stringified — before the
+   *  flush `toJSON()` still carries fibers and JSON.stringify throws on the
+   *  cycle, which has now cost two tests in this file. */
+  const typesIn = (node: any, out = new Set<string>()): Set<string> => {
+    if (node == null || typeof node === 'string') return out;
+    if (Array.isArray(node)) { for (const n of node) typesIn(n, out); return out; }
+    if (node.type) out.add(String(node.type));
+    typesIn(node.children, out);
+    return out;
+  };
+
+  it('flips the ordering from the running head', async () => {
+    put({ filings: [filing()], sort: 'LATEST' });
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText(/order|LATEST|CERTIFIED/i)); });
+    expect(useDispatch.getState().sort).toBe('CERTIFIED');
+  });
+
+  it('shows a filing whose author has gone, without a room to open', async () => {
+    put({ filings: [filing({ author: null, authorId: null })] });
+    const { getByText, queryByLabelText } = await mount();
+    expect(getByText('A MEMBER, DEPARTED')).toBeTruthy();
+    expect(queryByLabelText(/Open their room/i)).toBeNull();
+  });
+
+  it('names the series a filing belongs to', async () => {
+    put({
+      filings: [filing({
+        kind: 'dossier', body: 'The Empty Room',
+        seriesTitle: 'Ozu, in four parts', partNumber: 2,
+      })],
+    });
+    const { getByText } = await mount();
+    expect(getByText(/PART 2 OF OZU, IN FOUR PARTS/i)).toBeTruthy();
+  });
+
+  it('says it is fetching more rather than looking finished', async () => {
+    put({ filings: [filing()], loadingMore: true });
+    const { toJSON } = await mount();
+    expect(typesIn(toJSON()).has('ActivityIndicator')).toBe(true);
+  });
+
+  it('and shows no spinner when it is not', async () => {
+    put({ filings: [filing()], loadingMore: false });
+    const { toJSON } = await mount();
+    expect(typesIn(toJSON()).has('ActivityIndicator')).toBe(false);
+  });
+});
