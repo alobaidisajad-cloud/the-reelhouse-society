@@ -26,6 +26,7 @@ import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
 import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, groupDigits } from './paperMetrics';
+import { LEAD_STYLE } from './paperPerf';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { PaperKeyWell } from './PaperKeyWell';
@@ -121,7 +122,7 @@ export const WireDesk = memo(function WireDesk({
           <View style={p.column}>
             <Byline author={me} />
             <Text style={d.wireHead} {...displayTextProps}>
-              <Text style={[p.leadIn, { color: KIND_RULE.wire }]}>WIRE — </Text>
+              <Text style={[p.leadIn, LEAD_STYLE.wire]}>WIRE — </Text>
               {headline}
             </Text>
             <Text style={p.wire} {...scaledTextProps}>{body}<Text style={p.caret} {...UNSPOKEN}>|</Text></Text>
@@ -188,7 +189,7 @@ export const BallotDesk = memo(function BallotDesk({
                 No `onQuestion` means the harness, where this stays a drawn line
                 with a drawn caret and every screenshot is unchanged. */}
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              <Text style={[p.leadIn, { color: KIND_RULE.ballot }]} {...decorativeTextProps}>BALLOT — </Text>
+              <Text style={[p.leadIn, LEAD_STYLE.ballot]} {...decorativeTextProps}>BALLOT — </Text>
               {onQuestion ? (
                 <TextInput
                   style={[d.ballotQ, { flex: 1, minWidth: 0, padding: 0 }]}

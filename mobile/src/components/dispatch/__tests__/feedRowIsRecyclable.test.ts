@@ -99,3 +99,78 @@ describe('the feed row can actually be recycled', () => {
     expect(bare).toEqual([]);
   });
 });
+
+describe('paperPerf is wired, all of it', () => {
+  /**
+   * This module has now been caught unwired TWICE — once entirely, and once with
+   * two exports left dead after the rest was connected. `LEAD_STYLE` sat unused
+   * while eight sites built the very object it exists to replace, one of them in
+   * the feed row itself; `PREFETCH_ROWS` sat under a section that never asked
+   * for prefetching and has been removed.
+   *
+   * So the guard is not "is paperPerf imported" — it was, and two exports were
+   * still dead. It is: EVERY export earns its place, or it should not be there.
+   */
+  const DIR = path.join(__dirname, '..', 'paper');
+  const perfSrc = fs.readFileSync(path.join(DIR, 'paperPerf.ts'), 'utf8');
+  const names = [...perfSrc.matchAll(/export const (\w+)/g)].map((m) => m[1]);
+
+  /**
+   * Every SHIPPING source file except the one that defines them.
+   *
+   * Two exclusions, and the first draft got both wrong in the same run:
+   *   · the definition itself, or every export looks used — by itself;
+   *   · `__tests__`, because a test importing something does not make it wired.
+   *     `itemType` is imported by the feed AND by this file; if only this file
+   *     imported it, it would still be dead in the app. Excluding tests also
+   *     stops THIS test's own words from counting as usage, which is what made
+   *     the vacuity check below fire the first time it ran.
+   */
+  const corpus = (() => {
+    const out: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) { if (e.name !== '__tests__') walk(full); continue; }
+        if (!/\.tsx?$/.test(e.name) || e.name === 'paperPerf.ts') continue;
+        out.push(fs.readFileSync(full, 'utf8'));
+      }
+    };
+    walk(path.join(__dirname, '..', '..', '..'));
+    walk(path.join(__dirname, '..', '..', '..', '..', 'app'));
+    return out.join('\n');
+  })();
+
+  it('found the exports and a corpus to look in', () => {
+    expect(names.length).toBeGreaterThan(1);
+    expect(corpus.length).toBeGreaterThan(100_000);
+    // The corpus must genuinely exclude the definitions, or the next test
+    // passes vacuously — every name would match its own `export const` line.
+    // Built by concatenation so this assertion is not itself a match.
+    for (const n of names) expect(corpus).not.toContain('export const ' + n);
+  });
+
+  it('has no export that nothing imports', () => {
+    const dead = names.filter((n) => !new RegExp('\\b' + n + '\\b').test(corpus));
+    expect(dead).toEqual([]);
+  });
+
+  it('and no row builds the per-kind style LEAD_STYLE exists to replace', () => {
+    // `{ color: KIND_RULE[kind] }` written inline is a fresh object per render.
+    // The frozen constants are one per kind for the life of the process.
+    const offenders: string[] = [];
+    for (const f of fs.readdirSync(DIR).filter((n) => /\.tsx$/.test(n))) {
+      const code = fs.readFileSync(path.join(DIR, f), 'utf8')
+        .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/[^\n]*/g, '');
+      for (const m of code.matchAll(/\{\s*color:\s*KIND_RULE[.[][\w.\]]*\s*\}/g)) {
+        // The one legitimate form: a lookup with a fallback for a kind that is
+        // not one of the five, which a frozen record cannot express.
+        if (/\?\?/.test(code.slice(m.index, m.index! + 90))) continue;
+        offenders.push(f + ': ' + m[0].replace(/\s+/g, ' '));
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});

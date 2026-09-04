@@ -10,6 +10,7 @@ import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { COUNTER_SHOWS_AT, KIND_RULE, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { LEAD_STYLE } from './paperPerf';
 import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { PaperKeyWell } from './PaperKeyWell';
@@ -151,7 +152,7 @@ export const PaperComposer = memo(function PaperComposer({
                 style={
                   kind === 'seeking' ? p.seekingLead
                     : kind === 'wire' ? p.wireDateline
-                      : [p.leadIn, { color: KIND_RULE.take }]
+                      : [p.leadIn, LEAD_STYLE.take]
                 }
                 {...decorativeTextProps}
               >

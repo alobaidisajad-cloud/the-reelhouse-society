@@ -12,6 +12,7 @@ import {
 } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { formatCount, stillHeight, KIND_RULE, RULE_W, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
 import { softBreak } from './paperText';
 import { isRTLText } from '@/src/utils/text';
@@ -647,7 +648,7 @@ export const PaperPost = memo(function PaperPost({
                   makes them a family, and it carries the kind's colour. */}
               {kind === 'take' && (
                 <Text style={[p.take, rtl && p.rtlText]} {...scaledTextProps}>
-                  <Text style={[p.leadIn, { color: KIND_RULE.take }]}>TAKE — </Text>{softBreak(body)}
+                  <Text style={[p.leadIn, LEAD_STYLE.take]}>TAKE — </Text>{softBreak(body)}
                 </Text>
               )}
 

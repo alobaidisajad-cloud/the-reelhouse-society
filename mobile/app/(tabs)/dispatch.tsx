@@ -315,7 +315,11 @@ export default function DispatchScreen() {
               data={rows}
               keyExtractor={(r: Row) => r.key}
               getItemType={getItemType}
-              estimatedItemSize={190}
+              // No `estimatedItemSize`. FlashList 2 removed it and sizes itself;
+              // `src/types/flash-list.d.ts` keeps the prop declared so the older
+              // call sites still typecheck, and the library spreads what it does
+              // not recognise onto a ScrollView that ignores it. Passing 190 said
+              // this list had been measured when nothing had measured it.
               scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
               onScroll={onScroll}
               topInset={0}

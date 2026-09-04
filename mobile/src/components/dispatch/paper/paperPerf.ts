@@ -81,7 +81,12 @@ export const TMDB = { backdrop: 'w780', poster: 'w185', avatar: 'w92' } as const
  * `stillHeight(measure)` is arithmetic, not a measurement, which is also why
  * the skeletons can match the posts exactly.
  *
- * FlashList 2 sizes itself; there is no `estimatedItemSize` to get wrong.
+ * FlashList 2 sizes itself; there is no `estimatedItemSize` to get wrong. This
+ * feed passed one anyway. It did nothing — `src/types/flash-list.d.ts` declares
+ * the prop the library removed so twenty-odd older call sites still typecheck,
+ * and FlashList spreads what it does not recognise onto its ScrollView, which
+ * ignores a number it has never heard of. Passing it said the list was tuned
+ * when it was not, so it is gone from this one.
  */
 
 /**
@@ -119,5 +124,12 @@ export const TMDB = { backdrop: 'w780', poster: 'w185', avatar: 'w92' } as const
  * Four skeletons while it lands, shaped exactly like the posts that replace
  * them, so the first paint and the first content share one layout and nothing
  * moves when the data arrives.
+ *
+ * `PREFETCH_ROWS = 8` stood here and nothing imported it. No section of this
+ * file asks for prefetching and none of the reasoning above needs it: one
+ * request returns the page, the art is already fetched at sized paths with
+ * `cachePolicy="memory-disk"`, and eight rows of speculative decode ahead of a
+ * scroll is a cost, not a saving, unless a device says otherwise. A constant
+ * kept for a thing the file never argued for is the next audit's phantom
+ * finding, so it went — the same call, for the same reason, as `ARRIVE_Y`.
  */
-export const PREFETCH_ROWS = 8;

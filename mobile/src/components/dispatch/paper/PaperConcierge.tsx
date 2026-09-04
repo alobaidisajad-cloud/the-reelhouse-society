@@ -30,6 +30,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { displayTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { KIND_RULE } from './paperMetrics';
+import { LEAD_STYLE } from './paperPerf';
 import { FORMS } from './PaperMore';
 
 /**
@@ -129,7 +130,7 @@ export const ConciergeForms = memo(function ConciergeForms({ onBack }: { onBack?
         <View key={f.kind}>
           {i > 0 && <View style={c.div} />}
           <Act
-            icon={<Text style={[c.kindMark, { color: KIND_RULE[f.kind] }]} {...decorativeTextProps}>
+            icon={<Text style={[c.kindMark, LEAD_STYLE[f.kind]]} {...decorativeTextProps}>
               {f.name.slice(0, 1)}
             </Text>}
             tint="rgba(232,223,208,0.04)"

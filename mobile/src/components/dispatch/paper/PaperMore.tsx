@@ -21,6 +21,7 @@ import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
 import { KIND_RULE, MARGIN_W, RULE_W, RULE_GAP, AVATAR, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { LEAD_STYLE } from './paperPerf';
 import { MS, PILL_Y } from './paperMotion';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { clipToSentence } from './paperText';
@@ -76,7 +77,7 @@ export const PaperPicker = memo(function PaperPicker({
             accessibilityLabel={f.locked ? `${f.name}. Auteurs only. ${f.line}` : `${f.name}. ${f.line}`}
           >
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[p.leadIn, { color: KIND_RULE[f.kind] }]} {...decorativeTextProps}>
+              <Text style={[p.leadIn, LEAD_STYLE[f.kind]]} {...decorativeTextProps}>
                 {f.name}
               </Text>
               <Text style={m.formLine} {...scaledTextProps}>{f.line}</Text>
@@ -301,7 +302,7 @@ export const PaperCase = memo(function PaperCase({
             {reasons.toUpperCase()}
           </Text>
           <Text style={m.caseBody} numberOfLines={3} {...scaledTextProps}>
-            <Text style={[p.leadIn, { color: KIND_RULE[kind] }]}>{kind.toUpperCase()} — </Text>
+            <Text style={[p.leadIn, LEAD_STYLE[kind]]}>{kind.toUpperCase()} — </Text>
             {body}
           </Text>
           <View style={{ marginTop: 8 }}>
@@ -654,7 +655,7 @@ export const DossierShareCard = memo(function DossierShareCard({
             A clipping cut out of a newspaper never told you how long it would
             take. The nameplate carries the date; this line carries the kind. */}
         <Text style={m.shareKind} {...decorativeTextProps}>
-          <Text style={{ color: KIND_RULE.dossier }}>DOSSIER</Text>
+          <Text style={LEAD_STYLE.dossier}>DOSSIER</Text>
         </Text>
 
         {/* The size is COMPUTED, not negotiated. `adjustsFontSizeToFit` is the
