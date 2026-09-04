@@ -571,6 +571,29 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     }
   },
 
+  /**
+   * ⚠️ NOTHING IN THIS APP CALLS THIS, AND THAT IS ON PURPOSE — BUT SAY SO.
+   *
+   * `amend` is reachable only from `/dispatch/compose?edit=<id>`, and no screen
+   * ever navigates there: swept the whole of `src` and `app` for an `edit`
+   * param and for anything supplying `initialTitle`/`initialContent`, and there
+   * is nothing. `amendCritique` below has no caller at all.
+   *
+   * That matches the decision the reader states in its own words — "on your own
+   * filing there is one act: withdraw it" — so this is an unbuilt door, not a
+   * broken one. A member cannot fix a typo in a filing or a critique. Whether
+   * that is right is a product question and it is recorded in
+   * DEFERRED-ACTIONS.md rather than answered here.
+   *
+   * It is kept rather than deleted for one concrete reason: the offline queue
+   * carries `update_filing` and `update_critique` mutation types, and removing
+   * the path that drains them is only safe once nothing can have enqueued one.
+   *
+   * The EDITED mark a card prints reads `edited_at`, which this app therefore
+   * never sets. On 2026-09-04 the live table held no row with it set — and one
+   * filing in total, so that proves the column is unused rather than proving
+   * this app is what would have used it.
+   */
   amend: async (id, updates) => {
     const user = useAuthStore.getState().user;
     // Wherever it is held. This read the feed alone, so amending a filing
