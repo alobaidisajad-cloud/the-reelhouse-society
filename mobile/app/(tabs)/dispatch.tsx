@@ -32,7 +32,7 @@ import {
   DayDivider, Ornament, PaperChrome, PaperEmpty, PaperMasthead, PaperSkeletons,
   RunningHead, type PaperSection,
 } from '@/src/components/dispatch/paper/PaperFrame';
-import { NewFilings } from '@/src/components/dispatch/paper/PaperMore';
+import { NewFilings, NEW_FILINGS_ROOM } from '@/src/components/dispatch/paper/PaperMore';
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth, formatCount, PAPER_MAX } from '@/src/components/dispatch/paper/paperMetrics';
@@ -320,7 +320,19 @@ export default function DispatchScreen() {
               onScroll={onScroll}
               topInset={0}
               bottomInset={insets.bottom + 49}
-              contentContainerStyle={{ paddingBottom: insets.bottom + 64 }}
+              contentContainerStyle={{
+                // ── THE PILL GETS A GUTTER, NOT A SEAT ON THE WRITING ───────
+                // `NEW_FILINGS_ROOM` exists precisely for this and nothing
+                // reserved it, so the pill — absolutely positioned at the top of
+                // the list — sat across the first byline. `newWrap`'s own note
+                // records that this was found once already and fixed there; the
+                // half of the fix that lives on the PAGE was never applied.
+                //
+                // Reserved only while filings are held, so a page with nothing
+                // new above it does not carry an empty band at the top.
+                paddingTop: newCount > 0 ? NEW_FILINGS_ROOM : 0,
+                paddingBottom: insets.bottom + 64,
+              }}
               ListHeaderComponent={header}
               renderItem={renderItem as any}
               onEndReached={() => useDispatch.getState().loadMore()}

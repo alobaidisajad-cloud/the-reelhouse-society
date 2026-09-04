@@ -19,7 +19,7 @@
  * phone's screen and leave the writing in a slot.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Share, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, Share, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,7 +34,7 @@ import { PaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
 import {
   CritiqueComposer, CritiqueFooter, CritiqueHead, CritiqueRow, CritiqueSpine, PostDock,
 } from '@/src/components/dispatch/paper/PaperCritiques';
-import { EssayHead } from '@/src/components/dispatch/paper/PaperEssay';
+import { EssayHead, EssayNext } from '@/src/components/dispatch/paper/PaperEssay';
 import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
@@ -42,6 +42,14 @@ import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { measure } from '@/src/components/dispatch/paper/paperMetrics';
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
+import ViewShot, { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import { DossierShareCard } from '@/src/components/dispatch/paper/PaperMore';
+import { supabase } from '@/src/lib/supabase';
+
+/** The house's own mark, bundled — never a stand-in glyph on the share card. */
+const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
+import { FILING_FULL_COLUMNS, parseFilingRows } from '@/src/stores/dispatchTypes';
 import type { CritiqueOrder, Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import { nav } from '@/src/utils/typedRouter';
@@ -70,6 +78,20 @@ export default function FilingReader() {
 
   const filings = useDispatch((s) => s.filings);
   const critiques = useDispatch((s) => s.critiques);
+  /**
+   * The part after this one, when this filing is part of a series.
+   *
+   * ── WHY THIS EXISTS ────────────────────────────────────────────────────────
+   * `EssayNext` was drawn, built, labelled "NEXT IN THE SERIES" in the mockup —
+   * and never mounted. Its own docstring says why it should be: "an essay in
+   * four parts that ends with nothing is an essay the reader has to go and hunt
+   * for." A dossier ended at its critiques and left the reader to find the SERIES
+   * control back up at the head.
+   *
+   * Read here rather than in the store for the same reason the series page reads
+   * locally: it is one row, for one screen, and nothing else wants it.
+   */
+  const [nextPart, setNextPart] = useState<Filing | null>(null);
   const opened = useDispatch((s) => s.opened);
   const critiquesLoading = useDispatch((s) => s.critiquesLoading);
   const critiquesLoadingMore = useDispatch((s) => s.critiquesLoadingMore);
@@ -92,6 +114,8 @@ export default function FilingReader() {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const scroller = useRef<ScrollView>(null);
+  /** The off-screen clipping, captured when an essay is shared out of the app. */
+  const cardRef = useRef<ViewShot>(null);
 
   /**
    * The sheets. Two, and which one opens depends on whose filing it is.
@@ -134,6 +158,39 @@ export default function FilingReader() {
     return () => { cancelled = true; };
   }, [id]);
 
+  // ── WHAT COMES NEXT, IF ANYTHING DOES ─────────────────────────────────────
+  // One row: the lowest part number above this one, in the same series, that a
+  // reader could actually open. The same three gates the series page uses, so a
+  // withheld or withdrawn part is never offered as "next".
+  useEffect(() => {
+    const seriesId = live?.seriesId;
+    const part = live?.partNumber;
+    if (!seriesId || part == null) { setNextPart(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('dispatch_posts')
+          .select(FILING_FULL_COLUMNS)
+          .eq('series_id', seriesId)
+          .eq('is_published', true)
+          .is('withheld_at', null)
+          .is('ended_at', null)
+          .gt('part_number', part)
+          .order('part_number', { ascending: true })
+          .limit(1);
+        if (error) throw error;
+        if (cancelled) return;
+        setNextPart(parseFilingRows(data ?? []).filings[0] ?? null);
+      } catch {
+        // The foot simply does not appear. A part that could not be looked up
+        // must not become a control that goes nowhere.
+        if (!cancelled) setNextPart(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [live?.seriesId, live?.partNumber]);
+
   /**
    * ── THE ORDER IS THE SERVER'S NOW ─────────────────────────────────────────
    * This used to sort on the device, over whatever had been loaded. That was
@@ -164,10 +221,39 @@ export default function FilingReader() {
   const shareElsewhere = useCallback(async () => {
     if (!live) return;
     setSharing(false);
+
+    /**
+     * ── AN ESSAY LEAVES AS A CLIPPING, EVERYTHING ELSE AS A LINE ────────────
+     * `DossierShareCard` was drawn for exactly this and never mounted, so the
+     * one asset the design calls "the house's introduction to strangers" went
+     * out as plain text. The app already had the whole pipeline — ViewShot and
+     * `Sharing.shareAsync` carry the log card, the film card and the profile.
+     *
+     * Only a dossier gets an image, which is the design's own rule: a take
+     * shared as a poster is a poster of somebody's opinion, and a seeking is a
+     * poster of somebody's question. Nobody makes those.
+     */
+    const link = `https://reelhouse.app/dispatch/${live.id}`;
+    if (live.kind === 'dossier' && cardRef.current) {
+      try {
+        const uri = await captureRef(cardRef, { format: 'png', quality: 1, result: 'tmpfile' });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: live.title ?? 'A dossier' });
+          return;
+        }
+        await Share.share({ url: uri, message: `${live.title ?? ''}\n\n${link}` });
+        return;
+      } catch {
+        // Falls through to the line below. A capture that failed must not cost
+        // the member the share.
+      }
+    }
+
     try {
-      await Share.share({
-        message: `${live.title || live.body}\n\nThe Dispatch — reelhouse://dispatch/${live.id}`,
-      });
+      // `https`, not `reelhouse://`. A custom scheme opens nothing for anybody
+      // who does not already have the app — which is everybody this is being
+      // sent to. `ShareCardModal` has always used the web link; this did not.
+      await Share.share({ message: `${live.title || live.body}\n\nThe Dispatch — ${link}` });
     } catch {
       // A share sheet the member dismissed is not an error.
     }
@@ -320,6 +406,17 @@ export default function FilingReader() {
                   : undefined}
               />
               <EssayBody text={live.fullContent ?? live.body} />
+              {/* The foot of a part. Absent when there is no next one, because a
+                  control that says NEXT and opens nothing is worse than an essay
+                  that simply ends. */}
+              {nextPart ? (
+                <EssayNext
+                  label="NEXT IN THE SERIES"
+                  title={nextPart.title ?? ''}
+                  readTime={readTimeOf(nextPart.fullContent ?? nextPart.body)}
+                  onPress={() => nav.push(`/dispatch/${nextPart.id}`)}
+                />
+              ) : null}
             </>
           ) : live.kind === 'ballot' && !ended ? (
             <PaperBallot
@@ -507,6 +604,31 @@ export default function FilingReader() {
             onSave={(next) => useDispatch.getState().save(live.id, next)}
           />
         )
+      ) : null}
+
+      {/* ── THE CLIPPING, RENDERED OFF-SCREEN ────────────────────────────────
+          Mounted only while the share sheet is open on a dossier, and parked at
+          a negative offset rather than hidden: `ViewShot` cannot capture a tree
+          with `display: none`, and `opacity: 0` on iOS captures as transparent.
+          Off the left edge is the one placement that reliably renders and is
+          never seen — and it is unmounted the moment the sheet closes, so a page
+          a member is only reading never carries it.
+
+          Logo passed as the app's own bundled mark. The house's introduction to
+          strangers does not go out with a stand-in glyph. */}
+      {sharing && live.kind === 'dossier' ? (
+        <View style={{ position: 'absolute', left: -10000, top: 0 }} pointerEvents="none">
+          <ViewShot ref={cardRef} options={{ format: 'png', quality: 1 }}>
+            <DossierShareCard
+              title={live.title ?? ''}
+              opening={live.fullContent ?? live.body}
+              author={author}
+              filed={formatDateMonthDay(live.createdAt).toUpperCase()}
+              logo={Image.resolveAssetSource(HOUSE_MARK).uri}
+              width={width}
+            />
+          </ViewShot>
+        </View>
       ) : null}
 
       {/* ── THE TWO SHEETS ─────────────────────────────────────────────────

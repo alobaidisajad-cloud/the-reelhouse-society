@@ -25,6 +25,7 @@ import { PaperComposer } from '@/src/components/dispatch/paper/PaperComposer';
 import { BallotDesk, FilmFinder } from '@/src/components/dispatch/paper/PaperDesk';
 import type { PaperFilm } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { BALLOT_MIN, BALLOT_MAX } from '@/src/components/dispatch/paper/paperMetrics';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
@@ -167,14 +168,20 @@ export function ComposeBallotScreen() {
   // Six slots, drawn empty and numbered from the start, so the shape of the
   // thing being made is on the paper before it has been made.
   const [slots, setSlots] = useState<Array<{ film: PaperFilm; id: number } | null>>(
-    [null, null, null, null, null, null],
+    // ── THE BOUNDS ARE THE CONSTANTS, NOT SIX LITERAL NULLS ─────────────────
+    // `BALLOT_MIN` and `BALLOT_MAX` existed and nothing used them: the slot
+    // count was six hand-written nulls and the readiness test was `>= 2`. The
+    // database's `ballot_options` CHECK enforces two-to-six, so moving either
+    // number would have left the desk and the column disagreeing — the same
+    // shape as the comment page size saying 30 while the query asked for 50.
+    Array.from({ length: BALLOT_MAX }, () => null),
   );
   const [closes, setCloses] = useState('2 DAYS');
   const [finding, setFinding] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
 
   const filled = slots.filter(Boolean).length;
-  const ready = filled >= 2 && question.trim().length > 0 && !sending;
+  const ready = filled >= BALLOT_MIN && question.trim().length > 0 && !sending;
 
   const onFile = useCallback(async () => {
     if (!ready) return;

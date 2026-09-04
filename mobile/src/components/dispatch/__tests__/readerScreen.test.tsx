@@ -369,6 +369,57 @@ describe('the reader', () => {
     spy.mockRestore();
   });
 
+  it('sends a WEB link, never a scheme only this app understands', async () => {
+    // `reelhouse://dispatch/<id>` opens nothing for anybody who does not already
+    // have the app — which is everybody a share is being sent to. The film share
+    // card has always used the https link; this one did not.
+    const shared: Array<{ message?: string }> = [];
+    const spy = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
+      shared.push(c as { message?: string }); return { action: 'sharedAction' } as never;
+    });
+    mockRow = row({ kind: 'take', title: null, full_content: null, body: 'A take.' });
+
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+
+    expect(shared[0].message).toContain('https://reelhouse.app/dispatch/f1');
+    expect(shared[0].message).not.toContain('reelhouse://');
+    spy.mockRestore();
+  });
+
+  it('mounts the clipping only while an ESSAY is being shared', async () => {
+    // Only a dossier earns an image: a take shared as a poster is a poster of
+    // somebody's opinion. And it is mounted only while the sheet is open, so a
+    // page somebody is merely reading never carries it.
+    const { getByLabelText, getAllByText } = await mount();
+    // One "The Empty Room" while merely reading: the essay's own head.
+    expect(getAllByText('The Empty Room')).toHaveLength(1);
+
+    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    // Two while the sheet is open: the page, and the clipping behind it.
+    expect(getAllByText('The Empty Room').length).toBeGreaterThan(1);
+  });
+
+  it('does not mount a clipping for a kind that does not earn one', async () => {
+    // Counted on the off-screen offset the clipping is parked at, not on its
+    // text: a take's body appears three times in a card's nested Texts, so a
+    // text count cannot tell a second copy from the same copy.
+    const parked = (tree: unknown) => JSON.stringify(tree).includes('-10000');
+
+    mockRow = row({ kind: 'take', title: null, full_content: null, body: 'A take.' });
+    const take = await mount();
+    await act(async () => { fireEvent.press(take.getByLabelText('Share')); });
+    // A take shared as a poster is a poster of somebody's opinion.
+    expect(parked(take.toJSON())).toBe(false);
+    await act(async () => { take.unmount(); });
+
+    mockRow = row();
+    const essay = await mount();
+    await act(async () => { fireEvent.press(essay.getByLabelText('Share')); });
+    expect(parked(essay.toJSON())).toBe(true);
+  });
+
   it('closes the share sheet from the ground behind it', async () => {
     const { getByLabelText, queryByLabelText } = await mount();
     await act(async () => { fireEvent.press(getByLabelText('Share')); });
