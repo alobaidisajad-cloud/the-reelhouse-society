@@ -543,3 +543,63 @@ describe('an act the house refuses, with the member still here', () => {
     expect(toast.error).toHaveBeenCalledWith('The house did not accept that.');
   });
 });
+
+/**
+ * ── A PAGE THAT ARRIVES FOR A DEPARTMENT NOBODY IS LOOKING AT ───────────────
+ * `setSection` and `setSort` bump a generation and drop the in-flight request.
+ * Without that check, a member taps TAKES while the ALL page is still coming
+ * back, and the ALL rows land under the TAKES heading — every row the wrong
+ * kind, the index lit on a department that is not what is on the page.
+ *
+ * The guard is the one that decides whether a slow network can put the wrong
+ * page in front of somebody, so it is worth entering deliberately.
+ */
+describe('a superseded read', () => {
+  it('does not land its rows under a department nobody asked for', async () => {
+    /**
+     * The FIRST read is held open; every later one answers empty at once.
+     *
+     * Sharing one promise between them was the first attempt, and it could not
+     * tell the two apart: changing department starts a second read, that read
+     * resolved from the same deferred, and the row it delivered looked exactly
+     * like the stale one landing. The test failed against correct code.
+     */
+    let release: (rows: unknown[]) => void = () => {};
+    const held = new Promise<unknown[]>((res) => { release = res; });
+    let call = 0;
+
+    const supabase = require('../../lib/supabase').supabase;
+    const realFrom = supabase.from;
+    supabase.from = () => {
+      const mine = call++ === 0 ? held : Promise.resolve([] as unknown[]);
+      const chain: Record<string, unknown> = {};
+      const self = () => chain;
+      chain.select = () => self(); chain.eq = () => self(); chain.is = () => self();
+      chain.order = () => self(); chain.in = () => Promise.resolve({ data: [], error: null });
+      const b = Object.assign(mine.then((data) => ({ data, error: null })), {
+        abortSignal: () => b,
+      });
+      chain.limit = () => b;
+      chain.range = () => b;
+      chain.then = (r: (v: unknown) => unknown) => mine.then((data) => r({ data, error: null }));
+      return chain;
+    };
+
+    reset({ section: 'ALL' });
+    const p = useDispatch.getState().fetch();
+
+    // The member changes department while it is still in the air.
+    useDispatch.getState().setSection('TAKES');
+
+    release([row({ id: 'stale', kind: 'take' })]);
+    await p.catch(() => {});
+    await new Promise((r) => setTimeout(r, 0));
+
+    // The stale page did not land. What is on screen belongs to TAKES, and the
+    // only rows there are whatever the NEW request brings.
+    expect(useDispatch.getState().section).toBe('TAKES');
+    expect(useDispatch.getState().filings.find((f) => f.id === 'stale')).toBeUndefined();
+
+    supabase.from = realFrom;
+  });
+});
