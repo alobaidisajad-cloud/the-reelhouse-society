@@ -33,6 +33,8 @@ jest.mock('../../lib/supabase', () => ({
     from: (table: string) => {
       const chain: Record<string, unknown> = {};
       const self = () => chain;
+      /** Set by `update`, so `then` can answer with a row rather than nothing. */
+      let updated = false;
       chain.select = () => self();
       chain.eq = () => self();
       chain.is = () => self();
@@ -44,9 +46,28 @@ jest.mock('../../lib/supabase', () => ({
         mockSent.push({ table, op: 'insert', row: rows[0] });
         return answer();
       };
-      chain.update = (row: unknown) => { mockSent.push({ table, op: 'update', row }); return self(); };
+      /**
+       * An UPDATE now asks for its rows back — `.select('id')` — because a row
+       * RLS refuses matches nothing and that is not an error. So the mock has
+       * to answer the way PostgREST does: a row when the write lands, an empty
+       * array when it does not.
+       *
+       * Without this the mock returns `[]` for everything and every amendment
+       * looks refused, which is what the first run of this change reported.
+       */
+      chain.update = (row: unknown) => {
+        mockSent.push({ table, op: 'update', row });
+        updated = true;
+        return self();
+      };
       chain.delete = () => { mockSent.push({ table, op: 'delete', row: null }); return self(); };
-      chain.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => answer().then(res, rej);
+      chain.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
+        answer()
+          .then((r: { data: unknown; error: unknown }) =>
+            // A landed UPDATE returns the row it changed; a refusal returns
+            // none. `answer()` decides which by the test's `mockOutcome`.
+            (updated && !r.error ? { data: [{ id: 'row' }], error: null } : r))
+          .then(res, rej);
       return chain;
     },
     rpc: (fn: string, args: unknown) => { mockRpc.push({ fn, args }); return answer(); },

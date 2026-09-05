@@ -63,6 +63,8 @@ jest.mock('@/src/lib/supabase', () => ({
     from: () => {
       const chain: Record<string, unknown> = {};
       const self = () => chain;
+      /** Set by `update`, so `then` can answer with the row it changed. */
+      let updated = false;
       chain.select = () => self();
       chain.eq = () => self();
       chain.is = () => self();
@@ -98,9 +100,14 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.insert = () => (mockWriteFails
         ? Promise.resolve({ data: null, error: { message: 'refused', code: '42501' } })
         : Promise.resolve({ data: [], error: null }));
-      chain.update = () => self();
+      // An UPDATE now asks for its rows back — `.select('id')` — because a row
+      // RLS refuses matches NOTHING, and matching nothing is not an error. The
+      // mock has to answer with a row, or every amendment looks refused.
+      chain.update = () => { updated = true; return self(); };
       chain.delete = () => self();
-      chain.then = (res: (v: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(res);
+      chain.then = (res: (v: unknown) => unknown) =>
+        Promise.resolve(updated ? { data: [{ id: 'row' }], error: null } : { data: [], error: null })
+          .then(res);
       return chain;
     },
     rpc: () => Promise.resolve({ data: null, error: null }),

@@ -620,12 +620,29 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     const dbUpdates = toUpdateRow(clean);
     try {
-      const { error } = await supabase
+      /**
+       * ── A REFUSED ROW IS NOT AN ERROR, AND THAT IS THE TRAP ────────────────
+       * `posts_update_own` no longer reaches a filing that is WITHHELD or
+       * ENDED — the house is reading it, or has already struck it. RLS refuses
+       * those by matching no ROW, which is not an error: PostgREST answers 200
+       * with nothing changed.
+       *
+       * So `if (error) throw` sees nothing wrong, the optimistic edit stays on
+       * screen, and the member is told their words were saved while the
+       * database refused them. `.select('id')` is what turns silence into an
+       * answer — an empty array means the row was not theirs to change.
+       *
+       * Selecting `id` is safe under the narrowed grants: a member can always
+       * read their own filing.
+       */
+      const { data, error } = await supabase
         .from('dispatch_posts')
         .update({ ...dbUpdates, edited_at: now, updated_at: now })
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select('id');
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('dispatch.amend: refused');
     } catch (e) {
       if (isNetworkError(e)) {
         enqueueMutation({
@@ -828,12 +845,17 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     void writeThrough(
       async () => {
-        const { error } = await supabase
+        // `.select('id')` for the same reason as `amend`: taking an answer on a
+        // filing that has been withheld or ended matches no row, and a refusal
+        // that matches no row comes back as a success with nothing changed.
+        const { data, error } = await supabase
           .from('dispatch_posts')
           .update({ answer_id: critiqueId })
           .eq('id', postId)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .select('id');
         if (error) throw error;
+        if (!data || data.length === 0) throw new Error('dispatch.takeAnswer: refused');
       },
       { type: 'take_answer', payload: { post_id: postId, user_id: user.id, answer_id: critiqueId } },
       () => {
@@ -953,12 +975,18 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     }));
 
     try {
-      const { error } = await supabase
+      // `.select('id')` for the same reason as `amend`: a critique under a
+      // filing that has been withheld or ended matches no row, and a refusal
+      // that matches no row is not an error. Without this the member is told
+      // their amendment went through while the database refused it.
+      const { data, error } = await supabase
         .from('dispatch_comments')
         .update({ body: clean, edited_at: now })
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select('id');
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('dispatch.amendCritique: refused');
     } catch (e) {
       if (isNetworkError(e)) {
         enqueueMutation({ type: 'update_critique', payload: { id, user_id: user.id, body: clean } });

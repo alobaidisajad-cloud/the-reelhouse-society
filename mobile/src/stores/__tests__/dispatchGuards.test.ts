@@ -38,6 +38,15 @@ jest.mock('../../lib/supabase', () => ({
       const chain: Record<string, unknown> = {};
       const self = () => chain;
       let selected = '';
+      /**
+       * Set by `update`, so `then` can answer with a row.
+       *
+       * An UPDATE now asks for its rows back — `.select('id')` — because a row
+       * RLS refuses matches NOTHING, and matching nothing is not an error. A
+       * mock that answers `[]` to everything makes every amendment look
+       * refused.
+       */
+      let updated = false;
       chain.select = (c: string) => { selected = c ?? ''; return self(); };
       chain.eq = () => self();
       chain.is = () => self();
@@ -52,9 +61,17 @@ jest.mock('../../lib/supabase', () => ({
       chain.limit = () => builder([]);
       chain.range = () => builder([]);
       chain.insert = (rows: unknown[]) => { mockSent.push({ table, op: 'insert', row: rows[0] }); return answer(); };
-      chain.update = (row: unknown) => { mockSent.push({ table, op: 'update', row }); return self(); };
+      chain.update = (row: unknown) => {
+        mockSent.push({ table, op: 'update', row });
+        updated = true;
+        return self();
+      };
       chain.delete = () => { mockSent.push({ table, op: 'delete', row: null }); return self(); };
-      chain.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => answer().then(res, rej);
+      chain.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
+        answer()
+          .then((r: { data: unknown; error: unknown }) =>
+            (updated && !r.error ? { data: [{ id: 'row' }], error: null } : r))
+          .then(res, rej);
       void selected;
       return chain;
     },
@@ -601,5 +618,75 @@ describe('a superseded read', () => {
     expect(useDispatch.getState().filings.find((f) => f.id === 'stale')).toBeUndefined();
 
     supabase.from = realFrom;
+  });
+});
+
+/**
+ * ── A REFUSAL THAT MATCHES NO ROW IS NOT AN ERROR ───────────────────────────
+ * `posts_update_own` no longer reaches a filing that is WITHHELD — the house is
+ * reading it — or already ENDED. RLS enforces that by matching no ROW, and
+ * matching no row is not an error: PostgREST answers 200 with nothing changed.
+ *
+ * So the old `if (error) throw` saw nothing wrong. The optimistic edit stayed on
+ * screen and the member was told their words were saved while the database had
+ * refused them — the worst outcome a page that takes writing can produce, and
+ * one the migration would have INTRODUCED if the client had not been changed
+ * with it.
+ *
+ * `.select('id')` is what turns that silence into an answer.
+ */
+describe('an amendment the house refuses without an error', () => {
+  /** PostgREST's answer to an update that matched nothing: 200, empty, no error. */
+  const matchesNoRow = () => {
+    const supabase = require('../../lib/supabase').supabase;
+    const real = supabase.from;
+    supabase.from = () => {
+      const chain: Record<string, unknown> = {};
+      const self = () => chain;
+      chain.select = () => self(); chain.eq = () => self(); chain.is = () => self();
+      chain.order = () => self(); chain.update = () => self();
+      chain.in = () => Promise.resolve({ data: [], error: null });
+      chain.then = (r: (v: unknown) => unknown) =>
+        Promise.resolve({ data: [], error: null }).then(r);
+      return chain;
+    };
+    return () => { supabase.from = real; };
+  };
+
+  it('does not tell the member their filing was amended', async () => {
+    const restore = matchesNoRow();
+    reset({ filings: [filing({ body: 'The original.' })] });
+
+    await expect(useDispatch.getState().amend('f1', { body: 'Changed.' })).rejects.toBeTruthy();
+
+    // And the page is put back, so what is on screen is what the house holds.
+    expect(useDispatch.getState().filings[0].body).toBe('The original.');
+    restore();
+  });
+
+  it('does not tell them their critique was amended either', async () => {
+    const restore = matchesNoRow();
+    reset({
+      filings: [filing()],
+      critiques: {
+        f1: [{
+          id: 'c1', postId: 'f1', authorId: 'u1', author: null,
+          body: 'The original.', certifyCount: 0,
+          createdAt: '2026-08-28T21:00:00Z', editedAt: null,
+        }],
+      },
+    });
+
+    await expect(useDispatch.getState().amendCritique('c1', 'f1', 'Changed.')).rejects.toBeTruthy();
+    expect(useDispatch.getState().critiques.f1[0].body).toBe('The original.');
+    restore();
+  });
+
+  it('and an amendment that DOES land is still reported as landing', async () => {
+    // The control. A guard that refuses everything is not a guard.
+    reset({ filings: [filing({ body: 'The original.' })] });
+    await useDispatch.getState().amend('f1', { body: 'Changed.' });
+    expect(useDispatch.getState().filings[0].body).toBe('Changed.');
+    expect(useDispatch.getState().filings[0].editedAt).toBeTruthy();
   });
 });

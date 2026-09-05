@@ -37,6 +37,27 @@ const throwIfError = <T>(res: { error: unknown; data?: T }) => {
     return res;
 };
 
+/**
+ * Like `throwIfError`, but a write that changed NOTHING is also a failure.
+ *
+ * ── WHY THE DISPATCH REPLAYS NEED THIS ──────────────────────────────────────
+ * A member may amend their own filing, but not one the house has WITHHELD for
+ * review or already ENDED. RLS enforces that by matching no ROW — which is not
+ * an error. PostgREST answers 200 with an empty body, `res.error` is null, and
+ * a queued amendment replayed against a filing that was withheld while the
+ * member was offline would report success and change nothing.
+ *
+ * The caller must ask for the rows back (`.select('id')`) for this to mean
+ * anything; an update with no `select` returns no data either way.
+ */
+const throwIfRefused = <T>(res: { error: unknown; data?: T[] | null }, where: string) => {
+    if (res.error) throw res.error;
+    if (!res.data || res.data.length === 0) {
+        throw new Error(`${where}: the house refused it — the filing is withheld, ended, or not yours`);
+    }
+    return res;
+};
+
 const handleDuplicateLogMerge = async (error: any, dbPayload: any, _fakeId?: string): Promise<MutationResult | null> => {
     const errLower = String(error.message || '').toLowerCase();
     if (error.code === '23505' || errLower.includes('duplicate') || errLower.includes('unique')) {
@@ -936,7 +957,8 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         if (Object.keys(safe).length === 0) return {};
         safe.updated_at = new Date().toISOString();
         safe.edited_at = safe.updated_at;
-        throwIfError(await supabase.from('dispatch_posts').update(safe).eq('id', id).eq('user_id', user_id));
+        throwIfRefused(await supabase.from('dispatch_posts').update(safe)
+            .eq('id', id).eq('user_id', user_id).select('id'), 'update_filing');
         return {};
     },
 
@@ -965,10 +987,10 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
 
     update_critique: async (p: any) => {
         const { id, user_id, body } = p;
-        throwIfError(await supabase.from('dispatch_comments').update({
+        throwIfRefused(await supabase.from('dispatch_comments').update({
             body: sanitizeInput(body as string, 'critique'),
             edited_at: new Date().toISOString(),
-        }).eq('id', id).eq('user_id', user_id));
+        }).eq('id', id).eq('user_id', user_id).select('id'), 'update_critique');
         return {};
     },
 
@@ -1033,8 +1055,8 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // answer_id may be null: taking the answer back is the same act, undone.
     take_answer: async (p: any) => {
         const { post_id, user_id, answer_id } = p;
-        throwIfError(await supabase.from('dispatch_posts')
-            .update({ answer_id }).eq('id', post_id).eq('user_id', user_id));
+        throwIfRefused(await supabase.from('dispatch_posts')
+            .update({ answer_id }).eq('id', post_id).eq('user_id', user_id).select('id'), 'take_answer');
         return {};
     },
 
