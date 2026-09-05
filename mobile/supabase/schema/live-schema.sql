@@ -4937,10 +4937,24 @@ CREATE INDEX analytics_user_id_idx ON public.analytics_events USING btree (user_
 
 
 --
+-- Name: dispatch_cert_comment; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_cert_comment ON public.dispatch_certifications USING btree (comment_id) WHERE (comment_id IS NOT NULL);
+
+
+--
 -- Name: dispatch_cert_comment_once; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX dispatch_cert_comment_once ON public.dispatch_certifications USING btree (user_id, comment_id) WHERE (comment_id IS NOT NULL);
+
+
+--
+-- Name: dispatch_cert_post; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_cert_post ON public.dispatch_certifications USING btree (post_id) WHERE (post_id IS NOT NULL);
 
 
 --
@@ -4976,6 +4990,13 @@ CREATE INDEX dispatch_comments_user ON public.dispatch_comments USING btree (use
 --
 
 CREATE INDEX dispatch_dossiers_created_at_idx ON public.dispatch_dossiers_legacy USING btree (created_at DESC);
+
+
+--
+-- Name: dispatch_posts_answer; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_answer ON public.dispatch_posts USING btree (answer_id) WHERE (answer_id IS NOT NULL);
 
 
 --
@@ -5018,6 +5039,13 @@ CREATE INDEX dispatch_posts_subject ON public.dispatch_posts USING btree (subjec
 --
 
 CREATE INDEX dispatch_saves_post ON public.dispatch_saves USING btree (post_id);
+
+
+--
+-- Name: dispatch_votes_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_votes_user ON public.dispatch_votes USING btree (user_id);
 
 
 --
