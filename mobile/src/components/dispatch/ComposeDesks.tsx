@@ -28,7 +28,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager, StyleSheet, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -99,7 +99,39 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   const insets = useSafeAreaInsets();
   const hour = useOpeningHour();
 
-  const [body, setBody] = useState('');
+  /**
+   * ── THE SAME DESK, AMENDING ─────────────────────────────────────────────
+   * `?edit=<id>` opens this desk on a filing that already exists. It is the
+   * same form deliberately: a member who has written a take once should not
+   * have to learn a second screen to fix a word in it, and two desks for one
+   * shape is how they drift apart.
+   *
+   * The filing is read from the store rather than fetched. Whatever route
+   * reached this desk came through the reader, which has already hydrated it —
+   * and if it somehow has not, `existing` is null, the fields open empty, and
+   * `ready` refuses to file rather than overwriting a filing with nothing.
+   */
+  const editId = useLocalSearchParams<{ edit?: string }>().edit;
+  /**
+   * Read ONCE, through `getState`, not as a subscription.
+   *
+   * Every value below is a `useState` initialiser, which runs on the first
+   * render and never again — so subscribing would buy nothing and cost a
+   * re-render of the desk on every feed update while somebody is typing into
+   * it. The filing is wherever the reader left it: on the page, or in the map
+   * of what has been opened by its own address.
+   */
+  const existing = useMemo(
+    () => {
+      if (!editId) return null;
+      const s = useDispatch.getState();
+      return s.filings.find((f) => f.id === editId) ?? s.opened[editId] ?? null;
+    },
+    [editId],
+  );
+  const amending = !!editId && !!existing;
+
+  const [body, setBody] = useState(() => (existing?.body ?? ''));
   /**
    * A wire's provenance, typed by the member.
    *
@@ -108,10 +140,10 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
    * "News from elsewhere, carrying its source", produced a filing whose source
    * read `TOKYO STORY`, printed as the dateline beside the byline.
    */
-  const [source, setSource] = useState('');
-  const [film, setFilm] = useState<PaperFilm | null>(null);
-  const [filmId, setFilmId] = useState<number | null>(null);
-  const [spoiler, setSpoiler] = useState(false);
+  const [source, setSource] = useState(() => (existing?.source ?? ''));
+  const [film, setFilm] = useState<PaperFilm | null>(() => existing?.film ?? null);
+  const [filmId, setFilmId] = useState<number | null>(() => existing?.subjectId ?? null);
+  const [spoiler, setSpoiler] = useState(() => !!existing?.spoilerLabel);
   const [finding, setFinding] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -129,6 +161,37 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   const onFile = useCallback(async () => {
     if (!ready || sending) return;
     setSending(true);
+
+    /**
+     * ── AMENDING SENDS ONLY THE WORDS, NEVER THE FILM ──────────────────────
+     * `amend` accepts a narrow set of fields and the SUBJECT is not among
+     * them: the film a filing is about is what its critiques are arguing
+     * about, and changing it under them turns forty replies into replies to
+     * something else. A member who named the wrong film withdraws and files
+     * again, which is the honest version of that change.
+     *
+     * So the picker stays on the desk while amending — it shows what the
+     * filing is about — and the amendment carries the writing.
+     */
+    if (amending) {
+      try {
+        await useDispatch.getState().amend(editId!, {
+          body: body.trim(),
+          spoilerLabel: spoiler ? 'SPOILERS' : null,
+          source: kind === 'wire' ? (source.trim() || null) : null,
+        });
+        reelToast.success('Amended');
+        router.back();
+      } catch {
+        // The store put the old words back, and they are still in the field,
+        // so nothing the member typed is lost by a refusal.
+        reelToast.error('It could not be amended.');
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+
     try {
       const filed = await useDispatch.getState().file({
         kind,
@@ -153,7 +216,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
     } finally {
       setSending(false);
     }
-  }, [ready, sending, kind, body, spoiler, film, filmId, source]);
+  }, [ready, sending, kind, body, spoiler, film, filmId, source, amending, editId]);
 
   // Sent back by the hook above; this render is the one frame before it lands.
   if (!me) return null;
@@ -171,6 +234,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
         spoiler={spoiler}
         ready={ready}
         sending={sending}
+        amending={amending}
         source={source}
         onSource={kind === 'wire' ? setSource : undefined}
         onBody={setBody}

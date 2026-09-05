@@ -44,7 +44,7 @@ import { PaperKeyWell } from './PaperKeyWell';
  */
 export const PaperComposer = memo(function PaperComposer({
   kind, me, hour, body, film, remaining, spoiler, source,
-  onBody, onBack, onFile, onFilm, onStill, onSpoiler, onSource, ready, sending,
+  onBody, onBack, onFile, onFilm, onStill, onSpoiler, onSource, ready, sending, amending,
 }: {
   kind: string;
   me: PaperAuthor;
@@ -74,6 +74,14 @@ export const PaperComposer = memo(function PaperComposer({
   /** FILE IT is lit only when there is something to file and room to file it. */
   ready?: boolean;
   sending?: boolean;
+  /**
+   * This desk was opened on a filing that already exists.
+   *
+   * Only the words change. The control has to say so — a button reading FILE IT
+   * on a filing that is already filed promises a second copy of it, and a
+   * member who taps it expecting that has been misled by one word.
+   */
+  amending?: boolean;
 }) {
   const tier = me.tier;
   // Live in the app, drawn in the harness. `onBody` is what decides which, so a
@@ -97,9 +105,18 @@ export const PaperComposer = memo(function PaperComposer({
           hitSlop={{ top: 12, bottom: 12, left: 8, right: 0 }} haptic="medium"
           accessibilityRole="button"
           accessibilityState={{ disabled: blocked }}
-          accessibilityLabel={canFile ? 'File it' : 'File it. Not ready yet'}>
+          accessibilityLabel={
+            amending
+              ? (canFile ? 'Amend it' : 'Amend it. Not ready yet')
+              : (canFile ? 'File it' : 'File it. Not ready yet')
+          }>
+          {/* The control says what it will actually do. A desk opened on a
+              filing that already exists is not filing anything, and a button
+              reading FILE IT there promises a second copy of it. */}
           <Text style={[p.chs, canFile && p.chsGo, blocked && { opacity: 0.4 }]} {...scaledTextProps}>
-            {sending ? 'FILING…' : 'FILE IT'}
+            {sending
+              ? (amending ? 'AMENDING…' : 'FILING…')
+              : (amending ? 'AMEND IT' : 'FILE IT')}
           </Text>
         </PressableScale>
       </View>

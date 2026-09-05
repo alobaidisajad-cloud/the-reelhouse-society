@@ -151,49 +151,11 @@ writing, the link carries the house.
 
 ---
 
-## A member cannot fix a typo — a product question, not a bug
+## ~~A member cannot fix a typo~~ — BUILT 2026-09-05
 
-**Found 2026-09-04**, sweeping the Dispatch for controls that lead nowhere.
-
-The Dispatch has no editing at all. `useDispatch.amend` is reachable only from
-`/dispatch/compose?edit=<id>`, and nothing in `src` or `app` ever navigates
-there — no screen supplies an `edit` param, `initialTitle` or `initialContent`.
-`amendCritique` has no caller anywhere.
-
-**This is not an accident.** The reader states the decision in its own words:
-
-> On your own filing there is one act: withdraw it.
-
-So the store's `amend`, `amendCritique`, `cleanUpdate`, `toUpdateRow`, the
-compose desk's edit branch, and the offline queue's `update_filing` /
-`update_critique` types are all built, tested and unreachable. A member who
-mistypes a word in a take can only withdraw the whole filing and write it again
-— losing the critiques underneath it, since ending keeps the row but takes the
-words.
-
-**The question for the house:** is one act right? Withdrawing to fix a typo
-costs the argument that grew under the filing, which is the thing this design
-protects everywhere else.
-
-**If editing is wanted, in order:**
-
-1. An AMEND act beside WITHDRAW in `openMore` (`app/dispatch/[id].tsx`), for the
-   author only, and only while the filing is not ended or withheld.
-2. For a dossier it can route to the desk that already exists —
-   `/dispatch/compose?edit=<id>&initialTitle=…&initialContent=…` is already
-   wired at the receiving end. The other four kinds have no edit desk.
-3. A window. An unbounded edit lets a filing certified by forty members become a
-   different filing; most houses cap it, and the DB already stores `edited_at`
-   to say a thing changed.
-4. `edited_at` is what the card's EDITED mark reads. Nothing in this app sets
-   it, so the mark cannot currently appear.
-
-**Until then** the code stays rather than being deleted, for one concrete
-reason: the offline queue carries `update_filing` and `update_critique`, and
-removing the path that drains them is only safe once nothing can have enqueued
-one. It is documented at `amend` in `src/stores/dispatch.ts` so the next sweep
-finds the decision instead of re-finding the dead code.
-
+AMEND now sits beside WITHDRAW on the reader for the author of a live filing,
+and opens the desk the filing was written at. See the commit for what it does
+and, more importantly, what it deliberately does not.
 ---
 
 ## SAVE THE CARD — a row that needs a native dependency

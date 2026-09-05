@@ -331,10 +331,36 @@ export default function FilingReader() {
    * the words go and the argument underneath stays. "Delete?" would be a lie
    * about a row that is not deleted.
    */
-  const openMore = useCallback(() => {
+  /**
+   * ── AMENDING ────────────────────────────────────────────────────────────
+   * The same desk the filing was written at, opened on the filing itself. A
+   * member who has written a take once should not have to learn a second
+   * screen to fix a word in it.
+   *
+   * NOT OFFERED ON A BALLOT. Its options are what members voted on and its
+   * question is what they answered; changing either turns a result into an
+   * answer to something else. A ballot is withdrawn and called again.
+   *
+   * NOT OFFERED ON A WITHHELD OR ENDED FILING either — the house is reading
+   * that one, or has already struck it. The database refuses both since
+   * 20260905_02, so this is the app agreeing with the rule rather than the
+   * only thing holding it.
+   */
+  const amendable = !!live && !!me && live.authorId === me.id
+    && !live.withheldAt && !live.endedAt && live.kind !== 'ballot';
+
+  const openAmend = useCallback(() => {
     if (!live) return;
-    if (!!me && live.authorId === me.id) {
-      Alert.alert(
+    // The dossier desk takes its title and essay as params; the short desks read
+    // the filing out of the store, which the reader has already hydrated.
+    nav.push(live.kind === 'dossier'
+      ? `/dispatch/compose?kind=dossier&edit=${live.id}`
+      : `/dispatch/compose?kind=${live.kind}&edit=${live.id}`);
+  }, [live]);
+
+  const confirmWithdraw = useCallback(() => {
+    if (!live) return;
+    Alert.alert(
         'Withdraw this filing?',
         'The words go. The critiques underneath it stay, and so does the page they are on. This cannot be undone.',
         [
@@ -351,11 +377,34 @@ export default function FilingReader() {
             },
           },
         ],
-      );
+    );
+  }, [live]);
+
+  const openMore = useCallback(() => {
+    if (!live) return;
+    if (!!me && live.authorId === me.id) {
+      /**
+       * Two acts now, so the first sheet asks WHICH — and withdrawing keeps its
+       * own confirmation underneath, because it is the irreversible one and a
+       * single tap should never reach it.
+       */
+      if (amendable) {
+        Alert.alert(
+          'This filing',
+          'You can change the words, or take it off the page.',
+          [
+            { text: 'Amend it', onPress: openAmend },
+            { text: 'Withdraw it', style: 'destructive', onPress: () => confirmWithdraw() },
+            { text: 'Keep it as it is', style: 'cancel' },
+          ],
+        );
+        return;
+      }
+      confirmWithdraw();
       return;
     }
     setActions(true);
-  }, [live, me]);
+  }, [live, me, amendable, openAmend]);
 
   if (loading) {
     return (

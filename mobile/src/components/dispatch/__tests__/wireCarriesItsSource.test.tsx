@@ -29,6 +29,10 @@ const mockFiled: Array<Record<string, unknown>> = [];
 
 /** Flipped by the signed-out block at the foot of this file. */
 let mockSignedOut = false;
+/** `?edit=` and the filing the store holds for it — the amending block below. */
+let mockEditId: string | undefined;
+let mockHeld: Record<string, unknown> | null = null;
+const mockAmended: Array<{ id: string; updates: unknown }> = [];
 /** The two ways filing does not simply succeed. Both were dark. */
 let mockFileFails = false;
 let mockFileOffline = false;
@@ -55,9 +59,27 @@ jest.mock('@/src/stores/dispatch', () => ({
         if (mockFileFails) throw new Error('refused');
         return mockFileOffline ? { id: 'new', offline: true } : { id: 'new' };
       },
+      amend: async (id: string, updates: unknown) => { mockAmended.push({ id, updates }); },
+      // What the desk reads to prefill an amendment. `filings` is the page and
+      // `opened` is what was reached by its own address; the desk looks in both,
+      // so the mock has to offer both.
+      filings: mockHeld ? [mockHeld] : [],
+      opened: mockHeld ? { [String(mockHeld.id)]: mockHeld } : {},
     }),
   },
 }));
+
+// `useLocalSearchParams` is what carries `?edit=`. The shared setup does not
+// mock expo-router for this file, so only the one hook is replaced.
+jest.mock('expo-router', () => {
+  const actual = jest.requireActual('expo-router');
+  return {
+    ...actual,
+    router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn() },
+    useLocalSearchParams: () => ({ edit: mockEditId }),
+    Stack: { Screen: () => null },
+  };
+});
 
 // `search`, which is what FilmPicker calls — `searchMovies` was a guess, and a
 // mock that names a method the code never calls silently provides nothing.
@@ -397,5 +419,90 @@ describe('a filing that does not go', () => {
     const r = render(<ComposeShortScreen kind="take" />);
     await typeAndFile(r, 'take');
     expect(String(mockToast.success.mock.calls[0]?.[0])).toBe('Filed');
+  });
+});
+
+/**
+ * ── THE SAME DESK, AMENDING ─────────────────────────────────────────────────
+ * `?edit=<id>` opens this desk on a filing that already exists. It is the same
+ * form on purpose: a member who has written a take once should not have to
+ * learn a second screen to fix a word in it.
+ *
+ * What matters here is that it does not quietly become a SECOND filing, and
+ * that the control says which of the two it is about to do.
+ */
+describe('a desk opened on a filing that already exists', () => {
+  const existing = {
+    id: 'f9', kind: 'take' as const, authorId: 'u1',
+    author: { name: 'me', memberNo: 7, tier: 'free' as const },
+    film: null, subjectId: null, subjectKind: null,
+    title: null, body: 'Ozu never once stood up.', fullContent: null,
+    source: null, sourceUrl: null,
+    options: null, closesAt: null, frozenTotals: null, answerId: null,
+    seriesId: null, seriesTitle: null, partNumber: null,
+    spoilerLabel: null, withheldAt: null, endedAt: null, endedBy: null,
+    certifyCount: 3, commentCount: 1,
+    createdAt: '2026-08-28T21:00:00Z', editedAt: null,
+  };
+
+  beforeEach(() => {
+    mockEditId = 'f9';
+    mockHeld = existing;
+    mockAmended.length = 0;
+  });
+  afterEach(() => { mockEditId = undefined; mockHeld = null; });
+
+  it('opens with the words already in it', () => {
+    const { getByLabelText } = render(<ComposeShortScreen kind="take" />);
+    expect(getByLabelText('Your take').props.value).toBe('Ozu never once stood up.');
+  });
+
+  it('says AMEND IT, not FILE IT', () => {
+    // A button reading FILE IT on a filing that is already filed promises a
+    // second copy of it.
+    const { getByText, getByLabelText } = render(<ComposeShortScreen kind="take" />);
+    expect(getByText('AMEND IT')).toBeTruthy();
+    expect(getByLabelText('Amend it')).toBeTruthy();
+  });
+
+  it('amends the filing rather than filing a second one', async () => {
+    const r = render(<ComposeShortScreen kind="take" />);
+    await type(r.getByLabelText('Your take'), 'Ozu never once stood up, and that is the argument.');
+    await press(r.getByLabelText('Amend it'));
+
+    expect(mockFiled).toHaveLength(0);
+    expect(mockAmended).toHaveLength(1);
+    expect(mockAmended[0].id).toBe('f9');
+    expect((mockAmended[0].updates as Record<string, unknown>).body)
+      .toBe('Ozu never once stood up, and that is the argument.');
+  });
+
+  it('sends only the words — never the film the critiques are arguing about', () => {
+    // `amend` takes a narrow set of fields and the SUBJECT is not among them:
+    // changing the film under forty replies turns them into replies to
+    // something else.
+    const r = render(<ComposeShortScreen kind="take" />);
+    void press(r.getByLabelText('Amend it'));
+    const sent = Object.keys((mockAmended[0]?.updates ?? {}) as Record<string, unknown>);
+    expect(sent).not.toContain('film');
+    expect(sent).not.toContain('subjectId');
+  });
+
+  it('carries a wire’s source into the field, and back out again', async () => {
+    mockHeld = { ...existing, kind: 'wire', source: 'Sight & Sound' };
+    const r = render(<ComposeShortScreen kind="wire" />);
+    expect(r.getByLabelText('Where this came from').props.value).toBe('Sight & Sound');
+
+    await type(r.getByLabelText('Where this came from'), 'Cahiers du Cinéma');
+    await press(r.getByLabelText('Amend it'));
+    expect((mockAmended[0].updates as Record<string, unknown>).source).toBe('Cahiers du Cinéma');
+  });
+
+  it('still says FILE IT when there is nothing to amend', () => {
+    // The control. `?edit=` pointing at a filing the store does not hold must
+    // not silently turn a new filing into an amendment of nothing.
+    mockHeld = null;
+    const { getByText } = render(<ComposeShortScreen kind="take" />);
+    expect(getByText('FILE IT')).toBeTruthy();
   });
 });

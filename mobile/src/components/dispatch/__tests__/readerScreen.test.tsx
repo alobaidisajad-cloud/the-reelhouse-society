@@ -332,10 +332,17 @@ describe('the reader', () => {
     expect(mockSheetProps[0].contentId).toBe('f1');
   });
 
-  it('offers the AUTHOR one act instead, and never the sheet', async () => {
-    // MORE is two different things. On your own filing there is one act —
-    // withdraw it — and offering yourself "report" and "block" would be the
-    // page not knowing who is reading it.
+  it('offers the AUTHOR their own two acts, and never the sheet', async () => {
+    /**
+     * MORE is two different things. On somebody else's filing it is the app's
+     * standard sheet — report, block, mute. On your own it is what you may do
+     * to your own words, and offering yourself "report" would be the page not
+     * knowing who is reading it.
+     *
+     * There used to be ONE act here. There are two now: amend the words, or
+     * take it off the page. Withdrawing keeps its own confirmation underneath,
+     * because it is the irreversible one and a single tap must never reach it.
+     */
     const alerts: Array<[string, string, Array<{ text: string; onPress?: () => void }>]> = [];
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
@@ -346,17 +353,69 @@ describe('the reader', () => {
     await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
 
     expect(mockSheetProps).toHaveLength(0);
-    expect(alerts[0][0]).toBe('Withdraw this filing?');
-    // The confirmation says what actually happens. "Delete?" would be a lie
-    // about a row that is not deleted.
-    expect(alerts[0][1]).toMatch(/critiques underneath it stay/);
+    expect(alerts[0][0]).toBe('This filing');
+    expect(alerts[0][2].map((b) => b.text))
+      .toEqual(['Amend it', 'Withdraw it', 'Keep it as it is']);
 
-    await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
+    // Withdrawing asks again, in the words that say what actually happens.
+    await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw it')?.onPress?.(); });
+    expect(alerts[1][0]).toBe('Withdraw this filing?');
+    // "Delete?" would be a lie about a row that is not deleted.
+    expect(alerts[1][1]).toMatch(/critiques underneath it stay/);
+
+    await act(async () => { alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
     // Asserted on `opened`, not `filings` — this reader was reached by the
     // filing's own ADDRESS, so the feed does not hold it, and that is precisely
     // the case in which withdrawing used to do nothing at all.
     expect(useDispatch.getState().opened.f1?.endedBy).toBe('author');
     expect(useDispatch.getState().filings).toHaveLength(0);
+    spy.mockRestore();
+  });
+
+  it('opens the desk the filing was written at, on the filing itself', async () => {
+    const alerts: Array<[string, string, Array<{ text: string; onPress?: () => void }>]> = [];
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(
+      ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
+    );
+    mockUser = { id: 'u2', username: 'tomasreyes' };
+    mockPushed.length = 0;
+
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    await act(async () => { alerts[0][2].find((b) => b.text === 'Amend it')?.onPress?.(); });
+
+    // The row is a dossier, so it opens the essay desk — carrying the id, which
+    // is what turns FILE IT into AMEND IT at the other end.
+    expect(mockPushed).toEqual(['/dispatch/compose?kind=dossier&edit=f1']);
+    spy.mockRestore();
+  });
+
+  it('offers no amendment on a ballot, or on one the house is holding', async () => {
+    /**
+     * A ballot's options are what members voted on and its question is what
+     * they answered; changing either turns a result into an answer to something
+     * else. A withheld filing is being read by the Tribunal and an ended one is
+     * already struck — the database refuses both, and the app agrees rather
+     * than offering an act that would bounce.
+     */
+    const alerts: Array<[string, string, Array<{ text: string }>]> = [];
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(
+      ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
+    );
+    mockUser = { id: 'u2', username: 'tomasreyes' };
+
+    for (const over of [
+      { kind: 'ballot', title: 'Which?', body: 'Which?', options: [{ film_id: 1, title: 'A' }, { film_id: 2, title: 'B' }], closes_at: new Date(Date.now() + 86_400_000).toISOString() },
+      { withheld_at: new Date().toISOString() },
+      { ended_at: new Date().toISOString(), ended_by: 'author' },
+    ]) {
+      alerts.length = 0;
+      mockRow = row(over);
+      const { getByLabelText } = await mount();
+      await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+      // Straight to the withdrawal, with no first sheet offering an amendment.
+      expect(alerts[0][0]).toBe('Withdraw this filing?');
+    }
     spy.mockRestore();
   });
 
@@ -373,7 +432,10 @@ describe('the reader', () => {
     expect(getByText('The Empty Room')).toBeTruthy();
 
     await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
-    await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
+    // Through both sheets: the first asks which act, the second confirms the
+    // irreversible one.
+    await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw it')?.onPress?.(); });
+    await act(async () => { alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
 
     // The words are gone from the page the member is standing on, not only from
     // a feed they are not looking at.
@@ -1011,8 +1073,10 @@ describe('the ways out, and the ways it fails', () => {
     // Silence here is the worst outcome: the member believes the words are
     // gone and they are still on the page.
     mockUser = { id: 'u2', username: 'tomasreyes' };
+    // Two sheets now — the first chooses the act, the second confirms it — so
+    // this presses whichever withdrawal button the sheet it was handed carries.
     const alert = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      const withdraw = (buttons ?? []).find((b) => b.text === 'Withdraw');
+      const withdraw = (buttons ?? []).find((b) => b.text === 'Withdraw it' || b.text === 'Withdraw');
       void withdraw?.onPress?.();
     });
     const end = jest.spyOn(useDispatch.getState(), 'end')
