@@ -202,7 +202,23 @@ jest.mock('expo-router', () => {
     Stack: { Screen: ({ children }: any) => children || null },
     Tabs: { Screen: ({ children }: any) => children || null },
     Slot: () => null,
-    useFocusEffect: jest.fn((cb: any) => cb()),
+    /**
+     * ── THE CLEANUP HAS TO RUN, OR EVERY TIMER LEAKS ─────────────────────────
+     * This was `(cb) => cb()`: it called the callback DURING RENDER and threw
+     * the returned cleanup away.
+     *
+     * The real hook behaves like `useEffect` scoped to focus — run on focus,
+     * clean up on blur or unmount. Discarding the cleanup meant the Dispatch
+     * feed's ninety-second poll set an interval on every mount and cleared
+     * none: `--detectOpenHandles` found THIRTY-FIVE leaked timers, jest
+     * reported "a worker process has failed to exit gracefully", and an
+     * unrelated suite failed intermittently because of it.
+     *
+     * `useEffect` with `[cb]` matches the real signature, which expects a
+     * `useCallback`-wrapped function — so a screen that memoises its callback
+     * runs once, exactly as it does in the app.
+     */
+    useFocusEffect: (cb: any) => React.useEffect(cb, [cb]),
   };
 });
 
