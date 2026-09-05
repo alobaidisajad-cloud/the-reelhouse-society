@@ -31,7 +31,7 @@ import { ChevronRight } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
-import { p, QUIET } from './paperStyles';
+import { p } from './paperStyles';
 import { KIND_RULE, UNSPOKEN } from './paperMetrics';
 import { softBreak } from './paperText';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';

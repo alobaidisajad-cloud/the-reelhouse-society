@@ -1,11 +1,9 @@
 import { memo } from 'react';
 import { View, Text } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
-import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { counted } from './paperText';

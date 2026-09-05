@@ -12,7 +12,7 @@ import { PaperStrike } from './PaperStrike';
 import { softBreak, counted } from './paperText';
 import { isRTLText } from '@/src/utils/text';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
-import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 
 export interface Critique {
   id: string;

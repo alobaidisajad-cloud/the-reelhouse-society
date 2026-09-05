@@ -1,4 +1,4 @@
-import { memo, type ReactNode } from 'react';
+import { memo } from 'react';
 import { View, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,7 +11,7 @@ import {
   scaledTextProps, decorativeTextProps, displayTextProps,
 } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { formatCount, stillHeight, KIND_RULE, RULE_W, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { formatCount, stillHeight, KIND_RULE, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted } from './paperText';

@@ -20,10 +20,10 @@ import { colors, fonts } from '@/src/theme/theme';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
-import { KIND_RULE, MARGIN_W, RULE_W, RULE_GAP, AVATAR, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { KIND_RULE, MARGIN_W, RULE_W, RULE_GAP, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { MS, PILL_Y } from './paperMotion';
-import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { clipToSentence, counted } from './paperText';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
@@ -178,7 +178,7 @@ export const PaperDoor = memo(function PaperDoor({
  * designed for this screen — it is the page it already is, carrying rules
  * instead of filings, which is why it needs no explaining.
  */
-export const CLAUSES: Array<[string, string]> = [
+export const CLAUSES: [string, string][] = [
   ['I', 'Argue with the film. Never with the member.'],
   ['II', 'Mark a spoiler before you write one. The house hides it either way, but you should have meant to.'],
   ['III', 'A wire carries its source. No source, no wire.'],

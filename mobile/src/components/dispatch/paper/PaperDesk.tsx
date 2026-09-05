@@ -14,7 +14,6 @@
 import { memo } from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   FilmIcon, ImageIcon, AlertTriangle, Search, X, Plus, Calendar,
   Send, Bookmark, Share2,
@@ -22,13 +21,12 @@ import {
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
-import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
 import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, groupDigits } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
-import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { PaperKeyWell } from './PaperKeyWell';
 
 /** The head every desk wears. One component so three desks cannot drift. */
@@ -71,7 +69,7 @@ export const DeskHead = memo(function DeskHead({
 export const DeskRail = memo(function DeskRail({
   tools, remaining, onTool,
 }: {
-  tools: Array<{ icon: 'film' | 'still' | 'spoiler' | 'date'; label: string; on?: boolean }>;
+  tools: { icon: 'film' | 'still' | 'spoiler' | 'date'; label: string; on?: boolean }[];
   remaining?: number;
   onTool?: (icon: 'film' | 'still' | 'spoiler' | 'date') => void;
 }) {
@@ -158,7 +156,7 @@ export const BallotDesk = memo(function BallotDesk({
   onQuestion, onRemove, onChoose, onCloses, onBack, onFile, ready,
 }: {
   me: PaperAuthor; hour: string; question: string;
-  options: Array<PaperFilm | null>; closes: string;
+  options: (PaperFilm | null)[]; closes: string;
   /** Absent in the harness, where the question is a drawn line. */
   onQuestion?: (text: string) => void;
   onRemove?: (index: number) => void;
@@ -530,10 +528,10 @@ export const ShareSheet = memo(function ShareSheet({
    * and Instagram, ordered by what this member actually uses. We are not going
    * to guess that order better than their phone already knows it.
    */
-  const rows: Array<[typeof Send, string, string]> = [
+  const rows: [typeof Send, string, string][] = [
     [Send, 'TO THE LOUNGE', 'Drop it into a room'],
     ...(card
-      ? ([[Bookmark, 'SAVE THE CARD', 'A picture, to your photos']] as Array<[typeof Send, string, string]>)
+      ? ([[Bookmark, 'SAVE THE CARD', 'A picture, to your photos']] as [typeof Send, string, string][])
       : []),
     [Share2, 'ELSEWHERE', 'Anywhere your phone can send'],
   ];

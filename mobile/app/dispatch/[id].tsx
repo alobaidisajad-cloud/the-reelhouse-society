@@ -18,7 +18,7 @@
  * field brings the bar back. Two docked rows would take a third of a small
  * phone's screen and leave the writing in a slot.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Platform, ScrollView, Share, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +36,7 @@ import {
 } from '@/src/components/dispatch/paper/PaperCritiques';
 import { EssayHead, EssayNext } from '@/src/components/dispatch/paper/PaperEssay';
 import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
-import { PaperBack } from '@/src/components/dispatch/paper/PaperMore';
+import { DossierShareCard, PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { measure } from '@/src/components/dispatch/paper/paperMetrics';
@@ -44,11 +44,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import { DossierShareCard } from '@/src/components/dispatch/paper/PaperMore';
 import { supabase } from '@/src/lib/supabase';
-
-/** The house's own mark, bundled — never a stand-in glyph on the share card. */
-const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
 import { FILING_FULL_COLUMNS, parseFilingRows } from '@/src/stores/dispatchTypes';
 import type { CritiqueOrder, Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
@@ -56,6 +52,9 @@ import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
 import { timeAgo, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { scaledTextProps } from '@/src/constants/textScaling';
+
+/** The house's own mark, bundled — never a stand-in glyph on the share card. */
+const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
 
 /**
  * How a filing's critiques are ordered before anyone chooses.
@@ -404,7 +403,10 @@ export default function FilingReader() {
       return;
     }
     setActions(true);
-  }, [live, me, amendable, openAmend]);
+    // confirmWithdraw is named even though it turns over in step with `live`,
+    // which is already here. It costs nothing today and stops this sheet from
+    // going quietly stale the day that callback grows a dependency of its own.
+  }, [live, me, amendable, openAmend, confirmWithdraw]);
 
   if (loading) {
     return (

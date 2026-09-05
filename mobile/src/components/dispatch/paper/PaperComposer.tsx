@@ -1,15 +1,13 @@
 import { memo } from 'react';
 import { View, Text, TextInput } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { FilmIcon, ImageIcon, AlertTriangle } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
-import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { COUNTER_SHOWS_AT, KIND_RULE, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';

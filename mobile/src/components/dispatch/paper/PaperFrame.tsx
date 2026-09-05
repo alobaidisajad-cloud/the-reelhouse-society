@@ -4,7 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Bookmark, ChevronsUpDown } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
-import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { colors } from '@/src/theme/theme';
 import { BRASS, BRASS_STOPS, ON_BRASS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';

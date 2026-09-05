@@ -19,10 +19,10 @@
  * document: one frame, virtualised content, and the rails run the whole height.
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
-import Animated, { useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';

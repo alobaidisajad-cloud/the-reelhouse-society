@@ -710,7 +710,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     set((st) => {
       const ids = new Set(st.certifiedIds);
-      next ? ids.add(id) : ids.delete(id);
+      if (next) ids.add(id); else ids.delete(id);
       return {
         certifiedIds: ids,
         ...patchFiling(st, id, (f) => ({
@@ -731,14 +731,14 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       () => {
         if (!memberUnchanged(user.id)) return;
         set((st) => {
-        const ids = new Set(st.certifiedIds);
-        next ? ids.delete(id) : ids.add(id);
-        return {
-          certifiedIds: ids,
-          ...patchFiling(st, id, (f) => ({
-            ...f, certifyCount: Math.max(0, f.certifyCount + (next ? -1 : 1)),
-          })),
-        };
+          const ids = new Set(st.certifiedIds);
+          if (next) ids.delete(id); else ids.add(id);
+          return {
+            certifiedIds: ids,
+            ...patchFiling(st, id, (f) => ({
+              ...f, certifyCount: Math.max(0, f.certifyCount + (next ? -1 : 1)),
+            })),
+          };
         });
       },
       'dispatch.certify',
@@ -765,7 +765,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     set((st) => {
       const ids = new Set(st.savedIds);
-      next ? ids.add(id) : ids.delete(id);
+      if (next) ids.add(id); else ids.delete(id);
       // On the saved page, unsaving removes the entry — it no longer belongs to
       // the page it is on, and leaving it there would be the page lying.
       const filings = !next && st.savedOnly ? st.filings.filter((f) => f.id !== id) : st.filings;
@@ -785,7 +785,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         if (!memberUnchanged(user.id)) return;
         set((st) => {
           const ids = new Set(st.savedIds);
-          next ? ids.delete(id) : ids.add(id);
+          if (next) ids.delete(id); else ids.add(id);
           // Back where it was, not at the top — the same rule `removeCritique`
           // already follows. A card that jumps to the front because the network
           // failed is the app rewriting the page's order.
@@ -1057,7 +1057,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const move = (dir: 1 | -1) =>
       set((st) => {
         const ids = new Set(st.certifiedCritiqueIds);
-        dir === 1 ? ids.add(id) : ids.delete(id);
+        if (dir === 1) ids.add(id); else ids.delete(id);
         return {
           certifiedCritiqueIds: ids,
           critiques: {

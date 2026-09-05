@@ -346,14 +346,18 @@ describe('a signed-out reader who reaches a desk', () => {
   beforeEach(() => { mockSignedOut = true; });
   afterEach(() => { mockSignedOut = false; });
 
-  for (const [name, el] of [
-    ['a take', <ComposeShortScreen kind="take" />],
-    ['a seeking', <ComposeShortScreen kind="seeking" />],
-    ['a wire', <ComposeShortScreen kind="wire" />],
-    ['a ballot', <ComposeBallotScreen />],
+  // Held as factories, not as elements sitting in an array. The desks are a data
+  // table here rather than rendered children, so React never asked for a key —
+  // but the linter cannot tell those apart, and building each desk only when its
+  // own case runs is the honest shape anyway.
+  for (const [name, mount] of [
+    ['a take', () => <ComposeShortScreen kind="take" />],
+    ['a seeking', () => <ComposeShortScreen kind="seeking" />],
+    ['a wire', () => <ComposeShortScreen kind="wire" />],
+    ['a ballot', () => <ComposeBallotScreen />],
   ] as const) {
     it(`${name} — is told why, and taken back`, async () => {
-      const { toJSON } = render(el as React.ReactElement);
+      const { toJSON } = render(mount());
       await act(async () => { await Promise.resolve(); });
 
       // Still nothing drawn — but that is now ONE frame before the pop, with a

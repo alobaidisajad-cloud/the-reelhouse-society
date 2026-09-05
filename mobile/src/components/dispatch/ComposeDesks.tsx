@@ -272,7 +272,7 @@ export function ComposeBallotScreen() {
   const [question, setQuestion] = useState('');
   // Six slots, drawn empty and numbered from the start, so the shape of the
   // thing being made is on the paper before it has been made.
-  const [slots, setSlots] = useState<Array<{ film: PaperFilm; id: number } | null>>(
+  const [slots, setSlots] = useState<({ film: PaperFilm; id: number } | null)[]>(
     // ── THE BOUNDS ARE THE CONSTANTS, NOT SIX LITERAL NULLS ─────────────────
     // `BALLOT_MIN` and `BALLOT_MAX` existed and nothing used them: the slot
     // count was six hand-written nulls and the readiness test was `>= 2`. The
@@ -388,7 +388,7 @@ export function FilmPicker({
   bottomInset: number;
 }) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Array<{ film: PaperFilm; id: number }>>([]);
+  const [results, setResults] = useState<{ film: PaperFilm; id: number }[]>([]);
   const seq = useRef(0);
 
   /**
@@ -409,7 +409,7 @@ export function FilmPicker({
         const res = await tmdb.search(q);
         if (mine !== seq.current) return;
         setResults(
-          ((res?.results ?? []) as unknown as Array<Record<string, unknown>>)
+          ((res?.results ?? []) as unknown as Record<string, unknown>[])
             .filter((r) => r.media_type !== 'person' && (r.title || r.name))
             .slice(0, 8)
             .map((r) => ({
