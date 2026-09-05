@@ -23,6 +23,13 @@ import { FORMS, PaperPicker } from '@/src/components/dispatch/paper/PaperMore';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { groupDigits } from '@/src/components/dispatch/paper/paperMetrics';
 import { excerptFor } from '@/src/components/dispatch/excerpt';
+/**
+ * The writing room was the one Dispatch screen with no font-scaling props on any
+ * of its text. React Native's default is `allowFontScaling` with NO ceiling, so
+ * at accessibility sizes every label here grew without limit — the header's
+ * three-across row and the counter row worst, because neither can reflow.
+ */
+import { scaledTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
 
@@ -356,9 +363,12 @@ function ComposeDossierScreen() {
                 }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic
                     accessibilityRole="button"
                     accessibilityLabel="Cancel, and leave the writing room">
-                    <Text style={styles.cancelBtn} numberOfLines={1}>CANCEL</Text>
+                    {/* The header is three across and cannot reflow, so its
+                        labels take the deck cap: one line, and shrink-to-fit
+                        rather than push a neighbour off the row. */}
+                    <Text style={styles.cancelBtn} {...deckLabelProps}>CANCEL</Text>
                 </PressableScale>
-                <Text style={styles.headerTitle} numberOfLines={1}>THE WRITING ROOM</Text>
+                <Text style={styles.headerTitle} {...deckLabelProps}>THE WRITING ROOM</Text>
                 <PressableScale
                     onPress={() => {
                         setIsPreview(!isPreview);
@@ -371,14 +381,16 @@ function ComposeDossierScreen() {
                     accessibilityState={{ selected: isPreview }}
                     accessibilityLabel={isPreview ? 'Back to editing' : 'Preview the dossier'}
                 >
-                    <Text style={styles.previewBtn} numberOfLines={1}>{isPreview ? 'EDIT' : 'PREVIEW'}</Text>
+                    <Text style={styles.previewBtn} {...deckLabelProps}>{isPreview ? 'EDIT' : 'PREVIEW'}</Text>
                 </PressableScale>
             </View>
 
             {isPreview ? (
                 <CinematicScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false} bottomInset={insets.bottom}>
-                    <Text style={styles.previewEyebrow}>LIVE PREVIEW</Text>
-                    {title ? <Text style={styles.previewTitle}>{title}</Text> : null}
+                    <Text style={styles.previewEyebrow} {...scaledTextProps}>LIVE PREVIEW</Text>
+                    {/* The title is set at 30pt, so it takes the display cap —
+                        large type needs less multiplying to stay readable. */}
+                    {title ? <Text style={styles.previewTitle} {...displayTextProps}>{title}</Text> : null}
                     {/* Guarded like the other mounts — a link is a link even in your own
                         draft. Deliberately NOT capped: this is the author's live preview,
                         and truncating someone's essay while they write it is the app
@@ -389,7 +401,7 @@ function ComposeDossierScreen() {
                         </Markdown>
                     ) : (
                         <View style={styles.emptyPreview}>
-                            <Text style={styles.emptyPreviewText}>Your cinematic essay will appear here...</Text>
+                            <Text style={styles.emptyPreviewText} {...scaledTextProps}>Your cinematic essay will appear here...</Text>
                         </View>
                     )}
                 </CinematicScrollView>
@@ -451,10 +463,13 @@ function ComposeDossierScreen() {
 
                     <BlurView intensity={90} tint="dark" style={styles.footer}>
                         <View style={styles.stats}>
-                            <Text style={styles.statText} numberOfLines={1}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
-                            <Text style={styles.statText} numberOfLines={1}>READ TIME <Text style={styles.statVal}>~{stats.readMin}m</Text></Text>
+                            {/* The counter row is the other one that cannot
+                                reflow: three items sharing a fixed strip. The
+                                values nested inside inherit the cap. */}
+                            <Text style={styles.statText} {...deckLabelProps}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
+                            <Text style={styles.statText} {...deckLabelProps}>READ TIME <Text style={styles.statVal}>~{stats.readMin}m</Text></Text>
                             {limit.show ? (
-                                <Text style={[styles.statText, limit.over && styles.statOver]} numberOfLines={1}>
+                                <Text style={[styles.statText, limit.over && styles.statOver]} {...deckLabelProps}>
                                     {limit.over ? 'OVER BY ' : 'LEFT '}
                                     <Text style={[styles.statVal, limit.over && styles.statOver]}>
                                         {groupDigits(Math.abs(limit.remaining))}
@@ -479,7 +494,10 @@ function ComposeDossierScreen() {
                                         : edit ? 'Re-file the dossier' : 'File the dossier'
                             }
                         >
-                            <Text style={styles.publishBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE DOSSIER' : 'FILE THE DOSSIER')}</Text>
+                            {/* Keeps its own shrink-to-fit — 'FILE THE DOSSIER'
+                                is the longest label on the screen — and gains
+                                the ceiling it never had. */}
+                            <Text style={styles.publishBtnText} {...scaledTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE DOSSIER' : 'FILE THE DOSSIER')}</Text>
                         </PressableScale>
                     </BlurView>
                 </Animated.View>
