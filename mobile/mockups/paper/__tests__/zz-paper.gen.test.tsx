@@ -11,7 +11,7 @@ import { render } from '@testing-library/react-native';
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
-import { LOCAL_ART } from '../../../src/components/profile/__tests__/zz-art.gen';
+import { LOCAL_ART, POSTERS as REPO_POSTERS } from '../../../src/components/profile/__tests__/zz-art.gen';
 
 /** Nothing is pressed in a still. Present because the prop is REQUIRED — which
  *  is the point of it being required: the app cannot mount one without a
@@ -74,8 +74,13 @@ import { navTopPadding, NAV_ROW_MIN_H, NAV_BOTTOM_PADDING } from '@/src/componen
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { measure, columnWidth, SECTION_COLOR } from '@/src/components/dispatch/paper/paperMetrics';
 
-const SP = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/cc4f89a8-3d7c-4fec-af5d-a65d69fad004/scratchpad';
-const OUT = join(SP, 'paper');
+/**
+ * Where the sheets land. Defaults to `mockups/paper/out/` inside the repo so a
+ * run is reproducible; PAPER_OUT overrides it. The old value was one session's
+ * scratchpad, which meant every later run wrote its sheets somewhere that no
+ * longer existed.
+ */
+const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'out');
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
@@ -138,18 +143,37 @@ const COL = columnWidth(W);
 const ART = process.env.PAPER_ART
   ?? 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/art';
 
-const readArt = <T,>(file: string, fallback: T): T => {
+/**
+ * `empty` says what the fallback actually IS, because the message was wrong the
+ * moment the posters moved into the repo: it went on announcing "empty plates"
+ * while handing back seventeen real ones. A log line that describes a state the
+ * code no longer has is worse than no log line — it sends the next person
+ * looking for a missing file that stopped mattering.
+ */
+const readArt = <T,>(file: string, fallback: T, empty: boolean): T => {
   try {
     return JSON.parse(readFileSync(join(ART, file), 'utf8')) as T;
   } catch {
     // eslint-disable-next-line no-console
-    console.warn(`[paper] ${file} not found — rendering with empty plates.`);
+    console.warn(
+      empty
+        ? `[paper] ${file} not found — those plates render empty.`
+        : `[paper] ${file} not found — using the repo's own artwork instead.`,
+    );
     return fallback;
   }
 };
 
-const POSTERS = readArt<Record<string, { title: string; data: string }>>('posters.json', {});
-const ODYSSEY = readArt<Record<string, string>>('odyssey-art.json', {});
+/**
+ * The posters live IN THE REPO, inlined as data URIs by zz-art.gen. They used to
+ * be read from a scratchpad belonging to whichever session generated them, so
+ * every later run found nothing and drew the whole set with empty plates while
+ * still reporting success. The external file is still honoured if PAPER_ART
+ * points at one, but the repo's own artwork is the default now, which is the
+ * only version of this that survives the session that made it.
+ */
+const POSTERS = readArt<Record<string, { title: string; data: string }>>('posters.json', REPO_POSTERS, false);
+const ODYSSEY = readArt<Record<string, string>>('odyssey-art.json', {}, true);
 
 const IMAGES: Record<string, { title: string; data: string }> = { ...POSTERS };
 for (const [path, data] of Object.entries(ODYSSEY)) IMAGES[path] = { title: '', data };
