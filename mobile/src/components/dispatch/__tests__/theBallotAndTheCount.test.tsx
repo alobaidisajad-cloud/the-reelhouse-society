@@ -257,3 +257,67 @@ describe('a ballot that has closed', () => {
     }
   });
 });
+
+/**
+ * ── A BALLOT THAT HAS CLOSED BUT NOT BEEN COUNTED ───────────────────────────
+ * The numbers on a ballot come from `frozen_totals`, written by exactly one
+ * database function, which is REVOKEd from the app and was meant to be run by a
+ * cron. Checked against production: there is no cron. So the column was never
+ * filled for any ballot, and with no totals every option reads 0 — which this
+ * component printed as NO BALLOTS WERE CAST, under a question members had
+ * marked.
+ *
+ * The distinction survives the fix to the job: between a ballot closing and the
+ * next run there is always a window, and the page has to be honest inside it.
+ */
+describe('a ballot closed but not yet counted', () => {
+  const author = { name: 'ozu', memberNo: 7, tier: 'free' as const, avatar: null };
+  const words = (node: any, out: string[] = []): string[] => {
+    if (node == null) return out;
+    if (typeof node === 'string') { if (node.trim()) out.push(node.trim()); return out; }
+    if (Array.isArray(node)) { for (const n of node) words(n, out); return out; }
+    words(node.children, out);
+    return out;
+  };
+  const draw = (sealed: boolean) => words(render(
+    <PaperBallot
+      question="Which Ozu?" author={author} closed sealed={sealed} closesLabel=""
+      options={[
+        { title: 'Tokyo Story', posterPath: '/a.jpg', votes: 0 },
+        { title: 'Late Spring', posterPath: '/b.jpg', votes: 0 },
+      ]}
+    />,
+  ).toJSON());
+
+  it('does not claim nobody voted', () => {
+    const said = draw(false);
+    expect(said).not.toContain('NO BALLOTS WERE CAST');
+    expect(said).toContain('THE COUNT IS BEING SEALED');
+  });
+
+  it('crowns nobody, rather than the first option by default', () => {
+    // With every option at 0, `indexOf(max)` is 0 — so an unsealed ballot would
+    // name the first film as the house's choice on no votes at all.
+    const said = draw(false);
+    expect(said).not.toContain('THE HOUSE CHOSE');
+  });
+
+  it('and still says nobody voted when it really has been counted', () => {
+    // The other sentence must survive: a sealed ballot with no votes is a real
+    // and different fact about the house.
+    const said = draw(true);
+    expect(said).toContain('NO BALLOTS WERE CAST');
+    expect(said).not.toContain('THE COUNT IS BEING SEALED');
+  });
+
+  it('the reader passes the real thing, never a default', () => {
+    // `sealed` defaults TRUE for the render harness. If the app forgot to pass
+    // it, every uncounted ballot would go straight back to lying.
+    const fs = require('fs') as typeof import('fs');
+    const path = require('path') as typeof import('path');
+    const src = fs.readFileSync(
+      path.join(__dirname, '..', '..', '..', '..', 'app', 'dispatch', '[id].tsx'), 'utf8',
+    );
+    expect(src).toContain('sealed={!!live.frozenTotals}');
+  });
+});

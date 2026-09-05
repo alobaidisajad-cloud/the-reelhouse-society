@@ -52,14 +52,51 @@ const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
  *   · closed           the winner lifted out and set large, the rest dimmed
  *                      beneath. It stops being a question and becomes a record.
  *
- * `closes_at` is read at render time. There is no scheduled job anywhere in
- * this design, so there is no job that can silently stop running.
+ * `closes_at` is read at render time, so a ballot closes without anything
+ * having to run.
+ *
+ * ── BUT THE COUNT IS NOT RENDER-TIME, AND THIS SAID IT WAS ──────────────────
+ * The line here read: "There is no scheduled job anywhere in this design, so
+ * there is no job that can silently stop running." That was wrong, and it is
+ * the sentence that would have stopped anybody looking.
+ *
+ * A ballot's numbers come from `frozen_totals` on the post. That column is
+ * written by exactly one thing — `freeze_closed_ballots()` — which is REVOKEd
+ * from anon and authenticated, so the app cannot call it, and its own comment
+ * says a cron runs it. Checked against production: `cron.job` is EMPTY. So the
+ * column was never filled for any ballot, ever.
+ *
+ * Proved with real rows in a rolled-back transaction: a ballot closed an hour
+ * earlier with a vote on it had `frozen_totals = NULL`, and calling the
+ * function by hand immediately produced `{"total": 1, "counts": {"0": 1}}`. The
+ * function is correct. Nothing was calling it.
+ *
+ * ── AND UNTIL IT IS CALLED, THIS COMPONENT LIED ─────────────────────────────
+ * With no totals every option reads 0, so `total` is 0, so a closed ballot
+ * printed NO BALLOTS WERE CAST — under a question fifty members may have
+ * marked. `sealed` is what separates "counted, and nobody voted" from "not
+ * counted yet", which are different sentences and must not share one.
+ *
+ * That distinction matters even once the job exists: between a ballot closing
+ * and the next run there is always a window, and the page must be honest inside
+ * it rather than announcing a result that has not been worked out.
  */
 export const PaperBallot = memo(function PaperBallot({
-  question, author, options, myVote, closed, closesLabel,
+  question, author, options, myVote, closed, closesLabel, sealed = true,
   certifyCount, commentCount, certified, saved, showKind = true,
   onVote, onCertify, onCritique, onShare, onSave, onAuthor,
 }: {
+  /**
+   * Has the result actually been counted?
+   *
+   * `frozen_totals IS NOT NULL` on the post. Without it every option reads 0 and
+   * a closed ballot cannot tell "nobody voted" from "not counted yet" — it
+   * printed the first, which is a false statement about what the house did.
+   *
+   * Defaults TRUE so the render harness, which draws finished ballots with real
+   * numbers, is unchanged; the app passes the real thing.
+   */
+  sealed?: boolean;
   /**
    * A vote is cast once and never changed — the database enforces it with
    * UNIQUE (post_id, user_id). So the options stop being controls the moment
@@ -91,7 +128,13 @@ export const PaperBallot = memo(function PaperBallot({
   const showPercent = revealed && total >= BALLOT_PERCENT_FLOOR;
   const pct = showPercent ? shares(votes) : votes.map(() => 0);
 
-  const top = closed && total > 0
+  /**
+   * A result exists only when the count has been SEALED. Until then every
+   * option reads 0 and crowning the first of them would name a winner the house
+   * never chose.
+   */
+  const hasResult = closed && sealed;
+  const top = hasResult && total > 0
     ? votes.indexOf(Math.max(...votes))
     : -1;
 
@@ -120,7 +163,7 @@ export const PaperBallot = memo(function PaperBallot({
 
       <View style={[p.hair, { marginTop: 12 }]} />
 
-      {closed && total > 0 && (
+      {hasResult && total > 0 && (
         <View style={p.wonWrap}>
           <Text style={p.wonLabel} {...decorativeTextProps}>THE HOUSE CHOSE</Text>
           {/* The winner gets the hero's full treatment — glow host, brass rim,
@@ -159,14 +202,24 @@ export const PaperBallot = memo(function PaperBallot({
         </View>
       )}
 
-      {closed && total === 0 && (
+      {/* Two different sentences, which shared one for as long as the count was
+          never run. "Nobody voted" is a fact about the house; "not counted yet"
+          is a fact about the machinery, and printing the first while the second
+          is true tells a member their ballot was ignored. */}
+      {hasResult && total === 0 && (
         <Text style={[p.ballotFoot, { marginTop: 16 }]} {...scaledTextProps}>
           NO BALLOTS WERE CAST
         </Text>
       )}
 
+      {closed && !sealed && (
+        <Text style={[p.ballotFoot, { marginTop: 16 }]} {...scaledTextProps}>
+          THE COUNT IS BEING SEALED
+        </Text>
+      )}
+
       {options.map((o, i) => {
-        if (closed && i === top) return null;
+        if (hasResult && i === top) return null;
         const marked = myVote === i;
         return (
           <View key={i}>

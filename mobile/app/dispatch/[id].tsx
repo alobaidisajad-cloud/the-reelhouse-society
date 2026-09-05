@@ -479,6 +479,11 @@ export default function FilingReader() {
               myVote={myVotes[live.id] ?? null}
               closed={!!live.closesAt && new Date(live.closesAt) <= new Date()}
               closesLabel={live.closesAt ? `closes ${timeAgo(live.closesAt)}` : ''}
+              // Whether the result has actually been COUNTED, not merely whether
+              // the ballot has closed. Without it every option reads 0 and the
+              // page announced NO BALLOTS WERE CAST under a question members had
+              // marked — see PaperBallot's own note.
+              sealed={!!live.frozenTotals}
               certifyCount={live.certifyCount}
               commentCount={live.commentCount}
               certified={certified}
