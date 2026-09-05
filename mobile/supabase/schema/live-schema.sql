@@ -5406,13 +5406,6 @@ CREATE INDEX list_comments_list_id_idx ON public.list_comments USING btree (list
 
 
 --
--- Name: lists_user_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX lists_user_id_idx ON public.lists USING btree (user_id);
-
-
---
 -- Name: log_comments_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
