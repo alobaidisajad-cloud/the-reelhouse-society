@@ -18,6 +18,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 
 import { EssayBody } from '@/src/components/dispatch/EssayBody';
+import { fonts } from '@/src/theme/theme';
 
 const mockLinkPress = jest.fn(() => false);
 jest.mock('@/src/utils/markdownSafety', () => ({
@@ -28,15 +29,32 @@ jest.mock('@/src/utils/markdownSafety', () => ({
 const OPENING = 'Ozu frames a room and then leaves it. The camera stays at the height of somebody kneeling.';
 const SECOND = 'What follows is not a shot list. It is an argument about attention.';
 
-/** The drop cap is the design's own opening block: one big letter, set apart. */
+/**
+ * The initial is the design's own opening mark: ONE letter, set in the display
+ * face, at the head of the first paragraph.
+ *
+ * Found by its face and its length rather than by a size threshold. This helper
+ * used to say `fontSize >= 40`, a number chosen for a 52pt cap — so when the cap
+ * was reset to 34 to sit inside the body's 28pt line, three tests failed on an
+ * initial that renders correctly. A magic number couples the test to one value
+ * of the thing it is testing; the ROLE is what must not change.
+ */
+const isInitial = (n: any): boolean => {
+  const style = Array.isArray(n?.props?.style)
+    ? Object.assign({}, ...n.props.style.filter(Boolean))
+    : n?.props?.style;
+  const kids = n?.children ?? [];
+  return Boolean(
+    style && style.fontFamily === fonts.display
+    && kids.length === 1 && typeof kids[0] === 'string' && kids[0].length === 1,
+  );
+};
+
 const capOf = (tree: unknown): string | null => {
   const found: string[] = [];
   const walk = (n: any) => {
     if (!n || typeof n === 'string') return;
-    const size = Array.isArray(n.props?.style)
-      ? Object.assign({}, ...n.props.style.filter(Boolean))
-      : n.props?.style;
-    if (size && size.fontSize >= 40 && typeof n.children?.[0] === 'string') found.push(n.children[0]);
+    if (isInitial(n)) found.push(n.children[0]);
     for (const k of n.children ?? []) walk(k);
   };
   walk(tree);
@@ -125,7 +143,9 @@ describe('the essay’s ornaments and its refusals', () => {
    * the test being wrong, not the essay.
    *
    * What a cap actually is: a Text whose entire content is ONE character, set
-   * much larger than the prose beside it.
+   * in the DISPLAY face — not "larger than 40", which was a number borrowed
+   * from one particular cap size and broke the moment that size changed. See
+   * `isInitial` above.
    */
   const hasDropCap = (text: string): boolean => {
     const { toJSON } = render(<EssayBody text={text} />);
@@ -134,11 +154,7 @@ describe('the essay’s ornaments and its refusals', () => {
       if (n == null || typeof n === 'string' || found) return;
       if (Array.isArray(n)) { n.forEach(walk); return; }
       const kids = n.children ?? [];
-      const size = Number(n.props?.style?.fontSize ?? 0);
-      if (
-        n.type === 'Text' && size >= 40
-        && kids.length === 1 && typeof kids[0] === 'string' && kids[0].length === 1
-      ) { found = true; return; }
+      if (isInitial(n)) { found = true; return; }
       walk(kids);
     };
     walk(toJSON());

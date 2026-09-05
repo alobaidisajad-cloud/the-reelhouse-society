@@ -82,19 +82,40 @@ export const EssayHead = memo(function EssayHead({
   );
 });
 
-/** The opening paragraph, with the cap. Only the first — a drop cap on every
- *  section is a pattern book, not a page. */
+/**
+ * The opening paragraph, with the cap. Only the first — an initial on every
+ * section is a pattern book, not a page.
+ *
+ * ── WHY THE CAP IS INLINE AND NOT A COLUMN BESIDE THE TEXT ──────────────────
+ * It used to be a flex row: the cap in one child, the WHOLE paragraph in the
+ * other. A row cannot put a line back under the cap, so the paragraph stayed
+ * indented for its full height. Measured on the reader: 46pt of indent, a
+ * measure 15% narrower than every other paragraph, and — because the cap is
+ * only two lines tall — a 66pt column of nothing beneath it. It read as a
+ * misalignment rather than as a form, and it only ever looked right when the
+ * opening paragraph happened to be about two lines long, which is not something
+ * this component controls.
+ *
+ * A true SUNK initial — two lines beside the cap, then the text returning to
+ * full measure — needs `onTextLayout` to find where the second line ends, a
+ * split, and a re-render. That is a visible reflow at the top of the essay every
+ * time it opens, repeated whenever the type size changes. On the one screen in
+ * this app built for reading, that flicker is worse than the thing it fixes.
+ *
+ * So: a RAISED initial, set inline, which React Native can do exactly. Every
+ * line keeps the full measure, there is no void, and it is the same on both
+ * platforms at every type size.
+ */
 export const EssayOpening = memo(function EssayOpening({ text }: { text: string }) {
   const cap = text.slice(0, 1);
   return (
-    <View style={e.openRow}>
+    <Text style={e.body} {...scaledTextProps}>
+      {/* Does NOT scale. The line it sits in is a fixed 28, so a cap that grew
+          with the type would be clipped by it at the largest setting — the body
+          may grow into the leading, the initial may not. */}
       <Text style={e.cap} {...decorativeTextProps}>{cap}</Text>
-      {/* `bodyFlex` ONLY here. This paragraph sits beside the cap in a row and
-          needs the remaining width; every other paragraph is a block in a
-          column, where `flex: 1` makes each one claim the leftover height and
-          they stack on top of each other. That is exactly what happened. */}
-      <Text style={[e.body, e.bodyFlex]} {...scaledTextProps}>{softBreak(text.slice(1))}</Text>
-    </View>
+      {softBreak(text.slice(1))}
+    </Text>
   );
 });
 
@@ -255,11 +276,19 @@ const e = StyleSheet.create({
     fontFamily: fonts.serif, fontSize: 16.5, lineHeight: 28,
     color: colors.parchment, opacity: 0.94,
   },
-  bodyFlex: { flex: 1 },
-  openRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  /**
+   * 34, not 52, and it is the line box that decides it. Rye's ascent is about
+   * 0.75em, so 34 stands ~25.5pt inside the body's 28pt line and cannot be
+   * clipped; 52 could not fit that line on Android at all. `lineHeight` matches
+   * the body's so the initial never opens the first line wider than the rest,
+   * which is the difference between a raised initial and a gap.
+   *
+   * Still twice the body, still the dossier's colour: an initial, not a
+   * capital that happens to be bigger.
+   */
   cap: {
-    fontFamily: fonts.display, fontSize: 52, lineHeight: 46,
-    color: KIND_RULE.dossier, paddingRight: 8, marginTop: -4,
+    fontFamily: fonts.display, fontSize: 34, lineHeight: 28,
+    color: KIND_RULE.dossier,
   },
 
   breakRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24, opacity: 0.72 },

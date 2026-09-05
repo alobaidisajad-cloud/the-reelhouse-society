@@ -638,7 +638,21 @@ export const p = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.28)',
     backgroundColor: 'rgba(20,16,11,0.9)',
   },
-  creditWords: { flexDirection: 'row', alignItems: 'baseline', flexShrink: 1, minWidth: 0 },
+  /**
+   * `gap: 6` — the same gap `byline` uses, for the same reason.
+   *
+   * Both set two facts either side of a `·`, and both write it the same way: a
+   * second Text beginning with `'· '`. The byline's container reserved space
+   * before that dot and this one did not, so the credit rendered
+   * `TOKYO STORY· 1953` — a full word-space after the dot and nothing but 1.2pt
+   * of letter-spacing before it. Measured on the page: 10pt of air before the
+   * byline's dot, 0 before the credit's.
+   *
+   * Reserved in the LAYOUT rather than by padding the string, so the app has one
+   * way of setting this and not two. A long title now gives way 6pt earlier,
+   * which is right — the space is real, and the byline already spends it.
+   */
+  creditWords: { flexDirection: 'row', alignItems: 'baseline', gap: 6, flexShrink: 1, minWidth: 0 },
   /** `flexShrink: 1`, not `flex: 1`: the title takes the room it needs and gives
    *  way only when the line is full, so a short title does not push the year to
    *  the far edge of the column with a corridor of nothing between them. */
