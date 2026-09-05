@@ -458,3 +458,88 @@ describe('the session guard, where a rollback would ADD something', () => {
     expect(useDispatch.getState().certifiedCritiqueIds.size).toBe(0);
   });
 });
+
+/**
+ * ── AND WHEN THE HOUSE SIMPLY REFUSES ───────────────────────────────────────
+ * The other half of the same rollback, and the half a member actually meets:
+ * they are still signed in, the write is refused, and the optimistic change has
+ * to come back off the page.
+ *
+ * Every test above signs out, so `undo` was only ever reached in the case where
+ * the outer guard stops it — which left the whole body of every rollback dark.
+ * These are the tests that run it.
+ */
+describe('an act the house refuses, with the member still here', () => {
+  const refused = (over: Record<string, unknown> = {}) => {
+    mockOutcome = 'refused';
+    mockUser = { id: 'u1', username: 'me' };
+    reset({ filings: [filing({ certifyCount: 10 })], ...over });
+  };
+  const settle = () => new Promise((r) => setTimeout(r, 0));
+
+  it('takes a certification back off the count, and off the mark', async () => {
+    refused();
+    useDispatch.getState().certify('f1', true);
+    expect(useDispatch.getState().filings[0].certifyCount).toBe(11);
+    expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
+
+    await settle();
+    expect(useDispatch.getState().filings[0].certifyCount).toBe(10);
+    expect(useDispatch.getState().certifiedIds.has('f1')).toBe(false);
+  });
+
+  it('takes a save back, and puts the row back where it was', async () => {
+    // On the kept page an un-save removes the row. The row returns to its own
+    // place, not to the top — a card that jumps to the front because the
+    // network failed is the app rewriting the page's order.
+    refused({
+      filings: [filing({ id: 'a' }), filing({ id: 'b' }), filing({ id: 'c' })],
+      savedIds: new Set(['b']),
+      savedOnly: true,
+    });
+    useDispatch.getState().save('b', false);
+    expect(useDispatch.getState().filings.map((f) => f.id)).toEqual(['a', 'c']);
+
+    await settle();
+    expect(useDispatch.getState().filings.map((f) => f.id)).toEqual(['a', 'b', 'c']);
+    expect(useDispatch.getState().savedIds.has('b')).toBe(true);
+  });
+
+  it('takes a vote back rather than leaving a mark the house never had', async () => {
+    refused({ filings: [filing({ kind: 'ballot' })] });
+    useDispatch.getState().vote('f1', 1);
+    expect(useDispatch.getState().myVotes.f1).toBe(1);
+
+    await settle();
+    expect(useDispatch.getState().myVotes.f1).toBeUndefined();
+  });
+
+  it('takes a critique’s certification back', async () => {
+    refused({
+      certifiedCritiqueIds: new Set(),
+      critiques: {
+        f1: [{
+          id: 'c1', postId: 'f1', authorId: 'u2', author: null,
+          body: 'A critique.', certifyCount: 3,
+          createdAt: '2026-08-28T21:00:00Z', editedAt: null,
+        }],
+      },
+    });
+    useDispatch.getState().certifyCritique('c1', 'f1', true);
+    expect(useDispatch.getState().certifiedCritiqueIds.has('c1')).toBe(true);
+
+    await settle();
+    expect(useDispatch.getState().certifiedCritiqueIds.has('c1')).toBe(false);
+    expect(useDispatch.getState().critiques.f1[0].certifyCount).toBe(3);
+  });
+
+  it('says so out loud, every time', async () => {
+    // A silent revert teaches a member that their taps are guesses.
+    const toast = require('../../utils/reelToast').default;
+    toast.error.mockClear();
+    refused();
+    useDispatch.getState().certify('f1', true);
+    await settle();
+    expect(toast.error).toHaveBeenCalledWith('The house did not accept that.');
+  });
+});
