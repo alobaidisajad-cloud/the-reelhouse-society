@@ -61,12 +61,19 @@ export const measure = (screenWidth: number) => {
  */
 export const PAPER_MAX = 560;
 
-/** The one row of chrome: sections scroll left, tools pinned right. */
+/**
+ * The one row of chrome: sections scroll left, tools pinned right.
+ *
+ * There is no `chromeHeight` here any more. One existed, exported, with a
+ * docstring saying the height was "derived rather than declared — see the
+ * test": there was no test, and nothing in the app ever called it. The row is a
+ * plain View in normal flow with `alignItems: 'stretch'`, so it takes the
+ * height its content needs at whatever type size the reader has chosen, and
+ * nothing below it has to reserve anything. A declared height is exactly what
+ * would have clipped it at large type.
+ */
 export const CHROME_PAD_V = 10;
 export const CHROME_PAD_H = 14;
-/** Height of the index row, derived rather than declared — see the test. */
-export const chromeHeight = (fontScale = 1) =>
-  CHROME_PAD_V * 2 + Math.round(11 * Math.min(fontScale, 1.35)) + 2;
 
 /**
  * Vertical padding on every post block.

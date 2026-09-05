@@ -5,6 +5,35 @@ module.exports = {
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|react-native-mmkv|react-native-reanimated)',
   ],
   testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/'],
+  /**
+   * ── WHY THIS IS HERE ────────────────────────────────────────────────────
+   * "A worker process has failed to exit gracefully" was chased for a long time
+   * as a leaked handle. It is not one: `--detectOpenHandles` reports nothing, a
+   * probe running inside every worker after all 242 suites found zero pending
+   * timers and zero non-stdio handles, and the message is a red herring.
+   *
+   * The real thing, caught by capturing a full run rather than its tail:
+   *
+   *     FATAL ERROR: Zone Allocation failed - process out of memory
+   *
+   * A worker runs suite after suite and each one loads the whole React Native
+   * module registry — 336 MB of heap for a median suite, 507 MB for the worst.
+   * The heap is never fully reclaimed between them, so a long-lived worker
+   * eventually cannot allocate and is killed. Usually that only prints the
+   * warning; sometimes it takes the two suites that worker was holding with it
+   * and they report as failures that have nothing to do with their own code.
+   *
+   * This restarts a worker once it is carrying more than a single heavy suite's
+   * worth of heap, so nothing accumulates across the dozens of suites one worker
+   * runs. 768MB was tried first and still let a worker die: the limit has to sit
+   * near the median suite (336 MB), not above the worst one, because by the time
+   * a worker is carrying half a gigabyte it is already too late.
+   *
+   * Measured over five full runs each: 768MB still died; 400MB and 300MB both
+   * held — no out-of-memory, no worker taking suites down with it — and 300MB
+   * cost 16% more wall clock for no further gain, so 400MB is the setting.
+   */
+  workerIdleMemoryLimit: '400MB',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   testMatch: ['**/__tests__/**/*.test.{ts,tsx}', '**/*.test.{ts,tsx}'],
   moduleNameMapper: {

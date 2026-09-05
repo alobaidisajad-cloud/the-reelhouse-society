@@ -278,6 +278,35 @@ $$;
 
 
 --
+-- Name: claim_films_to_sync(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.claim_films_to_sync(p_limit integer DEFAULT 20) RETURNS TABLE(id integer)
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_limit integer := LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100);
+BEGIN
+  RETURN QUERY
+  UPDATE public.films f
+     SET sync_claimed_at = now()
+   WHERE f.id IN (
+     SELECT c.id
+       FROM public.films c
+      WHERE c.synced_at IS NULL
+        AND c.sync_failed < 3
+        AND (c.sync_claimed_at IS NULL OR c.sync_claimed_at < now() - interval '10 minutes')
+      ORDER BY c.id
+      LIMIT v_limit
+      FOR UPDATE SKIP LOCKED
+   )
+  RETURNING f.id;
+END;
+$$;
+
+
+--
 -- Name: claim_founding_seat(uuid, integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -471,6 +500,310 @@ $$;
 
 
 --
+-- Name: dispatch_comments_pin_columns(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_comments_pin_columns() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF current_user IN ('postgres', 'service_role', 'supabase_admin') THEN
+    RETURN NEW;
+  END IF;
+  NEW.certify_count := OLD.certify_count;
+  NEW.created_at    := OLD.created_at;
+  -- A critique belongs to the filing it was written under. Moving it puts a
+  -- member's words beneath somebody else's writing.
+  NEW.post_id       := OLD.post_id;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: dispatch_count_cert(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_count_cert() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.post_id IS NOT NULL THEN
+      UPDATE public.dispatch_posts SET certify_count = certify_count + 1 WHERE id = NEW.post_id;
+    ELSE
+      UPDATE public.dispatch_comments SET certify_count = certify_count + 1 WHERE id = NEW.comment_id;
+    END IF;
+    RETURN NEW;
+  ELSE
+    IF OLD.post_id IS NOT NULL THEN
+      UPDATE public.dispatch_posts
+         SET certify_count = GREATEST(0, certify_count - 1) WHERE id = OLD.post_id;
+    ELSE
+      UPDATE public.dispatch_comments
+         SET certify_count = GREATEST(0, certify_count - 1) WHERE id = OLD.comment_id;
+    END IF;
+    RETURN OLD;
+  END IF;
+END $$;
+
+
+--
+-- Name: dispatch_count_comment(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_count_comment() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE public.dispatch_posts SET comment_count = comment_count + 1 WHERE id = NEW.post_id;
+    RETURN NEW;
+  ELSE
+    UPDATE public.dispatch_posts
+       SET comment_count = GREATEST(0, comment_count - 1) WHERE id = OLD.post_id;
+    RETURN OLD;
+  END IF;
+END $$;
+
+
+--
+-- Name: dispatch_door(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_door() RETURNS TABLE(films integer, films_needed integer, days integer, days_needed integer, may_file boolean)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT (SELECT count(DISTINCT film_id) FROM public.logs WHERE user_id = p.id)::int,
+         5,
+         GREATEST(0, floor(extract(epoch FROM now() - p.created_at) / 86400))::int,
+         2,
+         public.may_file()
+    FROM public.profiles p WHERE p.id = auth.uid();
+$$;
+
+
+--
+-- Name: dispatch_names(text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_names(p_kind text, p_title text) RETURNS text
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT 'your ' || coalesce(p_kind, 'filing')
+      || CASE WHEN btrim(coalesce(p_title,'')) = '' THEN ''
+              ELSE ' “' || btrim(p_title) || '”' END;
+$$;
+
+
+--
+-- Name: dispatch_no_hard_delete(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_no_hard_delete() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF coalesce(current_setting('dispatch.allow_hard_delete', true), '') = 'on' THEN
+    RETURN OLD;
+  END IF;
+
+  -- already ended: nothing to erase, and nothing to delete either
+  IF OLD.ended_at IS NOT NULL THEN RETURN NULL; END IF;
+
+  UPDATE public.dispatch_posts
+     SET body = '', full_content = NULL, title = NULL, subject_image = NULL, source = NULL,
+         spoiler_label = NULL, ended_at = now(),
+         ended_by = CASE WHEN OLD.user_id IS NOT DISTINCT FROM auth.uid()
+                         THEN 'author' ELSE 'house' END
+   WHERE id = OLD.id;
+
+  RETURN NULL;   -- the delete does not happen
+END $$;
+
+
+--
+-- Name: dispatch_notify(uuid, uuid, text, text, jsonb, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_notify(p_to uuid, p_from uuid, p_type text, p_message text, p_meta jsonb, p_group text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF p_to IS NULL OR p_from IS NULL OR p_to = p_from THEN RETURN; END IF;
+
+  -- a block in either direction silences the notice. `is_hidden_by` reads the
+  -- SESSION's viewer, which inside a trigger is the actor rather than the
+  -- recipient, so the pair is asked for directly here.
+  IF EXISTS (
+    SELECT 1 FROM public.user_blocks
+     WHERE (blocker_id = p_to AND blocked_id = p_from)
+        OR (blocker_id = p_from AND blocked_id = p_to AND type = 'block')
+  ) THEN RETURN; END IF;
+
+  INSERT INTO public.notifications
+    (user_id, from_user_id, from_username, type, message, metadata, group_key)
+  SELECT p_to, p_from, pr.username, p_type, p_message, p_meta, p_group
+    FROM public.profiles pr WHERE pr.id = p_from;
+END $$;
+
+
+--
+-- Name: dispatch_notify_answer(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_notify_answer() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE c record;
+BEGIN
+  IF NEW.answer_id IS NULL OR NEW.answer_id IS NOT DISTINCT FROM OLD.answer_id THEN
+    RETURN NEW;
+  END IF;
+  SELECT id, user_id INTO c FROM public.dispatch_comments WHERE id = NEW.answer_id;
+  PERFORM public.dispatch_notify(
+    c.user_id, NEW.user_id, 'comment',
+    'took your critique as the answer.',
+    jsonb_build_object('dispatch_post_id', NEW.id, 'kind', NEW.kind, 'comment_id', c.id),
+    'endorse:post:' || NEW.id);
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: dispatch_notify_ballot_closed(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_notify_ballot_closed() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE v record; msg text;
+BEGIN
+  IF NEW.frozen_totals IS NULL OR OLD.frozen_totals IS NOT NULL THEN RETURN NEW; END IF;
+  msg := CASE WHEN btrim(coalesce(NEW.title,'')) = ''
+              THEN 'A ballot you voted in has closed.'
+              ELSE 'The ballot “' || btrim(NEW.title) || '” you voted in has closed.' END;
+  FOR v IN SELECT DISTINCT user_id FROM public.dispatch_votes WHERE post_id = NEW.id LOOP
+    INSERT INTO public.notifications (user_id, type, message, metadata, group_key)
+    SELECT v.user_id, 'system', msg,
+           jsonb_build_object('dispatch_post_id', NEW.id, 'kind', 'ballot',
+                              'title', NEW.title),
+           'endorse:post:' || NEW.id
+     WHERE EXISTS (SELECT 1 FROM public.profiles WHERE id = v.user_id);
+  END LOOP;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: dispatch_notify_certify(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_notify_certify() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE p record; c record;
+BEGIN
+  IF NEW.post_id IS NOT NULL THEN
+    SELECT id, user_id, kind, title INTO p
+      FROM public.dispatch_posts WHERE id = NEW.post_id;
+    PERFORM public.dispatch_notify(
+      p.user_id, NEW.user_id, 'endorse',
+      'certified ' || public.dispatch_names(p.kind, p.title) || '.',
+      jsonb_build_object('dispatch_post_id', p.id, 'kind', p.kind, 'title', p.title),
+      'endorse:post:' || p.id);
+  ELSE
+    SELECT id, user_id, post_id INTO c
+      FROM public.dispatch_comments WHERE id = NEW.comment_id;
+    PERFORM public.dispatch_notify(
+      c.user_id, NEW.user_id, 'endorse',
+      'certified your critique.',
+      jsonb_build_object('dispatch_post_id', c.post_id, 'comment_id', c.id),
+      'endorse:post:' || c.post_id);
+  END IF;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: dispatch_notify_critique(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_notify_critique() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE p record;
+BEGIN
+  SELECT id, user_id, kind, title INTO p
+    FROM public.dispatch_posts WHERE id = NEW.post_id;
+  PERFORM public.dispatch_notify(
+    p.user_id, NEW.user_id, 'comment',
+    'left a critique on ' || public.dispatch_names(p.kind, p.title) || '.',
+    jsonb_build_object('dispatch_post_id', p.id, 'kind', p.kind,
+                       'title', p.title, 'comment_id', NEW.id),
+    'endorse:post:' || p.id);
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: dispatch_posts_pin_columns(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_posts_pin_columns() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  -- The house's own machinery — the counters, `end_filing`, the Tribunal, the
+  -- ballot freeze — all run as the table owner. Everything else is a member.
+  IF current_user IN ('postgres', 'service_role', 'supabase_admin') THEN
+    RETURN NEW;
+  END IF;
+
+  -- Counts belong to the members who made them, not to the author.
+  NEW.certify_count := OLD.certify_count;
+  NEW.comment_count := OLD.comment_count;
+  -- When it was filed is what orders the paper.
+  NEW.created_at    := OLD.created_at;
+  -- The kind is gated at INSERT by tier; changing it afterwards walks around
+  -- that gate, so a take cannot quietly become a dossier.
+  NEW.kind          := OLD.kind;
+  -- Under review, or struck. Only the house moves these.
+  NEW.withheld_at   := OLD.withheld_at;
+  NEW.ended_at      := OLD.ended_at;
+  NEW.ended_by      := OLD.ended_by;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: dispatch_scrub_departed(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_scrub_departed() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF NEW.user_id IS NULL AND OLD.user_id IS NOT NULL THEN
+    NEW.author_username := '[deleted]';
+  END IF;
+  RETURN NEW;
+END $$;
+
+
+--
 -- Name: divert_private_notes(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -494,6 +827,124 @@ BEGIN
   END IF;
   UPDATE public.logs SET private_notes = NULL WHERE id = NEW.id;
   RETURN NULL;
+END $$;
+
+
+--
+-- Name: dossier_certifications_write(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dossier_certifications_write() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO public.dispatch_certifications (user_id, post_id)
+    VALUES (NEW.user_id, NEW.dossier_id)
+    RETURNING id INTO NEW.id;
+    RETURN NEW;
+  ELSE
+    DELETE FROM public.dispatch_certifications
+     WHERE user_id = OLD.user_id AND post_id = OLD.dossier_id;
+    RETURN OLD;
+  END IF;
+END $$;
+
+
+--
+-- Name: dossier_comments_write(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dossier_comments_write() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO public.dispatch_comments (post_id, user_id, author_username, body)
+    VALUES (NEW.dossier_id, NEW.user_id, coalesce(NEW.username, ''), NEW.body)
+    RETURNING id INTO NEW.id;
+    RETURN NEW;
+
+  ELSIF TG_OP = 'UPDATE' THEN
+    UPDATE public.dispatch_comments
+       SET body            = NEW.body,
+           user_id         = NEW.user_id,
+           author_username = NEW.username,
+           -- only a real edit is marked as one. An erasure changes the name and
+           -- nothing else, and a critique that reads "edited" because its author
+           -- closed their account is the app telling a small lie about a person
+           -- who is no longer there to correct it.
+           edited_at       = CASE WHEN NEW.body IS DISTINCT FROM OLD.body
+                                  THEN now() ELSE edited_at END
+     WHERE id = OLD.id;
+    RETURN NEW;
+
+  ELSE
+    DELETE FROM public.dispatch_comments WHERE id = OLD.id;
+    RETURN OLD;
+  END IF;
+END $$;
+
+
+--
+-- Name: dossiers_write(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dossiers_write() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO public.dispatch_posts
+      (kind, user_id, author_username, title, body, full_content, is_published)
+    VALUES ('dossier', NEW.user_id, NEW.author_username, NEW.title,
+            coalesce(NEW.excerpt,''), NEW.full_content, coalesce(NEW.is_published,true))
+    RETURNING id INTO NEW.id;
+    RETURN NEW;
+
+  ELSIF TG_OP = 'UPDATE' THEN
+    UPDATE public.dispatch_posts
+       SET title           = NEW.title,
+           body            = coalesce(NEW.excerpt,''),
+           full_content    = NEW.full_content,
+           is_published    = NEW.is_published,
+           -- carried, so an erasure through this name is a real erasure
+           user_id         = NEW.user_id,
+           author_username = NEW.author_username,
+           -- an erasure is not an edit: it must not move the essay up the feed
+           updated_at      = CASE WHEN NEW.user_id IS NULL AND OLD.user_id IS NOT NULL
+                                  THEN updated_at ELSE now() END
+     WHERE id = OLD.id;
+    RETURN NEW;
+
+  ELSE
+    DELETE FROM public.dispatch_posts WHERE id = OLD.id;
+    RETURN OLD;
+  END IF;
+END $$;
+
+
+--
+-- Name: end_filing(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.end_filing(p_post uuid, p_by text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF p_by NOT IN ('author','house') THEN RAISE EXCEPTION 'bad ended_by'; END IF;
+  IF p_by = 'author' AND NOT EXISTS (
+       SELECT 1 FROM public.dispatch_posts WHERE id = p_post AND user_id = auth.uid())
+  THEN RAISE EXCEPTION 'not yours'; END IF;
+
+  UPDATE public.dispatch_posts
+     SET body = '', full_content = NULL, title = NULL, subject_image = NULL, source = NULL,
+         spoiler_label = NULL, ended_at = now(), ended_by = p_by
+   WHERE id = p_post AND ended_at IS NULL;
 END $$;
 
 
@@ -836,6 +1287,48 @@ $$;
 
 
 --
+-- Name: freeze_closed_ballots(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.freeze_closed_ballots() RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE n integer;
+BEGIN
+  WITH tallied AS (
+    SELECT p.id,
+           jsonb_build_object(
+             -- sum(v.n), not count(v.id): `v` is already GROUPED BY option, so
+             -- it has no id to count and one row per option rather than one per
+             -- vote. Counting its rows would have recorded "2 ballots cast" for
+             -- a ballot with two options and two hundred voters — a permanent,
+             -- plausible, wrong number, written once and never recomputed.
+             'total', coalesce(sum(v.n), 0),
+             'counts', coalesce(jsonb_object_agg(v.option_index, v.n)
+                                FILTER (WHERE v.option_index IS NOT NULL), '{}'::jsonb),
+             'frozen_at', now()
+           ) AS totals
+      FROM public.dispatch_posts p
+      LEFT JOIN (
+        SELECT post_id, option_index, count(*) AS n
+          FROM public.dispatch_votes GROUP BY post_id, option_index
+      ) v ON v.post_id = p.id
+     WHERE p.kind = 'ballot'
+       AND p.closes_at <= now()
+       AND p.frozen_totals IS NULL
+     GROUP BY p.id
+  )
+  UPDATE public.dispatch_posts p
+     SET frozen_totals = t.totals
+    FROM tallied t
+   WHERE p.id = t.id;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  RETURN n;
+END $$;
+
+
+--
 -- Name: get_community_feed_auth_cursor(integer, timestamp with time zone, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -872,21 +1365,23 @@ CREATE FUNCTION public.get_dispatch_feed(p_limit integer DEFAULT 20, p_cursor_cr
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  SELECT
-    d.id::text,
-    d.title::text,
-    d.excerpt::text,
-    d.author_username::text,
-    d.user_id::text,
-    d.views::integer,
-    d.certify_count::integer,
-    d.created_at
-  FROM public.dispatch_dossiers d
-  WHERE d.is_published = true
-    AND (p_cursor_created_at IS NULL OR d.created_at < p_cursor_created_at)
-  ORDER BY d.created_at DESC
-  LIMIT LEAST(GREATEST(COALESCE(p_limit, 20), 0), 50);
-$$;
+      SELECT p.id::text,
+             p.title,
+             p.body            AS excerpt,
+             p.author_username,
+             p.user_id::text,
+             0                 AS views,
+             p.certify_count,
+             p.created_at
+        FROM public.dispatch_posts p
+       WHERE p.kind = 'dossier'
+         AND p.is_published
+         AND p.withheld_at IS NULL
+         AND p.ended_at IS NULL
+         AND (p_cursor_created_at IS NULL OR p.created_at < p_cursor_created_at)
+       ORDER BY p.created_at DESC, p.id DESC
+       LIMIT greatest(1, least(coalesce(p_limit, 20), 100));
+    $$;
 
 
 --
@@ -1400,7 +1895,8 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
     ELSE (
       WITH user_logs AS (
         SELECT *,
-          CASE WHEN year::text ~ '^\d+$' THEN year::text::int END AS year_int
+          -- THE ONLY CHANGE IN THIS FUNCTION: was '^\d+$'
+          CASE WHEN year::text ~ '^\d{1,4}$' THEN year::text::int END AS year_int
         FROM public.logs WHERE user_id = p_user_id
       ),
       stamps AS (
@@ -1416,11 +1912,8 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
       ),
       decades AS (
         SELECT (year_int / 10) * 10 AS decade, COUNT(*) AS c
-        FROM user_logs
-        WHERE year_int IS NOT NULL
-        GROUP BY decade
-        ORDER BY c DESC
-        LIMIT 3
+        FROM user_logs WHERE year_int IS NOT NULL
+        GROUP BY decade ORDER BY c DESC LIMIT 3
       ),
       dna AS (
         SELECT
@@ -1442,8 +1935,7 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
                 THEN COALESCE(((autopsy::jsonb)->>'sound')::numeric, ((autopsy::jsonb)->>'score')::numeric, ((autopsy::jsonb)->>'editing')::numeric)
                 ELSE NULLIF(COALESCE((autopsy::jsonb)->>'sound', (autopsy::jsonb)->>'score', (autopsy::jsonb)->>'editing')::numeric, 0)
               END) AS avg_sound
-        FROM user_logs
-        WHERE is_autopsied = true AND autopsy IS NOT NULL
+        FROM user_logs WHERE is_autopsied = true AND autopsy IS NOT NULL
       )
       SELECT jsonb_build_object(
         'stamps', (SELECT to_jsonb(s.*) FROM stamps s),
@@ -1513,7 +2005,15 @@ BEGIN
 
   ELSIF v_type = 'dossier_comment' THEN           -- dossier_comments.body
     SELECT body, '/dossier/' || dossier_id::text
-      INTO v_body, v_route FROM dossier_comments WHERE id = v_content_id;
+      INTO v_body, v_route FROM dossier_comments WHERE id = v_content_id;
+
+  ELSIF v_type = 'dispatch_post' THEN
+    SELECT title, coalesce(full_content, body), '/dispatch/' || id::text
+      INTO v_title, v_body, v_route FROM dispatch_posts WHERE id = v_content_id;
+
+  ELSIF v_type = 'dispatch_comment' THEN
+    SELECT body, '/dispatch/' || post_id::text
+      INTO v_body, v_route FROM dispatch_comments WHERE id = v_content_id;
 
   ELSIF v_type = 'lounge_message' THEN            -- lounge_messages.content
     SELECT content, '/lounge/' || lounge_id::text
@@ -1576,110 +2076,188 @@ $$;
 
 
 --
--- Name: get_user_analytics(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_taste_profile(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.get_user_analytics(p_user_id uuid) RETURNS json
-    LANGUAGE plpgsql SECURITY DEFINER
+CREATE FUNCTION public.get_taste_profile(p_user_id uuid) RETURNS json
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
 DECLARE
   result JSON;
 BEGIN
+  IF NOT public.can_view_user_data(p_user_id) THEN
+    RETURN json_build_object('error', 'forbidden');
+  END IF;
+
+  WITH mine AS (
+    SELECT DISTINCT l.film_id
+      FROM public.logs l
+     WHERE l.user_id = p_user_id AND l.film_id > 0
+  ),
+  known AS (
+    SELECT f.*
+      FROM public.films f
+      JOIN mine m ON m.film_id = f.id
+     WHERE f.synced_at IS NOT NULL
+  )
   SELECT json_build_object(
-    -- Total log count
-    'total_logs', (
-      SELECT COUNT(*) FROM logs WHERE user_id = p_user_id
+    'films_total', (SELECT COUNT(*) FROM mine),
+    'films_known', (SELECT COUNT(*) FROM known),
+
+    'genres', (
+      SELECT COALESCE(json_agg(row_to_json(g)), '[]'::json) FROM (
+        SELECT genre AS name, COUNT(*) AS count
+          FROM known, LATERAL unnest(known.genres) AS genre
+         GROUP BY genre
+         ORDER BY count DESC, genre
+         LIMIT 12
+      ) g
     ),
 
-    -- Average rating (exclude 0-rated entries)
-    'avg_rating', (
-      SELECT COALESCE(ROUND(AVG(rating)::numeric, 2), 0)
-      FROM logs WHERE user_id = p_user_id AND rating > 0
+    'actors', (
+      SELECT COALESCE(json_agg(row_to_json(a)), '[]'::json) FROM (
+        SELECT p.id,
+               MAX(p.name) AS name,
+               MAX(p.profile) AS profile_path,
+               COUNT(*) AS count
+          FROM known,
+               LATERAL unnest(known.cast_ids, known.cast_names, known.cast_profiles)
+                    AS p(id, name, profile)
+         WHERE p.id IS NOT NULL AND p.name IS NOT NULL AND p.name <> ''
+         GROUP BY p.id
+         ORDER BY count DESC, name
+         LIMIT 10
+      ) a
     ),
 
-    -- Rating distribution (1-5 stars)
-    'rating_distribution', (
-      SELECT COALESCE(json_agg(row_to_json(rd)), '[]'::json)
-      FROM (
-        SELECT rating, COUNT(*) as count
-        FROM logs
-        WHERE user_id = p_user_id AND rating > 0
-        GROUP BY rating
-        ORDER BY rating
-      ) rd
+    'directors', (
+      SELECT COALESCE(json_agg(row_to_json(d)), '[]'::json) FROM (
+        SELECT director_id AS id,
+               MAX(director) AS name,
+               MAX(director_profile) AS profile_path,
+               COUNT(*) AS count
+          FROM known
+         WHERE director_id IS NOT NULL AND director IS NOT NULL AND director <> ''
+         GROUP BY director_id
+         ORDER BY count DESC, name
+         LIMIT 10
+      ) d
     ),
 
-    -- Monthly activity (last 12 months)
-    'monthly_activity', (
-      SELECT COALESCE(json_agg(row_to_json(ma)), '[]'::json)
-      FROM (
-        SELECT TO_CHAR(
-          COALESCE(watched_date::date, created_at::date), 'YYYY-MM'
-        ) as month,
-        COUNT(*) as count
-        FROM logs
-        WHERE user_id = p_user_id
-          AND COALESCE(watched_date::date, created_at::date) >= NOW() - INTERVAL '12 months'
-        GROUP BY month
-        ORDER BY month
-      ) ma
+    'countries', (
+      SELECT COALESCE(json_agg(row_to_json(c)), '[]'::json) FROM (
+        SELECT code, COUNT(*) AS count
+          FROM known, LATERAL unnest(known.country_codes) AS code
+         GROUP BY code
+         ORDER BY count DESC, code
+         LIMIT 20
+      ) c
     ),
 
-    -- Current daily streak
-    'current_streak', (
-      WITH dates AS (
-        SELECT DISTINCT COALESCE(watched_date::date, created_at::date) as log_date
-        FROM logs WHERE user_id = p_user_id
-      ),
-      streak AS (
-        SELECT log_date,
-               log_date - (ROW_NUMBER() OVER (ORDER BY log_date DESC))::int AS grp
-        FROM dates
-        WHERE log_date >= CURRENT_DATE - 365
-      )
-      SELECT COALESCE(MAX(cnt), 0)
-      FROM (
-        SELECT grp, COUNT(*) as cnt
-        FROM streak
-        WHERE grp = (SELECT grp FROM streak WHERE log_date >= CURRENT_DATE - 1 LIMIT 1)
-        GROUP BY grp
-      ) s
-    ),
-
-    -- Longest ever streak
-    'longest_streak', (
-      WITH dates AS (
-        SELECT DISTINCT COALESCE(watched_date::date, created_at::date) as log_date
-        FROM logs WHERE user_id = p_user_id
-      ),
-      streak AS (
-        SELECT log_date,
-               log_date - (ROW_NUMBER() OVER (ORDER BY log_date))::int AS grp
-        FROM dates
-      )
-      SELECT COALESCE(MAX(cnt), 0)
-      FROM (
-        SELECT COUNT(*) as cnt FROM streak GROUP BY grp
-      ) s
-    ),
-
-    -- Format breakdown (physical media)
-    'format_breakdown', (
-      SELECT COALESCE(json_agg(row_to_json(fb)), '[]'::json)
-      FROM (
-        SELECT format, COUNT(*) as count
-        FROM logs
-        WHERE user_id = p_user_id AND format IS NOT NULL AND format != ''
-        GROUP BY format
-        ORDER BY count DESC
-      ) fb
-    )
+    'total_runtime', (SELECT COALESCE(SUM(runtime), 0) FROM known WHERE runtime > 0)
   ) INTO result;
 
   RETURN result;
 END;
 $$;
+
+
+--
+-- Name: get_user_analytics(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_user_analytics(p_user_id uuid) RETURNS json
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+DECLARE
+  result JSON;
+  v_vault JSON := '[]'::json;
+  v_decades JSON := '[]'::json;
+BEGIN
+  -- The check the other two functions already had. This one had none.
+  IF NOT public.can_view_user_data(p_user_id) THEN
+    RETURN json_build_object('error', 'forbidden');
+  END IF;
+
+  -- The two NEW fields, where a failure cannot reach the rest of the payload.
+  BEGIN
+    SELECT COALESCE(json_agg(row_to_json(vf)), '[]'::json) INTO v_vault
+    FROM (
+      SELECT COALESCE(f, 'unfiled') AS format, COUNT(*) AS count
+      FROM physical_archive pa
+      LEFT JOIN LATERAL unnest(NULLIF(pa.formats, '{}')) AS f ON TRUE
+      WHERE pa.user_id = p_user_id
+      GROUP BY 1 ORDER BY count DESC
+    ) vf;
+  EXCEPTION WHEN OTHERS THEN v_vault := '[]'::json;
+  END;
+
+  BEGIN
+    SELECT COALESCE(json_agg(row_to_json(wd)), '[]'::json) INTO v_decades
+    FROM (
+      -- {1,4} not + : an unbounded pattern accepts a 20-digit string and the
+      -- int cast then raises 22003, aborting everything.
+      SELECT ((year::text)::int / 10) * 10 AS decade, COUNT(*) AS count
+      FROM watchlists
+      WHERE user_id = p_user_id
+        AND year::text ~ '^\d{1,4}$'
+        AND (year::text)::int > 0
+      GROUP BY 1 ORDER BY 1 DESC
+    ) wd;
+  EXCEPTION WHEN OTHERS THEN v_decades := '[]'::json;
+  END;
+
+  SELECT json_build_object(
+    'total_logs', (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id),
+    'avg_rating', (SELECT COALESCE(ROUND(AVG(rating)::numeric, 2), 0)
+                   FROM logs WHERE user_id = p_user_id AND rating > 0),
+    'rating_distribution', (
+      SELECT COALESCE(json_agg(row_to_json(rd)), '[]'::json) FROM (
+        SELECT rating, COUNT(*) as count FROM logs
+        WHERE user_id = p_user_id AND rating > 0
+        GROUP BY rating ORDER BY rating) rd),
+
+    -- the 12-month window is gone
+    'monthly_activity', (
+      SELECT COALESCE(json_agg(row_to_json(ma)), '[]'::json) FROM (
+        SELECT TO_CHAR(COALESCE(watched_date::date, created_at::date), 'YYYY-MM') as month,
+               COUNT(*) as count
+        FROM logs WHERE user_id = p_user_id
+        GROUP BY month ORDER BY month DESC) ma),
+
+    -- FIXED: was 1 or 0 for every member. ASCENDING is what holds the grouping still.
+    'current_streak', (
+      WITH dates AS (SELECT DISTINCT COALESCE(watched_date::date, created_at::date) as log_date
+                     FROM logs WHERE user_id = p_user_id),
+      streak AS (SELECT log_date, log_date - (ROW_NUMBER() OVER (ORDER BY log_date))::int AS grp
+                 FROM dates)
+      SELECT COALESCE((SELECT COUNT(*) FROM streak WHERE grp = (
+        SELECT grp FROM streak WHERE log_date >= CURRENT_DATE - 1
+        ORDER BY log_date DESC LIMIT 1)), 0)),
+
+    'longest_streak', (
+      WITH dates AS (SELECT DISTINCT COALESCE(watched_date::date, created_at::date) as log_date
+                     FROM logs WHERE user_id = p_user_id),
+      streak AS (SELECT log_date, log_date - (ROW_NUMBER() OVER (ORDER BY log_date))::int AS grp
+                 FROM dates)
+      SELECT COALESCE(MAX(cnt), 0) FROM (SELECT COUNT(*) as cnt FROM streak GROUP BY grp) s),
+
+    -- unchanged: this is logs.format, how a film was watched — NOT the Vault
+    'format_breakdown', (
+      SELECT COALESCE(json_agg(row_to_json(fb)), '[]'::json) FROM (
+        SELECT format, COUNT(*) as count FROM logs
+        WHERE user_id = p_user_id AND format IS NOT NULL AND format != ''
+        GROUP BY format ORDER BY count DESC) fb),
+
+    'vault_formats', v_vault,
+    'watchlist_decades', v_decades
+  ) INTO result;
+
+  RETURN result;
+END;
+$_$;
 
 
 --
@@ -1948,9 +2526,10 @@ CREATE FUNCTION public.increment_dossier_views(dossier_uuid uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-BEGIN
-  UPDATE public.dispatch_dossiers SET views = COALESCE(views, 0) + 1 WHERE id = dossier_uuid;
-END $$;
+    BEGIN
+      -- deliberately nothing. See above.
+      RETURN;
+    END $$;
 
 
 --
@@ -2103,6 +2682,84 @@ $$;
 --
 
 COMMENT ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) IS 'Batch form of list_certify_count, for a page of stacks. Same guarantees. Returns a row for every id given, including stacks the caller cannot see (as 0).';
+
+
+--
+-- Name: mark_film_sync_failed(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.mark_film_sync_failed(p_film_id integer) RETURNS void
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  UPDATE public.films
+     SET sync_failed = sync_failed + 1,
+         sync_claimed_at = NULL
+   WHERE id = p_film_id;
+$$;
+
+
+--
+-- Name: may_file(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.may_file() RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles p
+     WHERE p.id = auth.uid()
+       AND now() >= p.created_at + interval '2 days'
+       AND (SELECT count(DISTINCT film_id) FROM public.logs WHERE user_id = p.id) >= 5);
+$$;
+
+
+--
+-- Name: note_film(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.note_film() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF NEW.film_id IS NULL OR NEW.film_id <= 0 THEN
+    RETURN NEW;
+  END IF;
+
+  INSERT INTO public.films (id, title)
+  VALUES (NEW.film_id, NULLIF(NEW.film_title, ''))
+  ON CONFLICT (id) DO NOTHING;
+
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: note_film_verdict(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.note_film_verdict() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    PERFORM public.refresh_film_verdict(OLD.film_id);
+    RETURN OLD;
+  END IF;
+
+  PERFORM public.refresh_film_verdict(NEW.film_id);
+
+  IF TG_OP = 'UPDATE' AND OLD.film_id IS DISTINCT FROM NEW.film_id THEN
+    PERFORM public.refresh_film_verdict(OLD.film_id);
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
 
 
 --
@@ -2410,6 +3067,35 @@ END $$;
 
 
 --
+-- Name: refresh_film_verdict(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.refresh_film_verdict(p_film_id integer) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF p_film_id IS NULL OR p_film_id <= 0 THEN
+    RETURN;
+  END IF;
+
+  INSERT INTO public.films AS f (id, avg_rating, rating_count, log_count)
+  SELECT
+    p_film_id,
+    ROUND(AVG(l.rating) FILTER (WHERE l.rating > 0), 2),
+    COUNT(*) FILTER (WHERE l.rating > 0),
+    COUNT(*)
+  FROM public.logs l
+  WHERE l.film_id = p_film_id
+  ON CONFLICT (id) DO UPDATE
+    SET avg_rating   = EXCLUDED.avg_rating,
+        rating_count = EXCLUDED.rating_count,
+        log_count    = EXCLUDED.log_count;
+END;
+$$;
+
+
+--
 -- Name: register_push_token(text, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2687,7 +3373,9 @@ BEGIN
         WHEN 'log_comment'     THEN DELETE FROM log_comments      WHERE id = v_content_id;
         WHEN 'list_comment'    THEN DELETE FROM list_comments     WHERE id = v_content_id;
         WHEN 'dossier'         THEN DELETE FROM dispatch_dossiers WHERE id = v_content_id;
-        WHEN 'dossier_comment' THEN DELETE FROM dossier_comments  WHERE id = v_content_id;
+        WHEN 'dossier_comment' THEN DELETE FROM dossier_comments  WHERE id = v_content_id;
+        WHEN 'dispatch_post'    THEN DELETE FROM dispatch_posts    WHERE id = v_content_id;
+        WHEN 'dispatch_comment' THEN DELETE FROM dispatch_comments WHERE id = v_content_id;
         WHEN 'lounge_message' THEN
           UPDATE lounge_messages
              SET content = '', deleted_at = now()
@@ -2908,26 +3596,30 @@ CREATE FUNCTION public.sync_denormalized_username() RETURNS trigger
 BEGIN
   IF NEW.username IS DISTINCT FROM OLD.username THEN
 
-    UPDATE public.dispatch_dossiers
+    UPDATE public.dispatch_posts
        SET author_username = NEW.username
      WHERE user_id = NEW.id
        AND author_username IS DISTINCT FROM NEW.username;
 
-    UPDATE public.dossier_comments
-       SET username = NEW.username
+    UPDATE public.dispatch_comments
+       SET author_username = NEW.username
      WHERE user_id = NEW.id
-       AND username IS DISTINCT FROM NEW.username;
+       AND author_username IS DISTINCT FROM NEW.username;
 
     UPDATE public.log_comments
        SET username = NEW.username
      WHERE user_id = NEW.id
        AND username IS DISTINCT FROM NEW.username;
 
+    UPDATE public.video_reviews
+       SET username = NEW.username
+     WHERE user_id = NEW.id
+       AND username IS DISTINCT FROM NEW.username;
+
   END IF;
 
-  RETURN NULL;
-END;
-$$;
+  RETURN NULL;  -- AFTER trigger: the return value is ignored
+END $$;
 
 
 --
@@ -3009,28 +3701,20 @@ CREATE FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) RETURNS boolean
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-DECLARE
-  v_uid uuid := auth.uid();
-  already_certified boolean;
-BEGIN
-  IF v_uid IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-
-  SELECT EXISTS(SELECT 1 FROM public.dossier_certifications
-    WHERE user_id = v_uid AND dossier_id = dossier_uuid) INTO already_certified;
-
-  IF already_certified THEN
-    DELETE FROM public.dossier_certifications
-     WHERE user_id = v_uid AND dossier_id = dossier_uuid;
-    UPDATE public.dispatch_dossiers
-       SET certify_count = GREATEST(0, COALESCE(certify_count, 0) - 1) WHERE id = dossier_uuid;
-    RETURN FALSE;
-  ELSE
-    INSERT INTO public.dossier_certifications (user_id, dossier_id) VALUES (v_uid, dossier_uuid);
-    UPDATE public.dispatch_dossiers
-       SET certify_count = COALESCE(certify_count, 0) + 1 WHERE id = dossier_uuid;
-    RETURN TRUE;
-  END IF;
-END $$;
+    DECLARE already boolean;
+    BEGIN
+      SELECT EXISTS(SELECT 1 FROM public.dispatch_certifications
+                     WHERE user_id = auth.uid() AND post_id = dossier_uuid) INTO already;
+      IF already THEN
+        DELETE FROM public.dispatch_certifications
+         WHERE user_id = auth.uid() AND post_id = dossier_uuid;
+        RETURN FALSE;
+      ELSE
+        INSERT INTO public.dispatch_certifications (user_id, post_id)
+        VALUES (auth.uid(), dossier_uuid);
+        RETURN TRUE;
+      END IF;
+    END $$;
 
 
 --
@@ -3085,10 +3769,125 @@ CREATE TABLE public.analytics_events (
 
 
 --
--- Name: dispatch_dossiers; Type: TABLE; Schema: public; Owner: -
+-- Name: dispatch_certifications; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.dispatch_dossiers (
+CREATE TABLE public.dispatch_certifications (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    post_id uuid,
+    comment_id uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT one_target CHECK ((num_nonnulls(post_id, comment_id) = 1))
+);
+
+
+--
+-- Name: dispatch_comments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dispatch_comments (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    post_id uuid NOT NULL,
+    user_id uuid,
+    author_username text NOT NULL,
+    body text NOT NULL,
+    certify_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    edited_at timestamp with time zone,
+    CONSTRAINT critique_ceiling CHECK ((char_length(body) <= 2000)),
+    CONSTRAINT handle_ceiling CHECK ((char_length(author_username) <= 100))
+);
+
+
+--
+-- Name: dispatch_posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dispatch_posts (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    kind text NOT NULL,
+    user_id uuid,
+    author_username text NOT NULL,
+    subject_kind text,
+    subject_id integer,
+    subject_title text,
+    subject_sub text,
+    subject_image text,
+    title text,
+    body text DEFAULT ''::text NOT NULL,
+    full_content text,
+    source text,
+    source_url text,
+    options jsonb,
+    closes_at timestamp with time zone,
+    frozen_totals jsonb,
+    answer_id uuid,
+    series_id uuid,
+    series_title text,
+    part_number smallint,
+    spoiler_label text,
+    withheld_at timestamp with time zone,
+    ended_at timestamp with time zone,
+    ended_by text,
+    is_published boolean DEFAULT true NOT NULL,
+    certify_count integer DEFAULT 0 NOT NULL,
+    comment_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    edited_at timestamp with time zone,
+    CONSTRAINT ballot_options CHECK (((kind <> 'ballot'::text) OR ((options IS NOT NULL) AND (closes_at IS NOT NULL) AND ((jsonb_array_length(options) >= 2) AND (jsonb_array_length(options) <= 6))))),
+    CONSTRAINT body_ceiling CHECK ((char_length(body) <= 2000)),
+    CONSTRAINT dispatch_posts_ended_by_check CHECK ((ended_by = ANY (ARRAY['author'::text, 'house'::text]))),
+    CONSTRAINT dispatch_posts_kind_check CHECK ((kind = ANY (ARRAY['take'::text, 'seeking'::text, 'wire'::text, 'ballot'::text, 'dossier'::text]))),
+    CONSTRAINT dispatch_posts_subject_kind_check CHECK ((subject_kind = ANY (ARRAY['film'::text, 'person'::text]))),
+    CONSTRAINT dossier_title CHECK (((kind <> 'dossier'::text) OR (ended_at IS NOT NULL) OR (title IS NOT NULL))),
+    CONSTRAINT ended_whole CHECK (((ended_at IS NULL) = (ended_by IS NULL))),
+    CONSTRAINT essay_ceiling CHECK (((full_content IS NULL) OR (char_length(full_content) <= 25000))),
+    CONSTRAINT excerpt_ceiling CHECK (((kind <> 'dossier'::text) OR (char_length(body) <= 500))),
+    CONSTRAINT frozen_ceiling CHECK (((frozen_totals IS NULL) OR (char_length((frozen_totals)::text) <= 4000))),
+    CONSTRAINT handle_ceiling CHECK ((char_length(author_username) <= 100)),
+    CONSTRAINT options_ceiling CHECK (((options IS NULL) OR (char_length((options)::text) <= 4000))),
+    CONSTRAINT published_has_body CHECK (((NOT is_published) OR (ended_at IS NOT NULL) OR (char_length(btrim(body)) > 0))),
+    CONSTRAINT series_title_ceiling CHECK (((series_title IS NULL) OR (char_length(series_title) <= 300))),
+    CONSTRAINT series_whole CHECK (((series_id IS NULL) OR ((series_title IS NOT NULL) AND (part_number IS NOT NULL) AND (kind = 'dossier'::text)))),
+    CONSTRAINT source_ceiling CHECK (((source IS NULL) OR (char_length(source) <= 100))),
+    CONSTRAINT source_url_ceiling CHECK (((source_url IS NULL) OR (char_length(source_url) <= 2048))),
+    CONSTRAINT spoiler_ceiling CHECK (((spoiler_label IS NULL) OR (char_length(spoiler_label) <= 80))),
+    CONSTRAINT subject_image_ceiling CHECK (((subject_image IS NULL) OR (char_length(subject_image) <= 2048))),
+    CONSTRAINT subject_sub_ceiling CHECK (((subject_sub IS NULL) OR (char_length(subject_sub) <= 300))),
+    CONSTRAINT subject_title_ceiling CHECK (((subject_title IS NULL) OR (char_length(subject_title) <= 300))),
+    CONSTRAINT subject_whole CHECK (((subject_kind IS NULL) OR ((subject_id IS NOT NULL) AND (subject_title IS NOT NULL)))),
+    CONSTRAINT title_ceiling CHECK (((title IS NULL) OR (char_length(title) <= 200))),
+    CONSTRAINT wire_source CHECK (((kind <> 'wire'::text) OR (ended_at IS NOT NULL) OR (source IS NOT NULL)))
+);
+
+
+--
+-- Name: dispatch_dossiers; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.dispatch_dossiers WITH (security_invoker='true') AS
+ SELECT id,
+    user_id,
+    author_username,
+    title,
+    body AS excerpt,
+    full_content,
+    is_published,
+    created_at,
+    updated_at,
+    0 AS views,
+    certify_count
+   FROM public.dispatch_posts
+  WHERE (kind = 'dossier'::text);
+
+
+--
+-- Name: dispatch_dossiers_legacy; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dispatch_dossiers_legacy (
     id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
     user_id uuid,
     author_username text NOT NULL,
@@ -3108,10 +3907,48 @@ CREATE TABLE public.dispatch_dossiers (
 
 
 --
--- Name: dossier_certifications; Type: TABLE; Schema: public; Owner: -
+-- Name: dispatch_saves; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.dossier_certifications (
+CREATE TABLE public.dispatch_saves (
+    user_id uuid NOT NULL,
+    post_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: dispatch_votes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dispatch_votes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    post_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    option_index smallint NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT dispatch_votes_option_index_check CHECK (((option_index >= 0) AND (option_index <= 5)))
+);
+
+
+--
+-- Name: dossier_certifications; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.dossier_certifications WITH (security_invoker='true') AS
+ SELECT id,
+    user_id,
+    post_id AS dossier_id,
+    created_at
+   FROM public.dispatch_certifications
+  WHERE (post_id IS NOT NULL);
+
+
+--
+-- Name: dossier_certifications_legacy; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dossier_certifications_legacy (
     id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
     user_id uuid NOT NULL,
     dossier_id uuid NOT NULL,
@@ -3120,10 +3957,24 @@ CREATE TABLE public.dossier_certifications (
 
 
 --
--- Name: dossier_comments; Type: TABLE; Schema: public; Owner: -
+-- Name: dossier_comments; Type: VIEW; Schema: public; Owner: -
 --
 
-CREATE TABLE public.dossier_comments (
+CREATE VIEW public.dossier_comments WITH (security_invoker='true') AS
+ SELECT id,
+    post_id AS dossier_id,
+    user_id,
+    author_username AS username,
+    body,
+    created_at
+   FROM public.dispatch_comments c;
+
+
+--
+-- Name: dossier_comments_legacy; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dossier_comments_legacy (
     id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
     dossier_id uuid NOT NULL,
     user_id uuid,
@@ -3156,6 +4007,57 @@ CREATE TABLE public.error_logs (
     CONSTRAINT error_logs_url_len CHECK ((char_length(url) <= 4096)),
     CONSTRAINT error_logs_user_agent_len CHECK ((char_length(user_agent) <= 1000))
 );
+
+
+--
+-- Name: films; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.films (
+    id integer NOT NULL,
+    title text,
+    year smallint,
+    runtime smallint,
+    poster_path text,
+    genres text[] DEFAULT '{}'::text[] NOT NULL,
+    cast_ids integer[] DEFAULT '{}'::integer[] NOT NULL,
+    cast_names text[] DEFAULT '{}'::text[] NOT NULL,
+    cast_profiles text[] DEFAULT '{}'::text[] NOT NULL,
+    director_id integer,
+    director text,
+    director_profile text,
+    country_codes text[] DEFAULT '{}'::text[] NOT NULL,
+    synced_at timestamp with time zone,
+    sync_claimed_at timestamp with time zone,
+    sync_failed smallint DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    avg_rating numeric,
+    rating_count integer DEFAULT 0 NOT NULL,
+    log_count integer DEFAULT 0 NOT NULL,
+    CONSTRAINT films_array_shape CHECK (((cardinality(cast_ids) = cardinality(cast_names)) AND (cardinality(cast_ids) = cardinality(cast_profiles)) AND (cardinality(cast_ids) <= 10) AND (cardinality(genres) <= 12) AND (cardinality(country_codes) <= 12))),
+    CONSTRAINT films_text_ceilings CHECK (((char_length(title) <= 300) AND (char_length(poster_path) <= 200) AND (char_length(director) <= 200) AND (char_length(director_profile) <= 200) AND (char_length(array_to_string(genres, ','::text)) <= 300) AND (char_length(array_to_string(cast_names, ','::text)) <= 1000) AND (char_length(array_to_string(cast_profiles, ','::text)) <= 1000) AND (char_length(array_to_string(country_codes, ','::text)) <= 200)))
+);
+
+
+--
+-- Name: COLUMN films.avg_rating; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.films.avg_rating IS 'Mean of every rating members gave this film. NULL means the house has not spoken — never 0, which would render as a verdict.';
+
+
+--
+-- Name: COLUMN films.rating_count; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.films.rating_count IS 'How many members rated it. Not the same as log_count: a member may log without rating.';
+
+
+--
+-- Name: COLUMN films.log_count; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.films.log_count IS 'How many members logged it at all, rated or not, written or not.';
 
 
 --
@@ -3577,7 +4479,7 @@ CREATE TABLE public.reports (
     resolution_action text,
     resolution_notes text,
     CONSTRAINT reports_content_id_len CHECK ((char_length(content_id) <= 100)),
-    CONSTRAINT reports_content_type_check CHECK ((content_type = ANY (ARRAY['log'::text, 'list'::text, 'log_comment'::text, 'list_comment'::text, 'dossier'::text, 'dossier_comment'::text, 'lounge_message'::text, 'profile'::text]))),
+    CONSTRAINT reports_content_type_check CHECK ((content_type = ANY (ARRAY['log'::text, 'list'::text, 'log_comment'::text, 'list_comment'::text, 'dossier'::text, 'dossier_comment'::text, 'lounge_message'::text, 'lounge'::text, 'profile'::text, 'dispatch_post'::text, 'dispatch_comment'::text]))),
     CONSTRAINT reports_content_type_len CHECK ((char_length(content_type) <= 50)),
     CONSTRAINT reports_details_len CHECK ((char_length(details) <= 500)),
     CONSTRAINT reports_reason_check CHECK ((reason = ANY (ARRAY['spoiler_unmarked'::text, 'harassment'::text, 'hate_speech'::text, 'spam'::text, 'inappropriate'::text, 'impersonation'::text, 'misinformation'::text, 'copyright'::text, 'other'::text]))),
@@ -3646,34 +4548,82 @@ ALTER TABLE ONLY public.analytics_events
 
 
 --
--- Name: dispatch_dossiers dispatch_dossiers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: dispatch_certifications dispatch_certifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dispatch_dossiers
+ALTER TABLE ONLY public.dispatch_certifications
+    ADD CONSTRAINT dispatch_certifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dispatch_comments dispatch_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_comments
+    ADD CONSTRAINT dispatch_comments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dispatch_dossiers_legacy dispatch_dossiers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_dossiers_legacy
     ADD CONSTRAINT dispatch_dossiers_pkey PRIMARY KEY (id);
 
 
 --
--- Name: dossier_certifications dossier_certifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: dispatch_posts dispatch_posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dossier_certifications
+ALTER TABLE ONLY public.dispatch_posts
+    ADD CONSTRAINT dispatch_posts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dispatch_saves dispatch_saves_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_saves
+    ADD CONSTRAINT dispatch_saves_pkey PRIMARY KEY (user_id, post_id);
+
+
+--
+-- Name: dispatch_votes dispatch_votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_votes
+    ADD CONSTRAINT dispatch_votes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dispatch_votes dispatch_votes_post_id_user_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_votes
+    ADD CONSTRAINT dispatch_votes_post_id_user_id_key UNIQUE (post_id, user_id);
+
+
+--
+-- Name: dossier_certifications_legacy dossier_certifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dossier_certifications_legacy
     ADD CONSTRAINT dossier_certifications_pkey PRIMARY KEY (id);
 
 
 --
--- Name: dossier_certifications dossier_certifications_user_id_dossier_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: dossier_certifications_legacy dossier_certifications_user_id_dossier_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dossier_certifications
+ALTER TABLE ONLY public.dossier_certifications_legacy
     ADD CONSTRAINT dossier_certifications_user_id_dossier_id_key UNIQUE (user_id, dossier_id);
 
 
 --
--- Name: dossier_comments dossier_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: dossier_comments_legacy dossier_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dossier_comments
+ALTER TABLE ONLY public.dossier_comments_legacy
     ADD CONSTRAINT dossier_comments_pkey PRIMARY KEY (id);
 
 
@@ -3683,6 +4633,14 @@ ALTER TABLE ONLY public.dossier_comments
 
 ALTER TABLE ONLY public.error_logs
     ADD CONSTRAINT error_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: films films_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.films
+    ADD CONSTRAINT films_pkey PRIMARY KEY (id);
 
 
 --
@@ -3979,52 +4937,129 @@ CREATE INDEX analytics_user_id_idx ON public.analytics_events USING btree (user_
 
 
 --
+-- Name: dispatch_cert_comment_once; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX dispatch_cert_comment_once ON public.dispatch_certifications USING btree (user_id, comment_id) WHERE (comment_id IS NOT NULL);
+
+
+--
+-- Name: dispatch_cert_post_once; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX dispatch_cert_post_once ON public.dispatch_certifications USING btree (user_id, post_id) WHERE (post_id IS NOT NULL);
+
+
+--
+-- Name: dispatch_cert_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_cert_user ON public.dispatch_certifications USING btree (user_id);
+
+
+--
+-- Name: dispatch_comments_post; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_comments_post ON public.dispatch_comments USING btree (post_id, created_at DESC);
+
+
+--
+-- Name: dispatch_comments_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_comments_user ON public.dispatch_comments USING btree (user_id);
+
+
+--
 -- Name: dispatch_dossiers_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX dispatch_dossiers_created_at_idx ON public.dispatch_dossiers USING btree (created_at DESC);
+CREATE INDEX dispatch_dossiers_created_at_idx ON public.dispatch_dossiers_legacy USING btree (created_at DESC);
+
+
+--
+-- Name: dispatch_posts_author; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_author ON public.dispatch_posts USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: dispatch_posts_feed; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_feed ON public.dispatch_posts USING btree (created_at DESC, id) WHERE ((ended_at IS NULL) AND (withheld_at IS NULL) AND is_published);
+
+
+--
+-- Name: dispatch_posts_kind; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_kind ON public.dispatch_posts USING btree (kind, created_at DESC);
+
+
+--
+-- Name: dispatch_posts_series; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_series ON public.dispatch_posts USING btree (series_id, part_number) WHERE (series_id IS NOT NULL);
+
+
+--
+-- Name: dispatch_posts_subject; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_subject ON public.dispatch_posts USING btree (subject_kind, subject_id) WHERE (subject_id IS NOT NULL);
+
+
+--
+-- Name: dispatch_saves_post; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_saves_post ON public.dispatch_saves USING btree (post_id);
 
 
 --
 -- Name: dossier_comments_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX dossier_comments_created_at_idx ON public.dossier_comments USING btree (created_at DESC);
+CREATE INDEX dossier_comments_created_at_idx ON public.dossier_comments_legacy USING btree (created_at DESC);
 
 
 --
 -- Name: idx_dispatch_dossiers_feed; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_dispatch_dossiers_feed ON public.dispatch_dossiers USING btree (is_published, created_at DESC);
+CREATE INDEX idx_dispatch_dossiers_feed ON public.dispatch_dossiers_legacy USING btree (is_published, created_at DESC);
 
 
 --
 -- Name: idx_dispatch_dossiers_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_dispatch_dossiers_user_id ON public.dispatch_dossiers USING btree (user_id);
+CREATE INDEX idx_dispatch_dossiers_user_id ON public.dispatch_dossiers_legacy USING btree (user_id);
 
 
 --
 -- Name: idx_dossier_certifications_dossier_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_dossier_certifications_dossier_id ON public.dossier_certifications USING btree (dossier_id);
+CREATE INDEX idx_dossier_certifications_dossier_id ON public.dossier_certifications_legacy USING btree (dossier_id);
 
 
 --
 -- Name: idx_dossier_comments_dossier_created; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_dossier_comments_dossier_created ON public.dossier_comments USING btree (dossier_id, created_at);
+CREATE INDEX idx_dossier_comments_dossier_created ON public.dossier_comments_legacy USING btree (dossier_id, created_at);
 
 
 --
 -- Name: idx_dossier_comments_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_dossier_comments_user_id ON public.dossier_comments USING btree (user_id);
+CREATE INDEX idx_dossier_comments_user_id ON public.dossier_comments_legacy USING btree (user_id);
 
 
 --
@@ -4032,6 +5067,13 @@ CREATE INDEX idx_dossier_comments_user_id ON public.dossier_comments USING btree
 --
 
 CREATE INDEX idx_error_logs_created_at ON public.error_logs USING btree (created_at DESC);
+
+
+--
+-- Name: idx_films_unsynced; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_films_unsynced ON public.films USING btree (id) WHERE ((synced_at IS NULL) AND (sync_failed < 3));
 
 
 --
@@ -4077,6 +5119,13 @@ CREATE INDEX idx_lists_created_at_id_desc ON public.lists USING btree (created_a
 
 
 --
+-- Name: idx_lists_user_created_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_lists_user_created_id ON public.lists USING btree (user_id, created_at DESC, id DESC);
+
+
+--
 -- Name: idx_logs_created_at_id_desc; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4102,6 +5151,13 @@ CREATE INDEX idx_logs_social_pulse_covering ON public.logs USING btree (created_
 --
 
 CREATE INDEX idx_logs_user_id_created_at ON public.logs USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: idx_logs_user_watched_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_logs_user_watched_id ON public.logs USING btree (user_id, watched_date DESC NULLS LAST, id DESC);
 
 
 --
@@ -4200,6 +5256,13 @@ CREATE INDEX idx_physical_archive_created_at_id_desc ON public.physical_archive 
 --
 
 CREATE INDEX idx_physical_archive_film_id ON public.physical_archive USING btree (film_id);
+
+
+--
+-- Name: idx_physical_archive_user_created_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_physical_archive_user_created_id ON public.physical_archive USING btree (user_id, created_at DESC, id DESC);
 
 
 --
@@ -4322,6 +5385,13 @@ CREATE INDEX idx_watchlists_film_id ON public.watchlists USING btree (film_id);
 
 
 --
+-- Name: idx_watchlists_user_created_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_watchlists_user_created_id ON public.watchlists USING btree (user_id, created_at DESC, id DESC);
+
+
+--
 -- Name: interactions_endorse_log_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4441,6 +5511,41 @@ CREATE TRIGGER a_enforce_log_tier_fields BEFORE INSERT OR UPDATE ON public.logs 
 
 
 --
+-- Name: dispatch_certifications count_cert; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER count_cert AFTER INSERT OR DELETE ON public.dispatch_certifications FOR EACH ROW EXECUTE FUNCTION public.dispatch_count_cert();
+
+
+--
+-- Name: dispatch_comments count_comment; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER count_comment AFTER INSERT OR DELETE ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.dispatch_count_comment();
+
+
+--
+-- Name: dossier_certifications dossier_certifications_write; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER dossier_certifications_write INSTEAD OF INSERT OR DELETE ON public.dossier_certifications FOR EACH ROW EXECUTE FUNCTION public.dossier_certifications_write();
+
+
+--
+-- Name: dossier_comments dossier_comments_write; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER dossier_comments_write INSTEAD OF INSERT OR DELETE OR UPDATE ON public.dossier_comments FOR EACH ROW EXECUTE FUNCTION public.dossier_comments_write();
+
+
+--
+-- Name: dispatch_dossiers dossiers_write; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER dossiers_write INSTEAD OF INSERT OR DELETE OR UPDATE ON public.dispatch_dossiers FOR EACH ROW EXECUTE FUNCTION public.dossiers_write();
+
+
+--
 -- Name: interactions enforce_interaction_rate_limit; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -4448,17 +5553,52 @@ CREATE TRIGGER enforce_interaction_rate_limit BEFORE INSERT ON public.interactio
 
 
 --
--- Name: dossier_certifications on_dossier_certify_notify; Type: TRIGGER; Schema: public; Owner: -
+-- Name: dispatch_posts no_hard_delete; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER on_dossier_certify_notify AFTER INSERT ON public.dossier_certifications FOR EACH ROW EXECUTE FUNCTION public.notify_on_dossier_certify();
+CREATE TRIGGER no_hard_delete BEFORE DELETE ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.dispatch_no_hard_delete();
 
 
 --
--- Name: dossier_comments on_dossier_comment_notify; Type: TRIGGER; Schema: public; Owner: -
+-- Name: dispatch_posts notify_answer; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER on_dossier_comment_notify AFTER INSERT ON public.dossier_comments FOR EACH ROW EXECUTE FUNCTION public.notify_on_dossier_comment();
+CREATE TRIGGER notify_answer AFTER UPDATE OF answer_id ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.dispatch_notify_answer();
+
+
+--
+-- Name: dispatch_posts notify_ballot_closed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER notify_ballot_closed AFTER UPDATE OF frozen_totals ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.dispatch_notify_ballot_closed();
+
+
+--
+-- Name: dispatch_certifications notify_certify; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER notify_certify AFTER INSERT ON public.dispatch_certifications FOR EACH ROW EXECUTE FUNCTION public.dispatch_notify_certify();
+
+
+--
+-- Name: dispatch_comments notify_critique; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER notify_critique AFTER INSERT ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.dispatch_notify_critique();
+
+
+--
+-- Name: dossier_certifications_legacy on_dossier_certify_notify; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER on_dossier_certify_notify AFTER INSERT ON public.dossier_certifications_legacy FOR EACH ROW EXECUTE FUNCTION public.notify_on_dossier_certify();
+
+
+--
+-- Name: dossier_comments_legacy on_dossier_comment_notify; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER on_dossier_comment_notify AFTER INSERT ON public.dossier_comments_legacy FOR EACH ROW EXECUTE FUNCTION public.notify_on_dossier_comment();
 
 
 --
@@ -4466,6 +5606,34 @@ CREATE TRIGGER on_dossier_comment_notify AFTER INSERT ON public.dossier_comments
 --
 
 CREATE TRIGGER on_notification_created_push AFTER INSERT ON public.notifications FOR EACH ROW EXECUTE FUNCTION public.tg_notify_push();
+
+
+--
+-- Name: dispatch_comments pin_columns; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER pin_columns BEFORE UPDATE ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.dispatch_comments_pin_columns();
+
+
+--
+-- Name: dispatch_posts pin_columns; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER pin_columns BEFORE UPDATE ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.dispatch_posts_pin_columns();
+
+
+--
+-- Name: dispatch_comments scrub_departed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER scrub_departed BEFORE UPDATE ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.dispatch_scrub_departed();
+
+
+--
+-- Name: dispatch_posts scrub_departed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER scrub_departed BEFORE UPDATE ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.dispatch_scrub_departed();
 
 
 --
@@ -4539,24 +5707,24 @@ CREATE TRIGGER tr_ban_freeze_profile_identity BEFORE UPDATE ON public.profiles F
 
 
 --
--- Name: dispatch_dossiers tr_ban_gate_insert; Type: TRIGGER; Schema: public; Owner: -
+-- Name: dispatch_dossiers_legacy tr_ban_gate_insert; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER tr_ban_gate_insert BEFORE INSERT ON public.dispatch_dossiers FOR EACH ROW EXECUTE FUNCTION public.enforce_not_restricted();
-
-
---
--- Name: dossier_certifications tr_ban_gate_insert; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER tr_ban_gate_insert BEFORE INSERT ON public.dossier_certifications FOR EACH ROW EXECUTE FUNCTION public.enforce_not_restricted();
+CREATE TRIGGER tr_ban_gate_insert BEFORE INSERT ON public.dispatch_dossiers_legacy FOR EACH ROW EXECUTE FUNCTION public.enforce_not_restricted();
 
 
 --
--- Name: dossier_comments tr_ban_gate_insert; Type: TRIGGER; Schema: public; Owner: -
+-- Name: dossier_certifications_legacy tr_ban_gate_insert; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER tr_ban_gate_insert BEFORE INSERT ON public.dossier_comments FOR EACH ROW EXECUTE FUNCTION public.enforce_not_restricted();
+CREATE TRIGGER tr_ban_gate_insert BEFORE INSERT ON public.dossier_certifications_legacy FOR EACH ROW EXECUTE FUNCTION public.enforce_not_restricted();
+
+
+--
+-- Name: dossier_comments_legacy tr_ban_gate_insert; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER tr_ban_gate_insert BEFORE INSERT ON public.dossier_comments_legacy FOR EACH ROW EXECUTE FUNCTION public.enforce_not_restricted();
 
 
 --
@@ -4644,17 +5812,17 @@ CREATE TRIGGER tr_ban_gate_insert BEFORE INSERT ON public.watchlists FOR EACH RO
 
 
 --
--- Name: dispatch_dossiers tr_ban_gate_update; Type: TRIGGER; Schema: public; Owner: -
+-- Name: dispatch_dossiers_legacy tr_ban_gate_update; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER tr_ban_gate_update BEFORE UPDATE ON public.dispatch_dossiers FOR EACH ROW EXECUTE FUNCTION public.enforce_not_restricted();
+CREATE TRIGGER tr_ban_gate_update BEFORE UPDATE ON public.dispatch_dossiers_legacy FOR EACH ROW EXECUTE FUNCTION public.enforce_not_restricted();
 
 
 --
--- Name: dossier_comments tr_ban_gate_update; Type: TRIGGER; Schema: public; Owner: -
+-- Name: dossier_comments_legacy tr_ban_gate_update; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER tr_ban_gate_update BEFORE UPDATE ON public.dossier_comments FOR EACH ROW EXECUTE FUNCTION public.enforce_not_restricted();
+CREATE TRIGGER tr_ban_gate_update BEFORE UPDATE ON public.dossier_comments_legacy FOR EACH ROW EXECUTE FUNCTION public.enforce_not_restricted();
 
 
 --
@@ -4784,10 +5952,17 @@ CREATE TRIGGER tr_tier_gate_archive BEFORE INSERT ON public.physical_archive FOR
 
 
 --
--- Name: dispatch_dossiers tr_tier_gate_dossiers; Type: TRIGGER; Schema: public; Owner: -
+-- Name: dispatch_posts tr_tier_gate_dispatch; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER tr_tier_gate_dossiers BEFORE INSERT ON public.dispatch_dossiers FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate('2', 'The Dispatch is an Auteur feature');
+CREATE TRIGGER tr_tier_gate_dispatch BEFORE INSERT ON public.dispatch_posts FOR EACH ROW WHEN ((new.kind = ANY (ARRAY['ballot'::text, 'dossier'::text]))) EXECUTE FUNCTION public.enforce_tier_gate('2', 'The Dispatch is an Auteur feature');
+
+
+--
+-- Name: dispatch_dossiers_legacy tr_tier_gate_dossiers; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER tr_tier_gate_dossiers BEFORE INSERT ON public.dispatch_dossiers_legacy FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate('2', 'The Dispatch is an Auteur feature');
 
 
 --
@@ -4819,17 +5994,31 @@ CREATE TRIGGER trg_assign_list_item_position BEFORE INSERT ON public.list_items 
 
 
 --
--- Name: dispatch_dossiers trg_derive_username; Type: TRIGGER; Schema: public; Owner: -
+-- Name: dispatch_comments trg_derive_username; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trg_derive_username BEFORE INSERT OR UPDATE ON public.dispatch_dossiers FOR EACH ROW EXECUTE FUNCTION public.derive_author_username_column();
+CREATE TRIGGER trg_derive_username BEFORE INSERT OR UPDATE ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.derive_author_username_column();
 
 
 --
--- Name: dossier_comments trg_derive_username; Type: TRIGGER; Schema: public; Owner: -
+-- Name: dispatch_dossiers_legacy trg_derive_username; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trg_derive_username BEFORE INSERT OR UPDATE ON public.dossier_comments FOR EACH ROW EXECUTE FUNCTION public.derive_username_column();
+CREATE TRIGGER trg_derive_username BEFORE INSERT OR UPDATE ON public.dispatch_dossiers_legacy FOR EACH ROW EXECUTE FUNCTION public.derive_author_username_column();
+
+
+--
+-- Name: dispatch_posts trg_derive_username; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_derive_username BEFORE INSERT OR UPDATE ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.derive_author_username_column();
+
+
+--
+-- Name: dossier_comments_legacy trg_derive_username; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_derive_username BEFORE INSERT OR UPDATE ON public.dossier_comments_legacy FOR EACH ROW EXECUTE FUNCTION public.derive_username_column();
 
 
 --
@@ -4847,10 +6036,45 @@ CREATE TRIGGER trg_divert_private_notes AFTER INSERT OR UPDATE OF private_notes 
 
 
 --
+-- Name: list_items trg_note_film_list_items; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_note_film_list_items AFTER INSERT ON public.list_items FOR EACH ROW EXECUTE FUNCTION public.note_film();
+
+
+--
+-- Name: logs trg_note_film_logs; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_note_film_logs AFTER INSERT ON public.logs FOR EACH ROW EXECUTE FUNCTION public.note_film();
+
+
+--
+-- Name: physical_archive trg_note_film_vault; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_note_film_vault AFTER INSERT ON public.physical_archive FOR EACH ROW EXECUTE FUNCTION public.note_film();
+
+
+--
+-- Name: watchlists trg_note_film_watchlists; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_note_film_watchlists AFTER INSERT ON public.watchlists FOR EACH ROW EXECUTE FUNCTION public.note_film();
+
+
+--
 -- Name: profiles trg_sync_denormalized_username; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trg_sync_denormalized_username AFTER UPDATE OF username ON public.profiles FOR EACH ROW WHEN ((old.username IS DISTINCT FROM new.username)) EXECUTE FUNCTION public.sync_denormalized_username();
+
+
+--
+-- Name: logs trg_verdict_film_logs; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_verdict_film_logs AFTER INSERT OR DELETE OR UPDATE OF film_id, rating ON public.logs FOR EACH ROW EXECUTE FUNCTION public.note_film_verdict();
 
 
 --
@@ -4869,42 +6093,146 @@ ALTER TABLE ONLY public.analytics_events
 
 
 --
--- Name: dispatch_dossiers dispatch_dossiers_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dispatch_posts answer_is_a_critique; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dispatch_dossiers
+ALTER TABLE ONLY public.dispatch_posts
+    ADD CONSTRAINT answer_is_a_critique FOREIGN KEY (answer_id) REFERENCES public.dispatch_comments(id) ON DELETE SET NULL;
+
+
+--
+-- Name: dispatch_certifications dispatch_certifications_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_certifications
+    ADD CONSTRAINT dispatch_certifications_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.dispatch_comments(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dispatch_certifications dispatch_certifications_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_certifications
+    ADD CONSTRAINT dispatch_certifications_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.dispatch_posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dispatch_certifications dispatch_certifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_certifications
+    ADD CONSTRAINT dispatch_certifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dispatch_comments dispatch_comments_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_comments
+    ADD CONSTRAINT dispatch_comments_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.dispatch_posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dispatch_comments dispatch_comments_profile_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_comments
+    ADD CONSTRAINT dispatch_comments_profile_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
+
+
+--
+-- Name: dispatch_comments dispatch_comments_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_comments
+    ADD CONSTRAINT dispatch_comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: dispatch_dossiers_legacy dispatch_dossiers_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_dossiers_legacy
     ADD CONSTRAINT dispatch_dossiers_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
 
 
 --
--- Name: dossier_certifications dossier_certifications_dossier_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dispatch_posts dispatch_posts_profile_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dossier_certifications
-    ADD CONSTRAINT dossier_certifications_dossier_id_fkey FOREIGN KEY (dossier_id) REFERENCES public.dispatch_dossiers(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.dispatch_posts
+    ADD CONSTRAINT dispatch_posts_profile_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
 
 
 --
--- Name: dossier_certifications dossier_certifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dispatch_posts dispatch_posts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dossier_certifications
+ALTER TABLE ONLY public.dispatch_posts
+    ADD CONSTRAINT dispatch_posts_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: dispatch_saves dispatch_saves_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_saves
+    ADD CONSTRAINT dispatch_saves_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.dispatch_posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dispatch_saves dispatch_saves_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_saves
+    ADD CONSTRAINT dispatch_saves_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dispatch_votes dispatch_votes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_votes
+    ADD CONSTRAINT dispatch_votes_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.dispatch_posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dispatch_votes dispatch_votes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_votes
+    ADD CONSTRAINT dispatch_votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dossier_certifications_legacy dossier_certifications_dossier_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dossier_certifications_legacy
+    ADD CONSTRAINT dossier_certifications_dossier_id_fkey FOREIGN KEY (dossier_id) REFERENCES public.dispatch_dossiers_legacy(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dossier_certifications_legacy dossier_certifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dossier_certifications_legacy
     ADD CONSTRAINT dossier_certifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
--- Name: dossier_comments dossier_comments_dossier_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dossier_comments_legacy dossier_comments_dossier_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dossier_comments
-    ADD CONSTRAINT dossier_comments_dossier_id_fkey FOREIGN KEY (dossier_id) REFERENCES public.dispatch_dossiers(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.dossier_comments_legacy
+    ADD CONSTRAINT dossier_comments_dossier_id_fkey FOREIGN KEY (dossier_id) REFERENCES public.dispatch_dossiers_legacy(id) ON DELETE CASCADE;
 
 
 --
--- Name: dossier_comments dossier_comments_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dossier_comments_legacy dossier_comments_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dossier_comments
+ALTER TABLE ONLY public.dossier_comments_legacy
     ADD CONSTRAINT dossier_comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
 
 
@@ -5223,17 +6551,17 @@ CREATE POLICY "Approved members can send" ON public.lounge_messages FOR INSERT W
 
 
 --
--- Name: dossier_certifications Authenticated users can certify; Type: POLICY; Schema: public; Owner: -
+-- Name: dossier_certifications_legacy Authenticated users can certify; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Authenticated users can certify" ON public.dossier_certifications FOR INSERT WITH CHECK ((auth.uid() = user_id));
+CREATE POLICY "Authenticated users can certify" ON public.dossier_certifications_legacy FOR INSERT WITH CHECK ((auth.uid() = user_id));
 
 
 --
--- Name: dossier_comments Authenticated users can comment on dossiers; Type: POLICY; Schema: public; Owner: -
+-- Name: dossier_comments_legacy Authenticated users can comment on dossiers; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Authenticated users can comment on dossiers" ON public.dossier_comments FOR INSERT WITH CHECK ((auth.uid() = user_id));
+CREATE POLICY "Authenticated users can comment on dossiers" ON public.dossier_comments_legacy FOR INSERT WITH CHECK ((auth.uid() = user_id));
 
 
 --
@@ -5244,10 +6572,10 @@ CREATE POLICY "Authenticated users can create lounges" ON public.lounges FOR INS
 
 
 --
--- Name: dossier_certifications Certifications viewable by everyone; Type: POLICY; Schema: public; Owner: -
+-- Name: dossier_certifications_legacy Certifications viewable by everyone; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Certifications viewable by everyone" ON public.dossier_certifications FOR SELECT USING (true);
+CREATE POLICY "Certifications viewable by everyone" ON public.dossier_certifications_legacy FOR SELECT USING (true);
 
 
 --
@@ -5274,10 +6602,10 @@ CREATE POLICY "Creators can update own lounges" ON public.lounges FOR UPDATE USI
 
 
 --
--- Name: dossier_comments Dossier comments viewable by everyone; Type: POLICY; Schema: public; Owner: -
+-- Name: dossier_comments_legacy Dossier comments viewable by everyone; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Dossier comments viewable by everyone" ON public.dossier_comments FOR SELECT USING (true);
+CREATE POLICY "Dossier comments viewable by everyone" ON public.dossier_comments_legacy FOR SELECT USING (true);
 
 
 --
@@ -5306,10 +6634,10 @@ CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles FOR
 
 
 --
--- Name: dispatch_dossiers Published dossiers are viewable by everyone.; Type: POLICY; Schema: public; Owner: -
+-- Name: dispatch_dossiers_legacy Published dossiers are viewable by everyone.; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Published dossiers are viewable by everyone." ON public.dispatch_dossiers FOR SELECT USING ((is_published = true));
+CREATE POLICY "Published dossiers are viewable by everyone." ON public.dispatch_dossiers_legacy FOR SELECT USING ((is_published = true));
 
 
 --
@@ -5461,10 +6789,10 @@ CREATE POLICY "Users can insert their own push subscriptions" ON public.push_sub
 
 
 --
--- Name: dispatch_dossiers Users can manage their dossiers.; Type: POLICY; Schema: public; Owner: -
+-- Name: dispatch_dossiers_legacy Users can manage their dossiers.; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Users can manage their dossiers." ON public.dispatch_dossiers USING ((auth.uid() = user_id));
+CREATE POLICY "Users can manage their dossiers." ON public.dispatch_dossiers_legacy USING ((auth.uid() = user_id));
 
 
 --
@@ -5503,10 +6831,10 @@ CREATE POLICY "Users can manage their logs." ON public.logs USING ((auth.uid() =
 
 
 --
--- Name: dossier_comments Users can manage their own dossier comments; Type: POLICY; Schema: public; Owner: -
+-- Name: dossier_comments_legacy Users can manage their own dossier comments; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Users can manage their own dossier comments" ON public.dossier_comments USING ((auth.uid() = user_id));
+CREATE POLICY "Users can manage their own dossier comments" ON public.dossier_comments_legacy USING ((auth.uid() = user_id));
 
 
 --
@@ -5524,10 +6852,10 @@ CREATE POLICY "Users can read own archive" ON public.physical_archive FOR SELECT
 
 
 --
--- Name: dossier_certifications Users can uncertify; Type: POLICY; Schema: public; Owner: -
+-- Name: dossier_certifications_legacy Users can uncertify; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Users can uncertify" ON public.dossier_certifications FOR DELETE USING ((auth.uid() = user_id));
+CREATE POLICY "Users can uncertify" ON public.dossier_certifications_legacy FOR DELETE USING ((auth.uid() = user_id));
 
 
 --
@@ -5663,24 +6991,24 @@ CREATE POLICY authed_insert_error_logs ON public.error_logs FOR INSERT TO authen
 
 
 --
--- Name: dossier_comments ban_block_dossier_comments_insert; Type: POLICY; Schema: public; Owner: -
+-- Name: dossier_comments_legacy ban_block_dossier_comments_insert; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY ban_block_dossier_comments_insert ON public.dossier_comments AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.is_user_not_banned());
-
-
---
--- Name: dispatch_dossiers ban_block_dossiers_insert; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY ban_block_dossiers_insert ON public.dispatch_dossiers AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.is_user_not_banned());
+CREATE POLICY ban_block_dossier_comments_insert ON public.dossier_comments_legacy AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.is_user_not_banned());
 
 
 --
--- Name: dispatch_dossiers ban_block_dossiers_update; Type: POLICY; Schema: public; Owner: -
+-- Name: dispatch_dossiers_legacy ban_block_dossiers_insert; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY ban_block_dossiers_update ON public.dispatch_dossiers AS RESTRICTIVE FOR UPDATE TO authenticated WITH CHECK (public.is_user_not_banned());
+CREATE POLICY ban_block_dossiers_insert ON public.dispatch_dossiers_legacy AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.is_user_not_banned());
+
+
+--
+-- Name: dispatch_dossiers_legacy ban_block_dossiers_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY ban_block_dossiers_update ON public.dispatch_dossiers_legacy AS RESTRICTIVE FOR UPDATE TO authenticated WITH CHECK (public.is_user_not_banned());
 
 
 --
@@ -5747,35 +7075,187 @@ CREATE POLICY ban_block_watchlists_insert ON public.watchlists AS RESTRICTIVE FO
 
 
 --
--- Name: dispatch_dossiers; Type: ROW SECURITY; Schema: public; Owner: -
+-- Name: dispatch_certifications certs_ban_delete; Type: POLICY; Schema: public; Owner: -
 --
 
-ALTER TABLE public.dispatch_dossiers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY certs_ban_delete ON public.dispatch_certifications AS RESTRICTIVE FOR DELETE TO authenticated USING (public.is_user_not_banned());
+
 
 --
--- Name: dossier_certifications; Type: ROW SECURITY; Schema: public; Owner: -
+-- Name: dispatch_certifications certs_ban_insert; Type: POLICY; Schema: public; Owner: -
 --
 
-ALTER TABLE public.dossier_certifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY certs_ban_insert ON public.dispatch_certifications AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.is_user_not_banned());
+
 
 --
--- Name: dossier_comments; Type: ROW SECURITY; Schema: public; Owner: -
+-- Name: dispatch_certifications certs_block; Type: POLICY; Schema: public; Owner: -
 --
 
-ALTER TABLE public.dossier_comments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY certs_block ON public.dispatch_certifications AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+
 
 --
--- Name: dossier_comments dossier_comments_hide_blocked; Type: POLICY; Schema: public; Owner: -
+-- Name: dispatch_certifications certs_delete_own; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY dossier_comments_hide_blocked ON public.dossier_comments AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+CREATE POLICY certs_delete_own ON public.dispatch_certifications FOR DELETE TO authenticated USING ((user_id = auth.uid()));
 
+
+--
+-- Name: dispatch_certifications certs_read; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY certs_read ON public.dispatch_certifications FOR SELECT TO authenticated USING (true);
+
+
+--
+-- Name: dispatch_certifications certs_write_own; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY certs_write_own ON public.dispatch_certifications FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+
+
+--
+-- Name: dispatch_comments critiques_ban_delete; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY critiques_ban_delete ON public.dispatch_comments AS RESTRICTIVE FOR DELETE TO authenticated USING (public.is_user_not_banned());
+
+
+--
+-- Name: dispatch_comments critiques_ban_insert; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY critiques_ban_insert ON public.dispatch_comments AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.is_user_not_banned());
+
+
+--
+-- Name: dispatch_comments critiques_ban_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY critiques_ban_update ON public.dispatch_comments AS RESTRICTIVE FOR UPDATE TO authenticated USING (public.is_user_not_banned());
+
+
+--
+-- Name: dispatch_comments critiques_block; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY critiques_block ON public.dispatch_comments AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+
+
+--
+-- Name: dispatch_comments critiques_delete_own; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY critiques_delete_own ON public.dispatch_comments FOR DELETE TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: dispatch_comments critiques_open_post; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY critiques_open_post ON public.dispatch_comments AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK ((EXISTS ( SELECT 1
+   FROM public.dispatch_posts p
+  WHERE ((p.id = dispatch_comments.post_id) AND (p.ended_at IS NULL) AND (p.withheld_at IS NULL)))));
+
+
+--
+-- Name: dispatch_comments critiques_read; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY critiques_read ON public.dispatch_comments FOR SELECT TO authenticated USING (true);
+
+
+--
+-- Name: dispatch_comments critiques_update_own; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY critiques_update_own ON public.dispatch_comments FOR UPDATE TO authenticated USING (((user_id = auth.uid()) AND (EXISTS ( SELECT 1
+   FROM public.dispatch_posts p
+  WHERE ((p.id = dispatch_comments.post_id) AND (p.withheld_at IS NULL) AND (p.ended_at IS NULL)))))) WITH CHECK ((user_id = auth.uid()));
+
+
+--
+-- Name: dispatch_comments critiques_write_own; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY critiques_write_own ON public.dispatch_comments FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+
+
+--
+-- Name: dispatch_certifications; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.dispatch_certifications ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: dispatch_comments; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.dispatch_comments ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: dispatch_dossiers_legacy; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.dispatch_dossiers_legacy ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: dispatch_posts; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.dispatch_posts ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: dispatch_saves; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.dispatch_saves ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: dispatch_votes; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.dispatch_votes ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: dossier_certifications_legacy; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.dossier_certifications_legacy ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: dossier_comments_legacy dossier_comments_hide_blocked; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY dossier_comments_hide_blocked ON public.dossier_comments_legacy AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+
+
+--
+-- Name: dossier_comments_legacy; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.dossier_comments_legacy ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: error_logs; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
 ALTER TABLE public.error_logs ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: films; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.films ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: films films_public_read; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY films_public_read ON public.films FOR SELECT TO authenticated, anon USING (true);
+
 
 --
 -- Name: founding_seat_counter; Type: ROW SECURITY; Schema: public; Owner: -
@@ -5987,26 +7467,26 @@ CREATE POLICY notifications_hide_blocked ON public.notifications AS RESTRICTIVE 
 
 
 --
--- Name: dossier_comments owner_delete_dossier_comments; Type: POLICY; Schema: public; Owner: -
+-- Name: dossier_comments_legacy owner_delete_dossier_comments; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY owner_delete_dossier_comments ON public.dossier_comments FOR DELETE TO authenticated USING (((user_id = auth.uid()) OR (EXISTS ( SELECT 1
+CREATE POLICY owner_delete_dossier_comments ON public.dossier_comments_legacy FOR DELETE TO authenticated USING (((user_id = auth.uid()) OR (EXISTS ( SELECT 1
    FROM public.profiles
   WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))));
 
 
 --
--- Name: dossier_comments owner_insert_dossier_comments; Type: POLICY; Schema: public; Owner: -
+-- Name: dossier_comments_legacy owner_insert_dossier_comments; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY owner_insert_dossier_comments ON public.dossier_comments FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+CREATE POLICY owner_insert_dossier_comments ON public.dossier_comments_legacy FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
 
 
 --
--- Name: dossier_comments owner_update_dossier_comments; Type: POLICY; Schema: public; Owner: -
+-- Name: dossier_comments_legacy owner_update_dossier_comments; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY owner_update_dossier_comments ON public.dossier_comments FOR UPDATE TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
+CREATE POLICY owner_update_dossier_comments ON public.dossier_comments_legacy FOR UPDATE TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
 
 
 --
@@ -6020,6 +7500,83 @@ ALTER TABLE public.physical_archive ENABLE ROW LEVEL SECURITY;
 --
 
 CREATE POLICY physical_archive_select_authorized ON public.physical_archive FOR SELECT USING (public.can_view_user_data(user_id));
+
+
+--
+-- Name: dispatch_posts posts_ban_delete; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_ban_delete ON public.dispatch_posts AS RESTRICTIVE FOR DELETE TO authenticated USING (public.is_user_not_banned());
+
+
+--
+-- Name: dispatch_posts posts_ban_insert; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_ban_insert ON public.dispatch_posts AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.is_user_not_banned());
+
+
+--
+-- Name: dispatch_posts posts_ban_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_ban_update ON public.dispatch_posts AS RESTRICTIVE FOR UPDATE TO authenticated USING (public.is_user_not_banned());
+
+
+--
+-- Name: dispatch_posts posts_block; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_block ON public.dispatch_posts AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+
+
+--
+-- Name: dispatch_posts posts_delete_own; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_delete_own ON public.dispatch_posts FOR DELETE TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: dispatch_posts posts_door; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_door ON public.dispatch_posts AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.may_file());
+
+
+--
+-- Name: dispatch_posts posts_read_own; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_read_own ON public.dispatch_posts FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: dispatch_posts posts_read_published; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_read_published ON public.dispatch_posts FOR SELECT TO authenticated, anon USING ((is_published AND (withheld_at IS NULL)));
+
+
+--
+-- Name: dispatch_posts posts_tier; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_tier ON public.dispatch_posts AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (((kind <> ALL (ARRAY['ballot'::text, 'dossier'::text])) OR public.has_tier_at_least(2)));
+
+
+--
+-- Name: dispatch_posts posts_update_own; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_update_own ON public.dispatch_posts FOR UPDATE TO authenticated USING (((user_id = auth.uid()) AND (withheld_at IS NULL) AND (ended_at IS NULL))) WITH CHECK ((user_id = auth.uid()));
+
+
+--
+-- Name: dispatch_posts posts_write_own; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY posts_write_own ON public.dispatch_posts FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
 
 
 --
@@ -6061,6 +7618,13 @@ CREATE POLICY push_tokens_select_own ON public.push_tokens FOR SELECT USING ((us
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: dispatch_saves saves_own; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY saves_own ON public.dispatch_saves TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
+
+
+--
 -- Name: physical_archive tier_gate_archive_insert; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -6068,10 +7632,10 @@ CREATE POLICY tier_gate_archive_insert ON public.physical_archive AS RESTRICTIVE
 
 
 --
--- Name: dispatch_dossiers tier_gate_dossiers_insert; Type: POLICY; Schema: public; Owner: -
+-- Name: dispatch_dossiers_legacy tier_gate_dossiers_insert; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY tier_gate_dossiers_insert ON public.dispatch_dossiers AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.has_tier_at_least(2));
+CREATE POLICY tier_gate_dossiers_insert ON public.dispatch_dossiers_legacy AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.has_tier_at_least(2));
 
 
 --
@@ -6155,6 +7719,36 @@ CREATE POLICY users_select_own_warnings ON public.warnings FOR SELECT USING ((us
 --
 
 CREATE POLICY users_update_own_blocks ON public.user_blocks FOR UPDATE USING ((blocker_id = auth.uid())) WITH CHECK ((blocker_id = auth.uid()));
+
+
+--
+-- Name: dispatch_votes votes_ban; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY votes_ban ON public.dispatch_votes AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.is_user_not_banned());
+
+
+--
+-- Name: dispatch_votes votes_read; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY votes_read ON public.dispatch_votes FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: dispatch_votes votes_still_open; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY votes_still_open ON public.dispatch_votes AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK ((EXISTS ( SELECT 1
+   FROM public.dispatch_posts p
+  WHERE ((p.id = dispatch_votes.post_id) AND (p.closes_at > now())))));
+
+
+--
+-- Name: dispatch_votes votes_write_own; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY votes_write_own ON public.dispatch_votes FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
 
 
 --
@@ -6285,6 +7879,14 @@ GRANT ALL ON FUNCTION public.check_interaction_rate_limit() TO service_role;
 
 
 --
+-- Name: FUNCTION claim_films_to_sync(p_limit integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.claim_films_to_sync(p_limit integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.claim_films_to_sync(p_limit integer) TO service_role;
+
+
+--
 -- Name: FUNCTION claim_founding_seat(p_user_id uuid, p_max_seats integer); Type: ACL; Schema: public; Owner: -
 --
 
@@ -6353,12 +7955,163 @@ GRANT ALL ON FUNCTION public.derive_username_column() TO service_role;
 
 
 --
+-- Name: FUNCTION dispatch_comments_pin_columns(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_comments_pin_columns() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_comments_pin_columns() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_comments_pin_columns() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_count_cert(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_count_cert() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_count_cert() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_count_cert() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_count_comment(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_count_comment() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_count_comment() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_count_comment() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_door(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_door() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_door() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_door() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_names(p_kind text, p_title text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.dispatch_names(p_kind text, p_title text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.dispatch_names(p_kind text, p_title text) TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_no_hard_delete(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_no_hard_delete() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_no_hard_delete() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_no_hard_delete() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_notify(p_to uuid, p_from uuid, p_type text, p_message text, p_meta jsonb, p_group text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.dispatch_notify(p_to uuid, p_from uuid, p_type text, p_message text, p_meta jsonb, p_group text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.dispatch_notify(p_to uuid, p_from uuid, p_type text, p_message text, p_meta jsonb, p_group text) TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_notify_answer(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_notify_answer() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_notify_answer() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_notify_answer() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_notify_ballot_closed(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_notify_ballot_closed() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_notify_ballot_closed() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_notify_ballot_closed() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_notify_certify(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_notify_certify() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_notify_certify() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_notify_certify() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_notify_critique(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_notify_critique() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_notify_critique() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_notify_critique() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_posts_pin_columns(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_scrub_departed(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_scrub_departed() TO anon;
+GRANT ALL ON FUNCTION public.dispatch_scrub_departed() TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_scrub_departed() TO service_role;
+
+
+--
 -- Name: FUNCTION divert_private_notes(); Type: ACL; Schema: public; Owner: -
 --
 
 GRANT ALL ON FUNCTION public.divert_private_notes() TO anon;
 GRANT ALL ON FUNCTION public.divert_private_notes() TO authenticated;
 GRANT ALL ON FUNCTION public.divert_private_notes() TO service_role;
+
+
+--
+-- Name: FUNCTION dossier_certifications_write(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dossier_certifications_write() TO anon;
+GRANT ALL ON FUNCTION public.dossier_certifications_write() TO authenticated;
+GRANT ALL ON FUNCTION public.dossier_certifications_write() TO service_role;
+
+
+--
+-- Name: FUNCTION dossier_comments_write(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dossier_comments_write() TO anon;
+GRANT ALL ON FUNCTION public.dossier_comments_write() TO authenticated;
+GRANT ALL ON FUNCTION public.dossier_comments_write() TO service_role;
+
+
+--
+-- Name: FUNCTION dossiers_write(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dossiers_write() TO anon;
+GRANT ALL ON FUNCTION public.dossiers_write() TO authenticated;
+GRANT ALL ON FUNCTION public.dossiers_write() TO service_role;
+
+
+--
+-- Name: FUNCTION end_filing(p_post uuid, p_by text); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) TO anon;
+GRANT ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) TO authenticated;
+GRANT ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) TO service_role;
 
 
 --
@@ -6431,6 +8184,14 @@ GRANT ALL ON FUNCTION public.enforce_tier_gate() TO service_role;
 GRANT ALL ON FUNCTION public.enforce_username_policy() TO anon;
 GRANT ALL ON FUNCTION public.enforce_username_policy() TO authenticated;
 GRANT ALL ON FUNCTION public.enforce_username_policy() TO service_role;
+
+
+--
+-- Name: FUNCTION freeze_closed_ballots(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.freeze_closed_ballots() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.freeze_closed_ballots() TO service_role;
 
 
 --
@@ -6779,6 +8540,15 @@ GRANT ALL ON FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) TO serv
 
 
 --
+-- Name: FUNCTION get_taste_profile(p_user_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.get_taste_profile(p_user_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.get_taste_profile(p_user_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.get_taste_profile(p_user_id uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION get_user_analytics(p_user_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -6934,6 +8704,40 @@ GRANT ALL ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) TO service_r
 
 
 --
+-- Name: FUNCTION mark_film_sync_failed(p_film_id integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.mark_film_sync_failed(p_film_id integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.mark_film_sync_failed(p_film_id integer) TO service_role;
+
+
+--
+-- Name: FUNCTION may_file(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.may_file() TO anon;
+GRANT ALL ON FUNCTION public.may_file() TO authenticated;
+GRANT ALL ON FUNCTION public.may_file() TO service_role;
+
+
+--
+-- Name: FUNCTION note_film(); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.note_film() TO anon;
+GRANT ALL ON FUNCTION public.note_film() TO authenticated;
+GRANT ALL ON FUNCTION public.note_film() TO service_role;
+
+
+--
+-- Name: FUNCTION note_film_verdict(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.note_film_verdict() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.note_film_verdict() TO service_role;
+
+
+--
 -- Name: FUNCTION notify_on_dossier_certify(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -7039,6 +8843,14 @@ GRANT ALL ON FUNCTION public.rate_limit_check(table_name text, user_col text, ma
 GRANT ALL ON FUNCTION public.recount_lounge_members() TO anon;
 GRANT ALL ON FUNCTION public.recount_lounge_members() TO authenticated;
 GRANT ALL ON FUNCTION public.recount_lounge_members() TO service_role;
+
+
+--
+-- Name: FUNCTION refresh_film_verdict(p_film_id integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.refresh_film_verdict(p_film_id integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.refresh_film_verdict(p_film_id integer) TO service_role;
 
 
 --
@@ -7212,12 +9024,66 @@ GRANT ALL ON TABLE public.analytics_events TO service_role;
 
 
 --
+-- Name: TABLE dispatch_certifications; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_certifications TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_certifications TO authenticated;
+GRANT ALL ON TABLE public.dispatch_certifications TO service_role;
+
+
+--
+-- Name: TABLE dispatch_comments; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT ON TABLE public.dispatch_comments TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_comments TO authenticated;
+GRANT ALL ON TABLE public.dispatch_comments TO service_role;
+
+
+--
+-- Name: TABLE dispatch_posts; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT ON TABLE public.dispatch_posts TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_posts TO authenticated;
+GRANT ALL ON TABLE public.dispatch_posts TO service_role;
+
+
+--
 -- Name: TABLE dispatch_dossiers; Type: ACL; Schema: public; Owner: -
 --
 
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_dossiers TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_dossiers TO authenticated;
 GRANT ALL ON TABLE public.dispatch_dossiers TO service_role;
+
+
+--
+-- Name: TABLE dispatch_dossiers_legacy; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_dossiers_legacy TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_dossiers_legacy TO authenticated;
+GRANT ALL ON TABLE public.dispatch_dossiers_legacy TO service_role;
+
+
+--
+-- Name: TABLE dispatch_saves; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_saves TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_saves TO authenticated;
+GRANT ALL ON TABLE public.dispatch_saves TO service_role;
+
+
+--
+-- Name: TABLE dispatch_votes; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_votes TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_votes TO authenticated;
+GRANT ALL ON TABLE public.dispatch_votes TO service_role;
 
 
 --
@@ -7230,6 +9096,15 @@ GRANT ALL ON TABLE public.dossier_certifications TO service_role;
 
 
 --
+-- Name: TABLE dossier_certifications_legacy; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dossier_certifications_legacy TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dossier_certifications_legacy TO authenticated;
+GRANT ALL ON TABLE public.dossier_certifications_legacy TO service_role;
+
+
+--
 -- Name: TABLE dossier_comments; Type: ACL; Schema: public; Owner: -
 --
 
@@ -7239,12 +9114,30 @@ GRANT ALL ON TABLE public.dossier_comments TO service_role;
 
 
 --
+-- Name: TABLE dossier_comments_legacy; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dossier_comments_legacy TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dossier_comments_legacy TO authenticated;
+GRANT ALL ON TABLE public.dossier_comments_legacy TO service_role;
+
+
+--
 -- Name: TABLE error_logs; Type: ACL; Schema: public; Owner: -
 --
 
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.error_logs TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.error_logs TO authenticated;
 GRANT ALL ON TABLE public.error_logs TO service_role;
+
+
+--
+-- Name: TABLE films; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.films TO service_role;
+GRANT SELECT ON TABLE public.films TO anon;
+GRANT SELECT ON TABLE public.films TO authenticated;
 
 
 --

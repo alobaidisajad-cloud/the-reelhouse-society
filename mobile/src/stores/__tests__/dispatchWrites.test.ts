@@ -15,7 +15,12 @@ import { useDispatch } from '../dispatch';
 import type { Filing } from '../dispatchTypes';
 import { MAX_LENGTHS } from '../../utils/sanitizeInput';
 
-let mockOutcome: 'ok' | 'refused' | 'offline' = 'ok';
+/**
+ * `silent` is the third way a write fails, and the only one that looks like a
+ * success: RLS refusing a ROW is not an error — PostgREST answers 200 with an
+ * empty array. That is the whole reason these updates ask for `.select('id')`.
+ */
+let mockOutcome: 'ok' | 'refused' | 'offline' | 'silent' = 'ok';
 const mockSent: Array<{ table: string; op: string; row: unknown }> = [];
 const mockQueued: Array<{ type: string; payload: Record<string, unknown> }> = [];
 const mockRpc: Array<{ fn: string; args: unknown }> = [];
@@ -66,7 +71,12 @@ jest.mock('../../lib/supabase', () => ({
           .then((r: { data: unknown; error: unknown }) =>
             // A landed UPDATE returns the row it changed; a refusal returns
             // none. `answer()` decides which by the test's `mockOutcome`.
-            (updated && !r.error ? { data: [{ id: 'row' }], error: null } : r))
+            // `silent` is the refusal that answers like a success, so it must
+            // NOT be handed the row back — that substitution is what makes an
+            // accepted update distinguishable from a refused one at all.
+            (updated && !r.error && mockOutcome !== 'silent'
+              ? { data: [{ id: 'row' }], error: null }
+              : r))
           .then(res, rej);
       return chain;
     },
@@ -335,5 +345,48 @@ describe('amending and withdrawing a critique', () => {
     await expect(useDispatch.getState().removeCritique('c2', 'f1')).rejects.toBeTruthy();
     expect(useDispatch.getState().critiques.f1.map((c) => c.id)).toEqual(['c1', 'c2', 'c3']);
     expect(useDispatch.getState().filings[0].commentCount).toBe(2);
+  });
+});
+
+// ── THE REFUSAL THAT LOOKS LIKE A SUCCESS ───────────────────────────────────
+/**
+ * Three updates ask for `.select('id')` — `amend`, `amendCritique`, and
+ * `takeAnswer` — because a row RLS refuses matches nothing, and matching
+ * nothing is a 200 with an empty array rather than an error. Two of the three
+ * had a test standing over that empty array. `takeAnswer` did not: its only
+ * refusal test used a PostgREST *error*, which is caught one line earlier by
+ * `if (error) throw error`, so the guard underneath had never once run.
+ *
+ * Deleting that line would have left every one of the suite's other tests green
+ * while the reader marked an answer the house never accepted — visible on the
+ * page, gone on the next fetch, and never explained to the member who chose it.
+ */
+describe('an update the house refuses in silence', () => {
+  /** Fire-and-forget, like the other five acts. */
+  const settle = () => new Promise((r) => setTimeout(r, 0));
+
+  it('puts the previous answer back when the row matched nothing', async () => {
+    mockOutcome = 'silent';
+    reset({ filings: [filing({ kind: 'seeking', answerId: 'c-old' })] });
+
+    useDispatch.getState().takeAnswer('f1', 'c-new');
+    // The member sees it taken at once — that half was always right.
+    expect(useDispatch.getState().filings[0].answerId).toBe('c-new');
+
+    await settle();
+    // And it comes ALL the way back, to the previous answer rather than null.
+    expect(useDispatch.getState().filings[0].answerId).toBe('c-old');
+  });
+
+  it('still sends the update, and still asks for the row back', async () => {
+    mockOutcome = 'silent';
+    reset({ filings: [filing({ kind: 'seeking', answerId: null })] });
+
+    useDispatch.getState().takeAnswer('f1', 'c-new');
+    await settle();
+
+    const row = sentTo('dispatch_posts', 'update')[0].row as Record<string, unknown>;
+    expect(row.answer_id).toBe('c-new');
+    expect(useDispatch.getState().filings[0].answerId).toBeNull();
   });
 });

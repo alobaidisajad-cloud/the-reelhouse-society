@@ -2,7 +2,7 @@
 -- pg_dump --schema-only cannot see any of this.
 
 [cron jobs]
-(none)
+freeze-closed-ballots  */5 * * * *  active=true  SELECT public.freeze_closed_ballots();
 
 [storage buckets]
 avatars  public=true  size_limit=2097152  mime=image/jpeg,image/png,image/webp,image/gif
