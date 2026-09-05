@@ -15,7 +15,7 @@
  *   · no sentence ending in the window at all, so it falls back to a word
  *   · a fallback that lands on a word which cannot end a phrase
  */
-import { softBreak, clipToSentence, counted } from '@/src/components/dispatch/paper/paperText';
+import { softBreak, clipToSentence, counted, MAX_RUN } from '@/src/components/dispatch/paper/paperText';
 import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
 
 describe('softBreak — where a line may break', () => {
@@ -40,6 +40,56 @@ describe('softBreak — where a line may break', () => {
     expect(out.length).toBeGreaterThan(url.length);
     // And nothing was lost doing it.
     expect(out.replace(/[​­]/g, '')).toBe(url);
+  });
+
+  /**
+   * ── AND BREAKS IT WHERE A LINK COMES APART, NOT WHERE THE COUNT RAN OUT ────
+   * This used to cut blind at the eighteenth character, so the wire's own
+   * example came apart as `https://www.bfi.or` / `g.uk/news/…` — a URL split
+   * through the middle of `org`, which reads as a typo rather than a link.
+   */
+  const ZWSP = '​';
+  const segmentsOf = (s: string) => softBreak(s).split(ZWSP);
+
+  it('breaks a link at its joints', () => {
+    const url = 'https://www.bfi.org.uk/news/napoleon-restoration-tour-2026-full-city-listing';
+    expect(segmentsOf(url)).toEqual([
+      'https://www.bfi',
+      '.org.uk/news/',
+      'napoleon-',
+      'restoration-tour-',
+      '2026-full-city-',
+      'listing',
+    ]);
+  });
+
+  it('still lets no run grow wider than the narrowest column holds', () => {
+    // The guarantee MAX_RUN was measured for. Preferring a joint only ever
+    // breaks EARLIER, so this must hold for a link and for a word with no
+    // joint anywhere in it.
+    const inputs = [
+      'https://www.bfi.org.uk/news/napoleon-restoration-tour-2026-full-city-listing',
+      'Rindfleischetikettierungsueberwachungsaufgabenuebertragungsgesetz',
+      '#thelongsilenceinozu',
+    ];
+    for (const s of inputs) {
+      for (const seg of segmentsOf(s)) expect(seg.length).toBeLessThanOrEqual(MAX_RUN);
+      expect(segmentsOf(s).join('')).toBe(s);
+    }
+  });
+
+  it('leaves a word with no joint in it exactly where it was', () => {
+    // A German compound has nothing to break at, so it must still fall back to
+    // the blind cut rather than being left to run off the page.
+    const de = 'Rindfleischetikettierungsueberwachungsaufgabenuebertragungsgesetz';
+    expect(segmentsOf(de)[0]).toHaveLength(MAX_RUN);
+  });
+
+  it('keeps a hashtag with its tag', () => {
+    // `#` opens what follows, it does not close what precedes. The first
+    // version of the joint rule had it the other way round and put a lone `#`
+    // on a line of its own.
+    expect(segmentsOf('#thelongsilenceinozu')[0].startsWith('#the')).toBe(true);
   });
 });
 

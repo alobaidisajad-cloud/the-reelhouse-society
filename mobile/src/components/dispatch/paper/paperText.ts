@@ -49,25 +49,69 @@ const ZWSP = '​';
  * Everything shorter is returned untouched, so ordinary prose — which is almost
  * all of it — pays nothing.
  */
+/**
+ * ── AND WHERE, INSIDE THAT RUN, THE BREAK SHOULD GO ─────────────────────────
+ * This used to cut blind at the eighteenth character, so the wire's own example
+ * — a pasted BFI link — came apart as `https://www.bfi.or` / `g.uk/news/…`. A
+ * URL split in the middle of `org` reads as a typo rather than as a link, and
+ * the WIRE form exists for news from elsewhere carrying its source, so it is
+ * the form where pasted links are the norm rather than the exception.
+ *
+ * AFTER a separator that CLOSES what it follows — a line ending on `napoleon-`
+ * or `news/` reads as hyphenation and as a path, which is what they are.
+ *
+ * BEFORE a mark that OPENS what comes next. A line ending on `www.bfi.` reads
+ * as a sentence that has finished, and `#` belongs to its tag: the first
+ * version of this had `#` in the set below and broke `#thelongsilenceinozu`
+ * into a lone `#` on one line and the words on the next.
+ */
+const BREAK_AFTER = new Set(['/', '-', '_']);
+const BREAK_BEFORE = new Set(['.', '?', '&', '#', '=', '+']);
+
+/**
+ * A break that leaves one or two characters behind is worse than none: it
+ * spends a line on an orphan and shortens the run by nothing worth having.
+ */
+const MIN_SEGMENT = 3;
+
 export function softBreak(text: string, run: number = MAX_RUN): string {
   if (!text) return text;
   let out = '';
-  let since = 0;
+  /** The run being built. Held rather than emitted, so a break can be placed
+   *  behind a joint that has already gone past. */
+  let buf = '';
+
   for (const ch of text) {
     // any whitespace resets the run; the string could already wrap there
     if (/\s/.test(ch)) {
-      out += ch;
-      since = 0;
+      out += buf + ch;
+      buf = '';
       continue;
     }
-    if (since >= run) {
-      out += ZWSP;
-      since = 0;
+
+    buf += ch;
+    if (buf.length < run) continue;
+
+    /**
+     * How many characters stay on the line. The LAST joint wins, so the line
+     * is filled rather than broken at the first opportunity; never 0, which
+     * would emit an empty segment and leave the run no shorter.
+     *
+     * The guarantee MAX_RUN was measured for is untouched: every candidate is
+     * at most `run`, so this only ever breaks EARLIER than the blind cut did.
+     */
+    let cut = -1;
+    for (let i = 0; i < buf.length; i++) {
+      const at = BREAK_AFTER.has(buf[i]) ? i + 1 : BREAK_BEFORE.has(buf[i]) ? i : -1;
+      if (at >= MIN_SEGMENT) cut = at;
     }
-    out += ch;
-    since++;
+    if (cut < MIN_SEGMENT) cut = buf.length; // no usable joint — cut where it always did
+
+    out += buf.slice(0, cut) + ZWSP;
+    buf = buf.slice(cut);
   }
-  return out;
+
+  return out + buf;
 }
 
 /**
