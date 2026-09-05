@@ -36,6 +36,7 @@ const mockAmended: Array<{ id: string; updates: unknown }> = [];
 /** The two ways filing does not simply succeed. Both were dark. */
 let mockFileFails = false;
 let mockFileOffline = false;
+let mockAmendFails = false;
 
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: Object.assign(
@@ -59,7 +60,10 @@ jest.mock('@/src/stores/dispatch', () => ({
         if (mockFileFails) throw new Error('refused');
         return mockFileOffline ? { id: 'new', offline: true } : { id: 'new' };
       },
-      amend: async (id: string, updates: unknown) => { mockAmended.push({ id, updates }); },
+      amend: async (id: string, updates: unknown) => {
+        mockAmended.push({ id, updates });
+        if (mockAmendFails) throw new Error(String.fromCharCode(114));
+      },
       // What the desk reads to prefill an amendment. `filings` is the page and
       // `opened` is what was reached by its own address; the desk looks in both,
       // so the mock has to offer both.
@@ -504,5 +508,51 @@ describe('a desk opened on a filing that already exists', () => {
     mockHeld = null;
     const { getByText } = render(<ComposeShortScreen kind="take" />);
     expect(getByText('FILE IT')).toBeTruthy();
+  });
+});
+
+/**
+ * ── AN AMENDMENT THE HOUSE REFUSES ──────────────────────────────────────────
+ * This is the exact case `.select('id')` exists for. RLS no longer reaches a
+ * filing that is withheld or ended, and it enforces that by matching no ROW —
+ * which is not an error. Without the row check the store would report success,
+ * the desk would navigate away, and the member would believe words were saved
+ * that the database refused.
+ *
+ * What matters here is the same thing as for filing: their sentence survives.
+ */
+describe('an amendment that does not go', () => {
+  const existing = {
+    id: 'f9', kind: 'take' as const, authorId: 'u1',
+    author: { name: 'me', memberNo: 7, tier: 'free' as const },
+    film: null, subjectId: null, subjectKind: null,
+    title: null, body: 'Ozu never once stood up.', fullContent: null,
+    source: null, sourceUrl: null,
+    options: null, closesAt: null, frozenTotals: null, answerId: null,
+    seriesId: null, seriesTitle: null, partNumber: null,
+    spoilerLabel: null, withheldAt: null, endedAt: null, endedBy: null,
+    certifyCount: 3, commentCount: 1,
+    createdAt: '2026-08-28T21:00:00Z', editedAt: null,
+  };
+
+  beforeEach(() => { mockEditId = 'f9'; mockHeld = existing; mockAmendFails = true; });
+  afterEach(() => { mockEditId = undefined; mockHeld = null; mockAmendFails = false; });
+
+  it('says so, and KEEPS what was written', async () => {
+    const r = render(<ComposeShortScreen kind="take" />);
+    await type(r.getByLabelText('Your take'), 'Ozu never once stood up, and that is the argument.');
+    await press(r.getByLabelText('Amend it'));
+
+    expect(String(mockToast.error.mock.calls[0]?.[0])).toBe('It could not be amended.');
+    // The words are still in the field. Without this the member retypes them.
+    expect(r.getByLabelText('Your take').props.value)
+      .toBe('Ozu never once stood up, and that is the argument.');
+    expect(mockToast.success).not.toHaveBeenCalled();
+  });
+
+  it('lets them try again rather than locking the desk', async () => {
+    const r = render(<ComposeShortScreen kind="take" />);
+    await press(r.getByLabelText('Amend it'));
+    expect(r.getByLabelText('Amend it').props.accessibilityState.disabled).toBe(false);
   });
 });
