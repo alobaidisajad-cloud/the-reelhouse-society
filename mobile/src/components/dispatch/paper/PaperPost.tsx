@@ -27,6 +27,28 @@ export interface PaperAuthor {
   avatar?: string | null;
 }
 
+/**
+ * ── THE MARK ON A MEMBER'S DISC ─────────────────────────────────────────────
+ * A member's HOUSE NUMBER is a fact about their membership, not about the thing
+ * they just wrote — so it is printed where membership is: their room, their
+ * file card, and the card a filing travels as. It used to be printed twice on
+ * every post, in the byline and again inside the disc, which made a serial
+ * number the loudest thing about a stranger's opinion of a film.
+ *
+ * What stands in for a face is their initial. The house already has a mark for
+ * a letter standing in for something — the raised initial that opens a dossier —
+ * so this is that gesture at nineteen points rather than a generic app avatar.
+ * Set in the DISPLAY face for the same reason: a letter in Rye is a monogram, a
+ * number in the typewriter face was a serial.
+ *
+ * Empty when there is no name to take a letter from, which is what a departed
+ * member's disc already shows.
+ */
+export function initialOf(name: string | null | undefined): string {
+  const first = (name ?? '').trim().slice(0, 1);
+  return first ? first.toUpperCase() : '';
+}
+
 export interface PaperFilm {
   title: string;
   year?: number | null;
@@ -79,11 +101,12 @@ export const Byline = memo(function Byline({
           <Image source={{ uri: author.avatar }} style={p.plateArt} contentFit="cover"
             recyclingKey={author.avatar} transition={0} cachePolicy="memory-disk" />
         ) : !departed ? (
-          // UNSPOKEN. The number stands in for a face a member has not set, and
-          // the byline directly beside it already says `· No. 147` — so read
-          // aloud this row was "147. TOMASREYES · No. 147", the same number
-          // twice with the first one meaning nothing on its own.
-          <Text style={p.avatarNo} {...UNSPOKEN} {...decorativeTextProps}>{author.memberNo}</Text>
+          // UNSPOKEN. The mark stands in for a face a member has not set, and
+          // the name is printed directly beside it — read aloud, a disc that
+          // said its own letter would open every row with "T. TOMASREYES".
+          <Text style={p.avatarMark} {...UNSPOKEN} {...decorativeTextProps}>
+            {initialOf(author.name)}
+          </Text>
         ) : null}
       </View>
       {/* ── THE TRAILING FACTS ARE NOT PART OF THE NAME ────────────────────
@@ -100,7 +123,7 @@ export const Byline = memo(function Byline({
         numberOfLines={1}
         {...scaledTextProps}
       >
-        {departed ? 'A MEMBER, DEPARTED' : `${author.name.toUpperCase()} · No. ${author.memberNo}`}
+        {departed ? 'A MEMBER, DEPARTED' : author.name.toUpperCase()}
       </Text>
       {trailing ? (
         <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>

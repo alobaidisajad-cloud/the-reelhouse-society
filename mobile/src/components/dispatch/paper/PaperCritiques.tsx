@@ -12,7 +12,7 @@ import { PaperStrike } from './PaperStrike';
 import { softBreak, counted } from './paperText';
 import { isRTLText } from '@/src/utils/text';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
-import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { Credit, initialOf, type PaperAuthor, type PaperFilm } from './PaperPost';
 
 export interface Critique {
   id: string;
@@ -159,12 +159,12 @@ export const CritiqueRow = memo(function CritiqueRow({
         {c.author && c.author.avatar ? (
           <Image source={{ uri: c.author.avatar }} style={p.plateArt} contentFit="cover" />
         ) : c.author ? (
-          <Text style={p.avatarNo} {...decorativeTextProps}>{c.author.memberNo}</Text>
+          <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(c.author.name)}</Text>
         ) : null}
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={p.commentName} numberOfLines={1} {...scaledTextProps}>
-          {c.author ? `${c.author.name.toUpperCase()} · No. ${c.author.memberNo}` : 'A MEMBER, DEPARTED'}
+          {c.author ? c.author.name.toUpperCase() : 'A MEMBER, DEPARTED'}
           {c.mine ? '  ·  YOU' : ''}
           {/* What THE REPLY was for, without inventing a second object: ordered
               by certifies, the strongest answer is simply first, and says so. */}
@@ -357,7 +357,7 @@ export const CritiqueComposer = memo(function CritiqueComposer({
       <View style={p.avatar}>
         {me.avatar ? (
           <Image source={{ uri: me.avatar }} style={p.plateArt} contentFit="cover" />
-        ) : <Text style={p.avatarNo} {...decorativeTextProps}>{me.memberNo}</Text>}
+        ) : <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(me.name)}</Text>}
       </View>
       <TextInput
         style={p.dockInput}

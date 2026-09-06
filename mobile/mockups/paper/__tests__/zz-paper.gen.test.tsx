@@ -729,7 +729,11 @@ add('f4-archive', (
 
 add('f5-member-room', (
   <View style={p.screen}>
-    <PaperBack label="ANA · No. 17" />
+    {/* The bar names whose room this is. The house NUMBER is not repeated here —
+        the room's own head prints it, one line under the name, and a screen
+        that says `No. 17` twice in its top forty points is a screen shouting a
+        serial at you. */}
+    <PaperBack label="ANA" />
     <PaperSheet>
       <PaperRoom author={ANA} filed={128} certified={4102} />
       <DayDivider label="AUGUST" />
@@ -915,26 +919,34 @@ const Said = ({ who, text, mine }: { who: string; text: string; mine?: boolean }
 
 add('f8c-lounge-in-room', (
   <View style={[p.screen, { justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 34 }]}>
-    <Said who="DAN · No. 402" text="did anyone actually finish the Ozu run or was that just me" />
-    <Said who="MIRA · No. 88" text="i got three in. the fourth broke me" />
+    {/* Names only. A name over a message is the same job as a byline over a
+        post, and a lounge that stamps a serial on every line anybody says is
+        the disease the byline was just cured of, in a second room. */}
+    <Said who="DAN" text="did anyone actually finish the Ozu run or was that just me" />
+    <Said who="MIRA" text="i got three in. the fourth broke me" />
     <View style={{ alignSelf: 'flex-start', maxWidth: '92%', marginBottom: 10 }}>
       <Text style={{ fontFamily: 'SpecialElite_400Regular', fontSize: 7.5, letterSpacing: 1.4,
-        color: '#9E9488', marginBottom: 4 }}>ANA · No. 17 · SHARED A FILING</Text>
+        color: '#9E9488', marginBottom: 4 }}>ANA · SHARED A FILING</Text>
       <LoungeCard kind="dossier" author={ANA} certifyCount={61} commentCount={14}
         title="The Long Silence in Ozu"
         body="There is a shot in Tokyo Story that lasts eleven seconds after everyone has left the frame." />
     </View>
-    <Said who="DAN · No. 402" text="oh this is the one. reading it now" />
+    <Said who="DAN" text="oh this is the one. reading it now" />
     <Said mine who="" text="the eleven seconds thing ruined me honestly" />
   </View>
 ));
 
-/* USERNAME_MAX is 30 and every byline so far was drawn with a four-letter
-   fixture. `MAXNAME` is exactly 30, with a five-figure member number beside it.
-   The dossier below carries a title too long for the bubble at the same time,
-   so both variable-length things in this card are at their worst together. */
+/* `MAX_LENGTHS.username` is 30 and every byline so far was drawn with a
+   four-letter fixture. `MAXNAME` is exactly 30 — it was 28 while the comment
+   claimed 30, so the plate meant to prove the worst case was two characters
+   short of it. The dossier below carries a title too long for the bubble at the
+   same time, so both variable-length things in this card are at their worst
+   together.
+
+   The member number is no longer beside the name — it left every byline — so
+   the name now stands alone as the only thing here that can run long. */
 const MAXNAME: PaperAuthor = {
-  name: 'Katharine-Wentworth-Ashgrove', memberNo: 10248,
+  name: 'Katharine-Wentworth-Ashgrovely', memberNo: 10248,
   tier: 'archivist', avatar: artPath('Setsuko Hara'),
 };
 
@@ -980,7 +992,7 @@ add('f7c-share-story', (
 add('f8-lounge-card', (
   <View style={[p.screen, { justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 34, gap: 10 }]}>
     <Text style={{ fontFamily: 'SpecialElite_400Regular', fontSize: 7.5, letterSpacing: 1.6, color: '#9E9488', marginBottom: 2 }}>
-      MIRA · No. 88 · SHARED A FILING
+      MIRA · SHARED A FILING
     </Text>
     <LoungeCard kind="take" author={MIRA} certifyCount={214} commentCount={31}
       body="Tokyo Story is the only film that has ever made me telephone my mother the same night." />

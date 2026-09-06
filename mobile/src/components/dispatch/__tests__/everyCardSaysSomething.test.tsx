@@ -39,7 +39,11 @@ const BODY = 'The ending is the whole film and nothing before it matters.';
 /** Words the CHROME contributes, which do not count as the card saying anything. */
 const CHROME = new Set([
   'CERTIFY', 'CERTIFIED', 'CRITIQUE', 'SHARE', 'SAVE', 'SAVED',
-  'OZU · No. 7', 'A MEMBER, DEPARTED', '14', '7', 'UNCOVER IT',
+  // The byline: the name, and the letter standing in for a face beside it. Both
+  // are furniture. They were one string, `OZU · No. 7`, until the member's house
+  // number left the page — and if this list is not kept level with that, a
+  // struck row passes the test below on its own author's name.
+  'OZU', 'O', 'A MEMBER, DEPARTED', '14', '7', 'UNCOVER IT',
   'TAKE — ', 'SEEKING — ', 'WIRE — ', 'BALLOT — ', 'DOSSIER — ',
 ]);
 

@@ -2,6 +2,7 @@
 # data URIs — regenerate it with `npx jest zz-paper.gen` rather than commit it.
 out/
 gallery.html
+proposals/
 look/
 ab/
 chunks/

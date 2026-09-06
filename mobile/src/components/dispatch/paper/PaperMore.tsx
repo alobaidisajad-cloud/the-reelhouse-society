@@ -20,10 +20,10 @@ import { colors, fonts } from '@/src/theme/theme';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
-import { KIND_RULE, MARGIN_W, RULE_W, RULE_GAP, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { KIND_RULE, MARGIN_W, RULE_W, RULE_GAP, CRIMSON_INK, UNSPOKEN, AVATAR } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { MS, PILL_Y } from './paperMotion';
-import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { Byline, initialOf, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { clipToSentence, counted } from './paperText';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
@@ -267,6 +267,20 @@ export const PaperRoom = memo(function PaperRoom({
     <View style={m.roomHead}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Byline author={author} />
+        {/* ── WHERE THE HOUSE NUMBER LIVES ────────────────────────────────────
+            It used to ride every byline, so a serial number was the loudest
+            thing about a stranger's opinion of a film. It comes off the page
+            and stays HERE, because a member's number is a fact about their
+            MEMBERSHIP, and this head is the one place in the Dispatch that is
+            about the member rather than about a filing.
+
+            Set on its own line, not folded back into the byline: this head has
+            counts pinned to its right edge, and a longer name plus a five-digit
+            number would push against them at large text sizes — the exact
+            crush that took the number off the byline to begin with. */}
+        <Text style={m.roomNo} numberOfLines={1} {...decorativeTextProps}>
+          {`No. ${author.memberNo}`}
+        </Text>
       </View>
       <Text style={m.roomCount} {...decorativeTextProps}>
         {filed} FILED · {certified} CERTIFIED
@@ -878,9 +892,11 @@ export const LoungeCard = memo(function LoungeCard({
           ) : (
             <View style={[m.loungeAvatar, m.loungeAvatarNone]} />
           )}
+          {/* No house number. A card in a lounge is a filing somebody shared,
+              not a membership record — the number belongs on the SHARE card,
+              which travels out of the app and has to say whose house it is. */}
           <Text style={m.loungeBy} numberOfLines={1} {...decorativeTextProps}>
             {author ? author.name.toUpperCase() : 'A MEMBER, DEPARTED'}
-            {author ? <Text style={m.loungeByNo}>{`  ·  No. ${author.memberNo}`}</Text> : null}
           </Text>
         </View>
 
@@ -976,7 +992,7 @@ export const PaperEvent = memo(function PaperEvent({
               {actor.avatar ? (
                 <Image source={{ uri: actor.avatar }} style={p.plateArt} contentFit="cover" />
               ) : (
-                <Text style={p.avatarNo} {...decorativeTextProps}>{actor.memberNo}</Text>
+                <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(actor.name)}</Text>
               )}
             </View>
             <Text style={m.eventLine} numberOfLines={1} {...scaledTextProps}>
@@ -1114,6 +1130,18 @@ const m = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingTop: 16, paddingBottom: 12,
     borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.25)',
+  },
+  roomNo: {
+    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    includeFontPadding: false,
+    // Indented past the disc so it hangs under the NAME, not under the disc —
+    // derived from the disc's own width and the byline's gap, so it stays
+    // aligned if either is ever retuned.
+    marginLeft: AVATAR + 6,
+    // The byline carries 8pt of its own bottom margin, sized for a name sitting
+    // above a post. A serial belongs tight under the name it labels, so this
+    // takes 4 of those 8 back.
+    marginTop: -4,
   },
   roomCount: {
     fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,

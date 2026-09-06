@@ -9,7 +9,7 @@ import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScalin
 import { p } from './paperStyles';
 import { COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
-import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { Credit, initialOf, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { PaperKeyWell } from './PaperKeyWell';
 
@@ -137,14 +137,14 @@ export const PaperComposer = memo(function PaperComposer({
                 {me.avatar ? (
                   <Image source={{ uri: me.avatar }} style={p.plateArt} contentFit="cover" />
                 ) : (
-                  <Text style={p.avatarNo} {...decorativeTextProps}>{me.memberNo}</Text>
+                  <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(me.name)}</Text>
                 )}
               </View>
               <Text
                 style={[p.bylineName, tier === 'auteur' && { color: CRIMSON_INK, opacity: 1 }]}
                 numberOfLines={1} {...scaledTextProps}
               >
-                {me.name.toUpperCase()} · No. {me.memberNo}
+                {me.name.toUpperCase()}
               </Text>
             </View>
 

@@ -512,8 +512,27 @@ export const p = StyleSheet.create({
   /** `champagne` — the theme owns this brass by name. */
   avatarArchivist: { borderColor: colors.champagne, borderWidth: 1.5 },
   avatarAuteur: { borderColor: colors.crimson, borderWidth: 1.5 },
-  avatarNo: {
-    fontFamily: fonts.sub, fontSize: 7.5, color: colors.parchmentBright, includeFontPadding: false,
+  /**
+   * A monogram, not a serial.
+   *
+   * This held the member's house number in the typewriter face at 7.5pt, sized
+   * down to fit four digits inside nineteen points. One letter needs none of
+   * that room, so it is set in the DISPLAY face and half again as large — the
+   * same gesture as the initial that opens a dossier, at the scale of a disc.
+   */
+  avatarMark: {
+    fontFamily: fonts.display, fontSize: 11, lineHeight: 13,
+    color: colors.parchmentBright,
+    /**
+     * The padding STAYS, unlike the number this replaced.
+     *
+     * `feedRowIsRecyclable` holds a rule: a reading face never strips
+     * `includeFontPadding`, because that is how a tall glyph clips on Android
+     * and there is no Android device here to prove otherwise on. The number
+     * was set in the label face, which is allowed to strip it; a monogram in
+     * the display face is not, and carving an exception for one letter would
+     * spend a guard that exists for a reason nobody can currently test.
+     */
   },
   /** A credit, not a headline. Dimmer and a hair smaller than the writing's
    *  neighbours so the eye reaches the words first. */
