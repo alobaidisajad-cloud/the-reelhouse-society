@@ -18,6 +18,7 @@ import Buster from '@/src/components/Buster';
 import { useReportUser } from '@/src/hooks/useReportUser';
 import type { PulseActivity } from './types';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
+import { RankBadge } from '@/src/components/RankBadge';
 
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
@@ -141,8 +142,11 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
               <Text style={s.pulseUsername} numberOfLines={1}>@{act.user}</Text>
               <Text style={s.pulseTime} numberOfLines={1}>{act.time}</Text>
             </View>
-            {isArchivist && <View style={s.badgeArchivist}><Text style={s.badgeText}>✦ ARCHIVIST</Text></View>}
-            {isAuteur && <View style={s.badgeAuteur}><Text style={[s.badgeText, { color: colors.ink }]}>★ AUTEUR</Text></View>}
+            {/* One badge, imported. The gold here was a goldenrod of its own
+                while the archive feed used the palette's token — the same rank
+                in two golds, because the fix that named the token landed on one
+                surface and never reached this one. */}
+            <RankBadge rank={isAuteur ? 'auteur' : isArchivist ? 'archivist' : null} />
           </PressableScale>
           <PressableScale onPress={handleReport} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} accessibilityLabel="Report and mute">
             <MoreHorizontal size={16} color={colors.fog} opacity={0.4} />
@@ -263,9 +267,6 @@ const s = StyleSheet.create({
   editorialBadgeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: 'rgba(218,165,32,0.9)', includeFontPadding: false },
   premiumBanner: { width: '100%', height: 60, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },
   premiumBannerImg: { width: '100%', height: '150%', top: '-25%', opacity: 0.45 },
-  badgeArchivist: { backgroundColor: 'rgba(184,137,26,0.1)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
-  badgeAuteur: { backgroundColor: '#DAA520', borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
-  badgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   abandonedBadge: {
     marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: colors.crimsonFaint, paddingHorizontal: 6, paddingVertical: 4,

@@ -510,8 +510,19 @@ export const p = StyleSheet.create({
    * the avatar already had a border doing nothing.
    */
   /** `champagne` — the theme owns this brass by name. */
+  /**
+   * ── THE RING ECHOES THE BADGE, IT DOES NOT DISAGREE WITH IT ────────────────
+   * The Auteur's ring was CRIMSON, and crimson on this page already means
+   * STRUCK and REPORTED — the docket's report count and the strike mark are
+   * both drawn in it. So the house's highest rank wore the house's warning
+   * colour, on the same screen, within an inch of it.
+   *
+   * It is brass now, and the rank reads the same here as it does in the archive
+   * feed, the home pulse, the registry and search. Crimson goes back to meaning
+   * one thing.
+   */
   avatarArchivist: { borderColor: colors.champagne, borderWidth: 1.5 },
-  avatarAuteur: { borderColor: colors.crimson, borderWidth: 1.5 },
+  avatarAuteur: { borderColor: colors.marqueeGold, borderWidth: 1.5 },
   /**
    * A monogram, not a serial.
    *
@@ -542,6 +553,15 @@ export const p = StyleSheet.create({
     /** Nine characters is the floor: below that a byline stops being a name. */
     flexShrink: 1, minWidth: 56,
   },
+  /**
+   * An Auteur's name, lifted. Brass, matching their ring and their badge.
+   *
+   * A FROZEN style rather than the `{ color, opacity }` written inline where
+   * this is used: the byline renders in every row of a recycling list, and an
+   * object literal in JSX is a fresh object on every render of every row —
+   * which is the exact allocation LEAD_STYLE exists to stop for the kind rule.
+   */
+  bylineNameAuteur: { color: colors.marqueeGold, opacity: 1 },
   /**
    * The read time, the source, the critique count — facts that cannot be
    * recovered from anywhere else on this screen, so they hold their ground

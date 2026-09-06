@@ -46,6 +46,7 @@ import {
   PAGE_SIZE,
   parseCritiqueRows,
   parseFilingRows,
+  paperTierOf,
   type BallotOption,
   type Critique,
   type CritiqueOrder,
@@ -511,7 +512,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       author: {
         name: user.username ?? '',
         memberNo: (user as { member_no?: number }).member_no ?? 0,
-        tier: 'free',
+        tier: paperTierOf(user),
         avatar: (user as { avatar_url?: string | null }).avatar_url ?? null,
       },
       film: clean.film
@@ -920,7 +921,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       author: {
         name: user.username ?? '',
         memberNo: (user as { member_no?: number }).member_no ?? 0,
-        tier: 'free',
+        tier: paperTierOf(user),
         avatar: (user as { avatar_url?: string | null }).avatar_url ?? null,
       },
       body: clean,

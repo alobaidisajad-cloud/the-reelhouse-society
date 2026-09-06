@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
+import { RankBadge, rankOf } from '@/src/components/RankBadge';
 
 interface Props {
   username: string;
@@ -46,16 +47,13 @@ export const UserAttributionRow = React.memo(function UserAttributionRow({ usern
             @{username.toUpperCase()}
           </Text>
         </PressableScale>
-        {isArchivist && (
-          <Text style={s.badgeArchivist} numberOfLines={1}>
-            ✦ ARCHIVIST
-          </Text>
-        )}
-        {isAuteur && (
-          <Text style={s.badgeAuteur} numberOfLines={1}>
-            ★ AUTEUR
-          </Text>
-        )}
+        {/* The house's badge, drawn once and imported. This file used to hold
+            its own copy — and the app ended up with three golds for one rank,
+            because four surfaces each solved this separately. The Auteur's
+            plate is the brass RAMP now, not a flat fill: `oneBrass` named this
+            badge as its one known violation of that rule and left it for
+            whoever owned the four surfaces to convert. */}
+        <RankBadge rank={rankOf(role)} />
         <Text style={s.timestamp} numberOfLines={1}>
           {timeAgo}
         </Text>
@@ -113,38 +111,6 @@ const s = StyleSheet.create({
     color: colors.sepia,
     textTransform: 'uppercase',
     flexShrink: 1,
-  },
-  badgeArchivist: {
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-    fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 1,
-    color: colors.sepia,
-    backgroundColor: colors.sepiaSubtle,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 2,
-    flexShrink: 0,
-  },
-  badgeAuteur: {
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-    fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 1,
-    color: colors.ink,
-    // The Shade Ledger's marqueeGold, not a seventh hand-mixed gold. The
-    // goldenrod that used to sit here measured 26 units away from it, and it
-    // marked the app's HIGHEST tier in a colour the palette did not own. The
-    // same shade appeared as an rgba in four other places on these surfaces
-    // (poster border, premium pull quote, two selection tints); all now read
-    // from marqueeGold's channels.
-    backgroundColor: colors.marqueeGold,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 2,
-    flexShrink: 0,
   },
   timestamp: {
     includeFontPadding: false,

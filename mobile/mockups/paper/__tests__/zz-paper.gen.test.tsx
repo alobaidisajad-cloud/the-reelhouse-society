@@ -342,6 +342,46 @@ add('t3-android-360', (
   </View>
 ));
 
+/* ── THE BYLINE'S WORST CASE, DRAWN ──────────────────────────────────────────
+   The byline gained a rank badge, and a badge is weight in a row that already
+   truncates. Every plate that existed tested it with a four-letter name, or a
+   fourteen-letter name wearing the NARROWER of the two badges — so the case
+   that actually decides the layout had never been drawn.
+
+   Here it is: a thirty-character name (the username ceiling), the AUTEUR plate
+   (the wider badge, and the one with a border), the trailing facts, and the
+   narrowest column the app supports. No avatar either, so the disc draws its
+   monogram rather than a picture.
+
+   What must hold: the badge never shrinks and never wraps. The NAME gives way
+   first and the trailing facts give way with it, because a name is recognisable
+   from its opening characters and a critique count is on the screen twice. */
+const MAX_AUTEUR: PaperAuthor = {
+  name: 'Katharine-Wentworth-Ashgrovely', memberNo: 10248, tier: 'auteur', avatar: null,
+};
+
+add('t7-byline-worst-case', (
+  <View style={p.screen}>
+    <TopNavBar />
+    <NavSpace />
+    <PaperChrome section="ALL" />
+    <PaperSheet>
+      <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
+      <PaperPost kind="dossier" order="14:20" author={MAX_AUTEUR} measureWidth={AND_COL} film={TOKYO}
+        body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
+        readTime="12 MIN" edited certifyCount={61} commentCount={14} />
+      <PaperPost kind="take" order="2.1K" author={MAX_AUTEUR} measureWidth={AND_COL}
+        body={LONGEST} certifyCount={2140} commentCount={61} certified />
+      {/* The other badge at the same width, so the two can be compared without
+          switching plates — an Archivist is the common case and the one that
+          decides whether the feed reads as a wall of medals. */}
+      <PaperPost kind="seeking" order="88" author={LONGNAME} measureWidth={AND_COL}
+        body="Where do I start with Ozu? I have two evenings and no idea which door to open."
+        certifyCount={88} commentCount={31} />
+    </PaperSheet>
+  </View>
+));
+
 add('t1-tablet', (
   <View style={p.screen}>
     <TopNavBar />

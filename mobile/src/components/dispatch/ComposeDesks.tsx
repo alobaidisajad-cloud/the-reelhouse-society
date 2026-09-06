@@ -40,7 +40,7 @@ import { BALLOT_MIN, BALLOT_MAX } from '@/src/components/dispatch/paper/paperMet
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
-import type { BallotOption } from '@/src/stores/dispatchTypes';
+import { paperTierOf, type BallotOption } from '@/src/stores/dispatchTypes';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
 
@@ -59,7 +59,11 @@ function useMe() {
   return useMemo(() => (user ? {
     name: user.username ?? '',
     memberNo: (user as { member_no?: number }).member_no ?? 0,
-    tier: 'free' as const,
+    // Your OWN rank, on your own byline. This said 'free' for everyone, so an
+    // Auteur composing a filing was shown a preview of a byline that was not
+    // theirs — on the one screen whose whole job is to show them what they are
+    // about to publish.
+    tier: paperTierOf(user),
     avatar: (user as { avatar_url?: string | null }).avatar_url ?? null,
   } : null), [user]);
 }

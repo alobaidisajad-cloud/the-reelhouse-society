@@ -6,7 +6,7 @@ import { Bookmark, ScrollText, User, Clapperboard, ArrowRight } from 'lucide-rea
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import type { SR } from '@/src/hooks/useUniversalSearch';
-import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
+import { RankBadge, rankOf } from '@/src/components/RankBadge';
 
 const TYPE_GLYPH: Record<string, string> = {
   film: '▶', actor: '◎', director: '✦', user: '◉', log: '✎', list: '☰',
@@ -79,15 +79,11 @@ export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR;
             <Text style={st.rowExcerpt} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.extra}</Text>
           ) : null}
 
-          {(item.type === 'user' || item.type === 'log') && item.role && isArchivistPlusTier(item.role) ? (
-            <Text style={[
-              st.rolePill,
-              isAuteurPlusTier(item.role) 
-                ? { color: '#D4A520', backgroundColor: 'rgba(212,165,32,0.12)' }
-                : { color: colors.sepia, backgroundColor: 'rgba(184,137,26,0.10)' },
-            ]}>
-              {isAuteurPlusTier(item.role) ? '★ AUTEUR' : '✦ ARCHIVIST'}
-            </Text>
+          {/* This row held the third of the three golds one rank was drawn in —
+              its own here, another on the home pulse, the palette's token in
+              the archive feed. One badge now, and only the token. */}
+          {item.type === 'user' || item.type === 'log' ? (
+            <View style={st.rolePillWrap}><RankBadge rank={rankOf(item.role)} /></View>
           ) : null}
         </View>
 
@@ -133,10 +129,7 @@ const st = StyleSheet.create({
     fontFamily: fonts.body, fontSize: 11, color: colors.bone, opacity: 0.45,
     fontStyle: 'italic', marginTop: 2, lineHeight: 14,
   },
-  rolePill: {
-    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.2,
-    color: colors.fog, paddingHorizontal: 5, paddingVertical: 1.5,
-    borderRadius: 2, alignSelf: 'flex-start', overflow: 'hidden', marginTop: 3,
-  },
+  /** The badge brings its own box; this only places it in the row. */
+  rolePillWrap: { alignSelf: 'flex-start', marginTop: 3 },
   rowArrow: { marginLeft: 6 },
 });

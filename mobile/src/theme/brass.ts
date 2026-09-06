@@ -24,6 +24,25 @@ export const BRASS_START = { x: 0.15, y: 0 } as const;
 export const BRASS_END = { x: 0.85, y: 1 } as const;
 
 /**
+ * ── THE SAME BRASS, ON A PLATE THAT IS MOSTLY WIDTH ─────────────────────────
+ * The vector above was set for the Concierge disc, which is a circle, and the
+ * film stub, which is nearly square. On a badge — 62 wide and 17 tall — that
+ * diagonal is effectively HORIZONTAL: the ramp runs along the plate's length,
+ * and the last letters of the label end up on `tarnish`, the darkest stop.
+ *
+ * Measured, not guessed: ink on that tail is 3.91:1, under the 4.5 WCAG asks of
+ * small text, on every size of both badges. Lit across the HEIGHT instead, the
+ * worst point under a glyph is 4.57:1.
+ *
+ * It is also the truer picture. A nameplate catches light across its short
+ * axis; a ramp running end to end on a wide plate reads as a fade, not as
+ * metal. Same four colours, same four stops — only the direction follows the
+ * shape.
+ */
+export const BRASS_WIDE_START = { x: 0.5, y: 0 } as const;
+export const BRASS_WIDE_END = { x: 0.5, y: 1 } as const;
+
+/**
  * The crown: `flicker`, the palette's candlelight, falling off over the top of
  * the face. Without it the ramp reads as a gradient; with it, as metal.
  */

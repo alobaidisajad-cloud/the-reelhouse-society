@@ -229,6 +229,43 @@ const unwrap = (p: RawProfile | RawProfile[] | null | undefined): RawProfile | n
  * painted from `tier` alone would be the wrong colour for a founding member and
  * for anyone whose rank comes from their role.
  */
+/**
+ * The rank a Dispatch byline draws, from anything that describes a member.
+ *
+ * ── WHY THIS IS EXPORTED ────────────────────────────────────────────────────
+ * It used to live inside `toAuthor`, which maps a row that came back from the
+ * SERVER. Three other places build a `PaperAuthor` for the member who is signed
+ * in right now — the desk's preview of your own byline, and the optimistic
+ * filing and critique you see the instant you post — and all three wrote
+ * `tier: 'free'` because there was nothing to call.
+ *
+ * That was survivable while rank was a 1.5pt ring. With a badge on the byline
+ * it is not: an Auteur would have paid for the mark, posted, watched their own
+ * post appear without it, and seen it appear a second later when the server's
+ * copy replaced theirs. The first thing the feature would have done is look
+ * broken to exactly the members who paid for it.
+ *
+ * Compared by WEIGHT, not by name. `resolveTier` already applies the Highest
+ * Watermark rule across tier / role / is_founding, and a founding member comes
+ * back as 'founding' — a name-equality check would have painted the app's most
+ * senior members with no ring at all, and would do the same to any tier added
+ * above archivist later. This is the same comparison isAuteurPlusTier makes.
+ */
+export function paperTierOf(
+  who: { tier?: string | null; role?: string | null; is_founding?: boolean | null } | null | undefined,
+): PaperTier {
+  const weight = getTierWeight(
+    resolveTier({
+      tier: who?.tier ?? undefined,
+      role: who?.role ?? undefined,
+      is_founding: who?.is_founding ?? undefined,
+    }),
+  );
+  return weight >= TIER_WEIGHTS.auteur ? 'auteur'
+    : weight >= TIER_WEIGHTS.archivist ? 'archivist'
+      : 'free';
+}
+
 function toAuthor(
   userId: string | null,
   username: string,
@@ -236,22 +273,7 @@ function toAuthor(
 ): PaperAuthor | null {
   if (!userId) return null;
   const p = unwrap(profile);
-  // Compared by WEIGHT, not by name. `resolveTier` already applies the Highest
-  // Watermark rule across tier / role / is_founding, and a founding member comes
-  // back as 'founding' — a name-equality check would have painted the app's most
-  // senior members with no ring at all, and would do the same to any tier added
-  // above archivist later. This is the same comparison isAuteurPlusTier makes.
-  const weight = getTierWeight(
-    resolveTier({
-      tier: p?.tier ?? undefined,
-      role: p?.role ?? undefined,
-      is_founding: p?.is_founding ?? undefined,
-    }),
-  );
-  const tier: PaperTier =
-    weight >= TIER_WEIGHTS.auteur ? 'auteur'
-      : weight >= TIER_WEIGHTS.archivist ? 'archivist'
-        : 'free';
+  const tier = paperTierOf(p);
   return {
     // The row's own handle is authoritative: it is derived server-side on every
     // write (trg_derive_username) and kept current by the rename trigger, so it

@@ -12,6 +12,7 @@ import {
 } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { formatCount, stillHeight, KIND_RULE, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted } from './paperText';
@@ -71,15 +72,24 @@ export const Byline = memo(function Byline({
   author, trailing, onPress,
 }: { author: PaperAuthor | null; trailing?: string; onPress?: () => void }) {
   const departed = !author;
+  // The rank the badge draws. `rankOf` goes through resolveTier, so a founding
+  // member reads as an Auteur here exactly as they do everywhere else.
+  const rank = departed ? null : rankOf(author.tier);
+  const word = rankWord(rank);
   // A departed member has no page to open, so the name is not a control. The
   // words stay and the destination goes, which is what the erasure means.
   const Row: React.ComponentType<any> = onPress && !departed ? PressableScale : View;
-  const rowProps = onPress && !departed
+  const pressable = Boolean(onPress) && !departed;
+  const rowProps = pressable
     ? {
       onPress, haptic: 'selection' as const,
       hitSlop: { top: 4, bottom: 4, left: 0, right: 0 },
       accessibilityRole: 'link' as const,
-      accessibilityLabel: `${author.name}. Open their room.`,
+      // The rank rides the ROW's label because an iOS control with a label of
+      // its own swallows its children: a badge left to speak for itself inside
+      // this Pressable would be silent, and a member's rank would be the one
+      // fact on the byline a screen reader never reached.
+      accessibilityLabel: `${author.name}${word ? `, ${word}` : ''}. Open their room.`,
     }
     : {};
   return (
@@ -119,12 +129,19 @@ export const Byline = memo(function Byline({
           The name truncates. The facts do not. Each gets its own box, and only
           the one that can be re-read elsewhere is allowed to give way. */}
       <Text
-        style={[p.bylineName, author?.tier === 'auteur' && { color: CRIMSON_INK, opacity: 1 }]}
+        style={[p.bylineName, rank === 'auteur' && p.bylineNameAuteur]}
         numberOfLines={1}
         {...scaledTextProps}
       >
         {departed ? 'A MEMBER, DEPARTED' : author.name.toUpperCase()}
       </Text>
+      {/* ── THE RANK ────────────────────────────────────────────────────────
+          The app's own badge, not a Dispatch variant of it. It never gives
+          way: the name truncates and the trailing facts truncate, because a
+          name can be recognised from its first characters and a count can be
+          read elsewhere on the screen — a rank shortened to `★ AUT` is just
+          wrong. `silent` inside a control that already says the rank. */}
+      <RankBadge rank={rank} silent={pressable} />
       {trailing ? (
         <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>
           {`· ${trailing}`}

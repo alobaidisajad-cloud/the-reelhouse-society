@@ -117,23 +117,61 @@ describe('no brass plate is painted flat', () => {
 });
 
 /**
- * ── KNOWN FLAT BRASS OUTSIDE THIS PAGE'S REACH ──────────────────────────────
- * `feed/UserAttributionRow` draws the ★ AUTEUR role badge as a flat
- * `colors.marqueeGold` pill, and it appears on the film page inside every
- * critique card. It is genuinely flat brass and it genuinely sits beside the
- * ramp.
+ * ── THE EXEMPTION, CLOSED ───────────────────────────────────────────────────
+ * This block used to assert that `feed/UserAttributionRow` STILL drew the
+ * ★ AUTEUR badge as a flat `colors.marqueeGold` pill. It was written as a
+ * failing tripwire rather than a comment: the conversion was "a four-surface
+ * change and a decision for whoever owns those", so the guard held the debt
+ * visible and promised to fail the moment somebody paid it.
  *
- * It is NOT changed here because that component is shared with the feed, the
- * home pulse and the log form: converting it is a four-surface change and a
- * decision for whoever owns those, not a detail of the film page.
+ * It has been paid. The badge is one shared component now — `RankBadge` — and
+ * the Auteur's plate is the ramp, so the old assertion would fail for the right
+ * reason. What replaces it is the assertion that matters from here: the badge
+ * is drawn ONCE, and the one place that draws it uses the ramp.
  *
- * Recorded as a test rather than a comment so it stays visible, and so that if
- * somebody does convert it, this fails and points at the exemption to remove.
+ * The other half of that debt was three golds for one rank — #DCA63A here,
+ * #DAA520 on the home pulse, #D4A520 in search. A shared component cannot drift
+ * that way, which is the real reason it is shared.
  */
-describe('the one flat brass this page can see but must not fix', () => {
-  it('is still the AUTEUR badge in a shared component', () => {
-    const src = readFileSync(
-      join(__dirname, '..', '..', 'feed', 'UserAttributionRow.tsx'), 'utf8');
-    expect(flatPlates(strip(src)).length).toBeGreaterThan(0);
+describe('the AUTEUR badge is one brass, in one place', () => {
+  const badge = readFileSync(
+    join(__dirname, '..', '..', 'RankBadge.tsx'), 'utf8');
+
+  it('draws its plate with the ramp, not a flat fill', () => {
+    expect(flatPlates(strip(badge))).toEqual([]);
+    expect(badge).toMatch(/from '@\/src\/theme\/brass'/);
+    expect(strip(badge)).toMatch(/colors=\{BRASS\}/);
+  });
+
+  it('and no surface keeps a hand-mixed gold for it', () => {
+    // The three that existed. A regex over the four files rather than a memory
+    // of having fixed them: this is the class, and the class is what must stay
+    // closed.
+    for (const rel of [
+      ['..', '..', 'feed', 'UserAttributionRow.tsx'],
+      ['..', '..', 'home', 'PulseCardItem.tsx'],
+      ['..', '..', 'search', 'SearchResultRow.tsx'],
+      ['..', '..', 'RankBadge.tsx'],
+    ]) {
+      const src = strip(readFileSync(join(__dirname, ...rel), 'utf8'));
+      expect(`${rel[rel.length - 1]}: ${src.match(/#D[A4]A?[0-9A-F]{3,4}/gi) ?? []}`)
+        .toMatch(/: $/);
+    }
+  });
+
+  it('and every surface that shows a rank imports the one badge', () => {
+    for (const rel of [
+      ['..', '..', 'feed', 'UserAttributionRow.tsx'],
+      ['..', '..', 'home', 'PulseCardItem.tsx'],
+      ['..', '..', 'search', 'SearchResultRow.tsx'],
+      ['..', '..', 'dispatch', 'paper', 'PaperPost.tsx'],
+    ]) {
+      const src = readFileSync(join(__dirname, ...rel), 'utf8');
+      expect(`${rel[rel.length - 1]} imports RankBadge: ${/RankBadge/.test(src)}`)
+        .toMatch(/true$/);
+      // And does not keep drawing its own.
+      expect(`${rel[rel.length - 1]} draws its own: ${/★ AUTEUR|✦ ARCHIVIST/.test(strip(src))}`)
+        .toMatch(/false$/);
+    }
   });
 });

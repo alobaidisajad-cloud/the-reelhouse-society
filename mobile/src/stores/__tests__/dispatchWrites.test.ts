@@ -213,6 +213,32 @@ describe('filing something new', () => {
     expect(await useDispatch.getState().file({ kind: 'take', body: 'A take.' })).toBeNull();
     expect(mockSent).toHaveLength(0);
   });
+
+  /**
+   * ── YOUR OWN RANK, ON YOUR OWN POST ───────────────────────────────────────
+   * The optimistic row is what a member SEES the instant they file — the server
+   * copy replaces it a moment later. Its author was built by hand here with
+   * `tier: 'free'` hardcoded, so it disagreed with the row that replaced it.
+   *
+   * That was invisible while rank was a 1.5pt ring. With a badge on the byline
+   * it is the feature's first impression, and it would have been: an Auteur
+   * pays for the mark, posts, sees their own filing appear without it, and
+   * watches it appear a second later. Guarded here because nothing else in the
+   * suite noticed when it was wrong.
+   */
+  it.each([
+    ['auteur', { tier: 'auteur' }, 'auteur'],
+    ['archivist', { tier: 'archivist' }, 'archivist'],
+    ['a founding member, who ranks as an Auteur', { is_founding: true }, 'auteur'],
+    ['a role rather than a tier', { role: 'auteur' }, 'auteur'],
+    ['nobody paid', { tier: 'cinephile' }, 'free'],
+  ])('files %s with their real rank on the optimistic row', async (_name, who, expected) => {
+    const auth = require('../auth').useAuthStore;
+    auth.getState.mockReturnValueOnce({ user: { id: 'u1', username: 'me', ...who } });
+    reset({ filings: [] });
+    await useDispatch.getState().file({ kind: 'take', body: 'A take.' });
+    expect(useDispatch.getState().filings[0].author?.tier).toBe(expected);
+  });
 });
 
 // ── AMENDING ────────────────────────────────────────────────────────────────
