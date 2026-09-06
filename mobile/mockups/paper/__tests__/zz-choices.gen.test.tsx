@@ -26,6 +26,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { render } from '@testing-library/react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
@@ -417,6 +418,167 @@ add('w0-today', (
       <Tool mark="▤" label="COVER" />
       <View style={{ flex: 1 }} />
       <Text style={p.rl} {...scaledTextProps}>1,240 WORDS · 6 MIN</Text>
+    </View>
+  </View>
+));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE RECOMMENDATION, IN ALL FOUR PLACES IT LIVES
+   ───────────────────────────────────────────────────────────────────────────
+   THE CRIMSON LACQUER PLATE. The house's own lit-plate construction — the four
+   stops and the crown it already uses for brass — in the Auteur's own crimson,
+   with parchment letters.
+
+   Why this one, of the six:
+
+   · It is the Auteur's ACTUAL colour, which is the whole complaint about the
+     brass version.
+   · It is the house's own premium material, not a new one. Brass is what the
+     HOUSE is made of — the Concierge disc, the stamps, every rule. Crimson
+     lacquer is the same construction in the colour that belongs to this rank.
+   · It keeps the HIERARCHY right. The Archivist's mark is a flat brass wash;
+     this one is a lit solid. Filled beats tinted at a glance, in any language.
+     Every unfilled candidate — the rule, the brackets, the margin mark —
+     inverts that: the lesser rank would carry the heavier shape.
+   · It survives every context. A tinted word and a hairline depend on a paper
+     ground to read as typography; on the home pulse card and in a search row
+     they read as an underline or as a stray bar. A plate is a plate anywhere.
+   · Parchment on crimson measures 4.74:1 at the ramp's LIGHTEST stop and
+     improves as it darkens — so unlike gold, it clears the floor at every
+     point of the gradient rather than only in the middle.
+
+   And it is NOT the censor stamp, which was the closest rival: `stampCrimson`
+   is what a WITHHELD filing wears, and dressing the house's highest rank in the
+   costume of a censored post is the exact collision this whole exercise set out
+   to remove.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const CRIMSON_RAMP = [colors.crimson, '#A32828', '#8E2222', '#6E1A1A'] as const;
+const CRIMSON_STOPS = [0, 0.34, 0.62, 1] as const;
+
+const Lacquer = ({ scale = 1 }: { scale?: number }) => (
+  <View style={{
+    borderRadius: 2, paddingHorizontal: 7, paddingVertical: 2,
+    overflow: 'hidden', flexShrink: 0,
+    borderWidth: 0.5, borderColor: 'rgba(226,86,79,0.45)',
+  }}>
+    <LinearGradient colors={CRIMSON_RAMP} locations={CRIMSON_STOPS}
+      start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+      style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
+    <LinearGradient colors={['rgba(240,232,176,0.18)', 'rgba(240,232,176,0.05)', 'transparent']}
+      style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '48%' }} />
+    <Text style={[TEXT, { fontSize: 8 * scale, color: colors.parchment }]}
+      numberOfLines={1} {...decorativeTextProps}>★ AUTEUR</Text>
+  </View>
+);
+
+/** The archive feed's ledger row, from its own measurements. */
+const LedgerRow = ({ auteur }: { auteur?: boolean }) => (
+  <View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10 }}>
+      <View style={{
+        width: 28, height: 28, borderRadius: 14, backgroundColor: colors.soot,
+        alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+        borderColor: auteur ? colors.crimson : colors.sepiaBorder, overflow: 'hidden',
+      }}>
+        <Text style={{ fontFamily: fonts.display, fontSize: 12, color: colors.parchment,
+          includeFontPadding: false }} {...decorativeTextProps}>{auteur ? 'A' : 'D'}</Text>
+      </View>
+      <Text style={{
+        fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, includeFontPadding: false,
+        color: auteur ? colors.crimsonInk : colors.sepia, flexShrink: 1,
+      }} numberOfLines={1} {...scaledTextProps}>@{auteur ? 'ANA' : 'DAN'}</Text>
+      {auteur ? <Lacquer /> : <RankBadge rank="archivist" />}
+      <Text style={{ fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog,
+        marginLeft: 'auto', includeFontPadding: false }} {...scaledTextProps}>2H AGO</Text>
+    </View>
+    <LinearGradient
+      colors={auteur ? ['rgba(180,45,45,0.55)', 'rgba(180,45,45,0.02)']
+        : ['rgba(184,137,26,0.55)', 'rgba(184,137,26,0.02)']}
+      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: 1 }} />
+  </View>
+);
+
+/** A search result row: name, subtitle, the mark under them. */
+const SearchRow = ({ auteur }: { auteur?: boolean }) => (
+  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9 }}>
+    <View style={{
+      width: 34, height: 34, borderRadius: 17, backgroundColor: colors.soot,
+      alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+      borderColor: auteur ? colors.crimson : colors.sepiaBorder,
+    }}>
+      <Text style={{ fontFamily: fonts.display, fontSize: 13, color: colors.parchment,
+        includeFontPadding: false }} {...decorativeTextProps}>{auteur ? 'A' : 'D'}</Text>
+    </View>
+    <View style={{ flex: 1, minWidth: 0 }}>
+      <Text style={{ fontFamily: fonts.body, fontSize: 13.5, color: colors.parchment }}
+        numberOfLines={1} {...scaledTextProps}>{auteur ? 'ana' : 'dan'}</Text>
+      <View style={{ alignSelf: 'flex-start', marginTop: 3 }}>
+        {auteur ? <Lacquer /> : <RankBadge rank="archivist" />}
+      </View>
+    </View>
+  </View>
+);
+
+add('f1-final-everywhere', (
+  <View style={[p.screen, { paddingHorizontal: 20, paddingTop: 34 }]}>
+    <Note>THE CRIMSON LACQUER PLATE — IN ALL FOUR PLACES IT LIVES</Note>
+
+    <Note dim>1 · THE DISPATCH BYLINE</Note>
+    <Row Mark={() => <Lacquer />} name="Ana" trailing="61 CRITIQUES" />
+    <View style={p.byline}>
+      <View style={[p.avatar, p.avatarArchivist]}>
+        <Text style={p.avatarMark} {...decorativeTextProps}>D</Text>
+      </View>
+      <Text style={p.bylineName} numberOfLines={1} {...scaledTextProps}>DAN</Text>
+      <RankBadge rank="archivist" />
+      <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>· 31 CRITIQUES</Text>
+    </View>
+
+    <View style={[p.hair, { marginTop: 16, marginBottom: 16 }]} />
+    <Note dim>2 · THE ARCHIVE FEED — A LEDGER ROW AND ITS TIER RULE</Note>
+    <LedgerRow auteur />
+    <View style={{ height: 12 }} />
+    <LedgerRow />
+
+    <View style={[p.hair, { marginTop: 16, marginBottom: 16 }]} />
+    <Note dim>3 · SEARCH</Note>
+    <SearchRow auteur />
+    <SearchRow />
+
+    <View style={[p.hair, { marginTop: 16, marginBottom: 16 }]} />
+    <Note dim>4 · AT THE LARGEST TEXT A MEMBER CAN SET</Note>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <Lacquer scale={1.35} />
+      <Text style={{ fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.fog }}
+        {...decorativeTextProps}>· PARCHMENT ON CRIMSON · 4.74:1 AT THE LIGHTEST STOP</Text>
+    </View>
+  </View>
+));
+
+add('f2-final-in-the-feed', (
+  <View style={[p.screen, { paddingHorizontal: 20, paddingTop: 34 }]}>
+    <Note>A COLUMN OF ROWS — THE ONLY TEST THAT MATTERS</Note>
+    <Note dim>THE TOP RANK IS RARE, SO THE RED IS RARE. THAT IS WHAT MAKES IT READ AS AN HONOUR.</Note>
+    {[
+      ['Ana', 1], ['Dan', 0], ['Sam', 2], ['Kit', 2], ['Mira', 1],
+      ['Jun', 0], ['Noor', 2], ['Iris', 2], ['Theo', 0], ['Lena', 2],
+    ].map(([who, kind], i) => (
+      <View key={who as string} style={p.byline}>
+        <View style={[p.avatar,
+          kind === 1 ? [p.avatarAuteur, { borderColor: colors.crimson }]
+            : kind === 0 ? p.avatarArchivist : null]}>
+          <Text style={p.avatarMark} {...decorativeTextProps}>{(who as string).slice(0, 1)}</Text>
+        </View>
+        <Text style={[p.bylineName, kind === 1 && { color: colors.crimsonInk, opacity: 1 }]}
+          numberOfLines={1} {...scaledTextProps}>{(who as string).toUpperCase()}</Text>
+        {kind === 1 ? <Lacquer /> : kind === 0 ? <RankBadge rank="archivist" /> : null}
+        <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>{`· ${(i + 2) * 13} CRITIQUES`}</Text>
+      </View>
+    ))}
+    <View style={[p.hair, { marginTop: 16, marginBottom: 14 }]} />
+    <Note dim>AND THE THIRTY-CHARACTER NAME, NARROWEST COLUMN</Note>
+    <View style={{ width: 257 }}>
+      <Row Mark={() => <Lacquer />} name="Katharine-Wentworth-Ashgrovely" trailing="12 MIN" />
     </View>
   </View>
 ));
