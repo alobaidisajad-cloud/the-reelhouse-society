@@ -70,7 +70,7 @@ import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import {
   WireDesk, BallotDesk, DossierDesk, FilmFinder, ReportSheet, ShareSheet,
 } from '@/src/components/dispatch/paper/PaperDesk';
-import { ConciergeActs, ConciergeForms } from '@/src/components/dispatch/paper/PaperConcierge';
+import { ConciergeCard } from '@/src/components/layout/ConciergeButton';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
 import { navTopPadding, NAV_ROW_MIN_H, NAV_BOTTOM_PADDING } from '@/src/components/layout/navMetrics';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
@@ -1234,15 +1234,20 @@ add('y0-rtl', (
   </View>
 ));
 
+/**
+ * ── THE CARD THE APP ACTUALLY MOUNTS ────────────────────────────────────────
+ * This drew `PaperConcierge`, which no screen mounted: a second copy of this
+ * card, alive only because this file imported it. The plates promise the real
+ * component, and for the concierge they were showing the other one.
+ *
+ * There was a second plate too — `y2-concierge-forms` — drawing the five forms
+ * INSIDE the concierge card behind a back arrow. The app does not do that: "File
+ * to the Dispatch" routes to /dispatch/compose, and the picker there is already
+ * drawn as `f1-picker`. It was a superseded design that no member could reach.
+ */
 add('y1-concierge-acts', (
   <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>
-    <ConciergeActs />
-  </View>
-));
-
-add('y2-concierge-forms', (
-  <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>
-    <ConciergeForms />
+    <ConciergeCard />
   </View>
 ));
 

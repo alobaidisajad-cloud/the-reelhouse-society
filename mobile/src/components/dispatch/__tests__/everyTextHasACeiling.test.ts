@@ -160,12 +160,16 @@ describe('every Text on the Dispatch surface has a ceiling', () => {
 
   it('finds the Text elements at all, so a silent zero cannot pass for a clean sweep', () => {
     // A parser that matched nothing would report no faults and look identical to
-    // a surface with none. 18 files and 250 Text elements today, so these floors
-    // sit just under what is really there rather than at a round number — the
-    // first draft asserted 20 files against an actual 18 and failed, which is
-    // the assertion doing its job.
-    expect(files.length).toBeGreaterThanOrEqual(18);
-    expect(seen).toBeGreaterThanOrEqual(240);
+    // a surface with none, so these floors sit just under what is really there
+    // rather than at a round number.
+    //
+    // They have caught a change twice now. The first draft asserted 20 files
+    // against an actual 18. Then PaperConcierge went — a second copy of the
+    // concierge card that no screen mounted, alive only because the mockups
+    // imported it — and the surface fell to 17, which is the floor doing exactly
+    // what it is for.
+    expect(files.length).toBeGreaterThanOrEqual(17);
+    expect(seen).toBeGreaterThanOrEqual(225);
   });
 
   it('counts the nested spans as covered rather than as faults', () => {

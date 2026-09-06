@@ -139,6 +139,88 @@ const BrassDisc = memo(function BrassDisc({ rotation }: { rotation: SharedValue<
   );
 });
 
+/**
+ * ── THE CARD ITSELF, SEPARATE FROM THE BUTTON THAT OPENS IT ─────────────────
+ * Exported so the design record can draw the REAL sheet.
+ *
+ * There used to be a second one. `PaperConcierge.tsx` held its own copy of this
+ * card — same title, same lore, same three acts, same descriptions — and the
+ * mockups drew that while the app mounted this. Two hundred and five lines that
+ * no screen mounted, kept alive by a fixture importing them, and the plates
+ * quietly promised to show "the real component" while showing the other one.
+ * Identical on the day it was found, and nothing kept them so: a change here
+ * would never have reached the drawing.
+ *
+ * The card is the whole visual unit — glow, brackets, title, rule, rows. The
+ * geometry around it (where it sits, the notch pointing at the button, the
+ * animation) belongs to the button and stays there.
+ */
+export const ConciergeCard = memo(function ConciergeCard({
+  onLog, onStack, onFile,
+}: {
+  onLog?: () => void; onStack?: () => void; onFile?: () => void;
+}) {
+  return (
+    <View style={s.card}>
+      {/* Hairline brass glow along the top — the same law as the login form card */}
+      <View style={s.cardGlow} />
+      {/* Archival registration brackets */}
+      <View style={[s.bracket, s.bracketTL]} />
+      <View style={[s.bracket, s.bracketTR]} />
+      <View style={[s.bracket, s.bracketBL]} />
+      <View style={[s.bracket, s.bracketBR]} />
+
+      <Text style={s.sheetTitle} {...displayTextProps}>✦ THE CONCIERGE ✦</Text>
+      <Text style={s.sheetLore} {...displayTextProps}>At your service.</Text>
+      <View style={s.headRule} />
+
+      {/* hitSlop null, deliberately. PressableScale defaults to 15pt on
+          every side, which on two rows stacked a hairline apart makes
+          their targets OVERLAP by 30pt — and the later row in the JSX
+          wins, so the bottom of "Log a Film" would have opened "Curate a
+          Stack". These rows are 66pt tall; they need no help. */}
+      <PressableScale style={s.actionRow} onPress={onLog} hitSlop={null} accessibilityLabel="Log a film">
+        <View style={[s.actionIconWrap, s.actionIconLog]}>
+          <Film size={18} color={colors.sepia} strokeWidth={1.5} />
+        </View>
+        <View style={s.actionTextCol}>
+          <Text style={s.actionTitle} {...displayTextProps}>Log a Film</Text>
+          <Text style={s.actionDesc} {...displayTextProps}>Set down what you&apos;ve seen.</Text>
+        </View>
+      </PressableScale>
+
+      <View style={s.rowDivider} />
+
+      <PressableScale style={s.actionRow} onPress={onStack} hitSlop={null} accessibilityLabel="Curate a stack">
+        <View style={[s.actionIconWrap, s.actionIconStack]}>
+          <ListPlus size={18} color={colors.bone} strokeWidth={1.5} />
+        </View>
+        <View style={s.actionTextCol}>
+          <Text style={s.actionTitle} {...displayTextProps}>Curate a Stack</Text>
+          <Text style={s.actionDesc} {...displayTextProps}>Gather films under one theme.</Text>
+        </View>
+      </PressableScale>
+
+      <View style={s.rowDivider} />
+
+      {/* hitSlop null, for the reason two rows above: three rows a
+          hairline apart, each 66pt tall, and the default 15pt would make
+          every pair overlap by 30 with the later one winning. */}
+      <PressableScale style={s.actionRow} onPress={onFile} hitSlop={null} accessibilityLabel="File to the Dispatch">
+        <View style={[s.actionIconWrap, s.actionIconFile]}>
+          <PenLine size={18} color={colors.parchment} strokeWidth={1.5} />
+        </View>
+        <View style={s.actionTextCol}>
+          <Text style={s.actionTitle} {...displayTextProps}>File to the Dispatch</Text>
+          <Text style={s.actionDesc} {...displayTextProps}>Say it to the whole house.</Text>
+        </View>
+      </PressableScale>
+    </View>
+  );
+});
+
+ConciergeCard.displayName = 'ConciergeCard';
+
 export const ConciergeButton = memo(function ConciergeButton() {
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
@@ -290,61 +372,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
             closes this — invisible to VoiceOver. */}
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none" accessibilityViewIsModal>
           <Animated.View style={[s.cardWrap, { top: cardTop, width: cardWidth }, cardStyle]}>
-            <View style={s.card}>
-              {/* Hairline brass glow along the top — the same law as the login form card */}
-              <View style={s.cardGlow} />
-              {/* Archival registration brackets */}
-              <View style={[s.bracket, s.bracketTL]} />
-              <View style={[s.bracket, s.bracketTR]} />
-              <View style={[s.bracket, s.bracketBL]} />
-              <View style={[s.bracket, s.bracketBR]} />
-
-              <Text style={s.sheetTitle} {...displayTextProps}>✦ THE CONCIERGE ✦</Text>
-              <Text style={s.sheetLore} {...displayTextProps}>At your service.</Text>
-              <View style={s.headRule} />
-
-              {/* hitSlop null, deliberately. PressableScale defaults to 15pt on
-                  every side, which on two rows stacked a hairline apart makes
-                  their targets OVERLAP by 30pt — and the later row in the JSX
-                  wins, so the bottom of "Log a Film" would have opened "Curate a
-                  Stack". These rows are 66pt tall; they need no help. */}
-              <PressableScale style={s.actionRow} onPress={onLog} hitSlop={null} accessibilityLabel="Log a film">
-                <View style={[s.actionIconWrap, s.actionIconLog]}>
-                  <Film size={18} color={colors.sepia} strokeWidth={1.5} />
-                </View>
-                <View style={s.actionTextCol}>
-                  <Text style={s.actionTitle} {...displayTextProps}>Log a Film</Text>
-                  <Text style={s.actionDesc} {...displayTextProps}>Set down what you&apos;ve seen.</Text>
-                </View>
-              </PressableScale>
-
-              <View style={s.rowDivider} />
-
-              <PressableScale style={s.actionRow} onPress={onStack} hitSlop={null} accessibilityLabel="Curate a stack">
-                <View style={[s.actionIconWrap, s.actionIconStack]}>
-                  <ListPlus size={18} color={colors.bone} strokeWidth={1.5} />
-                </View>
-                <View style={s.actionTextCol}>
-                  <Text style={s.actionTitle} {...displayTextProps}>Curate a Stack</Text>
-                  <Text style={s.actionDesc} {...displayTextProps}>Gather films under one theme.</Text>
-                </View>
-              </PressableScale>
-
-              <View style={s.rowDivider} />
-
-              {/* hitSlop null, for the reason two rows above: three rows a
-                  hairline apart, each 66pt tall, and the default 15pt would make
-                  every pair overlap by 30 with the later one winning. */}
-              <PressableScale style={s.actionRow} onPress={onFile} hitSlop={null} accessibilityLabel="File to the Dispatch">
-                <View style={[s.actionIconWrap, s.actionIconFile]}>
-                  <PenLine size={18} color={colors.parchment} strokeWidth={1.5} />
-                </View>
-                <View style={s.actionTextCol}>
-                  <Text style={s.actionTitle} {...displayTextProps}>File to the Dispatch</Text>
-                  <Text style={s.actionDesc} {...displayTextProps}>Say it to the whole house.</Text>
-                </View>
-              </PressableScale>
-            </View>
+            <ConciergeCard onLog={onLog} onStack={onStack} onFile={onFile} />
 
             {/* The notch, pointing back at the button. Drawn AFTER the card so its
                 soot fill erases the segment of card border it crosses; drawn
