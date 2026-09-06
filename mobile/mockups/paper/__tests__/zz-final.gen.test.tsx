@@ -59,7 +59,21 @@ const Mark = ({ rank, scale = 1 }: { rank: 'auteur' | 'archivist' | null; scale?
       paddingHorizontal: 7, paddingVertical: 2.5,
       borderWidth: a ? 1 : 0.5,
       borderColor: a ? colors.crimson : 'rgba(184,137,26,0.55)',
-      overflow: 'hidden', transform: [{ rotate: '-3deg' }],
+      /* ── NO RADIUS, AND THEREFORE NO CLIPPING ──────────────────────────
+         A letterpress stamp has square corners, so there is no radius — and
+         with no radius the absolutely-positioned gradient, pinned to all four
+         edges of the padding box, already fills exactly the area it should.
+         There is nothing left to clip, so `overflow: 'hidden'` comes off.
+
+         That matters beyond tidiness: `overflow: hidden` combined with a
+         `transform` is the one construction here that renders differently on
+         Android, and there is no Android device to prove otherwise on. The
+         safest fix was not to test around it but to stop needing it. */
+      transform: [{ rotate: '-3deg' }],
+      /* A rotated box PAINTS wider than the box layout reserved for it.
+         Measured on the rendered page: 0.65–1.13pt across, so ~0.6pt a side,
+         and it grows with the type. A point each side covers it to the 1.35
+         ceiling with room left. */
       marginHorizontal: 1, flexShrink: 0,
     }}>
       <LinearGradient
