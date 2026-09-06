@@ -564,6 +564,28 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// THE TEST ENVIRONMENT READS AT ORDINARY TYPE
+// ─────────────────────────────────────────────────────────────────────────────
+// jest-expo answers `Dimensions.get('window')` with `fontScale: 2` — a member
+// who has doubled their type size. Nothing read it, so nothing noticed, until
+// the essay's leading began deriving from it: every mockup was then drawn with
+// the leading already at its ceiling, and the plates showed normal type set far
+// looser than the app sets it.
+//
+// A test should render the ordinary case unless it says otherwise, so the scale
+// is 1 here and a test that wants a larger one sets it deliberately.
+// ─────────────────────────────────────────────────────────────────────────────
+// Required here rather than at the top: this file registers its mocks first and
+// has no import block of its own.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Dimensions: RNDimensions } = require('react-native');
+const realDimensionsGet = RNDimensions.get.bind(RNDimensions);
+jest.spyOn(RNDimensions, 'get').mockImplementation((...args: unknown[]) => ({
+  ...realDimensionsGet(args[0] as 'window' | 'screen'),
+  fontScale: 1,
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Silence console.warn for tests (noisy reanimated/navigation warnings)
 // ─────────────────────────────────────────────────────────────────────────────
 const originalWarn = console.warn;
