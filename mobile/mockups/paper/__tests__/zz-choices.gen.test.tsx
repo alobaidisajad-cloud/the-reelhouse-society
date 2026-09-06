@@ -583,6 +583,310 @@ add('f2-final-in-the-feed', (
   </View>
 ));
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE ONE THE APP ALREADY OWNS
+   ───────────────────────────────────────────────────────────────────────────
+   `profileStyles.tierStamp` — the rank, stamped on the corner of the print at a
+   hand's angle. Tilted −3.5°, a near-black ground, a hairline border, 7.5pt
+   caps tracked 1.8. Sepia for an Archivist, `tierStampRuby` turns the border and
+   the word CRIMSON for an Auteur.
+
+   Its own comment reads: "This is where rank lives now — the badge that used to
+   hang under the avatar and the pill that sat beside the name were two labels
+   for one fact." So the house has already chosen a rank mark, already chosen
+   crimson for the Auteur, and the feed simply never got the memo.
+
+   ONE CORRECTION to it, and only one: the profile paints the word in
+   `colors.crimson`, which on that near-black ground measures 3.16:1 — over the
+   app's 3:1 floor but under the 4.5 that 8pt type wants. `crimsonInk` exists in
+   the palette for exactly this ("words that must be crimson use this, at
+   5.4:1"), so the word takes it. Sepia on the same ground is already 6.24:1.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const Stamped = ({ auteur, scale = 1 }: { auteur?: boolean; scale?: number }) => (
+  <View style={{
+    paddingHorizontal: 7, paddingVertical: 2.5,
+    borderWidth: 1, borderColor: auteur ? colors.crimson : colors.sepia,
+    backgroundColor: 'rgba(10,9,6,0.92)',
+    transform: [{ rotate: '-3deg' }],
+    // A rotated box is WIDER than the box layout reserved for it. Measured on
+    // the page: an 18pt-tall plate at 3 degrees grows about half a point each
+    // side, so a point of margin keeps its corners out of the name beside it.
+    marginHorizontal: 1,
+    flexShrink: 0,
+  }}>
+    <Text style={{
+      fontFamily: fonts.sub, fontSize: 7.5 * scale, letterSpacing: 1.8,
+      includeFontPadding: false, color: auteur ? colors.crimsonInk : colors.sepia,
+    }} numberOfLines={1} {...decorativeTextProps}>{auteur ? '★ AUTEUR' : '✦ ARCHIVIST'}</Text>
+  </View>
+);
+
+/** Both finalists, in a byline and then in a column. */
+add('g1-stamp-vs-lacquer', (
+  <View style={[p.screen, { paddingHorizontal: 20, paddingTop: 34 }]}>
+    <Note>THE TWO FINALISTS</Note>
+
+    <Note dim>A · THE HOUSE'S OWN RANK STAMP — ALREADY ON THE PROFILE</Note>
+    <Row Mark={() => <Stamped auteur />} name="Ana" trailing="61 CRITIQUES" />
+    <View style={p.byline}>
+      <View style={[p.avatar, p.avatarArchivist]}>
+        <Text style={p.avatarMark} {...decorativeTextProps}>D</Text>
+      </View>
+      <Text style={p.bylineName} numberOfLines={1} {...scaledTextProps}>DAN</Text>
+      <Stamped />
+      <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>· 31 CRITIQUES</Text>
+    </View>
+
+    <View style={[p.hair, { marginTop: 18, marginBottom: 18 }]} />
+
+    <Note dim>B · THE CRIMSON LACQUER PLATE</Note>
+    <Row Mark={() => <Lacquer />} name="Ana" trailing="61 CRITIQUES" />
+    <View style={p.byline}>
+      <View style={[p.avatar, p.avatarArchivist]}>
+        <Text style={p.avatarMark} {...decorativeTextProps}>D</Text>
+      </View>
+      <Text style={p.bylineName} numberOfLines={1} {...scaledTextProps}>DAN</Text>
+      <RankBadge rank="archivist" />
+      <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>· 31 CRITIQUES</Text>
+    </View>
+
+    <View style={[p.hair, { marginTop: 18, marginBottom: 18 }]} />
+    <Note dim>THE STAMP, TEN ROWS DEEP</Note>
+    {[['Ana', 1], ['Dan', 0], ['Sam', 2], ['Kit', 2], ['Mira', 1], ['Jun', 0], ['Noor', 2]].map(([who, kind], i) => (
+      <View key={who as string} style={p.byline}>
+        <View style={[p.avatar,
+          kind === 1 ? [p.avatarAuteur, { borderColor: colors.crimson }]
+            : kind === 0 ? p.avatarArchivist : null]}>
+          <Text style={p.avatarMark} {...decorativeTextProps}>{(who as string).slice(0, 1)}</Text>
+        </View>
+        <Text style={[p.bylineName, kind === 1 && { color: colors.crimsonInk, opacity: 1 }]}
+          numberOfLines={1} {...scaledTextProps}>{(who as string).toUpperCase()}</Text>
+        {kind === 1 ? <Stamped auteur /> : kind === 0 ? <Stamped /> : null}
+        <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>{`· ${(i + 2) * 13} CRITIQUES`}</Text>
+      </View>
+    ))}
+  </View>
+));
+
+add('g2-stamp-everywhere', (
+  <View style={[p.screen, { paddingHorizontal: 20, paddingTop: 34 }]}>
+    <Note>THE RANK STAMP, IN EVERY PLACE IT LIVES</Note>
+
+    <Note dim>1 · THE PROFILE — WHERE IT ALREADY IS</Note>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+      <View style={{ width: 64, height: 78, backgroundColor: 'rgba(20,16,11,0.9)',
+        borderWidth: 1, borderColor: 'rgba(232,223,208,0.22)', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontFamily: fonts.display, fontSize: 26, color: colors.parchment }}
+          {...decorativeTextProps}>A</Text>
+      </View>
+      <View style={{ marginLeft: -22, marginBottom: -34 }}><Stamped auteur /></View>
+    </View>
+
+    <View style={[p.hair, { marginTop: 16, marginBottom: 14 }]} />
+    <Note dim>2 · THE DISPATCH BYLINE</Note>
+    <Row Mark={() => <Stamped auteur />} name="Ana" trailing="61 CRITIQUES" />
+
+    <View style={[p.hair, { marginTop: 12, marginBottom: 14 }]} />
+    <Note dim>3 · THE ARCHIVE FEED</Note>
+    <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10 }}>
+        <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.soot,
+          alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.crimson }}>
+          <Text style={{ fontFamily: fonts.display, fontSize: 12, color: colors.parchment,
+            includeFontPadding: false }} {...decorativeTextProps}>A</Text>
+        </View>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.crimsonInk,
+          includeFontPadding: false, flexShrink: 1 }} numberOfLines={1} {...scaledTextProps}>@ANA</Text>
+        <Stamped auteur />
+        <Text style={{ fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog,
+          marginLeft: 'auto', includeFontPadding: false }} {...scaledTextProps}>2H AGO</Text>
+      </View>
+      <LinearGradient colors={['rgba(180,45,45,0.55)', 'rgba(180,45,45,0.02)']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: 1 }} />
+    </View>
+
+    <View style={[p.hair, { marginTop: 16, marginBottom: 14 }]} />
+    <Note dim>4 · SEARCH  ·  5 · THE MEMBER REGISTRY</Note>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 }}>
+      <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.soot,
+        alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.crimson }}>
+        <Text style={{ fontFamily: fonts.display, fontSize: 13, color: colors.parchment,
+          includeFontPadding: false }} {...decorativeTextProps}>A</Text>
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ fontFamily: fonts.body, fontSize: 13.5, color: colors.parchment }}
+          numberOfLines={1} {...scaledTextProps}>ana</Text>
+        <View style={{ alignSelf: 'flex-start', marginTop: 4 }}><Stamped auteur /></View>
+      </View>
+    </View>
+
+    <View style={[p.hair, { marginTop: 14, marginBottom: 14 }]} />
+    <Note dim>6 · AT THE LARGEST TEXT A MEMBER CAN SET</Note>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <Stamped auteur scale={1.35} />
+      <Stamped scale={1.35} />
+    </View>
+    <View style={{ height: 10 }} />
+    <Note dim>CRIMSONINK 5.4:1 · SEPIA 6.24:1 · BOTH CLEAR AA</Note>
+  </View>
+));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TWO REFINEMENTS, BECAUSE THE PLAIN STAMP INVERTS THE HIERARCHY
+   ───────────────────────────────────────────────────────────────────────────
+   Drawn side by side, the profile's stamp has one fault the profile can never
+   show: it only ever draws ONE. In a feed the two ranks sit together, and a
+   BRASS hairline is brighter than a crimson one on near-black — so the lesser
+   rank reads louder than the greater. Rank hierarchy inverted by luminance.
+
+   A′ — THE IMPRESSION. One construction, two strengths. The Auteur's stamp is
+   struck at full pressure; the Archivist's is a lighter impression — a
+   half-tone border and a dimmer word. That is what a lesser stamp IS in
+   printing, so the hierarchy is carried by the medium rather than by a second
+   shape.
+
+   C — THE INKED STAMP. A′ plus texture: a whisper of the rank's own colour
+   inside the box and a graded ground, so it reads as ink pressed into card
+   rather than as an outline. The wash is 6% — far below the 10% `stampCrimson`
+   uses for WITHHELD, so it never becomes that mark.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const Impression = ({ auteur, scale = 1 }: { auteur?: boolean; scale?: number }) => (
+  <View style={{
+    paddingHorizontal: 7, paddingVertical: 2.5,
+    borderWidth: auteur ? 1 : 0.5,
+    borderColor: auteur ? colors.crimson : 'rgba(184,137,26,0.55)',
+    backgroundColor: 'rgba(10,9,6,0.92)',
+    transform: [{ rotate: '-3deg' }], marginHorizontal: 1, flexShrink: 0,
+  }}>
+    <Text style={{
+      fontFamily: fonts.sub, fontSize: 7.5 * scale, letterSpacing: 1.8,
+      includeFontPadding: false,
+      color: auteur ? colors.crimsonInk : colors.sepia,
+      opacity: auteur ? 1 : 0.78,
+    }} numberOfLines={1} {...decorativeTextProps}>{auteur ? '★ AUTEUR' : '✦ ARCHIVIST'}</Text>
+  </View>
+);
+
+const Inked = ({ auteur, scale = 1 }: { auteur?: boolean; scale?: number }) => (
+  <View style={{
+    paddingHorizontal: 7, paddingVertical: 2.5,
+    borderWidth: auteur ? 1 : 0.5,
+    borderColor: auteur ? colors.crimson : 'rgba(184,137,26,0.55)',
+    overflow: 'hidden',
+    transform: [{ rotate: '-3deg' }], marginHorizontal: 1, flexShrink: 0,
+  }}>
+    <LinearGradient
+      colors={auteur
+        ? ['rgba(180,45,45,0.16)', 'rgba(180,45,45,0.06)', 'rgba(10,9,6,0.96)']
+        : ['rgba(184,137,26,0.10)', 'rgba(184,137,26,0.03)', 'rgba(10,9,6,0.96)']}
+      start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+      style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
+    <Text style={{
+      fontFamily: fonts.sub, fontSize: 7.5 * scale, letterSpacing: 1.8,
+      includeFontPadding: false,
+      color: auteur ? colors.crimsonInk : colors.sepia,
+      opacity: auteur ? 1 : 0.82,
+    }} numberOfLines={1} {...decorativeTextProps}>{auteur ? '★ AUTEUR' : '✦ ARCHIVIST'}</Text>
+  </View>
+);
+
+const pairRow = (Mark: (p: { auteur?: boolean }) => React.ReactElement, who: string, kind: number, n: number) => (
+  <View key={who} style={p.byline}>
+    <View style={[p.avatar,
+      kind === 1 ? [p.avatarAuteur, { borderColor: colors.crimson }]
+        : kind === 0 ? p.avatarArchivist : null]}>
+      <Text style={p.avatarMark} {...decorativeTextProps}>{who.slice(0, 1)}</Text>
+    </View>
+    <Text style={[p.bylineName, kind === 1 && { color: colors.crimsonInk, opacity: 1 }]}
+      numberOfLines={1} {...scaledTextProps}>{who.toUpperCase()}</Text>
+    {kind === 1 ? <Mark auteur /> : kind === 0 ? <Mark /> : null}
+    <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>{`· ${n} CRITIQUES`}</Text>
+  </View>
+);
+
+const CAST: Array<[string, number]> = [
+  ['Ana', 1], ['Dan', 0], ['Sam', 2], ['Kit', 2], ['Mira', 1], ['Jun', 0], ['Noor', 2],
+];
+
+add('h1-refinements', (
+  <View style={[p.screen, { paddingHorizontal: 20, paddingTop: 34 }]}>
+    <Note>TWO REFINEMENTS — THE PLAIN STAMP LET THE LESSER RANK READ LOUDER</Note>
+
+    <Note dim>A · THE PLAIN STAMP — BRASS OUTSHOUTS CRIMSON</Note>
+    {CAST.slice(0, 4).map(([w, k], i) => pairRow(Stamped, w, k, (i + 2) * 13))}
+
+    <View style={[p.hair, { marginTop: 16, marginBottom: 16 }]} />
+    <Note dim>A′ · THE IMPRESSION — FULL PRESSURE, AND A LIGHTER ONE</Note>
+    {CAST.map(([w, k], i) => pairRow(Impression, w, k, (i + 2) * 13))}
+
+    <View style={[p.hair, { marginTop: 16, marginBottom: 16 }]} />
+    <Note dim>C · THE INKED STAMP — THE SAME, WITH INK IN IT</Note>
+    {CAST.map(([w, k], i) => pairRow(Inked, w, k, (i + 2) * 13))}
+  </View>
+));
+
+add('h2-inked-everywhere', (
+  <View style={[p.screen, { paddingHorizontal: 20, paddingTop: 34 }]}>
+    <Note>THE INKED STAMP — EVERY PLACE A RANK IS DRAWN</Note>
+
+    <Note dim>1 · THE DISPATCH BYLINE</Note>
+    {CAST.slice(0, 3).map(([w, k], i) => pairRow(Inked, w, k, (i + 2) * 13))}
+
+    <View style={[p.hair, { marginTop: 14, marginBottom: 14 }]} />
+    <Note dim>2 · THE ARCHIVE FEED, WITH ITS TIER RULE</Note>
+    <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10 }}>
+        <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.soot,
+          alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.crimson }}>
+          <Text style={{ fontFamily: fonts.display, fontSize: 12, color: colors.parchment,
+            includeFontPadding: false }} {...decorativeTextProps}>A</Text>
+        </View>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.crimsonInk,
+          includeFontPadding: false, flexShrink: 1 }} numberOfLines={1} {...scaledTextProps}>@ANA</Text>
+        <Inked auteur />
+        <Text style={{ fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog,
+          marginLeft: 'auto', includeFontPadding: false }} {...scaledTextProps}>2H AGO</Text>
+      </View>
+      <LinearGradient colors={['rgba(180,45,45,0.55)', 'rgba(180,45,45,0.02)']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: 1 }} />
+    </View>
+
+    <View style={[p.hair, { marginTop: 16, marginBottom: 14 }]} />
+    <Note dim>3 · SEARCH  ·  4 · THE MEMBER REGISTRY</Note>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 }}>
+      <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.soot,
+        alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.crimson }}>
+        <Text style={{ fontFamily: fonts.display, fontSize: 13, color: colors.parchment,
+          includeFontPadding: false }} {...decorativeTextProps}>A</Text>
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ fontFamily: fonts.body, fontSize: 13.5, color: colors.parchment }}
+          numberOfLines={1} {...scaledTextProps}>ana</Text>
+        <View style={{ alignSelf: 'flex-start', marginTop: 4 }}><Inked auteur /></View>
+      </View>
+    </View>
+
+    <View style={[p.hair, { marginTop: 14, marginBottom: 14 }]} />
+    <Note dim>5 · THE PROFILE — WHERE IT ALREADY LIVES</Note>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4 }}>
+      <View style={{ width: 60, height: 74, backgroundColor: 'rgba(20,16,11,0.9)',
+        borderWidth: 1, borderColor: 'rgba(232,223,208,0.22)', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontFamily: fonts.display, fontSize: 24, color: colors.parchment }}
+          {...decorativeTextProps}>A</Text>
+      </View>
+      <View style={{ marginLeft: -26, marginBottom: 8 }}><Inked auteur /></View>
+    </View>
+
+    <View style={[p.hair, { marginTop: 16, marginBottom: 14 }]} />
+    <Note dim>6 · THE LARGEST TEXT A MEMBER CAN SET</Note>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <Inked auteur scale={1.35} /><Inked scale={1.35} />
+    </View>
+    <View style={{ height: 8 }} />
+    <Note dim>CRIMSONINK 5.4:1 · SEPIA 6.24:1 · BOTH CLEAR AA</Note>
+  </View>
+));
+
 describe('choices', () => {
   it('renders every candidate to html', () => {
     mkdirSync(OUT, { recursive: true });
