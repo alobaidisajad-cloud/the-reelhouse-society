@@ -28,7 +28,9 @@ import Markdown from 'react-native-markdown-display';
 import { capMarkdownForRender, onMarkdownLinkPress } from '@/src/utils/markdownSafety';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
-import { EssayBreak, EssayOpening } from './paper/PaperEssay';
+import {
+  EssayBreak, EssayOpening, ESSAY_BODY, useEssayLeading, withLeading,
+} from './paper/PaperEssay';
 
 /**
  * The markdown renderer's own styles, aligned to the essay's typography so a
@@ -36,8 +38,27 @@ import { EssayBreak, EssayOpening } from './paper/PaperEssay';
  * Only the shapes markdown can produce are listed; anything absent falls back to
  * `body`, which is the essay's measure.
  */
+/**
+ * A fenced block, rendered as the library renders it — including the trailing
+ * newline the parser adds and it trims — with the one thing it does not set: a
+ * ceiling on how far the type may grow.
+ */
+const fencedBlock = (styleKey: 'code_block' | 'fence') =>
+  (node: any, _children: React.ReactNode, _parent: unknown, styles: any, inherited: object = {}) => {
+    let content = node.content;
+    if (typeof content === 'string' && content.charAt(content.length - 1) === '\n') {
+      content = content.substring(0, content.length - 1);
+    }
+    return (
+      <Text key={node.key} style={[inherited, styles[styleKey]]} {...scaledTextProps}>
+        {content}
+      </Text>
+    );
+  };
+
 const essayMarkdown = {
-  body: { fontFamily: fonts.serif, fontSize: 16.5, lineHeight: 28, color: colors.parchment, opacity: 0.94 },
+  /** The essay's measure, from the one place it is defined. */
+  body: { ...ESSAY_BODY },
   paragraph: { marginTop: 16, marginBottom: 0 },
   heading1: { fontFamily: fonts.display, fontSize: 21, lineHeight: 27, color: colors.parchment, marginTop: 26, marginBottom: 2 },
   heading2: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1.8, color: colors.sepia, marginTop: 24, marginBottom: 2 },
@@ -117,6 +138,24 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
    *
    * Rebuilt each render, which is what the paragraph above always described.
    */
+  /**
+   * The whole style map, with every leading opened to match the type.
+   *
+   * Applied to the MAP rather than to one style, because the library hands each
+   * rule its own entry from it — a heading, a fenced block and a quotation all
+   * fix a line height, and all of them crowd at the largest setting for the same
+   * reason the body did. Memoised on the scale, so it is rebuilt when the member
+   * changes their setting and not on every render of a long essay.
+   */
+  const lead = useEssayLeading();
+  const scaled = useMemo(() => {
+    const out: Record<string, unknown> = {};
+    for (const [key, style] of Object.entries(essayMarkdown)) {
+      out[key] = withLeading(style as { lineHeight?: number }, lead);
+    }
+    return out as typeof essayMarkdown;
+  }, [lead]);
+
   let seen = 0;
   const rules = {
     paragraph: (node: any, children: React.ReactNode) => {
@@ -124,7 +163,7 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
       seen += 1;
       if (!first) {
         return (
-          <Text key={node.key} style={[essayMarkdown.body, essayMarkdown.paragraph]} {...scaledTextProps}>
+          <Text key={node.key} style={[scaled.body, scaled.paragraph]} {...scaledTextProps}>
             {children}
           </Text>
         );
@@ -138,11 +177,39 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
         return <EssayOpening key={node.key} text={plain} />;
       }
       return (
-        <Text key={node.key} style={[essayMarkdown.body, essayMarkdown.paragraph]} {...scaledTextProps}>
+        <Text key={node.key} style={[scaled.body, scaled.paragraph]} {...scaledTextProps}>
           {children}
         </Text>
       );
     },
+    /**
+     * ── EVERY LEAF OF TEXT HAS A CEILING ────────────────────────────────────
+     * React Native's default is to scale text with NO maximum. The paragraph
+     * rule below sets one, so everything inside a paragraph — bold, italic, a
+     * link, a quotation, inline code — inherits it. Everything the library
+     * renders OUTSIDE a paragraph did not: a heading, a list item, a fenced
+     * block and a table cell all grew without limit, and a member can type any
+     * of them whether or not the toolbar offers it.
+     *
+     * Set on the LEAF rather than on seven container rules. The leaf is what
+     * every shape passes through, so a shape nobody has thought of yet is
+     * covered by construction rather than by remembering to add it.
+     */
+    text: (node: any, _children: React.ReactNode, _parent: unknown, styles: any, inherited: object = {}) => (
+      <Text key={node.key} style={[inherited, styles.text]} {...scaledTextProps}>
+        {node.content}
+      </Text>
+    ),
+
+    /**
+     * A fenced block renders its content directly rather than through a leaf,
+     * so the rule above does not reach it. Both shapes the parser can produce
+     * are covered; the body is the library's own, including the trailing
+     * newline it trims, so only the ceiling is added.
+     */
+    code_block: fencedBlock('code_block'),
+    fence: fencedBlock('fence'),
+
     // A rule between sections is the house's printed ornament, not a line.
     hr: (node: any) => <EssayBreak key={node.key} />,
 
@@ -168,7 +235,7 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
     image: (node: any) => {
       const alt = String(node?.attributes?.alt ?? '').trim();
       return (
-        <Text key={node.key} style={[essayMarkdown.body, essayMarkdown.imageNote]} {...scaledTextProps}>
+        <Text key={node.key} style={[scaled.body, scaled.imageNote]} {...scaledTextProps}>
           {alt ? `[image: ${alt}]` : '[image]'}
         </Text>
       );
@@ -179,7 +246,7 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
 
   return (
     <View>
-      <Markdown style={essayMarkdown} rules={rules} onLinkPress={onMarkdownLinkPress}>
+      <Markdown style={scaled} rules={rules} onLinkPress={onMarkdownLinkPress}>
         {safe}
       </Markdown>
     </View>

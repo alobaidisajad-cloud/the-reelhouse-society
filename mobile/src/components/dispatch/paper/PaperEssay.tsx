@@ -23,7 +23,7 @@
  * marks, the same spine when the head scrolls away.
  */
 import { memo, type ReactNode } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from 'lucide-react-native';
@@ -35,6 +35,49 @@ import { p } from './paperStyles';
 import { KIND_RULE, UNSPOKEN } from './paperMetrics';
 import { softBreak } from './paperText';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
+
+/**
+ * ── THE ESSAY'S MEASURE, DEFINED ONCE ───────────────────────────────────────
+ * 16.5/28. The feed's 13pt is right for a paragraph and punishing for four
+ * thousand words; this is set for reading, not for scanning.
+ *
+ * It lives here rather than in two places. It WAS in two — this file's `e.body`
+ * and EssayBody's `essayMarkdown.body`, character for character the same — so
+ * the opening paragraph and every paragraph after it were one edit away from
+ * being set differently.
+ */
+export const ESSAY_BODY = {
+  fontFamily: fonts.serif,
+  fontSize: 16.5,
+  lineHeight: 28,
+  color: colors.parchment,
+  opacity: 0.94,
+} as const;
+
+/**
+ * How far the leading opens as the type does.
+ *
+ * React Native's `lineHeight` is an absolute number: `fontSize` answers the
+ * member's type-size setting and the leading does not. Measured on the reader,
+ * the essay went from a ratio of 1.70 — generous, right for a long read — to
+ * 1.26 at the largest setting, which crowds. The screen built for reading got
+ * harder to read at exactly the setting chosen by people who need bigger type.
+ *
+ * Scaled by the SAME ceiling the type carries, read from `scaledTextProps`
+ * rather than written again, so the ratio the design chose is the ratio at
+ * every setting. `useWindowDimensions` and not `PixelRatio.getFontScale()`:
+ * the second reads once and goes stale when a member changes the setting while
+ * the app is open.
+ */
+export function useEssayLeading(): number {
+  const { fontScale } = useWindowDimensions();
+  return Math.min(fontScale, scaledTextProps.maxFontSizeMultiplier);
+}
+
+/** The same style with its leading opened to match the type. */
+export function withLeading<T extends { lineHeight?: number }>(style: T, scale: number): T {
+  return style.lineHeight ? { ...style, lineHeight: style.lineHeight * scale } : style;
+}
 
 export const EssayHead = memo(function EssayHead({
   title, series, author, readTime, filed, film, onSeries, onAuthor, onFilm,
@@ -108,8 +151,9 @@ export const EssayHead = memo(function EssayHead({
  */
 export const EssayOpening = memo(function EssayOpening({ text }: { text: string }) {
   const cap = text.slice(0, 1);
+  const lead = useEssayLeading();
   return (
-    <Text style={e.body} {...scaledTextProps}>
+    <Text style={withLeading(e.body, lead)} {...scaledTextProps}>
       {/* Does NOT scale. The line it sits in is a fixed 28, so a cap that grew
           with the type would be clipped by it at the largest setting — the body
           may grow into the leading, the initial may not. */}
@@ -120,7 +164,12 @@ export const EssayOpening = memo(function EssayOpening({ text }: { text: string 
 });
 
 export const EssayPara = memo(function EssayPara({ children }: { children: ReactNode }) {
-  return <Text style={[e.body, { marginTop: 16 }]} {...scaledTextProps}>{children}</Text>;
+  const lead = useEssayLeading();
+  return (
+    <Text style={[withLeading(e.body, lead), { marginTop: 16 }]} {...scaledTextProps}>
+      {children}
+    </Text>
+  );
 });
 
 export const EssayBreak = memo(function EssayBreak() {
@@ -270,12 +319,8 @@ const e = StyleSheet.create({
   },
   bylineRow: { marginTop: 12 },
 
-  /** 16.5/28. The feed's 13pt is right for a paragraph and punishing for four
-   *  thousand words; this is set for reading, not for scanning. */
-  body: {
-    fontFamily: fonts.serif, fontSize: 16.5, lineHeight: 28,
-    color: colors.parchment, opacity: 0.94,
-  },
+  /** The essay's measure — see ESSAY_BODY, which is the one definition of it. */
+  body: ESSAY_BODY,
   /**
    * 34, not 52, and it is the line box that decides it. Rye's ascent is about
    * 0.75em, so 34 stands ~25.5pt inside the body's 28pt line and cannot be

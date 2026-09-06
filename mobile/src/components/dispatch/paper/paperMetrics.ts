@@ -132,11 +132,17 @@ export const RULE_GAP = 12;
 export const AVATAR = 19;
 export const BYLINE_INDENT = RULE_W + RULE_GAP;
 
-/** The plate — a mounted engraving, not a poster tile. */
-export const PLATE_W = 44;
-export const PLATE_H = 66;
-export const PLATE_MINI_W = 34;
-export const PLATE_MINI_H = 51;
+/**
+ * The plate's four measures are gone with the styles that used them.
+ *
+ * `plateImg`, `plateImgMini`, `plateNoArt`, `plateMeta` and `plateLine` were the
+ * only readers, and none of them had been mounted on a screen — the feed carries
+ * a CREDIT instead, which is a thumbnail and one line, and the full poster lives
+ * on the post page. The numbers outlived the design decision that replaced them.
+ *
+ * (ProfileLedgerTab has its own PLATE_W/PLATE_H at 42x63. Different feature,
+ * different numbers, never imported from here.)
+ */
 
 /** A still: 16:9 of the measure, capped so one post cannot own a screen. */
 export const stillHeight = (m: number) => Math.min(Math.round(m * 0.5625), 108);

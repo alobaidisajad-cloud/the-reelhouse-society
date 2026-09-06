@@ -65,6 +65,8 @@ import {
 import {
   EssayHead, EssayOpening, EssayPara, EssayBreak, EssayNext, SeriesList,
 } from '@/src/components/dispatch/paper/PaperEssay';
+/** The path a real dossier takes — the markdown renderer, not hand-built paragraphs. */
+import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import {
   WireDesk, BallotDesk, DossierDesk, FilmFinder, ReportSheet, ShareSheet,
 } from '@/src/components/dispatch/paper/PaperDesk';
@@ -1017,6 +1019,41 @@ add('h1-essay-read', (
       <EssayNext label="NEXT IN THE SERIES" title="What the Camera Refuses to Do" readTime="9 MIN" />
     </PaperSheet>
     <PostDock certifyCount={61} commentCount={14} certified />
+  </View>
+));
+
+/**
+ * ── THE SHAPES A MEMBER CAN ACTUALLY TYPE ───────────────────────────────────
+ * h1 above hand-builds its paragraphs with EssayPara, so it draws the essay's
+ * TYPE but never the path a real dossier takes: `EssayBody`, and the markdown
+ * renderer inside it. Nothing in the set drew a heading, a quotation, a list or
+ * a fenced block — which is how seven shapes came to scale with no ceiling at
+ * all and no plate showed it.
+ *
+ * The toolbar offers bold, italic, heading, quote, rule and link. Markdown is
+ * plain text, so a list, a table and a fenced block are typed regardless — and
+ * all of them are here for that reason.
+ */
+add('h1b-essay-markdown', (
+  <View style={p.screen}>
+    <PaperBack label="DOSSIER" />
+    <PaperSheet>
+      <EssayHead title="What the Camera Refuses to Do" author={ANA}
+        readTime="9 MIN" filed="AUGUST 26" />
+      <EssayBody text={[
+        'Ozu keeps the camera at the height of somebody kneeling, and he keeps it there after the room has emptied.',
+        '## THE THREE REFUSALS',
+        'He will not move it, he will not cut early, and he will not tell you what to feel about either.',
+        '> The house outlives the family that argued in it.',
+        '- No pan, no track, no crane.',
+        '- The cut comes late, and always after the thought.',
+        '- Nobody looks at the lens.',
+        'A shot in *Tokyo Story* runs eleven seconds past its own ending, and the [restoration notes](https://example.com/notes) call it an error of the print.',
+        '### A NOTE ON THE PRINTS',
+        'It is not an error.',
+      ].join('\n\n')} />
+    </PaperSheet>
+    <PostDock certifyCount={38} commentCount={9} />
   </View>
 ));
 

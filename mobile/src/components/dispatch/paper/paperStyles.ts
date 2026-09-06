@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import {
   DOC_MARGIN, DOC_PAD, DOC_RAIL, POST_PAD_V, RULE_W, RULE_GAP, AVATAR,
-  BYLINE_INDENT, PLATE_W, PLATE_H, PLATE_MINI_W, PLATE_MINI_H, MARGIN_W,
+  BYLINE_INDENT, MARGIN_W,
   CHROME_PAD_V, CHROME_PAD_H, CRIMSON_INK, PAPER_MAX, KIND_RULE,
 } from './paperMetrics';
 
@@ -168,7 +168,6 @@ export const p = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
-  indexItemOn: { borderBottomColor: colors.sepia },
   indexLabel: {
     fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2,
     color: colors.bone, opacity: INDEX_INACTIVE, includeFontPadding: false,
@@ -208,11 +207,6 @@ export const p = StyleSheet.create({
   chromeFade: {
     position: 'absolute', right: 0, top: 0, bottom: 0, width: 26,
     zIndex: 2, elevation: 2,
-  },
-  chromeTools: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingLeft: 6, paddingRight: CHROME_PAD_H,
-    borderLeftWidth: 1, borderLeftColor: 'rgba(184,137,26,0.14)',
   },
   toolLabel: {
     fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
@@ -332,7 +326,6 @@ export const p = StyleSheet.create({
   /** `relative` + `overflow: hidden` so the film's own art can sit behind the
    *  block without bleeding into its neighbours. */
   post: { paddingVertical: POST_PAD_V, position: 'relative', overflow: 'hidden' },
-  postInner: { position: 'relative', zIndex: 1 },
   kind: {
     fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2,
     color: colors.sepia, marginBottom: 8, includeFontPadding: false,
@@ -377,18 +370,6 @@ export const p = StyleSheet.create({
     borderLeftColor: colors.sepiaBorder,
   },
   /**
-   * ── THE RULED LEDGER ─────────────────────────────────────────────────────
-   * The rule itself runs FAINT, so entry after entry the rules line up into
-   * one continuous ruled edge down the page — a register, which is what a
-   * printed ledger looks like and what no feed looks like.
-   *
-   * The kind colour caps the top of it instead: a short bright tab marking
-   * where each entry begins. Colouring the WHOLE rule broke the continuity
-   * into a stack of separate stripes, which is the look I was trying to
-   * escape.
-   */
-  kindTab: { position: "absolute", top: 0, width: RULE_W, height: 26, borderRadius: 1 },
-  /**
    * ── THE RULE CARRIES THE RANK ────────────────────────────────────────────
    * This rule was neutral brass on every filing, and tier lived only on the
    * 19pt avatar ring — a mark you have to look for. Meanwhile the KIND had
@@ -417,9 +398,6 @@ export const p = StyleSheet.create({
   rankRule: { position: 'absolute', left: -RULE_W, top: 0, bottom: 0, width: RULE_W },
 
   ruled: { paddingLeft: RULE_GAP, borderLeftWidth: RULE_W, borderLeftColor: 'rgba(184,137,26,0.25)' },
-  ruledCrimson: { borderLeftColor: colors.crimson },
-  ruledBrass: { borderLeftColor: 'transparent' },
-  brassRule: { position: 'absolute', left: -RULE_W, top: 2, bottom: 2, width: RULE_W, borderRadius: 1 },
 
   /** 16, not 15, and at full parchment. The one thing on a post that a member
    *  actually wrote should be the one thing that is unmistakably largest. */
@@ -496,25 +474,8 @@ export const p = StyleSheet.create({
    *  at full strength is the one element that can make this page look like a
    *  different app. */
   stillArt: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', opacity: 0.46 },
-  /** A flat warm wash: what pulls a colour photograph into the page's own ink. */
-  stillWash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(32,20,8,0.52)' },
   stillScrim: { ...StyleSheet.absoluteFillObject },
 
-  /**
-   * ── THE BACKDROP ──────────────────────────────────────────────────────────
-   * The film's own image, very dim, behind the post. This is the single biggest
-   * thing the first skin was missing: a take about THE SHINING should LOOK like
-   * it is about The Shining. The hero does exactly this at the top of the film
-   * page — art under a gradient that sinks it into the ground.
-   */
-  /** `width/height: 100%` alongside absoluteFill: RN does not need it, but an
-   *  `<img>` without it takes its intrinsic size, so the mockup would show the
-   *  art covering part of the block and lie about the layout. */
-  postArt: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', opacity: 0.13 },
-  /** The same warm wash the still uses. Without it a cool-graded frame tints the
-   *  whole post blue, and one blue post in a sepia column is all it takes. */
-  postArtWash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(28,18,8,0.5)' },
-  postArtScrim: { ...StyleSheet.absoluteFillObject },
 
   // ── byline ────────────────────────────────────────────────────────────────
   byline: {
@@ -578,7 +539,6 @@ export const p = StyleSheet.create({
     color: colors.fog, includeFontPadding: false,
     flexShrink: 1, minWidth: 0, marginLeft: 4,
   },
-  bylineDim: { opacity: 0.6 },
 
   // ── the plate ─────────────────────────────────────────────────────────────
   /**
@@ -596,25 +556,12 @@ export const p = StyleSheet.create({
     shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.55, shadowRadius: 12, elevation: 6,
   },
-  plateImg: {
-    width: PLATE_W, height: PLATE_H, borderRadius: 3,
-    borderWidth: 1.5, borderColor: 'rgba(240,232,176,0.34)',
-    backgroundColor: 'rgba(20,16,11,0.9)',
-    alignItems: 'center', justifyContent: 'center', padding: 4, overflow: 'hidden',
-  },
   plateArt: { width: '100%', height: '100%' },
   /** Poster art is held back a touch everywhere. At full strength a bright sheet
    *  (a yellow one-sheet, a saturated re-release) is the loudest thing on a page
    *  built out of ink and brass, and it drags the eye off the writing. */
   artHeld: { opacity: 0.86 },
-  plateImgMini: { width: PLATE_MINI_W, height: PLATE_MINI_H },
-  /** TMDB withdraws ids. A plate with no poster shows the title, never a hole. */
-  plateNoArt: {
-    fontFamily: fonts.sub, fontSize: 6.5, lineHeight: 9, letterSpacing: 0.8,
-    color: colors.bone, opacity: 0.8, textAlign: 'center', includeFontPadding: false,
-  },
   plateTitle: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.parchment, includeFontPadding: false },
-  plateMeta: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog, marginTop: 4, includeFontPadding: false },
   /** When a still is present the plate collapses to one line — no second poster
    *  of the same film in the same block. */
   /**
@@ -664,10 +611,6 @@ export const p = StyleSheet.create({
   creditYear: {
     fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.bone,
     includeFontPadding: false, flexShrink: 0,
-  },
-  plateLine: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.fog,
-    marginTop: 8, paddingLeft: BYLINE_INDENT, includeFontPadding: false,
   },
 
   // ── the action row ────────────────────────────────────────────────────────
@@ -833,11 +776,6 @@ export const p = StyleSheet.create({
     marginTop: 12, marginLeft: BYLINE_INDENT, paddingLeft: RULE_GAP,
     borderLeftWidth: RULE_W, borderLeftColor: 'rgba(184,137,26,0.5)',
   },
-  replyLabel: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2,
-    color: colors.sepia, marginBottom: 8, includeFontPadding: false,
-  },
-  replyBody: { fontFamily: fonts.serif, fontSize: 13.5, lineHeight: 21, color: colors.bone },
 
   // ── the answer on a seeking post ──────────────────────────────────────────
   answer: {
@@ -953,24 +891,15 @@ export const p = StyleSheet.create({
   cardBallotQ: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment, marginBottom: 8 },
   dossierLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.dossier, includeFontPadding: false },
   series: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, opacity: 0.85, marginTop: 8, includeFontPadding: false },
-  excerptRow: { flexDirection: 'row', marginTop: 4 },
-  dropCap: { fontFamily: fonts.display, fontSize: 38, lineHeight: 34, color: KIND_RULE.dossier, paddingRight: 8, opacity: 0.9 },
   excerpt: { fontFamily: fonts.serif, fontSize: 13.5, lineHeight: 24, color: colors.bone, opacity: 0.86, flex: 1, paddingTop: 2 },
 
   // ── section head + empty ──────────────────────────────────────────────────
-  sectionHead: { paddingTop: 16, paddingBottom: 4 },
   /** FilmSectionHeader's exact anatomy, plus a tint the shared component does
    *  not yet take. Shipping this means adding an optional `tint` prop there,
    *  not keeping a second copy — one source of truth, as its own comment says. */
   headRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  headBar: {
-    width: 2.5, height: 12, borderRadius: 1.5, marginRight: 8,
-    shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 4,
-  },
-  headLabel: { fontFamily: fonts.sub, fontSize: 12.5, letterSpacing: 2.2, includeFontPadding: false },
   headRule: { flex: 1, height: 1, marginLeft: 12 },
   sectionTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 6, textAlign: 'center' },
-  sectionSub: { fontFamily: fonts.bodyItalic, fontSize: 12.5, color: colors.bone, opacity: QUIET, marginTop: -6, marginBottom: 6 },
 
   /** No glyph above an empty state — the section head is the mark. */
   /** Centred in the space it is given. Pinned under the heading with acres
@@ -1018,7 +947,6 @@ export const p = StyleSheet.create({
   btn: { borderWidth: 1, borderColor: colors.sepia, borderRadius: 2, paddingVertical: 8, paddingHorizontal: 16 },
   btnText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.parchment, includeFontPadding: false },
   btnBrass: { borderColor: 'rgba(240,232,176,0.30)', overflow: 'hidden' },
-  btnBrassText: { color: colors.ink },
   quiet: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia, opacity: 0.95, marginTop: 16, includeFontPadding: false },
   endRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 },
   endLine: { width: 32, height: 1, backgroundColor: colors.sepia, opacity: 0.35 },
@@ -1159,10 +1087,6 @@ export const p = StyleSheet.create({
   caret: { color: colors.sepia },
   railTool: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
 
-  wmk: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 3.2, color: colors.sepia,
-    opacity: 0.72, textAlign: 'center', marginBottom: 16, includeFontPadding: false,
-  },
   sheet: {
     backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: colors.sepiaBorder,
     paddingHorizontal: 16, paddingVertical: 4, ...effects.shadowSurface,
