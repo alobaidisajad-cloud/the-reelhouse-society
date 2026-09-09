@@ -235,24 +235,6 @@
   opacity: 0.6;
 }
 
-/* ── ARCHIVIST BADGE — Premium Gold ── */
-.reel-archivist-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  font-family: var(--font-ui);
-  font-size: 0.35rem;
-  letter-spacing: 0.18em;
-  color: #DAA520;
-  background: linear-gradient(135deg, rgba(139,105,20,0.18) 0%, rgba(196,150,26,0.08) 100%);
-  border: 1px solid rgba(196,150,26,0.35);
-  padding: 0.1rem 0.4rem;
-  border-radius: 1px;
-  line-height: 1;
-  font-weight: 700;
-  text-shadow: 0 0 6px rgba(196,150,26,0.3);
-}
-
 /* ── AUTEUR DISPATCH — Crimson Velvet tier ── */
 /* The director's cut. Blood-red velvet replaces gold. */
 
@@ -337,24 +319,6 @@
   opacity: 0.6;
 }
 
-/* ── AUTEUR BADGE — Crimson Red ── */
-.reel-auteur-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  font-family: var(--font-ui);
-  font-size: 0.35rem;
-  letter-spacing: 0.18em;
-  color: #B42D2D;
-  background: linear-gradient(135deg, rgba(125,31,31,0.18) 0%, rgba(180,45,45,0.08) 100%);
-  border: 1px solid rgba(180,45,45,0.35);
-  padding: 0.1rem 0.4rem;
-  border-radius: 1px;
-  line-height: 1;
-  font-weight: 700;
-  text-shadow: 0 0 6px rgba(125,31,31,0.3);
-}
-
 /* ── POSTER AMBIENT ECHO ── */
 .reel-poster-wrap {
   position: relative;
@@ -434,22 +398,6 @@
 .reel-certify-pulse {
   animation: certifyPulse 0.5s ease-out;
   border-radius: 50%;
-}
-
-/* ── AUTEUR BADGE ── */
-.reel-auteur-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  font-family: var(--font-ui);
-  font-size: 0.38rem;
-  letter-spacing: 0.12em;
-  color: var(--ink);
-  background: linear-gradient(135deg, #8B6914, #DAA520);
-  padding: 0.1rem 0.4rem;
-  border-radius: 1px;
-  line-height: 1;
-  font-weight: 700;
 }
 
 /* ── SIDEBAR BULLETIN BOARD ── */
@@ -603,4 +551,51 @@
     flex-direction: column;
     gap: 2rem;
   }
+}
+
+/* ── THE RANK, STAMPED ───────────────────────────────────────────────────────
+   One mark, matching mobile: a square-cornered letterpress stamp struck at a
+   hand's angle, washed in the rank's own pigment over the page's ink.
+
+   It replaces three rules — .reel-archivist-badge, and .reel-auteur-badge
+   TWICE, once crimson and once gold, the later silently winning. That is the
+   same badge in two designs in one file, which is why it is drawn from one
+   component now and sized here rather than at the call site.
+
+   The Auteur is struck at full pressure and the Archivist as a lighter
+   impression: a brass hairline is brighter than a crimson one on near-black, so
+   equal weights would make the LESSER rank read louder. */
+.reel-rank {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  font-family: var(--font-sub);
+  font-size: 0.42rem;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  padding: 0.18rem 0.42rem;
+  /* Square corners. A stamp has no radius — and with none there is nothing for
+     the wash to overflow, so the box needs no clipping. */
+  border-radius: 0;
+  transform: rotate(-3deg);
+  /* A rotated box paints wider than the box laid out for it. */
+  margin: 0 1px;
+  white-space: nowrap;
+}
+
+.reel-rank--auteur {
+  color: var(--crimson-ink);
+  border: 1px solid var(--crimson);
+  background: linear-gradient(180deg, rgba(180, 45, 45, 0.09), rgba(11, 10, 8, 0.96));
+}
+
+.reel-rank--archivist {
+  color: var(--sepia);
+  opacity: 0.9;
+  border: 0.5px solid rgba(196, 150, 26, 0.5);
+  background: linear-gradient(180deg, rgba(196, 150, 26, 0.06), rgba(11, 10, 8, 0.96));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reel-rank { transform: none; }
 }

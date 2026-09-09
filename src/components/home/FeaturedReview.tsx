@@ -7,6 +7,7 @@ import { ReelRating, RadarChart } from '../UI'
 import Buster from '../Buster'
 import { useViewport } from '../../hooks/useViewport'
 import { useUIStore } from '../../store'
+import { RankBadge } from '../RankBadge';
 
 /**
  * FeaturedReview — surfaces the hottest critique from the last 24 hours.
@@ -306,8 +307,7 @@ const FeaturedReview = memo(function FeaturedReview() {
                             </div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.2em', color: 'var(--bone)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                                 {displayReview.author.toUpperCase()}
-                                {featuredCritique?.authorRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.38rem' }}>✦ ARCHIVIST</span>}
-                                {featuredCritique?.authorRole === 'auteur' && <span className="reel-auteur-badge" style={{ fontSize: '0.38rem' }}>★ AUTEUR</span>}
+                                <RankBadge who={featuredCritique?.authorRole} />
                             </div>
                         </div>
                         {displayReview.rating > 0 && <ReelRating value={displayReview.rating} size="sm" />}

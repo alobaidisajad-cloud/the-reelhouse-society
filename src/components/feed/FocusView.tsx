@@ -12,6 +12,7 @@ import ReactionBar from '../ReactionBar'
 import AnnotationPanel from './AnnotationPanel'
 import { DossierExportHTML } from './DossierExportHTML'
 import type { ActivityCardViewProps } from './types'
+import { RankBadge } from '../RankBadge';
 
 const RadarChart = lazy(() => import('../UI').then(m => ({ default: m.RadarChart })))
 
@@ -67,8 +68,7 @@ export default function FocusView({
                         <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.15em', color: 'var(--sepia)', textDecoration: 'none', textTransform: 'uppercase', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '15ch', display: 'inline-block' }}>
                             @{log.user || 'anonymous'}
                         </Link>
-                        {log.userRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>✦ ARCHIVIST</span>}
-                        {log.userRole === 'auteur' && <span className="reel-auteur-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>★ AUTEUR</span>}
+                        <RankBadge who={log.userRole} />
                     </div>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
                         {log.timestamp || 'RECENT'}

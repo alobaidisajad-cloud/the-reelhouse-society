@@ -6,6 +6,8 @@ import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { Link } from 'react-router-dom'
 
 import { Portal } from '../UI'
+import { RankBadge } from '../RankBadge'
+import { rankOf } from '../../utils/tier'
 
 /**
  * Cinematic log detail modal — premium Nitrate Noir.
@@ -29,8 +31,15 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
     const ratingLabel = ['', 'Walks Out', 'Poor Cut', 'Solid Frame', 'Compelling', 'Masterpiece'][Math.ceil(viewLog.rating)] || ''
     const statusColor = viewLog.status === 'abandoned' ? 'var(--blood-reel)' : viewLog.status === 'rewatched' ? 'var(--flicker)' : 'var(--sepia)'
     const statusLabel = viewLog.status === 'watched' ? 'WATCHED' : viewLog.status === 'rewatched' ? '⟳ REWATCH' : '✕ ABANDONED'
-    const isArchivistLog = profileUser?.role === 'archivist'
-    const isAuteurLog = profileUser?.role === 'auteur'
+    // The rank, resolved rather than matched. These were `role === 'auteur'`,
+    // which reads ONE of the three columns that carry standing — so a founding
+    // member, an admin who pays, and anyone whose entitlement rides `tier` came
+    // back false here and lost the badge, the ruby shadow and the premium
+    // treatment all at once. `rankOf` applies the Highest Watermark Rule and
+    // still returns exactly one rank, which is what these two names mean.
+    const rank = rankOf(profileUser)
+    const isArchivistLog = rank === 'archivist'
+    const isAuteurLog = rank === 'auteur'
     const isPremiumLog = isArchivistLog || isAuteurLog || viewLog.editorialHeader || viewLog.dropCap || viewLog.pullQuote
 
     return (
@@ -131,33 +140,16 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                             {statusLabel}
                         </div>
 
-                        {/* Premium badge — top right corner */}
-                        {isArchivistLog && (
-                            <div style={{
-                                position: 'absolute', top: '0.9rem', right: '2.8rem',
-                                fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.2em',
-                                color: 'var(--sepia)',
-                                background: 'rgba(11,10,8,0.6)',
-                                backdropFilter: 'blur(8px)',
-                                border: '1px solid rgba(139,105,20,0.3)',
-                                padding: '0.2rem 0.5rem', borderRadius: '3px',
-                            }}>
-                                ✦ ARCHIVIST
-                            </div>
-                        )}
-                        {isAuteurLog && (
-                            <div style={{
-                                position: 'absolute', top: '0.9rem', right: '2.8rem',
-                                fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.2em',
-                                color: '#B42D2D',
-                                background: 'rgba(11,10,8,0.6)',
-                                backdropFilter: 'blur(8px)',
-                                border: '1px solid rgba(180,45,45,0.3)',
-                                padding: '0.2rem 0.5rem', borderRadius: '3px',
-                            }}>
-                                ★ AUTEUR
-                            </div>
-                        )}
+                        {/* The rank, on the corner of the modal.
+                            This was a SIXTH dress: two blocks drawn inline with
+                            their own font size, their own border colours and a
+                            raw `#B42D2D`, matching neither of the two CSS
+                            classes the rest of the client used. The wrapper
+                            carries the POSITION; the mark itself comes from the
+                            one component, as it does everywhere else. */}
+                        <div style={{ position: 'absolute', top: '0.9rem', right: '2.8rem' }}>
+                            <RankBadge rank={rank} />
+                        </div>
 
                         {/* X close button — top right */}
                         <button

@@ -11,6 +11,7 @@ import { sanitizeHTML } from '../../utils/sanitize'
 import AnnotationPanel from './AnnotationPanel'
 import { DossierExportHTML } from './DossierExportHTML'
 import type { ActivityCardViewProps } from './types'
+import { RankBadge } from '../RankBadge';
 
 const RadarChart = lazy(() => import('../UI').then(m => ({ default: m.RadarChart })))
 const ShareToLoungeModal = lazy(() => import('../ShareToLoungeModal'))
@@ -118,8 +119,7 @@ export default function FeedView({
                         <Link to={`/user/${log.user}`} onClick={e => e.stopPropagation()} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', transition: 'text-shadow 0.2s' }} onMouseEnter={e => e.currentTarget.style.textShadow = '0 0 8px rgba(139,105,20,0.4)'} onMouseLeave={e => e.currentTarget.style.textShadow = 'none'}>
                             @{(log.user || 'anonymous').toUpperCase()}
                         </Link>
-                        {log.userRole === 'archivist' && <span className="reel-archivist-badge">✦ ARCHIVIST</span>}
-                        {log.userRole === 'auteur' && <span className="reel-auteur-badge">★ AUTEUR</span>}
+                        <RankBadge who={log.userRole} />
                     </div>
                     <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)', whiteSpace: 'nowrap', flexShrink: 0, opacity: 0.7 }}>
                         {log.timestamp || 'RECENT'}

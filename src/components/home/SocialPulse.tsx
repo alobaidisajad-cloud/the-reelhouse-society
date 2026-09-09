@@ -9,6 +9,7 @@ import { SectionHeader, ReelRating } from '../UI'
 import Buster from '../Buster'
 import { useViewport } from '../../hooks/useViewport'
 import { useAuthStore } from '../../store'
+import { RankBadge } from '../RankBadge';
 
 const SocialPulse = memo(function SocialPulse() {
     const { isTouch: IS_TOUCH } = useViewport()
@@ -177,8 +178,7 @@ const SocialPulse = memo(function SocialPulse() {
                                             <Buster size={14} mood={act.rating >= 4 ? 'smiling' : 'neutral'} />
                                         </div>
                                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--parchment)' }}>@{act.user}</span>
-                                        {isArchivist && <span className="reel-archivist-badge">✦ ARCHIVIST</span>}
-                                        {isAuteur && <span className="reel-auteur-badge">★ AUTEUR</span>}
+                                        <RankBadge rank={isAuteur ? 'auteur' : isArchivist ? 'archivist' : null} />
                                     </div>
                                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{act.time}</span>
                                 </div>

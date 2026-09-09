@@ -18,6 +18,15 @@
   --fog: #6B6055;
   --silver-nitrate: #D8E0E8;
 
+  /* ── AUTEUR CRIMSON ──────────────────────────────────────────────────────
+     Taken from mobile's Shade Ledger unchanged, because a RANK must be the
+     same colour on both clients even where the two palettes differ elsewhere.
+     Split the way mobile splits it: the pigment for MARKS (a rim, a ring), the
+     ink for WORDS — the pigment as text measures 3.16:1 on this ground and the
+     ink clears 5.4:1. */
+  --crimson: #B42D2D;
+  --crimson-ink: #E2564F;
+
   --font-display: 'Rye', serif;
   --font-sub: 'Special Elite', cursive;
   --font-body: 'Courier Prime', monospace;
