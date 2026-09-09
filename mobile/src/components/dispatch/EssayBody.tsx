@@ -44,7 +44,10 @@ import {
  * ceiling on how far the type may grow.
  */
 const fencedBlock = (styleKey: 'code_block' | 'fence') =>
-  (node: any, _children: React.ReactNode, _parent: unknown, styles: any, inherited: object = {}) => {
+  // NAMED. `react/display-name` was flagging this factory's return: a markdown
+  // RULE is not a component the linter can tell apart from one, and an
+  // anonymous node in a tree is the thing that makes a stack trace useless.
+  function FencedBlock(node: any, _children: React.ReactNode, _parent: unknown, styles: any, inherited: object = {}) {
     let content = node.content;
     if (typeof content === 'string' && content.charAt(content.length - 1) === '\n') {
       content = content.substring(0, content.length - 1);

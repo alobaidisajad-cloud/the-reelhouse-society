@@ -292,7 +292,7 @@ add('w2-the-margin', (
   <View style={p.screen}>
     <View style={{ paddingHorizontal: 20, paddingTop: 34, paddingBottom: 10 }}>
       <Note>W2 · THE MARGIN</Note>
-      <Note dim>AN EDITOR'S MARKS DOWN THE SIDE — THE PAGE ALREADY HAS THIS COLUMN</Note>
+      <Note dim>AN EDITOR’S MARKS DOWN THE SIDE — THE PAGE ALREADY HAS THIS COLUMN</Note>
     </View>
     <View style={{ flex: 1, flexDirection: 'row', marginHorizontal: 12, backgroundColor: 'rgba(8,6,4,0.98)',
       borderLeftWidth: 1.5, borderRightWidth: 1.5, borderColor: colors.sepiaBorder }}>
@@ -626,7 +626,7 @@ add('g1-stamp-vs-lacquer', (
   <View style={[p.screen, { paddingHorizontal: 20, paddingTop: 34 }]}>
     <Note>THE TWO FINALISTS</Note>
 
-    <Note dim>A · THE HOUSE'S OWN RANK STAMP — ALREADY ON THE PROFILE</Note>
+    <Note dim>A · THE HOUSE’S OWN RANK STAMP — ALREADY ON THE PROFILE</Note>
     <Row Mark={() => <Stamped auteur />} name="Ana" trailing="61 CRITIQUES" />
     <View style={p.byline}>
       <View style={[p.avatar, p.avatarArchivist]}>
