@@ -178,13 +178,46 @@ export const PaperDoor = memo(function PaperDoor({
  * designed for this screen — it is the page it already is, carrying rules
  * instead of filings, which is why it needs no explaining.
  */
+/**
+ * ── EVERY CLAUSE IS A CLAIM, AND EVERY CLAIM WAS CHECKED ─────────────────────
+ * A rules page is not decoration: each line tells a member what the house will
+ * do, and a line the code does not honour is a lie printed in the one place
+ * that must not contain any. So each was audited against the schema and the
+ * policies, and one did not survive.
+ *
+ *   III  TRUE — `CONSTRAINT wire_source` on `dispatch_posts`: a wire without a
+ *        source cannot be written at all, not merely refused by a screen.
+ *   IV   TRUE — `profiles_username_unique` and `profiles_username_lower_unique`.
+ *   VI   TRUE — private notes are owner-only at the row level.
+ *   VII  TRUE — `POLICY votes_read … USING (user_id = auth.uid())`. You can
+ *        read your own vote and nobody else's, the house included.
+ *   VIII TRUE — `TRIGGER no_hard_delete` on `dispatch_posts`.
+ *   IX   TRUE — `POLICY posts_tier … WITH CHECK (kind NOT IN ('ballot',
+ *        'dossier') OR has_tier_at_least(2))`. Server-side, not a locked button.
+ *
+ * And the one that failed:
+ *
+ *   V    WAS FALSE. It read "Five members report a filing and the house reads
+ *        it." There is no five anywhere — no threshold, no trigger, no counter
+ *        that acts. Reports raise a filing up a docket ordered by how many it
+ *        has, and a person reads it. The clause now says that, because a number
+ *        a member could count on and the house does not keep is worse than no
+ *        number at all.
+ *
+ * I and II are the two that are not machine-enforced, and they are the two that
+ * cannot be: one is conduct, and the other asks for an intention the veil
+ * cannot read. Both stay, and both are honest about it.
+ */
 export const CLAUSES: [string, string][] = [
   ['I', 'Argue with the film. Never with the member.'],
-  ['II', 'Mark a spoiler before you write one. The house hides it either way, but you should have meant to.'],
+  ['II', 'Mark a spoiler before you write one. The house covers it either way, but you should have meant to.'],
   ['III', 'A wire carries its source. No source, no wire.'],
   ['IV', 'One member, one name. A second voice is not a second person.'],
-  ['V', 'Five members report a filing and the house reads it. Five is not a verdict.'],
+  ['V', 'Report a filing and the house reads it. A report is not a verdict, and neither is the number of them.'],
   ['VI', 'What you keep is yours and is never shown. What you file is the house’s and is.'],
+  ['VII', 'A ballot is secret until it closes. Not even the house counts it early.'],
+  ['VIII', 'Nothing filed is destroyed. A filing may be withdrawn, and the critiques written under it stand.'],
+  ['IX', 'The long forms — the dossier, the ballot — are an Auteur’s to file.'],
 ];
 
 export const PaperRules = memo(function PaperRules() {
@@ -193,8 +226,12 @@ export const PaperRules = memo(function PaperRules() {
       <Text style={m.rulesHead} accessibilityRole="header" {...displayTextProps}>
         The house rules
       </Text>
+      {/* No count in the standfirst. It said "Six" while there were six, which
+          is a number that has to be maintained by whoever adds a clause — and
+          the one thing a rules page cannot afford is a line that quietly stops
+          being true. The sentence keeps the age and drops the arithmetic. */}
       <Text style={m.rulesStand} {...scaledTextProps}>
-        Six, and they have not changed since the room had a projector in it.
+        The house has kept them since the room still had a projector in it.
       </Text>
       {CLAUSES.map(([n, text], i) => (
         <View key={n}>
