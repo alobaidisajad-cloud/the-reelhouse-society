@@ -11,9 +11,12 @@
  *
  * The problem is that the two marks differ in DEGREE. Hue is a code, not a
  * rank: nothing in a crimson box says "more" than a brass one unless you have
- * been taught it, and gold reads as the premium metal in almost every visual
- * language there is. Two boxes of the same size, shape, tilt and construction,
- * in two colours, are two CATEGORIES — not a ladder.
+ * been taught it. Two boxes of the same size, shape, tilt and construction, in
+ * two colours, are two CATEGORIES — not a ladder.
+ *
+ * A gold star inside the crimson was drawn and REJECTED — the house does not
+ * want two metals in one mark, and it would have made the Auteur a third colour
+ * where every other rank is one.
  *
  * So the candidates below all make them differ in KIND.
  *
@@ -31,6 +34,10 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
+import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { colors, fonts } from '@/src/theme/theme';
+import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useFocusEffect: () => {},
@@ -39,12 +46,8 @@ jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(), notificationAsync: jest.fn(), selectionAsync: jest.fn(),
 }));
 
-import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { colors, fonts } from '@/src/theme/theme';
-import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
-
 const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'rank');
-const sheets: Array<[string, React.ReactElement]> = [];
+const sheets: [string, React.ReactElement][] = [];
 const add = (n: string, node: React.ReactElement) => sheets.push([n, node]);
 
 const WORD = {
@@ -72,24 +75,6 @@ const ShippedArchivist = () => (
   </View>
 );
 
-/* ══ A · THE FOIL STAR ══════════════════════════════════════════════════════
-   The word stays crimson ink; the STAR is struck in the house's brightest
-   brass. Gold foil on a red seal — and it is the only place in the pair where
-   any foil appears at all, so it reads as the richer object without the mark
-   growing by a point.
-
-   It also settles an old debt honestly: the membership page used to promise a
-   "Gold Foil Auteur Badge". The foil is the star. */
-const FoilAuteur = () => (
-  <View style={[BOX, { borderWidth: 1, borderColor: colors.crimson }]}>
-    <LinearGradient colors={[colors.stampCrimsonHead, colors.stampGround]}
-      start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={FILL} />
-    <Text style={[WORD, { color: colors.crimsonInk }]} {...scaledTextProps}>
-      <Text style={{ color: colors.marqueeGold }}>★</Text>{' AUTEUR'}
-    </Text>
-  </View>
-);
-
 /* ══ B · THE ARCHIVIST GOES PLAIN ═══════════════════════════════════════════
    The other half of the same idea, and the one that costs nothing: take the
    wash OFF the Archivist. A hairline and a word on the page's own ink — ink on
@@ -104,17 +89,24 @@ const PlainArchivist = () => (
 
 /* ══ C · THE DOUBLE RULE ════════════════════════════════════════════════════
    The printer's own way of saying "a higher grade of certificate": a second
-   hairline set inside the first. Two points of padding, no new colour, and it
-   reads instantly as more formal than a single rule. */
+   hairline set inside the first. No new colour — both rules are the rank's own
+   crimson, the outer at full strength and the inner as the lighter of the two,
+   which is how a real double rule is struck.
+
+   It is also the answer to the width problem the measurement turned up. The
+   Archivist's mark is 83.9pt against the Auteur's 67.1 — ARCHIVIST is simply a
+   longer word — and size is the first thing the eye ranks. A frame gives the
+   shorter mark visual MASS, which is the only way to outrank a wider box
+   without making it wider still. */
 const DoubleRuleAuteur = () => (
-  <View style={[{ borderWidth: 1, borderColor: colors.crimson, padding: 1.5,
-    transform: [{ rotate: '-3deg' }], marginHorizontal: 1, flexShrink: 0 }]}>
-    <View style={{ borderWidth: 0.5, borderColor: 'rgba(226,86,79,0.55)', paddingHorizontal: 6, paddingVertical: 2 }}>
+  <View style={{
+    borderWidth: 1, borderColor: colors.crimson, padding: 1.5,
+    transform: [{ rotate: '-3deg' }], marginHorizontal: 1, flexShrink: 0,
+  }}>
+    <View style={{ borderWidth: 0.5, borderColor: 'rgba(226,86,79,0.5)', paddingHorizontal: 6, paddingVertical: 2 }}>
       <LinearGradient colors={[colors.stampCrimsonHead, colors.stampGround]}
         start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={FILL} />
-      <Text style={[WORD, { color: colors.crimsonInk }]} {...scaledTextProps}>
-        <Text style={{ color: colors.marqueeGold }}>★</Text>{' AUTEUR'}
-      </Text>
+      <Text style={[WORD, { color: colors.crimsonInk }]} {...scaledTextProps}>★ AUTEUR</Text>
     </View>
   </View>
 );
@@ -151,32 +143,60 @@ const Pair = ({ A, B, who }: { A: () => React.ReactElement; B: () => React.React
 
 add('r1-the-four-ways', (
   <View style={[p.screen, { paddingHorizontal: 20, paddingTop: 34 }]}>
-    <Note>DOES THE AUTEUR READ AS HIGHER, OR ONLY AS DIFFERENT?</Note>
+    <Note>NO GOLD. THE DOUBLE RULE AND THE PLAIN ARCHIVIST, ON THEIR OWN.</Note>
 
     <Pair A={ShippedAuteur} B={ShippedArchivist}
       who="AS SHIPPED — TWO BOXES, TWO COLOURS, ONE SIZE" />
     <View style={[p.hair, { marginTop: 6, marginBottom: 18 }]} />
 
-    <Pair A={FoilAuteur} B={ShippedArchivist}
-      who="A · THE STAR IN GOLD FOIL — THE ONLY FOIL IN THE PAIR" />
-    <View style={[p.hair, { marginTop: 6, marginBottom: 18 }]} />
-
     <Pair A={ShippedAuteur} B={PlainArchivist}
-      who="B · THE ARCHIVIST GOES PLAIN — INK ON PAPER VS A PRINTED PLATE" />
+      who="B ALONE · THE ARCHIVIST GOES PLAIN" />
     <View style={[p.hair, { marginTop: 6, marginBottom: 18 }]} />
 
-    <Pair A={FoilAuteur} B={PlainArchivist}
-      who="A + B TOGETHER — THE RECOMMENDATION" />
+    <Pair A={DoubleRuleAuteur} B={ShippedArchivist}
+      who="C ALONE · THE AUTEUR TAKES A DOUBLE RULE" />
     <View style={[p.hair, { marginTop: 6, marginBottom: 18 }]} />
 
     <Pair A={DoubleRuleAuteur} B={PlainArchivist}
-      who="C · AND A DOUBLE RULE, THE PRINTER'S HIGHER GRADE" />
+      who="B + C TOGETHER — INK ON PAPER, AGAINST A FRAMED PLATE" />
+  </View>
+));
+
+/* The pair alone tells you little. Side by side at four times the size is where
+   a frame either earns its two points of padding or does not. */
+add('r3-up-close', (
+  <View style={[p.screen, { paddingHorizontal: 20, paddingTop: 40 }]}>
+    <Note>THE TWO MARKS, ENLARGED</Note>
+    <Note dim>AS SHIPPED</Note>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 26 }}>
+      <View style={{ transform: [{ scale: 3 }], marginHorizontal: 60, marginVertical: 18 }}>
+        <ShippedAuteur />
+      </View>
+    </View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 30 }}>
+      <View style={{ transform: [{ scale: 3 }], marginHorizontal: 66, marginVertical: 18 }}>
+        <ShippedArchivist />
+      </View>
+    </View>
+
+    <View style={[p.hair, { marginBottom: 22 }]} />
+    <Note dim>B + C</Note>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 26 }}>
+      <View style={{ transform: [{ scale: 3 }], marginHorizontal: 60, marginVertical: 20 }}>
+        <DoubleRuleAuteur />
+      </View>
+    </View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+      <View style={{ transform: [{ scale: 3 }], marginHorizontal: 66, marginVertical: 18 }}>
+        <PlainArchivist />
+      </View>
+    </View>
   </View>
 ));
 
 add('r2-a-column-of-rows', (
   <View style={[p.screen, { paddingHorizontal: 20, paddingTop: 34 }]}>
-    <Note>A + B, TWELVE ROWS DEEP</Note>
+    <Note>B + C, TWELVE ROWS DEEP</Note>
     <Note dim>ONE AUTEUR IN TWELVE IS THE REAL RATIO. RARITY IS HALF OF WHAT MAKES A MARK READ AS AN HONOUR.</Note>
     {[['Ana', 1], ['Dan', 0], ['Sam', 2], ['Kit', 2], ['Noor', 2], ['Jun', 0],
     ['Iris', 2], ['Theo', 2], ['Mira', 1], ['Lena', 0], ['Otto', 2], ['Vera', 2]]
@@ -189,7 +209,7 @@ add('r2-a-column-of-rows', (
           </View>
           <Text style={[p.bylineName, k === 1 && { color: colors.crimsonInk, opacity: 1 }]}
             numberOfLines={1} {...scaledTextProps}>{(who as string).toUpperCase()}</Text>
-          {k === 1 ? <FoilAuteur /> : k === 0 ? <PlainArchivist /> : null}
+          {k === 1 ? <DoubleRuleAuteur /> : k === 0 ? <PlainArchivist /> : null}
           <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>{`· ${(i + 2) * 13} CRITIQUES`}</Text>
         </View>
       ))}
@@ -203,6 +223,6 @@ describe('rank hierarchy', () => {
       const { toJSON } = render(node);
       writeFileSync(join(OUT, `${name}.html`), toHtml(toJSON()), 'utf8');
     }
-    expect(sheets.length).toBe(2);
+    expect(sheets.length).toBe(3);
   });
 });
