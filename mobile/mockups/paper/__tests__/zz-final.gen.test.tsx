@@ -369,6 +369,186 @@ add('b3-the-preview-is-the-reader', (
   </View>
 ));
 
+/* ══════════════════════════════════════════════════════════════════════════
+   C · THE MEMBERSHIP CARD — THE PROMISE, DELETED RATHER THAN REWRITTEN
+   ──────────────────────────────────────────────────────────────────────────
+   The Auteur tier is sold with `Gold Foil "Auteur" Badge` in its feature list.
+   Change the mark to crimson and that line is a lie on the paywall.
+   Rewriting it to say "crimson" only moves the lie one colour along: the copy
+   and the component would still be two places that have to agree, and the next
+   person to retune the mark will not think to open the membership file.
+
+   So the line is DELETED, and the card WEARS the mark instead. A card that
+   shows the badge cannot promise the wrong one. The bullet was describing
+   something the card can simply be.
+
+   It sits under the tier's label, where the eye already lands on the way to the
+   price — and the Cinephile card shows nothing there, which is the truest thing
+   the layout can say about an unranked member.
+   ══════════════════════════════════════════════════════════════════════════ */
+const TierCard = ({ rank, name, label, price, period, features, cta }: {
+  rank: 'auteur' | 'archivist' | null; name: string; label: string;
+  price: string; period: string; features: string[]; cta: string;
+}) => {
+  const a = rank === 'auteur';
+  return (
+    <View style={{
+      flex: 1, minWidth: 0, paddingHorizontal: 12, paddingTop: 16, paddingBottom: 14,
+      borderWidth: 1, borderColor: a ? colors.crimsonBorder : 'rgba(184,137,26,0.35)',
+      backgroundColor: a ? 'rgba(30,12,12,0.98)' : 'rgba(30,24,14,0.98)',
+    }}>
+      <Text style={{ fontFamily: fonts.display, fontSize: 15, lineHeight: 20, textAlign: 'center',
+        color: a ? colors.crimsonInk : colors.parchment }} {...displayTextProps}>{name}</Text>
+      <Text style={{ fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.8, textAlign: 'center',
+        marginTop: 5, color: a ? colors.crimson : colors.sepia }} {...decorativeTextProps}>{label}</Text>
+
+      {/* THE MARK, WORN NOT DESCRIBED. */}
+      <View style={{ alignItems: 'center', marginTop: 10, minHeight: 22, justifyContent: 'center' }}>
+        <Mark rank={rank} />
+      </View>
+
+      <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 12 }}>
+        <Text style={{ fontFamily: fonts.display, fontSize: 22, color: colors.parchmentBright }}
+          {...displayTextProps}>{price}</Text>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 6.5, letterSpacing: 1.6, color: colors.fog,
+          marginTop: 3 }} {...decorativeTextProps}>{period}</Text>
+      </View>
+
+      {features.map((f) => (
+        <View key={f} style={{ flexDirection: 'row', gap: 6, marginBottom: 7 }}>
+          <Text style={{ fontFamily: fonts.sub, fontSize: 7, lineHeight: 12,
+            color: a ? colors.crimson : colors.sepia }} {...decorativeTextProps}>{a ? '★' : '·'}</Text>
+          <Text style={{ fontFamily: fonts.sub, fontSize: 7.5, lineHeight: 12, letterSpacing: 0.4,
+            color: colors.bone, flex: 1 }} {...scaledTextProps}>{f}</Text>
+        </View>
+      ))}
+
+      <View style={{ flex: 1 }} />
+      <View style={{ borderWidth: 1, borderColor: a ? colors.crimson : colors.sepia,
+        paddingVertical: 7, alignItems: 'center', marginTop: 10 }}>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6,
+          color: a ? colors.crimsonInk : colors.sepia }} {...decorativeTextProps}>{cta}</Text>
+      </View>
+    </View>
+  );
+};
+
+add('c1-the-membership-card', (
+  <View style={[p.screen, { paddingHorizontal: 14, paddingTop: 34 }]}>
+    <Note>THE CARD WEARS THE MARK — IT NO LONGER DESCRIBES IT</Note>
+    <Note dim>THE `GOLD FOIL BADGE` LINE IS GONE. A CARD THAT SHOWS THE MARK CANNOT PROMISE THE WRONG ONE.</Note>
+    <View style={{ flexDirection: 'row', gap: 10, flex: 1, marginTop: 6 }}>
+      <TierCard rank="archivist" name={'The\nArchivist'} label="PREMIUM TOOLS" price="1.99" period="/ MO"
+        cta="BECOME AN ARCHIVIST"
+        features={['The Physical Archive', 'The Vault', 'The Gilded Frame', 'The Lounge']} />
+      <TierCard rank="auteur" name="The Auteur" label="ULTIMATE PATRONAGE" price="4.99" period="/ MO"
+        cta="BECOME AN AUTEUR"
+        features={['Publish Essays to The Dispatch', 'Curatorial Control', 'Poster Glow Profile',
+          'Early Access to New Features']} />
+    </View>
+  </View>
+));
+
+/* ══════════════════════════════════════════════════════════════════════════
+   D · THE SERIES SHEET — THE ONE GENUINELY NEW PIECE
+   ──────────────────────────────────────────────────────────────────────────
+   A series is not a table. `series_id`, `series_title` and `part_number` are
+   three columns on the filing itself, and the database already holds them
+   together:
+
+     CONSTRAINT series_whole CHECK (series_id IS NULL
+       OR (series_title IS NOT NULL AND part_number IS NOT NULL
+           AND kind = 'dossier'))
+
+   So a series cannot be half-set, and cannot be set on anything but a dossier —
+   the failure mode is a refused write, not a corrupt row. Nothing to migrate.
+
+   The sheet therefore only has to do two things: let a member rejoin a series
+   they have already begun, or begin one. Both come from a single query of their
+   own dossiers grouped by series, so the list is always true.
+
+   THE PART NUMBER IS SHOWN, NOT ASSUMED. `dispatch_posts_series` is an INDEX,
+   not a unique constraint, so two parts CAN share a number — it would not be
+   refused, it would just read "II, II" on the series page. The next number is
+   filled in for you and left editable, which is the only way a member who is
+   filing Part III after writing Part IV can say so.
+   ══════════════════════════════════════════════════════════════════════════ */
+const SeriesRow = ({ title, parts, next, chosen }: {
+  title: string; parts: string; next: string; chosen?: boolean;
+}) => (
+  <View style={{
+    flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)',
+  }}>
+    <Text style={{ fontFamily: fonts.sub, fontSize: 9, color: chosen ? colors.sepia : 'transparent',
+      width: 12, includeFontPadding: false }} {...decorativeTextProps}>✦</Text>
+    <View style={{ flex: 1, minWidth: 0 }}>
+      <Text style={{ fontFamily: fonts.display, fontSize: 13, lineHeight: 17,
+        color: chosen ? colors.parchmentBright : colors.parchment }}
+        numberOfLines={1} {...displayTextProps}>{title}</Text>
+      <Text style={{ fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.4, color: colors.fog,
+        marginTop: 3, includeFontPadding: false }} {...decorativeTextProps}>{parts}</Text>
+    </View>
+    <Text style={{ fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+      includeFontPadding: false }} {...decorativeTextProps}>{next}</Text>
+  </View>
+);
+
+add('d1-the-series-sheet', (
+  <View style={[p.screen, { justifyContent: 'flex-end' }]}>
+    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
+      backgroundColor: 'rgba(4,3,2,0.72)' }} />
+    <View style={{ backgroundColor: 'rgba(8,6,4,0.99)', borderTopWidth: 1.5,
+      borderTopColor: colors.sepiaBorder, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 30 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 4 }}>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.bone }}
+          {...decorativeTextProps}>PART OF A SERIES</Text>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.fog }}
+          {...decorativeTextProps}>NOT A SERIES</Text>
+      </View>
+      <Text style={{ fontFamily: fonts.body, fontSize: 11.5, lineHeight: 18, color: colors.fog,
+        marginBottom: 14 }} {...scaledTextProps}>
+        A series is read in order. Choose one you have begun, or begin one.
+      </Text>
+
+      <SeriesRow title="Ozu, in Four Parts" parts="THREE FILED · I, II, III" next="NEXT: IV" chosen />
+      <SeriesRow title="The Long Take" parts="ONE FILED · I" next="NEXT: II" />
+      <SeriesRow title="What the Wire Missed" parts="SIX FILED · I–VI" next="NEXT: VII" />
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 13,
+        borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)' }}>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, width: 12,
+          includeFontPadding: false }} {...decorativeTextProps}>+</Text>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.sepia }}
+          {...scaledTextProps}>BEGIN A NEW SERIES</Text>
+      </View>
+
+      {/* The chosen series, and the number it will carry — filled in, and
+          editable, because the member is the one who knows the order. */}
+      <View style={{ marginTop: 16, borderWidth: 1, borderColor: 'rgba(184,137,26,0.30)',
+        paddingHorizontal: 12, paddingVertical: 11 }}>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.8, color: colors.sepia,
+          marginBottom: 6 }} {...decorativeTextProps}>THIS DOSSIER WILL BE FILED AS</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+          <Text style={{ fontFamily: fonts.display, fontSize: 15, color: colors.parchmentBright,
+            flex: 1 }} numberOfLines={1} {...displayTextProps}>Ozu, in Four Parts</Text>
+          <Text style={{ fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.6, color: colors.fog }}
+            {...decorativeTextProps}>PART</Text>
+          <Text style={{ fontFamily: fonts.display, fontSize: 17, color: colors.sepia }}
+            {...displayTextProps}>IV</Text>
+        </View>
+      </View>
+
+      <View style={{ borderWidth: 1, borderColor: colors.sepia, paddingVertical: 10,
+        alignItems: 'center', marginTop: 14 }}>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.sepia }}
+          {...decorativeTextProps}>SET THE SERIES</Text>
+      </View>
+    </View>
+  </View>
+));
+
 describe('final', () => {
   it('renders the final look', () => {
     mkdirSync(OUT, { recursive: true });
@@ -376,6 +556,6 @@ describe('final', () => {
       const { toJSON } = render(node);
       writeFileSync(join(OUT, `${name}.html`), toHtml(toJSON()), 'utf8');
     }
-    expect(sheets.length).toBe(5);
+    expect(sheets.length).toBe(7);
   });
 });
