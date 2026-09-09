@@ -482,25 +482,23 @@ export const p = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     marginTop: 0, marginBottom: 8,
     /**
-     * ── THE MARK DROPS BELOW THE NAME RATHER THAN OUT OF THE ROW ─────────────
-     * This row has a hard minimum it cannot shrink past: the disc is fixed, the
-     * name stops at 56 (nine characters, below which a byline stops being a
-     * name), and the rank mark never gives way at all. Adding the mark raised
-     * that floor by its own width.
+     * ── NO `flexWrap` HERE, AND THAT IS A CORRECTION ─────────────────────────
+     * This row wrapped for one commit, put there to stop the byline painting
+     * outside a member's ROOM at the largest text size. It fixed that and broke
+     * the feed: measured on the plates, THIRTEEN of thirty-eight bylines went
+     * to two lines at NORMAL type, and twenty-one at 1.35.
      *
-     * A member's ROOM puts this byline in a column that carries `minWidth: 0`,
-     * so the column will shrink to nothing on request — which means the row is
-     * handed less than its floor and simply paints outside itself. Measured on
-     * the rendered page at the largest text size: a 163pt row holding 169pt of
-     * content, spilling 4.4pt past its own edge.
+     * The reason is a flexbox rule worth remembering: `flexWrap` turns OFF
+     * shrink-to-fit. In a wrapping row an item moves to the next line rather
+     * than giving up width — so the trailing facts, which exist precisely to be
+     * the thing that truncates, stopped truncating and pushed themselves down
+     * instead.
      *
-     * Wrapping is the honest give, and it belongs HERE rather than on any one
-     * container: the byline appears in a post, a ballot, an essay head, a
-     * docket case and a room, and only the row itself knows what it cannot
-     * fit. In every column wide enough — which is all of them at normal type —
-     * this changes nothing.
+     * Without it the row behaves as designed: the trailing count shrinks to
+     * nothing and the name truncates to its nine-character floor. The room's
+     * overflow was never this row's fault — see `m.roomHead`, which is the one
+     * container that hands the byline less than its floor.
      */
-    flexWrap: 'wrap',
   },
   /**
    * WITHDRAW, on your own critique.

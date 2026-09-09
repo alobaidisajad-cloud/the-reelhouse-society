@@ -67,9 +67,15 @@ const ShippedAuteur = () => (
     <Text style={[WORD, { color: colors.crimsonInk }]} {...scaledTextProps}>★ AUTEUR</Text>
   </View>
 );
+/**
+ * The Archivist AS IT SHIPPED, kept only so the plates can show what changed.
+ * Its wash token is gone from the Ledger now, so the value is written here
+ * rather than imported — a drawing of a past state, not a second definition of
+ * a live one.
+ */
 const ShippedArchivist = () => (
   <View style={[BOX, { borderWidth: 0.5, borderColor: colors.sepiaBorderStrong }]}>
-    <LinearGradient colors={[colors.stampBrassHead, colors.stampGround]}
+    <LinearGradient colors={['rgba(184, 137, 26, 0.06)', colors.stampGround]}
       start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={FILL} />
     <Text style={[WORD, { color: colors.sepia, opacity: 0.82 }]} {...scaledTextProps}>✦ ARCHIVIST</Text>
   </View>

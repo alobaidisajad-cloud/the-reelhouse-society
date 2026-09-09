@@ -130,9 +130,14 @@ export const colors = {
   // `sepiaBorderStrong`, which the Ledger already carries and which is exactly
   // what a lighter impression's edge is.
   stampCrimsonHead: 'rgba(180, 45, 45, 0.09)',
-  stampBrassHead: 'rgba(184, 137, 26, 0.06)',
-  /** Where both washes land: the page's own ink, all but opaque. */
+  /** Where the wash lands: the page's own ink, all but opaque. */
   stampGround: 'rgba(10, 9, 6, 0.96)',
+  /**
+   * The INNER rule of the Auteur's double frame — its own ink at half, so the
+   * two rules read as one struck pair rather than as a box inside a box. Only
+   * the higher rank is framed; that frame is what makes it read as higher.
+   */
+  stampRuleInner: 'rgba(226, 86, 79, 0.5)',
 
   parchmentBright: '#F8F2E4',
   surface: '#14120D',

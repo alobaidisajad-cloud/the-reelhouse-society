@@ -1,26 +1,28 @@
 /**
- * theRankBadgeIsReadable.test.ts — ink on a stamp's ground.
+ * theRankBadgeIsReadable.test.ts — each rank's word, on the ground it is on.
  * ─────────────────────────────────────────────────────────────────────────────
- * `textContrast.test.ts` skips any style that paints its own background, and
- * says so out loud: "A style that paints its own background is measured against
- * that background, which this scan cannot resolve — so it is skipped rather
- * than guessed at. Verify those by hand when you touch them."
+ * `textContrast.test.ts` skips any style that paints its own background and
+ * says so out loud: "verify those by hand when you touch them." This is that
+ * verification, kept as a number rather than as a memory of having checked.
  *
- * This is that verification, kept as a number rather than a memory of having
- * checked. It also holds the reason the profile's original stamp had to change:
- * that style painted its word in `colors.crimson`, which on this ground is
- * 3.16:1 — over the app's own 3:1 floor, and under the 4.5 that eight-point
- * type needs. The Ledger had already split the token for exactly this case
- * ("crimson for MARKS, crimsonInk for WORDS"), and the mark now uses the ink.
+ * ── THE HOLE THIS VERSION CLOSES ────────────────────────────────────────────
+ * The first version measured each rank's INK against its ground and passed. It
+ * did not measure the OPACITY the component applied on top: the Archivist's
+ * word carried `opacity: 0.82`, which composites to 4.35:1 — under the 4.5
+ * eight-point type needs. The guard tested the colour and the component drew
+ * something dimmer, so it reported a pass on a real failure.
  *
- * The ground is a WASH over near-black, not a solid, so the worst case is the
- * HEAD of the gradient — the lightest point, where the rank's own pigment is
- * strongest and the contrast with dark ink is least.
+ * The lesson generalises past this file: **a colour is not what renders.** What
+ * renders is the colour composited through every opacity between it and the
+ * page. So this reads the COMPONENT for any opacity on a word and folds it in —
+ * and fails if it cannot find the styles it means to be checking.
  */
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { colors } from '@/src/theme/theme';
-import {
-  STAMP_CRIMSON, STAMP_BRASS, STAMP_INK_AUTEUR, STAMP_INK_ARCHIVIST,
-} from '@/src/theme/stamp';
+import { STAMP_CRIMSON, STAMP_INK_AUTEUR, STAMP_INK_ARCHIVIST } from '@/src/theme/stamp';
+
+const BADGE = readFileSync(join(__dirname, '..', 'RankBadge.tsx'), 'utf8');
 
 /** WCAG relative luminance of an opaque #rrggbb. */
 function luminance(hex: string): number {
@@ -37,85 +39,123 @@ function contrast(a: string, b: string): number {
   return (x + 0.05) / (y + 0.05);
 }
 
-/** `rgba(r, g, b, a)` → the opaque colour it composites to over `under`. */
-function flatten(rgba: string, under: string): string {
-  const m = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s]+([\d.]+))?\s*\)/.exec(rgba);
-  if (!m) throw new Error(`not an rgba(): ${rgba}`);
-  const [r, g, b] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  const a = m[4] === undefined ? 1 : Number(m[4]);
+/** `rgba(...)` or a hex at an alpha, composited over an opaque ground. */
+function over(colour: string, alpha: number, under: string): string {
+  let rgb: number[];
+  const m = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s]+([\d.]+))?\s*\)/.exec(colour);
+  if (m) {
+    rgb = [Number(m[1]), Number(m[2]), Number(m[3])];
+    if (m[4] !== undefined) alpha *= Number(m[4]);
+  } else {
+    const h = colour.replace('#', '');
+    rgb = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  }
   const base = under.replace('#', '');
   const out = [0, 2, 4].map((i, n) => {
     const u = parseInt(base.slice(i, i + 2), 16);
-    return Math.round([r, g, b][n] * a + u * (1 - a));
+    return Math.round(rgb[n] * alpha + u * (1 - alpha));
   });
   return `#${out.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/** What the page is actually made of behind the mark. */
+/**
+ * The opacity the COMPONENT puts on a rank's word, read out of its stylesheet.
+ * Absent means 1 — but an unreadable stylesheet must not silently mean 1 too,
+ * which is what `wordOpacityOr` exists to prevent.
+ */
+function wordOpacity(styleName: string): number | null {
+  const block = new RegExp(`${styleName}:\\s*\\{([^}]*)\\}`).exec(BADGE);
+  if (!block) return null;
+  const op = /opacity:\s*([\d.]+)/.exec(block[1]);
+  return op ? Number(op[1]) : 1;
+}
+
 const PAGE = colors.ink;
 
 const CASES = [
-  { rank: 'Auteur', wash: STAMP_CRIMSON, ink: STAMP_INK_AUTEUR },
-  { rank: 'Archivist', wash: STAMP_BRASS, ink: STAMP_INK_ARCHIVIST },
+  {
+    rank: 'Auteur',
+    ink: STAMP_INK_AUTEUR,
+    style: 'wordAuteur',
+    // A wash over the page, so the ground is lighter than the page itself.
+    ground: over(STAMP_CRIMSON[0], 1, PAGE),
+  },
+  {
+    rank: 'Archivist',
+    ink: STAMP_INK_ARCHIVIST,
+    style: 'wordArchivist',
+    // NO wash. Ink on paper — which is the hierarchy, and also what lifted this
+    // rank's word off the 4.35:1 the opacity was costing it.
+    ground: PAGE,
+  },
 ];
 
-describe('the rank mark is readable on its own ground', () => {
-  it.each(CASES)('$rank — its word clears AA at the wash’s lightest point', ({ wash, ink }) => {
-    // The head of the gradient: the strongest pigment, the least contrast.
-    const ground = flatten(wash[0], PAGE);
-    const ratio = contrast(ink, ground);
-    expect(`ground ${ground} → ${ratio.toFixed(2)}:1`).toContain(':1');
+describe('each rank’s word is readable on the ground it actually sits on', () => {
+  it('can read the component’s own styles', () => {
+    // Vacuous-guard insurance. Every case below folds in an opacity read from
+    // that file; if the read broke, they would all quietly measure 1.
+    expect(BADGE.length).toBeGreaterThan(1000);
+    for (const c of CASES) expect(wordOpacity(c.style)).not.toBeNull();
+  });
+
+  it.each(CASES)('$rank — clears AA with the component’s own opacity folded in', (c) => {
+    const alpha = wordOpacity(c.style) as number;
+    const rendered = over(c.ink, alpha, c.ground);
+    const ratio = contrast(rendered, c.ground);
+    expect(`${c.rank}: ink ${c.ink} at ${alpha} on ${c.ground} → ${ratio.toFixed(2)}:1`).toContain(':1');
     expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
 
-  it.each(CASES)('$rank — and at every other stop of the wash', ({ wash, ink }) => {
-    const failing = wash
-      .map((stop) => ({ stop, r: contrast(ink, flatten(stop, PAGE)) }))
-      .filter(({ r }) => r < 4.5);
-    expect(failing).toEqual([]);
+  it('records the defect precisely: it took the wash AND the opacity together', () => {
+    /**
+     * The Archivist's word used to be sepia at 0.82 ON A BRASS WASH, and that
+     * pair measured 4.35:1. Neither half does it alone:
+     *
+     *   0.82 on the wash        4.35   ← what shipped, and failed
+     *   0.82 on the plain page  4.53   ← the dimming alone is survivable
+     *   1.00 on the plain page  6.24   ← what it is now
+     *
+     * Worth pinning as three numbers rather than one, because I first wrote
+     * this assertion from a memory of "4.35" without re-deriving which GROUND
+     * it was against — and it failed, correctly, on a mark that was fine. A
+     * contrast figure means nothing without the surface it was measured on.
+     */
+    const OLD_WASH = 'rgba(184, 137, 26, 0.06)';
+    const oldGround = over(OLD_WASH, 1, PAGE);
+
+    expect(contrast(over(STAMP_INK_ARCHIVIST, 0.82, oldGround), oldGround)).toBeLessThan(4.5);
+    expect(contrast(over(STAMP_INK_ARCHIVIST, 0.82, PAGE), PAGE)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(over(STAMP_INK_ARCHIVIST, 1, PAGE), PAGE)).toBeGreaterThan(6);
   });
 
-  it('records why the profile’s original word could not be kept', () => {
-    // `colors.crimson` as the WORD, which is what tierStamp used to paint.
-    const ground = flatten(STAMP_CRIMSON[0], PAGE);
-    const asPigment = contrast(colors.crimson, ground);
-    const asInk = contrast(colors.crimsonInk, ground);
-    expect(asPigment).toBeLessThan(4.5);      // why it changed
-    expect(asInk).toBeGreaterThanOrEqual(4.5); // what it changed to
-    expect(asInk).toBeGreaterThan(asPigment);
-  });
-
-  /** The alpha of an `rgba(...)`, which is what "how heavy is this wash" means. */
-  const alphaOf = (rgba: string) => Number(/([\d.]+)\s*\)$/.exec(rgba.trim())![1]);
-
-  it('a censure is a heavier crimson field than any rank', () => {
-    // `crimsonFaint` at 0.10 is the wash a WITHHELD filing wears. A rank at or
-    // above it would let the house's highest honour read, at a glance, as its
-    // censure — both being a tilted, crimson-edged box of about one line.
-    //
-    // This caught the first draft, which set the crimson head at 0.16 while its
-    // own comment claimed the value stayed "well under the ten". The comment
-    // was written from the intention, not from the number.
+  it('the Auteur’s wash stays lighter than a censure’s', () => {
+    // `crimsonFaint` at 0.10 is what a WITHHELD filing wears. A rank at or above
+    // it would let the house's highest honour read, at a glance, as its censure
+    // — both being a tilted, crimson-edged box of about one line.
+    const alphaOf = (rgba: string) => Number(/([\d.]+)\s*\)$/.exec(rgba.trim())![1]);
     expect(alphaOf(STAMP_CRIMSON[0])).toBeLessThan(alphaOf(colors.crimsonFaint));
-    expect(alphaOf(STAMP_BRASS[0])).toBeLessThan(alphaOf(colors.crimsonFaint));
   });
 
-  it('and an Auteur is a heavier impression than an Archivist', () => {
-    // The hierarchy, carried by the medium rather than by a second shape. If
-    // these ever cross, the lesser rank becomes the louder mark.
-    expect(alphaOf(STAMP_CRIMSON[0])).toBeGreaterThan(alphaOf(STAMP_BRASS[0]));
-    // Both wash down to the same ground — that is the point of it being the
-    // page's own ink — so only the heads are compared.
-    expect(STAMP_CRIMSON[STAMP_CRIMSON.length - 1]).toBe(STAMP_BRASS[STAMP_BRASS.length - 1]);
+  it('and only the Auteur is framed', () => {
+    // The hierarchy is carried by a difference of KIND. If the Archivist ever
+    // gains a frame or the Auteur loses one, the ranks are two colours again.
+    expect(BADGE).toMatch(/frame:\s*\{[^}]*borderWidth/);
+    expect(BADGE).toMatch(/plate:\s*\{[^}]*borderWidth/);
+    const archivist = /ruleArchivist:\s*\{([^}]*)\}/.exec(BADGE);
+    expect(archivist).not.toBeNull();
+    expect(archivist![1]).toMatch(/borderWidth/);
+    // …and no wash behind it.
+    expect(BADGE).not.toMatch(/STAMP_BRASS/);
   });
 
   it('the measurement can fail', () => {
     // Proving the instrument. Grey on brass is the pairing brass.ts names as
-    // the one that "fails contrast while looking fine in a mockup"; if this
-    // maths cannot see it, none of the numbers above mean anything.
-    expect(contrast(colors.fog, flatten('rgba(184,137,26,0.9)', PAGE))).toBeLessThan(4.5);
+    // the one that "fails contrast while looking fine in a mockup".
+    expect(contrast(colors.fog, over('rgba(184,137,26,0.9)', 1, PAGE))).toBeLessThan(4.5);
     expect(contrast('#FFFFFF', '#FFFFFF')).toBe(1);
-    expect(flatten('rgba(255, 255, 255, 1)', '#000000')).toBe('#ffffff');
-    expect(flatten('rgba(255, 255, 255, 0)', '#000000')).toBe('#000000');
+    expect(over('#FFFFFF', 1, '#000000')).toBe('#ffffff');
+    expect(over('#FFFFFF', 0, '#000000')).toBe('#000000');
+    // And the opacity reader must actually read one.
+    expect(wordOpacity('nothingCalledThis')).toBeNull();
   });
 });

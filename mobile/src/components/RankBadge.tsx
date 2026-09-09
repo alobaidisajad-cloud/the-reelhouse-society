@@ -34,8 +34,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { fonts } from '@/src/theme/theme';
 import {
-  STAMP_CRIMSON, STAMP_BRASS, STAMP_START, STAMP_END, STAMP_TILT, STAMP_BLEED,
-  STAMP_RIM_AUTEUR, STAMP_RIM_ARCHIVIST, STAMP_INK_AUTEUR, STAMP_INK_ARCHIVIST,
+  STAMP_CRIMSON, STAMP_START, STAMP_END, STAMP_TILT, STAMP_BLEED, STAMP_FRAME_GAP,
+  STAMP_RULE_AUTEUR, STAMP_RULE_AUTEUR_INNER, STAMP_RULE_ARCHIVIST,
+  STAMP_INK_AUTEUR, STAMP_INK_ARCHIVIST,
 } from '@/src/theme/stamp';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { isArchivistPlusTier, isAuteurPlusTier, type TierInput } from '@/src/utils/tier';
@@ -85,25 +86,42 @@ export const RankBadge = memo(function RankBadge({ rank, silent, style }: {
     ? { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const }
     : { accessibilityLabel: word };
 
+  // ── INK ON PAPER ──────────────────────────────────────────────────────────
+  // A hairline and a word, and nothing behind them. Beside a framed plate this
+  // reads as the plainer object, which is the whole hierarchy: the two ranks
+  // are different KINDS, not the same box in two colours.
+  if (!auteur) {
+    return (
+      <View style={[s.stamp, s.ruleArchivist, style]} {...a11y}>
+        <Text style={[s.word, s.wordArchivist]} numberOfLines={1} {...scaledTextProps}>
+          ✦ ARCHIVIST
+        </Text>
+      </View>
+    );
+  }
+
+  // ── A FRAMED PLATE ────────────────────────────────────────────────────────
+  // The double rule — the printer's higher grade of certificate. Both hairlines
+  // are the rank's own crimson, so the frame adds no colour; it adds MASS,
+  // which is the only answer to `✦ ARCHIVIST` being the physically wider word.
   return (
-    <View style={[s.stamp, auteur ? s.stampAuteur : s.stampArchivist, style]} {...a11y}>
-      <LinearGradient
-        colors={auteur ? STAMP_CRIMSON : STAMP_BRASS}
-        start={STAMP_START} end={STAMP_END}
-        style={s.wash}
-      />
-      <Text
-        style={[s.word, auteur ? s.wordAuteur : s.wordArchivist]}
-        numberOfLines={1}
-        {...scaledTextProps}
-      >
-        {auteur ? '★ AUTEUR' : '✦ ARCHIVIST'}
-      </Text>
+    <View style={[s.frame, style]} {...a11y}>
+      <View style={s.plate}>
+        <LinearGradient
+          colors={STAMP_CRIMSON}
+          start={STAMP_START} end={STAMP_END}
+          style={s.wash}
+        />
+        <Text style={[s.word, s.wordAuteur]} numberOfLines={1} {...scaledTextProps}>
+          ★ AUTEUR
+        </Text>
+      </View>
     </View>
   );
 });
 
 const s = StyleSheet.create({
+  /** The Archivist: one hairline, no ground. */
   stamp: {
     paddingHorizontal: 7,
     paddingVertical: 2.5,
@@ -115,10 +133,24 @@ const s = StyleSheet.create({
     // to `★ AUT` is simply wrong.
     flexShrink: 0,
   },
-  /** Full pressure. */
-  stampAuteur: { borderWidth: 1, borderColor: STAMP_RIM_AUTEUR },
-  /** A lighter impression — the hierarchy, carried by the medium. */
-  stampArchivist: { borderWidth: 0.5, borderColor: STAMP_RIM_ARCHIVIST },
+  ruleArchivist: { borderWidth: 0.5, borderColor: STAMP_RULE_ARCHIVIST },
+
+  /** The Auteur: the outer rule, and the gap that makes it a PAIR of rules. */
+  frame: {
+    borderWidth: 1,
+    borderColor: STAMP_RULE_AUTEUR,
+    padding: STAMP_FRAME_GAP,
+    transform: [{ rotate: STAMP_TILT }],
+    marginHorizontal: STAMP_BLEED,
+    flexShrink: 0,
+  },
+  /** The inner rule, and the plate the wash and the word sit on. */
+  plate: {
+    borderWidth: 0.5,
+    borderColor: STAMP_RULE_AUTEUR_INNER,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
 
   /** Pinned to the padding box, which with no radius needs no clipping. */
   wash: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
@@ -136,5 +168,12 @@ const s = StyleSheet.create({
     includeFontPadding: false,
   },
   wordAuteur: { color: STAMP_INK_AUTEUR },
-  wordArchivist: { color: STAMP_INK_ARCHIVIST, opacity: 0.82 },
+  /**
+   * FULL opacity. This carried 0.82, which composited to 4.35:1 — under the 4.5
+   * eight-point type needs — and the contrast guard tested the COLOUR without
+   * the opacity, so it reported a pass on something that failed. At full
+   * strength on the page's own ink it is 6.24:1, and the hierarchy is carried
+   * by the frame rather than by dimming the lesser rank into illegibility.
+   */
+  wordArchivist: { color: STAMP_INK_ARCHIVIST },
 });

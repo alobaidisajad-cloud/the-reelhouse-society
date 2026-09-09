@@ -5,25 +5,33 @@
  * Companion to `brass.ts`, and for the same reason. A rank mark is drawn on
  * every feed, every search row, the profile, the registry and the paywall — and
  * when four surfaces each solved it separately the app ended up with three
- * different golds for one rank and four different dresses. Stated once,
+ * different golds for one rank and six different dresses. Stated once,
  * imported everywhere, it cannot drift.
  *
- * ── WHAT IT IS ──────────────────────────────────────────────────────────────
- * A letterpress stamp: a square-cornered box, struck at a hand's angle, with
- * the rank's own pigment washed inside it over the page's near-black. It is the
- * construction `profileStyles.tierStamp` already used — that style carries the
- * comment "this is where rank lives now" — with the two faults corrected that a
- * page drawing exactly ONE stamp could never reveal:
+ * ── THE TWO RANKS ARE DIFFERENT KINDS OF OBJECT ─────────────────────────────
+ * They used to differ only in HUE and in amounts nobody can see — a 0.5pt
+ * hairline against a 1pt one at eight-point type, a wash of 0.06 against 0.09.
+ * Measured, the Auteur was already the brighter of the two, so the trouble was
+ * never brightness. Hue is a CODE, not a ladder: two boxes of the same size,
+ * shape, tilt and construction, in two colours, read as two categories.
  *
- *   1. THE HIERARCHY WAS INVERTED. Both ranks sit together in a feed, and a
- *      brass hairline is brighter than a crimson one on near-black, so the
- *      LESSER rank read louder. The Auteur is struck at full pressure now and
- *      the Archivist as a lighter impression — which is what a lesser stamp IS
- *      in printing. The medium carries the rank; there is no second shape.
- *   2. THE WORD FAILED CONTRAST. `colors.crimson` on that ground measures
- *      3.16:1 — over the app's 3:1 floor, under the 4.5 that 8pt type wants.
- *      `crimsonInk` exists in the Ledger for exactly this, at 5.40:1. Sepia on
- *      the same ground is already 6.24:1.
+ * And one fact settles it. `✦ ARCHIVIST` measures 83.9pt where `★ AUTEUR`
+ * measures 67.1 — ARCHIVIST is simply a longer word — so **the lower rank's
+ * mark is 25% bigger**, and size is the first thing the eye ranks. No amount of
+ * colour argues with that.
+ *
+ * So they are now different KINDS:
+ *
+ *   ARCHIVIST — ink on paper. A hairline and a word, no wash at all.
+ *   AUTEUR    — a framed plate. A wash, and a DOUBLE RULE: a second hairline
+ *               set inside the first, which is the printer's own way of saying
+ *               a higher grade of certificate. The frame is what gives the
+ *               shorter mark MASS, the only way to outrank a wider box without
+ *               making it wider still.
+ *
+ * Both rules are the rank's own crimson — outer at full strength, inner at
+ * half — so the frame adds no colour. A gold star was drawn for this and
+ * rejected: the house does not want two metals in one mark.
  *
  * ── TWO THINGS THAT LOOK LIKE DETAILS AND ARE NOT ───────────────────────────
  * NO RADIUS, AND THEREFORE NO CLIPPING. A letterpress stamp has square corners,
@@ -42,14 +50,17 @@
 import { colors } from '@/src/theme/theme';
 
 /**
- * The wash, per rank: the rank's own pigment falling to the page's own ink.
+ * The Auteur's wash: their own pigment falling to the page's own ink.
  *
  * Two stops. A third at two percent sat so close to the ground it was heading
  * for that it changed nothing visible — and its value collided with the tail of
  * the archive feed's tier rule, which is the theme naming one colour twice.
+ *
+ * The ARCHIVIST HAS NO WASH. That is the point: one rank is printed on
+ * something and the other is ink on the page. It also lifted that rank's word
+ * from 4.35:1 to 6.24:1, because the wash came with an opacity.
  */
 export const STAMP_CRIMSON = [colors.stampCrimsonHead, colors.stampGround] as const;
-export const STAMP_BRASS = [colors.stampBrassHead, colors.stampGround] as const;
 
 /**
  * Straight down the short axis.
@@ -68,16 +79,14 @@ export const STAMP_TILT = '-3deg';
 /** Margin that absorbs the width a tilt paints beyond its layout box. */
 export const STAMP_BLEED = 1;
 
-/**
- * The edge, per rank: full pressure, or a lighter impression.
- *
- * The Archivist's is `sepiaBorderStrong`, which the Ledger already carries — a
- * strong brass border is precisely what this is, and inventing a second token a
- * hundredth away from it would be the drift this whole exercise is about.
- */
-export const STAMP_RIM_AUTEUR = colors.crimson;
-export const STAMP_RIM_ARCHIVIST = colors.sepiaBorderStrong;
+/** The gap between the Auteur's two rules. Measured cost of the frame: 3.2pt. */
+export const STAMP_FRAME_GAP = 1.5;
 
-/** The word, per rank. Both clear 4.5:1 on the stamp's ground. */
+/** The edges. The Auteur is framed; the Archivist is a single hairline. */
+export const STAMP_RULE_AUTEUR = colors.crimson;
+export const STAMP_RULE_AUTEUR_INNER = colors.stampRuleInner;
+export const STAMP_RULE_ARCHIVIST = colors.sepiaBorderStrong;
+
+/** The word, per rank. Both clear 4.5:1 on the ground they actually sit on. */
 export const STAMP_INK_AUTEUR = colors.crimsonInk;
 export const STAMP_INK_ARCHIVIST = colors.sepia;

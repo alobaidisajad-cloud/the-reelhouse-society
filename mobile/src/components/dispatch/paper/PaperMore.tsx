@@ -263,28 +263,45 @@ export const PaperArchive = memo(function PaperArchive({
 export const PaperRoom = memo(function PaperRoom({
   author, filed, certified,
 }: { author: PaperAuthor; filed: number; certified: number }) {
+  /**
+   * ── TWO LINES, ALWAYS ──────────────────────────────────────────────────────
+   * The byline on its own line, then the particulars beneath it.
+   *
+   * This head used to be one row: the byline in a flexible column with the
+   * counts pinned to the right. It could not hold. A byline has a floor it
+   * cannot shrink past — a fixed disc, nine characters of name, and a rank mark
+   * that never gives way — and this is the narrowest container in the app, so
+   * at the largest text size it was handed 163pt for 169pt of content and
+   * painted outside itself.
+   *
+   * Three fixes were tried against that and each was worse than the last:
+   * wrapping the BYLINE turned off shrink-to-fit and sent a third of the feed
+   * to two lines; wrapping the HEAD did nothing because a `flex: 1` column
+   * reports no minimum; and removing that minimum does not help either, because
+   * Yoga lets a flex item shrink below its content anyway.
+   *
+   * The honest answer was to stop fitting two variable-width things onto one
+   * line in the tightest place in the app. Nothing here competes for width now,
+   * so nothing can be crushed — and the head reads better: who this is, then
+   * what they have done.
+   */
   return (
     <View style={m.roomHead}>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Byline author={author} />
-        {/* ── WHERE THE HOUSE NUMBER LIVES ────────────────────────────────────
+      <Byline author={author} />
+      <View style={m.roomFacts}>
+        {/* ── WHERE THE HOUSE NUMBER LIVES ──────────────────────────────────
             It used to ride every byline, so a serial number was the loudest
             thing about a stranger's opinion of a film. It comes off the page
             and stays HERE, because a member's number is a fact about their
             MEMBERSHIP, and this head is the one place in the Dispatch that is
-            about the member rather than about a filing.
-
-            Set on its own line, not folded back into the byline: this head has
-            counts pinned to its right edge, and a longer name plus a five-digit
-            number would push against them at large text sizes — the exact
-            crush that took the number off the byline to begin with. */}
+            about the member rather than about a filing. */}
         <Text style={m.roomNo} numberOfLines={1} {...decorativeTextProps}>
           {`No. ${author.memberNo}`}
         </Text>
+        <Text style={m.roomCount} numberOfLines={1} {...decorativeTextProps}>
+          {filed} FILED · {certified} CERTIFIED
+        </Text>
       </View>
-      <Text style={m.roomCount} {...decorativeTextProps}>
-        {filed} FILED · {certified} CERTIFIED
-      </Text>
     </View>
   );
 });
@@ -1139,22 +1156,31 @@ const m = StyleSheet.create({
   },
 
   // ── a member's room ───────────────────────────────────────────────────────
+  /** A column. Nothing in this head competes for width — see the note above it. */
   roomHead: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingTop: 16, paddingBottom: 12,
     borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.25)',
+  },
+  /**
+   * The particulars, under the name. Indented past the disc so they hang from
+   * the NAME rather than from the disc — derived from the disc's own width and
+   * the byline's gap, so the alignment survives either being retuned.
+   *
+   * `flexWrap` here is the safety valve, and it is safe HERE because nothing in
+   * this row has a floor: both are plain text, so at the largest size the
+   * counts drop below the serial rather than either being crushed.
+   */
+  roomFacts: {
+    flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap',
+    columnGap: 10, rowGap: 3,
+    marginLeft: AVATAR + 6,
+    // The byline carries 8pt of its own bottom margin, sized for a name sitting
+    // above a post. These belong tight under the name they describe.
+    marginTop: -4,
   },
   roomNo: {
     fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
     includeFontPadding: false,
-    // Indented past the disc so it hangs under the NAME, not under the disc —
-    // derived from the disc's own width and the byline's gap, so it stays
-    // aligned if either is ever retuned.
-    marginLeft: AVATAR + 6,
-    // The byline carries 8pt of its own bottom margin, sized for a name sitting
-    // above a post. A serial belongs tight under the name it labels, so this
-    // takes 4 of those 8 back.
-    marginTop: -4,
   },
   roomCount: {
     fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
