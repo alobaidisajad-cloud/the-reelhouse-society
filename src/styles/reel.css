@@ -583,17 +583,38 @@
   white-space: nowrap;
 }
 
+/* The higher rank is a FRAMED plate: a second rule struck inside the first,
+   the printer's way of saying a higher grade of certificate. Both rules are its
+   own crimson — outer at full strength, inner at half — so the frame adds no
+   colour, it adds MASS.
+
+   Mass is the point. The lower rank's mark is physically WIDER (ARCHIVIST is a
+   longer word than AUTEUR), and size is the first thing the eye ranks, so the
+   shorter mark needs weight it cannot get from hue.
+
+   The inner rule is an inset shadow rather than a second element, so the mark
+   stays one span and both clients draw the same object. */
 .reel-rank--auteur {
   color: var(--crimson-ink);
   border: 1px solid var(--crimson);
+  box-shadow: inset 0 0 0 1.5px rgba(11, 10, 8, 0.96),
+              inset 0 0 0 2px rgba(226, 86, 79, 0.5);
   background: linear-gradient(180deg, rgba(180, 45, 45, 0.09), rgba(11, 10, 8, 0.96));
+  padding: 0.26rem 0.5rem;
 }
 
+/* And the lower rank is INK ON PAPER: a hairline and a word, no ground behind
+   them at all. Beside a framed plate that reads as the plainer object, which is
+   the whole hierarchy — the two ranks are different KINDS, not one box in two
+   colours.
+
+   The 0.9 opacity went with the wash. On mobile the same pair measured 4.35:1,
+   under the 4.5 eight-point type needs, and dimming a word to signal "lesser"
+   is how a rank becomes hard to read. The frame carries the rank instead. */
 .reel-rank--archivist {
   color: var(--sepia);
-  opacity: 0.9;
   border: 0.5px solid rgba(196, 150, 26, 0.5);
-  background: linear-gradient(180deg, rgba(196, 150, 26, 0.06), rgba(11, 10, 8, 0.96));
+  background: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
