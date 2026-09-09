@@ -177,6 +177,19 @@ export function PatronageSection({ userRole, onUpgrade }: { userRole: string; on
             accessibilityRole="text"
             accessibilityLabel={`Your rank is ${pretty}. The Society's ranks are Cinephile, Archivist and Auteur.`}
           >
+            {/* ── WORDS HERE, NOT THE MARK, AND ON PURPOSE ────────────────────
+                Every other place a rank appears draws `RankBadge`. This one
+                deliberately does not, and the reason is what this row is FOR.
+
+                It is a progression, not a badge: three rungs with the one you
+                stand on lit and the others dimmed to 0.42. That dimming is the
+                whole message. A stamp cannot be dimmed without inventing a
+                second version of it — and a mark at full pressure on a rung you
+                have not reached would read as a rank you already hold, which is
+                the opposite of what this row exists to say.
+
+                Consistency of a MARK is not the same as consistency of a
+                MEANING. Do not "fix" this to match the other nine. */}
             {RANKS.map((r, i) => (
               <React.Fragment key={r}>
                 {i > 0 && <View style={st.ladderMark} />}

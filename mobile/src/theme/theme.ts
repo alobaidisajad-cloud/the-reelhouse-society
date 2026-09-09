@@ -102,6 +102,38 @@ export const colors = {
   // on someone else's feed, against their app's white, and not in the booth.
   storyGround: '#0B0907',
   crimsonFaint: 'rgba(180, 45, 45, 0.1)',
+
+  // ── THE RANK STAMP'S INK ────────────────────────────────────────────────
+  // The wash inside a rank mark: the rank's own pigment at low alpha, falling
+  // to the page's near-black, so the stamp reads as PRESSED INTO CARD rather
+  // than outlined on it. Head and foot of one gradient, per rank.
+  //
+  // Three things these numbers have to be true about at once, and the first
+  // draft got the second one wrong — its crimson head was 0.16:
+  //
+  //   1. AUTEUR OVER ARCHIVIST. The crimson wash is heavier than the brass, so
+  //      the top rank is the stronger impression.
+  //   2. CENSURE OVER RANK. Both stay UNDER the 0.10 `crimsonFaint` a WITHHELD
+  //      filing wears. A censure is the heaviest crimson field in the app, so a
+  //      rank can never read at a glance as the mark of a censured one.
+  //   3. LEGIBLE. A lighter wash leaves a darker ground, which is what carries
+  //      the pale ink — the two requirements pull the same way, not against.
+  //
+  // These live in the Ledger rather than in the component for a reason worth
+  // writing down: `colorLock` counts HEX literals only. An rgba painted inside
+  // a component sails through the ratchet while doing precisely what the
+  // ratchet exists to stop.
+  // TWO stops, not three. A mid-stop at two percent was very nearly the ground
+  // it was heading for, so it changed nothing anyone could see — and its value
+  // collided with the tail of the archive feed's tier rule, which `logSurfaces`
+  // rightly reported as the theme naming a colour twice. The rim is
+  // `sepiaBorderStrong`, which the Ledger already carries and which is exactly
+  // what a lighter impression's edge is.
+  stampCrimsonHead: 'rgba(180, 45, 45, 0.09)',
+  stampBrassHead: 'rgba(184, 137, 26, 0.06)',
+  /** Where both washes land: the page's own ink, all but opaque. */
+  stampGround: 'rgba(10, 9, 6, 0.96)',
+
   parchmentBright: '#F8F2E4',
   surface: '#14120D',
   /**

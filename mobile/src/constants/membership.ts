@@ -76,11 +76,17 @@ export const TIERS = [
       title: 'The Breakdown\nEngine',
       desc: 'Break down films across 6 specific axes \u2014 Story, Script, Acting, Cinematography, Editing & Sound.',
     },
+    // ── NO LINE ABOUT THE BADGE ────────────────────────────────────────────
+    // This list used to promise a `Gold Foil "Auteur" Badge`. The card now
+    // DRAWS the real mark, above the price, so a sentence describing it would
+    // be a second copy of one fact — and the copy is the one that goes stale.
+    // It already had: the mark is not gold.
+    //
+    // A description can disagree with the thing. A rendering cannot.
     features: [
       'Publish Essays to The\nDispatch',
       'Curatorial Control\n(Select Alternative TMDB\nPosters)',
       'Poster Glow Profile\nAesthetics',
-      'Gold Foil "Auteur" Badge',
       'Early Access to New\nFeatures',
     ],
     cta: 'BECOME AN AUTEUR',

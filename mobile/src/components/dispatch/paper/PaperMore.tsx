@@ -995,8 +995,21 @@ export const PaperEvent = memo(function PaperEvent({
                 <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(actor.name)}</Text>
               )}
             </View>
+            {/* ── THE ONE RANK SURFACE THAT TAKES NO MARK ───────────────────
+                The actor is a nested Text inside ONE truncating sentence, and
+                a View inside a Text is not something React Native lays out
+                reliably — so the stamp cannot go here, and the decision is
+                forced rather than aesthetic.
+
+                What it does take is the colour, because it already had the
+                tier RING and nothing else. Left alone it would have taken the
+                crimson ring from the stylesheet by accident while its name
+                stayed parchment, which is how a tenth surface quietly drifts
+                away from the other nine. */}
             <Text style={m.eventLine} numberOfLines={1} {...scaledTextProps}>
-              <Text style={m.eventActor}>{actor.name.toUpperCase()}</Text>
+              <Text style={[m.eventActor, actor.tier === 'auteur' && m.eventActorAuteur]}>
+                {actor.name.toUpperCase()}
+              </Text>
               {`  ${verb}`}
             </Text>
           </View>
@@ -1463,6 +1476,8 @@ const m = StyleSheet.create({
     color: colors.fog, includeFontPadding: false,
   },
   eventActor: { color: colors.parchment },
+  /** An Auteur, in the ink the Ledger keeps for crimson WORDS. */
+  eventActorAuteur: { color: colors.crimsonInk },
   eventQuote: {
     fontFamily: fonts.serifItalic, fontSize: 12.5, lineHeight: 21,
     color: colors.bone, marginTop: 8,

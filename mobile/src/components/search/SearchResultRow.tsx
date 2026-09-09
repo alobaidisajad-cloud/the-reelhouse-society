@@ -66,7 +66,12 @@ export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR;
           <Text style={st.rowTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.title}</Text>
 
           <View style={st.rowSubRow}>
-            <Text style={st.rowSub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.subtitle}</Text>
+            {/* A user row's subtitle is empty now that the rank is a mark, and
+                an empty Text still reserves its line. Rendered only when there
+                is something in it. */}
+            {item.subtitle ? (
+              <Text style={st.rowSub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.subtitle}</Text>
+            ) : null}
             {item.rating ? (
               <Text style={st.rowRating}>{'◉'.repeat(Math.min(item.rating, 5))}</Text>
             ) : null}

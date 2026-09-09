@@ -26,6 +26,7 @@ import { resolveTier, getTierWeight } from '@/src/utils/tier';
 // Replaced with Reanimated LinearTransition on animated containers
 
 import { TIERS } from '@/src/constants/membership';
+import { RankBadge } from '@/src/components/RankBadge';
 import { useMembershipPricing } from '@/src/hooks/useMembershipPricing';
 
 /**
@@ -419,6 +420,23 @@ export default function MembershipScreen() {
                 <Text style={[st.tierName, tier.id === 'auteur' && st.tierNameAuteur]}>{tier.name}</Text>
                 <Text style={[st.tierLabel, { color: tier.labelColor, opacity: tier.id === 'cinephile' ? 0.6 : 1 }]}>{tier.label}</Text>
 
+                {/* ── THE CARD WEARS THE MARK ──────────────────────────────────
+                    This tier used to be sold with `Gold Foil "Auteur" Badge` in
+                    its feature list — a sentence that became a lie the moment
+                    the mark changed colour. Rewriting it would only move the
+                    lie one shade along: copy and component would still be two
+                    places that have to agree, and nobody retuning the mark
+                    would think to open this file.
+
+                    So the line is gone and the card shows the real thing. A
+                    card that WEARS the badge cannot promise the wrong one.
+
+                    Cinephile renders nothing here, which is the truest thing
+                    this layout can say about a rank that carries no mark. */}
+                <View style={st.tierMark}>
+                  <RankBadge rank={tier.id === 'auteur' ? 'auteur' : tier.id === 'archivist' ? 'archivist' : null} />
+                </View>
+
                 {/* Price — honest per billing mode: the big number is what the
                     store will actually charge for the selected period, with the
                     ≈/MO equivalence + renewal terms beneath. Live localized
@@ -779,7 +797,10 @@ const st = StyleSheet.create({
   tierNameAuteur: { color: colors.crimson },
   tierCardOuter: { },
   tierCardOuterPopular: { paddingTop: 12 },
-  tierLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, marginBottom: 18 },
+  tierLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, marginBottom: 10 },
+  // A fixed height whether or not a mark is drawn, so the three cards keep
+  // their prices on one line. Cinephile shows nothing and still holds the row.
+  tierMark: { alignItems: ("center"), justifyContent: ("center"), minHeight: 22, marginBottom: 10 },
 
   // Price
   tierPriceWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 2, marginBottom: 4 },

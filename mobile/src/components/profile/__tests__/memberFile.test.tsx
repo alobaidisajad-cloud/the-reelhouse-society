@@ -416,14 +416,20 @@ describe('the hero is a composition, not a stack of eleven centred rows', () => 
     expect(CODE_SCREEN).toMatch(/usernameOverride\s*\n?\s*\?\s*insets\.top/);
   });
 
-  it('says the member’s rank ONCE', () => {
+  it('says the member’s rank ONCE, and does not compute it itself', () => {
     // It used to appear twice at the top of the page: a badge slung under the
     // avatar and a pill beside the name. The stamp on the corner of the print
     // is the one place it lives now.
     expect(CODE_SCREEN).not.toMatch(/levelBadge/);
     expect(CODE_SCREEN).not.toMatch(/auteurBadge|archivistBadge/);
     expect(CODE_SCREEN).toMatch(/tierStamp/);
-    expect(CODE_SCREEN).toMatch(/getDisplayTier/);
+
+    // And the rank comes from the shared mark rather than from a label this
+    // file works out. `getDisplayTier` used to be called here; a second
+    // computation of one fact is how two surfaces begin to disagree, which is
+    // exactly what happened across the other nine.
+    expect(CODE_SCREEN).toMatch(/RankBadge/);
+    expect(CODE_SCREEN).not.toMatch(/getDisplayTier/);
   });
 
   it('never writes "ARCHIVIST · FOUNDING" — founding is a flag, not a rank', () => {

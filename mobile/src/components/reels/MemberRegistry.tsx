@@ -27,7 +27,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useSocialStore } from '@/src/stores/followStore';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { followUser } from '@/src/stores/domain/socialSlice';
-import { resolveTier, isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
+import { RankBadge, rankOf } from '@/src/components/RankBadge';
 
 const MAX_ROWS = 6;
 
@@ -59,13 +59,7 @@ function MemberRow({ member }: { member: NotableMember }) {
   const isFollowing = useSocialStore((s) => s.isFollowing(member.username));
   const isRequested = useSocialStore((s) => s.isRequested(member.username));
 
-  const tier = resolveTier({ role: member.role, is_founding: member.is_founding });
-  const isAuteur = isAuteurPlusTier(tier);
-  const isArchivist = isArchivistPlusTier(tier);
   const serial = member.member_no ? `Nº ${String(member.member_no).padStart(4, '0')}` : null;
-
-  const rankLabel = isAuteur ? '★ AUTEUR' : isArchivist ? '✦ ARCHIVIST' : 'CINEPHILE';
-  const rankColor = isAuteur ? colors.marqueeGold : isArchivist ? colors.sepia : colors.fog;
 
   const goToProfile = useCallback(() => {
     (router.push as any)(`/user/${member.username}` as any);
@@ -109,9 +103,17 @@ function MemberRow({ member }: { member: NotableMember }) {
 
         <View style={s.rowText}>
           <Text style={s.name} numberOfLines={1}>@{member.username.toUpperCase()}</Text>
+          {/* The house's mark, not this file's own copy of it. This row used to
+              print `★ AUTEUR` as a coloured word in `marqueeGold` — a fifth
+              dress and a fourth gold for one rank.
+
+              And CINEPHILE is gone with it. It was a label meaning "has not
+              paid", printed on most of the house; the serial beside it is a
+              real fact about a member and says more. An unranked member now
+              shows their number and nothing else. */}
           <View style={s.rankRow}>
-            <Text style={[s.rank, { color: rankColor }]} numberOfLines={1}>{rankLabel}</Text>
-            {serial ? <Text style={s.serial} numberOfLines={1}>· {serial}</Text> : null}
+            <RankBadge rank={rankOf({ role: member.role, is_founding: member.is_founding })} />
+            {serial ? <Text style={s.serial} numberOfLines={1}>{serial}</Text> : null}
           </View>
         </View>
       </PressableScale>
@@ -195,7 +197,6 @@ const s = StyleSheet.create({
   rowText: { flex: 1 },
   name: { fontFamily: fonts.body, fontSize: 12, color: colors.parchment, letterSpacing: 0.5, marginBottom: 2 },
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  rank: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.2 },
   serial: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1, color: colors.fog, opacity: 0.8 },
 
   stamp: {

@@ -162,18 +162,21 @@ describe('the ident block', () => {
     expect(r.getByText('T')).toBeTruthy();
   });
 
+  // The stamp is `RankBadge` now — the one component that draws a rank in all
+  // ten places one appears — so its text carries the house's glyph with the
+  // word. What these two assert is unchanged: ONCE, and founding outranks.
   it('stamps the rank ONCE — no badge, no pill', async () => {
     const r = await mount({}, { targetUser: baseUser({ tier: 'archivist', role: 'archivist' }) });
-    expect(r.getAllByText('ARCHIVIST')).toHaveLength(1);
+    expect(r.getAllByText('✦ ARCHIVIST')).toHaveLength(1);
   });
 
   it('a founding member reads AUTEUR and carries the flag on its own line', async () => {
     // Founding outranks every tier (Highest Watermark), and it is a FLAG — so
     // "ARCHIVIST · FOUNDING" must be unwritable.
     const r = await mount({}, { targetUser: baseUser({ tier: 'archivist', is_founding: true }) });
-    expect(r.getAllByText('AUTEUR')).toHaveLength(1);
+    expect(r.getAllByText('★ AUTEUR')).toHaveLength(1);
     expect(r.getByText('✦ FOUNDING MEMBER')).toBeTruthy();
-    expect(r.queryByText('ARCHIVIST')).toBeNull();
+    expect(r.queryByText('✦ ARCHIVIST')).toBeNull();
   });
 
   it('a NON-founding member is not given the flag', async () => {

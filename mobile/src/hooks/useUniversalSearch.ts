@@ -3,7 +3,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { logger } from '@/src/utils/logger';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { buildSearchPattern } from '@/src/utils/searchPattern';
-import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
+import { resolveTier } from '@/src/utils/tier';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
 import { useQuery } from '@tanstack/react-query';
 
@@ -206,7 +206,17 @@ export function useUniversalSearch(query: string) {
           .map((user: ProfileRow) => ({
             id: `user-${user.id}`, type: 'user',
             title: `@${user.username ?? 'anonymous'}`,
-            subtitle: isAuteurPlusTier(user) ? '★ AUTEUR' : isArchivistPlusTier(user) ? '✦ ARCHIVIST' : 'MEMBER',
+            // NOT the rank, and nothing in its place.
+            //
+            // This line put one fact in the row twice — the rank as a string
+            // here, and the same rank as a badge drawn from `role` in the row
+            // itself. The badge is the better of the two: it applies the
+            // Highest Watermark rule, and a string cannot.
+            //
+            // Deliberately left EMPTY rather than filled with a member's
+            // number: that would mean widening this query for a decoration,
+            // and the row already renders nothing when there is nothing to say.
+            subtitle: '',
             image: user.avatar_url || null,
             role: resolveTier(user),
             _nav: `/user/${user.username}`,

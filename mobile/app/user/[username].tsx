@@ -49,7 +49,8 @@ import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView
 import PressableScale from '@/src/components/PressableScale';
 import ProfileListsTab from '@/src/components/profile/ProfileListsTab';
 import ProfilePhysicalTab from '@/src/components/profile/ProfilePhysicalTab';
-import { isArchivistPlusTier, isAuteurPlusTier, resolveTier, getDisplayTier } from '@/src/utils/tier';
+import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
+import { RankBadge, rankOf } from '@/src/components/RankBadge';
 import { formatDateMonthYear, timeAgo } from '@/src/utils/timeAgo';
 import {
     ArrowLeft,
@@ -390,10 +391,11 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   })();
   const serialLine = [memberNo ? `Nº ${memberNo}` : '', admitted].filter(Boolean).join(' · ');
 
-  // The rank is stamped on the corner of the print. `getDisplayTier` applies
-  // the Highest Watermark Rule, so a founding member reads AUTEUR whatever
-  // their nominal tier says.
-  const stampLabel = getDisplayTier(tier);
+  // The rank is stamped on the corner of the print by `RankBadge`, which takes
+  // the member and applies the Highest Watermark Rule itself — so a founding
+  // member reads AUTEUR here exactly as they do in every other place. This file
+  // no longer computes a label for it; a second computation of one fact is how
+  // two surfaces start disagreeing.
   // Founding is a FLAG, not a rank — it cannot appear as "ARCHIVIST · FOUNDING".
   // It gets the one line the stamp cannot carry, and nobody else pays for it.
   const isFounding = !!(targetUser as any)?.is_founding;
@@ -1137,12 +1139,17 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
                 {/* The rank, stamped on the corner at a hand's angle — and it
                     literally stamps down, on the last beat of the develop. */}
-                <AnimatedView style={[s.tierStamp, isAuteurPlus && s.tierStampRuby, stampDevelop]}>
-                  <Text
-                    {...decorativeTextProps}
-                    style={[s.tierStampText, isAuteurPlus && s.tierStampTextRuby]}
-                    numberOfLines={1}
-                  >{stampLabel}</Text>
+                {/* The house's mark, from the one component that draws it.
+                    This corner is where the construction CAME from — the style
+                    it replaces carried the note "this is where rank lives now"
+                    — but the profile only ever draws one, so it could never
+                    show the two faults a feed does: a brass hairline outshining
+                    a crimson one, and `crimson` as a WORD at 3.16:1.
+
+                    `style` carries the POSITION and the develop animation only.
+                    Nothing about the mark's own look is set from here. */}
+                <AnimatedView style={stampDevelop}>
+                  <RankBadge rank={rankOf(targetUser)} style={s.tierStamp} />
                 </AnimatedView>
               </View>
 

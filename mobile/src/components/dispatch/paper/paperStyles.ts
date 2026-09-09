@@ -481,6 +481,26 @@ export const p = StyleSheet.create({
   byline: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     marginTop: 0, marginBottom: 8,
+    /**
+     * ── THE MARK DROPS BELOW THE NAME RATHER THAN OUT OF THE ROW ─────────────
+     * This row has a hard minimum it cannot shrink past: the disc is fixed, the
+     * name stops at 56 (nine characters, below which a byline stops being a
+     * name), and the rank mark never gives way at all. Adding the mark raised
+     * that floor by its own width.
+     *
+     * A member's ROOM puts this byline in a column that carries `minWidth: 0`,
+     * so the column will shrink to nothing on request — which means the row is
+     * handed less than its floor and simply paints outside itself. Measured on
+     * the rendered page at the largest text size: a 163pt row holding 169pt of
+     * content, spilling 4.4pt past its own edge.
+     *
+     * Wrapping is the honest give, and it belongs HERE rather than on any one
+     * container: the byline appears in a post, a ballot, an essay head, a
+     * docket case and a room, and only the row itself knows what it cannot
+     * fit. In every column wide enough — which is all of them at normal type —
+     * this changes nothing.
+     */
+    flexWrap: 'wrap',
   },
   /**
    * WITHDRAW, on your own critique.
@@ -511,18 +531,20 @@ export const p = StyleSheet.create({
    */
   /** `champagne` — the theme owns this brass by name. */
   /**
-   * ── THE RING ECHOES THE BADGE, IT DOES NOT DISAGREE WITH IT ────────────────
-   * The Auteur's ring was CRIMSON, and crimson on this page already means
-   * STRUCK and REPORTED — the docket's report count and the strike mark are
-   * both drawn in it. So the house's highest rank wore the house's warning
-   * colour, on the same screen, within an inch of it.
+   * ── THE RING ECHOES THE MARK ───────────────────────────────────────────────
+   * Crimson, because crimson is the AUTEUR's colour: the Ledger names the token
+   * "Auteur crimson — the single bright red for dark surfaces", and this page's
+   * own `take` hue was moved OFF crimson on the grounds that it "is EXACTLY the
+   * Auteur ring". Other things were moved away to protect this meaning.
    *
-   * It is brass now, and the rank reads the same here as it does in the archive
-   * feed, the home pulse, the registry and search. Crimson goes back to meaning
-   * one thing.
+   * It spent one commit in brass, on my reasoning that crimson collided with
+   * STRUCK and REPORTED. That reasoning was wrong twice over: the Ledger had
+   * already assigned crimson to this rank, and the profile has always drawn an
+   * Auteur entirely in it — line, stats border, spot and stamp. Brass made the
+   * Dispatch the one screen disagreeing with the rest of the app.
    */
   avatarArchivist: { borderColor: colors.champagne, borderWidth: 1.5 },
-  avatarAuteur: { borderColor: colors.marqueeGold, borderWidth: 1.5 },
+  avatarAuteur: { borderColor: colors.crimson, borderWidth: 1.5 },
   /**
    * A monogram, not a serial.
    *
@@ -554,14 +576,19 @@ export const p = StyleSheet.create({
     flexShrink: 1, minWidth: 56,
   },
   /**
-   * An Auteur's name, lifted. Brass, matching their ring and their badge.
+   * An Auteur's name, lifted. `crimsonInk`, matching their ring and their mark.
+   *
+   * The INK, not the pigment. `colors.crimson` as a name on this ground was
+   * measured at 2.49:1 — the Ledger records it, and split the token for it:
+   * "crimson for MARKS, crimsonInk for WORDS". The ring is a mark and takes
+   * `crimson`; this is a word and takes the ink, at 5.4:1.
    *
    * A FROZEN style rather than the `{ color, opacity }` written inline where
    * this is used: the byline renders in every row of a recycling list, and an
    * object literal in JSX is a fresh object on every render of every row —
    * which is the exact allocation LEAD_STYLE exists to stop for the kind rule.
    */
-  bylineNameAuteur: { color: colors.marqueeGold, opacity: 1 },
+  bylineNameAuteur: { color: colors.crimsonInk, opacity: 1 },
   /**
    * The read time, the source, the critique count — facts that cannot be
    * recovered from anywhere else on this screen, so they hold their ground

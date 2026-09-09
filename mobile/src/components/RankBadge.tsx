@@ -2,68 +2,41 @@
  * RankBadge — the house's rank, drawn once.
  *
  * ── WHY THIS FILE EXISTS ────────────────────────────────────────────────────
- * The words were never the problem. `✦ ARCHIVIST` and `★ AUTEUR` were identical
- * in all five places that drew them. Everything AROUND the words had drifted:
+ * The WORDS were never the problem: `✦ ARCHIVIST` and `★ AUTEUR` were identical
+ * in every place that drew them. Everything around them had drifted — four
+ * dresses and three different golds for one rank, because four surfaces each
+ * solved the same problem separately. So it is solved once, here, and imported.
  *
- *   the archive feed  ink on the palette's gold, radius 2, tracking 1, no border
- *   the home pulse    ink on a goldenrod of its own, radius 3, tracking 2, bordered
- *   search            a third gold on a tint, its own pill
- *   the registry      no chip at all, a coloured word
- *   the Dispatch      no word at all — a 1.5pt ring, and CRIMSON for Auteur
+ * The construction lives in `theme/stamp.ts`, which explains what it is and why
+ * it is shaped that way. This file is only the drawing of it.
  *
- * Three golds for one rank, and the app's highest honour wearing crimson on the
- * one surface where crimson also means STRUCK and REPORTED. None of that is a
- * style choice anybody made; it is five people solving the same problem five
- * times. So it is solved once, here, and imported.
- *
- * ── AUTEUR IS BRASS, AND BRASS IS A RAMP ────────────────────────────────────
- * `oneBrass.test.ts` states the house rule: any FILLED brass surface uses the
- * four-stop ramp, because a flat gold rectangle "reads as yellow plastic beside
- * the real thing". That test named this badge as its one known violation and
- * left it flat, saying the conversion was "a decision for whoever owns those".
- * This is that decision. The Auteur's plate is metal now: the ramp, and the
- * crown that separates a gradient from a face of brass — the same construction
- * as the Concierge disc and the Dispatch's own stamps.
- *
- * Lit ACROSS its height, not along its length. The house's diagonal was set for
- * a disc and a near-square stub; on a badge four times wider than it is tall it
- * runs the ramp end to end and drops the label's last letters onto `tarnish`,
- * measured at 3.91:1 — under the 4.5 small text needs. Across the height the
- * worst point under a glyph is 4.57:1, and a nameplate catches light on its
- * short axis anyway. Same colours, same stops; the direction follows the shape.
- * `theRankBadgeIsReadable` holds both numbers.
- *
- * The membership page sells this tier with `Gold Foil "Auteur" Badge` in its
- * feature list. Foil is metal. A flat fill was never what was promised.
- *
- * ── AND ARCHIVIST IS INK ────────────────────────────────────────────────────
- * Deliberately NOT a brass plate. Two reasons, and the second is the one that
- * decides it:
- *
- *   · a 15%-alpha tint is not a filled brass surface, so it is outside the ramp
- *     rule rather than an exception to it;
- *   · Archivist is the popular tier. A plate on every second byline is a wall
- *     of medals, and the rank stops meaning anything the moment it is common.
- *     The top rank is rare, so it gets metal; the middle rank is not, so it
- *     gets ink. That hierarchy is the point.
+ * ── IT IS THE SAME MARK IN EVERY PLACE ──────────────────────────────────────
+ * One component, one construction, one size. The only thing that ever differs
+ * between surfaces is WHICH rank it says. There is deliberately no `size` or
+ * `variant` prop: a per-screen knob is exactly how the web ended up with the
+ * same badge at four sizes, two of them set by inline overrides at the call
+ * site. `style` exists for POSITION only — the profile stamps this onto the
+ * corner of a print and animates it in — and never for colour or type.
  *
  * ── WHAT IT SAYS ALOUD ──────────────────────────────────────────────────────
- * "Auteur", not "black star AUTEUR". The glyph is an ornament and a reader that
- * announces it is reading punctuation out of a badge. The label is set
+ * "Auteur", not "black star AUTEUR". The glyph is an ornament, and a reader
+ * that announces it is reading punctuation out of a badge. The label is set
  * explicitly so what is drawn and what is spoken can differ.
  *
- * Where the badge sits inside a control that carries its own label — a byline
- * that opens a member's room — the parent swallows this element on iOS, so the
- * rank has to be in the PARENT's label too. `rankWord` is exported for that.
+ * Where the mark sits inside a control that carries its own label — a byline
+ * that opens a member's room — iOS swallows this element, so the rank has to be
+ * in the PARENT's label instead. `rankWord` is exported for that, and `silent`
+ * stops the two from being said twice.
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, fonts } from '@/src/theme/theme';
+import { fonts } from '@/src/theme/theme';
 import {
-  BRASS, BRASS_STOPS, BRASS_WIDE_START, BRASS_WIDE_END, CROWN, CROWN_HEIGHT, RIM, ON_BRASS,
-} from '@/src/theme/brass';
+  STAMP_CRIMSON, STAMP_BRASS, STAMP_START, STAMP_END, STAMP_TILT, STAMP_BLEED,
+  STAMP_RIM_AUTEUR, STAMP_RIM_ARCHIVIST, STAMP_INK_AUTEUR, STAMP_INK_ARCHIVIST,
+} from '@/src/theme/stamp';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { isArchivistPlusTier, isAuteurPlusTier, type TierInput } from '@/src/utils/tier';
 
@@ -72,9 +45,11 @@ export type Rank = 'auteur' | 'archivist' | null;
 /**
  * The rank a member's row should draw, from anything that describes them.
  *
- * Goes through `resolveTier` rather than reading `tier` directly, so a FOUNDING
- * member reads as an Auteur — that mapping already exists and disagreeing with
- * it here would give one member two ranks depending on the screen.
+ * Goes through `resolveTier` rather than reading a column directly, so the
+ * Highest Watermark rule applies: a FOUNDING member reads as an Auteur, and an
+ * admin who pays keeps the tier they paid for. A name-equality check against
+ * `role` would leave both of them unmarked — which is precisely the bug the web
+ * client still has.
  */
 export function rankOf(input?: TierInput): Rank {
   if (isAuteurPlusTier(input)) return 'auteur';
@@ -88,95 +63,78 @@ export function rankWord(rank: Rank): string | null {
 }
 
 /**
- * The badge. Renders nothing at all for a member with no rank — an empty box
- * with padding still takes room in a row, and every byline in the app would
- * have paid for it.
+ * The mark. Renders NOTHING for a member with no rank — not an empty box, which
+ * would still take padding in every row in the app, and not a "CINEPHILE"
+ * label, which is a word meaning "has not paid" printed on most of the house.
  */
-export const RankBadge = memo(function RankBadge({ rank, silent }: {
+export const RankBadge = memo(function RankBadge({ rank, silent, style }: {
   rank: Rank;
   /**
-   * The badge sits inside a control that already speaks the rank in its own
-   * label. Hiding it here is what stops "Ana, Auteur. Open their room." from
-   * being followed by a second "Auteur".
+   * Inside a control that already speaks the rank in its own label. This is
+   * what stops "Ana, Auteur. Open their room." being followed by "Auteur".
    */
   silent?: boolean;
+  /** POSITION only. See the note at the top of this file. */
+  style?: StyleProp<ViewStyle>;
 }) {
   if (!rank) return null;
 
+  const auteur = rank === 'auteur';
   const word = rankWord(rank) as string;
   const a11y = silent
     ? { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const }
     : { accessibilityLabel: word };
 
-  if (rank === 'archivist') {
-    return (
-      <View style={s.chip} {...a11y}>
-        <Text style={s.inkArchivist} numberOfLines={1} {...scaledTextProps}>✦ ARCHIVIST</Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={s.plate} {...a11y}>
-      {/* The ramp, then the crown. Both absolute so the plate's height is set by
-          the type inside it and grows with the reader's text size. */}
+    <View style={[s.stamp, auteur ? s.stampAuteur : s.stampArchivist, style]} {...a11y}>
       <LinearGradient
-        colors={BRASS} locations={BRASS_STOPS} start={BRASS_WIDE_START} end={BRASS_WIDE_END}
-        style={s.face}
+        colors={auteur ? STAMP_CRIMSON : STAMP_BRASS}
+        start={STAMP_START} end={STAMP_END}
+        style={s.wash}
       />
-      <LinearGradient colors={CROWN} style={s.crown} />
-      <Text style={s.inkAuteur} numberOfLines={1} {...scaledTextProps}>★ AUTEUR</Text>
+      <Text
+        style={[s.word, auteur ? s.wordAuteur : s.wordArchivist]}
+        numberOfLines={1}
+        {...scaledTextProps}
+      >
+        {auteur ? '★ AUTEUR' : '✦ ARCHIVIST'}
+      </Text>
     </View>
   );
 });
 
-/**
- * 8pt, tracked 1, radius 2. Taken from the archive feed's chip, which was the
- * only one of the four whose metrics had a reason written down.
- *
- * `includeFontPadding: false` on both faces: this badge renders inside the
- * Dispatch's recycling rows, where every style in the label face must strip it
- * (feedRowIsRecyclable). The face IS the label face, so the rule applies rather
- * than being an exception to argue about.
- */
-const BADGE_TEXT = {
-  fontFamily: fonts.sub,
-  fontSize: 8,
-  letterSpacing: 1,
-  includeFontPadding: false,
-} as const;
-
 const s = StyleSheet.create({
-  chip: {
-    backgroundColor: colors.sepiaSubtle,
-    borderRadius: 2,
+  stamp: {
     paddingHorizontal: 7,
-    paddingVertical: 2,
-    // Never gives way. In every row this appears in, the NAME and the trailing
-    // facts are the things allowed to truncate; a rank that shrinks to three
-    // letters is worse than no rank.
+    paddingVertical: 2.5,
+    transform: [{ rotate: STAMP_TILT }],
+    marginHorizontal: STAMP_BLEED,
+    // Never gives way. In every row this appears in the NAME and the trailing
+    // facts are the things allowed to truncate: a name is recognisable from its
+    // opening letters and a count is on the screen twice, but a rank shortened
+    // to `★ AUT` is simply wrong.
     flexShrink: 0,
   },
-  inkArchivist: { ...BADGE_TEXT, color: colors.sepia },
+  /** Full pressure. */
+  stampAuteur: { borderWidth: 1, borderColor: STAMP_RIM_AUTEUR },
+  /** A lighter impression — the hierarchy, carried by the medium. */
+  stampArchivist: { borderWidth: 0.5, borderColor: STAMP_RIM_ARCHIVIST },
 
-  plate: {
-    borderRadius: 2,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    overflow: 'hidden',
-    // The machined edge — bright, because against near-black chrome a dark rim
-    // is simply invisible and real brass catches light all the way round.
-    borderWidth: 0.5,
-    borderColor: RIM,
-    flexShrink: 0,
+  /** Pinned to the padding box, which with no radius needs no clipping. */
+  wash: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+
+  /**
+   * `includeFontPadding: false` because this is the LABEL face, and every style
+   * in that face must strip it — a rule `feedRowIsRecyclable` enforces, and one
+   * this mark is subject to rather than exempt from, since it renders inside
+   * the Dispatch's recycling rows.
+   */
+  word: {
+    fontFamily: fonts.sub,
+    fontSize: 7.5,
+    letterSpacing: 1.8,
+    includeFontPadding: false,
   },
-  /** Ink on brass, never a grey: brass.ts calls a grey on gold the one
-   *  combination that fails contrast while looking fine in a mockup. */
-  inkAuteur: { ...BADGE_TEXT, color: ON_BRASS },
-
-  /* Written out rather than `StyleSheet.absoluteFill` so the crown can stop
-     partway down the face — the same construction the Dispatch's own stamps
-     use, which is the point of copying it rather than inventing a second one. */
-  face: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
-  crown: { position: 'absolute', left: 0, right: 0, top: 0, height: CROWN_HEIGHT },
+  wordAuteur: { color: STAMP_INK_AUTEUR },
+  wordArchivist: { color: STAMP_INK_ARCHIVIST, opacity: 0.82 },
 });

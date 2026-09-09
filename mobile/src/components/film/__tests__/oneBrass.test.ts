@@ -117,61 +117,48 @@ describe('no brass plate is painted flat', () => {
 });
 
 /**
- * ── THE EXEMPTION, CLOSED ───────────────────────────────────────────────────
- * This block used to assert that `feed/UserAttributionRow` STILL drew the
- * ★ AUTEUR badge as a flat `colors.marqueeGold` pill. It was written as a
- * failing tripwire rather than a comment: the conversion was "a four-surface
- * change and a decision for whoever owns those", so the guard held the debt
- * visible and promised to fail the moment somebody paid it.
+ * ── THE RANK MARK IS NO LONGER THIS PAGE'S BRASS PROBLEM ────────────────────
+ * This block has twice held a claim about the AUTEUR badge, and both are spent.
  *
- * It has been paid. The badge is one shared component now — `RankBadge` — and
- * the Auteur's plate is the ramp, so the old assertion would fail for the right
- * reason. What replaces it is the assertion that matters from here: the badge
- * is drawn ONCE, and the one place that draws it uses the ramp.
+ * First it asserted the badge was STILL a flat `marqueeGold` pill — a failing
+ * tripwire recording a debt, with a note that converting it was "a four-surface
+ * change and a decision for whoever owns those". Then, once converted, it
+ * asserted the badge drew the brass RAMP.
  *
- * The other half of that debt was three golds for one rank — #DCA63A here,
- * #DAA520 on the home pulse, #D4A520 in search. A shared component cannot drift
- * that way, which is the real reason it is shared.
+ * Neither is true now, and neither should be. A rank is a letterpress STAMP —
+ * see `theme/stamp.ts` — washed in the rank's own pigment, because `crimson`
+ * is the Ledger's "Auteur crimson" and this very page's `take` hue was moved
+ * off it on the grounds that crimson "is EXACTLY the Auteur ring".
+ *
+ * So the brass rule no longer reaches the badge, and `flatPlates` is right to
+ * find nothing: a wash at six to nine percent is not a filled brass surface.
+ * What survives here is the half that was always the point — no hand-mixed gold
+ * on any surface that draws a rank. That the mark is drawn ONCE, in one place,
+ * across all ten surfaces, is held in full by `oneRankMark.test.ts`.
  */
-describe('the AUTEUR badge is one brass, in one place', () => {
-  const badge = readFileSync(
-    join(__dirname, '..', '..', 'RankBadge.tsx'), 'utf8');
-
-  it('draws its plate with the ramp, not a flat fill', () => {
+describe('the AUTEUR badge is no longer this page\u2019s brass problem', () => {
+  it('paints no flat brass plate', () => {
+    // The rule this file exists for still applies to the mark. It simply passes
+    // by not being brass now, rather than by using the ramp.
+    const badge = readFileSync(join(__dirname, '..', '..', 'RankBadge.tsx'), 'utf8');
     expect(flatPlates(strip(badge))).toEqual([]);
-    expect(badge).toMatch(/from '@\/src\/theme\/brass'/);
-    expect(strip(badge)).toMatch(/colors=\{BRASS\}/);
   });
 
-  it('and no surface keeps a hand-mixed gold for it', () => {
-    // The three that existed. A regex over the four files rather than a memory
-    // of having fixed them: this is the class, and the class is what must stay
-    // closed.
+  it('and no surface that draws a rank keeps a hand-mixed gold', () => {
+    // The three that existed for one rank: #DCA63A in the archive feed,
+    // #DAA520 on the home pulse, #D4A520 in search — plus marqueeGold as a
+    // fourth in the member registry. A regex over the files rather than a
+    // memory of having fixed them.
     for (const rel of [
       ['..', '..', 'feed', 'UserAttributionRow.tsx'],
       ['..', '..', 'home', 'PulseCardItem.tsx'],
       ['..', '..', 'search', 'SearchResultRow.tsx'],
+      ['..', '..', 'reels', 'MemberRegistry.tsx'],
       ['..', '..', 'RankBadge.tsx'],
     ]) {
       const src = strip(readFileSync(join(__dirname, ...rel), 'utf8'));
       expect(`${rel[rel.length - 1]}: ${src.match(/#D[A4]A?[0-9A-F]{3,4}/gi) ?? []}`)
         .toMatch(/: $/);
-    }
-  });
-
-  it('and every surface that shows a rank imports the one badge', () => {
-    for (const rel of [
-      ['..', '..', 'feed', 'UserAttributionRow.tsx'],
-      ['..', '..', 'home', 'PulseCardItem.tsx'],
-      ['..', '..', 'search', 'SearchResultRow.tsx'],
-      ['..', '..', 'dispatch', 'paper', 'PaperPost.tsx'],
-    ]) {
-      const src = readFileSync(join(__dirname, ...rel), 'utf8');
-      expect(`${rel[rel.length - 1]} imports RankBadge: ${/RankBadge/.test(src)}`)
-        .toMatch(/true$/);
-      // And does not keep drawing its own.
-      expect(`${rel[rel.length - 1]} draws its own: ${/★ AUTEUR|✦ ARCHIVIST/.test(strip(src))}`)
-        .toMatch(/false$/);
     }
   });
 });

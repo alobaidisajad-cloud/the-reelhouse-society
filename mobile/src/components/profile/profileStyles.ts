@@ -295,19 +295,17 @@ export const s = StyleSheet.create({
   cornerBL: { bottom: 0, left: 0, borderBottomWidth: 15, borderRightWidth: 15, borderBottomColor: 'rgba(232,223,208,0.30)', borderRightColor: 'transparent' },
   cornerBR: { bottom: 0, right: 0, borderBottomWidth: 15, borderLeftWidth: 15, borderBottomColor: 'rgba(232,223,208,0.30)', borderLeftColor: 'transparent' },
 
-  // The rank, stamped on the corner of the print at a hand's angle. This is
-  // where rank lives now — the badge that used to hang under the avatar and the
-  // pill that sat beside the name were two labels for one fact.
+  // WHERE the rank sits on the print — and only where. This used to hold the
+  // whole construction too: the border, the ground, the tilt and the type. That
+  // construction is now `theme/stamp.ts` and `RankBadge`, drawn identically in
+  // every one of the ten places a rank appears, so what is left here is the
+  // corner it is pressed into.
+  //
+  // The tilt goes with it. One angle, stated once, so a column of marks in a
+  // feed agrees with the single mark on a profile.
   tierStamp: {
     position: 'absolute' as const, left: -8, bottom: 11, zIndex: 6,
-    paddingHorizontal: 8, paddingVertical: 3,
-    borderWidth: 1, borderColor: colors.sepia,
-    backgroundColor: 'rgba(10,9,6,0.92)',
-    transform: [{ rotate: '-3.5deg' }],
   },
-  tierStampRuby: { borderColor: colors.crimson },
-  tierStampText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.8, color: colors.sepia },
-  tierStampTextRuby: { color: colors.crimson },
 
   // ── the particulars ──
   particulars: { flex: 1, minWidth: 0, paddingTop: 2 },
