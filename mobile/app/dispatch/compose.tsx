@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
-import { onMarkdownLinkPress } from '@/src/utils/markdownSafety';
+// The preview mounts `EssayBody`, which carries the link guard and the render
+// cap itself — so this screen no longer holds its own copy of either.
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bold, Italic, Type, Quote, Minus, Link2 } from 'lucide-react-native';
-import Markdown from 'react-native-markdown-display';
+import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
 
 import { useAuthStore } from '@/src/stores/auth';
@@ -18,7 +19,8 @@ import reelToast from '@/src/utils/reelToast';
 // screen is the one that needed them.
 import { isOverLimit, remainingChars, MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import PressableScale from '@/src/components/PressableScale';
-import { ComposeBallotScreen, ComposeShortScreen } from '@/src/components/dispatch/ComposeDesks';
+import { ComposeBallotScreen, ComposeShortScreen, FilmPicker } from '@/src/components/dispatch/ComposeDesks';
+import { SeriesPicker, roman, type SeriesChoice } from '@/src/components/dispatch/SeriesPicker';
 import { FORMS, PaperPicker } from '@/src/components/dispatch/paper/PaperMore';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { groupDigits } from '@/src/components/dispatch/paper/paperMetrics';
@@ -29,7 +31,7 @@ import { excerptFor } from '@/src/components/dispatch/excerpt';
  * at accessibility sizes every label here grew without limit — the header's
  * three-across row and the counter row worst, because neither can reflow.
  */
-import { scaledTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
+import { scaledTextProps, displayTextProps, deckLabelProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
 
@@ -156,6 +158,28 @@ function ComposeDossierScreen() {
     const [content, setContent] = useState(initialContent || '');
     const [isPublishing, setIsPublishing] = useState(false);
     const [isPreview, setIsPreview] = useState(false);
+
+    /**
+     * ── WHAT THE PIECE IS, AS OPPOSED TO HOW IT IS SET ───────────────────────
+     * The reader has always drawn a dossier's film and its series — `EssayHead`
+     * prints a film credit and a series line, and the feed prints "Part II of
+     * …". The store has always accepted them: `FilingDraft` carries `film`,
+     * `seriesId`, `seriesTitle` and `partNumber`, and the database holds a
+     * series together with `series_whole`, which refuses a half-set one.
+     *
+     * Only this screen never set them. So an Auteur could write the long form
+     * and had no way to say which film it was about.
+     *
+     * NO COVER. `EssayHead` also draws one, from `film.backdropPath` — but
+     * `dispatch_posts` has a single image column, `subject_image`, and `toFilm`
+     * maps it to the POSTER. There is nowhere for a backdrop to live, so a
+     * cover control here would be a button that saves nothing. It needs a
+     * column before it needs a picker.
+     */
+    const [film, setFilm] = useState<{ id: number; title: string; sub: string | null; image: string | null } | null>(null);
+    const [filmOpen, setFilmOpen] = useState(false);
+    const [series, setSeries] = useState<SeriesChoice | null>(null);
+    const [seriesOpen, setSeriesOpen] = useState(false);
 
     // Live caret tracking — the toolbar wraps the selection AT the cursor.
     const [selection, setSelection] = useState({ start: (initialContent || '').length, end: (initialContent || '').length });
@@ -326,6 +350,14 @@ function ComposeDossierScreen() {
                     // meanings, and the database enforces the tighter 500 on it.
                     body: excerpt,
                     fullContent: content.trim(),
+                    // The film and the series, which the reader has always drawn
+                    // and the store has always accepted. `series_whole` refuses a
+                    // half-set series, so these three travel together or not at
+                    // all — which is why they come from one piece of state.
+                    film,
+                    seriesId: series?.id ?? null,
+                    seriesTitle: series?.title ?? null,
+                    partNumber: series?.part ?? null,
                 });
                 // The draft is deleted only after the write is accepted. It used
                 // to be deleted on the strength of a success that a silent
@@ -387,18 +419,38 @@ function ComposeDossierScreen() {
 
             {isPreview ? (
                 <CinematicScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false} bottomInset={insets.bottom}>
-                    <Text style={styles.previewEyebrow} {...scaledTextProps}>LIVE PREVIEW</Text>
-                    {/* The title is set at 30pt, so it takes the display cap —
-                        large type needs less multiplying to stay readable. */}
+                    {/* ── THIS IS THE READER, NOT A PICTURE OF IT ──────────────
+                        The preview used to set an essay in Courier 15/24 in
+                        `bone`, with its own heading sizes, while the page it
+                        would appear on sets it in Spectral 16.5/28 in
+                        `parchment`, opens it with a raised initial, and prints
+                        a section break as an ornament. Two different documents.
+                        A member could not learn anything here about how their
+                        writing would actually read.
+
+                        `EssayBody` is the component the Dispatch itself mounts,
+                        so the answer can no longer drift: there is one essay
+                        typography and this is it.
+
+                        ── AND IT IS CAPPED NOW, WHICH THE OLD NOTE REFUSED ────
+                        That note said capping the preview would be "the app
+                        fighting its user". It was written about truncation, but
+                        the cap is not a style rule — it is the guard against two
+                        markdown rules that are QUADRATIC, and the preview runs
+                        the same renderer the reader does. Uncapped, a very long
+                        draft could stall the composer exactly as it would stall
+                        the page.
+
+                        Nothing publishable is affected: `filingEssay` and
+                        `dossierContent` are both 25,000, and sanitizeInput says
+                        that is "not by accident". A draft ALREADY over the limit
+                        now shows an ellipsis at the point the composer already
+                        refuses to file past — which tells a member where the
+                        limit bites rather than hiding it. */}
+                    <Text style={styles.previewEyebrow} {...scaledTextProps}>AS THE HOUSE WILL SET IT</Text>
                     {title ? <Text style={styles.previewTitle} {...displayTextProps}>{title}</Text> : null}
-                    {/* Guarded like the other mounts — a link is a link even in your own
-                        draft. Deliberately NOT capped: this is the author's live preview,
-                        and truncating someone's essay while they write it is the app
-                        fighting its user. See utils/markdownSafety.ts. */}
                     {content ? (
-                        <Markdown style={markdownStyles} onLinkPress={onMarkdownLinkPress}>
-                            {content}
-                        </Markdown>
+                        <EssayBody text={content} />
                     ) : (
                         <View style={styles.emptyPreview}>
                             <Text style={styles.emptyPreviewText} {...scaledTextProps}>Your cinematic essay will appear here...</Text>
@@ -410,7 +462,7 @@ function ComposeDossierScreen() {
                     <CinematicScrollView style={styles.workspace} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bottomInset={insets.bottom}>
                         <TextInput
                             style={styles.titleInput}
-                            placeholder="Headline..."
+                            placeholder="A title for this dossier"
                             placeholderTextColor={colors.fog}
                             value={title}
                             onChangeText={setTitle}
@@ -420,10 +472,41 @@ function ComposeDossierScreen() {
                             keyboardAppearance="dark"
                             accessibilityLabel="Dossier headline"
                         />
+                        {/* ── WHAT THE PIECE IS ────────────────────────────────
+                            Above the writing, and separate from it. The rail at
+                            the foot sets HOW the words read; these two say what
+                            the dossier is about, which is a different question
+                            and belongs with the title rather than with bold and
+                            italic. */}
+                        <View style={styles.slots}>
+                            <PressableScale
+                                style={styles.slot} onPress={() => setFilmOpen(true)} haptic="selection"
+                                hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
+                                accessibilityRole="button"
+                                accessibilityLabel={film ? `The film is ${film.title}. Change it.` : 'Name the film this is about'}
+                            >
+                                <Text style={styles.slotLabel} {...decorativeTextProps}>FILM</Text>
+                                <Text style={[styles.slotValue, film && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
+                                    {film ? [film.title, film.sub].filter(Boolean).join(' · ') : 'Name the film this is about'}
+                                </Text>
+                            </PressableScale>
+                            <PressableScale
+                                style={styles.slot} onPress={() => setSeriesOpen(true)} haptic="selection"
+                                hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
+                                accessibilityRole="button"
+                                accessibilityLabel={series ? `Part ${series.part} of ${series.title}. Change it.` : 'Make this part of a series'}
+                            >
+                                <Text style={styles.slotLabel} {...decorativeTextProps}>SERIES</Text>
+                                <Text style={[styles.slotValue, series && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
+                                    {series ? `${series.title.toUpperCase()} · ${roman(series.part)}` : 'Part of a series?'}
+                                </Text>
+                            </PressableScale>
+                        </View>
+
                         <TextInput
                             ref={inputRef}
                             style={styles.contentInput}
-                            placeholder="Begin your dossier... Use Markdown for formatting."
+                            placeholder="Begin. The house is listening."
                             placeholderTextColor={colors.ash}
                             value={content}
                             onChangeText={setContent}
@@ -441,22 +524,28 @@ function ComposeDossierScreen() {
                     <View style={styles.toolbar}>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScroll} keyboardShouldPersistTaps="handled">
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
-                                <Bold size={18} color={colors.parchment} />
+                                <Bold size={15} color={colors.parchment} />
+                                <Text style={styles.toolWord} {...decorativeTextProps}>BOLD</Text>
                             </PressableScale>
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
-                                <Italic size={18} color={colors.parchment} />
+                                <Italic size={15} color={colors.parchment} />
+                                <Text style={styles.toolWord} {...decorativeTextProps}>ITALIC</Text>
                             </PressableScale>
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
-                                <Type size={18} color={colors.parchment} />
+                                <Type size={15} color={colors.parchment} />
+                                <Text style={styles.toolWord} {...decorativeTextProps}>HEADING</Text>
                             </PressableScale>
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
-                                <Quote size={18} color={colors.parchment} />
+                                <Quote size={15} color={colors.parchment} />
+                                <Text style={styles.toolWord} {...decorativeTextProps}>QUOTE</Text>
                             </PressableScale>
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Horizontal rule">
-                                <Minus size={18} color={colors.parchment} />
+                                <Minus size={15} color={colors.parchment} />
+                                <Text style={styles.toolWord} {...decorativeTextProps}>BREAK</Text>
                             </PressableScale>
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
-                                <Link2 size={18} color={colors.parchment} />
+                                <Link2 size={15} color={colors.parchment} />
+                                <Text style={styles.toolWord} {...decorativeTextProps}>LINK</Text>
                             </PressableScale>
                         </ScrollView>
                     </View>
@@ -502,6 +591,34 @@ function ComposeDossierScreen() {
                     </BlurView>
                 </Animated.View>
             )}
+
+            {/* Both sheets are mounted OUTSIDE the preview/edit branch, so
+                neither is torn down and rebuilt when a member flips to the
+                preview and back. They draw nothing until opened. */}
+            <FilmPicker
+                visible={filmOpen}
+                bottomInset={insets.bottom}
+                onClose={() => setFilmOpen(false)}
+                onPick={(f, id) => {
+                    // The id comes from the finder by POSITION, which is the one
+                    // way to get the right film when two share a title and year.
+                    setFilm({
+                        id,
+                        title: f.title,
+                        sub: [f.year, f.director].filter(Boolean).join(' · ') || null,
+                        image: f.posterPath ?? null,
+                    });
+                    setFilmOpen(false);
+                }}
+            />
+            <SeriesPicker
+                visible={seriesOpen}
+                chosen={series}
+                bottomInset={insets.bottom}
+                onClose={() => setSeriesOpen(false)}
+                onSet={(choice) => { setSeries(choice); setSeriesOpen(false); }}
+                onClear={() => { setSeries(null); setSeriesOpen(false); }}
+            />
         </View>
     );
 }
@@ -574,9 +691,23 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     toolBtn: {
-        padding: 8,
+        // A column now — the mark, and its NAME under it. Six unlabelled icons
+        // meant a member had to already know what markdown was to use a rail
+        // that exists so they would not have to.
+        alignItems: 'center',
+        gap: 3,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
         backgroundColor: 'rgba(184,137,26,0.1)',
         borderRadius: 4,
+        minWidth: 52,
+    },
+    toolWord: {
+        fontFamily: fonts.sub,
+        fontSize: 6.5,
+        letterSpacing: 1.2,
+        color: colors.bone,
+        includeFontPadding: false,
     },
     footer: {
         flexDirection: 'row',
@@ -635,11 +766,13 @@ const styles = StyleSheet.create({
         includeFontPadding: false,
     },
     previewTitle: {
+        // The reader's own head — `PaperEssay.title`, 26/34 in parchment. It was
+        // 30pt here, which is a fourth size for one thing on one screen.
         fontFamily: fonts.display,
-        fontSize: 30,
+        fontSize: 26,
+        lineHeight: 34,
         color: colors.parchment,
-        marginBottom: 32,
-        lineHeight: 36,
+        marginBottom: 20,
     },
     emptyPreview: {
         paddingVertical: 100,
@@ -652,48 +785,23 @@ const styles = StyleSheet.create({
     },
     kavFlex: { flex: 1 },
     previewContent: { padding: 20 },
+
+    /** What the piece IS — above the writing, below the title. */
+    slots: {
+        borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.16)',
+        borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)',
+        paddingVertical: 4, marginBottom: 14,
+    },
+    slot: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
+    slotLabel: {
+        fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.8, color: colors.sepia,
+        width: 46, includeFontPadding: false,
+    },
+    /** Unset reads as an invitation; set reads as a fact. */
+    slotValue: {
+        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog,
+        includeFontPadding: false, flex: 1, minWidth: 0,
+    },
+    slotValueSet: { color: colors.parchment },
 });
 
-const markdownStyles = {
-    body: {
-        fontFamily: fonts.body,
-        fontSize: 15,
-        color: colors.bone,
-        lineHeight: 24,
-    },
-    heading2: {
-        fontFamily: fonts.sub,
-        fontSize: 24,
-        color: colors.parchment,
-        marginTop: 24,
-        marginBottom: 12,
-    },
-    heading3: {
-        fontFamily: fonts.sub,
-        fontSize: 18,
-        color: colors.parchment,
-        marginTop: 20,
-        marginBottom: 10,
-    },
-    blockquote: {
-        backgroundColor: 'rgba(184,137,26,0.05)',
-        borderLeftWidth: 2,
-        borderLeftColor: colors.sepia,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        marginVertical: 16,
-    },
-    strong: {
-        fontFamily: fonts.bodyBold,
-        color: colors.parchment,
-    },
-    em: {
-        fontFamily: fonts.bodyItalic,
-    },
-    hr: {
-        backgroundColor: colors.sepia,
-        height: 1,
-        marginVertical: 24,
-        opacity: 0.3,
-    },
-};

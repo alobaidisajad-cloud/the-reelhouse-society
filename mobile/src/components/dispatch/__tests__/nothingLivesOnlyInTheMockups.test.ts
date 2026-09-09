@@ -60,7 +60,8 @@ const stripComments = (s: string): string => s
  * exactly what took PaperConcierge two hundred lines past its own death.
  */
 const DESIGNED_NOT_WIRED = new Set([
-  'src/components/dispatch/ComposeDesks.tsx  ::  FilmPicker',
+  // `FilmPicker` came off this list when the writing room began using it to
+  // name the film a dossier is about — the ratchet doing precisely its job.
   'src/components/dispatch/paper/PaperDesk.tsx  ::  DeskHead',
   'src/components/dispatch/paper/PaperDesk.tsx  ::  DeskRail',
   'src/components/dispatch/paper/PaperDesk.tsx  ::  WireDesk',
