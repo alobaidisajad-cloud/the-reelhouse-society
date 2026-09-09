@@ -81,11 +81,22 @@ const Mark = ({ rank, scale = 1 }: { rank: 'auteur' | 'archivist' | null; scale?
           : ['rgba(184,137,26,0.10)', 'rgba(184,137,26,0.03)', 'rgba(10,9,6,0.96)']}
         start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
         style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
+      {/* ── IT SCALES ────────────────────────────────────────────────────
+          `scaledTextProps`, not `decorativeTextProps`. A rank is a LABEL a
+          member reads, and freezing it small on a page where everything else
+          grows is exactly the accessibility miss this app keeps catching.
+
+          The first draft of this drawing used the decorative prop, so the
+          plates showed a mark that never grew while the plan described one
+          that did — the picture and the plan were two different products.
+          With the real prop the converter stamps this element's own ceiling,
+          so the type-size switch above moves it and the fit can be MEASURED
+          rather than asserted. */}
       <Text style={{
         fontFamily: fonts.sub, fontSize: 7.5 * scale, letterSpacing: 1.8,
         includeFontPadding: false, color: a ? colors.crimsonInk : colors.sepia,
         opacity: a ? 1 : 0.82,
-      }} numberOfLines={1} {...decorativeTextProps}>
+      }} numberOfLines={1} {...scaledTextProps}>
         {a ? '★ AUTEUR' : '✦ ARCHIVIST'}
       </Text>
     </View>
@@ -169,7 +180,36 @@ add('a1-the-mark-everywhere', (
     ))}
 
     <View style={[p.hair, { marginTop: 12, marginBottom: 14 }]} />
-    <Note dim>6 · THE PROFILE — STAMPED ON THE CORNER OF THE PRINT</Note>
+    {/* ── 6 · THE EVENTS ROW — RING AND NAME, AND DELIBERATELY NO MARK ────
+        This row draws its actor inside ONE truncating sentence: the name is a
+        nested Text inside "ANA  certified your filing". A stamp cannot go
+        there — a View inside a Text is not something React Native lays out
+        reliably — so the decision is forced rather than aesthetic.
+
+        What it DOES take is the name colour every other surface gives an
+        Auteur. It had the tier ring already and nothing else, which is how it
+        would have quietly drifted: the ring would have turned crimson with the
+        stylesheet and the name would have stayed parchment. */}
+    <Note dim>6 · THE DISPATCH EVENTS — RING AND NAME, NO MARK (SEE WHY, IN THE FILE)</Note>
+    {[1, 0, 2].map((k, i) => (
+      <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6 }}>
+        <Text style={{ fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 0.8, color: colors.sepia,
+          width: 32, includeFontPadding: false }} {...decorativeTextProps}>{`0${9 + i}:14`}</Text>
+        <View style={[p.avatar, ring(k)]}>
+          <Text style={p.avatarMark} {...decorativeTextProps}>{['A', 'D', 'S'][i]}</Text>
+        </View>
+        <Text style={{ flex: 1, minWidth: 0, fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2,
+          color: colors.fog, includeFontPadding: false }} numberOfLines={1} {...scaledTextProps}>
+          <Text style={{ color: k === 1 ? colors.crimsonInk : colors.parchment }}>
+            {['ANA', 'DAN', 'SAM'][i]}
+          </Text>
+          {'  certified your filing'}
+        </Text>
+      </View>
+    ))}
+
+    <View style={[p.hair, { marginTop: 12, marginBottom: 14 }]} />
+    <Note dim>7 · THE PROFILE — STAMPED ON THE CORNER OF THE PRINT</Note>
     <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
       <View style={{ width: 62, height: 76, backgroundColor: 'rgba(20,16,11,0.9)', borderWidth: 1,
         borderColor: 'rgba(232,223,208,0.22)', alignItems: 'center', justifyContent: 'center' }}>
@@ -180,7 +220,7 @@ add('a1-the-mark-everywhere', (
     </View>
 
     <View style={[p.hair, { marginTop: 16, marginBottom: 14 }]} />
-    <Note dim>7 · THE LARGEST TEXT A MEMBER CAN SET</Note>
+    <Note dim>8 · THE LARGEST TEXT A MEMBER CAN SET</Note>
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
       <Mark rank="auteur" scale={1.35} /><Mark rank="archivist" scale={1.35} />
     </View>
