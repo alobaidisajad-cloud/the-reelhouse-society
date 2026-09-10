@@ -29,7 +29,7 @@
  * and a SKIPPED CHECK COUNTS AS A FAILURE. An unrun check is not a pass; this
  * script once printed "Verified present in production: nothing." and exited 0.
  */
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -156,8 +156,128 @@ const missing = { rpcs: [], edgeFunctions: [] };
 const signatureDrift = [];
 /** Entries still checked by name alone, so still blind to that failure mode. */
 const unsignedRpcs = [];
+/** A `supabase.rpc(...)` in the app that production would refuse. */
+const callMismatches = [];
 let checkedEdges = false;
 let checkedRpcs = false;
+let ranCallCheck = false;
+let checkedCalls = 0;
+
+// ── Reading the app's own RPC calls ───────────────────────────────────────
+const APP_ROOTS = [join(__dirname, '..', 'src'), join(__dirname, '..', 'app')];
+const UNPARSED = '<unparsed>';
+
+/**
+ * Blank every comment, keeping the file the SAME LENGTH so offsets and reported
+ * line numbers stay true. String and template literals are tracked so a URL like
+ * `'https://x'` is never mistaken for the start of a comment.
+ */
+function blankComments(src) {
+  const out = src.split('');
+  let i = 0;
+  const blank = (from, to) => { for (let k = from; k < to; k++) if (out[k] !== '\n') out[k] = ' '; };
+  while (i < src.length) {
+    const c = src[i];
+    if (c === '"' || c === "'" || c === '`') {
+      const quote = c;
+      i++;
+      while (i < src.length && src[i] !== quote) i += src[i] === '\\' ? 2 : 1;
+      i++;
+    } else if (c === '/' && src[i + 1] === '/') {
+      const end = src.indexOf('\n', i);
+      blank(i, end === -1 ? src.length : end);
+      i = end === -1 ? src.length : end;
+    } else if (c === '/' && src[i + 1] === '*') {
+      const end = src.indexOf('*/', i + 2);
+      const stop = end === -1 ? src.length : end + 2;
+      blank(i, stop);
+      i = stop;
+    } else i++;
+  }
+  return out.join('');
+}
+
+/** The substring inside a balanced pair starting at `i`. */
+function balanced(src, i, open, close) {
+  let depth = 0;
+  for (let j = i; j < src.length; j++) {
+    if (src[j] === open) depth++;
+    else if (src[j] === close) { depth--; if (!depth) return src.slice(i + 1, j); }
+  }
+  return null;
+}
+
+/**
+ * Top-level keys of an object literal, in all four forms a key is written:
+ *   { p_id: x }  explicit    { p_id }   shorthand
+ *   { ...rest }  spread      { [k]: v } computed   -> both unknowable, reported
+ */
+function topKeys(obj) {
+  const parts = [];
+  let depth = 0, buf = '';
+  for (const c of obj) {
+    if ('{(['.includes(c)) depth++;
+    else if ('})]'.includes(c)) depth--;
+    if (c === ',' && depth === 0) { parts.push(buf); buf = ''; continue; }
+    buf += c;
+  }
+  parts.push(buf);
+
+  const keys = [];
+  for (const raw of parts) {
+    const seg = raw.trim();
+    if (!seg) continue;
+    if (seg.startsWith('...') || seg.startsWith('[')) return [UNPARSED];
+    let d = 0, cut = -1;
+    for (let i = 0; i < seg.length; i++) {
+      const c = seg[i];
+      if ('{(['.includes(c)) d++;
+      else if ('})]'.includes(c)) d--;
+      else if (c === ':' && d === 0) { cut = i; break; }
+    }
+    const key = (cut === -1 ? seg : seg.slice(0, cut)).trim();
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) return [UNPARSED];
+    keys.push(key);
+  }
+  return keys;
+}
+
+/** Every `supabase.rpc('name', {...})` the app makes. Tests are not the app. */
+function collectRpcCalls(roots) {
+  const files = [];
+  const walk = (dir) => {
+    if (!existsSync(dir)) return;
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (['node_modules', '.expo', 'android', 'ios', '__tests__'].includes(e.name)) continue;
+      const f = join(dir, e.name);
+      if (e.isDirectory()) walk(f);
+      else if (/\.tsx?$/.test(e.name)) files.push(f);
+    }
+  };
+  roots.forEach(walk);
+
+  const calls = [];
+  for (const file of files) {
+    const src = blankComments(readFileSync(file, 'utf8'));
+    const re = /\.rpc\(\s*'([a-z_0-9]+)'/g;
+    let m;
+    while ((m = re.exec(src))) {
+      const rest = src.slice(m.index + m[0].length);
+      const lead = rest.match(/^\s*,\s*\{/);
+      let args = null;
+      if (lead) {
+        const body = balanced(src, m.index + m[0].length + lead[0].length - 1, '{', '}');
+        args = body === null ? [UNPARSED] : topKeys(body);
+      }
+      calls.push({
+        name: m[1],
+        args,
+        at: `${file.slice(join(__dirname, '..').length + 1).replace(/\\/g, '/')}:${src.slice(0, m.index).split('\n').length}`,
+      });
+    }
+  }
+  return calls;
+}
 
 function sh(cmd) {
   return execSync(cmd, { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
@@ -254,6 +374,78 @@ if (DB_URL) {
   }
 } else {
   console.warn('⚠ RPC check skipped (set SUPABASE_DB_URL).');
+}
+
+// ── THE APP'S OWN CALLS ───────────────────────────────────────────────────
+// A pinned signature proves the server did not move. It does NOT prove the app
+// can call it: both sides can be internally consistent and still disagree, which
+// is precisely #24 — `get_priority_reports` existed under a name the app knew
+// and a signature it could not call. Pinning would have pinned the broken one.
+//
+// So this reads every `supabase.rpc(...)` in the app and asks the database
+// whether that exact call is satisfiable: every key the app sends must be a
+// parameter, and every parameter without a default must be sent.
+//
+// Two parsing traps, both of which produced a WRONG answer before they were
+// handled, and both of which now fail loudly rather than quietly passing:
+//   · `{ dossier_uuid }` — ES6 shorthand has no colon. Counting only `key:`
+//     reported two healthy call sites as broken.
+//   · a comment inside an object literal, whose prose comma split the argument
+//     list. Comments are blanked in place first, preserving offsets.
+// Anything still unparseable (a spread, a computed key) is REPORTED, never
+// assumed fine.
+if (DB_URL) {
+  try {
+    const liveArgs = new Map();          // name -> [{ params, required }]
+    // IN PARAMETERS ONLY. `proargnames` also carries the OUT columns of a
+    // function that RETURNS TABLE — `dispatch_door` reported its five result
+    // columns as acceptable arguments — so an app passing an output column name
+    // would have been waved through. `proargmodes` is NULL when every argument
+    // is IN, and an array of modes otherwise; 'i'/'b'/'v' are the input ones.
+    // `pronargs` already counts inputs only, so the required count is right.
+    const argRows = sh(
+      `psql "${DB_URL}" -tAc "SELECT p.proname || E'\\t' || coalesce(CASE WHEN p.proargmodes IS NULL THEN array_to_string(p.proargnames, ',') ELSE (SELECT string_agg(a.name, ',' ORDER BY a.ord) FROM unnest(p.proargnames, p.proargmodes) WITH ORDINALITY AS a(name, mode, ord) WHERE a.mode IN ('i','b','v')) END, '') || E'\\t' || (p.pronargs - p.pronargdefaults) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f'"`,
+    );
+    for (const row of argRows.split('\n')) {
+      const [rawName, names, req] = row.split('\t');
+      const name = (rawName ?? '').trim();
+      if (!name) continue;
+      const params = (names ?? '').trim().split(',').map((s) => s.trim()).filter(Boolean);
+      liveArgs.set(name, [
+        ...(liveArgs.get(name) ?? []),
+        { params, required: params.slice(0, Number((req ?? '').trim())) },
+      ]);
+    }
+
+    for (const call of collectRpcCalls(APP_ROOTS)) {
+      const overloads = liveArgs.get(call.name);
+      if (!overloads) { callMismatches.push(`${call.at}\n      ${call.name} — NOT IN THE DATABASE`); continue; }
+      if (call.args && call.args.includes(UNPARSED)) {
+        callMismatches.push(`${call.at}\n      ${call.name} — arguments could not be read (spread or computed key); check by hand`);
+        continue;
+      }
+      // `.rpc('name')` with no second argument is a call that sends NOTHING —
+      // which is only valid if some overload has no required parameter. Skipping
+      // it (the first version did) waves through exactly the call most likely to
+      // be wrong: one that forgot its arguments entirely.
+      const sent = call.args ?? [];
+      checkedCalls++;
+      const ok = overloads.some((o) =>
+        sent.every((a) => o.params.includes(a)) &&
+        o.required.every((r) => sent.includes(r)));
+      if (!ok) {
+        callMismatches.push(
+          `${call.at}\n      ${call.name}\n        app sends: ${sent.join(', ') || '(nothing)'}` +
+          overloads.map((o) =>
+            `\n        db takes:  ${o.params.join(', ') || '(none)'}    required: ${o.required.join(', ') || '(none)'}`).join(''));
+      }
+    }
+    ranCallCheck = true;
+  } catch (e) {
+    console.warn(`⚠ app-call check skipped — psql could not connect:\n    ${why(e)}`);
+  }
+} else {
+  console.warn('⚠ app-call check skipped (set SUPABASE_DB_URL).');
 }
 
 // ── Security posture ──────────────────────────────────────────────────────
@@ -554,6 +746,7 @@ if (DB_URL) {
 const skipped = [
   !checkedEdges && 'edge functions',
   !checkedRpcs && 'RPCs',
+  !ranCallCheck && "the app's own RPC calls",
   !checkedAnon && 'anon column visibility',
   !checkedGrants && 'grants/triggers/RLS',
 ].filter(Boolean);
@@ -568,6 +761,7 @@ const failed =
   missing.rpcs.length > 0 ||
   missing.edgeFunctions.length > 0 ||
   signatureDrift.length > 0 ||
+  callMismatches.length > 0 ||
   posture.length > 0 ||
   skipped.length > 0;
 
@@ -582,6 +776,15 @@ if (signatureDrift.length) {
   console.error('\n✗ Backend contract SIGNATURE DRIFT — the function exists but the app cannot call it:');
   for (const d of signatureDrift) console.error(`    ${d}`);
   console.error('\nThis is the #24 failure mode: a name that resolves and a signature that does not.');
+}
+
+if (callMismatches.length) {
+  console.error('\n✗ The APP MAKES A CALL production would refuse:');
+  for (const m of callMismatches) console.error(`    ${m}`);
+  console.error(
+    '\nA pinned signature proves the server did not move; this proves the app can\n' +
+      'actually reach it. Fix the call site, or the function, before shipping.',
+  );
 }
 
 if (posture.length) {
@@ -613,6 +816,7 @@ if (skipped.length) {
 const passed = [
   checkedEdges && !missing.edgeFunctions.length && 'edge functions',
   checkedRpcs && !missing.rpcs.length && !signatureDrift.length && 'RPC signatures',
+  ranCallCheck && !callMismatches.length && `every RPC call the app makes (${checkedCalls})`,
   checkedAnon && anonViolations === 0 && 'anon column visibility',
   checkedGrants && grantViolations === 0 && 'profile grants + triggers + RLS + length ceilings',
 ].filter(Boolean);
@@ -628,11 +832,16 @@ if (passed.length && failed) {
 if (!failed) {
   console.log(`✓ Verified against production: ${passed.join(', ')}.`);
   if (unsignedRpcs.length) {
-    // Named-only entries still cannot catch signature drift. Reported every run
-    // so the remaining blind spot is a number someone can watch shrink, rather
-    // than a silence.
-    console.log(`  ${unsignedRpcs.length} RPC(s) checked by NAME only — still blind to signature drift:`);
+    // Named-only entries cannot catch signature drift on their own. Reported
+    // every run so the remaining blind spot is a number someone can watch
+    // shrink, rather than a silence.
+    //
+    // An OVERLOADED function belongs here permanently and is not a gap: pinning
+    // one of two signatures would invent drift on every run. The app-call check
+    // above covers these, because it tries every overload.
+    console.log(`  ${unsignedRpcs.length} RPC(s) not pinned to one signature (overloaded, or newly added):`);
     console.log(`    ${unsignedRpcs.join(', ')}`);
+    console.log('    — these are still covered by the app-call check above.');
   }
 }
 

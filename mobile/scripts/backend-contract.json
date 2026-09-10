@@ -1,14 +1,38 @@
 {
   "_note": "The set of database RPCs and edge functions this app depends on. Auto-verified by __tests__/backendContract.test.ts on every CI run: if the app adds/removes a backend dependency, that test fails and this file must be updated CONSCIOUSLY. When you update it, make sure any NEW entry actually EXISTS and is DEPLOYED on the live DB (run: node scripts/check-backend-live.mjs). This is the guard against the repo<->production drift found on 2026-06-26. Reconciled with live on 2026-06-26.",
   "rpcs": [
-    "accept_follow_request",
-    "approve_lounge_member",
-    "bulk_dismiss_reports",
-    "create_lounge",
-    "decline_all_follow_requests",
-    "decline_follow_request",
-    "decline_lounge_member",
-    "delete_list_cascade",
+    {
+      "name": "accept_follow_request",
+      "signature": "accept_follow_request(requester_id uuid)"
+    },
+    {
+      "name": "approve_lounge_member",
+      "signature": "approve_lounge_member(p_lounge_id uuid, p_user_id uuid)"
+    },
+    {
+      "name": "bulk_dismiss_reports",
+      "signature": "bulk_dismiss_reports(p_report_ids uuid[], p_admin_id uuid, p_reason text)"
+    },
+    {
+      "name": "create_lounge",
+      "signature": "create_lounge(p_name text, p_description text, p_is_private boolean)"
+    },
+    {
+      "name": "decline_all_follow_requests",
+      "signature": "decline_all_follow_requests()"
+    },
+    {
+      "name": "decline_follow_request",
+      "signature": "decline_follow_request(requester_id uuid)"
+    },
+    {
+      "name": "decline_lounge_member",
+      "signature": "decline_lounge_member(p_lounge_id uuid, p_user_id uuid)"
+    },
+    {
+      "name": "delete_list_cascade",
+      "signature": "delete_list_cascade(p_list_id uuid)"
+    },
     {
       "name": "dispatch_door",
       "signature": "dispatch_door()"
@@ -21,43 +45,119 @@
       "name": "end_filing",
       "signature": "end_filing(p_post uuid, p_by text)"
     },
-    "get_community_feed_auth_cursor",
-    "get_featured_critique",
-    "get_filtered_stacks_auth_cursor_v2",
-    "get_following_feed_auth_cursor",
+    {
+      "name": "get_community_feed_auth_cursor",
+      "signature": "get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid)"
+    },
+    {
+      "name": "get_featured_critique",
+      "signature": "get_featured_critique()"
+    },
+    {
+      "name": "get_filtered_stacks_auth_cursor_v2",
+      "signature": "get_filtered_stacks_auth_cursor_v2(p_search text, p_filter_following boolean, p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid, p_poster_count integer)"
+    },
+    {
+      "name": "get_following_feed_auth_cursor",
+      "signature": "get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid)"
+    },
     "get_lounge_unread_counts",
-    "get_moderation_history_for_users",
+    {
+      "name": "get_moderation_history_for_users",
+      "signature": "get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer)"
+    },
     {
       "name": "get_priority_reports",
-      "signature": "get_priority_reports(p_limit integer, p_cursor_count bigint, p_cursor_created timestamp with time zone, p_cursor_id uuid)",
-      "why": "#24 — this existed under a name the app knew and a signature it could not call, so a name-only check reported it healthy while every call 404'd and the Tribunal showed an empty docket. Signature-checked from here on."
+      "signature": "get_priority_reports(p_limit integer, p_cursor_count bigint, p_cursor_created timestamp with time zone, p_cursor_id uuid)"
     },
-    "get_profile_counts",
-    "get_public_profile_analytics",
+    {
+      "name": "get_profile_counts",
+      "signature": "get_profile_counts(p_user_id uuid)"
+    },
+    {
+      "name": "get_public_profile_analytics",
+      "signature": "get_public_profile_analytics(p_user_id uuid)"
+    },
     {
       "name": "get_taste_profile",
-      "signature": "get_taste_profile(p_user_id uuid)",
-      "why": "New in the taste pass. Signed rather than named because #24's lesson was 'signature-checked from here on', and a new function is the cheapest possible moment to pin one — it replaces the TMDB fetch that capped a member's fingerprint at 60 films, so a silent 404 here would not break the screen, it would quietly show a WRONG portrait."
+      "signature": "get_taste_profile(p_user_id uuid)"
     },
-    "get_report_evidence",
-    "get_salon_member_faces",
-    "get_user_analytics",
-    "get_user_blocks",
-    "increment_dossier_views",
-    "join_public_lounge",
-    "list_certify_count",
-    "list_certify_counts",
-    "register_push_token",
-    "remove_lounge_member",
-    "request_account_deletion",
-    "request_lounge_membership",
-    "resolve_moderation_report_v2",
-    "set_lounge_cover",
-    "set_lounge_member_status",
-    "submit_report",
-    "toggle_dossier_certify",
-    "update_my_preferences",
-    "withdraw_lounge_message"
+    {
+      "name": "get_report_evidence",
+      "signature": "get_report_evidence(p_report_id uuid)"
+    },
+    {
+      "name": "get_salon_member_faces",
+      "signature": "get_salon_member_faces(p_lounge_ids uuid[])"
+    },
+    {
+      "name": "get_user_analytics",
+      "signature": "get_user_analytics(p_user_id uuid)"
+    },
+    {
+      "name": "get_user_blocks",
+      "signature": "get_user_blocks(p_user_id uuid)"
+    },
+    {
+      "name": "increment_dossier_views",
+      "signature": "increment_dossier_views(dossier_uuid uuid)"
+    },
+    {
+      "name": "join_public_lounge",
+      "signature": "join_public_lounge(p_lounge_id uuid)"
+    },
+    {
+      "name": "list_certify_count",
+      "signature": "list_certify_count(p_list_id uuid)"
+    },
+    {
+      "name": "list_certify_counts",
+      "signature": "list_certify_counts(p_list_ids uuid[])"
+    },
+    {
+      "name": "register_push_token",
+      "signature": "register_push_token(p_token text, p_platform text)"
+    },
+    {
+      "name": "remove_lounge_member",
+      "signature": "remove_lounge_member(p_lounge_id uuid, p_user_id uuid)"
+    },
+    {
+      "name": "request_account_deletion",
+      "signature": "request_account_deletion()"
+    },
+    {
+      "name": "request_lounge_membership",
+      "signature": "request_lounge_membership(p_lounge_id uuid)"
+    },
+    {
+      "name": "resolve_moderation_report_v2",
+      "signature": "resolve_moderation_report_v2(p_report_id uuid, p_action text, p_admin_id uuid, p_reason text, p_duration_hours integer, p_notify_user boolean)"
+    },
+    {
+      "name": "set_lounge_cover",
+      "signature": "set_lounge_cover(p_lounge_id uuid, p_cover_image text)"
+    },
+    {
+      "name": "set_lounge_member_status",
+      "signature": "set_lounge_member_status(p_lounge_id uuid, p_user_id uuid, p_status text)"
+    },
+    {
+      "name": "submit_report",
+      "signature": "submit_report(p_reporter_id uuid, p_content_id uuid, p_content_type text, p_reason text, p_details text, p_target_user_id uuid)"
+    },
+    {
+      "name": "toggle_dossier_certify",
+      "signature": "toggle_dossier_certify(dossier_uuid uuid)"
+    },
+    {
+      "name": "update_my_preferences",
+      "signature": "update_my_preferences(p_preferences jsonb)"
+    },
+    {
+      "name": "withdraw_lounge_message",
+      "signature": "withdraw_lounge_message(p_message_id uuid)"
+    }
   ],
   "_removedNote": "TWO entries left this contract on 2026-09-03, and NEITHER is a signal to undeploy anything. This file describes what the CURRENT mobile source calls; it is not an inventory of what production must keep. (1) fetch-rss — the Global Wire left the Dispatch and NewsService with it. (2) get_dispatch_feed — the Dispatch store now reads dispatch_posts directly. That RPC MUST STAY DEPLOYED: the build in members' hands on TestFlight calls it, and so does the web app, which is a separate tree on the same project. Step one's compatibility layer exists precisely so those keep working.",
   "edgeFunctions": [
@@ -66,21 +166,56 @@
     "sync-films",
     "tmdb-proxy"
   ],
-
   "_securityNote": "Facts about the LIVE database that no test can derive from this repo. Added 2026-08-10 after the schema snapshot misled three times in two days: it showed a column-unrestricted profiles UPDATE policy (live is locked to 7 columns), it showed two conflicting role whitelists (live has one, permitting 'admin' — acting on the snapshot would have locked out the moderators), and it showed email as world-readable (live denies it). Each entry below was OBSERVED live, not read from a migration. If one of these ever flips, this fails loudly instead of a person discovering it during an audit.",
   "security": {
     "anonMustNotRead": [
-      { "table": "profiles", "column": "email", "why": "F-15 — world-readable email is mass harvesting" },
-      { "table": "profiles", "column": "ban_reason", "why": "moderation detail; not the member's business" },
-      { "table": "profiles", "column": "banned_at", "why": "moderation detail" },
-      { "table": "profiles", "column": "suspended_until", "why": "moderation detail" },
-      { "table": "profiles", "column": "suspension_reason", "why": "moderation detail" },
-      { "table": "profiles", "column": "warning_count", "why": "moderation detail" },
-      { "table": "profiles", "column": "entitlement_source", "why": "decides who may demote a tier; must not be visible or writable" },
-      { "table": "logs", "column": "private_notes", "why": "owner-only by definition" }
+      {
+        "table": "profiles",
+        "column": "email",
+        "why": "F-15 — world-readable email is mass harvesting"
+      },
+      {
+        "table": "profiles",
+        "column": "ban_reason",
+        "why": "moderation detail; not the member's business"
+      },
+      {
+        "table": "profiles",
+        "column": "banned_at",
+        "why": "moderation detail"
+      },
+      {
+        "table": "profiles",
+        "column": "suspended_until",
+        "why": "moderation detail"
+      },
+      {
+        "table": "profiles",
+        "column": "suspension_reason",
+        "why": "moderation detail"
+      },
+      {
+        "table": "profiles",
+        "column": "warning_count",
+        "why": "moderation detail"
+      },
+      {
+        "table": "profiles",
+        "column": "entitlement_source",
+        "why": "decides who may demote a tier; must not be visible or writable"
+      },
+      {
+        "table": "logs",
+        "column": "private_notes",
+        "why": "owner-only by definition"
+      }
     ],
     "anonMustRead": [
-      { "table": "profiles", "column": "username", "why": "CONTROL. If the API is down or the key is wrong every probe above 'passes' by failing. This one must return 200 or the whole anon check is meaningless." }
+      {
+        "table": "profiles",
+        "column": "username",
+        "why": "CONTROL. If the API is down or the key is wrong every probe above 'passes' by failing. This one must return 200 or the whole anon check is meaningless."
+      }
     ],
     "profilesUpdatableColumns": [
       "avatar_url",
@@ -92,10 +227,26 @@
       "username"
     ],
     "mustBeEnabledTriggers": [
-      { "table": "profiles", "trigger": "tr_protect_privileged_profile_fields", "why": "pins role, tier, ban state, trust_score and entitlement_source on UPDATE. A DISABLED trigger looks identical to a working one everywhere except tgenabled." },
-      { "table": "profiles", "trigger": "tr_ban_freeze_profile_identity", "why": "stops a banned member editing their way out of recognition" },
-      { "table": "profiles", "trigger": "tr_profiles_username_policy", "why": "username charset/shape backstop" },
-      { "table": "profiles", "trigger": "trg_sync_denormalized_username", "why": "keeps the copied handles honest — the impersonation fix" }
+      {
+        "table": "profiles",
+        "trigger": "tr_protect_privileged_profile_fields",
+        "why": "pins role, tier, ban state, trust_score and entitlement_source on UPDATE. A DISABLED trigger looks identical to a working one everywhere except tgenabled."
+      },
+      {
+        "table": "profiles",
+        "trigger": "tr_ban_freeze_profile_identity",
+        "why": "stops a banned member editing their way out of recognition"
+      },
+      {
+        "table": "profiles",
+        "trigger": "tr_profiles_username_policy",
+        "why": "username charset/shape backstop"
+      },
+      {
+        "table": "profiles",
+        "trigger": "trg_sync_denormalized_username",
+        "why": "keeps the copied handles honest — the impersonation fix"
+      }
     ],
     "rlsRequiredOnEveryPublicTable": true,
     "minLengthCeilings": 98,

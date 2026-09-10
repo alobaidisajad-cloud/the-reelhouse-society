@@ -2,6 +2,42 @@
 // jest.setup.ts — Global mocks for ReelHouse mobile test suite
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── THE APP'S PUBLIC CONFIG, SO A CONTRACT TEST CAN ACTUALLY RUN ────────────
+// `loungeEmbeds.contract.test.ts` proves the `profiles(...)` embeds still
+// resolve — the build-31 regression where a missing FK made every lounge read
+// return 400. It gates itself on the Supabase URL and anon key, and jest never
+// had either, so it had NEVER RUN. It reported as "skipped", which in a summary
+// of 272 passing suites reads exactly like a pass.
+//
+// Only the two EXPO_PUBLIC_ values are lifted, and only when not already set.
+// They ship inside the app bundle and are public by design. SUPABASE_DB_URL is
+// deliberately NOT read here: it is a real credential, and no unit test has any
+// business holding one.
+//
+// If neither file exists the test skips exactly as before — this makes the check
+// possible, it does not make it mandatory.
+(() => {
+  const { readFileSync, existsSync } = require('fs') as typeof import('fs');
+  const { join } = require('path') as typeof import('path');
+  const WANTED = ['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_ANON_KEY'];
+
+  for (const file of ['.env.local', '.env']) {
+    const path = join(__dirname, file);
+    if (!existsSync(path)) continue;
+    try {
+      for (const line of readFileSync(path, 'utf8').split('\n')) {
+        const eq = line.indexOf('=');
+        if (eq < 1 || line.trimStart().startsWith('#')) continue;
+        const key = line.slice(0, eq).trim();
+        if (!WANTED.includes(key) || process.env[key]) continue;
+        process.env[key] = line.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
+      }
+    } catch {
+      /* unreadable — the contract test skips itself, which it already reports */
+    }
+  }
+})();
+
 // Mock AccessibilityInfo (used by stores for announceForAccessibility)
 //
 // It MUST carry a `default`. React Native's index.js reads this module as
