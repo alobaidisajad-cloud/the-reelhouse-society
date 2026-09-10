@@ -353,6 +353,28 @@ describe('#64 · every per-member cache on disk is erased', () => {
     expect(authSrc).toMatch(/clearHandleHistory\(\)/);
     expect(authSrc).toMatch(/clearRequestedHandle\(\)/);
   });
+
+  it('and DELETING an account takes the whole install with it', () => {
+    /**
+     * A third way a session ends, and the one where leaving anything behind is
+     * least defensible: somebody asked to be erased.
+     *
+     * It already does the strongest possible thing — `storage.clearAll()` after
+     * the logout, so every key this install ever wrote goes, including drafts
+     * and any key invented later. Pinned because it is the kind of line that
+     * looks removable to somebody tidying up, and because "logout already
+     * cleared it" is only true of the keys logout knows about.
+     */
+    const settings = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'features', 'settings', 'SettingsScreen.tsx'), 'utf8',
+    ).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+    const deletion = settings.slice(settings.indexOf('completeAccountDeletion'));
+    expect(deletion).toMatch(/storage\.clearAll\(\)/);
+    // After the logout, not instead of it: the server-side request and the
+    // store teardown both have to happen first.
+    expect(deletion.indexOf('logout()')).toBeLessThan(deletion.indexOf('storage.clearAll()'));
+  });
 });
 
 /** Deep equality without pulling in a dependency. */
