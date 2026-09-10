@@ -226,7 +226,7 @@ add('p4-the-desk-already-built', (
    today; the right is the same essay with the two things nothing can set. */
 add('p5-a-dossier-today', (
   <View style={p.screen}>
-    <PaperBack label="DOSSIER" />
+    <PaperBack label="ESSAY" />
     <PaperSheet>
       <EssayHead title="What the Camera Refuses to Do" author={ANA}
         readTime="9 MIN" filed="AUGUST 26" />
@@ -237,7 +237,7 @@ add('p5-a-dossier-today', (
 
 add('p6-a-dossier-with-its-film-and-series', (
   <View style={p.screen}>
-    <PaperBack label="DOSSIER" />
+    <PaperBack label="ESSAY" />
     <PaperSheet>
       <EssayHead title="What the Camera Refuses to Do" author={ANA}
         readTime="9 MIN" filed="AUGUST 26"

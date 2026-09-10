@@ -264,7 +264,7 @@ export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomI
         {/* What is about to be written, in the words the page will print. */}
         {ready ? (
           <View style={x.confirm}>
-            <Text style={x.confirmLabel} {...decorativeTextProps}>THIS DOSSIER WILL BE FILED AS</Text>
+            <Text style={x.confirmLabel} {...decorativeTextProps}>THIS ESSAY WILL BE FILED AS</Text>
             <View style={x.confirmRow}>
               <Text style={x.confirmTitle} numberOfLines={1} {...displayTextProps}>
                 {naming ? newTitle.trim() : pick?.title}

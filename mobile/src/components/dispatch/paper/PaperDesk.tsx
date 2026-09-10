@@ -23,7 +23,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
-import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, groupDigits } from './paperMetrics';
+import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, groupDigits, nameOf } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
@@ -49,7 +49,7 @@ export const DeskHead = memo(function DeskHead({
       </PressableScale>
       <Text style={[p.chm, { color: KIND_RULE[kind.toLowerCase() as keyof typeof KIND_RULE] ?? colors.sepia }]}
         {...decorativeTextProps}>
-        {kind.toUpperCase()}
+        {nameOf(kind)}
       </Text>
       {/* FILE IT is lit only when the form is complete. A permanently bright
           confirm on an unfinished form is a button that lies about being ready. */}

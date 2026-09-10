@@ -140,7 +140,7 @@ export const PaperBallot = memo(function PaperBallot({
     <View style={p.post}>
       {/* The closing time is apparatus, so it sits alone in the head. The KIND
           is not apparatus — it belongs on the line the member reads, in its own
-          colour, exactly as TAKE, SEEKING, WIRE and DOSSIER do. Naming it in a
+          colour, exactly as TAKE, SEEKING, WIRE and ESSAY do. Naming it in a
           chip up here made it the one kind whose word was chrome. */}
       <View style={p.ballotHead}>
         <View />

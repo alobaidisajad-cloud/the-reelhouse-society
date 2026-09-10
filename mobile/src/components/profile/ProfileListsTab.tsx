@@ -181,8 +181,8 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
           <View style={s.dossierFront}>
             <LayoutList size={32} color={colors.parchment} strokeWidth={1.5} style={r.ownIcon} />
             <Text {...scaledTextProps} style={r.ownTitle}>Uncharted Stacks</Text>
-            <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/list-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Compile a dossier">
-              <Text {...scaledTextProps} style={r.ownActText}>COMPILE A DOSSIER</Text>
+            <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/list-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Compile a stack">
+              <Text {...scaledTextProps} style={r.ownActText}>COMPILE A STACK</Text>
             </PressableScale>
           </View>
         </Animated.View>

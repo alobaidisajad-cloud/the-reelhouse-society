@@ -234,7 +234,7 @@ export default function ShareToLoungeModal({
                     </View>
 
                     {dossierId ? (
-                        <Text style={s.filmLabel} numberOfLines={1}>SHARING DOSSIER: {dossierTitle?.toUpperCase()}</Text>
+                        <Text style={s.filmLabel} numberOfLines={1}>SHARING ESSAY: {dossierTitle?.toUpperCase()}</Text>
                     ) : listId ? (
                         <Text style={s.filmLabel} numberOfLines={1}>SHARING STACK: {listTitle?.toUpperCase()}</Text>
                     ) : (

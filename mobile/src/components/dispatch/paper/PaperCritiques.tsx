@@ -7,7 +7,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK } from './paperMetrics';
+import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK, nameOf } from './paperMetrics';
 import { EndMark } from './PaperFrame';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted } from './paperText';
@@ -86,10 +86,10 @@ export const CritiqueSpine = memo(function CritiqueSpine({
         style={p.spineBody} onPress={onTop} haptic="selection"
         hitSlop={{ top: 8, bottom: 8, left: 0, right: 6 }}
         accessibilityRole="button"
-        accessibilityLabel={`Back to the top of the ${kind.toLowerCase()}. ${counted(count ?? 0, 'critique', 'critiques')}.`}
+        accessibilityLabel={`Back to the top of the ${nameOf(kind).toLowerCase()}. ${counted(count ?? 0, 'critique', 'critiques')}.`}
       >
         <ChevronUp size={13} strokeWidth={2} color={colors.sepia} />
-        <Text style={p.spineKind} {...decorativeTextProps}>{kind.toUpperCase()}</Text>
+        <Text style={p.spineKind} {...decorativeTextProps}>{nameOf(kind)}</Text>
         <Text style={p.spineText} numberOfLines={1} {...scaledTextProps}>{opening}</Text>
         <Text style={p.spineCount} {...scaledTextProps}>{formatCount(count) ?? ''}</Text>
       </PressableScale>

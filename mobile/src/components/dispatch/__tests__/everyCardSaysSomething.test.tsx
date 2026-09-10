@@ -44,7 +44,7 @@ const CHROME = new Set([
   // number left the page — and if this list is not kept level with that, a
   // struck row passes the test below on its own author's name.
   'OZU', 'O', 'A MEMBER, DEPARTED', '14', '7', 'UNCOVER IT',
-  'TAKE — ', 'SEEKING — ', 'WIRE — ', 'BALLOT — ', 'DOSSIER — ',
+  'TAKE — ', 'SEEKING — ', 'WIRE — ', 'BALLOT — ', 'ESSAY — ',
 ]);
 
 const wordsOf = (node: any, out: string[] = []): string[] => {

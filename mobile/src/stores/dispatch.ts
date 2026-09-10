@@ -56,7 +56,7 @@ import {
 
 // ── THE DEPARTMENTS ─────────────────────────────────────────────────────────
 
-export const SECTIONS = ['ALL', 'TAKES', 'SEEKING', 'WIRE', 'BALLOTS', 'DOSSIER'] as const;
+export const SECTIONS = ['ALL', 'TAKES', 'SEEKING', 'WIRE', 'BALLOTS', 'ESSAYS'] as const;
 export type Section = typeof SECTIONS[number];
 export type Sort = 'LATEST' | 'CERTIFIED';
 
@@ -64,6 +64,10 @@ export type Sort = 'LATEST' | 'CERTIFIED';
  * The index says TAKES; a row says `take`. One table maps the two, so the
  * plural in the chrome and the singular in the column can never disagree.
  * ALL maps to nothing because it is the absence of a filter, not a sixth kind.
+ *
+ * ESSAYS maps to `dossier` for the same reason `KIND_NAME` exists: the column is
+ * a live value on rows already filed, and what a member reads is a separate
+ * decision from what the wire carries.
  */
 const SECTION_KIND: Record<Section, FilingKind | null> = {
   ALL: null,
@@ -71,7 +75,7 @@ const SECTION_KIND: Record<Section, FilingKind | null> = {
   SEEKING: 'seeking',
   WIRE: 'wire',
   BALLOTS: 'ballot',
-  DOSSIER: 'dossier',
+  ESSAYS: 'dossier',
 };
 
 /**

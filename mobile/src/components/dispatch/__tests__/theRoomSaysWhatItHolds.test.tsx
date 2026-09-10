@@ -33,7 +33,7 @@ describe('the picker admits the one slot', () => {
     expect(getByText('IN PROGRESS')).toBeTruthy();
     // And a screen reader hears it as part of the row rather than as a stray
     // label after it.
-    expect(getByLabelText(/DOSSIER\. One in progress\./)).toBeTruthy();
+    expect(getByLabelText(/ESSAY\. One in progress\./)).toBeTruthy();
   });
 
   it('says nothing when there is nothing unfinished', () => {
@@ -47,7 +47,7 @@ describe('the picker admits the one slot', () => {
     const { getByLabelText } = render(
       <PaperPicker forms={FORMS.map((f) => ({ ...f, locked: true, inProgress: true }))} />,
     );
-    expect(getByLabelText(/DOSSIER\. Auteurs only\./)).toBeTruthy();
+    expect(getByLabelText(/ESSAY\. Auteurs only\./)).toBeTruthy();
   });
 
   it('still opens the form it names', async () => {
@@ -58,7 +58,7 @@ describe('the picker admits the one slot', () => {
         onPick={onPick}
       />,
     );
-    await act(async () => { fireEvent.press(getByLabelText(/DOSSIER\. One in progress\./)); });
+    await act(async () => { fireEvent.press(getByLabelText(/ESSAY\. One in progress\./)); });
     expect(onPick).toHaveBeenCalledWith('dossier');
   });
 });

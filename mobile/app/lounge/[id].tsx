@@ -3,6 +3,7 @@ import { ActionSheet } from '@/src/components/lounge/ActionSheet';
 import { AtTheDoorPanel } from '@/src/components/lounge/AtTheDoorPanel';
 import { LoungeSettingsPanel } from '@/src/components/lounge/LoungeSettingsPanel';
 import { REACTION_META } from '@/src/components/lounge/reactions';
+import { KIND_NAME, nameOf } from '@/src/components/dispatch/paper/paperMetrics';
 import { MasterLogo } from '@/src/components/MasterLogo';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
@@ -75,14 +76,15 @@ function renderBody(content: string) {
 }
 
 // ════════════════════════════════════════════════════════════
-// SHARED CONTENT CARD — the clipping (film / record / stack / dossier)
+// SHARED CONTENT CARD — the clipping (film / record / stack / essay)
 // Every clipping is a door: tap opens the thing itself.
 // ════════════════════════════════════════════════════════════
 const SHARE_LABELS: Record<string, string> = {
   film_share: 'FILM',
   log_share: 'LOG',
   list_share: 'STACK',
-  dossier_share: 'DOSSIER',
+  // The message type is the wire's word and stays; the label is the reader's.
+  dossier_share: KIND_NAME.dossier,
 };
 
 const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
@@ -98,8 +100,8 @@ const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
   // The Dispatch shares five kinds of filing down the `dossier_share` path —
   // the type and the metadata key stay put so the messages already in every room
   // keep working — so the LABEL comes from the metadata when it is there. A take
-  // shared into a salon used to announce itself as a DOSSIER.
-  const sharedKind = typeof meta.kind === 'string' ? meta.kind.toUpperCase() : null;
+  // shared into a salon used to announce itself as the long form.
+  const sharedKind = typeof meta.kind === 'string' ? nameOf(meta.kind) : null;
   const typeLabel = sharedKind
     ?? SHARE_LABELS[msg.type]
     ?? msg.type.toUpperCase().replace('_SHARE', '');

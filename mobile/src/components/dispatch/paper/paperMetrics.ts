@@ -308,6 +308,43 @@ export const KIND_RULE = {
 } as const;
 
 /**
+ * ── THE WIRE'S WORD IS NOT THE PRINTED WORD ──────────────────────────────────
+ * `kind` is a COLUMN VALUE — five lowercase tokens that live rows already carry,
+ * and renaming one would mean rewriting every row that has it. What a member
+ * READS is a separate decision, and until this table existed it was not one:
+ * six screens printed `kind.toUpperCase()` straight onto the page, so the
+ * database's vocabulary silently WAS the app's vocabulary. The long form was
+ * called a dossier because the column happened to say so.
+ *
+ * It is not one. A dossier is a file compiled ABOUT a subject — which is exactly
+ * what a member's profile is, what a film's panel is, and what a person's
+ * biography is, and all three keep the word. The long form is an argument
+ * somebody wrote, which is an ESSAY — the word every module that builds it has
+ * always used: `PaperEssay`, `EssayHead`, `EssayBody`, `EssayNext`, `SeriesList`,
+ * `MAX_LENGTHS.filingEssay`. The label was the only part that disagreed.
+ *
+ * So the two vocabularies are bound here and nothing prints a kind any other
+ * way. `noRawKindOnThePage.test.ts` refuses a bare `kind.toUpperCase()` in a
+ * member-facing position, because that is precisely how the drift started.
+ */
+export const KIND_NAME = {
+  take: 'TAKE',
+  seeking: 'SEEKING',
+  wire: 'WIRE',
+  ballot: 'BALLOT',
+  dossier: 'ESSAY',
+} as const;
+
+/**
+ * The printed name for a kind that arrives as a plain `string` — which is how
+ * the two desks and the lounge receive it. An unknown kind falls back to its own
+ * word rather than to nothing: a card that prints an odd label is recoverable, a
+ * card whose lead-in is blank is not.
+ */
+export const nameOf = (kind: string): string =>
+  KIND_NAME[kind.toLowerCase() as keyof typeof KIND_NAME] ?? kind.toUpperCase();
+
+/**
  * ── THE COLOUR BELONGS TO THE WORD ───────────────────────────────────────────
  * I first hung these on a rule beside each post — a stripe you had to learn.
  * The Darkroom already solved this properly: tap a mood and the MOOD ITSELF is
@@ -338,7 +375,7 @@ export const SECTION_COLOR: Record<string, string> = {
   SEEKING: KIND_RULE.seeking,
   WIRE: KIND_RULE.wire,
   BALLOTS: KIND_RULE.ballot,
-  DOSSIER: KIND_RULE.dossier,
+  ESSAYS: KIND_RULE.dossier,
 };
 
 /** `12` · `1.2K` · `1M` — and nothing at all at zero, which is the point. */

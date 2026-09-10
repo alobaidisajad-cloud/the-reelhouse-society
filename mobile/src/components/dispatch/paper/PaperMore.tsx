@@ -20,7 +20,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
-import { KIND_RULE, MARGIN_W, RULE_W, RULE_GAP, CRIMSON_INK, UNSPOKEN, AVATAR } from './paperMetrics';
+import { KIND_RULE, KIND_NAME, MARGIN_W, RULE_W, RULE_GAP, CRIMSON_INK, UNSPOKEN, AVATAR, nameOf } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { MS, PILL_Y } from './paperMotion';
 import { Byline, initialOf, type PaperAuthor, type PaperFilm } from './PaperPost';
@@ -62,7 +62,7 @@ export const FORMS: Form[] = [
   { kind: 'seeking', name: 'SEEKING', line: 'Ask the house what to watch tonight.' },
   { kind: 'wire', name: 'WIRE', line: 'News from elsewhere, carrying its source.' },
   { kind: 'ballot', name: 'BALLOT', line: 'Put a question to the house. Two to six films.', locked: true },
-  { kind: 'dossier', name: 'DOSSIER', line: 'An essay, at length, in parts if you like.', locked: true },
+  { kind: 'dossier', name: KIND_NAME.dossier, line: 'The long form. In parts, if you like.', locked: true },
 ];
 
 export const PaperPicker = memo(function PaperPicker({
@@ -282,7 +282,7 @@ export const CLAUSES: [string, string][] = [
   ['VI', 'What you keep is yours and is never shown, finished or not. What you file is the house’s and is.'],
   ['VII', 'A ballot is secret until it closes. Not even the house counts it early.'],
   ['VIII', 'Nothing filed is destroyed. A filing may be withdrawn, and the critiques written under it stand.'],
-  ['IX', 'The long forms — the dossier, the ballot — are an Auteur’s to file.'],
+  ['IX', 'The long forms — the essay, the ballot — are an Auteur’s to file.'],
 ];
 
 export const PaperRules = memo(function PaperRules() {
@@ -553,7 +553,7 @@ export const PaperCase = memo(function PaperCase({
             {reasons.toUpperCase()}
           </Text>
           <Text style={m.caseBody} numberOfLines={3} {...scaledTextProps}>
-            <Text style={[p.leadIn, LEAD_STYLE[kind]]}>{kind.toUpperCase()} — </Text>
+            <Text style={[p.leadIn, LEAD_STYLE[kind]]}>{nameOf(kind)} — </Text>
             {body}
           </Text>
           <View style={{ marginTop: 8 }}>
@@ -906,7 +906,7 @@ export const DossierShareCard = memo(function DossierShareCard({
             A clipping cut out of a newspaper never told you how long it would
             take. The nameplate carries the date; this line carries the kind. */}
         <Text style={m.shareKind} {...decorativeTextProps}>
-          <Text style={LEAD_STYLE.dossier}>DOSSIER</Text>
+          <Text style={LEAD_STYLE.dossier}>{KIND_NAME.dossier}</Text>
         </Text>
 
         {/* The size is COMPUTED, not negotiated. `adjustsFontSizeToFit` is the
@@ -1070,22 +1070,22 @@ export const LoungeCard = memo(function LoungeCard({
   return (
     <PressableScale style={m.bubble} haptic="selection" pressedScale={0.98} onPress={onOpen}
       accessibilityRole="button"
-      accessibilityLabel={`Open this ${kind}${title ? `: ${title}` : ''}${author ? `, by ${author.name}` : ''}`}>
+      accessibilityLabel={`Open this ${nameOf(kind).toLowerCase()}${title ? `: ${title}` : ''}${author ? `, by ${author.name}` : ''}`}>
       <View style={[m.loungeRule, { backgroundColor: ink }]} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        {/* A dossier leads with its name, on its own line, in the display face —
+        {/* An essay leads with its name, on its own line, in the display face —
             the same way it leads on the page and on the share card. */}
         {kind === 'dossier' && title ? (
           <>
             <Text style={[p.leadIn, m.loungeKind, { color: ink }]} {...decorativeTextProps}>
-              DOSSIER
+              {KIND_NAME.dossier}
             </Text>
             <Text style={m.loungeTitle} numberOfLines={2} {...scaledTextProps}>{title}</Text>
             <Text style={m.loungeBody} numberOfLines={2} {...scaledTextProps}>{body}</Text>
           </>
         ) : (
           <Text style={m.loungeBody} numberOfLines={3} {...scaledTextProps}>
-            <Text style={[p.leadIn, { fontSize: 8.5, color: ink }]}>{kind.toUpperCase()} — </Text>
+            <Text style={[p.leadIn, { fontSize: 8.5, color: ink }]}>{nameOf(kind)} — </Text>
             {body}
           </Text>
         )}

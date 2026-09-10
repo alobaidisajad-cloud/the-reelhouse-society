@@ -39,7 +39,7 @@ import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { DossierShareCard, PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { measure } from '@/src/components/dispatch/paper/paperMetrics';
+import { measure, KIND_NAME } from '@/src/components/dispatch/paper/paperMetrics';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { useAuthStore } from '@/src/stores/auth';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
@@ -323,7 +323,7 @@ export default function FilingReader() {
           return;
         }
         if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: live.title ?? 'A dossier' });
+          await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: live.title ?? 'An essay' });
           return;
         }
         await Share.share({ message: `${live.title ?? ''}\n\n${link}` });
@@ -497,7 +497,7 @@ export default function FilingReader() {
   const more = me ? openMore : undefined;
 
   const head = live.kind === 'dossier'
-    ? <PaperBack label="DOSSIER" onBack={() => nav.back()} onMore={more} />
+    ? <PaperBack label={KIND_NAME.dossier} onBack={() => nav.back()} onMore={more} />
     : (
       <CritiqueSpine
         kind={live.kind}

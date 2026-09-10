@@ -77,7 +77,7 @@ describe('describeGroup — the copy the old code got wrong', () => {
   it('names the right noun for each kind', () => {
     expect(describeGroup(4, 'log', 'Metropolis')).toBe('4 members certified your log of Metropolis');
     expect(describeGroup(4, 'list', 'Comfort movies')).toBe('4 members certified your stack “Comfort movies”');
-    expect(describeGroup(4, 'dossier', 'On Noir')).toBe('4 members certified your dossier “On Noir”');
+    expect(describeGroup(4, 'dossier', 'On Noir')).toBe('4 members certified your essay “On Noir”');
   });
 
   it('never renders "your review of your review"', () => {
@@ -141,10 +141,17 @@ describe('groupNotifications end to end', () => {
     }
   });
 
-  it('dossiers group too', () => {
+  it('essays group too — under a key that still says dossier', () => {
+    // The group KEY is the column value and does not move; the SENTENCE is the
+    // printed name. Both are asserted here because this is the one place they
+    // sit side by side, and confusing them is how the app came to call an essay
+    // a dossier in the first place. See `oneWordNamesOneThing.test.ts`.
     const items = groupNotifications(three('endorse:dossier:D1', 'On Noir'), NOW);
     expect(items).toHaveLength(1);
-    if (items[0].kind === 'group') expect(items[0].message).toContain('dossier');
+    if (items[0].kind === 'group') {
+      expect(items[0].message).toContain('essay');
+      expect(items[0].message).not.toContain('dossier');
+    }
   });
 
   it('different targets never merge, even at the same moment', () => {

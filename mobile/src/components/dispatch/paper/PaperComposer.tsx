@@ -7,7 +7,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, nameOf } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { Credit, initialOf, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -94,7 +94,7 @@ export const PaperComposer = memo(function PaperComposer({
         <PressableScale onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
           <Text style={p.chs} {...scaledTextProps}>BACK</Text>
         </PressableScale>
-        <Text style={p.chm} {...decorativeTextProps}>{kind.toUpperCase()}</Text>
+        <Text style={p.chm} {...decorativeTextProps}>{nameOf(kind)}</Text>
         {/* Lit only when the form is ready. A permanently bright confirm on an
             unfinished draft is a button that lies about being ready — the same
             rule DeskHead already follows, applied here so the two desks agree. */}
@@ -195,7 +195,7 @@ export const PaperComposer = memo(function PaperComposer({
                   // sentence and then say it is over by how much — a field that
                   // silently stops accepting characters mid-word is how the
                   // dossier composer used to destroy a draft.
-                  accessibilityLabel={`Your ${kind}`}
+                  accessibilityLabel={`Your ${nameOf(kind).toLowerCase()}`}
                   {...scaledTextProps}
                 />
               ) : (

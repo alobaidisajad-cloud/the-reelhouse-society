@@ -338,7 +338,7 @@ add('b1-the-room-opens', (
     <View style={[p.deskDoc, { paddingTop: 20 }]}>
       <Head />
       <Text style={{ fontFamily: fonts.display, fontSize: 21, lineHeight: 27, color: colors.fog }}
-        {...displayTextProps}>A title for this dossier</Text>
+        {...displayTextProps}>A title for this essay</Text>
       <View style={{ marginTop: 10, marginBottom: 4 }}>
         <Slot label="FILM" value="Name the film this is about" />
         <Slot label="SERIES" value="Part of a series?" />
@@ -569,7 +569,7 @@ add('d1-the-series-sheet', (
       <View style={{ marginTop: 16, borderWidth: 1, borderColor: 'rgba(184,137,26,0.30)',
         paddingHorizontal: 12, paddingVertical: 11 }}>
         <Text style={{ fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.8, color: colors.sepia,
-          marginBottom: 6 }} {...decorativeTextProps}>THIS DOSSIER WILL BE FILED AS</Text>
+          marginBottom: 6 }} {...decorativeTextProps}>THIS ESSAY WILL BE FILED AS</Text>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
           <Text style={{ fontFamily: fonts.display, fontSize: 15, color: colors.parchmentBright,
             flex: 1 }} numberOfLines={1} {...displayTextProps}>Ozu, in Four Parts</Text>

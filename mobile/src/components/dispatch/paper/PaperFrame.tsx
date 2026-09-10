@@ -10,7 +10,7 @@ import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/co
 import { p } from './paperStyles';
 import { SKELETON_COUNT, PAPER_MAX, folioOf, issueOf, SECTION_COLOR, UNSPOKEN } from './paperMetrics';
 
-export const SECTIONS = ['ALL', 'TAKES', 'SEEKING', 'WIRE', 'BALLOTS', 'DOSSIER'] as const;
+export const SECTIONS = ['ALL', 'TAKES', 'SEEKING', 'WIRE', 'BALLOTS', 'ESSAYS'] as const;
 export type PaperSection = typeof SECTIONS[number];
 
 /**
@@ -90,10 +90,10 @@ export const PaperChrome = memo(function PaperChrome({
             was a plain View. Nothing scrolled.
 
             At normal type all six departments fit, so it never showed. At 1.35
-            the row overflows by 5.2pt, measured across all 66 screens, and
-            DOSSIER is cut against the tools: a member who turns type up loses a
-            whole department and has no way to reach it — a dead end that only
-            appears for the people most likely to hit it.
+            the row overflows by 5.2pt, measured across all 66 screens, and the
+            last department is cut against the tools: a member who turns type up
+            loses a whole department and has no way to reach it — a dead end that
+            only appears for the people most likely to hit it.
 
             `alwaysBounceHorizontal` off, so a row that DOES fit does not rubber
             band and imply there is something past the end. */}

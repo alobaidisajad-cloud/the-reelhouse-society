@@ -84,15 +84,14 @@ const EMPTY: Record<Section, { title: string; body: string; action?: string }> =
     title: 'No ballot is open.',
     body: 'Auteurs call the votes. When one opens, the whole house marks it.',
   },
-  DOSSIER: {
-    // The FORM's name, because this is a heading for the DOSSIER department and
-    // every label, button and toast in the app says dossier. "Essay" is the word
-    // for describing what one IS, in a sentence — which is exactly what the line
-    // below does, and what the picker's own row does. Measured across the app:
-    // 60 member-facing uses of dossier, 4 of essay, and this heading was one of
-    // two that broke the rule.
-    title: 'No dossiers yet.',
-    body: 'The long form — an essay, at length. Auteurs file these, and the house reads them.',
+  ESSAYS: {
+    // The department's name, which is the FORM's name — see `KIND_NAME`. The
+    // column still says `dossier` and always will; a dossier is a file compiled
+    // about a subject, which is what the profile, the film panel and a person's
+    // biography are. This is somebody's argument, at length, and the word for
+    // that is an essay.
+    title: 'No essays yet.',
+    body: 'The long form, at length. Auteurs file these, and the house reads them.',
   },
 };
 
@@ -387,7 +386,7 @@ export default function DispatchScreen() {
                     onAction={openCompose}
                   />
                 ) : (
-                  // BALLOTS and DOSSIER are AUTEURS-only to file. Offering the
+                  // BALLOTS and ESSAYS are AUTEURS-only to file. Offering the
                   // act to somebody the door will refuse is a button that exists
                   // to say no, so the quiet line explains instead — and it is a
                   // link, because "what an auteur can do" is a real page.

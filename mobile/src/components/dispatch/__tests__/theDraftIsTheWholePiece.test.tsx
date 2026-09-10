@@ -181,7 +181,7 @@ describe('the room says what it found', () => {
     expect(getByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeTruthy();
 
     await act(async () => {
-      fireEvent.changeText(getByLabelText('Dossier content body'), 'y and more');
+      fireEvent.changeText(getByLabelText('Essay content body'), 'y and more');
     });
     expect(queryByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeNull();
   });

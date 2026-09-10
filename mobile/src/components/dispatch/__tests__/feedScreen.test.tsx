@@ -274,7 +274,7 @@ describe('the Dispatch feed', () => {
     // likely to need larger type.
     put({ filings: [filing()] });
     const { getByLabelText } = await mount();
-    for (const s of ['ALL', 'TAKES', 'SEEKING', 'WIRE', 'BALLOTS', 'DOSSIER']) {
+    for (const s of ['ALL', 'TAKES', 'SEEKING', 'WIRE', 'BALLOTS', 'ESSAYS']) {
       expect(getByLabelText(`${s} section`)).toBeTruthy();
     }
 
@@ -353,7 +353,7 @@ describe('an empty page, in every shape it takes', () => {
     // The FORM's name. A heading takes the label the app uses everywhere else —
     // "essay" is the word for describing what a dossier is, in a sentence, and
     // the line under this heading is where that belongs.
-    ['DOSSIER', 'No dossiers yet.'],
+    ['ESSAYS', 'No essays yet.'],
   ] as const) {
     it(`${section} — offers no act the door would refuse, and explains instead`, async () => {
       // These two are AUTEURS-only to file. A button that exists to say no is

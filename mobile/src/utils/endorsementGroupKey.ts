@@ -88,7 +88,10 @@ export function describeGroup(count: number, kind: EndorseKind, title?: string):
       // a ballot it does.
       return named ? `${people} certified your filing “${named}”` : `${people} certified your filing`;
     case 'dossier':
-      return named ? `${people} certified your dossier “${named}”` : `${people} certified your dossier`;
+      // `dossier` is the group KEY — a column value — and `essay` is the word.
+      // The server's `dispatch_names()` says the same thing for the ungrouped
+      // line, so a group and the notices it collapses cannot read differently.
+      return named ? `${people} certified your essay “${named}”` : `${people} certified your essay`;
     case 'log':
     default:
       return named ? `${people} certified your log of ${named}` : `${people} certified your log`;

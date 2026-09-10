@@ -1107,7 +1107,7 @@ add('f8-lounge-card', (
 // ══ H · THE ESSAY, AND THE FORMS THAT HAD NO DESK ═══════════════════════════
 add('h1-essay-read', (
   <View style={p.screen}>
-    <PaperBack label="DOSSIER" />
+    <PaperBack label="ESSAY" />
     <PaperSheet>
       <EssayHead title="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
         author={ANA} readTime="12 MIN" filed="AUGUST 24" film={TOKYO} />
@@ -1143,7 +1143,7 @@ add('h1-essay-read', (
  */
 add('h1b-essay-markdown', (
   <View style={p.screen}>
-    <PaperBack label="DOSSIER" />
+    <PaperBack label="ESSAY" />
     <PaperSheet>
       <EssayHead title="What the Camera Refuses to Do" author={ANA}
         readTime="9 MIN" filed="AUGUST 26" />
@@ -1424,7 +1424,7 @@ add('d2-composer-seeking', (
  */
 add('t5-se-reader', (
   <View style={[p.screen, { width: SE }]}>
-    <PaperBack label="DOSSIER" onMore={NOOP} />
+    <PaperBack label="ESSAY" onMore={NOOP} />
     <PaperSheet>
       <EssayHead title="The Long Silence in Ozu, and What the House Remembers"
         series="Part II of Ozu, in four parts"

@@ -593,10 +593,15 @@ $$;
 CREATE FUNCTION public.dispatch_names(p_kind text, p_title text) RETURNS text
     LANGUAGE sql IMMUTABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT 'your ' || coalesce(p_kind, 'filing')
-      || CASE WHEN btrim(coalesce(p_title,'')) = '' THEN ''
-              ELSE ' “' || btrim(p_title) || '”' END;
+    AS $$
+  SELECT 'your '
+      || CASE lower(btrim(coalesce(p_kind, '')))
+           WHEN 'dossier' THEN 'essay'
+           WHEN ''        THEN 'filing'
+           ELSE lower(btrim(p_kind))
+         END
+      || CASE WHEN btrim(coalesce(p_title, '')) = '' THEN ''
+              ELSE ' “' || btrim(p_title) || '”' END;
 $$;
 
 

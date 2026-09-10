@@ -162,7 +162,7 @@ describe('the door', () => {
   it('asks which form when no kind is chosen', () => {
     const { getByText } = render(<ComposeScreen />);
     expect(getByText('TAKE')).toBeTruthy();
-    expect(getByText('DOSSIER')).toBeTruthy();
+    expect(getByText('ESSAY')).toBeTruthy();
   });
 
   it('turns a member without the tier away at the route, not at the desk', async () => {
@@ -175,7 +175,7 @@ describe('the door', () => {
     await flush();
     // In the house's own words, and naming the FORM. "Auteur tier required" is
     // a settings screen talking about a subscription.
-    expect(mockToast.error).toHaveBeenCalledWith('The dossier is an Auteur’s to file.');
+    expect(mockToast.error).toHaveBeenCalledWith('The essay is an Auteur’s to file.');
   });
 
   it('and tells a LAPSED Auteur their unfinished one is kept', async () => {
@@ -190,7 +190,7 @@ describe('the door', () => {
     at({ kind: 'dossier' });
     render(<ComposeScreen />);
     await flush();
-    expect(mockToast.error).toHaveBeenCalledWith('The dossier is an Auteur’s. Your unfinished one is kept.');
+    expect(mockToast.error).toHaveBeenCalledWith('The essay is an Auteur’s. Your unfinished one is kept.');
   });
 });
 
@@ -199,7 +199,7 @@ describe('the writing room', () => {
 
   it('writes the draft to storage as you type', async () => {
     const { getByLabelText } = open();
-    await type(getByLabelText("Dossier headline"), 'The Empty Room');
+    await type(getByLabelText("Essay headline"), 'The Empty Room');
     await act(async () => { jest.advanceTimersByTime(1200); });
     expect(JSON.parse(mockStore.get(DRAFT_KEY)!).data.title).toBe('The Empty Room');
   });
@@ -214,26 +214,26 @@ describe('the writing room', () => {
   it('survives a corrupt draft rather than refusing to open', async () => {
     mockStore.set(DRAFT_KEY, 'not json at all');
     const { getByLabelText } = open();
-    expect(getByLabelText("Dossier headline")).toBeTruthy();
+    expect(getByLabelText("Essay headline")).toBeTruthy();
   });
 
   it('clears the draft when the room is emptied', async () => {
     mockStore.set(DRAFT_KEY, JSON.stringify({ title: 'x', content: 'y' }));
     const { getByLabelText } = open();
-    await type(getByLabelText("Dossier headline"), '');
-    await type(getByLabelText("Dossier content body"), '');
+    await type(getByLabelText("Essay headline"), '');
+    await type(getByLabelText("Essay content body"), '');
     await act(async () => { jest.advanceTimersByTime(1200); });
     expect(mockStore.has(DRAFT_KEY)).toBe(false);
   });
 
   it('files the essay, and only then throws the draft away', async () => {
     const { getByLabelText } = open();
-    await type(getByLabelText("Dossier headline"), 'The Empty Room');
-    await type(getByLabelText("Dossier content body"), 'Ozu frames a room and then leaves it.');
+    await type(getByLabelText("Essay headline"), 'The Empty Room');
+    await type(getByLabelText("Essay content body"), 'Ozu frames a room and then leaves it.');
     await act(async () => { jest.advanceTimersByTime(1200); });
     expect(mockStore.has(DRAFT_KEY)).toBe(true);
 
-    await press(getByLabelText('File the dossier'));
+    await press(getByLabelText('File the essay'));
     await flush();
 
     expect(mockFiled).toHaveLength(1);
@@ -248,11 +248,11 @@ describe('the writing room', () => {
     // on the strength of a write that did not land.
     mockFileFails = true;
     const { getByLabelText } = open();
-    await type(getByLabelText("Dossier headline"), 'The Empty Room');
-    await type(getByLabelText("Dossier content body"), 'The opening line.');
+    await type(getByLabelText("Essay headline"), 'The Empty Room');
+    await type(getByLabelText("Essay content body"), 'The opening line.');
     await act(async () => { jest.advanceTimersByTime(1200); });
 
-    await press(getByLabelText('File the dossier'));
+    await press(getByLabelText('File the essay'));
     await flush();
 
     expect(mockStore.has(DRAFT_KEY)).toBe(true);
@@ -263,20 +263,20 @@ describe('the writing room', () => {
     const { getByLabelText } = open();
     expect(getByLabelText(/Not ready yet/).props.accessibilityState.disabled).toBe(true);
 
-    await type(getByLabelText("Dossier headline"), 'The Empty Room');
+    await type(getByLabelText("Essay headline"), 'The Empty Room');
     expect(getByLabelText(/Not ready yet/).props.accessibilityState.disabled).toBe(true);
 
-    await type(getByLabelText("Dossier content body"), 'The opening line.');
-    expect(getByLabelText('File the dossier').props.accessibilityState.disabled).toBe(false);
+    await type(getByLabelText("Essay content body"), 'The opening line.');
+    expect(getByLabelText('File the essay').props.accessibilityState.disabled).toBe(false);
   });
 
   it('refuses an over-length essay before touching anything', async () => {
     const { getByLabelText } = open();
-    await type(getByLabelText("Dossier headline"), 'Too Long');
-    await type(getByLabelText("Dossier content body"), 'x'.repeat(25001));
+    await type(getByLabelText("Essay headline"), 'Too Long');
+    await type(getByLabelText("Essay content body"), 'x'.repeat(25001));
     await act(async () => { jest.advanceTimersByTime(1200); });
 
-    await press(getByLabelText('File the dossier'));
+    await press(getByLabelText('File the essay'));
     await flush();
 
     // Nothing written, nothing deleted, and the member told by how much.
@@ -287,17 +287,17 @@ describe('the writing room', () => {
 
   it('shows the counter only near the fence', async () => {
     const { getByLabelText, queryByText } = open();
-    await type(getByLabelText("Dossier content body"), 'A short opening.');
+    await type(getByLabelText("Essay content body"), 'A short opening.');
     expect(queryByText(/LEFT/)).toBeNull();
 
-    await type(getByLabelText("Dossier content body"), 'x'.repeat(21000));
+    await type(getByLabelText("Essay content body"), 'x'.repeat(21000));
     expect(queryByText(/LEFT/)).toBeTruthy();
   });
 
   it('switches between writing and reading it back', async () => {
     const { getByLabelText } = open();
-    await type(getByLabelText("Dossier content body"), 'Ozu frames a room.');
-    await press(getByLabelText('Preview the dossier'));
+    await type(getByLabelText("Essay content body"), 'Ozu frames a room.');
+    await press(getByLabelText('Preview the essay'));
     expect(getByLabelText('Back to editing')).toBeTruthy();
   });
 });
@@ -332,8 +332,8 @@ describe('an evening of writing survives the app going away', () => {
     // essay.
     at({ kind: 'dossier' });
     const { getByLabelText } = render(<ComposeScreen />);
-    await type(getByLabelText('Dossier headline'), 'The Empty Room');
-    await type(getByLabelText('Dossier content body'), 'The very last sentence.');
+    await type(getByLabelText('Essay headline'), 'The Empty Room');
+    await type(getByLabelText('Essay content body'), 'The very last sentence.');
 
     // Straight to background, with no time for the timer.
     await act(async () => { mockAppState.fire('background'); });
@@ -357,7 +357,7 @@ describe('an evening of writing survives the app going away', () => {
   it('does not flush while the app is still in front', async () => {
     at({ kind: 'dossier' });
     const { getByLabelText } = render(<ComposeScreen />);
-    await type(getByLabelText('Dossier headline'), 'Still writing');
+    await type(getByLabelText('Essay headline'), 'Still writing');
     await act(async () => { mockAppState.fire('active'); });
     expect(mockStore.has(DRAFT_KEY)).toBe(false);
   });
@@ -368,7 +368,7 @@ describe('the formatting toolbar', () => {
 
   it('wraps the selection, and leaves the caret after it', async () => {
     const { getByLabelText } = open();
-    const body = getByLabelText('Dossier content body');
+    const body = getByLabelText('Essay content body');
     await type(body, 'Ozu frames a room.');
 
     // The member selects "Ozu" and presses Bold.
@@ -377,22 +377,22 @@ describe('the formatting toolbar', () => {
     });
     await press(getByLabelText('Bold'));
 
-    expect(getByLabelText('Dossier content body').props.value).toBe('**Ozu** frames a room.');
+    expect(getByLabelText('Essay content body').props.value).toBe('**Ozu** frames a room.');
   });
 
   it('puts the caret BETWEEN the marks when nothing is selected', async () => {
     // Pressing Bold with no selection should leave somebody ready to type
     // inside the emphasis, not after it.
     const { getByLabelText } = open();
-    const body = getByLabelText('Dossier content body');
+    const body = getByLabelText('Essay content body');
     await type(body, 'Ozu');
     await act(async () => {
       fireEvent(body, 'selectionChange', { nativeEvent: { selection: { start: 3, end: 3 } } });
     });
     await press(getByLabelText('Italic'));
 
-    expect(getByLabelText('Dossier content body').props.value).toBe('Ozu**');
-    expect(getByLabelText('Dossier content body').props.selection).toEqual({ start: 4, end: 4 });
+    expect(getByLabelText('Essay content body').props.value).toBe('Ozu**');
+    expect(getByLabelText('Essay content body').props.selection).toEqual({ start: 4, end: 4 });
   });
 
   it('carries every mark the desk offers', async () => {
@@ -412,13 +412,13 @@ describe('leaving the room', () => {
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
     );
     const { getByLabelText } = open();
-    await type(getByLabelText('Dossier content body'), 'An opening line.');
+    await type(getByLabelText('Essay content body'), 'An opening line.');
     await press(getByLabelText(/Cancel/));
 
     // The form's own name, not "Draft" — the app says DOSSIER on every label and
     // button, and a member reads "Discard Draft?" as a fourth word for a thing
     // that already has one.
-    expect(alerts[0][0]).toBe('Discard this dossier?');
+    expect(alerts[0][0]).toBe('Discard this essay?');
     spy.mockRestore();
   });
 
@@ -438,7 +438,7 @@ describe('leaving the room', () => {
     }) as never);
 
     const { getByLabelText } = open();
-    await type(getByLabelText('Dossier content body'), 'Four thousand words.');
+    await type(getByLabelText('Essay content body'), 'Four thousand words.');
     await act(async () => { jest.advanceTimersByTime(1200); });
     await press(getByLabelText(/Cancel/));
 
@@ -474,8 +474,8 @@ describe('amending a dossier that already exists', () => {
 
   it('amends rather than filing a second one', async () => {
     const { getByLabelText } = openEdit();
-    await type(getByLabelText("Dossier content body"), 'The second version.');
-    await press(getByLabelText('Re-file the dossier'));
+    await type(getByLabelText("Essay content body"), 'The second version.');
+    await press(getByLabelText('Re-file the essay'));
     await flush();
 
     expect(mockFiled).toHaveLength(0);
@@ -492,12 +492,12 @@ describe('amending a dossier that already exists', () => {
       data: { title: 'Unfinished', content: 'Elsewhere.' },
     }));
     const { getByLabelText } = openEdit();
-    await type(getByLabelText("Dossier content body"), 'The second version.');
+    await type(getByLabelText("Essay content body"), 'The second version.');
     await act(async () => { jest.advanceTimersByTime(1200); });
 
     expect(JSON.parse(mockStore.get(DRAFT_KEY)!).data.title).toBe('Unfinished');
 
-    await press(getByLabelText('Re-file the dossier'));
+    await press(getByLabelText('Re-file the essay'));
     await flush();
     expect(mockStore.has(DRAFT_KEY)).toBe(true);
   });
@@ -520,12 +520,12 @@ describe('the tools that edit what the member wrote', () => {
 
   const write = async (r: ReturnType<typeof render>, text: string) => {
     await act(async () => {
-      fireEvent.changeText(r.getByLabelText('Dossier content body'), text);
+      fireEvent.changeText(r.getByLabelText('Essay content body'), text);
     });
   };
   const selectRange = async (r: ReturnType<typeof render>, start: number, end: number) => {
     await act(async () => {
-      fireEvent(r.getByLabelText('Dossier content body'), 'selectionChange', {
+      fireEvent(r.getByLabelText('Essay content body'), 'selectionChange', {
         nativeEvent: { selection: { start, end } },
       });
     });
@@ -534,7 +534,7 @@ describe('the tools that edit what the member wrote', () => {
     await act(async () => { fireEvent.press(r.getByLabelText(label)); });
   };
   const textNow = (r: ReturnType<typeof render>) =>
-    r.getByLabelText('Dossier content body').props.value;
+    r.getByLabelText('Essay content body').props.value;
 
   const TOOLS: [string, string, string][] = [
     ['Bold', '**', '**'],
@@ -562,7 +562,7 @@ describe('the tools that edit what the member wrote', () => {
       await selectRange(r, 1, 1);
       await tap(r, label);
       expect(textNow(r)).toBe(`A${before}${after}B`);
-      expect(r.getByLabelText('Dossier content body').props.selection)
+      expect(r.getByLabelText('Essay content body').props.selection)
         .toEqual({ start: 1 + before.length, end: 1 + before.length });
     });
   }
@@ -572,7 +572,7 @@ describe('the tools that edit what the member wrote', () => {
     await write(r, 'Ozu');
     await selectRange(r, 0, 3);
     await tap(r, 'Bold');
-    expect(r.getByLabelText('Dossier content body').props.selection)
+    expect(r.getByLabelText('Essay content body').props.selection)
       .toEqual({ start: 7, end: 7 }); // ** + Ozu + ** === 7
   });
 
@@ -584,8 +584,8 @@ describe('the tools that edit what the member wrote', () => {
     await write(r, 'Ozu');
     await selectRange(r, 0, 3);
     await tap(r, 'Bold');
-    expect(r.getByLabelText('Dossier content body').props.selection).toBeTruthy();
+    expect(r.getByLabelText('Essay content body').props.selection).toBeTruthy();
     await selectRange(r, 1, 1);
-    expect(r.getByLabelText('Dossier content body').props.selection).toBeUndefined();
+    expect(r.getByLabelText('Essay content body').props.selection).toBeUndefined();
   });
 });

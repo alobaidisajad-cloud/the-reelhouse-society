@@ -24,7 +24,7 @@ import { render } from '@testing-library/react-native';
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { PaperBallot, shares } from '@/src/components/dispatch/paper/PaperBallot';
 import { counted } from '@/src/components/dispatch/paper/paperText';
-import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
+import { formatCount, KIND_NAME } from '@/src/components/dispatch/paper/paperMetrics';
 
 const author = { name: 'ozu', memberNo: 7, tier: 'free' as const, avatar: null };
 
@@ -74,10 +74,15 @@ describe('a ballot in the feed', () => {
   it('every kind the type allows draws its own words', () => {
     // Enumerated from the union, not hand-listed, so a sixth kind added later
     // cannot quietly repeat this.
+    //
+    // The lead-in is the kind's PRINTED name, which is not its column value —
+    // `dossier` is filed as an ESSAY. Asserting `kind.toUpperCase()` here would
+    // re-tie the page to the schema, which is the coupling `KIND_NAME` exists to
+    // cut. See `oneWordNamesOneThing.test.ts`.
     for (const kind of ['take', 'seeking', 'wire', 'ballot', 'dossier'] as const) {
       const said = wordsOf(card({ kind, body: QUESTION }).toJSON());
       expect(said).toContain(QUESTION);
-      expect(said.some((w) => w.startsWith(kind.toUpperCase()))).toBe(true);
+      expect(said.some((w) => w.startsWith(KIND_NAME[kind]))).toBe(true);
     }
   });
 

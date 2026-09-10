@@ -118,7 +118,7 @@ describe('a newer one written elsewhere', () => {
     const { getByLabelText } = await mount();
 
     // The room still holds what was on this phone.
-    expect(getByLabelText('Dossier content body').props.value).toBe('One hundred words here.');
+    expect(getByLabelText('Essay content body').props.value).toBe('One hundred words here.');
   });
 
   it('TAKE THAT ONE replaces the room with the other version', async () => {
@@ -130,7 +130,7 @@ describe('a newer one written elsewhere', () => {
       fireEvent.press(r.getByLabelText('Take the one written elsewhere'));
     });
 
-    expect(r.getByLabelText('Dossier content body').props.value).toBe('Written elsewhere.');
+    expect(r.getByLabelText('Essay content body').props.value).toBe('Written elsewhere.');
     expect(r.queryByText('A NEWER ONE WAS WRITTEN ELSEWHERE')).toBeNull();
     // And it says where the words came from, rather than leaving them
     // unexplained — the same courtesy a local restore gets.
@@ -146,7 +146,7 @@ describe('a newer one written elsewhere', () => {
       fireEvent.press(r.getByLabelText('Keep the one on this phone'));
     });
 
-    expect(r.getByLabelText('Dossier content body').props.value).toBe('On this phone.');
+    expect(r.getByLabelText('Essay content body').props.value).toBe('On this phone.');
     expect(r.queryByText('A NEWER ONE WAS WRITTEN ELSEWHERE')).toBeNull();
   });
 
@@ -156,7 +156,7 @@ describe('a newer one written elsewhere', () => {
 
     const { queryByText, getByLabelText } = await mount();
     expect(queryByText('A NEWER ONE WAS WRITTEN ELSEWHERE')).toBeNull();
-    expect(getByLabelText('Dossier content body').props.value).toBe('The newer one is here.');
+    expect(getByLabelText('Essay content body').props.value).toBe('The newer one is here.');
   });
 
   it('THE NEW PHONE: takes it without asking when there is nothing here', async () => {
@@ -169,7 +169,7 @@ describe('a newer one written elsewhere', () => {
 
     const { getByLabelText, queryByText, getByText } = await mount();
 
-    expect(getByLabelText('Dossier content body').props.value).toBe('Four thousand words.');
+    expect(getByLabelText('Essay content body').props.value).toBe('Four thousand words.');
     expect(queryByText('A NEWER ONE WAS WRITTEN ELSEWHERE')).toBeNull();
     expect(getByText(/TAKEN UP WHERE YOU LEFT IT · FRIDAY/)).toBeTruthy();
   });

@@ -11,7 +11,7 @@ import {
   scaledTextProps, decorativeTextProps, displayTextProps,
 } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { formatCount, stillHeight, KIND_RULE, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { formatCount, stillHeight, KIND_RULE, KIND_NAME, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
 import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
@@ -747,7 +747,7 @@ export const PaperPost = memo(function PaperPost({
               {kind === 'dossier' && (
                 <>
                   <Text style={[p.dossierTitle, rtl && p.rtlText]} numberOfLines={3} {...displayTextProps}>
-                    <Text style={p.dossierLead}>DOSSIER — </Text>{softBreak(body)}
+                    <Text style={p.dossierLead}>{KIND_NAME.dossier} — </Text>{softBreak(body)}
                   </Text>
                   {series ? (
                     <Text style={p.series} numberOfLines={1} {...scaledTextProps}>{series.toUpperCase()}</Text>

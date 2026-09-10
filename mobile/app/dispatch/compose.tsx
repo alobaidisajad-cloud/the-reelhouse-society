@@ -383,8 +383,8 @@ function ComposeDossierScreen() {
              */
             const held = readDraft(user?.id, 'dossier') !== null;
             reelToast.error(held
-                ? 'The dossier is an Auteur’s. Your unfinished one is kept.'
-                : 'The dossier is an Auteur’s to file.');
+                ? 'The essay is an Auteur’s. Your unfinished one is kept.'
+                : 'The essay is an Auteur’s to file.');
             InteractionManager.runAfterInteractions(() => {
                 // This fires while the screen is still animating in, so the wait is
                 // long enough for the member to tap back themselves. Unguarded, both
@@ -691,7 +691,7 @@ function ComposeDossierScreen() {
                 clearDraft(user?.id, 'edit', edit);
                 // And the backup, which exists only until the house has the words.
                 void dropDraft(user?.id, 'edit', edit);
-                reelToast.success('Dossier updated');
+                reelToast.success('Essay updated');
             } else {
                 const filed = await useDispatch.getState().file({
                     kind: 'dossier',
@@ -714,7 +714,7 @@ function ComposeDossierScreen() {
                 // truncation had already spoiled; now nothing is thrown away
                 // until there is a row to throw it away for.
                 if (filed) { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
-                reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Dossier filed');
+                reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Essay filed');
             }
             router.replace('/(tabs)/dispatch');
 
@@ -759,7 +759,7 @@ function ComposeDossierScreen() {
                          */
                         const lost = saveFailed && !edit;
                         Alert.alert(
-                            lost ? 'This is not being kept' : 'Discard this dossier?',
+                            lost ? 'This is not being kept' : 'Discard this essay?',
                             lost
                                 ? 'Your phone is out of space, so nothing here has been saved. File it now, or free some room and come back.'
                                 : 'What you have written will be lost.',
@@ -799,7 +799,7 @@ function ComposeDossierScreen() {
                     // where you are. A control announced only as "Preview" gives
                     // a reader no way to know it is already showing one.
                     accessibilityState={{ selected: isPreview }}
-                    accessibilityLabel={isPreview ? 'Back to editing' : 'Preview the dossier'}
+                    accessibilityLabel={isPreview ? 'Back to editing' : 'Preview the essay'}
                 >
                     <Text style={styles.previewBtn} {...deckLabelProps}>{isPreview ? 'EDIT' : 'PREVIEW'}</Text>
                 </PressableScale>
@@ -883,7 +883,7 @@ function ComposeDossierScreen() {
                                 DOSSIER on the button below; "your cinematic
                                 essay" is a third word for the same thing, in a
                                 register nothing else here uses. */}
-                            <Text style={styles.emptyPreviewText} {...scaledTextProps}>Your dossier will appear here, as the house will set it.</Text>
+                            <Text style={styles.emptyPreviewText} {...scaledTextProps}>Your essay will appear here, as the house will set it.</Text>
                         </View>
                     )}
                 </CinematicScrollView>
@@ -980,7 +980,7 @@ function ComposeDossierScreen() {
                         ) : null}
                         <TextInput
                             style={styles.titleInput}
-                            placeholder="A title for this dossier"
+                            placeholder="A title for this essay"
                             placeholderTextColor={colors.fog}
                             value={title}
                             onChangeText={(t) => { setTitle(t); setRestored(null); }}
@@ -988,7 +988,7 @@ function ComposeDossierScreen() {
                             cursorColor={colors.sepia}
                             selectionColor="rgba(184,137,26,0.3)"
                             keyboardAppearance="dark"
-                            accessibilityLabel="Dossier headline"
+                            accessibilityLabel="Essay headline"
                         />
                         {/* ── WHAT THE PIECE IS ────────────────────────────────
                             Above the writing, and separate from it. The rail at
@@ -1035,7 +1035,7 @@ function ComposeDossierScreen() {
                             cursorColor={colors.sepia}
                             selectionColor="rgba(184,137,26,0.3)"
                             keyboardAppearance="dark"
-                            accessibilityLabel="Dossier content body"
+                            accessibilityLabel="Essay content body"
                         />
                     </CinematicScrollView>
 
@@ -1096,15 +1096,15 @@ function ComposeDossierScreen() {
                             // this whole audit exists to prevent.
                             accessibilityState={{ disabled: !title || !content || isPublishing, busy: isPublishing }}
                             accessibilityLabel={
-                                isPublishing ? 'Filing the dossier'
-                                    : !title || !content ? 'File the dossier. Not ready yet — it needs a title and a body'
-                                        : edit ? 'Re-file the dossier' : 'File the dossier'
+                                isPublishing ? 'Filing the essay'
+                                    : !title || !content ? 'File the essay. Not ready yet — it needs a title and a body'
+                                        : edit ? 'Re-file the essay' : 'File the essay'
                             }
                         >
-                            {/* Keeps its own shrink-to-fit — 'FILE THE DOSSIER'
+                            {/* Keeps its own shrink-to-fit — 'FILE THE ESSAY'
                                 is the longest label on the screen — and gains
                                 the ceiling it never had. */}
-                            <Text style={styles.publishBtnText} {...scaledTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE DOSSIER' : 'FILE THE DOSSIER')}</Text>
+                            <Text style={styles.publishBtnText} {...scaledTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE ESSAY' : 'FILE THE ESSAY')}</Text>
                         </PressableScale>
                     </BlurView>
                 </Animated.View>

@@ -32,7 +32,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { KIND_RULE, UNSPOKEN, DOC_PAD } from './paperMetrics';
+import { KIND_RULE, KIND_NAME, UNSPOKEN, DOC_PAD } from './paperMetrics';
 import { softBreak } from './paperText';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 
@@ -104,7 +104,7 @@ export const EssayHead = memo(function EssayHead({
           a mistake rather than as a code. */}
       <Text style={[p.leadIn, { color: KIND_RULE.dossier, marginTop: film?.backdropPath ? -6 : 18 }]}
         {...decorativeTextProps}>
-        DOSSIER
+        {KIND_NAME.dossier}
       </Text>
       <Text style={e.title} accessibilityRole="header" {...displayTextProps}>{title}</Text>
 
