@@ -9,7 +9,7 @@
  * feed does not have, it is written here rather than bent into `paperStyles`.
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import Animated, { FadeInUp, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -287,34 +287,106 @@ export const PaperRules = memo(function PaperRules() {
  * are anywhere else. Nothing is re-styled for having been found.
  */
 export const PaperArchive = memo(function PaperArchive({
-  query, film, count, span, children,
+  query, film, count, span, onQuery, children,
 }: {
-  query: string; film: PaperFilm; count: number; span: string; children?: React.ReactNode;
+  query: string;
+  /**
+   * NULL before a film has been chosen. The search row stands on its own then
+   * and `children` are the films the house has actually written about — not a
+   * blank plate with a dash where a title goes, which reads as a page that
+   * failed to load rather than a page waiting for you.
+   */
+  film: PaperFilm | null;
+  /** Only meaningful once there is a film. Both, or the line is not printed. */
+  count?: number; span?: string;
+  /**
+   * Makes the query line a real input.
+   *
+   * Absent in the harness, where the query is a drawn line — the same split
+   * `FilmFinder` already uses, so a plate can show a typed query without the
+   * generator having to run a keyboard.
+   */
+  onQuery?: (text: string) => void;
+  children?: React.ReactNode;
 }) {
   return (
     <View>
       <View style={m.searchRow}>
         <Search size={13} strokeWidth={2} color={colors.sepia} />
-        <Text style={m.searchText} numberOfLines={1} {...scaledTextProps}>{query}</Text>
+        {onQuery ? (
+          <TextInput
+            style={[m.searchText, { flex: 1, minWidth: 0, padding: 0 }]}
+            value={query}
+            onChangeText={onQuery}
+            placeholder="Name a film"
+            placeholderTextColor={colors.fog}
+            autoCorrect={false}
+            returnKeyType="search"
+            keyboardAppearance="dark"
+            cursorColor={colors.sepia}
+            selectionColor="rgba(184,137,26,0.3)"
+            accessibilityLabel="Search the archive for a film"
+            {...scaledTextProps}
+          />
+        ) : (
+          <Text style={m.searchText} numberOfLines={1} {...scaledTextProps}>{query}</Text>
+        )}
         <Text style={m.searchMark} {...decorativeTextProps}>ARCHIVIST</Text>
       </View>
 
-      <View style={m.found}>
-        <View style={m.foundPlate}>
-          {film.posterPath ? (
-            <Image source={{ uri: film.posterPath }} style={p.plateArt} contentFit="cover" />
-          ) : null}
+      {film ? (
+        <View style={m.found}>
+          <View style={m.foundPlate}>
+            {film.posterPath ? (
+              <Image source={{ uri: film.posterPath }} style={p.plateArt} contentFit="cover" />
+            ) : null}
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={m.foundTitle} numberOfLines={2} {...displayTextProps}>{film.title}</Text>
+            <Text style={m.foundMeta} numberOfLines={1} {...scaledTextProps}>
+              {[film.year, film.director?.toUpperCase()].filter(Boolean).join(' · ')}
+            </Text>
+            {count !== undefined && span ? (
+              <Text style={m.foundCount} {...scaledTextProps}>{count} FILINGS · {span}</Text>
+            ) : null}
+          </View>
         </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={m.foundTitle} numberOfLines={2} {...displayTextProps}>{film.title}</Text>
-          <Text style={m.foundMeta} numberOfLines={1} {...scaledTextProps}>
-            {[film.year, film.director?.toUpperCase()].filter(Boolean).join(' · ')}
-          </Text>
-          <Text style={m.foundCount} {...scaledTextProps}>{count} FILINGS · {span}</Text>
-        </View>
-      </View>
+      ) : null}
       {children}
     </View>
+  );
+});
+
+/**
+ * One film the house has written about, in the archive's list of candidates.
+ *
+ * It is a `Credit`-shaped row rather than a poster grid, because the archive is
+ * a page of a paper and the film is a REFERENCE here, not a thing being sold.
+ */
+export const ArchiveFilm = memo(function ArchiveFilm({
+  film, filings, onPress,
+}: { film: PaperFilm; filings: number; onPress?: () => void }) {
+  return (
+    <PressableScale
+      style={m.archiveRow} haptic="selection"
+      hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${film.title}. ${counted(filings, 'filing', 'filings')}`}
+    >
+      <View style={m.archivePlate}>
+        {film.posterPath ? (
+          <Image source={{ uri: film.posterPath }} style={p.plateArt} contentFit="cover" />
+        ) : null}
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={m.archiveTitle} numberOfLines={1} {...scaledTextProps}>{film.title}</Text>
+        <Text style={m.archiveMeta} numberOfLines={1} {...decorativeTextProps}>
+          {counted(filings, 'FILING', 'FILINGS')}
+        </Text>
+      </View>
+      <ChevronRight size={13} strokeWidth={2} color={colors.sepia} />
+    </PressableScale>
   );
 });
 
@@ -1275,6 +1347,21 @@ const m = StyleSheet.create({
   foundCount: {
     fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia,
     marginTop: 8, includeFontPadding: false,
+  },
+  /** A candidate film, before one has been chosen. */
+  archiveRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  archivePlate: {
+    width: 30, height: 45, borderRadius: 2, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(240,232,176,0.26)',
+    backgroundColor: 'rgba(20,16,11,0.9)',
+  },
+  archiveTitle: {
+    fontFamily: fonts.body, fontSize: 13.5, color: colors.parchment,
+    includeFontPadding: false,
+  },
+  archiveMeta: {
+    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    marginTop: 4, includeFontPadding: false,
   },
 
   // ── a member's room ───────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 import { memo, type ReactNode } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bookmark, ChevronsUpDown } from 'lucide-react-native';
+import { Bookmark, ChevronsUpDown, Search } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
@@ -35,10 +35,29 @@ export type PaperSection = typeof SECTIONS[number];
 const IX_SLOP = { top: 8, bottom: 8, left: 0, right: 0 };
 
 export const PaperChrome = memo(function PaperChrome({
-  section, onSection,
+  section, onSection, onArchive,
 }: {
   section: PaperSection;
   onSection?: (s: PaperSection) => void;
+  /**
+   * The archive — one film, and everything the house has ever said about it.
+   *
+   * It lives HERE, beside the index, for two reasons.
+   *
+   * The first is measured. The running head is where it started, and that row
+   * has no spare width: its issue line needs 207 points and is given 206.5. A
+   * third mark there costs 25 of them and turns `WEDNESDAY, AUGUST 28` into
+   * `WEDNESDAY, AUGUST 2` — not a shortened date, a wrong one. This row is a
+   * horizontal SCROLL, so a fixed mark beside it takes nothing away: the
+   * departments scroll a little sooner and every one of them is still reachable.
+   *
+   * The second is what it means. This row is how a member says what the paper
+   * IS — a department, or one film's whole history. The magnifier in the app's
+   * top bar finds members, films and stacks; this one finds FILINGS. Two
+   * searches doing different jobs, one in the app's chrome and one in the
+   * paper's, is how a member learns which is which.
+   */
+  onArchive?: () => void;
 }) {
   return (
     <View style={p.chrome}>
@@ -137,6 +156,18 @@ export const PaperChrome = memo(function PaperChrome({
           ))}
         </ScrollView>
       </View>
+      {onArchive ? (
+        <PressableScale
+          style={p.chromeArchive}
+          hitSlop={IX_SLOP}
+          onPress={onArchive}
+          haptic="selection"
+          accessibilityRole="button"
+          accessibilityLabel="The archive. Everything the house has said about one film"
+        >
+          <Search size={13} strokeWidth={2} color={colors.fog} />
+        </PressableScale>
+      ) : null}
       </View>
     </View>
   );
@@ -165,6 +196,18 @@ export const RunningHead = memo(function RunningHead({
   dayLabel: string;
   sort: 'LATEST' | 'CERTIFIED';
   saved?: boolean;
+  /**
+   * ── NO THIRD TOOL LIVES HERE ────────────────────────────────────────────
+   * The archive's magnifier was put in this row and MEASURED out of it. This
+   * head has no spare width: with the two tools it already has, the issue line
+   * needs 207 points and is given 206.5 — it fits by half a point, and only
+   * because `LATEST` is six characters. Under `CERTIFIED` it is tighter still.
+   *
+   * A third mark takes 25 of those points, and the line truncates: `WEDNESDAY,
+   * AUGUST 28` becomes `WEDNESDAY, AUGUST 2` at the accessibility size, which
+   * is not a shortened date but a WRONG one. The archive went to the index row
+   * instead, where the row scrolls and nothing has to give way.
+   */
   /** Replaces the issue line when the paper is filtered to something that is
    *  not the edition — your saved filings. The bookmark beside it lights, and
    *  that lit bookmark is also the way back out: one control, two states, no

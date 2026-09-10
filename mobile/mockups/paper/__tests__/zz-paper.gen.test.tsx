@@ -58,7 +58,7 @@ import {
   CritiqueComposer, PostDock as RawPostDock, type Critique,
 } from '@/src/components/dispatch/paper/PaperCritiques';
 import {
-  PaperPicker, PaperDoor, PaperRules, PaperArchive, PaperRoom,
+  PaperPicker, PaperDoor, PaperRules, PaperArchive, ArchiveFilm, PaperRoom,
   PaperCase, LoungeCard, PaperBack, NewFilings, NEW_FILINGS_ROOM, PaperEvent,
   DossierShareCard, StoryFrame,
 } from '@/src/components/dispatch/paper/PaperMore';
@@ -289,7 +289,7 @@ add('t4-unbreakable', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="wire" order="23:41" author={ANA} measureWidth={COL}
@@ -307,7 +307,7 @@ add('t2-iphone-se', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="dossier" order="14:20" author={LONGNAME} measureWidth={SE_COL} film={TOKYO}
@@ -329,7 +329,7 @@ add('t3-android-360', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="dossier" order="14:20" author={LONGNAME} measureWidth={AND_COL} film={TOKYO}
@@ -364,7 +364,7 @@ add('t7-byline-worst-case', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="dossier" order="14:20" author={MAX_AUTEUR} measureWidth={AND_COL} film={TOKYO}
@@ -386,7 +386,7 @@ add('t1-tablet', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="take" order="21:40" author={DAN} measureWidth={TAB_COL}
@@ -403,7 +403,7 @@ add('a1-paper-latest', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="take" order="21:40" author={DAN} measureWidth={COL}
@@ -426,7 +426,7 @@ add('a2-paper-certified', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="CERTIFIED" />
       <PaperPost kind="take" order="2.1K" author={ANA} measureWidth={COL} film={STALKER} still
@@ -449,7 +449,7 @@ add('a3-day-one', (
     {/* The index prints on day one too. The frame a member learns in their first
         minute should not appear and disappear — and with nothing filed, every
         department being empty is the honest thing to show. */}
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet top>
       <PaperMasthead date={TODAY} dateLabel="AUGUST 28" />
       <Ornament />
@@ -466,7 +466,7 @@ add('a4-empty-seeking', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="SEEKING" />
+    <PaperChrome onArchive={() => {}} section="SEEKING" />
     <PaperSheet>
       {/* No section head. The index above already names SEEKING, in the
           section's own violet, underlined — and the head printed `THE SEEKING /
@@ -486,7 +486,7 @@ add('a5-empty-ballots-free', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="BALLOTS" />
+    <PaperChrome onArchive={() => {}} section="BALLOTS" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperEmpty title="No ballot is open."
@@ -500,7 +500,7 @@ add('a6-skeletons', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="TAKES" />
+    <PaperChrome onArchive={() => {}} section="TAKES" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperSkeletons section="TAKES" />
@@ -512,7 +512,7 @@ add('a7-end-signed-out', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="take" order="08:12" author={SAM} measureWidth={COL} film={CHUNGKING}
@@ -552,7 +552,7 @@ add('e1-saved', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="" sort="LATEST" saved title="SAVED · 34" />
       <DayDivider label="WEDNESDAY, AUGUST 28" />
@@ -574,7 +574,7 @@ add('e2-saved-empty', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="" sort="LATEST" saved title="SAVED" />
       {/* No button. There is no act to perform on a page of things you have not
@@ -716,7 +716,7 @@ add('f1-picker', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="take" order="21:40" author={DAN} measureWidth={COL}
@@ -741,7 +741,7 @@ add('f2-door', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperDoor films={3} filmsNeeded={5} days={1} daysNeeded={2} />
@@ -768,6 +768,28 @@ add('f3-house-rules', (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <PaperSheet><PaperRules /></PaperSheet>
     </ScrollView>
+  </View>
+));
+
+/**
+ * The archive BEFORE a film is chosen — the state the record did not have.
+ *
+ * `f4-archive` draws the result: a film plate with its filings under it. Getting
+ * there takes a search, and the page a member spends most of their time on is
+ * the list of films the house has actually written about. A record that draws
+ * only the destination is a record of half a screen.
+ */
+add('f4b-archive-search', (
+  <View style={p.screen}>
+    <PaperBack label="THE ARCHIVE" />
+    <PaperSheet>
+      <PaperArchive query="tarkov" film={null}>
+        <ArchiveFilm film={STALKER} filings={41} />
+        <ArchiveFilm film={film('Solaris', 1972, 'Tarkovsky')} filings={12} />
+        <ArchiveFilm film={film('Mirror', 1975, 'Tarkovsky')} filings={3} />
+        <ArchiveFilm film={film('Andrei Rublev', 1966, 'Tarkovsky')} filings={1} />
+      </PaperArchive>
+    </PaperSheet>
   </View>
 ));
 
@@ -1205,7 +1227,7 @@ add('g1-wire-down', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       {/* The failure is a state of the PAGE, so it is drawn as the page: the
@@ -1224,7 +1246,7 @@ add('g2-not-sent', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost pending kind="take" order="21:46" author={ANA} measureWidth={COL} film={CHUNGKING}
@@ -1241,7 +1263,7 @@ add('g3-new-filings', (
   <View style={p.screen}>
     <TopNavBar />
     <NavSpace />
-    <PaperChrome section="ALL" />
+    <PaperChrome onArchive={() => {}} section="ALL" />
     <View style={{ flex: 1, minHeight: 0 }}>
       <PaperSheet>
         {/* The room the pill sits in. In the app this is the list's own top

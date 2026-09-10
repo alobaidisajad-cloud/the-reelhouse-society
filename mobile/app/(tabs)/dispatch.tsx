@@ -306,6 +306,10 @@ export default function DispatchScreen() {
           <PaperChrome
             section={section as PaperSection}
             onSection={(s) => useDispatch.getState().setSection(s as Section)}
+            // Drawn for everyone, not only Archivists. A feature you cannot see
+            // is one you never learn exists; the archive itself says what the
+            // rank buys, which is the gathering and not the reading.
+            onArchive={() => nav.push('/dispatch/archive')}
           />
         </View>
 

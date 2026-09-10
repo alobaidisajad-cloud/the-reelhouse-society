@@ -98,7 +98,8 @@ const DESIGNED_NOT_WIRED = new Set([
   // `PaperRules` came off when app/dispatch/rules.tsx began mounting it, and
   // the picker — the door every filing goes through — grew the line that opens
   // it. Nine clauses about what a member may file had never been reachable.
-  'src/components/dispatch/paper/PaperMore.tsx  ::  PaperArchive',
+  // `PaperArchive` came off when app/dispatch/archive.tsx began mounting it,
+  // and the running head grew the magnifier that opens it.
   // `PaperRoom` came off this list when app/dispatch/room/[username].tsx began
   // mounting it — and the four bylines that promised "Open their room" started
   // going there. The ratchet doing its job for the second time.

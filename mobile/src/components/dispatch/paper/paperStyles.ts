@@ -161,6 +161,18 @@ export const p = StyleSheet.create({
     width: '100%', maxWidth: PAPER_MAX, alignSelf: 'center',
   },
   chromeIndex: { flex: 1, minWidth: 0, overflow: 'hidden', paddingHorizontal: CHROME_PAD_H },
+  /**
+   * The archive's mark, beside the index and outside its scroll.
+   *
+   * `justifyContent: 'center'` on a stretched row item, so the magnifier sits on
+   * the departments' baseline rather than at the top of a row whose height is
+   * set by their underline. The right padding matches the index's own, so the
+   * mark ends where the page's margin does.
+   */
+  chromeArchive: {
+    justifyContent: 'center', alignItems: 'center',
+    paddingLeft: 4, paddingRight: CHROME_PAD_H,
+  },
   chromeRow: { flexDirection: 'row', alignItems: 'center' },
   indexItem: {
     paddingVertical: CHROME_PAD_V,
