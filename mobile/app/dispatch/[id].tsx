@@ -42,6 +42,7 @@ import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { measure } from '@/src/components/dispatch/paper/paperMetrics';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { useAuthStore } from '@/src/stores/auth';
+import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { useDispatch } from '@/src/stores/dispatch';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -113,6 +114,35 @@ export default function FilingReader() {
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+
+  /**
+   * ── A CRITIQUE IS KEPT TOO ───────────────────────────────────────────────
+   * Eight hundred words under somebody's essay is work, and it had no
+   * protection at all: a phone call took every one of them.
+   *
+   * Scoped to the FILING, so a member reading two essays does not have one
+   * critique bleeding into the other — and bounded by eviction rather than by a
+   * single slot, because "one at a time" is tidy right up until somebody goes
+   * back to the first one.
+   *
+   * The short desks keep no draft on purpose — a take is a sentence, and
+   * restoring one three days later is the app putting words in a member's
+   * mouth. A critique is not a sentence.
+   */
+  useEffect(() => {
+    if (!id || !me?.id) return;
+    const held = readDraft<{ body?: string }>(me.id, 'critique', id);
+    if (held?.data.body) { setDraft(held.data.body); setComposing(true); }
+  }, [id, me?.id]);
+
+  useEffect(() => {
+    if (!id || !me?.id) return;
+    const t = setTimeout(() => {
+      if (draft.trim()) writeDraft(me.id, 'critique', { body: draft }, id);
+      else clearDraft(me.id, 'critique', id);
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [draft, id, me?.id]);
   const scroller = useRef<ScrollView>(null);
   /** The off-screen clipping, captured when an essay is shared out of the app. */
   const cardRef = useRef<ViewShot>(null);
@@ -320,6 +350,10 @@ export default function FilingReader() {
     try {
       await useDispatch.getState().addCritique(live.id, draft);
       setDraft('');
+      // Only once the house has it. The store keeps the text on a refusal so
+      // the member can try again — throwing the draft away here would undo
+      // exactly that.
+      clearDraft(me?.id, 'critique', live.id);
       setComposing(false);
     } catch {
       // The store rolls the row back and keeps the text, so the member can try

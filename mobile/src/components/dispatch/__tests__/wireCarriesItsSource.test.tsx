@@ -399,7 +399,15 @@ describe('a filing that does not go', () => {
     const r = render(<ComposeShortScreen kind="take" />);
     await typeAndFile(r, 'take');
 
-    expect(String(mockToast.error.mock.calls[0]?.[0])).toBe('It could not be filed.');
+    /**
+     * "Still here", not "kept" — and the difference is the point. This desk
+     * keeps no draft on purpose, so the words survive only because the desk is
+     * still open with them in the field. The essay's message says KEPT because
+     * the essay is on the phone. One sentence for both would be a promise this
+     * form does not make.
+     */
+    expect(String(mockToast.error.mock.calls[0]?.[0]))
+      .toBe('It did not go. Your words are still here.');
     // The sentence survives. Without this the member types it again from memory.
     expect(r.getByLabelText('Your take').props.value).toBe('Ozu never once stood up.');
     // And they are still at the desk — no navigation on a failure.

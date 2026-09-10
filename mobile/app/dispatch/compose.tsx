@@ -407,6 +407,55 @@ function ComposeDossierScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id]);
 
+    /**
+     * ── AN AMEND IS KEPT TOO, AND SEPARATELY ─────────────────────────────────
+     * Every draft effect in this room began `if (edit) return`, so rewriting a
+     * filed essay had NO protection at all: a phone call took the rewrite, and
+     * a member who had spent an hour on it got the old version back with no
+     * word about what had happened.
+     *
+     * Scoped to the FILING, never to the room. Sharing one slot with the new
+     * essay would mean an amend quietly overwriting an unfinished dossier —
+     * which is what the existing test "never touches the NEW-dossier draft"
+     * exists to prevent, and it still holds.
+     *
+     * Several are kept, oldest evicted. One slot per member looks tidier and
+     * eats the rewrite of essay A the moment you open essay B, which is the
+     * fault all of this exists to close.
+     */
+    useEffect(() => {
+        if (!edit || !user?.id) return;
+        const held = readDraft<{ title?: string; content?: string }>(user.id, 'edit', edit);
+        if (!held?.data) return;
+        if (held.data.title) setTitle(held.data.title);
+        if (held.data.content) setContent(held.data.content);
+        setRestored(held.savedAt ?? 'unknown');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [edit, user?.id]);
+
+    useEffect(() => {
+        if (!edit || !user?.id) return;
+        const t = setTimeout(() => {
+            // An amend always has words — it opened with them — so there is no
+            // "empty means clear" branch here. It is cleared when the amend
+            // lands, and by START CLEAN.
+            setSaveFailed(!writeDraft(user.id, 'edit', { title, content }, edit));
+        }, 1000);
+        return () => clearTimeout(t);
+    }, [title, content, edit, user?.id]);
+
+    useEffect(() => {
+        if (!edit || !user?.id) return;
+        const sub = AppState.addEventListener('change', (state) => {
+            if (state !== 'active') {
+                writeDraft(user.id, 'edit', {
+                    title: titleRef.current, content: contentRef.current,
+                }, edit);
+            }
+        });
+        return () => sub.remove();
+    }, [edit, user?.id]);
+
     // ── Draft auto-save (debounced) ──
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
@@ -539,6 +588,8 @@ function ComposeDossierScreen() {
                     body: excerpt,
                     fullContent: content.trim(),
                 });
+                // The rewrite is the house's now, so the copy on the phone goes.
+                clearDraft(user?.id, 'edit', edit);
                 reelToast.success('Dossier updated');
             } else {
                 const filed = await useDispatch.getState().file({
@@ -567,7 +618,20 @@ function ComposeDossierScreen() {
             router.replace('/(tabs)/dispatch');
 
         } catch (err) {
-            reelToast.error('Transmission failed');
+            /**
+             * ── AND IT SAYS THE WORDS ARE SAFE, BECAUSE THEY ARE ─────────────
+             * The draft is deliberately kept when a filing is refused — there
+             * is a test for it — and the member was told only "Transmission
+             * failed". The one moment they most need to know their evening
+             * survived was the one moment nothing said so.
+             *
+             * `saveFailed` is the exception and it is not a detail: if the
+             * phone also refused the draft, promising the words are kept would
+             * be a lie told at the worst possible moment.
+             */
+            reelToast.error(saveFailed
+                ? 'It did not go, and your phone is out of space. Do not close this.'
+                : 'It did not go. Your words are kept.');
         } finally {
             setIsPublishing(false);
         }
@@ -601,7 +665,11 @@ function ComposeDossierScreen() {
                             [
                                 { text: lost ? 'Go back' : 'Keep writing', style: 'cancel' },
                                 { text: 'Discard', style: 'destructive', onPress: () => {
-                                    if (!edit) clearDraft(user?.id, 'dossier');
+                                    // Whichever one this room is holding. Discarding
+                                    // an amend must not touch an unfinished new
+                                    // essay sitting in the other slot.
+                                    if (edit) clearDraft(user?.id, 'edit', edit);
+                                    else clearDraft(user?.id, 'dossier');
                                     router.back();
                                 } },
                             ],
@@ -756,7 +824,8 @@ function ComposeDossierScreen() {
                                         onPress={() => {
                                             setTitle(''); setContent(''); setFilm(null); setSeries(null);
                                             setRestored(null);
-                                            clearDraft(user?.id, 'dossier');
+                                            if (edit) clearDraft(user?.id, 'edit', edit);
+                                            else clearDraft(user?.id, 'dossier');
                                         }}
                                         accessibilityRole="button"
                                         accessibilityLabel="Start clean, and discard what was here"

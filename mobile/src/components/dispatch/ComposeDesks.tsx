@@ -8,12 +8,23 @@
  *
  * A ballot has its own, because two to six films is a different shape.
  *
- * ── NO DRAFT PERSISTENCE HERE, DELIBERATELY ─────────────────────────────────
+ * ── NO DRAFT ON THE SHORT DESK, DELIBERATELY ────────────────────────────────
  * The dossier composer saves to MMKV because an essay is an evening's work and
  * must survive a background-kill. A take is a sentence. Restoring one three days
  * later into a desk somebody opened for something else is the app putting words
  * in their mouth — and the member cannot tell whether they wrote it or the app
  * did.
+ *
+ * ── AND A DRAFT ON THE BALLOT DESK, FOR THE SAME REASON REVERSED ────────────
+ * Two to six film searches and a question is not a sentence; it is an evening's
+ * fiddling, and it had no protection at all — a phone call took every bit of it.
+ * So the ballot keeps one and the short desk does not, which is the same rule
+ * applied honestly rather than the same behaviour applied uniformly.
+ *
+ * The DEADLINE is safe to restore, which is worth saying because it looks like
+ * it should not be: `closes` holds a relative label — `2 DAYS` — and the
+ * absolute time is worked out at filing. A stored timestamp would have restored
+ * a ballot that had already closed.
  *
  * ── A DESK WITH NOBODY AT IT ────────────────────────────────────────────────
  * Both desks used to end `if (!me) return null` — a screen that renders NOTHING.
@@ -39,6 +50,7 @@ import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { BALLOT_MIN, BALLOT_MAX } from '@/src/components/dispatch/paper/paperMetrics';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
+import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { useDispatch } from '@/src/stores/dispatch';
 import { paperTierOf, type BallotOption } from '@/src/stores/dispatchTypes';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -216,7 +228,14 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
       reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Filed');
       router.replace('/(tabs)/dispatch');
     } catch {
-      reelToast.error('It could not be filed.');
+      /**
+       * "Still here", not "kept". This desk keeps no draft on purpose — a take
+       * is a sentence — so the words survive only because the desk is still
+       * open with them in the field. Telling somebody their take was KEPT would
+       * be a promise this form does not make, and they would find out by
+       * closing the desk.
+       */
+      reelToast.error('It did not go. Your words are still here.');
     } finally {
       setSending(false);
     }
@@ -273,6 +292,10 @@ export function ComposeBallotScreen() {
   const insets = useSafeAreaInsets();
   const hour = useOpeningHour();
 
+  // `useMe` builds the BYLINE — a name, a number, a rank. The draft needs the
+  // member's id, which is a different fact and deliberately not on that object.
+  const userId = useAuthStore((s) => s.user?.id);
+
   const [question, setQuestion] = useState('');
   // Six slots, drawn empty and numbered from the start, so the shape of the
   // thing being made is on the paper before it has been made.
@@ -288,6 +311,47 @@ export function ComposeBallotScreen() {
   const [closes, setCloses] = useState('2 DAYS');
   const [finding, setFinding] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+
+  /**
+   * ── A BALLOT IS KEPT ─────────────────────────────────────────────────────
+   * Two to six film searches and a question is an evening's fiddling, and it
+   * had no protection: a phone call took all of it.
+   *
+   * The DEADLINE is safe to restore, which is worth writing down because it
+   * looks like it should not be. `closes` holds a relative label — `2 DAYS` —
+   * and the absolute time is worked out at filing, so a draft opened on
+   * Thursday closes two days from Thursday. A stored timestamp would have
+   * restored a ballot that had already closed.
+   */
+  useEffect(() => {
+    if (!userId) return;
+    const held = readDraft<{
+      question?: string;
+      slots?: ({ film: PaperFilm; id: number } | null)[];
+      closes?: string;
+    }>(userId, 'ballot');
+    if (!held) return;
+    if (held.data.question) setQuestion(held.data.question);
+    if (held.data.closes) setCloses(held.data.closes);
+    if (Array.isArray(held.data.slots)) {
+      // Padded back to the full row: a draft saved when the constants were
+      // different must not leave the desk with four slots and no way to add one.
+      const restored = Array.from({ length: BALLOT_MAX }, (_, i) => held.data.slots![i] ?? null);
+      setSlots(restored);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const t = setTimeout(() => {
+      if (question.trim() || slots.some(Boolean)) {
+        writeDraft(userId, 'ballot', { question, slots, closes });
+      } else {
+        clearDraft(userId, 'ballot');
+      }
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [question, slots, closes, userId]);
 
   const filled = slots.filter(Boolean).length;
   const ready = filled >= BALLOT_MIN && question.trim().length > 0 && !sending;
@@ -320,14 +384,18 @@ export function ComposeBallotScreen() {
         options,
         closesAt,
       });
+      // Only once the house has it.
+      clearDraft(userId, 'ballot');
       reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'The ballot is open');
       router.replace('/(tabs)/dispatch');
     } catch {
-      reelToast.error('The ballot could not be opened.');
+      // The question and the films are kept, so "could not be opened" is not
+      // also "start again".
+      reelToast.error('The ballot could not be opened. Your question is kept.');
     } finally {
       setSending(false);
     }
-  }, [ready, question, slots, closes]);
+  }, [ready, question, slots, closes, userId]);
 
   // Sent back by the hook above; this render is the one frame before it lands.
   if (!me) return null;

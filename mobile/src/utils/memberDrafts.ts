@@ -45,7 +45,7 @@ export const DRAFT_PREFIX = 'reelhouse_draft_';
  * per filing and one per post — and the scope rides at the end of the key so the
  * member's prefix still sweeps them.
  */
-export type DraftKind = 'dossier' | 'log' | 'edit' | 'critique';
+export type DraftKind = 'dossier' | 'log' | 'edit' | 'critique' | 'ballot';
 
 /** How many scoped drafts of one kind a member keeps. See `evictOldest`. */
 export const SCOPED_KEPT = 3;
