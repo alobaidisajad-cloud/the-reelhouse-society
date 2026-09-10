@@ -59,7 +59,7 @@ import {
 } from '@/src/components/dispatch/paper/PaperCritiques';
 import {
   PaperPicker, PaperDoor, PaperRules, PaperArchive, ArchiveFilm, PaperRoom,
-  PaperCase, LoungeCard, PaperBack, NewFilings, NEW_FILINGS_ROOM, PaperEvent,
+  PaperCase, LoungeCard, PaperBack, NewFilings, NEW_FILINGS_ROOM,
   DossierShareCard, StoryFrame,
 } from '@/src/components/dispatch/paper/PaperMore';
 import {
@@ -737,15 +737,22 @@ add('f1-picker', (
   </View>
 ));
 
+/**
+ * ── THE DOOR IS A SCREEN, NOT THE FEED'S EMPTY STATE ────────────────────────
+ * This drew the door inside the paper, under a running head, which reads as
+ * "here is what you get instead of the news". That is the opposite of what the
+ * door says: the house lets a new member READ from the first minute, and their
+ * feed is full. The door is what stands between them and FILING.
+ *
+ * So it is drawn where the app puts it — above the picker and above every desk,
+ * on the way to the writing room, with a way back out.
+ */
 add('f2-door', (
   <View style={p.screen}>
-    <TopNavBar />
-    <NavSpace />
-    <PaperChrome onArchive={() => {}} section="ALL" />
-    <PaperSheet>
-      <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
+    <PaperBack label="THE DISPATCH" />
+    <View style={{ flex: 1, justifyContent: 'center' }}>
       <PaperDoor films={3} filmsNeeded={5} days={1} daysNeeded={2} />
-    </PaperSheet>
+    </View>
   </View>
 ));
 
@@ -1282,26 +1289,17 @@ add('g3-new-filings', (
   </View>
 ));
 
-add('g4-events', (
-  <View style={p.screen}>
-    <PaperBack label="EVENTS" />
-    <PaperSheet>
-      <PaperEvent unread hour="21:52" actor={MIRA} verb="certified your take" kind="take"
-        opening="Chungking Express gets better every year and I no longer trust anyone who disagrees." />
-      <PaperEvent unread hour="20:04" actor={SAM} verb="critiqued your seeking" kind="seeking"
-        opening="something to watch after a funeral. No irony, no uplift. I have three hours." />
-      {/* "shared", not "filed". Your words for this event were "somebody you
-          follow shared smth", and the live notifications table already has the
-          type for exactly that: `retransmit`. I had drifted to "filed", which
-          is a different event and has no type — so the copy was inventing a
-          feature the database would have refused. */}
-      <PaperEvent hour="16:30" actor={ANA} verb="shared a dossier" kind="dossier"
-        opening="The Long Silence in Ozu" />
-      <PaperEvent hour="09:11" actor={DAN} verb="certified your wire" kind="wire"
-        opening="The restored NAPOLEON will tour eleven cities before it reaches any streaming service." />
-    </PaperSheet>
-  </View>
-));
+/* ── NO g4-events PLATE ────────────────────────────────────────────────────
+ * It drew a paper notices list that no screen mounted, beside a real one the
+ * app ships in `app/(modals)/notifications-modal.tsx` — which is fed by four
+ * live database triggers and routes a tap straight to the filing.
+ *
+ * The plate was the only thing keeping the component alive, and one of its four
+ * rows — "shared a dossier" — was an event this database has no trigger for at
+ * all. A record that draws a feature the schema would refuse is not a record.
+ *
+ * See the note in PaperMore.tsx where the component used to be.
+ */
 
 // ══ D · WRITING ═════════════════════════════════════════════════════════════
 add('d1-composer-take', (

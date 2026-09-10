@@ -21,7 +21,8 @@ import { isOverLimit, remainingChars, MAX_LENGTHS } from '@/src/utils/sanitizeIn
 import PressableScale from '@/src/components/PressableScale';
 import { ComposeBallotScreen, ComposeShortScreen, FilmPicker } from '@/src/components/dispatch/ComposeDesks';
 import { SeriesPicker, roman, type SeriesChoice } from '@/src/components/dispatch/SeriesPicker';
-import { FORMS, PaperPicker } from '@/src/components/dispatch/paper/PaperMore';
+import { FORMS, PaperBack, PaperDoor, PaperPicker } from '@/src/components/dispatch/paper/PaperMore';
+import { useDoor } from '@/src/hooks/useDoor';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { groupDigits } from '@/src/components/dispatch/paper/paperMetrics';
 import { excerptFor } from '@/src/components/dispatch/excerpt';
@@ -102,6 +103,26 @@ export default function ComposeScreen() {
         });
     }, [user]);
 
+    /**
+     * ── THE DOOR ─────────────────────────────────────────────────────────────
+     * Checked HERE, above the picker and above every desk, for the same reason
+     * the AUTEURS gate is: a member who cannot file must never reach a desk to
+     * find out at the end.
+     *
+     * And this one was worse than a locked desk. `posts_door` — two days a
+     * member, five distinct films logged — has been enforced by the database all
+     * along and NOTHING in the app referenced it. A new member wrote a take, or
+     * an essay, pressed FILE and got `Transmission failed`. No reason, no
+     * number, no way to find out; the likeliest next thing they did was write it
+     * again.
+     *
+     * `useDoor` fails OPEN, so a read that times out lets them through to the
+     * refusal the server was always going to give rather than locking them out
+     * of their own app.
+     */
+    const door = useDoor();
+    if (user && !door.loading && !door.open) return <TheDoor door={door} />;
+
     // An unrecognised kind in a link is not a crash and not a blank screen; it
     // is somebody arriving without having chosen, which is what the picker is.
     const known = (['take', 'seeking', 'wire', 'ballot', 'dossier'] as const)
@@ -141,6 +162,40 @@ function KindPicker() {
                     onRules={() => (router.push as (h: string) => void)('/dispatch/rules')}
                 />
             </View>
+        </View>
+    );
+}
+
+/**
+ * THE DOOR — the two things the house asks before it takes a filing.
+ *
+ * Not a wall to argue with: it states exactly what remains, draws both
+ * conditions as rules that FILL so "three of five" is a length before it is a
+ * number, and offers the one act that moves the count. A button that merely
+ * dismissed this would be a button that changed nothing.
+ */
+function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
+    const insets = useSafeAreaInsets();
+    return (
+        <View style={p.screen}>
+            <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
+            <PaperBack label="THE DISPATCH" onBack={() => router.back()} />
+            <ScrollView
+                contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: insets.bottom + 24 }}
+                showsVerticalScrollIndicator={false}
+            >
+                <PaperDoor
+                    films={door.films ?? 0}
+                    filmsNeeded={door.filmsNeeded}
+                    days={door.days ?? 0}
+                    daysNeeded={door.daysNeeded}
+                    // The one act that moves the count. It replaces this screen
+                    // rather than stacking on it: a member who logs a film and
+                    // presses back should land on the paper, not on the door
+                    // they have just been let through.
+                    onLog={() => (router.replace as (h: string) => void)('/log-modal')}
+                />
+            </ScrollView>
         </View>
     );
 }

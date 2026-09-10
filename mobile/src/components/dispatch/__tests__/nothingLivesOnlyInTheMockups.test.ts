@@ -94,7 +94,9 @@ const DESIGNED_NOT_WIRED = new Set([
   'src/components/dispatch/paper/PaperDesk.tsx  ::  DossierDesk',
   'src/components/dispatch/paper/PaperEssay.tsx  ::  EssayPara',
   'src/components/dispatch/paper/PaperFrame.tsx  ::  BrassButton',
-  'src/components/dispatch/paper/PaperMore.tsx  ::  PaperDoor',
+  // `PaperDoor` came off when the writing room began drawing it — the rule it
+  // states has been enforced by `posts_door` all along, and the app had never
+  // once mentioned it.
   // `PaperRules` came off when app/dispatch/rules.tsx began mounting it, and
   // the picker — the door every filing goes through — grew the line that opens
   // it. Nine clauses about what a member may file had never been reachable.
@@ -106,7 +108,10 @@ const DESIGNED_NOT_WIRED = new Set([
   'src/components/dispatch/paper/PaperMore.tsx  ::  PaperCase',
   'src/components/dispatch/paper/PaperMore.tsx  ::  StoryFrame',
   'src/components/dispatch/paper/PaperMore.tsx  ::  LoungeCard',
-  'src/components/dispatch/paper/PaperMore.tsx  ::  PaperEvent',
+  // `PaperEvent` was DELETED rather than wired: the notices are finished and
+  // work — four database triggers write them and the app's own modal routes a
+  // tap to the filing — so wiring it would have given the app two notice lists
+  // or one list in two visual languages. See the note where it used to be.
 ]);
 
 describe('the design record draws the app, not a second copy of it', () => {

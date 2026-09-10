@@ -1155,73 +1155,31 @@ export const NewFilings = memo(function NewFilings({
   );
 });
 
-/* ═══ AN EVENT ════════════════════════════════════════════════════════════════
- * Somebody certified your filing, critiqued it, or a member you follow filed
- * something. The same page again: the hour in the margin, the event in the
- * column — the actor named at full strength, the verb quiet, and beneath it the
- * filing itself in the ink of its kind so you know WHICH of yours before you
- * open anything.
+/* ── THERE IS NO PAPER EVENT ROW ──────────────────────────────────────────
+ * One stood here — the hour in the margin, the actor in the column, a brass
+ * dot for unread — and no screen ever mounted it.
  *
- * Unread is a brass dot in the margin beside the hour, not a coloured row. A
- * page where the unread state is a background is a page that looks broken while
- * you catch up.
+ * It was not waiting on plumbing. The notices are FINISHED and they work:
+ * four triggers on the database write them (`dispatch_notify_certify`,
+ * `_critique`, `_answer`, `_ballot_closed`), the block check is inside
+ * `dispatch_notify` so a blocked member is silenced in both directions, and
+ * `notifications-modal.tsx` renders them and routes a tap through the group
+ * key straight to `/dispatch/<id>`. A member IS told, and lands on the right
+ * page.
+ *
+ * So the choice was never "wire this or leave the notices broken". It was
+ * whether the app should have TWO notice lists, or one list with two visual
+ * languages in it — a paper row for a certification on a filing sitting
+ * above an app row for a follow. Both are worse than what exists.
+ *
+ * The plate went with it. `g4-events` also drew a fourth row, `shared a
+ * dossier`, for an event this database has no trigger for at all — a feature
+ * the record was inventing.
+ *
+ * Deleted rather than frozen. The frozen list is for design waiting on
+ * plumbing; this was waiting on a decision, and the decision is no.
  */
-export const PaperEvent = memo(function PaperEvent({
-  actor, verb, kind, opening, hour, unread, onOpen,
-}: {
-  onOpen?: () => void;
-  actor: PaperAuthor; verb: string; kind: keyof typeof KIND_RULE;
-  opening: string; hour: string; unread?: boolean;
-}) {
-  return (
-    <View style={{ paddingVertical: 12 }}>
-      <View style={p.postRow}>
-        <View style={[p.margin, { flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
-          {unread ? <View style={m.unread} /> : null}
-          <Text style={p.marginValue} {...decorativeTextProps}>{hour}</Text>
-        </View>
-        <View style={p.column}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={[
-              p.avatar,
-              actor.tier === 'archivist' && p.avatarArchivist,
-              actor.tier === 'auteur' && p.avatarAuteur,
-            ]}>
-              {actor.avatar ? (
-                <Image source={{ uri: actor.avatar }} style={p.plateArt} contentFit="cover" />
-              ) : (
-                <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(actor.name)}</Text>
-              )}
-            </View>
-            {/* ── THE ONE RANK SURFACE THAT TAKES NO MARK ───────────────────
-                The actor is a nested Text inside ONE truncating sentence, and
-                a View inside a Text is not something React Native lays out
-                reliably — so the stamp cannot go here, and the decision is
-                forced rather than aesthetic.
 
-                What it does take is the colour, because it already had the
-                tier RING and nothing else. Left alone it would have taken the
-                crimson ring from the stylesheet by accident while its name
-                stayed parchment, which is how a tenth surface quietly drifts
-                away from the other nine. */}
-            <Text style={m.eventLine} numberOfLines={1} {...scaledTextProps}>
-              <Text style={[m.eventActor, actor.tier === 'auteur' && m.eventActorAuteur]}>
-                {actor.name.toUpperCase()}
-              </Text>
-              {`  ${verb}`}
-            </Text>
-          </View>
-          <Text style={m.eventQuote} numberOfLines={2} {...scaledTextProps}>
-            <Text style={[p.leadIn, { fontSize: 8.5, color: KIND_RULE[kind] }]}>
-              {kind.toUpperCase()} —{' '}
-            </Text>
-            {opening}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-});
 
 /** A plain screen head for the pages reached from somewhere else. */
 export const PaperBack = memo(function PaperBack({
