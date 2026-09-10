@@ -2,41 +2,22 @@
 // jest.setup.ts — Global mocks for ReelHouse mobile test suite
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── THE APP'S PUBLIC CONFIG, SO A CONTRACT TEST CAN ACTUALLY RUN ────────────
-// `loungeEmbeds.contract.test.ts` proves the `profiles(...)` embeds still
-// resolve — the build-31 regression where a missing FK made every lounge read
-// return 400. It gates itself on the Supabase URL and anon key, and jest never
-// had either, so it had NEVER RUN. It reported as "skipped", which in a summary
-// of 272 passing suites reads exactly like a pass.
+// ── THE APP'S SUPABASE CONFIG IS DELIBERATELY *NOT* SET HERE ────────────────
+// Loading the real URL and anon key globally was tried and reverted, for two
+// reasons — the second one is the important one:
 //
-// Only the two EXPO_PUBLIC_ values are lifted, and only when not already set.
-// They ship inside the app bundle and are public by design. SUPABASE_DB_URL is
-// deliberately NOT read here: it is a real credential, and no unit test has any
-// business holding one.
+//   1. `src/lib/supabase.ts` and `src/lib/tmdb.ts` read them as
+//      `process.env.X || 'dummy'`. With the variables unset both operands
+//      evaluate, so the fallback is covered; setting them makes the fallback
+//      unreachable and dropped ./src/lib/ branch coverage under its floor.
 //
-// If neither file exists the test skips exactly as before — this makes the check
-// possible, it does not make it mandatory.
-(() => {
-  const { readFileSync, existsSync } = require('fs') as typeof import('fs');
-  const { join } = require('path') as typeof import('path');
-  const WANTED = ['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_ANON_KEY'];
-
-  for (const file of ['.env.local', '.env']) {
-    const path = join(__dirname, file);
-    if (!existsSync(path)) continue;
-    try {
-      for (const line of readFileSync(path, 'utf8').split('\n')) {
-        const eq = line.indexOf('=');
-        if (eq < 1 || line.trimStart().startsWith('#')) continue;
-        const key = line.slice(0, eq).trim();
-        if (!WANTED.includes(key) || process.env[key]) continue;
-        process.env[key] = line.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
-      }
-    } catch {
-      /* unreadable — the contract test skips itself, which it already reports */
-    }
-  }
-})();
+//   2. THE FALLBACKS ARE A SAFETY NET. `'https://dummy.supabase.co'` is what
+//      guarantees a unit test that accidentally builds a real client cannot
+//      reach PRODUCTION. Handing every one of 4,000 tests a live URL and a
+//      working anon key to save one contract test from skipping is a bad trade.
+//
+// The one test that genuinely needs credentials reads them itself — see
+// `src/services/__tests__/loungeEmbeds.contract.test.ts`.
 
 // Mock AccessibilityInfo (used by stores for announceForAccessibility)
 //
