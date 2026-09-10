@@ -797,6 +797,32 @@ END $$;
 
 
 --
+-- Name: dispatch_room_totals(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_room_totals(p_user_id uuid) RETURNS TABLE(filed integer, certified bigint)
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT
+    COUNT(*)::integer                        AS filed,
+    COALESCE(SUM(p.certify_count), 0)::bigint AS certified
+  FROM public.dispatch_posts p
+  WHERE p.user_id = p_user_id
+    AND p.is_published
+    AND p.withheld_at IS NULL
+    AND p.ended_at IS NULL;
+$$;
+
+
+--
+-- Name: FUNCTION dispatch_room_totals(p_user_id uuid); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.dispatch_room_totals(p_user_id uuid) IS 'The two numbers at the head of a member''s room: how many filings they have standing, and how many certifications those carry. SECURITY INVOKER so every policy on dispatch_posts still applies — a blocked member learns nothing.';
+
+
+--
 -- Name: dispatch_scrub_departed(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -8123,6 +8149,15 @@ GRANT ALL ON FUNCTION public.dispatch_notify_critique() TO service_role;
 GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_room_totals(p_user_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.dispatch_room_totals(p_user_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.dispatch_room_totals(p_user_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.dispatch_room_totals(p_user_id uuid) TO service_role;
 
 
 --
