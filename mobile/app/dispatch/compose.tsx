@@ -27,8 +27,8 @@ import { paperTierOf } from '@/src/stores/dispatchTypes';
 import { formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useDoor } from '@/src/hooks/useDoor';
 import {
-  adoptLegacyDraft, clearDraft, readDraft, writeDraft,
-} from '@/src/utils/dispatchDrafts';
+  adoptLegacyDrafts, clearDraft, readDraft, writeDraft,
+} from '@/src/utils/memberDrafts';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import {
   groupDigits, DOC_MARGIN, DOC_PAD, DOC_RAIL,
@@ -49,7 +49,10 @@ import type { FilingKind } from '@/src/stores/dispatchTypes';
    which is how one member's unpublished essay ended up waiting in the writing
    room for the next person to sign in on that phone. Whose a draft is, where it
    lives, and what happens to the ones written before the keys were split are all
-   answered once, in `src/utils/dispatchDrafts.ts`. */
+   answered once, in `src/utils/memberDrafts.ts` — which owns every draft this
+   app keeps, because the fault was never one key. It was that erasing them on
+   logout was a LIST somebody had to remember, and four keys in a row were
+   forgotten. They share a prefix now and logout sweeps the prefix. */
 
 /**
  * How close to the fence before the counter appears.
@@ -301,8 +304,9 @@ function ComposeDossierScreen() {
      */
     useEffect(() => {
         if (edit) return;
-        adoptLegacyDraft(user?.id);
-        const d = readDraft(user?.id);
+        adoptLegacyDrafts(user?.id);
+        const held = readDraft<{ title?: string; content?: string }>(user?.id, 'dossier');
+        const d = held?.data;
         if (d) {
             if (d.title) setTitle(d.title);
             if (d.content) {
@@ -320,9 +324,9 @@ function ComposeDossierScreen() {
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => {
             if (title.trim() || content.trim()) {
-                writeDraft(user?.id, { title, content });
+                writeDraft(user?.id, 'dossier', { title, content });
             } else {
-                clearDraft(user?.id);
+                clearDraft(user?.id, 'dossier');
             }
         }, 1000);
         return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
@@ -334,7 +338,7 @@ function ComposeDossierScreen() {
         const sub = AppState.addEventListener('change', (state) => {
             if (state !== 'active') {
                 const t = titleRef.current, c = contentRef.current;
-                if (t.trim() || c.trim()) writeDraft(user?.id, { title: t, content: c });
+                if (t.trim() || c.trim()) writeDraft(user?.id, 'dossier', { title: t, content: c });
             }
         });
         return () => sub.remove();
@@ -446,7 +450,7 @@ function ComposeDossierScreen() {
                 // to be deleted on the strength of a success that a silent
                 // truncation had already spoiled; now nothing is thrown away
                 // until there is a row to throw it away for.
-                if (filed) clearDraft(user?.id);
+                if (filed) clearDraft(user?.id, 'dossier');
                 reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Dossier filed');
             }
             router.replace('/(tabs)/dispatch');
@@ -468,7 +472,7 @@ function ComposeDossierScreen() {
                         Alert.alert('Discard Draft?', 'Your unsaved dossier will be lost.', [
                             { text: 'Keep Writing', style: 'cancel' },
                             { text: 'Discard', style: 'destructive', onPress: () => {
-                                if (!edit) clearDraft(user?.id);
+                                if (!edit) clearDraft(user?.id, 'dossier');
                                 router.back();
                             } },
                         ]);

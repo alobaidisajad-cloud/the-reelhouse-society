@@ -9,6 +9,9 @@ import { isNetworkError } from '@/src/utils/networkError';
 import { maybeRequestReview } from '@/src/utils/requestReview';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 import TactileEngine from '@/src/utils/TactileEngine';
+import {
+  adoptLegacyDrafts, clearDraft, readDraft, writeDraft,
+} from '@/src/utils/memberDrafts';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
@@ -32,6 +35,12 @@ export interface SelectedFilm {
     release_date?: string;
 }
 
+/**
+ * The old key, kept ONLY so the one-time reckoning in `memberDrafts` can find
+ * it. Nothing writes it any more: it carried no member, logout never cleared
+ * it, and it holds private notes — so it was readable by whoever signed in next
+ * on this phone. See `adoptLegacyDrafts`.
+ */
 export const DRAFT_KEY = 'reelhouse_log_draft';
 // AUTOPSY LAW: `null` means UNRATED; a number — including a deliberate 0 —
 // means the user filed that score. The saved JSONB carries only rated axes
@@ -306,13 +315,29 @@ export function useLogFlow() {
         setStep(1);
     }, [editLogId, logs]);
 
-    // ── Draft restore ──
+    /**
+     * ── DRAFT RESTORE ────────────────────────────────────────────────────────
+     * This draft carries a review, a rating and PRIVATE NOTES, and it lived
+     * under `reelhouse_log_draft` — one key, no member in it — which logout
+     * never cleared. So a member wrote, did not file, signed out, and the next
+     * person to sign in on this phone opened the log modal and read their
+     * private notes with the SAVE button live.
+     *
+     * `private_notes` is owner-only at the row level, has a trigger that diverts
+     * it, and is named in the guard as a column anon must never read. On the
+     * phone it was public to whoever held the phone.
+     *
+     * Whose a draft is now lives in `memberDrafts`, along with the one-time
+     * reckoning with the old key: adopted only if `last_user_id` proves nobody
+     * has signed out since, deleted unread otherwise.
+     */
     useEffect(() => {
         if (editLogId) return;
-        const raw = storage.getString(DRAFT_KEY);
-        if (raw) {
+        adoptLegacyDrafts(user?.id);
+        const held = readDraft<Record<string, unknown>>(user?.id, 'log');
+        if (held) {
             try {
-                const parsed = JSON.parse(raw);
+                const parsed = held.data as any;
                 // If opening modal fresh, auto-restore the film and draft state
                 if (!film?.id && parsed.filmId) {
                     setFilm({
@@ -336,7 +361,7 @@ export function useLogFlow() {
             } catch (err: unknown) { if (__DEV__) console.warn('[LogModal] draft restore failed:', err); }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [user?.id]);
 
     // ── Draft auto-save ──
     // Depend on stable scalar fields, not the entire `film` object reference.
@@ -394,17 +419,17 @@ export function useLogFlow() {
         if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
         draftTimerRef.current = setTimeout(() => {
             if (review.trim() || rating > 0 || privateNotes.trim()) {
-                storage.set(DRAFT_KEY, JSON.stringify({ 
+                writeDraft(user?.id, 'log', ({
                     filmId, review, rating, privateNotes,
                     filmTitle, filmName, 
                     filmPoster, filmYear
                 }));
             } else {
-                storage.delete(DRAFT_KEY);
+                clearDraft(user?.id, 'log');
             }
         }, 1000);
         return () => { if (draftTimerRef.current) clearTimeout(draftTimerRef.current); };
-    }, [review, rating, privateNotes, filmId, filmTitle, filmName, filmPoster, filmYear, editLogId]);
+    }, [review, rating, privateNotes, filmId, filmTitle, filmName, filmPoster, filmYear, editLogId, user?.id]);
 
     // ── DRAFT HANDLERS ──
     const selectFilm = (f: LogSearchResult) => {
@@ -429,7 +454,7 @@ export function useLogFlow() {
             const isNewEntry = !(isEditing && editLogId);
             if (isEditing && editLogId) { await updateLog(editLogId, logData); }
             else { await addLog(logData); }
-            storage.delete(DRAFT_KEY);
+            clearDraft(user?.id, 'log');
             TactileEngine.success();
             // Hold on a single brass beat — "RECORD SEALED" — then dismiss.
             //
@@ -504,7 +529,7 @@ export function useLogFlow() {
 
     // Explicit draft discard — clears MMKV and resets form state
     const discardDraft = useCallback(() => {
-        storage.delete(DRAFT_KEY);
+        clearDraft(user?.id, 'log');
         setRating(0);
         setReview('');
         setStatus('watched');

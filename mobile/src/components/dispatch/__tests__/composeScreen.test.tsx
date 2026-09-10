@@ -54,7 +54,7 @@ import ComposeScreen from '@/app/dispatch/compose';
  * real key, which is derived rather than typed so it cannot drift from it.
  */
 const LEGACY_KEY = 'reelhouse_dispatch_draft';
-const DRAFT_KEY = `reelhouse_dispatch_draft_u1`;
+const DRAFT_KEY = 'reelhouse_draft_u1_dossier';
 
 let mockUser: Record<string, unknown> | null = { id: 'u1', username: 'me', tier: 'auteur' };
 let mockFiled: Array<Record<string, unknown>> = [];
@@ -76,6 +76,10 @@ jest.mock('@/src/stores/auth', () => ({
 jest.mock('@/src/stores/mmkv-storage', () => ({
   storage: {
     getString: (k: string) => mockStore.get(k),
+    // `memberDrafts` sweeps by prefix on logout and evicts by age, so the mock
+    // has to be able to enumerate. Without it the sweep silently does nothing
+    // and every leak test passes for the wrong reason.
+    getAllKeys: () => [...mockStore.keys()],
     set: (k: string, v: string) => { mockStore.set(k, v); },
     delete: (k: string) => { mockStore.delete(k); },
   },
@@ -173,7 +177,7 @@ describe('the writing room', () => {
     const { getByLabelText } = open();
     await type(getByLabelText("Dossier headline"), 'The Empty Room');
     await act(async () => { jest.advanceTimersByTime(1200); });
-    expect(JSON.parse(mockStore.get(DRAFT_KEY)!).title).toBe('The Empty Room');
+    expect(JSON.parse(mockStore.get(DRAFT_KEY)!).data.title).toBe('The Empty Room');
   });
 
   it('gives the draft back when the room is opened again', async () => {
@@ -310,9 +314,11 @@ describe('an evening of writing survives the app going away', () => {
     // Straight to background, with no time for the timer.
     await act(async () => { mockAppState.fire('background'); });
 
+    // The payload rides inside an envelope now — `{ v, savedAt, data }` — so a
+    // draft can say WHEN it was written and an older shape can still be read.
     const saved = JSON.parse(mockStore.get(DRAFT_KEY)!);
-    expect(saved.title).toBe('The Empty Room');
-    expect(saved.content).toBe('The very last sentence.');
+    expect(saved.data.title).toBe('The Empty Room');
+    expect(saved.data.content).toBe('The very last sentence.');
   });
 
   it('writes nothing when there is nothing to write', async () => {
@@ -428,12 +434,16 @@ describe('amending a dossier that already exists', () => {
   it('never touches the NEW-dossier draft', async () => {
     // An edit loads from the server. Saving it over the draft would overwrite an
     // unfinished essay somebody has not filed yet.
-    mockStore.set(DRAFT_KEY, JSON.stringify({ title: 'Unfinished', content: 'Elsewhere.' }));
+    // Seeded in the shape a real draft has: an envelope carrying the payload.
+    mockStore.set(DRAFT_KEY, JSON.stringify({
+      v: 2, savedAt: '2026-09-10T21:40:00.000Z',
+      data: { title: 'Unfinished', content: 'Elsewhere.' },
+    }));
     const { getByLabelText } = openEdit();
     await type(getByLabelText("Dossier content body"), 'The second version.');
     await act(async () => { jest.advanceTimersByTime(1200); });
 
-    expect(JSON.parse(mockStore.get(DRAFT_KEY)!).title).toBe('Unfinished');
+    expect(JSON.parse(mockStore.get(DRAFT_KEY)!).data.title).toBe('Unfinished');
 
     await press(getByLabelText('Re-file the dossier'));
     await flush();

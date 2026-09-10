@@ -3,8 +3,9 @@ import { create } from 'zustand';
 import { removePushToken } from '../lib/pushNotifications';
 import { queryClient } from '../lib/queryClient';
 import { identifyUser, logoutRevenueCat } from '../lib/revenueCat';
-import { rememberRequestedHandle } from '../utils/handleNotice';
-import { clearAllDrafts } from '../utils/dispatchDrafts';
+import { rememberRequestedHandle, clearRequestedHandle } from '../utils/handleNotice';
+import { clearHandleHistory } from '../utils/handleHistory';
+import { clearAllDrafts } from '../utils/memberDrafts';
 import { captureError, setSentryUser } from '../lib/sentry';
 import type { User as AuthUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -456,6 +457,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // phone opened the room and found somebody else's work — readable, and
     // filable under their own name.
     clearAllDrafts(previousUserId);
+    // Their old handles and any handle they had asked for. Both guard themselves
+    // by holding the member id in the payload, so a second member could never
+    // READ them — but they were still one person's names left on somebody
+    // else's phone. Both modules have exported the eraser all along and nothing
+    // called either.
+    clearHandleHistory();
+    clearRequestedHandle();
     clearOfflineQueue();
     storage.delete('REELHOUSE_QUERY_CACHE');
     storage.delete('nitrate_memory_feed');

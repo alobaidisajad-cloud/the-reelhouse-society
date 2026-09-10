@@ -340,6 +340,18 @@ describe('#64 · every per-member cache on disk is erased', () => {
     const authSrc = fs.readFileSync(path.join(__dirname, '..', 'auth.ts'), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
     expect(authSrc).toMatch(/clearAllDrafts\(previousUserId\)/);
+
+    /**
+     * And the two that are not drafts. Their own modules have exported an eraser
+     * since they were written and logout called neither, so a departed member's
+     * old usernames and the handle they had asked for stayed on the phone.
+     *
+     * They were never READABLE by the next member — both hold the id in the
+     * payload and every read checks it — which is exactly why they needed a
+     * different fix from the drafts rather than being swept up with them.
+     */
+    expect(authSrc).toMatch(/clearHandleHistory\(\)/);
+    expect(authSrc).toMatch(/clearRequestedHandle\(\)/);
   });
 });
 

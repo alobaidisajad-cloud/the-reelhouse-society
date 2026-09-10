@@ -150,26 +150,25 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     // The same rule that the pending preferences taught: unsynced work must
     // survive regardless of encryption. A log draft and a dossier draft are the
     // member's own words, not a copy of something the server already has.
-    expect(strip(read('src/hooks/useLogFlow.ts'))).toMatch(/storage\.set\(DRAFT_KEY/);
-
     /**
-     * The dossier draft moved out of the screen and into its own module when
-     * the key gained a member — it used to be one shared string, so one
-     * member's unpublished essay waited in the writing room for the next
-     * person to sign in on that phone.
+     * EVERY draft moved into one module when the keys gained a member. They
+     * used to be four shared strings — an essay, a log carrying PRIVATE NOTES,
+     * a handle history and a pending handle — none of them cleared by logout,
+     * so all four were readable by the next person to sign in on that phone.
      *
-     * So this now asserts the RULE rather than a line in a screen: the module
-     * that owns the draft writes it ungated, and never reaches for the
-     * sensitive path. Anchored on `storage.set(draftKey(` — the actual write —
-     * so moving it again without keeping the rule fails here.
+     * So this asserts the RULE rather than a line in a screen: the module that
+     * owns them writes ungated and never reaches for the sensitive path.
+     * Anchored on the actual write, so moving it again without keeping the rule
+     * fails here.
      */
-    const drafts = strip(read('src/utils/dispatchDrafts.ts'));
+    const drafts = strip(read('src/utils/memberDrafts.ts'));
     expect(drafts).toMatch(/storage\.set\(draftKey\(/);
     expect(drafts).not.toMatch(/setSensitive/);
 
-    // And the screen no longer writes a draft by hand at all, which is what
-    // stops a second, unkeyed path appearing beside the module.
+    // And no screen writes a draft by hand any more, which is what stops a
+    // second, unkeyed path appearing beside the module.
     expect(strip(read('app/dispatch/compose.tsx'))).not.toMatch(/storage\.set\(/);
+    expect(strip(read('src/hooks/useLogFlow.ts'))).not.toMatch(/storage\.set\(DRAFT_KEY/);
   });
 
   it('the profile cache — which carries the member EMAIL — is gated', () => {
