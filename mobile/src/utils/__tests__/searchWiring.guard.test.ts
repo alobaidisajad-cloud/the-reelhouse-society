@@ -73,6 +73,12 @@ describe('every ilike carrying member input goes through the funnel', () => {
     'src/services/FeedService.ts',
     'src/services/ProfileDataService.ts',
     'src/services/FollowRequestService.ts',
+    // The Dispatch's archive: a member names a film and the house's filings
+    // about it are gathered. It searches `dispatch_posts.subject_title`, which
+    // is member-captured text, and it arrived here carrying a hand-rolled
+    // escaper that covered `%` and `_` and missed `*` — PostgREST's own alias
+    // for `%`. This guard is what refused it.
+    'src/hooks/useDispatchArchive.ts',
   ];
 
   const filesUsingIlike = FILES

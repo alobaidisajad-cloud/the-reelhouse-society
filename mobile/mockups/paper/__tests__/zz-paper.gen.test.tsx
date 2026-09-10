@@ -1222,9 +1222,15 @@ add('h6-film-finder', (
 add('h8-share', (
   <View style={[p.screen, { justifyContent: 'flex-end' }]}>
     <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(6,5,3,0.72)' }} />
+    {/* The preview the APP passes: two lines of the filing's own words. It
+        drew a `LoungeCard` here, which is a card the reader has never rendered
+        and which is only accurate for one of the three destinations — a plate
+        of a screen the app does not have. */}
     <ShareSheet preview={
-      <LoungeCard kind="take" author={MIRA} certifyCount={214} commentCount={31}
-        body="Tokyo Story is the only film that has ever made me telephone my mother the same night." />
+      <Text style={p.sharePreview} numberOfLines={2}>
+        Tokyo Story is the only film that has ever made me telephone my mother
+        the same night.
+      </Text>
     } />
   </View>
 ));

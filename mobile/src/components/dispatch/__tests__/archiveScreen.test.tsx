@@ -191,6 +191,30 @@ describe('the archive', () => {
     expect(search()!.ilike.subject_title).toBe('%8\\_½%');
   });
 
+  it('escapes the wildcard that is NOT a SQL one', async () => {
+    /**
+     * `*` is PostgREST's own alias for `%` inside an ilike value. A hand-rolled
+     * escaper covering `%` and `_` — which is what this hook shipped with for
+     * an hour — leaves it live, and a member typing `*` matches every filing
+     * the house has. `searchWiring.guard.test.ts` is what refused it, and
+     * `buildSearchPattern` is what covers it.
+     */
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, 'sta*ker');
+    expect(search()!.ilike.subject_title).toBe('%sta\\*ker%');
+  });
+
+  it('refuses a term that would match everything', async () => {
+    // A term of nothing but the characters PostgREST's filter parser owns
+    // becomes nothing but wildcards. `buildSearchPattern` returns null and the
+    // query is not run at all.
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, '(),');
+    expect(search()).toBeUndefined();
+  });
+
   it('waits for the typing to stop', async () => {
     const r = render(<ArchiveScreen />);
     await act(async () => { await Promise.resolve(); });

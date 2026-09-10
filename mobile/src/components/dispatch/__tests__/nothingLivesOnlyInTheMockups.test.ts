@@ -71,29 +71,51 @@ const importsFrom = (src: string, basename: string): boolean =>
   || new RegExp(`(?:from|require\\(|import\\()\\s*['"]${basename}['"]`).test(src);
 
 /**
- * ── WHAT IS DESIGNED BUT NOT YET WIRED ──────────────────────────────────────
- * Fifteen components the mockups draw and no screen mounts. They are not
- * mistakes — they are finished design work waiting on the plumbing:
+ * ── WHAT IS DESIGNED AND NOT WIRED, AND WHY EACH ONE IS NOT ─────────────────
+ * This list used to say "finished design work waiting on the plumbing" and
+ * leave it there. That was true of some of them and not of others, and an
+ * undifferentiated list is how a component nobody will ever wire sits beside
+ * one that is a day's work away, for a year, looking identical.
  *
- *   the door, the house rules, the archive, a member's room, the docket,
- *   the lounge card and its story frame, the events rail,
- *   the wire desk and the DOSSIER desk — the writing room with FILM, COVER and
- *   SERIES, none of which the app's own writing room offers.
+ * So every entry now carries a VERDICT. There are three:
  *
- * Frozen here rather than deleted, because deleting them would throw away the
- * design and the record of it. The list may only ever SHRINK: anything new that
- * lands here is a component the mockups are keeping alive by accident, which is
- * exactly what took PaperConcierge two hundred lines past its own death.
+ *   WAITING ON PLUMBING — the screen is wanted and the work is not done.
+ *   WAITING ON A BUILD — blocked by a native dependency under the release
+ *                        freeze; nothing to decide, something to wait for.
+ *   DECIDED AGAINST     — the app already does this, in one voice, and doing
+ *                         it twice would be worse. These are candidates for
+ *                         deletion the next time this file is opened.
+ *
+ * Two were deleted this pass rather than frozen — `ReportSheet` and
+ * `PaperEvent` — because both had a DEFECT as well as a duplicate: one carried
+ * a sentence about five reports that the rules page had already struck as
+ * false, and the other's plate drew an event this schema has no trigger for.
+ * A frozen component is a record; a frozen component that is WRONG is a
+ * proposal waiting to be mistaken for one.
+ *
+ * The list may only ever SHRINK: anything new that lands here is a component
+ * the mockups are keeping alive by accident, which is exactly what took
+ * PaperConcierge two hundred lines past its own death.
  */
 const DESIGNED_NOT_WIRED = new Set([
   // `FilmPicker` came off this list when the writing room began using it to
   // name the film a dossier is about — the ratchet doing precisely its job.
+
+  // DECIDED AGAINST × 4. The app has a writing room — `ComposeDesks`, and
+  // `app/dispatch/compose.tsx` around it — and it is the one that ships, with
+  // the toolbar, the preview that is the reader, the film and the series. These
+  // four are the alternative that lost. They stay drawn while the design record
+  // still refers to them; nothing will mount them.
   'src/components/dispatch/paper/PaperDesk.tsx  ::  DeskHead',
   'src/components/dispatch/paper/PaperDesk.tsx  ::  DeskRail',
   'src/components/dispatch/paper/PaperDesk.tsx  ::  WireDesk',
   'src/components/dispatch/paper/PaperDesk.tsx  ::  DossierDesk',
+  // KEPT FOR THE RECORD. `EssayPara` is not dead design — it is how the `h1`
+  // plate draws the essay's TYPE, beside `h1b` which draws the real path
+  // through `EssayBody` and the markdown renderer. The app cannot use it: the
+  // renderer builds its own paragraph nodes and a component cannot be threaded
+  // into the middle of that. The typography is shared through `ESSAY_BODY`.
   'src/components/dispatch/paper/PaperEssay.tsx  ::  EssayPara',
-  'src/components/dispatch/paper/PaperFrame.tsx  ::  BrassButton',
   // `PaperDoor` came off when the writing room began drawing it — the rule it
   // states has been enforced by `posts_door` all along, and the app had never
   // once mentioned it.
@@ -105,8 +127,23 @@ const DESIGNED_NOT_WIRED = new Set([
   // `PaperRoom` came off this list when app/dispatch/room/[username].tsx began
   // mounting it — and the four bylines that promised "Open their room" started
   // going there. The ratchet doing its job for the second time.
+  // DECIDED AGAINST. The Tribunal exists, is live, and handles every content
+  // type this app has with the full range of verdicts — dismiss, remove, warn,
+  // mute, suspend, ban. `PaperCase` is the Dispatch's own docket in the paper's
+  // voice, for one content type, with two verdicts. It is a nicer object and a
+  // worse tool, and it is admin-facing, so no member ever meets the difference.
   'src/components/dispatch/paper/PaperMore.tsx  ::  PaperCase',
+  // WAITING ON A BUILD. The story export is a card on a 9:16 ground, and there
+  // is nowhere to put the result: writing an image to the photo library needs
+  // `expo-media-library`, which is not a dependency and cannot become one
+  // without a native build, and the release is frozen. `ShareSheet` documents
+  // the same block on its own `card` prop. Nothing to decide.
   'src/components/dispatch/paper/PaperMore.tsx  ::  StoryFrame',
+  // DECIDED AGAINST. Sharing a filing into a lounge is wired end to end — the
+  // reader's share sheet, `ShareToLoungeModal`, a `dossier_share` message
+  // carrying the filing's kind, and `SharedCard` in `app/lounge/[id].tsx` which
+  // labels a take as a TAKE and opens the filing when tapped. `LoungeCard` is a
+  // second design for a card that already draws.
   'src/components/dispatch/paper/PaperMore.tsx  ::  LoungeCard',
   // `PaperEvent` was DELETED rather than wired: the notices are finished and
   // work — four database triggers write them and the app's own modal routes a

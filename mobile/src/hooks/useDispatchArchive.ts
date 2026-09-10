@@ -27,6 +27,7 @@ import type { PaperFilm } from '@/src/components/dispatch/paper/PaperPost';
 import { FILING_CARD_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/dispatchTypes';
 import { useDispatch } from '@/src/stores/dispatch';
 import { logger } from '@/src/utils/logger';
+import { buildSearchPattern } from '@/src/utils/searchPattern';
 
 /** One page of a film's filings. */
 export const ARCHIVE_PAGE = 20;
@@ -73,15 +74,19 @@ const spanOf = (firstISO: string, lastISO: string): string => {
 };
 
 /**
- * A LIKE pattern that means what the member typed.
+ * ── THE SEARCH GOES THROUGH THE HOUSE'S OWN FUNNEL ──────────────────────────
+ * A hand-rolled escaper stood here — `%`, `_` and a backslash — and it was
+ * wrong in a way that is invisible from reading it: PostgREST treats `*` as its
+ * OWN alias for `%` inside an ilike value, so a member typing `*` in the
+ * archive would have matched every filing in the house. `buildSearchPattern`
+ * escapes that third wildcard too, and turns the three characters PostgREST's
+ * filter parser owns into `_` rather than letting them rewrite the filter.
  *
- * `%` and `_` are wildcards, and a title genuinely containing one — `8_½`, or
- * anything with a percent — would otherwise match far more than itself. `\` is
- * escaped first or it would escape the escapes.
+ * Every claim in that file was measured against the live database. This one was
+ * reasoned about, which is the difference — and `searchWiring.guard.test.ts`
+ * refused the new search until it came through here, which is what a guard is
+ * for.
  */
-const likeSafe = (q: string): string =>
-  q.replace(/\\/g, '\\\\').replace(/[%_]/g, (c) => `\\${c}`);
-
 export function useDispatchArchive(): DispatchArchive {
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<ArchiveMatch[]>([]);
@@ -101,6 +106,10 @@ export function useDispatchArchive(): DispatchArchive {
   const search = useCallback(async (q: string) => {
     const term = q.trim();
     if (term.length < 2) { setMatches([]); setSearching(false); return; }
+    // Null when the term is nothing but the characters the parser owns — a
+    // search that would match everything is refused rather than run.
+    const pattern = buildSearchPattern(term);
+    if (!pattern) { setMatches([]); setSearching(false); return; }
     const mine = ++seq.current;
     setSearching(true);
     try {
@@ -113,7 +122,7 @@ export function useDispatchArchive(): DispatchArchive {
         .eq('is_published', true)
         .is('withheld_at', null)
         .is('ended_at', null)
-        .ilike('subject_title', `%${likeSafe(term)}%`)
+        .ilike('subject_title', `%${pattern}%`)
         .order('created_at', { ascending: false })
         .limit(SEARCH_ROWS);
       if (mine !== seq.current) return;

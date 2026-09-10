@@ -337,8 +337,13 @@ export const DayDivider = memo(function DayDivider({ label }: { label: string })
  * A test could catch that. A required prop makes it impossible, which is better:
  * the compiler is checked on every build and by every editor, and it names the
  * line rather than a file.
+ *
+ * NOT exported. `PaperEmpty` is its only caller and it lives in this file; the
+ * `export` was surface nobody asked for, and it read as a component waiting to
+ * be wired when it has been in use on the day-one screen and every empty
+ * department all along.
  */
-export const BrassButton = memo(function BrassButton({
+const BrassButton = memo(function BrassButton({
   label, onPress,
 }: { label: string; onPress: () => void }) {
   return (

@@ -14,6 +14,7 @@ import { colors, fonts } from '@/src/theme/theme';
 
 import reelToast from '@/src/utils/reelToast';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { clipToSentence } from '@/src/components/dispatch/paper/paperText';
 
 interface ShareToLoungeProps {
     visible: boolean;
@@ -57,6 +58,33 @@ interface _LoungeMemberRow {
  * design pass must raise, which no halo can do.
  */
 const LOUNGE_SLOP = { top: 3, bottom: 3, left: 15, right: 15 } as const;
+
+/**
+ * ── WHAT GOES IN THE CARD'S TITLE COLUMN ────────────────────────────────────
+ * `lounge_messages.film_title` has a CHECK of 300 characters, and the Dispatch
+ * shares every kind of filing down this path with `title || body` — so a TAKE,
+ * which runs to 2,000, was sent whole. Past 300 the constraint refused the
+ * insert; the modal had already closed on "fire and forget", and the member got
+ * a raw Postgres error naming `lounge_messages_film_title_len` while their
+ * filing never reached the room. It failed for exactly the longer, more
+ * considered takes.
+ *
+ * Cut at a SENTENCE, not at a character: the card is showing somebody's writing
+ * and `…and the thing about Ozu is that he ne` is not a title. `clipToSentence`
+ * walks back to the last full stop and only falls back to a word boundary when
+ * there is no sentence to end on.
+ *
+ * Applied to every share, not only the Dispatch's. A stack title is capped at
+ * 100 and a film title is short, so this changes nothing for them — and it is
+ * the last thing standing between any future caller and the same error.
+ */
+export const cardTitle = (raw?: string | null): string | null => {
+    const whole = (raw ?? '').trim();
+    if (!whole) return null;
+    if (whole.length <= MAX_LENGTHS.loungeShareTitle) return whole;
+    const cut = clipToSentence(whole, MAX_LENGTHS.loungeShareTitle);
+    return cut.clipped ? `${cut.text}…` : cut.text;
+};
 
 const LoungeItem = React.memo(({ item, isSelected, onSelect }: { item: LoungeRoom, isSelected: boolean, onSelect: (id: string) => void }) => (
     <PressableScale
@@ -130,7 +158,7 @@ export default function ShareToLoungeModal({
             // film_title is the lounge card's title column — it carries the
             // essay's headline; everything else rides the metadata jsonb.
             payload = {
-                film_title: dossierTitle ?? null,
+                film_title: cardTitle(dossierTitle),
                 // `kind` is new and OPTIONAL, so every message already in every
                 // room keeps rendering exactly as it did. The Dispatch shares
                 // five kinds of filing through this one path — the metadata key
@@ -150,7 +178,9 @@ export default function ShareToLoungeModal({
         } else {
             payload = {
                 film_id: filmId ? Number(filmId) : null,
-                film_title: filmTitle ?? null,
+                // The same clamp. A film title is short and this changes nothing
+                // for it — which is the point: one door into that column.
+                film_title: cardTitle(filmTitle),
                 film_poster: posterPath ?? null,
                 metadata
             };

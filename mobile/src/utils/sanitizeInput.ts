@@ -62,6 +62,21 @@ export const MAX_LENGTHS = {
   reportDetails: 500,
   dossierTitle: 200,
   dossierExcerpt: 500,
+  /**
+   * The title on a card shared into a lounge — `lounge_messages.film_title`.
+   *
+   * The column's own CHECK is 300, and the Dispatch was sending a take's whole
+   * BODY down this path: `dossierTitle={live.title || live.body}`, and a take
+   * runs to 2,000 characters. Anything past 300 was refused by the constraint,
+   * and the modal had already closed — so a member sharing a longer take saw a
+   * raw Postgres error about `lounge_messages_film_title_len` and their filing
+   * never arrived in the room.
+   *
+   * 180 rather than 300, because the card sets this in two lines and the
+   * ceiling that matters is the one the design can hold, not the one the column
+   * will accept.
+   */
+  loungeShareTitle: 180,
   // Essays are longform by design: ~4,350 words at this app's measured 5.75
   // characters per word. This is the sanitizer's memory/abuse fence, not an
   // editorial limit.

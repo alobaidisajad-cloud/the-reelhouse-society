@@ -16,8 +16,17 @@
  * and quietly broken the second — an italic in the first sentence would print
  * its asterisks. So the WHOLE body goes through the markdown renderer, and the
  * drop cap is a RULE inside it: the first paragraph is drawn by the design's own
- * `EssayOpening`, every later one as an `EssayPara`, and a horizontal rule
- * becomes the printed ornament.
+ * `EssayOpening`, and a horizontal rule becomes the printed ornament.
+ *
+ * ── AND THE LATER PARAGRAPHS ARE THE RENDERER'S OWN ─────────────────────────
+ * This said "every later one as an `EssayPara`". It does not, and cannot: the
+ * markdown renderer builds its own paragraph nodes, and a component cannot be
+ * threaded into the middle of that. They are set by the `paragraph` rule below,
+ * on the `body` style, which reads `ESSAY_BODY` and takes the same leading
+ * through `withLeading` — so the TYPE is identical by construction, which is
+ * what the sentence was reaching for. Naming a component the file does not
+ * import is how a docstring starts describing a version of the code that no
+ * longer exists.
  *
  * Nothing bypasses the guards, and nothing about the page changes.
  */
