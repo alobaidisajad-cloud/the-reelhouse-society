@@ -89,6 +89,43 @@ describe('what a draft makes visible', () => {
     );
     writeFileSync(join(OUT, 'y2-picker-in-progress.html'), toHtml(picker.toJSON()), 'utf8');
 
+    /**
+     * The two-sided question, at its widest: the longest weekday on both lines
+     * and a five-figure word count, which is past what the essay ceiling allows
+     * and therefore past anything a member can produce.
+     */
+    const elsewhere = render(
+      <View style={p.screen}>
+        <View style={{ paddingHorizontal: DOC_MARGIN + DOC_RAIL + DOC_PAD, paddingTop: 24 }}>
+          <View style={{
+            borderWidth: 1, borderColor: 'rgba(184,137,26,0.30)', borderRadius: 2,
+            paddingHorizontal: 12, paddingVertical: 10,
+          }}>
+            <Text style={{
+              fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+              color: colors.parchment, marginBottom: 8, includeFontPadding: false,
+            }} {...scaledTextProps}>A NEWER ONE WAS WRITTEN ELSEWHERE</Text>
+            {['ELSEWHERE · WEDNESDAY · 21:40 · 12,480 WORDS',
+              'HERE · WEDNESDAY · 09:12 · 11,204 WORDS'].map((t) => (
+                <Text key={t} style={{
+                  fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.4,
+                  color: colors.sepia, marginTop: 2, includeFontPadding: false,
+                }} {...scaledTextProps}>{t}</Text>
+              ))}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 12 }}>
+              {['TAKE THAT ONE', 'KEEP THIS ONE'].map((t) => (
+                <Text key={t} style={{
+                  fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+                  color: colors.parchment, includeFontPadding: false,
+                }} {...scaledTextProps}>{t}</Text>
+              ))}
+            </View>
+          </View>
+        </View>
+      </View>,
+    );
+    writeFileSync(join(OUT, 'y4-a-newer-one-elsewhere.html'), toHtml(elsewhere.toJSON()), 'utf8');
+
     const door = render(
       <View style={p.screen}>
         <View style={{ flex: 1, justifyContent: 'center' }}>

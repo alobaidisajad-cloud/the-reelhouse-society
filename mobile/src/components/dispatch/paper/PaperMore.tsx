@@ -270,7 +270,16 @@ export const CLAUSES: [string, string][] = [
   ['III', 'A wire carries its source. No source, no wire.'],
   ['IV', 'One member, one name. A second voice is not a second person.'],
   ['V', 'Report a filing and the house reads it. A report is not a verdict, and neither is the number of them.'],
-  ['VI', 'What you keep is yours and is never shown. What you file is the house’s and is.'],
+  /**
+   * "finished or not" was added the day an unfinished essay stopped living only
+   * on the member's phone. `member_drafts` keeps it so a lost handset does not
+   * take four thousand words with it — owner-only at the row level, readable by
+   * nobody, the house's own screens included.
+   *
+   * A schema change that makes a clause false is not a schema change. It is a
+   * broken promise with a migration attached.
+   */
+  ['VI', 'What you keep is yours and is never shown, finished or not. What you file is the house’s and is.'],
   ['VII', 'A ballot is secret until it closes. Not even the house counts it early.'],
   ['VIII', 'Nothing filed is destroyed. A filing may be withdrawn, and the critiques written under it stand.'],
   ['IX', 'The long forms — the dossier, the ballot — are an Auteur’s to file.'],

@@ -4329,6 +4329,30 @@ CREATE TABLE public.lounges (
 
 
 --
+-- Name: member_drafts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.member_drafts (
+    user_id uuid NOT NULL,
+    kind text NOT NULL,
+    scope text DEFAULT ''::text NOT NULL,
+    payload jsonb NOT NULL,
+    saved_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT member_drafts_ceiling CHECK ((char_length((payload)::text) <= 30000)),
+    CONSTRAINT member_drafts_kind CHECK ((kind = ANY (ARRAY['dossier'::text, 'edit'::text]))),
+    CONSTRAINT member_drafts_scope_len CHECK ((char_length(scope) <= 100))
+);
+
+
+--
+-- Name: TABLE member_drafts; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.member_drafts IS 'A member''s unfinished essay, so a lost phone does not take it. Owner-only at the row level and readable by nobody else, including the house''s own screens. See clause VI of the house rules, which was amended alongside this table.';
+
+
+--
 -- Name: member_no_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -4847,6 +4871,14 @@ ALTER TABLE ONLY public.lounge_messages
 
 ALTER TABLE ONLY public.lounges
     ADD CONSTRAINT lounges_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: member_drafts member_drafts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.member_drafts
+    ADD CONSTRAINT member_drafts_pkey PRIMARY KEY (user_id, kind, scope);
 
 
 --
@@ -5756,6 +5788,13 @@ CREATE TRIGGER set_logs_updated_at BEFORE UPDATE ON public.logs FOR EACH ROW EXE
 
 
 --
+-- Name: member_drafts set_member_drafts_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER set_member_drafts_updated_at BEFORE UPDATE ON public.member_drafts FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: notifications set_notifications_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -6493,6 +6532,14 @@ ALTER TABLE ONLY public.lounge_messages
 
 ALTER TABLE ONLY public.lounges
     ADD CONSTRAINT lounges_creator_id_fkey FOREIGN KEY (creator_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: member_drafts member_drafts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.member_drafts
+    ADD CONSTRAINT member_drafts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
 
 --
@@ -7537,6 +7584,40 @@ CREATE POLICY lpn_select ON public.log_private_notes FOR SELECT USING ((user_id 
 
 CREATE POLICY lpn_update ON public.log_private_notes FOR UPDATE USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
 
+
+--
+-- Name: member_drafts md_delete; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY md_delete ON public.member_drafts FOR DELETE TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: member_drafts md_insert; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY md_insert ON public.member_drafts FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+
+
+--
+-- Name: member_drafts md_select; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY md_select ON public.member_drafts FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: member_drafts md_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY md_update ON public.member_drafts FOR UPDATE TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
+
+
+--
+-- Name: member_drafts; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.member_drafts ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: mod_actions; Type: ROW SECURITY; Schema: public; Owner: -
@@ -9344,6 +9425,14 @@ GRANT ALL ON TABLE public.lounge_messages TO service_role;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lounges TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lounges TO authenticated;
 GRANT ALL ON TABLE public.lounges TO service_role;
+
+
+--
+-- Name: TABLE member_drafts; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.member_drafts TO authenticated;
+GRANT ALL ON TABLE public.member_drafts TO service_role;
 
 
 --

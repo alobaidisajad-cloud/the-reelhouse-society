@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
 // The preview mounts `EssayBody`, which carries the link guard and the render
 // cap itself — so this screen no longer holds its own copy of either.
@@ -29,6 +29,9 @@ import { WEEKDAYS, hourLabel } from '@/src/components/dispatch/dayLabel';
 import { paperTierOf } from '@/src/stores/dispatchTypes';
 import { formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useDoor } from '@/src/hooks/useDoor';
+import {
+  pullDraft, pushDraft, dropDraft, whichCopy, SYNC_EVERY_MS, type RemoteDraft,
+} from '@/src/utils/draftSync';
 import {
   adoptLegacyDrafts, clearDraft, readDraft, writeDraft, unreadableDraftFound,
   type DossierDraft,
@@ -67,6 +70,24 @@ import type { FilingKind } from '@/src/stores/dispatchTypes';
  * without hovering over anyone writing an ordinary piece.
  */
 const LIMIT_WARNING_CHARS = 5000;
+
+/**
+ * `TUESDAY · 21:40`, from the app's own tables.
+ *
+ * NEVER `Intl` — it is not in Hermes and this app ships no polyfill, so a
+ * `toLocaleString` would work in every test and throw on a device.
+ */
+const whenOf = (iso: string): string => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return `${WEEKDAYS[d.getDay()]} · ${hourLabel(iso)}`;
+};
+
+/** How long each side is, which is half of what makes the choice answerable. */
+const wordsOf = (text?: string): string => {
+    const n = (text ?? '').trim() ? (text ?? '').trim().split(/\s+/).length : 0;
+    return `${groupDigits(n)} ${n === 1 ? 'WORD' : 'WORDS'}`;
+};
 
 /**
  * ── THE DESK YOU ARE SENT TO ─────────────────────────────────────────────────
@@ -310,6 +331,25 @@ function ComposeDossierScreen() {
      */
     const [restored, setRestored] = useState<string | null>(null);
     const [saveFailed, setSaveFailed] = useState(false);
+    /** The house is holding something newer, written somewhere else. */
+    const [elsewhere, setElsewhere] = useState<RemoteDraft<DossierDraft> | null>(null);
+
+    /** One way to put a draft into the room, so the two sources cannot drift. */
+    const applyDraft = useCallback((d: DossierDraft) => {
+        setTitle(d.title ?? '');
+        setContent(d.content ?? '');
+        setSelection({ start: (d.content ?? '').length, end: (d.content ?? '').length });
+        setFilm(d.film ?? null);
+        setSeries(d.series ?? null);
+        if (d.series) {
+            // Asked fresh, exactly as a local restore does — a part number is a
+            // fact about when the series was picked, and this one was picked on
+            // another phone, possibly days ago.
+            void freshPartFor(user?.id, d.series.id).then((part) => {
+                if (part != null) setSeries((s) => (s && s.id === d.series!.id ? { ...s, part } : s));
+            });
+        }
+    }, [user?.id]);
 
     /**
      * `TUESDAY · 21:40`, from the app's own tables.
@@ -406,6 +446,65 @@ function ComposeDossierScreen() {
         setRestored(held?.savedAt ?? 'unknown');
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id]);
+
+    /**
+     * ── AND THE COPY THAT IS NOT ON THIS PHONE ───────────────────────────────
+     * The local draft above is what the room opens with, always. This asks the
+     * house whether it is holding something the member touched more recently —
+     * on a phone they have since lost, or before a reinstall.
+     *
+     * It ASKS rather than merges. A merge rule for prose is a rule for silently
+     * producing text nobody wrote, and nothing is overwritten until the member
+     * chooses. That is also what makes this verifiable without a second handset.
+     */
+    useEffect(() => {
+        if (!user?.id) return;
+        let cancelled = false;
+        (async () => {
+            const remote = await pullDraft<DossierDraft>(
+                user.id, edit ? 'edit' : 'dossier', edit ?? '',
+            );
+            if (cancelled || !remote) return;
+            const local = readDraft<DossierDraft>(user.id, edit ? 'edit' : 'dossier', edit ?? '');
+            const verdict = whichCopy(local?.savedAt, remote.savedAt);
+            if (verdict === 'remote') {
+                // Nothing here to lose — a new phone, or an install that has
+                // never held this essay. Take it and say where it came from.
+                applyDraft(remote.data);
+                setRestored(remote.savedAt);
+            } else if (verdict === 'ask') {
+                setElsewhere(remote);
+            }
+        })();
+        return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id, edit]);
+
+    /**
+     * ── THE BACKUP, EVERY TWO MINUTES ────────────────────────────────────────
+     * Not a debounce on typing. Measured against the real ceiling — 25,000
+     * characters — a ten-second push is about nine megabytes an hour of
+     * somebody's mobile data, for a file that only matters if their phone dies.
+     *
+     * Two minutes, plus the background flush below, plus when the room closes.
+     * Worst case a member loses two minutes, and only if the handset is
+     * destroyed inside that window.
+     */
+    useEffect(() => {
+        if (!user?.id) return;
+        const backUp = () => {
+            const t = titleRef.current, c = contentRef.current;
+            if (!t.trim() && !c.trim()) return;
+            void pushDraft(
+                user.id, edit ? 'edit' : 'dossier',
+                { title: t, content: c, film: filmRef.current, series: seriesRef.current },
+                new Date().toISOString(), edit ?? '',
+            );
+        };
+        const every = setInterval(backUp, SYNC_EVERY_MS);
+        const sub = AppState.addEventListener('change', (s) => { if (s !== 'active') backUp(); });
+        return () => { clearInterval(every); sub.remove(); backUp(); };
+    }, [user?.id, edit]);
 
     /**
      * ── AN AMEND IS KEPT TOO, AND SEPARATELY ─────────────────────────────────
@@ -590,6 +689,8 @@ function ComposeDossierScreen() {
                 });
                 // The rewrite is the house's now, so the copy on the phone goes.
                 clearDraft(user?.id, 'edit', edit);
+                // And the backup, which exists only until the house has the words.
+                void dropDraft(user?.id, 'edit', edit);
                 reelToast.success('Dossier updated');
             } else {
                 const filed = await useDispatch.getState().file({
@@ -612,7 +713,7 @@ function ComposeDossierScreen() {
                 // to be deleted on the strength of a success that a silent
                 // truncation had already spoiled; now nothing is thrown away
                 // until there is a row to throw it away for.
-                if (filed) clearDraft(user?.id, 'dossier');
+                if (filed) { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
                 reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Dossier filed');
             }
             router.replace('/(tabs)/dispatch');
@@ -668,8 +769,10 @@ function ComposeDossierScreen() {
                                     // Whichever one this room is holding. Discarding
                                     // an amend must not touch an unfinished new
                                     // essay sitting in the other slot.
-                                    if (edit) clearDraft(user?.id, 'edit', edit);
-                                    else clearDraft(user?.id, 'dossier');
+                                    // The backup goes with it: a discarded
+                                    // essay must not reappear on the next phone.
+                                    if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
+                                    else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
                                     router.back();
                                 } },
                             ],
@@ -798,6 +901,46 @@ function ComposeDossierScreen() {
                             accepting it, and `START CLEAN` is here because
                             otherwise a member who wants a fresh essay has to
                             hand-delete four thousand characters. */}
+                        {/* ── A NEWER ONE WAS WRITTEN SOMEWHERE ELSE ─────────
+                            It asks; it never merges. And the question names
+                            BOTH sides with a time and a length, because "a
+                            newer version exists, replace?" is not a question
+                            anybody can answer about their own writing. */}
+                        {elsewhere ? (
+                            <View style={styles.elsewhereBox}>
+                                <Text style={styles.elsewhereHead} {...scaledTextProps}>
+                                    A NEWER ONE WAS WRITTEN ELSEWHERE
+                                </Text>
+                                <Text style={styles.elsewhereLine} {...scaledTextProps}>
+                                    {`ELSEWHERE · ${whenOf(elsewhere.savedAt)} · ${wordsOf(elsewhere.data.content)}`}
+                                </Text>
+                                <Text style={styles.elsewhereLine} {...scaledTextProps}>
+                                    {`HERE · ${restored ? whenOf(restored) : 'JUST NOW'} · ${wordsOf(content)}`}
+                                </Text>
+                                <View style={styles.elsewhereActs}>
+                                    <PressableScale
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
+                                        onPress={() => {
+                                            applyDraft(elsewhere.data);
+                                            setRestored(elsewhere.savedAt);
+                                            setElsewhere(null);
+                                        }}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Take the one written elsewhere"
+                                    >
+                                        <Text style={styles.elsewhereTake} {...scaledTextProps}>TAKE THAT ONE</Text>
+                                    </PressableScale>
+                                    <PressableScale
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
+                                        onPress={() => setElsewhere(null)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Keep the one on this phone"
+                                    >
+                                        <Text style={styles.elsewhereKeep} {...scaledTextProps}>KEEP THIS ONE</Text>
+                                    </PressableScale>
+                                </View>
+                            </View>
+                        ) : null}
                         {restored ? (
                             <View
                                 style={styles.restoredRow}
@@ -824,8 +967,8 @@ function ComposeDossierScreen() {
                                         onPress={() => {
                                             setTitle(''); setContent(''); setFilm(null); setSeries(null);
                                             setRestored(null);
-                                            if (edit) clearDraft(user?.id, 'edit', edit);
-                                            else clearDraft(user?.id, 'dossier');
+                                            if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
+                                            else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
                                         }}
                                         accessibilityRole="button"
                                         accessibilityLabel="Start clean, and discard what was here"
@@ -1195,6 +1338,38 @@ const styles = StyleSheet.create({
     /** Crimson, because this one is a loss rather than a courtesy. */
     restoredLost: { color: colors.crimsonInk },
     restoredAct: {
+        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+        color: colors.parchment, includeFontPadding: false,
+    },
+    /**
+     * The two-sided question. A BOX rather than a line, because unlike the
+     * restore notice this one is a decision and must not be mistaken for
+     * something that will go away by itself.
+     *
+     * Column, not a row: two labelled facts and two acts cannot share a line at
+     * the accessibility size without one of them being crushed, and this is the
+     * one place in the room where a member is choosing between two versions of
+     * their own work.
+     */
+    elsewhereBox: {
+        borderWidth: 1, borderColor: 'rgba(184,137,26,0.30)', borderRadius: 2,
+        paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16,
+    },
+    elsewhereHead: {
+        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+        color: colors.parchment, marginBottom: 8, includeFontPadding: false,
+    },
+    elsewhereLine: {
+        fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.4,
+        color: colors.sepia, marginTop: 2, includeFontPadding: false,
+    },
+    elsewhereActs: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 12 },
+    elsewhereTake: {
+        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+        color: colors.parchment, includeFontPadding: false,
+    },
+    /** Equal weight. A choice where one act is louder is not a choice. */
+    elsewhereKeep: {
         fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
         color: colors.parchment, includeFontPadding: false,
     },

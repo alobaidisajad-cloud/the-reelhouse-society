@@ -45,6 +45,21 @@ const PINNED: Record<string, { says: RegExp; provenBy: RegExp; what: string }> =
     provenBy: /report_count DESC/,
     what: 'reports order a docket a person reads; nothing acts on a count',
   },
+  VI: {
+    says: /finished or not/i,
+    /**
+     * "finished or not" is the half of this clause a database can hold, and it
+     * arrived the day an unfinished essay stopped living only on the member's
+     * phone. `member_drafts` is owner-only at the row level — this pin is what
+     * stops the table ever being opened up without the sentence changing with it.
+     *
+     * The pin does NOT cover the second sentence. "What you file is the house's
+     * and is" is a statement about what FILING MEANS, and no policy expresses
+     * that. It is also the half nobody can accidentally break.
+     */
+    provenBy: /POLICY md_select ON public\.member_drafts[\s\S]{0,200}?user_id = auth\.uid\(\)/,
+    what: 'an unfinished essay is readable by its writer and by nobody else',
+  },
   VII: {
     says: /ballot is secret until it closes/i,
     provenBy: /POLICY votes_read[\s\S]{0,200}?user_id = auth\.uid\(\)/,
@@ -66,7 +81,6 @@ const PINNED: Record<string, { says: RegExp; provenBy: RegExp; what: string }> =
 const NOT_MACHINE_ENFORCEABLE: Record<string, string> = {
   I: 'conduct — no schema can hold a member to arguing with the film',
   II: 'the house covers a spoiler either way; the clause asks for the INTENTION, which nothing can check',
-  VI: 'half is enforced (private notes are owner-only) and half is a promise about what filing MEANS',
 };
 
 const byNumeral = new Map(CLAUSES);
