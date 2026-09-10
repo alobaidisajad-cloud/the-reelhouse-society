@@ -353,8 +353,14 @@ export const PaperActions = memo(function PaperActions({
  * A struck BRASS plate — the film page's REWATCHED tab, not outlined text.
  * WITHHELD is the exception: being withheld is not an achievement, so it keeps
  * a crimson censor's outline rather than being handed a medal.
+ *
+ * NOT exported. It is used twice, both of them in this file, and the `export`
+ * on it was surface nobody asked for — which the orphan guard could not see,
+ * because `lucide-react-native` also exports a `Stamp` and the edit-profile
+ * screen imports THAT one. Two same-named symbols, one of them vouching for the
+ * other, is the same fault that kept a dead report sheet alive next door.
  */
-export const Stamp = memo(function Stamp({
+const Stamp = memo(function Stamp({
   label, style, crimson,
 }: { label: string; style?: object; crimson?: boolean }) {
   return (

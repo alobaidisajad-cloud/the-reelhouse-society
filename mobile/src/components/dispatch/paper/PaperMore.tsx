@@ -56,8 +56,20 @@ export const FORMS: Form[] = [
 ];
 
 export const PaperPicker = memo(function PaperPicker({
-  forms = FORMS, onPick,
-}: { forms?: Form[]; onPick?: (kind: Form['kind']) => void }) {
+  forms = FORMS, onPick, onRules,
+}: {
+  forms?: Form[];
+  onPick?: (kind: Form['kind']) => void;
+  /**
+   * The house rules, at the foot of the door every filing goes through.
+   *
+   * They were written, drawn and never reachable — nine clauses about what a
+   * member may file, on a page nothing in the app opened. This is the one place
+   * where they are about to matter, and it costs a line rather than a piece of
+   * chrome on the paper itself.
+   */
+  onRules?: () => void;
+}) {
   return (
     <View style={m.sheet}>
       <View style={m.grab} />
@@ -93,6 +105,20 @@ export const PaperPicker = memo(function PaperPicker({
           </PressableScale>
         </View>
       ))}
+      {onRules ? (
+        <>
+          <View style={p.hair} />
+          <PressableScale
+            style={m.rulesRow} haptic="selection"
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            onPress={onRules}
+            accessibilityRole="link" accessibilityLabel="Read the house rules"
+          >
+            <Text style={m.rulesLink} {...decorativeTextProps}>THE HOUSE RULES</Text>
+            <ChevronRight size={11} strokeWidth={2} color={colors.sepia} />
+          </PressableScale>
+        </>
+      ) : null}
     </View>
   );
 });
@@ -382,10 +408,18 @@ export const PaperRoom = memo(function PaperRoom({
 });
 
 /* ═══ THE REPORTED DOCKET ═══════════════════════════════════════════════════════
- * Five reports send a filing here. The Tribunal's docket already exists in this
- * app; this is the Dispatch's case laid out in its language — the report count
- * in the margin, because that is what ordered the queue, and the filing quoted
- * beneath the reasons it was reported for.
+ * Reports send a filing here — and NOT a fixed number of them. This said "Five
+ * reports send a filing here", which is the same sentence the rules page was
+ * carrying and the same sentence a dead report sheet was carrying, and there is
+ * no five anywhere in this app: no threshold, no trigger, no counter that acts.
+ * Reports RAISE a filing up a queue ordered by how many it has, and a person
+ * reads it. Three copies of one false claim, in three files, is what a number
+ * nobody owns does while nobody is looking.
+ *
+ * The Tribunal's docket already exists in this app; this is the Dispatch's case
+ * laid out in its language — the report count in the margin, because that is
+ * what ordered the queue, and the filing quoted beneath the reasons it was
+ * reported for.
  *
  * Two acts, and they are opposite and equal in weight. A docket that makes one
  * verdict easier than the other is not a docket.
@@ -1166,6 +1200,19 @@ const m = StyleSheet.create({
   formLine: {
     fontFamily: fonts.bodyItalic, fontSize: 12.5, lineHeight: 19,
     color: colors.bone, opacity: QUIET, marginTop: 4,
+  },
+  /**
+   * The rules line under the five forms. `space-between` rather than a gap, so
+   * the chevron sits at the sheet's right edge where every other row in this
+   * list puts its trailing mark — the five forms above all end there.
+   */
+  rulesRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  rulesLink: {
+    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia,
+    includeFontPadding: false,
   },
   lockRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   lockText: {

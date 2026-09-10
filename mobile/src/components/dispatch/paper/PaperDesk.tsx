@@ -410,64 +410,29 @@ export const FilmFinder = memo(function FilmFinder({
   );
 });
 
-/* ═══ SPIKING A FILING ════════════════════════════════════════════════════════
- * Five reports send a filing to the house. The sheet says exactly that, because
- * a member who thinks they are deleting a post will report everything they
- * dislike, and a member who knows five are needed reports what actually warrants
- * it. It also names what happens next, so nobody has to wonder.
+/* ── THERE IS NO PAPER REPORT SHEET ───────────────────────────────────────
+ * One stood here, 60 lines, and no screen ever mounted it. The app reports
+ * a filing through `src/components/moderation/ReportSheet` — the same sheet
+ * the lounge and the logs use — which carries the plumbing this one never
+ * had: the content type, the target, the block toggle, the submission, and
+ * a reason enum a CHECK constraint actually enforces.
  *
- * The reasons are the house rules, in the same words the rules page uses. A
- * report form whose vocabulary differs from the rules it enforces is a form
- * that teaches members the wrong rules.
+ * It survived a dead-export sweep because a DIFFERENT component is also
+ * called `ReportSheet`, and the guard asked only whether the NAME appeared
+ * anywhere in the app. It did — in three files, all importing the other one.
+ * The guard now asks whether a file imports from THIS module.
+ *
+ * And it was not merely dead. Its foot read "Five members report a filing
+ * and the house reads it", which is the clause already removed from the
+ * rules page for being false — there is no five anywhere: no threshold, no
+ * trigger, no counter that acts. A dead component is a place a corrected
+ * sentence goes back to being wrong.
+ *
+ * Its reasons were good and are not lost: unmarked spoilers, arguing with
+ * the member, nothing to do with cinema. `REPORT_REASON_LABELS` in
+ * src/types/moderation.ts already says all three in the house's voice, and
+ * says them everywhere rather than on one screen.
  */
-export const ReportSheet = memo(function ReportSheet({
-  reasons, chosen, onChoose, onReport,
-}: {
-  reasons: string[]; chosen?: string;
-  onChoose?: (reason: string) => void;
-  onReport?: () => void;
-}) {
-  return (
-    <View style={d.sheet}>
-      <View style={d.grab} />
-      <Text style={d.sheetHead} accessibilityRole="header" {...decorativeTextProps}>
-        WHY ARE YOU REPORTING THIS?
-      </Text>
-      {reasons.map((r, i) => (
-        <View key={r}>
-          {i > 0 && <View style={p.hair} />}
-          <PressableScale style={d.reason} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
-            onPress={() => onChoose?.(r)}
-            accessibilityRole="radio" accessibilityState={{ checked: r === chosen }}
-            accessibilityLabel={r}>
-            <View style={[d.box, r === chosen && { borderColor: colors.crimson }]}>
-              {/* The mark is silent: this row is a radio, and its own
-                  `accessibilityState={{ checked }}` is how a reader learns it
-                  is chosen. Left spoken, the ✗ would be announced as "ballot X"
-                  on top of the state that already says the same thing. */}
-              {r === chosen ? (
-                <Text style={d.boxMark} {...decorativeTextProps} {...UNSPOKEN}>✗</Text>
-              ) : null}
-            </View>
-            <Text style={d.reasonText} {...scaledTextProps}>{r}</Text>
-          </PressableScale>
-        </View>
-      ))}
-      <Text style={d.sheetFoot} {...scaledTextProps}>
-        Five members report a filing and the house reads it. Five is not a verdict,
-        and the member is never told who reported them.
-      </Text>
-      <PressableScale style={[p.btn, d.reportBtn]} haptic="medium" disabled={!chosen}
-        onPress={chosen ? onReport : undefined}
-        accessibilityRole="button" accessibilityState={{ disabled: !chosen }}
-        accessibilityLabel={chosen ? "Report this filing" : "Report this filing. Choose a reason first"}>
-        <Text style={[p.btnText, { color: chosen ? CRIMSON_INK : colors.fog }]} {...scaledTextProps}>
-          REPORT IT
-        </Text>
-      </PressableScale>
-    </View>
-  );
-});
 
 /* ═══ SHARING ═════════════════════════════════════════════════════════════════
  * Four destinations, in the order they are actually used, and the card is shown

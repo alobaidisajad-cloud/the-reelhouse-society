@@ -45,6 +45,32 @@ const stripComments = (s: string): string => s
   .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
 
 /**
+ * ── A NAME IS NOT AN IMPORT ─────────────────────────────────────────────────
+ * This asked whether the NAME appeared anywhere in the app, and that is how a
+ * second dead component survived: `PaperDesk` exported `ReportSheet`, and so
+ * does `src/components/moderation/ReportSheet`. Three screens import the other
+ * one, the name matched in all three, and sixty unmounted lines — carrying a
+ * sentence about five reports that the rules page had already struck as false —
+ * read as live for as long as the guard existed.
+ *
+ * So a use now has to come through a real import OF THIS MODULE. The module is
+ * identified by its BASENAME, which survives every way this repo writes a path:
+ * `@/src/components/dispatch/paper/PaperDesk`, `./PaperDesk`, `../paper/PaperDesk`.
+ * Two files with the same basename would put the hole back, and the test below
+ * fails if two ever appear.
+ */
+const importsFrom = (src: string, basename: string): boolean =>
+  new RegExp(
+    // import … from '…/<basename>'   ·   require('…/<basename>')   ·   import('…')
+    `(?:from|require\\(|import\\()\\s*['"][^'"]*(?:^|/)${basename}['"]`,
+    'm',
+  ).test(src)
+  // A bare specifier with no path at all — `from 'PaperDesk'` — is not something
+  // this repo writes, but a relative import CAN be exactly `'./PaperDesk'`,
+  // which the alternation above already covers via the `/`.
+  || new RegExp(`(?:from|require\\(|import\\()\\s*['"]${basename}['"]`).test(src);
+
+/**
  * ── WHAT IS DESIGNED BUT NOT YET WIRED ──────────────────────────────────────
  * Fifteen components the mockups draw and no screen mounts. They are not
  * mistakes — they are finished design work waiting on the plumbing:
@@ -69,7 +95,9 @@ const DESIGNED_NOT_WIRED = new Set([
   'src/components/dispatch/paper/PaperEssay.tsx  ::  EssayPara',
   'src/components/dispatch/paper/PaperFrame.tsx  ::  BrassButton',
   'src/components/dispatch/paper/PaperMore.tsx  ::  PaperDoor',
-  'src/components/dispatch/paper/PaperMore.tsx  ::  PaperRules',
+  // `PaperRules` came off when app/dispatch/rules.tsx began mounting it, and
+  // the picker — the door every filing goes through — grew the line that opens
+  // it. Nine clauses about what a member may file had never been reachable.
   'src/components/dispatch/paper/PaperMore.tsx  ::  PaperArchive',
   // `PaperRoom` came off this list when app/dispatch/room/[username].tsx began
   // mounting it — and the four bylines that promised "Open their room" started
@@ -126,11 +154,17 @@ describe('the design record draws the app, not a second copy of it', () => {
        * file passed. A per-file question cannot find a component hiding among
        * its live neighbours.
        */
+      const base = rel.split('/').pop()!.replace(/\.tsx?$/, '');
       for (const n of names) {
         const re = new RegExp('\\b' + n + '\\b');
-        const usedByApp = appSources.some(
-          (other) => other !== file && re.test(stripComments(readFileSync(other, 'utf8'))),
-        );
+        const usedByApp = appSources.some((other) => {
+          if (other === file) return false;
+          const src2 = stripComments(readFileSync(other, 'utf8'));
+          // The name AND an import of this module. Either alone is not a use:
+          // the name alone matched a same-named component in another folder,
+          // and the import alone says nothing about which export is taken.
+          return re.test(src2) && importsFrom(src2, base);
+        });
         if (!usedByApp) orphans.push(rel + '  ::  ' + n);
       }
     }
@@ -150,13 +184,46 @@ describe('the design record draws the app, not a second copy of it', () => {
       const [rel, name] = entry.split('  ::  ');
       const file = dispatchFiles.find((f) => f.slice(ROOT.length + 1).replace(/\\/g, '/') === rel);
       if (!file) { stale.push(entry + '   (file is gone)'); continue; }
+      const base = rel.split('/').pop()!.replace(/\.tsx?$/, '');
       const re = new RegExp('\\b' + name + '\\b');
-      const live = appSources.some(
-        (other) => other !== file && re.test(stripComments(readFileSync(other, 'utf8'))),
-      );
+      const live = appSources.some((other) => {
+        if (other === file) return false;
+        const src = stripComments(readFileSync(other, 'utf8'));
+        return re.test(src) && importsFrom(src, base);
+      });
       if (live) stale.push(entry + '   (now mounted — take it off the list)');
     }
 
     expect(stale).toEqual([]);
+  });
+
+  it('has no two modules with the same basename, which would put the hole back', () => {
+    /**
+     * The import check identifies a module by its FILE NAME. That is exact only
+     * while file names are unique — two `PaperDesk.tsx` in different folders and
+     * an import of either would vouch for both, which is a smaller version of
+     * the same fault this replaced.
+     *
+     * Only the files this guard reads need to be unique among themselves, and
+     * they are: one flat folder of paper components plus the dispatch root.
+     */
+    const seen = new Map<string, string[]>();
+    for (const f of files) {
+      const rel = f.slice(ROOT.length + 1).replace(/\\/g, '/');
+      const base = rel.split('/').pop()!.replace(/\.tsx?$/, '');
+      seen.set(base, [...(seen.get(base) ?? []), rel]);
+    }
+    const collisions = [...seen.entries()].filter(([, v]) => v.length > 1);
+    expect(collisions).toEqual([]);
+  });
+
+  it('the import check can say NO', () => {
+    // Proving the instrument. A file that names a symbol without importing its
+    // module must not count as a use — that is the whole repair.
+    expect(importsFrom("import ReportSheet from '@/src/components/moderation/ReportSheet';", 'PaperDesk')).toBe(false);
+    expect(importsFrom("import { ShareSheet } from '@/src/components/dispatch/paper/PaperDesk';", 'PaperDesk')).toBe(true);
+    expect(importsFrom("import { X } from './PaperDesk';", 'PaperDesk')).toBe(true);
+    // And it must not match a LONGER name that merely ends the same way.
+    expect(importsFrom("import { X } from './MyPaperDesk';", 'PaperDesk')).toBe(false);
   });
 });

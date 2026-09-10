@@ -136,6 +136,9 @@ function KindPicker() {
                         locked: f.locked ? !auteur : false,
                     }))}
                     onPick={(k) => router.setParams({ kind: k })}
+                    // The rules, at the door every filing goes through. They
+                    // were nine clauses on a page nothing opened.
+                    onRules={() => (router.push as (h: string) => void)('/dispatch/rules')}
                 />
             </View>
         </View>

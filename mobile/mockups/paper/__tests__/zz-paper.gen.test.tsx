@@ -6,7 +6,7 @@
  * Run: npx jest zz-paper.gen
  */
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
@@ -68,7 +68,7 @@ import {
 /** The path a real dossier takes — the markdown renderer, not hand-built paragraphs. */
 import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import {
-  WireDesk, BallotDesk, DossierDesk, FilmFinder, ReportSheet, ShareSheet,
+  WireDesk, BallotDesk, DossierDesk, FilmFinder, ShareSheet,
 } from '@/src/components/dispatch/paper/PaperDesk';
 import { ConciergeCard } from '@/src/components/layout/ConciergeButton';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
@@ -728,7 +728,11 @@ add('f1-picker', (
         for the paper you can see behind it, not leaving for a different app. */}
     <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(6,5,3,0.72)' }} />
     <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
-      <PaperPicker />
+      {/* `onRules` is passed because the app passes it. The house rules had been
+          written, drawn and unreachable; the picker is the door every filing
+          goes through and now carries the line that opens them. A plate that
+          leaves an optional prop off draws a screen the app does not have. */}
+      <PaperPicker onRules={() => {}} />
     </View>
   </View>
 ));
@@ -745,10 +749,25 @@ add('f2-door', (
   </View>
 ));
 
+/**
+ * ── THE RULES PAGE SCROLLS, AND THE PLATE HAS TO SCROLL WITH IT ─────────────
+ * This drew the sheet with no scroll view, and MEASURED, nine clauses come to
+ * 962 points at the system text size and 1,151 at the accessibility ceiling,
+ * inside a 740-point screen. The plate was showing a page bleeding 222 points
+ * off its own frame — and reading it, nobody would have known whether that was
+ * the design or the drawing, which is exactly what a design record must never
+ * leave ambiguous.
+ *
+ * The screen has always been a `ScrollView`; the plate now is one too, so what
+ * is drawn here is the top of a page a member scrolls rather than a page that
+ * does not fit.
+ */
 add('f3-house-rules', (
   <View style={p.screen}>
     <PaperBack label="THE HOUSE RULES" />
-    <PaperSheet><PaperRules /></PaperSheet>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <PaperSheet><PaperRules /></PaperSheet>
+    </ScrollView>
   </View>
 ));
 
@@ -1158,17 +1177,18 @@ add('h6-film-finder', (
   </View>
 ));
 
-add('h7-report', (
-  <View style={[p.screen, { justifyContent: 'flex-end' }]}>
-    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(6,5,3,0.72)' }} />
-    <ReportSheet chosen="An unmarked spoiler" reasons={[
-      'Argues with the member, not the film',
-      'An unmarked spoiler',
-      'A wire with no source',
-      'Not about cinema at all',
-    ]} />
-  </View>
-));
+/* ── NO h7-report PLATE ────────────────────────────────────────────────────
+ * It drew a paper report sheet that no screen mounted, next to a real one the
+ * app has been shipping all along in `src/components/moderation/ReportSheet`.
+ * The plate was the only thing keeping it alive — and it printed "Five members
+ * report a filing and the house reads it", the clause already struck from the
+ * rules page for being false.
+ *
+ * A plate that draws something the app does not mount is not a record. It is a
+ * proposal, and one that will be mistaken for a record the moment nobody
+ * remembers the difference. See the note in PaperDesk.tsx where the component
+ * used to be.
+ */
 
 add('h8-share', (
   <View style={[p.screen, { justifyContent: 'flex-end' }]}>

@@ -19,7 +19,7 @@
  * Two clauses are deliberately unpinned: conduct, and an intention the veil
  * cannot read. They are named below so their absence is a decision.
  */
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { CLAUSES } from '../paper/PaperMore';
 
@@ -123,5 +123,77 @@ describe('every clause that can be checked is', () => {
     // Proving the instrument: a policy that does not exist must not match.
     expect(/CONSTRAINT wire_source CHECK/.test(SCHEMA)).toBe(true);
     expect(/CONSTRAINT nothing_like_this CHECK/.test(SCHEMA)).toBe(false);
+  });
+});
+
+/**
+ * ── THE CLAUSE WAS FIXED IN ONE PLACE AND WAS FALSE IN THREE ─────────────────
+ * The first version of this file checked `CLAUSES`, and `CLAUSES` only. It
+ * proved the rules PAGE honest and said nothing about the rest of the app, so
+ * the same struck sentence went on standing in two other files:
+ *
+ *   PaperDesk's own `ReportSheet` — sixty lines no screen mounted, whose foot
+ *   read "Five members report a filing and the house reads it". It had survived
+ *   the dead-export sweep because another component is also called ReportSheet.
+ *
+ *   PaperCase's docstring — "Five reports send a filing here."
+ *
+ * And the sweep that found those found a third claim nobody had questioned, on
+ * a sheet the app really does ship, from three different screens: "The Tribunal
+ * will review within 24 hours." Nothing in this app makes that true — no timer,
+ * no deadline, no job that escalates an old report. The only "24 hours" in the
+ * whole schema is a daily write limit.
+ *
+ * A rule fixed in the place you were looking is not a rule fixed. So this reads
+ * every surface the app ships and fails on the CLASS: a bare count of reports,
+ * and a promise about how soon the house will act.
+ */
+describe('no surface repeats a claim the house cannot keep', () => {
+  const APP = [join(__dirname, '..', '..', '..'), join(__dirname, '..', '..', '..', '..', 'app')];
+
+  /** A docstring quoting a struck sentence is a record, not a claim. */
+  const stripComments = (s: string): string => s
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
+
+  const collect = (dir: string, out: string[] = []): string[] => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (['node_modules', '__tests__', 'mockups', 'android', 'ios', '.expo'].includes(e.name)) continue;
+      const full = join(dir, e.name);
+      if (e.isDirectory()) collect(full, out);
+      else if (/\.tsx?$/.test(e.name) && !/\.d\.ts$/.test(e.name)) out.push(full);
+    }
+    return out;
+  };
+
+  const FILES = APP.flatMap((d) => collect(d));
+
+  it('reads the app at all, so an empty sweep cannot pass for a clean one', () => {
+    expect(FILES.length).toBeGreaterThan(200);
+    expect(FILES.some((f) => f.endsWith('ReportSheet.tsx'))).toBe(true);
+  });
+
+  const offenders = (re: RegExp) => FILES
+    .filter((f) => re.test(stripComments(readFileSync(f, 'utf8'))))
+    .map((f) => f.slice(f.lastIndexOf('src')).replace(/\\/g, '/'));
+
+  it('names no number of reports that makes anything happen', () => {
+    // The shape of the mistake, not one wording of it.
+    expect(offenders(/\b(two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(members?\s+)?reports?\b/i))
+      .toEqual([]);
+    expect(offenders(/\breports?\s+(send|sends|will send)\b/i)).toEqual([]);
+  });
+
+  it('promises no deadline for reading a report', () => {
+    // "within 24 hours", "in 48 hours", "within a day" — any of them.
+    expect(offenders(/\bwithin\s+\d+\s*(hours?|hrs?|days?)/i)).toEqual([]);
+    expect(offenders(/\breview\s+within\b/i)).toEqual([]);
+    expect(offenders(/\bwithin\s+(a|one)\s+(hour|day|week)\b/i)).toEqual([]);
+  });
+
+  it('these sweeps can fail', () => {
+    // The instrument, proved against text that IS in the app.
+    expect(offenders(/Report to the Tribunal/i).length).toBeGreaterThan(0);
+    expect(offenders(/a sentence that is nowhere in this application/i)).toEqual([]);
   });
 });
