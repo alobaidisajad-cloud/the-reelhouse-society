@@ -11,7 +11,6 @@ import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
 
 import { useAuthStore } from '@/src/stores/auth';
-import { storage } from '@/src/stores/mmkv-storage';
 import { isAuteurPlusTier } from '@/src/utils/tier';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
@@ -27,6 +26,9 @@ import { readTimeOf } from '@/src/components/dispatch/readTime';
 import { paperTierOf } from '@/src/stores/dispatchTypes';
 import { formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useDoor } from '@/src/hooks/useDoor';
+import {
+  adoptLegacyDraft, clearDraft, readDraft, writeDraft,
+} from '@/src/utils/dispatchDrafts';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import {
   groupDigits, DOC_MARGIN, DOC_PAD, DOC_RAIL,
@@ -43,7 +45,11 @@ import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
 
 // A long essay must survive a background-kill. Drafts persist here, new-dossiers only.
-const DRAFT_KEY = 'reelhouse_dispatch_draft';
+/* The draft's key is NOT here any more. It used to be one member-less string,
+   which is how one member's unpublished essay ended up waiting in the writing
+   room for the next person to sign in on that phone. Whose a draft is, where it
+   lives, and what happens to the ones written before the keys were split are all
+   answered once, in `src/utils/dispatchDrafts.ts`. */
 
 /**
  * How close to the fence before the counter appears.
@@ -280,22 +286,32 @@ function ComposeDossierScreen() {
         }
     }, [canWrite]);
 
-    // ── Draft restore (new dossiers only; edit loads from the server) ──
+    /**
+     * ── DRAFT RESTORE ────────────────────────────────────────────────────────
+     * New dossiers only; an edit loads from the server.
+     *
+     * Everything about whose draft this is lives in `dispatchDrafts` — the key
+     * used to carry no member at all, so an essay written by one member was
+     * waiting in the writing room for the next person to sign in on that phone,
+     * readable and filable under their name.
+     *
+     * `adoptLegacyDraft` runs first and once: a draft written before the keys
+     * were split is claimed only if `last_user_id` proves nobody has signed out
+     * since, and is deleted unread otherwise.
+     */
     useEffect(() => {
         if (edit) return;
-        const raw = storage.getString(DRAFT_KEY);
-        if (raw) {
-            try {
-                const d = JSON.parse(raw);
-                if (d.title) setTitle(d.title);
-                if (d.content) {
-                    setContent(d.content);
-                    setSelection({ start: d.content.length, end: d.content.length });
-                }
-            } catch { /* corrupt draft — ignore */ }
+        adoptLegacyDraft(user?.id);
+        const d = readDraft(user?.id);
+        if (d) {
+            if (d.title) setTitle(d.title);
+            if (d.content) {
+                setContent(d.content);
+                setSelection({ start: d.content.length, end: d.content.length });
+            }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [user?.id]);
 
     // ── Draft auto-save (debounced) ──
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -304,13 +320,13 @@ function ComposeDossierScreen() {
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => {
             if (title.trim() || content.trim()) {
-                storage.set(DRAFT_KEY, JSON.stringify({ title, content }));
+                writeDraft(user?.id, { title, content });
             } else {
-                storage.delete(DRAFT_KEY);
+                clearDraft(user?.id);
             }
         }, 1000);
         return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
-    }, [title, content, edit]);
+    }, [title, content, edit, user?.id]);
 
     // ── Background flush — guarantees a long essay survives an immediate OS kill ──
     useEffect(() => {
@@ -318,13 +334,11 @@ function ComposeDossierScreen() {
         const sub = AppState.addEventListener('change', (state) => {
             if (state !== 'active') {
                 const t = titleRef.current, c = contentRef.current;
-                if (t.trim() || c.trim()) {
-                    storage.set(DRAFT_KEY, JSON.stringify({ title: t, content: c }));
-                }
+                if (t.trim() || c.trim()) writeDraft(user?.id, { title: t, content: c });
             }
         });
         return () => sub.remove();
-    }, [edit]);
+    }, [edit, user?.id]);
 
     const stats = useMemo(() => {
         const words = content.trim() ? content.trim().split(/\s+/).length : 0;
@@ -432,7 +446,7 @@ function ComposeDossierScreen() {
                 // to be deleted on the strength of a success that a silent
                 // truncation had already spoiled; now nothing is thrown away
                 // until there is a row to throw it away for.
-                if (filed) storage.delete(DRAFT_KEY);
+                if (filed) clearDraft(user?.id);
                 reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Dossier filed');
             }
             router.replace('/(tabs)/dispatch');
@@ -454,7 +468,7 @@ function ComposeDossierScreen() {
                         Alert.alert('Discard Draft?', 'Your unsaved dossier will be lost.', [
                             { text: 'Keep Writing', style: 'cancel' },
                             { text: 'Discard', style: 'destructive', onPress: () => {
-                                if (!edit) storage.delete(DRAFT_KEY);
+                                if (!edit) clearDraft(user?.id);
                                 router.back();
                             } },
                         ]);

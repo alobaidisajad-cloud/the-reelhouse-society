@@ -44,7 +44,17 @@ import { useLocalSearchParams } from 'expo-router';
 
 import ComposeScreen from '@/app/dispatch/compose';
 
-const DRAFT_KEY = 'reelhouse_dispatch_draft';
+/**
+ * The draft's key carries the MEMBER now.
+ *
+ * It used to be this bare string for everybody, and logout never cleared it —
+ * so one member's unpublished essay sat in the writing room waiting for the
+ * next person to sign in on that phone, readable and filable under their name.
+ * `theDraftIsYours.test.ts` proves the leak is shut; these tests simply use the
+ * real key, which is derived rather than typed so it cannot drift from it.
+ */
+const LEGACY_KEY = 'reelhouse_dispatch_draft';
+const DRAFT_KEY = `reelhouse_dispatch_draft_u1`;
 
 let mockUser: Record<string, unknown> | null = { id: 'u1', username: 'me', tier: 'auteur' };
 let mockFiled: Array<Record<string, unknown>> = [];

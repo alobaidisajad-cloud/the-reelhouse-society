@@ -258,6 +258,89 @@ describe('#64 · every per-member cache on disk is erased', () => {
     const orphans = [...written].filter((k) => !erased.has(k));
     expect(orphans).toEqual([]);
   });
+
+  it('and a key BUILT BY A FUNCTION is swept too', () => {
+    /**
+     * The sweep above matches `storage.set(\`…${id}\`)` — a template at the call
+     * site. It cannot see a key that comes from a builder:
+     *
+     *     export const draftKey = (userId: string) => `…_${userId}`;
+     *     storage.set(draftKey(userId), …);
+     *
+     * The Dispatch's draft is the first key in this app written that way, and it
+     * went straight past the guard. Every per-member key from here on will be
+     * written that way too, because a key with a rule attached belongs in one
+     * module rather than at four call sites.
+     *
+     * So: any arrow that BUILDS a key from an interpolation must have a
+     * `storage.delete` naming it, in its own file. The module owns the key, so
+     * the module owes the erase.
+     */
+    const ROOT = path.join(__dirname, '..', '..', '..');
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) {
+          if (['node_modules', '__tests__', '.expo', 'android', 'ios'].includes(e.name)) continue;
+          walk(full, out);
+        } else if (/\.tsx?$/.test(e.name)) out.push(full);
+      }
+      return out;
+    };
+
+    /**
+     * Keys that outlive a logout ON PURPOSE. Named, with the reason, so the
+     * absence of an erase is a decision rather than an oversight.
+     */
+    const OUTLIVES_LOGOUT: Record<string, string> = {
+      flagKey: 'src/hooks/useInitiation.ts — "you have seen the ceremony", per member. '
+        + 'Erasing it on logout would replay the whole initiation for a member who '
+        + 'simply signed out and back in. It is a boolean about a person, not their content.',
+    };
+
+    const orphans: string[] = [];
+    let builders = 0;
+
+    for (const file of [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))]) {
+      const src = fs.readFileSync(file, 'utf8');
+      // `const somethingKey = (…) => `…${…}`;`
+      for (const m of src.matchAll(/(?:export\s+)?const\s+(\w*[Kk]ey)\s*=\s*\([^)]*\)\s*(?::[^=]+)?=>\s*`[^`]*\$\{/g)) {
+        const name = m[1];
+        /**
+         * It is only a STORAGE key if it is used as one. Without this the sweep
+         * reported `getFilmKey` in the darkroom — `${media_type}-${id}`, a React
+         * list key that never goes near the disk — which is a guard crying wolf
+         * about a line that has nothing to do with logging out.
+         */
+        const isStorageKey = new RegExp(
+          `storage\\.(set|getString|getBoolean|getNumber|contains)\\(\\s*${name}\\(`,
+        ).test(src);
+        if (!isStorageKey) continue;
+
+        builders += 1;
+        if (OUTLIVES_LOGOUT[name]) continue;
+
+        const erasedHere = new RegExp(`storage\\.delete\\(\\s*${name}\\(`).test(src);
+        if (!erasedHere) {
+          orphans.push(path.relative(ROOT, file).replace(/\\/g, '/') + '  ::  ' + name);
+        }
+      }
+    }
+
+    // Vacuous-guard insurance: if the pattern stopped matching anything, this
+    // would pass having swept nothing at all.
+    expect(builders).toBeGreaterThan(0);
+    expect(orphans).toEqual([]);
+  });
+
+  it('the Dispatch draft is erased BY THE LOGOUT, not only by its own module', () => {
+    // A module that CAN erase a key is not a logout that DOES. One member's
+    // unpublished essay used to survive a sign-out and sit in the writing room
+    // for the next person on that phone.
+    const authSrc = fs.readFileSync(path.join(__dirname, '..', 'auth.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    expect(authSrc).toMatch(/clearAllDrafts\(previousUserId\)/);
+  });
 });
 
 /** Deep equality without pulling in a dependency. */

@@ -4,6 +4,7 @@ import { removePushToken } from '../lib/pushNotifications';
 import { queryClient } from '../lib/queryClient';
 import { identifyUser, logoutRevenueCat } from '../lib/revenueCat';
 import { rememberRequestedHandle } from '../utils/handleNotice';
+import { clearAllDrafts } from '../utils/dispatchDrafts';
 import { captureError, setSentryUser } from '../lib/sentry';
 import type { User as AuthUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -450,6 +451,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     storage.delete('last_user_id');
     storage.delete('ironvault_user_cache'); // clean up legacy
     storage.delete('recovery_pending');
+    // The unfinished essay in the writing room. It was written under a key with
+    // no member in it and survived logout, so the next person to sign in on this
+    // phone opened the room and found somebody else's work — readable, and
+    // filable under their own name.
+    clearAllDrafts(previousUserId);
     clearOfflineQueue();
     storage.delete('REELHOUSE_QUERY_CACHE');
     storage.delete('nitrate_memory_feed');
