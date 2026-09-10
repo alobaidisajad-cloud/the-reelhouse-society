@@ -32,7 +32,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { KIND_RULE, UNSPOKEN } from './paperMetrics';
+import { KIND_RULE, UNSPOKEN, DOC_PAD } from './paperMetrics';
 import { softBreak } from './paperText';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 
@@ -303,8 +303,18 @@ export const SeriesList = memo(function SeriesList({
 const e = StyleSheet.create({
   /** Full-bleed sideways only. A negative TOP margin pulled it up over the back
    *  bar, because the sheet has no top padding to eat into. */
+  /**
+   * The cover bleeds to the SHEET's edge — which is the sheet's own gutter, not
+   * the number 24. It was written as `-24`, and the two agreed only because
+   * nobody had moved `DOC_PAD`; the day somebody did, the reader's cover would
+   * have stopped reaching the edge and nothing would have said so.
+   *
+   * It cost something already: the writing room's preview set its own 20pt
+   * gutter, so the same band reached four points PAST the container on each
+   * side. Both are derived from this constant now.
+   */
   cover: {
-    height: 176, marginHorizontal: -24, marginBottom: 16,
+    height: 176, marginHorizontal: -DOC_PAD, marginBottom: 16,
     overflow: 'hidden', backgroundColor: 'rgba(20,16,11,0.9)',
   },
   /** 26/33, and the only place Rye is set this large outside the masthead. */

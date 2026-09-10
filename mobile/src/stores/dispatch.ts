@@ -221,7 +221,15 @@ export interface FilingDraft {
   fullContent?: string | null;
   source?: string | null;
   sourceUrl?: string | null;
-  film?: { id: number; title: string; sub?: string | null; image?: string | null } | null;
+  /**
+   * `image` is the POSTER, which the feed card prints. `backdrop` is the wide
+   * still an essay bleeds behind its title — two different pictures of one
+   * film, both wanted at once, which is why they are two fields and not one.
+   */
+  film?: {
+    id: number; title: string; sub?: string | null;
+    image?: string | null; backdrop?: string | null;
+  } | null;
   options?: BallotOption[] | null;
   closesAt?: string | null;
   seriesId?: string | null;
@@ -1439,6 +1447,7 @@ function toInsertRow(
     row.subject_title = d.film.title;
     row.subject_sub = d.film.sub ?? null;
     row.subject_image = d.film.image ?? null;
+    row.subject_backdrop = d.film.backdrop ?? null;
   }
   return row;
 }

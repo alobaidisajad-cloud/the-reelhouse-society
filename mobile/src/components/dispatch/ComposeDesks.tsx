@@ -424,6 +424,26 @@ export function FilmPicker({
                 posterPath: r.poster_path
                   ? `https://image.tmdb.org/t/p/w185${r.poster_path as string}`
                   : null,
+                /**
+                 * The wide still, at w780.
+                 *
+                 * It is a different picture from the poster, not a different
+                 * size of it: the poster is 2:3 and the essay's cover is a
+                 * 176pt band, where a poster arrives as a crop of somebody's
+                 * chin. `EssayHead` has drawn this band from `backdropPath`
+                 * since it was written and no film ever carried one.
+                 *
+                 * w780 rather than w1280: the band is 390pt wide at 3x, so 780
+                 * is already generous, and the picture sits under a gradient
+                 * that ends at full opacity.
+                 *
+                 * Null is ordinary — plenty of films have no backdrop on TMDB,
+                 * and the head simply draws no cover, which is what every
+                 * dossier has looked like until now.
+                 */
+                backdropPath: r.backdrop_path
+                  ? `https://image.tmdb.org/t/p/w780${r.backdrop_path as string}`
+                  : null,
               },
             })),
         );

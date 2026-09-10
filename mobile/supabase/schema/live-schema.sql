@@ -3871,6 +3871,7 @@ CREATE TABLE public.dispatch_posts (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     edited_at timestamp with time zone,
+    subject_backdrop text,
     CONSTRAINT ballot_options CHECK (((kind <> 'ballot'::text) OR ((options IS NOT NULL) AND (closes_at IS NOT NULL) AND ((jsonb_array_length(options) >= 2) AND (jsonb_array_length(options) <= 6))))),
     CONSTRAINT body_ceiling CHECK ((char_length(body) <= 2000)),
     CONSTRAINT dispatch_posts_ended_by_check CHECK ((ended_by = ANY (ARRAY['author'::text, 'house'::text]))),
@@ -3889,6 +3890,7 @@ CREATE TABLE public.dispatch_posts (
     CONSTRAINT source_ceiling CHECK (((source IS NULL) OR (char_length(source) <= 100))),
     CONSTRAINT source_url_ceiling CHECK (((source_url IS NULL) OR (char_length(source_url) <= 2048))),
     CONSTRAINT spoiler_ceiling CHECK (((spoiler_label IS NULL) OR (char_length(spoiler_label) <= 80))),
+    CONSTRAINT subject_backdrop_ceiling CHECK (((subject_backdrop IS NULL) OR (char_length(subject_backdrop) <= 2048))),
     CONSTRAINT subject_image_ceiling CHECK (((subject_image IS NULL) OR (char_length(subject_image) <= 2048))),
     CONSTRAINT subject_sub_ceiling CHECK (((subject_sub IS NULL) OR (char_length(subject_sub) <= 300))),
     CONSTRAINT subject_title_ceiling CHECK (((subject_title IS NULL) OR (char_length(subject_title) <= 300))),
@@ -3896,6 +3898,13 @@ CREATE TABLE public.dispatch_posts (
     CONSTRAINT title_ceiling CHECK (((title IS NULL) OR (char_length(title) <= 200))),
     CONSTRAINT wire_source CHECK (((kind <> 'wire'::text) OR (ended_at IS NOT NULL) OR (source IS NOT NULL)))
 );
+
+
+--
+-- Name: COLUMN dispatch_posts.subject_backdrop; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.dispatch_posts.subject_backdrop IS 'The film''s BACKDROP — the wide still an essay bleeds behind its title. Separate from subject_image, which is the 2:3 poster the feed card prints; both are wanted at once and one column cannot be both.';
 
 
 --
@@ -9104,6 +9113,14 @@ GRANT ALL ON TABLE public.dispatch_comments TO service_role;
 GRANT SELECT ON TABLE public.dispatch_posts TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_posts TO authenticated;
 GRANT ALL ON TABLE public.dispatch_posts TO service_role;
+
+
+--
+-- Name: COLUMN dispatch_posts.subject_backdrop; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(subject_backdrop) ON TABLE public.dispatch_posts TO anon;
+GRANT SELECT(subject_backdrop),INSERT(subject_backdrop),UPDATE(subject_backdrop) ON TABLE public.dispatch_posts TO authenticated;
 
 
 --

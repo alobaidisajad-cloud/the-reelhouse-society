@@ -22,9 +22,15 @@ import PressableScale from '@/src/components/PressableScale';
 import { ComposeBallotScreen, ComposeShortScreen, FilmPicker } from '@/src/components/dispatch/ComposeDesks';
 import { SeriesPicker, roman, type SeriesChoice } from '@/src/components/dispatch/SeriesPicker';
 import { FORMS, PaperBack, PaperDoor, PaperPicker } from '@/src/components/dispatch/paper/PaperMore';
+import { EssayHead } from '@/src/components/dispatch/paper/PaperEssay';
+import { readTimeOf } from '@/src/components/dispatch/readTime';
+import { paperTierOf } from '@/src/stores/dispatchTypes';
+import { formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useDoor } from '@/src/hooks/useDoor';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { groupDigits } from '@/src/components/dispatch/paper/paperMetrics';
+import {
+  groupDigits, DOC_MARGIN, DOC_PAD, DOC_RAIL,
+} from '@/src/components/dispatch/paper/paperMetrics';
 import { excerptFor } from '@/src/components/dispatch/excerpt';
 /**
  * The writing room was the one Dispatch screen with no font-scaling props on any
@@ -234,7 +240,12 @@ function ComposeDossierScreen() {
      * cover control here would be a button that saves nothing. It needs a
      * column before it needs a picker.
      */
-    const [film, setFilm] = useState<{ id: number; title: string; sub: string | null; image: string | null } | null>(null);
+    const [film, setFilm] = useState<{
+        id: number; title: string; sub: string | null;
+        image: string | null;
+        /** The cover. Two pictures of one film — see `FilingDraft.film`. */
+        backdrop: string | null;
+    } | null>(null);
     const [filmOpen, setFilmOpen] = useState(false);
     const [series, setSeries] = useState<SeriesChoice | null>(null);
     const [seriesOpen, setSeriesOpen] = useState(false);
@@ -506,7 +517,44 @@ function ComposeDossierScreen() {
                         refuses to file past — which tells a member where the
                         limit bites rather than hiding it. */}
                     <Text style={styles.previewEyebrow} {...scaledTextProps}>AS THE HOUSE WILL SET IT</Text>
-                    {title ? <Text style={styles.previewTitle} {...displayTextProps}>{title}</Text> : null}
+                    {/* ── AND THE HEAD IS THE READER'S TOO ────────────────────
+                        The note above is about the BODY, and the body was the
+                        half that got fixed. The head stayed a hand-rolled
+                        eyebrow and a `previewTitle` — so a preview promising
+                        "as the house will set it" set the title in a style the
+                        house does not use, printed no DOSSIER label, no byline,
+                        no read time, no series line, and no COVER.
+
+                        The cover is the one that decides it. A member picks a
+                        film, the essay gets a 176pt band of its backdrop at the
+                        top of the page, and until now there was nowhere to see
+                        that before filing. Now the preview IS the head. */}
+                    {title || film ? (
+                        <EssayHead
+                            title={title}
+                            series={series ? `Part ${roman(series.part)} of ${series.title}` : undefined}
+                            author={{
+                                name: user?.username ?? '',
+                                memberNo: user?.member_no ?? 0,
+                                // Their real rank, so an Auteur previewing their
+                                // own essay sees their own mark — the same
+                                // resolution the byline uses everywhere else.
+                                tier: paperTierOf(user),
+                                avatar: user?.avatar_url ?? null,
+                            }}
+                            readTime={readTimeOf(content)}
+                            filed={formatDateMonthDay(new Date().toISOString()).toUpperCase()}
+                            film={film ? {
+                                title: film.title,
+                                director: film.sub,
+                                posterPath: film.image,
+                                backdropPath: film.backdrop,
+                            } : null}
+                            // No handlers: there is nothing to open from a
+                            // preview, and a control that leads nowhere is worse
+                            // than none.
+                        />
+                    ) : null}
                     {content ? (
                         <EssayBody text={content} />
                     ) : (
@@ -665,6 +713,9 @@ function ComposeDossierScreen() {
                         title: f.title,
                         sub: [f.year, f.director].filter(Boolean).join(' · ') || null,
                         image: f.posterPath ?? null,
+                        // The essay's cover, which the head has been drawing
+                        // from nothing since it was written.
+                        backdrop: f.backdropPath ?? null,
                     });
                     setFilmOpen(false);
                 }}
@@ -842,7 +893,25 @@ const styles = StyleSheet.create({
         color: colors.fog,
     },
     kavFlex: { flex: 1 },
-    previewContent: { padding: 20 },
+    /**
+     * ── THE PREVIEW'S MEASURE IS THE PAGE'S MEASURE ──────────────────────────
+     * This was `padding: 20`, and two things followed from the four points.
+     *
+     * The essay set to a 350pt column here and a 315pt column on the page, so
+     * every line broke somewhere else — on the one screen whose entire promise
+     * is "as the house will set it".
+     *
+     * And the COVER bled wrong. `EssayHead` draws it with `marginHorizontal:
+     * -24`, which reaches exactly the edge of the sheet's own 24pt gutter; in a
+     * 20pt one it reached four points PAST the container on each side.
+     *
+     * Derived, not typed: the sheet's own margin, rail and padding, so the
+     * preview follows the page if any of the three is ever re-cut.
+     */
+    previewContent: {
+        paddingHorizontal: DOC_MARGIN + DOC_RAIL + DOC_PAD,
+        paddingVertical: 20,
+    },
 
     /** What the piece IS — above the writing, below the title. */
     slots: {

@@ -159,6 +159,18 @@ export const FilingRowSchema = z.object({
   subject_title: z.string().nullable().optional(),
   subject_sub: z.string().nullable().optional(),
   subject_image: z.string().nullable().optional(),
+  /**
+   * The film's BACKDROP, which is not its poster.
+   *
+   * `subject_image` is 2:3 and is what the feed card prints beside a filing.
+   * This is the wide still `EssayHead` bleeds behind a dossier's title — it has
+   * drawn that band from `film.backdropPath` since the day it was written, and
+   * nothing ever supplied one, so the cover has never once appeared.
+   *
+   * OPTIONAL, like every other subject field: a filing made before the column
+   * existed simply has none, and a take never wants one.
+   */
+  subject_backdrop: z.string().nullable().optional(),
 
   title: z.string().nullable().optional(),
   body: z.string(),
@@ -295,6 +307,9 @@ export function toFilm(row: FilingRow): PaperFilm | null {
     // "1974" ends up as a year.
     director: row.subject_sub ?? null,
     posterPath: row.subject_image ?? null,
+    // The essay's cover. `EssayHead` draws a 176pt band from this and nothing
+    // at all without it, which is the state every dossier has been in.
+    backdropPath: row.subject_backdrop ?? null,
   };
 }
 
@@ -384,7 +399,12 @@ export function parseCritiqueRows(rows: unknown[]): { critiques: Critique[]; dro
  */
 export const FILING_CARD_COLUMNS =
   'id, kind, user_id, author_username, subject_kind, subject_id, subject_title, ' +
-  'subject_sub, subject_image, title, body, source, source_url, options, closes_at, ' +
+  // `subject_backdrop` rides with the card's columns rather than the reader's,
+  // because the ESSAY LIST — a series page — draws its parts from these and a
+  // part without its cover is the same page with the picture missing. It is a
+  // URL, not an essay: the cost of carrying it on a twenty-row page is nothing
+  // like the cost of carrying `full_content`, which is why that one is not here.
+  'subject_sub, subject_image, subject_backdrop, title, body, source, source_url, options, closes_at, ' +
   'frozen_totals, answer_id, series_id, series_title, part_number, spoiler_label, ' +
   'withheld_at, ended_at, ended_by, certify_count, comment_count, created_at, edited_at, ' +
   'profiles!dispatch_posts_profile_fkey(username, avatar_url, member_no, tier, role, is_founding)';

@@ -907,7 +907,12 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             author_username: raw.author_username ?? '',
             subject_kind: raw.subject_kind, subject_id: raw.subject_id,
             subject_title: raw.subject_title, subject_sub: raw.subject_sub,
-            subject_image: raw.subject_image,
+            // The poster AND the cover. A dossier filed with no signal would
+            // otherwise arrive with its 176pt band missing and nothing to say
+            // so — the exact silent loss `dispatchOfflineParity` exists for,
+            // and the guard that caught this one within a minute of the column
+            // being added.
+            subject_image: raw.subject_image, subject_backdrop: raw.subject_backdrop,
             title: raw.title, body: raw.body, full_content: raw.full_content,
             source: raw.source, source_url: raw.source_url,
             options: raw.options, closes_at: raw.closes_at,
@@ -937,7 +942,11 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const { id, user_id, updates } = p;
         const ALLOWED = ['title', 'body', 'full_content', 'source', 'source_url',
             'spoiler_label', 'subject_kind', 'subject_id', 'subject_title',
-            'subject_sub', 'subject_image', 'series_id', 'series_title',
+            // The cover travels with the film: a member who changes the film on
+            // their own filing changes both pictures of it, and leaving the
+            // backdrop out would strand the old film's still behind the new
+            // film's title.
+            'subject_sub', 'subject_image', 'subject_backdrop', 'series_id', 'series_title',
             'part_number', 'is_published'] as const;
         const u = (updates ?? {}) as Record<string, unknown>;
         const safe: Record<string, unknown> = {};
