@@ -35,6 +35,7 @@ import { PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { SeriesList, type Part } from '@/src/components/dispatch/paper/PaperEssay';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { readTimeOf } from '@/src/components/dispatch/readTime';
+import { roomOf } from '@/src/components/dispatch/roomLink';
 import { supabase } from '@/src/lib/supabase';
 import { FILING_FULL_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
@@ -175,7 +176,7 @@ export default function SeriesScreen() {
               const hit = at >= 0 ? parts[at] : undefined;
               if (hit) nav.push(`/dispatch/${hit.id}`);
             }}
-            onAuthor={author ? () => nav.push(`/user/${author.name}`) : undefined}
+            onAuthor={author ? () => nav.push(roomOf(author.name)) : undefined}
           />
           {/* Said out loud rather than swallowed. The alternative is a page that
               lists twenty-four parts, prints `24 OF 24`, and is wrong. */}

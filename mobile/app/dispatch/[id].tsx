@@ -40,6 +40,7 @@ import { DossierShareCard, PaperBack } from '@/src/components/dispatch/paper/Pap
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { measure } from '@/src/components/dispatch/paper/paperMetrics';
+import { roomOf } from '@/src/components/dispatch/roomLink';
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
 import ViewShot, { captureRef } from 'react-native-view-shot';
@@ -202,8 +203,17 @@ export default function FilingReader() {
    */
   const rows = critiques[id] ?? [];
 
+  /**
+   * Their ROOM, not their file.
+   *
+   * The byline has told a screen reader "Open their room." since the design was
+   * drawn, and it opened the profile — six rooms about films, not one of them
+   * the Dispatch. The room offers the file at its own head, so nothing is lost
+   * by arriving there first, and the paper stops handing a reader out of the
+   * paper at the one place it names a person.
+   */
   const openAuthor = useCallback((username?: string | null) => {
-    if (username) nav.push(`/user/${username}`);
+    if (username) nav.push(roomOf(username));
   }, []);
 
   const openFilm = useCallback(() => {

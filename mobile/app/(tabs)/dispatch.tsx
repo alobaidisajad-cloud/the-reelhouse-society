@@ -38,6 +38,7 @@ import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth, formatCount, PAPER_MAX } from '@/src/components/dispatch/paper/paperMetrics';
 import { itemType } from '@/src/components/dispatch/paper/paperPerf';
 import { dayKey, dayLabel, hourLabel } from '@/src/components/dispatch/dayLabel';
+import { roomOf } from '@/src/components/dispatch/roomLink';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch, type Section } from '@/src/stores/dispatch';
@@ -259,7 +260,7 @@ export default function DispatchScreen() {
         // full width; a fifth destination would be a target nobody can hit.
         onShare={() => nav.push(`/dispatch/${f.id}`)}
         onFilm={f.subjectId ? () => nav.push(`/film/${f.subjectId}`) : undefined}
-        onAuthor={f.author ? () => nav.push(`/user/${f.author!.name}`) : undefined}
+        onAuthor={f.author ? () => nav.push(roomOf(f.author!.name)) : undefined}
       />
     );
   }, [sort, width, certifiedIds, savedIds, me]);

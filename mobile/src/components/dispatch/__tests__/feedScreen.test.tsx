@@ -210,7 +210,10 @@ describe('the Dispatch feed', () => {
 
     mockPushed.length = 0;
     await act(async () => { fireEvent.press(getByLabelText(/Open their room/)); });
-    expect(mockPushed).toEqual(['/user/tomasreyes']);
+    // Their ROOM. The label has said so since the design was drawn; for a long
+    // time it opened the member file — six rooms about films, none of them the
+    // Dispatch — and the promise on the control is now the destination.
+    expect(mockPushed).toEqual(['/dispatch/room/tomasreyes']);
   });
 
   it('moves the marks from a card', async () => {

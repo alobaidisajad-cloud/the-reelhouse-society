@@ -7,7 +7,8 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK } from './paperMetrics';
+import { EndMark } from './PaperFrame';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted } from './paperText';
 import { isRTLText } from '@/src/utils/text';
@@ -288,13 +289,7 @@ export const CritiqueFooter = memo(function CritiqueFooter({
     );
   }
   if (left <= 0) {
-    return (
-      <View style={p.endRow}>
-        <View style={p.endLine} />
-        <Text style={{ color: colors.sepia, fontSize: 12.5, opacity: 0.7 }} {...UNSPOKEN} {...decorativeTextProps}>✦</Text>
-        <View style={p.endLine} />
-      </View>
-    );
+    return <EndMark />;
   }
   return (
     <PressableScale

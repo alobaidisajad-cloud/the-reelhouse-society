@@ -1014,6 +1014,9 @@ export const p = StyleSheet.create({
   quiet: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia, opacity: 0.95, marginTop: 16, includeFontPadding: false },
   endRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 },
   endLine: { width: 32, height: 1, backgroundColor: colors.sepia, opacity: 0.35 },
+  /** The ornament between the two rules. Typed by hand in two files before it
+   *  lived here, which is one hand-typed size away from drifting apart. */
+  endMark: { color: colors.sepia, fontSize: 12.5, opacity: 0.7 },
 
   // ── skeletons ─────────────────────────────────────────────────────────────
   skRow: { paddingVertical: POST_PAD_V },

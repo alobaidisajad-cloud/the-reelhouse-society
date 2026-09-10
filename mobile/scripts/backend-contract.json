@@ -10,6 +10,10 @@
     "decline_lounge_member",
     "delete_list_cascade",
     {
+      "name": "dispatch_room_totals",
+      "signature": "dispatch_room_totals(p_user_id uuid)"
+    },
+    {
       "name": "end_filing",
       "signature": "end_filing(p_post uuid, p_by text)"
     },

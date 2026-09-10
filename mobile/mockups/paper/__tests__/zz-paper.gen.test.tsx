@@ -775,8 +775,15 @@ add('f5-member-room', (
         serial at you. */}
     <PaperBack label="ANA" />
     <PaperSheet>
-      <PaperRoom author={ANA} filed={128} certified={4102} />
-      <DayDivider label="AUGUST" />
+      {/* The way out to the rest of the member — the profile and its six rooms
+          of films. It is a NAMED line rather than a tappable name: a `Byline`
+          that takes a press announces itself as "Open their room", and this is
+          their room. */}
+      <PaperRoom author={ANA} filed={128} certified={4102} onFile={() => {}} />
+      {/* The month AND the year. A room runs back through everything a member
+          has ever filed, so `AUGUST` alone names two different Augusts once the
+          house is two years old. */}
+      <DayDivider label="AUGUST 2026" />
       <PaperPost noByline kind="take" order="28" author={ANA} measureWidth={COL} film={STALKER}
         body={LONGEST} certifyCount={2140} commentCount={61} certified />
       <PaperPost noByline kind="dossier" order="24" author={ANA} measureWidth={COL} film={TOKYO}

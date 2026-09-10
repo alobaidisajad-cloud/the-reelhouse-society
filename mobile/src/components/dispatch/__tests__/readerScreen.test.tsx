@@ -567,7 +567,7 @@ describe('the reader', () => {
     const { getByLabelText } = await mount();
 
     await act(async () => { fireEvent.press(getByLabelText(/Open their room/)); });
-    expect(mockPushed).toContain('/user/tomasreyes');
+    expect(mockPushed).toContain('/dispatch/room/tomasreyes');
 
     mockPushed.length = 0;
     await act(async () => { fireEvent.press(getByLabelText(/Tokyo Story/)); });
@@ -1049,7 +1049,7 @@ describe('the ways out, and the ways it fails', () => {
     await act(async () => {
       fireEvent.press(getAllByLabelText(/Open their room/i)[0]);
     });
-    expect(mockPushed).toContain('/user/tomasreyes');
+    expect(mockPushed).toContain('/dispatch/room/tomasreyes');
   });
 
   it('offers no room to open for a member who has gone', async () => {

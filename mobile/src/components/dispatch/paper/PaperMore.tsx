@@ -298,8 +298,31 @@ export const PaperArchive = memo(function PaperArchive({
  * name is the page saying nothing twenty times.
  */
 export const PaperRoom = memo(function PaperRoom({
-  author, filed, certified,
-}: { author: PaperAuthor; filed: number; certified: number }) {
+  author, filed, certified, onFile,
+}: {
+  author: PaperAuthor;
+  /**
+   * NULL when the house's totals did not arrive — a network failure, or a
+   * build running ahead of the function that computes them.
+   *
+   * The line is then not drawn at all. Zero is a FACT about a member who has
+   * filed nothing, and printing it over somebody's twelve filings because a
+   * read failed is the page inventing a number rather than admitting it has
+   * none. Both or neither, because `12 FILED · 0 CERTIFIED` is worse than
+   * silence in exactly the same way.
+   */
+  filed: number | null; certified: number | null;
+  /**
+   * The way out to the rest of the member — their FILE, which is the profile
+   * and its six rooms of films.
+   *
+   * It is a named line rather than a tappable name, for one reason: a `Byline`
+   * that takes an `onPress` announces itself as "Open their room", and this IS
+   * their room. A control that says it will do the thing you already did is
+   * worse than no control. So the destination says what it is.
+   */
+  onFile?: () => void;
+}) {
   /**
    * ── TWO LINES, ALWAYS ──────────────────────────────────────────────────────
    * The byline on its own line, then the particulars beneath it.
@@ -335,10 +358,25 @@ export const PaperRoom = memo(function PaperRoom({
         <Text style={m.roomNo} numberOfLines={1} {...decorativeTextProps}>
           {`No. ${author.memberNo}`}
         </Text>
-        <Text style={m.roomCount} numberOfLines={1} {...decorativeTextProps}>
-          {filed} FILED · {certified} CERTIFIED
-        </Text>
+        {filed !== null && certified !== null ? (
+          <Text style={m.roomCount} numberOfLines={1} {...decorativeTextProps}>
+            {filed} FILED · {certified} CERTIFIED
+          </Text>
+        ) : null}
       </View>
+      {onFile ? (
+        <PressableScale
+          style={m.roomFile} haptic="selection" onPress={onFile}
+          /* All four sides given. A partial hitSlop does not leave the missing
+             sides at the component's 15pt default — it sets them to nothing. */
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="link"
+          accessibilityLabel={`Open the member file of ${author.name}`}
+        >
+          <Text style={m.roomFileText} {...decorativeTextProps}>THE MEMBER’S FILE</Text>
+          <ChevronRight size={10} strokeWidth={2} color={colors.sepia} />
+        </PressableScale>
+      ) : null}
     </View>
   );
 });
@@ -1220,6 +1258,22 @@ const m = StyleSheet.create({
     includeFontPadding: false,
   },
   roomCount: {
+    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    includeFontPadding: false,
+  },
+  /**
+   * The way out, on its own line under the particulars.
+   *
+   * `alignSelf: 'flex-start'` so the control is exactly as wide as its words:
+   * stretched across the head it would be a 300pt tap target reaching the edge
+   * of the page, and every miss aimed at the first filing would open a profile
+   * instead.
+   */
+  roomFile: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    alignSelf: 'flex-start', marginLeft: AVATAR + 6, marginTop: 10,
+  },
+  roomFileText: {
     fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
     includeFontPadding: false,
   },

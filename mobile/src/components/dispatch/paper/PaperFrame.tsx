@@ -340,6 +340,30 @@ const Ruling = ({ ops }: { ops: number[] }) => (
 );
 
 /**
+ * ── THE MARK AT THE END OF A THING ──────────────────────────────────────────
+ * Rule, ornament, rule — what a compositor set where a piece finished, so a
+ * page that has been read to the end says so instead of simply stopping.
+ *
+ * It existed twice, written out inline, with the same three-property style
+ * object typed by hand in both — the exact duplication `paperPerf` forbids, and
+ * the exact way one of them ends up half a point away from the other. A member's
+ * room would have been the third copy.
+ *
+ * UNSPOKEN, in both directions: ✦ is furniture, and a screen reader announcing
+ * "black four pointed star" at the foot of every finished list is the page
+ * reading its own punctuation aloud.
+ */
+export const EndMark = memo(function EndMark() {
+  return (
+    <View style={p.endRow}>
+      <View style={p.endLine} />
+      <Text style={p.endMark} {...UNSPOKEN} {...decorativeTextProps}>✦</Text>
+      <View style={p.endLine} />
+    </View>
+  );
+});
+
+/**
  * ── AN EMPTY PAGE STILL OFFERS A WAY FORWARD ────────────────────────────────
  * `action` and `onAction` are a PAIR, expressed as a union so the type system
  * refuses one without the other. An empty state whose only button does nothing
@@ -387,13 +411,7 @@ export const PaperEmpty = memo(function PaperEmpty({
           <Text style={p.quiet} {...scaledTextProps}>{quiet}</Text>
         )
       ) : null}
-      {end ? (
-        <View style={p.endRow}>
-          <View style={p.endLine} />
-          <Text style={{ color: colors.sepia, fontSize: 12.5, opacity: 0.7 }} {...decorativeTextProps} {...UNSPOKEN}>✦</Text>
-          <View style={p.endLine} />
-        </View>
-      ) : null}
+      {end ? <EndMark /> : null}
       <Ruling ops={RULED_BELOW} />
     </View>
   );

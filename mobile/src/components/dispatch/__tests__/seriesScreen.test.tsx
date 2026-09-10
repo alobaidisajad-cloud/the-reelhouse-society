@@ -200,7 +200,7 @@ describe('the series page', () => {
     mockRows = [part()];
     const { getByText } = await mount();
     await act(async () => { fireEvent.press(getByText(/tomasreyes/i)); });
-    expect(mockPushed).toEqual(['/user/tomasreyes']);
+    expect(mockPushed).toEqual(['/dispatch/room/tomasreyes']);
   });
 
   it('does not call the first 24 of 40 “24 OF 24”', async () => {

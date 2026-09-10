@@ -71,7 +71,9 @@ const DESIGNED_NOT_WIRED = new Set([
   'src/components/dispatch/paper/PaperMore.tsx  ::  PaperDoor',
   'src/components/dispatch/paper/PaperMore.tsx  ::  PaperRules',
   'src/components/dispatch/paper/PaperMore.tsx  ::  PaperArchive',
-  'src/components/dispatch/paper/PaperMore.tsx  ::  PaperRoom',
+  // `PaperRoom` came off this list when app/dispatch/room/[username].tsx began
+  // mounting it — and the four bylines that promised "Open their room" started
+  // going there. The ratchet doing its job for the second time.
   'src/components/dispatch/paper/PaperMore.tsx  ::  PaperCase',
   'src/components/dispatch/paper/PaperMore.tsx  ::  StoryFrame',
   'src/components/dispatch/paper/PaperMore.tsx  ::  LoungeCard',

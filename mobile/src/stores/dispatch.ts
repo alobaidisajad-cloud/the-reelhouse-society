@@ -175,6 +175,19 @@ export interface DispatchState {
   /** One filing, with its essay, for the reader. */
   hydrate: (id: string) => Promise<Filing | null>;
 
+  /**
+   * What this member has already done to a set of filings THIS STORE DID NOT
+   * FETCH — certified, saved, voted.
+   *
+   * The feed and the reader both fill these in for their own rows, privately.
+   * A member's room fetches its own page of filings, so without this every mark
+   * on it would draw empty: a member would open their own room and see nothing
+   * certified, tap the mark that is already true, and the insert would come back
+   * as a duplicate-key refusal. The marks are the member's memory of the page
+   * and they have to arrive with any page that shows them.
+   */
+  loadMarks: (filings: Filing[]) => Promise<void>;
+
   file: (draft: FilingDraft) => Promise<{ id: string; offline?: boolean } | null>;
   amend: (id: string, updates: FilingUpdate) => Promise<void | { offline: boolean }>;
   end: (id: string) => Promise<void | { offline: boolean }>;
@@ -490,6 +503,13 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       if (!isNetworkError(e)) captureError(e, { where: 'dispatch.hydrate' });
       return null;
     }
+  },
+
+  // The same three reads the feed and the reader already make for their own
+  // rows, offered to a screen that fetched its own. It merges — it never clears
+  // — so one page filling in its marks cannot wipe another page's.
+  loadMarks: async (filings) => {
+    await loadViewerState(filings, set, useAuthStore.getState().user?.id ?? null);
   },
 
   // ── FILING ────────────────────────────────────────────────────────────────
