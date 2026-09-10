@@ -69,6 +69,50 @@ export interface DraftEnvelope<T> {
 
 export const DRAFT_VERSION = 2;
 
+/**
+ * The writing room's own draft — the WHOLE piece.
+ *
+ * It used to be `{ title, content }`, and a member who picked a film, chose a
+ * series and wrote for an hour got the words back and nothing else. The film
+ * carries its cover now too, so half a draft would have lost the picture at the
+ * head of the essay as well.
+ *
+ * Every field optional: a draft is by definition unfinished.
+ */
+export interface DossierDraft {
+  title?: string;
+  content?: string;
+  film?: {
+    id: number; title: string; sub: string | null;
+    image: string | null; backdrop: string | null;
+  } | null;
+  /** `part` is stored for the line that names it and RE-DERIVED on restore. */
+  series?: { id: string; title: string; part: number } | null;
+}
+
+/**
+ * Was there something here that could not be read?
+ *
+ * `readDraft` returns null for an empty room and for a corrupt one, and clears
+ * the corrupt key so it cannot fail again — which means the caller cannot tell
+ * the two apart afterwards, and "nothing was ever written" is a very different
+ * thing to say to somebody than "what was here could not be read".
+ *
+ * So the clear leaves a mark. It is removed by the asking, so the room says it
+ * once and never again.
+ */
+const unreadable = new Set<string>();
+
+export function unreadableDraftFound(
+  userId: string | null | undefined, kind: DraftKind, scope?: string,
+): boolean {
+  if (!userId) return false;
+  const key = draftKey(userId, kind, scope);
+  const found = unreadable.has(key);
+  unreadable.delete(key);
+  return found;
+}
+
 // ── READ · WRITE · CLEAR ────────────────────────────────────────────────────
 /**
  * Every touch is wrapped, and not for symmetry.
@@ -98,9 +142,10 @@ export function readDraft<T>(
     }
     return { data: parsed as T };
   } catch {
-    // Unreadable. Cleared rather than left to fail on every open, and the null
-    // lets the room say so instead of opening blank as though nothing was ever
-    // written.
+    // Unreadable. Cleared rather than left to fail on every open — and marked,
+    // so the room can say so instead of opening blank as though nothing was
+    // ever written. See `unreadableDraftFound`.
+    unreadable.add(key);
     clearDraft(userId, kind, scope);
     return null;
   }

@@ -105,6 +105,42 @@ const Row = memo(function Row({ s, chosen, onPick }: {
   );
 });
 
+/**
+ * The next free part of a series, asked FRESH.
+ *
+ * `nextPart` is computed when a member picks the series, not when they file. A
+ * draft restored two days later still holds the number it was offered then — so
+ * if they filed Part II from somewhere else in the meantime, that draft files a
+ * SECOND Part II, and the series page prints II, II, III in Roman numerals off
+ * the field.
+ *
+ * A stored part number is a fact about the past. This asks the present.
+ *
+ * Returns null when it cannot tell — no member, no series, or the read failed —
+ * and the caller keeps what it had, because a number that might be stale is
+ * better than no number under a line that says which part this is.
+ */
+export async function freshPartFor(
+  userId: string | null | undefined, seriesId: string | null | undefined,
+): Promise<number | null> {
+  if (!userId || !seriesId) return null;
+  try {
+    const { data, error } = await supabase
+      .from('dispatch_posts')
+      .select('series_id, series_title, part_number')
+      .eq('user_id', userId)
+      .eq('kind', 'dossier')
+      .eq('series_id', seriesId);
+    if (error || !data) return null;
+    const found = groupSeries(data as never).find((s) => s.id === seriesId);
+    // No rows means the series exists only in this draft — a sequence the member
+    // began and has not filed the first part of. That is Part I.
+    return found ? nextPart(found.parts) : 1;
+  } catch {
+    return null;
+  }
+}
+
 export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomInset }: {
   visible: boolean;
   chosen: SeriesChoice | null;

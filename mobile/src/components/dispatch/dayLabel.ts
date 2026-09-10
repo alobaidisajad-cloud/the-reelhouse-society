@@ -20,7 +20,12 @@
  * made it in. `new Date(iso)` gives local time on the device, and the divider is
  * a human's idea of a day rather than an astronomer's.
  */
-const WEEKDAYS = [
+/**
+ * Exported because the writing room names the day a draft was last written, and
+ * a second copy of seven strings is a second thing to keep in step. `Intl` is
+ * not an option — see the note above.
+ */
+export const WEEKDAYS = [
   'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
 ] as const;
 

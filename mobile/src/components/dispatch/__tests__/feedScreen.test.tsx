@@ -350,7 +350,10 @@ describe('an empty page, in every shape it takes', () => {
 
   for (const [section, title] of [
     ['BALLOTS', 'No ballot is open.'],
-    ['DOSSIER', 'No essays yet.'],
+    // The FORM's name. A heading takes the label the app uses everywhere else —
+    // "essay" is the word for describing what a dossier is, in a sentence, and
+    // the line under this heading is where that belongs.
+    ['DOSSIER', 'No dossiers yet.'],
   ] as const) {
     it(`${section} — offers no act the door would refuse, and explains instead`, async () => {
       // These two are AUTEURS-only to file. A button that exists to say no is

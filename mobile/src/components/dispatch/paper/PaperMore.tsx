@@ -40,6 +40,16 @@ export interface Form {
   name: string;
   line: string;
   locked?: boolean;
+  /**
+   * There is a draft of this form waiting.
+   *
+   * The writing room keeps ONE unfinished dossier, and until this line existed
+   * that limit was a surprise: a member began a second essay and the first was
+   * overwritten without a word. Saying so turns the limit into information —
+   * and it is the only place outside the room where an unfinished piece is
+   * visible at all.
+   */
+  inProgress?: boolean;
 }
 
 export const FORMS: Form[] = [
@@ -86,7 +96,11 @@ export const PaperPicker = memo(function PaperPicker({
             haptic="medium" disabled={f.locked}
             accessibilityRole="button"
             accessibilityState={{ disabled: !!f.locked }}
-            accessibilityLabel={f.locked ? `${f.name}. Auteurs only. ${f.line}` : `${f.name}. ${f.line}`}
+            accessibilityLabel={
+              f.locked ? `${f.name}. Auteurs only. ${f.line}`
+                : f.inProgress ? `${f.name}. One in progress. ${f.line}`
+                  : `${f.name}. ${f.line}`
+            }
           >
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={[p.leadIn, LEAD_STYLE[f.kind]]} {...decorativeTextProps}>
@@ -98,6 +112,11 @@ export const PaperPicker = memo(function PaperPicker({
               <View style={m.lockRow}>
                 <Lock size={9} strokeWidth={2} color={colors.sepia} />
                 <Text style={m.lockText} {...decorativeTextProps}>AUTEURS</Text>
+              </View>
+            ) : f.inProgress ? (
+              <View style={m.lockRow}>
+                <Text style={m.inProgress} {...decorativeTextProps}>IN PROGRESS</Text>
+                <ChevronRight size={15} strokeWidth={2} color={colors.sepia} />
               </View>
             ) : (
               <ChevronRight size={15} strokeWidth={2} color={colors.sepia} />
@@ -133,9 +152,18 @@ export const PaperPicker = memo(function PaperPicker({
  * the same job — so "three of five" is a length before it is a number.
  */
 export const PaperDoor = memo(function PaperDoor({
-  films, filmsNeeded, days, daysNeeded, onLog,
+  films, filmsNeeded, days, daysNeeded, held, onLog,
 }: {
   films: number; filmsNeeded: number; days: number; daysNeeded: number;
+  /**
+   * They are holding an unfinished piece the door will not let them file yet.
+   *
+   * Possible because an Auteur can pay on the first day and still be two days
+   * and five films short — so a member can arrive here with an essay already
+   * written. Told nothing, they would reasonably assume it had been thrown
+   * away for being unfilable.
+   */
+  held?: boolean;
   onLog?: () => void;
 }) {
   // The return type is written out because a template literal widens to `string`,
@@ -187,7 +215,9 @@ export const PaperDoor = memo(function PaperDoor({
         accessibilityRole="button" accessibilityLabel="Go and log a film">
         <Text style={p.btnText} {...scaledTextProps}>LOG A FILM</Text>
       </PressableScale>
-      <Text style={p.quiet} {...scaledTextProps}>NOTHING IS HIDDEN FROM YOU MEANWHILE</Text>
+      <Text style={p.quiet} {...scaledTextProps}>
+        {held ? 'WHAT YOU HAVE WRITTEN IS KEPT' : 'NOTHING IS HIDDEN FROM YOU MEANWHILE'}
+      </Text>
 
       <View style={p.emptyRules} pointerEvents="none">
         {[0.06, 0.04, 0.02].map((o, i) => (
@@ -1245,6 +1275,11 @@ const m = StyleSheet.create({
     includeFontPadding: false,
   },
   lockRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  /** Sepia, not crimson: an unfinished piece is a fact, not a warning. */
+  inProgress: {
+    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    includeFontPadding: false,
+  },
   lockText: {
     fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
     includeFontPadding: false,

@@ -85,8 +85,14 @@ const EMPTY: Record<Section, { title: string; body: string; action?: string }> =
     body: 'Auteurs call the votes. When one opens, the whole house marks it.',
   },
   DOSSIER: {
-    title: 'No essays yet.',
-    body: 'The long form. Auteurs file these, and the house reads them.',
+    // The FORM's name, because this is a heading for the DOSSIER department and
+    // every label, button and toast in the app says dossier. "Essay" is the word
+    // for describing what one IS, in a sentence — which is exactly what the line
+    // below does, and what the picker's own row does. Measured across the app:
+    // 60 member-facing uses of dossier, 4 of essay, and this heading was one of
+    // two that broke the rule.
+    title: 'No dossiers yet.',
+    body: 'The long form — an essay, at length. Auteurs file these, and the house reads them.',
   },
 };
 

@@ -61,6 +61,7 @@ let mockFiled: Array<Record<string, unknown>> = [];
 let mockAmended: Array<[string, Record<string, unknown>]> = [];
 let mockFileFails = false;
 const mockStore = new Map<string, string>();
+let mockStoreFull = false;
 const mockToast = { error: jest.fn(), success: jest.fn() };
 
 jest.mock('@/src/stores/auth', () => ({
@@ -80,7 +81,12 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
     // has to be able to enumerate. Without it the sweep silently does nothing
     // and every leak test passes for the wrong reason.
     getAllKeys: () => [...mockStore.keys()],
-    set: (k: string, v: string) => { mockStore.set(k, v); },
+    set: (k: string, v: string) => {
+      // A full phone is the ordinary failure, and it is the one the room has to
+      // be able to report at the exit.
+      if (mockStoreFull) throw new Error('no space left on device');
+      mockStore.set(k, v);
+    },
     delete: (k: string) => { mockStore.delete(k); },
   },
 }));
@@ -137,6 +143,7 @@ beforeEach(() => {
   mockUser = { id: 'u1', username: 'me', tier: 'auteur' };
   mockFiled = []; mockAmended = []; mockFileFails = false;
   mockStore.clear();
+  mockStoreFull = false;
   mockToast.error.mockClear(); mockToast.success.mockClear();
   at({});
   mockParams.length = 0;
@@ -166,7 +173,24 @@ describe('the door', () => {
     at({ kind: 'dossier' });
     render(<ComposeScreen />);
     await flush();
-    expect(mockToast.error).toHaveBeenCalledWith('Auteur tier required');
+    // In the house's own words, and naming the FORM. "Auteur tier required" is
+    // a settings screen talking about a subscription.
+    expect(mockToast.error).toHaveBeenCalledWith('The dossier is an Auteur’s to file.');
+  });
+
+  it('and tells a LAPSED Auteur their unfinished one is kept', async () => {
+    // Turned away from a room still holding four thousand of their words, and
+    // told only that they lack the tier, a member reasonably assumes the essay
+    // went with the subscription.
+    mockStore.set('reelhouse_draft_u1_dossier', JSON.stringify({
+      v: 2, savedAt: new Date().toISOString(),
+      data: { title: 'The Empty Room', content: 'Four thousand words.' },
+    }));
+    mockUser = { id: 'u1', username: 'me', tier: 'free' };
+    at({ kind: 'dossier' });
+    render(<ComposeScreen />);
+    await flush();
+    expect(mockToast.error).toHaveBeenCalledWith('The dossier is an Auteur’s. Your unfinished one is kept.');
   });
 });
 
@@ -391,7 +415,35 @@ describe('leaving the room', () => {
     await type(getByLabelText('Dossier content body'), 'An opening line.');
     await press(getByLabelText(/Cancel/));
 
-    expect(alerts[0][0]).toBe('Discard Draft?');
+    // The form's own name, not "Draft" — the app says DOSSIER on every label and
+    // button, and a member reads "Discard Draft?" as a fourth word for a thing
+    // that already has one.
+    expect(alerts[0][0]).toBe('Discard this dossier?');
+    spy.mockRestore();
+  });
+
+  it('and warns about the LOSS when the phone refused to keep it', async () => {
+    /**
+     * There is no save mark in this room and there is not going to be one — a
+     * mark that only ever confirms is decoration, and none of the apps worth
+     * copying has one. But if the phone genuinely refused the write, silence is
+     * how somebody walks away from four thousand words believing they are safe.
+     *
+     * So the warning lives at the EXIT, the only moment the loss becomes real.
+     */
+    mockStoreFull = true;
+    const alerts: [string, string][] = [];
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(((t: string, m: string) => {
+      alerts.push([t, m]);
+    }) as never);
+
+    const { getByLabelText } = open();
+    await type(getByLabelText('Dossier content body'), 'Four thousand words.');
+    await act(async () => { jest.advanceTimersByTime(1200); });
+    await press(getByLabelText(/Cancel/));
+
+    expect(alerts[0][0]).toBe('This is not being kept');
+    expect(alerts[0][1]).toMatch(/out of space/);
     spy.mockRestore();
   });
 
