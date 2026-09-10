@@ -763,27 +763,36 @@ END $$;
 CREATE FUNCTION public.dispatch_posts_pin_columns() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  -- The house's own machinery — the counters, `end_filing`, the Tribunal, the
-  -- ballot freeze — all run as the table owner. Everything else is a member.
-  IF current_user IN ('postgres', 'service_role', 'supabase_admin') THEN
-    RETURN NEW;
-  END IF;
-
-  -- Counts belong to the members who made them, not to the author.
-  NEW.certify_count := OLD.certify_count;
-  NEW.comment_count := OLD.comment_count;
-  -- When it was filed is what orders the paper.
-  NEW.created_at    := OLD.created_at;
-  -- The kind is gated at INSERT by tier; changing it afterwards walks around
-  -- that gate, so a take cannot quietly become a dossier.
-  NEW.kind          := OLD.kind;
-  -- Under review, or struck. Only the house moves these.
-  NEW.withheld_at   := OLD.withheld_at;
-  NEW.ended_at      := OLD.ended_at;
-  NEW.ended_by      := OLD.ended_by;
-  RETURN NEW;
+    AS $$
+BEGIN
+  -- The house's own machinery — the counters, `end_filing`, the Tribunal, the
+  -- ballot freeze — all run as the table owner. Everything else is a member.
+  IF current_user IN ('postgres', 'service_role', 'supabase_admin') THEN
+    RETURN NEW;
+  END IF;
+
+  -- Counts belong to the members who made them, not to the author.
+  NEW.certify_count := OLD.certify_count;
+  NEW.comment_count := OLD.comment_count;
+  -- When it was filed is what orders the paper.
+  NEW.created_at    := OLD.created_at;
+  -- The kind is gated at INSERT by tier; changing it afterwards walks around
+  -- that gate, so a take cannot quietly become a dossier.
+  NEW.kind          := OLD.kind;
+  -- Under review, or struck. Only the house moves these.
+  NEW.withheld_at   := OLD.withheld_at;
+  NEW.ended_at      := OLD.ended_at;
+  NEW.ended_by      := OLD.ended_by;
+
+  -- ── A BALLOT IS THE HOUSE'S, NOT THE AUTHOR'S ───────────────────────────
+  -- The question is theirs to ask. The answer is not theirs to write, the
+  -- films are not theirs to swap once anybody has voted on an index, and the
+  -- deadline is not theirs to move after the fact.
+  NEW.frozen_totals := OLD.frozen_totals;
+  NEW.options       := OLD.options;
+  NEW.closes_at     := OLD.closes_at;
+
+  RETURN NEW;
 END $$;
 
 
@@ -934,18 +943,44 @@ END $$;
 CREATE FUNCTION public.end_filing(p_post uuid, p_by text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF p_by NOT IN ('author','house') THEN RAISE EXCEPTION 'bad ended_by'; END IF;
-  IF p_by = 'author' AND NOT EXISTS (
-       SELECT 1 FROM public.dispatch_posts WHERE id = p_post AND user_id = auth.uid())
-  THEN RAISE EXCEPTION 'not yours'; END IF;
-
-  UPDATE public.dispatch_posts
-     SET body = '', full_content = NULL, title = NULL, subject_image = NULL, source = NULL,
-         spoiler_label = NULL, ended_at = now(), ended_by = p_by
-   WHERE id = p_post AND ended_at IS NULL;
+    AS $$
+BEGIN
+  IF p_by NOT IN ('author','house') THEN RAISE EXCEPTION 'bad ended_by'; END IF;
+
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+
+  IF p_by = 'author' THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM public.dispatch_posts
+       WHERE id = p_post AND user_id = auth.uid()
+    ) THEN
+      RAISE EXCEPTION 'not yours' USING ERRCODE = '42501';
+    END IF;
+  ELSE
+    -- 'house'. The same admin predicate the Tribunal uses, so there is one
+    -- answer in this database to "is this the house" rather than two.
+    IF NOT EXISTS (
+      SELECT 1 FROM public.profiles
+       WHERE id = auth.uid() AND role = 'admin'
+    ) THEN
+      RAISE EXCEPTION 'not the house' USING ERRCODE = '42501';
+    END IF;
+  END IF;
+
+  UPDATE public.dispatch_posts
+     SET body = '', full_content = NULL, title = NULL, subject_image = NULL, source = NULL,
+         spoiler_label = NULL, ended_at = now(), ended_by = p_by
+   WHERE id = p_post AND ended_at IS NULL;
 END $$;
+
+
+--
+-- Name: FUNCTION end_filing(p_post uuid, p_by text); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.end_filing(p_post uuid, p_by text) IS 'Withdraw a filing. Each branch proves its own right: the author proves ownership, the house proves role = admin. Before 2026-09-10 the house branch proved nothing and was granted to anon, so any caller could erase any filing.';
 
 
 --
@@ -8130,7 +8165,7 @@ GRANT ALL ON FUNCTION public.dossiers_write() TO service_role;
 -- Name: FUNCTION end_filing(p_post uuid, p_by text); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) TO anon;
+REVOKE ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) TO authenticated;
 GRANT ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) TO service_role;
 
