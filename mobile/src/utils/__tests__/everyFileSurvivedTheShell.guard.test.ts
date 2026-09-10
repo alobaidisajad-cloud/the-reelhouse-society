@@ -160,7 +160,6 @@ describe('the detector, before it is trusted', () => {
      * If a future runtime ships without full ICU this cannot run, and the test
      * says so out loud rather than passing quietly.
      */
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { TextDecoder: NodeTextDecoder } = require('node:util');
     let node: InstanceType<typeof NodeTextDecoder>;
     try {
