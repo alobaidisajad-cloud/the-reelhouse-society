@@ -102,7 +102,7 @@ describe('every kind, in every state the card branches on', () => {
     // a missing branch was invisible in the first place. `KIND_RULE` is what
     // the app itself reads to colour a filing, so a sixth kind cannot be added
     // without showing up here.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { KIND_RULE } = require('@/src/components/dispatch/paper/paperMetrics');
     expect([...KINDS].sort()).toEqual(Object.keys(KIND_RULE).sort());
     expect(STATES.length).toBeGreaterThan(10);

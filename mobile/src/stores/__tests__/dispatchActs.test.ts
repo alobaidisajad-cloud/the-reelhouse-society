@@ -20,7 +20,7 @@ import { useDispatch } from '../dispatch';
 import type { Filing } from '../dispatchTypes';
 
 let mockOutcome: 'ok' | 'refused' | 'offline' = 'ok';
-const mockQueued: Array<{ type: string; payload: unknown }> = [];
+const mockQueued: { type: string; payload: unknown }[] = [];
 
 /** Refused by the house: a real PostgREST error, resolved not thrown. */
 const REFUSED = { data: null, error: { message: 'new row violates row-level security policy', code: '42501' } };

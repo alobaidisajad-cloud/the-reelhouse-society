@@ -208,7 +208,7 @@ gate('mockup generator', () => {
       manifest.push({ id, label, bytes: html.length });
     }
     writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
-    // eslint-disable-next-line no-console
+     
     console.log('WROTE:', manifest.map((m) => `${m.id}(${m.bytes}b)`).join(' '));
     expect(manifest.length).toBe(7);
   });

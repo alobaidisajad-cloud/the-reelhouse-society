@@ -20,13 +20,16 @@
 import React, { act } from 'react';
 import { Alert, AppState } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
+import { useLocalSearchParams } from 'expo-router';
+
+import ComposeScreen from '@/app/dispatch/compose';
 
 /**
  * The router, with `setParams` — which the shared setup mock does not carry, so
  * it cannot be spied on. This screen is ONE route for five desks and changes
  * desk by setting `?kind=`, so that call is the picker's entire behaviour.
  */
-const mockParams: Array<Record<string, string>> = [];
+const mockParams: Record<string, string>[] = [];
 jest.mock('expo-router', () => {
   const React = require('react');
   return {
@@ -40,9 +43,6 @@ jest.mock('expo-router', () => {
     Link: ({ children }: { children?: unknown }) => React.createElement(React.Fragment, null, children),
   };
 });
-import { useLocalSearchParams } from 'expo-router';
-
-import ComposeScreen from '@/app/dispatch/compose';
 
 /**
  * The draft's key carries the MEMBER now.
@@ -53,12 +53,11 @@ import ComposeScreen from '@/app/dispatch/compose';
  * `theDraftIsYours.test.ts` proves the leak is shut; these tests simply use the
  * real key, which is derived rather than typed so it cannot drift from it.
  */
-const LEGACY_KEY = 'reelhouse_dispatch_draft';
 const DRAFT_KEY = 'reelhouse_draft_u1_dossier';
 
 let mockUser: Record<string, unknown> | null = { id: 'u1', username: 'me', tier: 'auteur' };
-let mockFiled: Array<Record<string, unknown>> = [];
-let mockAmended: Array<[string, Record<string, unknown>]> = [];
+let mockFiled: Record<string, unknown>[] = [];
+let mockAmended: [string, Record<string, unknown>][] = [];
 let mockFileFails = false;
 const mockStore = new Map<string, string>();
 let mockStoreFull = false;
@@ -126,7 +125,7 @@ const at = (params: Record<string, string | undefined>) =>
  * killed while somebody takes a phone call.
  */
 const mockAppState = {
-  listeners: [] as Array<(s: string) => void>,
+  listeners: [] as ((s: string) => void)[],
   fire(state: string) { for (const l of [...this.listeners]) l(state); },
   reset() { this.listeners.length = 0; },
 };
@@ -407,7 +406,7 @@ describe('leaving the room', () => {
   const open = () => { at({ kind: 'dossier' }); return render(<ComposeScreen />); };
 
   it('asks before discarding words', async () => {
-    const alerts: Array<[string, string, Array<{ text: string; onPress?: () => void }>]> = [];
+    const alerts: [string, string, { text: string; onPress?: () => void }[]][] = [];
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
     );

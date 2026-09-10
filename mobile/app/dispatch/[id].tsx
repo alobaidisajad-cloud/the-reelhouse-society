@@ -362,7 +362,12 @@ export default function FilingReader() {
     } finally {
       setSending(false);
     }
-  }, [live, draft, sending]);
+    // `me?.id` belongs here: it is the KEY the draft is cleared under. Without
+    // it this closure keeps whichever member was signed in when it was last
+    // rebuilt, so after a sign-out and a sign-in the wrong member's draft key is
+    // the one erased — and this member's critique stays behind. The same class
+    // of fault as a draft key with no member in it.
+  }, [live, draft, sending, me?.id]);
 
   /**
    * ── THE MORE CONTROL, AND WHY IT IS TWO DIFFERENT THINGS ──────────────────

@@ -36,6 +36,8 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
+import RoomScreen from '@/app/dispatch/room/[username]';
+
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), replace: jest.fn(), setParams: jest.fn() },
   useLocalSearchParams: () => ({ username: 'tomasreyes' }),
@@ -117,8 +119,6 @@ jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
-
-import RoomScreen from '@/app/dispatch/room/[username]';
 
 const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'out');
 

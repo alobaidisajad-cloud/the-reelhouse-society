@@ -31,6 +31,11 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
+import { RankBadge } from '@/src/components/RankBadge';
+import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { colors, fonts } from '@/src/theme/theme';
+import { decorativeTextProps, scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useFocusEffect: () => {},
@@ -39,14 +44,9 @@ jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(), notificationAsync: jest.fn(), selectionAsync: jest.fn(),
 }));
 
-import { RankBadge } from '@/src/components/RankBadge';
-import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { colors, fonts } from '@/src/theme/theme';
-import { decorativeTextProps, scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
-
 const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'choices');
 
-const sheets: Array<[string, React.ReactElement]> = [];
+const sheets: [string, React.ReactElement][] = [];
 const add = (name: string, node: React.ReactElement) => sheets.push([name, node]);
 
 /* Shared metrics. Only the MATERIAL changes between candidates. */
@@ -136,7 +136,7 @@ const MarginMark = () => (
   </View>
 );
 
-const MARKS: Array<[string, string, () => React.ReactElement, string]> = [
+const MARKS: [string, string, () => React.ReactElement, string][] = [
   ['m1-censor-stamp', '1 · THE CENSOR STAMP', CensorStamp, 'the house’s own crimson plate, tilted · crimsonInk 5.4:1'],
   ['m2-the-rule', '2 · THE RULE', Rule, 'no box — a word over a hairline · crimsonInk 5.4:1'],
   ['m3-the-seal', '3 · THE SEAL', () => <Seal />, 'the passport’s ring, in crimson · no word to read'],
@@ -804,7 +804,7 @@ const pairRow = (Mark: (p: { auteur?: boolean }) => React.ReactElement, who: str
   </View>
 );
 
-const CAST: Array<[string, number]> = [
+const CAST: [string, number][] = [
   ['Ana', 1], ['Dan', 0], ['Sam', 2], ['Kit', 2], ['Mira', 1], ['Jun', 0], ['Noor', 2],
 ];
 

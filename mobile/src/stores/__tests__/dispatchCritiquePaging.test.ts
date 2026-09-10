@@ -21,7 +21,7 @@
 import { useDispatch } from '../dispatch';
 import { COMMENT_PAGE_SIZE } from '../dispatchTypes';
 
-interface Ask { order: Array<[string, unknown]>; range: [number, number] | null; eq: Record<string, unknown>; }
+interface Ask { order: [string, unknown][]; range: [number, number] | null; eq: Record<string, unknown>; }
 let mockAsks: Ask[] = [];
 let mockRows: unknown[][] = [];
 

@@ -21,9 +21,9 @@ import { MAX_LENGTHS } from '../../utils/sanitizeInput';
  * empty array. That is the whole reason these updates ask for `.select('id')`.
  */
 let mockOutcome: 'ok' | 'refused' | 'offline' | 'silent' = 'ok';
-const mockSent: Array<{ table: string; op: string; row: unknown }> = [];
-const mockQueued: Array<{ type: string; payload: Record<string, unknown> }> = [];
-const mockRpc: Array<{ fn: string; args: unknown }> = [];
+const mockSent: { table: string; op: string; row: unknown }[] = [];
+const mockQueued: { type: string; payload: Record<string, unknown> }[] = [];
+const mockRpc: { fn: string; args: unknown }[] = [];
 
 const REFUSED = { data: null, error: { message: 'refused', code: '42501' } };
 const networkError = () => Object.assign(new TypeError('Network request failed'), { name: 'TypeError' });

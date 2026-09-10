@@ -34,6 +34,10 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
+import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { colors, fonts } from '@/src/theme/theme';
+import { decorativeTextProps, scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useFocusEffect: () => {},
@@ -42,12 +46,8 @@ jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(), notificationAsync: jest.fn(), selectionAsync: jest.fn(),
 }));
 
-import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { colors, fonts } from '@/src/theme/theme';
-import { decorativeTextProps, scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
-
 const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'final');
-const sheets: Array<[string, React.ReactElement]> = [];
+const sheets: [string, React.ReactElement][] = [];
 const add = (n: string, node: React.ReactElement) => sheets.push([n, node]);
 
 /* ══ THE MARK ═══════════════════════════════════════════════════════════════ */

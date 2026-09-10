@@ -46,7 +46,7 @@ for (const m of sql.matchAll(/CONSTRAINT\s+(\w+)\s+CHECK/g)) {
 }
 
 /** field type in MAX_LENGTHS → the constraint it is answering to. */
-const MAPPING: Array<{ field: keyof typeof MAX_LENGTHS; constraint: string }> = [
+const MAPPING: { field: keyof typeof MAX_LENGTHS; constraint: string }[] = [
   { field: 'filingTitle', constraint: 'title_ceiling' },
   { field: 'filingBody', constraint: 'body_ceiling' },
   { field: 'filingExcerpt', constraint: 'excerpt_ceiling' },

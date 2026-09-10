@@ -594,7 +594,7 @@ jest.mock('react-native-safe-area-context', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Required here rather than at the top: this file registers its mocks first and
 // has no import block of its own.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
 const { Dimensions: RNDimensions } = require('react-native');
 const realDimensionsGet = RNDimensions.get.bind(RNDimensions);
 jest.spyOn(RNDimensions, 'get').mockImplementation((...args: unknown[]) => ({

@@ -33,8 +33,8 @@ const mockAsks: string[] = [];
  * undefined when the callback arrives, and the whole suite fails to load. It
  * lives on globalThis, created on first use by whichever runs first.
  */
-const resets = (): Array<() => void> => {
-  const g = globalThis as { __dispatchResets?: Array<() => void> };
+const resets = (): (() => void)[] => {
+  const g = globalThis as { __dispatchResets?: (() => void)[] };
   return (g.__dispatchResets ??= []);
 };
 
@@ -93,7 +93,7 @@ jest.mock('../../lib/supabase', () => ({
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: mockUser }) } }));
 jest.mock('../resetAllStores', () => ({
   registerStoreReset: (fn: () => void) => {
-    const g = globalThis as { __dispatchResets?: Array<() => void> };
+    const g = globalThis as { __dispatchResets?: (() => void)[] };
     (g.__dispatchResets ??= []).push(fn);
   },
 }));

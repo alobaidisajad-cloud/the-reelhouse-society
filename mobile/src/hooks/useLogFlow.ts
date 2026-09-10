@@ -15,7 +15,6 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
-import { storage } from '../stores/mmkv-storage';
 import { localCalendarDate } from '@/src/utils/timeAgo';
 export interface LogSearchResult {
     id: number;
@@ -547,7 +546,13 @@ export function useLogFlow() {
         setAutopsyOpen(false);
         setFilm(null);
         setStep(0);
-    }, []);
+        // `user?.id` is the KEY this clears under, and an empty array captured
+        // it once at mount — so after a sign-out and a sign-in, DISCARD erased
+        // the previous member's log draft and left this one's in place. That
+        // draft holds private notes, which makes it the worst one to get wrong.
+        // Every `setX` above is a state setter and stable by React's guarantee,
+        // so this is the only dependency that was actually missing.
+    }, [user?.id]);
 
     const toggleList = (listId: string) => {
         if (!film?.id) return;

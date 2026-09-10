@@ -44,7 +44,7 @@ export default function ArchiveScreen() {
 
   const {
     query, setQuery, matches, searching,
-    film, filings, count, span, loading, more, choose, clear, loadMore,
+    film, filings, count, span, loading, choose, clear, loadMore,
   } = useDispatchArchive();
 
   const certifiedIds = useDispatch((s) => s.certifiedIds);

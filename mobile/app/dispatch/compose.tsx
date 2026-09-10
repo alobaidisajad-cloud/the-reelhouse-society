@@ -47,7 +47,7 @@ import { excerptFor } from '@/src/components/dispatch/excerpt';
  * at accessibility sizes every label here grew without limit — the header's
  * three-across row and the counter row worst, because neither can reflow.
  */
-import { scaledTextProps, displayTextProps, deckLabelProps, decorativeTextProps } from '@/src/constants/textScaling';
+import { scaledTextProps, deckLabelProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
 
@@ -529,7 +529,7 @@ function ComposeDossierScreen() {
         if (held.data.title) setTitle(held.data.title);
         if (held.data.content) setContent(held.data.content);
         setRestored(held.savedAt ?? 'unknown');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, [edit, user?.id]);
 
     useEffect(() => {

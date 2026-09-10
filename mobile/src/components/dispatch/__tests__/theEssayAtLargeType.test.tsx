@@ -39,7 +39,7 @@ jest.mock('@/src/utils/markdownSafety', () => ({
 }));
 
 /** Every shape a member can type, whether or not the toolbar offers it. */
-const SHAPES: Array<[string, string]> = [
+const SHAPES: [string, string][] = [
   ['a paragraph', 'A second paragraph of ordinary prose.'],
   ['a heading', '# A Heading Here'],
   ['a smaller heading', '## A Smaller Heading'],

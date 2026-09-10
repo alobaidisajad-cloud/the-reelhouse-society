@@ -22,8 +22,8 @@ import { render, fireEvent } from '@testing-library/react-native';
 
 import { ComposeBallotScreen, FilmPicker } from '@/src/components/dispatch/ComposeDesks';
 
-let mockResults: Array<Record<string, unknown>> = [];
-const mockFiled: Array<Record<string, unknown>> = [];
+let mockResults: Record<string, unknown>[] = [];
+const mockFiled: Record<string, unknown>[] = [];
 const mockToast = { error: jest.fn(), success: jest.fn() };
 
 jest.mock('@/src/stores/auth', () => ({

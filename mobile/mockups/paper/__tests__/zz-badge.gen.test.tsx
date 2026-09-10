@@ -26,6 +26,12 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
+import { RankBadge } from '@/src/components/RankBadge';
+import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { colors, fonts } from '@/src/theme/theme';
+import { BRASS_STOPS, BRASS_WIDE_START, BRASS_WIDE_END, CROWN_HEIGHT } from '@/src/theme/brass';
+import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useFocusEffect: () => {},
@@ -34,15 +40,9 @@ jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(), notificationAsync: jest.fn(), selectionAsync: jest.fn(),
 }));
 
-import { RankBadge } from '@/src/components/RankBadge';
-import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { colors, fonts } from '@/src/theme/theme';
-import { BRASS, BRASS_STOPS, BRASS_WIDE_START, BRASS_WIDE_END, CROWN, CROWN_HEIGHT, RIM } from '@/src/theme/brass';
-import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
-
 const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'badge');
 
-const sheets: Array<[string, React.ReactElement]> = [];
+const sheets: [string, React.ReactElement][] = [];
 const add = (name: string, node: React.ReactElement) => sheets.push([name, node]);
 
 /* ── The badge's shared metrics. Every candidate uses these, so what is being
@@ -94,7 +94,7 @@ const BrightCrimson = () => (
   </View>
 );
 
-const CANDIDATES: Array<[string, string, () => React.ReactElement, string]> = [
+const CANDIDATES: [string, string, () => React.ReactElement, string][] = [
   ['a-today-brass', 'A · TODAY — brass ramp, ink lettering', Today, 'ink on brass · 4.57:1'],
   ['b-oxblood-foil', 'B · OXBLOOD + GOLD FOIL — the recommendation', Oxblood, 'gold on oxblood · 5.38:1'],
   ['c-oxblood-ramp', 'C · OXBLOOD RAMP + GOLD FOIL — lacquer', OxbloodRamp, 'gold on the lightest stop · 4.92:1'],

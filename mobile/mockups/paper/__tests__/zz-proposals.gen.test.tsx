@@ -21,6 +21,16 @@ import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 import { LOCAL_ART, POSTERS } from '../../../src/components/profile/__tests__/zz-art.gen';
 
+import { EssayHead } from '@/src/components/dispatch/paper/PaperEssay';
+import { EssayBody } from '@/src/components/dispatch/EssayBody';
+import { DossierDesk } from '@/src/components/dispatch/paper/PaperDesk';
+import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
+import { PaperBack } from '@/src/components/dispatch/paper/PaperMore';
+import { Byline } from '@/src/components/dispatch/paper/PaperPost';
+import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { colors, fonts } from '@/src/theme/theme';
+import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useFocusEffect: () => {},
@@ -39,16 +49,6 @@ jest.mock('@/src/utils/markdownSafety', () => ({
   onMarkdownLinkPress: () => false,
 }));
 
-import { EssayHead } from '@/src/components/dispatch/paper/PaperEssay';
-import { EssayBody } from '@/src/components/dispatch/EssayBody';
-import { DossierDesk } from '@/src/components/dispatch/paper/PaperDesk';
-import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
-import { PaperBack } from '@/src/components/dispatch/paper/PaperMore';
-import { Byline } from '@/src/components/dispatch/paper/PaperPost';
-import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { colors, fonts } from '@/src/theme/theme';
-import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
-
 
 
 const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'proposals');
@@ -63,7 +63,7 @@ const TOKYO = {
   backdropPath: Object.keys(POSTERS)[1] ?? null,
 };
 
-const sheets: Array<[string, React.ReactElement]> = [];
+const sheets: [string, React.ReactElement][] = [];
 const add = (name: string, node: React.ReactElement) => sheets.push([name, node]);
 
 const ESSAY = [

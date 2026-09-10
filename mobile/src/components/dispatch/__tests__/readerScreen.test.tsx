@@ -25,7 +25,6 @@ import { useLocalSearchParams } from 'expo-router';
 
 import FilingReader from '@/app/dispatch/[id]';
 import { useDispatch } from '@/src/stores/dispatch';
-import type { Filing } from '@/src/stores/dispatchTypes';
 
 let mockRow: Record<string, unknown> | null = null;
 let mockCritiqueRows: unknown[] = [];
@@ -122,7 +121,7 @@ jest.mock('@/src/lib/supabase', () => ({
  * this filing and this author, and mounts it at all only when there is somebody
  * to act on.
  */
-const mockSheetProps: Array<Record<string, unknown>> = [];
+const mockSheetProps: Record<string, unknown>[] = [];
 jest.mock('@/src/components/moderation/ContentActionSheet', () => ({
   ContentActionSheet: (props: Record<string, unknown>) => {
     if (props.visible) mockSheetProps.push(props);
@@ -131,7 +130,7 @@ jest.mock('@/src/components/moderation/ContentActionSheet', () => ({
 }));
 
 /** The Tribunal's report sheet, stubbed for the same reason as the action sheet. */
-const mockReportProps: Array<Record<string, unknown>> = [];
+const mockReportProps: Record<string, unknown>[] = [];
 jest.mock('@/src/components/moderation/ReportSheet', () => ({
   __esModule: true,
   default: (props: Record<string, unknown>) => {
@@ -343,7 +342,7 @@ describe('the reader', () => {
      * take it off the page. Withdrawing keeps its own confirmation underneath,
      * because it is the irreversible one and a single tap must never reach it.
      */
-    const alerts: Array<[string, string, Array<{ text: string; onPress?: () => void }>]> = [];
+    const alerts: [string, string, { text: string; onPress?: () => void }[]][] = [];
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
     );
@@ -373,7 +372,7 @@ describe('the reader', () => {
   });
 
   it('opens the desk the filing was written at, on the filing itself', async () => {
-    const alerts: Array<[string, string, Array<{ text: string; onPress?: () => void }>]> = [];
+    const alerts: [string, string, { text: string; onPress?: () => void }[]][] = [];
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
     );
@@ -398,7 +397,7 @@ describe('the reader', () => {
      * already struck — the database refuses both, and the app agrees rather
      * than offering an act that would bounce.
      */
-    const alerts: Array<[string, string, Array<{ text: string }>]> = [];
+    const alerts: [string, string, { text: string }[]][] = [];
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
     );
@@ -422,7 +421,7 @@ describe('the reader', () => {
   it('withdraws a filing reached by its own address, and shows the tombstone', async () => {
     // The whole failure in one test: no feed loaded, so `end` found nothing to
     // act on and returned — silently, with the page unchanged and no error.
-    const alerts: Array<[string, string, Array<{ text: string; onPress?: () => void }>]> = [];
+    const alerts: [string, string, { text: string; onPress?: () => void }[]][] = [];
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
     );
@@ -467,7 +466,7 @@ describe('the reader', () => {
     // `reelhouse://dispatch/<id>` opens nothing for anybody who does not already
     // have the app — which is everybody a share is being sent to. The film share
     // card has always used the https link; this one did not.
-    const shared: Array<{ message?: string }> = [];
+    const shared: { message?: string }[] = [];
     const spy = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
       shared.push(c as { message?: string }); return { action: 'sharedAction' } as never;
     });
@@ -542,7 +541,7 @@ describe('the reader', () => {
   });
 
   it('withdraws a critique, after asking', async () => {
-    const alerts: Array<[string, string, Array<{ text: string; onPress?: () => void }>]> = [];
+    const alerts: [string, string, { text: string; onPress?: () => void }[]][] = [];
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
     );
@@ -725,7 +724,7 @@ describe('the reader', () => {
     const capture = jest.spyOn(viewShot, 'captureRef').mockResolvedValue('file:///clipping.png');
     const available = jest.spyOn(sharing, 'isAvailableAsync').mockResolvedValue(true);
     const shareAsync = jest.spyOn(sharing, 'shareAsync').mockResolvedValue(undefined as never);
-    const shared: Array<{ url?: string; message?: string }> = [];
+    const shared: { url?: string; message?: string }[] = [];
     const plain = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
       shared.push(c as { url?: string; message?: string });
       return { action: 'sharedAction' } as never;
@@ -805,7 +804,7 @@ describe('the reader', () => {
     // A capture that failed must not cost the member the share.
     const viewShot = require('react-native-view-shot');
     const capture = jest.spyOn(viewShot, 'captureRef').mockRejectedValue(new Error('no surface'));
-    const shared: Array<{ message?: string }> = [];
+    const shared: { message?: string }[] = [];
     const spy = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
       shared.push(c as { message?: string }); return { action: 'sharedAction' } as never;
     });

@@ -25,14 +25,14 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { ComposeShortScreen, ComposeBallotScreen } from '@/src/components/dispatch/ComposeDesks';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
-const mockFiled: Array<Record<string, unknown>> = [];
+const mockFiled: Record<string, unknown>[] = [];
 
 /** Flipped by the signed-out block at the foot of this file. */
 let mockSignedOut = false;
 /** `?edit=` and the filing the store holds for it — the amending block below. */
 let mockEditId: string | undefined;
 let mockHeld: Record<string, unknown> | null = null;
-const mockAmended: Array<{ id: string; updates: unknown }> = [];
+const mockAmended: { id: string; updates: unknown }[] = [];
 /** The two ways filing does not simply succeed. Both were dark. */
 let mockFileFails = false;
 let mockFileOffline = false;
@@ -87,7 +87,7 @@ jest.mock('expo-router', () => {
 
 // `search`, which is what FilmPicker calls — `searchMovies` was a guess, and a
 // mock that names a method the code never calls silently provides nothing.
-let mockResults: Array<Record<string, unknown>> = [];
+let mockResults: Record<string, unknown>[] = [];
 jest.mock('@/src/lib/tmdb', () => ({ tmdb: { search: async () => ({ results: mockResults }) } }));
 const mockToast = { error: jest.fn(), success: jest.fn() };
 jest.mock('@/src/utils/reelToast', () => {

@@ -142,7 +142,7 @@ describe('the series meta row under a long handle', () => {
     // look like it. A guard that settles for "some View somewhere shrinks" is
     // satisfied by a View that has nothing to do with this one.
     type Node = { props?: { style?: unknown }; children?: unknown[] } | string | null;
-    const rows: Array<{ props?: { style?: unknown }; children?: unknown[] }> = [];
+    const rows: { props?: { style?: unknown }; children?: unknown[] }[] = [];
     const walk = (n: Node) => {
       if (!n || typeof n === 'string') return;
       const s = (StyleSheet.flatten(n.props?.style) ?? {}) as Record<string, unknown>;

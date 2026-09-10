@@ -24,6 +24,8 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
+import ComposeScreen from '@/app/dispatch/compose';
+
 /** The room is reached with `?kind=dossier`, and only by an Auteur. */
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), replace: jest.fn(), setParams: jest.fn() },
@@ -51,8 +53,6 @@ jest.mock('@/src/stores/auth', () => ({
 jest.mock('@/src/stores/mmkv-storage', () => ({
   storage: { getString: () => undefined, set: jest.fn(), delete: jest.fn() },
 }));
-
-import ComposeScreen from '@/app/dispatch/compose';
 
 const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'out');
 

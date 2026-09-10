@@ -25,8 +25,8 @@ const ROOTS = [
 ];
 
 /** Every source file of the Dispatch, tests excluded. */
-function sources(): Array<{ label: string; text: string }> {
-  const out: Array<{ label: string; text: string }> = [];
+function sources(): { label: string; text: string }[] {
+  const out: { label: string; text: string }[] = [];
   const walk = (dir: string, prefix: string) => {
     if (!fs.existsSync(dir)) return;
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

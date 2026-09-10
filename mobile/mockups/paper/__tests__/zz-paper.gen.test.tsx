@@ -13,6 +13,36 @@ import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 import { LOCAL_ART, POSTERS as REPO_POSTERS } from '../../../src/components/profile/__tests__/zz-art.gen';
 
+import { PaperPost as RawPaperPost, type PaperAuthor } from '@/src/components/dispatch/paper/PaperPost';
+import { PaperBallot as RawPaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
+import { PaperComposer } from '@/src/components/dispatch/paper/PaperComposer';
+import {
+  PaperChrome, PaperMasthead, PaperEmpty, PaperSkeletons,
+  PaperSheet, DayDivider, Ornament, RunningHead,
+} from '@/src/components/dispatch/paper/PaperFrame';
+import {
+  CritiqueSpine, CritiqueHead, CritiqueRow, CritiqueFooter,
+  CritiqueComposer, PostDock as RawPostDock, type Critique,
+} from '@/src/components/dispatch/paper/PaperCritiques';
+import {
+  PaperPicker, PaperDoor, PaperRules, PaperArchive, ArchiveFilm, PaperRoom,
+  PaperCase, LoungeCard, PaperBack, NewFilings, NEW_FILINGS_ROOM,
+  DossierShareCard, StoryFrame,
+} from '@/src/components/dispatch/paper/PaperMore';
+import {
+  EssayHead, EssayOpening, EssayPara, EssayBreak, EssayNext, SeriesList,
+} from '@/src/components/dispatch/paper/PaperEssay';
+/** The path a real dossier takes — the markdown renderer, not hand-built paragraphs. */
+import { EssayBody } from '@/src/components/dispatch/EssayBody';
+import {
+  WireDesk, BallotDesk, DossierDesk, FilmFinder, ShareSheet,
+} from '@/src/components/dispatch/paper/PaperDesk';
+import { ConciergeCard } from '@/src/components/layout/ConciergeButton';
+import { TopNavBar } from '@/src/components/layout/TopNavBar';
+import { navTopPadding, NAV_ROW_MIN_H, NAV_BOTTOM_PADDING } from '@/src/components/layout/navMetrics';
+import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { columnWidth } from '@/src/components/dispatch/paper/paperMetrics';
+
 /** Nothing is pressed in a still. Present because the prop is REQUIRED — which
  *  is the point of it being required: the app cannot mount one without a
  *  handler, and this harness has to say out loud that it is a drawing. */
@@ -42,39 +72,6 @@ const PaperBallot = (props: React.ComponentProps<typeof RawPaperBallot>) => (
 const PostDock = (props: React.ComponentProps<typeof RawPostDock>) => (
   <RawPostDock onCertify={NOOP} onSave={NOOP} {...props} />
 );
-const PaperActions = (props: React.ComponentProps<typeof RawPaperActions>) => (
-  <RawPaperActions onCertify={NOOP} onSave={NOOP} {...props} />
-);
-
-import { PaperPost as RawPaperPost, PaperActions as RawPaperActions, type PaperAuthor } from '@/src/components/dispatch/paper/PaperPost';
-import { PaperBallot as RawPaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
-import { PaperComposer } from '@/src/components/dispatch/paper/PaperComposer';
-import {
-  PaperChrome, PaperMasthead, PaperEmpty, PaperSkeletons,
-  PaperSheet, DayDivider, Ornament, RunningHead,
-} from '@/src/components/dispatch/paper/PaperFrame';
-import {
-  CritiqueSpine, CritiqueHead, CritiqueRow, CritiqueFooter,
-  CritiqueComposer, PostDock as RawPostDock, type Critique,
-} from '@/src/components/dispatch/paper/PaperCritiques';
-import {
-  PaperPicker, PaperDoor, PaperRules, PaperArchive, ArchiveFilm, PaperRoom,
-  PaperCase, LoungeCard, PaperBack, NewFilings, NEW_FILINGS_ROOM,
-  DossierShareCard, StoryFrame,
-} from '@/src/components/dispatch/paper/PaperMore';
-import {
-  EssayHead, EssayOpening, EssayPara, EssayBreak, EssayNext, SeriesList,
-} from '@/src/components/dispatch/paper/PaperEssay';
-/** The path a real dossier takes — the markdown renderer, not hand-built paragraphs. */
-import { EssayBody } from '@/src/components/dispatch/EssayBody';
-import {
-  WireDesk, BallotDesk, DossierDesk, FilmFinder, ShareSheet,
-} from '@/src/components/dispatch/paper/PaperDesk';
-import { ConciergeCard } from '@/src/components/layout/ConciergeButton';
-import { TopNavBar } from '@/src/components/layout/TopNavBar';
-import { navTopPadding, NAV_ROW_MIN_H, NAV_BOTTOM_PADDING } from '@/src/components/layout/navMetrics';
-import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { measure, columnWidth, SECTION_COLOR } from '@/src/components/dispatch/paper/paperMetrics';
 
 /**
  * Where the sheets land. Defaults to `mockups/paper/out/` inside the repo so a
@@ -122,7 +119,6 @@ const NavSpace = () => (
 const TODAY = new Date(2026, 7, 28);
 
 const W = 390;
-const M = measure(W);
 const COL = columnWidth(W);
 
 /**
@@ -156,7 +152,7 @@ const readArt = <T,>(file: string, fallback: T, empty: boolean): T => {
   try {
     return JSON.parse(readFileSync(join(ART, file), 'utf8')) as T;
   } catch {
-    // eslint-disable-next-line no-console
+     
     console.warn(
       empty
         ? `[paper] ${file} not found — those plates render empty.`
@@ -228,7 +224,6 @@ const STALKER = film('Stalker', 1979, 'Tarkovsky', 11);
  *  atmosphere, it is a mistake nobody can un-see. */
 const TOKYO = film('Tokyo Story', 1953, 'Ozu', 7);
 const COME = film('Come and See', 1985, 'Klimov');
-const MOOD = film('In the Mood for Love', 2000, 'Wong Kar-wai', 7);
 const CACHE = film('Cache', 2005, 'Haneke', 3);
 const GODFATHER = film('The Godfather Part II', 1974, 'Coppola', 22);
 const CHUNGKING = film('Chungking Express', 1994, 'Wong Kar-wai');
@@ -241,7 +236,7 @@ const LONGEST =
   'today seems to understand any more: the camera waits because the men are waiting, ' +
   'and when it finally moves you feel it in your chest rather than in your eyes.';
 
-const out: Array<[string, React.ReactElement]> = [];
+const out: [string, React.ReactElement][] = [];
 const add = (name: string, el: React.ReactElement) => out.push([name, el]);
 
 // ══ A · THE PAPER ═══════════════════════════════════════════════════════════

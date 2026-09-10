@@ -122,7 +122,7 @@ try {
   for (const [p, data] of Object.entries(rawArt)) posters[p] = { title: '', data };
 } catch (e) {
   fixtureMissing = `${ART} — ${(e as Error).message}`;
-  // eslint-disable-next-line no-console
+   
   console.warn(
     '[film generator] fixture missing, skipping. It lives in a temp directory the ' +
     'OS clears; re-fetch it or move it into the repo to make this permanent.\n  ' + fixtureMissing,

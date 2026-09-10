@@ -23,7 +23,7 @@ import { p, QUIET } from './paperStyles';
 import { KIND_RULE, KIND_NAME, MARGIN_W, RULE_W, RULE_GAP, CRIMSON_INK, UNSPOKEN, AVATAR, nameOf } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { MS, PILL_Y } from './paperMotion';
-import { Byline, initialOf, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { clipToSentence, counted } from './paperText';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════

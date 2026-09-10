@@ -13,9 +13,9 @@ import { join } from 'path';
 import { toHtml } from './zz-render.lib';
 import { POSTERS, POSTER_PATHS, POSTER_TITLES, LOCAL_ART } from './zz-art.gen';
 
-const ART = { posters: POSTERS, local: LOCAL_ART };
-
 import UserProfileScreen from '@/app/user/[username]';
+
+const ART = { posters: POSTERS, local: LOCAL_ART };
 
 const OUT = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/mockups';
 
@@ -147,7 +147,7 @@ gate('member file generator', () => {
     await act(async () => { r = render(<UserProfileScreen />); });
     const html = toHtml(r.toJSON(), ART);
     writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
-    // eslint-disable-next-line no-console
+     
     console.log(`WROTE ${name}: ${html.length} bytes`);
     expect(html.length).toBeGreaterThan(3000);
   });

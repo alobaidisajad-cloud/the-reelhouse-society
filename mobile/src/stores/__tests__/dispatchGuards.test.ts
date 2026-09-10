@@ -18,8 +18,8 @@ import type { Filing } from '../dispatchTypes';
 let mockOutcome: 'ok' | 'refused' | 'offline' = 'ok';
 let mockRow: Record<string, unknown> | null = null;
 let mockViewer: Record<string, unknown[]> = {};
-const mockSent: Array<{ table: string; op: string; row: unknown }> = [];
-const mockQueued: Array<{ type: string; payload: Record<string, unknown> }> = [];
+const mockSent: { table: string; op: string; row: unknown }[] = [];
+const mockQueued: { type: string; payload: Record<string, unknown> }[] = [];
 
 /** Who `getState()` reports. A test can change it MID-FLIGHT. */
 let mockUser: { id: string; username: string } | null = { id: 'u1', username: 'me' };
