@@ -34,6 +34,15 @@ const SLICES = [
   // they were fixed, which is what promoted them here.
   'src/stores/blockStore.ts',
   'src/stores/lounge.ts',
+  // The report store, which arrived here by the guard below firing. It had
+  // never registered a logout reset AT ALL — the only store with member state
+  // that did not — so it sat outside this rule entirely. `recentReports` is
+  // what stops a second report on the same content, and left standing it told
+  // the next member on the phone that they had already reported a filing they
+  // had never seen: turned away from the moderation tools by somebody else's
+  // history. Registering the reset put it in scope here, and its three writes
+  // after an await needed the guard.
+  'src/stores/reportStore.ts',
   // The Dispatch. It registers a logout reset like the rest, and it is the
   // sharpest case since content.ts: a feed, a per-viewer set of certified and
   // saved ids, and six acts that each await a write. This test found it the day

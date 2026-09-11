@@ -139,6 +139,36 @@ describe('logout clears what a store keeps outside itself', () => {
     expect(body).toMatch(/_activeChannel\s*=\s*null/);
   });
 
+  /**
+   * The guard above only sees stores that REGISTER a reset. It cannot see one
+   * that never registered at all — which is how `reportStore` kept the previous
+   * member's report history across a logout, so the next person on the phone
+   * pressed REPORT and was told they had already reported something they had
+   * never seen.
+   */
+  it('EVERY zustand store is cleared on logout — or is the one that does the clearing', () => {
+    // Matched on `create<`, not on an exported name: films.ts declares
+    // `const useFilmStoreBase = create<FilmState>()` and a matcher keyed on
+    // `export const use...` walks straight past it.
+    const stores = execFileSync('git', ['ls-files', 'src'], { cwd: ROOT, encoding: 'utf8' })
+      .split('\n')
+      .filter((f) => /\.tsx?$/.test(f) && !/__tests__|\.test\./.test(f))
+      .filter((f) => /(?:^|\n)\s*(?:export\s+)?const\s+\w+\s*=\s*create</.test(
+        fs.readFileSync(path.join(ROOT, f), 'utf8'),
+      ));
+
+    expect(stores.length).toBeGreaterThanOrEqual(8);
+
+    const unreset = stores.filter(
+      (f) => !fs.readFileSync(path.join(ROOT, f), 'utf8').includes('registerStoreReset('),
+    );
+
+    // auth.ts is the one legitimate exception: it PERFORMS the logout and
+    // clears itself in step 1, before calling resetAllStores. Registering
+    // itself would be circular.
+    expect(unreset).toEqual(['src/stores/auth.ts']);
+  });
+
   it('the Dispatch drops the in-flight fetch AND bumps its generation', () => {
     // Only bumping the generation discards the stale answer and still hands
     // back the stale promise, so the page stays empty either way.

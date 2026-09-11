@@ -23,6 +23,8 @@ import reelToast from '@/src/utils/reelToast';
 import NetInfo from '@react-native-community/netinfo';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { create } from 'zustand';
+import { registerStoreReset } from '@/src/stores/resetAllStores';
+import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 
 interface ReportState {
   isSubmitting: boolean;
@@ -51,6 +53,17 @@ export const useReportStore = create<ReportState>()((set, get) => ({
     }
 
     set({ isSubmitting: true });
+
+    // ── WHO STARTED THIS REPORT ───────────────────────────────────────────────
+    // Every write below lands AFTER an await — NetInfo, then the RPC. Now that
+    // this store is cleared on logout, an unguarded write would put the previous
+    // member's reported-content list back into a store the reset had just
+    // emptied, which is the very leak the reset was added for.
+    //
+    // `reporter_id` rather than the session: it is who the report is FROM, it is
+    // already validated by the schema above, and it is what the row is written
+    // under.
+    const startedAs = payload.reporter_id;
 
     // NOT in the register. `details` is free text one member writes ABOUT another,
     // stored in `reports` and rendered to moderators in the Tribunal — the one screen
@@ -84,7 +97,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
           if (isNetworkError(error)) {
             // Fall back to offline queue
             enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
-            set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
+            if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
             TactileEngine.success();
             reelToast('Report queued. Will be filed when connected.');
             return { status: 'queued' };
@@ -93,7 +106,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
         }
 
         // Success
-        set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
+        if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
         TactileEngine.success();
         reelToast('Report filed. The Tribunal will review.');
 
@@ -106,7 +119,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
       } else {
         // Offline: enqueue
         enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
-        set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
+        if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
         TactileEngine.success();
         reelToast('Report queued. Will be filed when connected.');
 
@@ -125,3 +138,21 @@ export const useReportStore = create<ReportState>()((set, get) => ({
     }
   },
 }));
+
+// ── THIS STORE WAS NEVER CLEARED ON LOGOUT ──────────────────────────────────
+// It did not call registerStoreReset at all — the only store with member state
+// that did not. `recentReports` holds the ids of everything THIS member has
+// reported, and `hasReported()` is what stops the app filing a second report on
+// the same content.
+//
+// Left standing, the next member to sign in on the phone inherited that list:
+// they would open a filing they had never seen, press REPORT, and be told
+// "you've already reported this content" — turned away from the moderation
+// tools by somebody else's history. On a shared or handed-over device that is
+// the difference between a member being able to report abuse and not.
+//
+// `isSubmitting` is reset with it so a logout mid-submit cannot leave the next
+// member's sheet stuck in a sending state.
+registerStoreReset(() => {
+  useReportStore.setState({ recentReports: new Set<string>(), isSubmitting: false });
+});
