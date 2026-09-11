@@ -1752,52 +1752,24 @@ $$;
 CREATE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(lounge_id uuid, unread_count bigint, last_message_at timestamp with time zone)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  WITH my_rooms AS (
-    SELECT lm.lounge_id, lm.last_read_at
-      FROM public.lounge_members lm
-     WHERE lm.user_id = auth.uid()
-  )
-  SELECT
-    r.lounge_id,
-    COUNT(m.id) FILTER (
-      WHERE r.last_read_at IS NULL OR m.created_at > r.last_read_at
-    ) AS unread_count,
-    MAX(m.created_at) AS last_message_at
-  FROM my_rooms r
-  LEFT JOIN public.lounge_messages m ON m.lounge_id = r.lounge_id
-  GROUP BY r.lounge_id;
+    AS $$
+  WITH my_rooms AS (
+    SELECT lm.lounge_id, lm.last_read_at
+      FROM public.lounge_members lm
+     WHERE lm.user_id = auth.uid()
+  )
+  SELECT
+    r.lounge_id,
+    COUNT(m.id) FILTER (
+      -- Somebody ELSE said it, and they said it after you last looked.
+      WHERE m.user_id <> auth.uid()
+        AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)
+    ) AS unread_count,
+    MAX(m.created_at) AS last_message_at
+  FROM my_rooms r
+  LEFT JOIN public.lounge_messages m ON m.lounge_id = r.lounge_id
+  GROUP BY r.lounge_id;
 $$;
-
-
---
--- Name: get_lounge_unread_counts(uuid); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.get_lounge_unread_counts(p_user_id uuid) RETURNS TABLE(lounge_id uuid, unread_count bigint)
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_uid uuid := auth.uid();
-BEGIN
-  IF v_uid IS NULL THEN
-    RETURN;
-  END IF;
-
-  RETURN QUERY
-  SELECT
-    lm.lounge_id,
-    COUNT(msg.id) AS unread_count
-  FROM public.lounge_members lm
-  LEFT JOIN public.lounge_messages msg
-    ON msg.lounge_id = lm.lounge_id
-   AND msg.created_at > COALESCE(lm.last_read_at, '1970-01-01'::timestamp)
-   AND msg.user_id != v_uid
-  WHERE lm.user_id = v_uid
-  GROUP BY lm.lounge_id
-  HAVING COUNT(msg.id) > 0;
-END $$;
 
 
 --
@@ -8651,15 +8623,6 @@ GRANT ALL ON FUNCTION public.get_following_feed_cursor(p_usernames text[], p_lim
 REVOKE ALL ON FUNCTION public.get_lounge_unread_counts() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_lounge_unread_counts() TO authenticated;
 GRANT ALL ON FUNCTION public.get_lounge_unread_counts() TO service_role;
-
-
---
--- Name: FUNCTION get_lounge_unread_counts(p_user_id uuid); Type: ACL; Schema: public; Owner: -
---
-
-REVOKE ALL ON FUNCTION public.get_lounge_unread_counts(p_user_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.get_lounge_unread_counts(p_user_id uuid) TO authenticated;
-GRANT ALL ON FUNCTION public.get_lounge_unread_counts(p_user_id uuid) TO service_role;
 
 
 --

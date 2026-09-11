@@ -66,37 +66,56 @@ module.exports = {
   // ⚠️ app/ is at ~10% — every screen in the product. That number is low because it
   // is TRUE, not because the floor is lenient. It is the honest starting point for
   // real screen tests, not a target to feel comfortable about.
+  // ── RE-BASED 2026-09-11, AND THE FOUR MISSING DIRECTORIES ADDED ──────────
+  //
+  // These had drifted to 25 POINTS under measured — `./app/` sat at 9 while the
+  // real figure was 34.4. A floor that far below actual is not a gate: every
+  // Dispatch screen could have lost three quarters of its coverage and CI would
+  // have passed. That is the same defect as the coverage ratchet's baseline
+  // recording 24.9% against an actual 46.4%, found the same week.
+  //
+  // Worse, the four LARGEST bodies of code had no floor at all — including
+  // `src/components/` (4,866 lines, the most in the app) which holds the
+  // Dispatch's paper at 92.7%. They were covered only by `global`, and global
+  // moves so slowly that one directory can collapse inside it unnoticed.
+  //
+  // ── WHY EXACTLY ONE POINT ───────────────────────────────────────────────
+  // The convention this file already stated. It is now measured rather than
+  // assumed: three full runs — two with default workers, one with CI's own
+  // `--ci --maxWorkers=2` — drifted 0.00 points on every group and every
+  // metric, despite five property-based suites (they seed deterministically).
+  // One point is real margin, not a hope.
+  //
+  // ── ⚠️ `global` IS NOT "EVERYTHING" ─────────────────────────────────────
+  // Jest SUBTRACTS every file matched by a path threshold from the global pool
+  // and judges it under its own key instead. So the moment the directories
+  // below were added, `global` stopped meaning the whole app and came to mean
+  // THE LEFTOVERS — src/constants, src/lore, src/providers (2%), src/schemas,
+  // src/theme. Its numbers fell from ~45% to ~26% without a line of code
+  // changing. The first version of this block set global from the app-wide
+  // figure and made CI permanently red.
+  //
+  // If you add a directory key, RE-DERIVE global: it is the coverage of files
+  // no key matches, which is not a number any report prints directly.
+  //
+  // ── KEEPING THEM HONEST ─────────────────────────────────────────────────
+  // Do not hand-edit these upward. `scripts/coverage-ratchet.js` now tracks the
+  // same directories and raises its own baseline automatically, so it is the
+  // thing that catches a slide between re-basings. These are the hard floor
+  // underneath it; re-derive them with the same "1 under measured" rule.
   coverageThreshold: {
-    global: {
-      branches: 18,
-      functions: 18,
-      lines: 23,
-      statements: 22,
-    },
-    './src/hooks/': {
-      branches: 18,
-      functions: 17,
-      lines: 17,
-      statements: 16,
-    },
-    './src/stores/': {
-      branches: 29,
-      functions: 34,
-      lines: 41,
-      statements: 39,
-    },
-    './src/lib/': {
-      branches: 34,
-      functions: 37,
-      lines: 41,
-      statements: 40,
-    },
-    './app/': {
-      branches: 7,
-      functions: 7,
-      lines: 9,
-      statements: 9,
-    },
+    global: { branches: 25, functions: 25, lines: 41, statements: 41 },
+    // The Dispatch's own components, held where they actually are. This is the
+    // best-covered area of the app and the floor should say so.
+    './src/components/dispatch/': { branches: 84, functions: 91, lines: 93, statements: 91 },
+    './src/components/': { branches: 42, functions: 42, lines: 46, statements: 45 },
+    './src/utils/': { branches: 74, functions: 79, lines: 79, statements: 78 },
+    './src/stores/': { branches: 45, functions: 54, lines: 57, statements: 54 },
+    './src/services/': { branches: 31, functions: 49, lines: 47, statements: 44 },
+    './src/features/': { branches: 29, functions: 40, lines: 33, statements: 32 },
+    './src/hooks/': { branches: 21, functions: 24, lines: 24, statements: 24 },
+    './src/lib/': { branches: 35, functions: 38, lines: 45, statements: 43 },
+    './app/': { branches: 35, functions: 31, lines: 34, statements: 33 },
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

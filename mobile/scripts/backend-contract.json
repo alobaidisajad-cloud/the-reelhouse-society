@@ -61,7 +61,10 @@
       "name": "get_following_feed_auth_cursor",
       "signature": "get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid)"
     },
-    "get_lounge_unread_counts",
+    {
+      "name": "get_lounge_unread_counts",
+      "signature": "get_lounge_unread_counts()"
+    },
     {
       "name": "get_moderation_history_for_users",
       "signature": "get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer)"

@@ -1,0 +1,51 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+-- A NOTICE THAT IS NOT TRUE
+-- ═══════════════════════════════════════════════════════════════════════════
+--
+-- Twenty-nine notifications read "certified your dossier 🏆" / "… ✦". They are
+-- removed here, and the reasoning matters more than the act, because deleting
+-- somebody's history is the kind of thing that should have to argue for itself.
+--
+-- ── THEY ARE FACTUALLY WRONG, NOT MERELY OLD ───────────────────────────────
+-- Every one of them sits beside an `interactions` row of type `endorse_log`.
+-- Somebody certified a LOG. The notice says dossier. They came from the
+-- superseded endorse trigger that wrote that one sentence for EVERY
+-- endorsement regardless of what was endorsed — the same defect the
+-- notification audit recorded, where the grouping regex could never match
+-- because the message named one thing and the act was another.
+--
+-- ── THEY ALSO GO NOWHERE, OR SOMEWHERE WRONG ───────────────────────────────
+-- 0 of 29 carry a `group_key`; 0 carry a `film_id`. The tap handler falls
+-- through to the actor, so 22 open THE PROFILE OF WHOEVER CERTIFIED — precisely
+-- the behaviour that handler's own comment calls the bug it fixed. The other 7
+-- have no actor either: no branch fires and the row is inert. 20 of the 29 are
+-- still unread, so they also sit there as a badge promising something to read.
+--
+-- ── REPAIR WAS INVESTIGATED FIRST, AND REJECTED ────────────────────────────
+-- 22 could be matched to an interaction within five seconds, and those
+-- interactions still resolve to a real log with a real film title — it looked
+-- repairable. It is not: those 29 notices match 76 interaction rows, and 16 of
+-- them match MORE THAN ONE. `notifications` carries no foreign key to its
+-- cause, so any single match is a guess. Writing a specific film's name into a
+-- member's history from a timestamp heuristic would be fabrication wearing the
+-- clothes of a correction. Better an absent notice than a confident lie.
+--
+-- ── AND IT IS REVERSIBLE ───────────────────────────────────────────────────
+-- All 29 rows were captured as INSERT statements before this ran, and the
+-- capture was PROVEN by deleting and restoring them inside a rolled-back
+-- transaction: the md5 of the restored set matched the original exactly. The
+-- file is deliberately not in this repo — these rows carry member ids, and a
+-- public git history is the wrong place for them. Supabase's point-in-time
+-- backup covers the same ground.
+--
+-- Scope: 29 rows, 5 members, all created 2026-04-15 to 2026-07-13 — before
+-- launch, and before the Dispatch existed.
+--
+-- The anchor is the exact phrase the dead trigger wrote. It cannot reach a
+-- notice about a member's PROFILE, which legitimately keeps the word dossier,
+-- because those never begin "certified your dossier".
+
+DELETE FROM public.notifications
+ WHERE message ILIKE '%your dossier%'
+   AND group_key IS NULL
+   AND film_id IS NULL;
