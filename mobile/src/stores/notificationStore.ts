@@ -389,8 +389,22 @@ export const useNotificationStore = create<NotificationState>()(
         }));
         
         try {
-            // Background DB sync
-            const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+            // Background DB sync.
+            //
+            // The ownership filter matches markAllRead and dismiss, whose
+            // comments already describe it as the pattern here — this one was
+            // the exception. RLS is and remains the primary guard: checked
+            // against production, a member updating another member's notice by
+            // id alone touches 0 rows ("Users can update own notifications",
+            // USING auth.uid() = user_id). So this is defence in depth, not a
+            // hole being closed, and it is written down that way to stop a
+            // later reader mistaking it for one.
+            const user = useAuthStore.getState().user;
+            if (!user) throw new Error('Authentication required');
+            const { error } = await supabase.from('notifications')
+                .update({ is_read: true })
+                .eq('id', id)
+                .eq('user_id', user.id);
             if (error) throw error;
         } catch (e) {
             logger.warn(`[markRead] Failed for ${id}:`, e);
