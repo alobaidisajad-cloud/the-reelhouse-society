@@ -993,7 +993,18 @@ function ComposeDossierScreen() {
                             placeholderTextColor={colors.fog}
                             value={title}
                             onChangeText={(t) => { setTitle(t); setRestored(null); }}
-                            maxLength={100}
+                            // ── ONE NUMBER, NOT THREE ──────────────────────
+                            // This was a literal 100 while `filingTitle` is 200
+                            // and the column's `title_ceiling` is 200 too. So
+                            // the box refused the second half of a headline the
+                            // sanitiser and the database would both have taken —
+                            // and `maxLength` simply stops accepting keystrokes,
+                            // so the member got no message either. They would
+                            // just find the title would not go any further.
+                            //
+                            // `MAX_LENGTHS` is where that number is decided, and
+                            // it already agrees with the ceiling checked live.
+                            maxLength={MAX_LENGTHS.filingTitle}
                             cursorColor={colors.sepia}
                             selectionColor="rgba(184,137,26,0.3)"
                             keyboardAppearance="dark"
