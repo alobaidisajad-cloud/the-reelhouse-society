@@ -1547,6 +1547,13 @@ registerStoreReset(() => {
     useLoungeStore.setState({ lounges: [], currentMessages: [], currentLoungeId: null, loading: false, sending: false, presentCount: 0, typingUsers: [], _pendingLeaveLoungeIds: new Set(), _lastMarkReadMap: {} });
     _lastCreateAt = 0;
     _lastTypingBroadcastAt = 0;
+    // The send throttle's memory, which this reset used to walk past. Left
+    // standing, the next member to sign in on this phone inherited the last
+    // one's timings: their opening message in a room that was just used came
+    // back false and said nothing, because the throttle is the one refusal
+    // that raises no toast. Every other module-level cache in this file is
+    // cleared here; this one was the exception.
+    _lastSendAt.clear();
     for (const t of _typingTimers.values()) clearTimeout(t);
     _typingTimers.clear();
     // Actually UNSUBSCRIBE, not just forget the reference. Nulling the variable
