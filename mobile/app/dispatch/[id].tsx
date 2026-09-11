@@ -47,7 +47,7 @@ import { useDispatch } from '@/src/stores/dispatch';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { supabase } from '@/src/lib/supabase';
-import { FILING_FULL_COLUMNS, parseFilingRows } from '@/src/stores/dispatchTypes';
+import { FILING_FULL_COLUMNS, parseFilingRows, paperTierOf } from '@/src/stores/dispatchTypes';
 import type { CritiqueOrder, Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import { nav } from '@/src/utils/typedRouter';
@@ -733,7 +733,16 @@ export default function FilingReader() {
             me={{
               name: me.username ?? '',
               memberNo: (me as { member_no?: number }).member_no ?? 0,
-              tier: 'free',
+              // Their OWN rank. This was hardcoded 'free', so EVERY member
+              // writing a critique — Archivist, Auteur, Founding — was shown a
+              // byline that was not theirs, on the one view whose job is to
+              // show them what they are about to publish.
+              //
+              // ComposeDesks carries a comment saying this exact defect was
+              // found and fixed for the filing desks. It survived here, and in
+              // the ballot desk, because each screen builds its own author
+              // object by hand. `paperTierOf` is the one place that decides.
+              tier: paperTierOf(me),
               avatar: (me as { avatar_url?: string | null }).avatar_url ?? null,
             }}
             value={draft}

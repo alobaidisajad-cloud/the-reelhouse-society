@@ -404,7 +404,13 @@ export function ComposeBallotScreen() {
     <View style={p.screen}>
       <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
       <BallotDesk
-        me={{ ...me, tier: 'auteur' }}
+        // Their OWN rank, exactly as the short desk above does it. This forced
+        // 'auteur' — presumably because only an Auteur may open a ballot — but
+        // the rank is not a permission check, it is the mark on their byline,
+        // and a FOUNDING member opening a ballot was shown somebody else's.
+        // The same defect this file's own `me` comment says was already fixed
+        // once, surviving one line further down.
+        me={me}
         hour={hour}
         question={question}
         onQuestion={setQuestion}
