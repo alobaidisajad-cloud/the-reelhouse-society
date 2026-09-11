@@ -158,8 +158,9 @@ beforeEach(() => {
 afterEach(() => { jest.useRealTimers(); jest.restoreAllMocks(); });
 
 describe('the door', () => {
-  it('asks which form when no kind is chosen', () => {
+  it('asks which form when no kind is chosen', async () => {
     const { getByText } = render(<ComposeScreen />);
+    await flush();
     expect(getByText('TAKE')).toBeTruthy();
     expect(getByText('ESSAY')).toBeTruthy();
   });
@@ -194,10 +195,10 @@ describe('the door', () => {
 });
 
 describe('the writing room', () => {
-  const open = () => { at({ kind: 'dossier' }); return render(<ComposeScreen />); };
+  const open = async () => { at({ kind: 'dossier' }); const r = render(<ComposeScreen />); await flush(); return r; };
 
   it('writes the draft to storage as you type', async () => {
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     await type(getByLabelText("Essay headline"), 'The Empty Room');
     await act(async () => { jest.advanceTimersByTime(1200); });
     expect(JSON.parse(mockStore.get(DRAFT_KEY)!).data.title).toBe('The Empty Room');
@@ -205,20 +206,20 @@ describe('the writing room', () => {
 
   it('gives the draft back when the room is opened again', async () => {
     mockStore.set(DRAFT_KEY, JSON.stringify({ title: 'Half Written', content: 'The opening line.' }));
-    const { getByDisplayValue } = open();
+    const { getByDisplayValue } = await open();
     expect(getByDisplayValue('Half Written')).toBeTruthy();
     expect(getByDisplayValue('The opening line.')).toBeTruthy();
   });
 
   it('survives a corrupt draft rather than refusing to open', async () => {
     mockStore.set(DRAFT_KEY, 'not json at all');
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     expect(getByLabelText("Essay headline")).toBeTruthy();
   });
 
   it('clears the draft when the room is emptied', async () => {
     mockStore.set(DRAFT_KEY, JSON.stringify({ title: 'x', content: 'y' }));
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     await type(getByLabelText("Essay headline"), '');
     await type(getByLabelText("Essay content body"), '');
     await act(async () => { jest.advanceTimersByTime(1200); });
@@ -226,7 +227,7 @@ describe('the writing room', () => {
   });
 
   it('files the essay, and only then throws the draft away', async () => {
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     await type(getByLabelText("Essay headline"), 'The Empty Room');
     await type(getByLabelText("Essay content body"), 'Ozu frames a room and then leaves it.');
     await act(async () => { jest.advanceTimersByTime(1200); });
@@ -246,7 +247,7 @@ describe('the writing room', () => {
     // The one thing this screen must never do is throw away an evening's work
     // on the strength of a write that did not land.
     mockFileFails = true;
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     await type(getByLabelText("Essay headline"), 'The Empty Room');
     await type(getByLabelText("Essay content body"), 'The opening line.');
     await act(async () => { jest.advanceTimersByTime(1200); });
@@ -259,7 +260,7 @@ describe('the writing room', () => {
   });
 
   it('will not file until there is both a title and a body', async () => {
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     expect(getByLabelText(/Not ready yet/).props.accessibilityState.disabled).toBe(true);
 
     await type(getByLabelText("Essay headline"), 'The Empty Room');
@@ -270,7 +271,7 @@ describe('the writing room', () => {
   });
 
   it('refuses an over-length essay before touching anything', async () => {
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     await type(getByLabelText("Essay headline"), 'Too Long');
     await type(getByLabelText("Essay content body"), 'x'.repeat(25001));
     await act(async () => { jest.advanceTimersByTime(1200); });
@@ -285,7 +286,7 @@ describe('the writing room', () => {
   });
 
   it('shows the counter only near the fence', async () => {
-    const { getByLabelText, queryByText } = open();
+    const { getByLabelText, queryByText } = await open();
     await type(getByLabelText("Essay content body"), 'A short opening.');
     expect(queryByText(/LEFT/)).toBeNull();
 
@@ -294,7 +295,7 @@ describe('the writing room', () => {
   });
 
   it('switches between writing and reading it back', async () => {
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     await type(getByLabelText("Essay content body"), 'Ozu frames a room.');
     await press(getByLabelText('Preview the essay'));
     expect(getByLabelText('Back to editing')).toBeTruthy();
@@ -302,13 +303,16 @@ describe('the writing room', () => {
 });
 
 describe('the door sends you to the right desk', () => {
-  it('opens the ballot desk for a ballot and the short desk for the rest', () => {
+  it('opens the ballot desk for a ballot and the short desk for the rest', async () => {
     at({ kind: 'ballot' });
-    expect(render(<ComposeScreen />).getByLabelText('Your question')).toBeTruthy();
+    const ballot = render(<ComposeScreen />);
+    await flush();
+    expect(ballot.getByLabelText('Your question')).toBeTruthy();
 
     for (const kind of ['take', 'seeking', 'wire'] as const) {
       at({ kind });
       const { getByLabelText } = render(<ComposeScreen />);
+      await flush();
       expect(getByLabelText(`Your ${kind}`)).toBeTruthy();
     }
   });
@@ -319,6 +323,7 @@ describe('the door sends you to the right desk', () => {
     // twice.
     at({});
     const { getByText } = render(<ComposeScreen />);
+    await flush();
     await press(getByText('TAKE'));
     expect(mockParams).toContainEqual({ kind: 'take' });
   });
@@ -331,6 +336,7 @@ describe('an evening of writing survives the app going away', () => {
     // essay.
     at({ kind: 'dossier' });
     const { getByLabelText } = render(<ComposeScreen />);
+    await flush();
     await type(getByLabelText('Essay headline'), 'The Empty Room');
     await type(getByLabelText('Essay content body'), 'The very last sentence.');
 
@@ -347,6 +353,7 @@ describe('an evening of writing survives the app going away', () => {
   it('writes nothing when there is nothing to write', async () => {
     at({ kind: 'dossier' });
     render(<ComposeScreen />);
+    await flush();
     await act(async () => { mockAppState.fire('background'); });
     // An empty draft saved on every backgrounding is a file that outlives the
     // intent to write.
@@ -356,6 +363,7 @@ describe('an evening of writing survives the app going away', () => {
   it('does not flush while the app is still in front', async () => {
     at({ kind: 'dossier' });
     const { getByLabelText } = render(<ComposeScreen />);
+    await flush();
     await type(getByLabelText('Essay headline'), 'Still writing');
     await act(async () => { mockAppState.fire('active'); });
     expect(mockStore.has(DRAFT_KEY)).toBe(false);
@@ -363,10 +371,10 @@ describe('an evening of writing survives the app going away', () => {
 });
 
 describe('the formatting toolbar', () => {
-  const open = () => { at({ kind: 'dossier' }); return render(<ComposeScreen />); };
+  const open = async () => { at({ kind: 'dossier' }); const r = render(<ComposeScreen />); await flush(); return r; };
 
   it('wraps the selection, and leaves the caret after it', async () => {
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     const body = getByLabelText('Essay content body');
     await type(body, 'Ozu frames a room.');
 
@@ -382,7 +390,7 @@ describe('the formatting toolbar', () => {
   it('puts the caret BETWEEN the marks when nothing is selected', async () => {
     // Pressing Bold with no selection should leave somebody ready to type
     // inside the emphasis, not after it.
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     const body = getByLabelText('Essay content body');
     await type(body, 'Ozu');
     await act(async () => {
@@ -395,7 +403,7 @@ describe('the formatting toolbar', () => {
   });
 
   it('carries every mark the desk offers', async () => {
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     for (const label of ['Bold', 'Italic', 'Heading', 'Block quote', 'Horizontal rule', 'Insert link']) {
       expect(getByLabelText(label)).toBeTruthy();
     }
@@ -403,14 +411,14 @@ describe('the formatting toolbar', () => {
 });
 
 describe('leaving the room', () => {
-  const open = () => { at({ kind: 'dossier' }); return render(<ComposeScreen />); };
+  const open = async () => { at({ kind: 'dossier' }); const r = render(<ComposeScreen />); await flush(); return r; };
 
   it('asks before discarding words', async () => {
     const alerts: [string, string, { text: string; onPress?: () => void }[]][] = [];
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
     );
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     await type(getByLabelText('Essay content body'), 'An opening line.');
     await press(getByLabelText(/Cancel/));
 
@@ -436,7 +444,7 @@ describe('leaving the room', () => {
       alerts.push([t, m]);
     }) as never);
 
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     await type(getByLabelText('Essay content body'), 'Four thousand words.');
     await act(async () => { jest.advanceTimersByTime(1200); });
     await press(getByLabelText(/Cancel/));
@@ -451,7 +459,7 @@ describe('leaving the room', () => {
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string) => { alerts.push(t); }) as never,
     );
-    const { getByLabelText } = open();
+    const { getByLabelText } = await open();
     await press(getByLabelText(/Cancel/));
     // A confirmation over an empty page is a dialog that exists to be dismissed.
     expect(alerts).toHaveLength(0);
@@ -460,19 +468,21 @@ describe('leaving the room', () => {
 });
 
 describe('amending a dossier that already exists', () => {
-  const openEdit = () => {
+  const openEdit = async () => {
     at({ kind: 'dossier', edit: 'f1', initialTitle: 'The Empty Room', initialContent: 'The first version.' });
-    return render(<ComposeScreen />);
+    const r = render(<ComposeScreen />);
+    await flush();
+    return r;
   };
 
-  it('opens with the essay already in it', () => {
-    const { getByDisplayValue } = openEdit();
+  it('opens with the essay already in it', async () => {
+    const { getByDisplayValue } = await openEdit();
     expect(getByDisplayValue('The Empty Room')).toBeTruthy();
     expect(getByDisplayValue('The first version.')).toBeTruthy();
   });
 
   it('amends rather than filing a second one', async () => {
-    const { getByLabelText } = openEdit();
+    const { getByLabelText } = await openEdit();
     await type(getByLabelText("Essay content body"), 'The second version.');
     await press(getByLabelText('Re-file the essay'));
     await flush();
@@ -490,7 +500,7 @@ describe('amending a dossier that already exists', () => {
       v: 2, savedAt: '2026-09-10T21:40:00.000Z',
       data: { title: 'Unfinished', content: 'Elsewhere.' },
     }));
-    const { getByLabelText } = openEdit();
+    const { getByLabelText } = await openEdit();
     await type(getByLabelText("Essay content body"), 'The second version.');
     await act(async () => { jest.advanceTimersByTime(1200); });
 
@@ -515,7 +525,7 @@ describe('amending a dossier that already exists', () => {
  * nothing was, so a member can carry on typing inside what they just opened.
  */
 describe('the tools that edit what the member wrote', () => {
-  const open = () => { at({ kind: 'dossier' }); return render(<ComposeScreen />); };
+  const open = async () => { at({ kind: 'dossier' }); const r = render(<ComposeScreen />); await flush(); return r; };
 
   const write = async (r: ReturnType<typeof render>, text: string) => {
     await act(async () => {
@@ -546,7 +556,7 @@ describe('the tools that edit what the member wrote', () => {
 
   for (const [label, before, after] of TOOLS) {
     it(`${label} — wraps what is selected, and leaves it selected-through`, async () => {
-      const r = open();
+      const r = await open();
       await write(r, 'Ozu never once stood up.');
       await selectRange(r, 0, 3); // "Ozu"
       await tap(r, label);
@@ -556,7 +566,7 @@ describe('the tools that edit what the member wrote', () => {
     it(`${label} — opens the markers and puts the caret INSIDE them`, async () => {
       // With nothing selected the caret belongs between the markers, so the
       // member types into what they just opened rather than after it.
-      const r = open();
+      const r = await open();
       await write(r, 'AB');
       await selectRange(r, 1, 1);
       await tap(r, label);
@@ -567,7 +577,7 @@ describe('the tools that edit what the member wrote', () => {
   }
 
   it('the caret after a wrap sits past the whole thing, not inside it', async () => {
-    const r = open();
+    const r = await open();
     await write(r, 'Ozu');
     await selectRange(r, 0, 3);
     await tap(r, 'Bold');
@@ -579,7 +589,7 @@ describe('the tools that edit what the member wrote', () => {
     // The forced selection is programmatic control of somebody's cursor. Held
     // one render too long it fights them: they tap elsewhere and are dragged
     // back. It is released on the next selection change.
-    const r = open();
+    const r = await open();
     await write(r, 'Ozu');
     await selectRange(r, 0, 3);
     await tap(r, 'Bold');

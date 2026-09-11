@@ -149,6 +149,10 @@ const store = (over: Record<string, unknown> = {}) => {
 const mount = async () => {
   const r = render(<RoomScreen />);
   await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+  // FlashList measures itself and sets state AFTER that first settle, so one
+  // tick leaves its update outside act and React says so. A second settle costs
+  // nothing and means the screen the assertions run against has fully arrived.
+  await act(async () => { await Promise.resolve(); });
   return r;
 };
 
@@ -225,7 +229,7 @@ describe('a member’s room', () => {
     mockUser = { id: 'u2', username: 'tomasreyes' };
     const own = await mount();
     expect(own.getByText('You have filed nothing yet.')).toBeTruthy();
-    await act(async () => { fireEvent.press(own.getByText('FILE SOMETHING')); });
+    await fireEvent.press(own.getByText('FILE SOMETHING'));
     expect(mockPushed).toContain('/dispatch/compose');
   });
 
@@ -330,16 +334,16 @@ describe('a member’s room', () => {
     mockRows = [filing()];
     const { getByText, getByLabelText } = await mount();
 
-    await act(async () => { fireEvent.press(getByText(/A take about a film/)); });
+    await fireEvent.press(getByText(/A take about a film/));
     expect(mockPushed).toContain('/dispatch/f1');
 
     mockPushed.length = 0;
-    await act(async () => { fireEvent.press(getByText('THE MEMBER’S FILE')); });
+    await fireEvent.press(getByText('THE MEMBER’S FILE'));
     // This room is one of seven. The other six are films, and they are still
     // one tap away.
     expect(mockPushed).toEqual(['/user/tomasreyes']);
 
-    await act(async () => { fireEvent.press(getByLabelText('Back')); });
+    await fireEvent.press(getByLabelText('Back'));
     expect(mockBack).toHaveBeenCalled();
   });
 

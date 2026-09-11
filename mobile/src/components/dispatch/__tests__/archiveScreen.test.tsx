@@ -136,11 +136,15 @@ const store = () => useDispatch.setState({
   critiquesHasMore: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(),
 } as never);
 
-/** Type into the archive's own search row and let the debounce fire. */
+/**
+ * Type into the archive's own search row and let the debounce fire.
+ *
+ * `fireEvent` awaits an `act` of its OWN (`fire-event.js:92`), so wrapping it in
+ * another one nests them and React says "overlapping act() calls". Awaited on
+ * its own here; the separate act is only for driving the debounce clock.
+ */
 const type = async (r: ReturnType<typeof render>, text: string) => {
-  await act(async () => {
-    fireEvent.changeText(r.getByLabelText('Search the archive for a film'), text);
-  });
+  await fireEvent.changeText(r.getByLabelText('Search the archive for a film'), text);
   await act(async () => {
     jest.advanceTimersByTime(400);
     await Promise.resolve(); await Promise.resolve();
@@ -218,11 +222,10 @@ describe('the archive', () => {
   it('waits for the typing to stop', async () => {
     const r = render(<ArchiveScreen />);
     await act(async () => { await Promise.resolve(); });
-    await act(async () => {
-      fireEvent.changeText(r.getByLabelText('Search the archive for a film'), 'sta');
-      fireEvent.changeText(r.getByLabelText('Search the archive for a film'), 'stal');
-      fireEvent.changeText(r.getByLabelText('Search the archive for a film'), 'stalk');
-    });
+    // Each awaited on its own — fireEvent brings its own act.
+    await fireEvent.changeText(r.getByLabelText('Search the archive for a film'), 'sta');
+    await fireEvent.changeText(r.getByLabelText('Search the archive for a film'), 'stal');
+    await fireEvent.changeText(r.getByLabelText('Search the archive for a film'), 'stalk');
     // Nothing yet: three keystrokes are not three requests.
     expect(search()).toBeUndefined();
     await act(async () => { jest.advanceTimersByTime(400); await Promise.resolve(); });

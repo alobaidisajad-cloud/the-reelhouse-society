@@ -13,10 +13,16 @@
  * default lives there and this guards it.
  */
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, act } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { CinematicFlashList } from '../CinematicFlashList';
+
+/**
+ * Both components below set state one tick after render — the guard when its
+ * session resolves, the list when it measures itself. Each test settles once so
+ * that update lands inside act rather than after the test body.
+ */
 
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
@@ -34,21 +40,23 @@ function listProps(tree: ReturnType<typeof render>) {
 }
 
 describe('a list never eats the first tap after a search', () => {
-  it('passes taps through to its rows while the keyboard is open', () => {
+  it('passes taps through to its rows while the keyboard is open', async () => {
     const t = render(
       <CinematicFlashList data={rows} renderItem={renderItem} keyExtractor={(i: { id: string }) => i.id} />,
     );
+    await act(async () => { await Promise.resolve(); });
     expect(listProps(t)).toContain('handled');
   });
 
-  it('puts the keyboard away when the member scrolls the results', () => {
+  it('puts the keyboard away when the member scrolls the results', async () => {
     const t = render(
       <CinematicFlashList data={rows} renderItem={renderItem} keyExtractor={(i: { id: string }) => i.id} />,
     );
+    await act(async () => { await Promise.resolve(); });
     expect(listProps(t)).toContain('on-drag');
   });
 
-  it('a caller can still override the default', () => {
+  it('a caller can still override the default', async () => {
     // Set BEFORE {...rest} precisely so this stays possible.
     const t = render(
       <CinematicFlashList
@@ -58,13 +66,15 @@ describe('a list never eats the first tap after a search', () => {
         keyboardShouldPersistTaps="always"
       />,
     );
+    await act(async () => { await Promise.resolve(); });
     expect(listProps(t)).toContain('always');
   });
 
-  it('applies to horizontal lists too, where the chips live', () => {
+  it('applies to horizontal lists too, where the chips live', async () => {
     const t = render(
       <CinematicFlashList horizontal data={rows} renderItem={renderItem} keyExtractor={(i: { id: string }) => i.id} />,
     );
+    await act(async () => { await Promise.resolve(); });
     expect(listProps(t)).toContain('handled');
   });
 });

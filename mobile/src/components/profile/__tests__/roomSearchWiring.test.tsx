@@ -35,8 +35,11 @@ const film = (over: Record<string, unknown> = {}) => ({
 const SHELF = Array.from({ length: 6 }, (_, i) => film({ id: `l${i}`, filmId: 40 + i })) as never[];
 
 const mount = async (node: React.ReactElement) => {
-  let r!: ReturnType<typeof render>;
-  await act(async () => { r = render(node); });
+  // The shim's `render` already runs inside React.act(); wrapping it in another
+  // one is the nesting React reports as overlapping act() calls. Render, then
+  // settle separately so FlashList's own measurement lands inside an act too.
+  const r = render(node);
+  await act(async () => { await Promise.resolve(); });
   return r;
 };
 
@@ -99,7 +102,7 @@ describe.each(ROOMS)('$name search box', (room) => {
     try {
       const { r, set } = await build();
       const input = r.getByPlaceholderText(room.placeholder);
-      await act(async () => { fireEvent.changeText(input, 'nosferatu'); });
+      await fireEvent.changeText(input, 'nosferatu');
       expect(set).not.toHaveBeenCalled();
       await act(async () => { jest.advanceTimersByTime(400); });
       expect(set).toHaveBeenCalledWith('nosferatu');
@@ -115,10 +118,10 @@ describe.each(ROOMS)('$name search box', (room) => {
       expect(r.queryByLabelText('Clear the search')).toBeNull();
 
       const input = r.getByPlaceholderText(room.placeholder);
-      await act(async () => { fireEvent.changeText(input, 'ozu'); });
+      await fireEvent.changeText(input, 'ozu');
 
       const clear = r.getByLabelText('Clear the search');
-      await act(async () => { fireEvent.press(clear); });
+      await fireEvent.press(clear);
       expect(set).toHaveBeenCalledWith('');
     } finally {
       jest.useRealTimers();

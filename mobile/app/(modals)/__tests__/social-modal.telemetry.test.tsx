@@ -8,13 +8,21 @@
  * member still gets their toast either way.
  */
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 
 import SocialModal from '../social-modal';
 import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { LoungeService } from '@/src/services/LoungeService';
 import { useLoungeStore } from '@/src/stores/lounge';
+
+/**
+ * These components set state one tick after render — FlashList when it measures,
+ * a guard when its session resolves. Without this the update lands after the
+ * test body and React reports it as not wrapped in act.
+ */
+afterEach(async () => { await act(async () => { await Promise.resolve(); }); });
+
 
 let mockParams: Record<string, string | undefined> = {};
 

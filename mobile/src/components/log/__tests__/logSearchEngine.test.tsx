@@ -63,7 +63,7 @@ afterEach(() => { jest.useRealTimers(); });
 
 /** Type a query and let the debounce and the request settle. */
 async function type(r: R, q: string) {
-  await act(async () => { fireEvent.changeText(r.getByLabelText('Search for a film to log'), q); });
+  await fireEvent.changeText(r.getByLabelText('Search for a film to log'), q);
   await act(async () => { jest.advanceTimersByTime(400); });
   await act(async () => { await Promise.resolve(); });
 }
@@ -72,9 +72,9 @@ describe('finding a film', () => {
   it('waits before it asks, so a title is not eight requests', async () => {
     const r = render(<LogSearchEngine onSelectFilm={jest.fn()} />);
     const field = r.getByLabelText('Search for a film to log');
-    await act(async () => {
-      for (const q of ['c', 'ch', 'chi', 'chin']) fireEvent.changeText(field, q);
-    });
+    // Each keystroke awaited on its own: fireEvent brings its own act, so a
+    // loop of them inside one more act is four nested acts.
+    for (const q of ['c', 'ch', 'chi', 'chin']) await fireEvent.changeText(field, q);
     expect(search).not.toHaveBeenCalled();
     // Still silent one tick short of the debounce — otherwise "it waits" is
     // satisfied by a delay of zero.
@@ -118,9 +118,9 @@ describe('finding a film', () => {
 
     const r = render(<LogSearchEngine onSelectFilm={jest.fn()} />);
     const field = r.getByLabelText('Search for a film to log');
-    await act(async () => { fireEvent.changeText(field, 'chin'); });
+    await fireEvent.changeText(field, 'chin');
     await act(async () => { jest.advanceTimersByTime(400); });
-    await act(async () => { fireEvent.changeText(field, 'nightcrawler'); });
+    await fireEvent.changeText(field, 'nightcrawler');
     await act(async () => { jest.advanceTimersByTime(400); });
     await act(async () => { await Promise.resolve(); });
     expect(r.getByText('Nightcrawler')).toBeTruthy();
@@ -134,7 +134,7 @@ describe('finding a film', () => {
 
   it('says it is working while it works', async () => {
     const r = render(<LogSearchEngine onSelectFilm={jest.fn()} />);
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Search for a film to log'), 'chinatown'); });
+    await fireEvent.changeText(r.getByLabelText('Search for a film to log'), 'chinatown');
     expect(r.getByText('TRANSMITTING QUERY...')).toBeTruthy();
     await type(r, 'chinatown');
     expect(r.queryByText('TRANSMITTING QUERY...')).toBeNull();
@@ -150,7 +150,7 @@ describe('finding a film', () => {
     const onSelectFilm = jest.fn();
     const r = render(<LogSearchEngine onSelectFilm={onSelectFilm} />);
     await type(r, 'chinatown');
-    await act(async () => { fireEvent.press(r.getByText('The Third Man')); });
+    await fireEvent.press(r.getByText('The Third Man'));
     expect(onSelectFilm).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }));
   });
 });
@@ -205,7 +205,7 @@ describe('when there is nothing to show', () => {
     const r = render(<LogSearchEngine onSelectFilm={jest.fn()} />);
     await type(r, 'chinatown');
     expect(r.getByText('Chinatown')).toBeTruthy();
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Search for a film to log'), ''); });
+    await fireEvent.changeText(r.getByLabelText('Search for a film to log'), '');
     expect(r.queryByText('Chinatown')).toBeNull();
     expect(r.queryByText(/No films found/)).toBeNull();
   });

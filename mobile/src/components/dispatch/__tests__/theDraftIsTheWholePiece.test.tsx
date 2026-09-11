@@ -72,6 +72,16 @@ jest.mock('@/src/lib/supabase', () => ({
         })),
         error: null,
       }).then(r);
+      /**
+       * The writing room also BACKS THE DRAFT UP while this screen is mounted.
+       * Without these three the push threw `upsert is not a function` on every
+       * run — and `pushDraft` swallows its own errors by design, so the throw
+       * printed a console warning and nothing failed. The suite looked green
+       * over a code path that was erroring every single time.
+       */
+      chain.upsert = () => Promise.resolve({ error: null });
+      chain.delete = () => self();
+      chain.maybeSingle = () => Promise.resolve({ data: null, error: null });
       return chain;
     },
     rpc: () => Promise.resolve({
