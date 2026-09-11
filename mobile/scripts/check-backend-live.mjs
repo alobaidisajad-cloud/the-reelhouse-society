@@ -468,6 +468,9 @@ let anonGrantViolations = 0;
 /** Whether anon's SECURITY DEFINER reach was compared against the allowlist. */
 let checkedDefiners = false;
 let definerViolations = 0;
+/** Whether any private room still carries a key anyone can read. */
+let checkedLoungeKeys = false;
+let loungeKeyViolations = 0;
 let checkedGrants = false;
 // How many violations each half found — a section that RAN is not a section that PASSED.
 let anonViolations = 0;
@@ -600,6 +603,44 @@ if (DB_URL) {
     checkedDefiners = true;
   } catch (e) {
     console.warn(`⚠ definer check skipped — psql could not connect:\n    ${why(e)}`);
+  }
+}
+
+// ── NO ROOM CARRIES A KEY ──────────────────────────────────────────────────
+// `lounges` is readable by every member — "Lounges are discoverable" USING
+// (true) — which is the design: you may see that a room exists and ask at the
+// door. `invite_code` was a way AROUND that door, sitting in the same readable
+// row, minted on every room `create_lounge` made.
+//
+// It was a dead credential: no function anywhere accepts a code to join, and
+// both clients retired codes. But the danger was never today — it was the first
+// person to add "join by code" to a private room and find every room already
+// open, with no reason to suspect it.
+//
+// So the secret was removed rather than guarded, and this keeps it removed. A
+// column that is always NULL cannot leak; a check that says so cannot be
+// quietly undone by a future `create_lounge` that starts minting again.
+if (DB_URL) {
+  try {
+    const before = posture.length;
+    const withCodes = sh(
+      `psql "${DB_URL}" -tAc "SELECT count(*) FROM public.lounges WHERE invite_code IS NOT NULL"`,
+    ).trim();
+    if (withCodes !== '0') {
+      posture.push(
+        `${withCodes} lounge(s) carry an invite_code — every member can read it off a discoverable table`,
+      );
+    }
+    const mints = sh(
+      `psql "${DB_URL}" -tAc "SELECT (prosrc ~* 'INSERT INTO public.lounges[^;]*invite_code')::text FROM pg_proc WHERE proname='create_lounge' AND pronamespace='public'::regnamespace"`,
+    ).trim();
+    if (mints === 't') {
+      posture.push('create_lounge mints an invite_code again — a key to a private room, in a table every member reads');
+    }
+    loungeKeyViolations = posture.length - before;
+    checkedLoungeKeys = true;
+  } catch (e) {
+    console.warn(`⚠ lounge key check skipped — psql could not connect:\n    ${why(e)}`);
   }
 }
 
@@ -845,6 +886,7 @@ const skipped = [
   !checkedAnon && 'anon column visibility',
   !checkedAnonGrants && "anon's table grants",
   !checkedDefiners && "anon's SECURITY DEFINER reach",
+  !checkedLoungeKeys && 'lounge invite codes',
   !checkedGrants && 'grants/triggers/RLS',
 ].filter(Boolean);
 
@@ -917,6 +959,7 @@ const passed = [
   checkedAnon && anonViolations === 0 && 'anon column visibility',
   checkedAnonGrants && anonGrantViolations === 0 && 'anon holds only what the paper needs',
   checkedDefiners && definerViolations === 0 && 'no definer takes an anonymous caller at their word',
+  checkedLoungeKeys && loungeKeyViolations === 0 && 'no room carries a key',
   checkedGrants && grantViolations === 0 && 'profile grants + triggers + RLS + length ceilings',
 ].filter(Boolean);
 
