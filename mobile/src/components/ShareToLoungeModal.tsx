@@ -188,7 +188,24 @@ export default function ShareToLoungeModal({
 
         const content = message.trim() || '';
 
-        // Fire and forget
+        // Fire and forget — the sheet closes either way, so the member is never
+        // made to wait on the network for a share.
+        //
+        // ── WHY THERE IS NO `.then(ok => ...)` HERE ─────────────────────────
+        // `sendMessage` RESOLVES to `false` when it declines rather than
+        // rejecting, so this `.catch` only ever sees an unexpected crash. The
+        // obvious repair — toast when the result is false — is wrong: every
+        // path in sendMessage that returns false for a SHARE already raises its
+        // own toast (schema, network, a refused write), so that would say it
+        // twice.
+        //
+        // The one path that returned false in silence was the send throttle,
+        // and it was a single app-wide number: sharing an essay into one salon
+        // and then another inside 800ms was read as a double-tap and dropped
+        // without a word. That is fixed where it belongs, in the store, by
+        // keying the throttle per room. What remains silent here is a genuine
+        // double-tap into the SAME room, which is what the throttle is for and
+        // which should stay quiet.
         useLoungeStore.getState().sendMessage(
             selectedLounge,
             content,

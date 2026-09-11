@@ -155,7 +155,19 @@ export interface LoungeState {
 }
 
 // ── Throttle ── (800ms between sends, matching web)
-let _lastSendAt = 0;
+//
+// ── PER ROOM, NOT PER APP ───────────────────────────────────────────────────
+// This was a single module-level number, so it counted the last send ANYWHERE.
+// A double-tap in one room is what it exists to stop; sharing an essay into one
+// salon and then into another within 800ms is not a double-tap, it is the
+// member doing exactly what the share sheet is for — and the second share
+// returned false and vanished. Silently, because the throttle is the one
+// refusal path in sendMessage that raises no toast (correctly: a swallowed
+// double-tap should say nothing).
+//
+// Keyed by room, the guard still blocks the repeat it was written for and stops
+// eating the deliberate one.
+const _lastSendAt = new Map<string, number>();
 const SEND_THROTTLE = 800;
 
 /**
@@ -755,8 +767,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     if (!user || (!cleanContent && type === 'text')) return false;
 
     const now = Date.now();
-    if (now - _lastSendAt < SEND_THROTTLE) return false;
-    _lastSendAt = now;
+    if (now - (_lastSendAt.get(loungeId) ?? 0) < SEND_THROTTLE) return false;
+    _lastSendAt.set(loungeId, now);
 
     set({ sending: true });
 
