@@ -457,6 +457,17 @@ if (DB_URL) {
 const sec = contract.security || {};
 const posture = [];
 let checkedAnon = false;
+/** Whether anon's table grants were compared against the allowlist. */
+let checkedAnonGrants = false;
+/**
+ * How many grants failed that comparison. Kept separately for the reason this
+ * file already records about `checkedAnon`: "it ran" is not "it was clean", and
+ * a run that FOUND drift must not also print a green tick for the same check.
+ */
+let anonGrantViolations = 0;
+/** Whether anon's SECURITY DEFINER reach was compared against the allowlist. */
+let checkedDefiners = false;
+let definerViolations = 0;
 let checkedGrants = false;
 // How many violations each half found — a section that RAN is not a section that PASSED.
 let anonViolations = 0;
@@ -506,6 +517,90 @@ if (SUPABASE_URL && ANON_KEY) {
   }
 } else {
   console.warn('⚠ anon posture check skipped (set EXPO_PUBLIC_SUPABASE_URL + _ANON_KEY).');
+}
+
+// ── ANON'S TABLE GRANTS, AGAINST AN EXPLICIT ALLOWLIST ─────────────────────
+// The check above asks whether anon can READ a column. This asks the wider
+// question it cannot: what is anon permitted to DO, table by table.
+//
+// anon held SELECT, INSERT, UPDATE and DELETE on dispatch_certifications,
+// dispatch_saves and dispatch_votes. None was exploitable — every policy on
+// those tables names `authenticated`, so RLS denied every row — but the ONLY
+// thing holding the line was that no policy had been left at `{public}`. One
+// such policy turns twelve dead grants live at once, and `notifications` was
+// found with exactly that mistake on this database the same day.
+//
+// So the grants are the thing asserted, not the exploit. A grant anon does not
+// need is surface, and surface is what a later mistake is built from. The list
+// is an ALLOWLIST: anything not named here is a violation, so a table added
+// later cannot quietly arrive with anon writes attached.
+if (DB_URL) {
+  try {
+    const rows = sh(
+      `psql "${DB_URL}" -tAc "SELECT table_name || ' ' || string_agg(DISTINCT privilege_type, ',' ORDER BY privilege_type) FROM information_schema.role_table_grants WHERE table_schema='public' AND grantee='anon' AND table_name IN ('dispatch_posts','dispatch_comments','dispatch_certifications','dispatch_saves','dispatch_votes','member_drafts','notifications') GROUP BY table_name ORDER BY 1"`,
+    );
+    /** The paper is public; nothing else about a member is. */
+    const ALLOWED = { dispatch_posts: 'SELECT', dispatch_comments: 'SELECT' };
+    const before = posture.length;
+    for (const line of rows.split('\n').map((s) => s.trim()).filter(Boolean)) {
+      const [table, privs] = line.split(' ');
+      const want = ALLOWED[table];
+      if (!want) {
+        posture.push(`anon holds ${privs} on ${table} — it should hold nothing there`);
+      } else if (privs !== want) {
+        posture.push(`anon holds ${privs} on ${table} — only ${want} is intended`);
+      }
+    }
+    anonGrantViolations = posture.length - before;
+    checkedAnonGrants = true;
+  } catch (e) {
+    console.warn(`⚠ anon grant check skipped — psql could not connect:\n    ${why(e)}`);
+  }
+}
+
+// ── DEFINERS THAT TAKE THE CALLER'S WORD FOR IT ────────────────────────────
+// A SECURITY DEFINER runs with the owner's rights. One that reads auth.uid()
+// decides for itself who is calling; one that takes the ACTOR AS A PARAMETER
+// believes whatever it is told. If `anon` may execute the second kind, an
+// anonymous caller simply names themselves.
+//
+// `get_taste_profile(<any uuid>)` handed back a member's taste profile to anon,
+// and `audience_allows(actor, owner, pref)` answered "may this member see that
+// one" for any pair — a privacy graph, one call at a time.
+//
+// The allowlist below is what anon is ALLOWED to execute of that kind, and each
+// entry states why. Three are RLS POLICY HELPERS: a policy expression evaluates
+// as the querying role, so revoking those would not tighten anything — it would
+// stop policies evaluating and break legitimate public reads. That is why this
+// is an allowlist with reasons rather than a blanket revoke.
+if (DB_URL) {
+  try {
+    const ALLOWED_FOR_ANON = {
+      can_annotate_list: 'RLS policy helper — anon needs it for the policy to evaluate',
+      can_annotate_log: 'RLS policy helper',
+      can_endorse_content: 'RLS policy helper',
+      get_featured_critique: 'public editorial content, meant for signed-out readers',
+      increment_dossier_views: 'live web caller; moves a view counter and nothing else',
+      rls_auto_enable: 'event trigger, not callable',
+      like_escape: 'pure string helper, no data',
+    };
+    const rows = sh(
+      `psql "${DB_URL}" -tAc "SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prosecdef AND p.prorettype <> 'trigger'::regtype AND has_function_privilege('anon', p.oid, 'EXECUTE') AND p.prosrc NOT ILIKE '%auth.uid()%' ORDER BY 1"`,
+    );
+    const before = posture.length;
+    for (const name of rows.split('\n').map((s) => s.trim()).filter(Boolean)) {
+      if (!ALLOWED_FOR_ANON[name]) {
+        posture.push(
+          `anon may EXECUTE ${name}() — a SECURITY DEFINER that never reads auth.uid(), ` +
+            'so it trusts whatever actor the caller names',
+        );
+      }
+    }
+    definerViolations = posture.length - before;
+    checkedDefiners = true;
+  } catch (e) {
+    console.warn(`⚠ definer check skipped — psql could not connect:\n    ${why(e)}`);
+  }
 }
 
 // Tier B — grants, triggers, RLS, ceilings. Needs real DB access.
@@ -748,6 +843,8 @@ const skipped = [
   !checkedRpcs && 'RPCs',
   !ranCallCheck && "the app's own RPC calls",
   !checkedAnon && 'anon column visibility',
+  !checkedAnonGrants && "anon's table grants",
+  !checkedDefiners && "anon's SECURITY DEFINER reach",
   !checkedGrants && 'grants/triggers/RLS',
 ].filter(Boolean);
 
@@ -818,6 +915,8 @@ const passed = [
   checkedRpcs && !missing.rpcs.length && !signatureDrift.length && 'RPC signatures',
   ranCallCheck && !callMismatches.length && `every RPC call the app makes (${checkedCalls})`,
   checkedAnon && anonViolations === 0 && 'anon column visibility',
+  checkedAnonGrants && anonGrantViolations === 0 && 'anon holds only what the paper needs',
+  checkedDefiners && definerViolations === 0 && 'no definer takes an anonymous caller at their word',
   checkedGrants && grantViolations === 0 && 'profile grants + triggers + RLS + length ceilings',
 ].filter(Boolean);
 

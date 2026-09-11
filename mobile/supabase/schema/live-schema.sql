@@ -7968,7 +7968,7 @@ GRANT ALL ON FUNCTION public.assign_list_item_position() TO service_role;
 -- Name: FUNCTION audience_allows(p_actor uuid, p_owner uuid, p_pref text); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.audience_allows(p_actor uuid, p_owner uuid, p_pref text) TO anon;
+REVOKE ALL ON FUNCTION public.audience_allows(p_actor uuid, p_owner uuid, p_pref text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.audience_allows(p_actor uuid, p_owner uuid, p_pref text) TO authenticated;
 GRANT ALL ON FUNCTION public.audience_allows(p_actor uuid, p_owner uuid, p_pref text) TO service_role;
 
@@ -8692,7 +8692,7 @@ GRANT ALL ON FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) TO serv
 -- Name: FUNCTION get_taste_profile(p_user_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.get_taste_profile(p_user_id uuid) TO anon;
+REVOKE ALL ON FUNCTION public.get_taste_profile(p_user_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_taste_profile(p_user_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_taste_profile(p_user_id uuid) TO service_role;
 
@@ -9176,7 +9176,6 @@ GRANT ALL ON TABLE public.analytics_events TO service_role;
 -- Name: TABLE dispatch_certifications; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_certifications TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_certifications TO authenticated;
 GRANT ALL ON TABLE public.dispatch_certifications TO service_role;
 
@@ -9229,7 +9228,6 @@ GRANT ALL ON TABLE public.dispatch_dossiers_legacy TO service_role;
 -- Name: TABLE dispatch_saves; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_saves TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_saves TO authenticated;
 GRANT ALL ON TABLE public.dispatch_saves TO service_role;
 
@@ -9238,7 +9236,6 @@ GRANT ALL ON TABLE public.dispatch_saves TO service_role;
 -- Name: TABLE dispatch_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_votes TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_votes TO authenticated;
 GRANT ALL ON TABLE public.dispatch_votes TO service_role;
 
