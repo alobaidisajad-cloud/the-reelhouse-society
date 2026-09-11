@@ -665,8 +665,17 @@ function ComposeDossierScreen() {
         // mode moves from "your essay was silently shortened and your draft is
         // gone" to "this cannot be filed yet, and every word is still here".
         if (limit.over) {
+            // "essay", not "dossier". `dossier` is the wire word — the kind
+            // value in the database, the table names, the mutation types — and
+            // it stays there. The word printed at a member is ESSAY, and this
+            // toast was missed when the rest of the desk was renamed because it
+            // is a sentence rather than a label.
+            //
+            // Written plainly rather than through `nameOf()`: that table yields
+            // the label form (ESSAY, in capitals) for headers and card kinds,
+            // which is not what belongs mid-sentence.
             reelToast.error(
-                `This dossier is ${groupDigits(Math.abs(limit.remaining))} characters over the limit. Trim it and file again — nothing has been lost.`
+                `This essay is ${groupDigits(Math.abs(limit.remaining))} characters over the limit. Trim it and file again — nothing has been lost.`
             );
             return;
         }
