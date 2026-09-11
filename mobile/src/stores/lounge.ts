@@ -247,8 +247,27 @@ async function resolveProfile(userId: string): Promise<{ username: string; avata
 // ── Reaction aggregation ──
 interface ReactionRow { message_id: string; reaction: string; user_id: string }
 
+/**
+ * Where a reaction sits in the curated row.
+ *
+ * `LOUNGE_REACTIONS.indexOf()` returns -1 for anything not in the list, and -1
+ * sorts BEFORE 0 — so an unknown reaction led the row, while the comment below
+ * claimed unknowns were appended. A member reading the room would have seen an
+ * arbitrary string at the head of the reactions on that message.
+ *
+ * The database now refuses any reaction outside the five
+ * (lounge_message_reactions_reaction_curated), so nothing unknown can be
+ * written any more. This is the defence behind that: an unknown value arriving
+ * from an older row, a future reaction this build does not know yet, or a
+ * hand-made payload goes to the END, never the front.
+ */
+const reactionRank = (reaction: string): number => {
+  const i = LOUNGE_REACTIONS.indexOf(reaction as LoungeReaction);
+  return i === -1 ? LOUNGE_REACTIONS.length : i;
+};
+
 /** Group raw reaction rows into per-message summaries (count + whether mine). */
-function summarizeReactions(rows: ReactionRow[], myId: string | undefined): Map<string, ReactionSummary[]> {
+export function summarizeReactions(rows: ReactionRow[], myId: string | undefined): Map<string, ReactionSummary[]> {
   const byMsg = new Map<string, Map<string, ReactionSummary>>();
   for (const r of rows) {
     let perReaction = byMsg.get(r.message_id);
@@ -262,7 +281,7 @@ function summarizeReactions(rows: ReactionRow[], myId: string | undefined): Map<
   for (const [msgId, perReaction] of byMsg) {
     // Stable order = the curated reaction order, with any unknowns appended.
     const ordered = Array.from(perReaction.values()).sort(
-      (a, b) => LOUNGE_REACTIONS.indexOf(a.reaction as LoungeReaction) - LOUNGE_REACTIONS.indexOf(b.reaction as LoungeReaction)
+      (a, b) => reactionRank(a.reaction) - reactionRank(b.reaction)
     );
     out.set(msgId, ordered);
   }
@@ -270,7 +289,7 @@ function summarizeReactions(rows: ReactionRow[], myId: string | undefined): Map<
 }
 
 /** Apply a single reaction delta to a message's summary array (realtime/optimistic). */
-function applyReactionDelta(
+export function applyReactionDelta(
   reactions: ReactionSummary[] | undefined,
   reaction: string,
   delta: 1 | -1,
@@ -285,9 +304,7 @@ function applyReactionDelta(
     if (mine) next[idx].mine = delta === 1;
     if (next[idx].count <= 0) next.splice(idx, 1);
   }
-  return next.sort(
-    (a, b) => LOUNGE_REACTIONS.indexOf(a.reaction as LoungeReaction) - LOUNGE_REACTIONS.indexOf(b.reaction as LoungeReaction)
-  );
+  return next.sort((a, b) => reactionRank(a.reaction) - reactionRank(b.reaction));
 }
 
 // ── Raw Realtime payload shape ──

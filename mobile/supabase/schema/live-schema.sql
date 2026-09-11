@@ -4251,10 +4251,18 @@ CREATE TABLE public.lounge_message_reactions (
     user_id uuid NOT NULL,
     reaction text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT lounge_message_reactions_reaction_curated CHECK ((reaction = ANY (ARRAY['bravo'::text, 'adored'::text, 'riveting'::text, 'quoted'::text, 'panned'::text]))),
     CONSTRAINT lounge_message_reactions_reaction_len CHECK ((char_length(reaction) <= 100))
 );
 
 ALTER TABLE ONLY public.lounge_message_reactions REPLICA IDENTITY FULL;
+
+
+--
+-- Name: CONSTRAINT lounge_message_reactions_reaction_curated ON lounge_message_reactions; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON CONSTRAINT lounge_message_reactions_reaction_curated ON public.lounge_message_reactions IS 'The five curated reactions. Kept in step with LOUNGE_REACTIONS in src/stores/lounge.ts; a guard test asserts the two lists are identical, so adding one here without the other fails the build.';
 
 
 --
