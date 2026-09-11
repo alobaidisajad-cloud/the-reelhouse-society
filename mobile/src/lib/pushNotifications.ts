@@ -191,16 +191,60 @@ async function storePushToken(_userId: string, token: string): Promise<void> {
 
 /**
  * Remove push token on logout.
+ *
+ * ── THIS ONE CANNOT FAIL QUIETLY ────────────────────────────────────────────
+ * If the token survives a logout, the device goes on receiving the PREVIOUS
+ * member's notifications — their critiques, their admissions, the names of
+ * people they follow — on somebody else's phone. `logout` already knows that;
+ * it is why step 7 runs this BEFORE revoking the session.
+ *
+ * But it could not tell whether it worked, three ways over:
+ *   · the delete is narrowed by `user_id`, and the policy is
+ *     `user_id = auth.uid()`, so a refusal matches no row and PostgREST calls
+ *     that 200 with no error;
+ *   · every throw was swallowed;
+ *   · and it returned `void`, so logout could not record it either.
+ *
+ * The case that matters is not a hostile one. It is the ordinary one: if the
+ * session has ALREADY expired by the time logout runs — a refresh that failed
+ * while the app was backgrounded — then `auth.uid()` is null, the delete
+ * matches nothing, and the token stays. Silently, on the path whose entire
+ * purpose is to stop that.
+ *
+ * So the session is checked first, because without one this cannot possibly
+ * succeed and that is worth saying out loud. With a session, an empty result is
+ * legitimate — this member simply had no token registered.
+ *
+ * @returns true if the token is gone (or was never there); false if the removal
+ *          could not be carried out, so logout can report it.
  */
-export async function removePushToken(userId: string): Promise<void> {
+export async function removePushToken(userId: string): Promise<boolean> {
   try {
-    await supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      // No session means auth.uid() is null and the policy can match nothing.
+      // Reported rather than attempted-and-shrugged-at.
+      logger.warn('[Push] token NOT removed: the session was already gone');
+      return false;
+    }
+
+    const { error } = await supabase
       .from('push_tokens')
       .delete()
       .eq('user_id', userId)
-      .eq('platform', Platform.OS);
-  } catch {
-    // Non-critical
+      .eq('platform', Platform.OS)
+      .select('id');
+
+    if (error) {
+      logger.warn('[Push] token removal refused:', error.message);
+      return false;
+    }
+    // An empty result here is fine: with a live session the policy matches this
+    // member's rows, so nothing coming back means nothing was registered.
+    return true;
+  } catch (e) {
+    logger.warn('[Push] token removal failed:', e);
+    return false;
   }
 }
 

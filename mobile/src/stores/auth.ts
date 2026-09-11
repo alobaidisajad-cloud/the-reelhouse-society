@@ -450,9 +450,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     //    delivering the old user's notifications to this device).
     try {
       if (previousUserId) {
-        await _withTimeout(removePushToken(previousUserId), 4000);
+        // It now ANSWERS. A token that survives logout keeps delivering the
+        // previous member's notifications to this device, so a failure here is
+        // recorded with the rest and reaches Sentry in production — it used to
+        // return void, so there was nothing to record even when it failed.
+        const removed = await _withTimeout(removePushToken(previousUserId), 4000);
+        if (!removed) cleanupErrors.push('push-token');
       }
-    } catch { /* push module may not be installed / slow network */ }
+    } catch { cleanupErrors.push('push-token'); }
 
     // 8. Revoke the Supabase session LAST among network ops. scope 'local'
     //    ends only this device's session (web/other devices stay signed in).
