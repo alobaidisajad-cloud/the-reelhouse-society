@@ -36,7 +36,7 @@ import {
     WifiOff,
     X,
 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     AppState,
@@ -319,10 +319,28 @@ export default function LoungeRoomScreen() {
     if (text.length > 0 && id) broadcastTyping(id);
   }, [id, broadcastTyping]);
 
+  /**
+   * The room this screen is showing RIGHT NOW.
+   *
+   * `refreshMembership` closes over the `id` it was built with, which is the
+   * right question to ask the server but the wrong one to answer to — by the
+   * time the roster comes back the member may be in another room. A ref is what
+   * lets the write compare the room it fetched FOR against the room on screen;
+   * a cleanup function cannot, because this is a callback and is also fired
+   * from the door, the settings sheet and after an approval.
+   */
+  const shownRoomRef = useRef(id);
+  shownRoomRef.current = id;
+
   // ── Membership + roster refresh (also drives host's "At the Door") ──
   const refreshMembership = useCallback(async () => {
     if (!id) return;
     const roster = await fetchMembers(id);
+    // Room A's roster must not become room B's. `myStatus` decides the GATE —
+    // whether the transcript, the request door or the banned notice is shown —
+    // and `members` drives the host's "At the Door" count, so a stale answer
+    // here shows one room's membership while standing in another.
+    if (shownRoomRef.current !== id) return;
     setMembers(roster);
     if (user) {
       const mine = roster.find(m => m.user_id === user.id);
@@ -333,8 +351,20 @@ export default function LoungeRoomScreen() {
   // ── Hydrate lounge metadata + membership ──
   useEffect(() => {
     if (!id) return;
+    // ── THE ROOM MAY HAVE CHANGED BEFORE THIS ANSWERS ───────────────────────
+    // expo-router reuses this screen when only the `[id]` param changes, so
+    // opening room A and then room B leaves A's query in the air. It used to
+    // land unconditionally: `localLounge` became A's row while the member was
+    // in B, and `activeLounge` feeds isCreator, canPost and canRead — so the
+    // gate was decided by the wrong room's membership. A stale `setNotFound`
+    // was worse still: the transcript replaced by "not found" for a room that
+    // is perfectly there.
+    //
+    // Same defect the store's fetchMessages had, in the screen above it.
+    let cancelled = false;
     const loadLounge = async () => {
       const { data: loungeData, error } = await supabase.from('lounges').select('*').eq('id', id).single();
+      if (cancelled) return;
       if (!loungeData || error) { setNotFound(true); return; }
       setLocalLounge(loungeData);
       const store = useLoungeStore.getState();
@@ -342,6 +372,7 @@ export default function LoungeRoomScreen() {
     };
     loadLounge();
     refreshMembership();
+    return () => { cancelled = true; };
   }, [id, refreshMembership]);
 
   const activeLounge = localLounge || lounges.find(l => l.id === id);
