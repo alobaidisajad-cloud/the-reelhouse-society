@@ -101,6 +101,18 @@ export function useDispatchArchive(): DispatchArchive {
 
   const subjectId = useRef<number | null>(null);
   const seq = useRef(0);
+  /**
+   * How many rows the SERVER has handed over for this film, which is not the
+   * same as how many are on screen.
+   *
+   * `parseFilingRows` drops a row it cannot read, so `filings.length` runs
+   * BEHIND the offset actually consumed. Paging from `filings.length` therefore
+   * asked for rows already fetched, and the archive repeated filings — one
+   * unreadable row is all it takes. notificationStore carries the same warning
+   * about building a cursor from the salvaged rows rather than the raw ones;
+   * this is the offset-shaped version of it.
+   */
+  const fetched = useRef(0);
 
   // ── THE SEARCH ────────────────────────────────────────────────────────────
   const search = useCallback(async (q: string) => {
@@ -182,14 +194,22 @@ export function useDispatchArchive(): DispatchArchive {
         .is('withheld_at', null)
         .is('ended_at', null)
         .order('created_at', { ascending: false })
+        // The id is the tiebreaker, so two filings made in the same instant
+        // keep one order across pages instead of swapping between requests and
+        // handing the reader a duplicate at the seam. Every other paginated
+        // read in the app carries this second key.
+        .order('id', { ascending: false })
         .range(from, from + ARCHIVE_PAGE - 1);
       if (mine !== seq.current) return;
       if (rows.error) { logger.warn(`[archive] filings: ${rows.error.message}`); return; }
 
+      const raw = rows.data?.length ?? 0;
       const { filings: got, dropped } = parseFilingRows(rows.data ?? []);
       if (dropped > 0) logger.warn(`[archive] ${dropped} filing(s) failed to parse`);
+      // Count what the SERVER gave, not what survived parsing — see `fetched`.
+      fetched.current = from === 0 ? raw : fetched.current + raw;
       setFilings((prev) => (from === 0 ? got : [...prev, ...got]));
-      setMore((rows.data?.length ?? 0) === ARCHIVE_PAGE);
+      setMore(raw === ARCHIVE_PAGE);
 
       if (from === 0) {
         setCount(rows.count ?? got.length);
@@ -223,6 +243,7 @@ export function useDispatchArchive(): DispatchArchive {
   const choose = useCallback((m: ArchiveMatch) => {
     seq.current += 1;
     subjectId.current = m.subjectId;
+    fetched.current = 0;
     setFilm(m.film);
     setFilings([]); setCount(0); setSpan(''); setMore(false);
     void page(0);
@@ -231,13 +252,17 @@ export function useDispatchArchive(): DispatchArchive {
   const clear = useCallback(() => {
     seq.current += 1;
     subjectId.current = null;
+    fetched.current = 0;
     setFilm(null); setFilings([]); setCount(0); setSpan(''); setMore(false);
   }, []);
 
   const loadMore = useCallback(() => {
     if (loading || !more) return;
-    void page(filings.length);
-  }, [loading, more, filings.length, page]);
+    // The offset the SERVER is at, not the number of rows on screen. Paging
+    // from `filings.length` re-requested everything that failed to parse, so
+    // one unreadable filing made the archive repeat rows at every seam after it.
+    void page(fetched.current);
+  }, [loading, more, page]);
 
   return {
     query, setQuery,
