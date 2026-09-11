@@ -1250,11 +1250,21 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       };
     });
 
-    const { error } = await supabase.from('lounge_members').delete()
+    // ── A DELETE THAT MATCHES NOTHING IS NOT AN ERROR ────────────────────────
+    // PostgREST answers 200 with an empty body when the predicate or the RLS
+    // policy refuses every row, so `error` is null and this read as success.
+    // The member was told they had left a room they were still sitting in, and
+    // the optimistic removal made the lie look true until the next fetch.
+    //
+    // `.select('id')` makes the refusal legible: no rows back means no row
+    // changed. Proved against production — a member running this exact delete
+    // on a row that is not theirs gets 0 rows and no error.
+    const { data: removed, error } = await supabase.from('lounge_members').delete()
       .eq('lounge_id', loungeId)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .select('id');
 
-    if (error) {
+    if (error || !removed || removed.length === 0) {
       // Left mid-flight — see sessionGuard. Writing here would repopulate a store
       // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return;
@@ -1282,11 +1292,21 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // Optimistic removal
     set(s => ({ lounges: s.lounges.filter(l => l.id !== loungeId) }));
     
-    const { error } = await supabase.from('lounges').delete()
+    // ── A DELETE THAT MATCHES NOTHING IS NOT AN ERROR ────────────────────────
+    // Same class as leaveLounge above. `.eq('creator_id', user.id)` plus the
+    // "Creators can delete own lounges" policy means a non-creator's delete
+    // touches no rows — and PostgREST reports that as 200, no error. This
+    // returned true, kept the optimistic removal, and the salon simply vanished
+    // from the member's list while it went on existing for everyone else.
+    //
+    // Proved against production: a member deleting a lounge they did not create
+    // gets ROWS_DELETED=0, no error, and the lounge is still there afterwards.
+    const { data: destroyed, error } = await supabase.from('lounges').delete()
       .eq('id', loungeId)
-      .eq('creator_id', user.id);
-    
-    if (error) {
+      .eq('creator_id', user.id)
+      .select('id');
+
+    if (error || !destroyed || destroyed.length === 0) {
       reelToast.error('Failed to incinerate lounge.');
       await get().fetchLounges(); // Revert
       return false;

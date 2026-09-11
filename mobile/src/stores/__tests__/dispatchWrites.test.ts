@@ -38,7 +38,7 @@ jest.mock('../../lib/supabase', () => ({
     from: (table: string) => {
       const chain: Record<string, unknown> = {};
       const self = () => chain;
-      /** Set by `update`, so `then` can answer with a row rather than nothing. */
+      /** Set by `update`/`delete`, so `then` can answer with a row rather than nothing. */
       let updated = false;
       chain.select = () => self();
       chain.eq = () => self();
@@ -65,7 +65,19 @@ jest.mock('../../lib/supabase', () => ({
         updated = true;
         return self();
       };
-      chain.delete = () => { mockSent.push({ table, op: 'delete', row: null }); return self(); };
+      /**
+       * A DELETE is the same story as the UPDATE above, and for the same
+       * reason: `removeCritique` now asks for `.select('id')`, because a row an
+       * RLS policy refuses matches nothing and PostgREST calls that 200. So a
+       * landed delete has to answer with the row it destroyed — otherwise every
+       * withdrawal in this file looks refused, which is exactly what the first
+       * run of that change reported.
+       */
+      chain.delete = () => {
+        mockSent.push({ table, op: 'delete', row: null });
+        updated = true;
+        return self();
+      };
       chain.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
         answer()
           .then((r: { data: unknown; error: unknown }) =>

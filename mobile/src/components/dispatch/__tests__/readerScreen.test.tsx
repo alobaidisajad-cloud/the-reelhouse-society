@@ -103,7 +103,11 @@ jest.mock('@/src/lib/supabase', () => ({
       // RLS refuses matches NOTHING, and matching nothing is not an error. The
       // mock has to answer with a row, or every amendment looks refused.
       chain.update = () => { updated = true; return self(); };
-      chain.delete = () => self();
+      // A DELETE asks for its rows back for the same reason — `removeCritique`
+      // does `.select('id')`, since a refused row matches nothing and PostgREST
+      // reports that as 200. A landed delete must answer with the row it
+      // destroyed, or withdrawing a critique looks refused here.
+      chain.delete = () => { updated = true; return self(); };
       chain.then = (res: (v: unknown) => unknown) =>
         Promise.resolve(updated ? { data: [{ id: 'row' }], error: null } : { data: [], error: null })
           .then(res);

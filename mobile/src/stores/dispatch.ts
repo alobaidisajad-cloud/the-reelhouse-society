@@ -1065,12 +1065,23 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     }));
 
     try {
-      const { error } = await supabase
+      // ── A REFUSED DELETE IS NOT AN ERROR ──────────────────────────────────
+      // PostgREST answers 200 with an empty body when the predicate or the RLS
+      // policy matches no row, so `error` stays null. Without asking for the
+      // row back, a refusal was indistinguishable from success: the critique
+      // vanished from its author's screen and the filing's count dropped by
+      // one, while the critique went on standing for every other member.
+      //
+      // `.select('id')` turns that into the rollback below, which is what the
+      // author should see. Same class as leaveLounge and deleteLounge.
+      const { data: removed, error } = await supabase
         .from('dispatch_comments')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select('id');
       if (error) throw error;
+      if (!removed || removed.length === 0) throw new Error('critique not removed');
     } catch (e) {
       if (isNetworkError(e)) {
         enqueueMutation({ type: 'remove_critique', payload: { id, user_id: user.id } });
