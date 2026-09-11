@@ -40,7 +40,30 @@ const SLICES = [
   // the file was written, which is the whole point of enumerating rather than
   // listing what somebody noticed.
   'src/stores/dispatch.ts',
+  // The auth store itself, which was never listed — it owns the logout, so it
+  // read as the one file that could not have this defect. It can. `updateUser`
+  // awaits a profile write and, on failure, puts the PREVIOUS member's whole
+  // user object back into the store and writes it to encrypted storage under
+  // their id. A logout landing inside that window resurrected the member who
+  // had just left, identity and cache together.
+  //
+  // Its sign-in paths are a different matter and are listed below: they
+  // legitimately establish a member where there was none, and a
+  // captured-member guard is meaningless for them.
+  'src/stores/auth.ts',
 ];
+
+/**
+ * Operations that write after an await and MUST NOT carry the guard.
+ *
+ * Signing in is the whole exception: `memberUnchanged(null)` asks "nobody then,
+ * nobody now", and a successful sign-in makes that false by design. Guarding
+ * these would throw away the session the member just created. Named one at a
+ * time so the exemption cannot quietly widen.
+ */
+const ESTABLISHES_A_MEMBER = new Set([
+  'login', 'signup', 'restoreSession', 'logout', 'deleteAccount',
+]);
 
 const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
@@ -102,6 +125,12 @@ function opsWritingAfterAwait(file: string): Op[] {
     // the guard has nothing to ask. Its equivalent protection is unsubscribing
     // on logout, which the test below asserts actually happens.
     if (/^\s*subscribeTo\w+:/.test(lines[start])) continue;
+
+    // Signing in, out, and account deletion CHANGE who the member is on
+    // purpose, so the captured-member question has no useful answer for them.
+    // Named individually above; anything not on that list is policed normally.
+    const opName = (/^\s*(\w+)\s*[:=]/.exec(lines[start]) ?? [])[1];
+    if (opName && ESTABLISHES_A_MEMBER.has(opName)) continue;
 
     out.push({ file, name: lines[start].trim().slice(0, 70), line: start + 1 });
   }

@@ -103,6 +103,23 @@ function pruneThrottles() {
   }
 }
 
+/**
+ * "Is this still the member who asked for this work?"
+ *
+ * ── WHY THIS IS DECLARED HERE AND NOT IMPORTED ─────────────────────────────
+ * It is `memberUnchanged` from domain/helpers/sessionGuard, restated. That
+ * helper imports THIS file to read the store, so auth.ts cannot import it back
+ * without a cycle — and a cycle here resolves to `undefined` at module init on
+ * Hermes, which would silently disable the guard rather than fail loudly.
+ * Same name on purpose: the enumeration in staleWriteGuard.test.ts recognises
+ * it, so the auth store is policed by the same rule as every other store.
+ *
+ * A function declaration, so it is hoisted above the store it reads.
+ */
+function memberUnchanged(capturedUserId: string | null): boolean {
+  return (useAuthStore.getState().user?.id ?? null) === capturedUserId;
+}
+
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   isAuthenticated: false,
@@ -528,6 +545,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         // Rollback optimistic update
         if (__DEV__) console.warn('[updateUser] DB sync failed, rolling back:', e);
         storage.delete(`dirty_profile_${user.id}`);
+        // \u2500\u2500 ONLY IF THEY ARE STILL HERE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        // This rollback restores the member's WHOLE user object and writes it
+        // back to encrypted storage under their id. A logout landing inside
+        // the await above meant it did both AFTER the reset had cleared them:
+        // the member who had just left was put back into the store, and their
+        // profile \u2014 email included \u2014 was rewritten to the very cache key the
+        // logout wipe had deleted.
+        //
+        // The auth store was the one store this enumeration never covered,
+        // because it owns the logout and so read as immune. It is not.
+        if (!memberUnchanged(prevUser.id)) return;
         set({ user: prevUser });
         setSensitive(`ironvault_user_cache_${prevUser.id}`, JSON.stringify(prevUser));
         reelToast.error('Profile update failed \u2014 changes reverted.');
@@ -608,6 +636,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         // stays set so restoreSession re-pushes the (now-consistent) baseline on next launch.
         const baseline = _prefBaselines.get(user.id) ?? {};
         _prefBaselines.delete(user.id);
+        // Same reason as updateUser's rollback, with an extra wrinkle: this one
+        // runs on a 1000ms debounce, so logging out just after changing a
+        // setting lands it squarely in the window. The `set` was already safe
+        // (it returns null when there is no user), but the cache write was not:
+        // it rewrote the departed member's cache key — recreating a file the
+        // logout wipe removes — with whatever `get().user` held by then.
+        if (!memberUnchanged(user.id)) return;
         set((state) => ({ user: state.user ? { ...state.user, preferences: { ...baseline } } : null }));
         setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify(get().user));
         if (__DEV__) console.warn('[setPreference] DB sync failed, rolled back window locally');
