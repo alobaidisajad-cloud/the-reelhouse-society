@@ -609,7 +609,17 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             );
           }
         }
-        set({ currentMessages: finalMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id)) });
+        // ── THE ROOM MAY HAVE CHANGED WHILE THIS WAS IN FLIGHT ──────────────
+        // Tapping room A and then room B starts two fetches. If A's is slower
+        // it lands LAST and wrote A's conversation into the store while the
+        // screen showed B — the member read one room's words under another
+        // room's name, and anything they then sent went to B.
+        //
+        // sendMessage has guarded this since it was written
+        // (`if (s.currentLoungeId !== loungeId) return s`). The fetch never did.
+        set(s => (s.currentLoungeId !== loungeId ? s : {
+          currentMessages: finalMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id)),
+        }));
       }
     } catch {
       reelToast.error('Could not load messages — check your connection.');
@@ -617,7 +627,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // Left mid-flight — see sessionGuard. Writing here would repopulate a store
     // the logout reset has already cleared.
     if (!memberUnchanged(startedAs)) return;
-    set({ loading: false });
+    // Same reason: a stale fetch must not take down the spinner the room the
+    // member is actually looking at is still raising.
+    set(s => (s.currentLoungeId !== loungeId ? s : { loading: false }));
   },
 
   loadMoreMessages: async (loungeId: string) => {
@@ -679,7 +691,21 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         // Left mid-flight — see sessionGuard. Writing here would repopulate a store
         // the logout reset has already cleared.
         if (!memberUnchanged(startedAs)) return;
-        set({ currentMessages: [...filteredOlder, ...current] });
+        // ── MERGE AGAINST THE LIVE LIST, NOT THE SNAPSHOT ───────────────────
+        // `current` was read BEFORE the await. Writing `[...older, ...current]`
+        // put the list back the way it was when the page started, so any
+        // dispatch that arrived over realtime while the member was scrolling up
+        // was silently erased — the one message-loss bug a reader would never
+        // think to report, because they never saw it arrive.
+        //
+        // The room guard is the same one fetchMessages needed: paging in room A
+        // must not prepend A's history onto B's transcript.
+        set(s => {
+          if (s.currentLoungeId !== loungeId) return s;
+          const have = new Set(s.currentMessages.map(m => m.id));
+          const older = filteredOlder.filter(m => !have.has(m.id));
+          return older.length === 0 ? s : { currentMessages: [...older, ...s.currentMessages] };
+        });
       }
     } catch {
       // FIX #10: Surface pagination failures instead of silently swallowing

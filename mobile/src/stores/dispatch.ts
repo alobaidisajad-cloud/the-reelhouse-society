@@ -904,11 +904,18 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
   // ── CRITIQUES ─────────────────────────────────────────────────────────────
   fetchCritiques: async (postId, order) => {
+    // readCritiquePage guards its own writes; this one is the caller's, and it
+    // lands after the await too. Without the guard a logout mid-read put this
+    // filing's id back into a store the reset had just cleared — the previous
+    // member's post id sitting in the next member's state. See staleWriteGuard:
+    // these two were invisible to it until its boundary walker was fixed.
+    const startedAs = useAuthStore.getState().user?.id ?? null;
     set((st) => ({
       critiquesLoading: { ...st.critiquesLoading, [postId]: true },
       critiquesOrder: { ...st.critiquesOrder, [postId]: order },
     }));
     await readCritiquePage(postId, order, 0, set);
+    if (!memberUnchanged(startedAs)) return;
     set((st) => ({ critiquesLoading: { ...st.critiquesLoading, [postId]: false } }));
   },
 
@@ -931,10 +938,14 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     if (st0.critiquesLoading[postId] || st0.critiquesLoadingMore[postId]) return;
     if (!st0.critiquesHasMore[postId]) return;
 
+    // Same as fetchCritiques: the trailing write is this function's own and
+    // lands after the await.
+    const startedAs = useAuthStore.getState().user?.id ?? null;
     const order = st0.critiquesOrder[postId] ?? 'NEWEST';
     const from = (st0.critiques[postId] ?? []).length;
     set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: true } }));
     await readCritiquePage(postId, order, from, set);
+    if (!memberUnchanged(startedAs)) return;
     set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: false } }));
   },
 

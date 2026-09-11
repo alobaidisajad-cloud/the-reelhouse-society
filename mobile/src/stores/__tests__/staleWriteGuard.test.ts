@@ -56,9 +56,20 @@ function opsWritingAfterAwait(file: string): Op[] {
   // next function and inherited that function's writes. deleteLounge was
   // reported unguarded on exactly that basis, while its own rollback is a
   // refetch that is guarded in its own right.
+  // ── A BOUNDARY IS A DEFINITION, NEVER A BARE CALL ─────────────────────────
+  // The previous pattern made `:` and `=` optional, so ANY `word(` sitting at
+  // four spaces or less opened a new pseudo-function — `set(`, `if (`,
+  // `return (`. fetchMessages was being cut into three fragments, and that is
+  // not merely noisy: the fragment holding `memberUnchanged(...)` becomes a
+  // DIFFERENT fragment from the one holding the writes. So the walker could
+  // report a guarded operation as unguarded, and — the direction that actually
+  // costs something — exempt a fragment because a guard belonging to unrelated
+  // code happened to fall inside it.
+  //
+  // A member is `name: (`, `name: async (`, or `name = (`. A call is not.
   const starts: number[] = [];
   lines.forEach((l, i) => {
-    if (/^\s{0,4}(export const )?\w+:?\s*(=\s*)?(async\s*\(|\()/.test(l)) starts.push(i);
+    if (/^\s{0,4}(export const )?\w+\s*(?::|=)\s*(?:async\s*)?\(/.test(l)) starts.push(i);
   });
 
   const out: Op[] = [];
