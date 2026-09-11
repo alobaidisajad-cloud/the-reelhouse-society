@@ -154,6 +154,28 @@ export function getQueueLength(): number {
 
 /** Clear entire offline queue (synchronous) */
 export function clearOfflineQueue(): void {
+    // ── A SWEEP OF THE PREFIX, NOT A LIST OF KEYS ───────────────────────────
+    // This emptied the main queue and nothing else. `QUEUE_KEY + '_dead_letter'`
+    // is written in FOUR places and was cleared in none of them — not at
+    // logout, not anywhere. It holds failed mutations WITH their payloads: the
+    // body of a critique, the text of a lounge message, a log's review. So one
+    // member's writing stayed on the phone after they signed out, and the next
+    // person to sign in was carrying it.
+    //
+    // Its only pruning is a 7-day age filter that runs when something NEW is
+    // dead-lettered, so with no further failures it sat there indefinitely.
+    //
+    // Erased by prefix for the reason memberDrafts.clearAllDrafts gives: four
+    // draft keys went unerased for as long as they existed precisely because
+    // erasing them was a list somebody had to remember. A fifth queue key added
+    // later is caught by this without anyone thinking of it.
+    try {
+        for (const key of storage.getAllKeys()) {
+            if (key.startsWith(QUEUE_KEY)) storage.delete(key);
+        }
+    } catch (e) {
+        logger.warn(`[OfflineSync] could not clear the queue on logout: ${String(e)}`);
+    }
     writeQueue([]);
     useOfflineQueueStore.setState({ pending: 0 });
 }
