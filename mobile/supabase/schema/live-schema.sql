@@ -6821,7 +6821,7 @@ CREATE POLICY "Users can delete own messages" ON public.lounge_messages FOR DELE
 -- Name: notifications Users can delete own notifications; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE USING ((auth.uid() = user_id));
+CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE TO authenticated USING ((auth.uid() = user_id));
 
 
 --
@@ -7007,7 +7007,7 @@ CREATE POLICY "Users can update own messages" ON public.lounge_messages FOR UPDA
 -- Name: notifications Users can update own notifications; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE USING ((auth.uid() = user_id));
+CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE TO authenticated USING ((auth.uid() = user_id));
 
 
 --
@@ -7035,7 +7035,7 @@ CREATE POLICY "Users can view own errors" ON public.error_logs FOR SELECT USING 
 -- Name: notifications Users can view own notifications; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT USING ((auth.uid() = user_id));
+CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT TO authenticated USING ((auth.uid() = user_id));
 
 
 --
@@ -9425,7 +9425,6 @@ GRANT ALL ON TABLE public.mod_actions TO service_role;
 -- Name: TABLE notifications; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.notifications TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.notifications TO authenticated;
 GRANT ALL ON TABLE public.notifications TO service_role;
 
