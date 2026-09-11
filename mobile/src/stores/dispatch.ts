@@ -1143,7 +1143,21 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   },
 }));
 
-registerStoreReset(() => useDispatch.setState(emptyState()));
+registerStoreReset(() => {
+  useDispatch.setState(emptyState());
+  // ── THE FETCH THE PREVIOUS MEMBER LEFT IN THE AIR ──────────────────────────
+  // `emptyState()` is zustand state; `inflight` and `generation` are module
+  // variables and the reset could not see them. `fetch` opens with
+  // `if (inflight) return inflight`, so a member signing in while the last
+  // member's request was still flying got handed THAT promise — which then
+  // failed its own `memberUnchanged` check, painted nothing, and left them on
+  // an empty Dispatch until they pulled to refresh.
+  //
+  // `invalidateInflight()` is the store's own primitive for exactly this: it
+  // bumps the generation AND drops the promise, because doing only the first
+  // discards the stale answer and still hands back the stale promise.
+  invalidateInflight();
+});
 
 /**
  * A timed, cancellable read — without the two casts per call site.
