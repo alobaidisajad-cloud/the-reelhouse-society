@@ -73,15 +73,40 @@ export const FollowRequestService = {
     // !inner is deliberate: a request whose requester profile is not readable is
     // dropped, exactly as the previous code dropped it after the fact — but now
     // the page length is honest instead of silently short.
+    // ── THE CURSOR CARRIES A TIEBREAKER ────────────────────────────────────
+    // It was `lt('created_at', cursor)` alone. A bare timestamp cursor skips
+    // every row sharing the boundary row's timestamp, and the skip is
+    // PERMANENT: the next page starts strictly below them, so those requests
+    // never load and the door simply shows fewer people than are standing at
+    // it — with no error anywhere.
+    //
+    // Latent rather than live: every follow request is a single-row insert, so
+    // two would have to land in the same microsecond and the tie would then
+    // have to straddle a page boundary. Production was checked and holds zero
+    // ties. But Postgres freezes now() for a whole transaction, so anything
+    // that ever writes requests in a batch makes this live at once.
+    //
+    // Same repair as socialSlice's hydrate, and the same shape the
+    // notification store, the feed, the lounge and the logs already use. The
+    // cursor is opaque to its only caller (useFollowRequests stores it and
+    // hands it back), so widening it to `created_at|id` breaks nothing.
     let q = supabase
       .from('interactions')
-      .select('user_id, created_at, profiles!interactions_user_id_fkey!inner(username, avatar_url)')
+      .select('id, user_id, created_at, profiles!interactions_user_id_fkey!inner(username, avatar_url)')
       .eq('target_user_id', myId)
       .eq('type', 'follow_request')
       .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
       .limit(PAGE_SIZE + 1);
 
-    if (cursor) q = q.lt('created_at', cursor);
+    if (cursor) {
+      const [at, id] = cursor.split('|');
+      q = id
+        ? q.or(`created_at.lt.${at},and(created_at.eq.${at},id.lt.${id})`)
+        // A cursor from a request already in flight when this shipped has no
+        // id half. Falling back keeps that page working rather than throwing.
+        : q.lt('created_at', at);
+    }
     if (pattern) q = q.ilike('profiles.username', `*${pattern}*`);
 
     const { data: rows, error } = await q;
@@ -91,7 +116,7 @@ export const FollowRequestService = {
     }
 
     type Requester = { username: string; avatar_url: string | null };
-    type Row = { user_id: string; created_at: string; profiles: Requester | Requester[] | null };
+    type Row = { id: string; user_id: string; created_at: string; profiles: Requester | Requester[] | null };
     const page = (rows ?? []) as Row[];
     const hasMore = page.length > PAGE_SIZE;
     const sliced = hasMore ? page.slice(0, PAGE_SIZE) : page;
@@ -105,7 +130,10 @@ export const FollowRequestService = {
       })
       .filter((x): x is FollowRequest => x !== null);
 
-    const nextCursor = hasMore ? sliced[sliced.length - 1].created_at : null;
+    // Both halves, from the same row, so the filter above and the ordering
+    // agree. Taking only the timestamp is what made the tie invisible.
+    const last = sliced[sliced.length - 1];
+    const nextCursor = hasMore ? `${last.created_at}|${last.id}` : null;
     return { items, nextCursor };
   },
 
