@@ -420,6 +420,7 @@ const MAX_HYDRATE_PAGES = 10;
 // Hoisted to module scope to avoid re-compiling Zod schemas
 // on every pagination loop iteration (was inside the while loop).
 const HydrateRowSchema = z.object({
+  id: z.string(),
   target_user_id: z.string(),
   created_at: z.string(),
   type: z.string(),
@@ -438,7 +439,7 @@ export async function hydrateFollowing(): Promise<void> {
   try {
     const allUsernames: string[] = [];
     const allRequested: string[] = [];
-    let cursor: string | null = null;
+    let cursor: { at: string; id: string } | null = null;
     let hasMore = true;
     let pageCount = 0;
 
@@ -451,17 +452,38 @@ export async function hydrateFollowing(): Promise<void> {
       // Cursor-based keyset pagination replaces offset pagination.
       // .range(offset, offset + N) is O(N²) aggregate on Postgres because
       // later pages must scan and discard all prior rows. Keyset pagination
-      // with .gt('created_at', cursor) is O(N) because it uses an index scan.
+      // is O(N) because it uses an index scan.
+      //
+      // ── THE CURSOR CARRIES A TIEBREAKER ─────────────────────────────────
+      // It used to be `gt('created_at', cursor)` alone. A bare timestamp
+      // cursor skips every row sharing the boundary row's timestamp, and the
+      // skip is PERMANENT, because the next page starts strictly above them.
+      //
+      // Latent rather than live today: every write here is a single-row
+      // insert, so two follows would have to land in the same microsecond, and
+      // the tie would then have to straddle a 1000-row page boundary. Checked
+      // against production — zero ties exist. But Postgres freezes now() for a
+      // whole transaction, so the day anything writes follows in a batch (an
+      // import, a migration, a "follow everyone you followed elsewhere"), every
+      // one of them shares a timestamp and this silently loses all but the
+      // boundary row.
+      //
+      // Every other paginated read in the app already carries the second key —
+      // FeedService, lounge, notifications, logs, watchlist. This was the only
+      // one that did not.
       let query = supabase
         .from('interactions')
-        .select('target_user_id, created_at, type, profiles!interactions_target_user_id_fkey(username)')
+        .select('id, target_user_id, created_at, type, profiles!interactions_target_user_id_fkey(username)')
         .eq('user_id', userId)
         .in('type', ['follow', 'follow_request'])
         .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
         .limit(HYDRATE_PAGE_SIZE);
 
       if (cursor) {
-        query = query.gt('created_at', cursor);
+        query = query.or(
+          `created_at.gt.${cursor.at},and(created_at.eq.${cursor.at},id.gt.${cursor.id})`,
+        );
       }
 
       const { data, error } = await query;
@@ -494,8 +516,11 @@ export async function hydrateFollowing(): Promise<void> {
           }
       });
 
-      // Set cursor to the last row's created_at for the next page
-      cursor = (data[data.length - 1] as { created_at: string }).created_at;
+      // Both halves of the cursor come from the last row of the page, so the
+      // filter above and the ordering agree. Taking only the timestamp is what
+      // made the tie invisible.
+      const last = data[data.length - 1] as { created_at: string; id: string };
+      cursor = { at: last.created_at, id: last.id };
       hasMore = data.length === HYDRATE_PAGE_SIZE;
       pageCount++;
     }
@@ -513,7 +538,7 @@ export async function hydrateFollowing(): Promise<void> {
 async function _hydrateFollowingFallback(userId: string): Promise<void> {
   const allUsernames: string[] = [];
   const allRequested: string[] = [];
-  let cursor: string | null = null;
+  let cursor: { at: string; id: string } | null = null;
   let hasMore = true;
   let pageCount = 0;
 
@@ -523,17 +548,22 @@ async function _hydrateFollowingFallback(userId: string): Promise<void> {
       logger.warn(`[socialSlice._hydrateFollowingFallback] Capped at ${allUsernames.length} following`);
       break;
     }
-    // Cursor-based keyset pagination for the fallback path too.
+    // Cursor-based keyset pagination for the fallback path too — with the same
+    // tiebreaker as the joined path above, for the same reason. A fix applied
+    // to one of two identical loops is the shape of the next silent bug.
     let query = supabase
       .from('interactions')
-      .select('target_user_id, created_at, type, profiles!interactions_target_user_id_fkey(username)')
+      .select('id, target_user_id, created_at, type, profiles!interactions_target_user_id_fkey(username)')
       .eq('user_id', userId)
       .in('type', ['follow', 'follow_request'])
       .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
       .limit(HYDRATE_PAGE_SIZE);
 
     if (cursor) {
-      query = query.gt('created_at', cursor);
+      query = query.or(
+        `created_at.gt.${cursor.at},and(created_at.eq.${cursor.at},id.gt.${cursor.id})`,
+      );
     }
 
     const { data: followRows, error: followErr } = await query;
@@ -564,7 +594,8 @@ async function _hydrateFollowingFallback(userId: string): Promise<void> {
       }
     });
 
-    cursor = (followRows[followRows.length - 1] as { created_at: string }).created_at;
+    const lastRow = followRows[followRows.length - 1] as { created_at: string; id: string };
+    cursor = { at: lastRow.created_at, id: lastRow.id };
     hasMore = followRows.length === HYDRATE_PAGE_SIZE;
     pageCount++;
   }
