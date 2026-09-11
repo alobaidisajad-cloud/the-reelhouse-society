@@ -38,8 +38,14 @@ jest.mock('expo-router', () => {
 
 
 describe('AuthGuard', () => {
-  afterEach(() => {
-    useAuthStore.setState({ user: null, isAuthenticated: false, loading: false });
+  afterEach(async () => {
+    // This runs while the test's tree is STILL MOUNTED — cleanup comes after —
+    // so resetting the store here re-renders a subscribed AuthGuard. That is a
+    // React update like any other and belongs inside act; unwrapped, it was the
+    // source of both warnings this file emitted.
+    await act(async () => {
+      useAuthStore.setState({ user: null, isAuthenticated: false, loading: false });
+    });
   });
 
   it('renders children when authenticated', async () => {
@@ -53,7 +59,7 @@ describe('AuthGuard', () => {
       </AuthGuard>
     );
 
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 
     expect(getByText('Protected content')).toBeTruthy();
   });
@@ -67,7 +73,7 @@ describe('AuthGuard', () => {
       </AuthGuard>
     );
 
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 
     expect(getAllByTestId('skeleton').length).toBeGreaterThan(0);
   });
@@ -81,7 +87,7 @@ describe('AuthGuard', () => {
       </AuthGuard>
     );
 
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 
     expect(queryByText('Protected content')).toBeNull();
     expect(getByTestId('redirect')).toBeTruthy();

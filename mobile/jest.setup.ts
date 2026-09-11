@@ -54,6 +54,62 @@ if (!RN.AccessibilityInfo?.announceForAccessibility) {
   };
 }
 
+// ── FlashList, rendered SYNCHRONOUSLY ───────────────────────────────────────
+// The real FlashList measures itself one tick after mount and sets state, so
+// every suite that renders one emitted "An update to ForwardRef(FlashList)
+// inside a test was not wrapped in act(...)" — eighteen of them across twelve
+// suites, none of which is a defect in this app's code and all of which are
+// noise a real warning can hide behind.
+//
+// It also lays nothing out in the test renderer: cells come back zero-wide, so
+// the real component was never giving these tests anything the mock does not.
+// Rendering the rows straight through is strictly MORE truthful here — a test
+// can now assert on the rows a list was asked to draw.
+//
+// Every prop is spread onto the host view, because suites assert on what the
+// list RECEIVED (keyboardShouldPersistTaps, onScroll, estimatedItemSize). The
+// ref carries the scroll methods callers use, as no-ops.
+jest.mock('@shopify/flash-list', () => {
+  const RNActual = jest.requireActual('react-native');
+  const ReactActual = jest.requireActual('react');
+
+  const FlashList = ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) => {
+    const {
+      data, renderItem, ListHeaderComponent, ListFooterComponent, ListEmptyComponent,
+      keyExtractor, ...rest
+    } = props as Record<string, (...a: unknown[]) => unknown> & Record<string, unknown>;
+
+    ReactActual.useImperativeHandle(ref, () => ({
+      scrollToOffset: () => {}, scrollToIndex: () => {}, scrollToItem: () => {},
+      scrollToEnd: () => {}, prepareForLayoutAnimationRender: () => {},
+      recordInteraction: () => {}, getScrollableNode: () => null,
+    }));
+
+    const node = (C: unknown) =>
+      typeof C === 'function' ? ReactActual.createElement(C as never) : (C ?? null);
+
+    const rows = Array.isArray(data) ? data : [];
+    const body = rows.length === 0
+      ? node(ListEmptyComponent)
+      : rows.map((item: unknown, index: number) =>
+          ReactActual.createElement(
+            RNActual.View,
+            { key: typeof keyExtractor === 'function' ? keyExtractor(item, index) : String(index) },
+            typeof renderItem === 'function' ? renderItem({ item, index, target: 'Cell' }) : null,
+          ));
+
+    return ReactActual.createElement(
+      RNActual.View,
+      { ...rest, data, testID: (rest as { testID?: string }).testID },
+      node(ListHeaderComponent),
+      body,
+      node(ListFooterComponent),
+    );
+  });
+  FlashList.displayName = 'FlashList';
+  return { __esModule: true, FlashList, default: FlashList };
+});
+
 // Mock react-native-mmkv (C++ native module not available in Jest)
 jest.mock('react-native-mmkv', () => ({
   MMKV: jest.fn(() => ({

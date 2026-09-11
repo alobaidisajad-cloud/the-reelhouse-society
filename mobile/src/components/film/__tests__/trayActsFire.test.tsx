@@ -59,7 +59,10 @@ describe('a row announces itself as one act', () => {
 });
 
 describe('pressing an act runs it', () => {
-  it('fires the handler for the row that was pressed', () => {
+  // `fireEvent` awaits an act of its own, so an un-awaited press leaves that act
+  // open while the next one starts — which React reports as overlapping act()
+  // calls, and which means an assertion can read state mid-update.
+  it('fires the handler for the row that was pressed', async () => {
     const log = jest.fn();
     const share = jest.fn();
     const t = render(<FilmActionTray {...base} acts={[
@@ -67,20 +70,20 @@ describe('pressing an act runs it', () => {
       act({ key: 'nitrate', label: 'THE NITRATE FILE', onPress: share }),
     ]} />);
 
-    fireEvent.press(t.getByText('THE NITRATE FILE'));
+    await fireEvent.press(t.getByText('THE NITRATE FILE'));
     expect(share).toHaveBeenCalledTimes(1);
     // And ONLY that one — a row that fires its neighbour is the hitSlop bug.
     expect(log).not.toHaveBeenCalled();
   });
 
-  it('fires every act, not just the first', () => {
+  it('fires every act, not just the first', async () => {
     const spies = ['log', 'rewatch', 'watchlist', 'trailer', 'nitrate', 'lounge']
       .map((key) => ({ key, fn: jest.fn() }));
     const t = render(<FilmActionTray {...base} acts={spies.map(({ key, fn }) =>
       act({ key, label: key.toUpperCase(), onPress: fn }))} />);
 
     for (const { key, fn } of spies) {
-      fireEvent.press(t.getByText(key.toUpperCase()));
+      await fireEvent.press(t.getByText(key.toUpperCase()));
       expect(fn).toHaveBeenCalledTimes(1);
     }
   });
