@@ -1372,8 +1372,17 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           // the bottom of this file now actually does; it used to null the
           // channel reference and leave the subscription running.
           set(s => {
+            // ── AND THE ROOM MUST STILL BE THIS ONE ───────────────────────────
+            // This callback AWAITS resolveProfile() — a real query on a cache
+            // miss — and the member can change rooms inside that window. This
+            // is the only one of these handlers that INTRODUCES a message; the
+            // others map over currentMessages by id, so after a room change no
+            // id matches and they do nothing. Without the check, a dispatch
+            // from the room just left appeared in the transcript of the room
+            // just opened.
+            if (s.currentLoungeId !== newMsg.lounge_id) return s;
             const messagesWithoutOpt = s.currentMessages.filter(m => m.id !== newMsg.id);
-            
+
             return {
               currentMessages: capMessages([...messagesWithoutOpt, newMsg].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())),
             };
