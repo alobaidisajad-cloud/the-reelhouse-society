@@ -18,6 +18,7 @@
  */
 import { useFilmStore } from '../films';
 import { clearAllMutexes, runWithMutex } from '../domain/helpers/promiseMutex';
+import { expectSwallowedTypeError } from '@/src/test-support/swallowedTypeError';
 import { captureError } from '@/src/lib/sentry';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { followUser, unfollowUser, hydrateFollowing } from '../domain/socialSlice';
@@ -44,12 +45,12 @@ jest.mock('react-native-mmkv', () => ({
         contains: jest.fn(() => false), getAllKeys: jest.fn(() => []),
     })),
 }));
-jest.mock('../mmkv-storage', () => ({
-    storage: { getString: jest.fn(), set: jest.fn(), delete: jest.fn(), contains: jest.fn(() => false), getAllKeys: jest.fn(() => []), clearAll: jest.fn() },
-    zustandMMKVStorage: { getItem: jest.fn(() => null), setItem: jest.fn(), removeItem: jest.fn() },
-    createAsyncMMKVStorage: jest.fn(() => ({ getItem: jest.fn(() => null), setItem: jest.fn(), removeItem: jest.fn() })),
-    getSecureStorage: jest.fn().mockResolvedValue({ getString: jest.fn(), set: jest.fn(), delete: jest.fn(), contains: jest.fn(() => false) }),
-}));
+// No local mmkv-storage mock on purpose. jest.setup.ts already mocks it with
+// the full export surface and a working in-memory store; this hand-list
+// REPLACED that and dropped `setSensitive`, `isStorageEncrypted`,
+// `zustandMMKVStorageSensitive` and `initEncryptedStorage`, so every
+// followStore.persistFollowing here threw and was swallowed by its own
+// try/catch. Nothing in this file reads storage directly. Take the global.
 
 /**
  * Every builder method returns the same thenable chain, so ANY call shape the
@@ -540,6 +541,12 @@ describe('the last two store paths', () => {
     it('hydrateFollowing reports an unexpected shape from the server', async () => {
         // Malformed payload => a TypeError inside the try, which is precisely
         // the "Unexpected error" this catch was labelled for.
+        //
+        // The TypeError is this test's instrument, not an accident, so it is
+        // declared. Without the declaration the mock-gap trap fails the test,
+        // which is right: everywhere else, a swallowed TypeError means a mock
+        // dropped an export and the test proved nothing.
+        expectSwallowedTypeError('feeds a non-array payload to prove the catch reports it');
         mockDbData = 'not-an-array';
         await hydrateFollowing();
         expect(captureError).toHaveBeenCalledWith(

@@ -1,6 +1,9 @@
 module.exports = {
   preset: 'jest-expo',
   setupFiles: ['./jest.setup.ts'],
+  // Runs after jest's globals exist, so it can register beforeEach/afterEach —
+  // jest.setup.ts cannot. See the header of jest.afterEnv.ts.
+  setupFilesAfterEnv: ['./jest.afterEnv.ts'],
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|react-native-mmkv|react-native-reanimated)',
   ],

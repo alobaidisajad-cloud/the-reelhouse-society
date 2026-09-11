@@ -171,9 +171,27 @@ jest.mock('./src/stores/mmkv-storage', () => ({
 }));
 
 // Mock expo-crypto (native module)
-jest.mock('expo-crypto', () => ({
-  randomUUID: jest.fn(() => 'test-uuid-' + Math.random().toString(36).slice(2, 11)),
-}));
+//
+// ── THE ID MUST BE A REAL UUID ──────────────────────────────────────────────
+// This used to return `'test-uuid-' + random`. That is not a UUID, and a dozen
+// call sites feed `Crypto.randomUUID()` straight into a payload whose Zod
+// schema says `z.string().uuid()` — lounge messages, dispatch filings, offline
+// queue entries, log comments. Under the old mock every one of those writes
+// failed validation and returned `false` BEFORE reaching the network, so any
+// test asserting "it refused" passed for a reason that does not exist in the
+// app. It cost a whole guard: a send-throttle test went green with the
+// throttle deleted, because both sends were dying at the schema instead.
+//
+// Deterministic and sequential, so a failure is reproducible and two ids in one
+// test are never accidentally equal.
+jest.mock('expo-crypto', () => {
+  let seq = 0;
+  return {
+    randomUUID: jest.fn(
+      () => `00000000-0000-4000-8000-${(++seq).toString(16).padStart(12, '0')}`,
+    ),
+  };
+});
 
 // Mock Sentry (native module)
 jest.mock('@sentry/react-native', () => ({
@@ -669,5 +687,52 @@ console.warn = (...args: any[]) => {
     msg.includes('Animated:') ||
     msg.includes('[react-native-gesture-handler]')
   ) return;
+  noteIfMockGap(args);
   originalWarn(...args);
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A MOCK THAT IS MISSING A PIECE MUST NOT PASS QUIETLY
+//
+// jest.setup.ts mocks mmkv-storage with its whole export surface. A test file
+// that re-mocks the same module WINS, and 109 local factories do — several with
+// a shorter hand-list. When the code under test then calls a dropped export it
+// throws `X is not a function`, the store's own try/catch swallows it, and the
+// suite stays green having exercised nothing:
+//
+//   followStore.persistFollowing -> setSensitive is not a function  (6 suites)
+//   socialSlice.hydrateFollowing -> data.forEach is not a function  (1 suite)
+//
+// Both were invisible for as long as they have existed. The failure is always
+// a TypeError reported through a logger, so that is where it is caught: any
+// such text in a warn or error fails the test that produced it. Recorded and
+// asserted afterwards rather than thrown on the spot, because throwing inside
+// a catch block is exactly what an outer catch would swallow again.
+// ─────────────────────────────────────────────────────────────────────────────
+// This file is a `setupFiles` entry, which runs BEFORE the test framework is
+// installed — there is no `beforeEach` here. So it only RECORDS, on the shared
+// global, and jest.afterEnv.ts does the asserting.
+// Every phrasing a mock gap surfaces as. The "Cannot read propert…" forms are
+// here because three FeedService tests hit one: `supabase.rpc` was a bare
+// jest.fn() answering `undefined`, so `rpcResult.error` threw, the catch
+// swallowed it, and all three silently tested the fallback branch instead of
+// the RPC the live app actually uses. Suite-wide count of these is now zero,
+// so any new one is a new gap.
+const MOCK_GAP =
+  /\b(?:is not a function|is not a constructor|is not iterable|is not defined)\b|Cannot read propert(?:y|ies) .*of (?:undefined|null)|undefined is not an object/;
+(globalThis as Record<string, unknown>).__mockGaps = [] as string[];
+
+function noteIfMockGap(args: any[]): void {
+  const text = args
+    .map((a) => (a instanceof Error ? a.message : typeof a === 'string' ? a : ''))
+    .join(' ');
+  if (MOCK_GAP.test(text)) {
+    ((globalThis as Record<string, unknown>).__mockGaps as string[]).push(text.trim());
+  }
+}
+
+const originalError = console.error;
+console.error = (...args: any[]) => {
+  noteIfMockGap(args);
+  originalError(...args);
 };

@@ -152,8 +152,14 @@ export const FeedService = {
 
     // ── Strategy 2: Direct query fallback (no server-side block filter) ──
     // Block/mute filtering for this path happens client-side only, in
-    // useFeeds.ts's `select`. Deploy get_community_feed_auth_cursor to close
-    // that gap.
+    // useFeeds.ts's `select`, so its pages can come up short.
+    //
+    // This is a safety net, not the live path: get_community_feed_auth_cursor
+    // IS deployed, with EXECUTE granted to authenticated, so every real
+    // community feed is served by Strategy 1 above. (The old note here said
+    // "deploy it to close that gap" — it was deployed, and the note outlived
+    // the work. Verified against pg_proc, 21 OUT columns matching
+    // FollowingFeedRowSchema field for field.)
     let query = supabase.from('logs')
       .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role)')
       .not('review', 'is', null).neq('review', '')

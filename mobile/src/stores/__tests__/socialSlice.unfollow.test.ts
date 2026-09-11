@@ -27,9 +27,12 @@ jest.mock('../auth', () => ({
   },
 }));
 
-jest.mock('../mmkv-storage', () => ({
-  storage: { getString: jest.fn(), set: jest.fn(), delete: jest.fn() },
-}));
+// No local mmkv-storage mock on purpose. jest.setup.ts already mocks it with
+// the full export surface and a working in-memory store; a three-key hand-list
+// here REPLACED that and dropped `setSensitive`, so every
+// followStore.persistFollowing in this file threw, was swallowed by its own
+// try/catch, and the follow graph was never actually persisted in any of these
+// tests. Take the global.
 
 jest.mock('../../utils/offlineQueue', () => ({
   enqueueMutation: (m: unknown) => mockEnqueue(m),

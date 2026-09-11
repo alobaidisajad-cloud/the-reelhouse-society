@@ -1,5 +1,21 @@
 import * as fc from 'fast-check';
 import { getTierWeight, isArchivistPlusTier, isAuteurPlusTier, normalizeTier, resolveTier } from '../tier';
+import { logger } from '../logger';
+
+/**
+ * ── THIS SUITE IS MUZZLED ON PURPOSE ────────────────────────────────────────
+ * It feeds fast-check's random strings into normalizeTier, and normalizeTier is
+ * built to warn once per unrecognised value. That is the function working, not
+ * failing — but it emitted 256 of the suite's 288 console.warns, which is how a
+ * genuinely unexpected warning goes unnoticed. A test run should be quiet, so
+ * the one line that is not quiet means something.
+ *
+ * Nothing is lost: tier.warning.test.ts owns the warning behaviour outright and
+ * asserts the call count, the message and the unchanged return value.
+ */
+let warnSpy: jest.SpyInstance;
+beforeAll(() => { warnSpy = jest.spyOn(logger, 'warn').mockImplementation(() => undefined); });
+afterAll(() => { warnSpy.mockRestore(); });
 
 const VALID_TIERS = ['cinephile', 'archivist', 'auteur', 'founding'] as const;
 const TIER_STRINGS = [...VALID_TIERS, 'free', '', 'unknown', 'admin', 'moderator'];
