@@ -122,10 +122,22 @@ export async function dropDraft(
 ): Promise<void> {
   if (!userId) return;
   try {
-    await supabase
+    // ── THE ERROR WAS NOT EVEN READ ─────────────────────────────────────────
+    // supabase-js RESOLVES a failure rather than throwing, so `await` alone
+    // learns nothing and this catch could only ever see a crash. A drop that
+    // quietly failed — a flaky connection is enough — left the backup standing
+    // after the essay was filed and the local copy cleared. The next time the
+    // member opened the room on another phone, `pullDraft` handed back the
+    // piece they had already published and the room offered to restore it.
+    //
+    // Not retried: this is fire-and-forget by design, and `whichCopy` compares
+    // timestamps rather than trusting the backup's existence. But a failure
+    // that has a visible consequence should be visible, so it is logged.
+    const { error } = await supabase
       .from('member_drafts')
       .delete()
       .eq('user_id', userId).eq('kind', kind).eq('scope', scope);
+    if (error) logger.warn(`[draftSync] drop refused: ${error.message}`);
   } catch (e) {
     logger.warn(`[draftSync] drop: ${String(e)}`);
   }

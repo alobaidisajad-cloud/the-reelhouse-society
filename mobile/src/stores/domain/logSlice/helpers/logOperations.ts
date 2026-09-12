@@ -781,7 +781,17 @@ export const updateLogOp = async (
         });
 
         try {
-            const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id);
+            // The ownership filter, which every other write in this file
+            // carries. RLS is the real protection; without this the row is
+            // addressed by id alone, and a refusal matches no row — which
+            // PostgREST reports as 200 with no error. The optimistic
+            // setQueryData above has already shown the member their edit, so a
+            // silent refusal leaves it on screen until the next refetch takes
+            // it away again, with nothing said.
+            const { error } = await supabase.from('logs')
+                .update(dbUpdates)
+                .eq('id', id)
+                .eq('user_id', user.id);
             // Same as addLogOp: a queued edit is not a saved one, and this branch
             // falls through to the announcement below.
             let queuedOffline = false;

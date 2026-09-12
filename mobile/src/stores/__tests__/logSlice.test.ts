@@ -379,9 +379,16 @@ describe('logSlice', () => {
             // Typed with the payload it receives. Declared as `() =>` it inferred a
             // zero-parameter mock, which made mock.calls an empty tuple and
             // calls[0][0] an out-of-range index.
-            const updateFn = jest.fn((_payload: Record<string, unknown>) => ({
-                eq: jest.fn().mockResolvedValue({ error: null }),
-            }));
+            // `.eq()` CHAINS, the way the real builder does, and the chain itself is
+            // thenable. Resolving on the first `.eq()` modelled a one-filter write
+            // only, so narrowing the update by user_id as well as id — which is what
+            // stops a log being addressed by id alone — made this throw
+            // "eq is not a function" rather than fail on anything real.
+            const updateChain: Record<string, unknown> = {};
+            updateChain.eq = jest.fn(() => updateChain);
+            updateChain.then = (res: (v: unknown) => unknown) =>
+                Promise.resolve({ error: null }).then(res);
+            const updateFn = jest.fn((_payload: Record<string, unknown>) => updateChain);
 
             // select() is used twice: the upfront existing-log check (→ none) and the
             // post-23505 re-fetch (→ the row that won the race).
