@@ -196,6 +196,66 @@ const unguarded = q(`
 const postingTriggers = Number(unguarded.find((r) => r[0] === 'lounge_messages')?.[1] ?? '0');
 const freeInside = Number(unguarded.find((r) => r[0] === 'free members inside a salon')?.[1] ?? '0');
 
+// ── and can the funnel actually RECORD what the registry names? ─────────────
+//
+// The quiet failure. `record_gate_event` folds anything failing a shape check
+// into 'other' — by design, because anon may call it and the table must stay
+// bounded. But that means a feature id with an underscore or a capital would
+// have every one of its taps disappear into 'other' for ever, with no error
+// anywhere, and the funnel for that door would read a confident zero.
+//
+// Checked against the LIVE function's own regexes rather than a copy of them,
+// so tightening the rule in a migration cannot leave this agreeing with a
+// version of itself.
+const fnSrc = q(
+  `SELECT prosrc FROM pg_proc WHERE oid='public.record_gate_event(text,text,text,text)'::regprocedure`,
+)
+  .map((r) => r[0])
+  .join('\n');
+
+if (!fnSrc.trim()) {
+  problems.push('record_gate_event is not deployed — every gate tap is recorded nowhere');
+} else {
+  const featureRule = /v_feature !~ '(\^[^']+\$)'/.exec(fnSrc);
+  const vocabulary = /p_event NOT IN \(([^)]*)\)/.exec(fnSrc);
+  if (!featureRule || !vocabulary) {
+    // Without this the loop below would pass over an empty rule set, which
+    // reads exactly like "every id is fine".
+    problems.push("could not read record_gate_event's own rules — the vocabulary check would be vacuous");
+  } else {
+    const shape = new RegExp(featureRule[1]);
+    // The tripwire: prove the rule rejects something before trusting it to
+    // accept our ids.
+    if (shape.test('The_Archive')) {
+      problems.push(`the live feature-id rule ${featureRule[1]} filters nothing`);
+    }
+    const featureIds = [...src.matchAll(/^\s*id:\s*'([^']+)'/gm)].map((m) => m[1]);
+    if (featureIds.length < 5) {
+      problems.push('the registry scan found almost no feature ids — it is not reading the file');
+    }
+    for (const id of featureIds) {
+      if (!shape.test(id)) {
+        problems.push(`feature id '${id}' fails the live shape rule — its taps would vanish into 'other'`);
+      }
+    }
+
+    const sqlEvents = [...vocabulary[1].matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    const seam = fs.readFileSync(path.join(MOBILE, 'src/utils/gateTelemetry.ts'), 'utf8');
+    const tsEvents = [...seam.matchAll(/^\s*\|\s*'(\w+)'/gm)].map((m) => m[1]);
+    for (const e of tsEvents) {
+      if (!sqlEvents.includes(e)) {
+        problems.push(`the app sends '${e}' and the server drops it on the floor`);
+      }
+    }
+    for (const e of sqlEvents) {
+      if (!tsEvents.includes(e)) {
+        problems.push(`the server accepts '${e}' and nothing sends it`);
+      }
+    }
+    console.log(`funnel vocabulary: ${featureIds.length} feature id(s), ${tsEvents.length} event(s) — all recordable`);
+  }
+}
+
 console.log(`triggers claimed: ${claimedTriggers.length}   live: ${liveTriggers.length}`);
 console.log(`stripped fields claimed: ${claimedStrips.length}   live: ${liveStripped.size}`);
 console.log(`posting into a salon: ${postingTriggers} tier trigger(s); ${freeInside} free member(s) currently inside`);
