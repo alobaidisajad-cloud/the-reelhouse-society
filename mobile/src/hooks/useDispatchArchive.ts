@@ -243,6 +243,10 @@ export function useDispatchArchive(): DispatchArchive {
   const choose = useCallback((m: ArchiveMatch) => {
     seq.current += 1;
     subjectId.current = m.subjectId;
+    // Belt and braces: `page(0)` below sets this from the raw row count anyway.
+    // It matters only when that fetch never completes — a stale generation, or
+    // a failure — because then a later loadMore would page from the PREVIOUS
+    // film's offset and skip this one's opening filings.
     fetched.current = 0;
     setFilm(m.film);
     setFilings([]); setCount(0); setSpan(''); setMore(false);

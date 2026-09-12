@@ -49,8 +49,14 @@ describe('the archive pages on what the server gave', () => {
   });
 
   it('the offset is reset when the film changes and when the search clears', () => {
-    // Without this, choosing a second film would page from the first one's
-    // offset and skip its opening rows entirely.
+    // Belt and braces, and said plainly: `page(0)` already sets the offset from
+    // the raw count, so these two resets only matter when that fetch never
+    // completes — a stale generation, or a failure — after which a loadMore
+    // would page from the PREVIOUS film's offset.
+    //
+    // The behavioural test cannot reach that case, which mutation-checking
+    // proved by deleting this and watching it stay green. So the claim lives
+    // here, in the source pin, where it is honest about being a shape check.
     expect((CODE.match(/fetched\.current = 0;/g) ?? []).length).toBe(2);
   });
 
