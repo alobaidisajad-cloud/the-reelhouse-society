@@ -43,10 +43,27 @@ export interface ArchiveSlice extends ArchiveSliceData {
 export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice> = (set, get) => ({
     ...archiveSliceInitialState(),
 
+    /**
+     * ── READING A SHELF IS NOT A PAID ACT ────────────────────────────────────
+     * This refused to fetch unless the VIEWER held the rank, which meant a
+     * lapsed Archivist opened their own Physical Archive and saw nothing —
+     * their own collection, invisible, because the client would not ask for it.
+     *
+     * The server would have handed it over: the policy is `Users can read own
+     * archive` on `auth.uid() = user_id`, with no tier condition anywhere near
+     * it. So the gate here was stricter than the database and the only thing it
+     * protected a member from was their own records.
+     *
+     * A member who stops paying keeps what they made and may always read it.
+     * Adding and changing are the paid acts, and those two are still gated
+     * below — and now by a trigger as well, not only by this.
+     */
     fetchPhysicalArchive: async (userId?: string, loadMore = false) => {
         const uid = userId ?? useAuthStore.getState().user?.id;
+        // Still read, because the staleness guard below compares against the
+        // SIGNED-IN member — only the tier test is gone, not the session.
         const user = useAuthStore.getState().user;
-        if (!uid || !isArchivistPlusTier(user)) return [];
+        if (!uid) return [];
         const state = get();
         if (loadMore && !state.archiveHasMore) return state.physicalArchive;
         if (state._fetchingArchive) return state.physicalArchive;
@@ -186,9 +203,19 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
         }
     },
 
+    /**
+     * ── WITHDRAWAL IS NEVER A PAID ACT ───────────────────────────────────────
+     * This refused to remove an item unless the member still held the rank,
+     * which trapped a lapsed Archivist's own records in a room they could no
+     * longer enter. They could neither change an entry nor take it out.
+     *
+     * A member must always be able to take their own things back. DELETE is
+     * ungated in the database for exactly this reason — `Users can delete own
+     * archive` — and the client now agrees with it.
+     */
     removeFromPhysicalArchive: async (filmId) => {
         const user = useAuthStore.getState().user;
-        if (!user || !isArchivistPlusTier(user)) return;
+        if (!user) return;
 
         const itemToRemove = get().physicalArchive.find((item) => item.filmId === filmId);
         if (!itemToRemove) return;

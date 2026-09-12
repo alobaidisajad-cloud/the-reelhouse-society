@@ -6,17 +6,21 @@
  * through an endless feed; here they are one page with the film at the head of
  * it, and the entries beneath are the same entries they are anywhere else.
  *
- * ── THE RANK IS SHOWN, NOT HIDDEN ───────────────────────────────────────────
- * A member below Archivist reaches this screen and is told exactly what it is
- * and what it takes, because that is the rule this app already follows in the
- * picker: a form you cannot see is a feature you never learn exists; a form you
- * can see and cannot use is an invitation. What they are NOT shown is the
- * search box, because a search that refuses to search is worse than no search.
+ * ── THE SEARCH RUNS FOR EVERYONE ────────────────────────────────────────────
+ * This file used to say the opposite: that a member below Archivist is shown
+ * what the room is but NOT the search box, "because a search that refuses to
+ * search is worse than no search".
  *
- * ── AND THE GATE IS A GATE, NOT A CURTAIN ───────────────────────────────────
- * Nothing here is secret: every filing this gathers is public and already on
- * the page. So the rank buys the GATHERING, not the reading, and the screen is
- * honest about that rather than implying a member is being kept from content.
+ * The reasoning was sound and the premise was wrong — the search does not have
+ * to refuse. Nothing it finds is secret. Its own next paragraph said so: every
+ * filing this gathers is public and already on the page, so a guest could read
+ * all of it by scrolling the Dispatch. Hiding the search protected nothing and
+ * cost a member the one thing that would make them want the rank: seeing that
+ * eleven people have argued about Stalker since 2019.
+ *
+ * So a guest may search, and see which films the house has written about and
+ * how much. What the rank buys is the GATHERING — opening one film and reading
+ * all of it in one place — and that is where the rope is.
  */
 import { useCallback } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
@@ -34,13 +38,17 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
 import { isArchivistPlusTier } from '@/src/utils/tier';
 import { colors } from '@/src/theme/theme';
-import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
+import { useClearance } from '@/src/hooks/useClearance';
+import { ClearanceGate } from '@/src/components/clearance/Clearance';
 
 export default function ArchiveScreen() {
   const insets = useSafeAreaInsets();
   const me = useAuthStore((s) => s.user);
   const archivist = isArchivistPlusTier(me);
+  /** Opening a film's gathered archive is the act the rank buys. */
+  const gathering = useClearance('dispatch-archive', '/dispatch/archive');
 
   const {
     query, setQuery, matches, searching,
@@ -58,24 +66,21 @@ export default function ArchiveScreen() {
     if (film) clear(); else nav.back();
   }, [film, clear]);
 
-  if (!archivist) {
-    return (
-      <View style={p.screen}>
-        <PaperBack label="THE ARCHIVE" onBack={() => nav.back()} />
-        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 32 }}>
-          <Text style={p.emptyTitle} accessibilityRole="header" {...scaledTextProps}>
-            The archive is an Archivist’s room.
-          </Text>
-          <Text style={p.emptyBody} {...scaledTextProps}>
-            Every filing in it is public and already on the page. What the rank
-            buys is the gathering: one film, and everything the house has ever
-            said about it, in one place.
-          </Text>
-          <Text style={p.quiet} {...decorativeTextProps}>ARCHIVIST AND ABOVE</Text>
-        </View>
-      </View>
-    );
-  }
+  /**
+   * ── THE WALL IS GONE, AND IT WAS THE WORST ONE ──────────────────────────
+   * This screen used to return a full-screen page that explained the rank and
+   * then offered NO WAY TO GET IT. It said "ARCHIVIST AND ABOVE" as a closing
+   * statement — a door that tells you the name of the key and then shuts.
+   *
+   * Its own copy also gave away why the wall was unnecessary: "Every filing in
+   * it is public and already on the page." A member could read every one of
+   * those filings by scrolling the Dispatch. Hiding the SEARCH for them
+   * protected nothing; what the rank buys is the GATHERING, and gathering is
+   * the act that is now gated.
+   *
+   * So the search runs for everyone, the films come back for everyone, and the
+   * rope sits on opening one — where the value actually is.
+   */
 
   return (
     <View style={p.screen}>
@@ -137,11 +142,25 @@ export default function ArchiveScreen() {
                   key={m.subjectId}
                   film={m.film}
                   filings={m.filings}
-                  onPress={() => choose(m)}
+                  // A guest may search and see WHAT the house has written about
+                  // and how much of it. Opening the gathering is the rank.
+                  onPress={() => (gathering.held ? choose(m) : gathering.open())}
                 />
               ))
             )}
           </PaperArchive>
+
+          {/* The rope, once, under the results a guest just found — not over
+              the page before they were allowed to look. */}
+          {!archivist && !film && matches.length > 0 ? (
+            <ClearanceGate
+              rank={gathering.rank}
+              standing={gathering.standing}
+              names="The Archive"
+              line="Every filing here is public and already on the page. What the rank buys is the gathering — one film, and everything the house has ever said about it, in one place."
+              onPress={gathering.open}
+            />
+          ) : null}
 
           {loading || searching ? (
             <View style={{ paddingVertical: 24, alignItems: 'center' }}>

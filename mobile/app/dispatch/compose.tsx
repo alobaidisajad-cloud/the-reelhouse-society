@@ -12,6 +12,7 @@ import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-re
 
 import { useAuthStore } from '@/src/stores/auth';
 import { isAuteurPlusTier } from '@/src/utils/tier';
+import { useClearance } from '@/src/hooks/useClearance';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 // isOverLimit / remainingChars shipped in the sanitiser with ZERO callers — this
@@ -265,6 +266,8 @@ function ComposeDossierScreen() {
     const { user } = useAuthStore();
     const insets = useSafeAreaInsets();
     const canWrite = isAuteurPlusTier(user);
+    /** Publishing the long form is the Auteur's act — asked from the registry. */
+    const essay = useClearance('essays', '/dispatch/compose');
 
     const keyboard = useAnimatedKeyboard();
     const animatedContainerStyle = useAnimatedStyle(() => ({
@@ -655,7 +658,20 @@ function ComposeDossierScreen() {
 
     const handlePublish = async () => {
         if (!canWrite) {
-            reelToast.error('Auteur tier required');
+            /**
+             * A DOOR, NOT A TOAST.
+             *
+             * This said `Auteur tier required` and stopped — four words of
+             * jargon at the end of writing an essay, naming a rank without
+             * saying what it is or how to hold it, on the one screen where a
+             * member has just spent an hour. The whole app's velvet rope
+             * existed and this was the single place that shouted instead.
+             *
+             * The draft is already kept by the room's own autosave, so a member
+             * who goes to read the ranks comes back to their words — which is
+             * the difference between a wall and a door.
+             */
+            essay.open();
             return;
         }
         if (!title.trim() || !content.trim() || isPublishing) return;

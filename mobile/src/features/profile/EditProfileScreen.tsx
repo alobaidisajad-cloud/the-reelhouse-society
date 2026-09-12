@@ -13,7 +13,9 @@ import { ChevronLeft, User, Camera, Link2, Film, Sparkles, Stamp, Image as Image
 
 import { useEditProfile } from '@/src/hooks/useEditProfile';
 import { formatDateMonthYear } from '@/src/utils/timeAgo';
-import { resolveTier, isAuteurPlusTier } from '@/src/utils/tier';
+import { resolveTier } from '@/src/utils/tier';
+import { useClearance } from '@/src/hooks/useClearance';
+import { ClearanceGate, Locked } from '@/src/components/clearance/Clearance';
 import { Toggle } from '@/src/components/Toggle';
 import { backdropIsOn } from '@/src/components/profile/ProfileBackdrop';
 import { pickBackdropFilm } from '@/src/components/profile/favourites';
@@ -138,6 +140,9 @@ export function EditProfileScreen() {
     const task = InteractionManager.runAfterInteractions(() => setIsReady(true));
     return () => task.cancel();
   }, []);
+
+  /** The Backdrop is the Auteur's, asked for from the registry like every other. */
+  const backdrop = useClearance('the-backdrop', '/edit-profile');
 
   const glowStyle = useAmbientGlow(0.04, 0.08, 3000);
 
@@ -289,11 +294,36 @@ export function EditProfileScreen() {
         {/* ════ THE BACKDROP — Auteur only ════
             It sits directly under the triptych because it is about the
             triptych: the centre panel is the film it dresses the page with. */}
-        {isReady && isAuteurPlusTier(user) && (
+        {/* ── THE VANISH, REPLACED ──────────────────────────────────────────
+            This row was DELETED from the page for anybody below Auteur, so a
+            member could not learn the Backdrop exists, let alone want it. A
+            member cannot want what they have never seen.
+
+            It is the one personal feature in the app, which makes the tease
+            different from every other: there is no other member's backdrop to
+            show. The Lounge can display real salons; the Vault and this can
+            only ever show you your own empty instance. So it renders the real
+            setting, inert, with the rope beneath naming what it is. */}
+        {isReady && (
           <>
             <DiamondDivider />
             <Animated.View entering={FadeInDown.duration(500).delay(175)}>
-              <BackdropSetting user={user as { id: string; preferences?: Record<string, unknown> | null }} />
+              {backdrop.held ? (
+                <BackdropSetting user={user as { id: string; preferences?: Record<string, unknown> | null }} />
+              ) : (
+                <>
+                  <Locked>
+                    <BackdropSetting user={user as { id: string; preferences?: Record<string, unknown> | null }} />
+                  </Locked>
+                  <ClearanceGate
+                    rank={backdrop.rank}
+                    standing={backdrop.standing}
+                    names="The Backdrop"
+                    line="Your room, dressed by the centre panel of your own triptych."
+                    onPress={backdrop.open}
+                  />
+                </>
+              )}
             </Animated.View>
           </>
         )}

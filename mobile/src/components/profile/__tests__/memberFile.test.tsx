@@ -390,11 +390,31 @@ describe('the Auteur backdrop is a choice, and absent means on', () => {
     expect(backdropIsOn({ backdrop: 0 })).toBe(true);
   });
 
-  it('the switch is offered only to the rank that has the feature', () => {
+  /**
+   * ── THIS USED TO REQUIRE THE ROW BE HIDDEN, AND THAT WAS THE DEFECT ───────
+   * It asserted `isAuteurPlusTier(user) &&` around the whole setting, so the
+   * Backdrop row was DELETED from the page for anybody below Auteur. A member
+   * could not learn the feature exists, and a member cannot want what they
+   * have never seen. That is the vanish, and it is the shape this work exists
+   * to remove.
+   *
+   * The row is shown to everyone now: the real setting, inert, with the rope
+   * beneath it. The Backdrop is the app's one PERSONAL paid feature, so there
+   * is no other member's to display as a tease — showing your own, locked, is
+   * the only honest version.
+   */
+  it('the switch is SHOWN to everyone and gated, not hidden from those without the rank', () => {
     const edit = read('src/features/profile/EditProfileScreen.tsx');
-    expect(edit).toMatch(/isAuteurPlusTier\(user\)\s*&&/);
-    // And it is the app's ONE switch, not a second copy that drifts from the
-    // one carrying the iOS track-colour fix.
+    // The defect exactly: the row conditional on the rank.
+    expect(code(edit)).not.toMatch(/isAuteurPlusTier\(user\)\s*&&/);
+    // The rank is asked from the registry, so this and the Society page can
+    // never disagree about which rank opens it.
+    expect(edit).toMatch(/useClearance\('the-backdrop'/);
+    // And it is rendered inert rather than removed.
+    expect(edit).toMatch(/<Locked>/);
+    expect(edit).toMatch(/<ClearanceGate/);
+    // Still the app's ONE switch, not a second copy that drifts from the one
+    // carrying the iOS track-colour fix.
     expect(edit).toMatch(/from '@\/src\/components\/Toggle'/);
   });
 

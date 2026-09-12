@@ -297,15 +297,40 @@ describe('the archive', () => {
     expect(mockBack).toHaveBeenCalled();
   });
 
-  it('tells a member below the rank what it is, and shows them no dead search', async () => {
+  /**
+   * ── THIS TEST USED TO ASSERT THE OPPOSITE, AND THE REVERSAL IS DELIBERATE ──
+   * It required a full-screen page reading "The archive is an Archivist's room"
+   * and NO search box, on the reasoning that "a search box that refuses to
+   * search is worse than no search box".
+   *
+   * The reasoning was right; the premise was wrong. The search never had to
+   * refuse. Every filing it finds is public and already on the page — the old
+   * wall's own copy said so — so a guest could read all of it by scrolling the
+   * Dispatch. Hiding the search protected nothing and cost the member the one
+   * thing that would make them want the rank: seeing that eleven people have
+   * argued about a film since 2019.
+   *
+   * The old wall also offered NO WAY TO UPGRADE. It named the key and shut.
+   */
+  it('lets a member below the rank search, and gates the gathering instead', async () => {
     mockUser = { id: 'u1', username: 'me', tier: 'free' };
     const r = render(<ArchiveScreen />);
     await act(async () => { await Promise.resolve(); });
-    expect(r.getByText(/The archive is an Archivist’s room/)).toBeTruthy();
-    // A search box that refuses to search is worse than no search box.
-    expect(r.queryByLabelText('Search the archive for a film')).toBeNull();
-    // And it is honest about what the rank buys: nothing here is secret.
-    expect(r.getByText(/already on the page/)).toBeTruthy();
+
+    // No wall.
+    expect(r.queryByText(/The archive is an Archivist’s room/)).toBeNull();
+    // The search is live for them.
+    expect(r.getByLabelText('Search the archive for a film')).toBeTruthy();
+  });
+
+  it('and a guest who finds films is offered the way in, which the wall never was', async () => {
+    mockUser = { id: 'u1', username: 'me', tier: 'free' };
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+
+    // The old screen's single worst property: it explained the rank and then
+    // offered nothing to do about it. "ARCHIVIST AND ABOVE" as a full stop.
+    expect(r.queryByText('ARCHIVIST AND ABOVE')).toBeNull();
   });
 
   it('is reachable — the index row carries the door, and the head does not', async () => {
