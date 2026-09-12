@@ -29,6 +29,7 @@ import { InteractionManager, StyleSheet } from 'react-native';
 // Global Dynamic Type / font scaling — runs side-effect at import time
 import OfflineBanner from '@/src/components/OfflineBanner';
 import { initSentry } from '@/src/lib/sentry';
+import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import '@/src/providers/AccessibilityProvider';
 export { RouterErrorBoundary as ErrorBoundary };
 
@@ -57,8 +58,13 @@ export default function RootLayout() {
   });
 
   // Initialize Sentry before any rendering — must run before AppBootstrapper mounts
-  useEffect(() => { 
+  useEffect(() => {
     initSentry();
+    // The funnel's destination, installed in exactly one place. It counts and
+    // names nobody — see the reasoning in gateMetricsSink.ts. It sits beside
+    // initSentry because a rope can be met before the app has finished waking,
+    // and an uninstalled sink loses that tap silently.
+    installGateMetricsSink();
   }, []);
 
   useEffect(() => {

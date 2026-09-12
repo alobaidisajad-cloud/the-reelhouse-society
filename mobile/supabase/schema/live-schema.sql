@@ -3090,6 +3090,63 @@ $$;
 
 
 --
+-- Name: record_gate_event(text, text, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.record_gate_event(p_event text, p_feature_id text DEFAULT ''::text, p_rank text DEFAULT ''::text, p_standing text DEFAULT ''::text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+DECLARE
+  v_feature text := coalesce(p_feature_id, '');
+  v_rank    text := coalesce(p_rank, '');
+  v_stand   text := coalesce(p_standing, '');
+BEGIN
+  -- A closed vocabulary. Anything else is not a funnel event and is dropped
+  -- silently: a measurement call must never be able to fail a member's action.
+  IF p_event NOT IN ('gate_tapped', 'membership_opened', 'rank_purchased', 'rank_relinquished') THEN
+    RETURN;
+  END IF;
+
+  -- Shape, not membership. The registry lives in the app; repeating it here
+  -- would be a second copy to keep in step. The ceiling below is what actually
+  -- bounds the table, so this only has to stop the absurd.
+  IF v_feature !~ '^[a-z0-9-]{0,48}$' THEN v_feature := 'other'; END IF;
+  IF v_rank    !~ '^[a-z]{0,16}$'     THEN v_rank    := '';      END IF;
+  IF v_stand   !~ '^[a-z]{0,16}$'     THEN v_stand   := '';      END IF;
+
+  -- Try the existing counter first. This is the overwhelmingly common path and
+  -- it touches one row by primary key.
+  UPDATE public.gate_metrics
+     SET count = count + 1
+   WHERE day = current_date AND event = p_event
+     AND feature_id = v_feature AND rank = v_rank AND standing = v_stand;
+
+  IF NOT FOUND THEN
+    -- Only a genuinely new combination pays for the ceiling check.
+    IF (SELECT count(*) FROM public.gate_metrics WHERE day = current_date) >= 500 THEN
+      v_feature := 'other';
+      v_rank    := '';
+      v_stand   := '';
+    END IF;
+
+    INSERT INTO public.gate_metrics AS m (day, event, feature_id, rank, standing, count)
+    VALUES (current_date, p_event, v_feature, v_rank, v_stand, 1)
+    ON CONFLICT (day, event, feature_id, rank, standing)
+    DO UPDATE SET count = m.count + 1;
+  END IF;
+END
+$_$;
+
+
+--
+-- Name: FUNCTION record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) IS 'Increments an aggregate gate counter. Records no identity of any kind.';
+
+
+--
 -- Name: recount_lounge_members(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3160,6 +3217,37 @@ BEGIN
   DO UPDATE SET token = EXCLUDED.token, updated_at = now();
 END;
 $$;
+
+
+--
+-- Name: relinquish_rank(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.relinquish_rank() RETURNS TABLE(out_tier text, out_applied boolean, out_reason text)
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'relinquish_rank: not authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  -- 'revenuecat' as the source, not 'manual': a rank granted by hand, or a
+  -- founding seat, is not the store's to take away. grant_entitlement enforces
+  -- that; naming the source here is what lets it.
+  RETURN QUERY
+  SELECT g.out_tier, g.out_applied, g.out_reason
+  FROM public.grant_entitlement(v_uid, 'cinephile', 'revenuecat') AS g;
+END $$;
+
+
+--
+-- Name: FUNCTION relinquish_rank(); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.relinquish_rank() IS 'Lowers the CALLER''S OWN rank to cinephile and nothing else. Safe for authenticated: the worst abuse is self-removal. Called by the client when RevenueCat reports no active entitlement but the profile still claims one.';
 
 
 --
@@ -4122,6 +4210,27 @@ CREATE TABLE public.founding_seat_counter (
 
 
 --
+-- Name: gate_metrics; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gate_metrics (
+    day date DEFAULT CURRENT_DATE NOT NULL,
+    event text NOT NULL,
+    feature_id text DEFAULT ''::text NOT NULL,
+    rank text DEFAULT ''::text NOT NULL,
+    standing text DEFAULT ''::text NOT NULL,
+    count bigint DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: TABLE gate_metrics; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.gate_metrics IS 'Aggregate gate funnel. Counters only — no member, device or session is identifiable here, by design.';
+
+
+--
 -- Name: interactions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4731,6 +4840,14 @@ ALTER TABLE ONLY public.films
 
 ALTER TABLE ONLY public.founding_seat_counter
     ADD CONSTRAINT founding_seat_counter_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: gate_metrics gate_metrics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gate_metrics
+    ADD CONSTRAINT gate_metrics_pkey PRIMARY KEY (day, event, feature_id, rank, standing);
 
 
 --
@@ -6070,6 +6187,13 @@ CREATE TRIGGER tr_tier_gate_archive BEFORE INSERT ON public.physical_archive FOR
 
 
 --
+-- Name: physical_archive tr_tier_gate_archive_update; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER tr_tier_gate_archive_update BEFORE UPDATE ON public.physical_archive FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate('1', 'The Physical Archive is an Archivist feature');
+
+
+--
 -- Name: dispatch_posts tr_tier_gate_dispatch; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -6091,6 +6215,20 @@ CREATE TRIGGER tr_tier_gate_lounge_members BEFORE INSERT ON public.lounge_member
 
 
 --
+-- Name: lounge_messages tr_tier_gate_lounge_messages; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER tr_tier_gate_lounge_messages BEFORE INSERT ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate('1', 'The Lounge is an Archivist feature');
+
+
+--
+-- Name: lounge_message_reactions tr_tier_gate_lounge_reactions; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER tr_tier_gate_lounge_reactions BEFORE INSERT ON public.lounge_message_reactions FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate('1', 'The Lounge is an Archivist feature');
+
+
+--
 -- Name: lounges tr_tier_gate_lounges; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -6098,10 +6236,31 @@ CREATE TRIGGER tr_tier_gate_lounges BEFORE INSERT ON public.lounges FOR EACH ROW
 
 
 --
+-- Name: lounges tr_tier_gate_private_lounges; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER tr_tier_gate_private_lounges BEFORE INSERT ON public.lounges FOR EACH ROW WHEN ((new.is_private IS TRUE)) EXECUTE FUNCTION public.enforce_tier_gate('2', 'A private screening room is an Auteur feature');
+
+
+--
+-- Name: TRIGGER tr_tier_gate_private_lounges ON lounges; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TRIGGER tr_tier_gate_private_lounges ON public.lounges IS 'Founding a PRIVATE room needs the Auteur rank. Entering one does not — that is the host''s gift, or an Auteur could not admit the Archivists they founded the room for.';
+
+
+--
 -- Name: log_private_notes tr_tier_gate_private_notes; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER tr_tier_gate_private_notes BEFORE INSERT ON public.log_private_notes FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate('1', 'The Vault is an Archivist feature');
+
+
+--
+-- Name: log_private_notes tr_tier_gate_private_notes_update; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER tr_tier_gate_private_notes_update BEFORE UPDATE ON public.log_private_notes FOR EACH ROW EXECUTE FUNCTION public.enforce_tier_gate('1', 'The Vault is an Archivist feature');
 
 
 --
@@ -7388,6 +7547,12 @@ CREATE POLICY films_public_read ON public.films FOR SELECT TO authenticated, ano
 --
 
 ALTER TABLE public.founding_seat_counter ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: gate_metrics; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.gate_metrics ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: interactions; Type: ROW SECURITY; Schema: public; Owner: -
@@ -8996,6 +9161,16 @@ GRANT ALL ON FUNCTION public.rate_limit_check(table_name text, user_col text, ma
 
 
 --
+-- Name: FUNCTION record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) TO anon;
+GRANT ALL ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) TO authenticated;
+GRANT ALL ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) TO service_role;
+
+
+--
 -- Name: FUNCTION recount_lounge_members(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -9019,6 +9194,16 @@ GRANT ALL ON FUNCTION public.refresh_film_verdict(p_film_id integer) TO service_
 GRANT ALL ON FUNCTION public.register_push_token(p_token text, p_platform text) TO anon;
 GRANT ALL ON FUNCTION public.register_push_token(p_token text, p_platform text) TO authenticated;
 GRANT ALL ON FUNCTION public.register_push_token(p_token text, p_platform text) TO service_role;
+
+
+--
+-- Name: FUNCTION relinquish_rank(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.relinquish_rank() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.relinquish_rank() TO anon;
+GRANT ALL ON FUNCTION public.relinquish_rank() TO authenticated;
+GRANT ALL ON FUNCTION public.relinquish_rank() TO service_role;
 
 
 --
@@ -9311,6 +9496,13 @@ GRANT SELECT ON TABLE public.films TO authenticated;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.founding_seat_counter TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.founding_seat_counter TO authenticated;
 GRANT ALL ON TABLE public.founding_seat_counter TO service_role;
+
+
+--
+-- Name: TABLE gate_metrics; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.gate_metrics TO service_role;
 
 
 --

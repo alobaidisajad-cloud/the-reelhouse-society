@@ -118,6 +118,10 @@
       "signature": "list_certify_counts(p_list_ids uuid[])"
     },
     {
+      "name": "record_gate_event",
+      "signature": "record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text)"
+    },
+    {
       "name": "register_push_token",
       "signature": "register_push_token(p_token text, p_platform text)"
     },
@@ -215,6 +219,11 @@
         "table": "logs",
         "column": "private_notes",
         "why": "owner-only by definition"
+      },
+      {
+        "table": "gate_metrics",
+        "column": "count",
+        "why": "the gate funnel is write-only from the app; anon holds EXECUTE on record_gate_event and must never be able to read the counts back"
       }
     ],
     "anonMustRead": [
@@ -261,6 +270,12 @@
     "noWipePrivileges": true,
     "indexHygiene": true,
     "columnsInvisibleToEveryClient": [
+      "gate_metrics.count",
+      "gate_metrics.day",
+      "gate_metrics.event",
+      "gate_metrics.feature_id",
+      "gate_metrics.rank",
+      "gate_metrics.standing",
       "profiles.email",
       "profiles.entitlement_source"
     ],
@@ -270,6 +285,7 @@
       "public.get_moderation_history_for_users(ARRAY[]::uuid[])",
       "public.get_user_lounges((SELECT id FROM public.profiles WHERE role='admin' LIMIT 1))",
       "public.get_lounge_unread_counts()"
-    ]
+    ],
+    "_columnsInvisibleNote": "gate_metrics is invisible to BOTH client roles on purpose, not by omission: the funnel is write-only from the app (anon and authenticated hold EXECUTE on record_gate_event and nothing else), and the counts are read from the dashboard as service_role."
   }
 }

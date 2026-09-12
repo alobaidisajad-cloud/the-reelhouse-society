@@ -11,13 +11,13 @@
  * the first of those needed exactly one line — which is the argument for having
  * collapsed them before trying to measure anything.
  *
- * ── AND THE SINK IS DELIBERATELY EMPTY ──────────────────────────────────────
- * Where member behaviour is recorded is not an engineering decision. A vendor
- * SDK is a third party receiving your members' activity; a table is a schema
- * change and a privacy posture. This app has spent real care on what leaves it,
- * and quietly starting to ship behavioural events somewhere would undo that
- * without anybody deciding to. So this test pins that the seam exists, that
- * every gate reports through it, and that it is NOT yet wired anywhere.
+ * ── AND THE SINK NOW HAS A DESTINATION ──────────────────────────────────────
+ * It shipped pointing nowhere on purpose, because where member behaviour is
+ * recorded is a privacy decision rather than an engineering one. It points at
+ * a first-party counter that records no identity of any kind — not a vendor
+ * SDK, which the app's own published privacy policy rules out in as many
+ * words. So this test pins the seam, pins that every gate reports through it,
+ * and pins the three properties that made wiring it acceptable.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -61,13 +61,58 @@ describe('the funnel has one seam', () => {
   });
 
   describe('the sink', () => {
-    it('is NOT wired to anything — that decision is not an engineering one', () => {
-      // If this ever fails, somebody chose a destination for member behaviour.
-      // That is allowed; it should be a decision, not a diff nobody read.
+    /**
+     * THE DECISION WAS MADE, AND THIS IS WHAT IT HOLDS TO.
+     *
+     * This block used to assert the sink was wired to nothing. It is wired now
+     * — to a first-party counter that records no identity of any kind. What is
+     * worth pinning is no longer "is it unwired" but the three properties that
+     * made wiring it acceptable, because those are what a later diff could
+     * quietly undo.
+     */
+    const SINK = read('src/lib/gateMetricsSink.ts');
+
+    it('is wired, and still in exactly one place', () => {
       expect(SEAM).toMatch(/let sink: Sink \| null = null;/);
       expect(SEAM).toMatch(/export function setGateTelemetrySink/);
-      // No vendor SDK has crept in.
-      expect(SEAM).not.toMatch(/posthog|amplitude|mixpanel|segment|firebase/i);
+      // Exactly one installer, called from exactly one place. Two sinks mean
+      // the second silently replaces the first and half the funnel vanishes.
+      expect(SINK).toMatch(/setGateTelemetrySink\(/);
+      const callers = ['app/_layout.tsx']
+        .filter((p) => code(read(p)).includes('installGateMetricsSink()'));
+      expect(callers).toEqual(['app/_layout.tsx']);
+    });
+
+    it('is FIRST-PARTY — the published privacy policy forbids the alternative', () => {
+      // The live policy says the app integrates no "analytics platforms that
+      // track individual users" and no third-party trackers. A vendor SDK here
+      // would make that sentence false the day it shipped.
+      //
+      // Asserted against STRIPPED code, not the raw file: both of these files
+      // name the vendors in prose, explaining why they are not used. Matching
+      // the raw text failed on its own reasoning — the comment trap, where an
+      // absence check is defeated by the comment that documents the absence.
+      const VENDORS = /posthog|amplitude|mixpanel|segment|firebase|appsflyer|adjust/i;
+      for (const f of [SEAM, SINK]) {
+        expect(code(f)).not.toMatch(VENDORS);
+      }
+      // And the stripper really is removing the prose that would otherwise
+      // match, rather than the files happening to be clean.
+      expect(SINK).toMatch(VENDORS);
+      expect(code(SINK)).toMatch(/supabase\s*\n?\s*\.rpc\('record_gate_event'/);
+    });
+
+    it('sends NOTHING that could name a member', () => {
+      // The whole argument for allowing this at all. If a later diff adds a
+      // user id, a device id or a session id to the payload, the counter stops
+      // being a counter and becomes a behavioural record of a person.
+      const payload = /\.rpc\('record_gate_event',\s*\{([\s\S]*?)\}\)/.exec(code(SINK));
+      expect(payload).not.toBeNull();
+      const keys = [...(payload?.[1] ?? '').matchAll(/(\w+):/g)].map((m) => m[1]);
+      // A tripwire: if the regex ever stops finding the real call, an empty
+      // key list would pass every assertion below vacuously.
+      expect(keys.length).toBeGreaterThan(0);
+      expect(keys.sort()).toEqual(['p_event', 'p_feature_id', 'p_rank', 'p_standing']);
     });
 
     it('cannot take a screen down with it', () => {

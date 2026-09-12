@@ -9,20 +9,24 @@
  * Marketing you cannot measure is decoration, so this is the seam. Every rope
  * in the app reports through here.
  *
- * ── WHY IT HAS NO DESTINATION YET, ON PURPOSE ───────────────────────────────
- * Choosing where member behaviour is recorded is not an engineering decision.
- * A vendor SDK is a third party receiving your members' activity; a table in
- * your own database is a schema change and a privacy posture. This app has
- * spent a lot of care on what leaves it — column grants, anon visibility
- * checks, an anon-privacy bypass found and closed — and quietly starting to
- * ship behavioural events somewhere would undo that care without anybody
- * deciding to.
+ * ── WHERE IT GOES, AND WHY THERE ────────────────────────────────────────────
+ * This shipped with no destination on purpose: choosing where member behaviour
+ * is recorded is a privacy decision, not an engineering one. The decision was
+ * made deliberately and it is written out in `gateMetricsSink.ts`, which is the
+ * only thing that ever calls `setGateTelemetrySink`.
  *
- * So the seam exists and the sink is one function away. Until one is chosen the
- * events go to Sentry as breadcrumbs, which is genuinely useful — when a member
- * reports "it wouldn't let me in", the trail of ropes they met is right there in
- * the report — but it is NOT measurement: breadcrumbs surface only when
- * something throws, so no conversion rate can be read from them.
+ * The short of it: not a vendor. The app's published privacy policy says it
+ * integrates no "analytics platforms that track individual users", and PostHog
+ * or Amplitude would make that false the day they shipped. Instead the events
+ * increment a first-party per-day COUNTER keyed by (event, feature, rank,
+ * standing) — no user, device or session id anywhere in it. Every event already
+ * carries the door it came from, so the funnel still reads end to end without
+ * anyone's name being part of it.
+ *
+ * Events also go to Sentry as breadcrumbs, which is genuinely useful — when a
+ * member reports "it wouldn't let me in", the trail of ropes they met is right
+ * there in the report — but that half is NOT measurement: breadcrumbs surface
+ * only when something throws, so no conversion rate can be read from them.
  *
  * ── WHAT TO RECORD, IF A SINK IS ADDED ──────────────────────────────────────
  * Taps, opens and purchases are low-volume and answer the question: a member
@@ -53,8 +57,10 @@ export interface GateEventDetail {
 }
 
 /**
- * THE SINK. Null until somebody decides where member behaviour is allowed to
- * go. Wire it once, in one place, and every rope in the app is measured.
+ * THE SINK. Null until something installs one, which `installGateMetricsSink()`
+ * does once from the root layout. It stays null here rather than importing the
+ * destination directly, so this file has no opinion about where events go and
+ * every test can run the whole funnel without a network.
  */
 type Sink = (event: GateEvent, detail: GateEventDetail) => void;
 let sink: Sink | null = null;

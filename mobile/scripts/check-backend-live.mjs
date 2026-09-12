@@ -586,6 +586,16 @@ if (DB_URL) {
       increment_dossier_views: 'live web caller; moves a view counter and nothing else',
       rls_auto_enable: 'event trigger, not callable',
       like_escape: 'pure string helper, no data',
+      // The rule this check enforces is "a definer granted to anon must not
+      // trust an actor the caller names". This one names no actor: it takes a
+      // closed event vocabulary and increments an aggregate per-day counter,
+      // and there is no user, device or session column in the table for a
+      // caller to point at. Granting it to anon is the POINT — a stranger
+      // meeting a rope is the most informative event in the funnel, and The
+      // Reel is open to strangers now. Worst case a hostile caller makes the
+      // numbers wrong; the function caps the table at 500 rows a day and can
+      // write nothing else.
+      record_gate_event: 'aggregate counter; names no actor and touches no member row',
     };
     const rows = sh(
       `psql "${DB_URL}" -tAc "SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prosecdef AND p.prorettype <> 'trigger'::regtype AND has_function_privilege('anon', p.oid, 'EXECUTE') AND p.prosrc NOT ILIKE '%auth.uid()%' ORDER BY 1"`,
