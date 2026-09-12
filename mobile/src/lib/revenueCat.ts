@@ -144,6 +144,81 @@ export async function checkEntitlements(): Promise<EntitlementInfo> {
 }
 
 /**
+ * ── A RANK THAT ENDS ────────────────────────────────────────────────────────
+ * Nothing in this app had ever lowered a rank. No expiry column, no webhook,
+ * and `grant_entitlement` — the only sanctioned writer of a rank — had never
+ * been called once in either direction. So a subscription could end and
+ * `profiles.tier` would say `archivist` for ever, while every server gate reads
+ * exactly that column.
+ *
+ * ── WHY THIS IS NOT `checkEntitlements().isActive` ──────────────────────────
+ * Because that would revoke the rank of almost everybody who pays.
+ *
+ * `checkEntitlements` returns `parseEntitlements(null)` — inactive — in three
+ * situations that are not remotely alike:
+ *
+ *   the SDK is not configured   which on Android is ALWAYS, today: there is no
+ *                               EXPO_PUBLIC_REVENUECAT_ANDROID_KEY at all
+ *   getCustomerInfo threw       offline, or a transient store failure
+ *   the customer genuinely has no active entitlement
+ *
+ * Only the third is a lapse. Acting on the first would strip every Android
+ * member; acting on the second would strip anyone who opened the app on a
+ * plane. "Not entitled" and "I could not find out" must never be the same
+ * answer, so this lives here, beside `isConfigured` and the try/catch, rather
+ * than downstream of a boolean that has already thrown that distinction away.
+ *
+ * The server is the backstop: `relinquish_rank` can only ever lower the
+ * CALLER'S OWN rank, and it delegates to `grant_entitlement`, which refuses to
+ * lower a rank granted by any other source. So a hand-granted rank and a
+ * founding seat survive this call even if it is made in error.
+ */
+export type RankReconciliation =
+  | 'unknown'          // could not find out — nothing was changed
+  | 'active'           // the store says they are entitled
+  | 'relinquished'     // the store says no, and the server lowered them
+  | 'already-current'; // the store says no, and the server had nothing to lower
+
+export async function reconcileRank(): Promise<RankReconciliation> {
+  // Not configured is NOT "not entitled".
+  if (!isConfigured || !Purchases) return 'unknown';
+
+  let customerInfo: CustomerInfo;
+  try {
+    customerInfo = await Purchases.getCustomerInfo();
+  } catch (e) {
+    // A failure to ask is not an answer.
+    logger.info('[revenueCat] reconcileRank: could not reach the store', e);
+    return 'unknown';
+  }
+
+  const info = parseEntitlements(customerInfo);
+  if (info.isActive) return 'active';
+
+  // Now — and only now — the store has positively said there is no active
+  // entitlement for this customer.
+  try {
+    const { data, error } = await supabase.rpc('relinquish_rank');
+    if (error) {
+      logger.warn(`[revenueCat] reconcileRank: ${error.message}`);
+      return 'unknown';
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    const applied = !!row?.out_applied;
+    if (applied) {
+      logger.info(`[revenueCat] rank relinquished: ${row?.out_reason ?? ''}`);
+      return 'relinquished';
+    }
+    // Refused for a good reason — a hand-granted rank, or a founding seat, or
+    // they were already a Cinephile. `out_reason` says which.
+    return 'already-current';
+  } catch (e) {
+    logger.warn(`[revenueCat] reconcileRank: ${String(e)}`);
+    return 'unknown';
+  }
+}
+
+/**
  * Get available offerings (subscription packages).
  * Returns structured data ready for the membership screen UI.
  */

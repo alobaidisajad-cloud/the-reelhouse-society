@@ -82,16 +82,16 @@
       "signature": "get_public_profile_analytics(p_user_id uuid)"
     },
     {
-      "name": "get_taste_profile",
-      "signature": "get_taste_profile(p_user_id uuid)"
-    },
-    {
       "name": "get_report_evidence",
       "signature": "get_report_evidence(p_report_id uuid)"
     },
     {
       "name": "get_salon_member_faces",
       "signature": "get_salon_member_faces(p_lounge_ids uuid[])"
+    },
+    {
+      "name": "get_taste_profile",
+      "signature": "get_taste_profile(p_user_id uuid)"
     },
     {
       "name": "get_user_analytics",
@@ -120,6 +120,10 @@
     {
       "name": "register_push_token",
       "signature": "register_push_token(p_token text, p_platform text)"
+    },
+    {
+      "name": "relinquish_rank",
+      "signature": "relinquish_rank()"
     },
     {
       "name": "remove_lounge_member",

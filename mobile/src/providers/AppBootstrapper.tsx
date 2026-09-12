@@ -9,7 +9,7 @@ import { Alert, AppState } from 'react-native';
 import { router } from 'expo-router';
 import { resolveHandleNotice } from '../utils/handleNotice';
 import { registerForPushNotifications, setupNotificationResponseHandler } from '../lib/pushNotifications';
-import { initRevenueCat } from '../lib/revenueCat';
+import { initRevenueCat, reconcileRank } from '../lib/revenueCat';
 import { addBreadcrumb, captureError, Sentry, setSentryUser } from '../lib/sentry';
 import { supabase } from '../lib/supabase';
 import { storage, useAuthStore } from '../stores/auth';
@@ -71,6 +71,27 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         try {
           await initRevenueCat(currentUser.id);
           addBreadcrumb('RevenueCat initialized', 'boot');
+
+          /**
+           * A rank has to be able to END, and this is the only place the app
+           * ever learns that one has. There is no webhook and no expiry
+           * column, so until this call existed a lapsed subscription left
+           * `profiles.tier` reading `archivist` for ever.
+           *
+           * It is safe to do on every boot: `reconcileRank` acts ONLY when the
+           * store positively reports no active entitlement, never when it is
+           * unconfigured or unreachable, and `relinquish_rank` can only lower
+           * the caller's own rank — never raise one, never touch anybody else,
+           * and never take a rank the store did not grant.
+           *
+           * Not awaited into the boot path's critical section on purpose: a
+           * slow store must not hold the app closed.
+           */
+          void reconcileRank().then((outcome) => {
+            if (outcome === 'relinquished') {
+              addBreadcrumb('rank relinquished — subscription had lapsed', 'boot');
+            }
+          });
         } catch (rcErr) {
           logger.warn('[Bootstrapper] RevenueCat init failed, continuing boot:', rcErr);
         }

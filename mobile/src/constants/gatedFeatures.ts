@@ -93,6 +93,42 @@ export const GATED_FEATURES: GatedFeature[] = [
     ],
   },
   {
+    id: 'lounge-speaking',
+    rank: 'archivist',
+    // The Lounge was gated at the door and open inside the room: joining and
+    // founding carried triggers, speaking and reacting carried none. Anybody
+    // already admitted kept talking for ever at any rank.
+    promise: 'The Lounge\n(Exclusive Cinema Chat Rooms)',
+    enforcement: { kind: 'refuses', table: 'lounge_messages', trigger: 'tr_tier_gate_lounge_messages' },
+    gates: ['app/(tabs)/lounge.tsx'],
+  },
+  {
+    id: 'lounge-reacting',
+    rank: 'archivist',
+    promise: 'The Lounge\n(Exclusive Cinema Chat Rooms)',
+    enforcement: { kind: 'refuses', table: 'lounge_message_reactions', trigger: 'tr_tier_gate_lounge_reactions' },
+    gates: ['app/(tabs)/lounge.tsx'],
+  },
+  {
+    id: 'vault-editing',
+    rank: 'archivist',
+    // Every tier trigger was BEFORE INSERT, and every ownership UPDATE policy
+    // has no tier condition — so a lapsed member could keep editing their
+    // notes for ever. The Vault is an ongoing instrument: changing a note IS
+    // using it. DELETE stays open; taking your own records back is not a paid
+    // act.
+    promise: 'The Vault (Private Notes)',
+    enforcement: { kind: 'refuses', table: 'log_private_notes', trigger: 'tr_tier_gate_private_notes_update' },
+    gates: ['src/hooks/useLogFlow.ts'],
+  },
+  {
+    id: 'shelf-editing',
+    rank: 'archivist',
+    promise: 'The Physical Archive\n(Track 4K/Blu-Ray/VHS)',
+    enforcement: { kind: 'refuses', table: 'physical_archive', trigger: 'tr_tier_gate_archive_update' },
+    gates: ['src/stores/domain/archiveSlice.ts'],
+  },
+  {
     id: 'create-a-lounge',
     rank: 'archivist',
     // Sold as part of the Lounge rather than separately: a member reads "the
