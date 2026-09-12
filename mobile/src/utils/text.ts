@@ -137,6 +137,25 @@ export function stripHTML(html: string): string {
 export function truncateReview(text: string, max = 350): string {
     const raw = String(text || '').trim();
     if (raw.length <= max) return raw;
-    const cut = raw.lastIndexOf(' ', max);
-    return raw.slice(0, cut > 40 ? cut : max).trimEnd() + '…';
+    const space = raw.lastIndexOf(' ', max);
+    const at = space > 40 ? space : max;
+
+    // ── A CUT AT A CODE-UNIT INDEX CAN SPLIT AN EMOJI ───────────────────────
+    // `slice` counts UTF-16 units, so cutting at `at` can land BETWEEN the two
+    // halves of an astral character and leave a lone high surrogate, which
+    // renders as a replacement mark at the end of the excerpt.
+    //
+    // It is not the exotic path it looks like. The word-boundary branch above
+    // only applies when there IS a space in the first 350 characters — and a
+    // review written in Chinese or Japanese has none, so those fall through to
+    // the raw index every time.
+    //
+    // sanitizeInput's cleanForStorage carries this same guard, with the note
+    // that an unpaired surrogate also makes PostgreSQL refuse the whole
+    // request. This is the display-side twin of it.
+    const cut = raw.slice(0, at);
+    const last = cut.charCodeAt(cut.length - 1);
+    const safe = last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut;
+
+    return safe.trimEnd() + '…';
 }
