@@ -33,7 +33,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
-import { decorativeTextProps, scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
+import { decorativeTextProps, scaledTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 export interface SeriesChoice { id: string; title: string; part: number }
@@ -220,7 +220,7 @@ export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomI
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               accessibilityRole="button" accessibilityLabel="Not part of a series"
             >
-              <Text style={x.headClear} {...decorativeTextProps}>NOT A SERIES</Text>
+              <Text style={x.headClear} {...deckLabelProps}>NOT A SERIES</Text>
             </PressableScale>
           ) : null}
         </View>
@@ -283,7 +283,7 @@ export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomI
           accessibilityState={{ disabled: !ready }}
           accessibilityLabel="Set the series"
         >
-          <Text style={[x.setText, !ready && x.setTextOff]} {...decorativeTextProps}>SET THE SERIES</Text>
+          <Text style={[x.setText, !ready && x.setTextOff]} {...deckLabelProps}>SET THE SERIES</Text>
         </PressableScale>
       </View>
     </View>

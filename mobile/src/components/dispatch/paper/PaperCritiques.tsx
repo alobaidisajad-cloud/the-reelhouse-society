@@ -5,7 +5,7 @@ import { ArrowLeft, ChevronUp, Heart, MessageSquare, MoreHorizontal, Share2, Boo
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
-import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
+import { scaledTextProps, decorativeTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK, nameOf } from './paperMetrics';
 import { EndMark } from './PaperFrame';
@@ -89,7 +89,7 @@ export const CritiqueSpine = memo(function CritiqueSpine({
         accessibilityLabel={`Back to the top of the ${nameOf(kind).toLowerCase()}. ${counted(count ?? 0, 'critique', 'critiques')}.`}
       >
         <ChevronUp size={13} strokeWidth={2} color={colors.sepia} />
-        <Text style={p.spineKind} {...decorativeTextProps}>{nameOf(kind)}</Text>
+        <Text style={p.spineKind} {...deckLabelProps}>{nameOf(kind)}</Text>
         <Text style={p.spineText} numberOfLines={1} {...scaledTextProps}>{opening}</Text>
         <Text style={p.spineCount} {...scaledTextProps}>{formatCount(count) ?? ''}</Text>
       </PressableScale>

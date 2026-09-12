@@ -30,7 +30,7 @@ import { ChevronRight } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
-import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
+import { scaledTextProps, decorativeTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { KIND_RULE, KIND_NAME, UNSPOKEN, DOC_PAD } from './paperMetrics';
 import { softBreak } from './paperText';
@@ -191,7 +191,7 @@ export const EssayNext = memo(function EssayNext({
     <PressableScale style={e.next} haptic="medium" onPress={onPress}
       accessibilityRole="button" accessibilityLabel={`${label}. ${title}. ${readTime}.`}>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={e.nextLabel} {...decorativeTextProps}>{label}</Text>
+        <Text style={e.nextLabel} {...deckLabelProps}>{label}</Text>
         <Text style={e.nextTitle} numberOfLines={2} {...displayTextProps}>{title}</Text>
         <Text style={e.nextMeta} {...scaledTextProps}>{readTime}</Text>
       </View>

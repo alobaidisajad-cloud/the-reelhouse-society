@@ -18,7 +18,7 @@ import { ChevronRight, ChevronUp, Search, ArrowLeft, Lock, ExternalLink, MoreHor
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
-import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
+import { scaledTextProps, decorativeTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
 import { KIND_RULE, KIND_NAME, MARGIN_W, RULE_W, RULE_GAP, CRIMSON_INK, UNSPOKEN, AVATAR, nameOf } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
@@ -104,7 +104,7 @@ export const PaperPicker = memo(function PaperPicker({
             }
           >
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[p.leadIn, LEAD_STYLE[f.kind]]} {...decorativeTextProps}>
+              <Text style={[p.leadIn, LEAD_STYLE[f.kind]]} {...deckLabelProps}>
                 {f.name}
               </Text>
               <Text style={m.formLine} {...scaledTextProps}>{f.line}</Text>
@@ -112,11 +112,11 @@ export const PaperPicker = memo(function PaperPicker({
             {f.locked ? (
               <View style={m.lockRow}>
                 <Lock size={9} strokeWidth={2} color={colors.sepia} />
-                <Text style={m.lockText} {...decorativeTextProps}>AUTEURS</Text>
+                <Text style={m.lockText} {...deckLabelProps}>AUTEURS</Text>
               </View>
             ) : f.inProgress ? (
               <View style={m.lockRow}>
-                <Text style={m.inProgress} {...decorativeTextProps}>IN PROGRESS</Text>
+                <Text style={m.inProgress} {...deckLabelProps}>IN PROGRESS</Text>
                 <ChevronRight size={15} strokeWidth={2} color={colors.sepia} />
               </View>
             ) : (
@@ -134,7 +134,7 @@ export const PaperPicker = memo(function PaperPicker({
             onPress={onRules}
             accessibilityRole="link" accessibilityLabel="Read the house rules"
           >
-            <Text style={m.rulesLink} {...decorativeTextProps}>THE HOUSE RULES</Text>
+            <Text style={m.rulesLink} {...deckLabelProps}>THE HOUSE RULES</Text>
             <ChevronRight size={11} strokeWidth={2} color={colors.sepia} />
           </PressableScale>
         </>
@@ -421,7 +421,7 @@ export const ArchiveFilm = memo(function ArchiveFilm({
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={m.archiveTitle} numberOfLines={1} {...scaledTextProps}>{film.title}</Text>
-        <Text style={m.archiveMeta} numberOfLines={1} {...decorativeTextProps}>
+        <Text style={m.archiveMeta} {...deckLabelProps}>
           {counted(filings, 'FILING', 'FILINGS')}
         </Text>
       </View>
@@ -511,7 +511,7 @@ export const PaperRoom = memo(function PaperRoom({
           accessibilityRole="link"
           accessibilityLabel={`Open the member file of ${author.name}`}
         >
-          <Text style={m.roomFileText} {...decorativeTextProps}>THE MEMBER’S FILE</Text>
+          <Text style={m.roomFileText} {...deckLabelProps}>THE MEMBER’S FILE</Text>
           <ChevronRight size={10} strokeWidth={2} color={colors.sepia} />
         </PressableScale>
       ) : null}
@@ -1079,7 +1079,7 @@ export const LoungeCard = memo(function LoungeCard({
             the same way it leads on the page and on the share card. */}
         {kind === 'dossier' && title ? (
           <>
-            <Text style={[p.leadIn, m.loungeKind, { color: ink }]} {...decorativeTextProps}>
+            <Text style={[p.leadIn, m.loungeKind, { color: ink }]} {...deckLabelProps}>
               {KIND_NAME.dossier}
             </Text>
             <Text style={m.loungeTitle} numberOfLines={2} {...scaledTextProps}>{title}</Text>
@@ -1101,20 +1101,20 @@ export const LoungeCard = memo(function LoungeCard({
             leaves", the host says where to. */}
         {kind === 'wire' && source ? (
           <View style={m.loungeSource}>
-            <Text style={[m.loungeFact, { color: ink, marginTop: 0 }]} numberOfLines={1}
-              {...decorativeTextProps}>
+            <Text style={[m.loungeFact, { color: ink, marginTop: 0 }]}
+              {...deckLabelProps}>
               {source.toUpperCase()}
             </Text>
             <ExternalLink size={9} strokeWidth={2} color={ink} />
           </View>
         ) : null}
         {kind === 'ballot' && result ? (
-          <Text style={[m.loungeFact, { color: ink }]} numberOfLines={1} {...decorativeTextProps}>
+          <Text style={[m.loungeFact, { color: ink }]} {...deckLabelProps}>
             {`CLOSED · ${result.toUpperCase()}`}
           </Text>
         ) : null}
         {kind === 'seeking' && answered ? (
-          <Text style={[m.loungeFact, { color: ink }]} numberOfLines={1} {...decorativeTextProps}>
+          <Text style={[m.loungeFact, { color: ink }]} {...deckLabelProps}>
             ANSWERED
           </Text>
         ) : null}
@@ -1135,12 +1135,12 @@ export const LoungeCard = memo(function LoungeCard({
           {/* No house number. A card in a lounge is a filing somebody shared,
               not a membership record — the number belongs on the SHARE card,
               which travels out of the app and has to say whose house it is. */}
-          <Text style={m.loungeBy} numberOfLines={1} {...decorativeTextProps}>
+          <Text style={m.loungeBy} {...deckLabelProps}>
             {author ? author.name.toUpperCase() : 'A MEMBER, DEPARTED'}
           </Text>
         </View>
 
-        <Text style={m.loungeMeta} numberOfLines={1} {...decorativeTextProps}>
+        <Text style={m.loungeMeta} {...deckLabelProps}>
           {`${certifyCount} CERTIFIED · ${counted(commentCount ?? 0, 'CRITIQUE', 'CRITIQUES')}`}
         </Text>
       </View>
@@ -1188,7 +1188,7 @@ export const NewFilings = memo(function NewFilings({
           accessibilityRole="button"
           accessibilityLabel={`${count} new filings. Go to the top.`}>
           <ChevronUp size={11} strokeWidth={2.5} color={colors.ink} />
-          <Text style={m.newText} {...decorativeTextProps}>
+          <Text style={m.newText} {...deckLabelProps}>
             {count} NEW {count === 1 ? 'FILING' : 'FILINGS'}
           </Text>
         </PressableScale>
@@ -1234,7 +1234,7 @@ export const PaperBack = memo(function PaperBack({
         accessibilityRole="button" accessibilityLabel="Back">
         <ArrowLeft size={15} strokeWidth={2} color={colors.sepia} />
       </PressableScale>
-      <Text style={m.backLabel} {...decorativeTextProps}>{label}</Text>
+      <Text style={m.backLabel} {...deckLabelProps}>{label}</Text>
       {/* The spacer on the right existed to keep the label optically centred
           against the arrow. It is the same width as a control, so when there is
           more to do with this filing the control simply takes its place and the

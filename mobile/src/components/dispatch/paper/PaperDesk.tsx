@@ -21,7 +21,7 @@ import {
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
-import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
+import { scaledTextProps, decorativeTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
 import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, groupDigits, nameOf } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
@@ -518,7 +518,7 @@ export const ShareSheet = memo(function ShareSheet({
             accessibilityRole="button" accessibilityLabel={`${label}. ${sub}.`}>
             <Icon size={15} strokeWidth={2} color={colors.sepia} />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={d.destLabel} {...decorativeTextProps}>{label}</Text>
+              <Text style={d.destLabel} {...deckLabelProps}>{label}</Text>
               <Text style={d.destSub} numberOfLines={1} {...scaledTextProps}>{sub}</Text>
             </View>
           </PressableScale>
