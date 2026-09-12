@@ -45,10 +45,29 @@ export const TIERS = [
       title: 'The Editorial\nDesk',
       desc: 'Pro-level review formatting. Inject movie stills, pull-quotes, and drop caps into your logs.',
     },
+    // ── NO LINE ABOUT THE FRAME ────────────────────────────────────────────
+    // This list used to promise a `Gilded Frame (Exclusive Animated Gold
+    // Borders)`. There was no such thing. It appeared in exactly one place in
+    // the whole codebase — here, in the sales list — and nowhere in the app.
+    // We were charging for it.
+    //
+    // It is not replaced with a description of the rank mark either, for the
+    // same reason the Auteur list below dropped its badge line: the card DRAWS
+    // the real mark, above the price. A description can disagree with the
+    // thing. A rendering cannot.
+    //
+    // What an Archivist's rank actually looks like lives in `roomTier` — light
+    // and edges, in three chosen places, on purpose: "if everything carried the
+    // tier, the tier would stop meaning anything."
+    // THE ARCHIVE was withheld from free members and never once offered to
+    // them — a gate with no sign on it, found by the guard rather than by
+    // anybody reading this list. The words are the archive screen's own: what
+    // the rank buys is not the filings, which are public and already on the
+    // page. It is the GATHERING of them.
     features: [
+      'The Archive\n(Every Filing on One Film,\nGathered)',
       'The Physical Archive\n(Track 4K/Blu-Ray/VHS)',
       'The Vault (Private Notes)',
-      'The Gilded Frame\n(Exclusive Animated Gold Borders)',
       'The Lounge\n(Exclusive Cinema Chat Rooms)',
     ],
     cta: 'BECOME AN ARCHIVIST',
@@ -86,7 +105,13 @@ export const TIERS = [
     features: [
       'Publish Essays to The\nDispatch',
       'Curatorial Control\n(Select Alternative TMDB\nPosters)',
-      'Poster Glow Profile\nAesthetics',
+      // Was `Poster Glow Profile Aesthetics`, which named nothing that exists.
+      // The feature is real and already built — `ProfileBackdrop` dresses the
+      // room with the centre panel of the member's own triptych, washed and
+      // vignetted. It just had a name no member could have matched to it, and
+      // "poster glow" is something else entirely: an ungated effect on the film
+      // page that everybody already gets.
+      'The Backdrop\n(Your Room, Dressed by\nYour Own Film)',
       'Early Access to New\nFeatures',
     ],
     cta: 'BECOME AN AUTEUR',
