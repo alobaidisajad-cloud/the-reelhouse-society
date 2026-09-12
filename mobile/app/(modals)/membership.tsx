@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Platform,
   useWindowDimensions, AppState
@@ -26,6 +26,8 @@ import { resolveTier, getTierWeight } from '@/src/utils/tier';
 // Replaced with Reanimated LinearTransition on animated containers
 
 import { TIERS } from '@/src/constants/membership';
+import { GATED_FEATURES } from '@/src/constants/gatedFeatures';
+import { useLocalSearchParams } from 'expo-router';
 import { RankBadge } from '@/src/components/RankBadge';
 import { useMembershipPricing } from '@/src/hooks/useMembershipPricing';
 
@@ -79,6 +81,24 @@ export default function MembershipScreen() {
   // Adding 'founding' to `pricing` cannot disturb monthlyKnownAbsent above: that uses
   // .some(), which needs only ONE tier to carry a monthly product, and a lifetime seat
   // never carries one.
+  /**
+   * WHICH DOOR SENT THEM, if a door did.
+   *
+   * `reason` is a feature id from `gatedFeatures.ts` — the same file the cards
+   * below sell from and the same file `gates:check` verifies against
+   * production. Resolving it here rather than passing prose through the URL
+   * means the line under the title can never disagree with the promise on the
+   * card, which is the failure that produced a Gilded Frame nobody built.
+   *
+   * An unrecognised or absent reason simply falls back to the general pitch:
+   * a deep link somebody typed must not be able to blank the header.
+   */
+  const { reason } = useLocalSearchParams<{ reason?: string; rank?: string; returnTo?: string }>();
+  const cameFor = useMemo(
+    () => (reason ? GATED_FEATURES.find((f) => f.id === reason) ?? null : null),
+    [reason],
+  );
+
   const foundingPriceLabel = pricing.founding?.lifetime;
   const foundingSeatPrice = pricing.founding?.lifetimePrice;
   // Compare against AUTEUR, because that is precisely what the seat grants — Auteur
@@ -331,12 +351,25 @@ export default function MembershipScreen() {
 
       <ScrollView contentContainerStyle={[st.scrollContent, { paddingBottom: Math.max(insets.bottom, 80) }]} showsVerticalScrollIndicator={false}>
 
-        {/* ── Header ── */}
+        {/* ── Header ──
+            WHY THEY CAME, IF THEY CAME FROM A DOOR.
+
+            Every gate in the app used to land a member on this page with no
+            memory of what they had been trying to do. They arrived at a
+            generic pitch, had to work out for themselves which rank they
+            needed, and — worst of all — were not returned to the thing they
+            wanted after paying for it.
+
+            `reason` is a feature id from gatedFeatures.ts, so the line under
+            the title is the same promise text the card below it sells. One
+            source, no second copy to go stale. */}
         <Animated.View entering={FadeInDown.duration(700)} style={st.header}>
           <Text style={st.headerLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦&nbsp; ELEVATE YOUR DEVOTION &nbsp;✦</Text>
           <Text style={st.headerTitle}>The ReelHouse{'\n'}Society</Text>
           <Text style={st.headerSub}>
-            Ascend the ranks of The Society. Embrace the aesthetic. Wield the ultimate cinematic toolkit.
+            {cameFor
+              ? `${cameFor.promise.replace(/\n/g, ' ')} opens with ${cameFor.rank === 'auteur' ? 'The Auteur' : 'The Archivist'}.`
+              : 'Ascend the ranks of The Society. Embrace the aesthetic. Wield the ultimate cinematic toolkit.'}
           </Text>
         </Animated.View>
 

@@ -145,6 +145,43 @@ if (dispatchWhen && !/WHEN .*kind = ANY .*ballot.*dossier/s.test(dispatchWhen)) 
   );
 }
 
+// ── can the app turn every refusal into a door? ─────────────────────────────
+//
+// Each trigger raises a sentence written for a person to read. `tierRefusal.ts`
+// is what turns one into a clearance gate — and a trigger whose wording it does
+// not recognise falls through to whatever generic "that did not save" copy the
+// calling screen happens to have, with no way forward. So the sentences the
+// database can raise and the sentences the app can read must be the same set.
+const refusalSrc = fs.readFileSync(path.join(MOBILE, 'src/utils/tierRefusal.ts'), 'utf8');
+const knownSentences = [...refusalSrc.matchAll(/match: \/\^([^$]+)\$\//g)].map((m) => m[1]);
+
+if (!knownSentences.length) {
+  console.error('gates:check — could not read any sentences out of tierRefusal.ts.');
+  console.error('That is a parse failure, not a clean result.');
+  process.exit(1);
+}
+
+const liveMessages = q(`
+  SELECT DISTINCT (regexp_match(pg_get_triggerdef(t.oid), ''', ''([^'']+)''\\)'))[1]
+  FROM pg_trigger t
+  JOIN pg_class c ON c.oid = t.tgrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  JOIN pg_proc p ON p.oid = t.tgfoid
+  WHERE n.nspname='public' AND NOT t.tgisinternal AND p.proname='enforce_tier_gate'`)
+  .map((r) => r[0]).filter(Boolean);
+
+for (const msg of liveMessages) {
+  if (!knownSentences.some((k) => new RegExp(`^${k}$`).test(msg))) {
+    problems.push(`production can refuse with "${msg}" and tierRefusal.ts cannot read it — `
+      + 'the member would get a generic failure and no way forward');
+  }
+}
+for (const k of knownSentences) {
+  if (!liveMessages.some((m) => new RegExp(`^${k}$`).test(m))) {
+    problems.push(`tierRefusal.ts expects "${k}" but no live trigger raises it`);
+  }
+}
+
 // ── the hole this whole study found: gated at the door, open in the room ────
 const unguarded = q(`
   SELECT 'lounge_messages', count(*)::text FROM pg_trigger t
