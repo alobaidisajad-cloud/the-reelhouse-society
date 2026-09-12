@@ -25,6 +25,7 @@ import { getTierWeight, resolveTier } from '@/src/utils/tier';
 import { GATED_FEATURES, RANK_WEIGHT, type Rank } from '@/src/constants/gatedFeatures';
 import type { Standing } from '@/src/components/clearance/Clearance';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { recordGateEvent } from '@/src/utils/gateTelemetry';
 
 export interface Clearance {
   /** True when the member holds the rank this feature needs. */
@@ -81,6 +82,12 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
 
   const open = useCallback(() => {
     TactileEngine.selection();
+    /**
+     * Every rope in the app reports here, because they all come through this
+     * one function — which is the reason it was worth collapsing seventeen
+     * gates into one hook before trying to measure anything.
+     */
+    recordGateEvent('gate_tapped', { featureId, rank, standing });
     const params = new URLSearchParams({ reason: featureId, rank });
     if (returnTo) params.set('returnTo', returnTo);
     const href = `/membership?${params.toString()}`;
@@ -93,7 +100,7 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
     } else {
       (router.push as (h: string) => void)(href);
     }
-  }, [featureId, rank, returnTo]);
+  }, [featureId, rank, returnTo, standing]);
 
   return { held, rank, standing, open };
 }

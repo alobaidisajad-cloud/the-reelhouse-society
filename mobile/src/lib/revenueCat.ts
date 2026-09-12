@@ -24,6 +24,7 @@ import { supabase } from './supabase';
 import { logger } from '../utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
 import { resolveTier } from '../utils/tier';
+import { recordGateEvent } from '../utils/gateTelemetry';
 
 // ── Type Definitions (no runtime dependency until package is installed) ──
 // These mirror RevenueCat's actual types for type-safety before the package exists
@@ -207,6 +208,7 @@ export async function reconcileRank(): Promise<RankReconciliation> {
     const applied = !!row?.out_applied;
     if (applied) {
       logger.info(`[revenueCat] rank relinquished: ${row?.out_reason ?? ''}`);
+      recordGateEvent('rank_relinquished');
       return 'relinquished';
     }
     // Refused for a good reason — a hand-granted rank, or a founding seat, or

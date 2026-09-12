@@ -27,6 +27,7 @@ import { resolveTier, getTierWeight } from '@/src/utils/tier';
 
 import { TIERS } from '@/src/constants/membership';
 import { GATED_FEATURES } from '@/src/constants/gatedFeatures';
+import { recordGateEvent } from '@/src/utils/gateTelemetry';
 import { useLocalSearchParams } from 'expo-router';
 import { RankBadge } from '@/src/components/RankBadge';
 import { useMembershipPricing } from '@/src/hooks/useMembershipPricing';
@@ -98,6 +99,19 @@ export default function MembershipScreen() {
     () => (reason ? GATED_FEATURES.find((f) => f.id === reason) ?? null : null),
     [reason],
   );
+
+  /**
+   * The middle of the funnel: a rope was tapped and the page actually opened.
+   * Recorded once per arrival rather than on every render, and it carries the
+   * door — so "which rope leads to the Society page" is answerable, and with
+   * the purchase event below, so is "which rope leads to a rank".
+   */
+  useEffect(() => {
+    recordGateEvent('membership_opened', {
+      featureId: cameFor?.id,
+      rank: cameFor?.rank,
+    });
+  }, [cameFor]);
 
   const foundingPriceLabel = pricing.founding?.lifetime;
   const foundingSeatPrice = pricing.founding?.lifetimePrice;
@@ -205,6 +219,12 @@ export default function MembershipScreen() {
       const entitlement = await purchaseTier(tier as ReelHouseTier, billing);
       if (entitlement?.isActive) {
         lastCheckoutRef.current = Date.now();
+        // The far end of the funnel. `reason` is the door that sent them, so
+        // this is the only place that can say WHICH rope led to a purchase.
+        recordGateEvent('rank_purchased', {
+          featureId: cameFor?.id,
+          rank: tier === 'auteur' || tier === 'founding' ? 'auteur' : 'archivist',
+        });
         reelToast.success(`Welcome to the ${tier.toUpperCase()} rank!`);
         useAuthStore.getState().setLocalTierHint({ tier: entitlement.tier });
         
