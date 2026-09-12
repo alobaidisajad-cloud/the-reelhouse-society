@@ -19,7 +19,36 @@ export const TIERS = [
     dotColor: colors.fog,
     includes: null,
     featuredFeature: null,
-    features: ['Log & Rate Films', 'The Diary & Watchlist', 'Basic Profile', 'Unlimited Custom Lists', 'Import & Export Archive'],
+    /**
+     * ── WHAT THIS LIST USED TO SAY, AND WHY IT WAS THE REAL PROBLEM ─────────
+     * "Log & Rate Films · The Diary & Watchlist · Basic Profile · Unlimited
+     * Custom Lists · Import & Export Archive".
+     *
+     * Every word true, and it described a spreadsheet with posters. It never
+     * mentioned that a Cinephile may FILE to the Dispatch — takes, seekings and
+     * wires, three of the five forms — nor that they may critique anyone,
+     * certify a filing, or vote in any ballot. Somebody reading that list and
+     * then seeing "chat rooms" under a paid rank would reasonably conclude the
+     * whole society was behind the paywall, when in fact they can publish to
+     * the entire house for nothing and argue with anyone about it.
+     *
+     * Every line below is verified against the database AND the client:
+     * `tr_tier_gate_dispatch` fires only WHEN kind IN ('ballot','dossier'), and
+     * `FORMS` marks `locked` on exactly those two. dispatch_comments,
+     * dispatch_certifications, dispatch_votes, log_comments, list_comments,
+     * lists and the archive import carry no tier gate at all.
+     *
+     * `aRankIsSoldEnforcedAndExplained` now guards this direction too: a table
+     * named here as free may not appear as a gated feature, and `gates:check`
+     * fails if production ever grows a tier trigger on one.
+     */
+    features: [
+      'Log, Rate & Review\nEvery Film You See',
+      'File to The Dispatch\n(Takes, Seekings & Wires)',
+      'Critique, Certify\n& Vote on Any Filing',
+      'The Diary, The Watchlist\n& Unlimited Lists',
+      'Import & Export\nYour Own Archive',
+    ],
     cta: 'JOIN FREE',
     ctaStyle: 'ghost' as const,
   },

@@ -15,6 +15,7 @@ import '../styles/dispatch.css'
 import PageSEO from '../components/PageSEO'
 import { parseMarkdown } from '../utils/markdownParser'
 import { sanitizeHTML } from '../utils/sanitize'
+import { isArchivistPlusTier, isAuteurPlusTier } from '../utils/tier'
 
 /* ── REFINED NOIR ICONS ── */
 const IconFeather = () => (
@@ -178,7 +179,7 @@ export default function DispatchPage() {
     const DOSSIERS_PER_PAGE = 6
 
     const scrollPos = useRef(0)
-    const canWrite = user?.role === 'auteur'
+    const canWrite = isAuteurPlusTier(user)
 
     useEffect(() => {
         const fetchNews = async () => {
@@ -256,7 +257,7 @@ export default function DispatchPage() {
     const [showShareLounge, setShowShareLounge] = useState(false)
     const [localCertifyCount, setLocalCertifyCount] = useState(0)
     const [localViews, setLocalViews] = useState(0)
-    const isLoungeEligible = user && ['archivist', 'auteur'].includes((user as any).role)
+    const isLoungeEligible = isArchivistPlusTier(user as never)
 
     const handleCertify = async () => {
         if (!user || !selectedArticle?.id || selectedArticle.id.startsWith('seed-') || certifyLoading) return

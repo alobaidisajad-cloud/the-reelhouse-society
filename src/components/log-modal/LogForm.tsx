@@ -13,6 +13,7 @@ import LogActionRow from './LogActionRow'
 import reelToast from '../../utils/reelToast'
 import { useNavigate } from 'react-router-dom'
 import { useFilmMutations } from '../../features/film/hooks/useFilmMutations'
+import { isArchivistPlusTier, isAuteurPlusTier } from '../../utils/tier'
 
 const AUTOPSY_INIT = Object.freeze({ story: 0, script: 0, acting: 0, cinematography: 0, editing: 0, sound: 0 })
 const ABANDONED_REASONS = ['Too Slow', 'Too Upsetting', 'Life Got in the Way', "I'll Return Someday", "Lost the Plot", "Wrong Mood"]
@@ -68,8 +69,8 @@ export default function LogForm({ film }: { film: any }) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [submitting, setSubmitting] = useState(false)
 
-    const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
-    const isAuteur = user?.role === 'auteur'
+    const isPremium = isArchivistPlusTier(user)
+    const isAuteur = isAuteurPlusTier(user)
 
 
     useEffect(() => {

@@ -113,7 +113,11 @@ export default function MembershipPage() {
                         </div>
 
                         <div className="tier-features">
-                            {['Log & Rate Films', 'The Diary & Watchlist', 'Basic Profile', 'Unlimited Custom Lists', 'Import & Export Archive'].map((feature, i) => (
+                            {/* Kept level with mobile/src/constants/membership.ts, which carries
+                                the reasoning: the old list described a spreadsheet with posters
+                                and never mentioned that a Cinephile may FILE to the Dispatch —
+                                takes, seekings and wires — nor critique, certify or vote. */}
+                            {['Log, Rate & Review\nEvery Film You See', 'File to The Dispatch\n(Takes, Seekings & Wires)', 'Critique, Certify\n& Vote on Any Filing', 'The Diary, The Watchlist\n& Unlimited Lists', 'Import & Export\nYour Own Archive'].map((feature, i) => (
                                 <div key={i} className="feature-item">
                                     <div className="feature-dot feature-dot--free" />
                                     <span className="feature-text feature-text--free">{feature}</span>
@@ -157,10 +161,15 @@ export default function MembershipPage() {
                                 </div>
                             </div>
                             
+                            {/* NO GILDED FRAME. It promised "Exclusive Animated Gold Borders"
+                                and there was no such thing — it existed in the two sales lists
+                                and nowhere else in either codebase. We were charging for it.
+                                THE ARCHIVE replaces it because that one is real and was being
+                                withheld from members without ever being offered to them. */}
                             {[
-                                'The Physical Archive\n(Track 4K/Blu-Ray/VHS)', 
-                                'The Vault (Private Notes)', 
-                                'The Gilded Frame\n(Exclusive Animated Gold Borders)', 
+                                'The Archive\n(Every Filing on One Film,\nGathered)',
+                                'The Physical Archive\n(Track 4K/Blu-Ray/VHS)',
+                                'The Vault (Private Notes)',
                                 'The Lounge\n(Exclusive Cinema Chat Rooms)'
                             ].map((feature, i) => (
                                 <div key={i} className="feature-item feature-item--pro">
@@ -209,11 +218,16 @@ export default function MembershipPage() {
                                 </div>
                             </div>
 
+                            {/* NO GOLD FOIL BADGE. Mobile dropped that line deliberately: the
+                                card DRAWS the real mark, and a sentence describing it is a
+                                second copy of one fact — the copy being the one that goes
+                                stale. It already had. The mark is not gold.
+                                And "Poster Glow" named nothing anybody could find; the feature
+                                is the profile Backdrop, which is real and already built. */}
                             {[
-                                'Publish Essays to The\nDispatch', 
-                                'Curatorial Control\n(Select Alternative TMDB\nPosters)', 
-                                'Poster Glow Profile\nAesthetics', 
-                                'Gold Foil "Auteur" Badge', 
+                                'Publish Essays to The\nDispatch',
+                                'Curatorial Control\n(Select Alternative TMDB\nPosters)',
+                                'The Backdrop\n(Your Room, Dressed by\nYour Own Film)',
                                 'Early Access to New\nFeatures'
                             ].map((feature, i) => (
                                 <div key={i} className="feature-item feature-item--pro">

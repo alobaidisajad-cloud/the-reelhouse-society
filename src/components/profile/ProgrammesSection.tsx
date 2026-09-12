@@ -3,6 +3,7 @@ import { Lock, X } from 'lucide-react'
 import reelToast from '../../utils/reelToast'
 import { useFilmStore, useProgrammeStore } from '../../store'
 import { tmdb } from '../../tmdb'
+import { isArchivistPlusTier } from '../../utils/tier'
 
 export function ProgrammesSection({ programmes, user, isOwnProfile }: { programmes: any[]; user: any; isOwnProfile: boolean }) {
     const { logs, vault, watchlist } = useFilmStore()
@@ -59,7 +60,10 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
         }
     }
 
-    const isAuteur = logs.length >= 20 || user?.role === 'auteur' || user?.role === 'archivist'
+    // Twenty logs OR the rank. The log count is a separate earned route in and
+    // is untouched; only the rank half is RESOLVED rather than matched, so a
+    // member who bought the rank — or holds a founding seat — is let in.
+    const isAuteur = logs.length >= 20 || isArchivistPlusTier(user)
 
     return (
         <div>

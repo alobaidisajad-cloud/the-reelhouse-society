@@ -11,6 +11,7 @@ import ShareToLoungeModal from '../components/ShareToLoungeModal'
 
 import { useViewport } from '../hooks/useViewport'
 import { useAuthStore } from '../store'
+import { isArchivistPlusTier } from '../utils/tier'
 
 export default function PersonPage() {
     const { id } = useParams()
@@ -18,7 +19,7 @@ export default function PersonPage() {
     const { isTouch: IS_TOUCH } = useViewport()
     const [showShareLounge, setShowShareLounge] = useState(false)
     const user = useAuthStore((s: any) => s.user)
-    const isArchivist = user && ['archivist', 'auteur'].includes(user.role)
+    const isArchivist = isArchivistPlusTier(user as never)
 
     const { data: person, isLoading: loadingPerson } = useQuery({
         queryKey: ['person', id],

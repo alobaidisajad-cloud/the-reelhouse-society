@@ -37,6 +37,8 @@ import {
   UNENFORCEABLE_PROMISES,
   NOT_A_GATE,
   RANK_WEIGHT,
+  FREE_PROMISES,
+  MUST_STAY_FREE,
 } from '../gatedFeatures';
 import { TIERS } from '../membership';
 
@@ -160,6 +162,49 @@ describe('a rank is sold, enforced, and explained', () => {
     expect(promises.length).toBeGreaterThanOrEqual(8);
     expect(viewerGateFiles().length).toBeGreaterThanOrEqual(10);
     expect(GATED_FEATURES.length).toBeGreaterThanOrEqual(9);
+  });
+
+  // ── the other direction ───────────────────────────────────────────────────
+  describe('what we promise is free, stays free', () => {
+    const freeTier = TIERS.find((t) => t.id === 'cinephile');
+
+    it('every line on the Cinephile list is accounted for', () => {
+      const claimed = new Set(FREE_PROMISES.map((f) => f.promise));
+      const unaccounted = (freeTier?.features ?? []).filter((f) => !claimed.has(f));
+      // A free promise nobody mapped is a promise nobody is checking.
+      expect(unaccounted.map((f) => JSON.stringify(f))).toEqual([]);
+    });
+
+    it('and every mapping still corresponds to a line we actually show', () => {
+      const shown = new Set(freeTier?.features ?? []);
+      const stale = FREE_PROMISES.filter((f) => !shown.has(f.promise));
+      expect(stale.map((f) => JSON.stringify(f.promise))).toEqual([]);
+    });
+
+    it('no table a free promise rests on is claimed as a paid feature', () => {
+      // The mistake this catches: gating something is one line of SQL, and
+      // nobody re-reads the Cinephile list afterwards. A member who finds a
+      // locked door where we promised an open one has been lied to just as
+      // surely as one who paid for something that does not exist.
+      const paidTables = new Set(
+        GATED_FEATURES
+          .map((f) => f.enforcement)
+          .filter((e): e is Extract<typeof e, { table: string }> => 'table' in e)
+          .map((e) => e.table),
+      );
+      const betrayed = MUST_STAY_FREE.filter((t) => paidTables.has(t));
+      expect(betrayed).toEqual([]);
+    });
+
+    it('the free list is not empty and says more than "basic profile"', () => {
+      expect((freeTier?.features ?? []).length).toBeGreaterThanOrEqual(4);
+      const joined = (freeTier?.features ?? []).join(' ');
+      // The three things the old list never mentioned, and the omission of
+      // which is what made the app look like a spreadsheet with posters.
+      expect(joined).toMatch(/Dispatch/);
+      expect(joined).toMatch(/Critique/);
+      expect(joined).toMatch(/Vote/);
+    });
   });
 
   it('the Gilded Frame is gone, and stays gone', () => {

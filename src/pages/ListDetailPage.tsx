@@ -13,6 +13,7 @@ import { useState } from 'react'
 
 import reelToast from '../utils/reelToast'
 import { sanitizeDescription, sanitizeListTitle } from '../utils/sanitize'
+import { isArchivistPlusTier } from '../utils/tier'
 
 function LoggedBadgeGrid({ films, isOwner, isArchivist, isAuteurRole }: { films: any[]; isOwner: boolean; isArchivist: boolean; isAuteurRole: boolean }) {
     const logs = useFilmStore(s => s.logs)
@@ -57,7 +58,7 @@ export default function ListDetailPage() {
     const [isEditing, setIsEditing] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
     const [showShareLounge, setShowShareLounge] = useState(false)
-    const isArchivist = currentUser && ['archivist', 'auteur'].includes((currentUser as any).role)
+    const isArchivist = isArchivistPlusTier(currentUser as never)
     const isAuteurRole = (currentUser as any)?.role === 'auteur'
 
 

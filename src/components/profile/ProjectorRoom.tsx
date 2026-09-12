@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Lock } from 'lucide-react'
 import { useFilmStore, useUIStore, useAuthStore } from '../../store'
 import reelToast from '../../utils/reelToast'
+import { isArchivistPlusTier } from '../../utils/tier'
 
 export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
     const isMaster = stats.total_logs > 50
@@ -18,7 +19,7 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
     //   2. is the VIEWER an Archivist?                  — the actual paywall
     const viewer = useAuthStore(s => s.user)
     const isOwnArchive = !!viewer?.id && !!user?.id && viewer.id === user.id
-    const isPremium = viewer?.role === 'archivist' || viewer?.role === 'auteur'
+    const isPremium = isArchivistPlusTier(viewer)
 
     const downloadCsv = async () => {
         if (!isOwnArchive) {

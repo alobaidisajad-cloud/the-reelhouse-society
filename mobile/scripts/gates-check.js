@@ -30,6 +30,15 @@ const claimedTriggers = [...src.matchAll(/kind: 'refuses', table: '([a-z_]+)', t
 const claimedStrips = [...src.matchAll(/kind: 'strips', table: '([a-z_]+)', fields: \[([^\]]+)\]/g)]
   .flatMap((m) => m[2].split(',').map((f) => ({ table: m[1], field: f.trim().replace(/'/g, '') })));
 
+/**
+ * The tables the Cinephile list rests on. Gating one of these is a single line
+ * of SQL, and nobody re-reads the free list afterwards — so production is asked
+ * directly whether any of them has grown a tier trigger.
+ */
+const mustStayFree = [...src.matchAll(/tables: \[([^\]]*)\]/g)]
+  .flatMap((m) => m[1].split(',').map((t) => t.trim().replace(/'/g, '')))
+  .filter(Boolean);
+
 if (!claimedTriggers.length || !claimedStrips.length) {
   console.error('gates:check — could not read the claims out of gatedFeatures.ts.');
   console.error('That is a parse failure, not a clean result. Refusing to report success.');
@@ -101,6 +110,39 @@ for (const f of liveStripped) {
   if (!claimedStrips.some((c) => c.field === f)) {
     problems.push(`production silently blanks logs.${f} and nothing sells it`);
   }
+}
+
+// ── the other direction: is what we advertise as FREE still free? ───────────
+if (mustStayFree.length) {
+  const gatedFree = q(`
+    SELECT c.relname
+    FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    JOIN pg_proc p ON p.oid = t.tgfoid
+    WHERE n.nspname='public' AND NOT t.tgisinternal AND p.proname LIKE '%tier%'
+      AND c.relname = ANY(ARRAY[${mustStayFree.map((t) => `'${t}'`).join(',')}])`);
+  for (const [tbl] of gatedFree) {
+    problems.push(`${tbl} is advertised as FREE on the Cinephile list and production now tier-gates it`);
+  }
+}
+
+/**
+ * The Dispatch trigger is the one gate with a WHEN clause, and that clause is
+ * load-bearing: it is the only thing making takes, seekings and wires free.
+ * Widen it to every kind and three free promises silently become paid.
+ */
+const dispatchWhen = q(`
+  SELECT pg_get_triggerdef(t.oid)
+  FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid
+  WHERE c.relname='dispatch_posts' AND t.tgname='tr_tier_gate_dispatch' AND NOT t.tgisinternal`)
+  .map((r) => r[0]).join(' ');
+
+if (dispatchWhen && !/WHEN .*kind = ANY .*ballot.*dossier/s.test(dispatchWhen)) {
+  problems.push(
+    'tr_tier_gate_dispatch no longer fires only for ballots and essays — '
+    + 'takes, seekings and wires are advertised as free and this is what keeps them free',
+  );
 }
 
 // ── the hole this whole study found: gated at the door, open in the room ────

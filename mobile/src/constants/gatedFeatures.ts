@@ -170,6 +170,53 @@ export const UNENFORCEABLE_PROMISES = [
 ];
 
 /**
+ * ── THE OTHER DIRECTION: WHAT WE PROMISE IS FREE ────────────────────────────
+ * Every check above asks "is this paid thing really withheld?". None of them
+ * asked the reverse — is this FREE thing really free? — and that is the easier
+ * mistake to make, because gating something is a one-line trigger and nobody
+ * re-reads the Cinephile list afterwards.
+ *
+ * A Cinephile who finds a locked door where we promised an open one has been
+ * lied to just as surely as one who pays for a Gilded Frame that does not
+ * exist. So each free promise names the tables it rests on, and those tables
+ * must carry NO tier trigger — checked in the repo by
+ * `aRankIsSoldEnforcedAndExplained` and against production by `gates:check`.
+ */
+export const FREE_PROMISES: { promise: string; tables: string[] }[] = [
+  {
+    promise: 'Log, Rate & Review\nEvery Film You See',
+    // `logs` carries enforce_log_tier_fields, which STRIPS premium columns but
+    // never refuses the row — so logging itself is free and the promise holds.
+    // It is named here anyway, so that turning that trigger into a refusal
+    // would break this rather than pass quietly.
+    tables: [],
+  },
+  {
+    promise: 'File to The Dispatch\n(Takes, Seekings & Wires)',
+    // dispatch_posts DOES carry a tier trigger, but only WHEN the kind is a
+    // ballot or an essay. The three free forms are untouched by it, which is
+    // why this promise names no table: the guard for it is the WHEN clause,
+    // asserted in `gates:check`.
+    tables: [],
+  },
+  {
+    promise: 'Critique, Certify\n& Vote on Any Filing',
+    tables: ['dispatch_comments', 'dispatch_certifications', 'dispatch_votes'],
+  },
+  {
+    promise: 'The Diary, The Watchlist\n& Unlimited Lists',
+    tables: ['lists', 'list_items', 'list_comments'],
+  },
+  {
+    promise: 'Import & Export\nYour Own Archive',
+    tables: [],
+  },
+];
+
+/** Every table a free promise rests on. Nothing here may ever be tier-gated. */
+export const MUST_STAY_FREE = [...new Set(FREE_PROMISES.flatMap((f) => f.tables))];
+
+/**
  * Client gates that are NOT paywalls, kept here so the guard can tell the
  * difference between a door with no sign and something that was never a door.
  */

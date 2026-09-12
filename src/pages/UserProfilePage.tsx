@@ -22,6 +22,7 @@ import { ProfileTabs } from '../features/profile/components/ProfileTabs'
 import { ProfileContent } from '../features/profile/components/ProfileContent'
 
 import { useViewport } from '../hooks/useViewport'
+import { isArchivistPlusTier } from '../utils/tier'
 
 
 
@@ -440,8 +441,12 @@ export default function UserProfilePage() {
     })
 
 
-    const isPremium = currentUser?.role === 'archivist' || currentUser?.role === 'auteur'
-    const isArchivistPlus = ['archivist', 'auteur'].includes((profileUser as any)?.role || '')
+    // Both resolved rather than matched. `role` is one of the THREE things that
+    // make a rank — profile_tier_weight takes the GREATEST of tier, role and the
+    // founding flag — so matching on role alone denied a member who BOUGHT the
+    // rank (tier set, role possibly stale) and every founding member.
+    const isPremium = isArchivistPlusTier(currentUser as never)
+    const isArchivistPlus = isArchivistPlusTier(profileUser as never)
 
     const TABS = [
         { id: 'diary', label: 'The Ledger', count: finalMetrics.total_logs },

@@ -10,6 +10,7 @@ import reelToast from '../utils/reelToast'
 import PageSEO from '../components/PageSEO'
 import '../styles/lounge.css'
 import { LIMITS } from '../utils/limits'
+import { isArchivistPlusTier } from '../utils/tier'
 
 // ── Gate for non-archivists ──
 function LoungeGate() {
@@ -294,7 +295,7 @@ export default function LoungePage() {
     const { myLounges, publicLounges, unreadCounts, fetchMyLounges, fetchPublicLounges, fetchUnreadCounts, searchQuery, setSearchQuery } = useLoungeStore()
     const [showCreate, setShowCreate] = useState(false)
 
-    const isArchivist = user?.role === 'archivist' || user?.role === 'auteur'
+    const isArchivist = isArchivistPlusTier(user)
 
     // Hooks must ALWAYS run in the same order — gate check lives inside the effect
     useEffect(() => {

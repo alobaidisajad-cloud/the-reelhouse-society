@@ -15,6 +15,7 @@ import { throttleAction } from '../../errorLogger'
 import { supabase } from '../../supabaseClient'
 import FocusView from './FocusView'
 import FeedView from './FeedView'
+import { isArchivistPlusTier } from '../../utils/tier'
 
 export default function ActivityCard({ log, isExpandedView = false }: { log: any, isExpandedView?: boolean }) {
     const { isTouch: IS_TOUCH, isMobile } = useViewport()
@@ -54,7 +55,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     const [annotateOpen, setAnnotateOpen] = useState(isExpandedView)
     const { user: currentUser } = useAuthStore()
     const [showShareLounge, setShowShareLounge] = useState(false)
-    const isLoungeEligible = currentUser && ['archivist', 'auteur'].includes((currentUser as any).role)
+    const isLoungeEligible = isArchivistPlusTier(currentUser as never)
 
     // ── SPOILER GUARD & EXPANSION ──
     const [spoilersRevealed, setSpoilersRevealed] = useState(false)

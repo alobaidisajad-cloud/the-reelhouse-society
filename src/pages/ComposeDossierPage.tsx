@@ -8,6 +8,7 @@ import PageSEO from '../components/PageSEO'
 import '../styles/compose.css'
 import { sanitizeHTML } from '../utils/sanitize'
 import { LIMITS } from '../utils/limits'
+import { isAuteurPlusTier } from '../utils/tier'
 
 /* ══════════════════════════════════════════════════════
    LIGHTWEIGHT MARKDOWN → HTML PARSER
@@ -84,7 +85,7 @@ export default function ComposeDossierPage() {
     const [editId, setEditId] = useState<string | null>(null)
 
     // ── Auth guard ──
-    const canWrite = user?.role === 'auteur'
+    const canWrite = isAuteurPlusTier(user)
 
     useEffect(() => {
         if (!canWrite) {

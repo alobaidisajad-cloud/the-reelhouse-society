@@ -12,6 +12,7 @@ import { supabase } from '../../../supabaseClient'
 import reelToast from '../../../utils/reelToast'
 import { useViewport } from '../../../hooks/useViewport'
 import { useFilmMutations } from '../hooks/useFilmMutations'
+import { isArchivistPlusTier } from '../../../utils/tier'
 
 export function FilmHero({ film, onPlayTrailer }: any) {
     const { isTouch: IS_TOUCH } = useViewport()
@@ -26,7 +27,7 @@ export function FilmHero({ film, onPlayTrailer }: any) {
     const [showExport, setShowExport] = useState(false)
     const [showShareLounge, setShowShareLounge] = useState(false)
     const user = useAuthStore(s => s.user)
-    const isArchivist = user && ['archivist', 'auteur'].includes(user.role)
+    const isArchivist = isArchivistPlusTier(user as never)
     const isWatchlisted = !!_watchlistIndex[film.id]
     const score = obscurityScore(film)
     const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
