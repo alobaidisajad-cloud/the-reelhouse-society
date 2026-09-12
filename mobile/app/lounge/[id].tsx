@@ -49,6 +49,7 @@ import {
 import Animated, { FadeIn, FadeInDown, FadeOut, SlideInDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { nav } from '@/src/utils/typedRouter';
+import { useClearance } from '@/src/hooks/useClearance';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -474,6 +475,17 @@ export default function LoungeRoomScreen() {
     else refreshMembership();
   }, [id, requestMembership, refreshMembership]);
 
+  /**
+   * The seat needs the rank, asked for ONCE, from the registry — so this button
+   * and the Society page can never disagree about which rank opens the room.
+   *
+   * `tr_tier_gate_lounge_members` is what actually refuses the join, and
+   * `tr_tier_gate_lounge_messages` refuses the speaking. This is the client
+   * saying the same thing in the same words, before the member finds out the
+   * hard way.
+   */
+  const seat = useClearance('the-lounge', id ? `/lounge/${id}` : '/lounge');
+
   const handleTakeSeat = useCallback(async () => {
     if (!id) return;
     TactileEngine.mutate();
@@ -668,11 +680,38 @@ export default function LoungeRoomScreen() {
         </View>
       )}
 
+      {/* ── THE SEAT IS WHERE THE CLEARANCE LIVES ────────────────────────────
+          Previewing a public salon was always allowed here — the bar below
+          predates this work, and the database agrees: public messages are
+          readable by any signed-in member. What was wrong is that a Cinephile
+          could never REACH this screen, because the corridor showed them a
+          poster instead of the rooms.
+
+          Now they can read the room and the rope sits on the one act that
+          needs the rank. `seat.held` and not `isArchivist`: the answer comes
+          from the same registry the Society page sells from, so this button and
+          that page can never disagree about which rank opens it. */}
       {gate === 'preview' && (
         <AnimatedView entering={SlideInDown.duration(300)} style={[s.previewBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
-          <Text style={s.previewText}>You&apos;re previewing this salon.</Text>
-          <PressableScale style={s.previewBtn} onPress={handleTakeSeat} haptic="medium" accessibilityRole="button">
-            <Text style={s.previewBtnText}>TAKE A SEAT</Text>
+          <Text style={s.previewText}>
+            {seat.held
+              ? "You're previewing this salon."
+              : seat.standing === 'lapsed'
+                ? "You're reading as a guest — your dues have lapsed."
+                : "You're reading as a guest."}
+          </Text>
+          <PressableScale
+            style={s.previewBtn}
+            onPress={seat.held ? handleTakeSeat : seat.open}
+            haptic="medium"
+            accessibilityRole="button"
+            accessibilityLabel={seat.held
+              ? 'Take a seat in this salon'
+              : `Take a seat. ${seat.rank === 'auteur' ? 'The Auteur' : 'The Archivist'} opens this. Opens the Society.`}
+          >
+            <Text style={s.previewBtnText}>
+              {seat.held ? 'TAKE A SEAT' : '✦ ASCEND THE RANKS'}
+            </Text>
           </PressableScale>
         </AnimatedView>
       )}

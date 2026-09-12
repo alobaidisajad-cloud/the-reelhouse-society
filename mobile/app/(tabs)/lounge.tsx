@@ -22,6 +22,7 @@ import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
 import { isArchivistPlusTier } from '@/src/utils/tier';
+import { useClearance } from '@/src/hooks/useClearance';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -59,6 +60,13 @@ export default function LoungeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const isArchivist = isArchivistPlusTier(user);
+  /**
+   * Founding a salon is a separate right from sitting in one, and the database
+   * has always enforced them separately — `tr_tier_gate_lounges` on creating,
+   * `tr_tier_gate_lounge_members` on joining. The client had them tangled into
+   * one wall over the whole page.
+   */
+  const foundRoom = useClearance('create-a-lounge', '/lounge');
   const isPollingRef = useRef(false);
   // Re-tap the active tab icon → smoothly scroll the corridor to the top.
   const listRef = useRef<any>(null);
@@ -84,7 +92,19 @@ export default function LoungeScreen() {
 
   // AppState-aware polling — pauses when app is backgrounded
   useEffect(() => {
-    if (!isAuthenticated || !isArchivist) return;
+    /**
+     * ── THE SALONS ARE FETCHED FOR EVERYONE NOW ──────────────────────────
+     * This used to read `if (!isAuthenticated || !isArchivist) return`, which
+     * meant a Cinephile's Lounge was not merely gated — it was EMPTY, three
+     * layers deep. The screen showed a poster, the poster described salons in
+     * prose, and the data layer had never asked for one.
+     *
+     * The server was always willing: the `lounges` SELECT policy is
+     * `USING (true)` for authenticated, and public salon messages are readable
+     * too. Nothing about showing the real rooms needed a migration — only the
+     * client had decided not to look.
+     */
+    if (!isAuthenticated) return;
     fetchLounges();
 
     let interval: ReturnType<typeof setInterval> | null = null;
@@ -111,7 +131,7 @@ export default function LoungeScreen() {
       stopPolling();
       subscription.remove();
     };
-  }, [isAuthenticated, isArchivist, fetchLounges]);
+  }, [isAuthenticated, fetchLounges]);
 
   // fetchLounges is a stable zustand selector — safe to include in deps
   const onRefresh = useCallback(async () => {
@@ -179,7 +199,20 @@ export default function LoungeScreen() {
     <PublicLoungeCard lounge={item} index={i} onReport={handleReportLounge} />
   ), [handleReportLounge]);
 
-  if (!isAuthenticated || !isArchivist) {
+  /**
+   * ── THE WALL IS GONE ────────────────────────────────────────────────────
+   * This used to be `if (!isAuthenticated || !isArchivist) return <LoungeGate/>`
+   * — a full-screen poster INSTEAD of the page, describing "intimate cinema
+   * salons where the devoted gather" and showing not one real room.
+   *
+   * A locked door with no window sells nothing; it reads as an app with less
+   * in it than you thought. So the corridor is the corridor for everyone: real
+   * names, real portraits, real member counts, and the public rooms readable.
+   * The clearance moved to where it belongs — TAKING A SEAT, and founding one.
+   *
+   * Signing in is still required, because a salon roster is not for the street.
+   */
+  if (!isAuthenticated) {
     return <LoungeGate />;
   }
 
@@ -195,10 +228,14 @@ export default function LoungeScreen() {
         </View>
 
         <Text style={s.headerTitle}>The Lounge</Text>
-        {/* "EST. 1924 ·" dropped from the front of this line — fifth page it had
-            appeared on, and the tab is only reachable by an Archivist anyway, so
-            the half that earns its place is the half naming who is inside. */}
-        <Text style={s.headerMetaLine}>ARCHIVIST EXCLUSIVE</Text>
+        {/* This said ARCHIVIST EXCLUSIVE, on the reasoning that "the tab is only
+            reachable by an Archivist anyway". It is reachable by everyone now,
+            so the line would be false — and worse, it would be the first thing
+            a Cinephile reads on a page full of rooms they are welcome to walk
+            into and read. It names what the rank buys instead. */}
+        <Text style={s.headerMetaLine}>
+          {isArchivist ? 'ARCHIVIST EXCLUSIVE' : 'READ ANY SALON · ARCHIVISTS TAKE A SEAT'}
+        </Text>
 
         {/* Search + Establish — one working row */}
         <View style={s.actionsRow}>
@@ -228,12 +265,20 @@ export default function LoungeScreen() {
               </PressableScale>
             )}
           </View>
+          {/* ESTABLISH is the one thing on this screen that is genuinely an
+              Archivist's: founding a room with your name on it. The database
+              agrees — `tr_tier_gate_lounges` refuses the INSERT — so the button
+              is SHOWN to everyone and answers honestly rather than being
+              hidden. A member who cannot found one still learns it is possible,
+              which is the entire point of the rope over the vanish. */}
           <PressableScale
             style={s.btnPrimary}
-            onPress={() => setShowCreate(true)}
+            onPress={() => (foundRoom.held ? setShowCreate(true) : foundRoom.open())}
             haptic="medium"
             accessibilityRole="button"
-            accessibilityLabel="Establish a salon"
+            accessibilityLabel={foundRoom.held
+              ? 'Establish a salon'
+              : 'Establish a salon. The Archivist opens this. Opens the Society.'}
           >
             <Plus size={12} color={colors.ink} strokeWidth={2.5} />
             <Text style={s.btnPrimaryText}>ESTABLISH</Text>

@@ -85,11 +85,17 @@ export const GATED_FEATURES: GatedFeature[] = [
     promise: 'The Lounge\n(Exclusive Cinema Chat Rooms)',
     enforcement: { kind: 'refuses', table: 'lounge_members', trigger: 'tr_tier_gate_lounge_members' },
     gates: [
+      // The room itself, where TAKING A SEAT is now the gated act.
+      'app/lounge/[id].tsx',
       'app/(tabs)/lounge.tsx',
-      'src/components/layout/TopNavBar.tsx',
       'src/components/feed/ActionDeck.tsx',
       'app/film/[id].tsx',
       'app/person/[id].tsx',
+      // TopNavBar is NOT here any more, and its absence is the point: it used
+      // to fork the icon on rank — chat mark for an Archivist, brass key for a
+      // Cinephile. The corridor lists real salons to everyone now, so the nav
+      // has nothing to decide and asks no rank at all. This test's own
+      // stale-entry check is what caught it still being listed.
     ],
   },
   {

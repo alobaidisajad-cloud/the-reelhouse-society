@@ -135,7 +135,21 @@ describe('a rank is sold, enforced, and explained', () => {
     for (const f of GATED_FEATURES) {
       for (const g of f.gates) {
         const text = readFileSync(join(ROOT, g), 'utf8');
-        const gates = /isArchivistPlusTier|isAuteurPlusTier|deckLabelProps|LogClearanceGate|dispatch_dossiers/.test(text);
+        /**
+         * Every way this app knows how to refuse on rank.
+         *
+         * `useClearance` and `ClearanceGate` are the NEW way and were missing
+         * from this list, so the first file to adopt them read as a file with
+         * no gate in it at all — the check reporting a stale entry for a gate
+         * that had just been written properly. A hand-written list decides what
+         * a check can see, which is the same lesson as the jest mock hand-lists.
+         */
+        const gates = new RegExp([
+          'useClearance', 'ClearanceGate',                 // the house pattern
+          'isArchivistPlusTier', 'isAuteurPlusTier',       // a direct tier check
+          'LogClearanceGate', 'deckLabelProps',            // the log's originals
+          'dispatch_dossiers',                             // the offline essay path
+        ].join('|')).test(text);
         // A stale entry is worse than a missing one: it reads as a considered
         // decision about something that is no longer there.
         expect(`${f.id} -> ${g}: ${gates}`).toBe(`${f.id} -> ${g}: true`);

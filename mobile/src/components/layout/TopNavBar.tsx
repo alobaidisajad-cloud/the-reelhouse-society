@@ -1,18 +1,16 @@
 import React, { useCallback, memo } from 'react';
 import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Search, Bell, MessageSquareText, KeyRound } from 'lucide-react-native';
+import { Search, Bell, MessageSquareText } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, withSpring, useSharedValue, useAnimatedProps } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Href } from 'expo-router';
 import { MasterLogo } from '@/src/components/MasterLogo';
-import { useAuthStore } from '@/src/stores/auth';
 import { colors } from '@/src/theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { NotificationBadge } from '@/src/components/ui/NotificationBadge';
-import { isArchivistPlusTier } from '@/src/utils/tier';
 import { ConciergeButton } from '@/src/components/layout/ConciergeButton';
 import {
   NAV_H_PADDING,
@@ -81,7 +79,7 @@ const NavIconButton = memo(function NavIconButton({
 
 // ════════════════════════════════════════════════════════════════
 //  TOP NAV BAR — The Society's Crown
-//  LEFT:   Concierge ＋ (brass)  |  Lounge / brass key
+//  LEFT:   Concierge ＋ (brass)  |  Lounge
 //  CENTER: MasterLogo
 //  RIGHT:  Search  |  Notifications Bell
 // ════════════════════════════════════════════════════════════════
@@ -112,8 +110,9 @@ export const TopNavBar = memo(function TopNavBar() {
     };
   });
 
-  // Role-gate: only Archivist & Auteur see the Lounge icon
-  const hasLoungeAccess = useAuthStore(s => isArchivistPlusTier(s.user));
+  // No rank is asked for here any more. The Lounge lists real salons to
+  // everyone and the clearance sits on taking a seat, so the nav bar has
+  // nothing to decide — see the door below.
 
   // ── Zero-Cost Memoized Routing ──
   // No onLogPress here any more — logging is one of the Concierge's two doors,
@@ -131,26 +130,23 @@ export const TopNavBar = memo(function TopNavBar() {
                 the one thing that MAKES something reads apart from the four
                 that navigate — including the brass key beside it. */}
             <ConciergeButton />
-            {hasLoungeAccess ? (
-              <NavIconButton
-                icon={MessageSquareText}
-                onPress={onLoungePress}
-                size={19}
-                accessibilityLabel="Lounge"
-              />
-            ) : (
-              // The velvet rope, not a hidden door — cinephiles see the brass
-              // key; tapping it opens /lounge where the LoungeGate makes the
-              // invitation (CLEARANCE REQUIRED → ASCEND THE RANKS). Same
-              // pattern as ActionDeck's lounge share.
-              <NavIconButton
-                icon={KeyRound}
-                onPress={onLoungePress}
-                size={19}
-                accent
-                accessibilityLabel="The Lounge — clearance required. Opens membership details."
-              />
-            )}
+            {/* ── ONE DOOR, FOR EVERYONE ────────────────────────────────────
+                This used to fork: an Archivist got the chat mark, a Cinephile
+                got a brass key. The key was the right instinct at the time —
+                far better than hiding the icon — but it described a page that
+                was a locked poster.
+
+                The Lounge now lists real salons to everyone, and the clearance
+                sits on TAKING A SEAT rather than on arriving. A key over the
+                door of a room you are welcome to walk into and read is the
+                wrong promise: it says "you cannot come in" when the truth is
+                "come in, listen, and speak when you hold the rank". */}
+            <NavIconButton
+              icon={MessageSquareText}
+              onPress={onLoungePress}
+              size={19}
+              accessibilityLabel="Lounge"
+            />
           </View>
 
           {/* ── CENTER: Logo ── */}
