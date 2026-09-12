@@ -141,6 +141,12 @@ export const TIERS = [
       // "poster glow" is something else entirely: an ungated effect on the film
       // page that everybody already gets.
       'The Backdrop\n(Your Room, Dressed by\nYour Own Film)',
+      // The Archivist and the Auteur had IDENTICAL rights in the Lounge, so
+      // "The Lounge" sold the rank below and bought this one nothing. Founding
+      // a private screening room is the Auteur's now — convening is the
+      // privilege, while being admitted stays the host's gift, or an Auteur
+      // could not let the Archivists into the room they made for them.
+      'Private Screening Rooms\n(Found Them; You Admit\nEach Guest)',
       'Early Access to New\nFeatures',
     ],
     cta: 'BECOME AN AUTEUR',

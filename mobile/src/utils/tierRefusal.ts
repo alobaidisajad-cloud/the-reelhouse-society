@@ -48,6 +48,7 @@ const SENTENCES: { match: RegExp; featureId: string; rank: Rank }[] = [
   { match: /^The Vault is an Archivist feature$/, featureId: 'the-vault', rank: 'archivist' },
   { match: /^The Physical Archive is an Archivist feature$/, featureId: 'physical-archive', rank: 'archivist' },
   { match: /^The Dispatch is an Auteur feature$/, featureId: 'essays', rank: 'auteur' },
+  { match: /^A private screening room is an Auteur feature$/, featureId: 'private-rooms', rank: 'auteur' },
 ];
 
 /** Every sentence this app knows how to turn into a door. */

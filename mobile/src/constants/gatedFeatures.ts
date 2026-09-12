@@ -190,6 +190,18 @@ export const GATED_FEATURES: GatedFeature[] = [
     gates: ['src/hooks/useLogFlow.ts', 'src/components/log/LogForm.tsx'],
   },
   {
+    id: 'private-rooms',
+    rank: 'auteur',
+    promise: 'Private Screening Rooms\n(Found Them; You Admit\nEach Guest)',
+    // A second, narrower trigger sits on top of tr_tier_gate_lounges with a
+    // WHEN clause — the same shape tr_tier_gate_dispatch uses to demand the
+    // Auteur rank for a ballot or an essay while leaving the free forms alone.
+    // Only founding is gated: request_lounge_membership is untouched, so a
+    // host may admit anyone they like.
+    enforcement: { kind: 'refuses', table: 'lounges', trigger: 'tr_tier_gate_private_lounges' },
+    gates: ['src/components/lounge/CreateLoungeSheet.tsx'],
+  },
+  {
     id: 'the-backdrop',
     rank: 'auteur',
     promise: 'The Backdrop\n(Your Room, Dressed by\nYour Own Film)',

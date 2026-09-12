@@ -90,48 +90,74 @@ export default function LoungeScreen() {
     setSearchQuery(text);
   }, []);
 
-  // AppState-aware polling — pauses when app is backgrounded
-  useEffect(() => {
-    /**
-     * ── THE SALONS ARE FETCHED FOR EVERYONE NOW ──────────────────────────
-     * This used to read `if (!isAuthenticated || !isArchivist) return`, which
-     * meant a Cinephile's Lounge was not merely gated — it was EMPTY, three
-     * layers deep. The screen showed a poster, the poster described salons in
-     * prose, and the data layer had never asked for one.
-     *
-     * The server was always willing: the `lounges` SELECT policy is
-     * `USING (true)` for authenticated, and public salon messages are readable
-     * too. Nothing about showing the real rooms needed a migration — only the
-     * client had decided not to look.
-     */
-    if (!isAuthenticated) return;
-    fetchLounges();
+  /**
+   * ── THE SALONS ARE FETCHED FOR EVERYONE NOW ────────────────────────────────
+   * This used to be gated on `isArchivist`, which meant a Cinephile's Lounge
+   * was not merely gated but EMPTY, three layers deep: the screen showed a
+   * poster, the poster described salons in prose, and the data layer had never
+   * asked for one. The server was always willing — `lounges` SELECT is
+   * `USING (true)` for authenticated — so only the client had decided not to
+   * look.
+   *
+   * ── AND THE POLL NOW RUNS ONLY WHILE SOMEBODY IS LOOKING AT IT ─────────────
+   * It was a 30-second `setInterval` started whenever the app was FOREGROUNDED,
+   * on any screen. So the salon list was re-queried every thirty seconds while
+   * the member was on Reels, reading a film, or writing in the Dispatch —
+   * refreshing badges nobody was looking at. Opening the corridor to everyone
+   * made that worse, not better: it used to be Archivists only, and now it
+   * would have been every signed-in member.
+   *
+   * It cannot simply be deleted. Realtime covers ONE room — `_activeChannel` is
+   * a single channel for the salon you have open — so nothing pushes changes
+   * for the rooms you are not in, and this query is the only thing feeding the
+   * unread counts in the corridor. Deleting it would leave every badge stale
+   * until a manual pull.
+   *
+   * So it moves from "while the app is open" to "while this screen is open",
+   * which is the only window in which its result can be seen. Liveness where it
+   * is visible; nothing spent where it is not. `useFocusEffect` also fires on
+   * arrival, so returning from a room updates the badges at once — the previous
+   * mount-time fetch is gone with it, because a tab that is mounted but not yet
+   * focused was fetching at startup for a screen nobody had opened.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated) return;
 
-    let interval: ReturnType<typeof setInterval> | null = null;
-    const startPolling = () => {
-      if (interval) return;
-      interval = setInterval(async () => {
+      let interval: ReturnType<typeof setInterval> | null = null;
+
+      const refresh = async () => {
+        // The in-flight guard stays: a slow query must not stack behind itself
+        // when a focus and a tick land together.
         if (isPollingRef.current) return;
         isPollingRef.current = true;
-        await fetchLounges();
-        isPollingRef.current = false;
-      }, 30000);
-    };
-    const stopPolling = () => {
-      if (interval) { clearInterval(interval); interval = null; }
-    };
+        try { await fetchLounges(); } finally { isPollingRef.current = false; }
+      };
 
-    startPolling();
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') startPolling();
-      else stopPolling();
-    });
+      const start = () => {
+        if (interval) return;
+        interval = setInterval(refresh, 30000);
+      };
+      const stop = () => {
+        if (interval) { clearInterval(interval); interval = null; }
+      };
 
-    return () => {
-      stopPolling();
-      subscription.remove();
-    };
-  }, [isAuthenticated, fetchLounges]);
+      // Arriving on the screen is itself the most valuable refresh.
+      void refresh();
+      start();
+
+      // Backgrounding still stops it, and coming back re-reads immediately
+      // rather than waiting out the remainder of a tick.
+      const sub = AppState.addEventListener('change', (next) => {
+        if (next === 'active') { void refresh(); start(); } else stop();
+      });
+
+      return () => {
+        stop();
+        sub.remove();
+      };
+    }, [isAuthenticated, fetchLounges]),
+  );
 
   // fetchLounges is a stable zustand selector — safe to include in deps
   const onRefresh = useCallback(async () => {

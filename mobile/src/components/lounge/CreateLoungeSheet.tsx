@@ -11,6 +11,7 @@ import { BlurView } from 'expo-blur';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { Lock, Globe } from 'lucide-react-native';
 import { useLoungeStore } from '@/src/stores/lounge';
+import { useClearance } from '@/src/hooks/useClearance';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 
@@ -22,6 +23,8 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   const [isPrivate, setIsPrivate] = useState(false);
   const [creating, setCreating] = useState(false);
   const createLounge = useLoungeStore(s => s.createLounge);
+  /** Founding a PRIVATE room is the Auteur's; being admitted to one is not. */
+  const privateRoom = useClearance('private-rooms', '/lounge');
   const wasSuccessRef = useRef(false);
 
   const handleCreate = async () => {
@@ -162,15 +165,42 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
                 </Text>
               </View>
               <Text style={s.toggleDesc}>
-                {isPrivate ? 'By request — you admit members at the door' : 'Anyone with Archivist+ can take a seat'}
+                {isPrivate
+                  ? 'By request — you admit members at the door'
+                  : privateRoom.held
+                    ? 'Anyone with Archivist+ can take a seat'
+                    // Said on the PUBLIC side, where a member who cannot found
+                    // a private room is standing. The switch is shown either
+                    // way — a control you cannot see is a feature you never
+                    // learn exists — and this is the one line that explains it
+                    // before the tap rather than after.
+                    : 'Anyone with Archivist+ can take a seat. A private room is an Auteur’s.'}
               </Text>
             </View>
             <Switch
               value={isPrivate}
-              onValueChange={(val) => { TactileEngine.selection(); setIsPrivate(val); }}
+              /**
+               * The switch is REAL for everyone and answers honestly on the
+               * way up. Turning it on without the rank opens the Society page
+               * instead of setting a value the database would refuse at
+               * `create_lounge` — which is where a member would otherwise
+               * discover it, after naming the room and writing its
+               * description.
+               *
+               * Turning it back OFF is never gated: nobody needs a rank to
+               * stop wanting something.
+               */
+              onValueChange={(val) => {
+                TactileEngine.selection();
+                if (val && !privateRoom.held) { privateRoom.open(); return; }
+                setIsPrivate(val);
+              }}
               trackColor={{ false: colors.ash, true: colors.sepia }}
               thumbColor={colors.parchment}
               ios_backgroundColor={colors.ash}
+              accessibilityLabel={privateRoom.held
+                ? 'Make this a private screening room'
+                : 'Make this a private screening room. The Auteur opens this. Opens the Society.'}
             />
           </View>
 
