@@ -8,7 +8,7 @@ import { logger } from '../utils/logger';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
-import { sanitizeInput } from '../utils/sanitizeInput';
+import { sanitizeInput, MAX_LENGTHS } from '../utils/sanitizeInput';
 import type { LoungeMember } from '../types/social.types';
 import { useAuthStore } from './auth';
 import { memberUnchanged } from './domain/helpers/sessionGuard';
@@ -893,8 +893,18 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       reelToast.error('Lounge name must be at least 2 characters.');
       return null;
     }
-    if (trimmedName.length > 50) {
-      reelToast.error('Lounge name cannot exceed 50 characters.');
+    // ── THIS BRANCH COULD NEVER FIRE ────────────────────────────────────────
+    // `sanitizeInput` has already trimmed to MAX_LENGTHS.loungeName, so by the
+    // time this ran the name was ALWAYS within the limit. It read as the guard
+    // against an over-long name and was dead code standing where that guard
+    // should have been — which is how a name cut from 60 to 50 got through
+    // without anyone being told.
+    //
+    // Kept, and made real, by asking the same question the sanitiser answers:
+    // a name longer than the cap now means the cap and the trim disagree, which
+    // is a fault worth surfacing rather than a limit worth enforcing twice.
+    if (trimmedName.length > MAX_LENGTHS.loungeName) {
+      reelToast.error(`Lounge name cannot exceed ${MAX_LENGTHS.loungeName} characters.`);
       return null;
     }
 

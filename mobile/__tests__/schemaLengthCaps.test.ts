@@ -145,11 +145,32 @@ describe('database ceilings vs both clients', () => {
       },
     );
 
-    it('lounges.name clears the web even though mobile is lower', () => {
-      // Pinned because it is the case that proved one client is not enough.
-      expect(MAX_LENGTHS.loungeName).toBe(50);
-      expect(web.get('loungeName')).toBe(60);
-      expect(ceilings.get('lounges.name')).toBeGreaterThanOrEqual(60);
+    it('lounges.name clears BOTH clients — the case that proved one is not enough', () => {
+      // This used to pin mobile at 50 against the web's 60, recording the
+      // divergence as the example. The divergence turned out to be a defect
+      // rather than a decision: mobile's own input box offers 60 and its
+      // counter says "/60", while MAX_LENGTHS cut the name to 50 on the way to
+      // the database — so a member typed the 60 they were offered and ten
+      // characters disappeared with no error. Mobile now agrees with its own
+      // box, the web and the column.
+      //
+      // What the rule always WAS, and still is: the ceiling covers the largest
+      // limit any client sends. That is the claim worth holding.
+      const ceiling = ceilings.get('lounges.name')!;
+      expect(ceiling).toBeGreaterThanOrEqual(web.get('loungeName')!);
+      expect(ceiling).toBeGreaterThanOrEqual(MAX_LENGTHS.loungeName);
+    });
+
+    it('a mobile input box never offers more than the cap will keep', () => {
+      // The claim that would have caught it. A box whose maxLength exceeds the
+      // sanitiser's cap promises the member characters that are silently
+      // trimmed before the write — which is exactly what CreateLoungeSheet did.
+      const sheet = readFileSync(
+        join(__dirname, '..', 'src/components/lounge/CreateLoungeSheet.tsx'), 'utf8',
+      );
+      const box = /maxLength=\{?(\d+)\}?/.exec(sheet);
+      expect(box).not.toBeNull();
+      expect(Number(box![1])).toBeLessThanOrEqual(MAX_LENGTHS.loungeName);
     });
   });
 

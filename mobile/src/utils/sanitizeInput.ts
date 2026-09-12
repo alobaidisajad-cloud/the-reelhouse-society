@@ -50,7 +50,11 @@ export const MAX_LENGTHS = {
   listComment: 2000,
   logComment: 2000,
   dossierComment: 2000,
-  loungeName: 50,
+  // 60, because `lounges_name_len` on the column is 60 and CreateLoungeSheet's
+  // box and counter both offer 60. This was 50 — the only one of the four that
+  // disagreed — so a member typing up to the 60 the app told them they had got
+  // a name silently cut to 50, with no error and no sign it had happened.
+  loungeName: 60,
   username: 30,
   // Matched to ProfileUpdateSchema's own limits so the two cannot disagree:
   // bio 160, display_name 50, persona 50 (schemas/profile.schema.ts:26-31).
