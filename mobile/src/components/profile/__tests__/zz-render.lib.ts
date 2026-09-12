@@ -72,6 +72,20 @@ const FONT_MAP: Record<string, string> = {
 const kebab = (k: string) => k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
 
 /**
+ * ── THE TWO PROPS WHOSE CSS NAME IS NOT THEIR REACT NATIVE NAME ──────────────
+ * Everything else in DIRECT kebab-cases into a real CSS property. `writing-
+ * direction` is not one — CSS calls it `direction` — so for as long as this was
+ * spelled the React Native way, every right-to-left plate in the gallery was
+ * drawn with a LEFT-to-right paragraph and nobody could see it: the browser
+ * drops an unknown property in silence, and the plates showed a real bug that
+ * was not there while hiding the real one that was.
+ *
+ * A renamed property is checked below, in `styleToCss`, against the browser's
+ * own list — the guard is that a name nobody recognises must not be emitted.
+ */
+const CSS_NAME: Record<string, string> = { writingDirection: 'direction' };
+
+/**
  * A style prop arrives as an object, an array of them, or — in older RN — a
  * registered id, which is an integer. `StyleSheet.flatten` resolves all three
  * to one flat object, which is what every caller here assumes it is getting.
@@ -259,7 +273,7 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
       continue;
     }
     if (PX.has(k)) { out.push(`${kebab(k)}:${typeof v === 'number' ? v + 'px' : v}`); continue; }
-    if (DIRECT.has(k)) { out.push(`${kebab(k)}:${v}`); continue; }
+    if (DIRECT.has(k)) { out.push(`${CSS_NAME[k] ?? kebab(k)}:${v}`); continue; }
   }
   return out.join(';');
 }

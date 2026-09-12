@@ -25,6 +25,7 @@ import { LEAD_STYLE } from './paperPerf';
 import { MS, PILL_Y } from './paperMotion';
 import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { clipToSentence, counted } from './paperText';
+import { isRTLText, RTL_MARK } from '@/src/utils/text';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
  * The brass ＋ opens this. Five forms, each named in its own ink with one line
@@ -552,7 +553,8 @@ export const PaperCase = memo(function PaperCase({
           <Text style={m.caseReasons} numberOfLines={1} {...decorativeTextProps}>
             {reasons.toUpperCase()}
           </Text>
-          <Text style={m.caseBody} numberOfLines={3} {...scaledTextProps}>
+          <Text style={[m.caseBody, isRTLText(body) && p.rtlText]} numberOfLines={3} {...scaledTextProps}>
+            {isRTLText(body) ? RTL_MARK : null}
             <Text style={[p.leadIn, LEAD_STYLE[kind]]}>{nameOf(kind)} — </Text>
             {body}
           </Text>
@@ -1084,7 +1086,8 @@ export const LoungeCard = memo(function LoungeCard({
             <Text style={m.loungeBody} numberOfLines={2} {...scaledTextProps}>{body}</Text>
           </>
         ) : (
-          <Text style={m.loungeBody} numberOfLines={3} {...scaledTextProps}>
+          <Text style={[m.loungeBody, isRTLText(body) && p.rtlText]} numberOfLines={3} {...scaledTextProps}>
+            {isRTLText(body) ? RTL_MARK : null}
             <Text style={[p.leadIn, { fontSize: 8.5, color: ink }]}>{nameOf(kind)} — </Text>
             {body}
           </Text>

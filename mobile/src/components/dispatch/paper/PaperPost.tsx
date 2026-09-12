@@ -16,7 +16,7 @@ import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted } from './paperText';
-import { isRTLText } from '@/src/utils/text';
+import { isRTLText, RTL_MARK } from '@/src/utils/text';
 
 export type PaperKind = 'take' | 'seeking' | 'wire' | 'ballot' | 'dossier';
 export type PaperTier = 'free' | 'archivist' | 'auteur';
@@ -703,13 +703,13 @@ export const PaperPost = memo(function PaperPost({
                   makes them a family, and it carries the kind's colour. */}
               {kind === 'take' && (
                 <Text style={[p.take, rtl && p.rtlText]} {...scaledTextProps}>
-                  <Text style={[p.leadIn, LEAD_STYLE.take]}>TAKE — </Text>{softBreak(body)}
+                  {rtl ? RTL_MARK : null}<Text style={[p.leadIn, LEAD_STYLE.take]}>TAKE — </Text>{softBreak(body)}
                 </Text>
               )}
 
               {kind === 'seeking' && (
                 <Text style={[p.seeking, rtl && p.rtlText]} {...scaledTextProps}>
-                  <Text style={p.seekingLead}>SEEKING — </Text>{softBreak(body)}
+                  {rtl ? RTL_MARK : null}<Text style={p.seekingLead}>SEEKING — </Text>{softBreak(body)}
                 </Text>
               )}
 
@@ -718,7 +718,7 @@ export const PaperPost = memo(function PaperPost({
                   already carries it. */}
               {kind === 'wire' && (
                 <Text style={[p.wire, rtl && p.rtlText]} {...scaledTextProps}>
-                  <Text style={p.wireDateline}>WIRE — </Text>{softBreak(body)}
+                  {rtl ? RTL_MARK : null}<Text style={p.wireDateline}>WIRE — </Text>{softBreak(body)}
                 </Text>
               )}
 
@@ -740,14 +740,14 @@ export const PaperPost = memo(function PaperPost({
                   card shows the question and you tap to vote. */}
               {kind === 'ballot' && (
                 <Text style={[p.cardBallotQ, rtl && p.rtlText]} numberOfLines={3} {...displayTextProps}>
-                  <Text style={p.ballotLead}>BALLOT — </Text>{softBreak(body)}
+                  {rtl ? RTL_MARK : null}<Text style={p.ballotLead}>BALLOT — </Text>{softBreak(body)}
                 </Text>
               )}
 
               {kind === 'dossier' && (
                 <>
                   <Text style={[p.dossierTitle, rtl && p.rtlText]} numberOfLines={3} {...displayTextProps}>
-                    <Text style={p.dossierLead}>{KIND_NAME.dossier} — </Text>{softBreak(body)}
+                    {rtl ? RTL_MARK : null}<Text style={p.dossierLead}>{KIND_NAME.dossier} — </Text>{softBreak(body)}
                   </Text>
                   {series ? (
                     <Text style={p.series} numberOfLines={1} {...scaledTextProps}>{series.toUpperCase()}</Text>

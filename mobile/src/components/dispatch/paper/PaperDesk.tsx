@@ -26,6 +26,7 @@ import { p, QUIET } from './paperStyles';
 import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, groupDigits, nameOf } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { PaperKeyWell } from './PaperKeyWell';
 
@@ -119,7 +120,12 @@ export const WireDesk = memo(function WireDesk({
           </View>
           <View style={p.column}>
             <Byline author={me} />
-            <Text style={d.wireHead} {...displayTextProps}>
+            {/* The desk promises "this is how it prints", so it carries the
+                page's direction rule too — the headline is the member's own
+                writing and `WIRE — ` in front of it is what makes the mark
+                necessary. */}
+            <Text style={[d.wireHead, isRTLText(headline) && p.rtlText]} {...displayTextProps}>
+              {isRTLText(headline) ? RTL_MARK : null}
               <Text style={[p.leadIn, LEAD_STYLE.wire]}>WIRE — </Text>
               {headline}
             </Text>

@@ -320,6 +320,15 @@ export const p = StyleSheet.create({
    * third spelling of one rule is how a rule stops being one.
    */
   rtlText: { writingDirection: 'rtl', textAlign: 'right' } as import('react-native').TextStyle,
+
+  /**
+   * The same rule for writing that is CENTRED on purpose — the ballot sheet's
+   * question is set centre and must stay centre in either language. Only the
+   * paragraph's direction turns, which is what decides where the punctuation
+   * and any Latin run inside the sentence sit. Reaching for `rtlText` here
+   * would have quietly re-set a centred question hard right.
+   */
+  rtlDirection: { writingDirection: 'rtl' } as import('react-native').TextStyle,
   dayRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 16, paddingBottom: 8, opacity: 0.92 },
   /** Thin over thick — how a printed section break is set, and the cheapest
    *  way to make a scroll read as an edition turning over. */

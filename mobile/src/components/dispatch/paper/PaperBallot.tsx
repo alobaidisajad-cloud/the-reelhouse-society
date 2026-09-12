@@ -6,6 +6,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
+import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { counted } from './paperText';
 import { BALLOT_PERCENT_FLOOR, UNSPOKEN } from './paperMetrics';
 import { PaperFill } from './PaperFill';
@@ -132,6 +133,9 @@ export const PaperBallot = memo(function PaperBallot({
    * never chose.
    */
   const hasResult = closed && sealed;
+
+  /** The question is the member's own writing, so it sets its own direction. */
+  const rtl = isRTLText(question);
   const top = hasResult && total > 0
     ? votes.indexOf(Math.max(...votes))
     : -1;
@@ -149,8 +153,13 @@ export const PaperBallot = memo(function PaperBallot({
         </Text>
       </View>
 
-      <Text style={p.ballotQ} accessibilityRole="header" {...displayTextProps}>
-        {showKind ? <Text style={p.ballotLead}>BALLOT — </Text> : null}{question}
+      {/* The question stays CENTRED in either language — only the paragraph's
+          direction turns, so `rtlDirection` rather than `rtlText`. The mark is
+          what actually turns it: with `BALLOT — ` printed in front, the first
+          strong character of the paragraph is Latin, and Android reads nothing
+          but that. */}
+      <Text style={[p.ballotQ, rtl && p.rtlDirection]} accessibilityRole="header" {...displayTextProps}>
+        {rtl ? RTL_MARK : null}{showKind ? <Text style={p.ballotLead}>BALLOT — </Text> : null}{question}
       </Text>
 
       {!closed && (

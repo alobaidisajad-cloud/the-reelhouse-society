@@ -38,7 +38,7 @@ import {
 } from '@/src/utils/memberDrafts';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import {
-  groupDigits, DOC_MARGIN, DOC_PAD, DOC_RAIL,
+  groupDigits, DOC_MARGIN, DOC_PAD, DOC_RAIL, actionLabelProps,
 } from '@/src/components/dispatch/paper/paperMetrics';
 import { excerptFor } from '@/src/components/dispatch/excerpt';
 /**
@@ -47,7 +47,7 @@ import { excerptFor } from '@/src/components/dispatch/excerpt';
  * at accessibility sizes every label here grew without limit — the header's
  * three-across row and the counter row worst, because neither can reflow.
  */
-import { scaledTextProps, deckLabelProps, decorativeTextProps } from '@/src/constants/textScaling';
+import { scaledTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
 
@@ -1023,7 +1023,7 @@ function ComposeDossierScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel={film ? `The film is ${film.title}. Change it.` : 'Name the film this is about'}
                             >
-                                <Text style={styles.slotLabel} {...decorativeTextProps}>FILM</Text>
+                                <Text style={styles.slotLabel} {...actionLabelProps}>FILM</Text>
                                 <Text style={[styles.slotValue, film && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
                                     {film ? [film.title, film.sub].filter(Boolean).join(' · ') : 'Name the film this is about'}
                                 </Text>
@@ -1034,7 +1034,7 @@ function ComposeDossierScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel={series ? `Part ${series.part} of ${series.title}. Change it.` : 'Make this part of a series'}
                             >
-                                <Text style={styles.slotLabel} {...decorativeTextProps}>SERIES</Text>
+                                <Text style={styles.slotLabel} {...actionLabelProps}>SERIES</Text>
                                 <Text style={[styles.slotValue, series && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
                                     {series ? `${series.title.toUpperCase()} · ${roman(series.part)}` : 'Part of a series?'}
                                 </Text>
@@ -1063,27 +1063,27 @@ function ComposeDossierScreen() {
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScroll} keyboardShouldPersistTaps="handled">
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
                                 <Bold size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...decorativeTextProps}>BOLD</Text>
+                                <Text style={styles.toolWord} {...scaledTextProps}>BOLD</Text>
                             </PressableScale>
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
                                 <Italic size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...decorativeTextProps}>ITALIC</Text>
+                                <Text style={styles.toolWord} {...scaledTextProps}>ITALIC</Text>
                             </PressableScale>
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
                                 <Type size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...decorativeTextProps}>HEADING</Text>
+                                <Text style={styles.toolWord} {...scaledTextProps}>HEADING</Text>
                             </PressableScale>
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
                                 <Quote size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...decorativeTextProps}>QUOTE</Text>
+                                <Text style={styles.toolWord} {...scaledTextProps}>QUOTE</Text>
                             </PressableScale>
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Horizontal rule">
                                 <Minus size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...decorativeTextProps}>BREAK</Text>
+                                <Text style={styles.toolWord} {...scaledTextProps}>BREAK</Text>
                             </PressableScale>
                             <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
                                 <Link2 size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...decorativeTextProps}>LINK</Text>
+                                <Text style={styles.toolWord} {...scaledTextProps}>LINK</Text>
                             </PressableScale>
                         </ScrollView>
                     </View>
@@ -1229,7 +1229,7 @@ const styles = StyleSheet.create({
     },
     toolsScroll: {
         paddingHorizontal: 16,
-        gap: 8,
+        gap: 6,
     },
     toolBtn: {
         // A column now — the mark, and its NAME under it. Six unlabelled icons
@@ -1238,14 +1238,29 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 3,
         paddingVertical: 6,
-        paddingHorizontal: 10,
+        // ── THE CHROME PAID FOR THE TYPE ──────────────────────────────────────
+        // The names used to be 6.5pt, and the reason was arithmetic rather than
+        // taste: six buttons at 10pt padding, 52pt minimum and 8pt gaps cost
+        // 388pt of a 390pt phone, so 6.5 was the largest size at which all six
+        // tools still fit one screen. It bought that at the price of a label a
+        // member with ordinary eyesight cannot read, and one they could not
+        // enlarge — see `toolWord`.
+        //
+        // Measured against the real rail: padding 8, minimum 48 and 6pt gaps
+        // cost 365pt at 8.5pt names. All six still fit, with 25pt to spare
+        // instead of 2, and the names are a third larger. The rhythm survives —
+        // five buttons land on the 48 minimum, HEADING sets its own 60.
+        paddingHorizontal: 8,
         backgroundColor: 'rgba(184,137,26,0.1)',
         borderRadius: 4,
-        minWidth: 52,
+        minWidth: 48,
     },
     toolWord: {
         fontFamily: fonts.sub,
-        fontSize: 6.5,
+        // 8.5pt is the house's label size — the same one the slot values, the
+        // stamps and every rail label on the page are set in. The rail was the
+        // one place that went below it.
+        fontSize: 8.5,
         letterSpacing: 1.2,
         color: colors.bone,
         includeFontPadding: false,
@@ -1405,9 +1420,17 @@ const styles = StyleSheet.create({
         paddingVertical: 4, marginBottom: 14,
     },
     slot: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
+    /**
+     * FILM and SERIES name the two things a member sets before writing, and they
+     * were 7pt and frozen. The column they sit in is a fixed width, so the size
+     * and the width move together: SERIES wants 41pt at 8.5 and 47pt at the 1.2
+     * ceiling `actionLabelProps` puts on it, both inside 54. `adjustsFontSizeToFit`
+     * in that same prop is the floor under the arithmetic — a longer word in a
+     * future language shrinks rather than spilling into the value beside it.
+     */
     slotLabel: {
-        fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.8, color: colors.sepia,
-        width: 46, includeFontPadding: false,
+        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.8, color: colors.sepia,
+        width: 54, includeFontPadding: false,
     },
     /** Unset reads as an invitation; set reads as a fact. */
     slotValue: {

@@ -48,13 +48,51 @@ export function extractDropCap(text: string): { first: string; rest: string } {
  * WHY THIS EXISTS. `writingDirection` is an iOS-only style and the app never
  * set it, so on iPhone an Arabic review inherited the app's own left-to-right
  * base. The visible symptom is a sentence's full stop appearing at the far LEFT
- * of the line, detached from the words it ends. Android resolves this itself.
+ * of the line, detached from the words it ends.
+ *
+ * ── AND WHAT THIS COMMENT USED TO GET WRONG ─────────────────────────────────
+ * It said "Android resolves this itself", which is true only while the member's
+ * own words are the first thing in the paragraph. Android never reads
+ * `writingDirection` at all: `ParagraphShadowNode.cpp` takes the paragraph's
+ * direction from the VIEW's layout direction (Yoga), and `TextLayoutManager`
+ * builds the layout without calling `setTextDirection`, so it falls back to
+ * Android's default heuristic — first strong character wins, over the WHOLE
+ * concatenated string.
+ *
+ * The Dispatch prints `TAKE — ` in front of the sentence, inside the same
+ * <Text>. So the first strong character is the T, the paragraph goes
+ * left-to-right, and an Arabic member sees the kind label stranded at the END of
+ * the first line with the full stop thrown to the opposite side. `RTL_MARK`
+ * below is the fix and `theParagraphKnowsItsDirection` is the guard.
  *
  * Ranges: Hebrew, Arabic (incl. supplement + extended-A), Syriac/Thaana/N'Ko,
  * and the Arabic presentation forms.
  */
 const RTL_STRONG = /[֐-׿؀-޿ࢠ-ࣿיִ-﷿ﹰ-﻿]/;
 const LTR_STRONG = /[A-Za-zÀ-ʯͰ-֏]/;
+
+/**
+ * U+200F RIGHT-TO-LEFT MARK — invisible, zero width, and STRONGLY right-to-left.
+ *
+ * Printed as the first thing inside a <Text> whose visible content opens with a
+ * Latin label, it is what the first-strong rule lands on, so the paragraph lays
+ * out right-to-left on BOTH platforms — which is what iOS already did from
+ * `writingDirection` and Android did not do at all.
+ *
+ * ── WHY A MARK AND NOT AN ISOLATE ───────────────────────────────────────────
+ * `LRI … PDI` (U+2066 … U+2069) around the label is the more elegant answer: the
+ * first-strong scan skips an isolate's contents, so the member's own words would
+ * decide the direction and the same wrapping would serve English bodies too. It
+ * is not used here because it depends on the engine implementing that part of
+ * UAX#9, which Android's heuristic does only on newer API levels — and there is
+ * no device in this project to test the older ones on. The mark depends on one
+ * thing instead: that U+200F is strongly RTL, which is true of every text engine
+ * ever written.
+ *
+ * It is printed as its OWN child of the outer <Text>, never concatenated into a
+ * label, so `TAKE — ` stays exactly `TAKE — ` for everything that matches on it.
+ */
+export const RTL_MARK = '‏';
 
 export function isRTLText(text: string | null | undefined): boolean {
     if (!text) return false;
