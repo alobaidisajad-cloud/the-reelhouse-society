@@ -155,8 +155,12 @@ export const FeedService = {
     // useFeeds.ts's `select`, so its pages can come up short.
     //
     // This is a safety net, not the live path: get_community_feed_auth_cursor
-    // IS deployed, with EXECUTE granted to authenticated, so every real
-    // community feed is served by Strategy 1 above. (The old note here said
+    // IS deployed, with EXECUTE granted to anon AND authenticated, so every
+    // real community feed is served by Strategy 1 above — including a signed-out
+    // visitor's, now that The Reel is open to one. (Verified as a real anon
+    // against production: 40 rows, and the fallback below reads too, because
+    // `logs` carries column grants for anon rather than a table grant.)
+    // (The old note here said
     // "deploy it to close that gap" — it was deployed, and the note outlived
     // the work. Verified against pg_proc, 21 OUT columns matching
     // FollowingFeedRowSchema field for field.)

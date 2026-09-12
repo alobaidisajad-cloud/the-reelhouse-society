@@ -16,7 +16,7 @@ import { useScrollToTop } from '@react-navigation/native';
 import { useAuthStore } from '@/src/stores/auth';
 import { resolveTier } from '@/src/utils/tier';
 import { useSocialStore } from '@/src/stores/followStore';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 
 import { SectionDivider } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
@@ -25,7 +25,6 @@ import FrozenTab from '@/src/components/layout/FrozenTab';
 
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import { globalScrollY } from '@/src/lib/scrollBridge';
-import { SocietySeal } from '@/src/components/auth/SocietySeal';
 
 // Extracted Modules
 import { 
@@ -245,7 +244,28 @@ export default function ReelScreen() {
     }
   }, [section, activeTabSV, overallLogsScrollY, stacksScrollY]);
 
+  /**
+   * A stranger reads this page and acts on none of it.
+   *
+   * The ask happens AT THE ACT, not at the door — the rule the film and log
+   * pages already follow (`if (!isAuthenticated) return router.push('/login')`).
+   * A bare '/login' is deliberate and matches every other act gate in the app:
+   * the two places that promised MEMBERSHIP instead of a sign-in were the
+   * outliers, and one of them was the wall this screen no longer has.
+   */
+  const askForAName = useCallback(() => {
+    TactileEngine.destroy();
+    (router.push as any)('/login' as any);
+  }, [router]);
+
   const switchFeedFilter = useCallback((f: FeedFilter) => {
+    /**
+     * FOLLOWING is roped rather than hidden. A stranger has no orbit, so the
+     * filter cannot work for them — but removing the chip would also remove the
+     * only place the app says an orbit exists. It stays visible, and tapping it
+     * is the invitation. Switching back to ALL is never gated.
+     */
+    if (f === 'following' && !isAuthenticated) return askForAName();
     if (f === feedFilter) return;
     TactileEngine.selection();
     
@@ -255,9 +275,11 @@ export default function ReelScreen() {
     globalScrollY.value = 0;
 
     setFeedFilter(f);
-  }, [feedFilter, overallLogsScrollY]);
+  }, [feedFilter, overallLogsScrollY, isAuthenticated, askForAName]);
 
   const switchStackFilter = useCallback((f: FeedFilter) => {
+    // Same rope, same reason — see switchFeedFilter above.
+    if (f === 'following' && !isAuthenticated) return askForAName();
     if (f === stackFilter) return;
     TactileEngine.selection();
     
@@ -267,7 +289,7 @@ export default function ReelScreen() {
     globalScrollY.value = 0;
 
     setStackFilter(f);
-  }, [stackFilter, stacksScrollY]);
+  }, [stackFilter, stacksScrollY, isAuthenticated, askForAName]);
 
 
 
@@ -325,7 +347,7 @@ export default function ReelScreen() {
             <Text style={st.emptyBtnText}>GLOBAL REEL</Text>
           </PressableScale>
         ) : (
-          <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); (router.push as any)('/log-modal' as any); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.mutate(); (router.push as any)('/log-modal' as any); }}>
             <Text style={st.emptyBtnText}>LOG A FILM</Text>
           </PressableScale>
         )}
@@ -337,7 +359,7 @@ export default function ReelScreen() {
         <MemberRegistry visible={feedFilter === 'following'} />
       </Animated.View>
     );
-  }, [feedLoading, feedFilter, router, switchFeedFilter]);
+  }, [feedLoading, feedFilter, router, switchFeedFilter, isAuthenticated, askForAName]);
 
   const stackHeader = useMemo(() => (
     <>
@@ -362,7 +384,7 @@ export default function ReelScreen() {
           it labels rather than the button. */}
       <PressableScale
         style={st.createStackBtn}
-        onPress={() => { TactileEngine.destroy(); (router.push as any)('/list-modal' as any); }}
+        onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.destroy(); (router.push as any)('/list-modal' as any); }}
       >
         <BrassSheen />
         <LinearGradient
@@ -376,7 +398,7 @@ export default function ReelScreen() {
     </>
    
   // Same here — `filteredStacks.length` left with the duplicate count.
-  ), [section, resolvedRole, stackSearch, stackFilter, switchSection, switchStackFilter, router, handleStackSearchChange, handleClearSearch]);
+  ), [section, resolvedRole, stackSearch, stackFilter, switchSection, switchStackFilter, router, handleStackSearchChange, handleClearSearch, isAuthenticated, askForAName]);
 
   const logsExtraData = useMemo(() => [feedFilter, section, logCount, resolvedRole, feedLoading], [feedFilter, section, logCount, resolvedRole, feedLoading]);
   const stacksExtraData = useMemo(() => [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading], [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading]);
@@ -407,42 +429,42 @@ export default function ReelScreen() {
             <Text style={st.emptyBtnText}>GLOBAL STACKS</Text>
           </PressableScale>
         ) : (
-          <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); (router.push as any)('/list-modal' as any); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.mutate(); (router.push as any)('/list-modal' as any); }}>
             <Text style={st.emptyBtnText}>CREATE COLLECTION</Text>
           </PressableScale>
         )}
       </Animated.View>
     );
-  }, [stacksLoading, stackSearch, stackFilter, router, handleClearSearch, switchStackFilter]);
+  }, [stacksLoading, stackSearch, stackFilter, router, handleClearSearch, switchStackFilter, isAuthenticated, askForAName]);
 
 
 
-  if (!isAuthenticated) {
-    return (
-      <FrozenTab>
-      <View style={st.gateContainer}>
-        <LinearGradient colors={[colors.ink, colors.soot]} style={StyleSheet.absoluteFillObject} />
-        {/* The Society's mark ignites at this door too — same ceremony as the
-            welcome screen and login. */}
-        <View style={st.gateSealWrap}>
-          <SocietySeal size={96} />
-        </View>
-        <Text style={st.gateTitle}>Admit One Required</Text>
-        <Text style={st.gateSub}>Join the Society to access The Reel.</Text>
-        {/* The same fault the Lobby's gate had, on a page already polished
-            twice: this button says REQUEST MEMBERSHIP beneath "Join the Society
-            to access The Reel", and pushed a bare '/login' — which opens the
-            sign-IN form. Every other caller of '/login' in the app is a "you
-            must be signed in to do that" gate and correctly wants the default;
-            these two were the only ones promising membership. */}
-        <PressableScale style={st.gateCta} onPress={() => { TactileEngine.destroy(); (router.push as any)({ pathname: '/login', params: { action: 'signup' } }); }}>
-          <BrassSheen />
-          <Text style={st.gateCtaText}>✦ REQUEST MEMBERSHIP</Text>
-        </PressableScale>
-      </View>
-      </FrozenTab>
-    );
-  }
+  /**
+   * ── THE DOOR THAT STOOD IN FRONT OF AN OPEN WINDOW ──────────────────────────
+   * A full-screen wall used to sit here: "Admit One Required · Join the Society
+   * to access The Reel." It protected nothing.
+   *
+   * Asked of production directly, the `anon` role already reads every byte
+   * behind it — 316 logs, 33 members, 15 stacks — through deliberate COLUMN
+   * grants that hand a stranger the film, the rating, the writing, the poster,
+   * the handle and the portrait, while withholding email, streaks, badges and
+   * everything about suspensions. Somebody designed exactly what a stranger may
+   * see, and then the app refused to show them any of it. The same writing is
+   * on the public web right now at /feed, /user/:username and /log/:id, with no
+   * account at all.
+   *
+   * So the wall did not keep anything private. It only meant the one thing that
+   * argues for this place — members' actual writing about actual films — was
+   * the one thing nobody could look at before deciding whether to join.
+   *
+   * The Reel is the advertisement. Reading it needs no name. The acts inside it
+   * still do, and they ask for one where they are, which is the rule the film
+   * and log pages have always followed.
+   *
+   * The Lounge keeps its wall, and now for a reason that can be checked rather
+   * than asserted: a stranger reads 0 lounges and 0 messages at the database.
+   * A salon roster is not for the street, and the schema says so too.
+   */
 
   return (
     <SectionErrorBoundary section="The Reel">
@@ -549,17 +571,9 @@ const st = StyleSheet.create({
   },
   emptyBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia },
 
-  gateContainer: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  gateSealWrap: { marginBottom: 18 },
-  gateTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
-  gateSub: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.fog, fontStyle: 'italic', marginBottom: 24, textAlign: 'center' },
-  gateCta: {
-    backgroundColor: 'rgba(18,14,9,0.9)', borderRadius: 3, overflow: 'hidden',
-    paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1,
-    borderColor: colors.sepiaBorderStrong,
-    ...effects.glowSepia,
-  },
-  gateCtaText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
+  // The six `gate*` styles that dressed the "Admit One Required" wall went with
+  // it. Leaving them would have left the next reader looking for the screen
+  // that used them.
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
