@@ -4,6 +4,8 @@ import { View, Text } from 'react-native';
 import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import type { Rank } from '@/src/constants/gatedFeatures';
+import type { Standing } from '@/src/components/clearance/Clearance';
 import { st } from './LogModalStyles';
 
 /**
@@ -19,14 +21,25 @@ import { st } from './LogModalStyles';
  * real controls rendered inert. You are not sold a name; you are looking at the
  * instrument.
  *
- * The wording is the Lounge's, verbatim, so a member who has met the rope
- * elsewhere recognises the shape rather than learning a second one.
+ * ── IT SAYS WHAT THE HOUSE-WIDE ROPE SAYS ────────────────────────────────────
+ * The wording is the shared ClearanceGate's, verbatim, so a member who has met
+ * the rope elsewhere recognises the shape rather than learning a second one.
+ * It used to fall short of that in two ways, both fixed together with moving
+ * these four ropes onto `useClearance`:
+ *
+ *   · it had no LAPSED voice — a member whose dues ran out was pitched as a
+ *     stranger, in the one place they have filed longest;
+ *   · it did not NAME what it guards. The instrument above it is inert and
+ *     hidden from a screen reader, so the rope is the only thing that can say
+ *     "The Vault" out loud. Without the name it was the vanish again, for
+ *     anyone listening rather than looking.
  */
 export default React.memo(function LogClearanceGate({
-  rank, onPress,
-}: { rank: 'archivist' | 'auteur'; onPress: () => void }) {
+  rank, standing = 'stranger', names, onPress,
+}: { rank: Rank; standing?: Standing; names: string; onPress: () => void }) {
   const tint = rank === 'auteur' ? colors.crimson : colors.sepia;
-  const label = rank === 'auteur' ? 'THE AUTEUR' : 'THE ARCHIVIST';
+  const label = rank === 'auteur' ? 'The Auteur' : 'The Archivist';
+  const lapsed = standing === 'lapsed';
 
   return (
     <PressableScale
@@ -35,11 +48,17 @@ export default React.memo(function LogClearanceGate({
       hitSlop={null}
       haptic="light"
       accessibilityRole="button"
-      accessibilityLabel={`Clearance required. ${label} opens this. Opens the Society.`}
+      accessibilityLabel={lapsed
+        ? `${names}. Your dues have lapsed. ${label} opens this again. Opens the Society.`
+        : `${names}. Clearance required. ${label} opens this. Opens the Society.`}
     >
       <View pointerEvents="none">
-        <Text style={st.gateSub} {...scaledTextProps}>[ CLEARANCE REQUIRED ]</Text>
-        <Text style={[st.gateCta, { color: tint }]} {...scaledTextProps}>✦ ASCEND THE RANKS</Text>
+        <Text style={st.gateSub} {...scaledTextProps}>
+          {lapsed ? '[ YOUR DUES HAVE LAPSED ]' : '[ CLEARANCE REQUIRED ]'}
+        </Text>
+        <Text style={[st.gateCta, { color: tint }]} {...scaledTextProps}>
+          {lapsed ? '✦ RESUME YOUR STANDING' : '✦ ASCEND THE RANKS'}
+        </Text>
       </View>
     </PressableScale>
   );

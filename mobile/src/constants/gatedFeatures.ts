@@ -70,7 +70,9 @@ export const GATED_FEATURES: GatedFeature[] = [
     rank: 'archivist',
     promise: 'The Physical Archive\n(Track 4K/Blu-Ray/VHS)',
     enforcement: { kind: 'refuses', table: 'physical_archive', trigger: 'tr_tier_gate_archive' },
-    gates: ['src/stores/domain/archiveSlice.ts'],
+    // The log form's format tag is where a member actually meets this feature;
+    // the slice's quiet guard covers the auto-sync behind it (see archiveSlice).
+    gates: ['src/components/log/LogForm.tsx', 'src/stores/domain/archiveSlice.ts'],
   },
   {
     id: 'the-vault',

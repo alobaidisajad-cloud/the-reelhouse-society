@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView } from 'react-native';
 
 import { Image } from 'expo-image';
@@ -15,6 +15,7 @@ import AuteurToolkit from '@/src/components/log/AuteurToolkit';
 import LogVerdict from '@/src/components/log/LogVerdict';
 import LogIndexEntry from '@/src/components/log/LogIndexEntry';
 import LogClearanceGate from '@/src/components/log/LogClearanceGate';
+import { useClearance } from '@/src/hooks/useClearance';
 import { Brackets, FieldLabel } from '@/src/components/log/LogFormBody';
 import { X, Eye, History, Trash2, Check, ListOrdered, Feather, Sparkles } from 'lucide-react-native';
 import { PHYSICAL_OPTIONS, ABANDONED_REASONS, getLocalDateString } from '@/src/hooks/useLogFlow';
@@ -58,8 +59,6 @@ export default function LogForm({ flow, user }: LogFormProps) {
     const router = useRouter();
     const following = useSocialStore(s => s.following);
     const {
-        isAuteur,
-        isPremium,
         film,
         status, rating, review, isSpoiler, abandonedReason, date, watchedWith, privateNotes, physicalMedia,
         autopsy, altPoster, editorialHeader, dropCap, pullQuote, autopsyOpen, calendarOpen, showDeleteConfirm, submitting,
@@ -83,21 +82,46 @@ export default function LogForm({ flow, user }: LogFormProps) {
     const deskName = (user?.username || 'you').toUpperCase();
 
     /**
-     * The Society page, reached WITHOUT stacking a modal on a modal.
+     * ── FOUR ROPES, ONE WAY TO HOLD THEM ────────────────────────────────────
+     * These four were the app's most-met ropes — logging is the core act — and
+     * the only ones outside `useClearance`. Each pushed a bare '/membership', so
+     * the Society page could not say what the member reached for, the funnel
+     * never saw a single tap from here, and a lapsed member was pitched as a
+     * stranger in the room where they have filed the longest.
      *
-     * `(modals)/membership` is `presentation: 'modal'` and so is this screen, and
-     * this form pushed straight to it from three places. On iOS that is a modal
-     * over a modal — the trap the floating button hit, whose fix became the
-     * Concierge's law: park the destination, dismiss, then travel.
+     * Dismissing this modal before travelling (the Concierge's law) is now done
+     * by `openSociety`, which knows this screen is presented.
      *
-     * The draft is already saved by useLogFlow, so a member who goes to read the
-     * ranks comes back to their words.
+     * WHERE TO COME BACK TO depends on what is open. A new log keeps a draft, so
+     * the form itself is the way back. An EDIT keeps none — returning an editing
+     * member to /log-modal would hand them an empty form — so its way back is
+     * the log they were editing.
      */
-    const goToSociety = useCallback(() => {
-        TactileEngine.selection();
-        router.back();
-        requestAnimationFrame(() => { (router.push as any)('/membership' as any); });
-    }, [router]);
+    const returnTo = flow.editLogId ? `/log/${flow.editLogId}` : '/log-modal';
+    const desk = useClearance('editorial-desk', returnTo);
+    const breakdown = useClearance('breakdown-engine', returnTo);
+    const shelf = useClearance('physical-archive', returnTo);
+    const vault = useClearance('the-vault', returnTo);
+    /**
+     * Curatorial Control was the one tool that stayed a VANISH: the poster was
+     * `disabled` for anyone below the Auteur — no label, no door, a tap that did
+     * nothing on a feature the Society page sells by name. It now behaves like
+     * the other four: the panel opens, the instrument is shown inert, and one
+     * rope beneath it says what it is and who opens it.
+     */
+    const curation = useClearance('curatorial-control', returnTo);
+
+    /**
+     * An instrument shown but not usable is inert to touch AND silent to a
+     * screen reader — the same pair the shared `Locked` applies. pointerEvents
+     * alone left VoiceOver landing on a "Private notes" field nobody could type
+     * into, with the rope that explains it further down the list.
+     */
+    const inert = (held: boolean) => held ? {} : {
+        pointerEvents: 'none' as const,
+        accessibilityElementsHidden: true,
+        importantForAccessibility: 'no-hide-descendants' as const,
+    };
 
     /**
      * An entry opens itself when it ALREADY HOLDS SOMETHING.
@@ -138,13 +162,20 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 <View style={st.filmHeader}>
                     {film.poster_path && (
                         <PressableScale
-                            onPress={() => { if (isAuteur) setPosterOpen(o => !o); }}
-                            disabled={!isAuteur}
+                            onPress={() => {
+                                // Its pictures are fetched up front only for the
+                                // rank; anyone else gets them on opening it.
+                                if (!curation.held) flow.loadImages();
+                                setPosterOpen(o => !o);
+                            }}
                             hitSlop={null}
-                            pressedScale={isAuteur ? 0.97 : 1}
-                            haptic={isAuteur ? 'selection' : undefined}
-                            accessibilityRole={isAuteur ? 'button' : undefined}
-                            accessibilityLabel={isAuteur ? 'Choose an alternate poster' : undefined}
+                            pressedScale={0.97}
+                            haptic="selection"
+                            accessibilityRole="button"
+                            accessibilityState={{ expanded: posterOpen }}
+                            accessibilityLabel={curation.held
+                                ? 'Choose an alternate poster'
+                                : 'Curatorial Control. Choose an alternate poster. Opens with The Auteur.'}
                         >
                             <Image source={{ uri: tmdb.poster(altPoster ?? film.poster_path, 'w342') }} style={st.poster} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                             {altPoster && <View style={st.altBadge}><Text style={st.altBadgeText}>ALT</Text></View>}
@@ -161,9 +192,10 @@ export default function LogForm({ flow, user }: LogFormProps) {
 
             {/* Curatorial Control — the Auteur's, exercised on the record's own
                 face rather than buried inside the autopsy where it had no business. */}
-            {isAuteur && posterOpen && (
+            {posterOpen && (
                 <Animated.View entering={FadeInDown.duration(200)} style={st.idxBody}>
                     <FieldLabel>CURATORIAL CONTROL</FieldLabel>
+                    <View style={!curation.held && st.lockedPanel} {...inert(curation.held)}>
                     {availablePosters.length > 0 ? (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.flatListGapPad} keyboardShouldPersistTaps="handled">
                             <PressableScale hitSlop={null} onPress={() => { setAltPoster(null); }} style={[st.pThumb, altPoster === null && st.pThumbActive]} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityState={{ selected: altPoster === null }} accessibilityLabel="Use the default poster">
@@ -175,7 +207,13 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                 </PressableScale>
                             ))}
                         </ScrollView>
-                    ) : <Text style={st.noData}>No alternative posters found on TMDB.</Text>}
+                    ) : flow.imagesLoaded ? (
+                        // Said only once TMDB has actually answered — never while
+                        // the request is still out, and never after it failed.
+                        <Text style={st.noData}>No alternative posters found on TMDB.</Text>
+                    ) : null}
+                    </View>
+                    {!curation.held && <LogClearanceGate rank={curation.rank} standing={curation.standing} names="Curatorial Control" onPress={curation.open} />}
                 </Animated.View>
             )}
 
@@ -282,7 +320,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         <Sparkles size={10} color={colors.sepia} strokeWidth={1.5} />
                         <Text style={st.deskFootText}>THE EDITORIAL DESK</Text>
                     </View>
-                    <View style={!isPremium && st.lockedPanel} pointerEvents={isPremium ? 'auto' : 'none'}>
+                    <View style={!desk.held && st.lockedPanel} {...inert(desk.held)}>
                         <EditorialDesk
                             dropCap={dropCap}
                             setDropCap={setDropCap}
@@ -293,16 +331,16 @@ export default function LogForm({ flow, user }: LogFormProps) {
                             availableBackdrops={availableBackdrops}
                         />
                     </View>
-                    {!isPremium && <LogClearanceGate rank="archivist" onPress={goToSociety} />}
+                    {!desk.held && <LogClearanceGate rank={desk.rank} standing={desk.standing} names="The Editorial Desk" onPress={desk.open} />}
                 </View>
             ) : (
-                <PressableScale style={st.deskFoot} onPress={() => { setDeskOpen(true); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: false }} accessibilityLabel={isPremium ? 'The Editorial Desk' : 'The Editorial Desk. Opens with The Archivist.'}>
+                <PressableScale style={st.deskFoot} onPress={() => { if (!desk.held) flow.loadImages(); setDeskOpen(true); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: false }} accessibilityLabel={desk.held ? 'The Editorial Desk' : 'The Editorial Desk. Opens with The Archivist.'}>
                     <View style={st.deskFootName}>
                         <Sparkles size={10} color={colors.sepia} strokeWidth={1.5} />
                         <Text style={st.deskFootText}>THE EDITORIAL DESK</Text>
                     </View>
-                    <Text style={[st.deskFootValue, !isPremium && { color: colors.sepia, opacity: 0.8 }]} numberOfLines={1}>
-                        {isPremium ? (dropCap || pullQuote || editorialHeader ? 'IN USE' : '—') : 'THE ARCHIVIST'}
+                    <Text style={[st.deskFootValue, !desk.held && { color: colors.sepia, opacity: 0.8 }]} numberOfLines={1}>
+                        {desk.held ? (dropCap || pullQuote || editorialHeader ? 'IN USE' : '—') : 'THE ARCHIVIST'}
                     </Text>
                 </PressableScale>
             )}
@@ -314,19 +352,19 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     name="THE AUTOPSY"
                     origin="auteur"
                     value={scoredAxes > 0 ? `${scoredAxes} OF 6 SCORED` : ''}
-                    lockedTo={isAuteur ? undefined : 'THE AUTEUR'}
+                    lockedTo={breakdown.held ? undefined : 'THE AUTEUR'}
                     open={autopsyOpen}
                     onPress={() => { setAutopsyOpen(!autopsyOpen); }}
                 >
                     <View style={st.idxBody}>
-                        <View style={!isAuteur && st.lockedPanel} pointerEvents={isAuteur ? 'auto' : 'none'}>
+                        <View style={!breakdown.held && st.lockedPanel} {...inert(breakdown.held)}>
                             <AuteurToolkit
-                                isAuteur={isAuteur}
+                                isAuteur={breakdown.held}
                                 autopsy={autopsy}
                                 setAutopsy={setAutopsy}
                             />
                         </View>
-                        {!isAuteur && <LogClearanceGate rank="auteur" onPress={goToSociety} />}
+                        {!breakdown.held && <LogClearanceGate rank={breakdown.rank} standing={breakdown.standing} names="The Autopsy" onPress={breakdown.open} />}
                     </View>
                 </LogIndexEntry>
 
@@ -334,12 +372,12 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     name="THE PHYSICAL ARCHIVE"
                     origin="archivist"
                     value={hasPhysicalFormat(physicalMedia) ? physicalMedia.toUpperCase() : ''}
-                    lockedTo={isPremium ? undefined : 'THE ARCHIVIST'}
+                    lockedTo={shelf.held ? undefined : 'THE ARCHIVIST'}
                     open={physicalOpen}
                     onPress={() => { setPhysicalOpen(o => !o); }}
                 >
                     <View style={st.idxBody}>
-                        <View style={[st.tagRow, !isPremium && st.lockedPanel]} pointerEvents={isPremium ? 'auto' : 'none'}>
+                        <View style={[st.tagRow, !shelf.held && st.lockedPanel]} {...inert(shelf.held)}>
                             {PHYSICAL_OPTIONS.map(opt => (
                                 <PressableScale key={opt} style={st.hit48} onPress={() => { setPhysicalMedia(opt); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: physicalMedia === opt }} accessibilityLabel={opt}>
                                     <View style={[st.tag, physicalMedia === opt && st.tagActive]}>
@@ -348,7 +386,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                 </PressableScale>
                             ))}
                         </View>
-                        {!isPremium && <LogClearanceGate rank="archivist" onPress={goToSociety} />}
+                        {!shelf.held && <LogClearanceGate rank={shelf.rank} standing={shelf.standing} names="The Physical Archive" onPress={shelf.open} />}
                     </View>
                 </LogIndexEntry>
 
@@ -359,15 +397,15 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     name="THE VAULT"
                     origin="archivist"
                     value={privateNotes ? ' ' : ''}
-                    lockedTo={isPremium ? undefined : 'THE ARCHIVIST'}
+                    lockedTo={vault.held ? undefined : 'THE ARCHIVIST'}
                     open={vaultOpen}
                     onPress={() => { setVaultOpen(o => !o); }}
                 >
                     <View style={st.idxBody}>
-                        <View style={!isPremium && st.lockedPanel} pointerEvents={isPremium ? 'auto' : 'none'}>
+                        <View style={!vault.held && st.lockedPanel} {...inert(vault.held)}>
                             <TextInput style={[st.reviewInput, st.privateNotesInput, isRTLText(privateNotes) && st.rtlText]} placeholder="Notes for the cutting room floor…" placeholderTextColor={colors.fog} value={privateNotes} onChangeText={setPrivateNotes} multiline maxLength={1000} textAlignVertical="top" {...scaledTextProps} keyboardAppearance="dark" accessibilityLabel="Private notes" selectionColor={'rgba(220,166,58,0.3)'} />
                         </View>
-                        {!isPremium && <LogClearanceGate rank="archivist" onPress={goToSociety} />}
+                        {!vault.held && <LogClearanceGate rank={vault.rank} standing={vault.standing} names="The Vault" onPress={vault.open} />}
                     </View>
                 </LogIndexEntry>
 

@@ -76,7 +76,7 @@ describe('the inventory — every control the composer owns', () => {
     ['write a private note',    'onChangeText={setPrivateNotes}'],
     ['add to a stack',          'toggleList(list.id)'],
     ['seal the record',         'onSeal={flow.handleLog}'],
-    ['reach the Society',       'goToSociety'],
+    ['reach the Society',       'onPress={vault.open}'],
   ];
 
   it.each(CONTROLS)('a member can still %s', (_what, handler) => {
@@ -150,8 +150,10 @@ describe('the velvet rope is said once', () => {
     // (the Physical Archive and the Vault) and one Auteur tool. Asserting only
     // that a lock exists let a mutation strip one of the two and still pass.
     const src = read(FORM);
-    expect(src.match(/lockedTo=\{isAuteur \? undefined : 'THE AUTEUR'\}/g) ?? []).toHaveLength(1);
-    expect(src.match(/lockedTo=\{isPremium \? undefined : 'THE ARCHIVIST'\}/g) ?? []).toHaveLength(2);
+    // Each lock now asks its OWN feature — the registry decides the rank, so a
+    // tool re-ranked there is re-locked here without anyone editing this form.
+    expect(src.match(/lockedTo=\{breakdown\.held \? undefined : 'THE AUTEUR'\}/g) ?? []).toHaveLength(1);
+    expect(src.match(/lockedTo=\{(shelf|vault)\.held \? undefined : 'THE ARCHIVIST'\}/g) ?? []).toHaveLength(2);
     // The app's own mark for a thing you lack clearance for — not a padlock.
     expect(read('src/components/log/LogIndexEntry.tsx')).toMatch(/KeyRound/);
   });
@@ -160,14 +162,30 @@ describe('the velvet rope is said once', () => {
     const gate = read('src/components/log/LogClearanceGate.tsx');
     expect(gate).toContain('[ CLEARANCE REQUIRED ]');
     expect(gate).toContain('✦ ASCEND THE RANKS');
+    // Including the lapsed voice it lacked: a member whose dues ran out is not
+    // pitched as a stranger in the room where they have filed the longest.
+    expect(gate).toContain('[ YOUR DUES HAVE LAPSED ]');
+    expect(gate).toContain('✦ RESUME YOUR STANDING');
+    // And it names what it guards, first, because the instrument above it is
+    // silent to a screen reader.
+    expect(gate).toMatch(/`\$\{names\}\. Clearance required\./);
   });
 
   it('the locked instrument is shown, inert', () => {
     // You are not sold a name; you are looking at the tool.
     const src = read(FORM);
     expect(src).toMatch(/st\.lockedPanel/);
-    expect(src).toMatch(/pointerEvents=\{isPremium \? 'auto' : 'none'\}/);
-    expect(src).toMatch(/pointerEvents=\{isAuteur \? 'auto' : 'none'\}/);
+    // Inert to touch AND silent to a screen reader — the pair the shared
+    // `Locked` applies. Touch alone left VoiceOver announcing controls that do
+    // nothing.
+    const inert = src.slice(src.indexOf('const inert ='), src.indexOf('const inert =') + 260);
+    expect(inert).toMatch(/pointerEvents: 'none'/);
+    expect(inert).toMatch(/accessibilityElementsHidden: true/);
+    expect(inert).toMatch(/importantForAccessibility: 'no-hide-descendants'/);
+    // On all four instruments, each by its own feature.
+    for (const c of ['desk', 'breakdown', 'shelf', 'vault']) {
+      expect(`${c}: ${src.includes(`{...inert(${c}.held)}`)}`).toBe(`${c}: true`);
+    }
   });
 });
 
@@ -530,15 +548,34 @@ describe('text can be enlarged without leaving its line box', () => {
 describe('the composer never stacks a modal on a modal', () => {
   it('reaching the Society parks, dismisses, then travels', () => {
     const src = read(FORM);
-    // Both screens are presentation:'modal'. A direct push is the trap the
-    // floating button hit; the Concierge's law is park → dismiss → travel.
-    expect(src).toMatch(/const goToSociety/);
-    expect(src).toMatch(/router\.back\(\)/);
-    // Exactly one push, and it lives inside goToSociety after the dismissal.
-    const pushes = src.match(/\/membership/g) ?? [];
-    expect(pushes).toHaveLength(1);
-    const fn = src.slice(src.indexOf('const goToSociety'));
-    expect(fn.indexOf('router.back()')).toBeLessThan(fn.indexOf('/membership'));
+    /**
+     * Both screens are presentation:'modal', and a direct push is the trap the
+     * floating button hit. The dismissal used to be hand-written here, as a
+     * push to a bare '/membership' — so the Society could not say what was
+     * reached for and the funnel never saw a tap from the core act.
+     *
+     * The four ropes now go through useClearance, and park → dismiss → travel
+     * lives in openSociety, which knows this screen is presented because
+     * '/log-modal' is in MODAL_PATHS (both pinned in theSocietyOpensOverYou).
+     * What is pinned HERE is that nobody hand-writes the trip again.
+     */
+    expect(src).not.toMatch(/\/membership/);
+    // One dismissal remains in this form, and it is the member's own: DISCARD.
+    // Any second one would be a hand-written trip to the Society coming back.
+    const backs = src.match(/router\.back\(\)/g) ?? [];
+    expect(backs).toHaveLength(1);
+    expect(src).toMatch(/discardDraft\(\); router\.back\(\);/);
+    for (const id of ['editorial-desk', 'breakdown-engine', 'physical-archive', 'the-vault']) {
+      expect(src).toMatch(new RegExp(`useClearance\\('${id}', returnTo\\)`));
+    }
+    expect(read('src/constants/modalRoutes.ts')).toMatch(/'\/log-modal'/);
+  });
+
+  it('and comes back to somewhere that still holds the member’s words', () => {
+    // A new log keeps a draft, so the form is the way back. An EDIT keeps none,
+    // so returning to the form would hand them an empty one — its way back is
+    // the log itself.
+    expect(read(FORM)).toMatch(/const returnTo = flow\.editLogId \? `\/log\/\$\{flow\.editLogId\}` : '\/log-modal';/);
   });
 });
 

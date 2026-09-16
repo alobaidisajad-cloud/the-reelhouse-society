@@ -250,17 +250,48 @@ export function useLogFlow() {
     const editLogId = params.editLogId || null;
     const isEditing = !!editLogId;
 
-    // ── Fetch images for premium features ──
+    /**
+     * ── THE IMAGES AN INSTRUMENT IS MADE OF ────────────────────────────────────
+     * Posters (Curatorial Control) and backdrops (the Editorial Desk) were
+     * fetched only for a member holding a rank. That was a sensible saving
+     * while those tools were invisible to everyone else. They are not any more:
+     * every tool is shown to every rank, inert, so the member can see what the
+     * rank buys — and a picker with no pictures in it shows nothing, while the
+     * poster panel's empty state would have said "No alternative posters found
+     * on TMDB", which would have been false.
+     *
+     * So a member with the rank still gets them up front, and anyone else gets
+     * them the moment they OPEN one of those tools — one request, on intent,
+     * never on every log. `imagesLoaded` lets the empty state speak only once it
+     * is true.
+     */
+    const [imagesLoaded, setImagesLoaded] = useState(false);
+    const imagesFor = useRef<number | string | null>(null);
+
+    const loadImages = useCallback(() => {
+        const id = film?.id;
+        if (!id || imagesFor.current === id) return;
+        imagesFor.current = id;
+        setImagesLoaded(false);
+        tmdb.movieImages(id).then((imgs: any) => {
+            // A different film arrived while this one was in flight.
+            if (imagesFor.current !== id) return;
+            if (imgs?.posters) setAvailablePosters(imgs.posters.slice(0, 20));
+            if (imgs?.backdrops) setAvailableBackdrops(imgs.backdrops.slice(0, 10));
+            // Only an ANSWER may let the empty state speak. A failed request is
+            // not "no posters found", and saying so would be a false sentence.
+            setImagesLoaded(true);
+        }).catch((err: unknown) => {
+            if (__DEV__) console.warn('[LogModal] image prefetch failed:', err);
+            // Allow a later open to try again, rather than a failure being final.
+            if (imagesFor.current === id) imagesFor.current = null;
+        });
+    }, [film?.id]);
+
     useEffect(() => {
         if (!film?.id) return;
-        if (isAuteur || isPremium) {
-            tmdb.movieImages(film.id).then((imgs: any) => {
-                if (!imgs) return;
-                if (imgs.posters) setAvailablePosters(imgs.posters.slice(0, 20));
-                if (imgs.backdrops) setAvailableBackdrops(imgs.backdrops.slice(0, 10));
-            }).catch((err: unknown) => { if (__DEV__) console.warn('[LogModal] image prefetch failed:', err); });
-        }
-    }, [film?.id, isAuteur, isPremium]);
+        if (isAuteur || isPremium) loadImages();
+    }, [film?.id, isAuteur, isPremium, loadImages]);
 
     // ── Populate form from existing log in edit mode ──
     useEffect(() => {
@@ -592,7 +623,11 @@ export function useLogFlow() {
         submitting,
         sealed,
         availablePosters, availableBackdrops,
+        imagesLoaded, loadImages,
         isEditing,
+        // Exposed so a rope in the form can say where to come back to: an edit
+        // keeps no draft, so its way back is the log itself, not an empty form.
+        editLogId,
         selectFilm,
         handleLog,
         handleDelete,
