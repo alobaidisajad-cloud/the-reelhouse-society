@@ -18,6 +18,7 @@ import type { ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '@/src/t
  
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useClearance } from '@/src/hooks/useClearance';
  
 import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import { CinematicInsights } from '@/src/components/profile/CinematicInsights';
@@ -260,6 +261,16 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const { refreshing, onRefresh, dnaCardOpen, setDnaCardOpen, rouletteOpen, setRouletteOpen, followLoading, toggleFollow } = ctrl;
   const { toEditProfile: navToEditProfile, toSettings: navToSettings, toMembership: navToMembership, toFollowers: navToFollowers, toFollowing: navToFollowing, toCalendar: navToCalendar, openSocialLink, handleBack } = nav;
   const closeDnaCard = useCallback(() => setDnaCardOpen(false), [setDnaCardOpen]);
+  /**
+   * A member's own Vault room, locked below the Archivist, was a bare push to
+   * the Society — so the page could not say it was the Physical Archive they
+   * reached for, and the funnel never saw the tap. It is that feature's rope now.
+   *
+   * The Viewing Calendar beside it keeps its plain push ON PURPOSE: nothing on
+   * the Society page sells a calendar, so there is no feature to name. Whether
+   * it should be sold or simply given is an open product decision.
+   */
+  const shelfRope = useClearance('physical-archive');
   const closeRoulette = useCallback(() => setRouletteOpen(false), [setRouletteOpen]);
   const onRouletteSelect = useCallback((id: number) => { setRouletteOpen(false); (router.push as any)(`/film/${id}` as never); }, [setRouletteOpen, router]);
 
@@ -868,7 +879,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     title="The Vault"
                     line={isSelf ? 'Physical media tracking awaits the Archivist rank.' : "This member's vault has not been opened."}
                     isSelf={isSelf}
-                    onAscend={navToMembership}
+                    onAscend={shelfRope.open}
                   />
                 </View>
               )

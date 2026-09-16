@@ -88,6 +88,61 @@ describe('a gate opens the form its label promises', () => {
         expect(offenders).toEqual([]);
     });
 
+    it('copy that promises JOINING never routes to the paid ranks', () => {
+        /**
+         * The scan above reads literal tappables, so it never saw a label handed
+         * to a component as a PROP. The Dispatch's signed-out page passed
+         * action="JOIN THE SOCIETY" to PaperEmpty with onAction pointing at the
+         * membership page — the paid ranks — for a visitor who only needed the
+         * free sign-up. This reads every JSX element, props and all.
+         */
+        const offenders: string[] = [];
+        let seen = 0;
+        /**
+         * An opening tag, read the way JSX reads it. The first version matched
+         * up to the first `>` — which is the `>` of `onAction={() => …}` — so it
+         * cut every element with an arrow prop in half and never saw where the
+         * arrow went. Mutation-checked and caught: pointing the Dispatch's JOIN
+         * back at the ranks left it green. Braces and quotes are skipped now.
+         */
+        const openingTags = (src: string): string[] => {
+            const out: string[] = [];
+            const start = /<[A-Z][A-Za-z]*\b/g;
+            let m: RegExpExecArray | null;
+            while ((m = start.exec(src))) {
+                let depth = 0; let quote: string | null = null; let i = m.index + m[0].length;
+                for (; i < src.length; i++) {
+                    const c = src[i];
+                    if (quote) { if (c === quote) quote = null; continue; }
+                    if (c === '"' || c === "'" || c === '`') { quote = c; continue; }
+                    if (c === '{') depth++;
+                    else if (c === '}') depth--;
+                    else if (c === '>' && depth === 0) break;
+                }
+                out.push(src.slice(m.index, i + 1));
+            }
+            return out;
+        };
+        for (const file of files) {
+            // Line comments are stripped because one inside a tag can hold an
+            // apostrophe ("the sign-UP form's job") that would open a false
+            // quote — but NOT a `//` after a colon, which is a URL in a string,
+            // and cutting it would leave a real quote unclosed.
+            const src = fs.readFileSync(file, 'utf8')
+                .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/gm, '$1 ');
+            for (const el of openingTags(src)) {
+                if (!PROMISES_MEMBERSHIP.test(el)) continue;
+                seen++;
+                if (/\/\(modals\)\/membership|['"]\/membership['"]/.test(el)) {
+                    offenders.push(`${path.relative(ROOT, file).split(path.sep).join('/')} — promises joining, opens the paid ranks`);
+                }
+            }
+        }
+        // Tripwire: the scan must find the membership promises that exist.
+        expect(seen).toBeGreaterThan(0);
+        expect(offenders).toEqual([]);
+    });
+
     it('sign-in CTAs are not accidentally routed to signup', () => {
         const offenders: string[] = [];
         for (const file of files) {

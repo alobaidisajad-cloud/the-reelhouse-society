@@ -9,7 +9,7 @@
  * no source-reading test could ever have caught.
  */
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, renderHook, act } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 import LogForm from '../LogForm';
@@ -259,6 +259,27 @@ describe('the log’s ropes are the house’s ropes', () => {
       await fireEvent.press(r.getByLabelText(POSTER));
       await waitFor(() =>
         expect(r.getByText('No alternative posters found on TMDB.', { includeHiddenElements: true })).toBeTruthy());
+    });
+
+    it('the next film never shows the last film’s posters', async () => {
+      // The pictures live in the flow, which outlives the form. Found while
+      // verifying this work: opening the tool on a second film showed the
+      // first film's posters until the second's arrived.
+      useAuthStore.setState({ user: { id: '33333333-3333-4333-8333-333333333333', username: 'sajjadobaidi', tier: 'free', role: 'cinephile' } as never });
+      (useLocalSearchParams as jest.Mock).mockReturnValue({});
+      const images = tmdb.movieImages as jest.Mock;
+      images.mockResolvedValueOnce({ posters: [{ file_path: '/first.jpg' }], backdrops: [] });
+      images.mockReturnValueOnce(new Promise(() => {})); // the second film is still on its way
+      const { result } = await renderHook(() => useLogFlow());
+
+      await act(async () => { result.current.selectFilm({ id: 101, title: 'First' }); });
+      await act(async () => { result.current.loadImages(); });
+      await waitFor(() => expect(result.current.availablePosters).toEqual([{ file_path: '/first.jpg' }]));
+
+      await act(async () => { result.current.selectFilm({ id: 202, title: 'Second' }); });
+      await act(async () => { result.current.loadImages(); });
+      expect(result.current.availablePosters).toEqual([]);
+      expect(result.current.imagesLoaded).toBe(false);
     });
 
     it('an Auteur meets the picker with no rope', async () => {

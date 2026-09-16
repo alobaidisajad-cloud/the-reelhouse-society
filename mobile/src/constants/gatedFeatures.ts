@@ -91,7 +91,7 @@ export const GATED_FEATURES: GatedFeature[] = [
     enforcement: { kind: 'refuses', table: 'physical_archive', trigger: 'tr_tier_gate_archive' },
     // The log form's format tag is where a member actually meets this feature;
     // the slice's quiet guard covers the auto-sync behind it (see archiveSlice).
-    gates: ['src/components/log/LogForm.tsx', 'src/stores/domain/archiveSlice.ts'],
+    gates: ['src/components/log/LogForm.tsx', 'src/stores/domain/archiveSlice.ts', 'app/user/[username].tsx'],
   },
   {
     id: 'the-vault',
@@ -219,7 +219,7 @@ export const GATED_FEATURES: GatedFeature[] = [
     rank: 'auteur',
     promise: 'Publish Essays & Open\nBallots in The Dispatch',
     enforcement: { kind: 'refuses', table: 'dispatch_posts', trigger: 'tr_tier_gate_dispatch', kinds: ['dossier'] },
-    gates: ['app/dispatch/compose.tsx'],
+    gates: ['app/dispatch/compose.tsx', 'app/(tabs)/dispatch.tsx'],
   },
   {
     id: 'ballots',
@@ -236,7 +236,7 @@ export const GATED_FEATURES: GatedFeature[] = [
      */
     promise: 'Publish Essays & Open\nBallots in The Dispatch',
     enforcement: { kind: 'refuses', table: 'dispatch_posts', trigger: 'tr_tier_gate_dispatch', kinds: ['ballot'] },
-    gates: ['app/dispatch/compose.tsx', 'src/components/dispatch/ComposeDesks.tsx'],
+    gates: ['app/dispatch/compose.tsx', 'src/components/dispatch/ComposeDesks.tsx', 'app/(tabs)/dispatch.tsx'],
   },
   {
     id: 'essays-legacy',

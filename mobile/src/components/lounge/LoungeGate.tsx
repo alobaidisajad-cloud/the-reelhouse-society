@@ -29,7 +29,15 @@ export function LoungeGate() {
               in, not when the house was founded. */}
           <OrnamentalRule />
 
-          <Text style={s.gateSub}>[ CLEARANCE REQUIRED ]</Text>
+          {/* ── WHAT STANDS AT THIS DOOR IS A NAME, NOT A RANK ─────────────────
+              This gate once met every member without the Archivist rank, and
+              said so: CLEARANCE REQUIRED, the ranks hold the key, ascend. Then
+              the corridor opened — any member walks in and reads every public
+              salon, and the rank waits at the seat inside. The Lounge tab now
+              shows this gate ONLY to someone who is not signed in, and it went
+              on selling them a paid rank for a room that costs nothing to
+              enter. What they lack is membership, which is free. */}
+          <Text style={s.gateSub}>[ MEMBERS ONLY ]</Text>
 
           <Text style={s.gateDesc}>
             Beyond this door lies The Lounge — intimate cinema
@@ -39,20 +47,23 @@ export function LoungeGate() {
             and every conversation is a love letter to the art.
           </Text>
 
+          {/* Sign-UP, not sign-in: the label promises membership, and a bare
+              '/login' opens the sign-in form (authRouting.test pins this). */}
           <PressableScale
             testID="lounge-gate-cta"
             style={s.gateCta}
-            onPress={() => nav.push('/membership')}
+            onPress={() => nav.push('/login', { action: 'signup' })}
             haptic="medium"
-            accessibilityRole="button" accessibilityLabel="Ascend the ranks — opens membership"
+            accessibilityRole="button" accessibilityLabel="Join the Society — free. Opens sign up."
           >
             <Sparkles size={11} color={colors.ink} strokeWidth={2} />
-            <Text style={s.gateCtaText} numberOfLines={1}>✦ ASCEND THE RANKS</Text>
+            <Text style={s.gateCtaText} numberOfLines={1}>✦ JOIN THE SOCIETY</Text>
           </PressableScale>
 
-          {/* Tier-neutral — the whole ladder, no rank pushed over another */}
+          {/* What the rank DOES buy here, in the corridor's own words — so the
+              ladder is still shown, at the seat where it applies. */}
           <Text style={s.gateKeyLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-            THE ARCHIVIST &amp; AUTEUR RANKS HOLD THE KEY
+            FREE TO JOIN · ARCHIVISTS TAKE A SEAT
           </Text>
 
           <Text style={s.gateFootnote}>

@@ -1,16 +1,35 @@
 appId: com.reelhouse.society
 ---
 # Lounge: there is no "Lounges" tab — Tabs.Screen name="lounge" is hidden
-# (href: null in app/(tabs)/_layout.tsx). It's only reachable via the
-# /lounge deep-link alias (app/lounge.tsx, redirects to /(tabs)/lounge) or
-# TopNavBar's Lounge icon, which only renders for Archivist+ users. The
-# e2e test account isn't Archivist+, so — same reasoning as
-# browse_vault.yaml's Watchlist substitution — this exercises the real
-# LoungeGate upsell screen rather than a live chat room.
+# (href: null in app/(tabs)/_layout.tsx). It is reached through the /lounge
+# deep-link alias (app/lounge.tsx, redirects to /(tabs)/lounge) or the nav's
+# Lounge icon.
+#
+# This flow used to sign in and then assert the LoungeGate's CLEARANCE REQUIRED.
+# The corridor opened to every member, so a signed-in account has not seen that
+# gate since — the flow was failing against the app as built. It now walks the
+# two doors that exist: a VISITOR meets a gate that asks for membership (free),
+# and a MEMBER without the rank walks into the corridor and meets the rope at
+# the act that needs it.
+
+# ── 1. Signed out: the door asks for a name, not a rank ──
 - launchApp:
     clearState: true
+- openLink: "reelhouse://lounge"
+- assertVisible: "The Lounge"
+- assertVisible: "MEMBERS ONLY"
+- assertNotVisible: "CLEARANCE REQUIRED"
+- assertVisible:
+    id: "lounge-gate-cta"
+- tapOn:
+    id: "lounge-gate-cta"
+# Joining is the sign-up form.
+- assertVisible:
+    id: "email-input"
 
-# Authenticate (via Profile tab's sign-in prompt — see login_flow.yaml)
+# ── 2. Signed in without the rank: the corridor is open ──
+- launchApp:
+    clearState: true
 - tapOn:
     id: "profile-tab"
 - assertVisible:
@@ -31,11 +50,9 @@ appId: com.reelhouse.society
 
 - openLink: "reelhouse://lounge"
 - assertVisible: "The Lounge"
-- assertVisible: "CLEARANCE REQUIRED"
-- assertVisible:
-    id: "lounge-gate-cta"
-- tapOn:
-    id: "lounge-gate-cta"
+- assertVisible: "READ ANY SALON · ARCHIVISTS TAKE A SEAT"
+- assertNotVisible: "MEMBERS ONLY"
 
-# CTA routes to the membership/upsell screen.
+# Founding a salon is the rank's act: ESTABLISH opens the Society page.
+- tapOn: "ESTABLISH"
 - assertVisible: "ELEVATE YOUR DEVOTION"

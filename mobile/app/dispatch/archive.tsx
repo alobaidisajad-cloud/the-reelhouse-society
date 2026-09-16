@@ -36,7 +36,6 @@ import { roomOf } from '@/src/components/dispatch/roomLink';
 import { useDispatchArchive } from '@/src/hooks/useDispatchArchive';
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
-import { isArchivistPlusTier } from '@/src/utils/tier';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
@@ -46,7 +45,6 @@ import { ClearanceGate } from '@/src/components/clearance/Clearance';
 export default function ArchiveScreen() {
   const insets = useSafeAreaInsets();
   const me = useAuthStore((s) => s.user);
-  const archivist = isArchivistPlusTier(me);
   /** Opening a film's gathered archive is the act the rank buys. */
   const gathering = useClearance('dispatch-archive', '/dispatch/archive');
 
@@ -152,7 +150,9 @@ export default function ArchiveScreen() {
 
           {/* The rope, once, under the results a guest just found — not over
               the page before they were allowed to look. */}
-          {!archivist && !film && matches.length > 0 ? (
+          {/* `gathering.held`, the same answer the tap above asks — this read a
+              separate bare tier check one line from the rope that already knew. */}
+          {!gathering.held && !film && matches.length > 0 ? (
             <ClearanceGate
               rank={gathering.rank}
               standing={gathering.standing}

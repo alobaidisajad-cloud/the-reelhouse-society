@@ -19,7 +19,7 @@ import FeedScreen from '@/app/(tabs)/dispatch';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { Filing } from '@/src/stores/dispatchTypes';
 
-let mockUser: { id: string; username: string } | null = { id: 'u1', username: 'me' };
+let mockUser: { id: string; username: string; tier?: string } | null = { id: 'u1', username: 'me' };
 
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: Object.assign(
@@ -38,7 +38,21 @@ jest.mock('@react-navigation/native', () => ({ useScrollToTop: jest.fn() }));
 
 const mockPushed: string[] = [];
 jest.mock('@/src/utils/typedRouter', () => ({
-  nav: { push: (p: string) => { mockPushed.push(p); }, replace: jest.fn(), back: jest.fn() },
+  // Params are recorded too: "join" and "sign in" are the same path and
+  // differ ONLY by `action`, which is exactly the difference being tested.
+  nav: {
+    push: (p: string, params?: Record<string, string>) => {
+      mockPushed.push(params ? `${p}?${new URLSearchParams(params).toString()}` : p);
+    },
+    replace: jest.fn(),
+    back: jest.fn(),
+  },
+}));
+// A rope travels through openSociety, not nav — recorded in the same list so a
+// test reads one sequence of where the member was sent.
+jest.mock('@/src/utils/openSociety', () => ({
+  openSociety: (href: string) => { mockPushed.push(href); },
+  societyHref: jest.requireActual('@/src/utils/openSociety').societyHref,
 }));
 
 jest.mock('@/src/lib/supabase', () => ({
@@ -330,7 +344,9 @@ describe('an empty page, in every shape it takes', () => {
     const { getByText, getByLabelText } = await mount();
     expect(getByText('The house is open to read.')).toBeTruthy();
     await pressIt(getByLabelText('JOIN THE SOCIETY'));
-    expect(mockPushed).toEqual(['/(modals)/membership']);
+    // Membership is free, so joining is the sign-UP form — not the paid ranks,
+    // where this used to send a visitor who only wanted to file a take.
+    expect(mockPushed).toEqual(['/login?action=signup']);
   });
 
   for (const [section, title, action] of [
@@ -364,7 +380,18 @@ describe('an empty page, in every shape it takes', () => {
       expect(getByText(title)).toBeTruthy();
       expect(queryByLabelText('FILE THE FIRST')).toBeNull();
       await pressIt(getByLabelText('WHAT AN AUTEUR CAN DO →'));
-      expect(mockPushed).toEqual(['/(modals)/membership']);
+      // The department's own rope: the Society is told which form was reached
+      // for, and where the member was.
+      const feature = section === 'BALLOTS' ? 'ballots' : 'essays';
+      expect(mockPushed).toEqual([`/membership?reason=${feature}&rank=auteur&returnTo=%2Fdispatch`]);
+    });
+
+    it(`${section} — says nothing about what an Auteur can do, to an Auteur`, async () => {
+      mockUser = { id: 'u1', username: 'me', tier: 'auteur' };
+      put({ filings: [], section });
+      const { getByText, queryByLabelText } = await mount();
+      expect(getByText(title)).toBeTruthy();
+      expect(queryByLabelText('WHAT AN AUTEUR CAN DO →')).toBeNull();
     });
   }
 

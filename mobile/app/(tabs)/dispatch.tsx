@@ -46,6 +46,7 @@ import type { Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
+import { useClearance } from '@/src/hooks/useClearance';
 
 /**
  * A row is a filing or the divider announcing the day it belongs to.
@@ -272,6 +273,16 @@ export default function DispatchScreen() {
 
   const empty = EMPTY[section];
   const today = new Date();
+  /**
+   * The empty BALLOTS and ESSAYS pages end in "WHAT AN AUTEUR CAN DO →". It was
+   * a bare push to the Society, so the page could not say which form was reached
+   * for and the funnel never saw the tap — and it was shown to Auteurs too, who
+   * already can. It is each department's own rope now, shown only to a member
+   * who does not hold it.
+   */
+  const ballots = useClearance('ballots', '/dispatch');
+  const essays = useClearance('essays', '/dispatch');
+  const formRope = section === 'BALLOTS' ? ballots : essays;
 
   /**
    * Day one prints the whole masthead; every other day prints the running head.
@@ -375,7 +386,10 @@ export default function DispatchScreen() {
                     title="The house is open to read."
                     body="Filing is for members."
                     action="JOIN THE SOCIETY"
-                    onAction={() => nav.push('/(modals)/membership')}
+                    // Membership is free — filing takes, seekings and wires needs
+                    // nothing more. This sent a visitor to the paid ranks to
+                    // "join", which is the sign-UP form's job.
+                    onAction={() => nav.push('/login', { action: 'signup' })}
                     end
                   />
                 ) : empty.action ? (
@@ -390,12 +404,16 @@ export default function DispatchScreen() {
                   // act to somebody the door will refuse is a button that exists
                   // to say no, so the quiet line explains instead — and it is a
                   // link, because "what an auteur can do" is a real page.
-                  <PaperEmpty
-                    title={empty.title}
-                    body={empty.body}
-                    quiet="WHAT AN AUTEUR CAN DO →"
-                    onQuiet={() => nav.push('/(modals)/membership')}
-                  />
+                  formRope.held ? (
+                    <PaperEmpty title={empty.title} body={empty.body} />
+                  ) : (
+                    <PaperEmpty
+                      title={empty.title}
+                      body={empty.body}
+                      quiet="WHAT AN AUTEUR CAN DO →"
+                      onQuiet={formRope.open}
+                    />
+                  )
                 )
               }
               ListFooterComponent={

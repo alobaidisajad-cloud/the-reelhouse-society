@@ -258,9 +258,13 @@ export default function LoungeScreen() {
             reachable by an Archivist anyway". It is reachable by everyone now,
             so the line would be false — and worse, it would be the first thing
             a Cinephile reads on a page full of rooms they are welcome to walk
-            into and read. It names what the rank buys instead. */}
+            into and read. It names what the rank buys instead.
+
+            The Archivist's half kept saying ARCHIVIST EXCLUSIVE, over the same
+            corridor every member walks — the one false line left on the page.
+            It now says what the rank gives THEM, in the same words. */}
         <Text style={s.headerMetaLine}>
-          {isArchivist ? 'ARCHIVIST EXCLUSIVE' : 'READ ANY SALON · ARCHIVISTS TAKE A SEAT'}
+          {isArchivist ? 'READ ANY SALON · TAKE YOUR SEAT' : 'READ ANY SALON · ARCHIVISTS TAKE A SEAT'}
         </Text>
 
         {/* Search + Establish — one working row */}

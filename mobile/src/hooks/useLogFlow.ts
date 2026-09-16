@@ -273,6 +273,13 @@ export function useLogFlow() {
         if (!id || imagesFor.current === id) return;
         imagesFor.current = id;
         setImagesLoaded(false);
+        // Clear the LAST film's pictures before asking for this one's. They live
+        // in the flow, which outlives the form, so a member who logged one film
+        // and opened the poster tool on the next saw the first film's posters
+        // until the second's arrived — and the same flash reached every member
+        // with a rank on every change of film.
+        setAvailablePosters([]);
+        setAvailableBackdrops([]);
         tmdb.movieImages(id).then((imgs: any) => {
             // A different film arrived while this one was in flight.
             if (imagesFor.current !== id) return;
