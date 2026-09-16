@@ -29,7 +29,7 @@ import { useQuery } from '@tanstack/react-query';
 import { tmdb } from '@/src/lib/tmdb';
 import { useArchiveStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
-import { isArchivistPlusTier } from '@/src/utils/tier';
+import { useClearance } from '@/src/hooks/useClearance';
 import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
@@ -144,7 +144,18 @@ export default function PersonDetailScreen() {
   }));
 
   const personId = Number(id);
-  const isArchivist = isArchivistPlusTier(user);
+  /**
+   * Sharing an artist into a salon is posting a message there, so the rope is
+   * `lounge-speaking`. It used to be a bare tier check that walked a Cinephile
+   * to '/lounge' on the promise the tab would refuse them — and the tab stopped
+   * refusing when the corridor opened to everyone.
+   */
+  const { held: canShare, standing: shareStanding, open: openShare } = useClearance('lounge-speaking', `/person/${id}`);
+  const isArchivist = canShare;
+  const shareLabel = canShare ? 'Share to lounge'
+    : !user ? 'Share to lounge. Sign in first.'
+    : shareStanding === 'lapsed' ? 'Share to lounge. Your dues have lapsed. The Archivist opens this again. Opens the Society.'
+    : 'Share to lounge. Clearance required. The Archivist opens this. Opens the Society.';
 
   const {
     data,
@@ -223,15 +234,15 @@ export default function PersonDetailScreen() {
     setShowFullBio((prev) => !prev);
   }, []);
 
-  // The velvet rope, not a dead end: archivists open the share sheet;
-  // cinephiles are walked to the LoungeGate (✦ ASCEND THE RANKS).
+  // The velvet rope, not a dead end: members who may speak open the share
+  // sheet; everyone else is taken to the Society, told what they reached for.
   const handleLoungeShare = useCallback(() => {
     if (!user) {
       nav.push('/login');
       return;
     }
-    if (!isArchivist) {
-      nav.push('/lounge');
+    if (!canShare) {
+      openShare();
       return;
     }
     if (!person) return;
@@ -247,7 +258,7 @@ export default function PersonDetailScreen() {
       personId: String(id),
       personName: person.name,
     });
-  }, [user, isArchivist, person, id]);
+  }, [user, canShare, openShare, person, id]);
 
   // ── THE CANON — the department cut ──
   const { canon, usedFallback } = useMemo(() => {
@@ -483,6 +494,7 @@ export default function PersonDetailScreen() {
             definingFilm={definingFilm}
             definingWorksCount={definingWorks.length}
             isArchivist={!!isArchivist}
+            shareLabel={shareLabel}
             handleLoungeShare={handleLoungeShare}
             showHunt={showHunt}
             huntTotal={huntFilms.length}

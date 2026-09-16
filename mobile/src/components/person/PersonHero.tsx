@@ -59,6 +59,12 @@ interface PersonHeroProps {
   /** How many cards the Defining shelf will show. 0 means KNOWN FOR must survive in the record card. */
   definingWorksCount: number;
   isArchivist: boolean;
+  /**
+   * What a screen reader says for the share button. Composed by the screen,
+   * which holds the rope and so knows whether the member never held the rank,
+   * held it and lapsed, or simply is not signed in.
+   */
+  shareLabel: string;
   handleLoungeShare: () => void;
   showHunt: boolean;
   huntTotal: number;
@@ -119,6 +125,7 @@ export const PersonHero = memo(function PersonHero({
   definingFilm,
   definingWorksCount,
   isArchivist,
+  shareLabel,
   handleLoungeShare,
   showHunt,
   huntTotal,
@@ -268,7 +275,7 @@ export const PersonHero = memo(function PersonHero({
             onPress={handleLoungeShare}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             haptic="light"
-            accessibilityLabel={isArchivist ? 'Share to lounge' : 'Lounge — requires a higher rank'}
+            accessibilityLabel={shareLabel}
           >
             {isArchivist ? (
               <MessageCircle size={11} color={colors.sepia} strokeWidth={1.5} />

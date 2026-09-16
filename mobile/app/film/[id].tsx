@@ -129,9 +129,10 @@ export default function FilmDetailScreen() {
   const handleOpenLounge = useCallback(() => {
     if (!isAuthenticated) return (router.push as any)('/login' as any);
     TactileEngine.selection();
-    // The Lounge is not film-scoped — route to the member's lounges (the tab gates
-    // by rank). This previously pushed `/lounge/${filmId}`, using a film id where a
-    // lounge id belongs, which resolved to a non-existent room ("Signal Lost").
+    // The Lounge is not film-scoped — route to the corridor, which every member
+    // may walk into and read; the rope waits at the seat inside each room. This
+    // previously pushed `/lounge/${filmId}`, using a film id where a lounge id
+    // belongs, which resolved to a non-existent room ("Signal Lost").
     (router.push as any)('/lounge' as any);
   }, [isAuthenticated, router]);
 

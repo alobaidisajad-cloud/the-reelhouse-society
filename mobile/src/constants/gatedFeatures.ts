@@ -85,17 +85,20 @@ export const GATED_FEATURES: GatedFeature[] = [
     promise: 'The Lounge\n(Exclusive Cinema Chat Rooms)',
     enforcement: { kind: 'refuses', table: 'lounge_members', trigger: 'tr_tier_gate_lounge_members' },
     gates: [
-      // The room itself, where TAKING A SEAT is now the gated act.
+      // The room itself, where TAKING A SEAT is the gated act. It is the only
+      // rope that stands in front of joining.
       'app/lounge/[id].tsx',
-      'app/(tabs)/lounge.tsx',
-      'src/components/feed/ActionDeck.tsx',
-      'app/film/[id].tsx',
-      'app/person/[id].tsx',
       // TopNavBar is NOT here any more, and its absence is the point: it used
       // to fork the icon on rank — chat mark for an Archivist, brass key for a
       // Cinephile. The corridor lists real salons to everyone now, so the nav
       // has nothing to decide and asks no rank at all. This test's own
       // stale-entry check is what caught it still being listed.
+      //
+      // Nor are the feed card, the person page or the film page. The first two
+      // SHARE into a salon, which is speaking — see `lounge-speaking`. The film
+      // page only walks to the open corridor, so it gates nothing; it is in
+      // NOT_A_GATE. All three were listed here, and the check passed, because
+      // it asked whether a file mentioned a rank rather than WHICH act it ropes.
     ],
   },
   {
@@ -106,14 +109,25 @@ export const GATED_FEATURES: GatedFeature[] = [
     // already admitted kept talking for ever at any rank.
     promise: 'The Lounge\n(Exclusive Cinema Chat Rooms)',
     enforcement: { kind: 'refuses', table: 'lounge_messages', trigger: 'tr_tier_gate_lounge_messages' },
-    gates: ['app/(tabs)/lounge.tsx'],
+    gates: [
+      // Sharing a critique or an artist INTO a salon is posting a message, so
+      // these two ropes are speaking, not entering.
+      'src/components/feed/ActionDeck.tsx',
+      'app/person/[id].tsx',
+      // The door AFTER the act: a member already seated whose rank has ended.
+      // No rope can stand in front of a composer they are entitled to see, so
+      // the refusal itself is read to them. The corridor tab was listed here and
+      // gated neither speaking nor reacting.
+      'src/stores/lounge.ts',
+    ],
   },
   {
     id: 'lounge-reacting',
     rank: 'archivist',
     promise: 'The Lounge\n(Exclusive Cinema Chat Rooms)',
     enforcement: { kind: 'refuses', table: 'lounge_message_reactions', trigger: 'tr_tier_gate_lounge_reactions' },
-    gates: ['app/(tabs)/lounge.tsx'],
+    // Only the door after the act — a reaction is offered only to the seated.
+    gates: ['src/stores/lounge.ts'],
   },
   {
     id: 'vault-editing',
@@ -277,6 +291,7 @@ export const MUST_STAY_FREE = [...new Set(FREE_PROMISES.flatMap((f) => f.tables)
 export const NOT_A_GATE: { file: string; why: string }[] = [
   { file: 'src/components/home/SocialPulse.tsx', why: 'tints the rail crimson for an Auteur — an accent, nothing withheld' },
   { file: 'src/components/profile/ProfileBackdrop.tsx', why: 'asks about the profile being VIEWED, not the viewer' },
+  { file: 'app/film/[id].tsx', why: 'picks the Lounge tray line — "Talk about it" or "Listen in. Archivists take a seat." — over one open corridor every rank walks into; nothing is withheld' },
 ];
 
 export const findFeature = (id: string): GatedFeature | undefined =>

@@ -35,7 +35,7 @@ import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, ReduceMotion } fr
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import {
-  Plus, Pencil, RotateCcw, Bookmark, Play, Share2, MessageCircle, KeyRound, ArrowUpRight,
+  Plus, Pencil, RotateCcw, Bookmark, Play, Share2, MessageCircle, ArrowUpRight,
 } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
@@ -307,4 +307,6 @@ const s = StyleSheet.create({
  * reaching into lucide a second time and risking a different icon for the
  * same act.
  */
-export const TrayIcons = { Plus, Pencil, RotateCcw, Bookmark, Play, Share2, MessageCircle, KeyRound };
+// KeyRound left this set when the Lounge act stopped claiming to be locked: the
+// tray has no act whose door is shut, so it has no key to hand out.
+export const TrayIcons = { Plus, Pencil, RotateCcw, Bookmark, Play, Share2, MessageCircle };

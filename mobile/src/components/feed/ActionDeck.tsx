@@ -11,7 +11,7 @@ import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing } from 'react-native-reanimated';
-import { isArchivistPlusTier } from '@/src/utils/tier';
+import { useClearance } from '@/src/hooks/useClearance';
 
 interface ActionDeckProps {
   itemId: string;
@@ -41,7 +41,13 @@ export const ActionDeck = React.memo(function ActionDeck({
   const removeFromWatchlist = useWatchlistStore(s => s.removeFromWatchlist);
 
   const isOwner = useAuthStore(s => s.user?.username === ownerUsername);
-  const isLoungeEligible = useAuthStore(s => s.user ? isArchivistPlusTier(s.user) : false);
+  const signedIn = useAuthStore(s => !!s.user);
+  /**
+   * Sharing a critique into a salon IS posting a message there — the act
+   * `tr_tier_gate_lounge_messages` refuses — so the rope is `lounge-speaking`,
+   * not the Lounge's door. The corridor itself is open to everyone to read.
+   */
+  const { held: canShare, standing: shareStanding, open: openShare } = useClearance('lounge-speaking');
 
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -135,16 +141,22 @@ export const ActionDeck = React.memo(function ActionDeck({
         (router.push as any)('/login' as any);
         return;
     }
-    if (!isLoungeEligible) {
-      // The velvet rope, not a dead end — the brass key opens the LoungeGate
-      // (CLEARANCE REQUIRED → ASCEND THE RANKS → membership).
-      TactileEngine.navigate();
-      (router.push as any)('/lounge' as any);
+    if (!canShare) {
+      /**
+       * This used to walk the member to '/lounge', on the promise that the tab
+       * would refuse them and explain. The corridor opened to everyone, so it
+       * stopped refusing — and a member tapping "share" was dropped into a list
+       * of salons with their critique left behind and no word about why. The
+       * rope now goes where it says: the Society, told what they reached for.
+       */
+      openShare();
       return;
     }
     TactileEngine.mutate();
     setShowShareModal(true);
-  }, [isLoungeEligible, router.push]);
+  // The fields, not `share` itself: useClearance returns a fresh object every
+  // render, and this handler lives in every card of a long feed.
+  }, [canShare, openShare, router.push]);
 
   return (
     <>
@@ -177,15 +189,22 @@ export const ActionDeck = React.memo(function ActionDeck({
           <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelSaved]} {...deckLabelProps}>{isOwner ? 'EDIT' : filmSaved ? 'SAVED' : 'SAVE'}</Text>
         </PressableScale>
 
-        {/* Eligible members share to a salon; cinephiles hold the brass key —
-            an invitation marked private, never a dead switch. */}
-        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityLabel={isLoungeEligible ? 'Share to a lounge' : 'The Lounge — clearance required. Opens membership details.'}>
-          {isLoungeEligible ? (
+        {/* Members who may speak share to a salon; everyone else holds the
+            brass key — an invitation marked private, never a dead switch. The
+            spoken label says where the key actually leads, in the rope's own
+            words, because it no longer leads to the corridor. */}
+        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityLabel={
+          canShare ? 'Share to a lounge'
+            : !signedIn ? 'Share to a lounge. Sign in first.'
+            : shareStanding === 'lapsed' ? 'Share to a lounge. Your dues have lapsed. The Archivist opens this again. Opens the Society.'
+            : 'Share to a lounge. Clearance required. The Archivist opens this. Opens the Society.'
+        }>
+          {canShare ? (
             <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
           ) : (
             <KeyRound size={15} strokeWidth={2} color={colors.sepia} style={s.keyDim} />
           )}
-          <Text style={[s.actionLabel, !isLoungeEligible && s.actionLabelKey]} {...deckLabelProps}>LOUNGE</Text>
+          <Text style={[s.actionLabel, !canShare && s.actionLabelKey]} {...deckLabelProps}>LOUNGE</Text>
         </PressableScale>
       </View>
 

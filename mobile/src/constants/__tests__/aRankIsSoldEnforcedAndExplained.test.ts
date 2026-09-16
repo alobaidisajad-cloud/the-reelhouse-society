@@ -72,9 +72,34 @@ const collect = (dir: string, out: string[] = []): string[] => {
   return out;
 };
 
+const rel = (file: string) => file.slice(ROOT.length + 1).replace(/\\/g, '/');
+const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+
+/**
+ * Every `useClearance('<id>')` in the client, by file.
+ *
+ * The house's own way to rope an act, and so the one a registry row can be
+ * checked against by NAME. The old stale-entry check asked only whether a file
+ * mentioned a rank at all — so a feed card roping SPEAKING sat under ENTERING
+ * for weeks, and passed.
+ */
+const clearanceCalls = (): Map<string, string[]> => {
+  const out = new Map<string, string[]>();
+  for (const file of [...collect(join(ROOT, 'src')), ...collect(join(ROOT, 'app'))]) {
+    const r = rel(file);
+    if (r === 'src/hooks/useClearance.ts') continue;
+    const ids = [...stripComments(readFileSync(file, 'utf8')).matchAll(/useClearance\('([^']+)'/g)].map((m) => m[1]);
+    if (ids.length) out.set(r, ids);
+  }
+  return out;
+};
+
 const viewerGateFiles = (): string[] => {
   const files = [...collect(join(ROOT, 'src')), ...collect(join(ROOT, 'app'))];
-  const hit = new Set<string>();
+  // Ropes count as gates. Counting only bare tier checks meant every rope moved
+  // onto useClearance made this scan see LESS — the tripwire below fell from 10
+  // to 8 on the day two gates were done properly.
+  const hit = new Set<string>(clearanceCalls().keys());
   for (const file of files) {
     const text = readFileSync(file, 'utf8');
     if (!/isArchivistPlusTier|isAuteurPlusTier/.test(text)) continue;
@@ -146,6 +171,7 @@ describe('a rank is sold, enforced, and explained', () => {
          */
         const gates = new RegExp([
           'useClearance', 'ClearanceGate',                 // the house pattern
+          'showTierDoor',                                  // the door AFTER the act
           'isArchivistPlusTier', 'isAuteurPlusTier',       // a direct tier check
           'LogClearanceGate', 'deckLabelProps',            // the log's originals
           'dispatch_dossiers',                             // the offline essay path
@@ -155,6 +181,51 @@ describe('a rank is sold, enforced, and explained', () => {
         expect(`${f.id} -> ${g}: ${gates}`).toBe(`${f.id} -> ${g}: true`);
       }
     }
+  });
+
+  describe('a rope is filed under the act it actually guards', () => {
+    const calls = clearanceCalls();
+
+    it('every useClearance call names a feature that lists that file', () => {
+      /**
+       * The direction that catches a new rope nobody registered: a gate that
+       * reports to the funnel under a feature whose row does not know it exists.
+       */
+      const unlisted: string[] = [];
+      for (const [file, ids] of calls) {
+        for (const id of ids) {
+          const f = GATED_FEATURES.find((x) => x.id === id);
+          if (!f) unlisted.push(`${file}: useClearance('${id}') has no registry row`);
+          else if (!f.gates.includes(file)) unlisted.push(`${file}: ropes '${id}' but '${id}' does not list it`);
+        }
+      }
+      expect(unlisted).toEqual([]);
+    });
+
+    it('and a file a feature lists as its rope ropes THAT feature', () => {
+      /**
+       * The direction that caught this: ActionDeck and the person page were
+       * listed under `the-lounge` (entering) while what they do is SHARE into a
+       * salon (speaking). A file listed under a feature must, if it ropes
+       * anything by name, rope that one. A door file (showTierDoor) reads the
+       * server's own sentence and names no feature, so it is exempt.
+       */
+      const misfiled: string[] = [];
+      for (const f of GATED_FEATURES) {
+        for (const g of f.gates) {
+          const ids = calls.get(g);
+          if (!ids) continue;
+          const text = readFileSync(join(ROOT, g), 'utf8');
+          if (/showTierDoor/.test(text) && !ids.includes(f.id)) continue;
+          if (!ids.includes(f.id)) misfiled.push(`${f.id} lists ${g}, which ropes ${ids.join(', ')}`);
+        }
+      }
+      expect(misfiled).toEqual([]);
+    });
+
+    it('the scan found ropes to check — not passing on an empty map', () => {
+      expect(calls.size).toBeGreaterThanOrEqual(6);
+    });
   });
 
   it('a client-only gate has to say why the server does not need to care', () => {

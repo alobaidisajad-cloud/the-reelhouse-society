@@ -166,14 +166,17 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   }, [isAuthenticated, film, isWatchlisted, addToWatchlist, removeFromWatchlist, handleWatchlistToggled]);
 
   /**
-   * The velvet rope is never a dead end: an archivist enters the salon, and a
-   * cinephile is walked to the gate that shows them how to earn the room.
+   * One door for every rank. This forked on rank — an Archivist "entered the
+   * salon", a Cinephile was "walked to the gate that shows them how to earn
+   * the room" — but both branches pushed the same corridor, and the corridor no
+   * longer has a gate: every member may walk in and read any salon, and the
+   * rope waits at the seat inside. So there is nothing to fork on. What
+   * differed was only the promise printed on the tray, and that is fixed there.
    */
   const openLounge = useCallback(() => {
     if (!isAuthenticated) { nav.push('/login'); return; }
-    if (!isArchivist) { TactileEngine.navigate(); nav.push('/lounge'); return; }
     handleOpenLounge();
-  }, [isAuthenticated, isArchivist, handleOpenLounge]);
+  }, [isAuthenticated, handleOpenLounge]);
 
   /**
    * ── THE STUB'S DATE IS THE SHORT ONE ──────────────────────────────────────
@@ -251,9 +254,12 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     });
     acts.push({
       key: 'lounge',
-      Icon: isArchivist ? TrayIcons.MessageCircle : TrayIcons.KeyRound,
+      // No brass key: the key means "this door is locked", and it is not. A
+      // Cinephile walks in and reads; the gloss says what the rank adds, in the
+      // same words the corridor's header and the room's own button use.
+      Icon: TrayIcons.MessageCircle,
       label: 'THE LOUNGE',
-      gloss: isArchivist ? 'Talk about it with the house.' : 'Archivists and above.',
+      gloss: isArchivist ? 'Talk about it with the house.' : 'Listen in. Archivists take a seat.',
       onPress: actThenClose(openLounge),
       brass: true,
       travels: true,

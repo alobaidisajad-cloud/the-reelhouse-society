@@ -53,7 +53,20 @@ export interface Clearance {
  *        to where they were".
  */
 export function useClearance(featureId: string, returnTo?: string): Clearance {
-  const user = useAuthStore((s) => s.user);
+  /**
+   * Two PRIMITIVES, never the user object.
+   *
+   * This hook now runs inside every feed card (the share-to-a-salon rope), and
+   * selecting `s.user` re-rendered every one of them whenever anything on the
+   * member changed — an avatar upload, a bio edit, a count refresh. A rope
+   * only needs two facts, and a number and a boolean compare equal when
+   * nothing that matters moved. -1 means signed out: no rank is weighed below
+   * zero, so it can never satisfy a gate.
+   */
+  const weight = useAuthStore((s) => (s.user ? getTierWeight(resolveTier(s.user)) : -1));
+  const onceHeldARank = useAuthStore(
+    (s) => !!(s.user as { entitlement_source?: string | null } | null)?.entitlement_source,
+  );
 
   const feature = useMemo(() => {
     const f = GATED_FEATURES.find((x) => x.id === featureId);
@@ -70,20 +83,14 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
 
   const rank: Rank = feature?.rank ?? 'archivist';
 
-  const held = useMemo(() => {
-    if (!user) return false;
-    return getTierWeight(resolveTier(user)) >= RANK_WEIGHT[rank];
-  }, [user, rank]);
+  const held = weight >= RANK_WEIGHT[rank];
 
   /**
    * `entitlement_source` is written only by `grant_entitlement`. A member
    * carrying one who no longer has the weight for it once paid and stopped —
    * which is the whole difference between "come in" and "come back".
    */
-  const standing: Standing = useMemo(() => {
-    const src = (user as { entitlement_source?: string | null } | null)?.entitlement_source;
-    return src ? 'lapsed' : 'stranger';
-  }, [user]);
+  const standing: Standing = onceHeldARank ? 'lapsed' : 'stranger';
 
   const open = useCallback(() => {
     TactileEngine.selection();
