@@ -11,8 +11,8 @@ import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
 
 import { useAuthStore } from '@/src/stores/auth';
-import { isAuteurPlusTier } from '@/src/utils/tier';
 import { useClearance } from '@/src/hooks/useClearance';
+import { showTierDoor } from '@/src/utils/tierDoor';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 // isOverLimit / remainingChars shipped in the sanitiser with ZERO callers — this
@@ -185,7 +185,15 @@ export default function ComposeScreen() {
  */
 function KindPicker() {
     const user = useAuthStore((s) => s.user);
-    const auteur = isAuteurPlusTier(user);
+    /**
+     * Each locked form ropes its OWN feature. They share a rank today because
+     * the database gates them with one trigger, but the Society page is told
+     * which was reached for — a member who tapped BALLOT should read about
+     * ballots — and the registry, not this file, decides who may file each.
+     */
+    const essays = useClearance('essays', '/dispatch/compose');
+    const ballots = useClearance('ballots', '/dispatch/compose');
+    const holds = (k: string) => (k === 'ballot' ? ballots.held : essays.held);
     const insets = useSafeAreaInsets();
     // Read once, on mount. A draft cannot appear while this sheet is open — the
     // only thing that writes one is the room this sheet leads to.
@@ -201,13 +209,15 @@ function KindPicker() {
                 <PaperPicker
                     forms={FORMS.map((f) => ({
                         ...f,
-                        locked: f.locked ? !auteur : false,
+                        locked: f.locked ? !holds(f.kind) : false,
                         // The room keeps ONE unfinished dossier. Until this said
                         // so, beginning a second essay overwrote the first with
                         // no word — the limit was a surprise instead of a fact.
                         inProgress: f.kind === 'dossier' && hasDossierDraft,
                     }))}
                     onPick={(k) => router.setParams({ kind: k })}
+                    onLocked={(k) => (k === 'ballot' ? ballots.open() : essays.open())}
+                    lockedStanding={essays.standing}
                     // The rules, at the door every filing goes through. They
                     // were nine clauses on a page nothing opened.
                     onRules={() => (router.push as (h: string) => void)('/dispatch/rules')}
@@ -265,9 +275,11 @@ function ComposeDossierScreen() {
     const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
     const { user } = useAuthStore();
     const insets = useSafeAreaInsets();
-    const canWrite = isAuteurPlusTier(user);
     /** Publishing the long form is the Auteur's act — asked from the registry. */
     const essay = useClearance('essays', '/dispatch/compose');
+    // One answer, not two: this was a bare tier check sitting one line above the
+    // rope that asks the registry the same question.
+    const canWrite = essay.held;
 
     const keyboard = useAnimatedKeyboard();
     const animatedContainerStyle = useAnimatedStyle(() => ({
@@ -755,6 +767,12 @@ function ComposeDossierScreen() {
              * phone also refused the draft, promising the words are kept would
              * be a lie told at the worst possible moment.
              */
+            // Out of space outranks everything: it is the one case where the
+            // words are NOT safe, and the member must not close this.
+            if (!saveFailed && showTierDoor(err, {
+                returnTo: '/dispatch/compose?kind=dossier',
+                also: 'Your words are kept.',
+            })) return;
             reelToast.error(saveFailed
                 ? 'It did not go, and your phone is out of space. Do not close this.'
                 : 'It did not go. Your words are kept.');

@@ -35,6 +35,13 @@ import { isRTLText, RTL_MARK } from '@/src/utils/text';
  * The two an Auteur can file are NOT hidden. A form you cannot see is a feature
  * you never learn exists; a form you can see and cannot use is an invitation.
  * They are dimmed, locked, and say who may file them.
+ *
+ * ── AN INVITATION HAS TO LEAD SOMEWHERE ─────────────────────────────────────
+ * They were also `disabled`. BALLOT and ESSAY sat under "AUTEURS" and did
+ * nothing when touched — an invitation with no address on it, and the one place
+ * a member learns ballots exist at all. Given `onLocked`, a locked row takes the
+ * tap and hands it to the caller, which opens the Society told what was reached
+ * for. Without it (a preview, a test) the row stays inert, as it was.
  */
 export interface Form {
   kind: keyof typeof KIND_RULE;
@@ -67,10 +74,14 @@ export const FORMS: Form[] = [
 ];
 
 export const PaperPicker = memo(function PaperPicker({
-  forms = FORMS, onPick, onRules,
+  forms = FORMS, onPick, onLocked, lockedStanding = 'stranger', onRules,
 }: {
   forms?: Form[];
   onPick?: (kind: Form['kind']) => void;
+  /** A locked form was touched. The caller decides where that leads. */
+  onLocked?: (kind: Form['kind']) => void;
+  /** Never held the rank, or held it and stopped — the spoken label differs. */
+  lockedStanding?: 'stranger' | 'lapsed';
   /**
    * The house rules, at the foot of the door every filing goes through.
    *
@@ -93,12 +104,16 @@ export const PaperPicker = memo(function PaperPicker({
           <PressableScale
             style={[m.formRow, f.locked && { opacity: 0.85 }]}
             hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
-            onPress={() => onPick?.(f.kind)}
-            haptic="medium" disabled={f.locked}
+            onPress={() => (f.locked ? onLocked?.(f.kind) : onPick?.(f.kind))}
+            haptic="medium" disabled={f.locked && !onLocked}
             accessibilityRole="button"
-            accessibilityState={{ disabled: !!f.locked }}
+            accessibilityState={{ disabled: !!f.locked && !onLocked }}
             accessibilityLabel={
-              f.locked ? `${f.name}. Auteurs only. ${f.line}`
+              f.locked && onLocked
+                ? (lockedStanding === 'lapsed'
+                  ? `${f.name}. ${f.line} Your dues have lapsed. The Auteur opens this again. Opens the Society.`
+                  : `${f.name}. ${f.line} Clearance required. The Auteur opens this. Opens the Society.`)
+              : f.locked ? `${f.name}. Auteurs only. ${f.line}`
                 : f.inProgress ? `${f.name}. One in progress. ${f.line}`
                   : `${f.name}. ${f.line}`
             }

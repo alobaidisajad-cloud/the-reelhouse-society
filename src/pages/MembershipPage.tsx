@@ -225,9 +225,14 @@ export default function MembershipPage() {
                                 And "Poster Glow" named nothing anybody could find; the feature
                                 is the profile Backdrop, which is real and already built. */}
                             {[
-                                'Publish Essays to The\nDispatch',
+                                'Publish Essays & Open\nBallots in The Dispatch',
                                 'Curatorial Control\n(Select Alternative TMDB\nPosters)',
                                 'The Backdrop\n(Your Room, Dressed by\nYour Own Film)',
+                                // Sold on mobile since founding a private room became the
+                                // Auteur's (tr_tier_gate_private_lounges). The database
+                                // enforces it for this client too, so this page sold a rank
+                                // that withheld something it never mentioned.
+                                'Private Screening Rooms\n(Found Them; You Admit\nEach Guest)',
                                 'Early Access to New\nFeatures'
                             ].map((feature, i) => (
                                 <div key={i} className="feature-item feature-item--pro">

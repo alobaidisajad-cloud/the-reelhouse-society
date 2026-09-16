@@ -19,6 +19,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import { useLoungeStore } from '../lounge';
+import { showTierDoor } from '../../utils/tierDoor';
 
 const L1 = '11111111-1111-4111-8111-111111111111';
 const U1 = '33333333-3333-4333-8333-333333333333';
@@ -193,6 +194,27 @@ describe('the house says why', () => {
       result = { data: null, error: { code: '23514', message: 'new row violates check constraint' } };
       await useLoungeStore.getState().retryMessage(M1);
       expect(toastTexts()).toEqual(['Still could not send. Try again.']);
+    });
+  });
+
+  describe('the door can keep a promise alongside the refusal', () => {
+    it('the house’s sentence first, then what the caller can vouch for', () => {
+      const handled = showTierDoor(
+        { code: '42501', message: 'The Dispatch is an Auteur feature' },
+        { returnTo: '/dispatch/compose?kind=dossier', also: 'Your words are kept.' },
+      );
+      expect(handled).toBe(true);
+      expect(toastTexts()).toEqual(['The Dispatch is an Auteur feature. Your words are kept.']);
+      const action = toast.error.mock.calls[0]?.[1] as { onPress: () => void };
+      action.onPress();
+      expect(mockOpenSociety).toHaveBeenCalledWith(
+        '/membership?reason=essays&rank=auteur&returnTo=%2Fdispatch%2Fcompose%3Fkind%3Ddossier',
+      );
+    });
+
+    it('and says nothing extra when there is nothing to vouch for', () => {
+      showTierDoor({ code: '42501', message: 'The Vault is an Archivist feature' });
+      expect(toastTexts()).toEqual(['The Vault is an Archivist feature']);
     });
   });
 

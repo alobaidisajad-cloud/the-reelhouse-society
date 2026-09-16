@@ -55,6 +55,7 @@ import { useDispatch } from '@/src/stores/dispatch';
 import { paperTierOf, type BallotOption } from '@/src/stores/dispatchTypes';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
+import { showTierDoor } from '@/src/utils/tierDoor';
 
 /** Set when the desk OPENS. A clock would re-render the composer every sixty
  *  seconds while somebody is typing, for a number nobody is watching. */
@@ -388,7 +389,15 @@ export function ComposeBallotScreen() {
       clearDraft(userId, 'ballot');
       reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'The ballot is open');
       router.replace('/(tabs)/dispatch');
-    } catch {
+    } catch (e) {
+      /**
+       * A ballot is the Auteur's to open, and until the picker's BALLOT row
+       * became a rope, nothing before this point said so. A member can still
+       * arrive here by link without the rank; they have built a whole question
+       * by then, so the house says why, keeps the promise that it is kept, and
+       * offers the way to file it. Anything else keeps its own words.
+       */
+      if (showTierDoor(e, { returnTo: '/dispatch/compose?kind=ballot', also: 'Your question is kept.' })) return;
       // The question and the films are kept, so "could not be opened" is not
       // also "start again".
       reelToast.error('The ballot could not be opened. Your question is kept.');

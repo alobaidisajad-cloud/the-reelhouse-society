@@ -103,6 +103,11 @@ describe('the Dispatch says essay, and only the Dispatch decides that', () => {
     'dossier_certifications', 'add_dossier', 'update_dossier', 'delete_dossier',
     'add_dossier_comment', 'increment_dossier_views', 'toggle_dossier_certify',
     'dossierComment', 'dossierExcerpt', 'dossier/[id]',
+    // The writing desk's own address, carried to the Society as `returnTo` so a
+    // refused Auteur-to-be comes back to their essay. `kind=dossier` is the
+    // route's value for the form — the same wire value as 'dossier' above,
+    // never shown to anyone.
+    '/dispatch/compose?kind=dossier',
   ]);
 
   it('no printed string in the Dispatch calls the long form a dossier', () => {

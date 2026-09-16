@@ -132,7 +132,11 @@ export const TIERS = [
     //
     // A description can disagree with the thing. A rendering cannot.
     features: [
-      'Publish Essays to The\nDispatch',
+      // Ballots too. The database has refused a ballot from anyone below the
+      // Auteur since the Dispatch opened (tr_tier_gate_dispatch fires on
+      // 'ballot' AND 'dossier'), and this line only ever sold the essay. What
+      // is enforced is sold; one sentence, because it is one privilege.
+      'Publish Essays & Open\nBallots in The Dispatch',
       'Curatorial Control\n(Select Alternative TMDB\nPosters)',
       // Was `Poster Glow Profile Aesthetics`, which named nothing that exists.
       // The feature is real and already built — `ProfileBackdrop` dresses the

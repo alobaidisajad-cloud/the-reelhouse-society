@@ -35,8 +35,16 @@ export const RANK_WEIGHT: Record<Rank, number> = { archivist: 1, auteur: 2 };
 
 /** How the server withholds a feature. Three kinds, and they are not alike. */
 export type Enforcement =
-  /** A trigger refuses the row outright, raising SQLSTATE 42501 with a message. */
-  | { kind: 'refuses'; table: string; trigger: string }
+  /**
+   * A trigger refuses the row outright, raising SQLSTATE 42501 with a message.
+   *
+   * `kinds` is required when the trigger has a `WHEN (new.kind = ANY(...))`
+   * clause. Matching triggers by NAME alone hid a whole feature: one trigger
+   * withholds both essays and ballots, the registry sold only essays, and
+   * `gates:check` called that "nothing withheld unsold" because the trigger's
+   * name was claimed. It now compares the clause's kinds with these.
+   */
+  | { kind: 'refuses'; table: string; trigger: string; kinds?: string[] }
   /** `enforce_log_tier_fields` blanks these columns and saves anyway — NO error. */
   | { kind: 'strips'; table: string; fields: string[] }
   /** Deliberately client-side. `why` must say why that is enough. */
@@ -183,9 +191,26 @@ export const GATED_FEATURES: GatedFeature[] = [
   {
     id: 'essays',
     rank: 'auteur',
-    promise: 'Publish Essays to The\nDispatch',
-    enforcement: { kind: 'refuses', table: 'dispatch_posts', trigger: 'tr_tier_gate_dispatch' },
+    promise: 'Publish Essays & Open\nBallots in The Dispatch',
+    enforcement: { kind: 'refuses', table: 'dispatch_posts', trigger: 'tr_tier_gate_dispatch', kinds: ['dossier'] },
     gates: ['app/dispatch/compose.tsx'],
+  },
+  {
+    id: 'ballots',
+    rank: 'auteur',
+    /**
+     * ENFORCED FOR MONTHS, SOLD NOWHERE.
+     *
+     * `tr_tier_gate_dispatch` fires WHEN kind IN ('ballot','dossier'). The
+     * Society page promised only essays, and the Dispatch's own picker showed
+     * BALLOT locked under "AUTEURS" — a row that could not be tapped and led
+     * nowhere. A member could see that ballots were somebody's, and nothing
+     * anywhere said whose or how. One sentence now sells both, because the
+     * database has always treated them as one privilege.
+     */
+    promise: 'Publish Essays & Open\nBallots in The Dispatch',
+    enforcement: { kind: 'refuses', table: 'dispatch_posts', trigger: 'tr_tier_gate_dispatch', kinds: ['ballot'] },
+    gates: ['app/dispatch/compose.tsx', 'src/components/dispatch/ComposeDesks.tsx'],
   },
   {
     id: 'essays-legacy',
@@ -194,7 +219,7 @@ export const GATED_FEATURES: GatedFeature[] = [
     // over `dispatch_dossiers_legacy`, and the offline mutation path still
     // writes through it, so the trigger on the base table is live — not an
     // orphan withholding something we never promised.
-    promise: 'Publish Essays to The\nDispatch',
+    promise: 'Publish Essays & Open\nBallots in The Dispatch',
     enforcement: { kind: 'refuses', table: 'dispatch_dossiers_legacy', trigger: 'tr_tier_gate_dossiers' },
     gates: ['src/utils/mutationExecutor.ts'],
   },

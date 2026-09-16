@@ -43,7 +43,21 @@ import TactileEngine from '@/src/utils/TactileEngine';
  *          writes `if (showTierDoor(e)) return;` above its own generic error
  *          copy, and a refusal never reads as "something went wrong".
  */
-export function showTierDoor(e: unknown, opts?: { returnTo?: string }): boolean {
+export function showTierDoor(
+  e: unknown,
+  opts?: {
+    returnTo?: string;
+    /**
+     * A second sentence the caller can vouch for, said after the house's.
+     *
+     * The writing desks tell a refused member their words are kept — the one
+     * thing they most need to hear after an hour's work. Replacing that with
+     * the refusal alone would trade reassurance for explanation; this keeps
+     * both on one line. Only pass what is TRUE at the call site.
+     */
+    also?: string;
+  },
+): boolean {
   const refusal = asTierRefusal(e);
   if (!refusal) return false;
 
@@ -66,7 +80,8 @@ export function showTierDoor(e: unknown, opts?: { returnTo?: string }): boolean 
   });
 
   // The server's own sentence, unedited. It was written for this.
-  reelToast.error(refusal.said, {
+  const message = opts?.also ? `${refusal.said}. ${opts.also}` : refusal.said;
+  reelToast.error(message, {
     label: standing === 'lapsed' ? '✦ RESUME YOUR STANDING' : '✦ ASCEND THE RANKS',
     onPress: () => {
       TactileEngine.selection();

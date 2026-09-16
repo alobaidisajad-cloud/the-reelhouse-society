@@ -25,8 +25,12 @@ const MOBILE = path.join(__dirname, '..');
 // build step and cannot be fooled by a stale one.
 const src = fs.readFileSync(path.join(MOBILE, 'src/constants/gatedFeatures.ts'), 'utf8');
 
-const claimedTriggers = [...src.matchAll(/kind: 'refuses', table: '([a-z_]+)', trigger: '([a-z_]+)'/g)]
-  .map((m) => ({ table: m[1], trigger: m[2] }));
+const claimedTriggers = [...src.matchAll(/kind: 'refuses', table: '([a-z_]+)', trigger: '([a-z_]+)'(?:, kinds: \[([^\]]*)\])?/g)]
+  .map((m) => ({
+    table: m[1],
+    trigger: m[2],
+    kinds: m[3] === undefined ? null : [...m[3].matchAll(/'([a-z_]+)'/g)].map((k) => k[1]),
+  }));
 const claimedStrips = [...src.matchAll(/kind: 'strips', table: '([a-z_]+)', fields: \[([^\]]+)\]/g)]
   .flatMap((m) => m[2].split(',').map((f) => ({ table: m[1], field: f.trim().replace(/'/g, '') })));
 
@@ -101,6 +105,59 @@ for (const [tbl, trg] of liveTriggers) {
     problems.push(`${tbl}.${trg} withholds something in production that no promise covers`);
   }
 }
+/**
+ * ── WHICH ROWS A TRIGGER WITHHOLDS, NOT JUST THAT IT EXISTS ─────────────────
+ * Matching by trigger NAME hid a whole feature. `tr_tier_gate_dispatch` fires
+ * WHEN kind IN ('ballot','dossier'); the registry claimed that trigger for
+ * essays alone, so this script reported "nothing withheld unsold" while the
+ * database refused every ballot from a Cinephile and nothing anywhere sold it.
+ *
+ * So for any trigger whose WHEN clause names kinds, the kinds the registry
+ * claims for it must equal the kinds production withholds — both directions.
+ */
+const liveDefs = q(`
+  SELECT c.relname, t.tgname, pg_get_triggerdef(t.oid)
+  FROM pg_trigger t
+  JOIN pg_class c ON c.oid = t.tgrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  JOIN pg_proc p ON p.oid = t.tgfoid
+  WHERE n.nspname='public' AND NOT t.tgisinternal AND p.proname='enforce_tier_gate'`);
+
+const kindsInWhen = (def) => {
+  const when = /WHEN \((.*)\) EXECUTE/i.exec(def)?.[1] ?? '';
+  if (!/new\.kind/i.test(when)) return null;
+  return [...when.matchAll(/'([a-z_]+)'::text/g)].map((m) => m[1]).sort();
+};
+
+let kindTriggersChecked = 0;
+for (const [tbl, trg, def] of liveDefs) {
+  const live = kindsInWhen(def ?? '');
+  const claims = claimedTriggers.filter((c) => c.table === tbl && c.trigger === trg);
+  if (!live) {
+    for (const c of claims) {
+      if (c.kinds) problems.push(`${tbl}.${trg} withholds EVERY row, but the registry claims it only for kinds ${c.kinds.join(', ')}`);
+    }
+    continue;
+  }
+  kindTriggersChecked++;
+  if (claims.some((c) => !c.kinds)) {
+    problems.push(`${tbl}.${trg} withholds only kinds ${live.join(', ')} — a claim on it must say which kinds it sells`);
+    continue;
+  }
+  const claimed = [...new Set(claims.flatMap((c) => c.kinds))].sort();
+  for (const k of live) {
+    if (!claimed.includes(k)) problems.push(`${tbl}.${trg} withholds kind '${k}' in production and no promise sells it`);
+  }
+  for (const k of claimed) {
+    if (!live.includes(k)) problems.push(`we sell kind '${k}' on ${tbl} as gated — production does NOT withhold it`);
+  }
+}
+// The tripwire: the dispatch trigger has a kind clause today. If the parser ever
+// stops seeing it, the loop above passes by checking nothing.
+if (kindTriggersChecked === 0) {
+  problems.push('found no trigger with a WHEN kind clause — the kind check parsed nothing, which is not a pass');
+}
+
 for (const c of claimedStrips) {
   if (!liveStripped.has(c.field)) {
     problems.push(`we sell ${c.table}.${c.field} as a paid field — production does NOT withhold it`);
@@ -256,7 +313,10 @@ if (!fnSrc.trim()) {
   }
 }
 
-console.log(`triggers claimed: ${claimedTriggers.length}   live: ${liveTriggers.length}`);
+// Distinct, because two features may share one trigger (essays and ballots both
+// ride tr_tier_gate_dispatch) — "12 claimed, 11 live" read like a mismatch.
+const distinctClaimed = new Set(claimedTriggers.map((c) => `${c.table}.${c.trigger}`)).size;
+console.log(`triggers claimed: ${distinctClaimed}   live: ${liveTriggers.length}   (kind-scoped triggers checked: ${kindTriggersChecked})`);
 console.log(`stripped fields claimed: ${claimedStrips.length}   live: ${liveStripped.size}`);
 console.log(`posting into a salon: ${postingTriggers} tier trigger(s); ${freeInside} free member(s) currently inside`);
 
