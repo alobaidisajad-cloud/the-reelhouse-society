@@ -146,8 +146,8 @@ const RULES: Rule[] = [
   // see `rooms.test.tsx › a chip may never reach past half its gap`.
   // (vault-modal's format row is gone with the modal itself — no screen in the
   //  app ever navigated to it, so a shelf is filled from the log's format tag.)
-  { file: 'src/components/PaywallModal.tsx', style: 'tierCard', gap: { y: 12 },
-    note: 'tier choice, marginBottom 12' },
+  // (PaywallModal's tier cards are gone with the modal — nothing ever rendered
+  //  it; ranks are sold on the Society page.)
   { file: 'src/components/profile/AvatarCropSheet.tsx', style: 'actionCard', gap: { x: 16 },
     note: 'camera / library, gap 16' },
   // (ArticleReaderModal's wrapping action row is gone with the modal itself —

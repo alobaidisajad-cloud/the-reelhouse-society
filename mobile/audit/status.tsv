@@ -159,7 +159,7 @@ src/components/feed/DossierCritiquePanel.tsx	AUDITED	0	0	1	0	no
 app/(modals)/membership.tsx	AUDITED	0	0	1	0	no
 src/components/PressableScale.tsx	AUDITED	0	0	0	0	yes
 src/components/ToastOverlay.tsx	AUDITED	0	0	0	0	yes
-src/components/PaywallModal.tsx	AUDITED	0	0	0	0	yes
+src/components/PaywallModal.tsx	REMOVED	0	0	0	0	yes
 src/components/OfflineBanner.tsx	AUDITED	0	0	0	0	yes
 src/components/HapticTab.tsx	AUDITED	0	0	0	0	yes
 src/components/ShareToLoungeModal.tsx	AUDITED	0	0	0	0	yes

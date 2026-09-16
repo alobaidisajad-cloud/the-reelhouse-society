@@ -306,7 +306,7 @@
 
 | File | Lines | Responsibility |
 |------|------:|----------------|
-| `src/components/PaywallModal.tsx` | 102 | _(pending)_ |
+| ~~`src/components/PaywallModal.tsx`~~ | 102 | _removed 2026-09-17 — nothing in the app rendered it_ |
 
 ## src/components/Preloader.tsx
 
@@ -379,7 +379,7 @@
 | File | Lines | Responsibility |
 |------|------:|----------------|
 | `src/components/__tests__/ErrorBoundary.test.tsx` | 102 | _(pending)_ |
-| `src/components/__tests__/PaywallModal.test.tsx` | 43 | _(pending)_ |
+| ~~`src/components/__tests__/PaywallModal.test.tsx`~~ | 43 | _moved — its checks were about TIERS, now theRanksAreWellFormed.test.ts_ |
 | `src/components/__tests__/ActionDeck.test.tsx` | 52 | _(pending)_ |
 | `src/components/__tests__/ControlledInput.test.tsx` | 52 | _(pending)_ |
 | `src/components/__tests__/OfflineBanner.test.tsx` | 65 | _(pending)_ |

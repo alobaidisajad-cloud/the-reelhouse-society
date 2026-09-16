@@ -72,7 +72,7 @@
 | `src/components/NitrateCalendar.tsx` | 278 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/OfflineBanner.tsx` | 81 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/OnboardingModal.tsx` | 122 | AUDITED | 0 | 0 | 0 | 0 | yes |
-| `src/components/PaywallModal.tsx` | 102 | AUDITED | 0 | 0 | 0 | 0 | yes |
+| ~~`src/components/PaywallModal.tsx`~~ | 102 | REMOVED | 0 | 0 | 0 | 0 | yes |
 | `src/components/Preloader.tsx` | 352 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/PressableScale.tsx` | 133 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/QuickActionsFAB.tsx` | 173 | AUDITED | 0 | 0 | 0 | 0 | yes |
@@ -91,7 +91,7 @@
 | `src/components/__tests__/ErrorBoundary.test.tsx` | 102 | PENDING |  |  |  |  |  |
 | `src/components/__tests__/LogSearchEngine.test.tsx` | 79 | PENDING |  |  |  |  |  |
 | `src/components/__tests__/OfflineBanner.test.tsx` | 65 | PENDING |  |  |  |  |  |
-| `src/components/__tests__/PaywallModal.test.tsx` | 43 | PENDING |  |  |  |  |  |
+| ~~`src/components/__tests__/PaywallModal.test.tsx`~~ | 43 | MOVED → src/constants/__tests__/theRanksAreWellFormed.test.ts |  |  |  |  |  |
 | `src/components/__tests__/SectionErrorBoundary.test.tsx` | 76 | PENDING |  |  |  |  |  |
 | `src/components/auth/EmailConfirmationScreen.tsx` | 183 | PENDING |  |  |  |  |  |
 | `src/components/auth/PasswordRecoveryModal.tsx` | 250 | AUDITED | 0 | 0 | 0 | 0 | yes |
