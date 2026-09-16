@@ -441,11 +441,10 @@ export default function UserProfilePage() {
     })
 
 
-    // Both resolved rather than matched. `role` is one of the THREE things that
+    // Resolved rather than matched. `role` is one of the THREE things that
     // make a rank — profile_tier_weight takes the GREATEST of tier, role and the
     // founding flag — so matching on role alone denied a member who BOUGHT the
     // rank (tier set, role possibly stale) and every founding member.
-    const isPremium = isArchivistPlusTier(currentUser as never)
     const isArchivistPlus = isArchivistPlusTier(profileUser as never)
 
     const TABS = [
@@ -456,7 +455,7 @@ export default function UserProfilePage() {
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
         { id: 'physical', label: isArchivistPlus ? 'Physical Archive' : <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> Physical Archive</>, count: isArchivistPlus ? (physicalArchive.length > 0 ? physicalArchive.length : null) : 'LOCKED' },
         { id: 'archive', label: 'The Archive', count: finalMetrics.total_logs > 0 ? finalMetrics.total_logs : null },
-        ...(isOwnProfile ? [{ id: 'calendar', label: isPremium ? '✦ The Calendar' : <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> The Calendar</>, count: null }] : []),
+        ...(isOwnProfile ? [{ id: 'calendar', label: 'The Calendar', count: null }] : []),
     ]
 
     return (
@@ -505,7 +504,6 @@ export default function UserProfilePage() {
                             physicalArchive={physicalArchive}
                             profileProgrammes={profileProgrammes}
                             isOwnProfile={isOwnProfile}
-                            isPremium={isPremium}
                             finalMetrics={finalMetrics}
                             cineStats={cineStats}
                             logsHasMore={logsHasMore}

@@ -397,10 +397,12 @@ export function AccountSection(props: AccountSectionProps) {
         <View style={st.fieldWrap}>
           <Text style={st.fieldLabel} {...scaledTextProps}>BIOMETRIC SECURITY</Text>
           {/* It said "for destructive actions", which is two thirds of the
-              truth. Enabling it also puts a vault screen in front of the
-              member's OWN Physical Archive, and nothing here warned them. */}
+              truth. Enabling it also puts a lock screen in front of the
+              member's OWN Archive, and nothing here warned them. (It then
+              said "Physical Archive" — the wrong room; the lock was named
+              for the Vault and the shelf shared that name.) */}
           <Text style={st.rowDesc} {...scaledTextProps}>
-            Face ID or Touch ID to sign out, to delete your account, and to open your own Physical Archive.
+            Face ID or Touch ID to sign out, to delete your account, and to open your own Archive.
           </Text>
           <View style={st.toggleUnderDesc}>
             <Controller

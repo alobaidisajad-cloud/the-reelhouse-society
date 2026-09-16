@@ -215,16 +215,20 @@ describe('the figures and the holdings', () => {
 
   it('names all six rooms, and the locked one says so', async () => {
     const r = await mount();
-    for (const room of ['ARCHIVE', 'LEDGER', 'STACKS', 'VAULT', 'PROJECTOR']) {
+    for (const room of ['ARCHIVE', 'LEDGER', 'STACKS', 'PHYSICAL', 'PROJECTOR']) {
       expect(r.getByText(room)).toBeTruthy();
     }
     // WATCHLIST deliberately appears twice: once as a figure in the summary
     // row, once as a door in the holdings. Different jobs — a number you
     // compare between members, and a room you walk into.
     expect(r.getAllByText('WATCHLIST')).toHaveLength(2);
-    // A Cinephile cannot open the Vault; the row must say so rather than lie
-    // with a zero.
-    expect(r.getByLabelText(/VAULT, physical, locked/)).toBeTruthy();
+    // A Cinephile cannot open the Physical Archive; the row must say so rather
+    // than lie with a zero.
+    expect(r.getByLabelText(/PHYSICAL, media, locked/)).toBeTruthy();
+    // And "Vault" names the private notes alone now — no room on this page may
+    // borrow it back.
+    expect(r.queryByText(/vault/i)).toBeNull();
+    expect(r.queryByLabelText(/vault/i)).toBeNull();
   });
 
   it('every room is still reachable by the id the rest of the screen uses', async () => {
@@ -234,8 +238,12 @@ describe('the figures and the holdings', () => {
     }
   });
 
-  it('the calendar door is locked for a Cinephile and open above', async () => {
-    expect((await mount()).getByLabelText('The Viewing Calendar, locked')).toBeTruthy();
+  it('the calendar door is open to every member — a Cinephile included', async () => {
+    // It was locked below the Archivist while the Society page never sold a
+    // calendar: the app withheld something it had never offered. Given now.
+    const cinephile = await mount();
+    expect(cinephile.getByLabelText('The Viewing Calendar')).toBeTruthy();
+    expect(cinephile.queryByLabelText('The Viewing Calendar, locked')).toBeNull();
     const arch = await mount({}, { targetUser: baseUser({ tier: 'archivist' }) });
     expect(arch.getByLabelText('The Viewing Calendar')).toBeTruthy();
   });
@@ -272,9 +280,10 @@ describe('your own file differs from someone else’s', () => {
 
     const cine = await mount({ isSelf: true });
     expect(cine.getByLabelText('Ascend the ranks')).toBeTruthy();
-    // Two doors are shut to a Cinephile — the Vault and the Calendar — and the
-    // plate must count what the page actually drew, not guess from the tier.
-    expect(cine.getByText(/Two rooms remain closed/)).toBeTruthy();
+    // One door is shut to a Cinephile — the Physical Archive; the Calendar is
+    // every member's — and the plate must count what the page actually drew,
+    // not guess from the tier.
+    expect(cine.getByText('One room remains closed to you.')).toBeTruthy();
   });
 
   it('an Archivist is told there is more above without being told a falsehood', async () => {
@@ -349,7 +358,7 @@ describe('the rooms behind the doors still open', () => {
     ['ledger', 'The Ledger'],
     ['watchlist', 'The Watchlist'],
     ['lists', 'The Stacks'],
-    ['physical', 'The Vault'],
+    ['physical', 'The Physical Archive'],
     ['projector', 'The Projector Room'],
     ['calendar', 'The Viewing Calendar'],
   ])('%s opens on "%s"', async (tab, title) => {

@@ -77,10 +77,11 @@ describe('two more ropes that answered on their own', () => {
     expect(archive).not.toMatch(/isArchivistPlusTier/);
   });
 
-  it('a member’s own Vault room ropes the Physical Archive by name', () => {
+  it('a member’s own Physical Archive ropes that feature by name', () => {
     const profile = code('app/user/[username].tsx');
     expect(profile).toMatch(/const shelfRope = useClearance\('physical-archive'\);/);
-    const vault = profile.slice(profile.indexOf('title="The Vault"'), profile.indexOf('title="The Vault"') + 300);
-    expect(vault).toMatch(/onAscend=\{shelfRope\.open\}/);
+    const at = profile.indexOf('title="The Physical Archive"');
+    expect(at).toBeGreaterThan(-1);
+    expect(profile.slice(at, at + 300)).toMatch(/onAscend=\{shelfRope\.open\}/);
   });
 });

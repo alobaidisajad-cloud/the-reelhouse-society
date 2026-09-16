@@ -209,7 +209,7 @@ const mockListChain = (data: unknown) => {
   const chain: Record<string, unknown> = {
     then: (res: (v: unknown) => unknown) => Promise.resolve({ data, error: null }).then(res),
   };
-  for (const m of ['select', 'eq', 'order', 'limit', 'or']) chain[m] = jest.fn(() => chain);
+  for (const m of ['select', 'eq', 'order', 'limit', 'or', 'not', 'gte']) chain[m] = jest.fn(() => chain);
   return chain;
 };
 
@@ -251,5 +251,33 @@ describe('fetchOtherUserLists — one bad item must never erase a whole list', (
     const { items } = await run([]);
     expect(items).toHaveLength(1);
     expect(items[0].title).toBe('My List');
+  });
+});
+
+describe('fetchCalendarData — the Viewing Calendar is every member’s', () => {
+  const row = { watched_date: '2026-09-01', rating: 4, status: 'watched' };
+
+  it('reads a Cinephile’s year — the rank never decides whether there is one', async () => {
+    // It returned [] below the Archivist rank while the Society page sold no
+    // calendar, so the door opened on an empty room. The signature now takes
+    // only the member's id, so a rank check cannot be written back in quietly;
+    // this pins the behaviour for the member it was withheld from.
+    (supabase.from as jest.Mock).mockReturnValue(mockListChain([row]));
+    const cinephile = { id: 'u1', tier: 'free', role: 'user', is_founding: false };
+    const days = await ProfileDataService.fetchCalendarData(cinephile);
+    expect(supabase.from).toHaveBeenCalledWith('logs');
+    expect(days).toEqual([{ date: '2026-09-01', rating: 4, status: 'watched' }]);
+  });
+
+  it('asks only for the 52 weeks the grid draws', async () => {
+    const chain = mockListChain([]);
+    const gte = jest.fn(() => chain);
+    (chain as Record<string, unknown>).gte = gte;
+    (supabase.from as jest.Mock).mockReturnValue(chain);
+    await ProfileDataService.fetchCalendarData({ id: 'u1' });
+    const from = new Date(`${(gte.mock.calls[0] as unknown as [string, string])[1]}T00:00:00`);
+    const days = Math.round((Date.now() - from.getTime()) / 86_400_000);
+    expect(days).toBeGreaterThanOrEqual(52 * 7);
+    expect(days).toBeLessThanOrEqual(52 * 7 + 8);
   });
 });

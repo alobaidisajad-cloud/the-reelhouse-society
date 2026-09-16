@@ -66,7 +66,7 @@ function oracleVerdict(film: RouletteFilm): string {
         'A relic of nitrate and shadow.',
     ]);
     if (y <= 1959) return pick([
-        'A classic, pulled from the golden vault.',
+        'A classic, pulled from the golden age.',
         `A ${decadeLabel(y)} reel, luminous still.`,
     ]);
     if (y <= 1989) return pick([

@@ -410,9 +410,9 @@ export const s = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.20)', borderRadius: 6,
     backgroundColor: 'rgba(15,10,5,0.85)',
   },
-  doorRowLocked: { borderColor: 'rgba(184,137,26,0.10)', backgroundColor: 'transparent' },
+  // (doorRowLocked / doorTextLocked went with the calendar's lock — the one
+  //  door that used them is every member's now.)
   doorText: { flex: 1, fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.2, color: colors.sepia },
-  doorTextLocked: { color: 'rgba(158,148,136,0.55)' },
 
   // ══ THE DESK — your own file only ══
   deskWrap: { paddingHorizontal: 20 },

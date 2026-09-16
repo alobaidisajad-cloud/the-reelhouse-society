@@ -10,7 +10,7 @@ import PressableScale from '../PressableScale';
 import type { ProfileLog } from '../../types';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
-import VaultLock from './VaultLock';
+import ArchiveLock from './ArchiveLock';
 import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET, yearMarker } from './roomStyles';
@@ -141,10 +141,10 @@ export default function ProfileArchiveTab({
   const { width: windowWidth } = useWindowDimensions();
   const grid = useMemo(() => posterColumns(windowWidth, 4), [windowWidth]);
 
-  // The Vault only guards the member's OWN archive, and only when they have
+  // The lock only guards the member's OWN archive, and only when they have
   // explicitly enabled the biometric lock in Settings.
   const biometricLock = useAuthStore((s) => s.user?.preferences?.biometric_lock === true);
-  const requiresVault = isSelf && biometricLock;
+  const requiresLock = isSelf && biometricLock;
   const [unlocked, setUnlocked] = useState(false);
 
   const breatheAnim = useSharedValue(0.2);
@@ -468,7 +468,7 @@ export default function ProfileArchiveTab({
 
   return (
     <View style={r.container}>
-      {requiresVault && !unlocked && <VaultLock onUnlocked={handleUnlocked} />}
+      {requiresLock && !unlocked && <ArchiveLock onUnlocked={handleUnlocked} />}
       <CinematicFlashList
         estimatedItemSize={estimatedItemSize}
         data={flashData}

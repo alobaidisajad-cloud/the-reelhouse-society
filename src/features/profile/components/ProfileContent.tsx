@@ -29,7 +29,6 @@ interface ProfileContentProps {
     physicalArchive: any[];
     profileProgrammes: any[];
     isOwnProfile: boolean;
-    isPremium: boolean;
     finalMetrics: any;
     cineStats: any;
     logsHasMore: boolean;
@@ -49,7 +48,7 @@ interface ProfileContentProps {
 
 export function ProfileContent({
     activeTab, profileUser, profileLogs, profileWatchlist, profileLists, physicalArchive, profileProgrammes,
-    isOwnProfile, isPremium, finalMetrics, cineStats, logsHasMore, listsHasMore,
+    isOwnProfile, finalMetrics, cineStats, logsHasMore, listsHasMore,
     archiveSieve, archiveVisibleCount, archiveFilteredLogs, currentLogs, currentWatchlist,
     setViewLog, fetchLogs, fetchLists, setArchiveSieve, setArchiveVisibleCount, setShowDNA
 }: ProfileContentProps) {
@@ -145,7 +144,7 @@ export function ProfileContent({
 
                             <div>
                                 <SectionHeader label="VIEWING HISTORY" title="The AUTEUR's Calendar" />
-                                <AUTEURCalendar {...{ logs: profileLogs, isPremium } as any} />
+                                <AUTEURCalendar logs={profileLogs} />
                             </div>
 
                             {((isOwnProfile && profileProgrammes?.length > 0) || (!isOwnProfile && (profileUser as any)?.role === 'auteur')) && (

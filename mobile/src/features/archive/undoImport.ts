@@ -153,7 +153,7 @@ export async function undoImport(receipt: ImportReceipt, userId: string): Promis
       .eq('user_id', userId)
       .in('id', batch)
       .select('id');
-    if (error) errors.push(`Vault: ${error.message}`);
+    if (error) errors.push(`Physical Archive: ${error.message}`);
     else removed += data?.length ?? 0;
   }
 

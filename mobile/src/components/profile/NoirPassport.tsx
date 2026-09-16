@@ -51,7 +51,7 @@ const PASSPORT_STAMPS = [
         }
         return false;
     } },
-    { id: 'vault_keeper', label: 'VAULT KEEPER', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: PassportLog[]) => {
+    { id: 'vault_keeper', label: 'THE COLLECTOR', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: PassportLog[]) => {
         for (const l of logs) {
             if (l.physicalMedia) return true;
         }

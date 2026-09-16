@@ -289,7 +289,8 @@ export function useProfileData({
     if (!state.targetUser) return false;
     
     if (tab === 'physical' && !isArchivistPlusTier(state.targetUser)) return false;
-    if (tab === 'calendar' && !isArchivistPlusTier(state.targetUser)) return false;
+    // The Viewing Calendar is every member's now — it was locked here while
+    // nothing on the Society page sold it.
     // Analytics (projector) + passport are base features (see the tiers page) — no tier
     // gate. Your own full analytics load regardless of tier; the heavy fetch for OTHERS
     // stays guarded inside fetchAnalyticsLogs (self + auteur-others) to protect bandwidth.
@@ -474,12 +475,15 @@ export function useProfileData({
         dispatch({ type: 'SET_TASTE', payload: tastePayload });
       } else if (tab === 'calendar' && (!state.tabDataLoaded.calendar || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { calendar: true } });
-        // If analytics logs are already loaded (Auteur+), use them, save bandwidth
-        if (!state.tabDataLoaded.analytics || forceRefresh) {
-          const calData = await ProfileDataService.fetchCalendarData(state.targetUser, _fetchAbortRef.current?.signal);
-          if (!isMounted.current || uid !== targetUserIdRef.current) return;
-          dispatch({ type: 'SET_CALENDAR_DATA', payload: calData.map(d => ({ watchedDate: d.date, rating: d.rating, status: d.status })) });
-        }
+        // Always its own read. It used to skip this whenever the Projector had
+        // loaded first, to reuse those logs — but for another member below the
+        // Auteur rank the Projector loads NOTHING, so the calendar was left
+        // drawing the first page of their logs as if it were their year. Three
+        // columns bounded to the 52 weeks the grid draws is cheap enough to
+        // simply ask for.
+        const calData = await ProfileDataService.fetchCalendarData(state.targetUser, _fetchAbortRef.current?.signal);
+        if (!isMounted.current || uid !== targetUserIdRef.current) return;
+        dispatch({ type: 'SET_CALENDAR_DATA', payload: calData.map(d => ({ watchedDate: d.date, rating: d.rating, status: d.status })) });
       }
     } catch (err: unknown) {
         if (err instanceof Error && err.name === 'AbortError') return;

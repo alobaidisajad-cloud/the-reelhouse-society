@@ -15,7 +15,8 @@ import { r, posterColumns, countLabel } from './roomStyles';
 import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
 
 /**
- * THE VAULT — a collection of OBJECTS, arranged the way objects are.
+ * THE PHYSICAL ARCHIVE — a collection of OBJECTS, arranged the way objects are.
+ * (Once called the Vault; that name belongs to the private notes now.)
  *
  * This room held physical discs and drew them as flat posters in a grid,
  * shelved by the MONTH each one was catalogued — a fact about the database, not
@@ -23,7 +24,7 @@ import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomEm
  * side because they were typed in on the same Tuesday. Nothing on the screen
  * said "this is a thing you own" rather than "this is a film you watched".
  *
- * So the Vault is shelved by CARRIER now, newest first, and every item is drawn
+ * So the room is shelved by CARRIER now, newest first, and every item is drawn
  * as a CASE: a coloured spine down its left edge in the format's own colour,
  * standing on a shelf board. It is the same data. It reads as a wall of discs.
  */
@@ -167,7 +168,7 @@ export default React.memo(function ProfilePhysicalTab({
       withTiming(0.6, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
       // 20, not -1. Every sibling room caps here and says why: to let the UI
       // thread idle instead of running a worklet for as long as the tab stays
-      // open. The Vault looped forever. And it is atmosphere, so it holds still
+      // open. This room looped forever. And it is atmosphere, so it holds still
       // for anyone who has asked the system to stop things moving.
       20, true, undefined, ReduceMotion.System,
     );
@@ -326,7 +327,7 @@ export default React.memo(function ProfilePhysicalTab({
               onChange={handleSearchChange}
               onClear={() => { setLocalSearch(''); setPhysicalSearch?.(''); }}
               placeholder="Find a copy…"
-              a11y="Search the vault by title or by your notes"
+              a11y="Search the Physical Archive by title or by your notes"
               ember={<Search size={13} color={colors.fog} strokeWidth={1.5} style={s.searchIcon} />}
             />
           </View>
@@ -341,7 +342,7 @@ export default React.memo(function ProfilePhysicalTab({
           on={!physicalFilter}
           onPress={() => setPhysicalFilter(null)}
           gap={8}
-          a11y={totalVault !== undefined ? `Show the whole vault, ${totalVault} copies` : 'Show the whole vault'}
+          a11y={totalVault !== undefined ? `Show all shelves, ${totalVault} copies` : 'Show all shelves'}
         />
         {shelfChips.map((f) => (
           <RoomChip
@@ -376,9 +377,9 @@ export default React.memo(function ProfilePhysicalTab({
   const ListEmptyComponent = useMemo(() => {
     if (physicalFiltered.length > 0) return null;
 
-    if (!ready) return <RoomRetrieving room="the vault" />;
+    if (!ready) return <RoomRetrieving room="the shelves" />;
 
-    // A FORMAT filter matched nothing — not an empty vault.
+    // A FORMAT filter matched nothing — not an empty archive.
     if (vault.length > 0) {
       const meta = physicalFilter ? FORMAT_META[physicalFilter] : null;
       return (
@@ -386,7 +387,7 @@ export default React.memo(function ProfilePhysicalTab({
           invite
           icon={<Disc size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
           title="That shelf is bare"
-          body={`Nothing in the vault is catalogued as ${meta?.label ?? physicalFilter ?? 'that format'}.`}
+          body={`Nothing in the Physical Archive is catalogued as${meta?.label ?? physicalFilter ?? 'that format'}.`}
           actionLabel="SHOW EVERY SHELF"
           onAction={() => setPhysicalFilter(null)}
         />

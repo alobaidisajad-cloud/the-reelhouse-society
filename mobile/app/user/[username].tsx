@@ -120,7 +120,7 @@ interface ProfileUser {
 // The six rooms of the member's private wing — one voice, every door named.
 const TAB_TITLES: Record<string, string> = {
   archive: 'The Archive', ledger: 'The Ledger', watchlist: 'The Watchlist',
-  lists: 'The Stacks', physical: 'The Vault', passport: 'The Cinematic Passport',
+  lists: 'The Stacks', physical: 'The Physical Archive', passport: 'The Cinematic Passport',
   projector: 'The Projector Room', calendar: 'The Viewing Calendar',
 };
 
@@ -262,7 +262,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const { toEditProfile: navToEditProfile, toSettings: navToSettings, toMembership: navToMembership, toFollowers: navToFollowers, toFollowing: navToFollowing, toCalendar: navToCalendar, openSocialLink, handleBack } = nav;
   const closeDnaCard = useCallback(() => setDnaCardOpen(false), [setDnaCardOpen]);
   /**
-   * A member's own Vault room, locked below the Archivist, was a bare push to
+   * A member's own Physical Archive, locked below the Archivist, was a bare push to
    * the Society — so the page could not say it was the Physical Archive they
    * reached for, and the funnel never saw the tap. It is that feature's rope now.
    *
@@ -497,12 +497,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
    *
    * "One room remains closed to you" is only worth saying if the page can
    * actually count the closed rooms, so it counts the ones it draws as locked —
-   * the holdings wearing a key, plus the calendar — rather than asserting a
-   * number from the tier name. An Archivist has none of those locked but is
-   * still not at the top, so that case gets its own line instead of the false
-   * "every door is open".
+   * the holdings wearing a key — rather than asserting a number from the tier
+   * name. (The calendar was added on here while it was locked; it is every
+   * member's now, so a Cinephile has ONE closed room, not two.) An Archivist
+   * has none locked but is still not at the top, so that case gets its own
+   * line instead of the false "every door is open".
    */
-  const lockedRooms = COLLECTION_CARDS.filter((c: any) => c.locked).length + (isArchivistPlus ? 0 : 1);
+  const lockedRooms = COLLECTION_CARDS.filter((c: any) => c.locked).length;
   const ranksSub = isAuteurPlus
     ? 'You hold the highest rank. Every door in the house is open to you.'
     : lockedRooms > 0
@@ -552,7 +553,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
    * Whether a room may describe its own contents yet.
    *
    * A room decided it was empty by asking whether its list was empty, and never
-   * whether the data had ARRIVED — so the first open of the Vault told a member
+   * whether the data had ARRIVED — so the first open of the Physical Archive told a member
    * with 286 discs that nothing was on the shelves. Own rooms hydrate from the
    * local store before first paint, so they are ready immediately; a visitor's
    * room is ready once its fetch has landed, which the reconciled count proves.
@@ -862,7 +863,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   setPhysicalSearch={setPhysicalSearch}
                   /* `physicalFilter === 'all'` was never true: no filter is
                      `null`, and 'all' is not a format. So the member's OWN
-                     vault took the visitor branch on all three of these — it
+                     shelves took the visitor branch on all three of these — it
                      paged through a fixed 150-item window and stopped, while
                      the store had the rest. `!physicalFilter` is the state the
                      chip actually sets. */
@@ -876,8 +877,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               ) : (
                 <View style={s.tabContentPad}>
                   <VelvetGate
-                    title="The Vault"
-                    line={isSelf ? 'Physical media tracking awaits the Archivist rank.' : "This member's vault has not been opened."}
+                    title="The Physical Archive"
+                    line={isSelf ? 'Physical media tracking awaits the Archivist rank.' : "This member's shelves have not been opened."}
                     isSelf={isSelf}
                     onAscend={shelfRope.open}
                   />
@@ -1021,21 +1022,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             )}
 
             {/* ═══ CALENDAR TAB ═══ */}
+            {/* Every member's. It was locked below the Archivist while nothing on
+                the Society page sold it; a calendar of your own evenings is the
+                kind of thing that brings a member back, so it is given. */}
             {activeTab === 'calendar' && (
               <View style={s.tabContentPad}>
-                {isArchivistPlus ? (
-                  <View>
-                    <SectionDivider label="VIEWING HISTORY" />
-                    <NitrateCalendarGrid {...{logs: calendarData.length > 0 ? calendarData : (analyticsLogs.length > 0 ? analyticsLogs : displayLogs), isSelf} as any} />
-                  </View>
-                ) : (
-                  <VelvetGate
-                    title="The Viewing Calendar"
-                    line={isSelf ? 'The nightly attendance record awaits the Archivist rank.' : "This member's calendar is not on display."}
-                    isSelf={isSelf}
-                    onAscend={navToMembership}
-                  />
-                )}
+                <SectionDivider label="VIEWING HISTORY" />
+                <NitrateCalendarGrid {...{logs: calendarData.length > 0 ? calendarData : (analyticsLogs.length > 0 ? analyticsLogs : displayLogs), isSelf} as any} />
               </View>
             )}
           </ScrollView>
@@ -1427,20 +1420,18 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             })}
           </View>
 
-          {/* The Viewing Calendar — Archivist+ door */}
+          {/* The Viewing Calendar — every member's door */}
           <PressableScale
-            style={[s.doorRow, !isArchivistPlus && s.doorRowLocked]}
+            style={s.doorRow}
             onPress={navToCalendar}
             hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
             haptic
             accessibilityRole="button"
-            accessibilityLabel={isArchivistPlus ? 'The Viewing Calendar' : 'The Viewing Calendar, locked'}
+            accessibilityLabel="The Viewing Calendar"
           >
-            <CalendarDays size={13} color={isArchivistPlus ? colors.sepia : 'rgba(158,148,136,0.55)'} strokeWidth={1.6} />
-            <Text {...scaledTextProps} style={[s.doorText, !isArchivistPlus && s.doorTextLocked]} numberOfLines={1}>THE VIEWING CALENDAR</Text>
-            {isArchivistPlus
-              ? <ChevronRight size={11} color={colors.sepia} strokeWidth={2} />
-              : <KeyRound size={11} color={'rgba(158,148,136,0.55)'} strokeWidth={2} />}
+            <CalendarDays size={13} color={colors.sepia} strokeWidth={1.6} />
+            <Text {...scaledTextProps} style={s.doorText} numberOfLines={1}>THE VIEWING CALENDAR</Text>
+            <ChevronRight size={11} color={colors.sepia} strokeWidth={2} />
           </PressableScale>
 
           {/* ══ THE DESK — your own file only ══

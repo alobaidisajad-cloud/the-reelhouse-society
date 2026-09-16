@@ -1,6 +1,4 @@
 ﻿import { useMemo, useState } from 'react'
-import { Lock } from 'lucide-react'
-import { Link } from 'react-router-dom'
 
 interface CalendarLog {
     watchedDate?: string
@@ -25,9 +23,10 @@ interface DayCell {
     display: Date
 }
 
-// ΓöÇΓöÇ The Calendar ΓöÇΓöÇ
-// GitHub-style 52-week film activity heatmap, Archivist tier
-export function AUTEURCalendar({ logs = [], isPremium = false }: { logs?: CalendarLog[]; isPremium?: boolean }) {
+// The Calendar: a 52-week film activity heatmap. Every member's, since
+// 2026-09-17 — it was locked below the Archivist rank while the Society page
+// never sold it.
+export function AUTEURCalendar({ logs = [] }: { logs?: CalendarLog[] }) {
     const [tooltip, setTooltip] = useState<TooltipData | null>(null)
 
     // Build a map of date -> films watched
@@ -115,28 +114,6 @@ export function AUTEURCalendar({ logs = [], isPremium = false }: { logs?: Calend
     const CELL = 12
     const GAP = 2
     const DAY_LABELS = ['', 'Mon', '', 'Wed', '', 'Fri', '']
-
-    if (!isPremium) {
-        return (
-            <div style={{
-                padding: '3rem', border: '1px solid var(--sepia)', borderRadius: 'var(--radius-card)',
-                background: 'rgba(139,105,20,0.03)', textAlign: 'center', display: 'flex',
-                flexDirection: 'column', alignItems: 'center', gap: '1.25rem'
-            }}>
-                <Lock size={28} color="var(--sepia)" />
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)' }}>
-                    The The Calendar
-                </div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)', maxWidth: 380, lineHeight: 1.6 }}>
-                    Your complete visual history of film activity ΓÇö every film, every day, across an entire year.
-                    Available with the Archivist membership.
-                </div>
-                <Link to="/society" style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', border: '1px solid var(--sepia)', padding: '0.6rem 1.4rem', borderRadius: '2px', textDecoration: 'none', transition: 'background 0.2s', display: 'inline-block' }}>
-                    JOIN THE SOCIETY
-                </Link>
-            </div>
-        )
-    }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

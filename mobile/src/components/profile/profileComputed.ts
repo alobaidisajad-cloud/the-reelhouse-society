@@ -102,9 +102,16 @@ export function reconcileCount(serverCount: number, localLength: number, isSelf:
 
 /**
  * ── THE PLAIN WORD UNDER EACH ROOM NAME ──────────────────────────────────────
- * ARCHIVE / *watched*, VAULT / *physical*. Six invented room names are what
+ * ARCHIVE / *watched*, PHYSICAL / *media*. Six invented room names are what
  * gives this app its voice; these six words are what stop a newcomer having to
  * guess what is behind each door. Rendered lowercase, under the name.
+ *
+ * ── WHY THE PHYSICAL ROOM IS NOT "THE VAULT" ─────────────────────────────────
+ * The Society page sells "The Vault (Private Notes)", and the log form's private
+ * notes panel is called THE VAULT. This room carried the same name for discs and
+ * tapes, so one word pointed at two different things. The notes keep the name —
+ * a vault is where you keep what is private — and this room is the Physical
+ * Archive, the name the web has always used.
  *
  * ── WHY THE LEDGER IS NO LONGER A "DIARY" ────────────────────────────────────
  * On Letterboxd — where most of these members are arriving from — a diary is
@@ -130,7 +137,7 @@ export const ROOM_GLOSS = {
   ledger: 'OPINIONS',
   watchlist: 'TO SEE',
   lists: 'LISTS',
-  physical: 'PHYSICAL',
+  physical: 'MEDIA',
   projector: 'ANALYTICS',
 } as const;
 
@@ -586,7 +593,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     { id: 'ledger' as ProfileTab, label: 'LEDGER', desc: ROOM_GLOSS.ledger, count: tally(totalLedger), Icon: BookOpen, disabled: false, highlight: false, locked: false },
     { id: 'watchlist' as ProfileTab, label: 'WATCHLIST', desc: ROOM_GLOSS.watchlist, count: tally(totalWatchlist), Icon: Bookmark, disabled: false, highlight: false, locked: false },
     { id: 'lists' as ProfileTab, label: 'STACKS', desc: ROOM_GLOSS.lists, count: tally(totalLists), Icon: LayoutList, disabled: false, highlight: false, locked: false },
-    { id: 'physical' as ProfileTab, label: 'VAULT', desc: ROOM_GLOSS.physical, count: isArchivistPlus ? tally(totalVault) : '✦', Icon: Disc, disabled: false, highlight: false, locked: !isArchivistPlus },
+    { id: 'physical' as ProfileTab, label: 'PHYSICAL', desc: ROOM_GLOSS.physical, count: isArchivistPlus ? tally(totalVault) : '✦', Icon: Disc, disabled: false, highlight: false, locked: !isArchivistPlus },
     { id: 'projector' as ProfileTab, label: 'PROJECTOR', desc: ROOM_GLOSS.projector, count: '★', Icon: Projector, disabled: false, highlight: true, locked: false },
   ], [totalLedger, totalWatchlist, totalLists, totalVault, isArchivistPlus, totalFilms]);
 

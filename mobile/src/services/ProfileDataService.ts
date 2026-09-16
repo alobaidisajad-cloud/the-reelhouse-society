@@ -785,11 +785,16 @@ export const ProfileDataService = {
   /**
    * BLOCK4-CALENDAR: Lightweight calendar heatmap data.
    * Returns only 3 columns (date, rating, status) instead of 10.
-   * Max 2000 rows for 5.5 years of daily viewing.
    */
-  async fetchCalendarData(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, signal?: AbortSignal): Promise<{ date: string; rating: number; status: string }[]> {
-    
-    if (!isArchivistPlusTier(targetUser)) return [];
+  async fetchCalendarData(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<{ date: string; rating: number; status: string }[]> {
+    /**
+     * EVERY MEMBER'S, since 2026-09-17. This returned nothing below the
+     * Archivist rank — but the Society page never sold a calendar, so the app
+     * was withholding something it had never offered. It is given to everyone
+     * now. Who may SEE another member's calendar is unchanged: these are that
+     * member's logs, read under the same rules as every other room (a private
+     * member's rows are refused by the database's own visibility check).
+     */
 
     /**
      * Bounded by the RANGE THE GRID DRAWS, not by a row count.

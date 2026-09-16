@@ -270,15 +270,30 @@ describe('account', () => {
   });
 
   it('the biometric switch admits all three things it does', async () => {
-    // It said "for destructive actions". It also puts a vault screen in front
-    // of the member's OWN Physical Archive, unannounced.
+    // It said "for destructive actions". It also puts a lock screen in front
+    // of the member's OWN Archive, unannounced.
     const r = await settle(mount());
     const line = r.getByText(/Face ID or Touch ID/);
     const said = String(line.props.children);
     expect(said).toMatch(/sign out/);
     expect(said).toMatch(/delete your account/);
-    expect(said).toMatch(/Physical Archive/);
+    expect(said).toMatch(/open your own Archive\./);
     expect(r.queryByText(/for destructive actions/)).toBeNull();
+  });
+
+  it('the room it names is the room the lock actually stands in', () => {
+    // It promised the Physical Archive for months while the lock sat in front
+    // of the Archive — the two rooms had been confused by a shared "Vault"
+    // name. So the sentence is checked against where the lock is MOUNTED, not
+    // against a string: if the lock ever moves rooms, this goes red until
+    // Settings says so.
+    const PROFILE = join(DIR, '..', '..', 'components', 'profile');
+    const mounts = (file: string) =>
+      /<ArchiveLock\b/.test(readFileSync(join(PROFILE, file), 'utf8'));
+    expect(mounts('ProfileArchiveTab.tsx')).toBe(true);
+    expect(mounts('ProfilePhysicalTab.tsx')).toBe(false);
+    expect(SECTIONS).toMatch(/to open your own Archive\./);
+    expect(SECTIONS).not.toMatch(/open your own Physical Archive/);
   });
 
   it('every switch says its own name', async () => {

@@ -6,7 +6,7 @@ const PASSPORT_STAMPS = [
     { id: 'devotee', label: 'THE DEVOTEE', sub: '500 FILMS LOGGED', glyph: '✦', test: (logs: any[]) => logs.length >= 500 },
     { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', test: (logs: any[]) => logs.filter((l: any) => l.year && parseInt(l.year) < 1960).length >= 20 },
     { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', test: (logs: any[]) => logs.filter((l: any) => l.rating === 5).length >= 10 },
-    { id: 'vault_keeper', label: 'VAULT KEEPER', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: any[]) => logs.some((l: any) => l.physicalMedia) },
+    { id: 'vault_keeper', label: 'THE COLLECTOR', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: any[]) => logs.some((l: any) => l.physicalMedia) },
     { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, test: (logs: any[]) => logs.some((l: any) => l.status === 'abandoned') },
     { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', test: (logs: any[]) => new Set(logs.filter((l: any) => l.year).map((l: any) => Math.floor(parseInt(l.year) / 10) * 10)).size >= 7 },
     { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: <><RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, test: (logs: any[]) => { const seen = new Set(); return logs.some((l: any) => { if (seen.has(l.filmId)) return true; seen.add(l.filmId); return false }) } },

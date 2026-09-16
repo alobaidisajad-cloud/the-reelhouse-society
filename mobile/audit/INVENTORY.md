@@ -539,7 +539,7 @@
 
 | File | Lines | Responsibility |
 |------|------:|----------------|
-| `src/components/profile/VaultLock.tsx` | 107 | _(pending)_ |
+| `src/components/profile/ArchiveLock.tsx` | 107 | _(pending)_ |
 | `src/components/profile/FilmRecommendations.tsx` | 109 | _(pending)_ |
 | `src/components/profile/ProfileBackdrop.tsx` | 112 | _(pending)_ |
 | `src/components/profile/TasteMatch.tsx` | 125 | _(pending)_ |

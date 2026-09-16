@@ -205,7 +205,7 @@
 | `src/components/profile/TasteDNAExportCanvas.tsx` | 197 | PENDING |  |  |  |  |  |
 | `src/components/profile/TasteMatch.tsx` | 125 | PENDING |  |  |  |  |  |
 | `src/components/profile/TicketBooth.tsx` | 72 | PENDING |  |  |  |  |  |
-| `src/components/profile/VaultLock.tsx` | 107 | PENDING |  |  |  |  |  |
+| `src/components/profile/ArchiveLock.tsx` | 107 | PENDING |  |  |  |  |  |
 | `src/components/profile/WatchlistRoulette.tsx` | 233 | PENDING |  |  |  |  |  |
 | `src/components/reels/ReelsCards.tsx` | 372 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/reels/ReelsFeedList.tsx` | 149 | AUDITED | 0 | 0 | 0 | 0 | yes |

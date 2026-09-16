@@ -37,20 +37,20 @@ export const FOUNDING = [
 // ── OPERATIONS — Rules, rituals, secrets ────────────────────────
 export const OPERATIONS = [
   'Your Ledger is encrypted with the same cipher used by the 1947 Paris chapter.',
-  'This vault is deeper than you think. Keep cataloging.',
+  'The Physical Archive is deeper than you think. Keep cataloging.',
   'The Archivist Council meets at midnight. You weren\'t told.',
   'Every log you write becomes part of the permanent archive.',
   'The Society does not rank films. The Society preserves them.',
   'Membership is not bought. It is earned through devotion to the art.',
   'All critiques are permanent. Choose your words with care.',
-  'The vault has never been breached. Your collection is safe.',
+  'The Vault has never been breached. Your private notes are yours alone.',
   'A stack is not a list. It is a thesis.',
   'The Dispatch is our newspaper. Every word matters.',
   'The Lounge exists for those who have earned the right to speak.',
   'Your watchlist is a promise you made to yourself.',
   'The Archive remembers what you have forgotten.',
   'Rating a film is an act of courage. Half-stars doubly so.',
-  'The physical vault preserves what streaming cannot: permanence.',
+  'The Physical Archive preserves what streaming cannot: permanence.',
 ];
 
 // ── BUSTER — Mascot personality ─────────────────────────────────
@@ -77,14 +77,14 @@ export const LOADING = [
   'Threading the projector…',
   'Developing the negatives…',
   'Consulting the Elder Archivists…',
-  'Decrypting the vault registry…',
+  'Decrypting the Society registry…',
   'Warming the projection lamp…',
   'Retrieving your dossier from the archive…',
   'Splicing the reels…',
   'Adjusting the carbon arc lamp…',
   'Dusting off the catalogue…',
   'The archive is vast. One moment…',
-  'Unlocking the film vault…',
+  'Unlocking the nitrate cellar…',
   'Calibrating the aperture gate…',
   'Rewinding to the beginning…',
   'The projectionist is preparing your reel…',
@@ -100,7 +100,7 @@ export const ERRORS = [
   'A reel has jammed in transit. The engineers are notified.',
   'The telegraph line to the archive is disrupted.',
   'The projection booth reports a malfunction.',
-  'The vault door is stuck. Give it a moment.',
+  'The archive door is stuck. Give it a moment.',
   'Signal lost. The screening will resume shortly.',
   'The archive clerk seems to be on break.',
   'A frame has been lost. We are recovering.',
@@ -118,7 +118,7 @@ export const EMPTY = [
   'The seats are empty. The screen awaits.',
   'No dispatches have arrived yet. The courier is en route.',
   'The archive returns silence. For now.',
-  'Your vault stands ready. The first addition is the hardest.',
+  'Your shelves stand ready. The first addition is the hardest.',
   'Even the founding members started with nothing.',
 ];
 

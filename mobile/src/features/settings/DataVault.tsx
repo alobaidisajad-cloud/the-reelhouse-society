@@ -427,14 +427,14 @@ export default function DataVault() {
               </Text>
             </View>
 
-            {/* Stats Grid — VAULT appears only when physical media transferred */}
+            {/* Stats Grid — PHYSICAL appears only when physical media transferred */}
             <View style={s.statsGrid}>
               {[
                 { label: 'FILM LOGS', value: importResult.logs },
                 { label: 'REVIEWS', value: importResult.reviews },
                 { label: 'WATCHLIST', value: importResult.watchlist },
                 { label: 'STACKS', value: importResult.lists },
-                ...(importResult.vault > 0 ? [{ label: 'VAULT', value: importResult.vault }] : []),
+                ...(importResult.vault > 0 ? [{ label: 'PHYSICAL', value: importResult.vault }] : []),
               ].map(stat => (
                 <View key={stat.label} style={s.statCell}>
                   <Text style={s.statValue}>{stat.value}</Text>

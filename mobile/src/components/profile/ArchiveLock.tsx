@@ -7,7 +7,16 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import PressableScale from '@/src/components/PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 
-export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
+/**
+ * The biometric screen in front of a member's OWN Archive — the room of every
+ * film they have seen — when they have turned the lock on in Settings.
+ *
+ * It was called VaultLock, and it asked the phone to "Unlock Vault". The Vault
+ * is the private notes, and the profile's disc shelf carried the same name, so
+ * Settings ended up promising this lock guarded the Physical Archive. It never
+ * did: it has only ever stood in front of the Archive.
+ */
+export default function ArchiveLock({ onUnlocked }: { onUnlocked: () => void }) {
     const [locked, setLocked] = useState(true);
     const [error, setError] = useState('');
 
@@ -31,7 +40,7 @@ export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
             }
 
             const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: 'Unlock Vault',
+                promptMessage: 'Unlock your Archive',
                 fallbackLabel: 'Use Passcode',
                 disableDeviceFallback: false,
             });
@@ -46,7 +55,7 @@ export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
 
         } catch (e) {
             // Fail CLOSED: an error in the auth flow must never grant access.
-            // The vault stays locked and the member can retry.
+            // The Archive stays locked and the member can retry.
             setError('Authentication Unavailable');
         }
     }
@@ -58,7 +67,7 @@ export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
             <Text {...scaledTextProps} style={styles.title}>RESTRICTED ACCESS</Text>
             <Text {...scaledTextProps} style={styles.subtitle}>Authenticate to view your private archive.</Text>
             {error ? <Text {...scaledTextProps} style={styles.error}>{error}</Text> : null}
-            <PressableScale style={styles.button} onPress={authenticate} accessibilityRole="button" accessibilityLabel="Authenticate to open the vault">
+            <PressableScale style={styles.button} onPress={authenticate} accessibilityRole="button" accessibilityLabel="Authenticate to open your Archive">
                 <Text {...scaledTextProps} style={styles.btnText}>AUTHENTICATE</Text>
             </PressableScale>
         </Animated.View>

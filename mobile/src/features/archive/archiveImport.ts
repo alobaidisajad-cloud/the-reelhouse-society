@@ -1610,11 +1610,11 @@ async function runJSONImport(
       await new Promise(r => setTimeout(r, 0));
       const batch = payloads.slice(i, i + BATCH_SIZE);
       onProgress?.({
-        phase: 'IMPORTING VAULT',
+        phase: 'IMPORTING SHELVES',
         current: Math.min(i + BATCH_SIZE, payloads.length),
         total: payloads.length,
       });
-      const newVaultIds = await upsertCounted('physical_archive', batch, 'user_id,film_id', true, 'Vault', errors);
+      const newVaultIds = await upsertCounted('physical_archive', batch, 'user_id,film_id', true, 'Physical Archive', errors);
       vaultCount += newVaultIds.length;
       receipt.physicalArchiveIds.push(...newVaultIds);
     }

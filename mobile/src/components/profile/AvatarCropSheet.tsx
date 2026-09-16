@@ -108,7 +108,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
               <View style={s.iconWrap}>
                 <ImageIcon size={24} color={colors.bone} />
               </View>
-              <Text {...scaledTextProps} style={s.actionText}>LIBRARY VAULT</Text>
+              <Text {...scaledTextProps} style={s.actionText}>PHOTO LIBRARY</Text>
             </PressableScale>
           </View>
         )}

@@ -317,8 +317,8 @@ export default function DarkRoomScreen() {
         <View style={{ alignItems: 'center' }}>
           <Buster size={56} mood="crying" />
         </View>
-        {/* "The Vault" belongs to the profile's physical-media room —
-            this tray speaks in the Darkroom's own chemistry. */}
+        {/* "The Vault" belongs to the private notes — this tray speaks in
+            the Darkroom's own chemistry. */}
         <Text style={s.emptyTitle}>
           {isSearching ? 'The negatives hold no match.' : 'Nothing surfaced in the tray.'}
         </Text>
