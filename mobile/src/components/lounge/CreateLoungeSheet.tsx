@@ -27,6 +27,26 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   const privateRoom = useClearance('private-rooms', '/lounge');
   const wasSuccessRef = useRef(false);
 
+  /**
+   * ── THE ROPE INSIDE A SHEET ────────────────────────────────────────────────
+   * This sheet is React Native's own <Modal>, which draws above the ENTIRE
+   * navigator. Flipping the private switch without the rank used to call
+   * `privateRoom.open()` straight away — so the Society page opened underneath
+   * a sheet that was still on screen, and the member saw nothing happen.
+   *
+   * The Concierge's presentation law, applied here: park the intent, close the
+   * sheet, and travel only once it is genuinely gone. "Gone" is the commit that
+   * unmounts the Modal (`isRendered` false), not the moment close was asked for.
+   * A backstop forces that unmount if the close animation never completes,
+   * because a switch that silently does nothing is worse than a late one.
+   *
+   * The name and description survive the trip: they are only cleared after a
+   * room is actually founded.
+   */
+  const societyPending = useRef(false);
+  const openSocietyRef = useRef(privateRoom.open);
+  openSocietyRef.current = privateRoom.open;
+
   const handleCreate = async () => {
     if (!name.trim()) return;
     setCreating(true);
@@ -52,6 +72,27 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
     Keyboard.dismiss();
     onClose();
   };
+
+  const closeThenOpenSociety = () => {
+    societyPending.current = true;
+    handleClose();
+  };
+
+  // Travel once the sheet has left the screen — see THE ROPE INSIDE A SHEET.
+  useEffect(() => {
+    if (isRendered || !societyPending.current) return;
+    societyPending.current = false;
+    const frame = requestAnimationFrame(() => openSocietyRef.current());
+    return () => cancelAnimationFrame(frame);
+  }, [isRendered]);
+
+  // The backstop: if the close animation is interrupted and never unmounts the
+  // sheet, unmount it anyway so the parked trip is not lost under it.
+  useEffect(() => {
+    if (visible || !isRendered || !societyPending.current) return;
+    const t = setTimeout(() => setIsRendered(false), 450);
+    return () => clearTimeout(t);
+  }, [visible, isRendered]);
 
   useEffect(() => {
     if (visible) {
@@ -192,7 +233,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
                */
               onValueChange={(val) => {
                 TactileEngine.selection();
-                if (val && !privateRoom.held) { privateRoom.open(); return; }
+                if (val && !privateRoom.held) { closeThenOpenSociety(); return; }
                 setIsPrivate(val);
               }}
               trackColor={{ false: colors.ash, true: colors.sepia }}

@@ -15,10 +15,14 @@
  * `(modals)/membership` is presented as a modal, and so are the desks and the
  * log. Pushing straight from one to the other is the iOS trap the Concierge
  * already fixed once: park the destination, dismiss, then travel. `open()`
- * does that, so no caller has to remember it.
+ * does that — but ONLY from a presented screen. From a pushed one (a salon,
+ * the archive) it travels directly, because dismissing there closed the very
+ * room the member was trying to enter. `openSociety` makes that call.
+ *
+ * A rope inside a React Native <Modal> sheet is the one case this cannot see:
+ * the sheet must close itself and call `open()` once it is gone.
  */
 import { useCallback, useMemo } from 'react';
-import { router } from 'expo-router';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { getTierWeight, resolveTier } from '@/src/utils/tier';
@@ -26,6 +30,7 @@ import { GATED_FEATURES, RANK_WEIGHT, type Rank } from '@/src/constants/gatedFea
 import type { Standing } from '@/src/components/clearance/Clearance';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { recordGateEvent } from '@/src/utils/gateTelemetry';
+import { openSociety, societyHref } from '@/src/utils/openSociety';
 
 export interface Clearance {
   /** True when the member holds the rank this feature needs. */
@@ -88,18 +93,10 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
      * gates into one hook before trying to measure anything.
      */
     recordGateEvent('gate_tapped', { featureId, rank, standing });
-    const params = new URLSearchParams({ reason: featureId, rank });
-    if (returnTo) params.set('returnTo', returnTo);
-    const href = `/membership?${params.toString()}`;
-
-    // Park, dismiss, then travel. Pushing a modal over a modal strands the
-    // member on iOS with nothing to dismiss.
-    if (router.canGoBack()) {
-      router.back();
-      requestAnimationFrame(() => (router.push as (h: string) => void)(href));
-    } else {
-      (router.push as (h: string) => void)(href);
-    }
+    // Dismiss only if this screen was PRESENTED. This used to dismiss whenever
+    // there was history behind the screen, which closed a salon behind the
+    // Society page — see openSociety.ts.
+    openSociety(societyHref(featureId, rank, returnTo));
   }, [featureId, rank, returnTo, standing]);
 
   return { held, rank, standing, open };

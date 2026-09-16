@@ -46,7 +46,13 @@ export type GateEvent =
   /** A rank was actually bought. */
   | 'rank_purchased'
   /** A rank ended, and the app noticed. */
-  | 'rank_relinquished';
+  | 'rank_relinquished'
+  /**
+   * A member reached a SERVER refusal — which can only happen when no rope
+   * stood in front of the act. Every one of these names a hole in the gating,
+   * so a nonzero count is a defect report rather than a sales number.
+   */
+  | 'gate_refused';
 
 export interface GateEventDetail {
   /** A feature id from `gatedFeatures.ts` — never free text. */

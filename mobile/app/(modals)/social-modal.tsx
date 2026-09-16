@@ -248,14 +248,16 @@ export default function SocialModal() {
                 );
             }
 
-            if (isMounted.current) {
-                if (success) {
-                    setSharedTo(prev => new Set(prev).add(loungeId));
-                    reelToast.success('Shared to lounge');
-                } else {
-                    reelToast.error('Failed to share. Try again.');
-                }
+            if (isMounted.current && success) {
+                setSharedTo(prev => new Set(prev).add(loungeId));
+                reelToast.success('Shared to lounge');
             }
+            // No `else` toast, on purpose. `sendMessage` already speaks for every
+            // failure a member can reach from here — the house's own sentence for
+            // a rank refusal, "Message could not be sent." for a malformed share,
+            // "Failed to send message." for the rest — and toasts QUEUE. So this
+            // line only ever arrived second, saying "Try again" directly under a
+            // refusal that no amount of trying will change.
         } catch (err) {
             // Same treatment as fetchData above, so the file is consistent.
             logger.debug('[SocialModal] Share failed:', err);

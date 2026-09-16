@@ -8,6 +8,7 @@ import { logger } from '../utils/logger';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
+import { showTierDoor } from '../utils/tierDoor';
 import { sanitizeInput, MAX_LENGTHS } from '../utils/sanitizeInput';
 import type { LoungeMember } from '../types/social.types';
 import { useAuthStore } from './auth';
@@ -869,6 +870,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }
       // Keep the dispatch and mark it failed so the transcript shows a discreet
       // "Failed · tap to retry" line (lifecycle state) instead of it vanishing.
+      //
+      // That holds for a RANK refusal too, deliberately. The retry is what
+      // carries the member's sentence across the trip to the Society and back:
+      // renew, return, tap it, and it sends. Removing it would make them type
+      // it again as the price of paying.
       set(s => {
         if (s.currentLoungeId !== loungeId) return s;
         return {
@@ -877,6 +883,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           ),
         };
       });
+      // The server said why, in a sentence written for this member. Say it,
+      // instead of "Failed to send message." over a retry that cannot succeed.
+      if (showTierDoor(error, { returnTo: `/lounge/${loungeId}` })) return false;
       reelToast.error('Failed to send message.');
       return false;
     }
@@ -1145,6 +1154,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           m.id === messageId ? { ...m, reactions: applyReactionDelta(m.reactions, reaction, (wasMine ? 1 : -1) as 1 | -1, wasMine) } : m
         ),
       }));
+      // A reaction used to revert in total silence — the mark appeared, then
+      // quietly un-appeared, and nothing said why. For a rank refusal the house
+      // has an answer, so give it. Any other failure keeps its silent revert.
+      showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` });
     }
   },
 
@@ -1227,6 +1240,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         return;
       }
       set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'failed' as const } : m) }));
+      // "Try again" is the one thing that cannot help a member without the
+      // rank — so a refusal gets the door, and only a real failure gets that.
+      if (showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` })) return;
       reelToast.error('Still could not send. Try again.');
     }
   },

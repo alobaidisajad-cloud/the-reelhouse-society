@@ -3104,7 +3104,7 @@ DECLARE
 BEGIN
   -- A closed vocabulary. Anything else is not a funnel event and is dropped
   -- silently: a measurement call must never be able to fail a member's action.
-  IF p_event NOT IN ('gate_tapped', 'membership_opened', 'rank_purchased', 'rank_relinquished') THEN
+  IF p_event NOT IN ('gate_tapped', 'membership_opened', 'rank_purchased', 'rank_relinquished', 'gate_refused') THEN
     RETURN;
   END IF;
 
@@ -3143,7 +3143,7 @@ $_$;
 -- Name: FUNCTION record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) IS 'Increments an aggregate gate counter. Records no identity of any kind.';
+COMMENT ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) IS 'Increments an aggregate gate counter. Records no identity of any kind. A gate_refused row means a member reached a server refusal with no rope in front of it.';
 
 
 --
