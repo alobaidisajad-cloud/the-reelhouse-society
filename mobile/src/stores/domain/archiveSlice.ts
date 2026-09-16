@@ -130,6 +130,23 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
 
     addToPhysicalArchive: async (film, formats, notes = '', condition = 'good') => {
         const user = useAuthStore.getState().user;
+        /**
+         * SILENT ON PURPOSE — read this before "fixing" it into a rope.
+         *
+         * Every other gate in the app now says why it refuses. This one does not,
+         * and an audit on 2026-09-13 flagged it as a vanish. It is not one. Its
+         * only live caller is the log's auto-sync (logOperations), which files a
+         * shelf entry as a SIDE EFFECT of saving a log that names a format. The
+         * member asked to save a log, and the log saves. Interrupting that with
+         * "✦ ASCEND THE RANKS" would be the app shouting about something they
+         * never asked it to do. The format tag itself is roped in the log form,
+         * which is where the member actually meets this feature.
+         *
+         * The screen that did call this deliberately — vault-modal — was never
+         * reachable from anywhere and has been removed. If an explicit "add to
+         * shelf" ever returns, IT gets a `useClearance('physical-archive')`
+         * rope; this guard stays quiet either way.
+         */
         if (!user || !isArchivistPlusTier(user)) return;
 
         const existingItem = get().physicalArchive.find(item => item.filmId === film.id);

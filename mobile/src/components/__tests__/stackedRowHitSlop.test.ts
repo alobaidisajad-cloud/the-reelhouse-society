@@ -144,8 +144,8 @@ const RULES: Rule[] = [
   // delete the rule. The arithmetic is unit-tested at its source instead, and
   // every call site is checked to pass its container's real gap:
   // see `rooms.test.tsx › a chip may never reach past half its gap`.
-  { file: 'app/(modals)/vault-modal.tsx', style: 'formatBtn', gap: { y: 8 },
-    note: 'export formats, marginBottom 8' },
+  // (vault-modal's format row is gone with the modal itself — no screen in the
+  //  app ever navigated to it, so a shelf is filled from the log's format tag.)
   { file: 'src/components/PaywallModal.tsx', style: 'tierCard', gap: { y: 12 },
     note: 'tier choice, marginBottom 12' },
   { file: 'src/components/profile/AvatarCropSheet.tsx', style: 'actionCard', gap: { x: 16 },

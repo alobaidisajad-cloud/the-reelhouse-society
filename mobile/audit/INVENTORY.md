@@ -17,7 +17,7 @@
 | File | Lines | Responsibility |
 |------|------:|----------------|
 | `app/(modals)/oracle.tsx` | 259 | _(pending)_ |
-| `app/(modals)/vault-modal.tsx` | 273 | _(pending)_ |
+| ~~`app/(modals)/vault-modal.tsx`~~ | 273 | _removed 2026-09-16 — no screen ever navigated to it_ |
 | `app/(modals)/notifications-modal.tsx` | 338 | _(pending)_ |
 | `app/(modals)/search-modal.tsx` | 357 | _(pending)_ |
 | `app/(modals)/login.tsx` | 450 | _(pending)_ |

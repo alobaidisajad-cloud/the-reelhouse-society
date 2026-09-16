@@ -15,7 +15,7 @@
 | `app/(modals)/oracle.tsx` | 259 | PENDING |  |  |  |  |  |
 | `app/(modals)/search-modal.tsx` | 357 | PENDING |  |  |  |  |  |
 | `app/(modals)/social-modal.tsx` | 469 | PENDING |  |  |  |  |  |
-| `app/(modals)/vault-modal.tsx` | 273 | PENDING |  |  |  |  |  |
+| ~~`app/(modals)/vault-modal.tsx`~~ | 273 | REMOVED |  |  |  |  |  |
 | `app/(tabs)/_layout.tsx` | 320 | PENDING |  |  |  |  |  |
 | `app/(tabs)/darkroom.tsx` | 436 | PENDING |  |  |  |  |  |
 | `app/(tabs)/dispatch.tsx` | 394 | PENDING |  |  |  |  |  |
