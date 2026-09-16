@@ -228,6 +228,64 @@ describe('a rank is sold, enforced, and explained', () => {
     });
   });
 
+  describe('every act the database refuses has a rope before it or a door after it', () => {
+    /**
+     * THE GAP THIS EXISTS FOR. tierRefusal.ts read every sentence a trigger can
+     * raise, gates:check verified those sentences against production character
+     * for character — and nothing called it. A member whose rank had ended
+     * tapped send and was told "Failed to send message." over a retry that
+     * could never succeed. Every check passed, because every check looked at
+     * the map and none asked whether anyone read it.
+     *
+     * So each refused act must show one of three things:
+     *   ROPE    some screen asks useClearance('<id>') before the act
+     *   DOOR    a file this feature names reads the refusal (showTierDoor)
+     *   THROUGH it is reachable only past another feature's rope — named, roped
+     *           itself, and explained at length
+     */
+    const calls = clearanceCalls();
+    const roped = new Set([...calls.values()].flat());
+    const doorFiles = new Set(
+      [...collect(join(ROOT, 'src')), ...collect(join(ROOT, 'app'))]
+        .map(rel)
+        .filter((f) => f !== 'src/utils/tierDoor.ts')
+        .filter((f) => /showTierDoor\(/.test(stripComments(readFileSync(join(ROOT, f), 'utf8')))),
+    );
+
+    it('none is left with nothing between the member and "something went wrong"', () => {
+      const bare: string[] = [];
+      for (const f of GATED_FEATURES) {
+        if (f.enforcement.kind !== 'refuses') continue;
+        const rope = roped.has(f.id);
+        const door = f.gates.some((g) => doorFiles.has(g));
+        const through = f.reachedThrough;
+        if (rope || door) continue;
+        if (!through) { bare.push(`${f.id}: no rope, no door, and no reachedThrough`); continue; }
+        if (!GATED_FEATURES.some((x) => x.id === through.feature)) {
+          bare.push(`${f.id}: reachedThrough names '${through.feature}', which is not a feature`);
+        } else if (!roped.has(through.feature)) {
+          bare.push(`${f.id}: reached through '${through.feature}', which has no rope of its own`);
+        }
+        if (through.why.length < 120) bare.push(`${f.id}: reachedThrough.why is too thin to be a reason`);
+      }
+      expect(bare).toEqual([]);
+    });
+
+    it('the door is actually wired — the defect, as a count', () => {
+      // Zero here is exactly the state that shipped. The lounge (send, retry,
+      // react), both Dispatch desks.
+      expect(doorFiles.size).toBeGreaterThanOrEqual(3);
+      expect([...doorFiles]).toEqual(expect.arrayContaining([
+        'src/stores/lounge.ts', 'app/dispatch/compose.tsx', 'src/components/dispatch/ComposeDesks.tsx',
+      ]));
+    });
+
+    it('and the door itself still reads the sentence table', () => {
+      const door = stripComments(readFileSync(join(ROOT, 'src/utils/tierDoor.ts'), 'utf8'));
+      expect(door).toMatch(/asTierRefusal\(e\)/);
+    });
+  });
+
   it('a client-only gate has to say why the server does not need to care', () => {
     for (const f of GATED_FEATURES) {
       if (f.enforcement.kind !== 'client-only') continue;

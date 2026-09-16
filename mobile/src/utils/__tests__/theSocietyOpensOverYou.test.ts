@@ -126,6 +126,36 @@ describe('the Society opens over you', () => {
       .toBe('/membership?reason=essays&rank=auteur&returnTo=%2Fdispatch%2Fcompose');
   });
 
+  describe('the way back is carried, and deliberately not yet taken', () => {
+    /**
+     * Every rope writes `returnTo`; the Society page does not read it yet. That
+     * was a silent gap — a parameter written by eight call sites and read by
+     * none. It is now a DECLARED one: honouring it belongs to checkout, which
+     * waits for the payments pass, and doing it naively (returning on purchase,
+     * before the rank has landed) would put the member back in front of the
+     * same locked rope.
+     *
+     * This test is built to FAIL on the day someone wires it, and to send them
+     * to the rules written above the line that reads the params.
+     */
+    const page = read('app/(modals)/membership.tsx');
+
+    it('the ropes carry it', () => {
+      expect(societyHref('the-vault', 'archivist', '/log-modal')).toContain('returnTo=%2Flog-modal');
+    });
+
+    it('the Society page does not act on it yet — and says why, where it would', () => {
+      const params = /const \{([^}]*)\} = useLocalSearchParams</.exec(code(page))?.[1] ?? '';
+      // Tripwire: the destructuring must be found, or "not read" passes on nothing.
+      expect(params).toMatch(/\breason\b/);
+      expect(params).not.toMatch(/\breturnTo\b/);
+      // The three rules the eventual implementation must follow are written down.
+      expect(page).toMatch(/NOT on purchase/);
+      expect(page).toMatch(/Only once the poll CONFIRMS the new weight/);
+      expect(page).toMatch(/never a scheme or a host/);
+    });
+  });
+
   describe('the list of presented screens is the layout’s, not a copy of it', () => {
     it('matches every `presentation:` the root stack actually declares', () => {
       /**

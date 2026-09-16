@@ -239,6 +239,38 @@ for (const k of knownSentences) {
   }
 }
 
+/**
+ * ── AND SOMEBODY HAS TO READ THEM ───────────────────────────────────────────
+ * The two loops above passed for the entire life of tierRefusal.ts while
+ * nothing in the app called it. The map matched production exactly and no
+ * member ever saw a word of it: a lapsed member in a salon got "Failed to send
+ * message." So a perfect sentence table is only a pass if a door reads it —
+ * walked here from the source, not trusted from a list.
+ */
+const walk = (dir, out = []) => {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      if (['node_modules', '__tests__', '.expo'].includes(e.name)) continue;
+      walk(p, out);
+    } else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name)) out.push(p);
+  }
+  return out;
+};
+const noComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+const doorCallers = [...walk(path.join(MOBILE, 'src')), ...walk(path.join(MOBILE, 'app'))]
+  .filter((f) => !f.replace(/\\/g, '/').endsWith('src/utils/tierDoor.ts'))
+  .filter((f) => /showTierDoor\(/.test(noComments(fs.readFileSync(f, 'utf8'))));
+const doorReads = /asTierRefusal\(/.test(noComments(fs.readFileSync(path.join(MOBILE, 'src/utils/tierDoor.ts'), 'utf8')));
+
+if (!doorReads) {
+  problems.push('tierDoor.ts no longer reads the sentence table — every refusal would reach a member as a generic failure');
+}
+if (doorCallers.length === 0) {
+  problems.push(`production can refuse with ${liveMessages.length} sentence(s) and NOTHING in the app reads them to a member — `
+    + 'the sentence table is verified and disconnected, which is the defect this check exists for');
+}
+
 // ── the hole this whole study found: gated at the door, open in the room ────
 const unguarded = q(`
   SELECT 'lounge_messages', count(*)::text FROM pg_trigger t
@@ -318,6 +350,7 @@ if (!fnSrc.trim()) {
 const distinctClaimed = new Set(claimedTriggers.map((c) => `${c.table}.${c.trigger}`)).size;
 console.log(`triggers claimed: ${distinctClaimed}   live: ${liveTriggers.length}   (kind-scoped triggers checked: ${kindTriggersChecked})`);
 console.log(`stripped fields claimed: ${claimedStrips.length}   live: ${liveStripped.size}`);
+console.log(`refusal sentences live: ${liveMessages.length}   files that read them to a member: ${doorCallers.length}`);
 console.log(`posting into a salon: ${postingTriggers} tier trigger(s); ${freeInside} free member(s) currently inside`);
 
 if (postingTriggers === 0 && freeInside > 0) {

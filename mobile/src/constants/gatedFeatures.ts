@@ -63,6 +63,17 @@ export interface GatedFeature {
   enforcement: Enforcement;
   /** Every client file that stops a member short of this feature. */
   gates: string[];
+  /**
+   * For an act with no rope and no door of its own: the feature whose rope a
+   * member must pass to reach it at all, and why that is the whole story.
+   *
+   * Every act the database refuses must have a rope before it, a door after it
+   * (showTierDoor), or this. The rule exists because the door was built,
+   * verified sentence by sentence against production, and wired to nothing —
+   * so a member reaching a refusal was told "Failed to send message." `why` is
+   * checked for substance: a bare pointer is how that kind of gap hides.
+   */
+  reachedThrough?: { feature: string; why: string };
 }
 
 export const GATED_FEATURES: GatedFeature[] = [
@@ -150,6 +161,14 @@ export const GATED_FEATURES: GatedFeature[] = [
     promise: 'The Vault (Private Notes)',
     enforcement: { kind: 'refuses', table: 'log_private_notes', trigger: 'tr_tier_gate_private_notes_update' },
     gates: ['src/hooks/useLogFlow.ts'],
+    reachedThrough: {
+      feature: 'the-vault',
+      why: 'The app never writes log_private_notes itself. Notes travel on the log, and '
+         + 'divert_private_notes DISCARDS them below the rank rather than refusing — '
+         + 'rehearsed against production on 2026-09-16: a Cinephile\'s log with a note '
+         + 'saved whole. So this trigger is a backstop no member can meet from the app; '
+         + 'the Vault panel in the log form, roped by the-vault, is where they meet it.',
+    },
   },
   {
     id: 'shelf-editing',
@@ -157,6 +176,13 @@ export const GATED_FEATURES: GatedFeature[] = [
     promise: 'The Physical Archive\n(Track 4K/Blu-Ray/VHS)',
     enforcement: { kind: 'refuses', table: 'physical_archive', trigger: 'tr_tier_gate_archive_update' },
     gates: ['src/stores/domain/archiveSlice.ts'],
+    reachedThrough: {
+      feature: 'physical-archive',
+      why: 'updatePhysicalArchiveItem has no caller anywhere in the app, and the only '
+         + 'screen that edited a shelf entry (vault-modal) was unreachable and is gone. '
+         + 'A shelf is written only by the log\'s format tag, which the physical-archive '
+         + 'rope stands in front of; the slice\'s quiet guard covers the auto-sync.',
+    },
   },
   {
     id: 'create-a-lounge',
@@ -222,6 +248,13 @@ export const GATED_FEATURES: GatedFeature[] = [
     promise: 'Publish Essays & Open\nBallots in The Dispatch',
     enforcement: { kind: 'refuses', table: 'dispatch_dossiers_legacy', trigger: 'tr_tier_gate_dossiers' },
     gates: ['src/utils/mutationExecutor.ts'],
+    reachedThrough: {
+      feature: 'essays',
+      why: 'Nothing in the app enqueues add_dossier any more — it survives only as a type '
+         + 'in the offline queue, so an item written by an older build still drains. Every '
+         + 'new essay is filed through the essay desk, roped by essays and read a refusal '
+         + 'by its door; a stale queued item that is refused dead-letters, as it should.',
+    },
   },
   {
     id: 'curatorial-control',

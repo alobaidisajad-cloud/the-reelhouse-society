@@ -93,6 +93,21 @@ export default function MembershipScreen() {
    *
    * An unrecognised or absent reason simply falls back to the general pitch:
    * a deep link somebody typed must not be able to blank the header.
+   *
+   * ── `returnTo` ARRIVES AND IS DELIBERATELY NOT YET READ ────────────────────
+   * Every rope sends where the member was: the salon, the log (or, for an edit,
+   * the log's own page), the writing desk. Honouring it is checkout work and
+   * waits for the payments pass before launch — and the naive version is wrong:
+   *
+   *   · NOT on purchase. The rank lands a few seconds later (the unlock poll
+   *     below); returning at once puts the member back in front of the same
+   *     rope, still locked — worse than staying here.
+   *   · Only once the poll CONFIRMS the new weight. On a timeout, stay.
+   *   · Validate it: a route inside this app, never a scheme or a host — it
+   *     arrives in a URL anybody can type.
+   *
+   * `theSocietyOpensOverYou.test.ts` fails the day this line reads it, so the
+   * person doing that work is sent here first.
    */
   const { reason } = useLocalSearchParams<{ reason?: string; rank?: string; returnTo?: string }>();
   const cameFor = useMemo(
