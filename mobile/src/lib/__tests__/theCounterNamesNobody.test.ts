@@ -79,6 +79,18 @@ describe('the counter names nobody', () => {
     expect(() => recordGateEvent('gate_tapped', { featureId: 'essays' })).not.toThrow();
   });
 
+  it('a breadcrumb that throws cannot stop the member’s trip', () => {
+    // Every rope records BEFORE it travels. A throw from the trail would leave
+    // the button silently doing nothing — which a test's partial stand-in for
+    // sentry.ts once caused, on the Dispatch's "WHAT AN AUTEUR CAN DO →".
+    const sentry = jest.requireMock('@/src/lib/sentry') as { addBreadcrumb: jest.Mock };
+    sentry.addBreadcrumb.mockImplementationOnce(() => { throw new Error('sentry not ready'); });
+    installGateMetricsSink();
+    expect(() => recordGateEvent('gate_tapped', { featureId: 'essays' })).not.toThrow();
+    // And the counting still happens after the trail failed.
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+  });
+
   it('nothing is sent until the sink is installed', () => {
     recordGateEvent('gate_tapped', { featureId: 'essays' });
     expect(mockRpc).not.toHaveBeenCalled();

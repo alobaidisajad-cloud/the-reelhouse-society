@@ -80,8 +80,13 @@ export function showTierDoor(
   });
 
   // The server's own sentence, unedited. It was written for this.
+  //
+  // Said as INFO, not as an error. A rank refusal is not a failure the member
+  // caused, and everywhere else the house presents it as a brass rope — here it
+  // arrived as a red ✕ over "✦ ASCEND THE RANKS", the one place the door looked
+  // like a crash.
   const message = opts?.also ? `${refusal.said}. ${opts.also}` : refusal.said;
-  reelToast.error(message, {
+  reelToast.info(message, {
     label: standing === 'lapsed' ? '✦ RESUME YOUR STANDING' : '✦ ASCEND THE RANKS',
     onPress: () => {
       TactileEngine.selection();

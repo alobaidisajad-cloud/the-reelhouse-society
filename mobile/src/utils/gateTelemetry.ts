@@ -78,10 +78,20 @@ export function setGateTelemetrySink(next: Sink | null): void {
 export function recordGateEvent(event: GateEvent, detail: GateEventDetail = {}): void {
   // Breadcrumbs always: they cost nothing and they turn "it wouldn't let me in"
   // into a readable trail. They are not measurement.
-  addBreadcrumb(
-    `${event}${detail.featureId ? ` · ${detail.featureId}` : ''}${detail.standing ? ` · ${detail.standing}` : ''}`,
-    'gate',
-  );
+  //
+  // Guarded HERE, not only inside sentry.ts. Every rope and every refusal door
+  // records BEFORE it travels, so anything thrown from this line would leave the
+  // member tapping a button that silently does nothing. The Dispatch screen's
+  // own test showed exactly that: its stand-in for sentry.ts had no
+  // addBreadcrumb, the call threw, and "WHAT AN AUTEUR CAN DO →" went nowhere.
+  try {
+    addBreadcrumb(
+      `${event}${detail.featureId ? ` · ${detail.featureId}` : ''}${detail.standing ? ` · ${detail.standing}` : ''}`,
+      'gate',
+    );
+  } catch {
+    // Deliberately silent — the member's trip matters more than the trail.
+  }
 
   // Never let a telemetry sink take a screen down with it. A member being
   // refused a feature is already a bad moment; a crash on top of it is worse.

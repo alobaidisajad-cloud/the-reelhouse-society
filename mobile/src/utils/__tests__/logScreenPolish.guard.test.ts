@@ -108,9 +108,15 @@ describe('#89 · the toast is the one spoken channel, on BOTH platforms', () => 
   it('an actionable toast announces its action too', () => {
     // A toast with an action stays up twice as long because it expects a
     // response. Announcing only the message would give a VoiceOver member five
-    // seconds to act on a button they were never told about. Latent — nothing
-    // fires an action toast yet — which is exactly why it needed pinning.
-    expect(toast).toMatch(/toast\.action \? .*toast\.action\.label/);
+    // seconds to act on a button they were never told about.
+    //
+    // The MECHANISM changed when the house's refusal doors became the first
+    // real callers: an actionable toast is drawn in a FullWindowOverlay on iOS,
+    // which moves VoiceOver focus onto itself — so a manual announcement as well
+    // would say it twice. The promise this test holds did not change: what is
+    // spoken first names the action. It now lives on the message element, and
+    // the render test (theDoorCanBeReadAndPressed) proves it on a mounted toast.
+    expect(toast).toMatch(/accessibilityLabel=\{`\$\{toast\.message\}\. \$\{spokenLabel\(action\.label\)\}, available\.`\}/);
     expect(toast).toMatch(/toast\.action \? 5000 : 2500/);
   });
 });

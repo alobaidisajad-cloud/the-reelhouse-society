@@ -55,7 +55,7 @@ jest.mock('../../utils/mappers', () => ({
   LoungeMessageRow: {},
 }));
 
-const toast = jest.requireMock('../../utils/reelToast').default as { error: jest.Mock };
+const toast = jest.requireMock('../../utils/reelToast').default as { error: jest.Mock; info: jest.Mock };
 
 let result: { data: unknown; error: unknown } = { data: null, error: null };
 const chain = (): Record<string, unknown> => {
@@ -76,7 +76,18 @@ const failedMessage = () => ({
   type: 'text', created_at: '2026-09-16T10:00:00Z', status: 'failed', reactions: [],
 });
 
-const toastTexts = () => toast.error.mock.calls.map((c) => String(c[0]));
+/**
+ * Everything the member was told, in the order it was said — the door speaks as
+ * INFO and a genuine failure as ERROR, and a toast queue shows both in sequence,
+ * so reading one channel would hide exactly the double-voice these tests exist
+ * to catch.
+ */
+const toastTexts = () =>
+  [...toast.error.mock.calls.map((c, i) => [toast.error.mock.invocationCallOrder[i], c] as const),
+   ...toast.info.mock.calls.map((c, i) => [toast.info.mock.invocationCallOrder[i], c] as const)]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, c]) => String(c[0]));
+const doorAction = () => toast.info.mock.calls[0]?.[1] as { label: string; onPress: () => void } | undefined;
 const refusedEvents = () => mockRecord.mock.calls.filter((c) => c[0] === 'gate_refused');
 
 let tick = 0;
@@ -92,6 +103,7 @@ beforeEach(() => {
   mockUser = stranger;
   mockFrom.mockReset().mockImplementation(() => chain());
   toast.error.mockReset();
+  toast.info.mockReset();
   mockRecord.mockReset();
   mockOpenSociety.mockReset();
   useLoungeStore.setState({
@@ -116,7 +128,9 @@ describe('the house says why', () => {
     it('and offers the way forward on the same line', async () => {
       result = { data: null, error: REFUSED };
       await useLoungeStore.getState().sendMessage(L1, 'Hello.');
-      const action = toast.error.mock.calls[0]?.[1] as { label: string; onPress: () => void } | undefined;
+      const action = doorAction();
+      // A door, not a crash: never the red ✕ of an error.
+      expect(toast.error).not.toHaveBeenCalled();
       expect(action?.label).toBe('✦ ASCEND THE RANKS');
 
       action?.onPress();
@@ -134,7 +148,7 @@ describe('the house says why', () => {
       mockUser = lapsed;
       result = { data: null, error: REFUSED };
       await useLoungeStore.getState().sendMessage(L1, 'Hello.');
-      const action = toast.error.mock.calls[0]?.[1] as { label: string } | undefined;
+      const action = doorAction();
       expect(action?.label).toBe('✦ RESUME YOUR STANDING');
       expect(refusedEvents()[0]?.[1]).toEqual({ featureId: 'the-lounge', rank: 'archivist', standing: 'lapsed' });
     });
@@ -166,6 +180,7 @@ describe('the house says why', () => {
       await useLoungeStore.getState().sendMessage(L1, 'Hello.');
       expect(toastTexts()).toEqual(['Failed to send message.']);
       expect(toast.error.mock.calls[0]?.[1]).toBeUndefined();
+      expect(toast.info).not.toHaveBeenCalled();
       expect(refusedEvents()).toHaveLength(0);
     });
 
@@ -205,7 +220,7 @@ describe('the house says why', () => {
       );
       expect(handled).toBe(true);
       expect(toastTexts()).toEqual(['The Dispatch is an Auteur feature. Your words are kept.']);
-      const action = toast.error.mock.calls[0]?.[1] as { onPress: () => void };
+      const action = doorAction() as { onPress: () => void };
       action.onPress();
       expect(mockOpenSociety).toHaveBeenCalledWith(
         '/membership?reason=essays&rank=auteur&returnTo=%2Fdispatch%2Fcompose%3Fkind%3Ddossier',
