@@ -51,22 +51,6 @@ export const BREAKPOINTS = {
     DESKTOP: 901,
 } as const
 
-// ── Supabase Table Names ───────────────────────────────────────────────────
-export const TABLES = {
-    PROFILES: 'profiles',
-    LOGS: 'logs',
-    LISTS: 'lists',
-    LIST_ITEMS: 'list_items',
-    INTERACTIONS: 'interactions',
-    NOTIFICATIONS: 'notifications',
-    LOUNGES: 'lounges',
-    LOUNGE_MEMBERS: 'lounge_members',
-    LOUNGE_MESSAGES: 'lounge_messages',
-    DOSSIERS: 'dossiers',
-    PROGRAMMES: 'programmes',
-    APP_CONFIG: 'app_config',
-} as const
-
 // ── Error Messages ─────────────────────────────────────────────────────────
 export const ERRORS = {
     OFFLINE: 'You are currently offline. Changes will sync when connection returns.',

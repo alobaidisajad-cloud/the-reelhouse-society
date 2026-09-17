@@ -106,15 +106,6 @@ export interface WatchlistItem {
     year?: number
 }
 
-// ── Vault ──
-export interface VaultItem {
-    id: number
-    title: string
-    poster_path?: string | null
-    year?: number
-    format: string
-}
-
 // ── Physical Archive ──
 export interface PhysicalArchiveItem {
     id: string
@@ -148,25 +139,6 @@ export interface Interaction {
     timestamp: string
 }
 
-// ── Ticket Stub ──
-export interface TicketStub {
-    id: string
-    filmTitle?: string
-    film_title?: string
-    venue_name?: string  // Legacy — kept for existing ticket stubs in DB
-    showtime_date?: string
-    date?: string
-    seat_label?: string
-    seat?: string
-    ticketType?: string
-    amount?: number
-    qrCode?: string | null
-    screenName?: string | null
-    poster_path?: string | null
-    createdAt?: string
-    created_at?: string
-}
-
 // ── Dispatch (Dossier) ──
 export interface Dossier {
     id: string
@@ -192,19 +164,6 @@ export interface Dossier {
     published?: boolean
     is_published?: boolean
     endorsements?: number
-    created_at?: string
-}
-
-// ── Programme (Nightly Programme) ──
-export interface Programme {
-    id: string
-    title: string
-    description?: string
-    films: Array<{ id: number; title?: string; poster_path?: string | null }>
-    isPublic?: boolean
-    createdAt?: string
-    date?: string
-    user_id?: string
     created_at?: string
 }
 

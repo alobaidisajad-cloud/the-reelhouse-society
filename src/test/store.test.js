@@ -50,7 +50,7 @@ describe('useFilmStore — initial state', () => {
         useFilmStore = mod.useFilmStore
         // Reset to clean state
         act(() => {
-            useFilmStore.setState({ logs: [], watchlist: [], vault: [], interactions: [] })
+            useFilmStore.setState({ logs: [], watchlist: [], interactions: [] })
         })
     })
 
@@ -190,35 +190,22 @@ describe('useNotificationStore — notifications', () => {
     })
 })
 
-// ── Programme Store ───────────────────────────────────────────────────────────
-describe('useProgrammeStore — programmes', () => {
-    it('starts with empty programmes array', async () => {
-        const { useProgrammeStore } = await import('../store')
-        const state = useProgrammeStore.getState()
-        expect(Array.isArray(state.programmes)).toBe(true)
+// ── Stores for dropped tables stay gone ───────────────────────────────────────
+// `programmes`, `vaults` and `tickets` were dropped from production in batch 31.
+// These tests used to pin the programme store's shape — asserting that a
+// feature which could only fail still existed. The mobile guard
+// everyNameAClientCallsExists holds every table name; this holds the surface.
+describe('stores for dropped tables stay gone', () => {
+    it('there is no programme store', async () => {
+        const store = await import('../store')
+        expect(store.useProgrammeStore).toBeUndefined()
     })
 
-    it('can set programmes via setState', async () => {
-        const { useProgrammeStore } = await import('../store')
-        const mock = [
-            { id: 'p1', title: 'Date Night Double', films: [{ id: 1 }, { id: 2 }], date: '2025-03-18' }
-        ]
-        act(() => {
-            useProgrammeStore.setState({ programmes: mock })
-        })
-        expect(useProgrammeStore.getState().programmes).toHaveLength(1)
-        expect(useProgrammeStore.getState().programmes[0].title).toBe('Date Night Double')
-        // Cleanup
-        act(() => { useProgrammeStore.setState({ programmes: [] }) })
-    })
-
-    it('exposes addProgramme action', async () => {
-        const { useProgrammeStore } = await import('../store')
-        expect(typeof useProgrammeStore.getState().addProgramme).toBe('function')
-    })
-
-    it('exposes removeProgramme action', async () => {
-        const { useProgrammeStore } = await import('../store')
-        expect(typeof useProgrammeStore.getState().removeProgramme).toBe('function')
+    it('the film store keeps no vault and no ticket stubs', async () => {
+        const { useFilmStore } = await import('../store')
+        const state = useFilmStore.getState()
+        for (const gone of ['vault', 'stubs', 'fetchVault', 'addToVault', 'removeFromVault', 'fetchStubs', 'saveStub']) {
+            expect(state[gone]).toBeUndefined()
+        }
     })
 })

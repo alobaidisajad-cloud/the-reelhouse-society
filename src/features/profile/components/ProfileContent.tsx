@@ -13,8 +13,7 @@ import CinematicInsights from '../../../components/profile/CinematicInsights';
 import Achievements from '../../../components/profile/Achievements';
 import { NoirPassport } from '../../../components/profile/NoirPassport';
 import { AUTEURCalendar } from '../../../components/profile/AUTEURCalendar';
-import { ProgrammesSection } from '../../../components/profile/ProgrammesSection';
-import { ListsSection, VaultSection } from '../../../components/profile/LedgerHelpers';
+import { ListsSection } from '../../../components/profile/LedgerHelpers';
 import { VaultWatchlistTab, VaultArchiveTab } from '../../../components/profile/VaultArchiveTab';
 import TasteMatch from '../../../components/profile/TasteMatch';
 import FilmRecommendations from '../../../components/profile/FilmRecommendations';
@@ -27,7 +26,6 @@ interface ProfileContentProps {
     profileWatchlist: any[];
     profileLists: any[];
     physicalArchive: any[];
-    profileProgrammes: any[];
     isOwnProfile: boolean;
     finalMetrics: any;
     cineStats: any;
@@ -37,7 +35,6 @@ interface ProfileContentProps {
     archiveVisibleCount: number;
     archiveFilteredLogs: any[];
     currentLogs: any[];
-    currentWatchlist: any[];
     setViewLog: (log: any) => void;
     fetchLogs: (loadMore?: boolean) => void;
     fetchLists: (loadMore?: boolean) => void;
@@ -47,9 +44,9 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({
-    activeTab, profileUser, profileLogs, profileWatchlist, profileLists, physicalArchive, profileProgrammes,
+    activeTab, profileUser, profileLogs, profileWatchlist, profileLists, physicalArchive,
     isOwnProfile, finalMetrics, cineStats, logsHasMore, listsHasMore,
-    archiveSieve, archiveVisibleCount, archiveFilteredLogs, currentLogs, currentWatchlist,
+    archiveSieve, archiveVisibleCount, archiveFilteredLogs, currentLogs,
     setViewLog, fetchLogs, fetchLists, setArchiveSieve, setArchiveVisibleCount, setShowDNA
 }: ProfileContentProps) {
     const { isTouch: IS_TOUCH } = useViewport();
@@ -143,19 +140,10 @@ export function ProfileContent({
                             </div>
 
                             <div>
-                                <SectionHeader label="VIEWING HISTORY" title="The AUTEUR's Calendar" />
+                                {/* Every member's — the name no longer says a rank. */}
+                                <SectionHeader label="VIEWING HISTORY" title="The Viewing Calendar" />
                                 <AUTEURCalendar logs={profileLogs} />
                             </div>
-
-                            {((isOwnProfile && profileProgrammes?.length > 0) || (!isOwnProfile && (profileUser as any)?.role === 'auteur')) && (
-                                <>
-                                    <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, var(--ash), transparent)' }} />
-                                    <div>
-                                        <SectionHeader label="CURATED FILM PAIRINGS" title="Nightly Programmes" />
-                                        <ProgrammesSection programmes={profileProgrammes} user={profileUser} isOwnProfile={isOwnProfile} />
-                                    </div>
-                                </>
-                            )}
                         </div>
                     )}
 
@@ -193,8 +181,10 @@ export function ProfileContent({
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <VaultSection {...{ vault: isOwnProfile ? currentWatchlist : [], user: profileUser, logs: profileLogs } as any} />
-
+                    {/* THE VAULT box is gone from here. It printed the member's
+                        WATCHLIST count as "N TITLES WITHIN — Private. Mysterious.
+                        Yours alone.", and 0 on everyone else's profile. The Vault
+                        is the private notes, which live on each log. */}
                     {!isOwnProfile && currentLogs.length >= 5 && (
                         <TasteMatch myLogs={currentLogs} theirLogs={profileLogs} theirUsername={profileUser?.username || ''} />
                     )}

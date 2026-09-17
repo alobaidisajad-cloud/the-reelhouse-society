@@ -548,7 +548,7 @@ export default function DiscoverPage() {
                             {accumulatedFilms.length === 0 && !isFetching && (
                                 <div style={{ padding: '3rem 1.5rem', textAlign: 'center', background: 'rgba(18,14,9,0.6)', border: '1px solid rgba(139,105,20,0.12)', borderLeft: '2px solid rgba(139,105,20,0.3)', borderRadius: '0 6px 6px 0', position: 'relative', overflow: 'hidden', maxWidth: 600, margin: '2rem auto' }}>
                                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.25), transparent)' }} />
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, marginBottom: '0.75rem' }}>THE VAULT IS SEALED</div>
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, marginBottom: '0.75rem' }}>NOTHING DEVELOPED</div>
                                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', opacity: 0.65, marginBottom: '0.4rem' }}>No titles match your criteria.</div>
                                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--bone)', opacity: 0.45, fontStyle: 'italic' }}>Adjust the filters or clear your search to reopen the archive.</div>
                                 </div>

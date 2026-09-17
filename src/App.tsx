@@ -9,7 +9,6 @@ import Preloader from './components/Preloader'
 import FilmStripLoader from './components/FilmStripLoader'
 import CustomCursor from './components/CustomCursor'
 import { useFilmStore, useUIStore, useAuthStore, initRealtime, initAuthSync } from './store'
-import { useFeatureFlagStore } from './stores/featureFlags'
 import InstallPrompt from './components/InstallPrompt'
 import QualityOfLife from './components/QualityOfLife'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -206,11 +205,12 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Elite Backend: Initialize Live global data stream + error logging + feature flags
+  // Elite Backend: Initialize Live global data stream + error logging.
+  // (No feature flags: they were read from `app_config`, a table production does
+  // not have, so every visit made a failing request — and nothing read a flag.)
   useEffect(() => {
     initAuthSync()
     initRealtime()
-    useFeatureFlagStore.getState().loadFlags()
     // Log unhandled errors to Supabase for production monitoring
     import('./errorLogger').then(m => m.initGlobalErrorLogging())
   }, [])

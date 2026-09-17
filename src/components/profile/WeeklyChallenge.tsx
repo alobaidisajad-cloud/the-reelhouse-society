@@ -11,7 +11,7 @@ const CHALLENGES = [
   { title: 'THE MARATHON', desc: 'Watch a film over 150 minutes', check: (_log: FilmLog) => true },
   { title: 'FOREIGN DISPATCH', desc: 'Watch a non-English language film', check: (_log: FilmLog) => true },
   { title: 'THE CAPSULE', desc: 'Watch a film under 90 minutes', check: (_log: FilmLog) => true },
-  { title: 'DEEP VAULT', desc: 'Watch a film from before 1960', check: (log: FilmLog) => !!log.year && log.year < 1960 },
+  { title: 'THE DEEP ARCHIVE', desc: 'Watch a film from before 1960', check: (log: FilmLog) => !!log.year && log.year < 1960 },
   { title: 'THE REWATCH', desc: 'Rewatch a film you\'ve seen before', check: (log: FilmLog) => log.status === 'rewatched' },
   { title: 'FIVE REELS', desc: 'Give a film a perfect 5-reel rating', check: (log: FilmLog) => log.rating === 5 },
   { title: 'THE CRITIC\'S PEN', desc: 'Write a review longer than 100 words', check: (log: FilmLog) => (log.review?.split(/\s+/).length || 0) > 100 },

@@ -168,7 +168,7 @@ src/components/OnboardingModal.tsx	AUDITED	0	0	0	0	yes
 src/components/NitrateCalendar.tsx	AUDITED	0	0	0	0	yes
 src/components/AutopsyGauge.tsx	AUDITED	0	0	0	0	yes
 src/components/WeeklyChallenge.tsx	AUDITED	0	0	0	0	yes
-src/components/HandbookModal.tsx	AUDITED	0	0	0	0	yes
+src/components/HandbookModal.tsx	REMOVED	0	0	0	0	yes
 src/components/Preloader.tsx	AUDITED	0	0	0	0	yes
 src/components/Buster.tsx	AUDITED	0	0	0	0	yes
 src/components/EmptyStates.tsx	AUDITED	0	0	0	0	yes

@@ -238,19 +238,6 @@ export function LazyLogRow({ log, onShare }: any) {
     )
 }
 
-// ── VAULT SECTION ──
-export const VaultSection = memo(function VaultSection({ vault }: any) {
-    return (
-        <div className="vault-box" style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)', marginTop: '0.5rem' }}>THE VAULT</div>
-                <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--fog)', marginTop: '0.25rem' }}>{vault.length} TITLES WITHIN</div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--fog)', marginTop: '0.5rem', fontStyle: 'italic' }}>Private. Mysterious. Yours alone.</div>
-            </div>
-        </div>
-    )
-})
-
 export function ListsSection({ lists, user, hasMoreLists, onLoadMoreLists }: { lists: any[], user: any, hasMoreLists?: boolean, onLoadMoreLists?: () => void }) {
     const { isAuthenticated } = useAuthStore()
 

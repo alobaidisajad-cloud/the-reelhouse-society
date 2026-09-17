@@ -433,27 +433,6 @@
   color: var(--fog);
 }
 
-/* ── VAULT ── */
-.vault-box {
-  border: 2px solid var(--ash);
-  border-radius: var(--radius-card);
-  background: var(--soot);
-  padding: 1.5rem;
-  text-align: center;
-  position: relative;
-  cursor: default;
-}
-
-.vault-box::after {
-  content: '🔒';
-  position: absolute;
-  top: -1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.5rem;
-  filter: sepia(1) hue-rotate(30deg);
-}
-
 /* ── ABANDONED LOG ── */
 .log-abandoned {
   opacity: 0.55;

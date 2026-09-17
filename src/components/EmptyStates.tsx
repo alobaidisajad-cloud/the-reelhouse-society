@@ -82,19 +82,6 @@ export function EmptyWatchlist() {
     )
 }
 
-export function EmptyVault() {
-    return (
-        <div style={emptyStateStyles.container}>
-            <Buster size={70} mood="peeking" />
-            <Ornament />
-            <p style={emptyStateStyles.title}>THE VAULT IS SEALED</p>
-            <p style={emptyStateStyles.subtitle}>
-                Your physical media collection starts here. Add films from your shelf.
-            </p>
-        </div>
-    )
-}
-
 export function EmptyLists() {
     return (
         <div style={emptyStateStyles.container}>

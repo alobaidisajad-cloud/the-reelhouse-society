@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
-import { Dossier, Programme } from '../types'
+import { Dossier } from '../types'
 
 export interface DispatchState {
     dossiers: Partial<Dossier>[] & { fullContent?: string, author?: string, date?: string }[]
@@ -140,68 +140,6 @@ export const useDispatchStore = create<DispatchState>((set) => ({
     },
 }))
 
-export interface ProgrammeState {
-    programmes: Programme[]
-    loading: boolean
-    fetchProgrammes: () => Promise<void>
-    addProgramme: (programme: Partial<Programme> & { isPublic?: boolean }) => Promise<void>
-    removeProgramme: (id: string) => Promise<void>
-}
-
-// ── PROGRAMME STORE — Auteur curated film pairings ──
-export const useProgrammeStore = create<ProgrammeState>((set) => ({
-    programmes: [],
-    loading: false,
-
-    fetchProgrammes: async () => {
-        const user = useAuthStore.getState().user
-        if (!user) return
-        set({ loading: true })
-        const { data, error } = await supabase
-            .from('programmes')
-            .select('id, user_id, title, description, films, is_public, created_at')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(100)
-        if (!error && data) {
-            set({
-                programmes: data.map((p) => ({
-                    id: p.id, title: p.title, description: p.description,
-                    films: p.films || [], isPublic: p.is_public, createdAt: p.created_at,
-                })),
-            })
-        }
-        set({ loading: false })
-    },
-
-    addProgramme: async (programme) => {
-        const user = useAuthStore.getState().user
-        if (!user) throw new Error("Must be logged in to curate programmes")
-        const { data, error } = await supabase
-            .from('programmes')
-            .insert([{
-                user_id: user.id, title: programme.title,
-                description: programme.description || '',
-                films: programme.films || [],
-                is_public: programme.isPublic !== false,
-            }])
-            .select().single()
-            
-        if (error || !data) throw error || new Error("Failed to save programme")
-            
-        set((state) => ({
-            programmes: [{
-                id: data.id, title: data.title, description: data.description,
-                films: data.films, isPublic: data.is_public, createdAt: data.created_at,
-            }, ...state.programmes],
-        }))
-    },
-
-    removeProgramme: async (id) => {
-        const user = useAuthStore.getState().user
-        if (!user) throw new Error("Must be logged in to remove a programme")
-        const { error } = await supabase.from('programmes').delete().eq('id', id).eq('user_id', user.id)
-        if (error) throw error
-        set((state) => ({ programmes: state.programmes.filter((p) => p.id !== id) }))
-    },
-}))
+// The PROGRAMME store is gone. It read and wrote `programmes`, a table that
+// production dropped with an abandoned feature in batch 31 — so an Auteur's
+// profile promised visitors curated pairings that could never be made.

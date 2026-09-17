@@ -529,7 +529,7 @@ export default function PersonPage() {
                         borderRadius: 'var(--radius-card)',
                         background: 'rgba(18,14,9,0.4)',
                     }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>THE VAULT IS SEALED</div>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>NO RECORDS ON FILE</div>
                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--parchment)', opacity: 0.6 }}>No Known Works Found</div>
                         <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)', marginTop: '0.3rem', fontStyle: 'italic' }}>The archive has no film records on file for this artist.</div>
                     </div>

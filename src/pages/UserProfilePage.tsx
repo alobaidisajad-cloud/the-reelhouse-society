@@ -4,7 +4,7 @@ import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-quer
 import { supabase } from '../supabaseClient'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X, ChevronRight, ChevronLeft, Archive, Bookmark, LayoutList, Ticket, LineChart, BookOpen, Disc } from 'lucide-react'
-import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
+import { useAuthStore, useFilmStore, useUIStore } from '../store'
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'
@@ -33,8 +33,7 @@ export default function UserProfilePage() {
     const { username: routeUsername, tab } = useParams()
     const queryClient = useQueryClient()
     const { user: currentUser, isAuthenticated, updateUser, followUser, unfollowUser } = useAuthStore()
-    const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, stubs: currentStubs, physicalArchive, getCinephileStats } = useFilmStore()
-    const { programmes: currentProgrammes } = useProgrammeStore()
+    const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, physicalArchive, getCinephileStats } = useFilmStore()
     const { openLogModal } = useUIStore()
     const fileRef = useRef(null)
     const isOwnProfile = !routeUsername || routeUsername === currentUser?.username || routeUsername === 'me'
@@ -222,13 +221,9 @@ export default function UserProfilePage() {
     })
 
     // Programmes were dropped in batch 31 — an abandoned feature whose table is
-    // gone, so this query could only 404 and the section always rendered empty.
-    // It fired on every visit to somebody else's profile.
-    //
-    // The empty array is kept rather than the prop removed: tearing the section
-    // out of the child component is a design decision, not cleanup. Flagged for
-    // the polish pass.
-    const otherUserProgrammes: never[] = []
+    // gone. The query went then; the section stayed, telling every visitor to an
+    // Auteur's profile that they "have not curated any programmes yet" — a
+    // feature nobody can use. It is gone now, with the store behind it.
 
     const loadMoreRef = useRef(null)
     const [viewLog, setViewLog] = useState<any>(null)
@@ -344,10 +339,8 @@ export default function UserProfilePage() {
     }
 
     // profileLogs is already defined above from infinite query
-    const profileStubs = isOwnProfile ? currentStubs : []
     const profileLists = isOwnProfile ? currentLists : otherUserLists
     const profileWatchlist = isOwnProfile ? currentWatchlist : otherUserWatchlist
-    const profileProgrammes = isOwnProfile ? currentProgrammes : otherUserProgrammes
     const finalMetrics = profileMetrics || { total_logs: profileLogs.length, avg_rating: 0 }
     const cineStats = {
         count: finalMetrics.total_logs,
@@ -502,7 +495,6 @@ export default function UserProfilePage() {
                             profileWatchlist={profileWatchlist}
                             profileLists={profileLists}
                             physicalArchive={physicalArchive}
-                            profileProgrammes={profileProgrammes}
                             isOwnProfile={isOwnProfile}
                             finalMetrics={finalMetrics}
                             cineStats={cineStats}
@@ -512,7 +504,6 @@ export default function UserProfilePage() {
                             archiveVisibleCount={archiveVisibleCount}
                             archiveFilteredLogs={archiveFilteredLogs}
                             currentLogs={currentLogs}
-                            currentWatchlist={currentWatchlist}
                             setViewLog={setViewLog}
                             fetchLogs={fetchLogs}
                             fetchLists={fetchLists}

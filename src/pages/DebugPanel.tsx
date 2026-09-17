@@ -14,7 +14,7 @@ import Buster from '../components/Buster'
 
 export default function DebugPanel() {
     const { user, isAuthenticated } = useAuthStore()
-    const { logs, watchlist, lists, stubs } = useFilmStore()
+    const { logs, watchlist, lists } = useFilmStore()
     const { badges } = useAchievements(user?.id, logs)
     const { currentStreak, longestStreak } = useStreak(logs)
     const [analyticsCount, setAnalyticsCount] = useState<number | null>(null)
@@ -81,7 +81,6 @@ export default function DebugPanel() {
         { label: 'FILM LOGS', value: logs.length },
         { label: 'WATCHLIST', value: watchlist.length },
         { label: 'LISTS', value: lists.length },
-        { label: 'TICKET STUBS', value: stubs?.length || 0 },
         { label: 'CURRENT STREAK', value: `${currentStreak} day${currentStreak !== 1 ? 's' : ''} 🔥` },
         { label: 'LONGEST STREAK', value: `${longestStreak} day${longestStreak !== 1 ? 's' : ''}` },
         { label: 'FOLLOWERS', value: profileData?.followers_count || 0 },

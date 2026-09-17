@@ -270,7 +270,7 @@
 
 | File | Lines | Responsibility |
 |------|------:|----------------|
-| `src/components/HandbookModal.tsx` | 57 | _(pending)_ |
+| ~~`src/components/HandbookModal.tsx`~~ | 57 | REMOVED — never rendered |
 
 ## src/components/HapticTab.tsx
 

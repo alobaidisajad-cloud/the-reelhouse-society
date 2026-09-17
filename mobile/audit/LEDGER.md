@@ -66,7 +66,7 @@
 | `src/components/ErrorBoundary.tsx` | 232 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/FilmGrain.tsx` | 34 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/FilmGrainOverlay.tsx` | 115 | AUDITED | 0 | 0 | 0 | 0 | yes |
-| `src/components/HandbookModal.tsx` | 57 | AUDITED | 0 | 0 | 0 | 0 | yes |
+| ~~`src/components/HandbookModal.tsx`~~ | 57 | REMOVED | 0 | 0 | 0 | 0 | yes |
 | `src/components/HapticTab.tsx` | 59 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/MasterLogo.tsx` | 14 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/NitrateCalendar.tsx` | 278 | AUDITED | 0 | 0 | 0 | 0 | yes |

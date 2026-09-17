@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { get, set, del } from 'idb-keyval'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
-import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction, PhysicalArchiveItem } from '../types'
+import { FilmLog, WatchlistItem, FilmList, Interaction, PhysicalArchiveItem } from '../types'
 import reelToast from '../utils/reelToast'
 import { enqueueMutation } from '../utils/offlineQueue'
 
@@ -57,9 +57,7 @@ interface TMDBFilmInput {
 export interface FilmState {
     logs: FilmLog[]
     watchlist: WatchlistItem[]
-    vault: VaultItem[]
     lists: FilmList[]
-    stubs: TicketStub[]
     interactions: Interaction[]
     physicalArchive: PhysicalArchiveItem[]
 
@@ -74,17 +72,12 @@ export interface FilmState {
     // Pagination state
     logsHasMore: boolean
     logsPage: number
-    vaultHasMore: boolean
-    vaultPage: number
     listsHasMore: boolean
     listsPage: number
 
     fetchLogs: (loadMore?: boolean) => Promise<void>
     fetchWatchlist: () => Promise<void>
-    fetchVault: (loadMore?: boolean) => Promise<void>
     fetchLists: (loadMore?: boolean) => Promise<void>
-    fetchStubs: () => Promise<void>
-    saveStub: (stub: Partial<TicketStub> & { showtimeId?: string, slotId?: string }) => Promise<string | null>
     addLog: (log: Partial<FilmLog>) => Promise<void>
     markAsWatched: (film: TMDBFilmInput, status?: 'watched' | 'rewatched' | 'abandoned') => Promise<void>
     unmarkWatched: (filmId: number) => Promise<void>
@@ -93,8 +86,6 @@ export interface FilmState {
     removeLog: (id: string) => Promise<void>
     addToWatchlist: (film: TMDBFilmInput) => Promise<void>
     removeFromWatchlist: (filmId: number) => Promise<void>
-    addToVault: (film: TMDBFilmInput, format?: string) => Promise<void>
-    removeFromVault: (filmId: number) => Promise<void>
     createList: (list: Partial<FilmList>) => Promise<void>
     updateList: (listId: string, updates: Partial<FilmList>) => Promise<void>
     deleteList: (listId: string) => Promise<void>
@@ -119,15 +110,14 @@ export const useFilmStore = create<FilmState>()(
         (set, get) => ({
             logs: [],
             watchlist: [],
-            vault: [],
             lists: [],
-            stubs: [],           // Supabase-backed digital tickets — fetched on login
+            // No `vault` and no `stubs`: both read tables (`vaults`, `tickets`)
+            // that production dropped with an abandoned feature in batch 31.
+            // The callers went then; these stores were left reading nothing.
             interactions: [],    // { type: 'endorse', targetId, timestamp }
             physicalArchive: [], // Physical media collection — 4K, Blu-ray, DVD, VHS, etc.
             logsHasMore: true,
             logsPage: 0,
-            vaultHasMore: true,
-            vaultPage: 0,
             listsHasMore: true,
             listsPage: 0,
             _endorsedIndex: {} as Record<string, true>,  // O(1) lookup — rebuilt on mutations
@@ -382,32 +372,6 @@ export const useFilmStore = create<FilmState>()(
                 set({ watchlist: newWatchlist, _watchlistIndex: idx })
             },
 
-            fetchVault: async (loadMore = false) => {
-                const user = useAuthStore.getState().user
-                if (!user) return
-                const state = get()
-                if (loadMore && !state.vaultHasMore) return
-
-                const PAGE_SIZE = 50
-                const page = loadMore ? state.vaultPage : 0
-
-                const { data, error } = await supabase
-                    .from('vaults').select('id, user_id, film_id, film_title, poster_path, year, format, created_at').eq('user_id', user.id)
-                    .order('created_at', { ascending: false })
-                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
-
-                if (!error && data) {
-                    const hasMore = data.length === PAGE_SIZE
-                    const newVault = data.map((v) => ({ id: v.film_id, title: v.film_title, poster_path: v.poster_path || null, year: v.year || null, format: v.format || 'Digital' }))
-                    
-                    set({ 
-                        vault: loadMore ? [...state.vault, ...newVault] : newVault,
-                        vaultPage: page + 1,
-                        vaultHasMore: hasMore
-                    })
-                }
-            },
-
             fetchLists: async (loadMore = false) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
@@ -452,55 +416,6 @@ export const useFilmStore = create<FilmState>()(
                         listsHasMore: hasMore
                     })
                 }
-            },
-
-            fetchStubs: async () => {
-                const user = useAuthStore.getState().user
-                if (!user) return
-                const { data, error } = await supabase
-                    .from('tickets')
-                    .select('id, user_id, seat, ticket_type, amount, qr_code, screen_name, created_at, showtimes(film_title, date)')
-                    .eq('user_id', user.id)
-                    .order('created_at', { ascending: false })
-                    .limit(500)
-                if (!error && data) {
-                    set({
-                        stubs: data.map((t) => ({
-                            id: t.id || '',
-                            filmTitle: (t.showtimes as any)?.film_title || 'Unknown Film',
-                            date: (t.showtimes as any)?.date || '',
-                            seat: t.seat || '—',
-                            ticketType: t.ticket_type || 'Standard',
-                            amount: t.amount || 0,
-                            qrCode: t.qr_code || null,
-                            screenName: t.screen_name || null,
-                            createdAt: t.created_at || new Date().toISOString(),
-                        })),
-                    })
-                }
-            },
-
-            saveStub: async (stub) => {
-                const user = useAuthStore.getState().user
-                if (!user) return null
-                // Only write to DB if we have a real showtime UUID (not demo data)
-                const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-                const isRealShowtime = stub.showtimeId && UUID_RE.test(stub.showtimeId)
-                if (!isRealShowtime) return null
-                const { data, error } = await supabase.from('tickets').insert([{
-                    user_id: user.id,
-                    showtime_id: stub.showtimeId,
-                    slot_id: stub.slotId || 'default',
-                    seat: stub.seat || '—',
-                    ticket_type: stub.ticketType || 'Standard',
-                    amount: stub.amount || 0,
-                    qr_code: stub.qrCode || null,
-                    screen_name: stub.screenName || null,
-                }]).select().single()
-                if (!error && data) {
-                    return data.id
-                }
-                return null
             },
 
             addLog: async (log) => {
@@ -814,30 +729,6 @@ export const useFilmStore = create<FilmState>()(
                 scheduleDeletion(`wl-${filmId}`, async () => { await supabase.from('watchlists').delete().eq('user_id', uid).eq('film_id', filmId) })
             },
 
-            addToVault: async (film, format = 'Digital') => {
-                const user = useAuthStore.getState().user
-                if (!user) return
-                const { error } = await supabase.from('vaults').insert([{
-                    user_id: user.id, film_id: film.id,
-                    film_title: film.title || film.name || 'Unknown',
-                    poster_path: film.poster_path || null,
-                    year: film.release_date ? new Date(film.release_date).getFullYear() : null,
-                    format,
-                }])
-                if (error) throw error
-                set((state) => ({
-                    vault: state.vault.find((f) => f.id === film.id) ? state.vault
-                        : [...state.vault, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, format }],
-                }))
-            },
-
-            removeFromVault: async (filmId) => {
-                const user = useAuthStore.getState().user
-                if (!user) return
-                const { error } = await supabase.from('vaults').delete().eq('user_id', user.id).eq('film_id', filmId)
-                if (!error) set((state) => ({ vault: state.vault.filter((f) => f.id !== filmId) }))
-            },
-
             createList: async (list) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
@@ -1008,7 +899,6 @@ export const useFilmStore = create<FilmState>()(
                 // IndexedDB has virtually unlimited space, so we persist the full dataset and indexes
                 logs: state.logs,
                 watchlist: state.watchlist,
-                vault: state.vault,
                 lists: state.lists,
                 interactions: state.interactions,
                 physicalArchive: state.physicalArchive,

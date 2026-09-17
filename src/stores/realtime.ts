@@ -2,7 +2,6 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import { queryClient } from '../queryClient'
 import { useAuthStore, hydrateFollowing } from './auth'
 import { useFilmStore } from './films'
-import { useProgrammeStore } from './content'
 
 // ── REALTIME + AUTH SYNC ──
 // These are module-level side effects, not stores.

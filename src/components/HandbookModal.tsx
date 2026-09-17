@@ -59,29 +59,43 @@ export default function HandbookModal() {
                                 <p>The live cardiovascular system of the community. See what other devotees are logging in real-time, and certify transmissions from fellow cinephiles.</p>
                             </div>
 
+                            {/* Every entry names a room a member can actually enter. This
+                                glossary described The Atlas and Ticket Stubs, which do not
+                                exist, called the profile "The Ledger / Vault", and never
+                                mentioned The Stacks, The Lounge or The Society. */}
                             <div className="hb-item">
                                 <h3>The Darkroom</h3>
-                                <p>Our expansive discovery engine. Step inside to develop films by emotional resonance, decade, genre, and aesthetic mood.</p>
-                            </div>
-
-                            <div className="hb-item">
-                                <h3>Ticket Stubs</h3>
-                                <p>Physical proof of attendance. When you book a seat at a Society-affiliated Palace, your stub is preserved here — a permanent record of where you were and what you witnessed.</p>
-                            </div>
-
-                            <div className="hb-item">
-                                <h3>The Ledger / Vault</h3>
-                                <p>Your personal profile. View your logged films, custom curations, and analyze your <strong>Taste DNA</strong> generated from your autopsies.</p>
+                                <p>Our discovery engine. Step inside to develop films by mood, decade and genre.</p>
                             </div>
 
                             <div className="hb-item">
                                 <h3>The Dispatch</h3>
-                                <p>The official newsletter of the Society. Read original dossiers filed by our premium Auteur members.</p>
+                                <p>The official newsletter of the Society. Read original dossiers filed by our Auteur members.</p>
                             </div>
 
                             <div className="hb-item">
-                                <h3>The Atlas</h3>
-                                <p>A directory of associated physical cinemas, theaters, and temples of the silver screen worldwide.</p>
+                                <h3>The Stacks</h3>
+                                <p>Curated collections of films — ranked or unranked, kept private or shared with the Society.</p>
+                            </div>
+
+                            <div className="hb-item">
+                                <h3>The Lounge</h3>
+                                <p>Chat rooms for members who take cinema seriously. Open to the Archivist rank and above.</p>
+                            </div>
+
+                            <div className="hb-item">
+                                <h3>Your File</h3>
+                                <p>Your profile. The Archive holds every film you have watched, The Ledger your logs in the order you watched them, and The Physical Archive the copies on your shelf. Your <strong>Taste DNA</strong> is drawn from your autopsies.</p>
+                            </div>
+
+                            <div className="hb-item">
+                                <h3>The Vault</h3>
+                                <p>Private notes on a log, seen by you alone. An Archivist privilege.</p>
+                            </div>
+
+                            <div className="hb-item">
+                                <h3>The Society</h3>
+                                <p>The ranks — Cinephile, Archivist and Auteur — and what each one opens.</p>
                             </div>
                         </div>
 

@@ -143,7 +143,7 @@ export default function ListDetailPage() {
         return (
             <div style={{ paddingTop: 100, textAlign: 'center', minHeight: '100dvh', background: 'var(--ink)' }}>
                 <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--sepia)' }}>Archive Missing</h1>
-                <p style={{ color: 'var(--fog)', marginTop: '1rem', fontFamily: 'var(--font-ui)' }}>This collection cannot be located in the vault.</p>
+                <p style={{ color: 'var(--fog)', marginTop: '1rem', fontFamily: 'var(--font-ui)' }}>This stack cannot be located on the shelves.</p>
                 <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ marginTop: '2rem' }}>GO BACK</button>
             </div>
         )

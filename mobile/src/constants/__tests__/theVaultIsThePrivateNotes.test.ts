@@ -82,8 +82,23 @@ const PRIVATE_NOTES: Said[] = [
   { file: 'src/constants/gatedFeatures.ts', text: 'screen that edited a shelf entry (vault-modal) was unreachable and is gone. ' },
 ];
 
+/**
+ * The web app says it too — the word is the product's, not one client's. The
+ * web had drifted further: a profile box reading "THE VAULT — N TITLES WITHIN"
+ * over the member's WATCHLIST count, "THE VAULT IS SEALED" on empty search
+ * results, and a handbook calling the whole profile "The Ledger / Vault".
+ */
+const WEB_PRIVATE_NOTES: Said[] = [
+  { file: '../src/pages/MembershipPage.tsx', text: 'The Vault (Private Notes)' },
+  { file: '../src/components/HandbookModal.tsx', text: 'The Vault' },
+];
+PRIVATE_NOTES.push(...WEB_PRIVATE_NOTES);
+
 const key = (s: Said) => `${s.file}  ${JSON.stringify(s.text)}`;
-const ALL = sayings([...walk(join(MOBILE, 'app')), ...walk(join(MOBILE, 'src'))]);
+const ALL = sayings([
+  ...walk(join(MOBILE, 'app')), ...walk(join(MOBILE, 'src')),
+  ...walk(join(MOBILE, '..', 'src')),
+]);
 
 describe('"The Vault" is the private notes, and nothing else', () => {
   it('no text in the app calls anything else a vault', () => {

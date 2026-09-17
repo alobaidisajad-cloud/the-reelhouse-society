@@ -7,11 +7,11 @@
  *
  * Domain modules:
  *   stores/auth.js      — useAuthStore (login, signup, logout, follow)
- *   stores/films.js     — useFilmStore (logs, watchlist, vault, lists)
+ *   stores/films.js     — useFilmStore (logs, watchlist, lists, physical archive)
  *   stores/lounge.js    — useLoungeStore
  *   stores/ui.js        — useUIStore, useDiscoverStore
  *   stores/social.js    — useNotificationStore
- *   stores/content.js   — useDispatchStore, useProgrammeStore
+ *   stores/content.js   — useDispatchStore
  *   stores/realtime.js  — initAuthSync, initRealtime
  */
 
@@ -20,5 +20,5 @@ export { useFilmStore } from './stores/films'
 export { useLoungeStore } from './stores/lounge'
 export { useUIStore, useDiscoverStore } from './stores/ui'
 export { useNotificationStore } from './stores/social'
-export { useDispatchStore, useProgrammeStore } from './stores/content'
+export { useDispatchStore } from './stores/content'
 export { initAuthSync, initRealtime } from './stores/realtime'

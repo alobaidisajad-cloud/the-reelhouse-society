@@ -448,7 +448,7 @@ export const tmdb = {
             },
             {
                 id: 'fb3',
-                title: "DEEP VAULT: Silent Era Masterpiece Restored",
+                title: "FROM THE ARCHIVE: Silent Era Masterpiece Restored",
                 excerpt: "Metropolis-style visuals meet gothic horror in this newly unearthed reel from the Weimar Republic archives.",
                 date: relDate(3),
                 time: "09:00 PM",
