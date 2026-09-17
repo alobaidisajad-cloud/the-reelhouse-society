@@ -22,6 +22,7 @@ import {
   NITRATE_EXPORT_WIDTH,
   NITRATE_EXPORT_HEIGHT,
 } from '@/src/components/film/NitrateFileCard';
+import { ToastHost } from '@/src/components/ToastHost';
 
 interface ShareFilm {
   id?: number | string;
@@ -165,6 +166,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
           </PressableScale>
         </View>
       </View>
+      <ToastHost />
     </Modal>
   );
 });

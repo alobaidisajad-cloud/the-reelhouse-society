@@ -34,7 +34,6 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
-import { ToastOverlay } from '@/src/components/ToastOverlay';
 import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { useBanCheck } from '@/src/hooks/useBanCheck';
 import { tmdb } from '@/src/lib/tmdb';
@@ -675,8 +674,7 @@ export default function ListModal() {
     );
 
     return (
-        <Animated.View style={[s.container, animatedContainerStyle]} accessibilityViewIsModal={true}>
-            <ToastOverlay />
+        <Animated.View style={[s.container, animatedContainerStyle]}>
             <DraggableFlatList
                 data={films}
                 onDragBegin={() => TactileEngine.navigate()}

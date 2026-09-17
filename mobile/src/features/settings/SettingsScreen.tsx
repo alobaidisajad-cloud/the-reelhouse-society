@@ -43,6 +43,7 @@ import { SettingsSchema, type SettingsFormData } from '@/src/schemas/settings';
 
 import { PatronageSection, AccountSection, PrivacySection, NotificationsSection, ExperienceSection, SectionCard, SectionHead, ActionBtn } from '@/src/features/settings/SettingsSections';
 import { st } from '@/src/features/settings/settings.styles';
+import { ToastHost } from '@/src/components/ToastHost';
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> => {
   return new Promise((resolve) => {
@@ -689,6 +690,7 @@ export function SettingsScreen() {
             </View>
           </View>
         </KeyboardAvoidingView>
+        <ToastHost />
       </Modal>
 
     </View>

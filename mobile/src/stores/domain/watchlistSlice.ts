@@ -127,7 +127,7 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
             _watchlistIndex: { ...state._watchlistIndex, [film.id]: true }
         }));
         // NOT announced here. The success path below toasts — and a toast is now
-        // spoken on both platforms (ToastOverlay announces on iOS, where the
+        // spoken on both platforms (toastBus announces on iOS, where the
         // live region does not fire) — so announcing here as well made a
         // VoiceOver member hear "Added to watchlist" and then, half a second
         // later, "\"Dune\" added to watchlist": the same fact twice, the second

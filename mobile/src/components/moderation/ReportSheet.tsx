@@ -46,6 +46,7 @@ import {
 } from '@/src/types/moderation';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { ToastHost } from '@/src/components/ToastHost';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -416,6 +417,7 @@ function ReportSheet({
           </AnimatedView>
         </GestureDetector>
       </GestureHandlerRootView>
+      <ToastHost />
     </Modal>
   );
 }

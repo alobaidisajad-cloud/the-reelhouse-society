@@ -330,7 +330,7 @@ export default function SocialModal() {
     }, [fetchData]);
 
     return (
-        <BlurView intensity={90} tint="dark" style={styles.container} accessibilityViewIsModal={true}>
+        <BlurView intensity={90} tint="dark" style={styles.container}>
             {/* Drag handle */}
             <View style={styles.dragHandleWrap}><View style={styles.dragHandle} /></View>
 

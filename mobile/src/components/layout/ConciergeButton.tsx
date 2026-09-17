@@ -56,6 +56,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
 import { NAV_BTN_SIZE, NAV_H_PADDING, navButtonTop, navButtonBottom } from './navMetrics';
 import { BRASS, BRASS_STOPS, BRASS_START, BRASS_END, CROWN, RIM } from '@/src/theme/brass';
+import { ToastHost } from '@/src/components/ToastHost';
 
 const OPEN_MS = 200;
 const CLOSE_MS = 160;
@@ -398,6 +399,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
               <BrassDisc rotation={rotation} />
             </PressableScale>
           </View>
+          <ToastHost />
         </View>
       </Modal>
     </>

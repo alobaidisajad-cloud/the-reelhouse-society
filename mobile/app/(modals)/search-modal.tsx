@@ -35,7 +35,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
 import { SearchResultRow } from '@/src/components/search/SearchResultRow';
-import { ToastOverlay } from '@/src/components/ToastOverlay';
 import { SR, useUniversalSearch } from '@/src/hooks/useUniversalSearch';
 import { colors, fonts } from '@/src/theme/theme';
 
@@ -186,9 +185,8 @@ export default function SearchModal() {
   const keyExtractorResult = useCallback((r: SR) => r.id, []);
 
   return (
-    <Animated.View style={[st.root, animatedContainerStyle]} accessibilityViewIsModal={true}>
+    <Animated.View style={[st.root, animatedContainerStyle]}>
       <BlurView intensity={Platform.OS === 'ios' ? 55 : 100} tint="dark" style={StyleSheet.absoluteFillObject} />
-      <ToastOverlay />
 
       {/* ── SEARCH BAR ── */}
       <View style={[st.header, { paddingTop: Math.max(insets.top, 20) + 4 }]}>

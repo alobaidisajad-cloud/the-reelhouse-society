@@ -82,7 +82,7 @@
 | `src/components/ShareToLoungeModal.tsx` | 240 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/SkeletonPulse.tsx` | 71 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/SkeletonShimmer.tsx` | 172 | AUDITED | 0 | 0 | 0 | 0 | yes |
-| `src/components/ToastOverlay.tsx` | 177 | AUDITED | 0 | 0 | 0 | 0 | yes |
+| `src/components/ToastHost.tsx` | 177 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/WeeklyChallenge.tsx` | 63 | AUDITED | 0 | 0 | 0 | 0 | yes |
 | `src/components/__tests__/ActionDeck.test.tsx` | 52 | PENDING |  |  |  |  |  |
 | `src/components/__tests__/AuthGuard.test.tsx` | 75 | PENDING |  |  |  |  |  |

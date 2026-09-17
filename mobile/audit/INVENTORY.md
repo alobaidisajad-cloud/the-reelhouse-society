@@ -362,11 +362,11 @@
 |------|------:|----------------|
 | `src/components/SkeletonShimmer.tsx` | 172 | _(pending)_ |
 
-## src/components/ToastOverlay.tsx
+## src/components/ToastHost.tsx
 
 | File | Lines | Responsibility |
 |------|------:|----------------|
-| `src/components/ToastOverlay.tsx` | 177 | _(pending)_ |
+| `src/components/ToastHost.tsx` | 177 | _(pending)_ |
 
 ## src/components/WeeklyChallenge.tsx
 

@@ -255,7 +255,7 @@ export default function NotificationsModal() {
   }, []);
 
   return (
-    <View style={s.container} accessibilityViewIsModal={true}>
+    <View style={s.container}>
       {/* Drag handle */}
       <View style={s.dragHandleWrap}><View style={s.dragHandle} /></View>
 

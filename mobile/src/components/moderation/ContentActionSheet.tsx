@@ -25,6 +25,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import type { ReportableContentType } from '@/src/types/moderation';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { ToastHost } from '@/src/components/ToastHost';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -237,6 +238,7 @@ export function ContentActionSheet({
           </AnimatedView>
         </GestureDetector>
       </GestureHandlerRootView>
+      <ToastHost />
     </Modal>
   );
 }

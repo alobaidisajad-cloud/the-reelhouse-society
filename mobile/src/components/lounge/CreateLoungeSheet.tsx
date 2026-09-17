@@ -14,6 +14,7 @@ import { useLoungeStore } from '@/src/stores/lounge';
 import { useClearance } from '@/src/hooks/useClearance';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { ToastHost } from '@/src/components/ToastHost';
 
 export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
 
@@ -265,6 +266,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
           </Animated.View>
       </Animated.View>
       </GestureHandlerRootView>
+      <ToastHost />
     </Modal>
   );
 }

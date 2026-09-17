@@ -1,9 +1,9 @@
 {
   "total": {
-    "lines": 50.3,
-    "branches": 43.84,
-    "functions": 47.18,
-    "statements": 48.85
+    "lines": 51.29,
+    "branches": 44.45,
+    "functions": 48.07,
+    "statements": 49.78
   },
   "./src/components/dispatch/": {
     "lines": 93.94,
@@ -12,16 +12,16 @@
     "statements": 92.37
   },
   "./src/components/": {
-    "lines": 49.76,
-    "branches": 45.34,
-    "functions": 45.66,
-    "statements": 48.63
+    "lines": 50.78,
+    "branches": 45.85,
+    "functions": 46.55,
+    "statements": 49.63
   },
   "./src/utils/": {
-    "lines": 82.01,
-    "branches": 76.73,
-    "functions": 83.44,
-    "statements": 80.5
+    "lines": 82.71,
+    "branches": 77.32,
+    "functions": 84.21,
+    "statements": 81.22
   },
   "./src/stores/": {
     "lines": 69.65,
@@ -30,10 +30,10 @@
     "statements": 66.2
   },
   "./src/services/": {
-    "lines": 52.39,
-    "branches": 36,
-    "functions": 54.1,
-    "statements": 48.66
+    "lines": 53.27,
+    "branches": 36.5,
+    "functions": 55.74,
+    "statements": 49.55
   },
   "./src/features/": {
     "lines": 34.38,
@@ -42,10 +42,10 @@
     "statements": 33.61
   },
   "./src/hooks/": {
-    "lines": 27.57,
-    "branches": 24.02,
-    "functions": 27.27,
-    "statements": 27.36
+    "lines": 32.24,
+    "branches": 27.65,
+    "functions": 31.82,
+    "statements": 31.54
   },
   "./src/lib/": {
     "lines": 52.36,
@@ -55,7 +55,7 @@
   },
   "./app/": {
     "lines": 35.68,
-    "branches": 36.38,
+    "branches": 36.21,
     "functions": 32.68,
     "statements": 34.84
   }

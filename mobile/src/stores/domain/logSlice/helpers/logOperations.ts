@@ -463,7 +463,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             // the log had FAILED, while the screen showed an error.
             //
             // Failure needs no announcement of its own: the error toast is now
-            // spoken on both platforms (ToastOverlay announces on iOS, where the
+            // spoken on both platforms (toastBus announces on iOS, where the
             // live region does not fire). Adding one here would make Android say
             // it twice.
             //

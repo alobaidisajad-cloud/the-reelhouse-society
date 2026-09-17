@@ -21,6 +21,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '../PressableScale';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
+import { ToastHost } from '@/src/components/ToastHost';
 
 interface RouletteFilm {
     id?: number;
@@ -272,6 +273,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                     </PressableScale>
                 </Pressable>
             </Pressable>
+            <ToastHost />
         </Modal>
     );
 }

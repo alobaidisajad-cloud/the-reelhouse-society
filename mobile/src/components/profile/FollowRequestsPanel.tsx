@@ -22,6 +22,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { useFollowRequests } from '@/src/hooks/useFollowRequests';
 import type { FollowRequest } from '@/src/services/FollowRequestService';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { ToastHost } from '@/src/components/ToastHost';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const HITSLOP = { top: 10, bottom: 10, left: 10, right: 10 } as const;
@@ -155,6 +156,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
           )}
         </AnimatedView>
       </View>
+      <ToastHost />
     </Modal>
   );
 }

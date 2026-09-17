@@ -28,7 +28,6 @@ import { SocietySeal } from '@/src/components/auth/SocietySeal';
 import { PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
 import { EmailConfirmationScreen } from '@/src/components/auth/EmailConfirmationScreen';
 import { PasswordRecoveryModal } from '@/src/components/auth/PasswordRecoveryModal';
-import { ToastOverlay } from '@/src/components/ToastOverlay';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedText = Animated.createAnimatedComponent(Text);
@@ -176,7 +175,6 @@ export default function LoginScreen() {
     // the container also padding the inset it was counted twice, which is why
     // the close button sat so far down the screen.
     <View style={[s.container, { paddingBottom: insets.bottom }]}>
-      <ToastOverlay />
       {/* ── Background & Atmospherics ── */}
       <AuthBackdrop />
 

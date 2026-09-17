@@ -6,6 +6,7 @@ import PressableScale from '@/src/components/PressableScale';
 import Animated from 'react-native-reanimated';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { SocietyEyebrow, HaloIcon, RegistrationBrackets } from './AuthChrome';
+import { ToastHost } from '@/src/components/ToastHost';
 
 interface Props {
   visible: boolean;
@@ -135,6 +136,7 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
           )}
         </View>
       </Animated.View>
+      <ToastHost />
     </Modal>
   );
 }

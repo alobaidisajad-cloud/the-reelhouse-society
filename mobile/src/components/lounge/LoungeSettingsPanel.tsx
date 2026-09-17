@@ -13,6 +13,7 @@ import React, { useCallback, useState } from 'react';
 import { Alert, InteractionManager, Modal, StyleSheet, Text, View } from 'react-native';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ToastHost } from '@/src/components/ToastHost';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const BLOOD = colors.crimson;
@@ -215,6 +216,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
           }
         />
       </AnimatedView>
+      <ToastHost />
     </Modal>
   );
 }

@@ -19,6 +19,7 @@ import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 import { isNetworkError } from '@/src/utils/networkError';
 import { readMounts, MOUNT_COUNT, CENTRE_MOUNT, type FavouriteFilm } from './favourites';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
+import { ToastHost } from '@/src/components/ToastHost';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 // Module-scoped: prevents remount on every render cycle
@@ -547,6 +548,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                         </Animated.View>
                     ) : null}
                 </Animated.View>
+                <ToastHost />
             </Modal>
         </View>
     );

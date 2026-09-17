@@ -6,6 +6,7 @@ import React, { memo, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { ToastHost } from '@/src/components/ToastHost';
 
 // YouTube throws "Error 153 / video player configuration error" when its /embed
 // URL is loaded as the top document (no valid referrer/origin). The fix is to
@@ -111,6 +112,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
                 </View>
                 {/* OFFICIAL TRAILER label — matches web */}
                 <Text style={s.trailerLabel}>OFFICIAL TRAILER</Text>
+                <ToastHost />
             </View>
         </Modal>
     );

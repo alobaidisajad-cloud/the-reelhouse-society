@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s } from './LoungeStyles';
 
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { ToastHost } from '@/src/components/ToastHost';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -174,6 +175,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose
         </AnimatedView>
       </GestureDetector>
       </GestureHandlerRootView>
+      <ToastHost />
     </Modal>
   );
 }

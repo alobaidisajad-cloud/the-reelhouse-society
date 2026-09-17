@@ -15,6 +15,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { clipToSentence } from '@/src/components/dispatch/paper/paperText';
+import { ToastHost } from '@/src/components/ToastHost';
 
 interface ShareToLoungeProps {
     visible: boolean;
@@ -301,6 +302,7 @@ export default function ShareToLoungeModal({
                         </>
                     )}
                 </View>
+                <ToastHost />
             </Animated.View>
         </Modal>
     );

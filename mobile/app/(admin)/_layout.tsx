@@ -1,6 +1,7 @@
 import React from 'react';
 import { Stack, Redirect } from 'expo-router';
 import { useAuthStore } from '@/src/stores/auth';
+import { toastScreenLayout } from '@/src/components/ToastHost';
 
 export default function AdminLayout() {
   const { user } = useAuthStore();
@@ -12,7 +13,7 @@ export default function AdminLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenLayout={toastScreenLayout} screenOptions={{ headerShown: false }}>
       <Stack.Screen name="tribunal" />
     </Stack>
   );

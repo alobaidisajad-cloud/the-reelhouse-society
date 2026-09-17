@@ -87,7 +87,9 @@ describe('#89 · a screen reader is never told a failure succeeded', () => {
 });
 
 describe('#89 · the toast is the one spoken channel, on BOTH platforms', () => {
-  const toast = stripComments(read('src/components/ToastOverlay.tsx'));
+  // The toast is two files now: toastBus owns the queue, the clock and the
+  // announcement; ToastHost draws it. The promises span both.
+  const toast = stripComments(read('src/utils/toastBus.ts')) + stripComments(read('src/components/ToastHost.tsx'));
 
   it('announces on iOS, where the live region does not fire', () => {
     // accessibilityLiveRegion is declared @platform android by React Native, and
@@ -111,12 +113,13 @@ describe('#89 · the toast is the one spoken channel, on BOTH platforms', () => 
     // seconds to act on a button they were never told about.
     //
     // The MECHANISM changed when the house's refusal doors became the first
-    // real callers: an actionable toast is drawn in a FullWindowOverlay on iOS,
-    // which moves VoiceOver focus onto itself — so a manual announcement as well
-    // would say it twice. The promise this test holds did not change: what is
-    // spoken first names the action. It now lives on the message element, and
-    // the render test (theDoorCanBeReadAndPressed) proves it on a mounted toast.
+    // real callers: on iOS an actionable toast moves VoiceOver focus onto its
+    // message — so a manual announcement as well would say it twice. The
+    // promise this test holds did not change: what is spoken first names the
+    // action. It lives on the message element, and the render test
+    // (theDoorCanBeReadAndPressed) proves it on a mounted toast.
     expect(toast).toMatch(/accessibilityLabel=\{`\$\{toast\.message\}\. \$\{spokenLabel\(action\.label\)\}, available\.`\}/);
+    expect(toast).toMatch(/sendAccessibilityEvent\(messageRef\.current, 'focus'\)/);
     expect(toast).toMatch(/toast\.action \? 5000 : 2500/);
   });
 });

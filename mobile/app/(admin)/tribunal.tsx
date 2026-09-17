@@ -41,6 +41,7 @@ import reelToast from '@/src/utils/reelToast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ToastHost } from '@/src/components/ToastHost';
 
 interface TribunalTarget {
   id: string;
@@ -282,6 +283,7 @@ function ActionModal({
           </PressableScale>
         </View>
       </KeyboardAvoidingView>
+      <ToastHost />
     </Modal>
   );
 }

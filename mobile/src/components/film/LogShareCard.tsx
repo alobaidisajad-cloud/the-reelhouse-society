@@ -26,6 +26,7 @@ import {
   NITRATE_EXPORT_WIDTH,
   NITRATE_EXPORT_HEIGHT,
 } from '@/src/components/film/NitrateFileCard';
+import { ToastHost } from '@/src/components/ToastHost';
 
 export interface ShareCardData {
     filmTitle: string;
@@ -145,6 +146,7 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
                     </PressableScale>
                 </Animated.View>
             </View>
+            <ToastHost />
         </Modal>
     );
 }

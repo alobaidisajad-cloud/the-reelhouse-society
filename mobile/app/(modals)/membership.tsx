@@ -16,7 +16,6 @@ import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
-import { ToastOverlay } from '@/src/components/ToastOverlay';
 import { restorePurchases as restoreIAP, purchaseTier, ReelHouseTier, BillingPeriod } from '@/src/lib/revenueCat';
 import { safeOpenURL } from '@/src/utils/linking';
 import { supabase } from '@/src/lib/supabase';
@@ -376,7 +375,6 @@ export default function MembershipScreen() {
 
   return (
     <View style={st.container}>
-      <ToastOverlay />
       {/* Nav */}
       <View style={[st.navBar, { paddingTop: insets.top + 8 }]}>
         <PressableScale onPress={() => nav.back()} style={st.navBackBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" accessibilityRole="button" accessibilityLabel="Go back">

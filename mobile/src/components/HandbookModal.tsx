@@ -5,6 +5,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { ToastHost } from '@/src/components/ToastHost';
 
 const SECTIONS = [
     { title: 'THE RATING SCALE', body: '1 Reel — Abysmal\n2 Reels — Below Average\n3 Reels — Decent\n4 Reels — Excellent\n5 Reels — Masterpiece' },
@@ -35,6 +36,7 @@ export default function HandbookModal({ visible, onClose }: { visible: boolean; 
                         <View style={s.footerPad} />
                     </ScrollView>
                 </View>
+                <ToastHost />
             </View>
         </Modal>
     );

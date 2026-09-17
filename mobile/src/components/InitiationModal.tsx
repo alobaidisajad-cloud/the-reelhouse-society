@@ -22,6 +22,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useReducedMotion } from '@/src/hooks/useReducedMotion';
+import { ToastHost } from '@/src/components/ToastHost';
 
 const CURVE = Easing.bezier(0.33, 0, 0.15, 1);
 
@@ -185,6 +186,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
 
           <Text style={s.societyTag}>THE REELHOUSE SOCIETY · EST. 1924</Text>
         </Animated.View>
+        <ToastHost />
       </View>
     </Modal>
   );

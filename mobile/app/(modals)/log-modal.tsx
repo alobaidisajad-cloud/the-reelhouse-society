@@ -48,7 +48,7 @@ export default function LogModalScreen() {
     //   R E N D E R
     // ════════════════════════════════════════
     return (
-        <View style={st.root} accessibilityViewIsModal={true}>
+        <View style={st.root}>
             <StatusBar style="light" backgroundColor="transparent" translucent />
             {/* The film, behind the chrome and the document alike. Fixed, so it
                 stays put while the docket scrolls over it — the record's own

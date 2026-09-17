@@ -36,6 +36,11 @@ const mockAccessibilityInfo = {
   addEventListener: jest.fn(() => ({ remove: jest.fn() })),
   isBoldTextEnabled: jest.fn().mockResolvedValue(false),
   isScreenReaderEnabled: jest.fn().mockResolvedValue(false),
+  // A toast that carries an action moves VoiceOver focus onto its message
+  // (ToastHost). React Native's own mock carries these; this hand-list did not,
+  // so the first suite to draw such a toast on iOS threw.
+  sendAccessibilityEvent: jest.fn(),
+  setAccessibilityFocus: jest.fn(),
 };
 jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => ({
   __esModule: true,

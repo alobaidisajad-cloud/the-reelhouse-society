@@ -8,7 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 // View removed — was unused
 import GlobalErrorBoundary from '@/src/components/ErrorBoundary';
 import Preloader from '@/src/components/Preloader';
-import { ToastOverlay } from '@/src/components/ToastOverlay';
+import { ToastHost, toastScreenLayout } from '@/src/components/ToastHost';
 import AppBootstrapper from '@/src/providers/AppBootstrapper';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
@@ -221,7 +221,10 @@ export default function RootLayout() {
           persistOptions={{ persister: mmkvPersister, maxAge: 24 * 60 * 60 * 1000 }}
         >
         <AppBootstrapper>
+          {/* Every route hosts its own toasts — a route presented as a modal
+              draws them above itself on iOS, not behind (ToastHost). */}
           <Stack
+            screenLayout={toastScreenLayout}
             screenOptions={{
               headerShown: false,
               contentStyle: { backgroundColor: colors.ink },
@@ -264,7 +267,7 @@ export default function RootLayout() {
 
       {showPreloader && <Preloader onComplete={() => setShowPreloader(false)} />}
       <PathTracker />
-      <ToastOverlay />
+      <ToastHost layer="root" />
       <OfflineBanner />
         <StatusBar style="light" />
         </GestureHandlerRootView>

@@ -49,7 +49,6 @@ jest.mock('@/src/stores/films', () => {
   return { useListStore };
 });
 jest.mock('@/src/hooks/useBanCheck', () => ({ useBanCheck: () => ({ checkBan: () => false }) }));
-jest.mock('@/src/components/ToastOverlay', () => ({ ToastOverlay: () => null }));
 jest.mock('@/src/utils/reelToast', () => {
   const t = jest.fn() as jest.Mock & { error: jest.Mock };
   t.error = jest.fn();

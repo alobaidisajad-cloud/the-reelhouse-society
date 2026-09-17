@@ -10,54 +10,43 @@
  *   · the button wore an error's bloodReel ink — 1.25–1.49:1, unreadable
  *   · it was a 26pt text span with no button role, read aloud with its ✦
  *   · on iOS it drew BEHIND the modal it was raised on (the writing desk, the
- *     share sheet), because this overlay lives in the root layout
+ *     share sheet), because the overlay lived in the root layout
  *
- * The overlay had no render test at all. This is it.
+ * The last is now structural — a host on every screen and in every sheet, one
+ * drawing at a time (theToastIsDrawnOnTop, theToastHasOneHome). This file holds
+ * what the toast itself must be once drawn.
  */
 import React from 'react';
 import { AccessibilityInfo, Platform, StyleSheet } from 'react-native';
 import { render, act, fireEvent } from '@testing-library/react-native';
 
-let mockOverlayProps: Record<string, unknown> | null = null;
-jest.mock('react-native-screens', () => {
-  const ReactLocal = jest.requireActual('react');
-  const { View } = jest.requireActual('react-native');
-  return {
-    FullWindowOverlay: (props: Record<string, unknown> & { children: React.ReactNode }) => {
-      mockOverlayProps = props;
-      return ReactLocal.createElement(View, { testID: 'full-window-overlay' }, props.children);
-    },
-  };
-});
-jest.mock('react-native-safe-area-context', () => ({
-  useSafeAreaInsets: () => ({ top: 47, bottom: 34, left: 0, right: 0 }),
-}));
-
-// eslint-disable-next-line import/first
-import { ToastOverlay, spokenLabel } from '../ToastOverlay';
-// eslint-disable-next-line import/first
+import { ToastHost, spokenLabel } from '../ToastHost';
 import reelToast from '@/src/utils/reelToast';
-// eslint-disable-next-line import/first
 import { colors } from '@/src/theme/theme';
 
 const SENTENCE = 'The Dispatch is an Auteur feature. Your words are kept.';
 const flat = (s: unknown) => StyleSheet.flatten(s as never) as Record<string, unknown>;
 
 beforeEach(() => {
-  mockOverlayProps = null;
-  jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
+  jest.useFakeTimers();
+  // Both are jest.fn()s from jest.setup — a spy on them IS them, and restoring
+  // it does not forget the calls. Cleared here, or one test hears the last.
+  jest.mocked(AccessibilityInfo.announceForAccessibility).mockClear();
+  jest.mocked(AccessibilityInfo.sendAccessibilityEvent).mockClear();
 });
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => {
+  jest.useRealTimers();
+});
 
 describe('the door can be read and pressed', () => {
   it('the whole sentence is allowed room — four lines, not two', async () => {
-    const r = render(<ToastOverlay />);
+    const r = render(<ToastHost layer="root" />);
     await act(async () => { reelToast.info(SENTENCE, { label: '✦ ASCEND THE RANKS', onPress: jest.fn() }); });
     expect(r.getByText(SENTENCE).props.numberOfLines).toBe(4);
   });
 
   it('the button is on its OWN row, so it can never squeeze the sentence again', async () => {
-    const r = render(<ToastOverlay />);
+    const r = render(<ToastHost layer="root" />);
     await act(async () => { reelToast.info(SENTENCE, { label: '✦ ASCEND THE RANKS', onPress: jest.fn() }); });
     // The pill stacks; the message shares a row only with its glyph. Walked up
     // the ancestors rather than hopped a fixed number of levels: host and
@@ -73,7 +62,7 @@ describe('the door can be read and pressed', () => {
 
   it('is a real button — named without its star — and pressing it works', async () => {
     const onPress = jest.fn();
-    const r = render(<ToastOverlay />);
+    const r = render(<ToastHost layer="root" />);
     await act(async () => { reelToast.info(SENTENCE, { label: '✦ RESUME YOUR STANDING', onPress }); });
     const button = r.getByRole('button', { name: 'Resume your standing' });
     await fireEvent.press(button);
@@ -81,14 +70,14 @@ describe('the door can be read and pressed', () => {
   });
 
   it('reaches 44pt, whatever the chip measures', async () => {
-    const r = render(<ToastOverlay />);
+    const r = render(<ToastHost layer="root" />);
     await act(async () => { reelToast.info(SENTENCE, { label: '✦ ASCEND THE RANKS', onPress: jest.fn() }); });
     const button = r.getByRole('button', { name: 'Ascend the ranks' });
     expect(button.props.hitSlop).toEqual({ top: 10, bottom: 10, left: 10, right: 10 });
   });
 
   it('is written in brass even on an error — never the unreadable bloodReel', async () => {
-    const r = render(<ToastOverlay />);
+    const r = render(<ToastHost layer="root" />);
     await act(async () => { reelToast.error('Something refused', { label: '✦ ASCEND THE RANKS', onPress: jest.fn() }); });
     expect(flat(r.getByText('✦ ASCEND THE RANKS').props.style).color).toBe(colors.champagne);
   });
@@ -113,43 +102,62 @@ describe('the door can be read and pressed', () => {
     beforeAll(() => { Object.defineProperty(Platform, 'OS', { get: () => 'ios', configurable: true }); });
     afterAll(() => { Object.defineProperty(Platform, 'OS', { get: () => original, configurable: true }); });
 
-    it('an actionable toast is drawn above modals — and does NOT capture VoiceOver', async () => {
-      const r = render(<ToastOverlay />);
+    it('an actionable toast takes VoiceOver focus onto its message — the element that names the button', async () => {
+      const r = render(<ToastHost layer="root" />);
       await act(async () => { reelToast.info(SENTENCE, { label: '✦ ASCEND THE RANKS', onPress: jest.fn() }); });
-      expect(r.getByTestId('full-window-overlay')).toBeTruthy();
-      // The native default is MODAL, which would shut VoiceOver inside the
-      // overlay and make the rest of the app unreachable while it is up.
-      expect(mockOverlayProps?.unstable_accessibilityContainerViewIsModal).toBe(false);
+      expect(AccessibilityInfo.sendAccessibilityEvent).not.toHaveBeenCalled();
+      // Once it has faded in far enough to be focusable.
+      await act(async () => { jest.advanceTimersByTime(300); });
+      const message = r.getByLabelText(`${SENTENCE}. Ascend the ranks, available.`);
+      expect(AccessibilityInfo.sendAccessibilityEvent).toHaveBeenCalledTimes(1);
+      const [target, event] = (AccessibilityInfo.sendAccessibilityEvent as jest.Mock).mock.calls[0];
+      expect(event).toBe('focus');
+      // The ref points at the host instance of the very element carrying the label.
+      expect(target).toBeTruthy();
+      expect(message).toBeTruthy();
     });
 
-    it('and is not announced as well — the overlay takes VoiceOver focus, which reads it', async () => {
-      render(<ToastOverlay />);
+    it('and is not announced as well — the focus reads it, once', async () => {
+      render(<ToastHost layer="root" />);
       await act(async () => { reelToast.info(SENTENCE, { label: '✦ ASCEND THE RANKS', onPress: jest.fn() }); });
+      await act(async () => { jest.advanceTimersByTime(1000); });
       expect(AccessibilityInfo.announceForAccessibility).not.toHaveBeenCalled();
     });
 
-    it('what that focus reads first names the button, so nobody has to find it by chance', async () => {
-      // Caught by an older guard when this was first written without it: the
-      // manual announcement used to name the action, and dropping it silently
-      // dropped that too.
-      const r = render(<ToastOverlay />);
-      await act(async () => { reelToast.info(SENTENCE, { label: '✦ ASCEND THE RANKS', onPress: jest.fn() }); });
-      expect(r.getByLabelText(`${SENTENCE}. Ascend the ranks, available.`)).toBeTruthy();
-    });
-
-    it('a PLAIN toast is untouched: no overlay, still announced, still two lines', async () => {
-      const r = render(<ToastOverlay />);
+    it('a PLAIN toast is announced, never focused, two lines, no button', async () => {
+      const r = render(<ToastHost layer="root" />);
       await act(async () => { reelToast.success('Filed'); });
-      expect(r.queryByTestId('full-window-overlay')).toBeNull();
-      expect(mockOverlayProps).toBeNull();
+      await act(async () => { jest.advanceTimersByTime(1000); });
+      expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledTimes(1);
       expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith('Filed');
+      expect(AccessibilityInfo.sendAccessibilityEvent).not.toHaveBeenCalled();
       expect(r.getByText('Filed').props.numberOfLines).toBe(2);
       expect(r.queryByRole('button')).toBeNull();
     });
   });
 
+  describe('on Android', () => {
+    const original = Platform.OS;
+    beforeAll(() => { Object.defineProperty(Platform, 'OS', { get: () => 'android', configurable: true }); });
+    afterAll(() => { Object.defineProperty(Platform, 'OS', { get: () => original, configurable: true }); });
+
+    it('the live region speaks — nothing announces or moves focus as well', async () => {
+      const r = render(<ToastHost layer="root" />);
+      await act(async () => { reelToast.info(SENTENCE, { label: '✦ ASCEND THE RANKS', onPress: jest.fn() }); });
+      await act(async () => { jest.advanceTimersByTime(1000); });
+      expect(AccessibilityInfo.announceForAccessibility).not.toHaveBeenCalled();
+      expect(AccessibilityInfo.sendAccessibilityEvent).not.toHaveBeenCalled();
+      // A View is not an accessible element to getByRole, so walk up to it.
+      let region: string | undefined;
+      for (let n = r.getByText(SENTENCE).parent; n && !region; n = n.parent) {
+        if (n.props?.accessibilityRole === 'alert') region = n.props.accessibilityLiveRegion;
+      }
+      expect(region).toBe('polite');
+    });
+  });
+
   it('the glyph is not read aloud', async () => {
-    const r = render(<ToastOverlay />);
+    const r = render(<ToastHost layer="root" />);
     await act(async () => { reelToast.success('Filed'); });
     const glyph = r.getByText('✦', { includeHiddenElements: true });
     expect(glyph.props.accessibilityElementsHidden).toBe(true);
