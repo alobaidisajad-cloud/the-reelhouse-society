@@ -1,48 +1,14 @@
 /**
  * deepLinks.test.ts — Deep Link Validation Tests
  * ────────────────────────────────────────────────
- * Tests the screen allowlist and URL scheme validation
- * introduced in T1-04 hardening.
+ * Tests the URL scheme validation introduced in T1-04 hardening. (The screen
+ * allowlist is gone — a tapped push opens its notice; see
+ * theTappedNoticeOpensIt.test.ts.)
  */
 
-import { isSafeDeepLinkUrl, isValidDeepLink } from '../deepLinks';
+import { isSafeDeepLinkUrl } from '../deepLinks';
 
 describe('deepLinks', () => {
-  describe('isValidDeepLink', () => {
-    it('accepts all allowed screens', () => {
-      const allowedScreens = [
-        'film', 'user', 'lounge', 'notifications', 'log',
-        'search', 'list-modal', 'membership', 'vault', 'social',
-      ];
-      for (const screen of allowedScreens) {
-        expect(isValidDeepLink(screen)).toBe(true);
-      }
-    });
-
-    it('rejects unknown screen names', () => {
-      expect(isValidDeepLink('admin')).toBe(false);
-      expect(isValidDeepLink('delete-account')).toBe(false);
-      expect(isValidDeepLink('../../../etc/passwd')).toBe(false);
-    });
-
-    it('rejects non-string inputs', () => {
-      expect(isValidDeepLink(null)).toBe(false);
-      expect(isValidDeepLink(undefined)).toBe(false);
-      expect(isValidDeepLink(42)).toBe(false);
-      expect(isValidDeepLink({})).toBe(false);
-      expect(isValidDeepLink([])).toBe(false);
-    });
-
-    it('rejects empty string', () => {
-      expect(isValidDeepLink('')).toBe(false);
-    });
-
-    it('is case-sensitive (rejects uppercase)', () => {
-      expect(isValidDeepLink('Film')).toBe(false);
-      expect(isValidDeepLink('LOUNGE')).toBe(false);
-    });
-  });
-
   describe('isSafeDeepLinkUrl', () => {
     it('allows https URLs', () => {
       expect(isSafeDeepLinkUrl('https://reelhouse.app/film/123')).toBe(true);

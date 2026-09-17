@@ -35,9 +35,11 @@ describe('GATE 1 · one column list, and it carries the new fields', () => {
     expect(inline).toHaveLength(0);
   });
 
-  it('both read paths use it', () => {
+  it('every read path uses it', () => {
     const uses = code(store).match(/\.select\(NOTIFICATION_COLUMNS\)/g) ?? [];
-    expect(uses).toHaveLength(2);   // fetchNotifications + loadMoreNotifications
+    // fetchNotifications + loadMoreNotifications + getNotice (a tapped push,
+    // read by id — it must parse the same row the list does).
+    expect(uses).toHaveLength(3);
   });
 
   it('it asks for group_key and title', () => {

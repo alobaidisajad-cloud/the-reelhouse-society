@@ -1,47 +1,15 @@
 /**
  * deepLinks.ts — Deep Link Validation (T1-04 HARDENING)
  * ─────────────────────────────────────────────────────────
- * Allowlist of valid screen names for push notification deep links.
- * Prevents arbitrary route injection from malicious/malformed payloads.
+ * URL scheme allowlist for anything the app opens from outside itself.
  *
- * When adding a new deep-linkable screen, add it here first.
+ * There used to be a second allowlist here, of screen NAMES a push could open
+ * with `data.screen`. Nothing ever sent one — notify-push sends the notice's id
+ * (see openNoticeFromPush) — and the list could not have worked if something
+ * had: it pushed `/${screen}` with its params beside the path, so `film` went
+ * to `/film` (no such route; the route is `/film/[id]`), and `vault` named a
+ * screen that no longer exists. A tap is now opened by the notice it announces.
  */
-
-const VALID_DEEP_LINK_SCREENS = [
-  'film',
-  'user',
-  'lounge',
-  'notifications',
-  'log',
-  'search',
-  'list-modal',
-  'membership',
-  'vault',
-  'social',
-  // Added missing routable screens to prevent
-  // push notification deep links from being silently rejected.
-  'dispatch',
-  'reels',
-  'darkroom',
-  'dossier',
-  'stacks',
-  'person',
-  'film-reviews',
-  'tribunal',
-  'year-in-cinema',
-  'settings',
-] as const;
-
-export type ValidDeepLinkScreen = typeof VALID_DEEP_LINK_SCREENS[number];
-
-/**
- * Type guard: Returns true only if the screen name is in the allowlist.
- * Use before `nav.push()` on any externally-sourced deep link.
- */
-export function isValidDeepLink(screen: unknown): screen is ValidDeepLinkScreen {
-  return typeof screen === 'string' &&
-    (VALID_DEEP_LINK_SCREENS as readonly string[]).includes(screen);
-}
 
 /**
  * URL scheme allowlist for push notification URLs.

@@ -183,6 +183,8 @@ export interface NotificationState {
     fetchNotifications: () => Promise<void>;
     loadMoreNotifications: () => Promise<void>;
     markRead: (id: string) => Promise<void>;
+    /** One notice by id — from the list if it is loaded, else from the server. */
+    getNotice: (id: string) => Promise<AppNotification | null>;
     markAllRead: () => Promise<void>;
     dismiss: (id: string) => Promise<void>;
     markGroupRead: (ids: string[]) => Promise<void>;
@@ -414,6 +416,34 @@ export const useNotificationStore = create<NotificationState>()(
             // it — restoring would hand the next member the previous one's
             // notifications, and persist them.
             if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousUnread });
+        }
+    },
+
+    /**
+     * A tapped push notification carries only the notice's id. It is usually in
+     * the loaded page already; when the app was closed, or the notice is older
+     * than the page, it is read by id — narrowed to this member, validated by the
+     * same schema as every other row, and never added to the list (the list is
+     * a page in order, and one row out of order would break its cursor).
+     */
+    getNotice: async (id: string) => {
+        const loaded = get().notifications.find(n => n.id === id);
+        if (loaded) return loaded;
+        const user = useAuthStore.getState().user;
+        if (!user) return null;
+        try {
+            const { data, error } = await supabase
+                .from('notifications')
+                .select(NOTIFICATION_COLUMNS)
+                .eq('id', id)
+                .eq('user_id', user.id)
+                .maybeSingle();
+            if (error || !data) return null;
+            const parsed = RealtimeNotifSchema.safeParse(data);
+            return parsed.success ? parsed.data : null;
+        } catch (e) {
+            logger.warn('[notificationStore.getNotice] failed:', e);
+            return null;
         }
     },
 

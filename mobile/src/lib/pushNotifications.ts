@@ -249,8 +249,40 @@ export async function removePushToken(userId: string): Promise<boolean> {
 }
 
 /**
- * Set up notification response handler for deep linking.
- * Call once in _layout.tsx to handle tap-to-open behavior.
+ * A notification response → its data, handed on once per notification request.
+ * Pure, so the "once" can be tested without the native module (which this file
+ * loads with a dynamic import Jest cannot run).
+ */
+export function deliverEachTapOnce(onTap: (data: Record<string, string>) => void) {
+  const delivered = new Set<string>();
+  return (response: any) => {
+    const request = response?.notification?.request;
+    const key: unknown = request?.identifier;
+    if (typeof key === 'string') {
+      if (delivered.has(key)) return;
+      delivered.add(key);
+    }
+    // Guard against malformed push payloads
+    const data = request?.content?.data;
+    if (data) onTap(data);
+  };
+}
+
+/**
+ * Hand every tapped notification to `onNotificationTapped` — exactly once.
+ * Call ONCE for the life of the app (AppBootstrapper), and call what it returns
+ * to stop.
+ *
+ * ── THE TAP THAT OPENED THE APP ─────────────────────────────────────────────
+ * A listener only hears taps made while it exists. This one is attached after
+ * the notifications module loads, which is after launch — so the tap that
+ * LAUNCHED a closed app was never heard, and the one push a member is most
+ * likely to act on did nothing. The launching response is read explicitly,
+ * delivered, and cleared so it is not delivered again on the next setup.
+ *
+ * Both paths can see the same tap (a listener attached early enough is also
+ * told of the launching one), so each notification request is delivered once,
+ * by its identifier.
  */
 export async function setupNotificationResponseHandler(
   onNotificationTapped: (data: Record<string, string>) => void
@@ -258,13 +290,18 @@ export async function setupNotificationResponseHandler(
   const loaded = await loadModules();
   if (!loaded || !Notifications) return null;
 
-  const subscription = Notifications.addNotificationResponseReceivedListener(
-    (response: any) => {
-      // Guard against malformed push payloads
-      const data = response?.notification?.request?.content?.data;
-      if (data) onNotificationTapped(data);
+  const deliver = deliverEachTapOnce(onNotificationTapped);
+  const subscription = Notifications.addNotificationResponseReceivedListener(deliver);
+
+  try {
+    const launching = await Notifications.getLastNotificationResponseAsync();
+    if (launching) {
+      deliver(launching);
+      await Notifications.clearLastNotificationResponseAsync?.();
     }
-  );
+  } catch (e) {
+    logger.warn('[Push] could not read the launching notification:', e);
+  }
 
   return () => subscription.remove();
 }

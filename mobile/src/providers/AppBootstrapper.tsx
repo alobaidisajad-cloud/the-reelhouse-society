@@ -1,6 +1,6 @@
-import { isSafeDeepLinkUrl, isValidDeepLink } from '@/src/constants/deepLinks';
+import { isSafeDeepLinkUrl } from '@/src/constants/deepLinks';
 import { logger } from '@/src/utils/logger';
-import { nav } from '@/src/utils/typedRouter';
+import { noticeIdOf, openNoticeFromPush } from '@/src/utils/openNoticeFromPush';
 import NetInfo from '@react-native-community/netinfo';
 import * as Linking from 'expo-linking';
 import * as Updates from 'expo-updates';
@@ -99,27 +99,10 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         // ── Push Notifications ──
         registerForPushNotifications(currentUser.id);
         addBreadcrumb('Push notifications registered', 'boot');
-        setupNotificationResponseHandler((data) => {
-          if (data.url && isSafeDeepLinkUrl(data.url)) {
-            Linking.openURL(data.url).catch(e => logger.warn('[Bootstrapper] Failed to open URL:', e));
-          } else if (data.url) {
-            logger.warn('[Bootstrapper] Blocked unsafe deep link URL scheme:', data.url);
-          } else if (data.screen && isValidDeepLink(data.screen)) {
-            let params: Record<string, unknown> | undefined;
-            if (data.params) {
-              try {
-                params = typeof data.params === 'string' ? JSON.parse(data.params) : data.params;
-              } catch {
-                logger.warn('[Bootstrapper] Failed to parse notification params:', data.params);
-              }
-            }
-            nav.push(`/${data.screen}`, params as Record<string, string> | undefined);
-          } else if (data.screen) {
-            logger.warn('[Bootstrapper] Blocked invalid deep link screen:', data.screen);
-          }
-        }).catch(e => {
-          logger.warn('[Bootstrapper] Failed to setup notification handler:', e);
-        });
+        // Taps are NOT listened for here. boot() runs again on every sign-in,
+        // and a listener added per boot was never removed — so after signing
+        // out and back in, one tap navigated twice. See "Push notification
+        // taps" below: one listener for the life of the app.
 
         // ── Real-time Notification Service ──
         // Static import guarantees registerStoreReset() in social.ts
@@ -194,6 +177,37 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
       checkHandle(currentUser);
     }
 
+    // ── Push notification taps ──
+    // One listener for the life of the app. A tap carries the id of the notice
+    // it announces, and opens that notice (openNoticeFromPush). A tap that
+    // arrives before the member is known — the tap that LAUNCHED the app, while
+    // the session is still being restored — waits for them; signing out drops it.
+    let pendingNotice: string | null = null;
+    let releaseTaps: (() => void) | null = null;
+    let tapsLive = true;
+    setupNotificationResponseHandler((data) => {
+      if (data.url) {
+        if (isSafeDeepLinkUrl(data.url)) {
+          Linking.openURL(data.url).catch(e => logger.warn('[Bootstrapper] Failed to open URL:', e));
+        } else {
+          logger.warn('[Bootstrapper] Blocked unsafe deep link URL scheme:', data.url);
+        }
+        return;
+      }
+      const id = noticeIdOf(data);
+      if (!id) return;
+      if (useAuthStore.getState().user) {
+        openNoticeFromPush(id).catch(e => logger.warn('[Bootstrapper] Failed to open notice:', e));
+      } else {
+        pendingNotice = id;
+      }
+    }).then((release) => {
+      if (tapsLive) releaseTaps = release;
+      else release?.();
+    }).catch(e => {
+      logger.warn('[Bootstrapper] Failed to setup notification handler:', e);
+    });
+
     // Subscribe to future auth state changes (handles cold start + re-login)
     const unsubscribeAuth = useAuthStore.subscribe(
       (state) => {
@@ -204,6 +218,13 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
           hasBooted.current = false;
         }
         if (state.user) checkHandle(state.user);
+        if (state.user && pendingNotice) {
+          const id = pendingNotice;
+          pendingNotice = null;
+          openNoticeFromPush(id).catch(e => logger.warn('[Bootstrapper] Failed to open notice:', e));
+        } else if (!state.user) {
+          pendingNotice = null;
+        }
       }
     );
 
@@ -336,6 +357,8 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
     });
 
     return () => {
+      tapsLive = false;
+      releaseTaps?.();
       unsubscribeAuth();
       authListener?.subscription.unsubscribe();
       unsubscribeNet();

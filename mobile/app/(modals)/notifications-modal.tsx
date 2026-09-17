@@ -9,6 +9,7 @@ import { useSocialStore } from '@/src/stores/followStore';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { DisplayItem, GroupedDisplayItem, groupNotifications } from '@/src/utils/groupNotifications';
 import { groupRoute, parseGroupKey } from '@/src/utils/endorsementGroupKey';
+import { noticeRoute } from '@/src/utils/noticeRoute';
 import * as Notifications from 'expo-notifications';
 
 import { EmptyState } from '@/src/components/EmptyStates';
@@ -64,30 +65,16 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
       useNotificationStore.getState().markRead(item.id);
     }
     // ── WHAT IT IS ABOUT, THEN WHO DID IT ──────────────────────────────────
-    // This routed on `film_id`, then fell back to the actor's profile. So every
-    // notice about a thing WITHOUT a film — a stack, a dossier, and now every
-    // filing in the Dispatch — took the member to the profile of whoever acted
-    // instead of to the thing they acted on. "Left a critique on your dossier"
-    // opened the critic's room.
-    //
-    // The group key already says what the notice is about; the server declares
-    // it and #73 exists because the client used to infer it. The same key
-    // answers here, so a grouped tap and a single tap land in the same place by
-    // construction rather than by two functions agreeing.
+    // This routed on `film_id`, then fell back to the actor's profile, so a
+    // critique on your essay opened the critic's room. The answer lives in
+    // noticeRoute now — the same one a tapped PUSH notification uses — so the
+    // sheet and the lock screen land in the same room by construction.
     //
     // FIX #6: back() before push, to keep the modal stack from corrupting.
-    const about = groupRoute(parseGroupKey(item.group_key), item.film_id);
-    if (about) {
+    const route = noticeRoute(item);
+    if (route) {
       nav.back();
-      InteractionManager.runAfterInteractions(() => nav.push(about as never));
-    } else if (item.film_id) {
-      nav.back();
-      InteractionManager.runAfterInteractions(() => nav.push(`/film/${item.film_id}`));
-    } else if (item.from_username) {
-      // A follow has no object but a person, so this is the right destination
-      // for it — it is the FALLBACK that was wrong, not the route.
-      nav.back();
-      InteractionManager.runAfterInteractions(() => nav.push(`/user/${item.from_username}`));
+      InteractionManager.runAfterInteractions(() => nav.push(route as never));
     }
   };
 
