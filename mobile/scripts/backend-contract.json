@@ -262,8 +262,45 @@
         "table": "profiles",
         "trigger": "trg_sync_denormalized_username",
         "why": "keeps the copied handles honest — the impersonation fix"
+      },
+      {
+        "table": "logs",
+        "trigger": "a_keep_viewings",
+        "why": "every history stays a proper list of viewings, each with an identity and no note in it, and a log may only move to another viewing by adding or removing one"
+      },
+      {
+        "table": "logs",
+        "trigger": "logs_forget_removed_viewing_notes",
+        "why": "a removed viewing takes its private note with it; disabled, a note outlives the viewing it was written about"
+      },
+      {
+        "table": "log_private_notes",
+        "trigger": "a_lpn_belongs_to_its_viewing",
+        "why": "a note belongs to a viewing of its writer's own log, and can never be moved to another"
+      },
+      {
+        "table": "log_private_notes",
+        "trigger": "tr_tier_gate_private_notes",
+        "why": "writing a note needs the Archivist rank — reading and withdrawing never do"
+      },
+      {
+        "table": "log_private_notes",
+        "trigger": "tr_tier_gate_private_notes_update",
+        "why": "changing a note needs the Archivist rank"
       }
     ],
+    "theVault": {
+      "why": "A private note belongs to one VIEWING and only its writer may ever read it. Every rule here was broken at some point and each break was invisible from the repo.",
+      "everyLogColumnIsDecided": true,
+      "noNoteTravelsInAHistory": true,
+      "noteActions": [
+        "log_viewing_add",
+        "log_viewing_remove",
+        "viewing_note_set",
+        "viewing_note_remove"
+      ],
+      "pgInputIsValidTypesAreWrittenOut": true
+    },
     "rlsRequiredOnEveryPublicTable": true,
     "minLengthCeilings": 98,
     "everyFunctionDemotesPgTemp": true,

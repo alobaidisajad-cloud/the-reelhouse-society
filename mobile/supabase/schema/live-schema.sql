@@ -856,18 +856,13 @@ CREATE FUNCTION public.divert_private_notes() RETURNS trigger
     AS $$
 DECLARE v text := NULLIF(btrim(NEW.private_notes), '');
 BEGIN
-  IF NOT public.has_tier_at_least(1) THEN
-    UPDATE public.logs SET private_notes = NULL WHERE id = NEW.id;
-    RETURN NULL;
+  IF v IS NOT NULL AND public.has_tier_at_least(1) THEN
+    INSERT INTO public.log_private_notes (log_id, viewing_id, user_id, notes, updated_at)
+    VALUES (NEW.id, NEW.viewing_id, NEW.user_id, left(v, 1000), now())
+    ON CONFLICT (viewing_id) DO UPDATE SET notes = EXCLUDED.notes, updated_at = now();
   END IF;
-
-  IF v IS NULL THEN
-    DELETE FROM public.log_private_notes WHERE log_id = NEW.id;
-  ELSE
-    INSERT INTO public.log_private_notes (log_id, user_id, notes, updated_at)
-    VALUES (NEW.id, NEW.user_id, left(v, 1000), now())
-    ON CONFLICT (log_id) DO UPDATE SET notes = EXCLUDED.notes, updated_at = now();
-  END IF;
+  -- Below the rank a note is discarded, not refused: refusing would fail the
+  -- whole log write and wedge an offline queue that cannot re-gate it.
   UPDATE public.logs SET private_notes = NULL WHERE id = NEW.id;
   RETURN NULL;
 END $$;
@@ -1511,6 +1506,7 @@ CREATE TABLE public.logs (
     video_url text,
     viewing_history jsonb DEFAULT '[]'::jsonb,
     view_count integer DEFAULT 1,
+    viewing_id uuid DEFAULT gen_random_uuid() NOT NULL,
     CONSTRAINT check_rating_range CHECK (((rating >= (0)::numeric) AND (rating <= (5)::numeric))),
     CONSTRAINT check_title_not_empty CHECK (((film_title IS NOT NULL) AND (film_title <> ''::text))),
     CONSTRAINT logs_abandoned_reason_len CHECK ((char_length(abandoned_reason) <= 500)),
@@ -1570,7 +1566,8 @@ BEGIN
     NULL::timestamptz,                 -- 24 updated_at
     NULL::text,                        -- 25 video_url
     NULL::jsonb,                       -- 26 viewing_history <-- also closed
-    NULL::integer                      -- 27 view_count
+    NULL::integer,                     -- 27 view_count
+    NULL::uuid                         -- 28 viewing_id      <-- 2026-09-17
   FROM public.logs l
   JOIN public.profiles p ON p.id = l.user_id
   WHERE l.review IS NOT NULL
@@ -2726,6 +2723,250 @@ COMMENT ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) IS 'Batch form
 
 
 --
+-- Name: log_viewing_add(uuid, uuid, jsonb); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.log_viewing_add(p_log_id uuid, p_viewing_id uuid, p_fields jsonb DEFAULT '{}'::jsonb) RETURNS uuid
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+DECLARE
+  l public.logs%ROWTYPE;
+  r public.logs%ROWTYPE;
+  f jsonb := COALESCE(p_fields, '{}'::jsonb);
+  a jsonb := public.viewing_fields()->'archived';
+  v_entry   jsonb;
+  v_payload jsonb;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+  IF p_viewing_id IS NULL THEN
+    RAISE EXCEPTION 'A viewing needs an identity.' USING ERRCODE = '22004';
+  END IF;
+
+  SELECT * INTO l FROM public.logs WHERE id = p_log_id AND user_id = auth.uid() FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Log not found' USING ERRCODE = 'P0002';
+  END IF;
+
+  IF l.viewing_id = p_viewing_id
+     OR EXISTS (SELECT 1 FROM jsonb_array_elements(l.viewing_history) x WHERE x->>'viewingId' = p_viewing_id::text) THEN
+    RETURN p_viewing_id;
+  END IF;
+
+  -- The viewing being left, written out in full — every field a viewing is
+  -- made of, and its identity. Never the note.
+  SELECT jsonb_object_agg(m->>'key', to_jsonb(l)->col) INTO v_entry
+    FROM jsonb_each(a) AS x(col, m);
+  v_entry := v_entry || jsonb_build_object('viewingId', l.viewing_id);
+
+  -- The new viewing: what the app sent, over what the log already held.
+  SELECT COALESCE(jsonb_object_agg(col, f->col), '{}'::jsonb) INTO v_payload
+    FROM jsonb_each(a) AS x(col, m) WHERE f ? col;
+  BEGIN
+    r := jsonb_populate_record(l, v_payload);
+  EXCEPTION WHEN others THEN
+    RAISE EXCEPTION 'A viewing was given a value of the wrong kind.' USING ERRCODE = '22023';
+  END;
+  -- A rewatch is today's, and it is a rewatch, unless the app says otherwise.
+  IF NOT (f ? 'watched_date') THEN r.watched_date := current_date; END IF;
+  IF NOT (f ? 'status')       THEN r.status       := 'rewatched';  END IF;
+
+  EXECUTE format('UPDATE public.logs SET viewing_id = $1, viewing_history = $2, %s WHERE id = $3',
+                 public.viewing_set_list())
+    USING p_viewing_id,
+          jsonb_build_array(v_entry) || COALESCE(l.viewing_history, '[]'::jsonb),
+          p_log_id,
+          r;
+
+  RETURN p_viewing_id;
+END $_$;
+
+
+--
+-- Name: log_viewing_remove(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.log_viewing_remove(p_log_id uuid, p_viewing_id uuid) RETURNS uuid
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+DECLARE
+  l public.logs%ROWTYPE;
+  r public.logs%ROWTYPE;
+  a jsonb := public.viewing_fields()->'archived';
+  e jsonb;
+  v_payload jsonb := '{}'::jsonb;
+  v_col  text;
+  v_map  jsonb;
+  v_val  jsonb;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT * INTO l FROM public.logs WHERE id = p_log_id AND user_id = auth.uid() FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+  IF l.viewing_id <> p_viewing_id THEN
+    RETURN l.viewing_id;
+  END IF;
+  IF jsonb_array_length(l.viewing_history) = 0 THEN
+    RAISE EXCEPTION 'The only viewing of a log is removed by deleting the log.'
+      USING ERRCODE = 'P0001', HINT = 'Delete the log instead.';
+  END IF;
+
+  e := l.viewing_history->0;
+
+  -- Read the viewing back field by field. Histories written by older builds
+  -- hold whatever those builds wrote, so a value that is not the kind its
+  -- column takes is replaced by the declared fallback rather than failing a
+  -- member's removal.
+  FOR v_col, v_map IN SELECT key, value FROM jsonb_each(a) LOOP
+    v_val := COALESCE(e->(v_map->>'key'), v_map->'fallback');
+    -- Ask the COLUMN itself whether it can take this value, by trying it.
+    -- Asking by type NAME cannot be done here: pg_input_is_valid keeps the type
+    -- of its first call at a given place in the code and answers about THAT
+    -- type ever after — so a loop over columns of different types gets nonsense.
+    BEGIN
+      PERFORM jsonb_populate_record(NULL::public.logs, jsonb_build_object(v_col, v_val));
+    EXCEPTION WHEN others THEN
+      v_val := v_map->'fallback';
+    END;
+    v_payload := v_payload || jsonb_build_object(v_col, v_val);
+  END LOOP;
+
+  -- Every viewing has a date. One that never recorded its own keeps the log's.
+  IF v_payload->'watched_date' IS NULL OR jsonb_typeof(v_payload->'watched_date') = 'null' THEN
+    v_payload := v_payload || jsonb_build_object('watched_date', to_jsonb(l.watched_date));
+  END IF;
+
+  r := jsonb_populate_record(NULL::public.logs, v_payload);
+  -- Older builds wrote "None" for no disc and "" for nobody; both mean nothing.
+  IF r.physical_media IN ('None', '') THEN r.physical_media := NULL; END IF;
+  IF r.watched_with = ''              THEN r.watched_with   := NULL; END IF;
+
+  EXECUTE format('UPDATE public.logs SET viewing_id = $1, viewing_history = $2, %s WHERE id = $3',
+                 public.viewing_set_list())
+    USING (e->>'viewingId')::uuid, l.viewing_history - 0, p_log_id, r;
+
+  RETURN (e->>'viewingId')::uuid;
+END $_$;
+
+
+--
+-- Name: logs_forget_removed_viewing_notes(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.logs_forget_removed_viewing_notes() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  DELETE FROM public.log_private_notes n
+   WHERE n.log_id = NEW.id
+     AND n.viewing_id <> NEW.viewing_id
+     AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(NEW.viewing_history) x
+                      WHERE x->>'viewingId' = n.viewing_id::text);
+  RETURN NULL;
+END $$;
+
+
+--
+-- Name: logs_keep_viewings(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.logs_keep_viewings() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_old       jsonb;
+  v_old_ids   text[];
+  v_new_ids   text[];
+  v_moved     boolean;
+  v_is_add    boolean := false;
+  v_is_remove boolean := false;
+BEGIN
+  NEW.viewing_history := public.normalize_viewing_history(NEW.viewing_history);
+
+  IF TG_OP = 'UPDATE' THEN
+    -- The stored history as it really is. A row from before the repair carries
+    -- no identities, so nothing about it can be read as a loss.
+    v_old := CASE WHEN jsonb_typeof(OLD.viewing_history) = 'array' THEN OLD.viewing_history ELSE '[]'::jsonb END;
+    SELECT array_agg(x->>'viewingId') INTO v_old_ids
+      FROM jsonb_array_elements(v_old) x
+     WHERE jsonb_typeof(x) = 'object' AND x ? 'viewingId';
+
+    v_moved := NEW.viewing_id <> OLD.viewing_id;
+
+    IF v_moved THEN
+      v_is_add := jsonb_array_length(NEW.viewing_history) = jsonb_array_length(v_old) + 1
+              AND NEW.viewing_history->0->>'viewingId' = OLD.viewing_id::text
+              AND (NEW.viewing_history - 0) = v_old;
+
+      v_is_remove := jsonb_array_length(v_old) > 0
+              AND NEW.viewing_id::text = v_old->0->>'viewingId'
+              AND NEW.viewing_history = (v_old - 0);
+
+      IF NOT (v_is_add OR v_is_remove) THEN
+        RAISE EXCEPTION 'A log moves to another viewing by adding one or removing one.'
+          USING ERRCODE = 'P0001', HINT = 'Use log_viewing_add or log_viewing_remove.';
+      END IF;
+    END IF;
+
+    -- Outside a removal, no past viewing may be lost.
+    IF NOT v_is_remove AND v_old_ids IS NOT NULL THEN
+      SELECT array_agg(x->>'viewingId') INTO v_new_ids FROM jsonb_array_elements(NEW.viewing_history) x;
+      IF NOT (v_old_ids <@ COALESCE(v_new_ids, '{}'::text[])) THEN
+        RAISE EXCEPTION 'A past viewing can only be removed by removing it.'
+          USING ERRCODE = 'P0001', HINT = 'Use log_viewing_remove.';
+      END IF;
+    END IF;
+  END IF;
+
+  -- The count is the history's, never a client's arithmetic.
+  NEW.view_count := jsonb_array_length(NEW.viewing_history) + 1;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: lpn_belongs_to_its_viewing(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.lpn_belongs_to_its_viewing() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_owner   uuid;
+  v_current uuid;
+  v_history jsonb;
+BEGIN
+  IF TG_OP = 'UPDATE' AND (NEW.viewing_id <> OLD.viewing_id OR NEW.log_id <> OLD.log_id OR NEW.user_id <> OLD.user_id) THEN
+    RAISE EXCEPTION 'A note stays with the viewing it was written about.' USING ERRCODE = '23514';
+  END IF;
+
+  SELECT user_id, viewing_id, viewing_history INTO v_owner, v_current, v_history
+    FROM public.logs WHERE id = NEW.log_id;
+
+  IF v_owner IS NULL OR v_owner <> NEW.user_id THEN
+    RAISE EXCEPTION 'That note has no log of its writer to belong to.' USING ERRCODE = '23503';
+  END IF;
+  IF NEW.viewing_id <> v_current
+     AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(v_history) x WHERE x->>'viewingId' = NEW.viewing_id::text) THEN
+    RAISE EXCEPTION 'That note has no viewing to belong to.' USING ERRCODE = '23503';
+  END IF;
+
+  NEW.notes := btrim(NEW.notes);
+  RETURN NEW;
+END $$;
+
+
+--
 -- Name: mark_film_sync_failed(integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2754,6 +2995,95 @@ CREATE FUNCTION public.may_file() RETURNS boolean
        AND now() >= p.created_at + interval '2 days'
        AND (SELECT count(DISTINCT film_id) FROM public.logs WHERE user_id = p.id) >= 5);
 $$;
+
+
+--
+-- Name: normalize_viewing_history(jsonb, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.normalize_viewing_history(p_history jsonb, p_depth integer DEFAULT 0) RETURNS jsonb
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_out   jsonb := '[]'::jsonb;
+  v_run   text  := '';
+  v_seen  text[] := '{}';
+  v_e     jsonb;
+  v_entry jsonb;
+  v_part  jsonb;
+  v_id    text;
+BEGIN
+  -- A string of a string of a string is still recoverable; beyond this it is noise.
+  IF p_depth > 6 OR p_history IS NULL OR jsonb_typeof(p_history) = 'null' THEN
+    RETURN '[]'::jsonb;
+  END IF;
+
+  -- Stored as a JSON string (the web's JSON.stringify): decode it.
+  IF jsonb_typeof(p_history) = 'string' THEN
+    IF pg_input_is_valid(p_history #>> '{}', 'jsonb') THEN
+      RETURN public.normalize_viewing_history((p_history #>> '{}')::jsonb, p_depth + 1);
+    END IF;
+    RETURN '[]'::jsonb;
+  END IF;
+
+  IF jsonb_typeof(p_history) = 'object' THEN
+    p_history := jsonb_build_array(p_history);
+  ELSIF jsonb_typeof(p_history) <> 'array' THEN
+    RETURN '[]'::jsonb;
+  END IF;
+
+  FOR v_e IN SELECT x.value FROM jsonb_array_elements(p_history) WITH ORDINALITY AS x(value, ord) ORDER BY x.ord
+  LOOP
+    -- The web's rewatch spread a string into single characters. Consecutive
+    -- string elements are joined back together and decoded in place.
+    IF jsonb_typeof(v_e) = 'string' THEN
+      v_run := v_run || (v_e #>> '{}');
+      CONTINUE;
+    END IF;
+    IF v_run <> '' THEN
+      v_part := public.normalize_viewing_history(to_jsonb(v_run), p_depth + 1);
+      v_run := '';
+      FOR v_entry IN SELECT y.value FROM jsonb_array_elements(v_part) WITH ORDINALITY AS y(value, ord) ORDER BY y.ord LOOP
+        v_id := v_entry->>'viewingId';
+        IF v_id = ANY (v_seen) THEN
+          v_entry := v_entry || jsonb_build_object('viewingId', gen_random_uuid());
+          v_id := v_entry->>'viewingId';
+        END IF;
+        v_seen := v_seen || v_id;
+        v_out := v_out || jsonb_build_array(v_entry);
+      END LOOP;
+    END IF;
+
+    IF jsonb_typeof(v_e) = 'object' THEN
+      -- A note never lives in a history anybody else can read.
+      v_entry := v_e - 'privateNotes' - 'private_notes';
+      v_id := v_entry->>'viewingId';
+      IF v_id IS NULL OR NOT pg_input_is_valid(v_id, 'uuid') OR v_id = ANY (v_seen) THEN
+        v_entry := v_entry || jsonb_build_object('viewingId', gen_random_uuid());
+        v_id := v_entry->>'viewingId';
+      END IF;
+      v_seen := v_seen || v_id;
+      v_out := v_out || jsonb_build_array(v_entry);
+    END IF;
+    -- Numbers, booleans and nulls are not viewings: dropped.
+  END LOOP;
+
+  IF v_run <> '' THEN
+    v_part := public.normalize_viewing_history(to_jsonb(v_run), p_depth + 1);
+    FOR v_entry IN SELECT y.value FROM jsonb_array_elements(v_part) WITH ORDINALITY AS y(value, ord) ORDER BY y.ord LOOP
+      v_id := v_entry->>'viewingId';
+      IF v_id = ANY (v_seen) THEN
+        v_entry := v_entry || jsonb_build_object('viewingId', gen_random_uuid());
+        v_id := v_entry->>'viewingId';
+      END IF;
+      v_seen := v_seen || v_id;
+      v_out := v_out || jsonb_build_array(v_entry);
+    END LOOP;
+  END IF;
+
+  RETURN v_out;
+END $$;
 
 
 --
@@ -3863,6 +4193,116 @@ $$;
 
 
 --
+-- Name: viewing_fields(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.viewing_fields() RETURNS jsonb
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT '{
+    "archived": {
+      "watched_date":     {"key": "date",            "fallback": null},
+      "rating":           {"key": "rating",          "fallback": 0},
+      "review":           {"key": "review",          "fallback": ""},
+      "format":           {"key": "format",          "fallback": "digital"},
+      "status":           {"key": "status",          "fallback": "watched"},
+      "is_spoiler":       {"key": "isSpoiler",       "fallback": false},
+      "watched_with":     {"key": "watchedWith",     "fallback": null},
+      "abandoned_reason": {"key": "abandonedReason", "fallback": null},
+      "physical_media":   {"key": "physicalMedia",   "fallback": null},
+      "is_autopsied":     {"key": "isAutopsied",     "fallback": false},
+      "autopsy":          {"key": "autopsy",         "fallback": null},
+      "alt_poster":       {"key": "altPoster",       "fallback": null},
+      "editorial_header": {"key": "editorialHeader", "fallback": null},
+      "drop_cap":         {"key": "dropCap",         "fallback": false},
+      "pull_quote":       {"key": "pullQuote",       "fallback": ""},
+      "video_url":        {"key": "videoUrl",        "fallback": null}
+    },
+    "not_a_viewing": ["id", "user_id", "film_id", "film_title", "poster_path",
+                      "year", "created_at", "updated_at", "private_notes",
+                      "viewing_history", "view_count", "viewing_id"]
+  }'::jsonb;
+$$;
+
+
+--
+-- Name: viewing_fields_uncovered(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.viewing_fields_uncovered() RETURNS text[]
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT COALESCE(array_agg(a.attname ORDER BY a.attnum), '{}'::text[])
+    FROM pg_attribute a
+   WHERE a.attrelid = 'public.logs'::regclass
+     AND a.attnum > 0 AND NOT a.attisdropped
+     AND NOT (public.viewing_fields()->'archived' ? a.attname)
+     AND NOT (public.viewing_fields()->'not_a_viewing' @> to_jsonb(a.attname));
+$$;
+
+
+--
+-- Name: viewing_note_remove(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.viewing_note_remove(p_viewing_id uuid) RETURNS void
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+  DELETE FROM public.log_private_notes WHERE viewing_id = p_viewing_id AND user_id = auth.uid();
+END $$;
+
+
+--
+-- Name: viewing_note_set(uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.viewing_note_set(p_log_id uuid, p_viewing_id uuid, p_notes text) RETURNS void
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE v text := NULLIF(btrim(COALESCE(p_notes, '')), '');
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  IF v IS NULL THEN
+    DELETE FROM public.log_private_notes WHERE viewing_id = p_viewing_id AND user_id = auth.uid();
+    RETURN;
+  END IF;
+  IF char_length(v) > 1000 THEN
+    RAISE EXCEPTION 'A note holds 1,000 characters at most.' USING ERRCODE = '22001';
+  END IF;
+
+  INSERT INTO public.log_private_notes (log_id, viewing_id, user_id, notes, updated_at)
+  VALUES (p_log_id, p_viewing_id, auth.uid(), v, now())
+  ON CONFLICT (viewing_id) DO UPDATE
+    SET notes = EXCLUDED.notes, updated_at = now()
+    WHERE public.log_private_notes.user_id = auth.uid();
+END $$;
+
+
+--
+-- Name: viewing_set_list(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.viewing_set_list() RETURNS text
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+  SELECT string_agg(format('%I = ($4::public.logs).%I', col, col), ', ' ORDER BY col)
+    FROM jsonb_object_keys(public.viewing_fields()->'archived') AS col;
+$_$;
+
+
+--
 -- Name: withdraw_lounge_message(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -4328,6 +4768,7 @@ CREATE TABLE public.log_private_notes (
     user_id uuid NOT NULL,
     notes text NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    viewing_id uuid NOT NULL,
     CONSTRAINT log_private_notes_notes_check CHECK (((length(notes) >= 1) AND (length(notes) <= 1000)))
 );
 
@@ -4911,7 +5352,7 @@ ALTER TABLE ONLY public.log_comments
 --
 
 ALTER TABLE ONLY public.log_private_notes
-    ADD CONSTRAINT log_private_notes_pkey PRIMARY KEY (log_id);
+    ADD CONSTRAINT log_private_notes_pkey PRIMARY KEY (viewing_id);
 
 
 --
@@ -5662,6 +6103,13 @@ CREATE INDEX log_comments_user_id_idx ON public.log_comments USING btree (user_i
 
 
 --
+-- Name: log_private_notes_log_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX log_private_notes_log_idx ON public.log_private_notes USING btree (log_id);
+
+
+--
 -- Name: log_private_notes_user_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5687,6 +6135,13 @@ CREATE INDEX logs_pulse_idx ON public.logs USING btree (created_at DESC) WHERE (
 --
 
 CREATE INDEX logs_user_film_idx ON public.logs USING btree (user_id, film_id, created_at DESC);
+
+
+--
+-- Name: logs_viewing_id_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX logs_viewing_id_key ON public.logs USING btree (viewing_id);
 
 
 --
@@ -5739,6 +6194,20 @@ CREATE TRIGGER a_enforce_log_tier_fields BEFORE INSERT OR UPDATE ON public.logs 
 
 
 --
+-- Name: logs a_keep_viewings; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keep_viewings BEFORE INSERT OR UPDATE ON public.logs FOR EACH ROW EXECUTE FUNCTION public.logs_keep_viewings();
+
+
+--
+-- Name: log_private_notes a_lpn_belongs_to_its_viewing; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_lpn_belongs_to_its_viewing BEFORE INSERT OR UPDATE ON public.log_private_notes FOR EACH ROW EXECUTE FUNCTION public.lpn_belongs_to_its_viewing();
+
+
+--
 -- Name: dispatch_certifications count_cert; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -5778,6 +6247,13 @@ CREATE TRIGGER dossiers_write INSTEAD OF INSERT OR DELETE OR UPDATE ON public.di
 --
 
 CREATE TRIGGER enforce_interaction_rate_limit BEFORE INSERT ON public.interactions FOR EACH ROW EXECUTE FUNCTION public.check_interaction_rate_limit();
+
+
+--
+-- Name: logs logs_forget_removed_viewing_notes; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER logs_forget_removed_viewing_notes AFTER UPDATE OF viewing_id, viewing_history ON public.logs FOR EACH ROW EXECUTE FUNCTION public.logs_forget_removed_viewing_notes();
 
 
 --
@@ -7714,28 +8190,28 @@ ALTER TABLE public.lounges ENABLE ROW LEVEL SECURITY;
 -- Name: log_private_notes lpn_delete; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY lpn_delete ON public.log_private_notes FOR DELETE USING ((user_id = auth.uid()));
+CREATE POLICY lpn_delete ON public.log_private_notes FOR DELETE TO authenticated USING ((user_id = auth.uid()));
 
 
 --
 -- Name: log_private_notes lpn_insert; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY lpn_insert ON public.log_private_notes FOR INSERT WITH CHECK ((user_id = auth.uid()));
+CREATE POLICY lpn_insert ON public.log_private_notes FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
 
 
 --
 -- Name: log_private_notes lpn_select; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY lpn_select ON public.log_private_notes FOR SELECT USING ((user_id = auth.uid()));
+CREATE POLICY lpn_select ON public.log_private_notes FOR SELECT TO authenticated USING ((user_id = auth.uid()));
 
 
 --
 -- Name: log_private_notes lpn_update; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY lpn_update ON public.log_private_notes FOR UPDATE USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
+CREATE POLICY lpn_update ON public.log_private_notes FOR UPDATE TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
 
 
 --
@@ -9028,6 +9504,51 @@ GRANT ALL ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) TO service_r
 
 
 --
+-- Name: FUNCTION log_viewing_add(p_log_id uuid, p_viewing_id uuid, p_fields jsonb); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.log_viewing_add(p_log_id uuid, p_viewing_id uuid, p_fields jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.log_viewing_add(p_log_id uuid, p_viewing_id uuid, p_fields jsonb) TO authenticated;
+GRANT ALL ON FUNCTION public.log_viewing_add(p_log_id uuid, p_viewing_id uuid, p_fields jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION log_viewing_remove(p_log_id uuid, p_viewing_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.log_viewing_remove(p_log_id uuid, p_viewing_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.log_viewing_remove(p_log_id uuid, p_viewing_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.log_viewing_remove(p_log_id uuid, p_viewing_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION logs_forget_removed_viewing_notes(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.logs_forget_removed_viewing_notes() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.logs_forget_removed_viewing_notes() TO authenticated;
+GRANT ALL ON FUNCTION public.logs_forget_removed_viewing_notes() TO service_role;
+
+
+--
+-- Name: FUNCTION logs_keep_viewings(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.logs_keep_viewings() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.logs_keep_viewings() TO authenticated;
+GRANT ALL ON FUNCTION public.logs_keep_viewings() TO service_role;
+
+
+--
+-- Name: FUNCTION lpn_belongs_to_its_viewing(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.lpn_belongs_to_its_viewing() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.lpn_belongs_to_its_viewing() TO authenticated;
+GRANT ALL ON FUNCTION public.lpn_belongs_to_its_viewing() TO service_role;
+
+
+--
 -- Name: FUNCTION mark_film_sync_failed(p_film_id integer); Type: ACL; Schema: public; Owner: -
 --
 
@@ -9042,6 +9563,15 @@ GRANT ALL ON FUNCTION public.mark_film_sync_failed(p_film_id integer) TO service
 GRANT ALL ON FUNCTION public.may_file() TO anon;
 GRANT ALL ON FUNCTION public.may_file() TO authenticated;
 GRANT ALL ON FUNCTION public.may_file() TO service_role;
+
+
+--
+-- Name: FUNCTION normalize_viewing_history(p_history jsonb, p_depth integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.normalize_viewing_history(p_history jsonb, p_depth integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.normalize_viewing_history(p_history jsonb, p_depth integer) TO authenticated;
+GRANT ALL ON FUNCTION public.normalize_viewing_history(p_history jsonb, p_depth integer) TO service_role;
 
 
 --
@@ -9347,6 +9877,51 @@ GRANT ALL ON FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) TO servic
 GRANT ALL ON FUNCTION public.update_my_preferences(p_preferences jsonb) TO anon;
 GRANT ALL ON FUNCTION public.update_my_preferences(p_preferences jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.update_my_preferences(p_preferences jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION viewing_fields(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.viewing_fields() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.viewing_fields() TO authenticated;
+GRANT ALL ON FUNCTION public.viewing_fields() TO service_role;
+
+
+--
+-- Name: FUNCTION viewing_fields_uncovered(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.viewing_fields_uncovered() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.viewing_fields_uncovered() TO authenticated;
+GRANT ALL ON FUNCTION public.viewing_fields_uncovered() TO service_role;
+
+
+--
+-- Name: FUNCTION viewing_note_remove(p_viewing_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.viewing_note_remove(p_viewing_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.viewing_note_remove(p_viewing_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.viewing_note_remove(p_viewing_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION viewing_note_set(p_log_id uuid, p_viewing_id uuid, p_notes text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.viewing_note_set(p_log_id uuid, p_viewing_id uuid, p_notes text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.viewing_note_set(p_log_id uuid, p_viewing_id uuid, p_notes text) TO authenticated;
+GRANT ALL ON FUNCTION public.viewing_note_set(p_log_id uuid, p_viewing_id uuid, p_notes text) TO service_role;
+
+
+--
+-- Name: FUNCTION viewing_set_list(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.viewing_set_list() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.viewing_set_list() TO authenticated;
+GRANT ALL ON FUNCTION public.viewing_set_list() TO service_role;
 
 
 --

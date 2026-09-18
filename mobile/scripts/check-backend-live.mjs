@@ -475,6 +475,8 @@ let checkedGrants = false;
 // How many violations each half found — a section that RAN is not a section that PASSED.
 let anonViolations = 0;
 let grantViolations = 0;
+let checkedVault = false;
+let vaultViolations = 0;
 
 // Tier A — anon probes. No secrets: the anon key is public by design and lives
 // in .env, so this half runs anywhere, including a laptop with no DB access.
@@ -768,6 +770,112 @@ if (DB_URL) {
       }
     }
 
+    // 10. THE VAULT — a note belongs to one viewing, and only its writer reads it.
+    //    Each rule below was broken at some point, and none of the breaks were
+    //    visible from the repo:
+    //      · notes read back empty in both apps, because the column they read is
+    //        kept blank on purpose;
+    //      · a rewatch copied the note into viewing_history, which anon reads;
+    //      · 16 histories were shredded into single characters by the web;
+    //      · the note policies were {public}, which includes anon, and were safe
+    //        only because auth.uid() happens to be null for a visitor.
+    if (sec.theVault) {
+      const v = sec.theVault;
+      const postureBeforeVault = posture.length;
+
+      // A column added to logs later must be declared part of a viewing or not.
+      // Otherwise a rewatch silently drops it from the archived viewing, and the
+      // member's own writing comes back missing a field.
+      if (v.everyLogColumnIsDecided) {
+        const undecided = q(
+          `SELECT COALESCE(array_to_string(public.viewing_fields_uncovered(), ', '), '')`,
+        );
+        if (undecided) {
+          posture.push(
+            `logs holds column(s) nobody decided about: ${undecided}\n` +
+              `    Say in viewing_fields() whether each is part of a viewing or not,\n` +
+              `    or a rewatch will quietly stop carrying it.`,
+          );
+        }
+      }
+
+      // A history is read by every member and by anon. Nothing private lives in
+      // it, every viewing carries an identity, and the count is the history's.
+      if (v.noNoteTravelsInAHistory) {
+        const leaks = q(
+          `SELECT count(*) FROM public.logs l, jsonb_array_elements(l.viewing_history) e ` +
+            `WHERE jsonb_typeof(e) <> 'object' OR NOT e ? 'viewingId' ` +
+            `OR e ? 'privateNotes' OR e ? 'private_notes'`,
+        );
+        if (leaks !== '0') {
+          posture.push(`${leaks} viewing(s) in a history are malformed or carry a private note — histories are world-readable`);
+        }
+        const notLists = q(
+          `SELECT count(*) FROM public.logs WHERE jsonb_typeof(viewing_history) <> 'array'`,
+        );
+        if (notLists !== '0') posture.push(`${notLists} viewing_history value(s) are not a list — a client wrote a JSON string`);
+
+        const miscounted = q(
+          `SELECT count(*) FROM public.logs WHERE view_count <> jsonb_array_length(viewing_history) + 1`,
+        );
+        if (miscounted !== '0') posture.push(`${miscounted} log(s) disagree with their own viewing count`);
+
+        const onColumn = q(`SELECT count(*) FROM public.logs WHERE private_notes IS NOT NULL`);
+        if (onColumn !== '0') posture.push(`${onColumn} note(s) are sitting on logs.private_notes instead of the Vault`);
+
+        const orphans = q(
+          `SELECT count(*) FROM public.log_private_notes n WHERE NOT EXISTS (` +
+            `SELECT 1 FROM public.logs l WHERE l.id = n.log_id AND (l.viewing_id = n.viewing_id ` +
+            `OR EXISTS (SELECT 1 FROM jsonb_array_elements(l.viewing_history) x WHERE x->>'viewingId' = n.viewing_id::text)))`,
+        );
+        if (orphans !== '0') posture.push(`${orphans} note(s) belong to no viewing of their log`);
+
+        const shared = q(
+          `SELECT count(*) - count(DISTINCT v) FROM (` +
+            `SELECT viewing_id::text AS v FROM public.logs ` +
+            `UNION ALL SELECT e->>'viewingId' FROM public.logs l, jsonb_array_elements(l.viewing_history) e) i`,
+        );
+        if (shared !== '0') posture.push(`${shared} viewing identit(ies) are shared by more than one viewing — a note could land on the wrong one`);
+      }
+
+      // The four actions the apps call: present, and closed to a logged-out
+      // visitor. A missing one is a feature that silently stops working; a
+      // granted one is the Vault open to the world.
+      for (const fn of v.noteActions || []) {
+        const state = q(
+          `SELECT CASE WHEN count(*) = 0 THEN 'missing' ` +
+            `WHEN bool_or(has_function_privilege('anon', p.oid, 'EXECUTE')) THEN 'open to anon' ` +
+            `WHEN NOT bool_and(has_function_privilege('authenticated', p.oid, 'EXECUTE')) THEN 'closed to members' ` +
+            `ELSE 'ok' END FROM pg_proc p WHERE p.pronamespace='public'::regnamespace AND p.proname='${fn}'`,
+        );
+        if (state !== 'ok') posture.push(`${fn} is ${state}`);
+      }
+
+      // pg_input_is_valid answers about the type of its FIRST call at each place
+      // in the code and keeps that answer for ever. Proven on production: a loop
+      // asking numeric, then text, then date, then boolean answered true, false,
+      // false, false. A member removing a rewatch got their writing back blank.
+      // So the type must always be written out, never held in a variable.
+      if (v.pgInputIsValidTypesAreWrittenOut) {
+        const guessy = q(
+          `SELECT COALESCE(string_agg(p.proname, ', ' ORDER BY p.proname), '') FROM pg_proc p ` +
+            `WHERE p.pronamespace='public'::regnamespace AND p.prosrc LIKE '%pg_input_is_valid(%' ` +
+            `AND (length(p.prosrc) - length(replace(p.prosrc, 'pg_input_is_valid(', ''))) / length('pg_input_is_valid(') ` +
+            `<> (SELECT count(*) FROM regexp_matches(p.prosrc, 'pg_input_is_valid\\([^()]*,\\s*''[a-zA-Z ]+''\\s*\\)', 'g'))`,
+        );
+        if (guessy) {
+          posture.push(
+            `pg_input_is_valid is asked about a type held in a variable in: ${guessy}\n` +
+              `    It answers about the type of its FIRST call there, for ever after.\n` +
+              `    Write the type out, or ask the column with jsonb_populate_record.`,
+          );
+        }
+      }
+
+      vaultViolations = posture.length - postureBeforeVault;
+      checkedVault = true;
+    }
+
     // 8. Index hygiene: no redundant indexes, and no unindexed foreign keys.
     //    Both are invisible to the repo — an index added through the SQL editor,
     //    or a new FK created without one, appears in no migration file.
@@ -898,6 +1006,7 @@ const skipped = [
   !checkedDefiners && "anon's SECURITY DEFINER reach",
   !checkedLoungeKeys && 'lounge invite codes',
   !checkedGrants && 'grants/triggers/RLS',
+  !checkedVault && 'the Vault (notes per viewing)',
 ].filter(Boolean);
 
 // A check that verifies NOTHING must not report success.
@@ -971,6 +1080,7 @@ const passed = [
   checkedDefiners && definerViolations === 0 && 'no definer takes an anonymous caller at their word',
   checkedLoungeKeys && loungeKeyViolations === 0 && 'no room carries a key',
   checkedGrants && grantViolations === 0 && 'profile grants + triggers + RLS + length ceilings',
+  checkedVault && vaultViolations === 0 && 'the Vault: no note rides in a history, each belongs to a viewing, and the actions are closed to anon',
 ].filter(Boolean);
 
 if (passed.length && failed) {
