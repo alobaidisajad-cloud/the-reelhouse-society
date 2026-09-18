@@ -134,6 +134,15 @@ export const st = StyleSheet.create({
     charCount: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
     charCountWarn: { color: colors.flicker },
     privateNotesInput: { minHeight: 80, backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
+    // While the Vault is being opened. Same height as the field it replaces, so
+    // the form does not jump when the note arrives.
+    vaultWaiting: { minHeight: 80, backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+    // LABEL on the composer's six-size scale — the same size every other line of
+    // chrome in this form uses. It is a state, not prose.
+    vaultWaitingText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.fog, textAlign: 'center' },
+    // Said under the field on a rewatch, where the blank box would otherwise
+    // read as writing that has gone missing.
+    vaultHint: { fontFamily: fonts.body, fontSize: 11, lineHeight: 17, color: colors.fog, marginTop: 8 },
 
     // Editorial (dead-dup keys kept swept — leaf owns live styles)
     editDesk: { padding: 16, borderWidth: 1, borderColor: colors.sepia, borderRadius: 6, backgroundColor: 'rgba(184,137,26,0.05)', gap: 16, marginBottom: 20 },

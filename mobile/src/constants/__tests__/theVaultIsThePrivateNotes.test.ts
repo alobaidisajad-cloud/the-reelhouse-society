@@ -78,7 +78,17 @@ const PRIVATE_NOTES: Said[] = [
   { file: 'src/components/log/LogForm.tsx', text: 'The Vault' },
   { file: 'src/lore/fragments.ts', text: 'The Vault has never been breached. Your private notes are yours alone.' },
   // The registry's own account of where the rope sits — the log form's notes panel.
-  { file: 'src/constants/gatedFeatures.ts', text: 'the Vault panel in the log form, roped by the-vault, is where they meet it.' },
+  { file: 'src/constants/gatedFeatures.ts', text: 'Vault panel in the log form is roped by the-vault and the note field is ' },
+  { file: 'src/constants/gatedFeatures.ts', text: 'Vault is an Archivist feature" while their clear and their remove both ' },
+  // The note itself, where a member reads it and opens it (2026-09-18).
+  { file: 'src/components/log/VaultNote.tsx', text: 'THE VAULT' },
+  { file: 'src/components/log/NoteSheet.tsx', text: 'THE VAULT' },
+  { file: 'src/components/log/LogForm.tsx', text: 'Opening the Vault…' },
+  // The rank gate's own refusal, matched rather than guessed at.
+  { file: 'src/services/VaultService.ts', text: 'The Vault is an Archivist feature' },
+  // A telemetry scope for the notes store. Not on a page, but not wire-shaped
+  // either (the dot), so it is listed rather than excused.
+  { file: 'src/stores/vaultStore.ts', text: 'vault.loadForLog' },
   { file: 'src/constants/gatedFeatures.ts', text: 'screen that edited a shelf entry (vault-modal) was unreachable and is gone. ' },
 ];
 

@@ -48,7 +48,9 @@ export const DomainLogSchema = z.object({
   videoUrl: z.string().nullable().optional(),
   
   viewCount: z.number().int().min(1).optional(),
+  viewingId: z.string().uuid().nullable().optional(),
   viewingHistory: z.array(z.object({
+    viewingId: z.string().optional(),
     date: z.string().optional(),
     rating: z.number(),
     review: z.string().optional(),

@@ -195,6 +195,59 @@ describe('Logs', () => {
 });
 
 // ════════════════════════════════════════════════════════════════════
+// THE VAULT
+// ════════════════════════════════════════════════════════════════════
+// Each act replays by the name of the viewing it is about, which is what makes a
+// queue flushed twice leave the archive as one flush would. What is pinned here
+// is that the replay reaches the right RPC with the SAME names it was queued
+// with — including after a log created offline is given its real id.
+
+describe('The Vault', () => {
+    const LOG = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const V1 = 'c1c1c1c1-c1c1-4c1c-8c1c-c1c1c1c1c1c1';
+    let rpc: jest.Mock;
+
+    beforeEach(() => {
+        rpc = jest.fn().mockResolvedValue({ data: null, error: null });
+        (supabase as any).rpc = rpc;
+    });
+
+    it('add_viewing replays the rewatch by the viewing it named', async () => {
+        await runMutation('add_viewing', { log_id: LOG, viewing_id: V1, fields: { rating: 5 } });
+        expect(rpc).toHaveBeenCalledWith('log_viewing_add', { p_log_id: LOG, p_viewing_id: V1, p_fields: { rating: 5 } });
+    });
+
+    it('remove_viewing replays the removal by the viewing it named', async () => {
+        await runMutation('remove_viewing', { log_id: LOG, viewing_id: V1 });
+        expect(rpc).toHaveBeenCalledWith('log_viewing_remove', { p_log_id: LOG, p_viewing_id: V1 });
+    });
+
+    it('set_viewing_note is cleaned on the way out, as every queued prose is', async () => {
+        // The queue persists, so an entry written by an older build flushes
+        // through this code after the source was fixed.
+        (sanitizeInput as jest.Mock).mockImplementationOnce((s: string) => `clean:${s}`);
+        await runMutation('set_viewing_note', { log_id: LOG, viewing_id: V1, notes: 'raw' });
+        expect(sanitizeInput).toHaveBeenCalledWith('raw', 'review');
+        expect(rpc).toHaveBeenCalledWith('viewing_note_set', { p_log_id: LOG, p_viewing_id: V1, p_notes: 'clean:raw' });
+    });
+
+    it('remove_viewing_note replays by the viewing alone', async () => {
+        await runMutation('remove_viewing_note', { viewing_id: V1 });
+        expect(rpc).toHaveBeenCalledWith('viewing_note_remove', { p_viewing_id: V1 });
+    });
+
+    it('a note on a log filed offline follows the log to its real id', async () => {
+        await runMutation('set_viewing_note', { log_id: 'temp-log', viewing_id: V1, notes: 'n' }, { 'temp-log': LOG });
+        expect(rpc).toHaveBeenCalledWith('viewing_note_set', expect.objectContaining({ p_log_id: LOG }));
+    });
+
+    it('a refusal on replay is raised, so the queue does not drop it as done', async () => {
+        rpc.mockResolvedValueOnce({ data: null, error: { message: 'The Vault is an Archivist feature' } });
+        await expect(runMutation('set_viewing_note', { log_id: LOG, viewing_id: V1, notes: 'n' })).rejects.toBeTruthy();
+    });
+});
+
+// ════════════════════════════════════════════════════════════════════
 // PROFILE
 // ════════════════════════════════════════════════════════════════════
 

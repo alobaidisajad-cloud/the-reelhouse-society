@@ -49,7 +49,13 @@ export interface QueuedMutation {
         | 'add_critique' | 'update_critique' | 'remove_critique'
         | 'certify_filing' | 'certify_critique'
         | 'cast_vote' | 'take_answer'
-        | 'save_filing' | 'unsave_filing';
+        | 'save_filing' | 'unsave_filing'
+        // ── The Vault ──
+        // A viewing and a note are separate acts, so they queue separately: a
+        // member can add a rewatch with no signal, write a note on it, and have
+        // both replay in order. All four name the viewing the app chose, so a
+        // replay of one that already happened does nothing rather than twice.
+        | 'add_viewing' | 'remove_viewing' | 'set_viewing_note' | 'remove_viewing_note';
     payload: Record<string, unknown>;
     timestamp: number;
     /**

@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Sparkles, Lock } from 'lucide-react-native';
+import { Sparkles } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
 import { extractDropCap, stripHTML, isRTLText } from '@/src/utils/text';
 import { s } from '@/src/components/log/logDetailStyles';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
+import VaultNote from '@/src/components/log/VaultNote';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 
 interface LogReviewBodyProps {
@@ -15,7 +16,14 @@ interface LogReviewBodyProps {
   isAuteur: boolean;
   isOwner: boolean;
   isSpoiler?: boolean;
-  privateNotes?: string | null;
+  /**
+   * The note this member wrote about THIS viewing — the one the log is on.
+   * Only ever passed for the log's owner, and only from the Vault; the log row
+   * itself no longer carries a note at all.
+   */
+  note?: string | null;
+  /** Opens the note in full. Absent while the Vault is still being opened. */
+  onOpenNote?: () => void;
 }
 
 export default function LogReviewBody({
@@ -25,12 +33,13 @@ export default function LogReviewBody({
   isAuteur,
   isOwner,
   isSpoiler,
-  privateNotes,
+  note,
+  onOpenNote,
 }: LogReviewBodyProps) {
   // A rating-only log has no quote, no essay and no notes — and this section's
   // own margins (24 above, 16 below) still rendered, leaving a 40pt hole under
   // the filing mark with nothing in it. Nothing to say, nothing to occupy.
-  const hasBody = !!pullQuote || !!stripHTML(review ?? '') || !!(isOwner && privateNotes);
+  const hasBody = !!pullQuote || !!stripHTML(review ?? '') || !!(isOwner && note);
   if (!hasBody) return null;
 
   return (
@@ -101,18 +110,10 @@ export default function LogReviewBody({
 
       </SpoilerVeil>
 
-      {/* PRIVATE NOTES (Only visible to the log owner) */}
-      {isOwner && privateNotes && (
-        <View style={s.privateNotesWrap}>
-           <View style={s.privateNotesHeader}>
-              <Lock size={10} color={colors.sepia} />
-              <Text style={s.privateNotesLabel}>PRIVATE ARCHIVIST NOTES</Text>
-           </View>
-           <Text style={[s.privateNotesBody, isRTLText(privateNotes) && s.rtlText]} {...scaledTextProps}>
-              {privateNotes}
-           </Text>
-        </View>
-      )}
+      {/* THE VAULT — the note about this viewing. The owner's eyes only, and
+          outside the spoiler veil: a member is never veiled from their own
+          writing, and a note is not part of the critique others read. */}
+      {isOwner && !!note && <VaultNote note={note} onOpen={onOpenNote} />}
     </View>
   );
 }

@@ -92,7 +92,7 @@ describe('the essay, as a member reads it', () => {
         isAuteur={false}
         isOwner={false}
         isSpoiler={false}
-        privateNotes={null}
+        note={null}
         {...props}
       />,
     );
@@ -146,9 +146,18 @@ describe('the essay, as a member reads it', () => {
     // A review is present in both, so the section renders either way. Without
     // it, the empty-section guard hides the note for a visitor and this passes
     // no matter what the note's own condition says.
-    const withReview = { review: 'Some words.', privateNotes: 'I cried at the top' };
+    const withReview = { review: 'Some words.', note: 'I cried at the top' };
     expect(body({ ...withReview, isOwner: false }).queryByText('I cried at the top')).toBeNull();
     expect(body({ ...withReview, isOwner: true }).getByText('I cried at the top')).toBeTruthy();
+  });
+
+  it('says whose the note is, so it is never mistaken for the critique', () => {
+    // The note sits directly under a member's public writing. Without the line
+    // above it, a member cannot tell at a glance which of the two everyone else
+    // can read — and that is the whole promise of the Vault.
+    const r = body({ review: 'Some words.', note: 'I cried at the top', isOwner: true });
+    expect(r.getByText('THE VAULT')).toBeTruthy();
+    expect(r.getByText('  ·  ONLY YOU')).toBeTruthy();
   });
 });
 

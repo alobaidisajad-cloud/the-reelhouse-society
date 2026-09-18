@@ -414,6 +414,11 @@ describe('logSlice', () => {
                 insert: jest.fn(() => insertChain),
                 update: updateFn,
             }));
+            // A rewatch is now the SERVER's act: log_viewing_add archives the
+            // viewing being left — from the row it holds — and moves the log on.
+            const rpcFn = jest.fn((_name: string, _args: Record<string, unknown>) =>
+                Promise.resolve({ data: null, error: null }));
+            (supabase as any).rpc = rpcFn;
 
             // The new attempt carries the user's freshly written review.
             await expect(
@@ -422,12 +427,18 @@ describe('logSlice', () => {
                 })
             ).resolves.toBeUndefined();
 
-            // Converged: the merge ran (update called) rather than the throw path.
-            expect(updateFn).toHaveBeenCalled();
-            // The existing viewing was archived into viewing_history (review preserved, not lost).
-            const updatePayload = updateFn.mock.calls[0][0] as Record<string, any>;
-            expect(Array.isArray(updatePayload.viewing_history)).toBe(true);
-            expect(updatePayload.viewing_history.length).toBe(1);
+            // Converged: the merge ran rather than the throw path — as a rewatch
+            // of the row that won the race, carrying the new review with it.
+            const add = rpcFn.mock.calls.find(([name]) => name === 'log_viewing_add');
+            expect(add).toBeDefined();
+            const args = add![1] as { p_log_id: string; p_viewing_id: string; p_fields: Record<string, unknown> };
+            expect(args.p_log_id).toBe('existing-server-log');
+            expect(args.p_fields.review).toBe('my new review');
+            // The viewing is named by this device, so a retry is the same rewatch.
+            expect(args.p_viewing_id).toMatch(/^[0-9a-f-]{36}$/i);
+            // …and the history is never written by the client: the first viewing's
+            // review is archived by the server, not by a payload guessing at it.
+            expect(updateFn).not.toHaveBeenCalled();
             // Mutex released for the next write.
             expect(useLogStore.getState()._addLogMutex).toBe(false);
         });

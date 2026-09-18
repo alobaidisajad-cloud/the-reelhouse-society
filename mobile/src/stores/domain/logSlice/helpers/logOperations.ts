@@ -15,6 +15,8 @@ import { sanitizeInput } from '../../../../utils/sanitizeInput';
 import { resolveTier } from '../../../../utils/tier';
 import { localCalendarDate } from '../../../../utils/timeAgo';
 import { useAuthStore } from '../../../auth';
+import { VaultService } from '../../../../services/VaultService';
+import { useVaultStore } from '../../../vaultStore';
 import { stillSignedIn } from '../../helpers/sessionGuard';
 import type { FilmState } from '../../../films';
 
@@ -33,6 +35,19 @@ import { StoreApi } from 'zustand';
  * survived here, in a different file, which is the whole reason that batch's
  * lesson was "fix the CLASS, not the instance in front of you".
  */
+/**
+ * What a viewing is made of, as the server names it.
+ *
+ * `viewing_history` and `view_count` are stripped deliberately: the server keeps
+ * both itself, from the history it holds, and a client that sends them is a
+ * client guessing. Everything else is a field of the viewing, and a field left
+ * out is left as it was.
+ */
+const viewingFieldsOf = (dbUpdates: Record<string, unknown>): Record<string, unknown> => {
+    const { viewing_history: _h, view_count: _c, ...fields } = dbUpdates;
+    return fields;
+};
+
 const DUPLICATE_KEY_MESSAGE = /duplicate key value violates unique constraint/i;
 const isDuplicateKey = (error: unknown): boolean => {
     const e = error as { code?: string; message?: string } | null;
@@ -202,13 +217,17 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
  */
 const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: DomainLog, log: Partial<DomainLog>) => {
     const oldHistory = (Array.isArray(existingLog.viewingHistory) ? existingLog.viewingHistory : []) as any[];
+    // What the viewing being left looked like. Built here for the screen only —
+    // the SERVER writes the real one, from the row it holds, so the archive never
+    // depends on how fresh this device's copy was. It carries no note: a note
+    // belongs to its viewing and stays in the Vault, which nobody else can read.
     const archivedEntry = {
+        viewingId: existingLog.viewingId ?? undefined,
         date: existingLog.watchedDate ?? existingLog.createdAt ?? localCalendarDate(),
         rating: existingLog.rating,
         review: existingLog.review ?? '',
         isSpoiler: existingLog.isSpoiler ?? false,
         watchedWith: existingLog.watchedWith ?? '',
-        privateNotes: existingLog.privateNotes ?? '',
         physicalMedia: existingLog.physicalMedia ?? 'None',
         status: existingLog.status ?? 'watched',
         abandonedReason: existingLog.abandonedReason ?? null,
@@ -238,6 +257,10 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
     // without this a member logging a film they had already seen heard "Record
     // amended" first, which is not what they did. Same defect as removeLogOp's,
     // at the caller I did not sweep for when I fixed that one.
+    // The identity of the viewing about to begin, chosen before the write so a
+    // retry of this exact rewatch is the same rewatch.
+    const newViewingId = Crypto.randomUUID();
+
     const merge = await updateLogOp(set, get, existingLog.id, {
         rating: log.rating !== undefined ? log.rating : existingLog.rating,
         review: isAware ? (log.review !== undefined ? log.review : existingLog.review) : (log.review !== undefined && log.review !== '' ? log.review : existingLog.review),
@@ -245,7 +268,6 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
         watchedDate: log.watchedDate ?? localCalendarDate(),
         watchedWith: log.watchedWith !== undefined ? log.watchedWith : (existingLog.watchedWith ?? null),
         isSpoiler: (log.isSpoiler !== undefined ? log.isSpoiler : existingLog.isSpoiler) ?? false,
-        privateNotes: safeOverride(log.privateNotes, existingLog.privateNotes, null),
         physicalMedia: log.physicalMedia !== undefined ? log.physicalMedia : (existingLog.physicalMedia ?? 'None'),
         abandonedReason: safeOverride(log.abandonedReason, existingLog.abandonedReason, null),
         isAutopsied: (log.isAutopsied !== undefined ? log.isAutopsied : existingLog.isAutopsied) ?? false,
@@ -258,7 +280,22 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
         format: log.physicalMedia !== undefined ? (log.physicalMedia ? resolveFormat(log.physicalMedia) : 'digital') : existingLog.format,
         viewCount: newViewCount,
         viewingHistory: newHistory,
-    } as Partial<DomainLog>, { silentAnnounce: true });
+        viewingId: newViewingId,
+    } as Partial<DomainLog>, { silentAnnounce: true, viewingOp: { kind: 'add', viewingId: newViewingId } });
+
+    // The note the member wrote in the form belongs to the viewing that has just
+    // begun — not to the one now in the history, which keeps its own. Written
+    // after the viewing exists, because a note must have a viewing to belong to.
+    if (typeof log.privateNotes === 'string' && log.privateNotes.trim()) {
+        try {
+            await useVaultStore.getState().saveNote(existingLog.id, newViewingId, log.privateNotes);
+        } catch (e) {
+            // The rewatch itself is filed. A refused note — the rank, most
+            // likely — is the note's own business and is reported where notes
+            // are written, not over the top of "Rewatch added".
+            if (!isNetworkError(e)) captureError(e, { scope: 'applyRewatchMerge.saveNote', logId: existingLog.id });
+        }
+    }
 
     if (existingLog.filmId) {
         queryClient.invalidateQueries({ queryKey: ['film', Number(existingLog.filmId)] });
@@ -321,8 +358,14 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             }
 
             const newId = Crypto.randomUUID();
+            // The first viewing's identity, chosen here rather than left to the
+            // database's default. It is what lets a member write a note on a log
+            // they filed with no signal: the note names this viewing, and both
+            // reach the server in order when the queue flushes.
+            const newViewingId = Crypto.randomUUID();
             const payload = {
                 id: newId,
+                viewing_id: newViewingId,
                 user_id: user.id,
                 film_id: log.filmId, film_title: log.title,
                 poster_path: log.poster ?? null, year: log.year ? (parseInt(String(log.year)) || null) : null,
@@ -330,7 +373,8 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 status: log.status ?? 'watched', is_spoiler: log.isSpoiler ?? false,
                 watched_date: log.watchedDate ?? localCalendarDate(),
                 watched_with: log.watchedWith ?? null,
-                private_notes: log.privateNotes ?? null,
+                // No `private_notes`. A note is written on the VIEWING, right
+                // after this row exists — see below.
                 abandoned_reason: log.abandonedReason ?? null,
                 physical_media: log.physicalMedia ?? null,
                 is_autopsied: log.isAutopsied ?? false, autopsy: log.autopsy ?? null,
@@ -396,6 +440,18 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             // that logout has cleared would leave one of their films visible to
             // whoever signs in next.
             if (!stillSignedIn(user.id)) return;
+
+            // The note the member wrote belongs to the viewing this log just
+            // began. It is written separately, because that is where a note
+            // lives now — and the log itself is already filed either way, so a
+            // note refused for the rank does not take the record down with it.
+            if (typeof log.privateNotes === 'string' && log.privateNotes.trim()) {
+                try {
+                    await useVaultStore.getState().saveNote(newId, newViewingId, log.privateNotes);
+                } catch (e) {
+                    if (!isNetworkError(e)) captureError(e, { scope: 'addLogOp.saveNote', logId: newId });
+                }
+            }
 
             const fullLog = mapLogRow(finalData) as import('@/src/types').DomainLog;
             set((state) => {
@@ -505,8 +561,13 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
             return;
         }
         const newLogId = Crypto.randomUUID();
+        // This log's first viewing, named here like every other. A film marked
+        // watched can be opened and given a note straight away — with no signal
+        // too, because the name already exists on this device.
+        const newViewingId = Crypto.randomUUID();
         const payload = {
             id: newLogId,
+            viewing_id: newViewingId,
             user_id: user.id,
             film_id: film.id,
             film_title: film.title ?? film.name ?? 'Untitled',
@@ -518,7 +579,9 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
             is_spoiler: false,
             watched_date: localCalendarDate(),
             watched_with: null,
-            private_notes: null,
+            // No `private_notes`. Marking a film watched writes no note, and
+            // this column is not the app's to write in any case — the blank it
+            // used to send was harmless only by luck.
             abandoned_reason: null,
             physical_media: null,
             is_autopsied: false,
@@ -626,10 +689,25 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
 export const unmarkWatchedOp = async (set: SetState, get: GetState, filmId: number) => {
     const existingLog = get().logs.find(l => l.filmId === filmId);
         if (!existingLog) return;
+
+        // A note is content, and unmarking a film deletes the whole record — so
+        // the Vault is ASKED, not assumed. It used to read `existingLog.privateNotes`,
+        // which is now always empty because a note lives on its viewing: left
+        // alone, this guard would have quietly stopped protecting the one piece
+        // of writing nobody else can recover.
+        //
+        // If the Vault cannot be reached, the answer is "there may be a note" and
+        // the record stays. Refusing to delete costs a tap; guessing costs the
+        // member's own writing.
+        const vault = useVaultStore.getState();
+        if (!vault.isLoaded(existingLog.id)) await vault.loadForLog(existingLog.id);
+        const after = useVaultStore.getState();
+        const mayHoldANote = after.isUnreachable(existingLog.id) || !!after.noteFor(existingLog.viewingId).trim();
+
         if (
-            existingLog.rating > 0 || 
-            !!existingLog.review?.trim() || 
-            !!existingLog.privateNotes?.trim() || 
+            existingLog.rating > 0 ||
+            !!existingLog.review?.trim() ||
+            mayHoldANote ||
             (existingLog.physicalMedia && existingLog.physicalMedia !== 'None') || 
             !!existingLog.autopsy || 
             !!existingLog.watchedWith?.trim() ||
@@ -667,8 +745,26 @@ export const updateLogOp = async (
     get: GetState,
     id: string,
     updates: Partial<DomainLog>,
-    /** Set by callers using this as a STEP, so it does not narrate their work. */
-    opts?: { silentAnnounce?: boolean },
+    opts?: {
+        /** Set by callers using this as a STEP, so it does not narrate their work. */
+        silentAnnounce?: boolean;
+        /**
+         * This edit is a member adding or removing a VIEWING, not amending one.
+         *
+         * Those two are the only ways a log moves from one viewing to another,
+         * and the server does the move itself: it archives the viewing being
+         * left — with its own identity, so the note written about it stays with
+         * it — or gives back the one before, note and all. The app cannot do
+         * that by writing `viewing_history`, and no longer tries: the database
+         * refuses a save that loses a past viewing, whoever sends it.
+         *
+         * `viewingId` is chosen HERE, before the write, which is what makes a
+         * retry safe. The same call arriving twice — a queue flushed again, a
+         * second press — names the same viewing, and the second one does
+         * nothing instead of adding a rewatch the member did not watch.
+         */
+        viewingOp?: { kind: 'add' | 'remove'; viewingId: string };
+    },
 ) => {
         if (get()._updateLogMutex) {
             // Same as addLog: one toast, chosen by the screen from this code.
@@ -788,17 +884,39 @@ export const updateLogOp = async (
             // setQueryData above has already shown the member their edit, so a
             // silent refusal leaves it on screen until the next refetch takes
             // it away again, with nothing said.
-            const { error } = await supabase.from('logs')
-                .update(dbUpdates)
-                .eq('id', id)
-                .eq('user_id', user.id);
+            //
+            // A viewing operation takes the other door: the two RPCs, which are
+            // the only things allowed to move a log to another viewing. They
+            // carry their own ownership check (`user_id = auth.uid()` inside the
+            // function) and answer 'Log not found' to anyone else.
+            let error: unknown = null;
+            if (opts?.viewingOp) {
+                try {
+                    if (opts.viewingOp.kind === 'add') {
+                        await VaultService.addViewing(id, opts.viewingOp.viewingId, viewingFieldsOf(dbUpdates));
+                    } else {
+                        await VaultService.removeViewing(id, opts.viewingOp.viewingId);
+                    }
+                } catch (e) {
+                    error = e;
+                }
+            } else {
+                ({ error } = await supabase.from('logs')
+                    .update(dbUpdates)
+                    .eq('id', id)
+                    .eq('user_id', user.id));
+            }
             // Same as addLogOp: a queued edit is not a saved one, and this branch
             // falls through to the announcement below.
             let queuedOffline = false;
             if (error) {
                 // Use shared network error detection
                 if (isNetworkError(error)) {
-                    enqueueMutation({ type: 'update_log', payload: { id, updates: dbUpdates } });
+                    enqueueMutation(opts?.viewingOp
+                        ? (opts.viewingOp.kind === 'add'
+                            ? { type: 'add_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, fields: viewingFieldsOf(dbUpdates) } }
+                            : { type: 'remove_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId } })
+                        : { type: 'update_log', payload: { id, updates: dbUpdates } });
                     // A STEP does not narrate itself, and that includes this
                     // toast — not just the announcement below. Removing a rewatch
                     // offline showed "Saved offline. Will sync when connected."
@@ -813,6 +931,29 @@ export const updateLogOp = async (
                 }
             }
             
+            // The note, if this edit carried one.
+            //
+            // `undefined` means the member did not touch it, and an untouched
+            // note is left exactly where it is — which is the whole reason the
+            // form sends it only when it changed. An empty string is not
+            // nothing: it is the member clearing their own note, and clearing is
+            // never gated. A viewing operation is excluded because it writes its
+            // note against the viewing it created, once that viewing exists.
+            if (!opts?.viewingOp && updates.privateNotes !== undefined) {
+                const viewingId = (get().logs.find(l => l.id === id)?.viewingId) ?? originalLog?.viewingId ?? null;
+                if (viewingId) {
+                    try {
+                        await useVaultStore.getState().saveNote(id, viewingId, updates.privateNotes ?? '');
+                    } catch (e) {
+                        // The record itself is saved. A note refused for the rank
+                        // is reported by the screen that asked for it, which can
+                        // say the one true thing about the Vault; saying it here
+                        // as well would be two messages for one act.
+                        if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp.saveNote', logId: id });
+                    }
+                }
+            }
+
             if (updates.physicalMedia && FORMAT_MAP[updates.physicalMedia]) {
                 const fmt = FORMAT_MAP[updates.physicalMedia];
                 const logToUpdate = get().logs.find(l => l.id === id);
@@ -897,9 +1038,32 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
         // Pop history instead of a hard delete
         const history = Array.isArray(logToRemove.viewingHistory) ? logToRemove.viewingHistory : [];
         if (!forceDeleteAll && history.length > 0) {
-            const poppedEntry = history[0];
+            const poppedEntry = history[0] as { viewingId?: string } & Record<string, any>;
             const remainingHistory = history.slice(1);
-            
+
+            // The viewing being removed is the one the log is ON. Naming it is
+            // what makes the removal exact — and what makes a retry do nothing,
+            // because by then the log is on a different viewing.
+            //
+            // A log cached by a build from before viewings had identities has no
+            // name for it, so it is asked for rather than guessed. Only that one
+            // case reaches the server here, and only once per such log.
+            let leavingViewingId = logToRemove.viewingId ?? null;
+            if (!leavingViewingId) {
+                try {
+                    const { data } = await supabase.from('logs').select('viewing_id').eq('id', id).maybeSingle();
+                    leavingViewingId = (data as { viewing_id?: string } | null)?.viewing_id ?? null;
+                } catch { /* offline — handled immediately below */ }
+            }
+            if (!leavingViewingId) {
+                // Nothing to name, so nothing honest to queue: a removal that
+                // cannot say WHICH viewing it removes is the one shape the
+                // database refuses, and rightly. The member is told the truth
+                // instead of being handed a queued write that will fail later.
+                reelToast('Removing a rewatch needs a connection.');
+                return;
+            }
+
             const updates: Partial<DomainLog> = {
                 watchedDate: poppedEntry.date ?? logToRemove.createdAt ?? localCalendarDate(),
                 rating: poppedEntry.rating ?? 0,
@@ -907,7 +1071,6 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
                 status: poppedEntry.status ?? 'watched',
                 isSpoiler: poppedEntry.isSpoiler ?? false,
                 watchedWith: poppedEntry.watchedWith ?? null,
-                privateNotes: poppedEntry.privateNotes ?? null,
                 physicalMedia: poppedEntry.physicalMedia ?? 'None',
                 abandonedReason: poppedEntry.abandonedReason ?? null,
                 isAutopsied: poppedEntry.isAutopsied ?? false,
@@ -920,13 +1083,21 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
                 format: poppedEntry.format ?? 'digital',
                 viewingHistory: remainingHistory,
                 viewCount: Math.max(1, (logToRemove.viewCount ?? 1) - 1),
+                viewingId: poppedEntry.viewingId ?? null,
             };
 
             try {
                 // Silent: this is a STEP in removing a rewatch, not the member
                 // amending a record. The toast below says the true thing, and it
                 // is now spoken on both platforms.
-                const undone = await updateLogOp(set, get, id, updates, { silentAnnounce: true });
+                const undone = await updateLogOp(set, get, id, updates, {
+                    silentAnnounce: true,
+                    viewingOp: { kind: 'remove', viewingId: leavingViewingId },
+                });
+                // The removed viewing's note went with it, at the server. The
+                // local Vault forgets it too, so the note does not linger on a
+                // screen that is about to redraw.
+                useVaultStore.getState().forgetNote(leavingViewingId);
                 // One message, with the member's own verb. The step no longer
                 // says "Saved offline…" over the top of this — they removed a
                 // rewatch, they did not save one — but the queued state still has

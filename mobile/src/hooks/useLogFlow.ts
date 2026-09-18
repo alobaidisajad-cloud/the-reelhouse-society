@@ -2,6 +2,7 @@
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
+import { useVaultStore } from '@/src/stores/vaultStore';
 import { captureError } from '@/src/lib/sentry';
 import reelToast from '@/src/utils/reelToast';
 import { LOG_BUSY } from '@/src/stores/domain/logSlice/helpers/logOperations';
@@ -110,6 +111,15 @@ export interface LogPayloadInput {
     abandonedReason: string;
     isAuteur: boolean;
     isPremium: boolean;
+    /**
+     * Did the member actually touch the note?
+     *
+     * An untouched note is OMITTED, and omission is what protects it: the store
+     * writes a note only when the key is present, so an edit to the rating
+     * cannot carry away writing the member never looked at — including when the
+     * Vault could not be reached and the field was never filled in.
+     */
+    noteTouched: boolean;
     autopsy: Record<string, number | null>;
     altPoster: string | null;
     editorialHeader: string | null;
@@ -123,7 +133,7 @@ export interface LogPayloadInput {
 export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
     const {
         film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
-        physicalMedia, abandonedReason, isAuteur, isPremium, autopsy,
+        physicalMedia, abandonedReason, isAuteur, isPremium, noteTouched, autopsy,
         altPoster, editorialHeader, dropCap, pullQuote,
     } = input;
     // An autopsy exists if and only if the user filed at least one score.
@@ -173,8 +183,15 @@ export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
         watchedDate: date, watchedWith: watchedWith.trim() || null,  // intentional || — empty string should be null
         abandonedReason: status === 'abandoned' ? abandonedReason : null,
 
+        // ── The note ──
+        // Sent only when the member touched it, and then exactly as written.
+        // An empty string is not nothing: it is them clearing their own note,
+        // which is never gated — so this sits OUTSIDE the rank group. Writing
+        // one meets the rank at the database, which refuses it there rather
+        // than here, where a lapsed member would also lose the ability to clear.
+        ...(noteTouched ? { privateNotes: privateNotes.trim() } : {}),
+
         ...(keep(isPremium) ? {
-            privateNotes: isPremium ? (privateNotes.trim() || null) : null,
             physicalMedia: isPremium && physicalMedia !== 'None' ? physicalMedia : null,
             editorialHeader: isPremium ? editorialHeader : null,
             dropCap: isPremium ? dropCap : false,
@@ -330,7 +347,9 @@ export function useLogFlow() {
         setIsSpoiler(log.isSpoiler ?? false);
         setDate(log.watchedDate?.slice(0, 10) ?? localCalendarDate());
         setWatchedWith(log.watchedWith ?? '');
-        setPrivateNotes(log.privateNotes ?? '');
+        // The note is NOT taken from the log: it belongs to the viewing, and it
+        // arrives from the Vault in its own effect below — which is also what
+        // keeps the field shut until the real note is in hand.
         setPhysicalMedia(log.physicalMedia ?? 'None');
         setAbandonedReason(log.abandonedReason ?? '');
         let loadedAutopsy: Record<string, number | null> = { ...AUTOPSY_INIT };
@@ -346,11 +365,64 @@ export function useLogFlow() {
         // Open the autopsy section when the log actually carries rated scores.
         setAutopsyOpen(Object.values(loadedAutopsy).some(v => typeof v === 'number'));
         // Never hide populated data: open the LOGISTICS drawer when the log
-        // already carries a companion, private notes, or physical media.
-        setMoreOpen(!!(log.watchedWith || log.privateNotes || (log.physicalMedia && log.physicalMedia !== 'None')));
+        // already carries a companion or physical media. A note opens it too,
+        // once the Vault answers — see the effect below.
+        setMoreOpen(!!(log.watchedWith || (log.physicalMedia && log.physicalMedia !== 'None')));
         setFilm({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year?.toString() });
         setStep(1);
     }, [editLogId, logs]);
+
+    /**
+     * ── THE NOTE, FROM THE VAULT ────────────────────────────────────────────
+     *
+     * A note belongs to the VIEWING this log is on, so it is read from the
+     * Vault by that viewing's name, never from the log row — the column there
+     * is kept blank on purpose, and reading it showed a member an empty Vault
+     * they had written in.
+     *
+     * It is hydrated ONCE per log, and only after the Vault has answered:
+     *   · before that, `noteReady` is false and the form keeps the field shut,
+     *     so nobody types into an empty box that is about to be filled;
+     *   · and because an untouched note is never sent, a member who edits their
+     *     rating while the Vault is unreachable cannot overwrite their own
+     *     writing with the blank the screen happens to be showing.
+     */
+    const editViewingId = editLogId ? (logs.find(l => l.id === editLogId)?.viewingId ?? null) : null;
+    const vaultLoaded = useVaultStore(s => (editLogId ? s.loaded[editLogId] === true : false));
+    const vaultUnreachable = useVaultStore(s => (editLogId ? s.unreachable[editLogId] === true : false));
+    const storedNote = useVaultStore(s => (editViewingId ? (s.notes[editViewingId] ?? '') : ''));
+    const loadVault = useVaultStore(s => s.loadForLog);
+    const [noteHydratedFor, setNoteHydratedFor] = useState<string | null>(null);
+    const [noteTouched, setNoteTouched] = useState(false);
+
+    useEffect(() => {
+        if (!editLogId) return;
+        void loadVault(editLogId);
+    }, [editLogId, loadVault]);
+
+    useEffect(() => {
+        if (!editLogId || !vaultLoaded) return;
+        if (noteHydratedFor === editLogId) return;
+        setPrivateNotes(storedNote);
+        setNoteHydratedFor(editLogId);
+        setNoteTouched(false);
+        if (storedNote) setMoreOpen(true);
+    }, [editLogId, vaultLoaded, storedNote, noteHydratedFor]);
+
+    // A new log, or a rewatch, begins with an empty note — and an empty note
+    // that has not been touched is never sent, so nothing is cleared by it.
+    useEffect(() => {
+        if (editLogId) return;
+        setNoteHydratedFor(null);
+        setNoteTouched(false);
+    }, [editLogId, film?.id]);
+
+    /**
+     * The field is open when there is nothing left to wait for: a new log or a
+     * rewatch (the note starts empty and belongs to the viewing about to begin),
+     * or an edit whose note has arrived.
+     */
+    const noteReady = !editLogId || noteHydratedFor === editLogId;
 
     /**
      * ── DRAFT RESTORE ────────────────────────────────────────────────────────
@@ -485,7 +557,7 @@ export function useLogFlow() {
         try {
             const logData = buildLogPayload({
                 film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
-                physicalMedia, abandonedReason, isAuteur, isPremium, autopsy,
+                physicalMedia, abandonedReason, isAuteur, isPremium, noteTouched, autopsy,
                 altPoster, editorialHeader, dropCap, pullQuote,
             });
             const isNewEntry = !(isEditing && editLogId);
@@ -616,7 +688,18 @@ export function useLogFlow() {
         abandonedReason, setAbandonedReason,
         date, setDate,
         watchedWith, setWatchedWith,
-        privateNotes, setPrivateNotes,
+        privateNotes,
+        // Every change to the note is a touch, and a touch is what makes it
+        // travel. Wrapped here rather than trusted to each caller, so a new
+        // caller cannot forget and silently stop saving notes.
+        setPrivateNotes: useCallback((next: string) => {
+            setNoteTouched(true);
+            setPrivateNotes(next);
+        }, []),
+        /** The Vault has answered for this log; the note field may open. */
+        noteReady,
+        /** The Vault could not be reached, so the note cannot be shown or written. */
+        noteUnreachable: !!editLogId && vaultUnreachable && !vaultLoaded,
         physicalMedia, setPhysicalMedia,
         autopsy, setAutopsy,
         altPoster, setAltPoster,

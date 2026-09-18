@@ -118,6 +118,14 @@
       "signature": "list_certify_counts(p_list_ids uuid[])"
     },
     {
+      "name": "log_viewing_add",
+      "signature": "log_viewing_add(p_log_id uuid, p_viewing_id uuid, p_fields jsonb)"
+    },
+    {
+      "name": "log_viewing_remove",
+      "signature": "log_viewing_remove(p_log_id uuid, p_viewing_id uuid)"
+    },
+    {
       "name": "record_gate_event",
       "signature": "record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text)"
     },
@@ -164,6 +172,14 @@
     {
       "name": "update_my_preferences",
       "signature": "update_my_preferences(p_preferences jsonb)"
+    },
+    {
+      "name": "viewing_note_remove",
+      "signature": "viewing_note_remove(p_viewing_id uuid)"
+    },
+    {
+      "name": "viewing_note_set",
+      "signature": "viewing_note_set(p_log_id uuid, p_viewing_id uuid, p_notes text)"
     },
     {
       "name": "withdraw_lounge_message",

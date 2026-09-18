@@ -37,6 +37,14 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   add_log: z.object({ user_id: z.string(), film_id: z.number() }).passthrough(),
   update_log: z.object({ id: z.string() }).passthrough(),
   remove_log: z.object({ log_id: z.string() }).passthrough(),
+  // ── The Vault ──
+  // Every one names the viewing, because that is what the act is about and what
+  // makes a replay harmless.
+  add_viewing: z.object({ log_id: z.string(), viewing_id: z.string(), fields: z.record(z.string(), z.unknown()) }).passthrough(),
+  remove_viewing: z.object({ log_id: z.string(), viewing_id: z.string() }).passthrough(),
+  set_viewing_note: z.object({ log_id: z.string(), viewing_id: z.string(), notes: z.string() }).passthrough(),
+  remove_viewing_note: z.object({ viewing_id: z.string() }).passthrough(),
+
   add_log_comment: z.object({ log_id: z.string(), user_id: z.string(), body: z.string() }).passthrough(),
   remove_log_comment: z.object({ comment_id: z.string(), user_id: z.string() }).passthrough(),
 

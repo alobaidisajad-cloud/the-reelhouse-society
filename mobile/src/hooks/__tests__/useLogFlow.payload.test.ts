@@ -22,6 +22,7 @@ function basePayloadInput(overrides: Partial<LogPayloadInput> = {}): LogPayloadI
     abandonedReason: '',
     isAuteur: false,
     isPremium: false,
+    noteTouched: false,
     autopsy: { ...AUTOPSY_INIT },
     altPoster: null,
     editorialHeader: null,
@@ -91,12 +92,34 @@ describe('buildLogPayload', () => {
     expect(buildLogPayload(basePayloadInput({ watchedWith: '  Alex  ' })).watchedWith).toBe('Alex');
   });
 
-  it('gates privateNotes behind isPremium and nullifies blank notes', () => {
-    // Below the gate the key is ABSENT, not null — null was written through and
-    // erased the stored note on edit and on rewatch.
-    expect('privateNotes' in buildLogPayload(basePayloadInput({ isPremium: false, privateNotes: 'secret' }))).toBe(false);
-    expect(buildLogPayload(basePayloadInput({ isPremium: true, privateNotes: 'secret' })).privateNotes).toBe('secret');
-    expect(buildLogPayload(basePayloadInput({ isPremium: true, privateNotes: '   ' })).privateNotes).toBeNull();
+  describe('the note', () => {
+    it('is not sent at all when the member did not touch it', () => {
+      // The whole protection for a member's own writing. The form may be
+      // showing an empty field — because the Vault has not answered yet, or
+      // could not be reached — and an edit to the rating must not carry that
+      // blank away with it. No key, no write.
+      expect('privateNotes' in buildLogPayload(basePayloadInput({ noteTouched: false, privateNotes: '' }))).toBe(false);
+      expect('privateNotes' in buildLogPayload(basePayloadInput({ noteTouched: false, privateNotes: 'still here' }))).toBe(false);
+    });
+
+    it('is sent exactly as written once they touch it', () => {
+      expect(buildLogPayload(basePayloadInput({ noteTouched: true, privateNotes: '  secret  ' })).privateNotes).toBe('secret');
+    });
+
+    it('sends an empty note when they clear it — at any rank', () => {
+      // Clearing is taking your own writing back, and that is never gated. A
+      // lapsed member must be able to do it, so this does NOT sit behind the
+      // rank: the database refuses a WRITE below the rank and allows a clear.
+      expect(buildLogPayload(basePayloadInput({ noteTouched: true, isPremium: false, privateNotes: '   ' })).privateNotes).toBe('');
+      expect(buildLogPayload(basePayloadInput({ noteTouched: true, isPremium: false, privateNotes: '' })).privateNotes).toBe('');
+    });
+
+    it('never travels on the log row itself', () => {
+      // A note belongs to a viewing and is written by viewing_note_set. If this
+      // key ever reaches mapLogToDbPayload again, the blank column comes back.
+      const payload = buildLogPayload(basePayloadInput({ noteTouched: true, isPremium: true, privateNotes: 'mine' }));
+      expect('private_notes' in payload).toBe(false);
+    });
   });
 
   it('sets abandonedReason only when status is abandoned', () => {
@@ -208,7 +231,12 @@ describe('getLocalDateString', () => {
 // pre-loads the real values, so anyone whose tier resolves below the gate (the
 // admin, or a lapsed subscriber) ERASED their own premium fields on every edit.
 describe('premium fields are omitted on edit, never nulled', () => {
-  const PREMIUM_KEYS = ['privateNotes', 'physicalMedia', 'editorialHeader', 'dropCap', 'pullQuote'];
+  // `privateNotes` is NOT here any more: it is not a field of the log, and it
+  // is not gated the same way. Writing one meets the rank at the database;
+  // CLEARING one is open to every member, so it cannot be omitted by rank
+  // without taking a lapsed member's own writing hostage. Its rule — sent only
+  // when touched — has its own tests above.
+  const PREMIUM_KEYS = ['physicalMedia', 'editorialHeader', 'dropCap', 'pullQuote'];
   const AUTEUR_KEYS = ['altPoster', 'isAutopsied', 'autopsy'];
 
   it('EDIT · a non-premium member sends no premium keys at all', () => {
@@ -228,16 +256,19 @@ describe('premium fields are omitted on edit, never nulled', () => {
 
   it('EDIT · a premium member still writes a DELIBERATE clear', () => {
     const p = buildLogPayload(basePayloadInput({
-      isPremium: true, privateNotes: '   ', pullQuote: '', editorialHeader: null,
+      isPremium: true, noteTouched: true, privateNotes: '   ', pullQuote: '', editorialHeader: null,
     }));
-    expect(p.privateNotes).toBeNull();
+    // The note clears with an empty string rather than null, because it is not
+    // a column any more: it is an act — viewing_note_set('') — and that act is
+    // open to every member, which is why it does not sit in the rank group.
+    expect(p.privateNotes).toBe('');
     expect(p.pullQuote).toBe('');
     expect(p.editorialHeader).toBeNull();
   });
 
   it('EDIT · a premium member still writes real values', () => {
     const p = buildLogPayload(basePayloadInput({
-      isPremium: true, privateNotes: 'secret', physicalMedia: 'Blu-Ray',
+      isPremium: true, noteTouched: true, privateNotes: 'secret', physicalMedia: 'Blu-Ray',
     }));
     expect(p.privateNotes).toBe('secret');
     expect(p.physicalMedia).toBe('Blu-Ray');
@@ -263,7 +294,7 @@ describe('premium fields are omitted on edit, never nulled', () => {
 describe('a non-premium edit sends no premium COLUMNS to the database', () => {
   const { mapLogToDbPayload } = require('../../utils/mappers');
   const PREMIUM_COLUMNS = [
-    'private_notes', 'physical_media', 'editorial_header',
+    'physical_media', 'editorial_header',
     'drop_cap', 'pull_quote', 'alt_poster', 'is_autopsied', 'autopsy',
   ];
 
@@ -281,8 +312,22 @@ describe('a non-premium edit sends no premium COLUMNS to the database', () => {
   });
 
   it('EDIT · a premium member still sends them', () => {
-    const db = toDbPayload({ isPremium: true, isAuteur: true, privateNotes: 'x' });
-    expect(db.private_notes).toBe('x');
+    const db = toDbPayload({ isPremium: true, isAuteur: true, physicalMedia: 'Blu-Ray' });
+    expect(db.physical_media).toBe('Blu-Ray');
+  });
+
+  it('a note NEVER reaches the log table, however loudly it is asked for', () => {
+    // The whole point of the Vault: `private_notes` is a column the database
+    // keeps blank on purpose. A note travels as its own act against its own
+    // viewing, so no payload built here may carry that column — at any rank,
+    // touched or not.
+    for (const input of [
+      { isPremium: true, isAuteur: true, noteTouched: true, privateNotes: 'mine' },
+      { isPremium: false, noteTouched: true, privateNotes: 'mine' },
+      { isPremium: true, noteTouched: false, privateNotes: 'mine' },
+    ]) {
+      expect('private_notes' in toDbPayload(input)).toBe(false);
+    }
   });
 
   it('CREATE · below the gate the columns are omitted too', () => {

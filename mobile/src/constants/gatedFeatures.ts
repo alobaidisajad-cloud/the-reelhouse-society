@@ -98,6 +98,9 @@ export const GATED_FEATURES: GatedFeature[] = [
     rank: 'archivist',
     promise: 'The Vault (Private Notes)',
     enforcement: { kind: 'refuses', table: 'log_private_notes', trigger: 'tr_tier_gate_private_notes' },
+    // A note belongs to a VIEWING (2026-09-18). Reading one is never gated and
+    // neither is taking it back; writing one is what this rope stands in front
+    // of, in the form where a member writes it.
     gates: ['src/hooks/useLogFlow.ts', 'src/components/log/LogForm.tsx'],
   },
   {
@@ -163,11 +166,15 @@ export const GATED_FEATURES: GatedFeature[] = [
     gates: ['src/hooks/useLogFlow.ts'],
     reachedThrough: {
       feature: 'the-vault',
-      why: 'The app never writes log_private_notes itself. Notes travel on the log, and '
-         + 'divert_private_notes DISCARDS them below the rank rather than refusing — '
-         + 'rehearsed against production on 2026-09-16: a Cinephile\'s log with a note '
-         + 'saved whole. So this trigger is a backstop no member can meet from the app; '
-         + 'the Vault panel in the log form, roped by the-vault, is where they meet it.',
+      why: 'The app writes a note with viewing_note_set, which meets this trigger '
+         + 'directly — but a member below the rank never reaches it, because the '
+         + 'Vault panel in the log form is roped by the-vault and the note field is '
+         + 'not writable behind it. What DOES pass this way is a member taking their '
+         + 'own writing back: an empty note deletes, and deleting carries no rank, so '
+         + 'a lapsed member can always clear or remove a note. Rehearsed against '
+         + 'production on 2026-09-18: a lapsed member\'s edit was refused with "The '
+         + 'Vault is an Archivist feature" while their clear and their remove both '
+         + 'went through.',
     },
   },
   {

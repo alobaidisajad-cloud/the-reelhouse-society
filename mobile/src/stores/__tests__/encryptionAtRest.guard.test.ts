@@ -108,6 +108,42 @@ describe('#49 · member content never reaches disk unencrypted', () => {
       .toMatch(/createAsyncMMKVStorage\(\{ sensitive: true \}\)/);
     expect(strip(read('src/stores/notificationStore.ts')))
       .toMatch(/createJSONStorage\(\(\) => zustandMMKVStorageSensitive\)/);
+    // The Vault: a member's private notes. The most sensitive thing on disk.
+    expect(strip(read('src/stores/vaultStore.ts')))
+      .toMatch(/createJSONStorage\(\(\) => zustandMMKVStorageSensitive\)/);
+  });
+
+  it('EVERY persisted store is either sensitive or named here as holding no member content', () => {
+    // The list above was kept by hand, which is how a new store holding a
+    // member's writing would slip past it. So every store that persists is
+    // enumerated, and each one must either write through a sensitive adapter
+    // or be named below with the reason it holds nothing of the member's.
+    const NOT_MEMBER_CONTENT: Record<string, string> = {
+      'src/stores/discover.ts': 'browsing filters and film search results — public catalogue data',
+      'src/stores/settings.ts': 'display and sound preferences — no writing, no identity',
+    };
+    const fsMod = require('fs');
+    const pathMod = require('path');
+    const dir = pathMod.join(__dirname, '..');
+    const persisted = fsMod.readdirSync(dir)
+      .filter((f: string) => /\.ts$/.test(f))
+      .map((f: string) => `src/stores/${f}`)
+      .filter((f: string) => /\bpersist\(/.test(strip(read(f))));
+    // The detector must find something, or it would pass on an empty set.
+    expect(persisted.length).toBeGreaterThanOrEqual(5);
+    // Read from the `storage:` line itself — the one that decides where the
+    // store is written. Matching the adapter's NAME anywhere in the file was
+    // fooled on its first run: the Vault names the sensitive adapter in its
+    // sign-out cleanup, so a plaintext `storage:` line still passed.
+    const storageLines = (src: string) => [...src.matchAll(/\bstorage:\s*([^,\n]+)/g)].map(m => m[1]);
+    const isSensitive = (line: string) =>
+      /createJSONStorage\(\(\) => zustandMMKVStorageSensitive\)|createAsyncMMKVStorage\(\{ sensitive: true \}\)/.test(line);
+    const unsafe = persisted.filter((f: string) => {
+      if (f in NOT_MEMBER_CONTENT) return false;
+      const lines = storageLines(strip(read(f)));
+      return lines.length === 0 || !lines.every(isSensitive);
+    });
+    expect(unsafe).toEqual([]);
   });
 
   it('EVERY write of the profile cache is gated — swept app-wide, not by directory', () => {

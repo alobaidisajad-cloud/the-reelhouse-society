@@ -33,6 +33,13 @@ export interface DomainLog {
     // UI mapping properties
     isSpoiler?: boolean
     watchedWith?: string | null
+    /**
+     * @deprecated A note belongs to a VIEWING, not to a log, and lives in the
+     * vault store keyed by `viewingId`. Nothing reads this from the database any
+     * more — the column it came from is kept blank on purpose — and nothing
+     * should write it. It survives only for the archive importer, which reads
+     * notes out of files members exported from other services.
+     */
     privateNotes?: string | null
     abandonedReason?: string | null
     physicalMedia?: string | null
@@ -44,13 +51,26 @@ export interface DomainLog {
     
     // Viewing Chronicle — rewatch history stored in same log
     viewCount?: number
+    /**
+     * The viewing this log is ON. Every viewing has one, for ever, and it is how
+     * a private note knows which viewing it was written about.
+     */
+    viewingId?: string | null
     viewingHistory?: {
+        /** This past viewing's own identity. The server gives every one of them one. */
+        viewingId?: string
         date?: string
         rating: number
         review?: string
         watchedWith?: string | null
         status?: 'watched' | 'rewatched' | 'abandoned'
         isSpoiler?: boolean
+        /**
+         * @deprecated Never present on anything the server sends: a history is
+         * readable by every member and by anonymous visitors, so the database
+         * strips this key from every viewing on every save. Kept in the type
+         * only so old cached data on a device still parses.
+         */
         privateNotes?: string | null
         physicalMedia?: string | null
         abandonedReason?: string | null

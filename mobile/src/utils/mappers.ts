@@ -150,7 +150,6 @@ export interface LogRow {
   watched_date?: string | null;
   is_spoiler?: boolean | null;
   watched_with?: string | null;
-  private_notes?: string | null;
   abandoned_reason?: string | null;
   physical_media?: string | null;
   is_autopsied?: boolean | null;
@@ -164,6 +163,12 @@ export interface LogRow {
   created_at: string;
   view_count?: number | null;
   viewing_history?: unknown[] | null;
+  /**
+   * The viewing this log is ON right now. A private note belongs to a viewing,
+   * so without this the app cannot say which note is the current one's — and
+   * cannot add or remove a viewing either, since both name it.
+   */
+  viewing_id?: string | null;
 }
 
 
@@ -180,13 +185,28 @@ export interface LogRow {
  * When adding a new column to the logs table, update this constant
  * AND the LogRow interface above in a single commit.
  */
-export const LOG_SELECT_COLUMNS = 'id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, watched_with, private_notes, abandoned_reason, physical_media, is_autopsied, autopsy, alt_poster, editorial_header, drop_cap, pull_quote, video_url, format, created_at, view_count, viewing_history' as const;
+/**
+ * `private_notes` is NOT here, and must never come back.
+ *
+ * The column is kept blank by a trigger on purpose: a note belongs to a VIEWING
+ * and lives in `log_private_notes`, read through VaultService and held by
+ * viewing in the vault store. Selecting the column returned an empty Vault to
+ * the member who had written in it — the app showed them nothing and, worse,
+ * offered to save that nothing back.
+ */
+export const LOG_SELECT_COLUMNS = 'id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, watched_with, abandoned_reason, physical_media, is_autopsied, autopsy, alt_poster, editorial_header, drop_cap, pull_quote, video_url, format, created_at, view_count, viewing_history, viewing_id' as const;
 
 /**
- * PUBLIC_LOG_COLUMNS: Explicitly omits `private_notes` while preserving
- * `is_spoiler` and presentation fields (format, drop_cap) for public profile viewing.
+ * PUBLIC_LOG_COLUMNS: what any reader of a log page gets.
+ *
+ * It carries `viewing_id` as well, and that is safe by construction: every PAST
+ * viewing already carries its own `viewingId` inside `viewing_history`, which
+ * every member and every anonymous visitor can read. A viewing's name is not a
+ * secret — the NOTE is, and a note is owner-only at the row level, so naming a
+ * viewing gets a stranger exactly nothing. The owner's page needs the name to
+ * show their own note and to rewatch, which is why it is not held back.
  */
-export const PUBLIC_LOG_COLUMNS = 'id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, watched_with, abandoned_reason, physical_media, is_autopsied, autopsy, alt_poster, editorial_header, drop_cap, pull_quote, video_url, format, created_at, view_count, viewing_history' as const;
+export const PUBLIC_LOG_COLUMNS = 'id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, watched_with, abandoned_reason, physical_media, is_autopsied, autopsy, alt_poster, editorial_header, drop_cap, pull_quote, video_url, format, created_at, view_count, viewing_history, viewing_id' as const;
 
 export function mapLogRow(dbLog: LogRow): DomainLog {
   return {
@@ -201,7 +221,6 @@ export function mapLogRow(dbLog: LogRow): DomainLog {
     isSpoiler: dbLog.is_spoiler ?? false,
     watchedDate: dbLog.watched_date ?? undefined,
     watchedWith: dbLog.watched_with ?? null,
-    privateNotes: dbLog.private_notes ?? null,
     abandonedReason: dbLog.abandoned_reason ?? null,
     physicalMedia: dbLog.physical_media ?? null,
     isAutopsied: dbLog.is_autopsied ?? false,
@@ -215,6 +234,7 @@ export function mapLogRow(dbLog: LogRow): DomainLog {
     createdAt: dbLog.created_at,
     viewCount: dbLog.view_count ?? 1,
     viewingHistory: (typeof dbLog.viewing_history === 'string' ? safeJsonParse(dbLog.viewing_history) : dbLog.viewing_history) ?? [],
+    viewingId: dbLog.viewing_id ?? null,
   } as DomainLog;
 }
 
@@ -236,7 +256,8 @@ const LOG_FIELD_MAP: { domain: keyof DomainLog; db: string; defaultOnNull?: stri
   { domain: 'isSpoiler', db: 'is_spoiler' },
   { domain: 'watchedDate', db: 'watched_date' },
   { domain: 'watchedWith', db: 'watched_with' },
-  { domain: 'privateNotes', db: 'private_notes' },
+  // `privateNotes` is deliberately absent: a note is never written on the log
+  // row. It is written on its VIEWING, through viewing_note_set.
   { domain: 'abandonedReason', db: 'abandoned_reason' },
   { domain: 'physicalMedia', db: 'physical_media' },
   { domain: 'isAutopsied', db: 'is_autopsied' },

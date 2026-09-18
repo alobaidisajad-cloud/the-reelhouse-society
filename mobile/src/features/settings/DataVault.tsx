@@ -253,7 +253,17 @@ export default function DataVault() {
         return;
       }
 
-      const headers = ['"Title"', '"Year"', '"Rating"', '"Status"', '"Date Watched"', '"Review"', '"Format"'];
+      // A member's own writing leaves with them. The Vault is theirs, and an
+      // export that quietly left it behind would be an archive missing the one
+      // part nobody else holds a copy of. The note here is the one on the
+      // viewing each log is CURRENTLY on; earlier viewings' notes travel in the
+      // full JSON export, which can carry a note per viewing.
+      const dbNotes = await fetchAllRows('log_private_notes');
+      const noteByViewing = new Map<string, string>(
+        (dbNotes || []).map((n: any) => [String(n.viewing_id), String(n.notes ?? '')]),
+      );
+
+      const headers = ['"Title"', '"Year"', '"Rating"', '"Status"', '"Date Watched"', '"Review"', '"Format"', '"Private Note"'];
       const rows = dbLogs.map((l: any) => [
         escapeCsvCell(l.film_title),
         escapeCsvCell(l.year),
@@ -262,6 +272,7 @@ export default function DataVault() {
         escapeCsvCell(l.watched_date ?? l.created_at?.slice(0, 10)),
         escapeCsvCell(l.review),
         escapeCsvCell(l.physical_media ?? 'Digital'),
+        escapeCsvCell(noteByViewing.get(String(l.viewing_id)) ?? ''),
       ]);
       const csv = [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n');
 
@@ -307,11 +318,14 @@ export default function DataVault() {
     let filePath = '';
 
     try {
-      const [dbLogs, dbWatchlist, dbVault, dbLists] = await Promise.all([
+      const [dbLogs, dbWatchlist, dbVault, dbLists, dbNotes] = await Promise.all([
         fetchAllRows('logs'),
         fetchAllRows('watchlists'),
         fetchAllRows('physical_archive'),
-        fetchAllRows('lists', '*, list_items(*)')
+        fetchAllRows('lists', '*, list_items(*)'),
+        // The member's private notes, one per viewing. Owner-only at the
+        // database, and this export is the member asking for their own.
+        fetchAllRows('log_private_notes'),
       ]);
 
       if (!isMounted.current) return;
@@ -323,8 +337,17 @@ export default function DataVault() {
       }
 
       const dump = {
-        meta: { exported_at: new Date().toISOString(), version: '2.0' },
+        meta: { exported_at: new Date().toISOString(), version: '2.1' },
         logs: dbLogs || [],
+        // Kept as their own list, keyed by viewing, because that is what a note
+        // belongs to: a log with three viewings can hold three different notes,
+        // and folding them onto the log would keep only one.
+        private_notes: (dbNotes || []).map((n: any) => ({
+          log_id: n.log_id,
+          viewing_id: n.viewing_id,
+          notes: n.notes,
+          updated_at: n.updated_at,
+        })),
         watchlist: dbWatchlist || [],
         vault: dbVault || [],
         // Strip the embedded list_items key (it used to ship TWICE — once raw,

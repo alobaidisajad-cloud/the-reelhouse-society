@@ -109,7 +109,6 @@ describe('mappers', () => {
                 watched_date: '2024-01-15',
                 is_spoiler: true,
                 watched_with: 'Tyler',
-                private_notes: 'Secret notes',
                 abandoned_reason: null,
                 physical_media: 'Blu-ray',
                 is_autopsied: false,
@@ -123,6 +122,7 @@ describe('mappers', () => {
                 created_at: '2024-01-15T12:00:00Z',
                 view_count: 42,
                 viewing_history: [],
+                viewing_id: '00000000-0000-4000-8000-000000000042',
             };
 
             const result = mapLogRow(input);
@@ -138,7 +138,10 @@ describe('mappers', () => {
             expect(result.isSpoiler).toBe(true);
             expect(result.watchedDate).toBe('2024-01-15');
             expect(result.watchedWith).toBe('Tyler');
-            expect(result.privateNotes).toBe('Secret notes');
+            // A note is NOT a field of a log any more: it belongs to a viewing,
+            // and it is read from the Vault, never from a log row.
+            expect(result.privateNotes).toBeUndefined();
+            expect(result.viewingId).toBe('00000000-0000-4000-8000-000000000042');
             expect(result.physicalMedia).toBe('Blu-ray');
             expect(result.isAutopsied).toBe(false);
             expect(result.altPoster).toBe('/alt.jpg');

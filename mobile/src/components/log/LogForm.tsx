@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, ScrollView } from 'react-native';
 
 import { Image } from 'expo-image';
@@ -68,6 +68,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
         setDropCap, setPullQuote, setEditorialHeader,
         setAutopsyOpen, setAutopsy, setAltPoster,
         isRewatchMode, previousLog,
+        noteReady, noteUnreachable,
         availablePosters, availableBackdrops,
         isEditing,
         handleDelete,
@@ -134,7 +135,16 @@ export default function LogForm({ flow, user }: LogFormProps) {
     const [deskOpen, setDeskOpen] = useState(() => !!(dropCap || pullQuote || editorialHeader));
     const [filedOpen, setFiledOpen] = useState(() => !!watchedWith);
     const [physicalOpen, setPhysicalOpen] = useState(() => hasPhysicalFormat(physicalMedia));
+    // Opened once the Vault answers with something in it — the note arrives
+    // after the form is already on screen, so this cannot be decided at mount.
     const [vaultOpen, setVaultOpen] = useState(() => !!privateNotes);
+    const vaultOpenedForNote = useRef(false);
+    useEffect(() => {
+        if (privateNotes && !vaultOpenedForNote.current) {
+            vaultOpenedForNote.current = true;
+            setVaultOpen(true);
+        }
+    }, [privateNotes]);
     const [stacksOpen, setStacksOpen] = useState(false);
     const [posterOpen, setPosterOpen] = useState(false);
 
@@ -402,10 +412,33 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     onPress={() => { setVaultOpen(o => !o); }}
                 >
                     <View style={st.idxBody}>
-                        <View style={!vault.held && st.lockedPanel} {...inert(vault.held)}>
-                            <TextInput style={[st.reviewInput, st.privateNotesInput, isRTLText(privateNotes) && st.rtlText]} placeholder="Notes for the cutting room floor…" placeholderTextColor={colors.fog} value={privateNotes} onChangeText={setPrivateNotes} multiline maxLength={1000} textAlignVertical="top" {...scaledTextProps} keyboardAppearance="dark" accessibilityLabel="Private notes" selectionColor={'rgba(220,166,58,0.3)'} />
-                        </View>
-                        {!vault.held && <LogClearanceGate rank={vault.rank} standing={vault.standing} names="The Vault" onPress={vault.open} />}
+                        {/* A note belongs to the VIEWING it was written about, so
+                            the field stays shut until this log's note is in hand.
+                            Typing into a box that is about to be filled loses
+                            writing; an empty box that is about to be filled and
+                            then SAVED loses more. Until it opens, nothing here is
+                            touched, and an untouched note is never sent. */}
+                        {!noteReady ? (
+                            <View style={st.vaultWaiting}>
+                                <Text style={st.vaultWaitingText}>
+                                    {noteUnreachable ? 'Opens when you\'re back online.' : 'Opening the Vault…'}
+                                </Text>
+                            </View>
+                        ) : (
+                            <View style={!vault.held && st.lockedPanel} {...inert(vault.held)}>
+                                <TextInput style={[st.reviewInput, st.privateNotesInput, isRTLText(privateNotes) && st.rtlText]} placeholder="Notes for the cutting room floor…" placeholderTextColor={colors.fog} value={privateNotes} onChangeText={setPrivateNotes} multiline maxLength={1000} textAlignVertical="top" {...scaledTextProps} keyboardAppearance="dark" accessibilityLabel="Private notes" selectionColor={'rgba(220,166,58,0.3)'} />
+                                {/* Said once, where the surprise would be: a
+                                    rewatch begins a new viewing, and its note
+                                    starts blank because the one before it is
+                                    still with the viewing it was about. */}
+                                {isRewatchMode && (
+                                    <Text style={st.vaultHint} {...scaledTextProps}>
+                                        This note belongs to this viewing. Notes from your earlier viewings stay with them.
+                                    </Text>
+                                )}
+                            </View>
+                        )}
+                        {noteReady && !vault.held && <LogClearanceGate rank={vault.rank} standing={vault.standing} names="The Vault" onPress={vault.open} />}
                     </View>
                 </LogIndexEntry>
 

@@ -23,6 +23,8 @@ import LogChronicle from '@/src/components/log/LogChronicle';
 import LogComments from '@/src/components/log/LogComments';
 import LogHero from '@/src/components/log/LogHero';
 import LogReviewBody from '@/src/components/log/LogReviewBody';
+import NoteSheet from '@/src/components/log/NoteSheet';
+import { useVault } from '@/src/hooks/useVault';
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
@@ -60,7 +62,6 @@ interface LogDetail {
   is_spoiler: boolean;
   watched_date?: string | null;
   watched_with?: string | null;
-  private_notes?: string | null;
   physical_media?: string | null;
   abandoned_reason?: string | null;
   is_autopsied?: boolean;
@@ -79,6 +80,8 @@ interface LogDetail {
   created_at: string;
   editorial_header?: string | null;
   viewing_history?: unknown;
+  /** The viewing this log is on. A private note belongs to one of these. */
+  viewing_id?: string | null;
 }
 
 interface LogProfile {
@@ -193,7 +196,6 @@ export default function LogDetailScreen() {
             is_spoiler: localLog.isSpoiler || false,
             watched_date: localLog.watchedDate,
             watched_with: localLog.watchedWith,
-            private_notes: localLog.privateNotes,
             // The save path drops the composer's 'None' sentinel; this mapping
             // did not, so a log read from the local store printed FORMAT: NONE
             // while the same log from the server printed nothing. One answer.
@@ -212,6 +214,7 @@ export default function LogDetailScreen() {
             user_id: useAuthStore.getState().user?.id || '',
             created_at: localLog.createdAt || new Date().toISOString(),
             viewing_history: localLog.viewingHistory,
+            viewing_id: localLog.viewingId ?? null,
           };
           const queue = getOfflineQueue();
           const pendingAdds = queue.filter(q => q.type === 'add_log_comment' && q.payload.log_id === id);
@@ -248,6 +251,13 @@ export default function LogDetailScreen() {
   const comments = logQueryData?.comments ?? [];
   const commentTotal = logQueryData?.commentTotal ?? comments.length;
   const loading = logQueryLoading;
+
+  /**
+   * THE VAULT. Asked for only when this member owns the log — a visitor's
+   * device never sends the request at all, so there is nothing for RLS to have
+   * to refuse. Held here, above the early returns, because hooks must be.
+   */
+  const vault = useVault(id, !!user?.id && !!log && user.id === log.user_id);
 
   /**
    * The ONE way this screen changes the critique list.
@@ -678,7 +688,10 @@ export default function LogDetailScreen() {
             isAuteur={isAuteur}
             isOwner={isOwner}
             isSpoiler={log.is_spoiler}
-            privateNotes={log.private_notes}
+            note={isOwner ? vault.noteFor(log.viewing_id) : ''}
+            onOpenNote={log.viewing_id
+              ? () => vault.openNote(log.viewing_id as string, '◆ CURRENT', isArchivist)
+              : undefined}
           />
 
           {/* ═══ VIEWING CHRONICLE — Horizontal swipeable carousel ═══ */}
@@ -687,6 +700,12 @@ export default function LogDetailScreen() {
             windowWidth={windowWidth}
             chronicleActiveIdx={chronicleActiveIdx}
             onChronicleIdxChange={setChronicleActiveIdx}
+            // A visitor's device is not given the means to ask for a note, let
+            // alone draw one: no reader, no opener.
+            noteFor={isOwner ? vault.noteFor : undefined}
+            onOpenNote={isOwner
+              ? ({ viewingId, label, isCurrent }) => vault.openNote(viewingId, label, isCurrent && isArchivist)
+              : undefined}
           />
 
           <LogActionDeck
@@ -816,6 +835,26 @@ export default function LogDetailScreen() {
             }}
           />
         </>
+      )}
+
+      {/* THE VAULT — a note, opened. Rendered only for the owner, and only once
+          there is a note open: nothing about a member's private writing is
+          mounted on anybody else's screen. */}
+      {isOwner && vault.openedNote && (
+        <NoteSheet
+          visible
+          note={vault.noteFor(vault.openedNote.viewingId)}
+          viewingLabel={vault.openedNote.label}
+          canEdit={vault.openedNote.canEdit}
+          onClose={vault.closeNote}
+          // Editing a note is editing the record it belongs to: the same form,
+          // opened the same way as the deck's own EDIT — one door, not two.
+          onEdit={log.film_id ? () => {
+            vault.closeNote();
+            (router.push as any)({ pathname: '/log-modal', params: { editLogId: id, filmId: String(log.film_id), filmTitle: log.film_title, filmPoster: log.poster_path } } as import('expo-router').Href);
+          } : undefined}
+          onRemove={vault.confirmRemove}
+        />
       )}
     </Animated.View>
   );

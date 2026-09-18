@@ -17,6 +17,7 @@
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/auth';
 import { InteractionService } from '../services/InteractionService';
+import { VaultService } from '../services/VaultService';
 import { logger } from './logger';
 import type { QueuedMutation } from './offlineQueue';
 import { sanitizeInput, type FieldType } from './sanitizeInput';
@@ -271,6 +272,34 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         else if (target_review_id)  deleteQuery = deleteQuery.eq('target_review_id', target_review_id as string).eq('type', 'endorse_review');
         
         throwIfError(await deleteQuery);
+        return {};
+    },
+
+    // ── The Vault ──
+    // Each of these names the viewing it is about, and the server treats a
+    // repeat of one that already happened as nothing: adding a viewing that is
+    // already there returns it, removing one that is no longer current answers
+    // with the current one, and a note is written by viewing, not appended. So a
+    // queue flushed twice — the classic way a retry becomes a second rewatch —
+    // leaves the archive exactly as one flush would.
+    add_viewing: async (p: any) => {
+        await VaultService.addViewing(p.log_id as string, p.viewing_id as string, (p.fields ?? {}) as Record<string, unknown>);
+        return {};
+    },
+    remove_viewing: async (p: any) => {
+        await VaultService.removeViewing(p.log_id as string, p.viewing_id as string);
+        return {};
+    },
+    set_viewing_note: async (p: any) => {
+        // Cleaned here as well as at the source, for the same reason every other
+        // prose does: this queue PERSISTS, so an entry written by an older build
+        // flushes through this code long after the source was fixed.
+        const notes = typeof p.notes === 'string' ? sanitizeInput(p.notes, 'review') : '';
+        await VaultService.setNote(p.log_id as string, p.viewing_id as string, notes);
+        return {};
+    },
+    remove_viewing_note: async (p: any) => {
+        await VaultService.removeNote(p.viewing_id as string);
         return {};
     },
 

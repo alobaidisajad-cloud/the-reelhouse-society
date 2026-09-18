@@ -125,9 +125,11 @@ export function initEncryptedStorage(): Promise<void> {
       // both errors mattered:
       //
       //  1. It said the cached data is "non-sensitive". It is not. The film
-      //     store persists up to 150 logs with NO field filtering, and a log
-      //     carries `privateNotes`. The profile cache is worse: it is
-      //     `{ ...session.user, ...profile }`, so it carries the member's EMAIL.
+      //     store persists up to 150 logs of the member's own reviews, and the
+      //     Vault store persists their PRIVATE NOTES (a log no longer carries
+      //     one — since 2026-09-18 notes live by viewing, in vaultStore). The
+      //     profile cache is worse again: it is `{ ...session.user, ...profile }`,
+      //     so it carries the member's EMAIL.
       //  2. It said this degrades to "the unencrypted instance". It does not —
       //     nothing is assigned here, so `storage` stays the import-time
       //     placeholder, a SEPARATE store id. The member's existing cache is
@@ -195,10 +197,12 @@ export const createAsyncMMKVStorage = <T>(opts: StorageOptions = {}): PersistSto
     }
   },
   setItem: (name, newValue) => {
-    // The film store persists up to 150 logs with no field filtering, and a log
-    // carries `privateNotes` — the very thing made owner-only at the database
-    // level. Writing that in plaintext because a keystore failed, silently, is
-    // the outcome worth losing a cold-start optimisation to avoid. The window
+    // The film store persists up to 150 of the member's logs with no field
+    // filtering. (Those logs used to carry `privateNotes` as well; notes now
+    // live by viewing in the Vault store, which is gated the same way through
+    // zustandMMKVStorageSensitive.) Writing a member's own writing in plaintext
+    // because a keystore failed, silently, is the outcome worth losing a
+    // cold-start optimisation to avoid. The window
     // exists "purely for instant cold-start display", so the fallback is a
     // slower first paint while fetch* repopulates from the server.
     if (opts.sensitive && !_encrypted) return;

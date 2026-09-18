@@ -91,7 +91,6 @@ const LogDetailSchema = z.object({
   watched_date: z.string().nullable().optional(),
   is_spoiler: z.boolean().nullable().optional(),
   watched_with: z.string().nullable().optional(),
-  private_notes: z.string().nullable().optional(),
   abandoned_reason: z.string().nullable().optional(),
   physical_media: z.string().nullable().optional(),
   is_autopsied: z.boolean().nullable().optional(),
@@ -105,6 +104,7 @@ const LogDetailSchema = z.object({
   created_at: z.string(),
   view_count: z.number().nullable().optional(),
   viewing_history: z.unknown().nullable().optional(),
+  viewing_id: z.string().nullable().optional(),
   profiles: z.union([LogDetailProfileSchema, z.array(LogDetailProfileSchema)]).nullable().optional(),
 });
 
@@ -167,24 +167,16 @@ export const LogService = {
 
     if (logData) {
         // 3. Apply pending offline updates FIRST
-        let hasOfflinePrivateNotesUpdate = false;
         const pendingUpdates = queue.filter((q) => q.type === 'update_log' && q.payload.id === logId);
         for (const up of pendingUpdates) {
             logData = { ...logData, ...(up.payload.updates as any) };
-            if ('private_notes' in (up.payload.updates as any)) {
-                hasOfflinePrivateNotesUpdate = true;
-            }
         }
-
-        // 4. Multi-device sync trap resolution for private_notes
-        if (currentUserId && logData.user_id === currentUserId) {
-            if (!hasOfflinePrivateNotesUpdate && logData.private_notes === undefined) {
-                let privQuery = supabase.from('logs').select('private_notes').eq('id', logId).maybeSingle();
-                privQuery = withAbortSignal(privQuery, signal);
-                const { data: priv } = await privQuery;
-                logData.private_notes = priv?.private_notes ?? null;
-            }
-        }
+        // There used to be a fourth step here: a second request that fetched
+        // `private_notes` on its own, because the column is invisible to the
+        // wider select. It was fetching a column the database keeps BLANK on
+        // purpose — so it cost a round trip per log and returned nothing. A note
+        // belongs to a viewing now, and the Vault is read by viewing, owner-only
+        // (VaultService), never from the log row.
     }
 
     // Validate response shape — logs structured warning on mismatch

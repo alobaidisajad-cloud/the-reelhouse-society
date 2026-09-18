@@ -257,9 +257,27 @@ export const s = StyleSheet.create({
   // in the band, and it was already sepia before this.
   filingValueAccent: { color: colors.sepia } as import('react-native').TextStyle,
 
-  // ── Private Notes ──
-  privateNotesWrap: { marginTop: 24, padding: 16, backgroundColor: 'rgba(10,7,3,0.5)', borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 4 },
-  privateNotesHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  privateNotesLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
-  privateNotesBody: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, lineHeight: 20 },
+  // ── THE VAULT: a private note, on the page it belongs to ──
+  // No frame and no radius on purpose — a brass rule down one side and a wash
+  // so faint it reads as part of the writing above, not as a third box between
+  // two others. The spacing is even on both sides of it: the review ends with 16
+  // below, the chronicle starts with 8 above, so 8 above / 16 below gives 24
+  // each way. It was 40 above and 8 below before that arithmetic.
+  vaultNote: {
+    backgroundColor: 'rgba(184,137,26,0.05)',
+    borderLeftWidth: 2,
+    borderLeftColor: colors.sepia,
+  },
+  vaultNoteFull: { marginTop: 8, marginBottom: 16, paddingVertical: 14, paddingLeft: 14, paddingRight: 12 },
+  vaultNoteCompact: { marginTop: 14, paddingVertical: 10, paddingLeft: 12, paddingRight: 8 },
+  vaultNoteHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  vaultNoteHeaderCompact: { marginBottom: 6 },
+  vaultNoteLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, flex: 1, includeFontPadding: false },
+  vaultNoteLabelCompact: { fontSize: 8.5 },
+  vaultNoteLabelName: { color: colors.sepia },
+  vaultNoteLabelWho: { color: colors.fog },
+  // Bone, not fog: this is the member's own writing and it is read, not skimmed.
+  // Fog on this wash measures under the floor at the small size it used to use.
+  vaultNoteBody: { fontFamily: fonts.bodyItalic, fontSize: 13.5, lineHeight: 22, color: colors.bone },
+  vaultNoteBodyCompact: { fontFamily: fonts.bodyItalic, fontSize: 12.5, lineHeight: 20, color: colors.bone },
 });

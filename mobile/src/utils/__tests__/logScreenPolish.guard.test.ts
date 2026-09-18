@@ -13,6 +13,25 @@ const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
 const logOps = stripComments(read('src/stores/domain/logSlice/helpers/logOperations.ts'));
+
+/**
+ * Every internal `updateLogOp(set, get, …)` call, each read to its own
+ * matching close paren. Paren-aware, so a multi-line options object — or a
+ * nested `{ kind: 'add', … }` inside it — cannot end the call early or run it
+ * into the next one.
+ */
+function updateLogOpCalls(src: string): string[] {
+  const out: string[] = [];
+  const needle = 'updateLogOp(set, get,';
+  for (let at = src.indexOf(needle); at !== -1; at = src.indexOf(needle, at + 1)) {
+    let depth = 0;
+    for (let i = at + 'updateLogOp'.length; i < src.length; i++) {
+      if (src[i] === '(') depth++;
+      else if (src[i] === ')' && --depth === 0) { out.push(src.slice(at, i + 1)); break; }
+    }
+  }
+  return out;
+}
 const flow = stripComments(read('src/hooks/useLogFlow.ts'));
 
 describe('#89 · a screen reader is never told a failure succeeded', () => {
@@ -72,7 +91,11 @@ describe('#89 · a screen reader is never told a failure succeeded', () => {
     // same condition, and pinning the exact string made a correct change look
     // like a regression. What must hold is that the flag GATES the announcement.
     expect(logOps).toMatch(/if \(!opts\?\.silentAnnounce[^)]*\) announceToScreenReader/);
-    expect(logOps).toMatch(/updateLogOp\(set, get, id, updates, \{ silentAnnounce: true \}\)/);
+    // removeLogOp's own call — found by its arguments, and read whole, because
+    // it now also names the viewing it removes and so spans several lines.
+    const removal = updateLogOpCalls(logOps).find(c => /updateLogOp\(set, get, id, updates,/.test(c));
+    expect(removal).toBeDefined();
+    expect(removal).toMatch(/silentAnnounce:\s*true/);
   });
 
   it('deleting needs no announcement of its own — it toasts, and toasts speak', () => {
@@ -290,8 +313,13 @@ describe('#89 · a queued write is never announced as a finished one', () => {
     const outsideItself = logOps.slice(0, start) + logOps.slice(logOps.indexOf('export const ', start + 10));
     expect(outsideItself).not.toMatch(/get\(\)\.updateLog\(/);
 
-    const calls = logOps.match(/updateLogOp\(set, get,[\s\S]*?\{ silentAnnounce: true \}\)/g) ?? [];
+    // Every call, read to its own closing paren — the rewatch and its removal
+    // now carry a second option (the viewing they are about), so the options
+    // object is no longer the fixed `{ silentAnnounce: true }` a regex can pin.
+    // What must hold is unchanged: all four are silent.
+    const calls = updateLogOpCalls(logOps);
     expect(calls.length).toBe(4);
+    for (const c of calls) expect(c).toMatch(/silentAnnounce:\s*true/);
   });
 });
 

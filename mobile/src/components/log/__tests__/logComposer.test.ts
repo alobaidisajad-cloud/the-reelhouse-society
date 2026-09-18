@@ -513,6 +513,9 @@ describe('text can be enlarged without leaving its line box', () => {
     filmTitle:           [1.2,  FORM, 'st.filmTitle'],
     prevTakeReview:      [1.35, FORM, 'st.prevTakeReview'],
     reviewInput:         [1.35, FORM, 'testID="review-input"'],
+    // Said under the Vault field on a rewatch: this note belongs to this
+    // viewing. It is prose a member reads, so it scales with the rest.
+    vaultHint:           [1.35, FORM, 'st.vaultHint'],
   };
   const PROP: Record<number, RegExp> = {
     1.35: /\{\.\.\.scaledTextProps\}/,

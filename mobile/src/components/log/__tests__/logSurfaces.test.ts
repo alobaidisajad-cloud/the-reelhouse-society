@@ -185,7 +185,10 @@ describe('a member’s own writing is rendered in their own direction', () => {
     // on a surface lost its direction — so every block is counted.
     const BLOCKS: [string, number][] = [
       [REVIEW, 3],                                       // pull quote, review, read-more row
-      ['src/components/log/LogReviewBody.tsx', 3],        // pull quote, essay, private notes
+      // The note left this file with the Vault: it is drawn by VaultNote now,
+      // which asks the question for both the page and the chronicle card.
+      ['src/components/log/LogReviewBody.tsx', 2],        // pull quote, essay
+      ['src/components/log/VaultNote.tsx', 1],            // the member's own note
       ['src/components/log/LogComments.tsx', 1],          // critique body
       ['src/components/log/LogChronicle.tsx', 1],         // past viewing
     ];
@@ -325,7 +328,11 @@ describe('text can be enlarged without leaving its line box', () => {
     featuredQuote: [1.2, 'src/components/log/LogReviewBody.tsx'],
     reviewParagraph: [1.35, 'src/components/log/LogReviewBody.tsx'],
     commBody: [1.35, 'src/components/log/LogComments.tsx'],
-    privateNotesBody: [1.35, 'src/components/log/LogReviewBody.tsx'],
+    // THE VAULT — the member's own note, on the page and on a chronicle card.
+    // Both are read, so both scale; the compact one is clamped to three lines,
+    // which is a line COUNT, not a cap on the size of each line.
+    vaultNoteBody: [1.35, 'src/components/log/VaultNote.tsx'],
+    vaultNoteBodyCompact: [1.35, 'src/components/log/VaultNote.tsx'],
     critiqueInput: [1.35, 'src/components/log/LogComments.tsx'],
     chronicleReviewText: [1.35, 'src/components/log/LogChronicle.tsx'],
     chronicleReviewTextCurrent: [1.35, 'src/components/log/LogChronicle.tsx'],
