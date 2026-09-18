@@ -2755,13 +2755,10 @@ BEGIN
     RETURN p_viewing_id;
   END IF;
 
-  -- The viewing being left, written out in full — every field a viewing is
-  -- made of, and its identity. Never the note.
   SELECT jsonb_object_agg(m->>'key', to_jsonb(l)->col) INTO v_entry
     FROM jsonb_each(a) AS x(col, m);
   v_entry := v_entry || jsonb_build_object('viewingId', l.viewing_id);
 
-  -- The new viewing: what the app sent, over what the log already held.
   SELECT COALESCE(jsonb_object_agg(col, f->col), '{}'::jsonb) INTO v_payload
     FROM jsonb_each(a) AS x(col, m) WHERE f ? col;
   BEGIN
@@ -2769,16 +2766,20 @@ BEGIN
   EXCEPTION WHEN others THEN
     RAISE EXCEPTION 'A viewing was given a value of the wrong kind.' USING ERRCODE = '22023';
   END;
-  -- A rewatch is today's, and it is a rewatch, unless the app says otherwise.
   IF NOT (f ? 'watched_date') THEN r.watched_date := current_date; END IF;
   IF NOT (f ? 'status')       THEN r.status       := 'rewatched';  END IF;
 
-  EXECUTE format('UPDATE public.logs SET viewing_id = $1, viewing_history = $2, %s WHERE id = $3',
-                 public.viewing_set_list())
-    USING p_viewing_id,
-          jsonb_build_array(v_entry) || COALESCE(l.viewing_history, '[]'::jsonb),
-          p_log_id,
-          r;
+  BEGIN
+    EXECUTE format('UPDATE public.logs SET viewing_id = $1, viewing_history = $2, %s WHERE id = $3',
+                   public.viewing_set_list())
+      USING p_viewing_id,
+            jsonb_build_array(v_entry) || COALESCE(l.viewing_history, '[]'::jsonb),
+            p_log_id,
+            r;
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'That viewing belongs to another log.'
+      USING ERRCODE = '23505', HINT = 'A new viewing needs a new identity.';
+  END;
 
   RETURN p_viewing_id;
 END $_$;
@@ -2857,24 +2858,6 @@ END $_$;
 
 
 --
--- Name: logs_forget_removed_viewing_notes(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.logs_forget_removed_viewing_notes() RETURNS trigger
-    LANGUAGE plpgsql
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  DELETE FROM public.log_private_notes n
-   WHERE n.log_id = NEW.id
-     AND n.viewing_id <> NEW.viewing_id
-     AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(NEW.viewing_history) x
-                      WHERE x->>'viewingId' = n.viewing_id::text);
-  RETURN NULL;
-END $$;
-
-
---
 -- Name: logs_keep_viewings(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2934,31 +2917,57 @@ END $$;
 
 
 --
+-- Name: logs_register_viewings(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.logs_register_viewings() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_ids uuid[];
+BEGIN
+  SELECT array_agg(DISTINCT id) INTO v_ids FROM (
+    SELECT NEW.viewing_id AS id
+    UNION ALL
+    SELECT (e->>'viewingId')::uuid FROM jsonb_array_elements(NEW.viewing_history) e
+  ) s;
+
+  BEGIN
+    INSERT INTO public.viewings (viewing_id, log_id)
+    SELECT id, NEW.id FROM unnest(v_ids) AS id
+     WHERE NOT EXISTS (SELECT 1 FROM public.viewings v WHERE v.viewing_id = id AND v.log_id = NEW.id);
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'That viewing belongs to another log.'
+      USING ERRCODE = '23505', HINT = 'A new viewing needs a new identity.';
+  END;
+
+  IF TG_OP = 'UPDATE' THEN
+    DELETE FROM public.viewings WHERE log_id = NEW.id AND viewing_id <> ALL (v_ids);
+  END IF;
+
+  RETURN NULL;
+END $$;
+
+
+--
 -- Name: lpn_belongs_to_its_viewing(); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.lpn_belongs_to_its_viewing() RETURNS trigger
-    LANGUAGE plpgsql
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-DECLARE
-  v_owner   uuid;
-  v_current uuid;
-  v_history jsonb;
 BEGIN
   IF TG_OP = 'UPDATE' AND (NEW.viewing_id <> OLD.viewing_id OR NEW.log_id <> OLD.log_id OR NEW.user_id <> OLD.user_id) THEN
     RAISE EXCEPTION 'A note stays with the viewing it was written about.' USING ERRCODE = '23514';
   END IF;
 
-  SELECT user_id, viewing_id, viewing_history INTO v_owner, v_current, v_history
-    FROM public.logs WHERE id = NEW.log_id;
-
-  IF v_owner IS NULL OR v_owner <> NEW.user_id THEN
-    RAISE EXCEPTION 'That note has no log of its writer to belong to.' USING ERRCODE = '23503';
-  END IF;
-  IF NEW.viewing_id <> v_current
-     AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(v_history) x WHERE x->>'viewingId' = NEW.viewing_id::text) THEN
-    RAISE EXCEPTION 'That note has no viewing to belong to.' USING ERRCODE = '23503';
+  IF NOT EXISTS (
+    SELECT 1 FROM public.viewings v JOIN public.logs l ON l.id = v.log_id
+     WHERE v.viewing_id = NEW.viewing_id AND v.log_id = NEW.log_id AND l.user_id = NEW.user_id
+  ) THEN
+    RAISE EXCEPTION 'That note has no viewing of its writer to belong to.' USING ERRCODE = '23503';
   END IF;
 
   NEW.notes := btrim(NEW.notes);
@@ -4286,6 +4295,10 @@ BEGIN
   ON CONFLICT (viewing_id) DO UPDATE
     SET notes = EXCLUDED.notes, updated_at = now()
     WHERE public.log_private_notes.user_id = auth.uid();
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'That viewing is not yours.' USING ERRCODE = '42501';
+  END IF;
 END $$;
 
 
@@ -5139,6 +5152,23 @@ CREATE TABLE public.user_blocks (
 
 
 --
+-- Name: viewings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.viewings (
+    viewing_id uuid NOT NULL,
+    log_id uuid NOT NULL
+);
+
+
+--
+-- Name: TABLE viewings; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.viewings IS 'Every viewing identity, current or past, and the ONE log it belongs to. Filled by logs_register_viewings; clients have no access.';
+
+
+--
 -- Name: warnings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5537,6 +5567,14 @@ ALTER TABLE ONLY public.user_blocks
 
 ALTER TABLE ONLY public.user_blocks
     ADD CONSTRAINT user_blocks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: viewings viewings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.viewings
+    ADD CONSTRAINT viewings_pkey PRIMARY KEY (viewing_id);
 
 
 --
@@ -6187,6 +6225,13 @@ CREATE UNIQUE INDEX profiles_username_lower_unique ON public.profiles USING btre
 
 
 --
+-- Name: viewings_log_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX viewings_log_idx ON public.viewings USING btree (log_id);
+
+
+--
 -- Name: logs a_enforce_log_tier_fields; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -6205,6 +6250,20 @@ CREATE TRIGGER a_keep_viewings BEFORE INSERT OR UPDATE ON public.logs FOR EACH R
 --
 
 CREATE TRIGGER a_lpn_belongs_to_its_viewing BEFORE INSERT OR UPDATE ON public.log_private_notes FOR EACH ROW EXECUTE FUNCTION public.lpn_belongs_to_its_viewing();
+
+
+--
+-- Name: logs a_register_viewings_insert; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_register_viewings_insert AFTER INSERT ON public.logs FOR EACH ROW EXECUTE FUNCTION public.logs_register_viewings();
+
+
+--
+-- Name: logs a_register_viewings_update; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_register_viewings_update AFTER UPDATE ON public.logs FOR EACH ROW WHEN (((old.viewing_id IS DISTINCT FROM new.viewing_id) OR (old.viewing_history IS DISTINCT FROM new.viewing_history))) EXECUTE FUNCTION public.logs_register_viewings();
 
 
 --
@@ -6247,13 +6306,6 @@ CREATE TRIGGER dossiers_write INSTEAD OF INSERT OR DELETE OR UPDATE ON public.di
 --
 
 CREATE TRIGGER enforce_interaction_rate_limit BEFORE INSERT ON public.interactions FOR EACH ROW EXECUTE FUNCTION public.check_interaction_rate_limit();
-
-
---
--- Name: logs logs_forget_removed_viewing_notes; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER logs_forget_removed_viewing_notes AFTER UPDATE OF viewing_id, viewing_history ON public.logs FOR EACH ROW EXECUTE FUNCTION public.logs_forget_removed_viewing_notes();
 
 
 --
@@ -7086,6 +7138,14 @@ ALTER TABLE ONLY public.log_private_notes
 
 
 --
+-- Name: log_private_notes log_private_notes_viewing_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.log_private_notes
+    ADD CONSTRAINT log_private_notes_viewing_id_fkey FOREIGN KEY (viewing_id) REFERENCES public.viewings(viewing_id) ON DELETE CASCADE;
+
+
+--
 -- Name: logs logs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7267,6 +7327,14 @@ ALTER TABLE ONLY public.user_blocks
 
 ALTER TABLE ONLY public.user_blocks
     ADD CONSTRAINT user_blocks_blocker_id_fkey FOREIGN KEY (blocker_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: viewings viewings_log_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.viewings
+    ADD CONSTRAINT viewings_log_id_fkey FOREIGN KEY (log_id) REFERENCES public.logs(id) ON DELETE CASCADE;
 
 
 --
@@ -8523,6 +8591,12 @@ CREATE POLICY users_update_own_blocks ON public.user_blocks FOR UPDATE USING ((b
 
 
 --
+-- Name: viewings; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.viewings ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: dispatch_votes votes_ban; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -9522,15 +9596,6 @@ GRANT ALL ON FUNCTION public.log_viewing_remove(p_log_id uuid, p_viewing_id uuid
 
 
 --
--- Name: FUNCTION logs_forget_removed_viewing_notes(); Type: ACL; Schema: public; Owner: -
---
-
-REVOKE ALL ON FUNCTION public.logs_forget_removed_viewing_notes() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.logs_forget_removed_viewing_notes() TO authenticated;
-GRANT ALL ON FUNCTION public.logs_forget_removed_viewing_notes() TO service_role;
-
-
---
 -- Name: FUNCTION logs_keep_viewings(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -9540,11 +9605,18 @@ GRANT ALL ON FUNCTION public.logs_keep_viewings() TO service_role;
 
 
 --
+-- Name: FUNCTION logs_register_viewings(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.logs_register_viewings() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.logs_register_viewings() TO service_role;
+
+
+--
 -- Name: FUNCTION lpn_belongs_to_its_viewing(); Type: ACL; Schema: public; Owner: -
 --
 
 REVOKE ALL ON FUNCTION public.lpn_belongs_to_its_viewing() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.lpn_belongs_to_its_viewing() TO authenticated;
 GRANT ALL ON FUNCTION public.lpn_belongs_to_its_viewing() TO service_role;
 
 
@@ -10518,6 +10590,13 @@ GRANT ALL ON TABLE public.reports TO service_role;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.user_blocks TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.user_blocks TO authenticated;
 GRANT ALL ON TABLE public.user_blocks TO service_role;
+
+
+--
+-- Name: TABLE viewings; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.viewings TO service_role;
 
 
 --

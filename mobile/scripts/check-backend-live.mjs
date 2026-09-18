@@ -838,6 +838,40 @@ if (DB_URL) {
         if (shared !== '0') posture.push(`${shared} viewing identit(ies) are shared by more than one viewing — a note could land on the wrong one`);
       }
 
+      // A viewing's identity is public (it sits in every history), so it must
+      // belong to ONE log, or another member can take yours first. Proven on
+      // production 2026-09-18: a copied identity silently swallowed the owner's
+      // note, and blocked them removing their rewatch for ever.
+      if (v.everyViewingBelongsToOneLog) {
+        const registry = q(
+          `SELECT CASE WHEN to_regclass('public.viewings') IS NULL THEN 'missing' ` +
+            `WHEN has_table_privilege('anon', 'public.viewings', 'SELECT,INSERT,UPDATE,DELETE') ` +
+            `  OR has_table_privilege('authenticated', 'public.viewings', 'SELECT,INSERT,UPDATE,DELETE') THEN 'open to clients' ` +
+            `ELSE 'ok' END`,
+        );
+        if (registry !== 'ok') {
+          posture.push(`the viewings registry is ${registry} — nothing stops one member taking another's viewing`);
+        } else {
+          const unregistered = q(
+            `SELECT count(*) FROM (SELECT l.id, l.viewing_id AS vid FROM public.logs l ` +
+              `UNION ALL SELECT l.id, (e->>'viewingId')::uuid FROM public.logs l, jsonb_array_elements(l.viewing_history) e) s ` +
+              `WHERE NOT EXISTS (SELECT 1 FROM public.viewings r WHERE r.viewing_id = s.vid AND r.log_id = s.id)`,
+          );
+          if (unregistered !== '0') posture.push(`${unregistered} viewing(s) are not registered to their own log`);
+          const stale = q(
+            `SELECT count(*) FROM public.viewings r JOIN public.logs l ON l.id = r.log_id ` +
+              `WHERE r.viewing_id <> l.viewing_id AND NOT EXISTS (` +
+              `SELECT 1 FROM jsonb_array_elements(l.viewing_history) e WHERE e->>'viewingId' = r.viewing_id::text)`,
+          );
+          if (stale !== '0') posture.push(`${stale} registered viewing(s) no longer exist on their log — their notes outlive them`);
+          const fk = q(
+            `SELECT count(*) FROM pg_constraint WHERE conrelid = 'public.log_private_notes'::regclass ` +
+              `AND contype = 'f' AND confrelid = 'public.viewings'::regclass AND confdeltype = 'c'`,
+          );
+          if (fk !== '1') posture.push(`a note's viewing is not a cascading foreign key into the registry — a removed viewing's note would outlive it`);
+        }
+      }
+
       // The four actions the apps call: present, and closed to a logged-out
       // visitor. A missing one is a feature that silently stops working; a
       // granted one is the Vault open to the world.

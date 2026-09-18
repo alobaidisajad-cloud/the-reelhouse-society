@@ -286,8 +286,13 @@
       },
       {
         "table": "logs",
-        "trigger": "logs_forget_removed_viewing_notes",
-        "why": "a removed viewing takes its private note with it; disabled, a note outlives the viewing it was written about"
+        "trigger": "a_register_viewings_insert",
+        "why": "a new log's viewings are registered to it alone; disabled, another member can copy your viewing's identity and stop you removing your rewatch"
+      },
+      {
+        "table": "logs",
+        "trigger": "a_register_viewings_update",
+        "why": "a changed log's viewings are registered, and a removed one leaves the registry — taking its note with it by the foreign key"
       },
       {
         "table": "log_private_notes",
@@ -309,6 +314,7 @@
       "why": "A private note belongs to one VIEWING and only its writer may ever read it. Every rule here was broken at some point and each break was invisible from the repo.",
       "everyLogColumnIsDecided": true,
       "noNoteTravelsInAHistory": true,
+      "everyViewingBelongsToOneLog": true,
       "noteActions": [
         "log_viewing_add",
         "log_viewing_remove",
@@ -330,7 +336,9 @@
       "gate_metrics.rank",
       "gate_metrics.standing",
       "profiles.email",
-      "profiles.entitlement_source"
+      "profiles.entitlement_source",
+      "viewings.log_id",
+      "viewings.viewing_id"
     ],
     "maxUnindexedForeignKeys": 7,
     "smokeExecuteAsAdmin": [
