@@ -702,7 +702,11 @@ export const unmarkWatchedOp = async (set: SetState, get: GetState, filmId: numb
         const vault = useVaultStore.getState();
         if (!vault.isLoaded(existingLog.id)) await vault.loadForLog(existingLog.id);
         const after = useVaultStore.getState();
-        const mayHoldANote = after.isUnreachable(existingLog.id) || !!after.noteFor(existingLog.viewingId).trim();
+        // ANY note on this log, not just the current viewing's: unmarking deletes
+        // the whole record, every viewing's note with it — and a log cached before
+        // viewings had names cannot even say which viewing is current.
+        const mayHoldANote = after.isUnreachable(existingLog.id)
+            || Object.entries(after.notesLog).some(([v, logId]) => logId === existingLog.id && !!after.notes[v]?.trim());
 
         if (
             existingLog.rating > 0 ||

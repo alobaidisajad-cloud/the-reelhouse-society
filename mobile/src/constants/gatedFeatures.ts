@@ -163,7 +163,10 @@ export const GATED_FEATURES: GatedFeature[] = [
     // act.
     promise: 'The Vault (Private Notes)',
     enforcement: { kind: 'refuses', table: 'log_private_notes', trigger: 'tr_tier_gate_private_notes_update' },
-    gates: ['src/hooks/useLogFlow.ts'],
+    // The log page too: opening a note offers EDIT only to a reader who may
+    // change it. Below the rank the sheet still opens — reading and removing
+    // are never gated — it just offers nothing that would then be refused.
+    gates: ['src/hooks/useLogFlow.ts', 'app/log/[id].tsx'],
     reachedThrough: {
       feature: 'the-vault',
       why: 'The app writes a note with viewing_note_set, which meets this trigger '

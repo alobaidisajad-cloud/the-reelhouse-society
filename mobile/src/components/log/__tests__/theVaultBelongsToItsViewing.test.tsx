@@ -143,6 +143,24 @@ describe('the note field waits for the Vault', () => {
   });
 });
 
+describe('who may be offered EDIT on the log page', () => {
+  const page = stripComments(read('app/log/[id].tsx'));
+
+  it('it is the READER’s clearance, through useClearance', () => {
+    // It first used `isArchivist` — built from `profile.role`, the log AUTHOR's
+    // role column. Rank lives in `tier`, so a paying Archivist whose role still
+    // read 'cinephile' was never offered EDIT on their own note.
+    // Filed under `vault-editing`: offering EDIT guards CHANGING a note.
+    expect(page).toMatch(/const vaultClearance = useClearance\('vault-editing'\)/);
+    const opens = page.match(/vault\.openNote\([^)]*\)/g) ?? [];
+    expect(opens.length).toBe(2);
+    for (const o of opens) {
+      expect(o).toMatch(/vaultClearance\.held/);
+      expect(o).not.toMatch(/isArchivist/);
+    }
+  });
+});
+
 describe('what the member sees', () => {
   const VaultNote = require('@/src/components/log/VaultNote').default;
 

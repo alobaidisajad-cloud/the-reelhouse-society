@@ -147,6 +147,7 @@ const ACCOUNTED: { marker: string; why: string }[] = [
   { marker: 'setEditorialHeader(p.file_path)', why: 'stillImg 80x48' },
   { marker: 'setDropCap(!dropCap)', why: 'spoilerRow minHeight 48' },
   { marker: 'onPress={onPress}', why: 'the index row, idxEntry minHeight 48; and the clearance gate, minHeight 48' },
+  { marker: 'accessibilityLabel="Remove this note"', why: 'vaultKeptRemove minHeight 48 — a lapsed member taking their note back' },
 
   // — stated exceptions —
   { marker: 'setDate(todayStr)', why: 'hit48 box around the date pill' },

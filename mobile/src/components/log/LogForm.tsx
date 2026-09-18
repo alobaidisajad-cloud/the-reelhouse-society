@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, ScrollView } from 'react-native';
+import { View, Text, TextInput, ScrollView, Alert } from 'react-native';
+import VaultNote from '@/src/components/log/VaultNote';
+import reelToast from '@/src/utils/reelToast';
 
 import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -68,7 +70,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
         setDropCap, setPullQuote, setEditorialHeader,
         setAutopsyOpen, setAutopsy, setAltPoster,
         isRewatchMode, previousLog,
-        noteReady, noteUnreachable,
+        noteReady, noteUnreachable, removeVaultNote,
         availablePosters, availableBackdrops,
         isEditing,
         handleDelete,
@@ -423,6 +425,55 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                 <Text style={st.vaultWaitingText}>
                                     {noteUnreachable ? 'Opens when you\'re back online.' : 'Opening the Vault…'}
                                 </Text>
+                            </View>
+                        ) : !vault.held && !!privateNotes ? (
+                            // A member whose rank has ended, over a note they
+                            // wrote. READING IS NEVER GATED: the note is drawn
+                            // whole, at full strength, and read aloud — not
+                            // faded and hidden inside a locked instrument, which
+                            // is how this state first shipped. Taking it back is
+                            // never gated either; only changing it is.
+                            <View>
+                                <VaultNote note={privateNotes} inPanel />
+                                <View style={st.vaultKeptRow}>
+                                    <Text style={st.vaultKeptText} {...scaledTextProps}>
+                                        Yours to keep or remove.
+                                    </Text>
+                                    <PressableScale
+                                        style={st.vaultKeptRemove}
+                                        hitSlop={null}
+                                        haptic="selection"
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Remove this note"
+                                        accessibilityHint="The viewing stays. The note is gone for good."
+                                        onPress={() => {
+                                            Alert.alert(
+                                                'Remove this note?',
+                                                'The viewing stays. The note is gone for good.',
+                                                [
+                                                    { text: 'Keep', style: 'cancel' },
+                                                    {
+                                                        text: 'Remove', style: 'destructive',
+                                                        onPress: () => {
+                                                            void (async () => {
+                                                                try {
+                                                                    const res = await removeVaultNote();
+                                                                    if (res) reelToast(res.queuedOffline ? 'Note removed. Will sync when connected.' : 'Note removed.');
+                                                                } catch {
+                                                                    reelToast.error('The note could not be removed. Try again.');
+                                                                }
+                                                            })();
+                                                        },
+                                                    },
+                                                ],
+                                                { cancelable: true },
+                                            );
+                                        }}
+                                    >
+                                        <Trash2 size={14} color={colors.crimson} strokeWidth={1.5} />
+                                        <Text style={st.vaultKeptRemoveText}>REMOVE NOTE</Text>
+                                    </PressableScale>
+                                </View>
                             </View>
                         ) : (
                             <View style={!vault.held && st.lockedPanel} {...inert(vault.held)}>

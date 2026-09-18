@@ -25,6 +25,7 @@ import LogHero from '@/src/components/log/LogHero';
 import LogReviewBody from '@/src/components/log/LogReviewBody';
 import NoteSheet from '@/src/components/log/NoteSheet';
 import { useVault } from '@/src/hooks/useVault';
+import { useClearance } from '@/src/hooks/useClearance';
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
@@ -258,6 +259,14 @@ export default function LogDetailScreen() {
    * to refuse. Held here, above the early returns, because hooks must be.
    */
   const vault = useVault(id, !!user?.id && !!log && user.id === log.user_id);
+  /**
+   * May the READER write in the Vault — decides whether EDIT is offered on the
+   * current viewing's note. The reader's own clearance, through useClearance,
+   * like every rank decision in the app. It first used `profile.role`, which is
+   * the log AUTHOR's `role` column: rank lives in `tier`, so a paying Archivist
+   * whose role still reads 'cinephile' was never offered EDIT on their own note.
+   */
+  const vaultClearance = useClearance('vault-editing');
 
   /**
    * The ONE way this screen changes the critique list.
@@ -690,7 +699,7 @@ export default function LogDetailScreen() {
             isSpoiler={log.is_spoiler}
             note={isOwner ? vault.noteFor(log.viewing_id) : ''}
             onOpenNote={log.viewing_id
-              ? () => vault.openNote(log.viewing_id as string, '◆ CURRENT', isArchivist)
+              ? () => vault.openNote(log.viewing_id as string, '◆ CURRENT', vaultClearance.held)
               : undefined}
           />
 
@@ -704,7 +713,7 @@ export default function LogDetailScreen() {
             // alone draw one: no reader, no opener.
             noteFor={isOwner ? vault.noteFor : undefined}
             onOpenNote={isOwner
-              ? ({ viewingId, label, isCurrent }) => vault.openNote(viewingId, label, isCurrent && isArchivist)
+              ? ({ viewingId, label, isCurrent }) => vault.openNote(viewingId, label, isCurrent && vaultClearance.held)
               : undefined}
           />
 

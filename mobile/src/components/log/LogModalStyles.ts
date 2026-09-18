@@ -143,6 +143,13 @@ export const st = StyleSheet.create({
     // Said under the field on a rewatch, where the blank box would otherwise
     // read as writing that has gone missing.
     vaultHint: { fontFamily: fonts.body, fontSize: 11, lineHeight: 17, color: colors.fog, marginTop: 8 },
+    // A member whose rank has ended, over their own note: it is read in full
+    // (VaultNote above), and this row offers the one thing still theirs to do.
+    vaultKeptRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 4 },
+    vaultKeptText: { flex: 1, fontFamily: fonts.body, fontSize: 11, color: colors.fog },
+    // 48pt tall, the floor every control on this page is held to.
+    vaultKeptRemove: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingHorizontal: 4 },
+    vaultKeptRemoveText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.parchment },
 
     // Editorial (dead-dup keys kept swept — leaf owns live styles)
     editDesk: { padding: 16, borderWidth: 1, borderColor: colors.sepia, borderRadius: 6, backgroundColor: 'rgba(184,137,26,0.05)', gap: 16, marginBottom: 20 },

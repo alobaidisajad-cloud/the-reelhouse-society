@@ -3,6 +3,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import { useVaultStore } from '@/src/stores/vaultStore';
+import { supabase } from '@/src/lib/supabase';
 import { captureError } from '@/src/lib/sentry';
 import reelToast from '@/src/utils/reelToast';
 import { LOG_BUSY } from '@/src/stores/domain/logSlice/helpers/logOperations';
@@ -387,7 +388,46 @@ export function useLogFlow() {
      *     rating while the Vault is unreachable cannot overwrite their own
      *     writing with the blank the screen happens to be showing.
      */
-    const editViewingId = editLogId ? (logs.find(l => l.id === editLogId)?.viewingId ?? null) : null;
+    const storeViewingId = editLogId ? (logs.find(l => l.id === editLogId)?.viewingId ?? null) : null;
+
+    /**
+     * A log cached on this phone before viewings had names does not know which
+     * viewing it is on. Without that name the Vault cannot say which note is
+     * this viewing's — so the form would open EMPTY over a note that exists, and
+     * whatever the member typed would have no viewing to be saved against. It is
+     * asked for once, and written back into the store so every later step (the
+     * save included) has it. Until it is known, the field stays shut.
+     */
+    const [fetchedViewingId, setFetchedViewingId] = useState<string | null>(null);
+    const [viewingLookupFailed, setViewingLookupFailed] = useState(false);
+    useEffect(() => {
+        setFetchedViewingId(null);
+        setViewingLookupFailed(false);
+        if (!editLogId || storeViewingId) return;
+        let live = true;
+        (async () => {
+            try {
+                const { data, error } = await supabase.from('logs').select('viewing_id').eq('id', editLogId).maybeSingle();
+                if (!live) return;
+                const found = (data as { viewing_id?: string } | null)?.viewing_id ?? null;
+                if (error || !found) { setViewingLookupFailed(true); return; }
+                setFetchedViewingId(found);
+                useFilmStore.setState((s) => {
+                    const logs = s.logs.map(l => (l.id === editLogId ? { ...l, viewingId: found } : l));
+                    const idx = { ...s._loggedIndex };
+                    for (const k of Object.keys(idx)) {
+                        if (idx[k as unknown as number]?.id === editLogId) idx[k as unknown as number] = { ...idx[k as unknown as number], viewingId: found };
+                    }
+                    return { logs, _loggedIndex: idx };
+                });
+            } catch {
+                if (live) setViewingLookupFailed(true);
+            }
+        })();
+        return () => { live = false; };
+    }, [editLogId, storeViewingId]);
+
+    const editViewingId = storeViewingId ?? fetchedViewingId;
     const vaultLoaded = useVaultStore(s => (editLogId ? s.loaded[editLogId] === true : false));
     const vaultUnreachable = useVaultStore(s => (editLogId ? s.unreachable[editLogId] === true : false));
     const storedNote = useVaultStore(s => (editViewingId ? (s.notes[editViewingId] ?? '') : ''));
@@ -401,13 +441,15 @@ export function useLogFlow() {
     }, [editLogId, loadVault]);
 
     useEffect(() => {
-        if (!editLogId || !vaultLoaded) return;
+        // Both are needed: the Vault's answer, and the name of the viewing to
+        // read it by. Either missing, and the field stays shut.
+        if (!editLogId || !vaultLoaded || !editViewingId) return;
         if (noteHydratedFor === editLogId) return;
         setPrivateNotes(storedNote);
         setNoteHydratedFor(editLogId);
         setNoteTouched(false);
         if (storedNote) setMoreOpen(true);
-    }, [editLogId, vaultLoaded, storedNote, noteHydratedFor]);
+    }, [editLogId, vaultLoaded, editViewingId, storedNote, noteHydratedFor]);
 
     // A new log, or a rewatch, begins with an empty note — and an empty note
     // that has not been touched is never sent, so nothing is cleared by it.
@@ -416,6 +458,19 @@ export function useLogFlow() {
         setNoteHydratedFor(null);
         setNoteTouched(false);
     }, [editLogId, film?.id]);
+
+    /**
+     * Take the note back from inside the form — for a member whose rank has
+     * ended, who can no longer edit it but may always remove it. Answers
+     * whether it was only queued, so the screen can say the true thing.
+     */
+    const removeVaultNote = useCallback(async (): Promise<{ queuedOffline: boolean } | null> => {
+        if (!editLogId || !editViewingId) return null;
+        const res = await useVaultStore.getState().dropNote(editLogId, editViewingId);
+        setPrivateNotes('');
+        setNoteTouched(false);
+        return res;
+    }, [editLogId, editViewingId]);
 
     /**
      * The field is open when there is nothing left to wait for: a new log or a
@@ -698,8 +753,14 @@ export function useLogFlow() {
         }, []),
         /** The Vault has answered for this log; the note field may open. */
         noteReady,
+        /** Take the note back — never gated. */
+        removeVaultNote,
         /** The Vault could not be reached, so the note cannot be shown or written. */
-        noteUnreachable: !!editLogId && vaultUnreachable && !vaultLoaded,
+        // Unreachable when either half cannot be had: the Vault itself, or the
+        // name of the viewing this log is on. Otherwise an offline member would
+        // watch "Opening the Vault…" for ever instead of being told why.
+        noteUnreachable: !!editLogId && noteHydratedFor !== editLogId
+            && ((vaultUnreachable && !vaultLoaded) || (viewingLookupFailed && !editViewingId)),
         physicalMedia, setPhysicalMedia,
         autopsy, setAutopsy,
         altPoster, setAltPoster,
