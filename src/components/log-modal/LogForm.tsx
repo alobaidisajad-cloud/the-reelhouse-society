@@ -14,6 +14,9 @@ import reelToast from '../../utils/reelToast'
 import { useNavigate } from 'react-router-dom'
 import { useFilmMutations } from '../../features/film/hooks/useFilmMutations'
 import { isArchivistPlusTier, isAuteurPlusTier } from '../../utils/tier'
+import { useLogNote } from '../../hooks/useVault'
+import { useVaultStore } from '../../stores/vault'
+import { LOG_DRAFT_PREFIX, logDraftKey } from '../../utils/logDrafts'
 
 const AUTOPSY_INIT = Object.freeze({ story: 0, script: 0, acting: 0, cinematography: 0, editing: 0, sound: 0 })
 const ABANDONED_REASONS = ['Too Slow', 'Too Upsetting', 'Life Got in the Way', "I'll Return Someday", "Lost the Plot", "Wrong Mood"]
@@ -52,7 +55,12 @@ export default function LogForm({ film }: { film: any }) {
     const [abandoned, setAbandoned] = useState('')
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
     const [watchedWith, setWatchedWith] = useState('')
-    const [privateNotes, setPrivateNotes] = useState('')
+    const [privateNotes, setPrivateNotesRaw] = useState('')
+    // Did the member touch the note? An untouched note is never sent, which is
+    // what protects writing they never looked at — including while the Vault
+    // could not be reached and the box stood empty.
+    const [noteTouched, setNoteTouched] = useState(false)
+    const setPrivateNotes = (next: string) => { setNoteTouched(true); setPrivateNotesRaw(next) }
     const [physicalMedia, setPhysicalMedia] = useState('None')
     const [autopsy, setAutopsy] = useState<Record<string, number>>({ ...AUTOPSY_INIT })
     const [altPoster, setAltPoster] = useState<string | null>(null)
@@ -104,7 +112,8 @@ export default function LogForm({ film }: { film: any }) {
                 setAbandoned(existingLog.abandonedReason || '')
                 setDate(existingLog.watchedDate || new Date().toISOString().slice(0, 10))
                 setWatchedWith(existingLog.watchedWith || '')
-                setPrivateNotes(existingLog.privateNotes || '')
+                // The note is NOT taken from the log: it belongs to the viewing
+                // and arrives from the Vault, in its own effect below.
                 setPhysicalMedia(existingLog.physicalMedia || 'None')
                 setAutopsy((existingLog as any).autopsy || { ...AUTOPSY_INIT })
                 setAltPoster(existingLog.altPoster || null)
@@ -114,41 +123,71 @@ export default function LogForm({ film }: { film: any }) {
                 setIsAutopsied(existingLog.isAutopsied || false)
                 setAutopsyOpen(existingLog.isAutopsied || false)
 
-                setMoreOpen(!!(existingLog.watchedWith || existingLog.privateNotes || (existingLog.physicalMedia && existingLog.physicalMedia !== 'None')))
+                setMoreOpen(!!(existingLog.watchedWith || (existingLog.physicalMedia && existingLog.physicalMedia !== 'None')))
             }
         }
     }, [film, logModalEditLogId, logs])
 
+    // ── THE NOTE, FROM THE VAULT ──
+    // Hydrated ONCE per log, and only after the Vault has answered. Until then
+    // the field stays shut (see `noteReady` below).
+    const vaultNote = useLogNote(logModalEditLogId)
+    const dropNote = useVaultStore(s => s.dropNote)
+    const [noteHydratedFor, setNoteHydratedFor] = useState<string | null>(null)
+    const [confirmNoteRemove, setConfirmNoteRemove] = useState(false)
     useEffect(() => {
-        if (film && !logModalEditLogId && logModalOpen) {
-            const draft = localStorage.getItem(`reelhouse_draft_${film.id}`)
-            if (draft) {
-                try {
-                    const parsed = JSON.parse(draft)
-                    setRating(parsed.rating || 0)
-                    setReview(parsed.review || '')
-                    setStatus(parsed.status || 'watched')
-                    setIsSpoiler(parsed.isSpoiler || false)
-                    setAbandoned(parsed.abandoned || '')
-                    setWatchedWith(parsed.watchedWith || '')
-                    setPrivateNotes(parsed.privateNotes || '')
-                    if (parsed.autopsy) setAutopsy(parsed.autopsy)
-                    if (parsed.autopsyOpen) { setAutopsyOpen(true); setIsAutopsied(true) }
-                    reelToast('DRAFT RESTORED', { icon: '✦' })
-                } catch(e) {}
-            }
+        if (!logModalEditLogId || !vaultNote.ready || noteHydratedFor === logModalEditLogId) return
+        setPrivateNotesRaw(vaultNote.note)
+        setNoteTouched(false)
+        setNoteHydratedFor(logModalEditLogId)
+        if (vaultNote.note) setMoreOpen(true)
+    }, [logModalEditLogId, vaultNote.ready, vaultNote.note, noteHydratedFor])
+    useEffect(() => {
+        // A new log or a rewatch starts with an empty, untouched note: it belongs
+        // to the viewing about to begin, not to the one before.
+        if (logModalEditLogId) return
+        setNoteHydratedFor(null)
+        setNoteTouched(false)
+    }, [logModalEditLogId, film?.id])
+    const noteReady = !logModalEditLogId || noteHydratedFor === logModalEditLogId
+
+    // ── DRAFTS ──
+    // A draft holds the member's review AND their private note, so it lives
+    // under a key with the MEMBER in it and is swept on sign-out. The old key
+    // carried no member; whoever wrote it cannot be known, so it is deleted
+    // unread rather than adopted by whoever happens to open this film next.
+    const draftKey = user?.id && film?.id ? logDraftKey(user.id, film.id) : null
+    useEffect(() => {
+        if (!film || logModalEditLogId || !logModalOpen || !draftKey) return
+        try { localStorage.removeItem(`${LOG_DRAFT_PREFIX}${film.id}`) } catch { /* storage unavailable */ }
+        const draft = localStorage.getItem(draftKey)
+        if (draft) {
+            try {
+                const parsed = JSON.parse(draft)
+                setRating(parsed.rating || 0)
+                setReview(parsed.review || '')
+                setStatus(parsed.status || 'watched')
+                setIsSpoiler(parsed.isSpoiler || false)
+                setAbandoned(parsed.abandoned || '')
+                setWatchedWith(parsed.watchedWith || '')
+                // A note in a draft is writing the member did, so it counts as
+                // touched and will be saved with the log.
+                if (parsed.privateNotes) setPrivateNotes(parsed.privateNotes)
+                if (parsed.autopsy) setAutopsy(parsed.autopsy)
+                if (parsed.autopsyOpen) { setAutopsyOpen(true); setIsAutopsied(true) }
+                reelToast('DRAFT RESTORED', { icon: '✦' })
+            } catch { /* a draft that does not parse is not restored */ }
         }
-    }, [film, logModalEditLogId, logModalOpen])
+    }, [film, logModalEditLogId, logModalOpen, draftKey])
 
     useEffect(() => {
-        if (film && !logModalEditLogId && logModalOpen) {
-            const debounce = setTimeout(() => {
-                const draft = { rating, review, status, isSpoiler, abandoned, watchedWith, privateNotes, autopsy, autopsyOpen }
-                localStorage.setItem(`reelhouse_draft_${film.id}`, JSON.stringify(draft))
-            }, 1000)
-            return () => clearTimeout(debounce)
-        }
-    }, [film, logModalEditLogId, logModalOpen, rating, review, status, isSpoiler, abandoned, watchedWith, privateNotes, autopsy, autopsyOpen])
+        if (!film || logModalEditLogId || !logModalOpen || !draftKey) return
+        const debounce = setTimeout(() => {
+            const draft = { rating, review, status, isSpoiler, abandoned, watchedWith, privateNotes, autopsy, autopsyOpen }
+            try { localStorage.setItem(draftKey, JSON.stringify(draft)) } catch { /* storage full or blocked */ }
+        }, 1000)
+        return () => clearTimeout(debounce)
+    }, [film, logModalEditLogId, logModalOpen, draftKey, rating, review, status, isSpoiler, abandoned, watchedWith, privateNotes, autopsy, autopsyOpen])
 
 
     const handleLog = async () => {
@@ -177,7 +216,11 @@ export default function LogForm({ film }: { film: any }) {
             abandonedReason: status === 'abandoned' ? abandoned : null,
             watchedDate: date,
             watchedWith,
-            privateNotes,
+            // Sent only when the member touched it. An empty string is them
+            // clearing their own note — never gated, so it is not in the rank
+            // group below. The note never goes onto the log row: the save
+            // writes it on its viewing (useFilmMutations → services/vault).
+            ...(noteTouched ? { privateNotes: privateNotes.trim() } : {}),
             physicalMedia,
             // Below the gate these are OMITTED, never written as null/false.
             //
@@ -209,7 +252,7 @@ export default function LogForm({ film }: { film: any }) {
                 reelToast.success('Log updated flawlessly.')
             } else {
                 await addLog(logData as any)
-                localStorage.removeItem(`reelhouse_draft_${film.id}`)
+                if (draftKey) { try { localStorage.removeItem(draftKey) } catch { /* storage unavailable */ } }
                 reelToast.success('Film logged to your archive.')
             }
             closeLogModal()
@@ -549,31 +592,114 @@ export default function LogForm({ film }: { film: any }) {
                 )}
             </div>
 
-            {/* Private Notes — Archivist+ (The Vault) */}
+            {/* ── THE VAULT ──
+                A note belongs to the VIEWING it was written about, and only its
+                writer ever reads it. The field has four honest states:
+                  · waiting    — the Vault has not answered, so the box is shut;
+                                 nobody types into a box about to be filled;
+                  · writable   — an Archivist writes;
+                  · kept       — a member whose rank has ended still READS their
+                                 note and may REMOVE it (withdrawing is never
+                                 gated), but cannot change it;
+                  · offered    — nothing written and no rank: the rope. */}
             <div style={{ position: 'relative' }}>
-                <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <Lock size={10} style={{ display: 'inline' }} />
-                        PRIVATE NOTES (THE CUTTING ROOM FLOOR)
-                    </div>
-                    {!isPremium && (
+                <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', justifyContent: 'space-between' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Lock size={10} style={{ display: 'inline' }} color="var(--sepia)" aria-hidden="true" />
+                        <span style={{ color: 'var(--sepia)' }}>THE VAULT</span>
+                        <span style={{ color: 'var(--fog)' }}>· ONLY YOU</span>
+                    </span>
+                    {!isPremium && !privateNotes && (
                         <span style={{ color: 'var(--fog)', fontSize: '0.5rem' }}>
-                            <Lock size={8} style={{ display: 'inline', marginRight: '0.1rem' }} /> ARCHIVIST TIER
+                            <Lock size={8} style={{ display: 'inline', marginRight: '0.1rem' }} /> ARCHIVIST
                         </span>
                     )}
                 </label>
-                <div style={{ position: 'relative' }}>
-                    <textarea
-                        className="input"
-                        style={{ minHeight: 80, resize: 'vertical', fontFamily: 'var(--font-body)', background: 'var(--ink)', opacity: isPremium ? 1 : 0.4 }}
-                        placeholder={isPremium ? "Hidden from the public. Your personal thoughts, contexts, or reminders..." : "Upgrade to Archivist to unlock private notes..."}
-                        value={isPremium ? privateNotes : ''}
-                        onChange={(e) => isPremium && setPrivateNotes(e.target.value)}
-                        maxLength={1000}
-                        readOnly={!isPremium}
-                    />
-                    {!isPremium && (
+
+                {!noteReady ? (
+                    <div role="status" style={{ minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--ash)', borderRadius: 'var(--radius-card)', background: 'var(--ink)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.18em', color: 'var(--fog)' }}>
+                        {vaultNote.unreachable ? 'Opens when you\'re back online.' : 'Opening the Vault…'}
+                    </div>
+                ) : isPremium ? (
+                    <>
+                        <textarea
+                            className="input"
+                            dir="auto"
+                            aria-label="Private notes"
+                            style={{ minHeight: 80, resize: 'vertical', fontFamily: 'var(--font-body)', background: 'var(--ink)' }}
+                            placeholder="Hidden from the public. Your personal thoughts, contexts, or reminders..."
+                            value={privateNotes}
+                            onChange={(e) => setPrivateNotes(e.target.value)}
+                            maxLength={1000}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', marginTop: '0.3rem', alignItems: 'flex-start' }}>
+                            {/* Said once, where the surprise would be: a rewatch
+                                begins a new viewing, and its note starts blank
+                                because the one before is still with its viewing. */}
+                            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', lineHeight: 1.5, color: 'var(--fog)' }}>
+                                {isRewatchMode ? 'This note belongs to this viewing. Notes from your earlier viewings stay with them.' : ''}
+                            </span>
+                            <span style={{ flexShrink: 0, fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: privateNotes.length > 800 ? 'var(--flicker)' : 'var(--fog)', transition: 'color 0.3s' }}>
+                                {privateNotes.length}/1000
+                            </span>
+                        </div>
+                    </>
+                ) : privateNotes ? (
+                    <div>
+                        {/* Reading is never gated: their own writing is shown to
+                            them whole, just not offered for editing. */}
+                        <p dir="auto" style={{ margin: 0, padding: '0.85rem 0.9rem', background: 'rgba(184,137,26,0.05)', borderLeft: '2px solid var(--sepia)', fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: '0.9rem', lineHeight: 1.65, color: 'var(--bone)', whiteSpace: 'pre-wrap', textAlign: 'start' }}>
+                            {privateNotes}
+                        </p>
+                        {!confirmNoteRemove ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+                                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--fog)' }}>
+                                    Yours to keep or remove. Writing in the Vault is an Archivist feature.
+                                </span>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost"
+                                    style={{ flexShrink: 0, fontSize: '0.5rem', letterSpacing: '0.18em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                                    onClick={() => setConfirmNoteRemove(true)}
+                                >
+                                    <Trash2 size={12} color="var(--crimson)" aria-hidden="true" /> REMOVE NOTE
+                                </button>
+                            </div>
+                        ) : (
+                            // Asked in the house's own words, in place — not the
+                            // browser's. Same sentence as everywhere else.
+                            <div role="alertdialog" aria-label="Remove this note?" style={{ marginTop: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--parchment)' }}>
+                                    Remove this note? The viewing stays. The note is gone for good.
+                                </span>
+                                <span style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button type="button" className="btn btn-ghost" autoFocus style={{ fontSize: '0.5rem', letterSpacing: '0.18em' }}
+                                        onClick={() => setConfirmNoteRemove(false)}>KEEP</button>
+                                    <button type="button" className="btn"
+                                        style={{ fontSize: '0.5rem', letterSpacing: '0.18em', background: 'var(--crimson)', borderColor: 'var(--crimson)', color: 'var(--parchment)' }}
+                                        onClick={async () => {
+                                            setConfirmNoteRemove(false)
+                                            if (!logModalEditLogId || !vaultNote.viewingId) return
+                                            try {
+                                                const { queuedOffline } = await dropNote(logModalEditLogId, vaultNote.viewingId)
+                                                setPrivateNotesRaw('')
+                                                setNoteTouched(false)
+                                                reelToast(queuedOffline ? 'Note removed. Will sync when connected.' : 'Note removed.')
+                                            } catch {
+                                                reelToast.error('The note could not be removed. Try again.')
+                                            }
+                                        }}>REMOVE</button>
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div style={{ position: 'relative' }}>
+                        <textarea className="input" readOnly aria-hidden="true" tabIndex={-1} value=""
+                            style={{ minHeight: 80, resize: 'none', fontFamily: 'var(--font-body)', background: 'var(--ink)', opacity: 0.4 }}
+                            placeholder="Upgrade to Archivist to unlock private notes..." />
                         <button
+                            type="button"
                             onClick={() => { closeLogModal(); navigate('/society') }}
                             style={{
                                 position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -585,11 +711,6 @@ export default function LogForm({ film }: { film: any }) {
                             <Lock size={16} color="var(--sepia)" />
                             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>UNLOCK WITH ARCHIVIST</span>
                         </button>
-                    )}
-                </div>
-                {isPremium && (
-                    <div style={{ textAlign: 'right', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: privateNotes.length > 800 ? 'var(--flicker)' : 'var(--fog)', marginTop: '0.25rem', transition: 'color 0.3s' }}>
-                        {privateNotes.length}/1000
                     </div>
                 )}
             </div>

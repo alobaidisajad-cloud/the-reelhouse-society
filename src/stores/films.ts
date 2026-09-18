@@ -78,11 +78,7 @@ export interface FilmState {
     fetchLogs: (loadMore?: boolean) => Promise<void>
     fetchWatchlist: () => Promise<void>
     fetchLists: (loadMore?: boolean) => Promise<void>
-    addLog: (log: Partial<FilmLog>) => Promise<void>
-    markAsWatched: (film: TMDBFilmInput, status?: 'watched' | 'rewatched' | 'abandoned') => Promise<void>
-    unmarkWatched: (filmId: number) => Promise<void>
     getCinephileStats: (overrideCount?: number) => { count: number, level: string, color: string, progress: number }
-    updateLog: (id: string, updates: Partial<FilmLog>) => Promise<void>
     removeLog: (id: string) => Promise<void>
     addToWatchlist: (film: TMDBFilmInput) => Promise<void>
     removeFromWatchlist: (filmId: number) => Promise<void>
@@ -301,8 +297,14 @@ export const useFilmStore = create<FilmState>()(
                 const PAGE_SIZE = 50
                 const page = loadMore ? state.logsPage : 0
 
+                // No `private_notes`, and it must never come back: the database
+                // keeps that column BLANK on purpose, and reading it showed members
+                // an empty Vault they had written in. A note belongs to a viewing
+                // and is read by viewing, owner-only, through services/vault.ts.
+                // `viewing_id` names the viewing each log is on — how its note is
+                // found, and how a rewatch is named.
                 const { data, error } = await supabase
-                    .from('logs').select('id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, watched_with, private_notes, abandoned_reason, physical_media, is_autopsied, autopsy, alt_poster, editorial_header, drop_cap, pull_quote, video_url, format, created_at, view_count, viewing_history').eq('user_id', user.id)
+                    .from('logs').select('id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, watched_with, abandoned_reason, physical_media, is_autopsied, autopsy, alt_poster, editorial_header, drop_cap, pull_quote, video_url, format, created_at, view_count, viewing_history, viewing_id').eq('user_id', user.id)
                     .order('watched_date', { ascending: false })
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
                 
@@ -322,7 +324,6 @@ export const useFilmStore = create<FilmState>()(
                         isSpoiler: dbLog.is_spoiler || false,
                         watchedDate: dbLog.watched_date,
                         watchedWith: dbLog.watched_with || null,
-                        privateNotes: dbLog.private_notes || null,
                         abandonedReason: dbLog.abandoned_reason || null,
                         physicalMedia: dbLog.physical_media || null,
                         isAutopsied: dbLog.is_autopsied || false,
@@ -334,7 +335,8 @@ export const useFilmStore = create<FilmState>()(
                         videoUrl: dbLog.video_url || null,
                         createdAt: dbLog.created_at,
                         viewCount: dbLog.view_count || 1,
-                        viewingHistory: dbLog.viewing_history || [],
+                        viewingHistory: Array.isArray(dbLog.viewing_history) ? dbLog.viewing_history : [],
+                        viewingId: dbLog.viewing_id ?? null,
                 }))
 
                 const nextLogs = loadMore ? [...state.logs, ...newLogs] : newLogs
@@ -418,156 +420,13 @@ export const useFilmStore = create<FilmState>()(
                 }
             },
 
-            addLog: async (log) => {
-                const user = useAuthStore.getState().user
-                if (!user) return
-
-                // Fetch directly from server as a pre-flight if missing in client paginated cache
-                let existingLog = log.filmId ? get()._loggedIndex[log.filmId] : undefined
-                if (!existingLog && log.filmId) {
-                    const { data: serverCheck } = await supabase.from('logs')
-                        .select('id, rating, review, watched_date, watched_with, view_count, viewing_history, created_at, status')
-                        .eq('user_id', user.id).eq('film_id', log.filmId).maybeSingle()
-                    if (serverCheck) {
-                        existingLog = {
-                            id: serverCheck.id, filmId: log.filmId, rating: serverCheck.rating, review: serverCheck.review, 
-                            watchedDate: serverCheck.watched_date, watchedWith: serverCheck.watched_with, 
-                            viewCount: serverCheck.view_count, viewingHistory: serverCheck.viewing_history,
-                            createdAt: serverCheck.created_at, status: serverCheck.status
-                        } as FilmLog
-                    }
-                }
-
-                // ── Rewatch: if a log already exists for this film, archive old review into viewing_history ──
-                if (existingLog) {
-                    const oldHistory = existingLog.viewingHistory || []
-                    const archivedEntry = {
-                        date: existingLog.watchedDate || existingLog.createdAt || new Date().toISOString(),
-                        rating: existingLog.rating,
-                        review: existingLog.review || '',
-                        watchedWith: existingLog.watchedWith || null,
-                    }
-                    const newHistory = [archivedEntry, ...oldHistory]
-                    const newViewCount = (existingLog.viewCount || 1) + 1
-
-                    await get().updateLog(existingLog.id, {
-                        rating: log.rating || 0,
-                        review: log.review || '',
-                        status: 'rewatched',
-                        watchedDate: log.watchedDate || new Date().toISOString(),
-                        watchedWith: log.watchedWith || null,
-                        isSpoiler: log.isSpoiler || false,
-                        privateNotes: log.privateNotes || null,
-                        physicalMedia: log.physicalMedia || null,
-                        viewCount: newViewCount,
-                        viewingHistory: newHistory,
-                    } as Partial<FilmLog>)
-                    return
-                }
-
-                // ── First watch: create new log ──
-                const { data, error } = await supabase.from('logs').insert([{
-                    user_id: user.id,
-                    film_id: log.filmId, film_title: log.title,
-                    poster_path: log.poster || null, year: log.year || null,
-                    rating: log.rating || 0, review: log.review || '',
-                    status: log.status || 'watched', is_spoiler: log.isSpoiler || false,
-                    watched_date: log.watchedDate || new Date().toISOString(),
-                    watched_with: log.watchedWith || null,
-                    private_notes: log.privateNotes || null,
-                    abandoned_reason: log.abandonedReason || null,
-                    physical_media: log.physicalMedia || null,
-                    is_autopsied: log.isAutopsied || false, autopsy: log.autopsy || null,
-                    alt_poster: log.altPoster || null, editorial_header: log.editorialHeader || null,
-                    drop_cap: log.dropCap || false, pull_quote: log.pullQuote || '',
-                    video_url: log.videoUrl || null,
-                    format: log.physicalMedia || 'Digital',
-                    view_count: 1,
-                    viewing_history: '[]',
-                }]).select().single()
-
-                if (error) return
-
-                const fullLog = { ...log, id: data.id, createdAt: data.created_at, viewCount: 1, viewingHistory: [] } as FilmLog
-                set((state) => {
-                    const nextIdx = { ...state._loggedIndex }
-                    if (log.filmId) nextIdx[log.filmId] = fullLog
-                    return { logs: [fullLog, ...state.logs], _loggedIndex: nextIdx }
-                })
-
-                // Auto-sync into Physical Archive if they claimed ownership
-                const syncFormatMap: Record<string, string> = { 'DVD': 'dvd', 'Blu-Ray': 'bluray', '4K UHD': '4k', 'VHS': 'vhs' }
-                if (log.physicalMedia && syncFormatMap[log.physicalMedia] && log.filmId !== undefined) {
-                    const fmt = syncFormatMap[log.physicalMedia]
-                    try {
-                        await get().addToPhysicalArchive({ id: log.filmId, title: log.title || '', poster_path: log.poster, release_date: log.year?.toString() }, [fmt])
-                    } catch (e) {
-                        console.error('Failed to auto-sync physical archive', e)
-                    }
-                }
-            },
-
-            markAsWatched: async (film, status = 'watched') => {
-                const user = useAuthStore.getState().user
-                if (!user) return
-                
-                let existingLog = get()._loggedIndex[film.id]
-                if (!existingLog) {
-                    const { data: serverCheck } = await supabase.from('logs').select('id, status').eq('user_id', user.id).eq('film_id', film.id).maybeSingle()
-                    if (serverCheck) existingLog = { id: serverCheck.id, status: serverCheck.status } as FilmLog
-                }
-
-                // If already logged, just update the status on the existing log
-                if (existingLog) {
-                    await get().updateLog(existingLog.id, { status } as Partial<FilmLog>)
-                    return
-                }
-                // Create a new log — first time watch
-                const { data, error } = await supabase.from('logs').insert([{
-                    user_id: user.id,
-                    film_id: film.id,
-                    film_title: film.title || film.name || 'Untitled',
-                    poster_path: film.poster_path || null,
-                    year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : null,
-                    rating: 0,
-                    review: '',
-                    status,
-                    watched_date: new Date().toISOString(),
-                    is_spoiler: false,
-                    view_count: 1,
-                    viewing_history: '[]',
-                }]).select().single()
-                if (error) return
-                const newLog: FilmLog = {
-                    id: data.id,
-                    filmId: film.id,
-                    title: film.title || film.name || 'Untitled',
-                    poster: film.poster_path,
-                    year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
-                    rating: 0,
-                    status,
-                    createdAt: data.created_at,
-                    watchedDate: new Date().toISOString(),
-                    viewCount: 1,
-                    viewingHistory: [],
-                }
-                set(state => {
-                    const nextIdx = { ...state._loggedIndex }
-                    nextIdx[film.id] = newLog
-                    return { logs: [newLog, ...state.logs], _loggedIndex: nextIdx }
-                })
-                // Auto-remove from watchlist if present
-                const inWatchlist = get().watchlist.some(w => w.id === film.id)
-                if (inWatchlist) get().removeFromWatchlist(film.id)
-            },
-
-            unmarkWatched: async (filmId) => {
-                const existingLog = get().logs.find(l => l.filmId === filmId)
-                if (!existingLog) return
-                // Only remove if it's a quick-watch (no rating, no review)
-                if (existingLog.rating > 0 || (existingLog.review && existingLog.review.length > 0)) return
-                await get().removeLog(existingLog.id)
-            },
+            // addLog, markAsWatched and unmarkWatched lived here, and nothing
+            // called them: every screen writes a log through
+            // features/film/hooks/useFilmMutations.ts. They were removed on
+            // 2026-09-18 because they wrote the note onto the blank
+            // `private_notes` column and built the viewing history by hand with
+            // JSON.stringify — the very code that shredded 16 histories. A second
+            // copy of a write path is how a fix lands in one and not the other.
 
             getCinephileStats: (overrideCount?: number) => {
                 const logs = get().logs
@@ -580,60 +439,8 @@ export const useFilmStore = create<FilmState>()(
                 return { count, level, color, progress: (count % 20) * 5 }
             },
 
-            updateLog: async (id, updates) => {
-                const dbUpdates: Record<string, unknown> = {}
-                if (updates.rating !== undefined) dbUpdates.rating = updates.rating
-                if (updates.review !== undefined) dbUpdates.review = updates.review
-                if (updates.status !== undefined) dbUpdates.status = updates.status
-                if (updates.isSpoiler !== undefined) dbUpdates.is_spoiler = updates.isSpoiler
-                if (updates.watchedDate !== undefined) dbUpdates.watched_date = updates.watchedDate
-                if (updates.watchedWith !== undefined) dbUpdates.watched_with = updates.watchedWith
-                if (updates.privateNotes !== undefined) dbUpdates.private_notes = updates.privateNotes
-                if (updates.abandonedReason !== undefined) dbUpdates.abandoned_reason = updates.abandonedReason
-                if (updates.physicalMedia !== undefined) dbUpdates.physical_media = updates.physicalMedia
-                if (updates.isAutopsied !== undefined) dbUpdates.is_autopsied = updates.isAutopsied
-                if (updates.autopsy !== undefined) dbUpdates.autopsy = updates.autopsy
-                if (updates.pullQuote !== undefined) dbUpdates.pull_quote = updates.pullQuote
-                if (updates.dropCap !== undefined) dbUpdates.drop_cap = updates.dropCap
-                if (updates.editorialHeader !== undefined) dbUpdates.editorial_header = updates.editorialHeader
-                if (updates.altPoster !== undefined) dbUpdates.alt_poster = updates.altPoster
-                if (updates.videoUrl !== undefined) dbUpdates.video_url = updates.videoUrl
-                if (updates.viewCount !== undefined) dbUpdates.view_count = updates.viewCount
-                if (updates.viewingHistory !== undefined) dbUpdates.viewing_history = JSON.stringify(updates.viewingHistory)
-                const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id)
-                if (!error) {
-                    set((state) => {
-                        let filmIdToUpdate: number | undefined
-                        const nextLogs = state.logs.map((l) => {
-                            if (l.id === id) {
-                                filmIdToUpdate = l.filmId
-                                return { ...l, ...updates } as FilmLog
-                            }
-                            return l
-                        })
-                        const nextIdx = { ...state._loggedIndex }
-                        if (filmIdToUpdate) {
-                            const updated = nextLogs.find(l => l.filmId === filmIdToUpdate)
-                            if (updated) nextIdx[filmIdToUpdate] = updated as FilmLog
-                        }
-                        return { logs: nextLogs, _loggedIndex: nextIdx }
-                    })
-                    
-                    // Auto-sync into Physical Archive if they updated a log to physical media
-                    const syncFormatMap: Record<string, string> = { 'DVD': 'dvd', 'Blu-Ray': 'bluray', '4K UHD': '4k', 'VHS': 'vhs' }
-                    if (updates.physicalMedia && syncFormatMap[updates.physicalMedia]) {
-                        const fmt = syncFormatMap[updates.physicalMedia]
-                        const logToUpdate = get().logs.find(l => l.id === id)
-                        if (logToUpdate && logToUpdate.filmId !== undefined) {
-                            try {
-                                await get().addToPhysicalArchive({ id: logToUpdate.filmId, title: logToUpdate.title || '', poster_path: logToUpdate.poster, release_date: logToUpdate.year?.toString() }, [fmt])
-                            } catch (e) {
-                                console.error('Failed to auto-sync physical archive on update', e)
-                            }
-                        }
-                    }
-                }
-            },
+            // updateLog was removed with them, for the same reason: unused, and
+            // it wrote `private_notes` and a stringified history.
 
             removeLog: async (id) => {
                 const logToRemove = get().logs.find((l) => l.id === id)

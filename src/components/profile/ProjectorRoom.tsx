@@ -4,6 +4,7 @@ import { Lock } from 'lucide-react'
 import { useFilmStore, useUIStore, useAuthStore } from '../../store'
 import reelToast from '../../utils/reelToast'
 import { isArchivistPlusTier } from '../../utils/tier'
+import { fetchAllMyNotes, type VaultNoteRow } from '../../services/vault'
 
 export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
     const isMaster = stats.total_logs > 50
@@ -41,12 +42,13 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
         while (true) {
             const { data, error } = await supabase
                 .from('logs')
-                .select('*')
+                // Named columns, not `*`: `*` includes `private_notes`, the column
+                // the database keeps blank, and nothing on the web reads it.
+                .select('film_title, year, rating, status, watched_date, review, watched_with, viewing_id, viewing_history, created_at')
                 // viewer.id, not user.id — the guard above already proves they are
                 // the same person, and reading it from the session means a future
                 // change to that guard cannot turn this back into someone else's
-                // archive. `select('*')` is safe here: `logs` is under column-level
-                // grants for anon only, and this path is always authenticated.
+                // archive.
                 .eq('user_id', viewer!.id)
                 .order('created_at', { ascending: false })
                 .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
@@ -63,14 +65,37 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
         
         if (!fetchLogs || fetchLogs.length === 0) return reelToast('No logs to export.')
 
-        const headers = ['Title', 'Year', 'Rating', 'Status', 'Watched Date', 'Review', 'Private Notes', 'Watched With']
+        // The member's own private notes leave with them — read from the Vault,
+        // where they live, by viewing. This column used to read the log row's
+        // `private_notes`, which the database keeps blank on purpose, so every
+        // export shipped with an empty "Private Notes" column. A log's row carries
+        // the note on the viewing it is ON; each earlier viewing follows as its
+        // own row with its own note, so no note is left behind.
+        let notes: VaultNoteRow[] = []
+        try { notes = await fetchAllMyNotes() } catch {
+            return reelToast.error('The Vault could not be reached, so the export was not made. Try again.')
+        }
+        const noteByViewing = new Map(notes.map(n => [n.viewing_id, n.notes]))
+        const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
+
+        const headers = ['Title', 'Year', 'Rating', 'Status', 'Watched Date', 'Review', 'Private Notes', 'Watched With', 'Viewing']
         const csvRows = [headers.join(',')]
         for (const log of fetchLogs) {
             csvRows.push([
-                `"${log.film_title || ''}"`, log.year || '', log.rating || '', log.status || '',
-                log.watched_date || '', `"${(log.review || '').replace(/"/g, '""')}"`,
-                `"${(log.private_notes || '').replace(/"/g, '""')}"`, `"${log.watched_with || ''}"`
+                cell(log.film_title), log.year || '', log.rating || '', log.status || '',
+                log.watched_date || '', cell(log.review),
+                cell(noteByViewing.get(log.viewing_id)), cell(log.watched_with), cell('current'),
             ].join(','))
+            const history: Array<{ viewingId?: string; date?: string; rating?: number; review?: string; watchedWith?: string | null; status?: string }> =
+                Array.isArray(log.viewing_history) ? log.viewing_history : []
+            history.forEach((v, i) => {
+                const note = v.viewingId ? noteByViewing.get(v.viewingId) : undefined
+                csvRows.push([
+                    cell(log.film_title), log.year || '', v.rating || '', v.status || '',
+                    (v.date || '').slice(0, 10), cell(v.review),
+                    cell(note), cell(v.watchedWith), cell(i === history.length - 1 ? 'first watch' : `viewing ${history.length - i}`),
+                ].join(','))
+            })
         }
         const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' })
         const url = window.URL.createObjectURL(blob)

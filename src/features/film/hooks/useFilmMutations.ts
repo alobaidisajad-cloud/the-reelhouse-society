@@ -5,6 +5,31 @@ import { useFilmStore } from '../../../stores/films';
 import reelToast from '../../../utils/reelToast';
 import { enqueueMutation } from '../../../utils/offlineQueue';
 import { FilmLog } from '../../../types';
+import * as Vault from '../../../services/vault';
+import { useVaultStore } from '../../../stores/vault';
+
+/** A history as the server sends it — always a list since 2026-09-18, but read defensively. */
+const parseHistory = (raw: unknown): FilmLog['viewingHistory'] => {
+    if (Array.isArray(raw)) return raw as FilmLog['viewingHistory'];
+    if (typeof raw === 'string') { try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; } }
+    return [];
+};
+
+/**
+ * Write the note that came with a log. The record itself is already filed by
+ * the time this runs, so a note that cannot be kept does not take the record
+ * down with it — but the member is told, once, in plain words, rather than
+ * finding their writing missing later.
+ */
+async function saveNoteQuietly(logId: string, viewingId: string, note: string): Promise<void> {
+    try {
+        await useVaultStore.getState().saveNote(logId, viewingId, note);
+    } catch (e) {
+        reelToast.error(Vault.isRankRefusal(e)
+            ? 'Your record is filed. The Vault is an Archivist feature, so the note was not kept.'
+            : 'Your record is filed, but the note could not be kept. Try again from the log.');
+    }
+}
 
 interface TMDBFilmInput {
     id: number;
@@ -28,7 +53,6 @@ export function useFilmMutations() {
         useRemoveLog,
         useRemoveFromWatchlist,
         useMarkAsWatched,
-        useUnmarkWatched,
     };
 }
 
@@ -92,6 +116,45 @@ export function useAddToWatchlist() {
     });
 }
 
+/**
+ * A viewing's fields, named as the server names them, from what the form sent.
+ *
+ * Only keys the form actually provided are included, and the server leaves every
+ * other field of the viewing as it was — so a member below a rank, whose form
+ * omits the ranked fields, never erases them. `private_notes`, `viewing_history`
+ * and `view_count` are never among them: a note is written on its viewing, and
+ * the history and its count belong to the server.
+ */
+export function viewingFieldsFromLog(log: Partial<FilmLog>): Record<string, unknown> {
+    const f: Record<string, unknown> = {};
+    const put = (col: string, v: unknown) => { if (v !== undefined) f[col] = v; };
+    put('rating', log.rating);
+    put('review', log.review);
+    put('status', log.status);
+    put('watched_date', log.watchedDate);
+    put('watched_with', log.watchedWith === '' ? null : log.watchedWith);
+    put('is_spoiler', log.isSpoiler);
+    put('abandoned_reason', log.abandonedReason);
+    put('physical_media', log.physicalMedia);
+    put('is_autopsied', log.isAutopsied);
+    put('autopsy', log.autopsy);
+    put('alt_poster', log.altPoster);
+    put('editorial_header', log.editorialHeader);
+    put('drop_cap', log.dropCap);
+    put('pull_quote', log.pullQuote);
+    put('video_url', log.videoUrl);
+    if (log.physicalMedia !== undefined) f.format = log.physicalMedia || 'Digital';
+    return f;
+}
+
+/**
+ * The note the form carried, if the member touched it. `undefined` means they
+ * did not, and an untouched note is never written — that is what protects
+ * writing the member never looked at.
+ */
+const touchedNote = (log: Partial<FilmLog>): string | undefined =>
+    typeof log.privateNotes === 'string' ? log.privateNotes.trim() : undefined;
+
 export function useAddLog() {
     const queryClient = useQueryClient();
     return useMutation({
@@ -100,61 +163,64 @@ export function useAddLog() {
             const user = useAuthStore.getState().user;
             if (!user) throw new Error("Not logged in");
 
-            // We perform the same logic as films.ts addLog
             let existingLog = log.filmId ? useFilmStore.getState()._loggedIndex[log.filmId] : undefined;
             if (!existingLog && log.filmId) {
                 const { data: serverCheck } = await supabase.from('logs')
-                    .select('id, rating, review, watched_date, watched_with, view_count, viewing_history, created_at, status')
+                    .select('id, viewing_id, rating, review, watched_date, watched_with, view_count, viewing_history, created_at, status')
                     .eq('user_id', user.id).eq('film_id', log.filmId).maybeSingle();
-                
+
                 if (serverCheck) {
                     existingLog = {
-                        id: serverCheck.id, filmId: log.filmId, rating: serverCheck.rating, review: serverCheck.review, 
-                        watchedDate: serverCheck.watched_date, watchedWith: serverCheck.watched_with, 
-                        viewCount: serverCheck.view_count, viewingHistory: serverCheck.viewing_history,
+                        id: serverCheck.id, filmId: log.filmId, viewingId: serverCheck.viewing_id,
+                        rating: serverCheck.rating, review: serverCheck.review,
+                        watchedDate: serverCheck.watched_date, watchedWith: serverCheck.watched_with,
+                        viewCount: serverCheck.view_count, viewingHistory: parseHistory(serverCheck.viewing_history),
                         createdAt: serverCheck.created_at, status: serverCheck.status
                     } as FilmLog;
                 }
             }
 
+            const note = touchedNote(log);
+
             if (existingLog) {
-                const oldHistory = existingLog.viewingHistory || [];
-                const archivedEntry = {
-                    date: existingLog.watchedDate || existingLog.createdAt || new Date().toISOString(),
-                    rating: existingLog.rating,
-                    review: existingLog.review || '',
-                    watchedWith: existingLog.watchedWith || null,
-                };
-                const newHistory = [archivedEntry, ...oldHistory];
-                const newViewCount = (existingLog.viewCount || 1) + 1;
+                // ── A rewatch ──
+                // The SERVER archives the viewing being left — from the row it
+                // holds, with its own identity, so the note written about it stays
+                // with it — and moves the log on to the new one. The web used to
+                // build the history here and JSON.stringify it, which is how 16
+                // members' histories were shredded into single characters.
+                //
+                // The new viewing is named HERE, before the write, so a retried
+                // call is the same rewatch and never a second one.
+                const newViewingId = crypto.randomUUID();
+                const fields = viewingFieldsFromLog({
+                    ...log,
+                    status: log.status === 'abandoned' ? 'abandoned' : 'rewatched',
+                    watchedDate: log.watchedDate || new Date().toISOString().slice(0, 10),
+                });
 
-                const updates = {
-                    rating: log.rating || 0,
-                    review: log.review || '',
-                    status: 'rewatched',
-                    watched_date: log.watchedDate || new Date().toISOString(),
-                    watched_with: log.watchedWith || null,
-                    is_spoiler: log.isSpoiler || false,
-                    private_notes: log.privateNotes || null,
-                    physical_media: log.physicalMedia || null,
-                    view_count: newViewCount,
-                    viewing_history: JSON.stringify(newHistory),
-                };
-
-                const { error } = await supabase.from('logs').update(updates).eq('id', existingLog.id);
-                if (error) {
-                    if (error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network')) {
-                        // Offline queueing not fully supported for complex rewatch updates yet
-                        throw new Error("Offline rewatch not supported");
-                    }
-                    throw error;
+                let queuedOffline = false;
+                try {
+                    await Vault.addViewing(existingLog.id, newViewingId, fields);
+                } catch (e) {
+                    if (!Vault.isNetworkError(e)) throw e;
+                    await enqueueMutation({ type: 'add_viewing', payload: { log_id: existingLog.id, viewing_id: newViewingId, fields } });
+                    queuedOffline = true;
                 }
-                
-                return { isRewatch: true, existingLog, updates: { ...updates, viewingHistory: newHistory } };
+                // The note belongs to the viewing that has just begun. Queued in
+                // order behind the rewatch when offline — a note needs a viewing.
+                if (note) await saveNoteQuietly(existingLog.id, newViewingId, note);
+
+                return { isRewatch: true as const, existingLog, newViewingId, fields, queuedOffline };
             }
 
-            // First watch
+            // ── A first watch ──
+            // Both identities are chosen here: the log's, so an offline log has a
+            // real id rather than a placeholder, and its first viewing's, so a
+            // note can be written on it before the queue has flushed.
             const payload = {
+                id: crypto.randomUUID(),
+                viewing_id: crypto.randomUUID(),
                 user_id: user.id,
                 film_id: log.filmId, film_title: log.title,
                 poster_path: log.poster || null, year: log.year || null,
@@ -162,7 +228,6 @@ export function useAddLog() {
                 status: log.status || 'watched', is_spoiler: log.isSpoiler || false,
                 watched_date: log.watchedDate || new Date().toISOString(),
                 watched_with: log.watchedWith || null,
-                private_notes: log.privateNotes || null,
                 abandoned_reason: log.abandonedReason || null,
                 physical_media: log.physicalMedia || null,
                 is_autopsied: log.isAutopsied || false, autopsy: log.autopsy || null,
@@ -170,40 +235,50 @@ export function useAddLog() {
                 drop_cap: log.dropCap || false, pull_quote: log.pullQuote || '',
                 video_url: log.videoUrl || null,
                 format: log.physicalMedia || 'Digital',
-                view_count: 1,
-                viewing_history: '[]',
             };
 
             const { data, error } = await supabase.from('logs').insert([payload]).select().single();
             if (error) {
-                if (error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network')) {
+                if (Vault.isNetworkError(error)) {
                     await enqueueMutation({ type: 'add_log', payload });
-                    return { isRewatch: false, log: { ...payload, id: `offline-${Date.now()}`, created_at: new Date().toISOString() } };
+                    if (note) await saveNoteQuietly(payload.id, payload.viewing_id, note);
+                    return { isRewatch: false as const, log: { ...payload, created_at: new Date().toISOString() } };
                 }
                 throw error;
             }
+            if (note) await saveNoteQuietly(payload.id, payload.viewing_id, note);
 
-            return { isRewatch: false, log: data };
+            return { isRewatch: false as const, log: data };
         },
         onSuccess: (data, logInput) => {
-            if (data.isRewatch && data.existingLog) {
+            if (data.isRewatch) {
                 const store = useFilmStore.getState();
+                const prior = data.existingLog;
+                // What the screen shows until the next fetch: the viewing it left,
+                // named, at the front of the history — and no note in it.
+                const archived = {
+                    viewingId: prior.viewingId ?? undefined,
+                    date: prior.watchedDate || prior.createdAt || new Date().toISOString(),
+                    rating: prior.rating,
+                    review: prior.review || '',
+                    watchedWith: prior.watchedWith || null,
+                };
                 const mappedUpdates = {
-                    rating: data.updates.rating,
-                    review: data.updates.review,
-                    status: data.updates.status,
-                    watchedDate: data.updates.watched_date,
-                    watchedWith: data.updates.watched_with,
-                    isSpoiler: data.updates.is_spoiler,
-                    privateNotes: data.updates.private_notes,
-                    physicalMedia: data.updates.physical_media,
-                    viewCount: data.updates.view_count,
-                    viewingHistory: data.updates.viewingHistory,
+                    rating: logInput.rating ?? prior.rating,
+                    review: logInput.review ?? prior.review,
+                    status: data.fields.status as FilmLog['status'],
+                    watchedDate: data.fields.watched_date as string,
+                    watchedWith: logInput.watchedWith ?? prior.watchedWith,
+                    isSpoiler: logInput.isSpoiler ?? prior.isSpoiler,
+                    physicalMedia: logInput.physicalMedia ?? prior.physicalMedia,
+                    viewingId: data.newViewingId,
+                    viewCount: (prior.viewCount || 1) + 1,
+                    viewingHistory: [archived, ...(prior.viewingHistory || [])],
                 } as Partial<FilmLog>;
-                
+
                 let filmIdToUpdate: number | undefined;
                 const nextLogs = store.logs.map((l) => {
-                    if (l.id === data.existingLog!.id) {
+                    if (l.id === prior.id) {
                         filmIdToUpdate = l.filmId;
                         return { ...l, ...mappedUpdates } as FilmLog;
                     }
@@ -216,13 +291,15 @@ export function useAddLog() {
                 }
                 useFilmStore.setState({ logs: nextLogs, _loggedIndex: nextIdx });
 
-            } else if (!data.isRewatch && data.log) {
-                const fullLog = { 
-                    ...logInput, 
-                    id: data.log.id, 
-                    createdAt: data.log.created_at, 
-                    viewCount: 1, 
-                    viewingHistory: [] 
+            } else if (data.log) {
+                const { privateNotes: _note, ...withoutNote } = logInput;
+                const fullLog = {
+                    ...withoutNote,
+                    id: data.log.id,
+                    viewingId: data.log.viewing_id ?? null,
+                    createdAt: data.log.created_at,
+                    viewCount: 1,
+                    viewingHistory: []
                 } as FilmLog;
                 
                 useFilmStore.setState((state) => {
@@ -263,7 +340,7 @@ export function useUpdateLog() {
             if (updates.watchedDate !== undefined) dbUpdates.watched_date = updates.watchedDate;
             if (updates.watchedWith !== undefined) dbUpdates.watched_with = updates.watchedWith;
             if (updates.abandonedReason !== undefined) dbUpdates.abandoned_reason = updates.abandonedReason;
-            if (updates.privateNotes !== undefined) dbUpdates.private_notes = updates.privateNotes;
+            // No `private_notes`. A note is written on its VIEWING, below.
             if (updates.physicalMedia !== undefined) dbUpdates.physical_media = updates.physicalMedia;
             if (updates.isAutopsied !== undefined) dbUpdates.is_autopsied = updates.isAutopsied;
             if (updates.autopsy !== undefined) dbUpdates.autopsy = updates.autopsy;
@@ -273,23 +350,38 @@ export function useUpdateLog() {
             if (updates.pullQuote !== undefined) dbUpdates.pull_quote = updates.pullQuote;
             if (updates.videoUrl !== undefined) dbUpdates.video_url = updates.videoUrl;
 
-            const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id);
-            if (error) {
-                if (error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network')) {
+            // Addressed by owner as well as id: RLS is the real guard, but a
+            // refused row answers 200 with no error, and the screen would then
+            // show an edit that never happened.
+            if (Object.keys(dbUpdates).length > 0) {
+                const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id).eq('user_id', user.id);
+                if (error) {
+                    if (!Vault.isNetworkError(error)) throw error;
                     await enqueueMutation({ type: 'update_log', payload: { id, updates: dbUpdates } });
-                    return { id, updates };
                 }
-                throw error;
+            }
+
+            // The note, if the member touched it — on the viewing this log is ON.
+            const note = touchedNote(updates);
+            if (note !== undefined) {
+                let viewingId = useFilmStore.getState().logs.find(l => l.id === id)?.viewingId ?? null;
+                if (!viewingId) {
+                    const { data } = await supabase.from('logs').select('viewing_id').eq('id', id).maybeSingle();
+                    viewingId = (data as { viewing_id?: string } | null)?.viewing_id ?? null;
+                }
+                if (viewingId) await saveNoteQuietly(id, viewingId, note);
             }
             return { id, updates };
         },
         onSuccess: (data) => {
             const store = useFilmStore.getState();
+            // The note is not part of the log and never sits on it.
+            const { privateNotes: _note, ...logUpdates } = data.updates;
             let filmIdToUpdate: number | undefined;
             const nextLogs = store.logs.map((l) => {
                 if (l.id === data.id) {
                     filmIdToUpdate = l.filmId;
-                    return { ...l, ...data.updates } as FilmLog;
+                    return { ...l, ...logUpdates } as FilmLog;
                 }
                 return l;
             });
@@ -316,9 +408,11 @@ export function useRemoveLog() {
             const user = useAuthStore.getState().user;
             if (!user) throw new Error("Not logged in");
 
-            const { error } = await supabase.from('logs').delete().eq('id', id);
+            // Deleting the log deletes every note on it, at the database (the
+            // notes' foreign key cascades). Addressed by owner as well as id.
+            const { error } = await supabase.from('logs').delete().eq('id', id).eq('user_id', user.id);
             if (error) {
-                if (error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network')) {
+                if (Vault.isNetworkError(error)) {
                     await enqueueMutation({ type: 'delete_log', payload: { id } });
                     return id;
                 }
@@ -400,7 +494,12 @@ export function useMarkAsWatched() {
             const user = useAuthStore.getState().user;
             if (!user) throw new Error("Not logged in");
 
+            // The log and its first viewing are named here, so a film marked
+            // watched with no signal has a real id and can take a note at once.
+            // No `viewing_history` or `view_count`: both are the server's.
             const payload = {
+                id: crypto.randomUUID(),
+                viewing_id: crypto.randomUUID(),
                 user_id: user.id,
                 film_id: film.id,
                 film_title: film.title || film.name || 'Unknown',
@@ -409,23 +508,22 @@ export function useMarkAsWatched() {
                 rating: 0,
                 status: 'watched',
                 watched_date: new Date().toISOString(),
-                view_count: 1,
-                viewing_history: '[]'
             };
 
             const { data, error } = await supabase.from('logs').insert([payload]).select().single();
             if (error) {
-                if (error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network')) {
+                if (Vault.isNetworkError(error)) {
                     await enqueueMutation({ type: 'add_log', payload });
-                    return { ...payload, id: `offline-${Date.now()}`, created_at: new Date().toISOString() };
+                    return { ...payload, created_at: new Date().toISOString() };
                 }
                 throw error;
             }
             return data;
         },
         onSuccess: (data, film) => {
-            const fullLog = { 
-                id: data.id, 
+            const fullLog = {
+                id: data.id,
+                viewingId: data.viewing_id ?? null,
                 filmId: film.id,
                 title: film.title || film.name || 'Unknown',
                 poster: film.poster_path || null,
@@ -452,42 +550,7 @@ export function useMarkAsWatched() {
     });
 }
 
-export function useUnmarkWatched() {
-    const queryClient = useQueryClient();
-    return useMutation({
-        networkMode: 'offlineFirst',
-        mutationFn: async (filmId: number) => {
-            const store = useFilmStore.getState();
-            const log = store._loggedIndex[filmId];
-            if (!log) throw new Error("Log not found");
-
-            const user = useAuthStore.getState().user;
-            if (!user) throw new Error("Not logged in");
-
-            const { error } = await supabase.from('logs').delete().eq('id', log.id);
-            if (error) {
-                if (error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network')) {
-                    await enqueueMutation({ type: 'delete_log', payload: { id: log.id } });
-                    return log.id;
-                }
-                throw error;
-            }
-            return log.id;
-        },
-        onSuccess: (id) => {
-            useFilmStore.setState((state) => {
-                const log = state.logs.find(l => l.id === id);
-                const nextLogs = state.logs.filter((l) => l.id !== id);
-                const nextIdx = { ...state._loggedIndex };
-                if (log?.filmId) delete nextIdx[log.filmId];
-                return { logs: nextLogs, _loggedIndex: nextIdx };
-            });
-            reelToast.success('Removed watch history');
-            
-            const user = useAuthStore.getState().user;
-            if (user) {
-                queryClient.invalidateQueries({ queryKey: ['user-profile-logs', user.id] });
-            }
-        }
-    });
-}
+// useUnmarkWatched was removed on 2026-09-18. Nothing called it, and it deleted
+// the whole log — review, rewatches and every private note on it — without
+// checking whether the log held anything but the mark. A destructive act that
+// no screen uses is a defect waiting for its first caller.

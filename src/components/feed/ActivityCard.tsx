@@ -16,6 +16,7 @@ import { supabase } from '../../supabaseClient'
 import FocusView from './FocusView'
 import FeedView from './FeedView'
 import { isArchivistPlusTier } from '../../utils/tier'
+import { useLogVault } from '../../hooks/useVault'
 
 export default function ActivityCard({ log, isExpandedView = false }: { log: any, isExpandedView?: boolean }) {
     const { isTouch: IS_TOUCH, isMobile } = useViewport()
@@ -74,6 +75,16 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     const privacyAnnotations = log.privacyAnnotations || 'everyone'
     const isOwner = currentUser?.username === log.user
     const isFollowing = currentUser?.following?.includes(log.user)
+
+    // ── THE VAULT ──
+    // Whose private notes may be drawn here is decided by member ID, never by
+    // username: a name can change, and the one thing that must never happen is
+    // a note being asked for on a log that is not the reader's. (The server would
+    // return nothing anyway — RLS is owner-only — this is the second lock.) Only
+    // on the log's own page: a feed card never asks for a note at all.
+    const ownsLog = !!currentUser?.id && !!(log.userId || log.user_id) && (log.userId || log.user_id) === currentUser.id
+    const vault = useLogVault(isExpandedView && ownsLog ? log.id : null, isExpandedView && ownsLog)
+    const canWriteVault = isArchivistPlusTier(currentUser as never)
     
     const canEndorse = isOwner || privacyEndorsements === 'everyone' || (privacyEndorsements === 'followers' && isFollowing) || log.user === 'anonymous'
     const canAnnotate = isOwner || privacyAnnotations === 'everyone' || (privacyAnnotations === 'followers' && isFollowing) || log.user === 'anonymous'
@@ -183,7 +194,8 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         stampRotation, isPremiumLog, isAuteurLog, isArchivistLog,
         strippedReview, showFullText, spoilersRevealed, setSpoilersRevealed,
         isExpanded, setIsExpanded,
-        currentUser, reelToast, handleCardClick, handleReport
+        currentUser, reelToast, handleCardClick, handleReport,
+        ownsLog: isExpandedView && ownsLog, vault, canWriteVault,
     }
 
     // ── EARLY RETURN IF MUTED ──

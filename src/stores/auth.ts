@@ -5,6 +5,8 @@ import { supabase } from '../supabaseClient'
 import { logError } from '../errorLogger'
 import { User } from '../types'
 import reelToast from '../utils/reelToast'
+import { clearOfflineQueue } from '../utils/offlineQueue'
+import { LOG_DRAFT_PREFIX } from '../utils/logDrafts'
 
 // ── Username → ID cache: prevents redundant profile lookups on follow/unfollow ──
 const _usernameIdCache = new Map<string, string>()
@@ -205,7 +207,19 @@ export const useAuthStore = create<AuthState>()(
                 localStorage.removeItem('reelhouse-ui')
                 localStorage.removeItem('reelhouse-social')
                 localStorage.removeItem('reelhouse-content')
-                
+
+                // Log drafts hold a member's own writing — their review AND their
+                // private note. Swept by PREFIX, never by a list: a list is how
+                // four draft keys on mobile came to outlive the member who wrote
+                // them. The prefix covers today's per-member keys and the older
+                // keys that carried no member at all.
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith(LOG_DRAFT_PREFIX)) localStorage.removeItem(key)
+                })
+
+                // The offline queue can hold private notes waiting for a signal.
+                await clearOfflineQueue()
+
                 // Clear all session storage tokens holding recovery flags
                 sessionStorage.clear()
 

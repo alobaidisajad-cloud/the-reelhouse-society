@@ -28,7 +28,7 @@ export default function LogDetailPage() {
                 .from('logs')
                 .select(`
                     id, rating, review, pull_quote, drop_cap, editorial_header, is_spoiler, is_autopsied, autopsy, created_at,
-                    user_id, film_id, film_title, poster_path, year, status, viewing_history, view_count, watched_date, watched_with,
+                    user_id, film_id, film_title, poster_path, year, status, viewing_history, view_count, viewing_id, watched_date, watched_with,
                     profiles!logs_user_id_fkey ( username, role, public_prefs )
                 `)
                 .eq('id', logId)
@@ -45,6 +45,11 @@ export default function LogDetailPage() {
             // Map data to match ActivityCard's expected log object shape
             const formattedLog = {
                 id: data.id,
+                // By id, so the page can tell the log's own writer from everyone
+                // else without trusting a username that can change.
+                userId: data.user_id,
+                // The viewing this log is on — how its private note is found.
+                viewingId: data.viewing_id ?? null,
                 user: profileData?.username || 'anonymous',
                 userRole: profileData?.role || 'cinephile',
                 // `public_prefs` is the whitelist projection of `preferences`; this is

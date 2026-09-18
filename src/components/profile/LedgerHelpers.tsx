@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, memo } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
-import { Film, BookOpen, Lock, Check, RotateCcw, X } from 'lucide-react'
+import { Film, BookOpen, Check, RotateCcw, X } from 'lucide-react'
 import { useAuthStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
@@ -158,12 +158,13 @@ export const FilmLogRow = memo(function FilmLogRow({ log, onShare }: any) {
                 {log.pullQuote && <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem', paddingLeft: '0.75rem', borderLeft: '3px solid var(--sepia)', fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--sepia)', fontStyle: 'italic', lineHeight: 1.2 }}>"{log.pullQuote}"</div>}
                 {log.review && <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.4rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{log.review}</p>}
                 {log.isAutopsied && log.autopsy && <div style={{ display: 'flex', justifyContent: 'flex-start' }}><RadarChart {...{ autopsy: log.autopsy, size: 140 } as any} /></div>}
-                {log.privateNotes && (
-                    <div style={{ marginTop: '0.75rem', padding: '0.5rem', background: 'rgba(212, 185, 117, 0.05)', borderRadius: '2px', borderLeft: '2px solid var(--sepia)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginBottom: '0.2rem' }}><Lock size={10} /> THE CUTTING ROOM FLOOR (PRIVATE)</div>
-                        <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', margin: 0, fontStyle: 'italic' }}>{log.privateNotes}</p>
-                    </div>
-                )}
+                {/* No private note here, deliberately. A ledger is a list — the
+                    thing on screen when a member scrolls their profile in front
+                    of someone — and a note is the one piece of writing they may
+                    not want legible over their shoulder. It is shown where it
+                    belongs, on the log's own page, under the viewing it is about.
+                    (This row also read the note off the log, where the database
+                    keeps it blank — so it never showed anything anyway.) */}
             </div>
         </div>
     )

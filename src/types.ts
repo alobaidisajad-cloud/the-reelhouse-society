@@ -80,6 +80,14 @@ export interface FilmLog {
     isSpoiler?: boolean
     watchedDate?: string
     watchedWith?: string | null
+    /**
+     * The note the member is writing in the log form, carried from the form to
+     * the save. It is NEVER read from, or written to, the log row: a note belongs
+     * to a VIEWING and lives in `log_private_notes`, read through
+     * services/vault.ts. The `logs.private_notes` column is kept blank by the
+     * database on purpose — reading it is how both apps came to show a member an
+     * empty Vault they had written in.
+     */
     privateNotes?: string | null
     abandonedReason?: string | null
     physicalMedia?: string | null
@@ -90,7 +98,11 @@ export interface FilmLog {
     videoUrl?: string | null
     // Viewing Chronicle — rewatch history stored in same log
     viewCount?: number
+    /** The viewing this log is ON. A private note belongs to one of these. */
+    viewingId?: string | null
     viewingHistory?: Array<{
+        /** This past viewing's own identity; the server gives every one of them one. */
+        viewingId?: string
         date?: string
         rating: number
         review?: string

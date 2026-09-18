@@ -70,8 +70,20 @@ describe('useFilmStore — initial state', () => {
         const state = useFilmStore.getState()
         expect(typeof state.fetchLogs).toBe('function')
         expect(typeof state.fetchWatchlist).toBe('function')
-        expect(typeof state.addLog).toBe('function')
         expect(typeof state.toggleEndorse).toBe('function')
+    })
+
+    it('has ONE way to write a log, and it is not here', () => {
+        // The store carried addLog / markAsWatched / unmarkWatched / updateLog as
+        // well as useFilmMutations, and nothing called them — but they still wrote
+        // the note onto the blank `private_notes` column and stringified the
+        // viewing history by hand. A second copy of a write path is how a fix
+        // lands in one and not the other. Every log write goes through
+        // features/film/hooks/useFilmMutations.ts now.
+        const state = useFilmStore.getState()
+        for (const gone of ['addLog', 'markAsWatched', 'unmarkWatched', 'updateLog']) {
+            expect(state[gone]).toBeUndefined()
+        }
     })
 
     it('can set logs directly via setState (simulating loaded data)', () => {

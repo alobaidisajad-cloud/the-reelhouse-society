@@ -90,7 +90,7 @@ export default function HandbookModal() {
 
                             <div className="hb-item">
                                 <h3>The Vault</h3>
-                                <p>Private notes on a log, seen by you alone. An Archivist privilege.</p>
+                                <p>A private note on each viewing of a film, seen by you alone. Writing one is an Archivist privilege; reading and removing your own never is.</p>
                             </div>
 
                             <div className="hb-item">

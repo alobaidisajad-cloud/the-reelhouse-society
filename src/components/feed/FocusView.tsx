@@ -13,6 +13,8 @@ import AnnotationPanel from './AnnotationPanel'
 import { DossierExportHTML } from './DossierExportHTML'
 import type { ActivityCardViewProps } from './types'
 import { RankBadge } from '../RankBadge';
+import VaultNote from '../vault/VaultNote'
+import NoteDialog from '../vault/NoteDialog'
 
 const RadarChart = lazy(() => import('../UI').then(m => ({ default: m.RadarChart })))
 
@@ -27,7 +29,13 @@ export default function FocusView({
     stampRotation, isPremiumLog, isAuteurLog, isArchivistLog,
     strippedReview, showFullText, spoilersRevealed, setSpoilersRevealed,
     currentUser, reelToast,
+    ownsLog = false, vault, canWriteVault = false,
 }: ActivityCardViewProps) {
+    // The Vault is drawn only for the log's own writer, on this page. For anyone
+    // else there is no reader and no opener, so nothing private can render.
+    const noteFor = ownsLog && vault ? vault.noteFor : () => ''
+    const currentNote = noteFor(log.viewingId)
+    const filmForEdit = { id: log.film?.id || log.filmId, title: log.film?.title, poster_path: log.film?.poster, release_date: log.film?.year + '-01-01' }
     return (
         <div className="fade-in-up" onClick={e => e.stopPropagation()} style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: '100%', isolation: 'isolate', overflow: 'hidden' }}>
             {/* ── IMMERSIVE FULL-BLEED BACKDROP ── */}
@@ -213,26 +221,44 @@ export default function FocusView({
                 </div>
             )}
 
+            {/* ── THE VAULT — the note about THIS viewing. The owner's eyes only,
+                and outside the spoiler veil: nobody is veiled from their own
+                writing, and a note is not part of the critique others read. ── */}
+            {ownsLog && vault && log.viewingId && currentNote && (
+                <div style={{ padding: '0 1.5rem' }}>
+                    <VaultNote
+                        note={currentNote}
+                        onOpen={() => vault.openNote(log.viewingId, '◆ LATEST VIEWING', canWriteVault)}
+                    />
+                </div>
+            )}
+
             {/* ── VIEWING CHRONICLE — Horizontal swipeable review carousel ── */}
             {log.viewingHistory && log.viewingHistory.length > 0 && (() => {
                 const allViewings = [
                     // Current review as the first page
                     ...(log.review ? [{
                         label: '◆ LATEST VIEWING',
+                        viewingId: log.viewingId as string | undefined,
                         date: log.watchedDate || log.watched_date,
                         rating: log.rating,
                         review: log.review,
                         watchedWith: log.watchedWith || log.watched_with,
                         isCurrent: true,
+                        note: '',
                     }] : []),
-                    // Past reviews
+                    // Past reviews — each with the note written about it, for its
+                    // writer only. A visitor's copy of a viewing holds no note at
+                    // all: the server strips notes from every history.
                     ...log.viewingHistory.map((entry: any, idx: number) => ({
                         label: idx === log.viewingHistory.length - 1 ? '◆ FIRST WATCH' : `VIEWING ${log.viewingHistory.length - idx}`,
+                        viewingId: entry.viewingId as string | undefined,
                         date: entry.date,
                         rating: entry.rating,
                         review: entry.review,
                         watchedWith: entry.watchedWith,
                         isCurrent: false,
+                        note: noteFor(entry.viewingId),
                     })),
                 ]
                 return (
@@ -311,6 +337,16 @@ export default function FocusView({
                                                 ♡ {entry.watchedWith}
                                             </span>
                                         )}
+                                        {/* The note about this past viewing — clamped to three lines,
+                                            the whole of it one click away. The current viewing's note
+                                            is not repeated here; it sits under the review above. */}
+                                        {ownsLog && vault && !entry.isCurrent && entry.note && entry.viewingId && (
+                                            <VaultNote
+                                                compact
+                                                note={entry.note}
+                                                onOpen={() => vault.openNote(entry.viewingId as string, entry.label, false)}
+                                            />
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -383,6 +419,22 @@ export default function FocusView({
 
             {/* Dossier Hidden HTML Canvas */}
             <DossierExportHTML ref={dossierRef} log={log} isExporting={isExporting} />
+
+            {/* THE VAULT — a note, opened. Mounted only for the owner, and only
+                while a note is open. */}
+            {ownsLog && vault?.openedNote && (
+                <NoteDialog
+                    open
+                    note={vault.noteFor(vault.openedNote.viewingId)}
+                    viewingLabel={vault.openedNote.label}
+                    canEdit={vault.openedNote.canEdit}
+                    onClose={vault.closeNote}
+                    // Editing a note is editing the record it belongs to: the same
+                    // form, opened the same way as the page's own EDIT.
+                    onEdit={() => { vault.closeNote(); openLogModal(filmForEdit, log.id) }}
+                    onRemove={() => { void vault.removeOpened() }}
+                />
+            )}
         </div>
     )
 }

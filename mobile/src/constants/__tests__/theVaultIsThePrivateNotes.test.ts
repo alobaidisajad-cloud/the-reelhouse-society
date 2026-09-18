@@ -101,6 +101,15 @@ const PRIVATE_NOTES: Said[] = [
 const WEB_PRIVATE_NOTES: Said[] = [
   { file: '../src/pages/MembershipPage.tsx', text: 'The Vault (Private Notes)' },
   { file: '../src/components/HandbookModal.tsx', text: 'The Vault' },
+  // The web put on the Vault per viewing, 2026-09-18 — every one is the notes.
+  { file: '../src/components/vault/VaultNote.tsx', text: 'THE VAULT' },
+  { file: '../src/components/vault/NoteDialog.tsx', text: 'THE VAULT' },
+  { file: '../src/components/log-modal/LogForm.tsx', text: 'THE VAULT' },
+  { file: '../src/components/log-modal/LogForm.tsx', text: 'Opening the Vault…' },
+  { file: '../src/components/log-modal/LogForm.tsx', text: 'Yours to keep or remove. Writing in the Vault is an Archivist feature.' },
+  { file: '../src/components/profile/ProjectorRoom.tsx', text: 'The Vault could not be reached, so the export was not made. Try again.' },
+  { file: '../src/features/film/hooks/useFilmMutations.ts', text: 'Your record is filed. The Vault is an Archivist feature, so the note was not kept.' },
+  { file: '../src/services/vault.ts', text: 'The Vault is an Archivist feature' },
 ];
 PRIVATE_NOTES.push(...WEB_PRIVATE_NOTES);
 

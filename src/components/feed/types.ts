@@ -3,6 +3,7 @@
  * Both FocusView and FeedView receive identical props from the parent orchestrator.
  */
 import type { NavigateFunction } from 'react-router-dom'
+import type { useLogVault } from '../../hooks/useVault'
 
 export interface ActivityCardViewProps {
     log: any
@@ -64,4 +65,11 @@ export interface ActivityCardViewProps {
 
     // Card click (feed only)
     handleCardClick: () => void
+
+    // ── The Vault (the log's own page, for its owner only) ──
+    /** True only on the log's own page, for the member who wrote it — by id. */
+    ownsLog?: boolean
+    vault?: ReturnType<typeof useLogVault>
+    /** The reader holds the rank to write in the Vault (editing is offered only then). */
+    canWriteVault?: boolean
 }
