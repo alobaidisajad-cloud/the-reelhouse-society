@@ -13,7 +13,13 @@
  */
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { supabase } from '@/src/lib/supabase';
+import { useLogFlow } from '@/src/hooks/useLogFlow';
+import { useAuthStore } from '@/src/stores/auth';
+import { useFilmStore } from '@/src/stores/films';
+import { useVaultStore } from '@/src/stores/vaultStore';
 
+// jest hoists this above the imports; `mock`-prefixed names may be captured.
 const mockFetchNotes = jest.fn();
 jest.mock('@/src/services/VaultService', () => {
   const real = jest.requireActual('@/src/services/VaultService');
@@ -22,12 +28,6 @@ jest.mock('@/src/services/VaultService', () => {
     VaultService: { ...real.VaultService, fetchNotesForLog: (...a: unknown[]) => mockFetchNotes(...a) },
   };
 });
-
-import { supabase } from '@/src/lib/supabase';
-import { useLogFlow } from '@/src/hooks/useLogFlow';
-import { useAuthStore } from '@/src/stores/auth';
-import { useFilmStore } from '@/src/stores/films';
-import { useVaultStore } from '@/src/stores/vaultStore';
 
 const ME = '33333333-3333-4333-8333-333333333333';
 const LOG = '44444444-4444-4444-8444-444444444444';
