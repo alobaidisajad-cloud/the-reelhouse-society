@@ -19,19 +19,17 @@ import { SocietySeal } from '@/src/components/auth/SocietySeal';
 import { colors, fonts } from '@/src/theme/theme';
 import { deckLabelProps, displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
-import { seatsLine, type FoundingPitch } from './societyPricing';
+import { SEATS_LINE, type FoundingPitch } from './societyPricing';
 
 export const FoundingCertificate = memo(function FoundingCertificate({
-  founder, taken, pitch, busy, onClaim,
+  founder, pitch, busy, onClaim,
 }: {
   /** The member already holds a seat: the certificate is theirs, not for sale. */
   founder: boolean;
-  taken: number;
   pitch: FoundingPitch;
   busy: boolean;
   onClaim: () => void;
 }) {
-  const seats = seatsLine(taken);
   return (
     <View style={s.cert}>
       <View style={s.frameDash} pointerEvents="none" />
@@ -46,7 +44,7 @@ export const FoundingCertificate = memo(function FoundingCertificate({
         </View>
       ) : (
         <>
-          <View accessible accessibilityRole="header" accessibilityLabel={`Founding members. A seat for life. ${pitch.body} ${pitch.amount}, once. ${seats.head}. ${seats.sub}`}>
+          <View accessible accessibilityRole="header" accessibilityLabel={`Founding members. A seat for life. ${pitch.body} ${pitch.amount}, once. Limited to the first hundred members.`}>
             <Text style={s.key} {...deckLabelProps} {...UNSPOKEN}>FOUNDING MEMBERS</Text>
             <Text style={s.title} {...displayTextProps} {...UNSPOKEN}>A Seat for Life.</Text>
             <Text style={s.body} {...scaledTextProps} {...UNSPOKEN}>{pitch.body}</Text>
@@ -54,8 +52,7 @@ export const FoundingCertificate = memo(function FoundingCertificate({
               <Text style={s.amount} {...displayTextProps} maxFontSizeMultiplier={1.1} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{pitch.amount}</Text>
               <Text style={s.once} {...deckLabelProps}>ONCE</Text>
             </View>
-            <Text style={s.seats} {...deckLabelProps} {...UNSPOKEN}>{seats.head}</Text>
-            <Text style={s.seatsSub} {...scaledTextProps} {...UNSPOKEN}>{seats.sub}</Text>
+            <Text style={s.seats} {...deckLabelProps} {...UNSPOKEN}>{SEATS_LINE}</Text>
           </View>
           <PressableScale
             style={s.btn}
@@ -97,7 +94,6 @@ const s = StyleSheet.create({
   amount: { fontFamily: fonts.display, fontSize: 44, lineHeight: 52, color: colors.marqueeGold, flexShrink: 1 },
   once: { fontFamily: fonts.sub, fontSize: 13, letterSpacing: 1.5, color: colors.bone, includeFontPadding: false },
   seats: { fontFamily: fonts.sub, fontSize: 12, letterSpacing: 1.5, color: colors.parchment, textAlign: 'center', marginTop: 10, includeFontPadding: false },
-  seatsSub: { fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 19, color: colors.bone, textAlign: 'center', marginTop: 3 },
   btn: { alignSelf: 'stretch', minHeight: 52, marginTop: 18, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingHorizontal: 12 },
   btnText: { fontFamily: fonts.sub, fontSize: 13, letterSpacing: 2.5, color: colors.ink, includeFontPadding: false },
 });

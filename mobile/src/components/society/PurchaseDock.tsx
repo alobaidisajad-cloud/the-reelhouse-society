@@ -17,8 +17,30 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { deckLabelProps, scaledTextProps } from '@/src/constants/textScaling';
 
-/** Summary line + button + footnote + padding, at the default text size. */
-export const DOCK_HEIGHT = 11 + 18 + 9 + 52 + 8 + 16 + 12;
+/**
+ * The window's parts — the SAME numbers its styles use, so its height is their
+ * sum and cannot drift from what is drawn (the docked-bar law; a test adds up
+ * the rendered window and compares). The home-indicator inset is added by the
+ * page on top of this, at the size the device reports.
+ *
+ * Text lines are fixed by lineHeight, which does not grow with Dynamic Type,
+ * and both are one line (numberOfLines 1, shrink to fit), so the height holds
+ * at every text size.
+ */
+export const DOCK = {
+  rule: 1,
+  padTop: 11,
+  summary: 18,
+  summaryGap: 9,
+  button: 52,
+  subGap: 8,
+  sub: 16,
+  /** Below the footnote, over the home indicator's own inset. */
+  padBottom: 4,
+  /** The least the window sits above the screen's edge on a phone with no inset. */
+  minInset: 12,
+} as const;
+export const DOCK_HEIGHT = DOCK.rule + DOCK.padTop + DOCK.summary + DOCK.summaryGap + DOCK.button + DOCK.subGap + DOCK.sub + DOCK.padBottom;
 /** The fade that lets the page run under the window rather than stop at it. */
 const FADE = 32;
 
@@ -34,7 +56,7 @@ export const PurchaseDock = memo(function PurchaseDock({
   bottomInset: number;
 }) {
   return (
-    <View style={[s.dock, { paddingBottom: Math.max(bottomInset, 12) + 4 }]}>
+    <View testID="purchase-dock" style={[s.dock, { paddingBottom: Math.max(bottomInset, DOCK.minInset) + DOCK.padBottom }]}>
       <LinearGradient colors={['rgba(10,9,6,0)', colors.ink]} style={s.fade} pointerEvents="none" />
       <Text style={s.summary} {...scaledTextProps} maxFontSizeMultiplier={1.2} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{summary}</Text>
       <PressableScale
@@ -63,14 +85,16 @@ export const PurchaseDock = memo(function PurchaseDock({
 const s = StyleSheet.create({
   dock: {
     position: 'absolute', left: 0, right: 0, bottom: 0,
-    paddingHorizontal: 16, paddingTop: 11,
+    paddingHorizontal: 16, paddingTop: DOCK.padTop,
     backgroundColor: colors.ink,
-    borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
+    borderTopWidth: DOCK.rule, borderTopColor: colors.sepiaBorder,
   },
-  fade: { position: 'absolute', left: 0, right: 0, top: -FADE - 1, height: FADE },
-  summary: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.parchment, textAlign: 'center', marginBottom: 9 },
-  btn: { minHeight: 52, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingHorizontal: 12 },
+  fade: { position: 'absolute', left: 0, right: 0, top: -FADE - DOCK.rule, height: FADE },
+  summary: { fontFamily: fonts.body, fontSize: 13, lineHeight: DOCK.summary, color: colors.parchment, textAlign: 'center', marginBottom: DOCK.summaryGap },
+  // A fixed height, not a minimum: the window's height is a sum, and a button
+  // allowed to grow would make it a guess.
+  btn: { height: DOCK.button, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingHorizontal: 12 },
   btnText: { fontFamily: fonts.sub, fontSize: 13, letterSpacing: 2.5, color: colors.ink, includeFontPadding: false },
   btnTextAuteur: { color: colors.silverScreen },
-  sub: { fontFamily: fonts.body, fontSize: 12, lineHeight: 16, color: colors.fog, textAlign: 'center', marginTop: 8 },
+  sub: { fontFamily: fonts.body, fontSize: 12, lineHeight: DOCK.sub, color: colors.fog, textAlign: 'center', marginTop: DOCK.subGap },
 });

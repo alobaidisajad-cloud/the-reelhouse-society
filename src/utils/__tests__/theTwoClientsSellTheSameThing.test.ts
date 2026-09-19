@@ -115,6 +115,46 @@ describe('the two clients sell the same thing', () => {
     })
 })
 
+describe('the founding offer, on the web', () => {
+    const page = () => strip(readFileSync(WEB_MEMBERSHIP, 'utf8'))
+
+    it('states its limit, never its count', () => {
+        // "N SEATS REMAINING" told every visitor how many had joined — at launch,
+        // that nobody had. The count may decide whether the banner shows; it is
+        // never printed.
+        expect(page()).toMatch(/LIMITED TO THE FIRST 100 MEMBERS/)
+        expect(page()).not.toMatch(/REMAIN|FILLING FAST|None taken/)
+        expect(page()).not.toMatch(/100 - foundingCount/)
+    })
+
+    it('compares the seat with the rank it is — the Auteur — not the Archivist', () => {
+        expect(page()).not.toMatch(/\$19\.99\/yr/)
+        expect(page()).toMatch(/less than a single year of the Auteur/)
+    })
+
+    it('is signed with the house’s own mark, not a stand-in star', () => {
+        expect(page()).toMatch(/className="founding-mark" src="\/reelhouse-logo-transparent\.png"/)
+        expect(page()).not.toMatch(/founding-seal/)
+    })
+})
+
+describe('nothing else on the web sells what the Society does not', () => {
+    it('no page promises a gold badge — the Auteur’s mark is crimson', () => {
+        const collect = (dir: string, out: string[] = []): string[] => {
+            for (const e of readdirSync(dir, { withFileTypes: true })) {
+                const full = join(dir, e.name)
+                if (e.isDirectory()) { if (!['node_modules', '__tests__'].includes(e.name)) collect(full, out) }
+                else if (/\.tsx?$/.test(e.name)) out.push(full)
+            }
+            return out
+        }
+        const files = collect(WEB_ROOT)
+        expect(files.length).toBeGreaterThan(100)
+        const offenders = files.filter((f) => /gold (Dispatch )?badge|Gold Foil/i.test(strip(readFileSync(f, 'utf8'))))
+        expect(offenders).toEqual([])
+    })
+})
+
 describe('who web lets through the door', () => {
     const collect = (dir: string, out: string[] = []): string[] => {
         for (const e of readdirSync(dir, { withFileTypes: true })) {

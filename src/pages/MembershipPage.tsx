@@ -277,11 +277,12 @@ export default function MembershipPage() {
                 >
                     <div className="founding-texture" />
 
-                    <div className="founding-seal">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                    </div>
+                    {/* A certificate is signed with the house's own mark, never a stand-in star. */}
+                    <img className="founding-mark" src="/reelhouse-logo-transparent.png" alt="The ReelHouse Society" width={64} height={64} />
 
-                    <div className="founding-tag">LIMITED OFFER · {100 - foundingCount} SEATS REMAINING</div>
+                    {/* The limit, never the count: "N seats remaining" told every visitor how many
+                        had joined. The count still decides whether this banner shows at all. */}
+                    <div className="founding-tag">LIMITED TO THE FIRST 100 MEMBERS</div>
                     <h2 className="founding-title">Founding Members</h2>
                     <p className="founding-desc">
                         The first 100 members to join The Society receive <em>Auteur access for life</em> — permanently, with no recurring charges, ever. A single entry in the ledger. A permanent seat in the house.
@@ -296,8 +297,11 @@ export default function MembershipPage() {
                         </div>
                     </div>
 
+                    {/* It compared the seat with $19.99 — the ARCHIVIST's year — when the seat
+                        is the AUTEUR rank ($49.99 a year). Against the rank it actually is, $49
+                        once costs less than a single year of it. */}
                     <div className="founding-compare">
-                        Compare to $19.99/yr recurring — this pays for itself in under 3 years and never charges again.
+                        It costs less than a single year of the Auteur, and lasts somewhat longer.
                     </div>
 
                     <button
@@ -323,7 +327,7 @@ export default function MembershipPage() {
                     </button>
 
                     <div className="founding-footer">
-                        SECURE CHECKOUT · SEATS FILLING FAST
+                        ONE PAYMENT · NEVER RENEWS
                     </div>
                 </motion.div>
                 )}

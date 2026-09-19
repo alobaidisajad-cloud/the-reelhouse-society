@@ -31,7 +31,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
-import { restorePurchases as restoreIAP, purchaseTier, showManageSubscriptions, ReelHouseTier, BillingPeriod } from '@/src/lib/revenueCat';
+import { restorePurchases as restoreIAP, purchaseTier, showManageSubscriptions, isStoreReady, ReelHouseTier, BillingPeriod } from '@/src/lib/revenueCat';
 import { safeOpenURL } from '@/src/utils/linking';
 import { supabase } from '@/src/lib/supabase';
 import { resolveTier, getTierWeight } from '@/src/utils/tier';
@@ -50,7 +50,7 @@ import { GeneralAdmission } from '@/src/components/society/GeneralAdmission';
 import { PrivilegeLedger } from '@/src/components/society/PrivilegeLedger';
 import { FoundingCertificate } from '@/src/components/society/FoundingCertificate';
 import { SmallPrint, STORE } from '@/src/components/society/SmallPrint';
-import { PurchaseDock, DOCK_HEIGHT } from '@/src/components/society/PurchaseDock';
+import { PurchaseDock, DOCK, DOCK_HEIGHT } from '@/src/components/society/PurchaseDock';
 import { ticketPrice, savePercent, foundingPitch, type Billing } from '@/src/components/society/societyPricing';
 
 /** The house's own legal pages — the same two Settings opens. */
@@ -63,6 +63,8 @@ export const MANAGE_URL = Platform.OS === 'android'
 
 /** Below this height the poster steps down so a ticket shows on the first screen. */
 const SHORT_SCREEN = 740;
+/** Clear space between the last line of the page and the window above it. */
+export const SCROLL_BREATH = 32;
 
 const PAID: (Rank & { id: PaidRankId })[] = RANKS.filter((r): r is Rank & { id: PaidRankId } => r.id !== 'cinephile');
 
@@ -220,11 +222,23 @@ export default function MembershipScreen() {
   const pitch = foundingPitch(pricing);
   const selectedPrice = selected ? ticketPrice(selected, billing as Billing, pricing) : null;
 
+  /**
+   * No store on this device (no key, or it failed to start): say so. The buy
+   * button used to do NOTHING here — purchaseTier answers null, the same as a
+   * member cancelling, and the page stayed silent.
+   */
+  const storeUnavailable = () => {
+    if (isStoreReady()) return false;
+    reelToast.error(`Couldn't reach ${STORE.name}. Please try again shortly.`);
+    return true;
+  };
+
   const handleCheckout = async (tier: string) => {
     if (!isAuthenticated || !user) {
       nav.push('/login');
       return;
     }
+    if (storeUnavailable()) return;
     // Synchronous mutex guard
     if (purchaseMutex.current) return;
     purchaseMutex.current = true;
@@ -279,6 +293,7 @@ export default function MembershipScreen() {
 
   const handleFoundingCheckout = async () => {
     if (!isAuthenticated || !user) { nav.push('/login'); return; }
+    if (storeUnavailable()) return;
     // Synchronous mutex guard
     if (purchaseMutex.current) return;
     purchaseMutex.current = true;
@@ -473,7 +488,9 @@ export default function MembershipScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: (showDock ? DOCK_HEIGHT : 0) + Math.max(insets.bottom, 12) + 40 }}
+        // The window's exact height and the inset it sits on, then room to breathe,
+        // so the last line of the small print always scrolls clear of the window.
+        contentContainerStyle={{ paddingBottom: (showDock ? DOCK_HEIGHT + Math.max(insets.bottom, DOCK.minInset) : insets.bottom) + SCROLL_BREATH }}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeIn.duration(500)}>
@@ -484,7 +501,9 @@ export default function MembershipScreen() {
           <BillingSwitch billing={billing as Billing} save={save} onChange={(b) => { TactileEngine.selection(); setBilling(b); }} />
         ) : null}
 
-        <View style={st.tickets}>
+        {/* One choice among the tickets on offer: a radio group, so VoiceOver
+            says "1 of 2" and a switch-access user moves through them as a set. */}
+        <View style={st.tickets} accessibilityRole="radiogroup" accessibilityLabel="Choose a rank">
           {PAID.map((rank) => {
             const state = ticketState(rank.id);
             return (
@@ -508,7 +527,6 @@ export default function MembershipScreen() {
         {showFounding ? (
           <FoundingCertificate
             founder={founder}
-            taken={foundingCount ?? 0}
             pitch={pitch}
             busy={isRedirecting || isRestoring}
             onClaim={handleFoundingCheckout}

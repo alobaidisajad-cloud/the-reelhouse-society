@@ -157,6 +157,18 @@ export const RANKS: Rank[] = [
 
 export const rankById = (id: RankId): Rank => RANKS.find((r) => r.id === id) as Rank;
 
+/**
+ * "The Vault, The Editorial Desk and The Lounge" — the first three things a
+ * rank adds, in the order its ticket lists them. For any sentence elsewhere in
+ * the app that says what a rank opens: read from here, it cannot name a
+ * privilege that does not exist. (Settings once promised "the gold Dispatch
+ * badge" at Auteur — gold being the colour the mark is not.)
+ */
+export function firstPrivilegesOf(rank: PaidRankId, count = 3): string {
+  const names = privilegesOf(rank).slice(0, count).map((p) => p.name);
+  return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names.join('');
+}
+
 /** The founding seat: the Auteur rank for life, one payment, a hundred seats. */
 export const FOUNDING = {
   seats: 100,

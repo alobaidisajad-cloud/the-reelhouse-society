@@ -20,17 +20,24 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import { PRIVILEGES, RANK_ORDER, privilegesOf } from '@/src/constants/membership';
-import { ticketPrice, savePercent, foundingPitch, seatsLine } from '../societyPricing';
+import { ticketPrice, savePercent, foundingPitch, SEATS_LINE } from '../societyPricing';
 import { LEDGER_COLUMN_ORDER } from '../PrivilegeLedger';
 
 // ── the world the page is rendered in ───────────────────────────────────────
 const mockRestore = jest.fn();
 const mockPurchase = jest.fn();
 const mockShowManage = jest.fn();
+let mockStoreReady = true;
 jest.mock('@/src/lib/revenueCat', () => ({
   restorePurchases: (...a: unknown[]) => mockRestore(...a),
   purchaseTier: (...a: unknown[]) => mockPurchase(...a),
   showManageSubscriptions: (...a: unknown[]) => mockShowManage(...a),
+  isStoreReady: () => mockStoreReady,
+}));
+const mockToastError = jest.fn();
+jest.mock('@/src/utils/reelToast', () => ({
+  __esModule: true,
+  default: { error: (...a: unknown[]) => mockToastError(...a), success: jest.fn(), info: jest.fn() },
 }));
 let mockPricing: Record<string, unknown> = {};
 jest.mock('@/src/hooks/useMembershipPricing', () => ({ useMembershipPricing: () => mockPricing }));
@@ -94,6 +101,8 @@ beforeEach(() => {
   mockParams = {};
   mockUser = { id: '11111111-1111-4111-8111-111111111111', tier: 'free', role: 'cinephile' };
   mockFounders = 0;
+  mockStoreReady = true;
+  mockToastError.mockReset();
   [mockRestore, mockPurchase, mockShowManage, mockOpenBrowser, mockOpenURL, mockPush, mockRestoreSession, mockTierHint].forEach((m) => m.mockReset());
 });
 
@@ -145,10 +154,9 @@ describe('the numbers', () => {
     expect(dear.body).toMatch(/never renews/);
   });
 
-  it('the seats are counted straight', () => {
-    expect(seatsLine(0)).toEqual({ head: '100 SEATS · 100 REMAIN', sub: 'None taken yet. Someone has to be first.' });
-    expect(seatsLine(99).head).toBe('100 SEATS · 1 REMAINS');
-    expect(seatsLine(12).sub).toBe('12 taken so far.');
+  it('the founding seat states its limit, never its count', () => {
+    // "100 REMAIN — None taken yet" told every visitor that nobody had joined.
+    expect(SEATS_LINE).toBe('LIMITED TO THE FIRST 100 MEMBERS');
   });
 });
 
@@ -188,6 +196,26 @@ describe('what each member is offered', () => {
     await fireEvent.press(r.getByLabelText('Pay monthly'));
     await fireEvent.press(r.getByText('BECOME AN ARCHIVIST'));
     expect(mockPurchase).toHaveBeenCalledWith('archivist', 'monthly');
+  });
+
+  it('with no store on this device, the button says so — it never does nothing', async () => {
+    // Every Android build today: no key, so purchaseTier answers null — exactly
+    // what a member cancelling answers — and the page used to stay silent.
+    mockStoreReady = false;
+    const r = await mount();
+    await fireEvent.press(r.getByText('BECOME AN ARCHIVIST'));
+    expect(mockPurchase).not.toHaveBeenCalled();
+    expect(mockToastError).toHaveBeenCalledWith(expect.stringMatching(/^Couldn't reach .+\. Please try again shortly\.$/));
+    await fireEvent.press(r.getByLabelText(/^Claim a founding seat/));
+    expect(mockToastError).toHaveBeenCalledTimes(2);
+    expect(mockPurchase).not.toHaveBeenCalled();
+  });
+
+  it('the tickets are one choice to a screen reader', async () => {
+    const r = await mount();
+    const group = r.getByLabelText('Choose a rank');
+    expect(group.props.accessibilityRole).toBe('radiogroup');
+    expect(r.getByLabelText("Show the Auteur's six privileges")).toBeTruthy();
   });
 
   it('a visitor is sent to sign in rather than to the store', async () => {
@@ -337,14 +365,96 @@ describe('nothing false is printed', () => {
   });
 
   it('the seat count is the database’s, and the certificate retires at a hundred', async () => {
+    // The count is read — it decides whether the certificate shows — and never printed.
+    for (const taken of [0, 3, 99]) {
+      mockFounders = taken;
+      const shown = await mount();
+      await waitFor(() => expect(shown.getByText('LIMITED TO THE FIRST 100 MEMBERS', PRINT)).toBeTruthy());
+      expect(shown.queryByText(/REMAIN|taken|None taken|first\.$|SEATS ·/, PRINT)).toBeNull();
+      expect(shown.getByLabelText(/Limited to the first hundred members\.$/)).toBeTruthy();
+      shown.unmount();
+    }
     mockFounders = 3;
     let r = await mount();
-    await waitFor(() => expect(r.getByText('100 SEATS · 97 REMAIN', PRINT)).toBeTruthy());
-    expect(r.getByLabelText(/100 SEATS · 97 REMAIN\. 3 taken so far\./)).toBeTruthy();
     r.unmount();
     mockFounders = 100;
     r = await mount();
     await waitFor(() => expect(r.queryByText('A Seat for Life.', PRINT)).toBeNull());
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+describe('the window is as tall as it says, and the page makes room for it', () => {
+  const { PurchaseDock, DOCK, DOCK_HEIGHT } = require('../PurchaseDock');
+  const { StyleSheet } = require('react-native');
+  const flat = (n: any) => StyleSheet.flatten(n.props.style) ?? {};
+
+  it('DOCK_HEIGHT is the sum of what is actually drawn', async () => {
+    const r = render(<PurchaseDock summary="$19.99 a year · renews yearly" cta="BECOME AN ARCHIVIST" spoken="x" auteur={false} busy={false} onBuy={() => {}} bottomInset={34} />);
+    const dock = flat(r.getByTestId('purchase-dock'));
+    const summary = flat(r.getByText('$19.99 a year · renews yearly'));
+    const sub = flat(r.getByText('Cancel any time. No hard feelings.'));
+    const button = flat(r.getByRole('button'));
+    const drawn = dock.borderTopWidth + dock.paddingTop
+      + summary.lineHeight + summary.marginBottom
+      + button.height
+      + sub.marginTop + sub.lineHeight
+      + (dock.paddingBottom - 34);
+    expect(drawn).toBe(DOCK_HEIGHT);
+    expect(dock.paddingBottom).toBe(34 + DOCK.padBottom);
+  });
+
+  it('on a phone with no inset it still stands clear of the edge', () => {
+    const r = render(<PurchaseDock summary="s" cta="c" spoken="x" auteur={false} busy={false} onBuy={() => {}} bottomInset={0} />);
+    expect(flat(r.getByTestId('purchase-dock')).paddingBottom).toBe(DOCK.minInset + DOCK.padBottom);
+  });
+
+  it('the page reserves exactly the window, its inset, and room to breathe', async () => {
+    const { SCROLL_BREATH } = require('@/app/(modals)/membership');
+    const r = await mount();
+    // The page's one vertical scroll, found in the drawn tree.
+    const find = (n: any): any => {
+      if (!n || typeof n !== 'object') return null;
+      if (Array.isArray(n)) { for (const c of n) { const f = find(c); if (f) return f; } return null; }
+      if (n.type === 'RCTScrollView' && !n.props.horizontal) return n;
+      return find(n.children);
+    };
+    const scroll = find(r.toJSON());
+    expect(scroll).toBeTruthy();
+    // The suite's safe-area stand-in reports a zero inset, so the window sits on its minimum.
+    expect(StyleSheet.flatten(scroll.props.contentContainerStyle).paddingBottom).toBe(DOCK_HEIGHT + DOCK.minInset + SCROLL_BREATH);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+describe('every other sentence about a rank reads from the same list', () => {
+  const { firstPrivilegesOf } = require('@/src/constants/membership');
+  const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+
+  it('says what a rank opens in the names its ticket sells', () => {
+    expect(firstPrivilegesOf('archivist')).toBe('The Vault, The Editorial Desk and The Lounge');
+    expect(firstPrivilegesOf('auteur')).toBe('The Breakdown Engine, Essays & Ballots and Private Screening Rooms');
+  });
+
+  it('Settings names what the next rank opens from it — never by hand', () => {
+    // It promised "the gold Dispatch badge" at Auteur: the mark is crimson.
+    const settings = strip(readFileSync(join(ROOT, 'src/features/settings/SettingsSections.tsx'), 'utf8'));
+    expect(settings).toMatch(/\$\{firstPrivilegesOf\('archivist'\)\} open at Archivist\./);
+    expect(settings).toMatch(/\$\{firstPrivilegesOf\('auteur'\)\} open at Auteur\./);
+  });
+
+  it('no shipped file of the app promises a gold badge', () => {
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const e of require('fs').readdirSync(dir, { withFileTypes: true })) {
+        const p = join(dir, e.name);
+        if (e.isDirectory()) { if (!['node_modules', '__tests__'].includes(e.name)) walk(p, out); }
+        else if (/\.(ts|tsx)$/.test(e.name)) out.push(p);
+      }
+      return out;
+    };
+    const files = [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'src'))];
+    expect(files.length).toBeGreaterThan(300);
+    expect(files.filter((f) => /gold (Dispatch )?badge|Gold Foil/i.test(strip(readFileSync(f, 'utf8'))))).toEqual([]);
   });
 });
 

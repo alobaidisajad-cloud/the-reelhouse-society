@@ -117,12 +117,12 @@ export function foundingPitch(pricing: Pricing): FoundingPitch {
   };
 }
 
-/** The seat count, told straight. */
-export function seatsLine(taken: number): { head: string; sub: string } {
-  const remain = Math.max(0, FOUNDING.seats - taken);
-  const head = `${FOUNDING.seats} SEATS · ${remain} ${remain === 1 ? 'REMAINS' : 'REMAIN'}`;
-  const sub = taken === 0 ? 'None taken yet. Someone has to be first.'
-    : remain === 1 ? 'One seat left. After that, the door closes.'
-    : `${taken} taken so far.`;
-  return { head, sub };
-}
+/**
+ * The limit, and never the count.
+ *
+ * The page used to print "100 SEATS · 100 REMAIN — None taken yet." True, and
+ * it told every visitor that nobody had joined. The offer's real terms are the
+ * limit, so that is what is said; the count is still read, quietly, so the
+ * certificate retires itself when the last seat goes.
+ */
+export const SEATS_LINE = `LIMITED TO THE FIRST ${FOUNDING.seats} MEMBERS`;

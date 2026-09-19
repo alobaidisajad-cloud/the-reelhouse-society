@@ -399,18 +399,14 @@
   pointer-events: none;
   background-image: repeating-linear-gradient(90deg, rgba(139,105,20,0.03) 0px, transparent 1px, transparent 40px);
 }
-.founding-seal {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 1.5px solid var(--sepia);
-  background: rgba(139,105,20,0.08);
-  margin-bottom: 1.25rem;
-  font-size: 1.4rem;
-  color: var(--sepia);
+/* The house's mark, unframed and untinted — as the app's SocietySeal shows it. */
+.founding-mark {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.25rem;
+  position: relative;
+  filter: drop-shadow(0 0 18px rgba(220,166,58,0.28));
 }
 .founding-tag {
   font-family: var(--font-ui);

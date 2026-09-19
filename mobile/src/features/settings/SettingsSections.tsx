@@ -21,6 +21,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { AuthService } from '@/src/services/AuthService';
 import { supabase } from '@/src/lib/supabase';
 import { isAuteurPlusTier, isArchivistPlusTier, getDisplayTier } from '@/src/utils/tier';
+import { firstPrivilegesOf } from '@/src/constants/membership';
 import { getPasswordChecks, PW_CHECK_LABELS, getStrengthInfo } from '@/src/components/auth/PasswordStrengthMeter';
 import { Toggle } from '@/src/components/Toggle';
 
@@ -132,10 +133,13 @@ export function PatronageSection({ userRole, onUpgrade }: { userRole: string; on
   const isAuteur = isAuteurPlusTier(userRole);
   const isArchivist = isArchivistPlusTier(userRole);
 
+  // Read from the Society's own price list, so this line can only name what a
+  // rank really opens. It used to promise "the gold Dispatch badge" at Auteur;
+  // the mark is crimson, and the Society page had already stopped selling it.
   const standingLine = !isArchivist
-    ? 'The Editorial Desk, The Physical Archive and The Lounge open at Archivist.'
+    ? `${firstPrivilegesOf('archivist')} open at Archivist.`
     : !isAuteur
-      ? 'Radar breakdowns, curatorial poster control and the gold Dispatch badge open at Auteur.'
+      ? `${firstPrivilegesOf('auteur')} open at Auteur.`
       : 'You hold the highest rank in The Society. Every room is open to you.';
 
   return (

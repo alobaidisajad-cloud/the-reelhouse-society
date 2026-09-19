@@ -2,22 +2,17 @@
  * TermsOfServicePage — Legal compliance page.
  * Nitrate Noir themed, clean readability.
  */
-import { Link } from 'react-router-dom'
+import LegalBack from '../components/LegalBack'
 import PageSEO from '../components/PageSEO'
-import { ArrowLeft, FileText } from 'lucide-react'
+import { FileText } from 'lucide-react'
 
 export default function TermsOfServicePage() {
     return (
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '5.5rem 1.5rem 5rem' }}>
             <PageSEO title="Terms of Service" description="The ReelHouse Society terms of service — rules and guidelines." path="/terms" />
 
-            {/* Back */}
-            <Link to="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', textDecoration: 'none', marginBottom: '2rem', transition: 'color 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}
-            >
-                <ArrowLeft size={14} /> BACK TO SETTINGS
-            </Link>
+            {/* Back — only when this visit has somewhere to go back to */}
+            <LegalBack />
 
             {/* Header */}
             <div style={{ textAlign: 'center', marginBottom: '3rem', paddingBottom: '2rem', borderBottom: '1px solid rgba(139,105,20,0.12)', position: 'relative' }}>

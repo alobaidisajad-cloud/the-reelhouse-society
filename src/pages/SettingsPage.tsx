@@ -286,7 +286,10 @@ export default function SettingsPage() {
                     ) : user.role === 'archivist' ? (
                         <div>
                             <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', marginBottom: '0.75rem', lineHeight: 1.6 }}>
-                                You're an Archivist. Upgrade to Auteur for radar breakdowns, curatorial poster control, and the gold Dispatch badge.
+                                {/* It promised "the gold Dispatch badge" — the Auteur's mark is crimson,
+                                    and the Society page had stopped selling it. These are the Auteur's
+                                    first three privileges, as both Society pages list them. */}
+                                You're an Archivist. Upgrade to Auteur for The Breakdown Engine, Essays &amp; Ballots, Private Screening Rooms, and more.
                             </div>
                             <button className="btn btn-primary" onClick={() => navigate('/patronage')} style={{ fontSize: '0.7rem', padding: '0.7rem 1.5rem' }}>
                                 UPGRADE TO AUTEUR

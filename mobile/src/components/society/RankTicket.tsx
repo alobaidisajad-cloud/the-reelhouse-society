@@ -132,7 +132,7 @@ export const RankTicket = memo(function RankTicket({
           pressedScale={0.99}
           hitSlop={null}
           accessibilityRole="button"
-          accessibilityLabel={`Show ${rank.name}'s ${count} privileges`}
+          accessibilityLabel={`Show ${rank.name.replace(/^The /, 'the ')}'s ${count} privileges`}
         >
           <Text style={[s.moreText, auteur && s.inkAuteur]} {...deckLabelProps}>SHOW ITS {count.toUpperCase()} PRIVILEGES</Text>
           <Text style={[s.moreMark, auteur && s.inkAuteur]} {...UNSPOKEN}>＋</Text>

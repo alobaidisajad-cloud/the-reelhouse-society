@@ -501,6 +501,18 @@ export async function restorePurchases(): Promise<RestoreResult> {
 }
 
 /**
+ * Whether there is a store to buy from on this device right now.
+ *
+ * `purchaseTier` answers null both when the member cancelled and when there is
+ * no store at all — and the first must be silent while the second must not.
+ * Without this, a build with no key (every Android build today) had a buy
+ * button that did nothing whatsoever when tapped.
+ */
+export function isStoreReady(): boolean {
+  return isConfigured && !!Purchases;
+}
+
+/**
  * Open the store's own "manage subscriptions" screen.
  *
  * The native sheet on iOS (Apple's, inside the app) and the Play subscriptions
