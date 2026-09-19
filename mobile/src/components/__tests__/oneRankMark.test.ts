@@ -113,7 +113,8 @@ describe('one rank mark, drawn in one place', () => {
       'src/components/search/SearchResultRow.tsx',
       'src/components/reels/MemberRegistry.tsx',
       'app/user/[username].tsx',
-      'app/(modals)/membership.tsx',
+      // The Society page draws its marks on the tickets, which import the badge.
+      'src/components/society/RankTicket.tsx',
     ];
     for (const f of MUST_IMPORT) {
       const src = readFileSync(join(ROOT, f), 'utf8');

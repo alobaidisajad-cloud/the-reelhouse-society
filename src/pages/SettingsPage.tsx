@@ -187,7 +187,7 @@ export default function SettingsPage() {
             'This will permanently delete your account, all logs, lists, and reviews. This cannot be undone. Are you absolutely certain?'
         )
         if (!confirmed) return
-        reelToast.error('Account deletion requires admin intervention. Contact support@reelhouse.app')
+        reelToast.error('Account deletion requires admin intervention. Contact support@thereelhousesociety.com')
     }
 
     if (!user) return null

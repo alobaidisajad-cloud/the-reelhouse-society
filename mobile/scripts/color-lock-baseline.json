@@ -21,7 +21,6 @@
   "src/features/settings/SettingsSections.tsx": 10,
   "src/utils/html.ts": 2,
   "app/(modals)/login.tsx": 1,
-  "app/(modals)/membership.tsx": 2,
   "app/(tabs)/index.tsx": 4,
   "app/reset-password.tsx": 2,
   "app/user/[username].tsx": 5,

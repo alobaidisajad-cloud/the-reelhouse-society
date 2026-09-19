@@ -109,10 +109,14 @@ describe('the invitation has an address', () => {
   });
 
   describe('what is enforced is sold', () => {
-    it('the Auteur’s list sells ballots, on both clients, in one sentence', () => {
-      const line = 'Publish Essays & Open\\nBallots in The Dispatch';
-      expect(readFileSync(join(ROOT, 'src/constants/membership.ts'), 'utf8')).toContain(`'${line}'`);
-      expect(readFileSync(join(ROOT, '..', 'src/pages/MembershipPage.tsx'), 'utf8')).toContain(`'${line}'`);
+    it('the Auteur’s list sells ballots, on both clients, in one privilege', () => {
+      // One privilege, because the database has always treated them as one:
+      // its name says both, and its sentence says where.
+      const { PRIVILEGES } = require('@/src/constants/membership');
+      const p = PRIVILEGES.find((x: { name: string }) => x.name === 'Essays & Ballots');
+      expect(p?.rank).toBe('auteur');
+      expect(p?.detail).toMatch(/ballots in the Dispatch/);
+      expect(readFileSync(join(ROOT, '..', 'src/pages/MembershipPage.tsx'), 'utf8')).toContain(`'Essays & Ballots'`);
     });
   });
 });

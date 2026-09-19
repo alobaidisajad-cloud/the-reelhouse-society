@@ -308,6 +308,13 @@ export interface TierPricing {
   annualPrice?: number;
   lifetimePrice?: number;
   currencyCode?: string;
+  /**
+   * The annual price as a month, formatted BY THE STORE in the member's own
+   * currency ("£1.67"). The page used to divide by twelve and format the result
+   * with Intl, which Hermes cannot be relied on to have — and when it failed,
+   * the fallback printed a US-dollar figure beside a local price.
+   */
+  annualPerMonth?: string;
 }
 
 /**
@@ -319,7 +326,15 @@ export interface TierPricing {
  * `constants/membership.ts`.
  */
 export async function getTierPricing(): Promise<Record<string, TierPricing>> {
-  const packages = await collectPurchasablePackages();
+  return pricingFromPackages(await collectPurchasablePackages());
+}
+
+/**
+ * The store's packages, read into prices per rank. A pure function of what the
+ * store returned — exported so every rule in it runs under test, as
+ * `selectPackageForTier` is (the configured SDK cannot load in Jest).
+ */
+export function pricingFromPackages(packages: any[]): Record<string, TierPricing> {
   const out: Record<string, TierPricing> = {};
   for (const p of packages) {
     const productId = String(p?.product?.identifier ?? '').toLowerCase();
@@ -341,11 +356,14 @@ export async function getTierPricing(): Promise<Record<string, TierPricing>> {
     if (!period) continue;
     const priceNum = typeof p?.product?.price === 'number' && isFinite(p.product.price) ? p.product.price : undefined;
     const currencyCode = typeof p?.product?.currencyCode === 'string' ? p.product.currencyCode : undefined;
+    const perMonth = period === 'annual' && typeof p?.product?.pricePerMonthString === 'string' && p.product.pricePerMonthString
+      ? p.product.pricePerMonthString : undefined;
     out[tierId] = {
       ...out[tierId],
       [period]: priceString,
       ...(priceNum !== undefined ? { [`${period}Price`]: priceNum } : {}),
       ...(currencyCode ? { currencyCode: out[tierId]?.currencyCode ?? currencyCode } : {}),
+      ...(perMonth ? { annualPerMonth: perMonth } : {}),
     };
   }
   return out;
@@ -479,6 +497,26 @@ export async function restorePurchases(): Promise<RestoreResult> {
     // downgrade off a failed lookup is exactly how a paying member gets demoted.
     logger.warn('[revenueCat] restorePurchases failed', e);
     return { ...parseEntitlements(null), storeReachable: false };
+  }
+}
+
+/**
+ * Open the store's own "manage subscriptions" screen.
+ *
+ * The native sheet on iOS (Apple's, inside the app) and the Play subscriptions
+ * page on Android — both are the store's, so they always show the member's
+ * real subscriptions and the store's own cancel button. Returns false when the
+ * SDK is not configured or the store refused; the caller then opens the
+ * store's subscriptions address instead, so the control never does nothing.
+ */
+export async function showManageSubscriptions(): Promise<boolean> {
+  if (!isConfigured || !Purchases) return false;
+  try {
+    await Purchases.showManageSubscriptions();
+    return true;
+  } catch (e) {
+    logger.info('[revenueCat] showManageSubscriptions failed', e);
+    return false;
   }
 }
 

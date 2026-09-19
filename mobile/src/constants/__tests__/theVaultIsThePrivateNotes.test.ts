@@ -72,8 +72,10 @@ const isWire = (s: string) =>
 
 /** The uses of the word a member meets — every one of them about the private notes. */
 const PRIVATE_NOTES: Said[] = [
-  { file: 'src/constants/membership.ts', text: 'The Vault (Private Notes)' },
-  { file: 'src/constants/gatedFeatures.ts', text: 'The Vault (Private Notes)' },
+  // The privilege on the price list, and the registry's promise quoting it. Its
+  // sentence ("Private notes on each viewing…") says what the name means.
+  { file: 'src/constants/membership.ts', text: 'The Vault' },
+  { file: 'src/constants/gatedFeatures.ts', text: 'The Vault' },
   { file: 'src/components/log/LogForm.tsx', text: 'THE VAULT' },
   { file: 'src/components/log/LogForm.tsx', text: 'The Vault' },
   { file: 'src/lore/fragments.ts', text: 'The Vault has never been breached. Your private notes are yours alone.' },
@@ -99,7 +101,7 @@ const PRIVATE_NOTES: Said[] = [
  * results, and a handbook calling the whole profile "The Ledger / Vault".
  */
 const WEB_PRIVATE_NOTES: Said[] = [
-  { file: '../src/pages/MembershipPage.tsx', text: 'The Vault (Private Notes)' },
+  { file: '../src/pages/MembershipPage.tsx', text: 'The Vault' },
   { file: '../src/components/HandbookModal.tsx', text: 'The Vault' },
   // The web put on the Vault per viewing, 2026-09-18 — every one is the notes.
   { file: '../src/components/vault/VaultNote.tsx', text: 'THE VAULT' },

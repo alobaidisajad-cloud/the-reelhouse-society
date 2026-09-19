@@ -39,21 +39,16 @@ import {
   RANK_WEIGHT,
   FREE_PROMISES,
   MUST_STAY_FREE,
+  RANK_MARKS,
 } from '../gatedFeatures';
-import { TIERS } from '../membership';
+import { PRIVILEGES, RANKS, privilegesOf } from '../membership';
 
 const ROOT = join(__dirname, '..', '..', '..');
 
 // ── the promises, read from the file the Society page sells from ────────────
-const soldPromises = (): { rank: string; promise: string }[] => {
-  const out: { rank: string; promise: string }[] = [];
-  for (const t of TIERS) {
-    if (t.id === 'cinephile') continue; // the free tier promises nothing gated
-    if (t.featuredFeature) out.push({ rank: t.id, promise: t.featuredFeature.title });
-    for (const f of t.features) out.push({ rank: t.id, promise: f });
-  }
-  return out;
-};
+// One list feeds every ticket and the ledger, so it is the whole of what we sell.
+const soldPromises = (): { rank: string; promise: string }[] =>
+  PRIVILEGES.filter((p) => p.rank !== 'cinephile').map((p) => ({ rank: p.rank, promise: p.name }));
 
 // ── the doors, read from the client ─────────────────────────────────────────
 const GATE_FN = /\b(isArchivistPlusTier|isAuteurPlusTier)\s*\(([^)]*)\)/g;
@@ -121,6 +116,7 @@ describe('a rank is sold, enforced, and explained', () => {
   it('every promise on the Society page is backed by something real', () => {
     const backed = new Set([
       ...GATED_FEATURES.map((f) => f.promise),
+      ...RANK_MARKS.map((m) => m.promise),
       ...UNENFORCEABLE_PROMISES,
     ]);
     // Named, not counted. "1 unbacked promise" tells nobody which one we are
@@ -286,6 +282,65 @@ describe('a rank is sold, enforced, and explained', () => {
     });
   });
 
+  it('nothing is sold on the strength of being unenforceable', () => {
+    // "Early Access to New Features" sat here: sold, and kept by nothing.
+    expect(UNENFORCEABLE_PROMISES).toEqual([]);
+  });
+
+  describe('the rank marks are the rank itself', () => {
+    it('each mark is sold on the ticket of the rank it marks', () => {
+      for (const m of RANK_MARKS) {
+        const p = PRIVILEGES.find((x) => x.name === m.promise);
+        expect(`${m.promise}: ${p?.rank}`).toBe(`${m.promise}: ${m.rank}`);
+      }
+    });
+
+    it('and the badge still draws each rank in words a member can read', () => {
+      // The mark is a promise the RENDERING keeps. If RankBadge ever stopped
+      // drawing a rank, the privilege would be sold with nothing behind it.
+      const badge = stripComments(readFileSync(join(ROOT, 'src/components/RankBadge.tsx'), 'utf8'));
+      expect(badge).toMatch(/✦ ARCHIVIST/);
+      expect(badge).toMatch(/★ AUTEUR/);
+      const { rankOf } = require('@/src/components/RankBadge');
+      expect(rankOf({ tier: 'archivist' })).toBe('archivist');
+      expect(rankOf({ tier: 'auteur' })).toBe('auteur');
+      expect(rankOf({ is_founding: true })).toBe('auteur');
+    });
+  });
+
+  describe('the price list itself', () => {
+    it('no name carries a hard line break — the page lays out its own lines', () => {
+      // The old names had \n typed into them to fit a card that no longer
+      // exists, which is where the ragged, broken lines on the page came from.
+      expect(PRIVILEGES.filter((p) => /\n/.test(p.name + p.detail)).map((p) => p.id)).toEqual([]);
+    });
+
+    it('every privilege says what it does, in a sentence', () => {
+      expect(PRIVILEGES.filter((p) => p.detail.length < 20 || !/[.]$/.test(p.detail)).map((p) => p.id)).toEqual([]);
+    });
+
+    it('every id and every name is said once', () => {
+      const ids = PRIVILEGES.map((p) => p.id);
+      const names = PRIVILEGES.map((p) => p.name);
+      expect(ids.length).toBe(new Set(ids).size);
+      expect(names.length).toBe(new Set(names).size);
+    });
+
+    it('the three ranks are the three the house has, each with something of its own', () => {
+      expect(RANKS.map((r) => r.id)).toEqual(['cinephile', 'archivist', 'auteur']);
+      for (const r of RANKS) expect(privilegesOf(r.id).length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('no rank claims a popularity it has not earned', () => {
+      // "MOST POPULAR" was printed over a rank nobody had bought. A
+      // recommendation is an opinion and says so; exactly one rank carries it.
+      const src = stripComments(readFileSync(join(ROOT, 'src/constants/membership.ts'), 'utf8'))
+        + stripComments(readFileSync(join(ROOT, 'app/(modals)/membership.tsx'), 'utf8'));
+      expect(src).not.toMatch(/MOST POPULAR|FILLING FAST|popular:/i);
+      expect(RANKS.filter((r) => r.recommended).length).toBe(1);
+    });
+  });
+
   it('a client-only gate has to say why the server does not need to care', () => {
     for (const f of GATED_FEATURES) {
       if (f.enforcement.kind !== 'client-only') continue;
@@ -309,7 +364,8 @@ describe('a rank is sold, enforced, and explained', () => {
 
   // ── the other direction ───────────────────────────────────────────────────
   describe('what we promise is free, stays free', () => {
-    const freeTier = TIERS.find((t) => t.id === 'cinephile');
+    const free = privilegesOf('cinephile');
+    const freeTier = { features: free.map((p) => p.name) };
 
     it('every line on the Cinephile list is accounted for', () => {
       const claimed = new Set(FREE_PROMISES.map((f) => f.promise));
@@ -341,12 +397,12 @@ describe('a rank is sold, enforced, and explained', () => {
 
     it('the free list is not empty and says more than "basic profile"', () => {
       expect((freeTier?.features ?? []).length).toBeGreaterThanOrEqual(4);
-      const joined = (freeTier?.features ?? []).join(' ');
+      const joined = free.map((p) => `${p.name} ${p.detail}`).join(' ');
       // The three things the old list never mentioned, and the omission of
       // which is what made the app look like a spreadsheet with posters.
       expect(joined).toMatch(/Dispatch/);
-      expect(joined).toMatch(/Critique/);
-      expect(joined).toMatch(/Vote/);
+      expect(joined).toMatch(/Critique/i);
+      expect(joined).toMatch(/vote/i);
     });
   });
 
@@ -356,11 +412,10 @@ describe('a rank is sold, enforced, and explained', () => {
     // Comments blanked FIRST. The note explaining why each name was removed
     // necessarily contains the removed name, so asserting absence against raw
     // source fails on the very comment that records the fix.
-    const raw = readFileSync(join(ROOT, 'src/constants/membership.ts'), 'utf8');
-    const src = raw.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
-    const inFeatureList = /features: \[[\s\S]*?\]/g;
-    const lists = src.match(inFeatureList)?.join('\n') ?? '';
+    const lists = PRIVILEGES.map((p) => `${p.name} ${p.detail}`).join('\n');
     expect(lists).not.toMatch(/Gilded Frame/);
     expect(lists).not.toMatch(/Poster Glow/);
+    expect(lists).not.toMatch(/Gold Foil/);
+    expect(lists).not.toMatch(/Early Access/);
   });
 });

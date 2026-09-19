@@ -511,7 +511,15 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
    */
   if (t === 'RCTScrollView') {
     const cls = p.horizontal ? 'hscroll' : 'vscroll';
-    return `<div class="${cls}" style="${css(st, false)}">${kids}</div>`;
+    /**
+     * ── AND ITS CONTENT HAS A STYLE OF ITS OWN ─────────────────────────────
+     * `contentContainerStyle` is where a screen reserves the room under a
+     * docked bar. It arrives as a prop on the scroll view, not on any child, so
+     * dropping it drew every such page with its last lines trapped under the
+     * bar — a fault the device does not have. It wraps the content, as RN does.
+     */
+    const inner = p.contentContainerStyle ? css(flat(p.contentContainerStyle), false) : '';
+    return `<div class="${cls}" style="${css(st, false)}">${inner ? `<div style="${inner}">${kids}</div>` : kids}</div>`;
   }
 
   // A testID travels through as a hook, so the frame can address one element

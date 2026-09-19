@@ -117,7 +117,7 @@ export default function MembershipPage() {
                                 the reasoning: the old list described a spreadsheet with posters
                                 and never mentioned that a Cinephile may FILE to the Dispatch —
                                 takes, seekings and wires — nor critique, certify or vote. */}
-                            {['Log, Rate & Review\nEvery Film You See', 'File to The Dispatch\n(Takes, Seekings & Wires)', 'Critique, Certify\n& Vote on Any Filing', 'The Diary, The Watchlist\n& Unlimited Lists', 'Import & Export\nYour Own Archive'].map((feature, i) => (
+                            {['Log, rate and review every film', 'The Diary, Watchlist and lists', 'Import and export your archive', 'File takes, seekings and wires', 'Critique, certify and vote', 'Listen in on the open salons'].map((feature, i) => (
                                 <div key={i} className="feature-item">
                                     <div className="feature-dot feature-dot--free" />
                                     <span className="feature-text feature-text--free">{feature}</span>
@@ -138,7 +138,9 @@ export default function MembershipPage() {
 
                     {/* The Pro Tier */}
                     <motion.div variants={itemVariants as any} className="card card-tier tier-card tier-card--archivist">
-                        <div className="popular-badge">MOST POPULAR</div>
+                        {/* "MOST POPULAR" was printed here over a rank nobody had yet bought.
+                            The app says what is true instead: the house recommends it. */}
+                        <div className="popular-badge">THE HOUSE RECOMMENDS</div>
 
                         <h3 className="tier-name tier-name--archivist">The<br/>Archivist</h3>
                         <div className="tier-label tier-label--archivist">PREMIUM TOOLS</div>
@@ -157,7 +159,7 @@ export default function MembershipPage() {
                                 <div className="feature-dot feature-dot--archivist" />
                                 <div>
                                     <div className="featured-feature-title featured-feature-title--archivist">The Editorial<br/>Desk</div>
-                                    <div className="featured-feature-desc">Pro-level review formatting. Inject movie stills, pull-quotes, and drop caps into your logs.</div>
+                                    <div className="featured-feature-desc">Dress a review with a film still, a pull-quote and a drop cap.</div>
                                 </div>
                             </div>
                             
@@ -167,10 +169,11 @@ export default function MembershipPage() {
                                 THE ARCHIVE replaces it because that one is real and was being
                                 withheld from members without ever being offered to them. */}
                             {[
-                                'The Archive\n(Every Filing on One Film,\nGathered)',
-                                'The Physical Archive\n(Track 4K/Blu-Ray/VHS)',
-                                'The Vault (Private Notes)',
-                                'The Lounge\n(Exclusive Cinema Chat Rooms)'
+                                'The Vault',
+                                'The Lounge',
+                                'The Physical Archive',
+                                'The Archive',
+                                'The Archivist’s Mark'
                             ].map((feature, i) => (
                                 <div key={i} className="feature-item feature-item--pro">
                                     <div className="feature-dot feature-dot--archivist" />
@@ -214,7 +217,7 @@ export default function MembershipPage() {
                                 <div className="feature-dot feature-dot--auteur" />
                                 <div>
                                     <div className="featured-feature-title featured-feature-title--auteur">The Breakdown<br/>Engine</div>
-                                    <div className="featured-feature-desc">Break down films across 6 specific axes — Story, Script, Acting, Cinematography, Editing & Sound. Attach gorgeous, dynamic radar charts to your reviews.</div>
+                                    <div className="featured-feature-desc">Score a film on six counts: story, script, acting, cinematography, editing, sound.</div>
                                 </div>
                             </div>
 
@@ -225,15 +228,17 @@ export default function MembershipPage() {
                                 And "Poster Glow" named nothing anybody could find; the feature
                                 is the profile Backdrop, which is real and already built. */}
                             {[
-                                'Publish Essays & Open\nBallots in The Dispatch',
-                                'Curatorial Control\n(Select Alternative TMDB\nPosters)',
-                                'The Backdrop\n(Your Room, Dressed by\nYour Own Film)',
+                                'Essays & Ballots',
+                                'Curatorial Control',
+                                'The Backdrop',
                                 // Sold on mobile since founding a private room became the
                                 // Auteur's (tr_tier_gate_private_lounges). The database
                                 // enforces it for this client too, so this page sold a rank
                                 // that withheld something it never mentioned.
-                                'Private Screening Rooms\n(Found Them; You Admit\nEach Guest)',
-                                'Early Access to New\nFeatures'
+                                'Private Screening Rooms',
+                                // "Early Access to New Features" was sold here and kept by
+                                // nothing — no mechanism gave anyone early access to anything.
+                                'The Auteur’s Plate'
                             ].map((feature, i) => (
                                 <div key={i} className="feature-item feature-item--pro">
                                     <div className="auteur-star">

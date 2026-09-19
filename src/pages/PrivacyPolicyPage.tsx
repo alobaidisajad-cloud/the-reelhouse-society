@@ -26,7 +26,7 @@ export default function PrivacyPolicyPage() {
                     Privacy Policy
                 </h1>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
-                    LAST UPDATED: MARCH 2026
+                    LAST UPDATED: SEPTEMBER 2026
                 </div>
             </div>
 
@@ -34,7 +34,7 @@ export default function PrivacyPolicyPage() {
             <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--bone)', lineHeight: 1.8 }}>
 
                 <Section title="1. Introduction">
-                    <p>The ReelHouse Society ("we," "our," or "us") operates the web application at the-reelhouse-society.vercel.app. This Privacy Policy explains how we collect, use, and protect your personal information when you use our platform.</p>
+                    <p>The ReelHouse Society ("we," "our," or "us") operates The ReelHouse Society: the website at thereelhousesociety.com and the ReelHouse apps for iPhone and Android. This Privacy Policy explains how we collect, use, and protect your personal information when you use our platform.</p>
                     <p>By creating an account or using The ReelHouse Society, you agree to the practices described in this policy.</p>
                 </Section>
 
@@ -42,7 +42,9 @@ export default function PrivacyPolicyPage() {
                     <p><strong>Account Information:</strong> When you register, we collect your email address, username, and password (securely hashed). You may optionally provide a display name, profile photo, and bio.</p>
                     <p><strong>Activity Data:</strong> We store the film logs, reviews, ratings, lists, and comments you create within the platform. This data is necessary to provide the core service.</p>
                     <p><strong>Interactions:</strong> We track certifications, reactions, follows, and other social interactions to power community features like notifications, The Pulse, and featured critiques.</p>
-                    <p><strong>Technical Data:</strong> We may collect basic analytics such as device type and browser information to improve the user experience. We do not use third-party trackers or advertising pixels.</p>
+                    <p><strong>Purchases:</strong> If you buy a paid rank, the App Store or Google Play processes the payment. We never receive your card or payment details. We receive a record of what you bought and whether it is active, so that your rank works.</p>
+                    <p><strong>Notifications:</strong> If you allow notifications in the app, we store a push token for your device so that notifications can be delivered to it.</p>
+                    <p><strong>Technical Data:</strong> When the app or website fails, an error report is sent so that we can fix it. It contains the error, your device type and app version, and your account's internal ID. It never contains your email address, your password, or what you have written. We do not use third-party trackers or advertising pixels.</p>
                 </Section>
 
                 <Section title="3. How We Use Your Information">
@@ -66,18 +68,22 @@ export default function PrivacyPolicyPage() {
                         <li><strong>Social Visibility:</strong> Control whether your profile is Public, Followers-Only, or Private</li>
                         <li><strong>Certification & Annotation Privacy:</strong> Choose who can certify or comment on your logs</li>
                         <li><strong>Notification Preferences:</strong> Toggle specific notification types on or off</li>
-                        <li><strong>Data Export:</strong> Export your data in CSV format from your profile page</li>
+                        <li><strong>Data Export:</strong> Export your archive as CSV or as a complete JSON file from Settings</li>
                         <li><strong>Account Deletion:</strong> Request permanent deletion through Settings</li>
                     </ul>
                 </Section>
 
                 <Section title="6. Third-Party Services">
                     <ul>
-                        <li><strong>Supabase:</strong> Database and authentication infrastructure</li>
-                        <li><strong>Vercel:</strong> Application hosting and deployment</li>
+                        <li><strong>Supabase:</strong> Database and authentication infrastructure, including account emails such as password resets</li>
+                        <li><strong>Vercel:</strong> Website hosting and deployment</li>
+                        <li><strong>Apple App Store and Google Play:</strong> Payment for paid ranks (subject to Apple's and Google's own privacy policies)</li>
+                        <li><strong>RevenueCat:</strong> Manages paid-rank subscriptions. It receives your account's internal ID and the record of your purchases, never your payment details</li>
+                        <li><strong>Sentry:</strong> Error and crash reports, as described in section 2</li>
+                        <li><strong>Expo:</strong> Delivers push notifications to your device</li>
                         <li><strong>TMDB API:</strong> Film metadata and poster images (subject to <a href="https://www.themoviedb.org/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--sepia)' }}>TMDB's Privacy Policy</a>)</li>
                     </ul>
-                    <p>We do not integrate any advertising networks, social media trackers, or analytics platforms that track individual users.</p>
+                    <p>We do not integrate any advertising networks or social media trackers, and none of these services is used to track you or to advertise to you.</p>
                 </Section>
 
                 <Section title="7. Cookies">
@@ -97,7 +103,7 @@ export default function PrivacyPolicyPage() {
                 </Section>
 
                 <Section title="11. Contact">
-                    <p>For privacy-related questions or data requests, contact us at: <span style={{ color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.05em' }}>support@reelhouse.app</span></p>
+                    <p>For privacy-related questions or data requests, contact us at: <span style={{ color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.05em' }}>support@thereelhousesociety.com</span></p>
                 </Section>
 
             </div>

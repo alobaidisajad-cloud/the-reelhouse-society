@@ -182,6 +182,14 @@ export const colors = {
   // promised not to make one silently. Flagged here for a colour pass.
   posterVoid: '#050402',
 
+  // ── THE SOCIETY'S TICKETS ────────────────────────────────────────────────
+  // An admission ticket is card stock laid on the page, so its head is a warm
+  // step above `frame` and falls to it. The Auteur's is oxblood stock — the
+  // higher grade is a different paper, not the same paper in a red outline.
+  ticketHead: '#1C1710',
+  ticketAuteurHead: '#2A1210',
+  ticketAuteurFoot: '#120A08',
+
   tarnishDeep: '#5A430D',   // brass in shadow — the closing stop of a brass gradient.
                             // `sepia → this` was written out by hand in both autopsy
                             // gauges; using tarnish instead flattens the ramp that

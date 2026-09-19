@@ -80,14 +80,14 @@ export const GATED_FEATURES: GatedFeature[] = [
   {
     id: 'editorial-desk',
     rank: 'archivist',
-    promise: 'The Editorial\nDesk',
+    promise: 'The Editorial Desk',
     enforcement: { kind: 'strips', table: 'logs', fields: ['drop_cap', 'editorial_header', 'pull_quote'] },
     gates: ['src/hooks/useLogFlow.ts', 'src/components/log/LogForm.tsx'],
   },
   {
     id: 'physical-archive',
     rank: 'archivist',
-    promise: 'The Physical Archive\n(Track 4K/Blu-Ray/VHS)',
+    promise: 'The Physical Archive',
     enforcement: { kind: 'refuses', table: 'physical_archive', trigger: 'tr_tier_gate_archive' },
     // The log form's format tag is where a member actually meets this feature;
     // the slice's quiet guard covers the auto-sync behind it (see archiveSlice).
@@ -96,7 +96,7 @@ export const GATED_FEATURES: GatedFeature[] = [
   {
     id: 'the-vault',
     rank: 'archivist',
-    promise: 'The Vault (Private Notes)',
+    promise: 'The Vault',
     enforcement: { kind: 'refuses', table: 'log_private_notes', trigger: 'tr_tier_gate_private_notes' },
     // A note belongs to a VIEWING (2026-09-18). Reading one is never gated and
     // neither is taking it back; writing one is what this rope stands in front
@@ -106,7 +106,7 @@ export const GATED_FEATURES: GatedFeature[] = [
   {
     id: 'the-lounge',
     rank: 'archivist',
-    promise: 'The Lounge\n(Exclusive Cinema Chat Rooms)',
+    promise: 'The Lounge',
     enforcement: { kind: 'refuses', table: 'lounge_members', trigger: 'tr_tier_gate_lounge_members' },
     gates: [
       // The room itself, where TAKING A SEAT is the gated act. It is the only
@@ -131,7 +131,7 @@ export const GATED_FEATURES: GatedFeature[] = [
     // The Lounge was gated at the door and open inside the room: joining and
     // founding carried triggers, speaking and reacting carried none. Anybody
     // already admitted kept talking for ever at any rank.
-    promise: 'The Lounge\n(Exclusive Cinema Chat Rooms)',
+    promise: 'The Lounge',
     enforcement: { kind: 'refuses', table: 'lounge_messages', trigger: 'tr_tier_gate_lounge_messages' },
     gates: [
       // Sharing a critique or an artist INTO a salon is posting a message, so
@@ -148,7 +148,7 @@ export const GATED_FEATURES: GatedFeature[] = [
   {
     id: 'lounge-reacting',
     rank: 'archivist',
-    promise: 'The Lounge\n(Exclusive Cinema Chat Rooms)',
+    promise: 'The Lounge',
     enforcement: { kind: 'refuses', table: 'lounge_message_reactions', trigger: 'tr_tier_gate_lounge_reactions' },
     // Only the door after the act — a reaction is offered only to the seated.
     gates: ['src/stores/lounge.ts'],
@@ -161,7 +161,7 @@ export const GATED_FEATURES: GatedFeature[] = [
     // notes for ever. The Vault is an ongoing instrument: changing a note IS
     // using it. DELETE stays open; taking your own records back is not a paid
     // act.
-    promise: 'The Vault (Private Notes)',
+    promise: 'The Vault',
     enforcement: { kind: 'refuses', table: 'log_private_notes', trigger: 'tr_tier_gate_private_notes_update' },
     // The log page too: opening a note offers EDIT only to a reader who may
     // change it. Below the rank the sheet still opens — reading and removing
@@ -183,7 +183,7 @@ export const GATED_FEATURES: GatedFeature[] = [
   {
     id: 'shelf-editing',
     rank: 'archivist',
-    promise: 'The Physical Archive\n(Track 4K/Blu-Ray/VHS)',
+    promise: 'The Physical Archive',
     enforcement: { kind: 'refuses', table: 'physical_archive', trigger: 'tr_tier_gate_archive_update' },
     gates: ['src/stores/domain/archiveSlice.ts'],
     reachedThrough: {
@@ -200,14 +200,14 @@ export const GATED_FEATURES: GatedFeature[] = [
     // Sold as part of the Lounge rather than separately: a member reads "the
     // Lounge" as the whole room, not as a right to enter distinct from a right
     // to open one. The server gates them separately, so both are listed.
-    promise: 'The Lounge\n(Exclusive Cinema Chat Rooms)',
+    promise: 'The Lounge',
     enforcement: { kind: 'refuses', table: 'lounges', trigger: 'tr_tier_gate_lounges' },
     gates: ['app/(tabs)/lounge.tsx'],
   },
   {
     id: 'dispatch-archive',
     rank: 'archivist',
-    promise: 'The Archive\n(Every Filing on One Film,\nGathered)',
+    promise: 'The Archive',
     enforcement: {
       kind: 'client-only',
       why: 'A search across filings that are already public and already on the page — '
@@ -220,14 +220,14 @@ export const GATED_FEATURES: GatedFeature[] = [
   {
     id: 'breakdown-engine',
     rank: 'auteur',
-    promise: 'The Breakdown\nEngine',
+    promise: 'The Breakdown Engine',
     enforcement: { kind: 'strips', table: 'logs', fields: ['autopsy', 'is_autopsied'] },
     gates: ['src/hooks/useLogFlow.ts', 'src/components/log/LogForm.tsx'],
   },
   {
     id: 'essays',
     rank: 'auteur',
-    promise: 'Publish Essays & Open\nBallots in The Dispatch',
+    promise: 'Essays & Ballots',
     enforcement: { kind: 'refuses', table: 'dispatch_posts', trigger: 'tr_tier_gate_dispatch', kinds: ['dossier'] },
     gates: ['app/dispatch/compose.tsx', 'app/(tabs)/dispatch.tsx'],
   },
@@ -244,7 +244,7 @@ export const GATED_FEATURES: GatedFeature[] = [
      * anywhere said whose or how. One sentence now sells both, because the
      * database has always treated them as one privilege.
      */
-    promise: 'Publish Essays & Open\nBallots in The Dispatch',
+    promise: 'Essays & Ballots',
     enforcement: { kind: 'refuses', table: 'dispatch_posts', trigger: 'tr_tier_gate_dispatch', kinds: ['ballot'] },
     gates: ['app/dispatch/compose.tsx', 'src/components/dispatch/ComposeDesks.tsx', 'app/(tabs)/dispatch.tsx'],
   },
@@ -255,7 +255,7 @@ export const GATED_FEATURES: GatedFeature[] = [
     // over `dispatch_dossiers_legacy`, and the offline mutation path still
     // writes through it, so the trigger on the base table is live — not an
     // orphan withholding something we never promised.
-    promise: 'Publish Essays & Open\nBallots in The Dispatch',
+    promise: 'Essays & Ballots',
     enforcement: { kind: 'refuses', table: 'dispatch_dossiers_legacy', trigger: 'tr_tier_gate_dossiers' },
     gates: ['src/utils/mutationExecutor.ts'],
     reachedThrough: {
@@ -269,14 +269,14 @@ export const GATED_FEATURES: GatedFeature[] = [
   {
     id: 'curatorial-control',
     rank: 'auteur',
-    promise: 'Curatorial Control\n(Select Alternative TMDB\nPosters)',
+    promise: 'Curatorial Control',
     enforcement: { kind: 'strips', table: 'logs', fields: ['alt_poster'] },
     gates: ['src/hooks/useLogFlow.ts', 'src/components/log/LogForm.tsx'],
   },
   {
     id: 'private-rooms',
     rank: 'auteur',
-    promise: 'Private Screening Rooms\n(Found Them; You Admit\nEach Guest)',
+    promise: 'Private Screening Rooms',
     // A second, narrower trigger sits on top of tr_tier_gate_lounges with a
     // WHEN clause — the same shape tr_tier_gate_dispatch uses to demand the
     // Auteur rank for a ballot or an essay while leaving the free forms alone.
@@ -288,7 +288,7 @@ export const GATED_FEATURES: GatedFeature[] = [
   {
     id: 'the-backdrop',
     rank: 'auteur',
-    promise: 'The Backdrop\n(Your Room, Dressed by\nYour Own Film)',
+    promise: 'The Backdrop',
     enforcement: {
       kind: 'client-only',
       why: 'A self-cosmetic written to the member’s own preferences blob. Nobody '
@@ -300,11 +300,34 @@ export const GATED_FEATURES: GatedFeature[] = [
 ];
 
 /**
- * Sold but not mechanically enforceable, and listed so the guard does not report
- * it as an unbacked promise every time it runs.
+ * Sold but not mechanically enforceable. EMPTY, and meant to stay so.
+ *
+ * It held "Early Access to New Features" — and no mechanism anywhere gave anyone
+ * early access to anything. A promise nothing keeps is the Gilded Frame again,
+ * so it was taken off the page rather than listed here as an exception.
  */
-export const UNENFORCEABLE_PROMISES = [
-  'Early Access to New\nFeatures',
+export const UNENFORCEABLE_PROMISES: string[] = [];
+
+/**
+ * The two privileges that are the rank ITSELF: the mark beside a member's name.
+ *
+ * No trigger withholds them and none should — `RankBadge` draws the mark from
+ * `rankOf()`, which reads the same weight the database gives the rank
+ * (`profile_tier_weight`), so a member holds the mark exactly when they hold
+ * the rank. `aRankIsSoldEnforcedAndExplained` checks each is sold at its rank
+ * and that the badge still draws that rank.
+ */
+export const RANK_MARKS: { promise: string; rank: Rank; why: string }[] = [
+  {
+    promise: 'The Archivist’s Mark',
+    rank: 'archivist',
+    why: 'RankBadge renders the Archivist’s hairline mark for rankOf() === archivist — the rank, read from tier, role and the founding flag, the same GREATEST profile_tier_weight uses.',
+  },
+  {
+    promise: 'The Auteur’s Plate',
+    rank: 'auteur',
+    why: 'RankBadge renders the Auteur’s framed plate for rankOf() === auteur — which a founding seat also reads as, by the same Highest Watermark rule.',
+  },
 ];
 
 /**
@@ -322,7 +345,7 @@ export const UNENFORCEABLE_PROMISES = [
  */
 export const FREE_PROMISES: { promise: string; tables: string[] }[] = [
   {
-    promise: 'Log, Rate & Review\nEvery Film You See',
+    promise: 'Log, rate and review every film',
     // `logs` carries enforce_log_tier_fields, which STRIPS premium columns but
     // never refuses the row — so logging itself is free and the promise holds.
     // It is named here anyway, so that turning that trigger into a refusal
@@ -330,7 +353,7 @@ export const FREE_PROMISES: { promise: string; tables: string[] }[] = [
     tables: [],
   },
   {
-    promise: 'File to The Dispatch\n(Takes, Seekings & Wires)',
+    promise: 'File takes, seekings and wires',
     // dispatch_posts DOES carry a tier trigger, but only WHEN the kind is a
     // ballot or an essay. The three free forms are untouched by it, which is
     // why this promise names no table: the guard for it is the WHEN clause,
@@ -338,15 +361,23 @@ export const FREE_PROMISES: { promise: string; tables: string[] }[] = [
     tables: [],
   },
   {
-    promise: 'Critique, Certify\n& Vote on Any Filing',
+    promise: 'Critique, certify and vote',
     tables: ['dispatch_comments', 'dispatch_certifications', 'dispatch_votes'],
   },
   {
-    promise: 'The Diary, The Watchlist\n& Unlimited Lists',
+    promise: 'The Diary, Watchlist and lists',
     tables: ['lists', 'list_items', 'list_comments'],
   },
   {
-    promise: 'Import & Export\nYour Own Archive',
+    promise: 'Import and export your archive',
+    tables: [],
+  },
+  {
+    promise: 'Listen in on the open salons',
+    // READING a salon. lounge_messages DOES carry a tier trigger — on INSERT,
+    // for speaking — and a trigger never fires on a SELECT, so the table cannot
+    // be listed here without contradicting `lounge-speaking`. What keeps this
+    // promise is the read policy on open salons, which carries no rank.
     tables: [],
   },
 ];

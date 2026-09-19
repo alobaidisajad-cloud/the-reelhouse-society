@@ -65,15 +65,16 @@ const webFeatures = (src: string): Set<string> => {
     return out
 }
 
+/**
+ * Mobile keeps ONE list, `PRIVILEGES`, that every ticket and the ledger read —
+ * one record per privilege, whose `name` is what a member reads. The block is
+ * taken whole, then each record's name, so a name can never be matched from
+ * some other quoted string in the file.
+ */
 const mobileFeatures = (src: string): Set<string> => {
     const out = new Set<string>()
-    const code = strip(src)
-    for (const block of code.matchAll(/features:\s*\[([\s\S]*?)\]/g)) {
-        for (const m of block[1].matchAll(/'([^']+)'/g)) out.add(tidy(m[1]))
-    }
-    for (const m of code.matchAll(/featuredFeature:\s*\{[\s\S]*?title:\s*'([^']+)'/g)) {
-        out.add(tidy(m[1]))
-    }
+    const block = /export const PRIVILEGES[^=]*=\s*\[([\s\S]*?)\n\];/.exec(strip(src).replace(/\r\n/g, '\n'))?.[1] ?? ''
+    for (const m of block.matchAll(/\{\s*id:\s*'[^']+',\s*name:\s*'([^']+)'/g)) out.add(tidy(m[1]))
     return out
 }
 
@@ -92,6 +93,9 @@ describe('the two clients sell the same thing', () => {
         expect(both).not.toMatch(/Gilded Frame/)
         expect(both).not.toMatch(/Poster Glow/)
         expect(both).not.toMatch(/Gold Foil/)
+        // …and the promise nothing kept, and the popularity nobody had earned.
+        expect(both).not.toMatch(/Early Access/)
+        expect(both).not.toMatch(/MOST POPULAR/)
     })
 
     it('every feature mobile sells, web sells too', () => {

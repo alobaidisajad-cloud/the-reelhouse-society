@@ -26,7 +26,7 @@ export default function TermsOfServicePage() {
                     Terms of Service
                 </h1>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
-                    LAST UPDATED: MARCH 2026
+                    LAST UPDATED: SEPTEMBER 2026
                 </div>
             </div>
 
@@ -38,7 +38,7 @@ export default function TermsOfServicePage() {
                 </Section>
 
                 <Section title="2. Description of Service">
-                    <p>The ReelHouse Society is a community-driven platform for tracking, reviewing, and discussing cinema. Users can log films, write reviews, create curated lists, and interact with other members through certifications, annotations, and reactions.</p>
+                    <p>The ReelHouse Society is a community-driven platform for tracking, reviewing, and discussing cinema, available on the web and in the ReelHouse apps for iPhone and Android. Users can log films, write reviews, create curated lists, and interact with other members through certifications, annotations, and reactions.</p>
                     <p>The Platform uses <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--sepia)' }}>The Movie Database (TMDB)</a> API for film data. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
                 </Section>
 
@@ -103,30 +103,41 @@ export default function TermsOfServicePage() {
                     </ul>
                 </Section>
 
-                <Section title="9. Account Termination">
+                <Section title="9. Memberships &amp; Payments">
+                    <p>Joining The ReelHouse Society is free, and the free membership has no time limit. Two paid ranks, the Archivist and the Auteur, add the privileges listed on the Society page in the app. What each rank includes is shown before you buy.</p>
+                    <p><strong>Subscriptions:</strong> The Archivist and the Auteur are sold as auto-renewing subscriptions, billed monthly or yearly, through the Apple App Store or Google Play. The price and billing period are shown before you confirm. Payment is charged to your App Store or Google Play account when you confirm the purchase.</p>
+                    <p><strong>Renewal:</strong> A subscription renews automatically at the same price for the same period unless it is cancelled at least 24 hours before the end of the current period. Your store account is charged for the renewal within the 24 hours before the period ends.</p>
+                    <p><strong>Cancelling:</strong> You can manage or cancel a subscription at any time in your App Store or Google Play account settings, or from the Society page in the app. Cancelling stops the next renewal; your rank remains until the end of the period you have already paid for.</p>
+                    <p><strong>Refunds:</strong> Purchases made through the App Store or Google Play are processed by Apple or Google, and refunds are handled by them under their own policies. We cannot issue refunds for store purchases ourselves.</p>
+                    <p><strong>Founding seats:</strong> A founding seat is a single payment that grants the Auteur rank for as long as your account exists and the Platform operates. It does not renew. Seats are limited to the first 100 members. If the last seat is claimed while your purchase is being completed, you will receive the Auteur rank and we will contact you about the seat.</p>
+                    <p><strong>When a rank ends:</strong> Everything you created remains yours. You can always read, export, and remove your own writing, including private notes; the paid tools are simply no longer available for creating or changing.</p>
+                    <p><strong>Price changes:</strong> Prices may change. A change to the price of an active subscription is notified and applied according to the rules of the App Store or Google Play.</p>
+                </Section>
+
+                <Section title="10. Account Termination">
                     <p>You may delete your account at any time through Settings. We may suspend or terminate accounts that violate these Terms, at our sole discretion, with or without notice.</p>
                     <p>Upon account deletion, your personal data will be removed within 30 days in accordance with our Privacy Policy. Some anonymized data (such as aggregate statistics) may be retained.</p>
                 </Section>
 
-                <Section title="10. Disclaimers">
+                <Section title="11. Disclaimers">
                     <p>The Platform is provided "as is" and "as available" without warranties of any kind. We do not guarantee uninterrupted access, data accuracy, or that the Platform will meet your expectations.</p>
                     <p>Film data provided via TMDB may contain inaccuracies. We are not responsible for the accuracy of third-party data.</p>
                 </Section>
 
-                <Section title="11. Limitation of Liability">
+                <Section title="12. Limitation of Liability">
                     <p>To the maximum extent permitted by law, The ReelHouse Society shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Platform.</p>
                 </Section>
 
-                <Section title="12. Changes to Terms">
+                <Section title="13. Changes to Terms">
                     <p>We reserve the right to modify these Terms at any time. Changes will be reflected on this page with an updated "Last Updated" date. Continued use after changes constitutes acceptance of the new terms.</p>
                 </Section>
 
-                <Section title="13. Governing Law">
+                <Section title="14. Governing Law">
                     <p>These Terms shall be governed by and construed in accordance with applicable laws. Any disputes arising from these Terms or your use of the Platform shall be resolved through good-faith negotiation.</p>
                 </Section>
 
-                <Section title="14. Contact">
-                    <p>For questions about these Terms, contact us at: <span style={{ color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.05em' }}>support@reelhouse.app</span></p>
+                <Section title="15. Contact">
+                    <p>For questions about these Terms, contact us at: <span style={{ color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.05em' }}>support@thereelhousesociety.com</span></p>
                 </Section>
 
             </div>
