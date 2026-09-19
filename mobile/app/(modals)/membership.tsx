@@ -19,7 +19,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, AppState, useWindowDimensions, Platform } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import * as WebBrowser from 'expo-web-browser';
 
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -33,6 +32,8 @@ import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { restorePurchases as restoreIAP, purchaseTier, showManageSubscriptions, isStoreReady, ReelHouseTier, BillingPeriod } from '@/src/lib/revenueCat';
 import { safeOpenURL } from '@/src/utils/linking';
+import { openHousePage } from '@/src/utils/housePages';
+import { SUPPORT_EMAIL, TERMS_URL, PRIVACY_URL } from '@/src/constants/support';
 import { supabase } from '@/src/lib/supabase';
 import { resolveTier, getTierWeight } from '@/src/utils/tier';
 import { deckLabelProps } from '@/src/constants/textScaling';
@@ -53,9 +54,8 @@ import { SmallPrint, STORE } from '@/src/components/society/SmallPrint';
 import { PurchaseDock, DOCK, DOCK_HEIGHT } from '@/src/components/society/PurchaseDock';
 import { ticketPrice, savePercent, foundingPitch, type Billing } from '@/src/components/society/societyPricing';
 
-/** The house's own legal pages — the same two Settings opens. */
-export const TERMS_URL = 'https://www.thereelhousesociety.com/terms';
-export const PRIVACY_URL = 'https://www.thereelhousesociety.com/privacy';
+/** The house's own legal pages — the same two Settings opens (constants/support). */
+export { TERMS_URL, PRIVACY_URL };
 /** Where "Manage subscription" goes when the store's own sheet cannot open. */
 export const MANAGE_URL = Platform.OS === 'android'
   ? 'https://play.google.com/store/account/subscriptions'
@@ -369,7 +369,7 @@ export default function MembershipScreen() {
                 setFoundingCount(count);
                 await supabase.auth.refreshSession();
                 await useAuthStore.getState().restoreSession?.();
-                reelToast.info('The final Founding seat was claimed just before your purchase. You have the Auteur rank — write to support@thereelhousesociety.com about your seat.');
+                reelToast.info(`The final Founding seat was claimed just before your purchase. You have the Auteur rank — write to ${SUPPORT_EMAIL} about your seat.`);
               }
               // Seats still available -> the webhook is simply slow. Stay quiet: the
               // optimistic tier hint is already applied and the next session restore
@@ -445,20 +445,6 @@ export default function MembershipScreen() {
   const handleManage = async () => {
     const shown = await showManageSubscriptions();
     if (!shown) await safeOpenURL(MANAGE_URL, `Open ${STORE.settings} to manage your subscription.`);
-  };
-
-  // ── The legal pages, read without leaving the app ─────────────────────────
-  const openLegal = async (url: string) => {
-    try {
-      await WebBrowser.openBrowserAsync(url, {
-        controlsColor: colors.sepia,
-        toolbarColor: colors.ink,
-        dismissButtonStyle: 'close',
-        presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
-      });
-    } catch {
-      await safeOpenURL(url);
-    }
   };
 
   const showDock = selected !== null && selectedPrice !== null;
@@ -538,8 +524,8 @@ export default function MembershipScreen() {
           busy={isRedirecting}
           onRestore={handleRestore}
           onManage={handleManage}
-          onTerms={() => openLegal(TERMS_URL)}
-          onPrivacy={() => openLegal(PRIVACY_URL)}
+          onTerms={() => openHousePage(TERMS_URL)}
+          onPrivacy={() => openHousePage(PRIVACY_URL)}
         />
       </ScrollView>
 

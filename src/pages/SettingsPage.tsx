@@ -10,12 +10,13 @@ import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import reelToast from '../utils/reelToast'
-import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User, ArrowLeft, Upload, CheckCircle, AlertCircle, Crown } from 'lucide-react'
+import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User, ArrowLeft, Upload, CheckCircle, AlertCircle, Crown, Mail } from 'lucide-react'
 import { subscribeToWebPush } from '../utils/push'
 import { importArchiveZip } from '../utils/archiveImport'
 import { useFilmStore } from '../store'
 import exportLogsCSV from '../components/profile/exportLogsCSV'
 import '../styles/settings.css'
+import { SUPPORT_EMAIL } from '../constants/support'
 
 export default function SettingsPage() {
     const { user, isAuthenticated, logout } = useAuthStore()
@@ -187,7 +188,7 @@ export default function SettingsPage() {
             'This will permanently delete your account, all logs, lists, and reviews. This cannot be undone. Are you absolutely certain?'
         )
         if (!confirmed) return
-        reelToast.error('Account deletion requires admin intervention. Contact support@thereelhousesociety.com')
+        reelToast.error(`Account deletion requires admin intervention. Contact ${SUPPORT_EMAIL}`)
     }
 
     if (!user) return null
@@ -641,10 +642,13 @@ export default function SettingsPage() {
             {/* ═══════════════════════════════════════════ */}
             <div className="settings-section">
                 <div className="settings-section-header">
-                    <FileText size={14} /> LEGAL
+                    <FileText size={14} /> HELP & LEGAL
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <Link to="/support" className="settings-action-btn" style={{ textDecoration: 'none' }}>
+                        <Mail size={12} /> THE FRONT DESK
+                    </Link>
                     <Link to="/privacy" className="settings-action-btn" style={{ textDecoration: 'none' }}>
                         <Shield size={12} /> PRIVACY POLICY
                     </Link>

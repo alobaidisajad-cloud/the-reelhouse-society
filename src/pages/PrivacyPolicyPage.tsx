@@ -5,6 +5,7 @@
 import LegalBack from '../components/LegalBack'
 import PageSEO from '../components/PageSEO'
 import { Shield } from 'lucide-react'
+import { SUPPORT_EMAIL } from '../constants/support'
 
 export default function PrivacyPolicyPage() {
     return (
@@ -98,7 +99,7 @@ export default function PrivacyPolicyPage() {
                 </Section>
 
                 <Section title="11. Contact">
-                    <p>For privacy-related questions or data requests, contact us at: <span style={{ color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.05em' }}>support@thereelhousesociety.com</span></p>
+                    <p>For privacy-related questions or data requests, contact us at: <a href={`mailto:${SUPPORT_EMAIL}`} style={{ color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.05em' }}>{SUPPORT_EMAIL}</a></p>
                 </Section>
 
             </div>

@@ -9,6 +9,7 @@ Allow: /dispatch
 Allow: /patronage
 Allow: /privacy
 Allow: /terms
+Allow: /support
 Disallow: /auth/
 Disallow: /api/
 Disallow: /admin

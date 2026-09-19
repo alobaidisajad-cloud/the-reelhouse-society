@@ -23,7 +23,6 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useSettingsStore } from '@/src/stores/settings';
 import { supabase } from '@/src/lib/supabase';
 import reelToast from '@/src/utils/reelToast';
-import { safeOpenURL } from '@/src/utils/linking';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useUpdateUser } from '@/src/hooks/useUpdateUser';
 import { AuthService } from '@/src/services/AuthService';
@@ -41,7 +40,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SettingsSchema, type SettingsFormData } from '@/src/schemas/settings';
 
-import { PatronageSection, AccountSection, PrivacySection, NotificationsSection, ExperienceSection, SectionCard, SectionHead, ActionBtn } from '@/src/features/settings/SettingsSections';
+import { PatronageSection, AccountSection, PrivacySection, NotificationsSection, ExperienceSection, FrontDeskSection, SectionCard, SectionHead, ActionBtn } from '@/src/features/settings/SettingsSections';
+import { openHousePage, writeToFrontDesk, copySupportAddress } from '@/src/utils/housePages';
+import { SUPPORT_EMAIL, SUPPORT_URL, TERMS_URL, PRIVACY_URL } from '@/src/constants/support';
 import { st } from '@/src/features/settings/settings.styles';
 import { ToastHost } from '@/src/components/ToastHost';
 
@@ -160,7 +161,7 @@ export function SettingsScreen() {
     try {
       await AuthService.requestAccountDeletion();
     } catch {
-      reelToast.error('Account deletion failed. Please contact support.');
+      reelToast.error(`Account deletion failed. Try again, or write to ${SUPPORT_EMAIL} and we will do it for you.`);
       return;
     }
     try { await logout(); } catch { /* local teardown continues regardless */ }
@@ -582,12 +583,21 @@ export function SettingsScreen() {
         {/* ── Chapter: the house ── */}
         <View style={st.ornRule}><View style={st.ornLine} /><View style={st.ornDiamond} /><View style={st.ornLine} /></View>
 
+        <AnimatedView entering={enterDown(325)}>
+          <FrontDeskSection
+            memberId={user?.id ?? null}
+            onWrite={(id) => { void writeToFrontDesk(id); }}
+            onHelp={() => { void openHousePage(SUPPORT_URL); }}
+            onCopy={() => { void copySupportAddress(); }}
+          />
+        </AnimatedView>
+
         <AnimatedView entering={enterDown(350)}>
           <SectionCard>
             <SectionHead icon={Scroll} label="LEGAL" />
             <View style={st.legalActions}>
-              <ActionBtn icon={Shield} label="PRIVACY POLICY" onPress={() => safeOpenURL('https://www.thereelhousesociety.com/privacy')} />
-              <ActionBtn icon={FileText} label="TERMS OF SERVICE" onPress={() => safeOpenURL('https://www.thereelhousesociety.com/terms')} />
+              <ActionBtn icon={Shield} label="PRIVACY POLICY" onPress={() => { void openHousePage(PRIVACY_URL); }} />
+              <ActionBtn icon={FileText} label="TERMS OF SERVICE" onPress={() => { void openHousePage(TERMS_URL); }} />
             </View>
           </SectionCard>
         </AnimatedView>

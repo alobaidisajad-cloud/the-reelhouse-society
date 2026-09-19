@@ -6,8 +6,9 @@ import Animated from 'react-native-reanimated';
 import { enterDown } from '@/src/utils/enter';
 import {
   Crown, Lock, Eye, Bell, ChevronDown, ChevronUp, Star, Sparkles,
-  UserRound, AudioLines, BellOff, TriangleAlert,
+  UserRound, AudioLines, BellOff, TriangleAlert, Mail, LifeBuoy, Copy,
 } from 'lucide-react-native';
+import { SUPPORT_EMAIL } from '@/src/constants/support';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { scaledTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
@@ -112,6 +113,47 @@ export const ActionBtn = ({ icon: Icon, label, onPress, danger }: { icon: import
 );
 
 // ═══ SECTIONS ═══
+
+/**
+ * THE FRONT DESK — where a member writes to the house.
+ *
+ * Settings had no way at all to reach a person. Now: the address itself
+ * (tap it to copy it), a letter already addressed with the
+ * account details a desk needs, and the help page for the questions that do
+ * not need a letter. Every action lands somewhere: a phone with no mail app is
+ * offered the address and the help page instead (housePages.writeToFrontDesk).
+ */
+export function FrontDeskSection({ memberId, onWrite, onHelp, onCopy }: {
+  memberId: string | null;
+  onWrite: (memberId: string | null) => void;
+  onHelp: () => void;
+  onCopy: () => void;
+}) {
+  return (
+    <SectionCard>
+      <SectionHead icon={Mail} label="THE FRONT DESK" />
+      <View style={st.deskIntro}>
+        <Text style={st.deskLine} {...scaledTextProps}>
+          A question, a billing matter, or something not working — write to us. A person reads every letter.
+        </Text>
+        <PressableScale
+          style={st.deskAddressRow}
+          onPress={onCopy}
+          hitSlop={null}
+          haptic="light"
+          pressedScale={0.98}
+          accessibilityRole="button"
+          accessibilityLabel={`${SUPPORT_EMAIL}. Copy the address`}
+        >
+          <Text style={st.deskAddress} {...deckLabelProps} minimumFontScale={0.6}>{SUPPORT_EMAIL}</Text>
+          <Copy size={13} color={colors.sepia} />
+        </PressableScale>
+      </View>
+      <ActionBtn icon={Mail} label="WRITE TO THE FRONT DESK" onPress={() => onWrite(memberId)} />
+      <ActionBtn icon={LifeBuoy} label="HELP & ANSWERS" onPress={onHelp} />
+    </SectionCard>
+  );
+}
 
 /**
  * MEMBERSHIP & BILLING.
@@ -726,6 +768,11 @@ const st = StyleSheet.create({
   permBtn: { marginTop: 11, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.sepia, borderRadius: 2 },
   permBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
 
+  deskIntro: { paddingHorizontal: 16, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
+  deskLine: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.bone },
+  // The address, on one line (it shrinks rather than breaks), and a full 48pt target.
+  deskAddressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, minHeight: 48, marginTop: 6 },
+  deskAddress: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.parchment, includeFontPadding: false },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, minHeight: 48, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
   actionBtnDanger: { borderBottomColor: 'transparent' },
   actionBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.bone, includeFontPadding: false },

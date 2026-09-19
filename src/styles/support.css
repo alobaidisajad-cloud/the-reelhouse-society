@@ -1,0 +1,348 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   The Front Desk — /support
+   A 1924 club's front desk: a brass-ruled calling card with the address on it,
+   and a ledger of answers below. Read mostly on a phone, often inside the app's
+   in-app browser, so nothing here is smaller than 0.72rem and every control is
+   at least 48px tall.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.front-desk {
+    --fd-brass: var(--sepia);
+    --fd-line: rgba(196, 150, 26, 0.22);
+    --fd-line-soft: rgba(196, 150, 26, 0.12);
+    --fd-card: rgba(26, 21, 14, 0.72);
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 5.5rem 1rem 5rem;
+    color: var(--bone);
+    font-family: var(--font-body);
+}
+
+.fd-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ── Masthead ── */
+.fd-head {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+.fd-kicker {
+    font-family: var(--font-sub);
+    font-size: 0.75rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--fd-brass);
+    margin: 0 0 0.9rem;
+}
+.fd-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.1rem, 8vw, 3.2rem);
+    font-weight: 400;
+    line-height: 1.05;
+    color: var(--parchment);
+    margin: 0;
+    text-wrap: balance;
+}
+.fd-rule {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    margin: 1.4rem auto 1.3rem;
+    max-width: 260px;
+}
+.fd-rule span {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--fd-brass));
+}
+.fd-rule span:last-child {
+    background: linear-gradient(90deg, var(--fd-brass), transparent);
+}
+.fd-rule i {
+    width: 7px;
+    height: 7px;
+    transform: rotate(45deg);
+    border: 1px solid var(--fd-brass);
+}
+.fd-dek {
+    font-size: 1rem;
+    line-height: 1.75;
+    max-width: 34rem;
+    margin: 0 auto;
+    color: var(--bone);
+    text-wrap: pretty;
+}
+
+/* ── The calling card ── */
+.fd-card {
+    position: relative;
+    text-align: center;
+    padding: 2rem 1.25rem 1.6rem;
+    background: var(--fd-card);
+    border: 1px solid var(--fd-line);
+    outline: 1px solid var(--fd-line-soft);
+    outline-offset: 5px;
+    margin: 0 5px 3.5rem;
+}
+.fd-card-label {
+    font-family: var(--font-sub);
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--fd-brass);
+    margin: 0 0 0.6rem;
+}
+.fd-card {
+    container-type: inline-size;
+}
+.fd-address {
+    margin: 0 0 1.5rem;
+    font-family: var(--font-sub);
+    /* An address broken across two lines ("…society.c / om") reads as two
+       things. It is sized to the card instead — 31 characters on one line from
+       a 320px phone up — and never wraps. */
+    font-size: min(1.45rem, 5.6cqi);
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+.fd-address a {
+    color: var(--parchment);
+    text-decoration: none;
+    border-bottom: 1px solid var(--fd-line);
+    padding-bottom: 2px;
+    transition: border-color 0.2s, color 0.2s;
+}
+.fd-address a:hover {
+    color: var(--flicker);
+    border-color: var(--fd-brass);
+}
+
+.fd-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+}
+.fd-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 48px;
+    min-width: 11rem;
+    padding: 0 1.3rem;
+    font-family: var(--font-sub);
+    font-size: 0.82rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--parchment);
+    background: transparent;
+    border: 1px solid var(--fd-line);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+}
+.fd-btn:hover {
+    border-color: var(--fd-brass);
+    background: rgba(196, 150, 26, 0.06);
+}
+.fd-btn--primary {
+    color: var(--ink);
+    background: linear-gradient(180deg, #D8AC34 0%, var(--sepia) 55%, #A57C12 100%);
+    border-color: #A57C12;
+}
+.fd-btn--primary:hover {
+    color: var(--ink);
+    background: linear-gradient(180deg, #E4BA45 0%, #CFA024 55%, #B08616 100%);
+}
+.fd-status {
+    min-height: 1.3em;
+    margin: 0.8rem 0 0;
+    font-size: 0.8rem;
+    color: var(--fd-brass);
+}
+.fd-card-note {
+    margin: 0.4rem auto 0;
+    max-width: 30rem;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--bone);
+    opacity: 0.85;
+}
+
+/* ── The answers ── */
+.fd-h2 {
+    font-family: var(--font-sub);
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--fd-brass);
+    text-align: center;
+    margin: 0 0 1rem;
+}
+.fd-q {
+    border-top: 1px solid var(--fd-line-soft);
+    scroll-margin-top: 5rem;
+}
+.fd-q:last-of-type {
+    border-bottom: 1px solid var(--fd-line-soft);
+}
+.fd-q summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 56px;
+    padding: 0.85rem 0.25rem;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-sub);
+    font-size: 1.02rem;
+    line-height: 1.4;
+    color: var(--parchment);
+    transition: color 0.2s;
+}
+.fd-q summary::-webkit-details-marker {
+    display: none;
+}
+.fd-q summary:hover {
+    color: var(--flicker);
+}
+/* A brass plus that turns to a minus when the answer is open. */
+.fd-q-mark {
+    position: relative;
+    flex: none;
+    width: 14px;
+    height: 14px;
+}
+.fd-q-mark::before,
+.fd-q-mark::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6.5px;
+    width: 14px;
+    height: 1px;
+    background: var(--fd-brass);
+    transition: transform 0.25s ease;
+}
+.fd-q-mark::after {
+    transform: rotate(90deg);
+}
+.fd-q[open] .fd-q-mark::after {
+    transform: rotate(0deg);
+}
+.fd-a {
+    padding: 0 0.25rem 1.4rem;
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: var(--bone);
+}
+.fd-a p {
+    margin: 0 0 0.8rem;
+}
+.fd-a p:last-child {
+    margin-bottom: 0;
+}
+.fd-a ol,
+.fd-a ul {
+    margin: 0 0 0.9rem;
+    padding-left: 1.4rem;
+    display: grid;
+    gap: 0.45rem;
+}
+.fd-a ol li::marker {
+    font-family: var(--font-sub);
+    color: var(--fd-brass);
+}
+.fd-a ul li::marker {
+    color: var(--fd-brass);
+}
+.fd-a strong {
+    color: var(--parchment);
+    font-weight: 400;
+    font-family: var(--font-sub);
+}
+.fd-a a {
+    color: var(--sepia);
+    text-underline-offset: 3px;
+}
+.fd-warn {
+    padding: 0.7rem 0.9rem;
+    border-left: 2px solid var(--fd-brass);
+    background: rgba(196, 150, 26, 0.06);
+}
+
+/* Settings › Membership & billing — the app's own labels, set as plates. */
+.fd-path {
+    display: inline;
+}
+.fd-path-step {
+    white-space: nowrap;
+}
+.fd-path-name {
+    font-family: var(--font-sub);
+    font-size: 0.88em;
+    color: var(--parchment);
+    letter-spacing: 0.02em;
+}
+.fd-path-sep {
+    margin: 0 0.4em;
+    color: var(--fd-brass);
+}
+
+/* ── Foot ── */
+.fd-foot {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.9rem;
+    margin-top: 3rem;
+    font-family: var(--font-sub);
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+.fd-foot a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+    color: var(--bone);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.fd-foot a:hover {
+    color: var(--sepia);
+}
+.fd-foot span {
+    color: var(--fd-brass);
+}
+
+/* ── Focus, and motion ── */
+.front-desk a:focus-visible,
+.front-desk button:focus-visible,
+.fd-q summary:focus-visible {
+    outline: 2px solid var(--sepia);
+    outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+    .front-desk *,
+    .front-desk *::before,
+    .front-desk *::after {
+        transition: none !important;
+    }
+}
+@media (max-width: 380px) {
+    .fd-btn {
+        width: 100%;
+    }
+}

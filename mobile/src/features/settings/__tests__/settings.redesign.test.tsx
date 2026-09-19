@@ -93,6 +93,13 @@ jest.mock('react-native/Libraries/Alert/Alert', () => ({ alert: (...a: unknown[]
 // The global mock carries no version, so the footer line could never render and
 // a test asserting only that the SOURCE mentions it proved nothing.
 jest.mock('expo-constants', () => ({ __esModule: true, default: { expoConfig: { version: '1.4.2', extra: {} } } }));
+const mockOpenBrowser = jest.fn(() => Promise.resolve({ type: 'dismiss' }));
+jest.mock('expo-web-browser', () => ({
+  openBrowserAsync: (...a: unknown[]) => mockOpenBrowser(...(a as [])),
+  WebBrowserPresentationStyle: { PAGE_SHEET: 'pageSheet' },
+}));
+const mockCopy = jest.fn(() => Promise.resolve(true));
+jest.mock('expo-clipboard', () => ({ setStringAsync: (...a: unknown[]) => mockCopy(...(a as [])) }));
 
 const BASE = {
   id: 'u1', username: 'sajjadobaidi', email: 'member@example.com',
@@ -661,6 +668,74 @@ describe('the keyboard does not cover what you are typing', () => {
     // automaticallyAdjustKeyboardInsets cannot reach inside one.
     const modal = SCREEN.slice(SCREEN.indexOf('<Modal'));
     expect(modal).toMatch(/<KeyboardAvoidingView behavior="padding"/);
+  });
+});
+
+describe('the front desk — a way to reach a person', () => {
+  // Settings had none. The only address the app printed bounced.
+  const { Linking } = jest.requireActual('react-native') as typeof import('react-native');
+  let openURL: jest.SpyInstance;
+  beforeEach(() => { openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true); });
+  afterEach(() => openURL.mockRestore());
+
+  const { SUPPORT_EMAIL, SUPPORT_URL, TERMS_URL, PRIVACY_URL } = jest.requireActual('@/src/constants/support') as typeof import('@/src/constants/support');
+
+  it('shows the address itself, so a member can write from anywhere', async () => {
+    const r = await settle(mount());
+    expect(r.getByText('THE FRONT DESK')).toBeTruthy();
+    expect(r.getByText(SUPPORT_EMAIL)).toBeTruthy();
+    expect(r.getByText(/A person reads every letter/)).toBeTruthy();
+  });
+
+  it('WRITE TO THE FRONT DESK opens a letter addressed to the desk, naming this member', async () => {
+    const r = await settle(mount());
+    await fireEvent.press(r.getByText('WRITE TO THE FRONT DESK'));
+    await waitFor(() => expect(openURL).toHaveBeenCalledTimes(1));
+    const mailto = String(openURL.mock.calls[0][0]);
+    expect(mailto.startsWith(`mailto:${SUPPORT_EMAIL}?`)).toBe(true);
+    const body = decodeURIComponent(mailto.split('&body=')[1]);
+    expect(body).toContain('Member: u1');
+    expect(body).toContain('App: The ReelHouse Society 1.4.2');
+    // The member's email address never rides along.
+    expect(mailto).not.toContain(encodeURIComponent('member@example.com'));
+    expect(mailto).not.toContain('member@example.com');
+  });
+
+  it('HELP & ANSWERS opens the help page inside the app', async () => {
+    const r = await settle(mount());
+    await fireEvent.press(r.getByText('HELP & ANSWERS'));
+    await waitFor(() => expect(mockOpenBrowser).toHaveBeenCalledWith(SUPPORT_URL, expect.any(Object)));
+    expect(openURL).not.toHaveBeenCalled();
+  });
+
+  it('tapping the address copies it, and says what it will do before you tap', async () => {
+    const r = await settle(mount());
+    const address = r.getByLabelText(`${SUPPORT_EMAIL}. Copy the address`);
+    expect(address.props.accessibilityRole).toBe('button');
+    await fireEvent.press(address);
+    await waitFor(() => expect(mockCopy).toHaveBeenCalledWith(SUPPORT_EMAIL));
+  });
+
+  it('sits in the house chapter, before the legal pages', async () => {
+    const r = await settle(mount());
+    const tree = JSON.stringify(r.toJSON());
+    expect(tree.indexOf('THE FRONT DESK')).toBeGreaterThan(tree.indexOf('IMPORT & EXPORT'));
+    expect(tree.indexOf('THE FRONT DESK')).toBeLessThan(tree.indexOf('PRIVACY POLICY'));
+  });
+
+  it('the legal pages open inside the app too, at the same addresses the Society page uses', async () => {
+    const r = await settle(mount());
+    await fireEvent.press(r.getByText('PRIVACY POLICY'));
+    await fireEvent.press(r.getByText('TERMS OF SERVICE'));
+    await waitFor(() => expect(mockOpenBrowser).toHaveBeenCalledTimes(2));
+    expect(mockOpenBrowser.mock.calls.map(c => (c as unknown[])[0])).toEqual([PRIVACY_URL, TERMS_URL]);
+  });
+
+  it('the address row is a full 48pt target, and its words are never below the floor', () => {
+    expect(Number(styleBody(SECTIONS, 'deskAddressRow').match(/minHeight: (\d+)/)![1])).toBeGreaterThanOrEqual(48);
+    for (const name of ['deskLine', 'deskAddress']) {
+      expect(Number(styleBody(SECTIONS, name).match(/fontSize: (\d+)/)![1])).toBeGreaterThanOrEqual(10);
+    }
   });
 });
 

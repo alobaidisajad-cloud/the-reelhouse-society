@@ -338,9 +338,16 @@ describe('the four doors at the foot all go somewhere', () => {
   });
 
   it('they are the same two pages Settings opens — one address for each, not two', () => {
+    // Both screens open the SAME constants, and neither types the address out.
+    for (const file of ['src/features/settings/SettingsScreen.tsx', 'app/(modals)/membership.tsx']) {
+      const src = readFileSync(join(ROOT, file), 'utf8');
+      expect(src).toMatch(/import \{[^}]*TERMS_URL[^}]*PRIVACY_URL[^}]*\} from '@\/src\/constants\/support'/);
+      expect(src).not.toContain(`'${TERMS_URL}'`);
+      expect(src).not.toContain(`'${PRIVACY_URL}'`);
+    }
     const settings = readFileSync(join(ROOT, 'src/features/settings/SettingsScreen.tsx'), 'utf8');
-    expect(settings).toContain(`'${TERMS_URL}'`);
-    expect(settings).toContain(`'${PRIVACY_URL}'`);
+    expect(settings).toContain('openHousePage(TERMS_URL)');
+    expect(settings).toContain('openHousePage(PRIVACY_URL)');
   });
 
   it('the small print names the store and the terms Apple requires', async () => {
