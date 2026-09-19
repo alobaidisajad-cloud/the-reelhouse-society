@@ -297,10 +297,14 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
 
         <View style={s.marqueeContent}>
           <Text style={s.marqueeEyebrow}>✦ THE WEEKLY FEATURE ✦</Text>
-          {/* Clamped: this line had no limit and wraps to two centred lines
-              today. A longer one would take three and push the film title down
-              inside a card that reads as fixed-height. */}
-          <Text style={s.marqueeLoreSub} numberOfLines={2}>As decreed by the Programming Committee</Text>
+          {/* Clamped: a longer line would take three and push the film title
+              down inside a card that reads as fixed-height.
+
+              It said "As decreed by the Programming Committee" — words that
+              were not the house's own, and not true either: nobody decrees
+              this film. It is the world's weekly trending #1 (the Lobby passes
+              `trending[0]`), which is what this line now says, in our voice. */}
+          <Text style={s.marqueeLoreSub} numberOfLines={2}>Top of the world’s bill this week</Text>
 
           <View style={s.marqueeTitleWrap}>
             {/* displayTextProps caps at 1.2x. This title is 28pt in a 34pt line
