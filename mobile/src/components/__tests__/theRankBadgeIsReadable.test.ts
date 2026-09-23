@@ -109,23 +109,40 @@ describe('each rank’s word is readable on the ground it actually sits on', () 
   it('records the defect precisely: it took the wash AND the opacity together', () => {
     /**
      * The Archivist's word used to be sepia at 0.82 ON A BRASS WASH, and that
-     * pair measured 4.35:1. Neither half does it alone:
+     * pair measured 4.35:1 against the page of the day (#0A0906). Neither half
+     * did it alone, which is the point being recorded:
      *
      *   0.82 on the wash        4.35   ← what shipped, and failed
-     *   0.82 on the plain page  4.53   ← the dimming alone is survivable
-     *   1.00 on the plain page  6.24   ← what it is now
+     *   0.82 on the plain page  4.53   ← the dimming alone was survivable THEN
+     *   1.00 on the plain page  6.24   ← what it became
      *
-     * Worth pinning as three numbers rather than one, because I first wrote
-     * this assertion from a memory of "4.35" without re-deriving which GROUND
-     * it was against — and it failed, correctly, on a mark that was fine. A
-     * contrast figure means nothing without the surface it was measured on.
+     * ── WHY THE PAGE IS A LITERAL HERE ────────────────────────────────────────
+     * History is measured against the ground it happened on. Pinning it to
+     * `colors.ink` made this record move when the house was lit (2026-09-23) and
+     * the third line failed at 4.47 — correctly, but as a report about TODAY
+     * inside a test whose subject is the past. A contrast figure means nothing
+     * without the surface it was measured on, including when that surface is a
+     * former one.
      */
+    const PAGE_THEN = '#0A0906';
     const OLD_WASH = 'rgba(184, 137, 26, 0.06)';
-    const oldGround = over(OLD_WASH, 1, PAGE);
+    const oldGround = over(OLD_WASH, 1, PAGE_THEN);
 
     expect(contrast(over(STAMP_INK_ARCHIVIST, 0.82, oldGround), oldGround)).toBeLessThan(4.5);
-    expect(contrast(over(STAMP_INK_ARCHIVIST, 0.82, PAGE), PAGE)).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(over(STAMP_INK_ARCHIVIST, 1, PAGE), PAGE)).toBeGreaterThan(6);
+    expect(contrast(over(STAMP_INK_ARCHIVIST, 0.82, PAGE_THEN), PAGE_THEN)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(over(STAMP_INK_ARCHIVIST, 1, PAGE_THEN), PAGE_THEN)).toBeGreaterThan(6);
+  });
+
+  it('and on the house as it is lit now, that same dimming FAILS — which is why no word is dimmed', () => {
+    /**
+     * The house is lighter than it was, so 0.82 of the Archivist's ink no longer
+     * clears the floor even on a plain page: 4.47. This is the whole argument for
+     * the rule that came with the lit house — opacity belongs to the thing a word
+     * sits on, never to the word — and it is pinned here so the rule cannot be
+     * quietly undone by dimming a mark again.
+     */
+    expect(contrast(over(STAMP_INK_ARCHIVIST, 0.82, PAGE), PAGE)).toBeLessThan(4.5);
+    expect(contrast(over(STAMP_INK_ARCHIVIST, 1, PAGE), PAGE)).toBeGreaterThanOrEqual(4.5);
   });
 
   it('the Auteur’s wash stays lighter than a censure’s', () => {

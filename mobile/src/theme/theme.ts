@@ -4,11 +4,34 @@
 // ============================================================
 
 export const colors = {
-  // ── NITRATE NOIR PALETTE v3.1 — Aged Tungsten ──
-  ink: '#0A0906',         // Primary background (deeper warm brown-black)
+  /**
+   * ── THE HOUSE, LIT — the ground ladder (2026-09-23) ────────────────────────
+   *
+   * The app used to sit on twelve near-blacks that nobody could tell apart: a
+   * card (`soot`) sat 0.8 of a perceived step above the page, so cards read as
+   * holes rather than paper, and the "cut into the page" recesses were BELOW a
+   * page that was already at the floor. Shadows were black on black — invisible
+   * — and the only thing separating one surface from another was a hairline.
+   *
+   * Five surfaces now, on one warm charcoal, each a clear step from the next
+   * (perceived lightness in brackets). Deep where the drama is, lit where the
+   * reading is — a dark house with light falling through it, not a flat fill:
+   *
+   *   recess  1.4   cut INTO the page: poster voids, deck bars, the chronicle
+   *   well    3.4   a field you type into, sunk below the card it sits on
+   *   house   3.1   the room itself
+   *   card    9.2   paper laid on the page
+   *   raised 12.7   bars, trays, docks and sheets, lit by the booth
+   *
+   * The hue is a neutral grey carrying ink's own warmth, NOT ink's channels
+   * scaled: scaling multiplies the tint with the light and the ground turns
+   * olive. Measured: no step bands (the largest 8-bit step across the light is
+   * 1/255), and every text tone clears its contrast floor on all five.
+   */
+  ink: '#0D0B09',         // THE HOUSE — the room itself (was #0A0906)
   parchment: '#E8DFD0',   // Primary text (yellowed, like actual old paper)
   sepia: '#B8891A',       // Tarnished brass — buttons, links, active state
-  soot: '#0D0C08',        // Secondary dark surface (deeper warmth)
+  soot: '#1E1914',        // CARD — paper laid on the page (was #0D0C08, a hole)
   flicker: '#F0E8B0',     // Candlelight accent — hover states, highlights
   bloodReel: '#6B1A0A',   // Deep crimson — destructive actions, stamps
   danger: '#E74C3C',      // Alert red
@@ -20,14 +43,24 @@ export const colors = {
   // that headroom is what the opacity budget spends: 0.80 -> 4.59 (clears AA),
   // 0.65 -> 3.38, 0.60 -> 3.04, 0.45 -> 2.18, 0.30 -> 1.58 (invisible outdoors).
   fog: '#9E9488',         // Muted text, disabled
+  /**
+   * ── WORDS ARE NEVER DRAWN SEE-THROUGH ─────────────────────────────────────
+   * The app's quiet grey was `fog` at 0.8, and that 0.8 was budgeted against the
+   * old near-black: 4.59:1, scraping past the 4.5 floor. The same text lands at
+   * 4.22 on a card and 3.97 on a raised bar — it fails the moment it sits on
+   * anything lit. So the tone becomes a colour of its own, lifted along its own
+   * hue until it clears the floor on the LIGHTEST surface it can sit on
+   * (4.64 on raised, 5.37 on the house), and no word is painted at partial
+   * opacity again: opacity is for the thing a word sits on, never the word.
+   */
+  fogQuiet: '#908980',
   silverNitrate: '#D8E0E8', // System/info accent
   rust: '#8B4513',           // Tarnished copper — dossier accents, warm highlights
   // The dark INSIDE a frame — the member's mounted portrait, the three panels of
-  // the triptych, the small poster wells in the LATELY ledger. It has to be a
-  // clear step above `ink` so an empty frame reads as a frame rather than a hole
-  // punched in the page; `soot` is only three values off ink and disappears
-  // against it, which is why this is its own shade and not a reuse.
-  frame: '#14100B',
+  // the triptych, the small poster wells in the LATELY ledger. An empty frame
+  // must read as a frame rather than a hole punched in the page, so it sits on
+  // the CARD step: a frame is a thing laid on the wall, not a gap in it.
+  frame: '#1E1914',
 
   // Derived — channels MUST match base `sepia` (#B8891A = rgb(184, 137, 26)).
   // (CONST-1: previously rgb(196,150,26), a subtly different hue than the base.)
@@ -60,7 +93,8 @@ export const colors = {
   // pigment above stays for marks — rings, filled hearts, a ballot's cross —
   // and words that must be crimson use this, at 5.4:1, unmistakably the same
   // family. The same 2.7:1 label is on the log deck today.
-  crimsonInk: '#E2564F',
+  // Lifted from #E2564F: on a raised bar it read 4.35, under the floor. 4.63 now.
+  crimsonInk: '#E35E58',
 
   // ── THE DISPATCH'S FIVE DEPARTMENTS ──────────────────────────────────────
   // A filing's kind carries a hue, and the WORD wears it — the way a Darkroom
@@ -89,15 +123,15 @@ export const colors = {
   //
   // `dossier` is silverNitrate and is written as the token, not a copy of its
   // value — the silver screen, the most considered form.
-  dispatchTake: '#D9633A',
+  // Lifted from #D9633A for the same reason: 4.45 on a raised bar, 4.62 now.
+  dispatchTake: '#DA6840',
   dispatchSeeking: '#A07CBE',
   dispatchWire: '#5FA3B8',
   dispatchBallot: '#6FA855',
 
-  // The ground inside a keyboard well — a clear step above `ink` so the well
-  // reads as a surface rather than a hole punched in the page, the same reason
-  // `frame` exists and is not `soot`.
-  keyWell: '#171613',
+  // The ground inside a keyboard well — a RAISED surface: the keyboard rises
+  // from the floor of the screen, so it is lit like a tray, not cut like a well.
+  keyWell: '#26201A',
   // The ground of an exported story card. Deeper than `ink` because it is seen
   // on someone else's feed, against their app's white, and not in the booth.
   storyGround: '#0B0907',
@@ -130,8 +164,8 @@ export const colors = {
   // `sepiaBorderStrong`, which the Ledger already carries and which is exactly
   // what a lighter impression's edge is.
   stampCrimsonHead: 'rgba(180, 45, 45, 0.09)',
-  /** Where the wash lands: the page's own ink, all but opaque. */
-  stampGround: 'rgba(10, 9, 6, 0.96)',
+  /** Where the wash lands: the house's own ink, all but opaque. */
+  stampGround: 'rgba(13, 11, 9, 0.96)',
   /**
    * The INNER rule of the Auteur's double frame — its own ink at half, so the
    * two rules read as one struck pair rather than as a box inside a box. Only
@@ -140,14 +174,14 @@ export const colors = {
   stampRuleInner: 'rgba(226, 86, 79, 0.5)',
 
   parchmentBright: '#F8F2E4',
-  surface: '#14120D',
+  /** CARD — the same paper as `soot`, kept as its own name for panels. */
+  surface: '#1E1914',
   /**
    * A sheet raised OVER the page, lit by the room rather than the page behind
-   * it — the film page's action tray. A hair above `ink` and a hair below
-   * `surface`: enough to read as a separate plane against the scrim, not
-   * enough to read as a grey card.
+   * it — the film page's action tray, a bottom sheet, a dock. The top step of
+   * the ladder: it must read as a separate plane against the scrim.
    */
-  surfaceRaised: '#12100B',
+  surfaceRaised: '#26201A',
   // Text-selection highlight — brand sepia at low alpha so selected text stays legible
   selection: 'rgba(184, 137, 26, 0.35)',
   // ── Semantic ──
@@ -171,24 +205,32 @@ export const colors = {
   // Two more the log surfaces were still mixing by hand. Same rule as above:
   // the values are EXACTLY what shipped, so naming them changes nothing on
   // screen — it only stops the next person guessing at them again.
-  inkwell: '#050403',       // the recess UNDER the paper — deck bars, the chronicle
-                            // strip, the critique field. Darker than ink on purpose:
-                            // these are cut into the page, not laid on it.
-  // The black behind a MISSING poster — the hole in the wall where a picture
-  // is not. Mixed by hand in three places (the poster card, the vault case, the
-  // ledger plate) and now named, at exactly the value that ships.
-  // ⚠ One point of blue from `inkwell` (#050403). They are almost certainly the
-  // same shade and want merging — but that is a pixel change, and this pass
-  // promised not to make one silently. Flagged here for a colour pass.
-  posterVoid: '#050402',
+  // RECESS — the cut UNDER the paper: deck bars, the chronicle strip, the
+  // critique field. Below the house on purpose; now that the house is lit, a
+  // recess finally reads as cut in rather than as more of the same black.
+  inkwell: '#060504',
+  /**
+   * The black behind a MISSING poster — the hole in the wall where a picture is
+   * not. It was one point of blue off `inkwell`, a difference nobody could see,
+   * and the colour pass this file's old comment asked for is this one: the two
+   * are now the same recess, named twice because they mean different things.
+   */
+  posterVoid: '#060504',
+  /**
+   * WELL — a field you type into. Sunk below the card it sits on, so a search
+   * box or a password field reads as something cut into the surface. It was the
+   * house colour with a heavy black drop shadow, which was invisible on black
+   * and, once the house was lit, drew a dark halo down both sides of the screen.
+   */
+  well: '#0E0C0A',
 
   // ── THE SOCIETY'S TICKETS ────────────────────────────────────────────────
   // An admission ticket is card stock laid on the page, so its head is a warm
   // step above `frame` and falls to it. The Auteur's is oxblood stock — the
   // higher grade is a different paper, not the same paper in a red outline.
-  ticketHead: '#1C1710',
-  ticketAuteurHead: '#2A1210',
-  ticketAuteurFoot: '#120A08',
+  ticketHead: '#2A241B',
+  ticketAuteurHead: '#33170F',
+  ticketAuteurFoot: '#1A0F0B',
 
   tarnishDeep: '#5A430D',   // brass in shadow — the closing stop of a brass gradient.
                             // `sepia → this` was written out by hand in both autopsy

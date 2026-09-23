@@ -424,7 +424,18 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
   // ── artwork ──
   if (/^(Image|ExpoImage)$/i.test(t)) {
     const src = p.source as { uri?: string; testUri?: string } | undefined;
-    const style = css(st, false);
+    /**
+     * ── AN IMAGE PINNED TO ALL FOUR EDGES DOES NOT STRETCH ────────────────────
+     * The app fills a frame with `StyleSheet.absoluteFillObject`, which React
+     * Native reads as "cover this box". CSS does that for ordinary boxes, but an
+     * IMG is a replaced element: with all four insets at 0 and no width, the
+     * browser keeps its INTRINSIC size — so a 342pt-wide poster sat inside a
+     * 119pt cell and the Darkroom's grid came out zoomed and overhanging. The
+     * box has to be restated, exactly as it is for svg elsewhere in this file.
+     */
+    const fills = st.position === 'absolute' &&
+      [st.top, st.left, st.right, st.bottom].every((v) => v === 0);
+    const style = css(st, false) + (fills ? ';width:100%;height:100%' : '');
 
     // A remote poster, matched on its TMDB path — or a video still, matched on
     // its YouTube key. `img.youtube.com/vi/KEY/hqdefault.jpg` carries no TMDB
