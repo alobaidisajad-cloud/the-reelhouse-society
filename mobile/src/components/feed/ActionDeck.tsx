@@ -252,7 +252,7 @@ const s = StyleSheet.create({
   // Crimson passion for certification; brass for the archival act of saving —
   // both finally legible (bloodReel was ~1.4:1 on ink).
   actionLabelCertified: {
-    color: colors.crimson,
+    color: colors.crimsonInk,
   },
   actionLabelSaved: {
     color: colors.sepia,

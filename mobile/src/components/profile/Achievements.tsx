@@ -204,7 +204,7 @@ export function Achievements({ logs, analytics, totalFilms }: { logs: Achievemen
 
 const s = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.2)',
     borderRadius: 4,
@@ -277,7 +277,7 @@ const s = StyleSheet.create({
     color: colors.flicker,
   },
   titleLocked: {
-    color: colors.ash,
+    color: colors.fogQuiet,
     opacity: 0.5,
   },
 });

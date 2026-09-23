@@ -4,7 +4,7 @@ import { colors, fonts, effects } from '@/src/theme/theme';
 export const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   ambientGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 350, zIndex: 0 },
-  navBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)', zIndex: 10, backgroundColor: 'rgba(5,3,1,0.85)' },
+  navBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)', zIndex: 10, backgroundColor: 'rgba(6,5,4,0.85)' },
   // 48 by geometry, not by halo. A halo lives inside React Native's touch
   // dispatch and never reaches either platform's accessibility layer, so it
   // buys reach and never compliance. The negative margin keeps the chevron
@@ -58,14 +58,14 @@ export const st = StyleSheet.create({
 
   // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalContent: { backgroundColor: '#110D0A', borderWidth: 1, borderColor: '#30261A', borderRadius: 6, width: '100%', padding: 24 },
+  modalContent: { backgroundColor: colors.soot, borderWidth: 1, borderColor: '#30261A', borderRadius: 6, width: '100%', padding: 24 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-  modalTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.bloodReel },
+  modalTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.crimsonInk },
   modalDesc: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, marginBottom: 16 },
   // Said in place, not only in a toast that has already gone. A code that never
   // arrived used to leave a live box with no explanation and no way to retry.
-  modalFail: { fontFamily: fonts.body, fontSize: 12, color: colors.crimson, lineHeight: 18, marginBottom: 16 },
-  otpInput: { backgroundColor: colors.ink, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 24, padding: 16, borderRadius: 4, textAlign: 'center', marginBottom: 16, letterSpacing: 8 },
+  modalFail: { fontFamily: fonts.body, fontSize: 12, color: colors.crimsonInk, lineHeight: 18, marginBottom: 16 },
+  otpInput: { backgroundColor: colors.well, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 24, padding: 16, borderRadius: 4, textAlign: 'center', marginBottom: 16, letterSpacing: 8 },
   modalResend: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   modalResendText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   modalResendTextDim: { color: colors.fog, opacity: 0.6 },

@@ -97,7 +97,7 @@ const s = StyleSheet.create({
     castPhotoWrap: { width: 100, height: 150, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', marginBottom: 8 },
     castPhoto: { width: '100%', height: '100%' },
     sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.12)', zIndex: 1 },
-    castPhotoPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
+    castPhotoPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
     castPhotoPlaceholderText: { fontFamily: fonts.display, fontSize: 32, color: colors.fog },
     /**
      * ── THE ROLES HAVE TO LINE UP ─────────────────────────────────────────

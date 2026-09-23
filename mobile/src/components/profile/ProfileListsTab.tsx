@@ -279,10 +279,10 @@ const CARD_MARGIN = ROOM_INSET / 2;
 const s = StyleSheet.create({
   // ── a bound volume ──
   stackCard: { flex: 1, marginHorizontal: CARD_MARGIN, marginBottom: 20 },
-  stackPosterWrap: { width: '100%', aspectRatio: 3 / 2, borderRadius: 2, overflow: 'hidden', backgroundColor: 'rgba(18,14,9,0.5)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(232,223,208,0.14)', position: 'relative' },
+  stackPosterWrap: { width: '100%', aspectRatio: 3 / 2, borderRadius: 2, overflow: 'hidden', backgroundColor: 'rgba(30,25,20,0.5)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(232,223,208,0.14)', position: 'relative' },
   stackPosterPanel: { position: 'absolute', top: 0, bottom: 0, height: '100%' },
-  stackEmptyBg: { flex: 1, backgroundColor: 'rgba(18,14,9,0.7)' },
-  stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5,4,3,0.32)' },
+  stackEmptyBg: { flex: 1, backgroundColor: 'rgba(30,25,20,0.7)' },
+  stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,5,4,0.32)' },
   /**
    * A clasp, not a pill. The old lock was a filled brass circle floating over
    * the artwork at radius 12 — the roundest object in an app where nothing is
@@ -316,9 +316,9 @@ const s = StyleSheet.create({
 
   // ── your own empty stacks ──
   emptyStateSelf: { marginTop: 24, marginHorizontal: CARD_MARGIN, position: 'relative', shadowColor: 'rgba(0,0,0,0.8)', shadowOffset: { width: 0, height: 10 }, shadowRadius: 20 },
-  dossierStackBg1: { position: 'absolute', top: -12, left: 12, right: 12, height: '100%', backgroundColor: 'rgba(15,12,8,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', borderRadius: 4 },
-  dossierStackBg2: { position: 'absolute', top: -6, left: 6, right: 6, height: '100%', backgroundColor: 'rgba(18,14,9,0.8)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 4 },
-  dossierFront: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(25,20,15,1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 4 },
+  dossierStackBg1: { position: 'absolute', top: -12, left: 12, right: 12, height: '100%', backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', borderRadius: 4 },
+  dossierStackBg2: { position: 'absolute', top: -6, left: 6, right: 6, height: '100%', backgroundColor: 'rgba(30,25,20,0.8)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 4 },
+  dossierFront: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 4 },
 });
 
 

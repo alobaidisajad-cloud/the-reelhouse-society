@@ -143,7 +143,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
       <GestureHandlerRootView style={{ flex: 1 }}>
       <Animated.View style={[s.sheetKeyboard, animatedContainerStyle]}>
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
-          <BlurView intensity={90} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(5,3,1,0.6)' }]}>
+          <BlurView intensity={90} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(6,5,4,0.6)' }]}>
             <PressableScale style={s.sheetBackdrop} onPress={handleClose} accessibilityLabel="Close sheet" />
           </BlurView>
         </Animated.View>
@@ -279,7 +279,7 @@ const s = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(7,5,4,0.98)',
+    backgroundColor: colors.inkwell,
     borderTopLeftRadius: 4,
     borderTopRightRadius: 4,
     padding: 24,
@@ -324,7 +324,7 @@ const s = StyleSheet.create({
   fieldInput: {
     borderWidth: 1,
     borderColor: colors.sepiaBorder,
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    backgroundColor: colors.well,
     paddingHorizontal: 16,
     paddingVertical: 16,
     fontFamily: fonts.body,

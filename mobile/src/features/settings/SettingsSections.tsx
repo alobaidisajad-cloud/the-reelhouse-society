@@ -682,14 +682,14 @@ export function ExperienceSection() {
 }
 
 const st = StyleSheet.create({
-  sectionCard: { backgroundColor: '#110D0A', borderWidth: 1, borderColor: '#30261A', borderRadius: 6, marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' },
+  sectionCard: { backgroundColor: colors.soot, borderWidth: 1, borderColor: '#30261A', borderRadius: 6, marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' },
   sectionCardDanger: { borderColor: 'rgba(162,36,36,0.5)', backgroundColor: 'rgba(162,36,36,0.03)' },
   sectionTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, zIndex: 10 },
   sectionHeaderWrap: { padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionHeaderIcon: { marginTop: -1 },
   sectionHeaderText: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 2.5, includeFontPadding: false },
-  sectionHeaderTextDanger: { color: colors.bloodReel },
+  sectionHeaderTextDanger: { color: colors.crimsonInk },
   dimmed: { opacity: 0.5 },
 
   fieldWrap: { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
@@ -710,7 +710,7 @@ const st = StyleSheet.create({
   // bolding on iOS and, on Android, a silent fall back to the system face —
   // the rank would render in a different typeface entirely. Nothing else in
   // the app puts a weight on fonts.display, and this used to.
-  rankAuteur: { color: colors.bloodReel },
+  rankAuteur: { color: colors.crimsonInk },
   activeBadge: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: 'rgba(184,137,26,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 2 },
   activeBadgeText: { fontFamily: fonts.sub, fontSize: 8, color: colors.sepia, letterSpacing: 1, includeFontPadding: false },
   ladder: { flexDirection: 'row', alignItems: 'center', marginTop: 12, flexWrap: 'wrap' },
@@ -727,16 +727,16 @@ const st = StyleSheet.create({
 
   actionBtnSpaced: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 48, backgroundColor: 'rgba(184,137,26,0.03)' },
   actionBtnTextFlex: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.bone, flex: 1, marginLeft: 10, includeFontPadding: false },
-  passwordPanel: { padding: 16, backgroundColor: '#0A0806', borderTopWidth: 1, borderTopColor: '#30261A' },
+  passwordPanel: { padding: 16, backgroundColor: colors.inkwell, borderTopWidth: 1, borderTopColor: '#30261A' },
   panelField: { marginBottom: 16 },
   oauthBanner: { backgroundColor: 'rgba(184,137,26,0.05)', padding: 16, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)' },
-  fieldInput: { backgroundColor: colors.ink, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 14, padding: 12, borderRadius: 2 },
+  fieldInput: { backgroundColor: colors.well, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 14, padding: 12, borderRadius: 2 },
   pwMeter: { marginTop: 10 },
   pwBars: { flexDirection: 'row', gap: 5 },
   pwBar: { flex: 1, height: 3, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 1 },
   pwStrength: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, marginTop: 8, includeFontPadding: false },
   pwChecks: { fontFamily: fonts.body, fontSize: 10.5, color: colors.fog, lineHeight: 16, marginTop: 6 },
-  pwMismatch: { fontFamily: fonts.body, fontSize: 11, color: colors.crimson, marginTop: 8 },
+  pwMismatch: { fontFamily: fonts.body, fontSize: 11, color: colors.crimsonInk, marginTop: 8 },
   saveFieldBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.sepia, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 2 },
   saveFieldBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
 
@@ -776,5 +776,5 @@ const st = StyleSheet.create({
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, minHeight: 48, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
   actionBtnDanger: { borderBottomColor: 'transparent' },
   actionBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.bone, includeFontPadding: false },
-  actionBtnTextDanger: { color: colors.bloodReel },
+  actionBtnTextDanger: { color: colors.crimsonInk },
 });

@@ -65,5 +65,6 @@ export const RIM = 'rgba(240,232,176,0.30)';
 export const ON_BRASS = colors.ink;
 
 /** A rule drawn ON brass: ink at low alpha, so it reads as scored metal. */
-export const ON_BRASS_RULE = 'rgba(10,9,6,0.42)';
-export const ON_BRASS_MUTED = 'rgba(10,9,6,0.72)';
+export const ON_BRASS_RULE = 'rgba(13,11,9,0.42)';
+/** A quieter WORD on brass — solid, never the ink at an alpha. See the theme. */
+export const ON_BRASS_MUTED = colors.onBrassQuiet;

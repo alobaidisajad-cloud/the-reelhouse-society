@@ -177,7 +177,7 @@ const s = StyleSheet.create({
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16,
-    backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)',
+    backgroundColor: colors.well, borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)',
     borderRadius: 8, paddingHorizontal: 11, height: 40,
   },
   searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.parchment, padding: 0 },
@@ -201,5 +201,5 @@ const s = StyleSheet.create({
   admitText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 1.5, color: colors.ink, includeFontPadding: false },
 
   declineAll: { marginTop: 12, alignItems: 'center', paddingVertical: 12, borderWidth: 1, borderColor: colors.crimsonBorder, borderRadius: 8 },
-  declineAllText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.crimson },
+  declineAllText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.crimsonInk },
 });

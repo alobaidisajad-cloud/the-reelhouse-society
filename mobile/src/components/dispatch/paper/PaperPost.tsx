@@ -692,7 +692,7 @@ export const PaperPost = memo(function PaperPost({
                   ) : null}
                   {/* The wash folded into the ramp — one layer, as above. */}
                   <LinearGradient
-                    colors={['rgba(26,17,7,0.48)', 'rgba(16,11,5,0.70)', 'rgba(10,9,6,0.93)']}
+                    colors={['rgba(30,25,20,0.48)', 'rgba(13,11,9,0.70)', 'rgba(13,11,9,0.93)']}
                     locations={[0, 0.5, 1]} style={p.stillScrim}
                   />
                 </View>

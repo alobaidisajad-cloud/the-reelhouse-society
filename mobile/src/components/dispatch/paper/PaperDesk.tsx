@@ -531,7 +531,7 @@ export const ShareSheet = memo(function ShareSheet({
 const d = StyleSheet.create({
   // ── shared sheet shell ────────────────────────────────────────────────────
   sheet: {
-    backgroundColor: 'rgba(8,6,4,0.99)',
+    backgroundColor: colors.soot,
     borderTopWidth: 1.5, borderTopColor: colors.sepiaBorder,
     borderTopLeftRadius: 6, borderTopRightRadius: 6,
     paddingHorizontal: 24, paddingTop: 8, paddingBottom: 34,
@@ -576,7 +576,7 @@ const d = StyleSheet.create({
   slotNo: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, width: 21, includeFontPadding: false },
   slotArt: {
     width: 26, height: 39, borderRadius: 1, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(240,232,176,0.18)', backgroundColor: 'rgba(20,16,11,0.9)',
+    borderWidth: 1, borderColor: 'rgba(240,232,176,0.18)', backgroundColor: colors.soot,
   },
   slotTitle: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.parchment, includeFontPadding: false },
   slotMeta: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.fog, marginTop: 4, includeFontPadding: false },
@@ -627,7 +627,7 @@ const d = StyleSheet.create({
   result: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
   resultArt: {
     width: 30, height: 45, borderRadius: 1, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(240,232,176,0.18)', backgroundColor: 'rgba(20,16,11,0.9)',
+    borderWidth: 1, borderColor: 'rgba(240,232,176,0.18)', backgroundColor: colors.soot,
   },
   resultTitle: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.parchment, includeFontPadding: false },
   resultMeta: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.fog, marginTop: 4, includeFontPadding: false },

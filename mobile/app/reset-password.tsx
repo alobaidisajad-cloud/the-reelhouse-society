@@ -160,7 +160,7 @@ export default function ResetPasswordScreen() {
             <View style={[s.successIconWrap, { backgroundColor: 'rgba(107, 26, 10, 0.15)', borderColor: colors.bloodReel }]}>
               <Text style={[s.successIcon, { color: colors.bloodReel }]}>✕</Text>
             </View>
-            <Text style={[s.successEyebrow, { color: colors.bloodReel }]}>SESSION EXPIRED</Text>
+            <Text style={[s.successEyebrow, { color: colors.crimsonInk }]}>SESSION EXPIRED</Text>
             <Text style={s.successTitle}>No Active Session</Text>
             <Text style={s.successBody}>
               Your reset link has expired or was already used.{"\n"}Please request a new one.
@@ -390,7 +390,7 @@ const s = StyleSheet.create({
 
   // Form Card
   formCard: {
-    backgroundColor: 'rgba(14, 13, 10, 0.7)', borderWidth: 1, borderColor: colors.ash,
+    backgroundColor: 'rgba(30,25,20,0.7)', borderWidth: 1, borderColor: colors.ash,
     borderRadius: 4, padding: 24, gap: 18, overflow: 'hidden',
   },
   formCardGlow: {
@@ -403,7 +403,7 @@ const s = StyleSheet.create({
   inputLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.fog, textTransform: 'uppercase' },
   inputWrap: { position: 'relative' },
   input: {
-    backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.ash,
+    backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash,
     borderRadius: 3, padding: 14, paddingHorizontal: 16,
     fontSize: 14, fontFamily: fonts.body, color: colors.parchment,
   },
@@ -421,7 +421,7 @@ const s = StyleSheet.create({
   checkLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.5 },
 
   // Mismatch
-  mismatchText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimson, marginTop: 2 },
+  mismatchText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimsonInk, marginTop: 2 },
 
   // Submit
   submitBtn: {

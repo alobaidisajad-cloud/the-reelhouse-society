@@ -87,7 +87,7 @@ export function TasteMatch({ myLogs = [], theirLogs = [], theirUsername }: Taste
 
 const s = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: colors.soot,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(184,137,26,0.2)',
     borderRadius: 4,

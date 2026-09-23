@@ -465,8 +465,8 @@ const s = StyleSheet.create({
     backgroundColor: colors.posterVoid,
   },
   caseFace: { width: '100%', height: '100%' },
-  caseEmpty: { backgroundColor: 'rgba(18,14,9,0.7)', justifyContent: 'center', alignItems: 'center' },
-  caseBadge: { position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(5,4,3,0.95)', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 2, borderWidth: 1 },
+  caseEmpty: { backgroundColor: 'rgba(30,25,20,0.7)', justifyContent: 'center', alignItems: 'center' },
+  caseBadge: { position: 'absolute', bottom: 4, right: 4, backgroundColor: colors.inkwell, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 2, borderWidth: 1 },
   caseBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1 },
 
   // ── your own empty shelves ──

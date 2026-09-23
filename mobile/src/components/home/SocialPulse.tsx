@@ -282,7 +282,7 @@ const s = StyleSheet.create({
   // and FilmStripRow, where this style is duplicated verbatim.
   sectionLoreSub: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, opacity: 0.8, letterSpacing: 0.3 },
   pulseEmpty: {
-    marginHorizontal: 20, backgroundColor: 'rgba(18,14,9,0.85)', borderLeftWidth: 3,
+    marginHorizontal: 20, backgroundColor: 'rgba(30,25,20,0.85)', borderLeftWidth: 3,
     borderLeftColor: 'rgba(184,137,26,0.3)', borderRadius: 6, padding: 32, alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)',
   },

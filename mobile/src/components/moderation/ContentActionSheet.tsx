@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     color: colors.parchment,
   },
   optionTextDestructive: {
-    color: colors.bloodReel,
+    color: colors.crimsonInk,
   },
 });
 

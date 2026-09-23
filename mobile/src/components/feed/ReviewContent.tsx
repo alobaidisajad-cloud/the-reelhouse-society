@@ -185,7 +185,7 @@ const s = StyleSheet.create({
     textShadowColor: colors.sepiaSubtle, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8,
   },
   pullQuotePremium: { color: 'rgba(220,166,58,0.9)' },
-  pullQuoteAuteur: { color: colors.crimson },
+  pullQuoteAuteur: { color: colors.crimsonInk },
   review: {
     includeFontPadding: false, textAlignVertical: 'center',
     fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 22,

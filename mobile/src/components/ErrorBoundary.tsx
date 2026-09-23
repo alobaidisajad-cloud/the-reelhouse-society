@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 11,
     fontFamily: fonts.body,
-    color: colors.bloodReel,
+    color: colors.crimsonInk,
     lineHeight: 16,
   },
   retryButton: {

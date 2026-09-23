@@ -57,7 +57,7 @@ export const PurchaseDock = memo(function PurchaseDock({
 }) {
   return (
     <View testID="purchase-dock" style={[s.dock, { paddingBottom: Math.max(bottomInset, DOCK.minInset) + DOCK.padBottom }]}>
-      <LinearGradient colors={['rgba(10,9,6,0)', colors.ink]} style={s.fade} pointerEvents="none" />
+      <LinearGradient colors={['rgba(13,11,9,0)', colors.ink]} style={s.fade} pointerEvents="none" />
       <Text style={s.summary} {...scaledTextProps} maxFontSizeMultiplier={1.2} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{summary}</Text>
       <PressableScale
         style={s.btn}

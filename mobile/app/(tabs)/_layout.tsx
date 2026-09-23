@@ -334,10 +334,10 @@ const s = StyleSheet.create({
   },
 
   tabBarTint: {
-    backgroundColor: 'rgba(8, 6, 4, 0.45)', // Smoked Obsidian tint overlaying the blur
+    backgroundColor: 'rgba(30,25,20,0.45)', // Smoked Obsidian tint overlaying the blur
   },
   tabBarTintAndroid: {
-    backgroundColor: 'rgba(8, 6, 4, 0.94)', // No blur beneath — carry legibility alone
+    backgroundColor: colors.soot, // No blur beneath — carry legibility alone
   },
 
   centerGlow: {

@@ -217,7 +217,7 @@ export default function LobbyScreen() {
       <FrozenTab>
       <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <LinearGradient
-          colors={[colors.ink, 'rgba(12, 9, 5, 0.98)', colors.soot]}
+          colors={[colors.ink, 'rgba(13,11,9,0.98)', colors.soot]}
           locations={[0, 0.4, 1]}
           style={StyleSheet.absoluteFillObject}
         />
@@ -334,7 +334,7 @@ export default function LobbyScreen() {
   return (
     <FrozenTab>
     <View style={s.container}>
-      <LinearGradient colors={[colors.ink, 'rgba(10,7,3,0.98)', colors.soot]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
+      <LinearGradient colors={[colors.ink, 'rgba(13,11,9,0.98)', colors.soot]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
 
       {/* Parallax Hero Backdrop */}
       {heroFilm?.backdrop_path && (
@@ -346,7 +346,7 @@ export default function LobbyScreen() {
             cachePolicy="memory-disk" transition={150}
           />
           <LinearGradient
-            colors={['rgba(10,7,3,0.28)', 'rgba(10,7,3,0.7)', colors.ink]}
+            colors={['rgba(13,11,9,0.28)', 'rgba(13,11,9,0.7)', colors.ink]}
             locations={[0, 0.65, 1]}
             style={StyleSheet.absoluteFillObject}
           />
@@ -468,13 +468,13 @@ const s = StyleSheet.create({
   welcomeCtaContainer: { width: '100%', maxWidth: 360, alignItems: 'center', gap: 24 },
   
   ctaPrimaryNoir: {
-    backgroundColor: '#1E1911', width: '100%', borderRadius: 6,
+    backgroundColor: colors.soot, width: '100%', borderRadius: 6,
     borderWidth: 1, borderColor: '#3A2E1C',
     position: 'relative', overflow: 'hidden', padding: 3,
     ...effects.shadowPrimary,
   },
   ctaPrimaryNoirInner: {
-    backgroundColor: '#0D0A07', borderRadius: 4,
+    backgroundColor: colors.ink, borderRadius: 4,
     paddingVertical: 18, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: '#1F180E',
   },

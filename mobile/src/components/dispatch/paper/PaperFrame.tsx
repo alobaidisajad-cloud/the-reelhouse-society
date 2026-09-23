@@ -78,7 +78,7 @@ export const PaperChrome = memo(function PaperChrome({
             broken label rather than as more to scroll. A short fade over the
             trailing edge says "there is more this way" in the page's own ink. */}
         <LinearGradient
-          colors={['rgba(8,6,4,0)', 'rgba(8,6,4,0.97)']}
+          colors={['rgba(30,25,20,0)', 'rgba(30,25,20,0.97)']}
           start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
           pointerEvents="none"
           style={p.chromeFade}

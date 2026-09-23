@@ -121,7 +121,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
 const s = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(8, 6, 4, 0.95)',
+        backgroundColor: colors.soot,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 16,

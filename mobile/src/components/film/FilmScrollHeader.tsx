@@ -80,7 +80,7 @@ export const FilmScrollHeader = memo(function FilmScrollHeader({
 const s = StyleSheet.create({
   header: {
     position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50,
-    backgroundColor: 'rgba(10,9,6,0.96)',
+    backgroundColor: colors.ink,
     borderBottomWidth: 1, borderBottomColor: colors.sepiaBorder,
   },
   bar: {

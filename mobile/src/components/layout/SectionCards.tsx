@@ -34,13 +34,13 @@ SectionHead.displayName = 'SectionHead';
 
 const st = StyleSheet.create({
 
-  sectionCard: { marginHorizontal: 16, marginBottom: 16, padding: 20, backgroundColor: 'rgba(18,14,9,0.85)', borderWidth: 1, borderColor: colors.sepiaFaint, borderRadius: 4, overflow: 'hidden' },
+  sectionCard: { marginHorizontal: 16, marginBottom: 16, padding: 20, backgroundColor: 'rgba(30,25,20,0.85)', borderWidth: 1, borderColor: colors.sepiaFaint, borderRadius: 4, overflow: 'hidden' },
   sectionCardDanger: { borderColor: colors.bloodFaint },
   sectionTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1 },
   sectionHeaderWrap: { marginBottom: 18, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.sepiaFaint },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionHeaderIcon: { opacity: 0.7 },
   sectionHeaderText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
-  sectionHeaderTextDanger: { color: colors.bloodReel },
+  sectionHeaderTextDanger: { color: colors.crimsonInk },
 });
 

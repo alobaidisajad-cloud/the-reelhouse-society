@@ -1270,7 +1270,7 @@ export const PaperBack = memo(function PaperBack({
 const m = StyleSheet.create({
   // ── the picker ────────────────────────────────────────────────────────────
   sheet: {
-    backgroundColor: 'rgba(8,6,4,0.99)',
+    backgroundColor: colors.soot,
     borderTopWidth: 1.5, borderTopColor: colors.sepiaBorder,
     borderTopLeftRadius: 6, borderTopRightRadius: 6,
     paddingHorizontal: 24, paddingTop: 8, paddingBottom: 34,
@@ -1357,7 +1357,7 @@ const m = StyleSheet.create({
   foundPlate: {
     width: 46, height: 69, borderRadius: 2, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.26)',
-    backgroundColor: 'rgba(20,16,11,0.9)',
+    backgroundColor: colors.soot,
   },
   foundTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment },
   foundMeta: {
@@ -1373,7 +1373,7 @@ const m = StyleSheet.create({
   archivePlate: {
     width: 30, height: 45, borderRadius: 2, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.26)',
-    backgroundColor: 'rgba(20,16,11,0.9)',
+    backgroundColor: colors.soot,
   },
   archiveTitle: {
     fontFamily: fonts.body, fontSize: 13.5, color: colors.parchment,
@@ -1459,7 +1459,7 @@ const m = StyleSheet.create({
 
   // ── the share card ────────────────────────────────────────────────────────
   card: {
-    backgroundColor: 'rgba(8,6,4,0.99)',
+    backgroundColor: colors.soot,
     borderWidth: 1.5, borderColor: colors.sepiaBorder, borderRadius: 3,
     paddingHorizontal: 24, paddingVertical: 24,
   },
@@ -1497,7 +1497,7 @@ const m = StyleSheet.create({
    */
   share: {
     aspectRatio: 4 / 5,
-    backgroundColor: 'rgba(8,6,4,0.99)',
+    backgroundColor: colors.soot,
     borderWidth: 2, borderColor: colors.sepiaBorder, borderRadius: 3,
     /* 16, down from 22. The ornament and the mark at full size cost about
        twenty points between them, and the last line of the opening went under
@@ -1658,7 +1658,7 @@ const m = StyleSheet.create({
   // ── the lounge card ───────────────────────────────────────────────────────
   bubble: {
     flexDirection: 'row', gap: 8,
-    backgroundColor: 'rgba(20,16,11,0.72)',
+    backgroundColor: 'rgba(30,25,20,0.72)',
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)', borderRadius: 3,
     paddingVertical: 12, paddingHorizontal: 12,
   },
@@ -1758,7 +1758,7 @@ const m = StyleSheet.create({
   back: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 8,
-    backgroundColor: 'rgba(8,6,4,0.97)',
+    backgroundColor: colors.soot,
     borderBottomWidth: 1, borderBottomColor: colors.sepiaBorder,
   },
   backLabel: {

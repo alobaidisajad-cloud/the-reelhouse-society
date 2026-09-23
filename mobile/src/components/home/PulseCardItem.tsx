@@ -29,7 +29,7 @@ const EditorialBanner = memo(function EditorialBanner({ uri }: { uri: string }) 
   return (
     <View style={s.editorialBanner}>
       <Image source={{ uri }} style={s.editorialBannerImg} blurRadius={2} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
-      <LinearGradient colors={['rgba(11,10,8,0.2)', 'transparent', 'rgba(18,14,9,0.95)']} locations={[0, 0.3, 1]} style={StyleSheet.absoluteFillObject} />
+      <LinearGradient colors={['rgba(13,11,9,0.2)', 'transparent', 'rgba(30,25,20,0.95)']} locations={[0, 0.3, 1]} style={StyleSheet.absoluteFillObject} />
       <View style={s.editorialBadge}>
         <Text style={s.editorialBadgeText}>✦ EDITORIAL</Text>
       </View>
@@ -41,7 +41,7 @@ const PremiumBanner = memo(function PremiumBanner({ uri }: { uri: string }) {
   return (
     <View style={s.premiumBanner}>
       <Image source={{ uri }} style={s.premiumBannerImg} blurRadius={12} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
-      <LinearGradient colors={['rgba(11,10,8,0.4)', 'rgba(18,14,9,0.98)']} style={StyleSheet.absoluteFillObject} />
+      <LinearGradient colors={['rgba(13,11,9,0.4)', 'rgba(30,25,20,0.98)']} style={StyleSheet.absoluteFillObject} />
     </View>
   );
 });
@@ -158,7 +158,7 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
              {posterUri && (
               <PressableScale style={s.pulsePosterWrap} onPressIn={() => { if(posterUri) Image.prefetch(posterUri).catch(() => {}); }} onPress={() => { if(act.film?.id) nav.push(`/film/${act.film.id}`); }} accessibilityLabel={`${act.film?.title} poster`}>
                  <AnimatedExpoImage {...({ sharedTransitionTag: `poster-${act.id}-${act.film?.id}` } as Record<string, string>)} source={{ uri: posterUri }} style={s.pulsePoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
-                 <LinearGradient colors={['transparent', 'rgba(10,7,3,0.4)']} style={StyleSheet.absoluteFillObject} />
+                 <LinearGradient colors={['transparent', 'rgba(13,11,9,0.4)']} style={StyleSheet.absoluteFillObject} />
               </PressableScale>
             )}
             <View style={s.pulseContentFlex}>
@@ -221,13 +221,13 @@ const s = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 30,
     ...Platform.select({ android: { elevation: 0 } })
   },
-  pulsePremium: { borderColor: 'rgba(184,137,26,0.3)', backgroundColor: 'rgba(10,8,4,1)' },
+  pulsePremium: { borderColor: 'rgba(184,137,26,0.3)', backgroundColor: colors.ink },
   pulseFeaturedMuseum: {
     borderColor: 'rgba(218,165,32,0.6)', borderWidth: 1.5,
     shadowColor: colors.sepia, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.6, shadowRadius: 15,
     ...Platform.select({ android: { elevation: 0 } })
   },
-  pulseCardAuteur: { backgroundColor: 'rgba(12,5,5,1)', borderColor: colors.crimsonBorder },
+  pulseCardAuteur: { backgroundColor: colors.sootAuteur, borderColor: colors.crimsonBorder },
   pulseCardHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)',
@@ -250,7 +250,7 @@ const s = StyleSheet.create({
   pulseReview: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, fontStyle: 'italic', opacity: 0.9, paddingBottom: 6, includeFontPadding: false },
   pulseWatchedWith: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, marginTop: 8, includeFontPadding: false },
   pulseWatchedWithName: { color: colors.bone, includeFontPadding: false },
-  pulseAutopsyTag: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimson, marginTop: 4, marginBottom: 8, includeFontPadding: false },
+  pulseAutopsyTag: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimsonInk, marginTop: 4, marginBottom: 8, includeFontPadding: false },
   pullQuoteWrap: { paddingLeft: 10, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.sepia, marginBottom: 6 },
   pullQuoteText: { fontFamily: fonts.display, fontSize: 14, fontStyle: 'italic', color: colors.sepia, paddingBottom: 6, includeFontPadding: false, lineHeight: 20 },
   dropCapRow: { flexDirection: 'row', alignItems: 'flex-start' },
@@ -263,7 +263,7 @@ const s = StyleSheet.create({
   pulseReadMoreText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.85, includeFontPadding: false },
   editorialBanner: { width: '100%', height: 90, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.2)' },
   editorialBannerImg: { width: '100%', height: '100%', opacity: 0.6 },
-  editorialBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(18,14,9,0.7)', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
+  editorialBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(30,25,20,0.7)', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
   editorialBadgeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: 'rgba(218,165,32,0.9)', includeFontPadding: false },
   premiumBanner: { width: '100%', height: 60, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },
   premiumBannerImg: { width: '100%', height: '150%', top: '-25%', opacity: 0.45 },
@@ -273,5 +273,5 @@ const s = StyleSheet.create({
     borderRadius: 4, borderWidth: 1, borderColor: colors.crimsonBorder, alignSelf: 'flex-start',
   },
   // Crimson (not bloodReel) — the deep stamp red was near-invisible on soot.
-  abandonedText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimson, includeFontPadding: false },
+  abandonedText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimsonInk, includeFontPadding: false },
 });

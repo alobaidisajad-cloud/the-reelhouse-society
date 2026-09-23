@@ -821,7 +821,7 @@ const s = StyleSheet.create({
   // ── Header (marquee chrome) ──
   header: {
     paddingBottom: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(11,10,8,0.97)', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
+    backgroundColor: colors.ink, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
   },
   headerBtn: { padding: 8 },
   headerCenter: { flex: 1, alignItems: 'center' },
@@ -917,7 +917,7 @@ const s = StyleSheet.create({
   // ── Offline banner ──
   offlineBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 9,
-    backgroundColor: 'rgba(22,15,8,0.96)', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.25)',
+    backgroundColor: colors.soot, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.25)',
   },
   offlineText: { flex: 1, fontFamily: fonts.serifItalic, fontSize: 12.5, color: colors.bone },
 
@@ -940,7 +940,7 @@ const s = StyleSheet.create({
   replyBannerText: { fontFamily: fonts.serif, fontSize: 12.5, color: colors.fog },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   input: {
-    flex: 1, minHeight: 42, maxHeight: 120, backgroundColor: colors.soot, borderRadius: 21,
+    flex: 1, minHeight: 42, maxHeight: 120, backgroundColor: colors.well, borderRadius: 21,
     paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, color: colors.parchment,
     fontFamily: fonts.serif, fontSize: 15, lineHeight: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
   },
@@ -959,7 +959,7 @@ const s = StyleSheet.create({
 
   // ── Preview bar ──
   previewBar: {
-    paddingHorizontal: 16, paddingTop: 16, backgroundColor: 'rgba(11,10,8,0.97)',
+    paddingHorizontal: 16, paddingTop: 16, backgroundColor: colors.ink,
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash, alignItems: 'center', gap: 12,
   },
   previewText: { fontFamily: fonts.serifItalic, fontSize: 13, color: colors.fog },

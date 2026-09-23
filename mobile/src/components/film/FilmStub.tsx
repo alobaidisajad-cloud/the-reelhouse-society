@@ -207,7 +207,7 @@ const s = StyleSheet.create({
      */
     position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 70,
     paddingHorizontal: 20, paddingTop: STUB_PAD_TOP,
-    backgroundColor: 'rgba(8,6,4,0.96)',
+    backgroundColor: colors.soot,
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
   },
   shadowHost: {
@@ -223,7 +223,7 @@ const s = StyleSheet.create({
   record: {
     height: STUB_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingLeft: 17, paddingRight: 14, borderRadius: 2, overflow: 'hidden',
-    backgroundColor: 'rgba(25,23,20,0.8)',
+    backgroundColor: 'rgba(38,32,26,0.8)',
     borderWidth: 1, borderColor: colors.sepiaBorder,
   },
   recordEdge: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 3 },

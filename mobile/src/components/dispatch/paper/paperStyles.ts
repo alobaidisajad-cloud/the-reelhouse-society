@@ -88,7 +88,7 @@ export const p = StyleSheet.create({
    */
   doc: {
     flex: 1, minHeight: 0,
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: colors.soot,
     marginHorizontal: DOC_MARGIN,
     paddingHorizontal: DOC_PAD,
     borderLeftWidth: DOC_RAIL,
@@ -133,7 +133,7 @@ export const p = StyleSheet.create({
      *  axis, which is vertical, so the first attempt left the index exactly
      *  where it had been and only the render showed it. */
     justifyContent: 'center',
-    backgroundColor: 'rgba(8,6,4,0.97)',
+    backgroundColor: colors.soot,
     borderBottomWidth: 1,
     borderBottomColor: colors.sepiaBorder,
   },
@@ -487,7 +487,7 @@ export const p = StyleSheet.create({
    */
   still: {
     borderRadius: 3, marginBottom: 12, overflow: 'hidden',
-    backgroundColor: 'rgba(20,16,11,0.9)',
+    backgroundColor: colors.soot,
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.16)',
     ...effects.shadowSurface,
   },
@@ -668,7 +668,7 @@ export const p = StyleSheet.create({
   creditArt: {
     width: 18, height: 27, borderRadius: 1.5, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.28)',
-    backgroundColor: 'rgba(20,16,11,0.9)',
+    backgroundColor: colors.soot,
   },
   /**
    * `gap: 6` — the same gap `byline` uses, for the same reason.
@@ -934,7 +934,7 @@ export const p = StyleSheet.create({
   optionPoster: { overflow: 'hidden',
     width: 30, height: 45, borderRadius: 1,
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.18)',
-    backgroundColor: 'rgba(20,16,11,0.9)',
+    backgroundColor: colors.soot,
   },
   /** 9 and 1.1, not 9.5 and 1.3. Measured: a 28-character title left 1.8pt of
    *  slack in the option row, so ordinary long titles truncated at normal text
@@ -953,7 +953,7 @@ export const p = StyleSheet.create({
   wonLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
   wonPoster: { overflow: 'hidden',
     width: 74, height: 111, borderRadius: 2, marginBottom: 12,
-    borderWidth: 1, borderColor: 'rgba(240,232,176,0.26)', backgroundColor: 'rgba(20,16,11,0.9)',
+    borderWidth: 1, borderColor: 'rgba(240,232,176,0.26)', backgroundColor: colors.soot,
   },
   wonTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 6, textAlign: 'center' },
   wonMeta: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
@@ -961,7 +961,7 @@ export const p = StyleSheet.create({
   // ── the dossier ───────────────────────────────────────────────────────────
   cover: {
     height: 104, borderRadius: 2, marginBottom: 12,
-    backgroundColor: 'rgba(20,16,11,0.9)',
+    backgroundColor: colors.soot,
     borderWidth: 1, borderColor: 'rgba(232,223,208,0.09)',
   },
   dossierTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment, marginBottom: 8 },
@@ -1051,7 +1051,7 @@ export const p = StyleSheet.create({
   spine: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingVertical: 8, paddingHorizontal: DOC_PAD,
-    backgroundColor: 'rgba(8,6,4,0.97)',
+    backgroundColor: colors.soot,
     borderBottomWidth: 1, borderBottomColor: colors.sepiaBorder,
   },
   /** The back arrow is its own target inside the one bar, divided from the rest
@@ -1066,7 +1066,7 @@ export const p = StyleSheet.create({
   // when you touch outside it, and one that traps you until you choose a
   // destination punishes changing your mind.
   sheetHost: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'flex-end' },
-  sheetGround: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(4,3,2,0.72)' },
+  sheetGround: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(6,5,4,0.72)' },
   /** What is being shared, named, so the sheet is about a thing and not a verb. */
   sharePreview: {
     fontFamily: fonts.serifItalic, fontSize: 14, lineHeight: 21,
@@ -1097,13 +1097,13 @@ export const p = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingTop: 12, paddingHorizontal: 16,
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
-    backgroundColor: 'rgba(10,7,3,0.97)',
+    backgroundColor: colors.ink,
   },
   dockCompose: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingTop: 12, paddingHorizontal: 16,
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
-    backgroundColor: 'rgba(10,7,3,0.97)',
+    backgroundColor: colors.ink,
   },
   dockInput: { flex: 1, fontFamily: fonts.serif, fontSize: 13.5, color: colors.bone, opacity: 0.78 },
 
@@ -1152,7 +1152,7 @@ export const p = StyleSheet.create({
   deskDoc: {
     flex: 1, minHeight: 0, overflow: 'hidden',
     marginHorizontal: DOC_MARGIN, paddingHorizontal: DOC_PAD, paddingTop: 16,
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: colors.soot,
     borderLeftWidth: DOC_RAIL, borderRightWidth: DOC_RAIL,
     borderColor: colors.sepiaBorder,
   },
@@ -1176,7 +1176,7 @@ export const p = StyleSheet.create({
   railTool: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
 
   sheet: {
-    backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: colors.sepiaBorder,
+    backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.sepiaBorder,
     paddingHorizontal: 16, paddingVertical: 4, ...effects.shadowSurface,
   },
   /** The tool rail sits above the keyboard, where the writing room already puts
@@ -1185,7 +1185,7 @@ export const p = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 16,
     paddingHorizontal: 16, paddingVertical: 12,
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
-    backgroundColor: 'rgba(10,7,3,0.94)',
+    backgroundColor: colors.ink,
   },
   rl: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.bone, includeFontPadding: false },
   kbd: {

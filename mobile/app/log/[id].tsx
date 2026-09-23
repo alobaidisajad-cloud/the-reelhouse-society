@@ -585,7 +585,7 @@ export default function LogDetailScreen() {
                    blurRadius={4}
                    cachePolicy="memory-disk" transition={150}
                 />
-                <LinearGradient colors={['rgba(10,7,3,0)', 'rgba(10,7,3,0.4)', 'rgba(10,7,3,0.95)', colors.ink]} style={StyleSheet.absoluteFillObject} />
+                <LinearGradient colors={['rgba(13,11,9,0)', 'rgba(13,11,9,0.4)', 'rgba(13,11,9,0.95)', colors.ink]} style={StyleSheet.absoluteFillObject} />
                 {/* Scan lines texture — Web: repeating-linear-gradient for film grain */}
                 <View style={[StyleSheet.absoluteFillObject, s.textureOverlay]} />
                 
@@ -667,7 +667,7 @@ export default function LogDetailScreen() {
         {/* Transparent Padder for Parallax Overlap — Web: height IS_TOUCH ? '10vh' ≈ 80px */}
         <View style={s.parallaxPadder} />
 
-        {/* Overlapping Content Card — Web: bg rgba(10,7,3,0.85), backdropFilter blur(16px), borderRadius 12px 12px 0 0, boxShadow 0 -20px 40px rgba(0,0,0,0.8) */}
+        {/* Overlapping Content Card — Web: bg rgba(13,11,9,0.85), backdropFilter blur(16px), borderRadius 12px 12px 0 0, boxShadow 0 -20px 40px rgba(0,0,0,0.8) */}
         {/* Shadow host outside the clip — see contentCardShadow. */}
         <View style={[s.contentCardShadow, isAuteur && s.contentCardShadowAuteur]}>
         <View style={[s.contentCard, isAuteur && s.contentCardAuteur]}>

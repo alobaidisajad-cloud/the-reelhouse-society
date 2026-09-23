@@ -78,8 +78,8 @@ export const s = StyleSheet.create({
   // reads under it, which is why the background cannot simply be copied up here.
   contentCardShadow: { borderTopLeftRadius: 12, borderTopRightRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40 },
   contentCardShadowAuteur: { shadowColor: colors.bloodReel },
-  contentCard: { backgroundColor: 'rgba(10,7,3,0.92)', borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', elevation: 24, shadowColor: '#000' },
-  contentCardAuteur: { backgroundColor: 'rgba(25,10,10,0.92)', borderColor: colors.crimsonBorder, shadowColor: colors.bloodReel },
+  contentCard: { backgroundColor: colors.ink, borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', elevation: 24, shadowColor: '#000' },
+  contentCardAuteur: { backgroundColor: colors.sootAuteur, borderColor: colors.crimsonBorder, shadowColor: colors.bloodReel },
   logCardInner: { paddingHorizontal: SPINE, paddingBottom: 16, marginTop: 0, paddingTop: 24 },
   logCenter: { alignItems: 'center' },
   bylineFull: { width: '100%', marginBottom: 20 },
@@ -117,7 +117,7 @@ export const s = StyleSheet.create({
   ornamentalStar: { opacity: 0.7 },
   featuredQuoteWrap: { paddingVertical: 24, alignItems: 'center' },
   featuredQuote: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, fontStyle: 'italic', lineHeight: 27, textAlign: 'center', textShadowColor: colors.sepiaSubtle, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12 },
-  featuredQuoteAuteur: { color: colors.crimson, textShadowColor: 'rgba(107,26,10,0.15)' },
+  featuredQuoteAuteur: { color: colors.crimsonInk, textShadowColor: 'rgba(107,26,10,0.15)' },
   reviewBodyWrap: { paddingHorizontal: 0, marginTop: 0 },
   // The essay, set as paragraphs — a raised drop cap opens the first.
   // iOS needs the paragraph direction stated — writingDirection is an iOS-only
@@ -132,7 +132,7 @@ export const s = StyleSheet.create({
   dropCapLetter: { fontFamily: fonts.display, fontSize: 34, color: colors.sepia, lineHeight: 36, textShadowColor: 'rgba(184,137,26,0.2)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
 
   // ── Editorial Badge ──
-  editorialBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, position: 'absolute', left: 16, backgroundColor: 'rgba(11,10,8,0.5)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 2, borderWidth: 1, borderColor: colors.sepiaBorder },
+  editorialBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, position: 'absolute', left: 16, backgroundColor: 'rgba(13,11,9,0.5)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 2, borderWidth: 1, borderColor: colors.sepiaBorder },
   editorialBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.2, color: 'rgba(220,166,58,0.85)', includeFontPadding: false },
 
   // ── Viewing Chronicle ──
@@ -158,7 +158,7 @@ export const s = StyleSheet.create({
 
   // ── Autopsy drawer ──
   autopsyWrap: { marginTop: 8 },
-  autopsyToggle: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'rgba(11,10,8,0.95)', borderRadius: 4, borderWidth: 1, borderColor: colors.sepiaBorder, borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: -1, zIndex: 2 },
+  autopsyToggle: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: colors.ink, borderRadius: 4, borderWidth: 1, borderColor: colors.sepiaBorder, borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: -1, zIndex: 2 },
   autopsyToggleInner: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   autopsyPulse: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.bloodReel, shadowColor: 'rgba(107,26,10,0.9)', shadowOffset: { width: 0, height: 0 }, shadowRadius: 8, shadowOpacity: 1 },
   autopsyToggleTitle: { fontFamily: fonts.display, fontSize: 12, letterSpacing: 2, color: colors.parchment },
@@ -171,7 +171,7 @@ export const s = StyleSheet.create({
   deckBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 18, gap: 6, backgroundColor: colors.ink, borderRadius: 1 },
   deckLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
   deckLabelActive: { color: colors.sepia },
-  deckLabelCertified: { color: colors.crimson },
+  deckLabelCertified: { color: colors.crimsonInk },
 
   // ── Critiques ──
   commentsSection: { paddingHorizontal: SPINE, marginTop: 16, paddingBottom: 40 },
@@ -208,7 +208,7 @@ export const s = StyleSheet.create({
   // ── Compose critique (top of the section) ──
   composeWrap: { marginTop: 4 },
   critiqueInput: {
-    backgroundColor: colors.inkwell, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder,
+    backgroundColor: colors.well, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder,
     borderRadius: 2, paddingHorizontal: 16, paddingVertical: 16,
     color: colors.bone, fontFamily: fonts.body, fontSize: 13, lineHeight: 22,
     minHeight: 100, textAlignVertical: 'top',
@@ -227,7 +227,7 @@ export const s = StyleSheet.create({
   // ── Abandoned Badge (crimson, shrink-guarded) ──
   abandonedWrap: { marginTop: 12, alignItems: 'center', width: '100%', paddingHorizontal: 8 },
   abandonedBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.crimsonFaint, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4, borderWidth: 1, borderColor: colors.crimsonBorder, flexShrink: 1, maxWidth: '100%' },
-  abandonedText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.crimson, includeFontPadding: false, flexShrink: 1 },
+  abandonedText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.crimsonInk, includeFontPadding: false, flexShrink: 1 },
 
   // ── Watched Metadata Row ──
   // ── The filing mark ──

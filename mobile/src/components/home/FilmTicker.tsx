@@ -73,7 +73,7 @@ export const FilmTicker = memo(function FilmTicker({ films }: { films: TMDBFilm[
   return (
     <Animated.View style={[s.tickerWrap, maskStyle]}>
       <LinearGradient
-        colors={['rgba(10,7,3,0.95)', 'rgba(10,7,3,0.7)', 'rgba(10,7,3,0.95)']}
+        colors={['rgba(13,11,9,0.95)', 'rgba(13,11,9,0.7)', 'rgba(13,11,9,0.95)']}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
         style={StyleSheet.absoluteFillObject}
       />

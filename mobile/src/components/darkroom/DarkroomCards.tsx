@@ -71,7 +71,7 @@ export const AnimatedPosterSkeleton = React.memo(function AnimatedPosterSkeleton
   
   const animStyle = useAnimatedStyle(() => ({ opacity: op.value }));
   return (
-    <Animated.View style={[s.posterWrap, animStyle, { backgroundColor: 'rgba(14,11,8,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.06)' }]} />
+    <Animated.View style={[s.posterWrap, animStyle, { backgroundColor: 'rgba(30,25,20,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.06)' }]} />
   );
 });
 
@@ -145,7 +145,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
               <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={300} contentFit="cover" />
               {/* Soft tactical tungsten edge mapping */}
               <LinearGradient 
-                colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(10,5,3,0.9)']} 
+                colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(13,11,9,0.9)']} 
                 locations={[0, 0.4, 1]} 
                 style={StyleSheet.absoluteFillObject} 
                 pointerEvents="none" 
@@ -281,7 +281,7 @@ const s = StyleSheet.create({
     aspectRatio: 2/3,
     borderRadius: 6,
     overflow: 'hidden',
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.5)',
     elevation: 25,
@@ -358,7 +358,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.sepia,
   },
   quickSaveIconInactive: {
-    backgroundColor: 'rgba(10,10,10,0.85)',
+    backgroundColor: 'rgba(13,11,9,0.85)',
   },
   loggedBadge: {
     position: 'absolute',
@@ -380,7 +380,7 @@ const s = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    backgroundColor: 'rgba(10,8,5,0.85)',
+    backgroundColor: 'rgba(13,11,9,0.85)',
     color: colors.parchment,
     fontFamily: fonts.sub,
     fontSize: 9,

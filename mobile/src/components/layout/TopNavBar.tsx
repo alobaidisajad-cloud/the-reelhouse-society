@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     borderRadius: NAV_BTN_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(11, 10, 8, 0.45)',
+    backgroundColor: 'rgba(13,11,9,0.45)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255, 255, 255, 0.06)',
   },

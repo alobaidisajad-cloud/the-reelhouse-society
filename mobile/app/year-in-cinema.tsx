@@ -24,7 +24,7 @@ type SlideType = 'intro' | 'total' | 'verdict' | 'rhythm' | 'top' | 'outro';
 function StateShell({ topInset, children }: { topInset: number; children: React.ReactNode }) {
   return (
     <View style={s.container}>
-      <LinearGradient colors={['#1a1510', colors.ink, '#0A0703']} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} />
+      <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} />
       {children}
       <PressableScale style={[s.closeBtn, { top: topInset + 10 }]} onPress={() => router.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
@@ -96,7 +96,7 @@ export default function YearInCinemaScreen() {
 
     return (
       <View style={[s.slide, { width, height: slideHeight }]}>
-        <LinearGradient colors={['#1a1510', colors.ink, '#0A0703']} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} />
         {/* Filmic vertical vignette — depth without a flat grey wash */}
         <LinearGradient colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.55)']} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
         <FilmEdges />
@@ -296,7 +296,7 @@ const s = StyleSheet.create({
 
   // Top films — compact, bounded so 3 always fit the smallest screen
   topWrap: { width: '100%', marginTop: 26 },
-  topCard: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, backgroundColor: 'rgba(10,7,3,0.4)', borderRadius: 2, padding: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  topCard: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, backgroundColor: 'rgba(13,11,9,0.4)', borderRadius: 2, padding: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   topPoster: { width: 52, height: 78, borderRadius: 2, marginRight: 14, backgroundColor: colors.soot },
   topPosterBlank: { alignItems: 'center', justifyContent: 'center' },
   topInfo: { flex: 1 },

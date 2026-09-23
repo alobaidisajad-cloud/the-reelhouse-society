@@ -46,7 +46,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { trayMaxHeight } from './filmStubMetrics';
 
 /** The scrim, matching the Concierge's. Not a blur — Android. */
-const SCRIM = 'rgba(10,9,6,0.66)';
+const SCRIM = 'rgba(13,11,9,0.66)';
 const RISE_MS = 260;
 
 export interface TrayAct {
@@ -269,7 +269,7 @@ const s = StyleSheet.create({
     width: 34, height: 51, borderRadius: 2,
     borderWidth: 1, borderColor: colors.sepiaBorder, backgroundColor: colors.surface,
   },
-  headPosterEmpty: { backgroundColor: 'rgba(8,6,4,0.98)' },
+  headPosterEmpty: { backgroundColor: colors.soot },
   headText: { flex: 1, minWidth: 0 },
   headTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment, includeFontPadding: false },
   headMeta: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.4, color: colors.fog, marginTop: 3, includeFontPadding: false },

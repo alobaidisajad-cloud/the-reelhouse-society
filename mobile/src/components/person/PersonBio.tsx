@@ -33,7 +33,7 @@ export const PersonBio = memo(function PersonBio({
         <Text style={s.bioText} {...scaledTextProps} numberOfLines={!isLongBio || showFullBio ? undefined : 6}>{biography}</Text>
         {isLongBio && !showFullBio && (
           <LinearGradient
-            colors={['transparent', 'rgba(19,15,10,0.8)', 'rgba(19,15,10,1)']}
+            colors={['transparent', 'rgba(30,25,20,0.8)', 'rgba(30,25,20,1)']}
             style={s.bioFadeMask}
             pointerEvents="none"
           />

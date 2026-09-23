@@ -208,7 +208,7 @@ const s = StyleSheet.create({
     container: { gap: 16 },
     metaNote: { textAlign: 'center', fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.fog, opacity: 0.6, marginBottom: 4 },
     card: {
-        padding: 20, backgroundColor: 'rgba(8,6,4,0.98)',
+        padding: 20, backgroundColor: colors.soot,
         borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4,
     },
     sectionTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia, marginBottom: 16 },
@@ -223,7 +223,7 @@ const s = StyleSheet.create({
     rankText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog },
     avatar: {
         width: 36, height: 36, borderRadius: 18, overflow: 'hidden',
-        borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', backgroundColor: '#050402',
+        borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', backgroundColor: colors.inkwell,
         alignItems: 'center', justifyContent: 'center',
     },
     avatarImg: { width: '100%', height: '100%' } as import('react-native').ImageStyle,

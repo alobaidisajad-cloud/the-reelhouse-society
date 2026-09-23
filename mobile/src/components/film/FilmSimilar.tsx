@@ -99,7 +99,7 @@ const s = StyleSheet.create({
   
   similarListContainer: { height: 180 },
   similarCard: { width: 100, marginRight: 10 },
-  similarPoster: { width: 100, height: 150, borderRadius: 4, marginBottom: 8, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
+  similarPoster: { width: 100, height: 150, borderRadius: 4, marginBottom: 8, backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
   similarPosterPlaceholder: { justifyContent: 'center', alignItems: 'center' },
   similarTitle: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, textAlign: 'center' },
 });

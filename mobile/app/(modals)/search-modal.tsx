@@ -302,7 +302,7 @@ export default function SearchModal() {
 // STYLES
 // ═══════════════════════════════════════════════════════════════
 const st = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'rgba(5,3,1,0.7)' },
+  root: { flex: 1, backgroundColor: 'rgba(6,5,4,0.7)' },
 
   // Header
   header: {
@@ -314,7 +314,7 @@ const st = StyleSheet.create({
   },
   inputWrap: {
     flex: 1, flexDirection: 'row', alignItems: 'center', height: 42,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.well,
     borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.10)',
   },
   input: { flex: 1, height: 42, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },

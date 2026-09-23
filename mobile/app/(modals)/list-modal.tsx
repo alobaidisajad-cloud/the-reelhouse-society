@@ -749,7 +749,7 @@ const s = StyleSheet.create({
     secTight: { paddingHorizontal: 20, marginTop: 8 },
     label: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
     input: {
-        backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
+        backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
         padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment,
     },
     /**
@@ -775,7 +775,7 @@ const s = StyleSheet.create({
     // Search
     searchWrap: { position: 'relative' },
     searchInput: {
-        backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
+        backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
         paddingLeft: 36, paddingRight: 12, paddingVertical: 10,
         fontFamily: fonts.body, fontSize: 13, color: colors.parchment,
     },
@@ -795,7 +795,7 @@ const s = StyleSheet.create({
     containerFlex: { flex: 1 },
     filmRow: {
         flexDirection: 'row', alignItems: 'center', gap: 10,
-        backgroundColor: 'rgba(10,7,3,0.5)', borderWidth: 1, borderColor: colors.ash,
+        backgroundColor: 'rgba(13,11,9,0.5)', borderWidth: 1, borderColor: colors.ash,
         borderRadius: 4, padding: 8,
     },
     filmPoster: { width: 28, height: 42, borderRadius: 2 },

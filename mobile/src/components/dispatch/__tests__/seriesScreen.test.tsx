@@ -29,7 +29,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 import SeriesScreen from '@/app/dispatch/series/[id]';
-import { TO_COME_DIM } from '@/src/components/dispatch/paper/PaperEssay';
+import { TO_COME_INK } from '@/src/components/dispatch/paper/PaperEssay';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { colors } from '@/src/theme/theme';
 
@@ -287,16 +287,19 @@ describe('a part that is not out yet is still legible', () => {
   /**
    * A contrast sweep over the rendered page found the part NUMERAL at 4.21:1
    * and its TO COME at 4.45:1 — both under the 4.5 a reader is owed, because
-   * the row is dimmed to say it has not been published.
+   * the row was DIMMED to say it has not been published.
    *
    * The disabled-control exemption does not cover it. The row IS a disabled
    * control, but what it carries is the shape of the series, and somebody
    * deciding whether to start a four-part essay is READING that, not operating
    * it.
    *
-   * This is computed from the tokens rather than pinned at 0.84, so it stays
-   * true if `fog`, `sepia` or the sheet's ground is ever re-cut — which is the
-   * way this would actually regress.
+   * Raising the opacity fixed the number and not the fault: when the sheet's
+   * ground was re-cut the numeral fell under again, at 4.27. A see-through word
+   * hands its contrast to whatever is painted behind it. So the row is printed
+   * in quieter INKS now, and this holds both halves of that — legible, and
+   * still visibly quieter than a part that is out — computed from the tokens so
+   * it stays true if any shade or the sheet is re-cut.
    */
   const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.substr(i, 2), 16));
   const lum = (c: number[]) => {
@@ -310,36 +313,62 @@ describe('a part that is not out yet is still legible', () => {
     const a = lum(fg); const b = lum(bg);
     return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
   };
-  /** What the eye receives once the row's opacity has composited it. */
-  const over = (hex: string, ground: number[], alpha: number) =>
-    ratio(rgb(hex).map((v, i) => alpha * v + (1 - alpha) * ground[i]), ground);
-
   /**
    * Read off `p.sheet` rather than typed in, for the same reason the shades
    * are: a ground written down here would go stale the moment the sheet was
    * re-cut, and the test would keep passing against the old one.
    */
   const SHEET = (() => {
-    const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(String(p.sheet.backgroundColor));
-    if (!m) throw new Error('the sheet stopped being an rgb ground: ' + p.sheet.backgroundColor);
-    return [Number(m[1]), Number(m[2]), Number(m[3])];
+    // Either spelling: the sheet was `rgb(30,25,20)` until the grounds were
+    // given their names and it became `colors.soot`, which is a hex. A reader
+    // that only knows one of the two fails the suite for a rename.
+    const raw = String(p.sheet.backgroundColor);
+    const fn = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(raw);
+    if (fn) return [Number(fn[1]), Number(fn[2]), Number(fn[3])];
+    if (/^#[0-9a-fA-F]{6}$/.test(raw)) return rgb(raw);
+    throw new Error('the sheet stopped being a solid ground: ' + raw);
   })();
 
-  it('clears 4.5:1 for both runs the dimming touches', () => {
-    expect(over(colors.sepia, SHEET, TO_COME_DIM)).toBeGreaterThanOrEqual(4.5);
-    expect(over(colors.fog, SHEET, TO_COME_DIM)).toBeGreaterThanOrEqual(4.5);
+  /** What the row is printed in when it is out, against what it becomes. */
+  const PAIRS: [keyof typeof TO_COME_INK, string][] = [
+    ['numeral', String(p.marginValue.color)],
+    ['title', colors.parchment],
+    ['meta', colors.fog],
+  ];
+
+  it('prints every word of the row solid — no alpha, no opacity', () => {
+    for (const [slot] of PAIRS) {
+      // An `rgba(...)` or an 8-digit hex here would put us back where we were:
+      // a word whose contrast is decided by the paint behind it.
+      expect(TO_COME_INK[slot]).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    }
+  });
+
+  it('clears 4.5:1 for every word in the row', () => {
+    for (const [slot] of PAIRS) {
+      expect(ratio(rgb(TO_COME_INK[slot]), SHEET)).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it('and is still visibly quieter than a part that IS out', () => {
-    // The fix must not simply delete the signal it was dimming to send.
-    expect(TO_COME_DIM).toBeLessThan(0.95);
+    // The fix must not simply delete the signal the dimming was sending. A
+    // tenth of a ratio point is not a difference anybody sees, so each ink has
+    // to be a real step down from the one it replaces.
+    for (const [slot, out] of PAIRS) {
+      expect(ratio(rgb(TO_COME_INK[slot]), SHEET))
+        .toBeLessThan(ratio(rgb(out), SHEET) - 0.4);
+    }
   });
 
-  it('is the value the row actually uses', async () => {
-    // Pinning the constant is worthless if the row stopped reading it.
+  it('is what the row actually does', async () => {
+    // Pinning the inks is worthless if the row stopped reading them — and the
+    // old fault has to be spelled out, or it can quietly come back beside them.
     const src = fs.readFileSync(
       path.join(__dirname, '..', 'paper', 'PaperEssay.tsx'), 'utf8',
     );
-    expect(src).toContain('x.toCome && { opacity: TO_COME_DIM }');
+    for (const [slot] of PAIRS) {
+      expect(src).toContain(`x.toCome && { color: TO_COME_INK.${slot} }`);
+    }
+    expect(src).not.toMatch(/toCome\s*&&\s*\{\s*opacity/);
   });
 });

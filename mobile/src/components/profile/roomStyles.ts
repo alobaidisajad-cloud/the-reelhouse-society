@@ -349,7 +349,7 @@ export const r = StyleSheet.create({
   // ══════════════════════════════════════════════════════════════════════════
   // SEARCH
   // ══════════════════════════════════════════════════════════════════════════
-  search: { flexDirection: 'row' as const, alignItems: 'center' as const, height: 40, paddingHorizontal: 12, gap: 10, backgroundColor: 'rgba(8,6,4,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2 },
+  search: { flexDirection: 'row' as const, alignItems: 'center' as const, height: 40, paddingHorizontal: 12, gap: 10, backgroundColor: 'rgba(30,25,20,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2 },
   searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.parchment, height: '100%' as const },
   searchClear: { padding: 4, opacity: 0.8 },
 
@@ -360,7 +360,7 @@ export const r = StyleSheet.create({
     marginTop: 18, paddingVertical: 34, paddingHorizontal: 26,
     alignItems: 'center' as const, justifyContent: 'center' as const,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 3,
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: colors.soot,
   },
   /** Your own empty room, and the seal — an invitation, not a verdict. */
   stateInvite: { borderStyle: 'dashed' as const, borderColor: 'rgba(184,137,26,0.30)', backgroundColor: 'rgba(184,137,26,0.06)' },

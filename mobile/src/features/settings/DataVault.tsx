@@ -561,7 +561,7 @@ const s = StyleSheet.create({
   uploadZone: {
     borderWidth: 2, borderStyle: 'dashed', borderColor: 'rgba(184,137,26,0.25)',
     borderRadius: 6, paddingVertical: 24, paddingHorizontal: 20,
-    alignItems: 'center', backgroundColor: 'rgba(10,7,3,0.4)',
+    alignItems: 'center', backgroundColor: 'rgba(13,11,9,0.4)',
   },
   uploadTitle: {
     fontFamily: fonts.display, fontSize: 14, color: colors.parchment, marginBottom: 4,
@@ -573,7 +573,7 @@ const s = StyleSheet.create({
   // ── Progress ──
   progressCard: {
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 6,
-    padding: 16, backgroundColor: 'rgba(10,7,3,0.6)',
+    padding: 16, backgroundColor: 'rgba(13,11,9,0.6)',
   },
   progressHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
@@ -601,7 +601,7 @@ const s = StyleSheet.create({
   // ── Result Card ──
   resultCard: {
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 6,
-    padding: 16, backgroundColor: 'rgba(10,7,3,0.6)',
+    padding: 16, backgroundColor: 'rgba(13,11,9,0.6)',
   },
   resultHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14,
@@ -658,7 +658,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(125,31,31,0.28)',
   },
   undoText: {
-    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.crimson,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.crimsonInk,
   },
 
   // ── Export Action ──

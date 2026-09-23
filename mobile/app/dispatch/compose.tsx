@@ -1258,7 +1258,7 @@ const styles = StyleSheet.create({
     toolbar: {
         borderTopWidth: 1,
         borderTopColor: colors.sepiaBorder,
-        backgroundColor: 'rgba(10,7,3,0.9)',
+        backgroundColor: colors.ink,
         paddingVertical: 8,
     },
     toolsScroll: {
@@ -1326,7 +1326,7 @@ const styles = StyleSheet.create({
     // The one state where the essay cannot be filed. Same strip, same weight —
     // a colour change, not an alarm.
     statOver: {
-        color: colors.crimson,
+        color: colors.crimsonInk,
     },
     publishBtn: {
         backgroundColor: colors.sepia,

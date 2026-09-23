@@ -67,27 +67,27 @@ export function ProfileBackdrop({ user, logs }: { user: BackdropUser; logs: Back
 
             {/* Bottom-to-top gradient (primary vignette) */}
             <LinearGradient
-                colors={['transparent', 'rgba(10,7,3,0.55)', colors.ink]}
+                colors={['transparent', 'rgba(13,11,9,0.55)', colors.ink]}
                 locations={[0, 0.45, 1]}
                 style={StyleSheet.absoluteFillObject}
             />
 
             {/* Top edge fade (navbar blend) */}
             <LinearGradient
-                colors={['rgba(10,7,3,0.85)', 'transparent']}
+                colors={['rgba(13,11,9,0.85)', 'transparent']}
                 style={s.topFade}
             />
 
             {/* Left vignette */}
             <LinearGradient
-                colors={['rgba(10,7,3,0.6)', 'transparent']}
+                colors={['rgba(13,11,9,0.6)', 'transparent']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={s.sideFadeLeft}
             />
 
             {/* Right vignette */}
             <LinearGradient
-                colors={['rgba(10,7,3,0.6)', 'transparent']}
+                colors={['rgba(13,11,9,0.6)', 'transparent']}
                 start={{ x: 1, y: 0 }} end={{ x: 0, y: 0 }}
                 style={s.sideFadeRight}
             />
@@ -109,7 +109,7 @@ const s = StyleSheet.create({
     },
     darkWash: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(10,7,3,0.35)',
+        backgroundColor: 'rgba(13,11,9,0.35)',
     },
     topFade: {
         position: 'absolute',

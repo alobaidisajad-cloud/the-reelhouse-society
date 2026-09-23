@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 100000,
-    backgroundColor: '#080604',
+    backgroundColor: colors.soot,
     alignItems: 'center',
     justifyContent: 'center',
   },

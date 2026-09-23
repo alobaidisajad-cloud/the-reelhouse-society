@@ -194,7 +194,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
 
 const s = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  dim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5,3,2,0.55)' },
+  dim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,5,4,0.55)' },
   card: {
     width: '100%', maxWidth: 380, backgroundColor: colors.ink,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)', borderRadius: 6,
@@ -221,7 +221,7 @@ const s = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.bloodReel, borderRadius: 4,
     paddingVertical: 7, paddingHorizontal: 16, marginBottom: 12, maxWidth: '100%',
   },
-  stampText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.crimson, includeFontPadding: false },
+  stampText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.crimsonInk, includeFontPadding: false },
 
   firstLogBtn: {
     marginTop: 18, backgroundColor: colors.sepia, borderRadius: 3,

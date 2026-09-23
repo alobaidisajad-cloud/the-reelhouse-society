@@ -116,11 +116,11 @@ const st = StyleSheet.create({
     // 16 rather than 24 below: with the Est. rule and the status row gone the
     // masthead is tighter, and the old gap left the tabs floating.
     flexDirection: 'row', marginHorizontal: 16, marginTop: 12, marginBottom: 16,
-    backgroundColor: 'rgba(18,14,9,0.5)', borderRadius: 4, borderWidth: 1,
+    backgroundColor: 'rgba(30,25,20,0.5)', borderRadius: 4, borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.15)', height: 46, position: 'relative'
   },
   tabsActiveBg: {
-    width: '50%', backgroundColor: 'rgba(18,14,9,0.95)', borderColor: 'rgba(184,137,26,0.4)',
+    width: '50%', backgroundColor: colors.soot, borderColor: 'rgba(184,137,26,0.4)',
     borderWidth: 1, borderRadius: 4, ...effects.shadowSurface, elevation: 5
   },
   tabButton: { flex: 1, justifyContent: 'center', alignItems: 'center' },

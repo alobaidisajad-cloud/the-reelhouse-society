@@ -186,7 +186,7 @@ const s = StyleSheet.create({
         height: 8,
         backgroundColor: colors.soot,
         borderWidth: 1,
-        borderColor: 'rgba(10, 7, 3, 0.8)',
+        borderColor: 'rgba(13,11,9,0.8)',
         borderRadius: 1,
         overflow: 'hidden',
         position: 'relative',

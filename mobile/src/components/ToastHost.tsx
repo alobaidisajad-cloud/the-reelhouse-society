@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(11,10,8,0.92)',
+    backgroundColor: colors.ink,
     borderWidth: 1,
     borderColor: 'rgba(196,150,26,0.15)',
     borderLeftWidth: 3,

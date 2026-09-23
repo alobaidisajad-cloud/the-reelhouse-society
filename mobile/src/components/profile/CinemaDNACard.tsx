@@ -209,7 +209,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
 const s = StyleSheet.create({
     overlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(10, 7, 3, 0.95)',
+        backgroundColor: colors.ink,
         zIndex: 100005,
         justifyContent: 'center',
         alignItems: 'center',
@@ -229,7 +229,7 @@ const s = StyleSheet.create({
         zIndex: -1,
     },
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 10 },
-    avatarWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#050402', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.sepia, overflow: 'hidden' },
+    avatarWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.inkwell, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.sepia, overflow: 'hidden' },
     avatarImg: { width: '100%', height: '100%' },
     username: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.parchment },
     subtext: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.sepia, marginTop: 2 },

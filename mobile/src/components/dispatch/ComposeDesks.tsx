@@ -556,7 +556,7 @@ export function FilmPicker({
         accessibilityRole="button"
         accessibilityLabel="Close, without naming a film"
       >
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(4,3,2,0.72)' }]} />
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(6,5,4,0.72)' }]} />
       </PressableScale>
       <View style={{ paddingBottom: bottomInset }}>
         <FilmFinder

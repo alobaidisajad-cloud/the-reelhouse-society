@@ -39,7 +39,7 @@ export const st = StyleSheet.create({
     searchStep: { flex: 1, paddingHorizontal: 20 },
     searchWrap: { marginTop: 12, position: 'relative' },
     searchIcon: { position: 'absolute', left: 12, top: 14, zIndex: 1 },
-    searchInput: { backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingLeft: 38, paddingRight: 12, paddingVertical: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
+    searchInput: { backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingLeft: 38, paddingRight: 12, paddingVertical: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
     searchingWrap: { alignItems: 'center', paddingVertical: 20 },
     searchingText: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 3, includeFontPadding: false },
     searchBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
@@ -61,7 +61,7 @@ export const st = StyleSheet.create({
     formScroll: { flex: 1 },
     formContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 80 },
     sec: { marginBottom: 20 },
-    input: { backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
+    input: { backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
     // No marginBottom: this sits INSIDE the bracket, whose own padding sets the
     // inset. A margin here pushed the bottom brackets 24pt below the poster —
     // 14pt of air above the docket and 38 below it.
@@ -133,10 +133,10 @@ export const st = StyleSheet.create({
     spoilerText: { fontFamily: fonts.sub, fontSize: 7.5, color: colors.fog, letterSpacing: 1, includeFontPadding: false },
     charCount: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
     charCountWarn: { color: colors.flicker },
-    privateNotesInput: { minHeight: 80, backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
+    privateNotesInput: { minHeight: 80, backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
     // While the Vault is being opened. Same height as the field it replaces, so
     // the form does not jump when the note arrives.
-    vaultWaiting: { minHeight: 80, backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+    vaultWaiting: { minHeight: 80, backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
     // LABEL on the composer's six-size scale — the same size every other line of
     // chrome in this form uses. It is a state, not prose.
     vaultWaitingText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.fog, textAlign: 'center' },
@@ -156,7 +156,7 @@ export const st = StyleSheet.create({
     editRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     editLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.bone, marginBottom: 8, includeFontPadding: false },
     editToggleText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, includeFontPadding: false },
-    pullQuoteInput: { backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 14, fontStyle: 'italic', color: colors.parchment },
+    pullQuoteInput: { backgroundColor: 'rgba(13,11,9,0.8)', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 14, fontStyle: 'italic', color: colors.parchment },
     stillThumb: { width: 80, height: 45, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     stillActive: { backgroundColor: colors.sepia, borderColor: colors.sepia, borderWidth: 2 },
     stillNone: { fontFamily: fonts.sub, fontSize: 7.5, color: colors.fog, includeFontPadding: false },
@@ -214,9 +214,9 @@ export const st = StyleSheet.create({
 
     // Delete (destructive → house crimson, not the bright alert red)
     deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, minHeight: 48, borderWidth: 1, borderColor: colors.crimsonBorder, borderRadius: 4, marginBottom: 16 },
-    deleteBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimson, includeFontPadding: false },
+    deleteBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimsonInk, includeFontPadding: false },
     deleteConfirm: { ...effects.shadowPrimary, shadowColor: colors.crimson, backgroundColor: 'rgba(50,0,0,0.6)', borderWidth: 1, borderColor: colors.crimson, borderRadius: 4, padding: 20, alignItems: 'center', marginBottom: 16 },
-    deleteConfirmText: { fontFamily: fonts.sub, fontSize: 11, color: colors.crimson, marginBottom: 16, textAlign: 'center' },
+    deleteConfirmText: { fontFamily: fonts.sub, fontSize: 11, color: colors.crimsonInk, marginBottom: 16, textAlign: 'center' },
     deleteConfirmRow: { flexDirection: 'row', gap: 12 },
     deleteYes: { flex: 1, backgroundColor: colors.crimson, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
     deleteNo: { flex: 1, borderWidth: 1, borderColor: colors.ash, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },

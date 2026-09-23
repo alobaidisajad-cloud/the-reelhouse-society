@@ -413,7 +413,7 @@ export default function PersonDetailScreen() {
           </PressableScale>
       <View style={[s.shimmerBackdrop, heroDynStyle]}>
         <ShimmerBlock style={StyleSheet.absoluteFillObject} />
-        <LinearGradient colors={['rgba(11,10,8,0.1)', 'rgba(11,10,8,0.6)', colors.ink]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['rgba(13,11,9,0.1)', 'rgba(13,11,9,0.6)', colors.ink]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
       </View>
       <View style={s.shimmerContent}>
         <ShimmerBlock style={s.shimmerPortrait} />
@@ -455,7 +455,7 @@ export default function PersonDetailScreen() {
           — and faded in by scroll on the UI thread, so it costs no JS per frame. */}
       <Animated.View style={[s.topVeil, veilStyle, veilDynStyle]} pointerEvents="none">
         <LinearGradient
-          colors={[colors.ink, 'rgba(10,9,6,0.86)', 'transparent']}
+          colors={[colors.ink, 'rgba(13,11,9,0.86)', 'transparent']}
           locations={[0, 0.55, 1]}
           style={StyleSheet.absoluteFill}
         />

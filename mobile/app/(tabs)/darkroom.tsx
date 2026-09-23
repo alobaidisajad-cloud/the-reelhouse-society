@@ -440,7 +440,7 @@ const s = StyleSheet.create({
     fontStyle: 'italic',
   },
   emptyBtn: {
-    backgroundColor: 'rgba(14,11,8,0.95)',
+    backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.25)',
     borderRadius: 3,

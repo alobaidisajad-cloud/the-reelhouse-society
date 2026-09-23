@@ -164,7 +164,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
 
 const s = StyleSheet.create({
     container: {
-        backgroundColor: '#100D08',
+        backgroundColor: colors.soot,
         borderWidth: 1,
         borderColor: 'rgba(184, 137, 26, 0.25)',
         borderRadius: 6,

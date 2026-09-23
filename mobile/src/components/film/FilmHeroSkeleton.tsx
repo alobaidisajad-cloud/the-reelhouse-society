@@ -38,7 +38,7 @@ export const FilmHeroSkeleton = memo(function FilmHeroSkeleton({
     <>
       <View style={[styles.shimmerBackdrop, { height: backdropHeight }]}>
         <Animated.View style={[styles.shimmer, StyleSheet.absoluteFillObject, skeletonAnimStyle]} />
-        <LinearGradient colors={['rgba(11,10,8,0.1)', 'rgba(11,10,8,0.6)', colors.ink]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['rgba(13,11,9,0.1)', 'rgba(13,11,9,0.6)', colors.ink]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
       </View>
       <View style={[styles.shimmerContent, { marginTop: -metrics.posterLift }]}>
         <Animated.View style={[styles.shimmer, styles.shimmerPoster, skeletonAnimStyle]} />
@@ -58,7 +58,7 @@ export const FilmHeroSkeleton = memo(function FilmHeroSkeleton({
 
 const styles = StyleSheet.create({
   shimmer: { backgroundColor: 'rgba(184,137,26,0.15)' },
-  shimmerBackdrop: { backgroundColor: 'rgba(8,6,4,0.98)', position: 'relative' },
+  shimmerBackdrop: { backgroundColor: colors.soot, position: 'relative' },
   // marginTop comes from `metrics.posterLift` at render — the same token the
   // real hero uses, so the poster cannot land in two different places.
   shimmerContent: { alignItems: 'center', paddingHorizontal: 20 },
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   waitingDock: {
     position: 'absolute', left: 0, right: 0, bottom: 0,
     paddingHorizontal: 20, paddingTop: STUB_PAD_TOP,
-    backgroundColor: 'rgba(8,6,4,0.96)',
+    backgroundColor: colors.soot,
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
   },
   shimmerStub: { height: STUB_HEIGHT, borderRadius: 2 },

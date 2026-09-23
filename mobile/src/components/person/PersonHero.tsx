@@ -192,13 +192,13 @@ export const PersonHero = memo(function PersonHero({
           <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
         ) : (
           <LinearGradient
-            colors={['rgba(184,137,26,0.12)', 'rgba(10,7,3,0.95)']}
+            colors={['rgba(184,137,26,0.12)', 'rgba(13,11,9,0.95)']}
             style={s.heroBg}
           />
         )}
         {heroBackdrop && <View style={s.heroSepia} />}
         <LinearGradient
-          colors={['rgba(10,7,3,0.05)', 'rgba(10,7,3,0.45)', colors.ink]}
+          colors={['rgba(13,11,9,0.05)', 'rgba(13,11,9,0.45)', colors.ink]}
           locations={[0, 0.55, 1]}
           style={StyleSheet.absoluteFillObject}
         />

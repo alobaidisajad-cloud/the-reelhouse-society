@@ -93,8 +93,8 @@ const essayMarkdown = {
   ordered_list: { marginTop: 12 },
   list_item: { marginTop: 6 },
   code_inline: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, backgroundColor: 'transparent' },
-  code_block: { fontFamily: fonts.body, fontSize: 13.5, color: colors.bone, backgroundColor: 'rgba(20,16,11,0.7)', padding: 12, marginTop: 16 },
-  fence: { fontFamily: fonts.body, fontSize: 13.5, color: colors.bone, backgroundColor: 'rgba(20,16,11,0.7)', padding: 12, marginTop: 16 },
+  code_block: { fontFamily: fonts.body, fontSize: 13.5, color: colors.bone, backgroundColor: 'rgba(30,25,20,0.7)', padding: 12, marginTop: 16 },
+  fence: { fontFamily: fonts.body, fontSize: 13.5, color: colors.bone, backgroundColor: 'rgba(30,25,20,0.7)', padding: 12, marginTop: 16 },
   hr: { height: 0, backgroundColor: 'transparent' },
 };
 

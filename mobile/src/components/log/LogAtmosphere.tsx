@@ -77,12 +77,12 @@ export default React.memo(function LogAtmosphere({ posterPath }: { posterPath: s
                 accessible={false}
             />
             <LinearGradient
-                colors={['rgba(10,7,3,0)', 'rgba(10,7,3,0.40)', 'rgba(10,7,3,0.95)', colors.ink]}
+                colors={['rgba(13,11,9,0)', 'rgba(13,11,9,0.40)', 'rgba(13,11,9,0.95)', colors.ink]}
                 locations={[0, 0.38, 0.76, 1]}
                 style={StyleSheet.absoluteFillObject}
             />
             <LinearGradient
-                colors={['rgba(10,7,3,0.72)', 'rgba(10,7,3,0.34)', 'rgba(10,7,3,0)']}
+                colors={['rgba(13,11,9,0.72)', 'rgba(13,11,9,0.34)', 'rgba(13,11,9,0)']}
                 locations={[0, 0.55, 1]}
                 style={s.chromeScrim}
             />

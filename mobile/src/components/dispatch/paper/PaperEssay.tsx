@@ -93,7 +93,7 @@ export const EssayHead = memo(function EssayHead({
           <Image source={{ uri: film.backdropPath }} style={p.plateArt} contentFit="cover"
             recyclingKey={film.backdropPath} cachePolicy="memory-disk" />
           <LinearGradient
-            colors={['rgba(26,17,7,0.30)', 'rgba(14,10,5,0.72)', 'rgba(8,6,4,0.99)']}
+            colors={['rgba(30,25,20,0.30)', 'rgba(13,11,9,0.72)', 'rgba(30,25,20,0.99)']}
             locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill}
           />
         </View>
@@ -215,23 +215,30 @@ export interface Part {
 }
 
 /**
- * How far a part that is not out yet is dimmed.
+ * The inks a part that is not out yet is printed in.
  *
- * It was 0.78, which put the part NUMERAL at 4.21:1 and its TO COME at 4.45:1
- * against the sheet — both under the 4.5 a reader is owed. The disabled-control
- * exemption does not cover this: the row is a control, but what it carries is
- * the SHAPE OF THE SERIES, and a reader deciding whether to start a four-part
- * essay is reading it, not operating it.
+ * This row used to be dimmed instead — the whole thing set to one opacity. That
+ * put the part NUMERAL at 4.21:1 and its TO COME at 4.45:1 against the sheet,
+ * both under the 4.5 a reader is owed, and lifting the opacity only moved the
+ * problem: the ground was re-cut later and the numeral fell under again, at
+ * 4.27. A dimmed word is a word whose contrast is decided by whatever is
+ * painted behind it, and the house does not draw words see-through.
  *
- * 0.84 is the value, not a rounder number, because it is where both clear:
- * `fog` reaches 5.02 and `sepia` 4.75 over the sheet's ground. A part that is
- * not out yet still reads as quieter than the parts that are — the dimming does
- * its job, it simply stops short of illegible.
+ * So the row is printed, not faded. Three solid inks, each one quieter than the
+ * ink a part that IS out uses, and each one clear of 4.5:1 on the sheet:
  *
- * The ratio is recomputed FROM THE TOKENS in `seriesScreen.test.tsx` rather than
- * written down here, so it stays true if any of the three shades is re-cut.
+ *   numeral   brass -> grey   the brass is what says a part can be opened
+ *   title     parchment -> bone
+ *   TO COME   fog -> fogQuiet
+ *
+ * Both halves of that are held by `seriesScreen.test.tsx`, recomputed from the
+ * tokens rather than written down, so they stay true if any shade is re-cut.
  */
-export const TO_COME_DIM = 0.84;
+export const TO_COME_INK = {
+  numeral: colors.fogQuiet,
+  title: colors.bone,
+  meta: colors.fogQuiet,
+} as const;
 
 export const SeriesList = memo(function SeriesList({
   title, author, parts, onPart, onAuthor,
@@ -274,7 +281,7 @@ export const SeriesList = memo(function SeriesList({
         <View key={i}>
           {i > 0 && <View style={p.hair} />}
           <PressableScale
-            style={[e.part, x.toCome && { opacity: TO_COME_DIM }]}
+            style={e.part}
             onPress={() => onPart?.(x)}
             disabled={x.toCome} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
             accessibilityRole="button"
@@ -282,11 +289,11 @@ export const SeriesList = memo(function SeriesList({
             accessibilityLabel={x.toCome ? `Part ${x.n}. ${x.title}. To come.` : `Part ${x.n}. ${x.title}.`}
           >
             <View style={p.margin}>
-              <Text style={p.marginValue} {...decorativeTextProps}>{x.n}</Text>
+              <Text style={[p.marginValue, x.toCome && { color: TO_COME_INK.numeral }]} {...decorativeTextProps}>{x.n}</Text>
             </View>
             <View style={[p.column, x.current && { borderLeftColor: KIND_RULE.dossier }]}>
-              <Text style={e.partTitle} numberOfLines={2} {...displayTextProps}>{x.title}</Text>
-              <Text style={e.partMeta} numberOfLines={1} {...scaledTextProps}>
+              <Text style={[e.partTitle, x.toCome && { color: TO_COME_INK.title }]} numberOfLines={2} {...displayTextProps}>{x.title}</Text>
+              <Text style={[e.partMeta, x.toCome && { color: TO_COME_INK.meta }]} numberOfLines={1} {...scaledTextProps}>
                 {x.toCome
                   ? 'TO COME'
                   : [x.readTime, x.certified ? `${x.certified} CERTIFIED` : null,
@@ -315,7 +322,7 @@ const e = StyleSheet.create({
    */
   cover: {
     height: 176, marginHorizontal: -DOC_PAD, marginBottom: 16,
-    overflow: 'hidden', backgroundColor: 'rgba(20,16,11,0.9)',
+    overflow: 'hidden', backgroundColor: colors.soot,
   },
   /** 26/33, and the only place Rye is set this large outside the masthead. */
   title: {

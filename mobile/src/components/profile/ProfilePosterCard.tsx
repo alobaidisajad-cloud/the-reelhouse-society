@@ -103,7 +103,7 @@ const s = StyleSheet.create({
     position: 'absolute', 
     top: 4, 
     right: 4, 
-    backgroundColor: 'rgba(10,7,3,0.85)', 
+    backgroundColor: 'rgba(13,11,9,0.85)', 
     borderWidth: 1, 
     borderColor: 'rgba(184,137,26,0.35)', 
     borderRadius: 2, 

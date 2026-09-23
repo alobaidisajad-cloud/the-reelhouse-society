@@ -124,8 +124,8 @@ export const FilterChip = memo(function FilterChip({ label, active, onPress }: {
 //  STACK CARD — Compact Dossier Card (Parity with Web)
 // ══════════════════════════════════════════════════════════════
 const PRESET_GRADIENTS: readonly [string, string, ...string[]][] = [
-  ['#1a0e05', '#3a2010', '#0a0703'],
-  ['#0a0a0a', '#1c1710', '#2a1a05'],
+  ['#1a0e05', '#3a2010', '#0D0B09'],
+  ['#0D0B09', '#26201A', '#2a1a05'],
   ['#05080a', '#101820', '#1a2010'],
   ['#0a0508', '#1a0f18', '#0a0508'],
 ];
@@ -157,7 +157,7 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
                 />
                 {i < posters.length - 1 && (
                   <LinearGradient 
-                    colors={['transparent', 'rgba(10,10,10,0.8)']} 
+                    colors={['transparent', 'rgba(13,11,9,0.8)']} 
                     start={{ x: 0.8, y: 0 }} end={{ x: 1, y: 0 }} 
                     style={StyleSheet.absoluteFillObject} 
                   />
@@ -169,7 +169,7 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
       </View>
 
       <LinearGradient 
-        colors={['rgba(15,12,8,0)', 'rgba(5,3,2,0.9)', 'rgba(5,3,2,1)']} 
+        colors={['rgba(13,11,9,0)', 'rgba(6,5,4,0.9)', 'rgba(6,5,4,1)']} 
         locations={[0, 0.4, 0.9]} 
         style={StyleSheet.absoluteFillObject} 
       />
@@ -269,7 +269,7 @@ const st = StyleSheet.create({
   filterChip: {
     paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
-    backgroundColor: 'rgba(18,14,9,0.5)',
+    backgroundColor: 'rgba(30,25,20,0.5)',
   },
   // 0.6 measured 3.04:1; 0.8 gives 4.59:1. An unselected filter should read as
   // unselected, not as disabled.
@@ -278,7 +278,7 @@ const st = StyleSheet.create({
 
   stackCard: {
     // App-standard 1px brass dossier frame (was a heavy 2px umber slab).
-    flex: 1, backgroundColor: '#050402',
+    flex: 1, backgroundColor: colors.inkwell,
     borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 5, overflow: 'hidden',
     height: 220,
@@ -299,7 +299,7 @@ const st = StyleSheet.create({
   stackCardRef: {
     position: 'absolute',
     top: 8, right: 8,
-    backgroundColor: 'rgba(5,3,2,0.8)',
+    backgroundColor: 'rgba(6,5,4,0.8)',
     paddingHorizontal: 6, paddingVertical: 3,
     borderRadius: 2,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)',

@@ -179,7 +179,7 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
 const s = StyleSheet.create({
   container: {
     marginVertical: 16,
-    backgroundColor: 'rgba(10, 7, 3, 0.4)',
+    backgroundColor: 'rgba(13,11,9,0.4)',
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
     borderRadius: 8,
     paddingVertical: 16,

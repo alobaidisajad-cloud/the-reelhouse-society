@@ -270,7 +270,7 @@ const s = StyleSheet.create({
   coverBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.25)' },
   coverBtnRemove: { borderColor: colors.crimsonBorder },
   coverBtnText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.5, color: colors.parchment, includeFontPadding: false },
-  coverBtnTextRemove: { color: colors.crimson },
+  coverBtnTextRemove: { color: colors.crimsonInk },
   coverEmpty: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 3, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(184,137,26,0.25)', backgroundColor: 'rgba(184,137,26,0.06)' },
   coverEmptyText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
 });

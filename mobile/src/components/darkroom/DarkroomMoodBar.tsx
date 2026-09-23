@@ -117,7 +117,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: 'rgba(10,8,5,0.8)',
+    backgroundColor: 'rgba(13,11,9,0.8)',
     borderColor: 'rgba(184,137,26,0.15)',
     minWidth: 140,
     ...effects.shadowSurface,

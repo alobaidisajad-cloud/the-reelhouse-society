@@ -101,7 +101,7 @@ const s = StyleSheet.create({
     },
     // Crimson here is SEMANTIC — loss, not rank. The provenance colours label
     // where a capability comes from; a verdict is not a capability.
-    wordAbandoned: { color: colors.crimson, textShadowColor: 'rgba(180,45,45,0.25)' },
+    wordAbandoned: { color: colors.crimsonInk, textShadowColor: 'rgba(180,45,45,0.25)' },
     waiting: { fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.fog, opacity: 0.75, includeFontPadding: false },
     value: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.bone, marginTop: 9, includeFontPadding: false },
     hint: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2, color: colors.fog, opacity: 0.85, marginTop: 9, includeFontPadding: false },

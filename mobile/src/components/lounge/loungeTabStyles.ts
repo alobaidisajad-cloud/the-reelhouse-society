@@ -68,7 +68,7 @@ export const s = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(5,4,3,0.95)',
+    backgroundColor: colors.inkwell,
     borderRadius: 3,
     paddingHorizontal: 12,
     height: 44,

@@ -110,7 +110,7 @@ const s = StyleSheet.create({
   sectionLoreSub: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, opacity: 0.8, letterSpacing: 0.3 },
   critiqueCardWrap: { marginHorizontal: 0 },
   critiqueSubmitBtn: {
-    backgroundColor: 'rgba(18,14,9,0.95)', marginTop: 12, borderRadius: 6,
+    backgroundColor: colors.soot, marginTop: 12, borderRadius: 6,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     alignItems: 'center', paddingVertical: 14, paddingHorizontal: 8,
     overflow: 'hidden', ...effects.shadowSurface,

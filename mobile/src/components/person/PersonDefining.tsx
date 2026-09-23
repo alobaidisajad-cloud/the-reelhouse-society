@@ -68,7 +68,7 @@ const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }
           </View>
         )}
         <LinearGradient
-          colors={['transparent', 'rgba(10,7,3,0.5)', 'rgba(10,7,3,0.92)']}
+          colors={['transparent', 'rgba(13,11,9,0.5)', 'rgba(13,11,9,0.92)']}
           locations={[0, 0.45, 1]}
           style={st.defOverlay}
         >

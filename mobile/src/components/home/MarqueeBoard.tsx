@@ -285,7 +285,7 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
           />
         )}
         <LinearGradient
-          colors={['rgba(14,11,8,0.3)', 'rgba(14,11,8,0.7)', 'rgba(14,11,8,0.95)']}
+          colors={['rgba(30,25,20,0.3)', 'rgba(30,25,20,0.7)', 'rgba(30,25,20,0.95)']}
           locations={[0, 0.45, 1]}
           style={StyleSheet.absoluteFillObject}
         />
@@ -348,7 +348,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.45)',
     padding: 3,
-    backgroundColor: '#0B0906',
+    backgroundColor: colors.ink,
     ...effects.shadowPrimary,
     // NO overflow:hidden here — the corner studs live on this layer.
   },
@@ -357,7 +357,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.16)',
     overflow: 'hidden',
-    backgroundColor: 'rgba(14,11,8,0.9)',
+    backgroundColor: colors.soot,
   },
   stud: {
     position: 'absolute',
@@ -379,7 +379,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 6,
     paddingHorizontal: 13,
-    backgroundColor: '#0C0A07',
+    backgroundColor: colors.ink,
   },
   fasciaTop: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -395,7 +395,7 @@ const s = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.4)',
-    backgroundColor: '#0B0906',
+    backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
   },

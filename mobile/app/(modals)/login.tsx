@@ -202,7 +202,7 @@ export default function LoginScreen() {
           below the header, non-interactive. */}
       <LinearGradient
         pointerEvents="none"
-        colors={['rgba(10,9,6,0.85)', 'rgba(10,9,6,0)']}
+        colors={['rgba(13,11,9,0.85)', 'rgba(13,11,9,0)']}
         style={[s.headerFade, { top: 56 + insets.top }]}
       />
 
@@ -339,7 +339,7 @@ export default function LoginScreen() {
                 <Text style={s.fieldHint}>Minimum 3 characters</Text>
               )}
               {usernameStatus === 'taken' && (
-                <Text style={[s.fieldHint, { color: colors.bloodReel }]}>USERNAME ALREADY TAKEN</Text>
+                <Text style={[s.fieldHint, { color: colors.crimsonInk }]}>USERNAME ALREADY TAKEN</Text>
               )}
             </AnimatedView>
           )}

@@ -323,7 +323,11 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // mark + stats panel). Cinephile = house brass (understated); Archivist =
   // champagne; Auteur = ruby. The avatar ring/badge stay the primary signal.
   const tierLine = isAuteurPlus ? 'rgba(180,45,45,0.45)' : isArchivistPlus ? 'rgba(196,150,26,0.5)' : 'rgba(184,137,26,0.3)';
-  const tierText = isAuteurPlus ? '#B42D2D' : isArchivistPlus ? colors.champagne : 'rgba(184,137,26,0.7)';
+  // WORDS, so solid inks of the same three colours: the ruby as pigment is
+  // 2.78:1 on the card this line sits on, and the house brass at 0.7 is a word
+  // painted see-through. The line, the border and the spot beside it are marks
+  // and keep their pigments.
+  const tierText = isAuteurPlus ? colors.crimsonInk : isArchivistPlus ? colors.champagne : colors.sepia;
   const tierStatsBorder = isAuteurPlus ? 'rgba(180,45,45,0.5)' : isArchivistPlus ? 'rgba(196,150,26,0.6)' : 'rgba(184,137,26,0.3)';
   const tierSpot = isAuteurPlus ? '#B42D2D' : isArchivistPlus ? colors.champagne : '#B8891A';
   const tierSpotOpacity = isAuteurPlus ? 0.2 : isArchivistPlus ? 0.26 : 0.18;
@@ -1076,7 +1080,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               <ProfileBackdrop {...{user: targetUser, logs: displayLogs} as any} />
             ) : isArchivistPlus ? (
               <View style={s.headerArchivistBase}>
-                 <LinearGradient colors={['rgba(196,150,26,0.15)', 'rgba(10,8,5,0.95)', colors.ink]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
+                 <LinearGradient colors={['rgba(196,150,26,0.15)', 'rgba(13,11,9,0.95)', colors.ink]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
                  <AnimatedView style={[StyleSheet.absoluteFillObject, pulseStyle]} pointerEvents="none">
                    <LinearGradient colors={['rgba(196,150,26,0.1)', 'transparent']} style={StyleSheet.absoluteFillObject} />
                  </AnimatedView>
@@ -1098,7 +1102,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           {/* A breath of dark at the very top so the status bar and the back
               button recede into the plate instead of competing with a bright
               backdrop for the same pixels. */}
-          <LinearGradient colors={['rgba(6,5,3,0.72)', 'transparent']} style={s.heroTopFade} pointerEvents="none" />
+          <LinearGradient colors={['rgba(6,5,4,0.72)', 'transparent']} style={s.heroTopFade} pointerEvents="none" />
 
           {/* Bottom structural edge */}
           <View style={[s.headerGoldEdge, isAuteurPlus && { backgroundColor: 'rgba(180,45,45,0.35)' }]} pointerEvents="none" />

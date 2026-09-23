@@ -32,6 +32,22 @@ export const colors = {
   parchment: '#E8DFD0',   // Primary text (yellowed, like actual old paper)
   sepia: '#B8891A',       // Tarnished brass — buttons, links, active state
   soot: '#1E1914',        // CARD — paper laid on the page (was #0D0C08, a hole)
+  /**
+   * THE CARD, IN THE AUTEUR'S INK — the same paper, tinted.
+   *
+   * An Auteur's post sits on a crimson card, and it was written by hand in
+   * three places and never twice the same: `rgb(12,5,5)` on the feed, the same
+   * on the Pulse, `rgba(25,10,10,0.92)` on a log. At L* 1.8 and 4.3 against a
+   * card at 9.2, the one surface that marks the app's PAYING members was also
+   * the one that still read as a hole punched in the page.
+   *
+   * Matched to `soot` exactly — same perceived step, the crimson carried in the
+   * hue — so every word that clears its floor on a card clears it here too, to
+   * the second decimal. A card is still paper; paper the colour of blood is a
+   * different object, so the tint is a quarter of `bloodReel` over the card's
+   * own warmth rather than the pigment neat.
+   */
+  sootAuteur: '#2A140D',
   flicker: '#F0E8B0',     // Candlelight accent — hover states, highlights
   bloodReel: '#6B1A0A',   // Deep crimson — destructive actions, stamps
   danger: '#E74C3C',      // Alert red
@@ -233,6 +249,21 @@ export const colors = {
   ticketAuteurFoot: '#1A0F0B',
 
   tarnishDeep: '#5A430D',   // brass in shadow — the closing stop of a brass gradient.
+  /**
+   * The QUIET ink printed on brass — a gloss under a brass label.
+   *
+   * It was the house ink at 0.72, which is a word painted see-through, and on
+   * brass that costs more than anywhere else: the ramp darkens toward tarnish
+   * along its diagonal, and the gloss's last letters sit on rgb(166,124,24),
+   * where 0.72 of the ink measured 3.66:1. Even the darkest ink in the app at
+   * that opacity only reached 3.88.
+   *
+   * Solid now: the house ink a fifth of the way toward brass-in-shadow, the
+   * lightest such step that clears — 4.72 at that worst point, 8.43 on the
+   * brightest brass. The label above it keeps the full ink (5.16 there); the
+   * two differ by typeface as much as by tone, which is all brass has room for.
+   */
+  onBrassQuiet: '#1C160A',
                             // `sepia → this` was written out by hand in both autopsy
                             // gauges; using tarnish instead flattens the ramp that
                             // makes the fill read as curved metal.

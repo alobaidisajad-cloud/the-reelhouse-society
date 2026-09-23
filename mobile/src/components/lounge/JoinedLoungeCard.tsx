@@ -40,7 +40,7 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
             <Image source={{ uri: coverUrl }} style={s.joinedImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
           ) : (
             <LinearGradient
-              colors={['rgba(184,137,26,0.06)', 'rgba(11,10,8,0.95)']}
+              colors={['rgba(184,137,26,0.06)', 'rgba(13,11,9,0.95)']}
               style={s.joinedImgPlaceholder}
             >
               <FilmIcon size={22} color={colors.sepia} strokeWidth={1} />
@@ -48,7 +48,7 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
           )}
 
           <LinearGradient
-            colors={['transparent', 'rgba(11,10,8,0.85)']}
+            colors={['transparent', 'rgba(13,11,9,0.85)']}
             style={s.joinedGradient}
           />
 
@@ -168,7 +168,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(11,10,8,0.85)',
+    backgroundColor: 'rgba(13,11,9,0.85)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(184,137,26,0.5)',
     paddingHorizontal: 7,

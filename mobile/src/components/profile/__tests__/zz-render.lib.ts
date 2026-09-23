@@ -418,7 +418,19 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     }
     const kids = (n.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
     const style = css(st, false);
-    return `<div style="${style};background-image:linear-gradient(${dir},${stops.join(',')})">${kids}</div>`;
+    // THE PHONE'S RAMP, KEPT FOR WHOEVER MEASURES IT. A CSS angle is not the
+    // same gradient: it drops the start and end OFFSETS (a brass ramp runs 0.15
+    // to 0.85, not corner to corner) and a native gradient interpolates in the
+    // box's UNIT space, not in pixels. Drawn this way it looks close enough to
+    // design with; measured this way it put every word on a brass plate against
+    // the darkest stop, which the words never touch. So the real parameters ride
+    // along, and a contrast check reads the colour under each word from them.
+    const grad = encodeURIComponent(JSON.stringify({
+      s: s0 ?? { x: 0.5, y: 0 }, e: e0 ?? { x: 0.5, y: 1 },
+      c: cols.map((c) => decodeColour(c) ?? 'transparent'),
+      l: cols.map((_, i) => (typeof locs[i] === 'number' ? locs[i] : cols.length > 1 ? i / (cols.length - 1) : 0)),
+    }));
+    return `<div data-grad="${grad}" style="${style};background-image:linear-gradient(${dir},${stops.join(',')})">${kids}</div>`;
   }
 
   // ── artwork ──

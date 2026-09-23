@@ -172,7 +172,7 @@ export default function AuthCallbackScreen() {
             <View style={s.errorIconWrap}>
               <Text style={s.errorIcon}>✕</Text>
             </View>
-            <Text style={[s.eyebrow, { color: colors.bloodReel }]}>VERIFICATION FAILED</Text>
+            <Text style={[s.eyebrow, { color: colors.crimsonInk }]}>VERIFICATION FAILED</Text>
             <Text style={s.title}>Link Expired{'\n'}or Invalid</Text>
             <Text style={s.body}>{errorMsg}</Text>
             

@@ -167,7 +167,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     borderTopWidth: 1,
     borderTopColor: colors.sepiaSubtle,
-    backgroundColor: 'rgba(20,15,5,0.4)',
+    backgroundColor: 'rgba(30,25,20,0.4)',
   },
   stripContent: {
     flexDirection: 'row',
@@ -306,7 +306,7 @@ const s = StyleSheet.create({
   },
   track: {
     height: 10,
-    backgroundColor: 'rgba(2,1,1,1)',
+    backgroundColor: colors.inkwell,
     borderRadius: 2,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.1)',

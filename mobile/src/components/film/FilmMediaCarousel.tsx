@@ -108,9 +108,9 @@ const sub = StyleSheet.create({
   // a fixed-height rail does not grow to fit its contents.
   videoListContainer: { height: 176 },
   videoThumb: { width: 200, marginRight: 10 },
-  videoImg: { width: 200, height: 112, borderRadius: 4, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
+  videoImg: { width: 200, height: 112, borderRadius: 4, backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
   videoPlayOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 48, justifyContent: 'center', alignItems: 'center' },
-  videoPlayCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(8,6,4,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)', justifyContent: 'center', alignItems: 'center' },
+  videoPlayCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(30,25,20,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)', justifyContent: 'center', alignItems: 'center' },
   videoLabelWrap: { marginTop: 8 },
   videoType: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
   videoName: { fontFamily: fonts.body, fontSize: 11, color: colors.bone },

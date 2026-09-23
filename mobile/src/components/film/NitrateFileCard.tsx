@@ -71,7 +71,7 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
         <Image source={{ uri: data.posterUrl }} style={s.ambient} contentFit="cover" blurRadius={40} />
       ) : (
         <LinearGradient
-          colors={['rgba(184,137,26,0.08)', 'rgba(4,3,2,0)']}
+          colors={['rgba(184,137,26,0.08)', 'rgba(6,5,4,0)']}
           start={{ x: 0.5, y: 0.5 }}
           end={{ x: 0.5, y: 1 }}
           style={s.ambient}
@@ -106,7 +106,7 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
             {data.posterUrl ? (
               <Image source={{ uri: data.posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
             ) : (
-              <LinearGradient colors={['#15120e', '#090705']} style={s.posterFallback}>
+              <LinearGradient colors={['#15120e', '#0D0B09']} style={s.posterFallback}>
                 <View style={s.posterFallbackRule} />
                 <Text style={s.posterFallbackMark}>✦</Text>
                 <Text style={s.posterFallbackTitle} numberOfLines={3}>{data.title}</Text>
@@ -166,7 +166,7 @@ const s = StyleSheet.create({
   canvas: {
     width: NITRATE_CARD_WIDTH,
     height: NITRATE_CARD_HEIGHT,
-    backgroundColor: '#040302',
+    backgroundColor: colors.inkwell,
     overflow: 'hidden',
   },
   ambient: {
@@ -176,7 +176,7 @@ const s = StyleSheet.create({
   },
   vignette: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(4,3,2,0.45)',
+    backgroundColor: 'rgba(6,5,4,0.45)',
   },
 
   // ── The perforation rail ──
@@ -193,7 +193,7 @@ const s = StyleSheet.create({
     width: 9,
     height: 12,
     borderRadius: 2,
-    backgroundColor: '#0A0906',
+    backgroundColor: colors.ink,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.28)',
   },
@@ -205,7 +205,7 @@ const s = StyleSheet.create({
     right: 16,
     top: 22,
     bottom: 22,
-    backgroundColor: '#090705',
+    backgroundColor: colors.ink,
     borderWidth: 1,
     borderColor: colors.sepiaBorder,
     borderRadius: 6,
@@ -319,7 +319,7 @@ const s = StyleSheet.create({
     borderRadius: 3,
     paddingHorizontal: 9,
     paddingVertical: 4,
-    backgroundColor: 'rgba(9,7,5,0.55)',
+    backgroundColor: 'rgba(13,11,9,0.55)',
   },
   stampAbandoned: {
     borderColor: 'rgba(180,45,45,0.75)',
@@ -332,7 +332,7 @@ const s = StyleSheet.create({
     includeFontPadding: false,
   },
   stampTextAbandoned: {
-    color: colors.crimson,
+    color: colors.crimsonInk,
   },
 
   // ── Identity ──

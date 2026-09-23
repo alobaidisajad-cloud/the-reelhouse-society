@@ -590,7 +590,7 @@ const s = StyleSheet.create({
         width: 5, height: 5,
         borderWidth: 1,
         borderColor: 'rgba(184,137,26,0.45)',
-        backgroundColor: 'rgba(10,9,6,0.9)',
+        backgroundColor: colors.ink,
         transform: [{ rotate: '45deg' }],
     },
     hookBrass: { borderColor: 'rgba(184,137,26,0.75)' },
@@ -665,7 +665,7 @@ const s = StyleSheet.create({
     shimmerTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, borderRadius: 6, zIndex: 4 },
 
     // ── the sheet ──
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(8,6,4,0.95)', justifyContent: 'flex-end' },
+    modalOverlay: { flex: 1, backgroundColor: colors.soot, justifyContent: 'flex-end' },
     sheet: {
         backgroundColor: colors.ink,
         borderTopLeftRadius: 16,
@@ -695,7 +695,7 @@ const s = StyleSheet.create({
     },
     plateActionText: { flex: 1 },
     plateActionLabel: { fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
-    plateActionLabelDanger: { color: colors.crimson },
+    plateActionLabelDanger: { color: colors.crimsonInk },
     plateActionHint: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, marginTop: 2 },
 
     modalHeader: { padding: 24, paddingTop: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
@@ -703,7 +703,7 @@ const s = StyleSheet.create({
     searchWrap: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(10,5,0,0.5)',
+        backgroundColor: colors.well,
         borderWidth: 1,
         borderColor: 'rgba(184,137,26,0.15)',
         borderRadius: 8,
@@ -717,7 +717,7 @@ const s = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 12,
-        backgroundColor: 'rgba(20,15,10,0.5)',
+        backgroundColor: 'rgba(30,25,20,0.5)',
         borderWidth: 1,
         borderColor: 'rgba(184,137,26,0.1)',
         borderRadius: 8,

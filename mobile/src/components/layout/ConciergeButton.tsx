@@ -451,7 +451,7 @@ const s = StyleSheet.create({
     zIndex: 12,
   },
 
-  scrim: { backgroundColor: 'rgba(4,3,2,0.66)' },
+  scrim: { backgroundColor: 'rgba(6,5,4,0.66)' },
 
   cardWrap: {
     position: 'absolute',

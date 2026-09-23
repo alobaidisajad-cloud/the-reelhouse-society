@@ -327,7 +327,7 @@ const s = StyleSheet.create({
     loadingIndicator: { marginVertical: 24 },
     emptyText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, textAlign: 'center', paddingVertical: 24 },
     messageInput: {
-        backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: colors.ash,
+        backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash,
         color: colors.bone, fontFamily: fonts.body, fontSize: 13,
         paddingHorizontal: 12, paddingVertical: 10, minHeight: 60, borderRadius: 4,
         textAlignVertical: 'top', marginTop: 12,

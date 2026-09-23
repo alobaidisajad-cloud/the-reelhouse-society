@@ -41,7 +41,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
     <View style={s.heroContainer}>
       <DarkroomAtmo />
       <LinearGradient
-        colors={['rgba(10,7,3,0.8)', 'rgba(5,3,2,0.9)', 'transparent']}
+        colors={['rgba(13,11,9,0.8)', 'rgba(6,5,4,0.9)', 'transparent']}
         locations={[0, 0.6, 1]}
         style={StyleSheet.absoluteFillObject}
       />
@@ -167,7 +167,7 @@ const s = StyleSheet.create({
     // Courier ledger hand, not bold terminal mono — typing should feel
     // like filling an archival form, same as every input in the app.
     width: '100%',
-    backgroundColor: 'rgba(10,8,5,0.95)',
+    backgroundColor: colors.well,
     borderWidth: 1.5,
     borderColor: 'rgba(184,137,26,0.2)',
     borderRadius: 6,
@@ -182,7 +182,7 @@ const s = StyleSheet.create({
   },
   searchInputActive: {
     borderColor: 'rgba(180,45,45,0.5)',
-    backgroundColor: 'rgba(5,3,2,0.95)',
+    backgroundColor: colors.inkwell,
   },
   clearBtn: {
     position: 'absolute',
@@ -195,7 +195,7 @@ const s = StyleSheet.create({
     top: 55,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.5)',
     borderStyle: 'solid',

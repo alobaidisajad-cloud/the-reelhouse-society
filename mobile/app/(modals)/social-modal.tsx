@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12, paddingVertical: 8,
         borderRadius: 2, borderWidth: 1,
         borderColor: 'rgba(215,205,190,0.15)',
-        backgroundColor: 'rgba(25,23,20,0.8)',
+        backgroundColor: 'rgba(38,32,26,0.8)',
     },
     shareChipDone: {
         borderColor: 'rgba(184,137,26,0.3)',

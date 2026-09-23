@@ -183,25 +183,34 @@ function ActionModal({
     reset();
   }, [state.action, reason, durationHours, onSubmit, reset]);
 
-  const actionLabels: Record<EnforcementAction, { title: string; color: string; description: string }> = {
+  // Two colours per verdict, because the verdict is drawn twice. `color` is the
+  // FILL of the button — crimson pigment, with parchment on it at 4.74:1. `ink`
+  // is the title's WORDS on the sheet, where that same crimson measures 2.78:1.
+  // One value for both jobs was always going to fail one of them: moving the
+  // fill to the lighter ink drops the button's own label to 2.65.
+  const actionLabels: Record<EnforcementAction, { title: string; color: string; ink: string; description: string }> = {
     warn: {
       title: 'ISSUE WARNING',
       color: colors.sepia,
+      ink: colors.sepia,
       description: 'A formal warning will be recorded and the member notified.',
     },
     suspend: {
       title: 'SUSPEND MEMBER',
       color: colors.crimson,
+      ink: colors.crimsonInk,
       description: 'Temporarily restrict access for the specified duration.',
     },
     ban: {
       title: 'BAN MEMBER',
       color: colors.crimson,
+      ink: colors.crimsonInk,
       description: 'Permanently revoke access. This can be reversed by another admin.',
     },
     permanent_exile: {
       title: 'PERMANENT EXILE',
       color: colors.crimson,
+      ink: colors.crimsonInk,
       description: 'Irrevocable expulsion from the Society. Cannot be undone.',
     },
     // The only action here that addresses the WORK rather than the member.
@@ -210,6 +219,7 @@ function ActionModal({
     delete_content: {
       title: 'REMOVE CONTENT',
       color: colors.sepia,
+      ink: colors.sepia,
       description:
         'The reported piece is struck from the house. A lounge dispatch is struck through rather than erased, so the conversation around it still reads. A copy is kept with the record, should the decision ever be questioned.',
     },
@@ -230,7 +240,7 @@ function ActionModal({
           <View style={s.modalHandle} />
 
           <View style={s.modalHeader}>
-            <Text style={[s.modalTitle, { color: config.color }]}>{config.title}</Text>
+            <Text style={[s.modalTitle, { color: config.ink }]}>{config.title}</Text>
             <PressableScale onPress={handleClose} haptic="selection" pressedScale={0.9}>
               <X size={20} color={colors.fog} />
             </PressableScale>
@@ -1013,7 +1023,7 @@ export default function TribunalScreen() {
                                 accessibilityLabel="Suspend member"
                               >
                                 <Clock size={14} color={colors.crimson} />
-                                <Text style={[s.actionText, { color: colors.crimson }]}>SUSPEND</Text>
+                                <Text style={[s.actionText, { color: colors.crimsonInk }]}>SUSPEND</Text>
                               </PressableScale>
 
                               <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
@@ -1025,7 +1035,7 @@ export default function TribunalScreen() {
                                 accessibilityLabel="Ban member"
                               >
                                 <Ban size={14} color={colors.crimson} />
-                                <Text style={[s.actionText, { color: colors.crimson }]}>BAN</Text>
+                                <Text style={[s.actionText, { color: colors.crimsonInk }]}>BAN</Text>
                               </PressableScale>
                             </View>
 
@@ -1038,7 +1048,7 @@ export default function TribunalScreen() {
                               accessibilityLabel="Permanently exile member"
                             >
                               <Skull size={14} color={colors.crimson} />
-                              <Text style={[s.actionText, { color: colors.crimson }]}>PERMANENT EXILE</Text>
+                              <Text style={[s.actionText, { color: colors.crimsonInk }]}>PERMANENT EXILE</Text>
                             </PressableScale>
                           </>
                         )}
@@ -1116,7 +1126,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 4,
-    color: colors.crimson,
+    color: colors.crimsonInk,
     marginBottom: 6,
   },
   title: { fontFamily: fonts.display, fontSize: 32, color: colors.parchment, marginBottom: 4 },
@@ -1147,7 +1157,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(180,45,45,0.35)',
   },
-  typeBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimson },
+  typeBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimsonInk },
 
   reasonTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 14 },
 
@@ -1188,7 +1198,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 2,
-    color: colors.ash,
+    color: colors.fogQuiet,
     marginBottom: 4,
   },
   contextValue: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 19 },
@@ -1257,7 +1267,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 1,
-    color: colors.crimson,
+    color: colors.crimsonInk,
   },
 
   // ── Enforcement History ────────────────────────────────────────────────
@@ -1291,7 +1301,7 @@ const s = StyleSheet.create({
     color: colors.bone,
   },
   historyReason: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, marginTop: 2 },
-  historyDate: { fontFamily: fonts.sub, fontSize: 9, color: colors.ash, marginTop: 2 },
+  historyDate: { fontFamily: fonts.sub, fontSize: 9, color: colors.fogQuiet, marginTop: 2 },
 
   // ── Modal ──────────────────────────────────────────────────────────────
   modalOverlay: {
@@ -1344,7 +1354,7 @@ const s = StyleSheet.create({
     marginBottom: 6,
   },
   textInput: {
-    backgroundColor: colors.soot,
+    backgroundColor: colors.well,
     borderWidth: 1,
     borderColor: colors.ash,
     borderRadius: radii.sm,
@@ -1389,7 +1399,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 2.5,
-    color: colors.crimson,
+    color: colors.crimsonInk,
     fontWeight: '700',
   },
 

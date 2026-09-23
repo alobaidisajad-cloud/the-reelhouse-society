@@ -208,7 +208,7 @@ export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomI
         style={StyleSheet.absoluteFillObject} onPress={onClose}
         accessibilityRole="button" accessibilityLabel="Close, without setting a series"
       >
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(4,3,2,0.72)' }]} />
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(6,5,4,0.72)' }]} />
       </PressableScale>
 
       <View style={[x.sheet, { paddingBottom: bottomInset + 22 }]}>
@@ -292,7 +292,7 @@ export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomI
 
 const x = StyleSheet.create({
   sheet: {
-    backgroundColor: 'rgba(8,6,4,0.99)',
+    backgroundColor: colors.soot,
     borderTopWidth: 1.5, borderTopColor: colors.sepiaBorder,
     paddingHorizontal: 20, paddingTop: 18,
   },

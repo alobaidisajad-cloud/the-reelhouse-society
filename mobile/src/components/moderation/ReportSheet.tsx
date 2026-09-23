@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   detailsInput: {
-    backgroundColor: colors.soot,
+    backgroundColor: colors.well,
     borderWidth: 1,
     borderColor: colors.ash,
     borderRadius: radii.sm,

@@ -144,7 +144,7 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
 const s = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(5, 3, 1, 0.95)',
+    backgroundColor: colors.inkwell,
     justifyContent: 'center',
     padding: 24,
   },

@@ -49,5 +49,5 @@ export const s = StyleSheet.create({
     color: colors.parchment,
     includeFontPadding: false,
   },
-  actionBtnDanger: { color: colors.crimson },
+  actionBtnDanger: { color: colors.crimsonInk },
 });

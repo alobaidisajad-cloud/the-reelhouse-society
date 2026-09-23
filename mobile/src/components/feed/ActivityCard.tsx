@@ -56,7 +56,7 @@ const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.
   return (
     <>
       <LinearGradient
-        colors={isAuteur ? ['rgba(40,18,18,0.7)', 'rgba(14,5,5,0.95)'] : ['rgba(15, 12, 10, 0.95)', 'rgba(5, 4, 3, 0.98)']}
+        colors={isAuteur ? ['rgba(40,18,18,0.7)', 'rgba(14,5,5,0.95)'] : ['rgba(30,25,20,0.95)', 'rgba(6,5,4,0.98)']}
         locations={[0, 1]}
         style={StyleSheet.absoluteFillObject}
       />
@@ -89,7 +89,7 @@ const ActivityEditorialHeader = React.memo(({ backdropUri }: { backdropUri: stri
           contentFit="cover"
           transition={200}
         />
-        <LinearGradient colors={['rgba(11,10,8,0.3)', 'rgba(11,10,8,0.95)']} style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={['rgba(13,11,9,0.3)', 'rgba(13,11,9,0.95)']} style={StyleSheet.absoluteFillObject} />
         <View style={s.editorialBadge}><Text style={s.editorialBadgeText}>✦ EDITORIAL</Text></View>
       </View>
       <LinearGradient
@@ -308,7 +308,7 @@ const s = StyleSheet.create({
   // The clip host: the paper, the border, and the mask the reverse face turns
   // inside of.
   card: {
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: colors.soot,
     borderRadius: 4,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.4)',
@@ -323,11 +323,11 @@ const s = StyleSheet.create({
   },
   cardPremium: {
     borderColor: 'rgba(184,137,26,0.3)',
-    backgroundColor: 'rgba(10,8,4,1)',
+    backgroundColor: colors.ink,
   },
   cardAuteur: {
     borderColor: colors.crimsonBorder,
-    backgroundColor: 'rgba(12,5,5,1)',
+    backgroundColor: colors.sootAuteur,
     // Pairs with cardShadowAuteur: the crimson file lifts in its own colour on
     // Android too, not just iOS.
     shadowColor: colors.bloodReel,
@@ -360,7 +360,7 @@ const s = StyleSheet.create({
     position: 'absolute',
     top: 12,
     left: 12,
-    backgroundColor: 'rgba(11,10,8,0.6)',
+    backgroundColor: 'rgba(13,11,9,0.6)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 2,

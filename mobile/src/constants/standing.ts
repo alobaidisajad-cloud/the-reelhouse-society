@@ -44,7 +44,7 @@ export const STANDING_LADDER: readonly Rung[] = [
   { at: 0,   name: 'UNSEATED',         color: colors.fog },
   { at: 1,   name: 'FIRST REEL',       color: colors.bone },
   { at: 10,  name: 'THE REGULAR',      color: colors.flicker },
-  { at: 25,  name: 'MIDNIGHT DEVOTEE', color: colors.crimson },
+  { at: 25,  name: 'MIDNIGHT DEVOTEE', color: colors.crimsonInk },
   { at: 100, name: 'THE ORACLE',       color: colors.sepia },
 ] as const;
 

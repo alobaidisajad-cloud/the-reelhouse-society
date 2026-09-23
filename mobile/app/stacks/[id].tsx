@@ -220,7 +220,7 @@ const StackNav = React.memo(function StackNav({
         <View style={[s.navBar, { height, paddingTop: topInset }]} pointerEvents="box-none">
             <View style={[s.navScrim, { height: height + 44 }]} pointerEvents="none">
                 <LinearGradient
-                    colors={['rgba(10,7,3,0.92)', 'rgba(10,7,3,0.78)', 'rgba(10,7,3,0.34)', 'rgba(10,7,3,0)']}
+                    colors={['rgba(13,11,9,0.92)', 'rgba(13,11,9,0.78)', 'rgba(13,11,9,0.34)', 'rgba(13,11,9,0)']}
                     locations={[0, 0.46, 0.78, 1]}
                     style={StyleSheet.absoluteFillObject}
                 />
@@ -825,7 +825,7 @@ export default function StackDetailScreen() {
                 <Image source={heroPoster} style={StyleSheet.absoluteFillObject} contentFit="cover" blurRadius={20} cachePolicy="memory-disk" />
               )}
               <LinearGradient 
-                colors={['rgba(10, 7, 3, 0.4)', 'rgba(10, 7, 3, 0.9)', colors.ink]}
+                colors={['rgba(13,11,9,0.4)', 'rgba(13,11,9,0.9)', colors.ink]}
                 locations={[0, 0.6, 1]}
                 style={StyleSheet.absoluteFillObject}
               />
@@ -1222,7 +1222,7 @@ const s = StyleSheet.create({
   filmCardFirst: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)' },
   posterPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 },
   placeholderMark: { fontFamily: fonts.sub, fontSize: 15, color: colors.ash, includeFontPadding: false },
-  loggedBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(10,7,3,0.75)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)' },
+  loggedBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(13,11,9,0.75)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)' },
   /**
    * A CAPTION BOX, not a caption.
    *
@@ -1248,7 +1248,7 @@ const s = StyleSheet.create({
   // The strip of page left visible above the sheet. Dimmed so the sheet reads
   // as sitting ON the page, and tappable, because reaching for the thing behind
   // is the most natural way anyone closes a surface like this.
-  critiqueBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: 'rgba(5,4,2,0.72)' },
+  critiqueBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: 'rgba(6,5,4,0.72)' },
   critiqueSheet: {
     position: 'absolute', left: 0, right: 0,
     backgroundColor: colors.soot,
@@ -1277,7 +1277,7 @@ const s = StyleSheet.create({
   },
   critiqueField: {
     flex: 1, minHeight: 48, maxHeight: 120,
-    backgroundColor: 'rgba(10,7,3,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
+    backgroundColor: colors.well, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
     borderRadius: 4, paddingHorizontal: 12, paddingVertical: 12,
     fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.bone,
   },
@@ -1291,7 +1291,7 @@ const s = StyleSheet.create({
   emptySubtitle: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.fog, textAlign: 'center' },
 
   loadingCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  actionLabelActive: { color: colors.crimson },
+  actionLabelActive: { color: colors.crimsonInk },
   actionLabelOpen: { color: colors.sepia },
   sendBtnDisabled: { opacity: 0.3 },
 });

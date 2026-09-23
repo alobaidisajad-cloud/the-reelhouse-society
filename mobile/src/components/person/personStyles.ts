@@ -27,7 +27,7 @@ export const s = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
 
   // ── Shimmer (mirrors the real anatomy exactly) ──
-  shimmerBackdrop: { minHeight: 240, maxHeight: 300, backgroundColor: 'rgba(8,6,4,0.98)', position: 'relative' },
+  shimmerBackdrop: { minHeight: 240, maxHeight: 300, backgroundColor: colors.soot, position: 'relative' },
   shimmerContent: { alignItems: 'center', marginTop: -75, paddingHorizontal: RAIL, zIndex: 2 },
   shimmerPortrait: { width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 2, marginBottom: 12 },
   shimmerDeptBadge: { width: 90, height: 22, borderRadius: 2, marginBottom: 10 },
@@ -47,7 +47,7 @@ export const s = StyleSheet.create({
   floatingBack: {
     position: 'absolute', top: 54, left: 16, zIndex: 100,
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(10,7,3,0.65)', borderWidth: 1, borderColor: colors.sepiaBorder,
+    backgroundColor: 'rgba(13,11,9,0.65)', borderWidth: 1, borderColor: colors.sepiaBorder,
     alignItems: 'center', justifyContent: 'center',
     // Must out-rank the veil (90). Android orders by elevation, not zIndex, so
     // giving the veil an elevation without raising this one would have hidden
@@ -75,7 +75,7 @@ export const s = StyleSheet.create({
   // ── Hero Backdrop ──
   heroWrap: { minHeight: 240, maxHeight: 300, position: 'relative', overflow: 'hidden' },
   heroBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
-  heroSepia: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.5)' },
+  heroSepia: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(13,11,9,0.5)' },
   // The film leader runs along the TOP of the frame, not the bottom. The title
   // block is pulled 75pt up over the hero, so a strip anywhere in the hero's
   // lower region crosses the portrait's face — measured, not guessed. Moving it
@@ -105,7 +105,7 @@ export const s = StyleSheet.create({
     zIndex: 1,
   },
   portrait: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
-  portraitPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
+  portraitPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
   portraitInitial: { fontFamily: fonts.display, fontSize: 40, color: colors.fog },
 
   // ── Beat 1: identity — badge · name · life line ──
@@ -132,7 +132,7 @@ export const s = StyleSheet.create({
   recordCard: {
     width: '100%', marginTop: 14, marginBottom: 14,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.18)', borderRadius: 3,
-    backgroundColor: 'rgba(18,14,9,0.5)',
+    backgroundColor: 'rgba(30,25,20,0.5)',
     paddingHorizontal: 12,
   },
   recordRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 8 },
@@ -154,7 +154,7 @@ export const s = StyleSheet.create({
   recordPressValue: { flex: 1 },
   recordRule: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(184,137,26,0.14)' },
   // The dagger wears crimson — archival convention, no skulls in this house.
-  recordDeath: { color: colors.crimson } as import('react-native').TextStyle,
+  recordDeath: { color: colors.crimsonInk } as import('react-native').TextStyle,
   recordLink: { color: colors.sepia } as import('react-native').TextStyle,
 
   // ── Beat 3: the action — lounge (every rank sees the door) ──
@@ -162,7 +162,7 @@ export const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 12,
     borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2,
-    backgroundColor: 'rgba(14,11,8,0.9)',
+    backgroundColor: colors.soot,
     marginBottom: 14,
   },
   loungeBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
@@ -178,11 +178,11 @@ export const s = StyleSheet.create({
   auteurHuntHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 } as import('react-native').ViewStyle,
   auteurHuntTitle: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   auteurHuntCount: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.parchment, includeFontPadding: false },
-  auteurHuntTrack: { height: 8, backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 2, overflow: 'hidden', position: 'relative' },
+  auteurHuntTrack: { height: 8, backgroundColor: colors.soot, borderRadius: 2, overflow: 'hidden', position: 'relative' },
   auteurHuntFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.sepia, borderRadius: 2 } as import('react-native').ViewStyle,
   // Frame notches — the strip reads as film, not as a loading bar.
   auteurHuntNotches: { ...StyleSheet.absoluteFillObject, flexDirection: 'row', justifyContent: 'space-evenly' } as import('react-native').ViewStyle,
-  auteurHuntNotch: { width: 1, height: '100%', backgroundColor: 'rgba(10,9,6,0.55)' } as import('react-native').ViewStyle,
+  auteurHuntNotch: { width: 1, height: '100%', backgroundColor: 'rgba(13,11,9,0.55)' } as import('react-native').ViewStyle,
   auteurHuntMastery: { shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 10, elevation: 10 } as import('react-native').ViewStyle,
   auteurComplete: {
     fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5,
@@ -193,7 +193,7 @@ export const s = StyleSheet.create({
   bioSection: {
     marginHorizontal: RAIL, marginBottom: 24, marginTop: 8,
     padding: 20,
-    backgroundColor: 'rgba(25,20,15,0.6)',
+    backgroundColor: 'rgba(38,32,26,0.6)',
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
     borderLeftWidth: 3, borderLeftColor: 'rgba(184,137,26,0.4)',
     borderRadius: 4, borderTopLeftRadius: 0,
@@ -207,7 +207,7 @@ export const s = StyleSheet.create({
   toggleTicketBtn: {
     marginTop: 16, paddingVertical: 12, alignItems: 'center',
     borderWidth: 1, borderColor: colors.sepiaBorder,
-    backgroundColor: 'rgba(14,11,8,0.9)', borderRadius: 2,
+    backgroundColor: colors.soot, borderRadius: 2,
   },
   toggleTicketText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, includeFontPadding: false },
 
@@ -224,7 +224,7 @@ export const s = StyleSheet.create({
   emptyState: {
     padding: 32, marginHorizontal: RAIL, alignItems: 'center',
     borderWidth: 1, borderColor: colors.sepiaBorder,
-    borderRadius: 4, backgroundColor: 'rgba(18,14,9,0.4)',
+    borderRadius: 4, backgroundColor: 'rgba(30,25,20,0.4)',
   },
   emptyLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, opacity: 0.7, marginBottom: 4 },
@@ -240,7 +240,7 @@ export const s = StyleSheet.create({
 //  SHARED SUB-COMPONENT STYLES
 // ═══════════════════════════════════════════════════════════
 export const st = StyleSheet.create({
-  shimmer: { backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 3 },
+  shimmer: { backgroundColor: colors.soot, borderRadius: 3 },
 
   // ── Obscurity Badge ──
   // The raw score is gone. It was an internal 2–99 number with no unit — "51
@@ -265,12 +265,12 @@ export const st = StyleSheet.create({
     borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
     width: '100%', aspectRatio: 2 / 3,
   },
-  gridPosterPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
+  gridPosterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
   // The brass mark of a screened frame — the Hunt made visible.
   screenedTick: {
     position: 'absolute', top: 5, right: 5,
     width: 16, height: 16, borderRadius: 2,
-    backgroundColor: 'rgba(10,9,6,0.85)',
+    backgroundColor: 'rgba(13,11,9,0.85)',
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.6)',
     alignItems: 'center', justifyContent: 'center',
   },
@@ -298,7 +298,7 @@ export const st = StyleSheet.create({
     position: 'relative',
   },
   defPoster: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
-  defPosterPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
+  defPosterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
   defOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: 8, paddingBottom: 8, paddingTop: 50,

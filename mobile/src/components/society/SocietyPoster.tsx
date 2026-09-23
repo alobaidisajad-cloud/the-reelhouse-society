@@ -188,7 +188,11 @@ const s = StyleSheet.create({
   slip: {
     marginTop: 16, alignSelf: 'stretch',
     borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepiaBorderStrong,
-    backgroundColor: colors.stampGround,
+    // The house's ink, SOLID. `stampGround` is the same colour at 0.96 and it
+    // belongs to the rank mark's wash, where a gradient wants an alpha; on a
+    // paper slip carrying words, those last four percent are the poster behind
+    // it showing faintly through the type.
+    backgroundColor: colors.ink,
     paddingHorizontal: 14, paddingTop: 11, paddingBottom: 12,
   },
   slipKey: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },

@@ -18,7 +18,7 @@ export const s = StyleSheet.create({
   tabPageHeader: {
     paddingTop: 56, paddingHorizontal: ROOM_INSET, paddingBottom: 12,
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: colors.soot,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.15)',
   },
 
@@ -71,18 +71,18 @@ export const s = StyleSheet.create({
   socialLinkText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
 
   // ── Buttons ──
-  ghostBtn: { paddingVertical: 14, paddingHorizontal: 28, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4, backgroundColor: 'rgba(10,8,5,0.8)' },
+  ghostBtn: { paddingVertical: 14, paddingHorizontal: 28, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4, backgroundColor: 'rgba(13,11,9,0.8)' },
   ghostBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen },
-  primaryBtn: { backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 4, ...effects.shadowSurface },
+  primaryBtn: { backgroundColor: colors.soot, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 4, ...effects.shadowSurface },
   primaryBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen, ...effects.textGlowSepia },
-  ctaBtn: { borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: 'rgba(14,11,8,0.9)', paddingVertical: 14, alignItems: 'center' as const, borderRadius: 4, marginBottom: 16, ...effects.shadowSurface },
+  ctaBtn: { borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: colors.soot, paddingVertical: 14, alignItems: 'center' as const, borderRadius: 4, marginBottom: 16, ...effects.shadowSurface },
   ctaBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen, ...effects.textGlowSepia },
 
   // ── Stats ──
   statsGrid: { 
     flexDirection: 'row' as const, width: '100%' as const, marginTop: 24, 
     justifyContent: 'center' as const, alignItems: 'center' as const,
-    backgroundColor: 'rgba(10,8,5,0.85)',
+    backgroundColor: 'rgba(13,11,9,0.85)',
     borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.15)',
     borderRadius: 6,
     ...effects.shadowSurface,
@@ -134,22 +134,22 @@ export const s = StyleSheet.create({
   },
 
   // ── Badges ──
-  statusBadge: { position: 'absolute' as const, top: 4, right: 4, backgroundColor: 'rgba(10,7,3,0.85)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.35)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 2 },
-  halfLifeBadge: { position: 'absolute' as const, bottom: 4, left: 4, backgroundColor: 'rgba(10,7,3,0.9)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 2 },
-  formatBadge: { position: 'absolute' as const, top: 4, right: 4, backgroundColor: 'rgba(10,5,0,0.95)', borderWidth: 1, borderRadius: 2, paddingHorizontal: 5, paddingVertical: 2 },
+  statusBadge: { position: 'absolute' as const, top: 4, right: 4, backgroundColor: 'rgba(13,11,9,0.85)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.35)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 2 },
+  halfLifeBadge: { position: 'absolute' as const, bottom: 4, left: 4, backgroundColor: colors.ink, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 2 },
+  formatBadge: { position: 'absolute' as const, top: 4, right: 4, backgroundColor: colors.ink, borderWidth: 1, borderRadius: 2, paddingHorizontal: 5, paddingVertical: 2 },
 
   // ── Filters & Search ──
   filterChip: { paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, backgroundColor: 'transparent' },
   filterChipActive: { borderColor: colors.sepia, backgroundColor: colors.sepiaFaint },
   filterChipText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
   filterChipTextActive: { color: colors.sepia },
-  searchWrap: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: 'rgba(22,18,12,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', borderRadius: 2, paddingHorizontal: 10 },
+  searchWrap: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.well, borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', borderRadius: 2, paddingHorizontal: 10 },
   searchIcon: { fontSize: 14, color: colors.fog, opacity: 0.5, marginRight: 6 },
   searchInput: { flex: 1, fontFamily: fonts.sub, fontSize: 11, color: colors.parchment, paddingVertical: 10 },
   searchClear: { padding: 4 },
 
   // ── Empty State ──
-  emptyState: { alignItems: 'center' as const, paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderStyle: 'dashed' as const, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, backgroundColor: 'rgba(14,11,8,0.7)' },
+  emptyState: { alignItems: 'center' as const, paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderStyle: 'dashed' as const, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, backgroundColor: 'rgba(30,25,20,0.7)' },
   emptyTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment, marginBottom: 8 },
   emptyDesc: { fontFamily: fonts.body, fontSize: 10, color: colors.fog, textAlign: 'center' as const, lineHeight: 16, fontStyle: 'italic' as const },
 
@@ -157,14 +157,14 @@ export const s = StyleSheet.create({
   stackCard: { borderRadius: 2, overflow: 'hidden' as const, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)', backgroundColor: colors.soot },
   stackPosterWrap: { width: '100%' as const, height: 80, position: 'relative' as const, overflow: 'hidden' as const },
   stackPosterPanel: { position: 'absolute' as const, top: 0, height: '100%' as const },
-  stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.55)' },
+  stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(13,11,9,0.55)' },
   stackContent: { padding: 12 },
   stackBadge: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.sepia, backgroundColor: colors.sepiaFaint, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 1, alignSelf: 'flex-start' as const, overflow: 'hidden' as const, marginBottom: 4 },
   stackTitle: { fontFamily: fonts.display, fontSize: 11, color: colors.parchment, letterSpacing: 0.5, lineHeight: 14 },
   stackDesc: { fontFamily: fonts.body, fontSize: 9, color: colors.fog, fontStyle: 'italic' as const, lineHeight: 13, marginTop: 4 },
 
   // ── Projector Tab ──
-  card: { backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, padding: 16, gap: 10 },
+  card: { backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, padding: 16, gap: 10 },
   favouriteRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
 
   // ── Early Return States ──
@@ -194,7 +194,7 @@ export const s = StyleSheet.create({
   searchNoResults: { textAlign: 'center' as const, padding: 24, color: colors.fog, fontFamily: fonts.body, fontSize: 11 },
 
   // ── Poster Cards ──
-  posterPlaceholder: { backgroundColor: '#050402', justifyContent: 'center' as const, alignItems: 'center' as const },
+  posterPlaceholder: { backgroundColor: colors.inkwell, justifyContent: 'center' as const, alignItems: 'center' as const },
   posterRatingRow: { flexDirection: 'row' as const, gap: 2 },
   posterCardWrap: { aspectRatio: 2 / 3, position: 'relative' as const },
   statusBadgeAbandoned: { borderColor: 'rgba(139,30,30,0.4)' },
@@ -210,7 +210,7 @@ export const s = StyleSheet.create({
   ctaBtnRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
 
   // ── Stacks ──
-  stackEmptyBg: { flex: 1, backgroundColor: 'rgba(8,6,4,0.98)' },
+  stackEmptyBg: { flex: 1, backgroundColor: colors.soot },
 
   // ── Projector Tab ──
   // The Projector Room used to announce itself a second time under the header
@@ -222,7 +222,7 @@ export const s = StyleSheet.create({
 
   // ── Favourites ──
   favPosterThumb: { width: 28, height: 42, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(232,223,208,0.14)' },
-  favPosterEmpty: { backgroundColor: '#050402' },
+  favPosterEmpty: { backgroundColor: colors.inkwell },
   favYear: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
   favTextWrap: { flex: 1, minWidth: 0 },
   favTitle: { fontFamily: fonts.sub, fontSize: 11, color: colors.parchment, lineHeight: 14 },
@@ -327,7 +327,7 @@ export const s = StyleSheet.create({
     position: 'relative' as const, zIndex: 5, flexDirection: 'row' as const,
     marginHorizontal: 20, marginTop: 20,
     borderWidth: 1, borderRadius: 6,
-    backgroundColor: 'rgba(10,8,5,0.82)',
+    backgroundColor: 'rgba(13,11,9,0.82)',
   },
   statCell: { flex: 1, minHeight: 56, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 4, paddingHorizontal: 2 },
   statCellRule: { borderLeftWidth: 1, borderLeftColor: 'rgba(184,137,26,0.10)' },
@@ -408,7 +408,7 @@ export const s = StyleSheet.create({
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10,
     marginHorizontal: 20, marginTop: 18, minHeight: 52, paddingHorizontal: 15,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.20)', borderRadius: 6,
-    backgroundColor: 'rgba(15,10,5,0.85)',
+    backgroundColor: 'rgba(13,11,9,0.85)',
   },
   // (doorRowLocked / doorTextLocked went with the calendar's lock — the one
   //  door that used them is every member's now.)

@@ -366,7 +366,7 @@ const s = StyleSheet.create({
   },
   doorIcon: {
     width: 32, height: 32, borderRadius: 3, borderWidth: 1, borderColor: colors.sepia,
-    backgroundColor: 'rgba(11,10,8,0.6)', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(13,11,9,0.6)', alignItems: 'center', justifyContent: 'center',
   },
   doorTextWrap: { flex: 1 },
   doorTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },
@@ -387,7 +387,7 @@ const s = StyleSheet.create({
   iconCircle: {
     width: 30, height: 30, borderRadius: 3,
     borderWidth: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(11,10,8,0.6)',
+    backgroundColor: 'rgba(13,11,9,0.6)',
   },
   itemContent: { flex: 1 },
   itemMessage: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },

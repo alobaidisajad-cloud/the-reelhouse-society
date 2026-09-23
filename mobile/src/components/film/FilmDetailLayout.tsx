@@ -375,11 +375,11 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         {film.backdrop_path ? (
           <Image source={{ uri: tmdb.backdrop(film.backdrop_path) }} style={s.backdrop} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
         ) : (
-          <LinearGradient colors={['rgba(8,6,4,0.98)', colors.ink]} style={s.backdrop} />
+          <LinearGradient colors={['rgba(30,25,20,0.98)', colors.ink]} style={s.backdrop} />
         )}
         {film.backdrop_path && <View style={s.sepiaTint} />}
         <LinearGradient
-          colors={['rgba(11,10,8,0.05)', 'rgba(11,10,8,0.4)', 'rgba(11,10,8,0.85)', colors.ink]}
+          colors={['rgba(13,11,9,0.05)', 'rgba(13,11,9,0.4)', 'rgba(13,11,9,0.85)', colors.ink]}
           locations={[0, 0.5, 0.75, 1]}
           style={StyleSheet.absoluteFill}
         />
@@ -654,7 +654,7 @@ const s = StyleSheet.create({
   // The house prose hand — Courier, like every review and dossier line.
   synopsis: { fontFamily: fonts.body, fontSize: 13.5, color: colors.bone, lineHeight: 23, letterSpacing: 0.2 },
   // The director card's styles went with the card — see DirectorCard above.
-  backBtn: { backgroundColor: 'rgba(8,6,4,0.8)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(215,205,190,0.1)', marginTop: 24 },
+  backBtn: { backgroundColor: 'rgba(30,25,20,0.8)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(215,205,190,0.1)', marginTop: 24 },
   backBtnText: { fontFamily: fonts.sub, fontSize: 10, color: colors.bone, letterSpacing: 1.5, includeFontPadding: false },
   ctaIconRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
 });

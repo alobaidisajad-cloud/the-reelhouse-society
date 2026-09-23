@@ -94,14 +94,14 @@ const s = StyleSheet.create({
   debug: {
     fontFamily: fonts.body,
     fontSize: 9,
-    color: colors.bloodReel,
+    color: colors.crimsonInk,
     opacity: 0.8,
     textAlign: 'center',
     marginTop: 4,
   },
   retryBtn: {
     marginTop: 12,
-    backgroundColor: 'rgba(14,11,8,0.95)',
+    backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.35)',
     borderRadius: 3,

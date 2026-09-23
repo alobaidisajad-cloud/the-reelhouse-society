@@ -181,7 +181,7 @@ export function EditProfileScreen() {
         {!!submitError && (
           <Animated.View entering={FadeInDown} style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder, borderRadius: 4, marginBottom: 16, marginHorizontal: 16 }}>
             {/* Type-guard submitError to prevent invariant violation on object errors */}
-            <Text {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimson, textAlign: 'center', letterSpacing: 1 }}>
+            <Text {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimsonInk, textAlign: 'center', letterSpacing: 1 }}>
               {typeof submitError === 'string' ? submitError : (submitError instanceof Error ? submitError.message : (submitError as any)?.message || 'An unexpected error occurred while saving your dossier.')}
             </Text>
           </Animated.View>
@@ -225,7 +225,7 @@ export function EditProfileScreen() {
               <Text {...scaledTextProps} style={st.avatarSpec}>JPG, PNG, or WEBP · MAX 5MB</Text>
               {avatarPreview && (
                 <PressableScale onPress={handleRemoveAvatar} style={{ marginTop: 12, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder }} haptic="light" accessibilityRole="button" accessibilityLabel="Remove portrait">
-                  <Text {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimson, textAlign: 'center', letterSpacing: 1 }}>REMOVE PORTRAIT</Text>
+                  <Text {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimsonInk, textAlign: 'center', letterSpacing: 1 }}>REMOVE PORTRAIT</Text>
                 </PressableScale>
               )}
             </View>

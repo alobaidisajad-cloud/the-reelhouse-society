@@ -144,7 +144,7 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo }: Ta
 
 const s = StyleSheet.create({
     container: {
-        padding: 20, backgroundColor: 'rgba(8,6,4,0.98)',
+        padding: 20, backgroundColor: colors.soot,
         borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4,
         position: 'relative', overflow: 'hidden',
     },

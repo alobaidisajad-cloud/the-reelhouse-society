@@ -215,7 +215,7 @@ const s = StyleSheet.create({
   section: { paddingHorizontal: 20, marginBottom: 24, zIndex: 2 },
 
   reviewCard: {
-    backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: colors.sepiaBorder,
+    backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 4, padding: 16, marginTop: 10,
     borderLeftWidth: 3, borderLeftColor: 'rgba(184,137,26,0.4)',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8,
@@ -231,7 +231,7 @@ const s = StyleSheet.create({
   pullQuoteWrapAuteur: { borderLeftColor: colors.crimson, backgroundColor: colors.crimsonFaint, paddingVertical: 6, borderRadius: 2 },
   pullQuoteWrapPremium: { borderLeftColor: colors.sepia, backgroundColor: colors.sepiaSubtle, paddingVertical: 6, borderRadius: 2 },
   pullQuote: { fontFamily: fonts.display, fontSize: 15, color: colors.sepia, lineHeight: 22 },
-  pullQuoteAuteur: { color: colors.crimson },
+  pullQuoteAuteur: { color: colors.crimsonInk },
   dropCapLetter: { fontFamily: fonts.display, fontSize: 42, color: colors.sepia, marginRight: 6, marginTop: -4, lineHeight: 42 },
 
   cardFooter: {
@@ -262,7 +262,7 @@ const s = StyleSheet.create({
 
   readAllBtn: {
     marginTop: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 2,
+    backgroundColor: colors.soot, borderRadius: 2,
     borderWidth: 1, borderColor: colors.sepiaBorder,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8,
   },
@@ -276,7 +276,7 @@ const s = StyleSheet.create({
     flexShrink: 1,
   },
   abandonedText: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.crimson,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.crimsonInk,
     includeFontPadding: false, flexShrink: 1,
   },
 });

@@ -161,7 +161,7 @@ DarkroomFilterPanel.displayName = 'DarkroomFilterPanel';
 // ── Styles (copied pixel-perfect from DarkroomHeader) ──
 const s = StyleSheet.create({
   filterPanel: {
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.35)',
     padding: spacing.md,
@@ -190,7 +190,7 @@ const s = StyleSheet.create({
   },
   yearInput: {
     flex: 1,
-    backgroundColor: 'rgba(14,11,8,0.95)',
+    backgroundColor: colors.well,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.15)',
     borderRadius: 4,

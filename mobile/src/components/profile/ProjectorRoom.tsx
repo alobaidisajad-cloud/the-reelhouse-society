@@ -288,7 +288,7 @@ const s = StyleSheet.create({
     dialWrap: { alignItems: 'center' },
     dialCard: {
         width: '100%', alignItems: 'center', paddingVertical: 26, paddingHorizontal: 20,
-        backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 3,
+        backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 3,
     },
     rankLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog, marginBottom: 8 },
     rankValue: { fontFamily: fonts.display, fontSize: 26, textAlign: 'center' },
@@ -307,7 +307,7 @@ const s = StyleSheet.create({
     recL: { fontFamily: fonts.sub, fontSize: 7.5, lineHeight: 11, letterSpacing: 1.5, color: colors.fog, marginTop: 4, textAlign: 'center' },
 
     certCard: {
-        padding: 32, alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.98)',
+        padding: 32, alignItems: 'center', backgroundColor: colors.soot,
         borderWidth: 2, borderColor: colors.sepia, borderRadius: 4, position: 'relative',
     },
     certCornerTL: { position: 'absolute', top: 10, left: 12, fontFamily: fonts.display, fontSize: 32, color: colors.sepia, opacity: 0.15 },
@@ -321,7 +321,7 @@ const s = StyleSheet.create({
     exportWrap: { alignItems: 'center', marginTop: 16 },
     exportBtn: {
         minHeight: 46, justifyContent: 'center', paddingHorizontal: 32, borderWidth: 1,
-        borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, backgroundColor: 'rgba(10,7,3,0.5)',
+        borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, backgroundColor: 'rgba(13,11,9,0.5)',
     },
     exportText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog },
 });

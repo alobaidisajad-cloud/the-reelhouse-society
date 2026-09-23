@@ -35,7 +35,7 @@ const FilmCard = memo(function FilmCard({ film, onPress }: { film: TMDBFilm; onP
         
         {/* Tactile Overlay Lighting */}
         <LinearGradient 
-          colors={['rgba(255,255,255,0.05)', 'transparent', 'rgba(10,7,3,0.8)']} 
+          colors={['rgba(255,255,255,0.05)', 'transparent', 'rgba(13,11,9,0.8)']} 
           locations={[0, 0.4, 1]} 
           style={StyleSheet.absoluteFillObject} 
           pointerEvents="none" 

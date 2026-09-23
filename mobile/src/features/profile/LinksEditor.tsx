@@ -74,7 +74,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
 const st = StyleSheet.create({
   fieldBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, marginBottom: 12 },
   linksContainer: { gap: 16, marginBottom: 12 },
-  linkItem: { padding: 16, backgroundColor: 'rgba(10,7,3,0.5)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 4 },
+  linkItem: { padding: 16, backgroundColor: 'rgba(13,11,9,0.5)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 4 },
   // minHeight keeps this row exactly as tall as it was when the × lived inside
   // it, so pulling the × out onto the card moves nothing below it.
   linkItemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, minHeight: 22 },
@@ -89,11 +89,11 @@ const st = StyleSheet.create({
   },
   fieldWrap: { marginBottom: 16 },
   fieldLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, marginBottom: 6 },
-  fieldInput: { width: '100%', paddingHorizontal: 14, paddingVertical: 11, backgroundColor: 'rgba(10,7,3,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 3, color: colors.parchment, fontFamily: fonts.body, fontSize: 14 },
-  errorText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimson, marginTop: 4 },
+  fieldInput: { width: '100%', paddingHorizontal: 14, paddingVertical: 11, backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 3, color: colors.parchment, fontFamily: fonts.body, fontSize: 14 },
+  errorText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimsonInk, marginTop: 4 },
   addLinkBtn: { width: '100%', padding: 14, backgroundColor: 'rgba(184,137,26,0.05)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderStyle: 'dashed', borderRadius: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
   addLinkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
-  linksCount: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.ash, textAlign: 'center', marginTop: 10 },
+  linksCount: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fogQuiet, textAlign: 'center', marginTop: 10 },
   linkDragHandleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   linkDragHandleIcon: { opacity: 0.4 },
 });

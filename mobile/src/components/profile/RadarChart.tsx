@@ -131,7 +131,7 @@ export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, nu
 
 const styles = StyleSheet.create({
     fallback: {
-        backgroundColor: 'rgba(11,10,8,0.5)',
+        backgroundColor: 'rgba(13,11,9,0.5)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: StyleSheet.hairlineWidth,

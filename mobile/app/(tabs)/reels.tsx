@@ -471,7 +471,7 @@ export default function ReelScreen() {
       <FrozenTab>
       <View style={st.container}>
       <LinearGradient
-        colors={[colors.ink, 'rgba(10,5,3,1)', colors.soot]}
+        colors={[colors.ink, 'rgba(13,11,9,1)', colors.soot]}
         locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFillObject}
       />
@@ -533,7 +533,7 @@ const st = StyleSheet.create({
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 12,
-    backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.12)',
+    backgroundColor: colors.well, borderWidth: 1, borderColor: 'rgba(184,137,26,0.12)',
     borderRadius: 4, paddingHorizontal: 12, height: 40,
   },
   // 0.55 measured 2.60:1 — the glyph that marks the field as searchable was
@@ -548,7 +548,7 @@ const st = StyleSheet.create({
 
   createStackBtn: {
     marginHorizontal: 16, marginBottom: 16,
-    backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1,
+    backgroundColor: colors.soot, borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.2)', borderStyle: 'dashed', borderRadius: 2,
     paddingVertical: 16, alignItems: 'center',
     overflow: 'hidden',
@@ -565,7 +565,7 @@ const st = StyleSheet.create({
   // tells a member what to DO with an empty feed, so it has to be readable.
   emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.7, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
   emptyBtn: {
-    backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1,
+    backgroundColor: colors.soot, borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, borderStyle: 'dashed',
     paddingVertical: 12, paddingHorizontal: 28,
   },
