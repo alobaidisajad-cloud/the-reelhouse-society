@@ -2,13 +2,13 @@
  * SHOOT — photograph renders as PNGs, at a text size, optionally cropped.
  *
  *   node mockups/tools/shoot.cjs --only film-built,reel [--src DIR] [--out DIR]
- *        [--factor 1.35] [--clip x,y,w,h] [--full]
+ *        [--factor 1.35] [--platform android] [--clip x,y,w,h] [--full]
  *
  * Writes <out>/<name>@<factor>.png (default out: mockups/out/shots).
  */
 const fs = require('fs');
 const path = require('path');
-const { chromium, open, screens, MOBILE } = require('./harness.cjs');
+const { chromium, open, shrinkToFit, screens, MOBILE } = require('./harness.cjs');
 
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
@@ -16,6 +16,7 @@ const SRC = path.resolve(opt('src', path.join(MOBILE, 'mockups', 'out', 'screens
 const OUT = path.resolve(opt('out', path.join(MOBILE, 'mockups', 'out', 'shots')));
 const ONLY = opt('only') ? opt('only').split(',') : null;
 const FACTOR = Number(opt('factor', '1'));
+const PLATFORM = opt('platform', 'ios');
 const CLIP = opt('clip') ? opt('clip').split(',').map(Number) : null;
 const FULL = args.includes('--full');
 
@@ -23,7 +24,9 @@ const FULL = args.includes('--full');
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch();
   for (const name of screens(SRC, ONLY)) {
-    const page = await open(browser, path.join(SRC, name + '.html'), { factor: FACTOR });
+    const page = await open(browser, path.join(SRC, name + '.html'), { factor: FACTOR, platform: PLATFORM });
+    // The phone shrinks a label that may shrink before it would cut it; so does the photograph.
+    await shrinkToFit(page);
     const file = path.join(OUT, `${name}@${FACTOR}.png`);
     const shot = CLIP
       ? { path: file, clip: { x: CLIP[0], y: CLIP[1], width: CLIP[2], height: CLIP[3] }, fullPage: true }

@@ -71,7 +71,9 @@ nothing else — is reported. Run it after changing the tool.
 
 ## Other tools
 
-- `shoot.cjs --only <names> [--factor 1.35] [--clip x,y,w,h] [--full]` — PNGs to `mockups/out/shots/`.
+- `shoot.cjs --only <names> [--factor 1.35] [--platform android] [--clip x,y,w,h] [--full]` — PNGs to
+  `mockups/out/shots/`. It shrinks labels exactly as the audit does (`harness.shrinkToFit`): a photo
+  that skipped it showed "Max von May…" where the phone draws the whole name a little smaller.
 - `advances.cjs` — measures Rye's letter widths from the font file into
   `src/theme/ryeAdvances.ts` (the profile uses it to fit a name as words).
 
@@ -84,4 +86,5 @@ nothing else — is reported. Run it after changing the tool.
   `src/providers/androidTracking.ts`. Android grows a set line height past any
   ceiling.
 - A horizontal ScrollView lays its content in a row.
-- A one-line label that may shrink is shrunk as the phone shrinks it, to its floor.
+- A label that may shrink is shrunk as the phone shrinks it — until it truly fits its width and
+  its line limit, never below its floor — by ONE function both the audit and the camera use.

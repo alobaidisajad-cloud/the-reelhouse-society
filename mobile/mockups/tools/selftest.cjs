@@ -37,6 +37,10 @@ const CASES = {
   // two texts drawn over each other
   clash: [box('position:relative;height:40px', T('position:absolute;top:0;left:20px;font-size:14px', 'FIRST WORDS') + T('position:absolute;top:2px;left:30px;font-size:14px', 'SECOND WORDS')),
     { 'ios@1': ['CLASH'], 'ios@1.35': ['CLASH'], 'android@1.35': ['CLASH'], 'android@2': ['CLASH'] }],
+  // a label that fits its cell ONLY once shrunk, as the phone shrinks it: not a fault
+  // (CERTIFIED at 12pt measures 63.7pt: unshrunk it runs 7.7pt past this 56pt cell and
+  // is CUT, so this case fails if the shrink does not run; at its 0.75 floor it is 47.8)
+  shrinks: [box('width:56px;overflow:hidden', T('font-size:12px;white-space:nowrap;display:block', 'CERTIFIED', 1, ' data-fit-min="0.75"')), {}],
   // a label clipped by its cell, whose shrink cannot save it
   clip: [box('width:40px;overflow:hidden', T('font-size:12px;white-space:nowrap', 'CERTIFIED 2.1K', 0, ' data-fit-min="0.75"')),
     { 'ios@1': ['CUT'], 'ios@1.35': ['CUT'], 'android@1.35': ['CUT'], 'android@2': ['CUT'] }],

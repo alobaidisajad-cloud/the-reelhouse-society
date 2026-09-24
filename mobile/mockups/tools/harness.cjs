@@ -138,4 +138,49 @@ async function open(browser, file, { factor = 1, height = HEIGHT, platform = 'io
   return page;
 }
 
-module.exports = { chromium, open, screens, fonts, GROWTH, HOUSE, WIDTH, HEIGHT, MOBILE };
+/**
+ * Shrink-to-fit, as the phone does it: a label that may shrink
+ * (`adjustsFontSizeToFit`, `data-fit-min`) steps down toward its floor until
+ * it fits its own box and every ancestor that clips it. ONE implementation,
+ * used by the audit and the camera alike — a photograph that skips this shows
+ * "Max von May…" where the phone draws the whole name a little smaller.
+ */
+async function shrinkToFit(page) {
+  await page.evaluate(() => {
+    const truncates = (e) => { const cs = getComputedStyle(e); return cs.textOverflow === 'ellipsis' || cs.webkitLineClamp !== 'none' && cs.webkitLineClamp !== ''; };
+    const rectOf = (e) => {
+      const box = e.getBoundingClientRect();
+      if (truncates(e)) return box;
+      const r = document.createRange(); r.selectNodeContents(e);
+      const g = r.getBoundingClientRect();
+      const block = getComputedStyle(e).display !== 'inline';
+      return block ? { left: g.left, right: g.right, top: box.top, bottom: box.bottom } : g;
+    };
+    const fits = (e) => {
+      const q = rectOf(e);
+      for (let a = e.parentElement; a && !a.classList.contains('phone'); a = a.parentElement) {
+        if (a.classList.contains('hscroll') || a.classList.contains('vscroll')) break;
+        const cs = getComputedStyle(a);
+        if (cs.overflow === 'visible' && cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+        const b = a.getBoundingClientRect();
+        if (q.right > b.right + 0.75 || q.left < b.left - 0.75 || q.bottom > b.bottom + 0.75 || q.top < b.top - 0.75) return false;
+      }
+      // No tolerance: a label a fraction of a point too wide is still drawn with
+      // "…" — the phone shrinks it that last fraction, so this does too.
+      return (e.scrollWidth <= e.clientWidth && e.scrollHeight <= e.clientHeight) || getComputedStyle(e).display === 'inline';
+    };
+    for (const e of document.querySelectorAll('span[data-fit-min]')) {
+      const min = Number(e.dataset.fitMin || 0);
+      if (!min || fits(e)) continue;
+      const base = parseFloat(getComputedStyle(e).fontSize);
+      const ls = parseFloat(getComputedStyle(e).letterSpacing) || 0;
+      for (let k = 0.97; k >= min - 1e-6; k -= 0.03) {
+        e.style.fontSize = base * k + 'px';
+        if (ls) e.style.letterSpacing = ls * k + 'px';
+        if (fits(e)) break;
+      }
+    }
+  });
+}
+
+module.exports = { chromium, open, shrinkToFit, screens, fonts, GROWTH, HOUSE, WIDTH, HEIGHT, MOBILE };

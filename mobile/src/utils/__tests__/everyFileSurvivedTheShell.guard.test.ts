@@ -167,6 +167,16 @@ describe('the detector, before it is trusted', () => {
     } catch {
       throw new Error('no windows-1252 decoder to check the table against — this test cannot verify itself');
     }
+    // Node 20 and older answer to 'windows-1252' with ISO-8859-1, which leaves
+    // 0x80–0x9F as invisible control characters. Checked against THAT, a correct
+    // table reads as 29 mismatches — CI failed this way for two weeks. Say what
+    // is actually wrong instead: the runtime, not the table.
+    if (node.decode(Uint8Array.of(0x80)) !== '€') {
+      throw new Error(
+        `this Node (${process.version}) decodes windows-1252 as ISO-8859-1, so it cannot check the table — ` +
+        'run on Node 22 or later (CI pins 24).',
+      );
+    }
 
     const mismatches: string[] = [];
     for (let b = 0; b <= 0xff; b++) {

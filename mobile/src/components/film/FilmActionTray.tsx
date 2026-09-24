@@ -49,6 +49,8 @@ import { EDGE_LIT } from '@/src/theme/light';
 /** The scrim, matching the Concierge's. Not a blur — Android. */
 const SCRIM = 'rgba(13,11,9,0.66)';
 const RISE_MS = 260;
+/** A gloss may give back what large type added — down to its designed size, never below. */
+const GLOSS_FLOOR = 1 / scaledTextProps.maxFontSizeMultiplier;
 
 export interface TrayAct {
   key: string;
@@ -134,9 +136,14 @@ const ActRow = memo(function ActRow({ act }: { act: TrayAct }) {
       <View style={[s.perfRule, act.primary && { borderLeftColor: ON_BRASS_RULE }]} />
       <View style={s.rowBody}>
         {/* Both capped at one line so every row keeps its height in any
-            language and at any type size. */}
+            language and at any type size. The gloss is a SENTENCE, though —
+            "Listen in. Archivists take a seat." is the tray telling a member
+            what their rank does — and at the largest size it lost its last
+            words. It gives back the growth instead: it may shrink to the size
+            it was designed at, and no smaller (GLOSS_FLOOR). */}
         <Text {...scaledTextProps} style={[s.rowLabel, { color: tint }]} numberOfLines={1}>{act.label}</Text>
-        <Text {...scaledTextProps} style={[s.rowGloss, act.primary && s.rowGlossPrimary]} numberOfLines={1}>
+        <Text {...scaledTextProps} style={[s.rowGloss, act.primary && s.rowGlossPrimary]} numberOfLines={1}
+          adjustsFontSizeToFit minimumFontScale={GLOSS_FLOOR}>
           {act.gloss}
         </Text>
       </View>

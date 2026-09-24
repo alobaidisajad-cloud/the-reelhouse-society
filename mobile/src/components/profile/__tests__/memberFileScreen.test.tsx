@@ -134,7 +134,14 @@ describe('the ident block', () => {
     const r = await mount();
     expect(r.getByText('TOMAS')).toBeTruthy();
     expect(r.getByText('@TOMASREYES')).toBeTruthy();
-    expect(r.getByText('Nº 0147 · ADMITTED MARCH 2026')).toBeTruthy();
+    // No-break spaces hold the number and the year to their words, so a large
+    // text size wraps the line at the dot or before the month, never orphaning either.
+    expect(r.getByText('Nº 0147 · ADMITTED MARCH 2026')).toBeTruthy();
+  });
+
+  it('lets the serial take a second line rather than cut the year', async () => {
+    const r = await mount();
+    expect(r.getByText(/ADMITTED MARCH/).props.numberOfLines).toBe(2);
   });
 
   it('falls back to the handle when a member has no name at all — ONCE', async () => {
@@ -204,7 +211,7 @@ describe('the ident block', () => {
 
   it('hides the serial gracefully when the member has no number yet', async () => {
     const r = await mount({}, { targetUser: baseUser({ member_no: null }) });
-    expect(r.getByText('ADMITTED MARCH 2026')).toBeTruthy();
+    expect(r.getByText('ADMITTED MARCH 2026')).toBeTruthy();
   });
 
   it('says something kind when the bio is empty', async () => {

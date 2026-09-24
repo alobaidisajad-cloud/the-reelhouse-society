@@ -412,12 +412,20 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
    * silently and the line renders as `3/14/2026` — the failure looks like a
    * design choice, which is why it survives.
    */
+  /*
+   * At the largest text sizes the line no longer fits one line, and it used to
+   * end "ADMITTED NOVEMBER…" — the year, the one fact in it, was the part cut.
+   * It may take a second line now, and it breaks only where a reader would:
+   * after the dot, or before the month. NO-BREAK SPACES hold `Nº 0147` and
+   * `MARCH 2026` together, so a number or a year is never left alone on a line.
+   */
+  const NBSP = ' ';
   const admittedFull = formatDateMonthYear(targetUser?.created_at);
   const admitted = (() => {
     const [mon, yr] = admittedFull.split(' ');
-    return mon && yr ? `ADMITTED ${mon.toUpperCase()} ${yr}` : '';
+    return mon && yr ? `ADMITTED ${mon.toUpperCase()}${NBSP}${yr}` : '';
   })();
-  const serialLine = [memberNo ? `Nº ${memberNo}` : '', admitted].filter(Boolean).join(' · ');
+  const serialLine = [memberNo ? `Nº${NBSP}${memberNo}` : '', admitted].filter(Boolean).join(' · ');
 
   // The rank is stamped on the corner of the print by `RankBadge`, which takes
   // the member and applies the Highest Watermark Rule itself — so a founding
@@ -1196,7 +1204,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 {isFounding && (
                   <Text {...scaledTextProps} style={[s.heroStand, { color: tierText }]} numberOfLines={1}>✦ FOUNDING MEMBER</Text>
                 )}
-                {!!serialLine && <Text {...scaledTextProps} style={s.heroSerial} numberOfLines={1}>{serialLine}</Text>}
+                {!!serialLine && <Text {...scaledTextProps} style={s.heroSerial} numberOfLines={2}>{serialLine}</Text>}
               </View>
             </AnimatedView>
 

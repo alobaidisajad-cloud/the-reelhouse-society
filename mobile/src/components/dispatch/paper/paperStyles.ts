@@ -604,8 +604,9 @@ export const p = StyleSheet.create({
   bylineName: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9,
     color: colors.bone, includeFontPadding: false,
-    /** Nine characters is the floor: below that a byline stops being a name. */
-    flexShrink: 1, minWidth: 56,
+    /** Nine characters is the floor: below that a byline stops being a name.
+     *  1000: the name gives before the trailing facts do (see `bylineTrail`). */
+    flexShrink: 1000, minWidth: 56,
   },
   /**
    * An Auteur's name, lifted. `crimsonInk`, matching their ring and their mark.
@@ -636,6 +637,18 @@ export const p = StyleSheet.create({
    * part of the byline. A 4pt margin on top made this the one 10pt gap in a row
    * of 6s — and when the type floor raised the byline to 10pt, those 4 points
    * were exactly what "· 5 CRITIQUES" needed to stay whole.
+   *
+   * ── AND THE ORDER IS NOW THE ONE WRITTEN ABOVE ──────────────────────────────
+   * With both at `flexShrink: 1` they did not take turns: flexbox shares a
+   * shortfall in proportion to width, so the trail was cut WHILE the name still
+   * had room to give. Measured on a 320pt phone: a long name held 101pt of its
+   * 56pt floor while `· 12 MIN · EDITED` was cut to `· 12 MIN · E…`. The NAME
+   * now carries a shrink factor a thousand times the trail's (`bylineName`), so
+   * it gives first; once it reaches its floor its min-width freezes it and the
+   * trail takes whatever shortfall is left. (Not a tiny factor on the trail:
+   * flex factors that sum below 1 absorb only that fraction of a shortfall, so
+   * a 0.001 trail left the row 4.7pt too wide.) Still one line, and still the
+   * trail that gives last.
    */
   bylineTrail: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9,

@@ -27,7 +27,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { chromium, open, screens, MOBILE } = require('./harness.cjs');
+const { chromium, open, shrinkToFit, screens, MOBILE } = require('./harness.cjs');
 
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
@@ -47,8 +47,11 @@ const JSON_OUT = opt('json');
 // Also list every text the phone shortens ("…" or a clamp) — for reading, not a fault.
 const SHORTS = args.includes('--shorts');
 
-async function audit(page) {
-  return page.evaluate((SHORTS) => {
+/**
+ * What both page passes need, defined ONCE as real code and installed in the
+ * page as `window.RN` — a pass runs inside the page and cannot import.
+ */
+function pageHelpers() {
     const phone = document.querySelector('.phone').getBoundingClientRect();
     const opacityOf = (e) => { let o = 1; for (let x = e; x && x.nodeType === 1; x = x.parentElement) o *= +getComputedStyle(x).opacity; return o; };
     const truncates = (e) => { const cs = getComputedStyle(e); return cs.textOverflow === 'ellipsis' || cs.webkitLineClamp !== 'none' && cs.webkitLineClamp !== ''; };
@@ -73,19 +76,15 @@ async function audit(page) {
       const r = document.createRange(); r.selectNodeContents(e);
       return [...r.getClientRects()].filter((q) => q.width > 0.5 && q.height > 0.5);
     };
-    // Shrink-to-fit, as the phone does: step the size down toward its floor
-    // until the label fits its own box (and its clipping ancestors).
-    const fits = (e) => {
-      const q = rectOf(e);
-      for (let a = e.parentElement; a && !a.classList.contains('phone'); a = a.parentElement) {
-        if (a.classList.contains('hscroll') || a.classList.contains('vscroll')) break;
-        const cs = getComputedStyle(a);
-        if (cs.overflow === 'visible' && cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
-        const b = a.getBoundingClientRect();
-        if (q.right > b.right + 0.75 || q.left < b.left - 0.75 || q.bottom > b.bottom + 0.75 || q.top < b.top - 0.75) return false;
-      }
-      return e.scrollWidth <= e.clientWidth + 1 || getComputedStyle(e).display === 'inline';
-    };
+    return { phone, opacityOf, truncates, texts, rectOf, parked, linesOf };
+}
+
+async function audit(page) {
+  await page.addScriptTag({ content: `window.RN = (${pageHelpers})();` });
+
+  // 1 · RUN — before anything shrinks.
+  await page.evaluate(() => {
+    const { texts } = window.RN;
     // RUN: a word wider than the line it is set on. Asked BEFORE any shrink,
     // and by the text's LINES, not its box — a clamped text is otherwise
     // measured by its box, which never grows, so the word ran past the phone's
@@ -99,7 +98,6 @@ async function audit(page) {
     // its line — so a title that shrinks until its long word fits is not one,
     // and a tagline that stops shrinking as soon as a broken word squeezes it
     // into three lines is.
-    const runs = [];
     const hostOf = (e) => { let h = e; while (h.parentElement && getComputedStyle(h).display === 'inline') h = h.parentElement; return h; };
     const overlong = (e, host) => {
       const hb = host.getBoundingClientRect();
@@ -120,7 +118,7 @@ async function audit(page) {
       const limit = parseInt(getComputedStyle(host).webkitLineClamp, 10);
       if (!min || e !== host || !(limit > 0)) {
         const over = overlong(e, host);
-        if (over > 0.75) runs.push([e, over]);
+        if (over > 0.75) e.dataset.run = String(over);
         continue;
       }
       const st = e.style;
@@ -137,20 +135,17 @@ async function audit(page) {
       st.overflowWrap = 'normal';
       const over = overlong(e, host);
       [st.fontSize, st.letterSpacing, st.overflowWrap, st.webkitLineClamp] = saved;
-      if (over > 0.75) runs.push([e, over]);
+      if (over > 0.75) e.dataset.run = String(over);
     }
-    for (const e of texts) {
-      const min = Number(e.dataset.fitMin || 0);
-      if (!min || fits(e)) continue;
-      const base = parseFloat(getComputedStyle(e).fontSize);
-      const ls = parseFloat(getComputedStyle(e).letterSpacing) || 0;
-      for (let k = 0.97; k >= min - 1e-6; k -= 0.03) {
-        e.style.fontSize = base * k + 'px';
-        if (ls) e.style.letterSpacing = ls * k + 'px';
-        if (fits(e)) break;
-      }
-    }
+  });
 
+  // 2 · shrink-to-fit, exactly as the camera does (harness.shrinkToFit).
+  await shrinkToFit(page);
+
+  // 3 · the faults, on the page as the phone draws it.
+  return page.evaluate((SHORTS) => {
+    const { phone, opacityOf, truncates, texts, rectOf, parked, linesOf } = window.RN;
+    const runs = [...document.querySelectorAll('[data-run]')].map((e) => [e, Number(e.dataset.run)]);
     const found = [];
     const live = texts.filter((e) => opacityOf(e) > 0.05 && getComputedStyle(e).visibility !== 'hidden');
     const invisible = texts.length - live.length;
