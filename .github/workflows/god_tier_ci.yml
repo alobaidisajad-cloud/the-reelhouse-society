@@ -94,7 +94,23 @@ jobs:
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-        run: npx jest --coverage --ci --maxWorkers=2
+        run: |
+          set -o pipefail
+          npx jest --coverage --ci --maxWorkers=2 2>&1 | tee jest-output.txt
+
+      # ── A FAILURE THAT EXPLAINS ITSELF ────────────────────────────────────────
+      # This job failed on every push for two weeks and nobody could say why from
+      # the summary: job logs are shown only to signed-in members, and a red cross
+      # says nothing. On failure, the failing tests and the end of Jest's own output
+      # are posted as ONE annotation, which appears on the run's summary page (and in
+      # the public checks API) for anyone who opens it.
+      - name: Surface Jest's failure on the summary
+        if: failure()
+        working-directory: ./mobile
+        run: |
+          [ -f jest-output.txt ] || exit 0
+          { grep -E "^FAIL |● |Jest: |threshold|Error: " jest-output.txt | head -40; echo "── last lines ──"; tail -n 30 jest-output.txt; } > jest-failure.txt
+          echo "::error title=Jest failed::$(sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g' jest-failure.txt)"
 
       # ── The same suite, run from the Americas ────────────────────────────────
       # The step above runs in the runner's timezone, which is UTC — and a whole class
