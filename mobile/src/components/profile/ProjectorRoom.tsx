@@ -8,6 +8,7 @@ import reelToast from '@/src/utils/reelToast';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { standingFor } from '@/src/constants/standing';
 import { tally } from './profileComputed';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /**
  * THE PROJECTOR ROOM — the one room that never got rebuilt, and the only one
@@ -286,7 +287,7 @@ const ds = StyleSheet.create({
 const s = StyleSheet.create({
     container: { gap: 24 },
     dialWrap: { alignItems: 'center' },
-    dialCard: {
+    dialCard: { ...EDGE_LIT,
         width: '100%', alignItems: 'center', paddingVertical: 26, paddingHorizontal: 20,
         backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 3,
     },
@@ -306,7 +307,7 @@ const s = StyleSheet.create({
     recV: { fontFamily: fonts.display, fontSize: 18, lineHeight: 23, color: colors.parchment, textAlign: 'center' },
     recL: { fontFamily: fonts.sub, fontSize: 7.5, lineHeight: 11, letterSpacing: 1.5, color: colors.fog, marginTop: 4, textAlign: 'center' },
 
-    certCard: {
+    certCard: { ...EDGE_LIT,
         padding: 32, alignItems: 'center', backgroundColor: colors.soot,
         borderWidth: 2, borderColor: colors.sepia, borderRadius: 4, position: 'relative',
     },

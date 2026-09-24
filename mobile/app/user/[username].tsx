@@ -34,7 +34,8 @@ import { CinemaDNACard } from '@/src/components/profile/CinemaDNACard';
 import NitrateCalendarGrid from '@/src/components/profile/NitrateCalendarGrid';
 import { NoirPassport } from '@/src/components/profile/NoirPassport';
 import ProfileArchiveTab from '@/src/components/profile/ProfileArchiveTab';
-import { ProfileBackdrop } from '@/src/components/profile/ProfileBackdrop';
+import { ProfileBackdrop, backdropSource } from '@/src/components/profile/ProfileBackdrop';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import ProfileLedgerTab from '@/src/components/profile/ProfileLedgerTab';
 import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
 import ProfileWatchlistTab from '@/src/components/profile/ProfileWatchlistTab';
@@ -496,6 +497,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     serverDecades: analyticsShape?.watchlist_decades,
   });
 
+  // THE ROOM'S LIGHT. A member's file has a reading lamp; where an Auteur's
+  // backdrop hangs over the plate, the lamp hangs from its hem and the film's
+  // own colour blooms onto the page beneath — the same picture the backdrop
+  // shows, from the same rule. The hem is the plate's height as laid out.
+  const heroArt = backdropSource(targetUser as never, displayLogs as never);
+  const [plateH, setPlateH] = useState(0);
+  const lit = heroArt && plateH > 0 ? { hem: plateH, art: heroArt } : {};
+
   /**
    * What the Society plate says, and it has to be TRUE at every rank.
    *
@@ -651,6 +660,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // It self-clears after 4s, so this can never become a permanent spinner.
   if (loading || repairingHandle) return (
     <View style={[s.container, s.centeredFull]}>
+      <RoomLight room="member" />
       <View style={s.loadingRow}>
         <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
         <Text {...scaledTextProps} style={s.loadingText}>RETRIEVING DOSSIER</Text>
@@ -661,6 +671,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
   if (!targetUser) return (
     <View style={[s.container, s.centeredPadded]}>
+      <RoomLight room="member" />
       <FilmIcon size={48} color={colors.sepia} strokeWidth={1} style={s.notFoundIcon} />
       <Text {...scaledTextProps} style={s.notFoundTitle}>Member Not Found</Text>
       {/* eslint-disable-next-line react/no-unescaped-entities */}
@@ -718,6 +729,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   if (activeTab) {
     return (
       <View style={[s.container, { paddingTop: Math.max(insets.top + 6, 36) }]}>
+        <RoomLight room="member" />
         {/* ── THE ROOM PLATE — one threshold for all six ── */}
         <RoomPlate
           /* Title case, not caps. The display face (Rye) is set title-case
@@ -1048,6 +1060,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ════════════════════════════════════════════════════════════
   return (
     <View style={s.container}>
+      <RoomLight room="member" {...lit} />
       {/* Back button (only when navigated to, not on own tab) */}
       {!usernameOverride && (
         <View style={[s.topNav, { paddingTop: Math.max(insets.top + 10, 40) }]}>
@@ -1073,24 +1086,23 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}>
 
         {/* ═══ THE MEMBERSHIP PLATE — atmosphere ends at the stats grid ═══ */}
-        <View style={s.headerWrap}>
+        <View style={s.headerWrap} onLayout={(e) => setPlateH(Math.round(e.nativeEvent.layout.y + e.nativeEvent.layout.height))}>
           {/* Tier atmosphere — breathes up as the plate develops */}
           <AnimatedView style={[StyleSheet.absoluteFillObject, atmosphereDevelop]} pointerEvents="none">
             {isAuteurPlus ? (
-              <ProfileBackdrop {...{user: targetUser, logs: displayLogs} as any} />
+              <ProfileBackdrop {...{user: targetUser, logs: displayLogs} as any} hem={plateH || undefined} scrollY={scrollY} />
             ) : isArchivistPlus ? (
+              /* A brass tint at the top, fading to nothing — never to the house
+                 colour. The plate used to be painted solid over the room, which
+                 blacked out the room's light exactly where it is brightest and
+                 left an edge where the plate ended. */
               <View style={s.headerArchivistBase}>
-                 <LinearGradient colors={['rgba(196,150,26,0.15)', 'rgba(13,11,9,0.95)', colors.ink]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
+                 <LinearGradient colors={['rgba(196,150,26,0.15)', 'rgba(196,150,26,0)']} locations={[0, 0.4]} style={StyleSheet.absoluteFillObject} />
                  <AnimatedView style={[StyleSheet.absoluteFillObject, pulseStyle]} pointerEvents="none">
                    <LinearGradient colors={['rgba(196,150,26,0.1)', 'transparent']} style={StyleSheet.absoluteFillObject} />
                  </AnimatedView>
               </View>
-            ) : (
-              /* Inert in its own right, not merely by inheritance from the
-                 wash above it — a background that depends on an ancestor for
-                 that is one refactor from swallowing the hero's controls. */
-              <View style={s.headerDarkBase} pointerEvents="none" />
-            )}
+            ) : null}
 
             {/* The projector's pool of light — true radial, tier-tinted */}
             <SpotlightPool tint={tierSpot} opacity={tierSpotOpacity} />
@@ -1297,7 +1309,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           </View>
         </View>
 
-        {/* ═══ SOLID GROUND — the plate ends above; the rooms begin here ═══ */}
+        {/* ═══ The plate ends above; the rooms begin here, on the lit room ═══ */}
         {isPrivate ? (
           /* ── THE SEALED DOSSIER ── */
           <View style={s.sealedWrap}>

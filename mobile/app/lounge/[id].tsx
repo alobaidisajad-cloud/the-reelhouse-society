@@ -50,6 +50,8 @@ import Animated, { FadeIn, FadeInDown, FadeOut, SlideInDown, useAnimatedKeyboard
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
+import { EDGE_LIT } from '@/src/theme/light';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -497,6 +499,7 @@ export default function LoungeRoomScreen() {
   if (notFound) {
     return (
       <View style={s.centered}>
+        <RoomLight room="default" />
         <View style={s.crestSmall}><X size={18} color={colors.sepia} strokeWidth={1.5} /></View>
         <Text style={s.edgeTitle}>Signal Lost</Text>
         <Text style={s.edgeDesc}>This screening room has been incinerated or never existed.</Text>
@@ -511,6 +514,7 @@ export default function LoungeRoomScreen() {
   if (!activeLounge) {
     return (
       <View style={s.centered}>
+        <RoomLight room="default" />
         <ActivityIndicator size="small" color={colors.sepia} />
         <Text style={s.edgeLoad}>ESTABLISHING CONNECTION</Text>
       </View>
@@ -519,6 +523,7 @@ export default function LoungeRoomScreen() {
 
   return (
     <Animated.View style={[s.container, animatedContainerStyle]}>
+      <RoomLight room="default" />
       {/* ── Marquee header ── */}
       <View style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
         <PressableScale style={s.headerBtn} onPress={() => router.back()} haptic="selection" accessibilityRole="button" accessibilityLabel="Back">
@@ -917,7 +922,7 @@ const s = StyleSheet.create({
   emptyChat: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 10 },
 
   // ── Offline banner ──
-  offlineBanner: {
+  offlineBanner: { ...EDGE_LIT,
     flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 9,
     backgroundColor: colors.soot, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.25)',
   },
@@ -933,7 +938,7 @@ const s = StyleSheet.create({
   typingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   typingDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia, opacity: 0.8 },
   typingText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
-  replyBanner: {
+  replyBanner: { ...EDGE_LIT,
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.soot, paddingVertical: 8, paddingHorizontal: 12,
     borderRadius: 4, marginBottom: 8, borderLeftWidth: 2, borderLeftColor: colors.sepia, gap: 10,
   },

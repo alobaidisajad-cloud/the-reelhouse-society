@@ -1,5 +1,6 @@
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import { StyleSheet } from 'react-native';
+import { EDGE_LIT } from '@/src/theme/light';
 
 // ── THE RECORD — one spine for the whole document ──
 export const SPINE = 20;
@@ -20,13 +21,19 @@ export const SPINE = 20;
  */
 export const PARALLAX_PADDER_HEIGHT = 80;
 
+/**
+ * How tall the picture behind the record hangs. Exported because the room's
+ * light hangs from its hem, and the picture's veil meets the light there.
+ */
+export const BACKDROP_H = 360;
+
 export const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   centerFull: { justifyContent: 'center', alignItems: 'center', gap: 16 },
   notFoundText: { color: colors.fog, fontFamily: fonts.body, fontSize: 14, marginTop: 8 },
   shrinkable: { flexShrink: 1 },
   maxHeight200: { maxHeight: 200 },
-  backdropContainer: { height: 360 },
+  backdropContainer: { height: BACKDROP_H },
   fullSize: { width: '100%', height: '100%' },
   opacity30: { opacity: 0.3 },
   opacity20: { opacity: 0.2 },
@@ -76,10 +83,16 @@ export const s = StyleSheet.create({
   // its shadow from the painted background's outline, and this host paints
   // nothing — the sheet is deliberately 8% see-through so the film's backdrop
   // reads under it, which is why the background cannot simply be copied up here.
-  contentCardShadow: { borderTopLeftRadius: 12, borderTopRightRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40 },
-  contentCardShadowAuteur: { shadowColor: colors.bloodReel },
-  contentCard: { backgroundColor: colors.ink, borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', elevation: 24, shadowColor: '#000' },
-  contentCardAuteur: { backgroundColor: colors.sootAuteur, borderColor: colors.crimsonBorder, shadowColor: colors.bloodReel },
+  // No black lift: across a sheet this wide it drew a dark band over the
+  // backdrop above it, on the lit house.
+  contentCardShadow: { borderTopLeftRadius: 12, borderTopRightRadius: 12, ...effects.flat },
+  // The Auteur's sheet still rises in its own colour — light, not shadow. It
+  // carries the WHOLE lift now: the base above casts none, so a colour alone
+  // would draw nothing.
+  contentCardShadowAuteur: { shadowColor: colors.bloodReel, shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40 },
+  // 8% see-through on purpose (see above) — `sheetOverArt`, not the house.
+  contentCard: { backgroundColor: colors.sheetOverArt, borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', elevation: 24, ...effects.flat },
+  contentCardAuteur: { ...EDGE_LIT, backgroundColor: colors.sheetOverArtAuteur, borderColor: colors.crimsonBorder, shadowColor: colors.bloodReel },
   logCardInner: { paddingHorizontal: SPINE, paddingBottom: 16, marginTop: 0, paddingTop: 24 },
   logCenter: { alignItems: 'center' },
   bylineFull: { width: '100%', marginBottom: 20 },
@@ -94,10 +107,10 @@ export const s = StyleSheet.create({
   // which also keeps the plate drawing over its own glow on Android.
   posterBoundsShadow: { width: 140, height: 210, borderRadius: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 40 },
   posterBoundsShadowAuteur: { shadowColor: colors.bloodFaint },
-  posterBounds: { width: '100%', height: '100%', borderRadius: 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.sepiaBorderStrong, backgroundColor: colors.soot, elevation: 12, shadowColor: '#000' },
+  posterBounds: { ...EDGE_LIT, width: '100%', height: '100%', borderRadius: 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.sepiaBorderStrong, backgroundColor: colors.soot, elevation: 12, shadowColor: '#000' },
   posterBoundsAuteur: { borderColor: colors.crimsonBorder, shadowColor: colors.bloodFaint },
   posterCentered: { width: '100%', height: '100%' },
-  posterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  posterPlaceholder: { ...EDGE_LIT, backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
 
   // ── Title ──
   titleSection: { alignItems: 'center', marginBottom: 12 },

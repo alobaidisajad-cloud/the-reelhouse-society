@@ -15,6 +15,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET, yearMarker } from './roomStyles';
 import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /**
  * THE ARCHIVE — every film, by the month it was seen.
@@ -519,7 +520,7 @@ const s = StyleSheet.create({
   walkWords: { fontFamily: fonts.bodyItalic, fontSize: 11.5, lineHeight: 17, color: colors.fogQuiet, marginTop: 6 },
   walkSilent: { opacity: 0.4 },
   searchIcon: { opacity: 0.6 },
-  emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.soot, borderWidth: 1, borderRadius: 4, marginTop: 12 },
+  emptyStateSelf: { ...EDGE_LIT, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.soot, borderWidth: 1, borderRadius: 4, marginTop: 12 },
   importDividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'stretch', marginTop: 20, marginBottom: 12, paddingHorizontal: 10 },
   importDividerLine: { flex: 1, height: 1, backgroundColor: colors.sepia, opacity: 0.2 },
   importDividerMark: { fontFamily: fonts.sub, fontSize: 7, color: colors.sepia, opacity: 0.7 },

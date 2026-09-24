@@ -12,11 +12,12 @@ import {
 } from 'lucide-react-native';
 import { ReelEyeIcon } from '@/src/components/ReelEyeIcon';
 import { HapticTab } from '@/src/components/HapticTab';
-import { colors } from '@/src/theme/theme';
+import { colors, effects } from '@/src/theme/theme';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
 import InitiationModal from '@/src/components/InitiationModal';
 import { useInitiation } from '@/src/hooks/useInitiation';
 import { nav } from '@/src/utils/typedRouter';
+import { EDGE_LIT } from '@/src/theme/light';
 
 // ════════════════════════════════════════════════════════════════
 //  TAB ICON — Icons only. No labels. Pure cinema.
@@ -292,10 +293,9 @@ const s = StyleSheet.create({
     borderTopWidth: 0,
     elevation: 0,
     backgroundColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
+    // No upward shadow: on the lit house a black one above the bar drew a dark
+    // band across the page just over it. The bar's own tone separates it.
+    ...effects.flat,
   },
 
   topBorder: {
@@ -336,7 +336,7 @@ const s = StyleSheet.create({
   tabBarTint: {
     backgroundColor: 'rgba(30,25,20,0.45)', // Smoked Obsidian tint overlaying the blur
   },
-  tabBarTintAndroid: {
+  tabBarTintAndroid: { ...EDGE_LIT,
     backgroundColor: colors.soot, // No blur beneath — carry legibility alone
   },
 

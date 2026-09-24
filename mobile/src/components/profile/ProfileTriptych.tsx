@@ -20,6 +20,7 @@ import { isNetworkError } from '@/src/utils/networkError';
 import { readMounts, MOUNT_COUNT, CENTRE_MOUNT, type FavouriteFilm } from './favourites';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { ToastHost } from '@/src/components/ToastHost';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 // Module-scoped: prevents remount on every render cycle
@@ -632,7 +633,7 @@ const s = StyleSheet.create({
     // frame that glows like a button reads as a control, and three of them in a
     // row read as a toolbar. The warmth here comes from the light on the centre.
     glowWrap: { borderWidth: 1, borderRadius: 2, overflow: 'visible' },
-    mount: {
+    mount: { ...EDGE_LIT,
         borderRadius: 2,
         overflow: 'hidden',
         alignItems: 'center',
@@ -644,8 +645,10 @@ const s = StyleSheet.create({
     mountWing: { borderWidth: 1, borderColor: 'rgba(232,223,208,0.15)' },
     mountCentre: { borderWidth: 1, borderColor: 'rgba(232,223,208,0.30)' },
     // Only the centre is lit, and the light is the rank.
-    mountCentreLit: { shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.18, shadowRadius: 30, elevation: 8 },
-    mountCentreLitRuby: { shadowColor: 'rgba(180,45,45,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.22, shadowRadius: 30, elevation: 8 },
+    // The centre's glow, held close (12, not 30): on the lit house a 30pt halo
+    // spread past the side panels and read as a stain, not a lamp on the prize.
+    mountCentreLit: { shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8 },
+    mountCentreLitRuby: { shadowColor: 'rgba(180,45,45,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.22, shadowRadius: 12, elevation: 8 },
     mountNoBorder: { borderWidth: 0 },
     mountBoard: { position: 'absolute', top: 4, left: 4, right: 4, bottom: 4, borderWidth: 1, borderColor: 'rgba(232,223,208,0.10)', zIndex: 3 },
     poster: { width: '100%', height: '100%' },
@@ -665,7 +668,7 @@ const s = StyleSheet.create({
     shimmerTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, borderRadius: 6, zIndex: 4 },
 
     // ── the sheet ──
-    modalOverlay: { flex: 1, backgroundColor: colors.soot, justifyContent: 'flex-end' },
+    modalOverlay: { ...EDGE_LIT, flex: 1, backgroundColor: colors.soot, justifyContent: 'flex-end' },
     sheet: {
         backgroundColor: colors.ink,
         borderTopLeftRadius: 16,

@@ -35,6 +35,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { ReelRating } from '@/src/components/Decorative';
 import { STUB_HEIGHT, STUB_PAD_TOP, dockHeight } from './filmStubMetrics';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export interface FilmStubProps {
   /**
@@ -194,7 +195,7 @@ export const FilmStub = memo(function FilmStub({
 });
 
 const s = StyleSheet.create({
-  dock: {
+  dock: { ...EDGE_LIT,
     /**
      * ── ABOVE THE TRAY, DELIBERATELY ────────────────────────────────────────
      * The tray layer sits at 60. At 40 the stub was PAINTED OVER by it: the

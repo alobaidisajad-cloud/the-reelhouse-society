@@ -17,6 +17,7 @@ import { useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 export default function CoverPicker() {
   const { loungeId } = useLocalSearchParams<{ loungeId: string }>();
@@ -37,6 +38,7 @@ export default function CoverPicker() {
 
   return (
     <View style={[s.container, { paddingTop: Math.max(insets.top + 8, 16) }]}>
+      <RoomLight room="default" />
       <View style={s.header}>
         <View style={s.headerText}>
           <Text style={s.eyebrow}>✦ THE SALON COVER</Text>

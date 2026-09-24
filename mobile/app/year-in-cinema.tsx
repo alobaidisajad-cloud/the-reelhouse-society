@@ -16,6 +16,8 @@ import { computeYearStats, fetchYearLogs, YearStats } from '@/src/services/YearI
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WASH } from '@/src/theme/light';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 type SlideType = 'intro' | 'total' | 'verdict' | 'rhythm' | 'top' | 'outro';
 
@@ -24,7 +26,8 @@ type SlideType = 'intro' | 'total' | 'verdict' | 'rhythm' | 'top' | 'outro';
 function StateShell({ topInset, children }: { topInset: number; children: React.ReactNode }) {
   return (
     <View style={s.container}>
-      <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} />
+      <RoomLight room="member" />
+      <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFillObject, WASH]} />
       {children}
       <PressableScale style={[s.closeBtn, { top: topInset + 10 }]} onPress={() => router.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
@@ -96,9 +99,9 @@ export default function YearInCinemaScreen() {
 
     return (
       <View style={[s.slide, { width, height: slideHeight }]}>
-        <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFillObject, WASH]} />
         {/* Filmic vertical vignette — depth without a flat grey wash */}
-        <LinearGradient colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.55)']} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+        <LinearGradient colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.55)']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFillObject, WASH]} pointerEvents="none" />
         <FilmEdges />
 
         {/* Content region — flex:1, centred, can never reach the footer */}
@@ -240,6 +243,7 @@ export default function YearInCinemaScreen() {
 
   return (
     <View style={s.container}>
+      <RoomLight room="member" />
       <FlashList
         data={slides}
         keyExtractor={(item, i) => `${item}-${i}`}

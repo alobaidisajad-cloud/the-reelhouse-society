@@ -89,7 +89,7 @@ export const PaperComposer = memo(function PaperComposer({
   const canFile = ready !== undefined ? ready : body.trim().length > 0 && remaining >= 0;
   const blocked = !canFile || !!sending;
   return (
-    <View style={p.screen}>
+    <View style={p.desk}>
       <View style={p.ch}>
         <PressableScale onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
           <Text style={p.chs} {...scaledTextProps}>BACK</Text>

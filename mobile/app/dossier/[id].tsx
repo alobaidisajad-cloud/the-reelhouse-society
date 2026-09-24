@@ -24,6 +24,7 @@ import { useLocalSearchParams } from 'expo-router';
 
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { nav } from '@/src/utils/typedRouter';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 export default function DossierRedirect() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,5 +38,5 @@ export default function DossierRedirect() {
 
   // The house's ground, for the single frame between mount and replace. A white
   // flash here would be the only white frame anywhere in the app.
-  return <View style={p.screen} />;
+  return <View style={p.screen}><RoomLight room="dispatch" /></View>;
 }

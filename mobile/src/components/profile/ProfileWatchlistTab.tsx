@@ -13,6 +13,7 @@ import { tmdb } from '../../lib/tmdb';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, posterColumns, EMBER_REST, EMBER_BEATS } from './roomStyles';
 import { RoomChip, RoomChipDivider, RoomRetrieving, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /**
  * THE WATCHLIST — the queue, and the one room with a ritual in it.
@@ -344,7 +345,7 @@ export default function ProfileWatchlistTab({
 }
 
 const s = StyleSheet.create({
-  emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.soot, borderWidth: 1, borderRadius: 4, marginTop: 12 },
+  emptyStateSelf: { ...EDGE_LIT, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.soot, borderWidth: 1, borderRadius: 4, marginTop: 12 },
 
   // ── the Oracle — untouched, because it is the best thing here ──
   oracleCta: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.sepiaFaint, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)', paddingVertical: 14, paddingHorizontal: 14, marginBottom: 18, overflow: 'hidden' },

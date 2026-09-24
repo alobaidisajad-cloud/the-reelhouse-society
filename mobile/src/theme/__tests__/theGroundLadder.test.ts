@@ -62,6 +62,18 @@ const ART = [
  * you read on", and each is a TOKEN — which is the whole point: a name can be
  * argued with in review, and `rgba(12,5,5,1)` typed into a component cannot.
  */
+/**
+ * See-through ON PURPOSE: a sheet laid over a film, which the backdrop is meant
+ * to tint. The sweep that made every near-solid ground solid took the log
+ * page's content sheet with the bars — right for a bar over scrolling words,
+ * wrong for this — and it was restored. Named here so no blanket rule can do
+ * it again, and so nothing else can hide in the exception.
+ */
+const OVER_ART: Record<string, string> = {
+  sheetOverArt: 'the log page’s content sheet, over the film’s backdrop',
+  sheetOverArtAuteur: 'the same sheet, in the Auteur’s card',
+};
+
 const NOT_A_SURFACE: Record<string, string> = {
   ash: 'the inert tone — a hairline drawn as a box, an empty poster well, a dead control',
   storyGround: 'the canvas of an exported story, seen on somebody else’s feed',
@@ -212,7 +224,8 @@ describe('every ground in the app is on it', () => {
   it('paints no solid dark that is not one of the five, or a stated exception', () => {
     const ladder = Object.values(LADDER).map((h) => parse(h)!);
     const stray = solidDarks.filter(
-      (g) => !ladder.some((s) => same(s, g.rgba)) && !(g.token && g.token in NOT_A_SURFACE),
+      (g) => !ladder.some((s) => same(s, g.rgba))
+        && !(g.token && (g.token in NOT_A_SURFACE || g.token in OVER_ART)),
     );
     expect(stray.map((g) => `${g.file}:${g.line} ${g.raw}`)).toEqual([]);
   });
@@ -227,8 +240,15 @@ describe('every ground in the app is on it', () => {
   it('and no near-solid one either — the last few percent only let words ghost through', () => {
     // 0.9–0.99 was the shape of the old fault: a bar meant to be opaque,
     // written with an alpha, that let the page's type show faintly through it.
-    const ghosts = solidDarks.filter((g) => g.rgba.a < 1);
+    const ghosts = solidDarks.filter((g) => g.rgba.a < 1 && !(g.token && g.token in OVER_ART));
     expect(ghosts.map((g) => `${g.file}:${g.line} ${g.raw}`)).toEqual([]);
+  });
+
+  it('keeps every sheet that is see-through on purpose — and only those', () => {
+    // Both halves: each named sheet is still drawn, still see-through (a solid
+    // one would be the sweep's mistake again), and nothing else is on the list.
+    const seen = new Set(solidDarks.filter((g) => g.token && g.token in OVER_ART && g.rgba.a < 1).map((g) => g.token));
+    expect([...Object.keys(OVER_ART)].filter((k) => !seen.has(k))).toEqual([]);
   });
 
   it('gives every field the well, and the well to nothing else', () => {

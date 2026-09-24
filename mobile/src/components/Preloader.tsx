@@ -16,6 +16,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { storage } from '@/src/stores/mmkv-storage';
 import { useReducedMotion } from '@/src/hooks/useReducedMotion';
 import { useDeviceThrottling } from '@/src/hooks/useDeviceThrottling';
+import { EDGE_LIT } from '@/src/theme/light';
 
 
 const D1    = 580;
@@ -288,7 +289,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { ...EDGE_LIT,
     ...StyleSheet.absoluteFillObject,
     zIndex: 100000,
     backgroundColor: colors.soot,

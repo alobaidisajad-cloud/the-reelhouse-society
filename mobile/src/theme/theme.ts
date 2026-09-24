@@ -48,6 +48,16 @@ export const colors = {
    * own warmth rather than the pigment neat.
    */
   sootAuteur: '#2A140D',
+  /**
+   * A SHEET LAID OVER A FILM — 8% see-through ON PURPOSE, so the backdrop it
+   * rises over still tints it. The log page's content sheet was drawn this way
+   * with the reason written beside it; the ladder's sweep made every near-solid
+   * ground solid (right for a bar over scrolling words, which ghost through it)
+   * and took this one with them. Restored, and named, so a blanket rule cannot
+   * flatten it again: the ladder guard holds this list apart.
+   */
+  sheetOverArt: 'rgba(13, 11, 9, 0.92)',
+  sheetOverArtAuteur: 'rgba(42, 20, 13, 0.92)',
   flicker: '#F0E8B0',     // Candlelight accent — hover states, highlights
   bloodReel: '#6B1A0A',   // Deep crimson — destructive actions, stamps
   danger: '#E74C3C',      // Alert red
@@ -396,7 +406,35 @@ export const effects = {
     shadowRadius: 16,
     elevation: 8,
   },
-  
+  /**
+   * THE SHADOW A SMALL THING KEEPS ON THE LIT HOUSE. On black, the 24pt
+   * surface shadow did nothing; on a lit page it is a dark cloud round every
+   * chip and tab. A small floating thing keeps a short one, cast straight
+   * down — never more than 6pt, never softer than 12 — and anything WIDE casts
+   * none: its own tone and the lamp separate it from the page.
+   */
+  shadowFloat: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  /**
+   * A WIDE thing casts no shadow on the lit house: spread LAST, after whatever
+   * shadow it had, and the shadow is gone on iOS and on Android 9+.
+   *
+   * It deliberately leaves `elevation` alone. On Android elevation is also the
+   * PAINT ORDER — a dropdown, a sheet or a glow's host is drawn above its
+   * siblings because of it — and stripping it would slide a menu under the
+   * content it opens over. A transparent shadow keeps the order and loses the
+   * cloud.
+   */
+  flat: {
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+  },
+
   // Outer glows for cards and interactive inputs
   glowSepia: {
     shadowColor: colors.sepia,

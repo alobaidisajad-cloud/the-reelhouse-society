@@ -25,6 +25,7 @@ import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { isNetworkError } from '@/src/utils/networkError';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { SectionCard, SectionHead } from '@/src/components/layout/SectionCards';
 import { st } from '@/src/features/profile/profile.styles';
 import { DiamondDivider } from '@/src/components/theme/DiamondDivider';
@@ -154,8 +155,12 @@ export function EditProfileScreen() {
   if (!user) return null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.ink }}>
+    // One ground, the inner one, which carries the room's light. This outer
+    // box was painted in the house colour too — a second, unlit room under
+    // the first.
+    <View style={{ flex: 1 }}>
       <View style={st.container}>
+        <RoomLight room="member" />
         <Animated.View style={[st.ambientGlow, glowStyle]}>
           <LinearGradient
             colors={['rgba(184,137,26,0.15)', 'transparent', 'transparent']}

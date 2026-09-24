@@ -21,6 +21,8 @@ import FrozenTab from '@/src/components/layout/FrozenTab';
 import { DarkroomHeader } from '@/src/components/darkroom/DarkroomHeader';
 import { FilmGridCard, AnimatedPosterSkeleton } from '@/src/components/darkroom/DarkroomCards';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
+import { EDGE_LIT } from '@/src/theme/light';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 // === MAIN SCREEN ===
 export default function DarkRoomScreen() {
@@ -356,6 +358,7 @@ export default function DarkRoomScreen() {
   return (
     <FrozenTab>
       <View style={s.container}>
+        <RoomLight room="default" />
         <CinematicFlashList
           ref={listRef}
           data={displayData}
@@ -438,7 +441,7 @@ const s = StyleSheet.create({
     // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
     fontStyle: 'italic',
   },
-  emptyBtn: {
+  emptyBtn: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.25)',
@@ -446,7 +449,7 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 28,
     marginTop: 20,
-    ...effects.shadowPrimary,
+    ...effects.shadowFloat,
   },
   emptyBtnText: {
     fontFamily: fonts.sub,

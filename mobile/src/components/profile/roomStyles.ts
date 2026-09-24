@@ -1,6 +1,7 @@
 import { StyleSheet, type TextStyle } from 'react-native';
 import { colors, fonts, type } from '@/src/theme/theme';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /**
  * roomStyles — the one vocabulary the six rooms are furnished from.
@@ -356,7 +357,7 @@ export const r = StyleSheet.create({
   // ══════════════════════════════════════════════════════════════════════════
   // STATES — a room must never describe itself before it knows what it holds
   // ══════════════════════════════════════════════════════════════════════════
-  state: {
+  state: { ...EDGE_LIT,
     marginTop: 18, paddingVertical: 34, paddingHorizontal: 26,
     alignItems: 'center' as const, justifyContent: 'center' as const,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 3,

@@ -6,6 +6,7 @@ import reelToast from '@/src/utils/reelToast';
 import type { ProfileAnalyticsPayload } from './NoirPassport';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { rungAt } from '@/src/constants/standing';
+import { EDGE_LIT } from '@/src/theme/light';
 
 interface AchievementLog {
     rating: number;
@@ -203,7 +204,7 @@ export function Achievements({ logs, analytics, totalFilms }: { logs: Achievemen
 }
 
 const s = StyleSheet.create({
-  container: {
+  container: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.2)',

@@ -38,9 +38,10 @@ import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { useBanCheck } from '@/src/hooks/useBanCheck';
 import { tmdb } from '@/src/lib/tmdb';
 import { useListStore } from '@/src/stores/films';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import { Globe, GripVertical, List, ListOrdered, Lock, Plus, Search, X } from 'lucide-react-native';
+import { EDGE_LIT } from '@/src/theme/light';
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -730,7 +731,7 @@ export default function ListModal() {
 }
 
 const s = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.soot },
+    container: { ...EDGE_LIT, flex: 1, backgroundColor: colors.soot },
     handleWrap: { alignItems: 'center', paddingBottom: 8 },
     handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.sepia },
     header: {
@@ -808,11 +809,10 @@ const s = StyleSheet.create({
     filmRowActive: {
         backgroundColor: 'rgba(184,137,26,0.2)',
         borderColor: colors.sepia,
+        // Keeps its elevation (Android paint order while dragging); casts no
+        // shadow — a row this wide would draw a dark rim on the lit house.
         elevation: 5,
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 10,
+        ...effects.flat,
     },
     filmPosterEmpty: { backgroundColor: colors.ash },
     gripOpacity: { opacity: 0.5 },
@@ -860,7 +860,7 @@ const s = StyleSheet.create({
      * carrying the stack's own mark once there is one — which is also the only
      * confirmation a member gets that a film they added actually landed.
      */
-    bar: {
+    bar: { ...EDGE_LIT,
         position: 'absolute', left: 0, right: 0, bottom: 0,
         backgroundColor: colors.soot,
         borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,

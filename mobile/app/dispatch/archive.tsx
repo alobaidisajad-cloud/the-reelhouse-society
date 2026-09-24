@@ -41,6 +41,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
 import { ClearanceGate } from '@/src/components/clearance/Clearance';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 export default function ArchiveScreen() {
   const insets = useSafeAreaInsets();
@@ -82,6 +83,7 @@ export default function ArchiveScreen() {
 
   return (
     <View style={p.screen}>
+      <RoomLight room="dispatch" />
       <PaperBack label="THE ARCHIVE" onBack={back} />
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}

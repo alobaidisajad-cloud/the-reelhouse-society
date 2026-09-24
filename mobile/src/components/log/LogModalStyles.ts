@@ -1,9 +1,10 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { StyleSheet, Platform } from 'react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export const st = StyleSheet.create({
-    root: { flex: 1, backgroundColor: colors.soot },
+    root: { ...EDGE_LIT, flex: 1, backgroundColor: colors.soot },
     centerAuthPrompt: { justifyContent: 'center', alignItems: 'center' },
     identifyText: { fontFamily: fonts.display, fontSize: 17, color: colors.parchment },
     kavFlex: { flex: 1 },
@@ -215,7 +216,7 @@ export const st = StyleSheet.create({
     // Delete (destructive → house crimson, not the bright alert red)
     deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, minHeight: 48, borderWidth: 1, borderColor: colors.crimsonBorder, borderRadius: 4, marginBottom: 16 },
     deleteBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimsonInk, includeFontPadding: false },
-    deleteConfirm: { ...effects.shadowPrimary, shadowColor: colors.crimson, backgroundColor: 'rgba(50,0,0,0.6)', borderWidth: 1, borderColor: colors.crimson, borderRadius: 4, padding: 20, alignItems: 'center', marginBottom: 16 },
+    deleteConfirm: { ...effects.shadowPrimary, backgroundColor: 'rgba(50,0,0,0.6)', borderWidth: 1, borderColor: colors.crimson, borderRadius: 4, padding: 20, alignItems: 'center', marginBottom: 16, ...effects.flat, },
     deleteConfirmText: { fontFamily: fonts.sub, fontSize: 11, color: colors.crimsonInk, marginBottom: 16, textAlign: 'center' },
     deleteConfirmRow: { flexDirection: 'row', gap: 12 },
     deleteYes: { flex: 1, backgroundColor: colors.crimson, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
@@ -240,13 +241,12 @@ export const st = StyleSheet.create({
     // The document, lifting off the film. The Booth Law blesses an UPWARD
     // shadow for surfaces that rise from the floor — bottom sheets, and the
     // record's own card. This is the composer's.
-    sheet: {
+    sheet: { ...EDGE_LIT,
         marginHorizontal: -20, paddingHorizontal: 20, marginTop: 26, paddingTop: 2,
         backgroundColor: colors.soot,
         borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,
         borderTopLeftRadius: 12, borderTopRightRadius: 12,
-        shadowColor: '#000', shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.85, shadowRadius: 40,
-        elevation: 24,
+        elevation: 24, ...effects.flat,
     },
 
     // ── THE DOCKET ───────────────────────────────────────────────────────────

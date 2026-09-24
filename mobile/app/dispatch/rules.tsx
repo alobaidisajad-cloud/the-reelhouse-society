@@ -27,11 +27,13 @@ import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { PaperBack, PaperRules } from '@/src/components/dispatch/paper/PaperMore';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { nav } from '@/src/utils/typedRouter';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 export default function HouseRulesScreen() {
   const insets = useSafeAreaInsets();
   return (
     <View style={p.screen}>
+      <RoomLight room="dispatch" />
       <PaperBack label="THE HOUSE RULES" onBack={() => nav.back()} />
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}

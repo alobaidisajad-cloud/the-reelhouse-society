@@ -11,6 +11,7 @@ import PressableScale from '@/src/components/PressableScale';
 import type { EmailOtpType, Session } from '@supabase/supabase-js';
 import { AuthService } from '@/src/services/AuthService';
 import * as Linking from 'expo-linking';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -135,6 +136,7 @@ export default function AuthCallbackScreen() {
 
   return (
     <View style={s.container}>
+      <RoomLight room="default" />
       <View style={s.content}>
         {/* ── Verifying ── */}
         {status === 'verifying' && (

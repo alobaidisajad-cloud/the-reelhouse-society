@@ -42,6 +42,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastHost } from '@/src/components/ToastHost';
+import { EDGE_LIT, WASH } from '@/src/theme/light';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 interface TribunalTarget {
   id: string;
@@ -646,7 +648,7 @@ export default function TribunalScreen() {
 
   // ── Guard: admin only ──────────────────────────────────────────────────
 
-  if (user?.role !== 'admin') return <View style={s.container} />;
+  if (user?.role !== 'admin') return <View style={s.container}><RoomLight room="default" /></View>;
 
   // ── Determine which data to show ──────────────────────────────────────
 
@@ -676,9 +678,10 @@ export default function TribunalScreen() {
 
   return (
     <View style={s.container}>
+      <RoomLight room="default" />
       <LinearGradient
         colors={['rgba(180,45,45,0.10)', colors.ink]}
-        style={StyleSheet.absoluteFillObject}
+        style={[StyleSheet.absoluteFillObject, WASH]}
       />
 
       <Animated.View entering={FadeInDown.duration(600)} style={[s.header, { paddingTop: insets.top + 12 }]}>
@@ -1133,7 +1136,7 @@ const s = StyleSheet.create({
   subtitle: { fontFamily: fonts.sub, fontSize: 14, color: colors.fog },
 
   listContent: { padding: 16, paddingBottom: 60 },
-  reportCard: {
+  reportCard: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderRadius: radii.sm,
     padding: 16,

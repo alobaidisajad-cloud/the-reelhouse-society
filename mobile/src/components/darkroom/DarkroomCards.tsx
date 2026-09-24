@@ -14,6 +14,7 @@ import { type DiscoverFilm } from '@/src/stores/discover';
 import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import PressableScale from '@/src/components/PressableScale';
+import { EDGE_LIT } from '@/src/theme/light';
 
 // ══════════════════════════════════════════════════════════════
 //  DARKROOM SAFELIGHT ATMOSPHERICS
@@ -276,7 +277,7 @@ const s = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 1,
   },
-  posterWrap: {
+  posterWrap: { ...EDGE_LIT,
     width: '100%',
     aspectRatio: 2/3,
     borderRadius: 6,
@@ -284,11 +285,14 @@ const s = StyleSheet.create({
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.5)',
-    elevation: 25,
+    // A short lift, straight down: a 20pt drop with a 30pt blur was a dark
+    // cloud round every print on the lit house. Grid cells never overlap, so
+    // the lower elevation changes Android's paint order for nothing.
+    elevation: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.8,
-    shadowRadius: 30,
+    shadowRadius: 12,
   },
   posterBorderEngrave: {
     ...StyleSheet.absoluteFillObject,

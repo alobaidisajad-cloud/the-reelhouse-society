@@ -41,6 +41,7 @@ import { FILING_FULL_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/
 import { colors } from '@/src/theme/theme';
 import { nav } from '@/src/utils/typedRouter';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 /** A series is a handful of essays. Bounded because every read here is. */
 const MOST_PARTS = 24;
@@ -110,6 +111,7 @@ export default function SeriesScreen() {
   if (loading) {
     return (
       <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+        <RoomLight room="dispatch" />
         <ActivityIndicator size="small" color={colors.sepia} />
       </View>
     );
@@ -125,6 +127,7 @@ export default function SeriesScreen() {
   if (parts.length === 0) {
     return (
       <View style={p.screen}>
+        <RoomLight room="dispatch" />
         <PaperBack label="SERIES" onBack={() => nav.back()} />
         <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 32 }}>
           <Text style={p.emptyTitle} accessibilityRole="header" {...scaledTextProps}>
@@ -156,6 +159,7 @@ export default function SeriesScreen() {
 
   return (
     <View style={p.screen}>
+      <RoomLight room="dispatch" />
       <PaperBack label="SERIES" onBack={() => nav.back()} />
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
         {/* No `top` rail — the same as the reader, which is the page on the

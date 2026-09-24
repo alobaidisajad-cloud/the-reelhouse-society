@@ -54,6 +54,7 @@ import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
 import { timeAgo, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
@@ -460,6 +461,7 @@ export default function FilingReader() {
   if (loading) {
     return (
       <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+        <RoomLight room="dispatch" />
         <ActivityIndicator size="small" color={colors.sepia} />
       </View>
     );
@@ -476,6 +478,7 @@ export default function FilingReader() {
   if (!live) {
     return (
       <View style={p.screen}>
+        <RoomLight room="dispatch" />
         <PaperBack label="THE DISPATCH" onBack={() => nav.back()} />
         <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 32 }}>
           <Text style={p.emptyTitle} accessibilityRole="header" {...scaledTextProps}>
@@ -516,6 +519,7 @@ export default function FilingReader() {
 
   return (
     <View style={p.screen}>
+      <RoomLight room="dispatch" />
       {head}
 
       <ScrollView

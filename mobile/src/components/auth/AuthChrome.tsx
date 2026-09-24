@@ -15,6 +15,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import type { LucideIcon } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
+import { WASH } from '@/src/theme/light';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 // ── Candlelight halo — a soft radial glow, the projector's warmth ──
 // Static SVG (rendered once, never re-painted). Used behind the seal
@@ -57,13 +59,15 @@ function FilmPerforations({ side }: { side: 'left' | 'right' }) {
 }
 
 // ── Full backdrop — nitrate gradient + perforations, one call ──
+// Mount as the FIRST child of the screen's root: it carries the room's light.
 export const AuthBackdrop = memo(function AuthBackdrop() {
   return (
     <>
+      <RoomLight room="default" />
       <LinearGradient
         colors={[colors.ink, '#0B0907', colors.soot]}
         locations={[0, 0.5, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={[StyleSheet.absoluteFillObject, WASH]}
       />
       <FilmPerforations side="left" />
       <FilmPerforations side="right" />

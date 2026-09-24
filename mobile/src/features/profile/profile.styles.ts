@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
@@ -46,7 +47,7 @@ export const st = StyleSheet.create({
 
   // Avatar
   avatarSection: { alignItems: 'center', marginVertical: 10 },
-  avatarWrap: { width: 120, height: 120, borderRadius: 60, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  avatarWrap: { ...EDGE_LIT, width: 120, height: 120, borderRadius: 60, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   avatarImg: { width: '100%', height: '100%' },
   avatarOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   avatarHint: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, marginBottom: 4 },

@@ -26,6 +26,7 @@ import { MS, PILL_Y } from './paperMotion';
 import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { clipToSentence, counted } from './paperText';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
  * The brass ＋ opens this. Five forms, each named in its own ink with one line
@@ -1269,7 +1270,7 @@ export const PaperBack = memo(function PaperBack({
 
 const m = StyleSheet.create({
   // ── the picker ────────────────────────────────────────────────────────────
-  sheet: {
+  sheet: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderTopWidth: 1.5, borderTopColor: colors.sepiaBorder,
     borderTopLeftRadius: 6, borderTopRightRadius: 6,
@@ -1458,7 +1459,7 @@ const m = StyleSheet.create({
   },
 
   // ── the share card ────────────────────────────────────────────────────────
-  card: {
+  card: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderWidth: 1.5, borderColor: colors.sepiaBorder, borderRadius: 3,
     paddingHorizontal: 24, paddingVertical: 24,
@@ -1495,7 +1496,7 @@ const m = StyleSheet.create({
    * every length of title, instead of leaving a short essay's card with its
    * signature floating in the middle.
    */
-  share: {
+  share: { ...EDGE_LIT,
     aspectRatio: 4 / 5,
     backgroundColor: colors.soot,
     borderWidth: 2, borderColor: colors.sepiaBorder, borderRadius: 3,
@@ -1755,7 +1756,7 @@ const m = StyleSheet.create({
   },
 
   // ── a screen reached from somewhere else ──────────────────────────────────
-  back: {
+  back: { ...EDGE_LIT,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 8,
     backgroundColor: colors.soot,

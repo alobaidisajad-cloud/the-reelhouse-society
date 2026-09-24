@@ -19,7 +19,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { XCircle } from 'lucide-react-native';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ReelRating } from '@/src/components/Decorative';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
@@ -30,6 +30,7 @@ import { extractDropCap } from '@/src/utils/text';
 import { timeAgo } from '@/src/utils/timeAgo';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const INLINE_CLIPPINGS = 4;
 
@@ -214,12 +215,12 @@ export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, review
 const s = StyleSheet.create({
   section: { paddingHorizontal: 20, marginBottom: 24, zIndex: 2 },
 
-  reviewCard: {
+  reviewCard: { ...EDGE_LIT,
     backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 4, padding: 16, marginTop: 10,
     borderLeftWidth: 3, borderLeftColor: 'rgba(184,137,26,0.4)',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8,
-    position: 'relative', overflow: 'hidden',
+    elevation: 8,
+    position: 'relative', overflow: 'hidden', ...effects.flat,
   },
   verdictRow: {
     flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',
@@ -260,11 +261,11 @@ const s = StyleSheet.create({
   // here was the faintest text on the page.
   emptyReviewBody: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, fontStyle: 'italic', lineHeight: 20 },
 
-  readAllBtn: {
+  readAllBtn: { ...EDGE_LIT,
     marginTop: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.soot, borderRadius: 2,
     borderWidth: 1, borderColor: colors.sepiaBorder,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8,
+    elevation: 8, ...effects.flat,
   },
   readAllText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia, includeFontPadding: false },
 

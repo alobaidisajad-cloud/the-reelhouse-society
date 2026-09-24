@@ -22,6 +22,8 @@ import type { ErrorBoundaryProps } from 'expo-router';
 import { colors, fonts, spacing } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { captureError } from '@/src/lib/sentry';
+import { EDGE_LIT } from '@/src/theme/light';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const insets = useSafeAreaInsets();
@@ -35,6 +37,7 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
   return (
     <View style={[s.container, { paddingTop: insets.top + spacing.xl }]}>
+      <RoomLight room="default" />
       <Text style={s.glyph}>✦</Text>
       <Text style={s.title}>This reel jammed.</Text>
       <Text style={s.body}>
@@ -97,7 +100,7 @@ const s = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
   },
-  retryBtn: {
+  retryBtn: { ...EDGE_LIT,
     marginTop: 12,
     backgroundColor: colors.soot,
     borderWidth: 1,

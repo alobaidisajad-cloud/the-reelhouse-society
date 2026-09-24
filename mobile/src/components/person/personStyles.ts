@@ -14,6 +14,7 @@
  */
 import { StyleSheet } from 'react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const PORTRAIT_W = 130;
 const POSTER_GRID_GAP = 10;
@@ -27,7 +28,7 @@ export const s = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
 
   // ── Shimmer (mirrors the real anatomy exactly) ──
-  shimmerBackdrop: { minHeight: 240, maxHeight: 300, backgroundColor: colors.soot, position: 'relative' },
+  shimmerBackdrop: { ...EDGE_LIT, minHeight: 240, maxHeight: 300, backgroundColor: colors.soot, position: 'relative' },
   shimmerContent: { alignItems: 'center', marginTop: -75, paddingHorizontal: RAIL, zIndex: 2 },
   shimmerPortrait: { width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 2, marginBottom: 12 },
   shimmerDeptBadge: { width: 90, height: 22, borderRadius: 2, marginBottom: 10 },
@@ -105,7 +106,7 @@ export const s = StyleSheet.create({
     zIndex: 1,
   },
   portrait: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
-  portraitPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  portraitPlaceholder: { ...EDGE_LIT, backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
   portraitInitial: { fontFamily: fonts.display, fontSize: 40, color: colors.fog },
 
   // ── Beat 1: identity — badge · name · life line ──
@@ -158,7 +159,7 @@ export const s = StyleSheet.create({
   recordLink: { color: colors.sepia } as import('react-native').TextStyle,
 
   // ── Beat 3: the action — lounge (every rank sees the door) ──
-  loungeBtn: {
+  loungeBtn: { ...EDGE_LIT,
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 12,
     borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2,
@@ -204,7 +205,7 @@ export const s = StyleSheet.create({
   bioTextWrap: { position: 'relative' },
   bioText: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, lineHeight: 24 },
   bioFadeMask: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
-  toggleTicketBtn: {
+  toggleTicketBtn: { ...EDGE_LIT,
     marginTop: 16, paddingVertical: 12, alignItems: 'center',
     borderWidth: 1, borderColor: colors.sepiaBorder,
     backgroundColor: colors.soot, borderRadius: 2,
@@ -265,7 +266,7 @@ export const st = StyleSheet.create({
     borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
     width: '100%', aspectRatio: 2 / 3,
   },
-  gridPosterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  gridPosterPlaceholder: { ...EDGE_LIT, backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
   // The brass mark of a screened frame — the Hunt made visible.
   screenedTick: {
     position: 'absolute', top: 5, right: 5,
@@ -298,7 +299,7 @@ export const st = StyleSheet.create({
     position: 'relative',
   },
   defPoster: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
-  defPosterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  defPosterPlaceholder: { ...EDGE_LIT, backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
   defOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: 8, paddingBottom: 8, paddingTop: 50,

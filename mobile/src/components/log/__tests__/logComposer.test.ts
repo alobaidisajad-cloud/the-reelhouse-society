@@ -324,11 +324,17 @@ describe('the film behind the record', () => {
     expect(read(SCREEN)).toMatch(/step === 1 && st\.headerOnFilm/);
   });
 
-  it('the document rises off it, and iOS can draw the lift', () => {
-    // A large shadow on a view that also clips draws NOTHING on iOS — the bug
-    // fixed four times on the record. The sheet casts and never clips.
+  it('the document rises off it — lit along its top edge, never a black shadow', () => {
+    // The lift is drawn by LIGHT now: the sheet catches the booth light on its
+    // top edge (EDGE_LIT). A wide surface casts no black shadow — black on the
+    // house's black is invisible, and on the lit room it reads as soot
+    // (theme/light.ts, EDGE). It still never clips: a view that clips cannot
+    // show anything outside itself, which is the bug fixed four times on the
+    // record.
     const sheet = style(read(STYLES), 'sheet');
-    expect(sheet).toMatch(/shadowOffset: \{ width: 0, height: -20 \}/);
+    expect(sheet).toMatch(/\.\.\.EDGE_LIT/);
+    expect(sheet).toMatch(/\.\.\.effects\.flat/);
+    expect(sheet).not.toMatch(/shadowOffset|shadowRadius|shadowOpacity/);
     expect(sheet).not.toMatch(/overflow:\s*'hidden'/);
     // Android draws from the painted background's outline, so elevation belongs
     // on the same view — which here has one.

@@ -13,6 +13,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { tally } from './profileComputed';
 import { tasteReadiness, type TasteProfile } from '@/src/constants/taste';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /**
  * Deleted with the TMDB fetch: a 19-entry GENRE_MAP that had to be kept in step
@@ -207,7 +208,7 @@ export function CinematicInsights({ taste }: { taste?: TasteProfile | null }) {
 const s = StyleSheet.create({
     container: { gap: 16 },
     metaNote: { textAlign: 'center', fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.fogQuiet, marginBottom: 4 },
-    card: {
+    card: { ...EDGE_LIT,
         padding: 20, backgroundColor: colors.soot,
         borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4,
     },

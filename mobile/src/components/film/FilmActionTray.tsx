@@ -44,6 +44,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
 import { trayMaxHeight } from './filmStubMetrics';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /** The scrim, matching the Concierge's. Not a blur — Android. */
 const SCRIM = 'rgba(13,11,9,0.66)';
@@ -255,7 +256,7 @@ const PERF_HOLES = Array.from({ length: 26 }, (_, i) => `perf-${i}`);
 const s = StyleSheet.create({
   layer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 60, justifyContent: 'flex-end' },
   scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: SCRIM },
-  tray: {
+  tray: { ...EDGE_LIT,
     backgroundColor: colors.surfaceRaised,
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
     overflow: 'hidden',

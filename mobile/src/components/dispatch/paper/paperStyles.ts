@@ -5,6 +5,7 @@ import {
   BYLINE_INDENT, MARGIN_W,
   CHROME_PAD_V, CHROME_PAD_H, CRIMSON_INK, PAPER_MAX, KIND_RULE,
 } from './paperMetrics';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /**
  * ── THE CONTRAST FLOOR ───────────────────────────────────────────────────────
@@ -40,13 +41,20 @@ export const p = StyleSheet.create({
    * shows on either side and the whole composition depends on reading as a
    * sheet ON something.
    *
-   * `inkwell` is the app's own token for this, and its definition in the theme
-   * says so in as many words: "the recess UNDER the paper". It was sitting
-   * there the whole time being used for deck bars. Five points darker on every
-   * channel — nothing on a phone but a whisper, and on a tablet the difference
-   * between a broadsheet on a desk and a strip in a void.
+   * That was drawn as `inkwell`, the recess, when the house and the paper were
+   * a whisper apart. On the lit ladder the paper is the CARD step, a full
+   * stride above the house, so the house itself is the desk the broadsheet
+   * lies on — and every screen in the app stands on the house, lit by its
+   * room's lamp (the Dispatch's hangs left of centre, a desk lamp). The recess
+   * is for what is cut INTO the page, never for the page itself.
    */
-  screen: { flex: 1, backgroundColor: colors.inkwell },
+  screen: { flex: 1, backgroundColor: colors.ink },
+  /**
+   * The root of a writing DESK, which is always mounted inside a screen that
+   * already stands on the house under its lamp. Transparent on purpose: a
+   * second opaque page here would paint over the room's light.
+   */
+  desk: { flex: 1 },
   /**
    * ── A SHORT PAGE STILL REACHES THE FOOT ──────────────────────────────────
    * A post with two critiques left its closing mark stranded halfway up the
@@ -86,7 +94,7 @@ export const p = StyleSheet.create({
    * it is a whisper at the rails; on a tablet it is the edge of a sheet lying
    * on a desk, and the empty ground becomes the desk rather than a void.
    */
-  doc: {
+  doc: { ...EDGE_LIT,
     flex: 1, minHeight: 0,
     backgroundColor: colors.soot,
     marginHorizontal: DOC_MARGIN,
@@ -94,14 +102,14 @@ export const p = StyleSheet.create({
     borderLeftWidth: DOC_RAIL,
     borderRightWidth: DOC_RAIL,
     borderColor: colors.sepiaBorder,
-    ...effects.shadowSurface,
+    ...effects.shadowSurface, ...effects.flat,
   },
   docTop: {
     borderTopWidth: DOC_RAIL,
     borderTopLeftRadius: 4,
     borderTopRightRadius: 4,
     paddingTop: 24,
-    ...effects.shadowSurface,
+    ...effects.shadowSurface, ...effects.flat,
   },
   /**
    * ── THERE IS NO SURFACE, AND THAT IS THE DECISION ────────────────────────
@@ -125,7 +133,7 @@ export const p = StyleSheet.create({
    */
 
   // ── the one row of chrome ─────────────────────────────────────────────────
-  chrome: {
+  chrome: { ...EDGE_LIT,
     flexDirection: 'row',
     alignItems: 'stretch',
     /** The capped index centres HERE, on the main axis. `alignSelf: 'center'`
@@ -484,11 +492,11 @@ export const p = StyleSheet.create({
    * beneath stay legible, and a brass hairline. The film page treats every image
    * this way and the page reads as cinema because of it.
    */
-  still: {
+  still: { ...EDGE_LIT,
     borderRadius: 3, marginBottom: 12, overflow: 'hidden',
     backgroundColor: colors.soot,
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.16)',
-    ...effects.shadowSurface,
+    ...effects.shadowSurface, ...effects.flat,
   },
   /** The art itself is held back before anything is laid over it — a raw frame
    *  at full strength is the one element that can make this page look like a
@@ -957,7 +965,7 @@ export const p = StyleSheet.create({
   wonMeta: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
 
   // ── the dossier ───────────────────────────────────────────────────────────
-  cover: {
+  cover: { ...EDGE_LIT,
     height: 104, borderRadius: 2, marginBottom: 12,
     backgroundColor: colors.soot,
     borderWidth: 1, borderColor: 'rgba(232,223,208,0.09)',
@@ -1045,7 +1053,7 @@ export const p = StyleSheet.create({
   // ── post page ─────────────────────────────────────────────────────────────
   /** The spine that appears once the post scrolls away, so you never lose what
    *  you are reading comments on. Tapping it returns to the top. */
-  spine: {
+  spine: { ...EDGE_LIT,
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingVertical: 8, paddingHorizontal: DOC_PAD,
     backgroundColor: colors.soot,
@@ -1124,7 +1132,7 @@ export const p = StyleSheet.create({
   chs: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.fog, includeFontPadding: false },
   chsGo: { color: colors.parchment },
   chm: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 3, color: colors.sepia, includeFontPadding: false },
-  cb: { flex: 1, minHeight: 0, paddingHorizontal: 16, paddingTop: 16, backgroundColor: colors.soot },
+  cb: { ...EDGE_LIT, flex: 1, minHeight: 0, paddingHorizontal: 16, paddingTop: 16, backgroundColor: colors.soot },
 
   /** The desk's document FILLS the writing area. A sheet that stops halfway down
    *  an empty screen reads as a widget; one that runs to the rail reads as the
@@ -1146,7 +1154,7 @@ export const p = StyleSheet.create({
    * the obvious one — and it reserves the rail's height from its content
    * inset, so the last line can always be scrolled clear of it.
    */
-  deskDoc: {
+  deskDoc: { ...EDGE_LIT,
     flex: 1, minHeight: 0, overflow: 'hidden',
     marginHorizontal: DOC_MARGIN, paddingHorizontal: DOC_PAD, paddingTop: 16,
     backgroundColor: colors.soot,
@@ -1172,9 +1180,9 @@ export const p = StyleSheet.create({
   caret: { color: colors.sepia },
   railTool: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
 
-  sheet: {
+  sheet: { ...EDGE_LIT,
     backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.sepiaBorder,
-    paddingHorizontal: 16, paddingVertical: 4, ...effects.shadowSurface,
+    paddingHorizontal: 16, paddingVertical: 4, ...effects.shadowSurface, ...effects.flat,
   },
   /** The tool rail sits above the keyboard, where the writing room already puts
    *  its toolbar — outside the sheet, so the printed page stays clean. */
@@ -1185,7 +1193,7 @@ export const p = StyleSheet.create({
     backgroundColor: colors.ink,
   },
   rl: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.bone, includeFontPadding: false },
-  kbd: {
+  kbd: { ...EDGE_LIT,
     height: 210, backgroundColor: colors.keyWell,
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center', justifyContent: 'center',

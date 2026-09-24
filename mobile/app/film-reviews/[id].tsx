@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { supabase } from '../../src/lib/supabase';
 import { colors, fonts } from '../../src/theme/theme';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import PressableScale from '@/src/components/PressableScale';
 import { ActivityCard } from '@/src/components/feed/ActivityCard';
 import { FeedItemSchema, type FeedItem } from '@/src/schemas/feed.schema';
@@ -112,6 +113,7 @@ export default function FilmReviewsScreen() {
 
   return (
     <View style={s.container}>
+      <RoomLight room="film" />
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}

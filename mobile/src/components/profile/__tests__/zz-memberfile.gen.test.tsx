@@ -11,6 +11,7 @@ import { render } from '@testing-library/react-native';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from './zz-render.lib';
+import { s } from '../profileStyles';
 import { POSTERS, POSTER_PATHS, POSTER_TITLES, LOCAL_ART } from './zz-art.gen';
 
 import UserProfileScreen from '@/app/user/[username]';
@@ -135,6 +136,22 @@ const VARIANTS: [string, Ctl][] = [
       targetUser: { ...USER, is_social_private: true },
     },
   }],
+
+  // The ranks below the Auteur carry no picture: the plate is lit by the
+  // room alone (and, for the Archivist, a brass tint at the top).
+  ['memberfile-archivist', {
+    ...CTL,
+    data: { ...(CTL.data as Record<string, unknown>), targetUser: { ...USER, role: 'archivist', tier: 'archivist', is_founding: false } },
+  }],
+  ['memberfile-member', {
+    ...CTL,
+    data: { ...(CTL.data as Record<string, unknown>), targetUser: { ...USER, role: 'user', tier: 'free', is_founding: false } },
+  }],
+
+  // The rooms behind the file's doors, each its own screen over the same lit
+  // room — so none of them may paint the house colour across it.
+  ...(['archive', 'ledger', 'watchlist', 'lists', 'physical', 'passport', 'projector', 'calendar'] as const)
+    .map((tab): [string, Ctl] => [`memberfile-tab-${tab}`, { ...CTL, activeTab: tab }]),
 ];
 
 const RUN = !!process.env.MOCKUPS;
@@ -145,6 +162,21 @@ gate('member file generator', () => {
     mockCtl = ctl;
     let r!: ReturnType<typeof render>;
     await act(async () => { r = render(<UserProfileScreen />); });
+    // The test renderer never lays anything out, so the plate never reports
+    // where it ends and the room's light never learns to hang from the
+    // picture. Tell it what the browser lays the plate out at: 390×484 from the
+    // top, measured WITH the app's fonts loaded (without them the text sets
+    // taller and the plate measures 504 — a hem 20pt below the picture's own
+    // edge, which hid a line exactly there). The re-render this causes
+    // is also what lets the plate's develop animation reach its resting
+    // state: without it the atmosphere is drawn at opacity 0, and the render
+    // shows a plate no member ever sees.
+    // (A tab's own room has no plate: nothing to lay out.)
+    const bio = r.queryAllByText(/Nitrate, mostly/)[0];
+    let plate = bio ? bio.parent : null;
+    while (plate && !(plate.props.style === s.headerWrap && typeof plate.props.onLayout === 'function')) plate = plate.parent;
+    if (bio && !plate) throw new Error('the membership plate was not found');
+    if (plate) await act(async () => { plate!.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 484 } } }); });
     const html = toHtml(r.toJSON(), ART);
     writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
      

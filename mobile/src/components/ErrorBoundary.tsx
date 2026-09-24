@@ -12,6 +12,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { captureError } from '../lib/sentry';
 import { colors, fonts } from '../theme/theme';
 import PressableScale from './PressableScale';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 interface Props {
   children: ReactNode;
@@ -111,6 +112,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
       return (
         <View style={styles.container}>
+          <RoomLight room="default" />
           <View style={styles.content}>
             <Text style={styles.glyph}>⊗</Text>
             <Text style={styles.title}>PROJECTION FAILURE</Text>

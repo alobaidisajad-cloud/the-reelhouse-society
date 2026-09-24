@@ -56,6 +56,7 @@ import { paperTierOf, type BallotOption } from '@/src/stores/dispatchTypes';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
 import { showTierDoor } from '@/src/utils/tierDoor';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 /** Set when the desk OPENS. A clock would re-render the composer every sixty
  *  seconds while somebody is typing, for a number nobody is watching. */
@@ -247,6 +248,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
 
   return (
     <View style={p.screen}>
+      <RoomLight room="dispatch" />
       <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
       <PaperComposer
         kind={kind}
@@ -411,6 +413,7 @@ export function ComposeBallotScreen() {
 
   return (
     <View style={p.screen}>
+      <RoomLight room="dispatch" />
       <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
       <BallotDesk
         // Their OWN rank, exactly as the short desk above does it. This forced

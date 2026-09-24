@@ -16,10 +16,11 @@ import { decode } from 'base64-arraybuffer';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { EDGE_LIT } from '@/src/theme/light';
 
 interface Props {
   onClose: () => void;
@@ -118,12 +119,12 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
 }
 
 const s = StyleSheet.create({
-  sheet: {
+  sheet: { ...EDGE_LIT,
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: colors.soot, borderTopLeftRadius: 16, borderTopRightRadius: 16,
     paddingHorizontal: 20, paddingTop: 20,
     borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.2)',
-    shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.8, shadowRadius: 20,
+    ...effects.flat,
   },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   title: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, letterSpacing: 1 },

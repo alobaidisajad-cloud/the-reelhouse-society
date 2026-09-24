@@ -7,6 +7,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { AlertTriangle, RotateCcw, ArrowLeft } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import { Sentry } from '@/src/lib/sentry';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 export default function GlobalErrorScreen({ error, retry }: ErrorBoundaryProps) {
 
@@ -33,6 +34,7 @@ export default function GlobalErrorScreen({ error, retry }: ErrorBoundaryProps) 
 
   return (
     <View style={s.container}>
+      <RoomLight room="default" />
       <View style={s.iconWrapper}>
         <AlertTriangle size={48} color={colors.danger} strokeWidth={1.5} />
       </View>

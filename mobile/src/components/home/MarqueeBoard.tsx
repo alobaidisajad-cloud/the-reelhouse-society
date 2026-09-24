@@ -36,6 +36,7 @@ import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { supabase } from '@/src/lib/supabase';
 import type { TMDBFilm } from './types';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
 const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
@@ -349,10 +350,12 @@ const s = StyleSheet.create({
     borderColor: 'rgba(184,137,26,0.45)',
     padding: 3,
     backgroundColor: colors.ink,
-    ...effects.shadowPrimary,
+    // No drop shadow. On black it did nothing; on the lit house a black shadow
+    // under something this wide draws a dark rim round it, and the lamp the
+    // Lobby hangs is the thing that lifts the cabinet off the page now.
     // NO overflow:hidden here — the corner studs live on this layer.
   },
-  cabinetInner: {
+  cabinetInner: { ...EDGE_LIT,
     borderRadius: 5,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.16)',

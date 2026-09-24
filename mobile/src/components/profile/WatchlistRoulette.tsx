@@ -22,6 +22,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '../PressableScale';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { ToastHost } from '@/src/components/ToastHost';
+import { EDGE_LIT } from '@/src/theme/light';
 
 interface RouletteFilm {
     id?: number;
@@ -283,7 +284,7 @@ const s = StyleSheet.create({
         flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
         justifyContent: 'center', alignItems: 'center', padding: 24,
     },
-    card: {
+    card: { ...EDGE_LIT,
         width: '100%', maxWidth: 400, padding: 32,
         backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
         borderTopWidth: 2, borderTopColor: colors.sepia, borderRadius: 8,
@@ -312,7 +313,7 @@ const s = StyleSheet.create({
     },
     gateWindow: { width: 140, height: 210, borderRadius: 3, overflow: 'hidden' },
     poster: { width: '100%', height: '100%' },
-    posterBlank: { width: '100%', height: '100%', backgroundColor: colors.soot, opacity: 0.5 },
+    posterBlank: { ...EDGE_LIT, width: '100%', height: '100%', backgroundColor: colors.soot, opacity: 0.5 },
     posterBlankResult: { opacity: 1, alignItems: 'center', justifyContent: 'center', padding: 12, borderWidth: 1, borderColor: colors.sepiaBorder },
     posterBlankTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, textAlign: 'center' },
 

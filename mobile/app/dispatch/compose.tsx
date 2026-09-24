@@ -51,6 +51,8 @@ import { excerptFor } from '@/src/components/dispatch/excerpt';
 import { scaledTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
+import { EDGE_LIT } from '@/src/theme/light';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 // A long essay must survive a background-kill. Drafts persist here, new-dossiers only.
 /* The draft's key is NOT here any more. It used to be one member-less string,
@@ -204,6 +206,7 @@ function KindPicker() {
 
     return (
         <View style={[p.screen, { justifyContent: 'flex-end' }]}>
+            <RoomLight room="dispatch" />
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
             <View style={{ paddingBottom: insets.bottom }}>
                 <PaperPicker
@@ -244,6 +247,7 @@ function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
     );
     return (
         <View style={p.screen}>
+            <RoomLight room="dispatch" />
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
             <PaperBack label="THE DISPATCH" onBack={() => router.back()} />
             <ScrollView
@@ -1199,7 +1203,7 @@ function ComposeDossierScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
+    container: { ...EDGE_LIT,
         flex: 1,
         backgroundColor: colors.soot,
     },

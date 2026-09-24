@@ -1,5 +1,5 @@
 import PressableScale from '@/src/components/PressableScale';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X } from 'lucide-react-native';
 import React, { memo, useEffect, useRef, useState } from 'react';
@@ -7,6 +7,7 @@ import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { ToastHost } from '@/src/components/ToastHost';
+import { EDGE_LIT, WASH } from '@/src/theme/light';
 
 // YouTube throws "Error 153 / video player configuration error" when its /embed
 // URL is loaded as the top document (no valid referrer/origin). The fix is to
@@ -76,7 +77,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
                     <View style={{ position: 'absolute', zIndex: 2, top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
                         <LinearGradient
                             colors={['rgba(184,137,26,0.25)', 'transparent', 'rgba(184,137,26,0.15)']}
-                            style={StyleSheet.absoluteFillObject}
+                            style={[StyleSheet.absoluteFillObject, WASH]}
                         />
                     </View>
                     <WebView
@@ -119,7 +120,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
 })
 
 const s = StyleSheet.create({
-    overlay: {
+    overlay: { ...EDGE_LIT,
         flex: 1,
         backgroundColor: colors.soot,
         justifyContent: 'center',
@@ -156,11 +157,7 @@ const s = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: 'rgba(184,137,26,0.3)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 40 },
-        shadowOpacity: 0.8,
-        shadowRadius: 40,
-        elevation: 30,
+        elevation: 30, ...effects.flat,
     },
     webview: {
         flex: 1,

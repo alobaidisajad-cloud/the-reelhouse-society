@@ -9,7 +9,7 @@
  * the dagger (†) in crimson for the departed. No skulls in this house.
  */
 import { memo, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
@@ -19,8 +19,13 @@ import { nav } from '@/src/utils/typedRouter';
 import { s } from '@/src/components/person/personStyles';
 import { displayTextProps } from '@/src/constants/textScaling';
 import { FilmStripPerforations } from '@/src/components/person/PersonFilmography';
+import { RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
+import type { SharedValue } from 'react-native-reanimated';
 
 import type { DimensionValue } from 'react-native';
+
+/** The hero's fade into the room: how much house it lays down, top to hem. */
+const HERO_VEIL: VeilStops = [[0, 0.05], [0.55, 0.45], [1, 1]];
 
 // ── Interfaces ──────────────────────────────────────────────
 interface PersonDetail {
@@ -52,6 +57,8 @@ interface PersonHeroProps {
   heroBackdrop: string | null;
   photoUri: string | null;
   heroDynStyle: { height: number };
+  /** The page's scroll: the hero moves with it, the room's light does not. */
+  scrollY?: SharedValue<number>;
   canonCount: number;
   craftLabel: string;
   careerSpan: number;
@@ -119,6 +126,7 @@ export const PersonHero = memo(function PersonHero({
   heroBackdrop,
   photoUri,
   heroDynStyle,
+  scrollY,
   canonCount,
   craftLabel,
   careerSpan,
@@ -189,19 +197,22 @@ export const PersonHero = memo(function PersonHero({
       ═══════════════════════════════════════════════════════ */}
       <View style={[s.heroWrap, heroDynStyle]}>
         {heroBackdrop ? (
-          <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
+          <>
+            <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
+            <View style={s.heroSepia} />
+            {/* Fades into the LIT room, and carries the room's light still
+                while the page scrolls — see RoomVeil. */}
+            <RoomVeil room="film" hem={heroDynStyle.height} art={heroBackdrop} stops={HERO_VEIL} lifted={scrollY} />
+          </>
         ) : (
+          /* No picture: a brass tint at the top, fading to nothing — never to
+             the house colour. It used to be a near-solid dark plate, which
+             hid the room's light where it is brightest and ended in a line. */
           <LinearGradient
-            colors={['rgba(184,137,26,0.12)', 'rgba(13,11,9,0.95)']}
+            colors={['rgba(184,137,26,0.12)', 'rgba(184,137,26,0)']}
             style={s.heroBg}
           />
         )}
-        {heroBackdrop && <View style={s.heroSepia} />}
-        <LinearGradient
-          colors={['rgba(13,11,9,0.05)', 'rgba(13,11,9,0.45)', colors.ink]}
-          locations={[0, 0.55, 1]}
-          style={StyleSheet.absoluteFillObject}
-        />
         {/* Film-strip perforations — ReelHouse signature */}
         <View style={s.perfBar}>
           <FilmStripPerforations />

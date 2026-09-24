@@ -32,6 +32,7 @@ import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { tally } from './profileComputed';
 import { tasteReadiness, coverageNote, type TasteProfile } from '@/src/constants/taste';
+import { EDGE_LIT } from '@/src/theme/light';
 
 // Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
 // TactileEngine.navigate would lose its `this` binding).
@@ -143,7 +144,7 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo }: Ta
 });
 
 const s = StyleSheet.create({
-    container: {
+    container: { ...EDGE_LIT,
         padding: 20, backgroundColor: colors.soot,
         borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4,
         position: 'relative', overflow: 'hidden',

@@ -20,10 +20,11 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import { stripHtml } from '@/src/utils/html';
 import { truncateReview } from '@/src/utils/text';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export const NITRATE_CARD_WIDTH = 360;
 export const NITRATE_CARD_HEIGHT = 640;
@@ -210,11 +211,7 @@ const s = StyleSheet.create({
     borderColor: colors.sepiaBorder,
     borderRadius: 6,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.8,
-    shadowRadius: 30,
-    elevation: 10,
+    elevation: 10, ...effects.flat,
   },
   bracket: {
     position: 'absolute',
@@ -258,7 +255,7 @@ const s = StyleSheet.create({
     padding: 16,
     paddingBottom: 10,
   },
-  posterFrame: {
+  posterFrame: { ...EDGE_LIT,
     height: '100%',
     aspectRatio: 2 / 3,
     backgroundColor: colors.soot,

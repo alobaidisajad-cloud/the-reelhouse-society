@@ -12,6 +12,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { DarkroomAtmo, DarkroomSuggestionRow } from './DarkroomCards';
 import type { DiscoverFilm } from '@/src/stores/discover';
+import { EDGE_LIT, WASH } from '@/src/theme/light';
 
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
@@ -40,10 +41,13 @@ export const DarkroomHero = React.memo(function DarkroomHero({
   return (
     <View style={s.heroContainer}>
       <DarkroomAtmo />
+      {/* A wash with no artwork behind it, thinned: at full strength it
+          darkened the lit page itself, and the room's lamp showed only where
+          content did not cover it — two dark columns down the screen. */}
       <LinearGradient
         colors={['rgba(13,11,9,0.8)', 'rgba(6,5,4,0.9)', 'transparent']}
         locations={[0, 0.6, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={[StyleSheet.absoluteFillObject, WASH]}
       />
       <Animated.View entering={FadeInDown.springify().mass(0.8).damping(18)} style={s.heroContent}>
         {(() => {
@@ -127,7 +131,7 @@ const s = StyleSheet.create({
     borderBottomColor: 'rgba(184,137,26,0.2)',
     position: 'relative',
     zIndex: 100,
-    elevation: 100,
+    elevation: 100, ...effects.flat,
   },
   heroContent: {
     alignItems: 'center',
@@ -178,7 +182,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 13,
     letterSpacing: 0.5,
-    ...effects.shadowSurface,
+    ...effects.shadowSurface, ...effects.flat,
   },
   searchInputActive: {
     borderColor: 'rgba(180,45,45,0.5)',
@@ -190,7 +194,7 @@ const s = StyleSheet.create({
     top: 16,
     zIndex: 1,
   },
-  suggestionsBox: {
+  suggestionsBox: { ...EDGE_LIT,
     position: 'absolute',
     top: 55,
     left: 0,
@@ -202,10 +206,10 @@ const s = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
     zIndex: 20,
+    // Elevation stays: on Android it is what draws this dropdown ABOVE the
+    // grid it opens over. The shadow goes — the box is the card step, lit,
+    // and a 30pt black cloud round something this wide is a dark rim.
     elevation: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.8,
-    shadowRadius: 30,
+    ...effects.flat,
   },
 });

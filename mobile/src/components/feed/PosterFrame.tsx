@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
@@ -103,7 +104,7 @@ const s = StyleSheet.create({
   },
   // The clip host. The blurred glow layer is scaled to 1.15 and would spill
   // past the frame without this.
-  wrap: {
+  wrap: { ...EDGE_LIT,
     width: '100%',
     height: '100%',
     borderWidth: 1,

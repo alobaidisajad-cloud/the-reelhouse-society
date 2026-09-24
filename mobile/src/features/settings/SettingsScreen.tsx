@@ -45,6 +45,7 @@ import { openHousePage, writeToFrontDesk, copySupportAddress } from '@/src/utils
 import { SUPPORT_EMAIL, SUPPORT_URL, TERMS_URL, PRIVACY_URL } from '@/src/constants/support';
 import { st } from '@/src/features/settings/settings.styles';
 import { ToastHost } from '@/src/components/ToastHost';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> => {
   return new Promise((resolve) => {
@@ -479,6 +480,7 @@ export function SettingsScreen() {
 
   return (
     <View style={st.container}>
+      <RoomLight room="default" />
       <Animated.View style={[st.ambientGlow, glowStyle]} pointerEvents="none">
         <LinearGradient colors={['rgba(184,137,26,0.15)', 'transparent', 'transparent']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
       </Animated.View>

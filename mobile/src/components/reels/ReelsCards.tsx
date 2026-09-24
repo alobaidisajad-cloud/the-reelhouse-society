@@ -285,7 +285,7 @@ const st = StyleSheet.create({
     height: 220,
     marginBottom: 14,
     position: 'relative',
-    ...effects.shadowPrimary,
+    ...effects.shadowPrimary, ...effects.flat,
   },
   stackCardPosterWrap: {
     position: 'absolute',

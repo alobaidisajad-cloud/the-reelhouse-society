@@ -25,6 +25,7 @@ import { isAuteurPlusTier, isArchivistPlusTier, getDisplayTier } from '@/src/uti
 import { firstPrivilegesOf } from '@/src/constants/membership';
 import { getPasswordChecks, PW_CHECK_LABELS, getStrengthInfo } from '@/src/components/auth/PasswordStrengthMeter';
 import { Toggle } from '@/src/components/Toggle';
+import { EDGE_LIT, WASH } from '@/src/theme/light';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -48,7 +49,7 @@ export const SectionCard = ({ children, danger }: { children: React.ReactNode; d
     />
     <LinearGradient
       colors={danger ? ['rgba(162,36,36,0.05)', 'transparent'] : ['rgba(184,137,26,0.03)', 'transparent']}
-      style={StyleSheet.absoluteFillObject}
+      style={[StyleSheet.absoluteFillObject, WASH]}
     />
     {children}
   </View>
@@ -682,7 +683,7 @@ export function ExperienceSection() {
 }
 
 const st = StyleSheet.create({
-  sectionCard: { backgroundColor: colors.soot, borderWidth: 1, borderColor: '#30261A', borderRadius: 6, marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' },
+  sectionCard: { ...EDGE_LIT, backgroundColor: colors.soot, borderWidth: 1, borderColor: '#30261A', borderRadius: 6, marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' },
   sectionCardDanger: { borderColor: 'rgba(162,36,36,0.5)', backgroundColor: 'rgba(162,36,36,0.03)' },
   sectionTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, zIndex: 10 },
   sectionHeaderWrap: { padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },

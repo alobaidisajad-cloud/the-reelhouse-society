@@ -1,4 +1,5 @@
 import { StyleSheet as RNStyleSheet } from 'react-native';
+import { BLOOM, lightGeometry, type Room } from '@/src/theme/light';
 /**
  * The React Native tree, converted to HTML that draws the same picture.
  *
@@ -224,6 +225,21 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
       : sc;
     out.push(`${isText ? 'text-shadow' : 'box-shadow'}:${x}px ${y}px ${blur}px ${colour}`);
   }
+  /**
+   * ── THE NEW ARCHITECTURE'S OWN CSS ────────────────────────────────────────
+   * React Native 0.76+ takes `boxShadow` (inset included) and, from 0.79,
+   * `experimental_backgroundImage` (gradients) as CSS strings. The edge light
+   * on every lit surface is exactly these two. A legacy shadow above and a
+   * `boxShadow` here are separate layers on the device, so both are drawn.
+   */
+  if (!isText && typeof st.boxShadow === 'string') {
+    const legacy = out.findIndex((d) => d.startsWith('box-shadow:'));
+    if (legacy >= 0) out[legacy] = `${out[legacy]}, ${st.boxShadow}`;
+    else out.push(`box-shadow:${st.boxShadow}`);
+  }
+  if (!isText && typeof st.experimental_backgroundImage === 'string') {
+    out.push(`background-image:${st.experimental_backgroundImage}`);
+  }
   const ts = st.textShadowColor as string | undefined;
   if (ts) {
     const o = st.textShadowOffset as { width: number; height: number } | undefined;
@@ -292,6 +308,7 @@ const SVG_TAG: Record<string, string> = {
   RNSVGRect: 'rect', RNSVGLine: 'line', RNSVGEllipse: 'ellipse',
   RNSVGDefs: 'defs', RNSVGLinearGradient: 'linearGradient',
   RNSVGRadialGradient: 'radialGradient', RNSVGStop: 'stop', RNSVGText: 'text',
+  RNSVGMask: 'mask',
 };
 
 function svgAttrs(type: string, p: Record<string, unknown>): string {
@@ -330,8 +347,50 @@ function svgAttrs(type: string, p: Record<string, unknown>): string {
     return a.join(' ');
   }
 
-  const fill = decodeColour(p.fill);
-  const stroke = decodeColour(p.stroke);
+  /**
+   * ── A GRADIENT IS ONE NATIVE NODE, NOT A TREE OF STOPS ───────────────────
+   * react-native-svg folds a gradient's <Stop> children into the node itself:
+   * `name` is its id, `gradient` is [offset, argb, offset, argb, …], and
+   * `gradientUnits` is 0/1. Without this the room's light rendered as three
+   * rectangles filled with a reference to nothing — i.e. not at all.
+   *
+   * And an ELLIPTICAL radial gradient (rx ≠ ry) has no SVG 1.1 attribute: a
+   * browser knows only `r`. It is a circle of radius rx, squashed vertically
+   * about its own centre by a transform — which is exactly the same shape.
+   */
+  if (type === 'RNSVGRadialGradient' || type === 'RNSVGLinearGradient') {
+    put('id', p.name);
+    if (p.gradientUnits === 1) put('gradientUnits', 'userSpaceOnUse');
+    if (type === 'RNSVGRadialGradient') {
+      put('cx', p.cx); put('cy', p.cy); put('fx', p.fx ?? p.cx); put('fy', p.fy ?? p.cy);
+      const rx = Number(p.rx ?? p.r), ry = Number(p.ry ?? p.r);
+      put('r', rx);
+      if (rx && ry && rx !== ry) {
+        const cx = Number(p.cx), cy = Number(p.cy);
+        put('gradientTransform', `translate(${cx} ${cy}) scale(1 ${ry / rx}) translate(${-cx} ${-cy})`);
+      }
+    } else {
+      put('x1', p.x1); put('y1', p.y1); put('x2', p.x2); put('y2', p.y2);
+    }
+    return a.join(' ');
+  }
+
+  // A mask, like a gradient, carries its id as `name` and its units as 0/1.
+  if (type === 'RNSVGMask') {
+    put('id', p.name);
+    if (p.maskUnits === 1) put('maskUnits', 'userSpaceOnUse');
+    put('x', p.x); put('y', p.y); put('width', p.width); put('height', p.height);
+    return a.join(' ');
+  }
+  // Anything masked names its mask by id alone.
+  if (typeof p.mask === 'string' && p.mask) put('mask', `url(#${p.mask})`);
+
+  // A fill that points at a gradient arrives as { type: 1, brushRef: <id> }.
+  const brush = (v: unknown) =>
+    v && typeof v === 'object' && (v as { type?: number }).type === 1
+      ? `url(#${(v as { brushRef?: string }).brushRef})` : null;
+  const fill = brush(p.fill) ?? decodeColour(p.fill);
+  const stroke = brush(p.stroke) ?? decodeColour(p.stroke);
   put('fill', fill ?? (p.fill === null ? 'none' : undefined));
   put('stroke', stroke);
   put('stroke-width', p.strokeWidth);
@@ -343,6 +402,23 @@ function svgAttrs(type: string, p: Record<string, unknown>): string {
     if (p[k] !== undefined) put(k === 'stopColor' ? 'stop-color' : k === 'stopOpacity' ? 'stop-opacity' : k, p[k]);
   }
   return a.join(' ');
+}
+
+// Each veil's gradients get their own ids, should a page hold two.
+let veilSeq = 0;
+
+// ── the bloom ───────────────────────────────────────────────────────────────
+/** The bloom, drawn from `BLOOM` in a box styled by the caller. */
+function bloomHtml(uri: string, style: string, opts: RenderOpts): string {
+  const m = /\/w\d+(\/[^/?]+)$/.exec(uri) || /\/(\w+\.jpg)$/.exec(uri);
+  const poster = m && opts.posters ? opts.posters[m[1]] || opts.posters['/' + m[1]] : undefined;
+  const fade = `linear-gradient(180deg,${BLOOM.mask.map(([at, a]) => `rgba(0,0,0,${a}) ${at * 100}%`).join(',')})`;
+  const img = poster
+    ? `<img src="${poster.data}" alt="" style="width:100%;height:100%;object-fit:cover;` +
+      `filter:blur(${BLOOM.blur}px) saturate(${BLOOM.saturate}) sepia(${BLOOM.sepia});` +
+      `opacity:${BLOOM.opacity};transform:scale(${BLOOM.scale})" />`
+    : '';
+  return `<div data-t="room-bloom" style="${style};-webkit-mask-image:${fade};mask-image:${fade}">${img}</div>`;
 }
 
 // ── the walk ────────────────────────────────────────────────────────────────
@@ -369,7 +445,17 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
   // ── SVG: the icons and the dial ──
   const tag = SVG_TAG[t];
   if (tag) {
-    const kids = (n.children || []).map((c) => toHtml(c, opts, true)).join('');
+    // A gradient's stops live in its own `gradient` prop (see svgAttrs).
+    const packed = Array.isArray(p.gradient) ? (p.gradient as number[]) : null;
+    const kids = packed
+      ? Array.from({ length: packed.length / 2 }, (_, i) => {
+        const c = decodeColour(packed[i * 2 + 1]) ?? '#000';
+        const m = /^rgba\((\d+),(\d+),(\d+),([\d.]+)\)$/.exec(c);
+        return m
+          ? `<stop offset="${packed[i * 2]}" stop-color="rgb(${m[1]},${m[2]},${m[3]})" stop-opacity="${m[4]}"></stop>`
+          : `<stop offset="${packed[i * 2]}" stop-color="${c}"></stop>`;
+      }).join('')
+      : (n.children || []).map((c) => toHtml(c, opts, true)).join('');
     const attrs = svgAttrs(t, p);
     if (t === 'RNSVGSvgView') {
       // Style carries position/size for absolutely-placed art like the dial ring.
@@ -431,6 +517,47 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
       l: cols.map((_, i) => (typeof locs[i] === 'number' ? locs[i] : cols.length > 1 ? i / (cols.length - 1) : 0)),
     }));
     return `<div data-grad="${grad}" style="${style};background-image:linear-gradient(${dir},${stops.join(',')})">${kids}</div>`;
+  }
+
+  /**
+   * ── THE BLOOM ──────────────────────────────────────────────────────────────
+   * Drawn on the GPU through Skia, which does not run here. Its wrapper carries
+   * the artwork (`nativeID`), and the recipe is `BLOOM` itself — so this draws
+   * the same blur, colour, opacity and fade the component does, from the same
+   * numbers, rather than a second copy of them.
+   */
+  if (p.testID === 'room-bloom') {
+    return bloomHtml(String(p.nativeID ?? ''), css(st, false), opts);
+  }
+  /**
+   * ── THE LIGHT A VEIL CARRIES ──────────────────────────────────────────────
+   * Skia again. Its wrapper carries the room, the hem, the veil's stops and
+   * the art; this draws, from `lightGeometry` — the one the component draws
+   * from — the room's light, masked by the veil's stops, ending at the hem.
+   * At rest, which is what a proof shows, the light has not moved.
+   */
+  if (p.testID === 'room-veil-light') {
+    const r = JSON.parse(String(p.nativeID)) as { room: Room; hem: number; art: string | null; stops: [number, number][]; W: number; H: number };
+    const g = lightGeometry(r.room, r.W, r.H, r.hem);
+    const k = ++veilSeq;
+    const ramp = `linear-gradient(180deg,${r.stops.map(([at, a]) => `rgba(0,0,0,${a}) ${at * 100}%`).join(',')})`;
+    const radial = (id: string, e: { cx: number; cy: number; rx: number; ry: number }, stops: string) =>
+      `<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="${e.cx}" cy="${e.cy}" fx="${e.cx}" fy="${e.cy}" r="${e.rx}" ` +
+      `gradientTransform="translate(${e.cx} ${e.cy}) scale(1 ${e.ry / e.rx}) translate(${-e.cx} ${-e.cy})">${stops}</radialGradient>`;
+    const rgb = g.pool.rgb.join(',');
+    const stop = (at: number, colour: string, a: number) => `<stop offset="${at}" stop-color="${colour}" stop-opacity="${a}"></stop>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${r.W}" height="${r.H}" style="position:absolute;top:0;left:0;width:${r.W}px;height:${r.H}px"><defs>` +
+      radial(`vpool${k}`, g.pool, g.pool.stops.map(([at, a]) => stop(at, `rgb(${rgb})`, a)).join('')) +
+      `<linearGradient id="vfloor${k}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${g.floor.height}">${g.floor.stops.map(([at, a]) => stop(at, '#000', a)).join('')}</linearGradient>` +
+      radial(`vcorners${k}`, g.corners, g.corners.stops.map(([at, a]) => stop(at, '#000', a)).join('')) +
+      `</defs><rect x="0" y="0" width="${r.W}" height="${r.H}" fill="url(#vpool${k})"></rect>` +
+      `<rect x="0" y="0" width="${r.W}" height="${r.H}" fill="url(#vfloor${k})"></rect>` +
+      `<rect x="0" y="0" width="${r.W}" height="${r.H}" fill="url(#vcorners${k})"></rect></svg>`;
+    const bloom = r.art
+      ? bloomHtml(r.art, `position:absolute;top:0px;left:${g.bloom.left}px;width:${g.bloom.width}px;height:${g.bloom.height}px;overflow:hidden`, opts)
+      : '';
+    return `<div data-t="room-veil-light" style="position:absolute;top:0px;left:0px;width:${r.W}px;height:${r.hem}px;` +
+      `-webkit-mask-image:${ramp};mask-image:${ramp}">${svg}${bloom}</div>`;
   }
 
   // ── artwork ──

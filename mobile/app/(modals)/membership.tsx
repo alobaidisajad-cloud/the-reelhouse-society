@@ -53,6 +53,7 @@ import { FoundingCertificate } from '@/src/components/society/FoundingCertificat
 import { SmallPrint, STORE } from '@/src/components/society/SmallPrint';
 import { PurchaseDock, DOCK, DOCK_HEIGHT } from '@/src/components/society/PurchaseDock';
 import { ticketPrice, savePercent, foundingPitch, type Billing } from '@/src/components/society/societyPricing';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 /** The house's own legal pages — the same two Settings opens (constants/support). */
 export { TERMS_URL, PRIVACY_URL };
@@ -454,6 +455,7 @@ export default function MembershipScreen() {
 
   return (
     <View style={st.container}>
+      <RoomLight room="default" />
       {/* Nav */}
       <View style={[st.navBar, { paddingTop: insets.top + 4 }]}>
         <PressableScale onPress={() => nav.back()} style={st.navBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="light" accessibilityRole="button" accessibilityLabel="Go back">

@@ -13,6 +13,7 @@ import type { FilmVerdict } from '@/src/services/FilmService';
 
 import type { TMDBMovieDetail } from '@/src/lib/tmdb';
 import type { StyleProp, ViewStyle } from 'react-native';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const POSTER_W = 140;
 const POSTER_H = POSTER_W * 1.5;
@@ -242,12 +243,13 @@ const styles = StyleSheet.create({
     boxShadow: '0 0 20px rgba(184, 137, 26, 0.8)',
     shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 20,
   },
+  // A photograph is not a lit surface: the edge light is the empty frame’s.
   poster: {
     width: POSTER_W, height: POSTER_H, borderRadius: 2,
     borderWidth: 1, borderColor: colors.sepiaBorder,
     backgroundColor: colors.surface,
   },
-  posterPlaceholder: { 
+  posterPlaceholder: { ...EDGE_LIT,
     justifyContent: 'center', 
     alignItems: 'center' 
   },

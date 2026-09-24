@@ -18,6 +18,7 @@ import UserProfileScreen from '../user/[username]';
 import Buster from '@/src/components/Buster';
 import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 export default function ProfileTab() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
@@ -28,6 +29,7 @@ export default function ProfileTab() {
     return (
       <FrozenTab>
         <View style={s.container}>
+          <RoomLight room="member" />
           <Buster size={80} mood="peeking" message="The archive awaits your identity." />
           <Text style={s.prompt}>Identify yourself to access your dossier</Text>
           <PressableScale testID="profile-sign-in-prompt" style={s.ctaBtn} onPress={() => (router.push as any)('/login' as any)} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="medium">

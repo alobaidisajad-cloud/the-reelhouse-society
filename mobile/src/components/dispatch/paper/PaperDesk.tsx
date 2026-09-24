@@ -29,6 +29,7 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { PaperKeyWell } from './PaperKeyWell';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /** The head every desk wears. One component so three desks cannot drift. */
 /**
@@ -111,7 +112,7 @@ export const WireDesk = memo(function WireDesk({
   onBack: () => void; onFile: () => void;
 }) {
   return (
-    <View style={p.screen}>
+    <View style={p.desk}>
       <DeskHead kind="wire" ready={!!source && !!headline} onBack={onBack} onFile={onFile} />
       <View style={p.deskDoc}>
         <View style={p.postRow}>
@@ -175,7 +176,7 @@ export const BallotDesk = memo(function BallotDesk({
   const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
   const filled = options.filter(Boolean).length;
   return (
-    <View style={p.screen}>
+    <View style={p.desk}>
       <DeskHead kind="ballot" ready={ready ?? (filled >= 2 && !!question)} onBack={onBack} onFile={onFile} />
       <View style={p.deskDoc}>
         <View style={p.postRow}>
@@ -296,7 +297,7 @@ export const DossierDesk = memo(function DossierDesk({
   onBack: () => void; onFile: () => void;
 }) {
   return (
-    <View style={p.screen}>
+    <View style={p.desk}>
       <DeskHead kind="dossier" ready={!!title && words > 0} onBack={onBack} onFile={onFile} />
       <View style={[p.deskDoc, { paddingTop: 16 }]}>
         <Text style={d.dossierTitle} {...displayTextProps}>
@@ -530,7 +531,7 @@ export const ShareSheet = memo(function ShareSheet({
 
 const d = StyleSheet.create({
   // ── shared sheet shell ────────────────────────────────────────────────────
-  sheet: {
+  sheet: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderTopWidth: 1.5, borderTopColor: colors.sepiaBorder,
     borderTopLeftRadius: 6, borderTopRightRadius: 6,

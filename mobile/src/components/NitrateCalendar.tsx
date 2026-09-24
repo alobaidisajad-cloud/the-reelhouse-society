@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -163,7 +164,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
 }
 
 const s = StyleSheet.create({
-    container: {
+    container: { ...EDGE_LIT,
         backgroundColor: colors.soot,
         borderWidth: 1,
         borderColor: 'rgba(184, 137, 26, 0.25)',

@@ -7,6 +7,7 @@ import { colors, fonts, effects } from '@/src/theme/theme';
 import { displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { AuthBackdrop, SocietyEyebrow, HaloIcon, Est1924 } from './AuthChrome';
+import { EDGE_LIT } from '@/src/theme/light';
 
 interface Props {
   confirmedEmail: string;
@@ -140,7 +141,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone,
     textAlign: 'center', lineHeight: 22, marginBottom: 12,
   },
-  confirmEmailBox: {
+  confirmEmailBox: { ...EDGE_LIT,
     backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 2, paddingVertical: 10, paddingHorizontal: 16,
     marginBottom: 20, alignSelf: 'stretch',

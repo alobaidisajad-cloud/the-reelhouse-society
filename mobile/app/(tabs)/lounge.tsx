@@ -42,6 +42,7 @@ import { EmptyMyLounges } from '@/src/components/lounge/EmptyMyLounges';
 // ── Styles ── (must live outside app/ so Expo Router never treats it as a route)
 import { s } from '@/src/components/lounge/loungeTabStyles';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -245,6 +246,7 @@ export default function LoungeScreen() {
   return (
     <FrozenTab>
     <View style={s.container}>
+      <RoomLight room="default" />
       {/* ── Compact ceremonial header ── */}
       <Animated.View entering={FadeIn.duration(700)} style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
         <View style={s.headerCrestRow}>

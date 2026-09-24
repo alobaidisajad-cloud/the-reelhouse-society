@@ -31,6 +31,7 @@ import { deckLabelProps, displayTextProps, scaledTextProps } from '@/src/constan
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { privilegesOf, type PaidRankId, type Rank } from '@/src/constants/membership';
 import type { TicketPrice } from './societyPricing';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export type TicketState = 'offer' | 'held' | 'included';
 
@@ -190,7 +191,7 @@ function Stub({ auteur, selected, quiet }: { auteur: boolean; selected: boolean;
 const PUNCH = 12;
 
 const s = StyleSheet.create({
-  ticket: {
+  ticket: { ...EDGE_LIT,
     marginHorizontal: 16,
     borderWidth: 1, borderColor: colors.sepiaBorder,
     backgroundColor: colors.frame,

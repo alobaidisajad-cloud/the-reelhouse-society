@@ -16,6 +16,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Lock } from 'lucide-react-native';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -126,6 +127,7 @@ export default function ResetPasswordScreen() {
   if (success) {
     return (
       <View style={s.container}>
+        <RoomLight room="default" />
         <View style={s.successWrap}>
           <AnimatedView entering={FadeIn.duration(600).reduceMotion(ReduceMotion.Never)} style={s.successContent}>
             <View style={s.successIconWrap}>
@@ -147,6 +149,7 @@ export default function ResetPasswordScreen() {
   if (hasSession === null) {
     return (
       <View style={s.container}>
+        <RoomLight room="default" />
         <View style={s.successWrap}>
           <ActivityIndicator size="large" color={colors.sepia} />
         </View>
@@ -158,6 +161,7 @@ export default function ResetPasswordScreen() {
   if (hasSession === false) {
     return (
       <View style={s.container}>
+        <RoomLight room="default" />
         <View style={s.successWrap}>
           <Animated.View entering={FadeIn.duration(600).reduceMotion(ReduceMotion.Never)} style={s.successContent}>
             <View style={[s.successIconWrap, { backgroundColor: 'rgba(107, 26, 10, 0.15)', borderColor: colors.bloodReel }]}>
@@ -195,13 +199,15 @@ export default function ResetPasswordScreen() {
 
   // ── Main Form ──
   return (
-    <ScrollView 
-      style={s.container} 
-      contentContainerStyle={[s.scroll, { paddingTop: Math.max(insets.top + 64, 96) }]}
-      showsVerticalScrollIndicator={false} 
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets={true}
-    >
+    <View style={s.container}>
+      <RoomLight room="default" />
+      <ScrollView
+        style={s.fill}
+        contentContainerStyle={[s.scroll, { paddingTop: Math.max(insets.top + 64, 96) }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
+      >
         {/* Close / Back — abandoning a pending recovery destroys the session:
             a recovery link alone must never leave the user signed in with an
             unchanged password. */}
@@ -357,6 +363,7 @@ export default function ResetPasswordScreen() {
           </PressableScale>
         </AnimatedView>
       </ScrollView>
+    </View>
   );
 }
 
@@ -365,6 +372,8 @@ export default function ResetPasswordScreen() {
 // ══════════════════════════════════════════════════════════════
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
+  // The form scrolls over the room; the room stays put.
+  fill: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 40 },
 
   // Back

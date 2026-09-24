@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
@@ -58,7 +59,7 @@ export const st = StyleSheet.create({
 
   // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalContent: { backgroundColor: colors.soot, borderWidth: 1, borderColor: '#30261A', borderRadius: 6, width: '100%', padding: 24 },
+  modalContent: { ...EDGE_LIT, backgroundColor: colors.soot, borderWidth: 1, borderColor: '#30261A', borderRadius: 6, width: '100%', padding: 24 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
   modalTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.crimsonInk },
   modalDesc: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, marginBottom: 16 },

@@ -35,6 +35,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { decorativeTextProps, scaledTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export interface SeriesChoice { id: string; title: string; part: number }
 
@@ -291,7 +292,7 @@ export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomI
 }
 
 const x = StyleSheet.create({
-  sheet: {
+  sheet: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderTopWidth: 1.5, borderTopColor: colors.sepiaBorder,
     paddingHorizontal: 20, paddingTop: 18,

@@ -6,6 +6,7 @@ import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ReelSection } from './types';
 import { isAuteurPlusTier } from '@/src/utils/tier';
+import { EDGE_LIT } from '@/src/theme/light';
 
 
 // ══════════════════════════════════════════════════════════════
@@ -60,11 +61,13 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteu
       <PressableScale hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
         <View style={st.tabInner}>
           <Animated.View style={[st.liveDot, auteur ? st.liveDotAuteur : st.liveDotDefault, pulseStyle]} />
-          <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fog, opacity: activeTab === 'logs' ? 1 : 0.75 }]}>LOGS</Text>
+          {/* The tab you are NOT on is quieter by its ink, not by being drawn
+              see-through: fog at 0.75 took its contrast from the plate behind. */}
+          <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fogQuiet }]}>LOGS</Text>
         </View>
       </PressableScale>
       <PressableScale hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
-        <Text style={[st.tabText, { color: activeTab === 'stacks' ? colors.parchmentDim : colors.fog, opacity: activeTab === 'stacks' ? 1 : 0.75 }]}>STACKS</Text>
+        <Text style={[st.tabText, { color: activeTab === 'stacks' ? colors.parchmentDim : colors.fogQuiet }]}>STACKS</Text>
       </PressableScale>
     </View>
   );
@@ -119,9 +122,9 @@ const st = StyleSheet.create({
     backgroundColor: 'rgba(30,25,20,0.5)', borderRadius: 4, borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.15)', height: 46, position: 'relative'
   },
-  tabsActiveBg: {
+  tabsActiveBg: { ...EDGE_LIT,
     width: '50%', backgroundColor: colors.soot, borderColor: 'rgba(184,137,26,0.4)',
-    borderWidth: 1, borderRadius: 4, ...effects.shadowSurface, elevation: 5
+    borderWidth: 1, borderRadius: 4, ...effects.shadowFloat, elevation: 5
   },
   tabButton: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   tabInner: { flexDirection: 'row', alignItems: 'center', gap: 7 },

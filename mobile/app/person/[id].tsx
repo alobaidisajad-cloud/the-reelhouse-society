@@ -37,12 +37,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NetInfo from '@react-native-community/netinfo';
 
 import { s } from '@/src/components/person/personStyles';
+import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { ShimmerBlock } from '@/src/components/person/PersonOrnaments';
 import { PersonHero, formatDossierDate, calcCareerSpan } from '@/src/components/person/PersonHero';
 import { PersonBio } from '@/src/components/person/PersonBio';
 import { PersonDefining } from '@/src/components/person/PersonDefining';
 import { FilmPosterCard, FilmographyHeader, GridColumn } from '@/src/components/person/PersonFilmography';
+
+const PLACEHOLDER_VEIL: VeilStops = [[0, 0.1], [0.7, 0.6], [1, 1]];
 
 // ── Strict Interfaces ────────────────────────────────────────
 interface PersonDetail {
@@ -126,7 +129,11 @@ export default function PersonDetailScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
 
-  const heroDynStyle = useMemo(() => ({ height: windowWidth * 0.6 }), [windowWidth]);
+  // The hero's height as it is really drawn — its box clamps to 240..300 —
+  // in whole points: the room's light hangs from this line, and the hero's
+  // veil meets the light exactly here.
+  const heroH = Math.round(Math.min(300, Math.max(240, windowWidth * 0.6)));
+  const heroDynStyle = useMemo(() => ({ height: heroH }), [heroH]);
   const floatingBackDynStyle = useMemo(() => ({ top: Math.max(insets.top + 10, 20) }), [insets.top]);
   const scrollContentDynStyle = useMemo(() => ({ paddingBottom: 100 + insets.bottom }), [insets.bottom]);
 
@@ -391,6 +398,7 @@ export default function PersonDetailScreen() {
   // ── Error (Offline) ──
   if (error) return (
     <View style={[s.container, s.notFoundContainer]}>
+      <RoomLight room="film" />
       <PressableScale style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
@@ -408,12 +416,14 @@ export default function PersonDetailScreen() {
   // ── Loading (mirrors the real anatomy exactly) ──
   if (loading) return (
     <View style={s.container}>
+      <RoomLight room="film" hem={heroH} />
       <PressableScale style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
       <View style={[s.shimmerBackdrop, heroDynStyle]}>
         <ShimmerBlock style={StyleSheet.absoluteFillObject} />
-        <LinearGradient colors={['rgba(13,11,9,0.1)', 'rgba(13,11,9,0.6)', colors.ink]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
+        {/* Fades into the LIT room, as the hero it stands in for does. */}
+        <RoomVeil room="film" hem={heroH} stops={PLACEHOLDER_VEIL} />
       </View>
       <View style={s.shimmerContent}>
         <ShimmerBlock style={s.shimmerPortrait} />
@@ -430,6 +440,7 @@ export default function PersonDetailScreen() {
   // ── Not found ──
   if (!person) return (
     <View style={[s.container, s.notFoundContainer]}>
+      <RoomLight room="film" />
       <Text style={s.notFoundLabel} {...displayTextProps}>RECORDS DEPT — FILE NOT FOUND</Text>
       <Text style={s.notFoundTitle} {...displayTextProps}>No Record On File</Text>
       <Text style={s.notFoundBody} {...scaledTextProps}>
@@ -448,6 +459,8 @@ export default function PersonDetailScreen() {
 
   return (
     <View style={s.container}>
+      {/* The room's light hangs from where the hero ends, and blooms from it. */}
+      <RoomLight room="film" hem={heroBackdrop ? heroH : undefined} art={heroBackdrop} />
       {/* ── The veil ──
           The back button is pinned and the list runs beneath it, so headings and
           posters used to slide under it and the clock sat on bare content. This
@@ -488,6 +501,7 @@ export default function PersonDetailScreen() {
             heroBackdrop={heroBackdrop ?? null}
             photoUri={photoUri ?? null}
             heroDynStyle={heroDynStyle}
+            scrollY={scrollY}
             canonCount={canon.length}
             craftLabel={craftLabel}
             careerSpan={careerSpan}

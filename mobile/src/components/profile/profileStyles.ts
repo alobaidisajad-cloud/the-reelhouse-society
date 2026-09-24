@@ -1,6 +1,7 @@
 import { colors, effects, fonts } from '@/src/theme/theme';
 import { StyleSheet } from 'react-native';
 import { ROOM_INSET } from './roomStyles';
+import { EDGE_LIT } from '@/src/theme/light';
 
 // ════════════════════════════════════════════════════════════
 // STYLES — Nitrate Noir Design System
@@ -15,7 +16,7 @@ export const s = StyleSheet.create({
   topNavBtn: { width: 40, height: 40, justifyContent: 'center' },
 
   // ── Tab Page Header ──
-  tabPageHeader: {
+  tabPageHeader: { ...EDGE_LIT,
     paddingTop: 56, paddingHorizontal: ROOM_INSET, paddingBottom: 12,
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: colors.soot,
@@ -27,13 +28,9 @@ export const s = StyleSheet.create({
     position: 'relative', overflow: 'hidden',
     borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)',
   },
-  headerDarkBase: {
-    ...StyleSheet.absoluteFillObject, zIndex: 0,
-    backgroundColor: colors.ink,
-  },
+  // Clear, so the room's light reaches the plate: see RoomLight.
   headerArchivistBase: {
     ...StyleSheet.absoluteFillObject, zIndex: 0,
-    backgroundColor: colors.ink,
   },
   filmGrainOverlay: {
     ...StyleSheet.absoluteFillObject, zIndex: 2, opacity: 0.03,
@@ -73,9 +70,9 @@ export const s = StyleSheet.create({
   // ── Buttons ──
   ghostBtn: { paddingVertical: 14, paddingHorizontal: 28, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4, backgroundColor: 'rgba(13,11,9,0.8)' },
   ghostBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen },
-  primaryBtn: { backgroundColor: colors.soot, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 4, ...effects.shadowSurface },
+  primaryBtn: { ...EDGE_LIT, backgroundColor: colors.soot, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 4, ...effects.shadowFloat },
   primaryBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen, ...effects.textGlowSepia },
-  ctaBtn: { borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: colors.soot, paddingVertical: 14, alignItems: 'center' as const, borderRadius: 4, marginBottom: 16, ...effects.shadowSurface },
+  ctaBtn: { ...EDGE_LIT, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: colors.soot, paddingVertical: 14, alignItems: 'center' as const, borderRadius: 4, marginBottom: 16, ...effects.shadowSurface, ...effects.flat, },
   ctaBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen, ...effects.textGlowSepia },
 
   // ── Stats ──
@@ -85,13 +82,15 @@ export const s = StyleSheet.create({
     backgroundColor: 'rgba(13,11,9,0.85)',
     borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.15)',
     borderRadius: 6,
-    ...effects.shadowSurface,
+    ...effects.shadowSurface, ...effects.flat,
   },
   statValue: { fontFamily: fonts.display, fontSize: 18, color: colors.silverScreen, lineHeight: 22, ...effects.textGlowSepia },
   statLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fogQuiet, marginTop: 4 },
 
   // ── The Sealed Dossier (private accounts) ──
-  sealedWrap: { paddingHorizontal: 24, paddingVertical: 48, backgroundColor: colors.ink },
+  // No ground of its own, as contentArea has none: the sealed notice lies on
+  // the lit room like the open file's rooms do.
+  sealedWrap: { paddingHorizontal: 24, paddingVertical: 48 },
   sealedCard: {
     borderWidth: 1, borderStyle: 'dashed' as const, borderColor: 'rgba(184,137,26,0.35)',
     borderRadius: 4, backgroundColor: colors.sepiaFaint,
@@ -154,7 +153,7 @@ export const s = StyleSheet.create({
   emptyDesc: { fontFamily: fonts.body, fontSize: 10, color: colors.fog, textAlign: 'center' as const, lineHeight: 16, fontStyle: 'italic' as const },
 
   // ── Stacks ──
-  stackCard: { borderRadius: 2, overflow: 'hidden' as const, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)', backgroundColor: colors.soot },
+  stackCard: { ...EDGE_LIT, borderRadius: 2, overflow: 'hidden' as const, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)', backgroundColor: colors.soot },
   stackPosterWrap: { width: '100%' as const, height: 80, position: 'relative' as const, overflow: 'hidden' as const },
   stackPosterPanel: { position: 'absolute' as const, top: 0, height: '100%' as const },
   stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(13,11,9,0.55)' },
@@ -164,7 +163,7 @@ export const s = StyleSheet.create({
   stackDesc: { fontFamily: fonts.body, fontSize: 9, color: colors.fog, fontStyle: 'italic' as const, lineHeight: 13, marginTop: 4 },
 
   // ── Projector Tab ──
-  card: { backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, padding: 16, gap: 10 },
+  card: { ...EDGE_LIT, backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, padding: 16, gap: 10 },
   favouriteRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
 
   // ── Early Return States ──
@@ -210,7 +209,7 @@ export const s = StyleSheet.create({
   ctaBtnRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
 
   // ── Stacks ──
-  stackEmptyBg: { flex: 1, backgroundColor: colors.soot },
+  stackEmptyBg: { ...EDGE_LIT, flex: 1, backgroundColor: colors.soot },
 
   // ── Projector Tab ──
   // The Projector Room used to announce itself a second time under the header
@@ -242,7 +241,10 @@ export const s = StyleSheet.create({
   triptychWrap: { marginTop: 16 },
 
   // ── Content Area ──
-  contentArea: { backgroundColor: colors.ink },
+  // No ground of its own. It was painted in the house colour, which laid a
+  // second, UNLIT page over the room's light from the plate down — the seam
+  // under the profile's buttons. The light is painted once, at the root.
+  contentArea: {},
 
   // ── Main Scroll ──
   mainScrollContent: { paddingBottom: 60 },
@@ -274,14 +276,14 @@ export const s = StyleSheet.create({
   // Not a circle. Circles are what every profile in the world uses; a member
   // file holds a PRINT, and a print has edges, a white margin and corners.
   portraitWrap: { position: 'relative' as const, flexShrink: 0 },
-  plate: {
+  plate: { ...EDGE_LIT,
     width: 96, height: 120,
     borderWidth: 3, borderColor: 'rgba(232,223,208,0.86)',
     backgroundColor: colors.frame,
     overflow: 'hidden' as const,
   },
   plateImage: { width: '100%' as const, height: '100%' as const },
-  plateInitialWrap: { width: '100%' as const, height: '100%' as const, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: colors.soot },
+  plateInitialWrap: { ...EDGE_LIT, width: '100%' as const, height: '100%' as const, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: colors.soot },
   plateInitial: { fontFamily: fonts.display, fontSize: 40, color: 'rgba(232,223,208,0.28)' },
   // The grain sits INSIDE the frame, over the photograph — it is the print that
   // is old, not the screen.

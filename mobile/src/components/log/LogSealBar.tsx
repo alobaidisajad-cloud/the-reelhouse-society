@@ -9,6 +9,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { validateLogSubmission } from '@/src/hooks/useLogFlow';
 import { buildFilingMark } from '@/src/components/log/logRecord';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const MARK = require('../../../assets/images/reelhouse-logo.png');
 
@@ -122,7 +123,7 @@ export default React.memo(function LogSealBar({
 });
 
 const s = StyleSheet.create({
-    bar: {
+    bar: { ...EDGE_LIT,
         position: 'absolute', left: 0, right: 0, bottom: 0,
         backgroundColor: colors.soot,
         borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,

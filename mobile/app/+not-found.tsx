@@ -12,12 +12,14 @@ import { useRouter } from 'expo-router';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 export default function NotFoundScreen() {
   const router = useRouter();
 
   return (
     <View style={s.container}>
+      <RoomLight room="default" />
       <Text style={s.glyph}>∅</Text>
       <Text style={s.title}>ROUTE NOT IN THE ARCHIVE</Text>
       <Text style={s.body}>

@@ -19,12 +19,12 @@
 import { sanitizeInput, MAX_LENGTHS } from '../sanitizeInput';
 
 /** Bidi override + isolates + zero-width joiner + a C0 control, wrapped in real words. */
-const HOSTILE = 'Citizen‮⁦⁧Kane​⁩⁩';
+const HOSTILE = 'Citizen‮⁦⁧Kane​\u0007⁩⁩';
 const CLEAN = 'CitizenKane';
 
 /** Every invisible codepoint the sanitiser is responsible for removing. */
 const INVISIBLES = ['​', '‌', '‍', '‎', '‏', '﻿', '­',
-  '⁦', '⁧', '⁨', '⁩', '‮', ''];
+  '⁦', '⁧', '⁨', '⁩', '‮', '\u0007'];
 
 describe('the sanitiser removes the class that matters', () => {
   it('strips bidi controls, isolates, zero-width and control characters', () => {

@@ -14,7 +14,6 @@
 import { ScrollView, StyleSheet } from 'react-native';
 import { ProjectorRoom, type ProjectorRecord } from './ProjectorRoom';
 import { CinematicInsights } from './CinematicInsights';
-import { colors } from '@/src/theme/theme';
 import type { TasteProfile } from '@/src/constants/taste';
 
 interface ProjectorTabStats {
@@ -49,6 +48,8 @@ export function ProfileProjectorTab({ stats, user, record, taste }: Props) {
 }
 
 const s = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.ink },
+    // No ground of its own: the tab scrolls over the member's lit room. In
+    // the house colour it covered the room's light across the whole tab.
+    container: { flex: 1 },
     contentContainer: { padding: 16, gap: 24, paddingBottom: 48 },
 });

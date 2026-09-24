@@ -35,6 +35,7 @@ import { p } from './paperStyles';
 import { KIND_RULE, KIND_NAME, UNSPOKEN, DOC_PAD } from './paperMetrics';
 import { softBreak } from './paperText';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /**
  * ── THE ESSAY'S MEASURE, DEFINED ONCE ───────────────────────────────────────
@@ -320,7 +321,7 @@ const e = StyleSheet.create({
    * gutter, so the same band reached four points PAST the container on each
    * side. Both are derived from this constant now.
    */
-  cover: {
+  cover: { ...EDGE_LIT,
     height: 176, marginHorizontal: -DOC_PAD, marginBottom: 16,
     overflow: 'hidden', backgroundColor: colors.soot,
   },

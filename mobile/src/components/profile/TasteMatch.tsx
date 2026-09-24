@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { EDGE_LIT } from '@/src/theme/light';
 
 interface TasteLog {
   rating: number;
@@ -86,7 +87,7 @@ export function TasteMatch({ myLogs = [], theirLogs = [], theirUsername }: Taste
 }
 
 const s = StyleSheet.create({
-  container: {
+  container: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(184,137,26,0.2)',

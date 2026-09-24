@@ -11,6 +11,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
+import { EDGE_LIT } from '@/src/theme/light';
 
 interface SimilarFilm {
   id: number;
@@ -99,7 +100,8 @@ const s = StyleSheet.create({
   
   similarListContainer: { height: 180 },
   similarCard: { width: 100, marginRight: 10 },
+  // A photograph is not a lit surface: the edge light is the empty frame’s.
   similarPoster: { width: 100, height: 150, borderRadius: 4, marginBottom: 8, backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
-  similarPosterPlaceholder: { justifyContent: 'center', alignItems: 'center' },
+  similarPosterPlaceholder: { ...EDGE_LIT, justifyContent: 'center', alignItems: 'center' },
   similarTitle: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, textAlign: 'center' },
 });

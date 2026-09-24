@@ -20,6 +20,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { timeAgo } from '@/src/utils/timeAgo';
 import { Award, Bell, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 // ── Hoisted Constants (P2-HITSLOP FIX) ──
 const HITSLOP_15 = { top: 15, bottom: 15, left: 15, right: 15 } as const;
@@ -243,6 +244,7 @@ export default function NotificationsModal() {
 
   return (
     <View style={s.container}>
+      <RoomLight room="default" />
       {/* Drag handle */}
       <View style={s.dragHandleWrap}><View style={s.dragHandle} /></View>
 
@@ -376,8 +378,11 @@ const s = StyleSheet.create({
   
   itemWrap: {
     flexDirection: 'row', alignItems: 'center', padding: 14,
+    // No ground of its own: a slip lies on the room, ruled off from the next.
+    // Painted in the house colour, every read slip hid the room's light while
+    // the unread ones (a see-through brass tint) let it through.
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
-    backgroundColor: colors.ink, gap: 10,
+    gap: 10,
   },
   itemUnread: {
     backgroundColor: 'rgba(184,137,26,0.06)',

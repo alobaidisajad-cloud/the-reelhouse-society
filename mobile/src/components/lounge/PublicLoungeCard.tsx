@@ -92,7 +92,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 4, position: 'relative',
     overflow: 'hidden',
-    ...effects.shadowSurface,
+    ...effects.shadowSurface, ...effects.flat,
   },
   publicAccentBar: {
     position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,

@@ -12,6 +12,7 @@ import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, roomTier, ROOM_INSET } from './roomStyles';
 import { RoomChip, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
+import { EDGE_LIT } from '@/src/theme/light';
 
 /**
  * THE STACKS — bound volumes, not thumbnails.
@@ -319,7 +320,7 @@ const s = StyleSheet.create({
   emptyStateSelf: { marginTop: 24, marginHorizontal: CARD_MARGIN, position: 'relative', shadowColor: 'rgba(0,0,0,0.8)', shadowOffset: { width: 0, height: 10 }, shadowRadius: 20 },
   dossierStackBg1: { position: 'absolute', top: -12, left: 12, right: 12, height: '100%', backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', borderRadius: 4 },
   dossierStackBg2: { position: 'absolute', top: -6, left: 6, right: 6, height: '100%', backgroundColor: 'rgba(30,25,20,0.8)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 4 },
-  dossierFront: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 4 },
+  dossierFront: { ...EDGE_LIT, alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 4 },
 });
 
 

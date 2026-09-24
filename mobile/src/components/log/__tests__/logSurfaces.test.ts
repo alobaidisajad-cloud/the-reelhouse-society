@@ -246,21 +246,31 @@ describe('a shadow is never asked for through a clip', () => {
   // overflow:'hidden' sets clipsToBounds, and a layer that masks to its bounds
   // cannot draw a shadow outside them — so on iOS the shadow simply never
   // existed, while Android drew one from elevation. Four of these shipped.
-  const pairs: [string, string, string][] = [
-    [POSTER, 'wrapShadow', 'wrap'],
-    [CARD, 'cardShadow', 'card'],
-    [STYLES, 'contentCardShadow', 'contentCard'],
-    [STYLES, 'posterBoundsShadow', 'posterBounds'],
+  //
+  // The fourth column is the style that actually CASTS from the outer host.
+  // A wide surface casts no black shadow any more — black on the house's black
+  // is invisible, and the lit edge carries the lift (theme/light.ts, EDGE) — so
+  // the card and the record sheet cast only as an Auteur's, whose crimson glow
+  // is light and rank design. That variant rides the same outer host, which is
+  // why the host must still never clip.
+  const pairs: [string, string, string, string][] = [
+    [POSTER, 'wrapShadow', 'wrap', 'wrapShadow'],
+    [CARD, 'cardShadow', 'card', 'cardShadowAuteur'],
+    [STYLES, 'contentCardShadow', 'contentCard', 'contentCardShadowAuteur'],
+    [STYLES, 'posterBoundsShadow', 'posterBounds', 'posterBoundsShadow'],
   ];
-  it.each(pairs)('%s :: %s casts, %s clips', (file, shadowName, clipName) => {
+  it.each(pairs)('%s :: %s casts, %s clips', (file, shadowName, clipName, castName) => {
     const src = read(file);
     const shadow = style(src, shadowName);
     const clip = style(src, clipName);
+    const cast = style(src, castName);
     expect(shadow).not.toBe('');
     expect(clip).not.toBe('');
+    expect(cast).not.toBe('');
     // The host that casts must not clip…
     expect(shadow).not.toMatch(/overflow:\s*['"]hidden['"]/);
-    expect(shadow).toMatch(/shadowOpacity|shadowRadius|shadowOffset/);
+    expect(cast).not.toMatch(/overflow:\s*['"]hidden['"]/);
+    expect(cast).toMatch(/shadowOpacity|shadowRadius|shadowOffset/);
     // …and the host that clips must not carry the iOS box shadow.
     expect(clip).toMatch(/overflow:\s*['"]hidden['"]/);
     expect(clip.split('\n').filter((l) => !/textShadow/.test(l)).join('\n'))

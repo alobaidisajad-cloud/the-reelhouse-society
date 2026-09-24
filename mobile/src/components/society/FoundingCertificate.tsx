@@ -20,6 +20,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { deckLabelProps, displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { SEATS_LINE, type FoundingPitch } from './societyPricing';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export const FoundingCertificate = memo(function FoundingCertificate({
   founder, pitch, busy, onClaim,
@@ -75,7 +76,7 @@ export const FoundingCertificate = memo(function FoundingCertificate({
 });
 
 const s = StyleSheet.create({
-  cert: {
+  cert: { ...EDGE_LIT,
     marginHorizontal: 16, marginTop: 40,
     borderWidth: 1, borderColor: colors.sepiaBorderBold,
     backgroundColor: colors.frame,

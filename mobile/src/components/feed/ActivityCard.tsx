@@ -25,7 +25,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate,
   useReducedMotion,
 } from 'react-native-reanimated';
-import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH, effects } from '@/src/theme/theme';
 import { displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { ActionDeck } from './ActionDeck';
@@ -38,6 +38,7 @@ import { timeAgo } from '@/src/utils/timeAgo';
 
 // Single source of truth: Zod schema
 import type { FeedItem } from '@/src/schemas/feed.schema';
+import { EDGE_LIT, WASH } from '@/src/theme/light';
 
 // The editorial banner spans the full card at ~326pt. On a 3x screen that is
 // 978 physical pixels being filled from a 500px image — barely half the detail,
@@ -52,18 +53,26 @@ const FLIP_MS = 420;
 const FLIP_EASING = Easing.bezier(0.33, 0, 0.15, 1);
 const CROSSFADE_MS = 250;
 
+/**
+ * The card's own washes, THINNED. At full strength the shell ran the card from
+ * its own tone down to the recess, so on the lit house every card darkened
+ * into a hole at its foot; a card is paper laid on the page, lit like one.
+ * Every full-bleed wash with no artwork behind it is drawn at this strength.
+ */
+const SHELL = WASH;
+
 const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {
   return (
     <>
       <LinearGradient
         colors={isAuteur ? ['rgba(40,18,18,0.7)', 'rgba(14,5,5,0.95)'] : ['rgba(30,25,20,0.95)', 'rgba(6,5,4,0.98)']}
         locations={[0, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={[StyleSheet.absoluteFillObject, SHELL]}
       />
       {(isPremium || isAuteur) && (
         <>
-          <LinearGradient colors={[isAuteur ? colors.crimsonFaint : colors.sepiaFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
-          <LinearGradient colors={[isAuteur ? 'rgba(180,45,45,0.04)' : 'rgba(184,137,26,0.04)', 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[isAuteur ? colors.crimsonFaint : colors.sepiaFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFillObject, SHELL]} />
+          <LinearGradient colors={[isAuteur ? 'rgba(180,45,45,0.04)' : 'rgba(184,137,26,0.04)', 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFillObject, SHELL]} />
         </>
       )}
       {children}
@@ -297,17 +306,21 @@ const s = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 20,
     borderRadius: 4,
-    shadowColor: '#000',
+    ...effects.flat,
+  },
+  // Auteur cards lift in their own colour — the crimson file reads as warmer
+  // paper, and a neutral black shadow under it flattened that. On the lit
+  // house the black lift is gone from every card (see `cardShadow`), so this
+  // carries the WHOLE lift: a colour alone would draw nothing.
+  cardShadowAuteur: {
+    shadowColor: colors.bloodReel,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.7,
     shadowRadius: 20,
   },
-  // Auteur cards lift in their own colour — the crimson file reads as warmer
-  // paper, and a neutral black shadow under it flattened that.
-  cardShadowAuteur: { shadowColor: colors.bloodReel },
   // The clip host: the paper, the border, and the mask the reverse face turns
   // inside of.
-  card: {
+  card: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderRadius: 4,
     borderWidth: 1,
@@ -319,13 +332,13 @@ const s = StyleSheet.create({
     // what tints the elevation shadow; it draws nothing on iOS on its own,
     // since shadowOpacity defaults to 0.
     elevation: 12,
-    shadowColor: '#000',
+    ...effects.flat,
   },
   cardPremium: {
     borderColor: 'rgba(184,137,26,0.3)',
     backgroundColor: colors.ink,
   },
-  cardAuteur: {
+  cardAuteur: { ...EDGE_LIT,
     borderColor: colors.crimsonBorder,
     backgroundColor: colors.sootAuteur,
     // Pairs with cardShadowAuteur: the crimson file lifts in its own colour on

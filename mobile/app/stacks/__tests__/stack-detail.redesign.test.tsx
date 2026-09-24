@@ -200,7 +200,9 @@ describe('the hero', () => {
   it('is measured from the safe area, not from the phone', () => {
     // windowHeight * 0.45 put the title 120pt lower on a tall phone than a
     // short one — the page's first impression changed with the hardware.
-    expect(SOURCE).toMatch(/HEADER_HEIGHT = insets\.top \+ Math\.min\(320, Math\.max\(236/);
+    // Rounded to whole points: the room's light hangs from this hem and the
+    // hero's veil meets it there, so it may not fall between two pixels.
+    expect(SOURCE).toMatch(/HEADER_HEIGHT = Math\.round\(insets\.top \+ Math\.min\(320, Math\.max\(236/);
     expect(SOURCE).not.toMatch(/HEADER_HEIGHT = windowHeight \* 0\.45/);
   });
 

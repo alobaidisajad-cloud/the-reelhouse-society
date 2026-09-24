@@ -367,6 +367,35 @@ jest.mock('expo-image', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Mock @shopify/react-native-skia — native module, shipped as untranspiled ESM
+// ─────────────────────────────────────────────────────────────────────────────
+// The room's light blooms a hero's artwork through Skia, and every screen that
+// hangs a photograph at its top mounts it. Without this, importing any such
+// screen fails to parse. Each drawing element becomes a host element that
+// records its props and renders its children, so a tree can still be asserted
+// on; `useImage` resolves nothing, as an image that has not loaded yet would,
+// so the bloom's own wrapper (which carries the recipe) is what a test sees.
+jest.mock('@shopify/react-native-skia', () => {
+  const React = require('react');
+  const host = (name: string) => (props: Record<string, unknown>) =>
+    React.createElement(`Skia${name}`, props, props.children as never);
+  const names = ['Canvas', 'Group', 'Paint', 'Blur', 'ColorMatrix', 'Mask', 'Image', 'Rect',
+    'LinearGradient', 'RadialGradient', 'RuntimeShader', 'Fill', 'Shader'];
+  return {
+    ...Object.fromEntries(names.map((n) => [n, host(n)])),
+    useImage: () => null,
+    vec: (x: number, y: number) => ({ x, y }),
+    Skia: {
+      RuntimeEffect: { Make: () => ({}) },
+      // A picture still on its way: the shared loader waits, and nothing that
+      // waits on it is drawn — exactly the state before an image arrives.
+      Data: { fromURI: () => new Promise(() => {}) },
+      Image: { MakeImageFromEncoded: () => null },
+    },
+  };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Mock expo-linking — native module
 // ─────────────────────────────────────────────────────────────────────────────
 jest.mock('expo-linking', () => ({

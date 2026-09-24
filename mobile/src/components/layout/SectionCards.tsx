@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts } from '@/src/theme/theme';
 import type { LucideIcon } from 'lucide-react-native';
+import { WASH } from '@/src/theme/light';
 
 
 
@@ -15,7 +16,7 @@ export const SectionCard = React.memo(({ children, danger }: { children: React.R
     />
     <LinearGradient
       colors={[colors.sepiaFaint, 'transparent']}
-      style={StyleSheet.absoluteFillObject}
+      style={[StyleSheet.absoluteFillObject, WASH]}
     />
     {children}
   </View>

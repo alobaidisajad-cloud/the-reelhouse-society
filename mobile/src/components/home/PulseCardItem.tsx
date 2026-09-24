@@ -19,6 +19,7 @@ import { useReportUser } from '@/src/hooks/useReportUser';
 import type { PulseActivity } from './types';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import { RankBadge } from '@/src/components/RankBadge';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
@@ -214,12 +215,11 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
 const s = StyleSheet.create({
   pulseCardOuter: { },
   pulseCardContentPressable: { },
-  pulseCard: {
+  pulseCard: { ...EDGE_LIT,
     backgroundColor: colors.surface,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)',
     borderRadius: 4, overflow: 'hidden', minHeight: 260,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 30,
-    ...Platform.select({ android: { elevation: 0 } })
+    ...Platform.select({ android: { elevation: 0 } }), ...effects.flat,
   },
   pulsePremium: { borderColor: 'rgba(184,137,26,0.3)', backgroundColor: colors.ink },
   pulseFeaturedMuseum: {
@@ -227,7 +227,7 @@ const s = StyleSheet.create({
     shadowColor: colors.sepia, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.6, shadowRadius: 15,
     ...Platform.select({ android: { elevation: 0 } })
   },
-  pulseCardAuteur: { backgroundColor: colors.sootAuteur, borderColor: colors.crimsonBorder },
+  pulseCardAuteur: { ...EDGE_LIT, backgroundColor: colors.sootAuteur, borderColor: colors.crimsonBorder },
   pulseCardHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)',

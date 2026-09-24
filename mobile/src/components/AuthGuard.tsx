@@ -21,6 +21,7 @@ import { View, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors } from '@/src/theme/theme';
 import SkeletonPulse from '@/src/components/SkeletonPulse';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -36,6 +37,7 @@ export default function AuthGuard({ children, redirectTo = '/(modals)/login' }: 
   if (loading) {
     return (
       <View style={styles.skeleton}>
+        <RoomLight room="default" />
         <SkeletonPulse width={200} height={20} />
         <SkeletonPulse width={160} height={14} style={{ marginTop: 12 }} />
         <SkeletonPulse width={240} height={14} style={{ marginTop: 8 }} />

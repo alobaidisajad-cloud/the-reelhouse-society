@@ -48,6 +48,7 @@ import type { Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 type Row =
   | { type: 'month'; key: string; label: string }
@@ -173,6 +174,7 @@ export default function MemberRoomScreen() {
   if (missing && !loading) {
     return (
       <View style={p.screen}>
+        <RoomLight room="dispatch" />
         <PaperBack label={barLabel} onBack={() => nav.back()} />
         <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 32 }}>
           <Text style={p.emptyTitle} accessibilityRole="header" {...scaledTextProps}>
@@ -189,6 +191,7 @@ export default function MemberRoomScreen() {
 
   return (
     <View style={p.screen}>
+      <RoomLight room="dispatch" />
       <PaperBack label={barLabel} onBack={() => nav.back()} />
 
       <View style={[p.docWrap, { maxWidth: PAPER_MAX }]}>

@@ -36,6 +36,10 @@ import { useFilmAnimations } from '@/src/hooks/useFilmAnimations';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
 import { useFilmDetailContext } from '@/src/providers/FilmDetailProvider';
+import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
+
+/** The backdrop's fade into the room: how much house it lays down, top to hem. */
+const BACKDROP_VEIL: VeilStops = [[0, 0.05], [0.5, 0.4], [0.75, 0.85], [1, 1]];
 
 
 const STATUS_CONFIG = {
@@ -85,7 +89,9 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   }, [setActiveTrailerKey, setTrailerModalVisible]);
 
   const { height: windowHeight } = useWindowDimensions();
-  const BACKDROP_H = useMemo(() => windowHeight * metrics.backdropHeightRatio, [windowHeight]);
+  // Whole points: the backdrop's veil and the room's light meet at this line,
+  // and a fractional hem leaves the last row of pixels to only one of them.
+  const BACKDROP_H = useMemo(() => Math.round(windowHeight * metrics.backdropHeightRatio), [windowHeight]);
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
 
@@ -104,6 +110,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     skeletonAnimStyle,
     bookmarkAnimStyle,
     backdropAnimatedStyle,
+    backdropLifted,
     immersiveAnimatedStyle,
     scrollHeaderStyle,
     bookmarkScale
@@ -324,6 +331,9 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   if (loading && validFilmId) {
     return (
       <View style={s.container}>
+        {/* Hung where the backdrop will be, as the skeleton draws it: the
+            light must not move when the page arrives. */}
+        <RoomLight room="film" hem={BACKDROP_H} />
         <Animated.View style={[s.floatingBack, { top: Math.max(insets.top + 10, 20), zIndex: 100 }]}>
           <PressableScale onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityLabel="Go back">
             <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
@@ -337,6 +347,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   if (isError && !film) {
     return (
       <View style={[s.container, s.notFoundContainer]}>
+        <RoomLight room="film" />
         <AlertTriangle size={48} color={colors.bloodReel} strokeWidth={1} />
         <Text style={s.notFoundTitle}>Transmission Failed</Text>
         <Text style={s.notFoundBody}>The archive is currently unreachable. Please check your connection.</Text>
@@ -353,6 +364,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   if (!validFilmId || !film) {
     return (
       <View style={[s.container, s.notFoundContainer]}>
+        <RoomLight room="film" />
         <FilmIcon size={48} color={colors.bloodReel} strokeWidth={1} />
         <Text style={s.notFoundTitle}>Not in the Archive</Text>
         <Text style={s.notFoundBody}>This reel could not be found. It may have been withdrawn from circulation.</Text>
@@ -365,25 +377,27 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
       </View>
     );
   }
+  const backdropUri = film.backdrop_path ? tmdb.backdrop(film.backdrop_path) : null;
   return (
     <View style={s.container}>
+      {/* The room's light hangs from where the backdrop ends, and blooms from it. */}
+      <RoomLight room="film" hem={backdropUri ? BACKDROP_H : undefined} art={backdropUri} />
       {/* Parallax Backdrop */}
       {/* testID so a static render can be driven through the fade — it is the
           only way to SEE that the backdrop leaves rather than ghosting behind
-          every section, on a page nobody can build to a device yet. */}
-      <Animated.View testID="film-backdrop" style={[s.backdropWrap, { height: BACKDROP_H }, backdropAnimatedStyle]}>
-        {film.backdrop_path ? (
-          <Image source={{ uri: tmdb.backdrop(film.backdrop_path) }} style={s.backdrop} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
-        ) : (
-          <LinearGradient colors={['rgba(30,25,20,0.98)', colors.ink]} style={s.backdrop} />
-        )}
-        {film.backdrop_path && <View style={s.sepiaTint} />}
-        <LinearGradient
-          colors={['rgba(13,11,9,0.05)', 'rgba(13,11,9,0.4)', 'rgba(13,11,9,0.85)', colors.ink]}
-          locations={[0, 0.5, 0.75, 1]}
-          style={StyleSheet.absoluteFill}
-        />
-      </Animated.View>
+          every section, on a page nobody can build to a device yet.
+
+          A film with no backdrop gets no plate at all. It used to get a dark
+          stand-in painted down to the house colour, which blacked out the
+          room's light at the top of the screen: with no picture to show, the
+          room itself is the picture. */}
+      {backdropUri ? (
+        <Animated.View testID="film-backdrop" style={[s.backdropWrap, { height: BACKDROP_H }, backdropAnimatedStyle]}>
+          <Image source={{ uri: backdropUri }} style={s.backdrop} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
+          <View style={s.sepiaTint} />
+          <RoomVeil room="film" hem={BACKDROP_H} art={backdropUri} stops={BACKDROP_VEIL} lifted={backdropLifted} />
+        </Animated.View>
+      ) : null}
 
       {/* Floating Back — hands over to the header as the hero leaves. Both are
           hidden from the reader while the tray is up, for the same reason the

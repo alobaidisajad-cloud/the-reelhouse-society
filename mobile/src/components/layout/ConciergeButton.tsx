@@ -50,13 +50,14 @@ import { useRouter, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, Film, ListPlus, PenLine } from 'lucide-react-native';
 
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import { displayTextProps } from '@/src/constants/textScaling';
 import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
 import { NAV_BTN_SIZE, NAV_H_PADDING, navButtonTop, navButtonBottom } from './navMetrics';
 import { BRASS, BRASS_STOPS, BRASS_START, BRASS_END, CROWN, RIM } from '@/src/theme/brass';
 import { ToastHost } from '@/src/components/ToastHost';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const OPEN_MS = 200;
 const CLOSE_MS = 160;
@@ -459,7 +460,7 @@ const s = StyleSheet.create({
     // The card grows out of the button's own corner rather than its middle.
     transformOrigin: 'top left',
   },
-  card: {
+  card: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: colors.sepiaBorder,
@@ -473,11 +474,7 @@ const s = StyleSheet.create({
     // the same rule that made discFace and discShadow two views instead of
     // one.) Nothing in this card overflows: the glow is inset 22, the brackets
     // 6, and the rows wrap rather than spill.
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 14,
-    elevation: 10,
+    elevation: 10, ...effects.flat,
   },
   notch: {
     position: 'absolute',

@@ -287,7 +287,7 @@ const s = StyleSheet.create({
     borderBottomWidth: 0,
     borderColor: colors.sepiaBorder,
     ...effects.shadowSurface,
-    elevation: 20,
+    elevation: 20, ...effects.flat,
   },
   sheetHandle: {
     width: 48,
@@ -399,7 +399,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 2,
     backgroundColor: colors.sepia,
-    ...effects.shadowSurface,
+    ...effects.shadowSurface, ...effects.flat,
   },
   sheetBtnPrimaryText: {
     fontFamily: fonts.sub,

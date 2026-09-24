@@ -14,7 +14,7 @@ import { ActivityIndicator, Platform, RefreshControl, Share, StyleSheet, Text, T
 import Animated, { Easing, SlideInUp, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
  
-import { s, PARALLAX_PADDER_HEIGHT } from '@/src/components/log/logDetailStyles';
+import { s, PARALLAX_PADDER_HEIGHT, BACKDROP_H } from '@/src/components/log/logDetailStyles';
 import { hasPhysicalFormat } from '@/src/components/log/logRecord';
 import LogShareCard from '@/src/components/film/LogShareCard';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
@@ -41,9 +41,14 @@ import { timeAgo } from '@/src/utils/timeAgo';
 import { ChevronLeft, Film as FilmIcon, MoreHorizontal, Share2, Sparkles } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { z } from 'zod';
+import { WASH } from '@/src/theme/light';
+import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 
 // TMDB_IMG hardcoded string removed in favor of tmdb.poster / tmdb.backdrop
 const AnimatedView = Animated.createAnimatedComponent(View);
+
+/** The backdrop's fade into the room: how much house it lays down, top to hem. */
+const BACKDROP_VEIL: VeilStops = [[0, 0], [1 / 3, 0.4], [2 / 3, 0.95], [1, 1]];
 // #75 / finding 109 — a local timeAgo used to live here, one of four near-copies. It had no
 // weeks bucket at all, so a fortnight-old log jumped straight from "6d AGO" to a bare
 // "MAR 5" with no year. The shared util is imported at the top of this file.
@@ -545,6 +550,7 @@ export default function LogDetailScreen() {
   if (loading) {
     return (
       <View style={[s.container, s.centerFull]}>
+        <RoomLight room="film" />
         {/* Labelled because this spinner is the ONLY thing on screen. Without it
             the fix was sighted-only: a blank screen became a spinner, and a
             VoiceOver member still heard nothing either way. */}
@@ -556,6 +562,7 @@ export default function LogDetailScreen() {
   if (!log) {
     return (
       <View style={[s.container, s.centerFull]}>
+        <RoomLight room="film" />
         <FilmIcon size={40} color={colors.sepia} strokeWidth={1} />
         <Text style={s.notFoundText}>Log not found.</Text>
         <PressableScale style={s.backBtnRow} onPress={() => { router.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection" pressedScale={0.92}>
@@ -570,22 +577,27 @@ export default function LogDetailScreen() {
   const isArchivist = isArchivistPlusTier(profile?.role);
 
   const backdropPosterUri = effectivePosterPath ? tmdb.poster(effectivePosterPath, 'w780') : null;
+  // The one picture behind the page: the editorial header when there is one.
+  const backdropUri = log.editorial_header ? tmdb.backdrop(log.editorial_header, 'w780') : backdropPosterUri;
   const isOwner = user?.id === log.user_id;
 
   return (
     <Animated.View style={[s.container, animatedContainerStyle]}>
+      {/* The room's light hangs from where the backdrop ends, and blooms from it. */}
+      <RoomLight room="film" hem={backdropUri ? BACKDROP_H : undefined} art={backdropUri} />
       {/* ── IMMERSIVE FULL-BLEED BACKDROP (BEHIND SCROLLVIEW) ── */}
-      {(log.editorial_header || backdropPosterUri) && (
+      {backdropUri && (
           <View style={[StyleSheet.absoluteFillObject, s.backdropContainer]}>
              <View style={s.fullSize}>
                 <Image 
-                   source={{ uri: log.editorial_header ? tmdb.backdrop(log.editorial_header, 'w780') : (backdropPosterUri || '') }} 
+                   source={{ uri: backdropUri }} 
                    style={[StyleSheet.absoluteFillObject, log.editorial_header ? s.opacity30 : s.opacity20]}
                    contentFit="cover"
                    blurRadius={4}
                    cachePolicy="memory-disk" transition={150}
                 />
-                <LinearGradient colors={['rgba(13,11,9,0)', 'rgba(13,11,9,0.4)', 'rgba(13,11,9,0.95)', colors.ink]} style={StyleSheet.absoluteFillObject} />
+                {/* Fades into the LIT room — see RoomVeil. */}
+                <RoomVeil room="film" hem={BACKDROP_H} art={backdropUri} stops={BACKDROP_VEIL} />
                 {/* Scan lines texture — Web: repeating-linear-gradient for film grain */}
                 <View style={[StyleSheet.absoluteFillObject, s.textureOverlay]} />
                 
@@ -672,7 +684,7 @@ export default function LogDetailScreen() {
         <View style={[s.contentCardShadow, isAuteur && s.contentCardShadowAuteur]}>
         <View style={[s.contentCard, isAuteur && s.contentCardAuteur]}>
           {isAuteur && (
-            <LinearGradient colors={[colors.crimsonFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
+            <LinearGradient colors={[colors.crimsonFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFillObject, WASH]} />
           )}
         
         <AnimatedView entering={SlideInUp.duration(500).easing(Easing.out(Easing.cubic))} style={s.logCardInner}>

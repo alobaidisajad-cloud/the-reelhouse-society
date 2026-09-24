@@ -15,6 +15,7 @@ import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
 import { MemberFaceStack } from '@/src/components/lounge/MemberFaceStack';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge: LoungeRoom; index: number }) => {
   const coverUrl = lounge.cover_image
@@ -90,14 +91,15 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
 JoinedLoungeCard.displayName = 'JoinedLoungeCard';
 
 const s = StyleSheet.create({
-  joinedCard: {
+  joinedCard: { ...EDGE_LIT,
     width: 140,
     borderRadius: 3,
     overflow: 'hidden',
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: colors.sepiaBorder,
-    ...effects.shadowSurface,
+    // A small lit card keeps a short lift, straight down (see effects.shadowFloat).
+    ...effects.shadowFloat,
     elevation: 8,
   },
   joinedImgWrap: {

@@ -47,6 +47,7 @@ import { colors } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 /**
  * A row is a filing or the divider announcing the day it belongs to.
@@ -315,6 +316,7 @@ export default function DispatchScreen() {
   return (
     <FrozenTab>
       <View style={p.screen}>
+        <RoomLight room="dispatch" />
         {/* The index, pinned under the floating bar. It never scrolls: it is how
             you change what the page is, and a control that leaves the screen is
             a control you have to go and find. */}

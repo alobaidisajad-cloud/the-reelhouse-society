@@ -19,6 +19,7 @@ import reelToast from '@/src/utils/reelToast';
 import { BlurView } from 'expo-blur';
 import { Check, Film as FilmIcon, Send, User, UserCircle2, Users, X } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 interface SocialProfile {
     id: string;
@@ -331,6 +332,7 @@ export default function SocialModal() {
 
     return (
         <BlurView intensity={90} tint="dark" style={styles.container}>
+            <RoomLight room="default" />
             {/* Drag handle */}
             <View style={styles.dragHandleWrap}><View style={styles.dragHandle} /></View>
 

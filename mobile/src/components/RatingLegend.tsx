@@ -4,6 +4,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const RATINGS = [
     { reels: 1, label: 'Abysmal', desc: 'A cinematic affront.' },
@@ -35,7 +36,7 @@ export function RatingLegend() {
 }
 
 const s = StyleSheet.create({
-    container: { padding: 20, backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
+    container: { ...EDGE_LIT, padding: 20, backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
     title: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 16, textAlign: 'center' },
     row: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
     reelsWrap: { flexDirection: 'row', gap: 2, minWidth: 70 },

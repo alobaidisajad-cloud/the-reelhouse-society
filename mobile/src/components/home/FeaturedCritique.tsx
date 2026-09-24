@@ -17,6 +17,7 @@ import type { FeaturedLog, PulseActivity } from './types';
 import { timeAgo } from './types';
 import { PulseCardItem } from './PulseCardItem';
 import { ShimmerRule } from './VelvetRopeCTA';
+import { EDGE_LIT } from '@/src/theme/light';
 
 // ── FEATURED CRITIQUE ──
 function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
@@ -110,11 +111,11 @@ const s = StyleSheet.create({
   // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
   sectionLoreSub: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fogQuiet, letterSpacing: 0.3 },
   critiqueCardWrap: { marginHorizontal: 0 },
-  critiqueSubmitBtn: {
+  critiqueSubmitBtn: { ...EDGE_LIT,
     backgroundColor: colors.soot, marginTop: 12, borderRadius: 6,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     alignItems: 'center', paddingVertical: 14, paddingHorizontal: 8,
-    overflow: 'hidden', ...effects.shadowSurface,
+    overflow: 'hidden', ...effects.shadowSurface, ...effects.flat,
   },
   critiqueSubmitText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.sepia },
 });

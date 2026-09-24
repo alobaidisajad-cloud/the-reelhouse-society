@@ -29,6 +29,7 @@ import { Vignette } from '@/src/components/CinematicOverlays';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { SocietySeal } from '@/src/components/auth/SocietySeal';
+import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 
 // Extracted Architectural Components
 import type { TMDBFilm } from '@/src/components/home/types';
@@ -40,6 +41,10 @@ import { FeaturedCritique } from '@/src/components/home/FeaturedCritique';
 import { SocialPulseSection } from '@/src/components/home/SocialPulse';
 import { VelvetRopeCTA, BrassSheen } from '@/src/components/home/VelvetRopeCTA';
 import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
+import { EDGE_LIT, WASH } from '@/src/theme/light';
+
+/** The marquee backdrop's fade into the room: how much house it lays down, top to hem. */
+const HERO_VEIL: VeilStops = [[0, 0.28], [0.65, 0.7], [1, 1]];
 
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
@@ -216,10 +221,11 @@ export default function LobbyScreen() {
     return (
       <FrozenTab>
       <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <RoomLight room="lobby" />
         <LinearGradient
           colors={[colors.ink, 'rgba(13,11,9,0.98)', colors.soot]}
           locations={[0, 0.4, 1]}
-          style={StyleSheet.absoluteFillObject}
+          style={[StyleSheet.absoluteFillObject, WASH]}
         />
         
         {/* Dynamic Scene Atmospherics */}
@@ -331,25 +337,33 @@ export default function LobbyScreen() {
   }
 
   // ── Authenticated: The Nitrate Lobby ──
+  // The marquee's backdrop hangs over the top 65% of the screen: the lamp hangs
+  // from its hem, and the film's own colour blooms onto the page beneath.
+  const heroUri = heroFilm?.backdrop_path ? `${TMDB_IMG_W780}${heroFilm.backdrop_path}` : null;
+  // Whole points: the backdrop's veil and the room's light meet at this line,
+  // and a fractional hem leaves the last row of pixels to only one of them.
+  const heroH = Math.round(windowHeight * 0.65);
+
   return (
     <FrozenTab>
     <View style={s.container}>
-      <LinearGradient colors={[colors.ink, 'rgba(13,11,9,0.98)', colors.soot]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
+      <RoomLight room="lobby" hem={heroUri ? heroH : undefined} art={heroUri} />
+      {/* The page's own fade, house to card. At full strength it covered the
+          room's light entirely; as a wash with no artwork behind it, it is
+          thinned so the lamp shows through — the same rule every such wash in
+          the house follows now. */}
+      <LinearGradient colors={[colors.ink, 'rgba(13,11,9,0.98)', colors.soot]} locations={[0, 0.4, 1]} style={[StyleSheet.absoluteFillObject, WASH]} />
 
       {/* Parallax Hero Backdrop */}
       {heroFilm?.backdrop_path && (
-        <Animated.View style={[s.heroBackdropWrap, { height: windowHeight * 0.65 }, backdropAnimatedStyle]}>
+        <Animated.View style={[s.heroBackdropWrap, { height: heroH }, backdropAnimatedStyle]}>
           <Image
             source={{ uri: `${TMDB_IMG_W780}${heroFilm.backdrop_path}` }}
             style={s.heroBackdrop}
             contentFit="cover"
             cachePolicy="memory-disk" transition={150}
           />
-          <LinearGradient
-            colors={['rgba(13,11,9,0.28)', 'rgba(13,11,9,0.7)', colors.ink]}
-            locations={[0, 0.65, 1]}
-            style={StyleSheet.absoluteFillObject}
-          />
+          <RoomVeil room="lobby" hem={heroH} art={heroUri} stops={HERO_VEIL} />
           <LinearGradient
             colors={['rgba(184,137,26,0.05)', 'transparent', 'transparent']}
             locations={[0, 0.4, 1]}
@@ -467,11 +481,11 @@ const s = StyleSheet.create({
   
   welcomeCtaContainer: { width: '100%', maxWidth: 360, alignItems: 'center', gap: 24 },
   
-  ctaPrimaryNoir: {
+  ctaPrimaryNoir: { ...EDGE_LIT,
     backgroundColor: colors.soot, width: '100%', borderRadius: 6,
     borderWidth: 1, borderColor: '#3A2E1C',
     position: 'relative', overflow: 'hidden', padding: 3,
-    ...effects.shadowPrimary,
+    ...effects.shadowPrimary, ...effects.flat,
   },
   ctaPrimaryNoirInner: {
     backgroundColor: colors.ink, borderRadius: 4,
@@ -519,7 +533,6 @@ const s = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-
   heroBackdropWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 0 },
   heroBackdrop: { width: '100%', height: '100%', opacity: 1 },
 

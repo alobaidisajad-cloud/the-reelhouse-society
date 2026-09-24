@@ -2,9 +2,12 @@ import { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import type { StyleProp, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { colors, metrics } from '@/src/theme/theme';
 import { STUB_HEIGHT, STUB_PAD_TOP } from './filmStubMetrics';
+import { EDGE_LIT } from '@/src/theme/light';
+import { RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
+
+const PLACEHOLDER_VEIL: VeilStops = [[0, 0.1], [0.7, 0.6], [1, 1]];
 
 interface FilmHeroSkeletonProps {
   skeletonAnimStyle: StyleProp<ViewStyle>;
@@ -38,7 +41,8 @@ export const FilmHeroSkeleton = memo(function FilmHeroSkeleton({
     <>
       <View style={[styles.shimmerBackdrop, { height: backdropHeight }]}>
         <Animated.View style={[styles.shimmer, StyleSheet.absoluteFillObject, skeletonAnimStyle]} />
-        <LinearGradient colors={['rgba(13,11,9,0.1)', 'rgba(13,11,9,0.6)', colors.ink]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
+        {/* Fades into the LIT room, as the backdrop it stands in for does. */}
+        <RoomVeil room="film" hem={backdropHeight} stops={PLACEHOLDER_VEIL} />
       </View>
       <View style={[styles.shimmerContent, { marginTop: -metrics.posterLift }]}>
         <Animated.View style={[styles.shimmer, styles.shimmerPoster, skeletonAnimStyle]} />
@@ -58,7 +62,7 @@ export const FilmHeroSkeleton = memo(function FilmHeroSkeleton({
 
 const styles = StyleSheet.create({
   shimmer: { backgroundColor: 'rgba(184,137,26,0.15)' },
-  shimmerBackdrop: { backgroundColor: colors.soot, position: 'relative' },
+  shimmerBackdrop: { ...EDGE_LIT, backgroundColor: colors.soot, position: 'relative' },
   // marginTop comes from `metrics.posterLift` at render — the same token the
   // real hero uses, so the poster cannot land in two different places.
   shimmerContent: { alignItems: 'center', paddingHorizontal: 20 },
@@ -66,7 +70,7 @@ const styles = StyleSheet.create({
   shimmerEyebrow: { width: 120, height: 10, borderRadius: 2, marginBottom: 10 },
   shimmerTitle: { width: 200, height: 28, borderRadius: 2, marginBottom: 10 },
   shimmerMeta: { width: 160, height: 10, borderRadius: 2, marginBottom: 20 },
-  waitingDock: {
+  waitingDock: { ...EDGE_LIT,
     position: 'absolute', left: 0, right: 0, bottom: 0,
     paddingHorizontal: 20, paddingTop: STUB_PAD_TOP,
     backgroundColor: colors.soot,

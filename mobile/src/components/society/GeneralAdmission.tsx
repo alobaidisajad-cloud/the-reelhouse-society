@@ -13,6 +13,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { deckLabelProps, displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { privilegesOf, rankById } from '@/src/constants/membership';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export const GeneralAdmission = memo(function GeneralAdmission({ yours }: { yours: boolean }) {
   const rank = rankById('cinephile');
@@ -40,7 +41,7 @@ export const GeneralAdmission = memo(function GeneralAdmission({ yours }: { your
 });
 
 const s = StyleSheet.create({
-  slip: {
+  slip: { ...EDGE_LIT,
     marginHorizontal: 16, marginTop: 20,
     borderWidth: 1, borderColor: colors.ash, backgroundColor: colors.surface,
     paddingHorizontal: 18, paddingVertical: 16,

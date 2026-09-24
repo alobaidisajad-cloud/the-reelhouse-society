@@ -135,7 +135,20 @@ function census(): string[] {
         const style = /style=\{([\s\S]*)\}/.exec(src.slice(m.index, i));
         if (!style) continue;
         const s = style[1];
-        const op = /(?:^|[^A-Za-z])opacity\s*:\s*(0?\.\d+)/.test(s);
+        // The opacity's whole EXPRESSION, not just a bare number: the Reel's
+        // tab labels were `activeTab === 'logs' ? 1 : 0.75`, and a first
+        // version of this test, reading only literals, walked straight past.
+        const op = [...s.matchAll(/(?:^|[^A-Za-z])opacity\s*:\s*/g)].some((om) => {
+          let d = 0, e = '';
+          for (let k = (om.index ?? 0) + om[0].length; k < s.length; k++) {
+            const ch = s[k];
+            if ('([{'.includes(ch)) d++;
+            else if (')]}'.includes(ch)) { if (d === 0) break; d--; }
+            else if (ch === ',' && d === 0) break;
+            e += ch;
+          }
+          return /(^|[^\d.])0?\.\d+/.test(e);
+        });
         const al = /(?:^|[^A-Za-z])color\s*:\s*'rgba\([^)]*,\s*(0?\.\d+)\s*\)'/.test(s);
         if (!op && !al) continue;
         const rides = /\b\w+\.(\w+)/.exec(s);

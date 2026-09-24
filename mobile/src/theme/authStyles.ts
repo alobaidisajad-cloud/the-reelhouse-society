@@ -6,6 +6,7 @@
  */
 import { StyleSheet } from 'react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { EDGE_LIT } from '@/src/theme/light';
 
 export const loginStyles = StyleSheet.create({
   container: {
@@ -104,7 +105,7 @@ export const loginStyles = StyleSheet.create({
     maxWidth: 280,
     alignSelf: 'center',
   },
-  formCard: {
+  formCard: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: colors.sepiaBorder,

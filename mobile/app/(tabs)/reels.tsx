@@ -39,6 +39,8 @@ import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
 import { ReelsStackList } from '@/src/components/reels/ReelsStackList';
 import { MemberRegistry } from '@/src/components/reels/MemberRegistry';
 import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { EDGE_LIT, WASH } from '@/src/theme/light';
 
 // Removed LayoutAnimation — conflicts with Reanimated layout transitions.
 // Reanimated's entering/exiting animations handle all transitions in this screen.
@@ -470,10 +472,12 @@ export default function ReelScreen() {
     <SectionErrorBoundary section="The Reel">
       <FrozenTab>
       <View style={st.container}>
+      <RoomLight room="reel" />
+      {/* The page's own fade, thinned so the projector's light shows through. */}
       <LinearGradient
         colors={[colors.ink, 'rgba(13,11,9,1)', colors.soot]}
         locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={[StyleSheet.absoluteFillObject, WASH]}
       />
       <ProjectorBeam scrollY={activeScrollY} />
 
@@ -546,7 +550,7 @@ const st = StyleSheet.create({
   searchClear: { padding: 4, marginLeft: 4 },
   searchClearText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog },
 
-  createStackBtn: {
+  createStackBtn: { ...EDGE_LIT,
     marginHorizontal: 16, marginBottom: 16,
     backgroundColor: colors.soot, borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.2)', borderStyle: 'dashed', borderRadius: 2,
@@ -565,7 +569,7 @@ const st = StyleSheet.create({
   // tells a member what to DO with an empty feed, so it has to be readable.
   // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
   emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.fogQuiet, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
-  emptyBtn: {
+  emptyBtn: { ...EDGE_LIT,
     backgroundColor: colors.soot, borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, borderStyle: 'dashed',
     paddingVertical: 12, paddingHorizontal: 28,

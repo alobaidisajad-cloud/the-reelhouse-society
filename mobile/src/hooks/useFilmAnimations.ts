@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import {
   useSharedValue,
   useAnimatedStyle,
+  useDerivedValue,
   withRepeat,
   withTiming,
   Easing,
@@ -79,9 +80,16 @@ export function useFilmAnimations({ isFocused, scrollY, backdropHeight }: UseFil
    * belongs to the hero; below it the page is ink and every section reads at
    * full strength.
    */
+  // How far the backdrop has drifted DOWN the screen (the parallax). One value,
+  // read by the backdrop's style and, negated, by its veil — whose light must
+  // hold still on the screen while the backdrop drifts (see RoomVeil).
+  const backdropDrift = useDerivedValue(() =>
+    interpolate(scrollY.value, [0, backdropHeight], [0, backdropHeight * 0.4], Extrapolation.CLAMP));
+  const backdropLifted = useDerivedValue(() => -backdropDrift.value);
+
   const backdropAnimatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateY: interpolate(scrollY.value, [0, backdropHeight], [0, backdropHeight * 0.4], Extrapolation.CLAMP) }],
+      transform: [{ translateY: backdropDrift.value }],
       opacity: interpolate(scrollY.value, [0, backdropHeight * 0.85], [1, 0], Extrapolation.CLAMP),
     };
   });
@@ -112,6 +120,7 @@ export function useFilmAnimations({ isFocused, scrollY, backdropHeight }: UseFil
     skeletonAnimStyle,
     bookmarkAnimStyle,
     backdropAnimatedStyle,
+    backdropLifted,
     immersiveAnimatedStyle,
     scrollHeaderStyle,
     skeletonOpacity,

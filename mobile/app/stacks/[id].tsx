@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MoreHorizontal, Send, Trash2, User, X } from 'lucide-react-native';
 import { ActivityIndicator, Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
@@ -29,12 +29,17 @@ import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { formatDateMonthYear, timeAgo } from '@/src/utils/timeAgo';
 import { z } from 'zod';
+import { EDGE_LIT } from '@/src/theme/light';
+import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
 /** The epigraph folds past this many lines — the clamp and the test for the
  *  fold must be the same number, or the page offers to open what is not shut. */
 const DESC_CLAMP_LINES = 4;
+
+/** The hero's fade into the room: how much house it lays down, top to hem. */
+const HERO_VEIL: VeilStops = [[0, 0.4], [0.6, 0.9], [1, 1]];
 
 const isNetworkError = (e: unknown): boolean => {
     const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
@@ -278,7 +283,9 @@ export default function StackDetailScreen() {
    * everywhere, with a floor and a ceiling so a small phone is not swallowed by
    * its own header.
    */
-  const HEADER_HEIGHT = insets.top + Math.min(320, Math.max(236, windowHeight * 0.38));
+  // Whole points: the room's light hangs from the hero's hem, and its veil
+  // meets the light exactly there.
+  const HEADER_HEIGHT = Math.round(insets.top + Math.min(320, Math.max(236, windowHeight * 0.38)));
 
 
   // ── React Query: MMKV-cached stack detail (instant revisits & offline fallback) ──
@@ -443,11 +450,17 @@ export default function StackDetailScreen() {
   // Scroll animations
   const scrollY = useSharedValue(0);
 
+  // The hero's parallax: how far it drifts DOWN inside the page as the page
+  // scrolls up. Read by its style and by its veil, which must know how far
+  // the hero has really risen up the screen — the scroll, less the drift.
+  const heroDrift = useDerivedValue(() => interpolate(scrollY.value, [-100, 0, HEADER_HEIGHT], [0, 0, HEADER_HEIGHT * 0.5]));
+  const heroLifted = useDerivedValue(() => scrollY.value - heroDrift.value);
+
   const headerStyle = useAnimatedStyle(() => {
     return {
       height: HEADER_HEIGHT,
       transform: [
-        { translateY: interpolate(scrollY.value, [-100, 0, HEADER_HEIGHT], [0, 0, HEADER_HEIGHT * 0.5]) },
+        { translateY: heroDrift.value },
         { scale: interpolate(scrollY.value, [-100, 0], [1.2, 1], 'clamp') }
       ]
     };
@@ -734,6 +747,7 @@ export default function StackDetailScreen() {
   if (loading) {
     return (
       <View style={s.container}>
+        <RoomLight room="default" />
         <StackNav topInset={insets.top} onBack={() => router.back()} />
         <View style={s.loadingCenter}>
           <ActivityIndicator size="large" color={colors.sepia} />
@@ -747,6 +761,7 @@ export default function StackDetailScreen() {
   if (isError || !list || (list.isPrivate && !isOwner)) {
     return (
       <View style={s.container}>
+        <RoomLight room="default" />
         <StackNav topInset={insets.top} onBack={() => router.back()} />
         <View style={s.loadingCenter}>
           <Text style={s.title}>CLASSIFIED</Text>
@@ -780,6 +795,8 @@ export default function StackDetailScreen() {
 
   return (
     <Animated.View style={[s.container, animatedContainerStyle]}>
+      {/* The room's light hangs from where the hero ends, and blooms from it. */}
+      <RoomLight room="default" hem={heroPoster ? HEADER_HEIGHT : undefined} art={heroPoster} />
       {/* Absolute Dynamic Nav Bar */}
       <StackNav topInset={insets.top} onBack={() => router.back()} blurStyle={navBlurStyle}>
         {isOwner ? (
@@ -821,14 +838,14 @@ export default function StackDetailScreen() {
           <>
             {/* Parallax Image Background */}
             <Animated.View style={[s.parallaxHeader, headerStyle]}>
-              {heroPoster && (
-                <Image source={heroPoster} style={StyleSheet.absoluteFillObject} contentFit="cover" blurRadius={20} cachePolicy="memory-disk" />
-              )}
-              <LinearGradient 
-                colors={['rgba(13,11,9,0.4)', 'rgba(13,11,9,0.9)', colors.ink]}
-                locations={[0, 0.6, 1]}
-                style={StyleSheet.absoluteFillObject}
-              />
+              {/* No picture, no veil: there is nothing to fade, and a veil
+                  over nothing is a dark block hiding the room's light. */}
+              {heroPoster ? (
+                <>
+                  <Image source={heroPoster} style={StyleSheet.absoluteFillObject} contentFit="cover" blurRadius={20} cachePolicy="memory-disk" />
+                  <RoomVeil room="default" hem={HEADER_HEIGHT} art={heroPoster} stops={HERO_VEIL} lifted={heroLifted} />
+                </>
+              ) : null}
             </Animated.View>
 
             {/* Content Overlaid on Header */}
@@ -1217,7 +1234,7 @@ const s = StyleSheet.create({
   // sideways and loose downward. They are one number now, and the row gap lives
   // on the item so FlashList still measures a whole cell.
   filmItem: { marginBottom: 14, marginHorizontal: 7 },
-  filmCard: { borderRadius: 2, overflow: 'hidden', backgroundColor: colors.soot, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.1)' },
+  filmCard: { ...EDGE_LIT, borderRadius: 2, overflow: 'hidden', backgroundColor: colors.soot, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.1)' },
   // The podium frame — only #1 of a ranked stack earns the brass hairline.
   filmCardFirst: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)' },
   posterPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 },
@@ -1249,7 +1266,7 @@ const s = StyleSheet.create({
   // as sitting ON the page, and tappable, because reaching for the thing behind
   // is the most natural way anyone closes a surface like this.
   critiqueBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: 'rgba(6,5,4,0.72)' },
-  critiqueSheet: {
+  critiqueSheet: { ...EDGE_LIT,
     position: 'absolute', left: 0, right: 0,
     backgroundColor: colors.soot,
     borderTopLeftRadius: 14, borderTopRightRadius: 14,
