@@ -37,7 +37,8 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import type { Rank } from '@/src/constants/gatedFeatures';
 
 /** Brass for the Archivist, ruby for the Auteur — the ranks' own inks. */
-const inkFor = (rank: Rank) => (rank === 'auteur' ? colors.crimson : colors.sepia);
+// A WORD's ink: the Auteur's crimson pigment is 2.78:1 as a word on a card.
+const inkFor = (rank: Rank) => (rank === 'auteur' ? colors.crimsonInk : colors.sepia);
 const nameFor = (rank: Rank) => (rank === 'auteur' ? 'THE AUTEUR' : 'THE ARCHIVIST');
 
 /**
@@ -148,8 +149,7 @@ const s = StyleSheet.create({
     marginBottom: 8, textAlign: 'center', includeFontPadding: false,
   },
   line: {
-    fontFamily: fonts.serif, fontSize: 12.5, lineHeight: 19, color: colors.bone,
-    opacity: 0.9, textAlign: 'center', marginBottom: 10, maxWidth: 280,
+    fontFamily: fonts.serif, fontSize: 12.5, lineHeight: 19, color: colors.bone, textAlign: 'center', marginBottom: 10, maxWidth: 280,
     includeFontPadding: false,
   },
   cta: {

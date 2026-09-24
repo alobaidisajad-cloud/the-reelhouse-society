@@ -209,7 +209,7 @@ const TungstenIgnition = memo(function TungstenIgnition() {
   return (
     <View style={s.marqueeBoard}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 140 }}>
-         <Text style={[s.marqueeEyebrow, { opacity: 0.5 }]}>WARMING UP THE ARC LAMP...</Text>
+         <Text style={s.marqueeEyebrow}>WARMING UP THE ARC LAMP...</Text>
          <Animated.View style={[{ width: '80%', height: 2, backgroundColor: '#E7C173', marginTop: 16, ...effects.glowSepia }, animStyle]} />
       </View>
     </View>
@@ -464,9 +464,10 @@ const s = StyleSheet.create({
   marqueeLoreSub: {
     fontFamily: fonts.body,
     fontSize: 10,
+    // `fog`, solid — not the quieter step. This line sits on the marquee's
+    // poster and scrim, lit by the picture: fogQuiet measured 4.49 there.
     color: colors.fog,
     textAlign: 'center',
-    opacity: 0.72,
     marginBottom: 10,
     fontStyle: 'italic',
     textShadowColor: 'rgba(0,0,0,0.6)',
@@ -520,9 +521,8 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 2.5,
-    color: colors.fog,
+    color: colors.fogQuiet,
     textAlign: 'center',
     marginTop: 4,
-    opacity: 0.7,
   },
 });

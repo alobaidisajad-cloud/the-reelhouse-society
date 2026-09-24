@@ -351,7 +351,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         <Sparkles size={10} color={colors.sepia} strokeWidth={1.5} />
                         <Text style={st.deskFootText}>THE EDITORIAL DESK</Text>
                     </View>
-                    <Text style={[st.deskFootValue, !desk.held && { color: colors.sepia, opacity: 0.8 }]} numberOfLines={1}>
+                    <Text style={[st.deskFootValue, !desk.held && { color: colors.sepia }]} numberOfLines={1}>
                         {desk.held ? (dropCap || pullQuote || editorialHeader ? 'IN USE' : '—') : 'THE ARCHIVIST'}
                     </Text>
                 </PressableScale>

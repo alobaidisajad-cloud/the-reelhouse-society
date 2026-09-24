@@ -228,7 +228,6 @@ const s = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 2,
     color: colors.sepia,
-    opacity: 0.8,
   },
   grid: {
     flexDirection: 'row',

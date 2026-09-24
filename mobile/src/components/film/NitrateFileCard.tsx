@@ -296,7 +296,6 @@ const s = StyleSheet.create({
     fontSize: 13,
     lineHeight: 17,
     color: colors.parchment,
-    opacity: 0.85,
     textAlign: 'center',
     marginBottom: 4,
   },
@@ -389,7 +388,6 @@ const s = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     color: colors.bone,
-    opacity: 0.95,
   },
 
   // ── The ledger line ──

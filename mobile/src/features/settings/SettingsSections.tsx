@@ -368,11 +368,11 @@ export function PasswordChangePanel() {
             <>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>CURRENT PASSWORD</Text>
-                <TextInput style={st.fieldInput} value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry textContentType="password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => newPasswordRef.current?.focus()} placeholder="Your current password" placeholderTextColor={colors.ash} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Current password" {...scaledTextProps} />
+                <TextInput style={st.fieldInput} value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry textContentType="password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => newPasswordRef.current?.focus()} placeholder="Your current password" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Current password" {...scaledTextProps} />
               </View>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>NEW PASSWORD</Text>
-                <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="Society encryption standard" placeholderTextColor={colors.ash} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="New password" {...scaledTextProps} />
+                <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="Society encryption standard" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="New password" {...scaledTextProps} />
                 {newPassword.length > 0 && (
                   <View style={st.pwMeter} accessible accessibilityRole="progressbar" accessibilityLabel={`Cipher strength: ${strength.label}`}>
                     <View style={st.pwBars}>
@@ -380,7 +380,7 @@ export function PasswordChangePanel() {
                         <View key={key} style={[st.pwBar, i < pwPassed && { backgroundColor: strength.color }]} />
                       ))}
                     </View>
-                    <Text style={[st.pwStrength, { color: strength.color }]} {...scaledTextProps}>{strength.label}</Text>
+                    <Text style={[st.pwStrength, { color: strength.ink }]} {...scaledTextProps}>{strength.label}</Text>
                     <Text style={st.pwChecks} {...scaledTextProps}>
                       {PW_CHECK_LABELS.map(([key, text]) => (pwChecks[key] ? text : text)).join(' · ')}
                     </Text>
@@ -389,7 +389,7 @@ export function PasswordChangePanel() {
               </View>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>CONFIRM PASSWORD</Text>
-                <TextInput ref={confirmPasswordRef} style={st.fieldInput} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="done" onSubmitEditing={handlePasswordChange} placeholder="Repeat password" placeholderTextColor={colors.ash} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Confirm password" {...scaledTextProps} />
+                <TextInput ref={confirmPasswordRef} style={st.fieldInput} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="done" onSubmitEditing={handlePasswordChange} placeholder="Repeat password" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Confirm password" {...scaledTextProps} />
                 {confirmPassword.length > 0 && newPassword !== confirmPassword && (
                   <Text style={st.pwMismatch} {...scaledTextProps}>The two ciphers do not match.</Text>
                 )}
@@ -698,7 +698,7 @@ const st = StyleSheet.create({
   fieldBodyFlush: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },
   // 7pt with 2pt tracking wrapped to two lines and crowded the card's edge; the
   // dropped clause ("SECURE CHECKOUT") was reassurance nobody had asked for.
-  microNote: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.fog, opacity: 0.6, textAlign: 'center', padding: 16, paddingBottom: 18, marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.1)', includeFontPadding: false },
+  microNote: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.fogQuiet, textAlign: 'center', padding: 16, paddingBottom: 18, marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.1)', includeFontPadding: false },
 
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   // The one line stating who you are in the house was set smaller than a
@@ -714,7 +714,7 @@ const st = StyleSheet.create({
   activeBadge: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: 'rgba(184,137,26,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 2 },
   activeBadgeText: { fontFamily: fonts.sub, fontSize: 8, color: colors.sepia, letterSpacing: 1, includeFontPadding: false },
   ladder: { flexDirection: 'row', alignItems: 'center', marginTop: 12, flexWrap: 'wrap' },
-  ladderRank: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.fog, opacity: 0.42, includeFontPadding: false },
+  ladderRank: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.fogQuiet, includeFontPadding: false },
   ladderRankNow: { color: colors.sepia, opacity: 1 },
   ladderMark: { width: 4, height: 4, backgroundColor: colors.fog, opacity: 0.35, transform: [{ rotate: '45deg' }], marginHorizontal: 9 },
 
@@ -722,7 +722,7 @@ const st = StyleSheet.create({
   primaryBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.ink, fontWeight: '700', includeFontPadding: false },
 
   recordValue: { fontFamily: fonts.body, fontSize: 13, color: colors.parchment, paddingBottom: 9, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },
-  recordNote: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.fog, opacity: 0.75, marginTop: 7, includeFontPadding: false },
+  recordNote: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.fogQuiet, marginTop: 7, includeFontPadding: false },
   toggleUnderDesc: { marginTop: 12, alignSelf: 'flex-start' },
 
   actionBtnSpaced: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 48, backgroundColor: 'rgba(184,137,26,0.03)' },

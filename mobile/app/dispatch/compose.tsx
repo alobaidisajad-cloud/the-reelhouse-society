@@ -1079,7 +1079,7 @@ function ComposeDossierScreen() {
                             ref={inputRef}
                             style={styles.contentInput}
                             placeholder="Begin. The house is listening."
-                            placeholderTextColor={colors.ash}
+                            placeholderTextColor={colors.fog}
                             value={content}
                             onChangeText={(t) => { setContent(t); setRestored(null); }}
                             onSelectionChange={handleSelectionChange}

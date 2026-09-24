@@ -45,7 +45,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                       <Text {...scaledTextProps} style={st.fieldLabel}>TITLE</Text>
                       <ControlledInput
                         name={`links.${index}.title` as const}
-                        style={st.fieldInput} placeholder="e.g. My Portfolio, Blog, Channel..." placeholderTextColor={colors.ash} maxLength={40} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia}
+                        style={st.fieldInput} placeholder="e.g. My Portfolio, Blog, Channel..." placeholderTextColor={colors.fog} maxLength={40} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia}
                       />
                   </View>
                   
@@ -53,7 +53,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                       <Text {...scaledTextProps} style={st.fieldLabel}>URL</Text>
                       <ControlledInput
                         name={`links.${index}.url` as const}
-                        style={st.fieldInput} placeholder="https://..." placeholderTextColor={colors.ash} keyboardType="url" autoCapitalize="none" autoCorrect={false} keyboardAppearance="dark" accessibilityLabel="Link URL" selectionColor={colors.sepia}
+                        style={st.fieldInput} placeholder="https://..." placeholderTextColor={colors.fog} keyboardType="url" autoCapitalize="none" autoCorrect={false} keyboardAppearance="dark" accessibilityLabel="Link URL" selectionColor={colors.sepia}
                       />
                       {!!errors.links?.[index]?.url && <Text {...scaledTextProps} style={st.errorText}>{errors.links[index]?.url?.message}</Text>}
                   </View>

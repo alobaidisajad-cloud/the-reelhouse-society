@@ -556,14 +556,15 @@ const st = StyleSheet.create({
   createStackGlow: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
   },
-  createStackText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.parchment, opacity: 0.9 },
+  createStackText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.parchment },
 
 
   emptyWrap: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32 },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, opacity: 0.8, textAlign: 'center', marginBottom: 8 },
-  // 0.5 measured 3.12:1 on 12pt italic. 0.7 gives 5.14:1 — this is the line that
+  emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, textAlign: 'center', marginBottom: 8 },
+  // 0.5 measured 3.12:1 on 12pt italic. 0.7 gave 5.14:1 — this is the line that
   // tells a member what to DO with an empty feed, so it has to be readable.
-  emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.7, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
+  // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+  emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.fogQuiet, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
   emptyBtn: {
     backgroundColor: colors.soot, borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, borderStyle: 'dashed',

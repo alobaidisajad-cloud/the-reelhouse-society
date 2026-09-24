@@ -200,7 +200,7 @@ export const s = StyleSheet.create({
     position: 'relative', overflow: 'hidden',
   },
   bioTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1 } as import('react-native').ViewStyle,
-  bioLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 12, opacity: 0.9, includeFontPadding: false },
+  bioLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
   bioTextWrap: { position: 'relative' },
   bioText: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, lineHeight: 24 },
   bioFadeMask: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
@@ -227,7 +227,7 @@ export const s = StyleSheet.create({
     borderRadius: 4, backgroundColor: 'rgba(30,25,20,0.4)',
   },
   emptyLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, opacity: 0.7, marginBottom: 4 },
+  emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.bone, marginBottom: 4 },
   emptyBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
 
   // ── Back Button ──

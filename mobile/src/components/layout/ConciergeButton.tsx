@@ -515,7 +515,8 @@ const s = StyleSheet.create({
   sheetLore: {
     // 0.6 measured 3.04:1 on soot. This line is a flourish, but a flourish
     // nobody can read is just noise taking up room.
-    fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, opacity: 0.8,
+    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fogQuiet,
     marginTop: 5, textAlign: 'center',
   },
   // What EST. 1924 left behind: the rule stays, the words go. It still divides

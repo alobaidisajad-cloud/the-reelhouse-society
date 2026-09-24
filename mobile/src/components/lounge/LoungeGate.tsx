@@ -117,11 +117,10 @@ const s = StyleSheet.create({
   gateDesc: {
     fontFamily: fonts.body,
     fontSize: 11,
-    color: colors.bone,
+    color: colors.fog,
     lineHeight: 18,
     textAlign: 'center',
     marginBottom: 32,
-    opacity: 0.8,
   },
   gateCta: {
     flexDirection: 'row',
@@ -144,8 +143,8 @@ const s = StyleSheet.create({
     fontSize: 7,
     letterSpacing: 2.5,
     color: colors.sepia,
-    // 0.6 was 2.90:1 in sepia. 0.85 = 4.78:1.
-    opacity: 0.85,
+    // 0.6 was 2.90:1 in sepia. 0.85 made 4.78:1.
+    // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
     textAlign: 'center',
     marginTop: -18,
     marginBottom: 24,
@@ -154,9 +153,9 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 7,
     letterSpacing: 2.5,
-    color: colors.fog,
-    // 0.4 was 1.96:1. 0.8 = 4.59:1.
-    opacity: 0.8,
+    color: colors.fogQuiet,
+    // 0.4 was 1.96:1. 0.8 made 4.59:1.
+    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
     textAlign: 'center',
   },
 });

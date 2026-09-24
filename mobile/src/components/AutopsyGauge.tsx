@@ -178,7 +178,6 @@ const s = StyleSheet.create({
         fontSize: 16,
         lineHeight: 16,
         color: colors.parchment,
-        opacity: 0.85,
         letterSpacing: 0.5,
     },
     track: {

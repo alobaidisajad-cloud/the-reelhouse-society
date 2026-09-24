@@ -291,7 +291,7 @@ const s = StyleSheet.create({
   rowBody: { flex: 1, minWidth: 0 },
   sep: { height: 1, marginLeft: 67, marginRight: 12, backgroundColor: 'rgba(215,205,190,0.07)' },
   rowLabel: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1.6, marginBottom: 3, includeFontPadding: false },
-  rowGloss: { fontFamily: fonts.bodyItalic, fontSize: 11.5, color: colors.fog, opacity: 0.85, includeFontPadding: false },
+  rowGloss: { fontFamily: fonts.bodyItalic, fontSize: 11.5, color: colors.fogQuiet, includeFontPadding: false },
   rowGlossPrimary: { color: ON_BRASS_MUTED, opacity: 1 },
   chip: {
     fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.sepia,

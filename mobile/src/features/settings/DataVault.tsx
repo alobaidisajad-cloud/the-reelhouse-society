@@ -594,8 +594,8 @@ const s = StyleSheet.create({
     backgroundColor: colors.sepia,
   },
   progressDetail: {
-    fontFamily: fonts.body, fontSize: 11, color: colors.fog,
-    marginTop: 8, fontStyle: 'italic', opacity: 0.7,
+    fontFamily: fonts.body, fontSize: 11, color: colors.fogQuiet,
+    marginTop: 8, fontStyle: 'italic',
   },
 
   // ── Result Card ──
@@ -636,7 +636,7 @@ const s = StyleSheet.create({
   },
   errorScroll: { marginTop: 8 },
   errorLine: {
-    fontFamily: fonts.body, fontSize: 10, color: 'rgba(162,36,36,0.8)',
+    fontFamily: fonts.body, fontSize: 10, color: colors.crimsonInk,
     fontStyle: 'italic', marginBottom: 3,
   },
 

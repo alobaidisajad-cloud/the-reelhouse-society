@@ -206,7 +206,7 @@ export function CinematicInsights({ taste }: { taste?: TasteProfile | null }) {
 
 const s = StyleSheet.create({
     container: { gap: 16 },
-    metaNote: { textAlign: 'center', fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.fog, opacity: 0.6, marginBottom: 4 },
+    metaNote: { textAlign: 'center', fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.fogQuiet, marginBottom: 4 },
     card: {
         padding: 20, backgroundColor: colors.soot,
         borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4,
@@ -238,6 +238,6 @@ const s = StyleSheet.create({
     genreHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, gap: 8 },
     genreName: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, flex: 1 },
     genreCountWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-    pctText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, opacity: 0.6 },
+    pctText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fogQuiet },
     loaderMargin: { marginVertical: 16 },
 });

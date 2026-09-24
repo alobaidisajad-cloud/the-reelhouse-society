@@ -352,7 +352,7 @@ const s = StyleSheet.create({
   closeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, includeFontPadding: false },
   titleBlock: { flex: 1, alignItems: 'center' },
   title: { fontFamily: fonts.display, fontSize: 18, color: colors.bone },
-  eyebrow: { fontFamily: fonts.sub, fontSize: 6, letterSpacing: 2.5, color: colors.sepia, opacity: 0.7, marginTop: 3, includeFontPadding: false },
+  eyebrow: { fontFamily: fonts.sub, fontSize: 6, letterSpacing: 2.5, color: colors.sepia, marginTop: 3, includeFontPadding: false },
   markReadBtn: { width: 80, alignItems: 'flex-end' },
   markReadText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
 

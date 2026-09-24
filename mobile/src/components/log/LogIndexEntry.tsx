@@ -39,16 +39,29 @@ export interface LogIndexEntryProps {
   children?: React.ReactNode;
 }
 
+/** The MARK's colour — the key and the dot. Pigment reads as a shape. */
 const TINT = {
   base: colors.parchmentDim,
   archivist: colors.sepia,
   auteur: colors.crimson,
 } as const;
 
+/**
+ * The WORDS' colour — the entry's name and what it is locked to. One table
+ * used to do both jobs, so every Auteur-rank entry printed its name in the
+ * crimson PIGMENT: 2.78:1 on the card. Same families, inks that clear.
+ */
+const INK = {
+  base: colors.parchmentDim,
+  archivist: colors.sepia,
+  auteur: colors.crimsonInk,
+} as const;
+
 export default React.memo(function LogIndexEntry({
   name, value, origin = 'base', lockedTo, open, onPress, children,
 }: LogIndexEntryProps) {
   const tint = TINT[origin];
+  const ink = INK[origin];
   const locked = !!lockedTo;
 
   return (
@@ -77,9 +90,9 @@ export default React.memo(function LogIndexEntry({
         ) : (
           <View style={[st.idxDot, { borderColor: tint }, !!value && { backgroundColor: tint }]} />
         )}
-        <Text style={[st.idxName, { color: tint }]} numberOfLines={1} {...scaledTextProps}>{name}</Text>
+        <Text style={[st.idxName, { color: ink }]} numberOfLines={1} {...scaledTextProps}>{name}</Text>
         <Text
-          style={[st.idxValue, locked && { color: tint, opacity: 0.8 }]}
+          style={[st.idxValue, locked && { color: ink }]}
           numberOfLines={1}
           {...scaledTextProps}
         >

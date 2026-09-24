@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 11,
     letterSpacing: 5,
-    color: 'rgba(196,150,26,0.50)',
+    color: colors.sepia,
     zIndex: 3,
   },
   bloom: {

@@ -271,9 +271,10 @@ const st = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
     backgroundColor: 'rgba(30,25,20,0.5)',
   },
-  // 0.6 measured 3.04:1; 0.8 gives 4.59:1. An unselected filter should read as
+  // 0.6 measured 3.04:1; 0.8 gave 4.59:1. An unselected filter should read as
   // unselected, not as disabled.
-  filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog, opacity: 0.8 },
+  // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+  filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fogQuiet },
   filterChipTextActive: { color: colors.sepia, opacity: 1 },
 
   stackCard: {
@@ -310,7 +311,6 @@ const st = StyleSheet.create({
     fontSize: 7,
     letterSpacing: 2,
     color: colors.parchment,
-    opacity: 0.8,
   },
   stackCardContent: {
     position: 'absolute',
@@ -325,7 +325,7 @@ const st = StyleSheet.create({
     fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia
   },
   stackCertifyText: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.flicker, opacity: 0.9
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.flicker
   },
   stackCardMetaDivider: {
     flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)',

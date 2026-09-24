@@ -212,8 +212,7 @@ const s = StyleSheet.create({
         fontFamily: fonts.sub,
         fontSize: 8,
         letterSpacing: 1,
-        color: colors.fog,
-        opacity: 0.6,
+        color: colors.fogQuiet,
         includeFontPadding: false,
     },
     dayRow: {

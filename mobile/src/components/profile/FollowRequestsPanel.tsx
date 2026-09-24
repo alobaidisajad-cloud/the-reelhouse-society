@@ -108,7 +108,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Find a petitioner…"
-                placeholderTextColor={colors.ash}
+                placeholderTextColor={colors.fog}
                 selectionColor={colors.sepia}
                 keyboardAppearance="dark"
                 autoCapitalize="none"

@@ -292,7 +292,7 @@ const s = StyleSheet.create({
     },
     rankLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog, marginBottom: 8 },
     rankValue: { fontFamily: fonts.display, fontSize: 26, textAlign: 'center' },
-    rankNote: { fontFamily: fonts.bodyItalic, fontSize: 11, lineHeight: 16, color: colors.bone, opacity: 0.7, marginTop: 6, textAlign: 'center' },
+    rankNote: { fontFamily: fonts.bodyItalic, fontSize: 11, lineHeight: 16, color: colors.fogQuiet, marginTop: 6, textAlign: 'center' },
     // Deliberately quieter than the standing above it and louder than the track
     // note below: a live fact, not a headline and not fine print.
     runNote: { fontFamily: fonts.sub, fontSize: type.meta, letterSpacing: 2.4, color: colors.sepia, marginTop: 9, textAlign: 'center' },

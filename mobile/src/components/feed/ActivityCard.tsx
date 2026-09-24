@@ -371,7 +371,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 7,
     letterSpacing: 2.5,
-    color: 'rgba(220,166,58,0.9)',
+    color: colors.marqueeGold,
     includeFontPadding: false,
   },
 

@@ -864,8 +864,9 @@ const s = StyleSheet.create({
   authorAvatarLetter: { fontFamily: fonts.display, color: colors.fog, fontSize: 11 },
   authorName: { fontFamily: fonts.sub, fontSize: 12, color: colors.bone, letterSpacing: 0.3, flexShrink: 1 },
   authorNameSelf: { color: colors.sepia },
-  // 0.6 was 3.04:1 — every timestamp in every conversation. 0.8 = 4.59:1.
-  authorTime: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, opacity: 0.8, includeFontPadding: false },
+  // 0.6 was 3.04:1 — every timestamp in every conversation. 0.8 made 4.59:1.
+  // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+  authorTime: { fontFamily: fonts.sub, fontSize: 8, color: colors.fogQuiet, includeFontPadding: false },
 
   contentCol: { paddingLeft: 32 },
   contentColSelf: { paddingLeft: 13, marginLeft: 11, borderLeftWidth: 2, borderLeftColor: 'rgba(184,137,26,0.45)' },
@@ -878,7 +879,8 @@ const s = StyleSheet.create({
 
   stateLine: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 5 },
   stateLineText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, includeFontPadding: false },
-  stateLineFail: { color: REACTION_META.panned.tint },
+  // A word: the PANNED icon's pigment reads 2.78:1 as text, so the family's ink.
+  stateLineFail: { color: colors.crimsonInk },
 
   // ── Reply pull-quote ──
   replyQuote: { borderLeftWidth: 2, borderLeftColor: colors.sepia, paddingLeft: 10, marginBottom: 7 },
@@ -930,7 +932,7 @@ const s = StyleSheet.create({
   typingLine: { height: 16, justifyContent: 'center', marginBottom: 2 },
   typingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   typingDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia, opacity: 0.8 },
-  typingText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, color: colors.sepia, opacity: 0.85, includeFontPadding: false },
+  typingText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
   replyBanner: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.soot, paddingVertical: 8, paddingHorizontal: 12,
     borderRadius: 4, marginBottom: 8, borderLeftWidth: 2, borderLeftColor: colors.sepia, gap: 10,

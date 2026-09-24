@@ -409,9 +409,9 @@ const s = StyleSheet.create({
     letterSpacing: 3,
     color: colors.sepia,
     // 0.6 was 2.90:1 — under the large-text floor. This is the only thing that
-    // tells you more prints are on the way. 0.85 = 4.78:1.
-    opacity: 0.85,
-  },
+    // tells you more prints are on the way. 0.85 made 4.78:1.
+    // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
+    },
   emptyWrap: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -425,18 +425,17 @@ const s = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     letterSpacing: 1,
-    opacity: 0.9,
   },
   emptySub: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: colors.bone,
+    color: colors.fogQuiet,
     textAlign: 'center',
     marginTop: 12,
     lineHeight: 18,
     // 0.5 was 3.12:1 on 12pt italic — this is the line that tells a member what
-    // to do with an empty room. 0.7 = 5.14:1.
-    opacity: 0.7,
+    // to do with an empty room. 0.7 made 5.14:1.
+    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
     fontStyle: 'italic',
   },
   emptyBtn: {

@@ -1019,7 +1019,7 @@ export default function StackDetailScreen() {
                   ref={commentInputRef}
                   style={s.critiqueField}
                   placeholder="File a critique..."
-                  placeholderTextColor={colors.ash}
+                  placeholderTextColor={colors.fog}
                   value={commentText}
                   onChangeText={handleCommentTextChange}
                   returnKeyType="send"
@@ -1170,7 +1170,7 @@ const s = StyleSheet.create({
   metaChipText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
   // The epigraph — prose wears Courier italic, folded past four lines.
   descWrap: { marginBottom: 24 },
-  desc: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.bone, lineHeight: 21, opacity: 0.9 },
+  desc: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.bone, lineHeight: 21 },
   descToggle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginTop: 8 },
   // Out of flow and invisible: it exists only to be laid out once, so it must
   // occupy the same width as the real epigraph and none of its height.
@@ -1191,7 +1191,7 @@ const s = StyleSheet.create({
   actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
 
   // ── Critiques Panel ──
-  commentEmpty: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 12, color: colors.fog, textAlign: 'center', paddingVertical: 8, opacity: 0.7 },
+  commentEmpty: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 12, color: colors.fogQuiet, textAlign: 'center', paddingVertical: 8 },
   commentRow: { flexDirection: 'row', gap: 8, marginBottom: 10, alignItems: 'flex-start' },
   commentAvatar: {
     width: 24, height: 24, borderRadius: 12, backgroundColor: colors.soot,

@@ -349,16 +349,16 @@ const st = StyleSheet.create({
 
   // Count bar
   countBar: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 },
-  countText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.fog, opacity: 0.5 },
+  countText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.fogQuiet },
 
   resultsWrap: { flex: 1 },
 
   // Center states
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 10 },
   centerLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.fog, textAlign: 'center' },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, opacity: 0.5 },
+  emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.fogQuiet },
   emptySub: {
-    fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.35,
+    fontFamily: fonts.body, fontSize: 12, color: colors.fogQuiet,
     textAlign: 'center', lineHeight: 18, maxWidth: 280,
   },
 });

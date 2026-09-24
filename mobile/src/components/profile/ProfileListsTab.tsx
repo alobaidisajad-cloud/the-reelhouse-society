@@ -290,7 +290,7 @@ const s = StyleSheet.create({
    */
   clasp: { position: 'absolute', top: 0, right: 10, paddingHorizontal: 5, paddingTop: 4, paddingBottom: 5, backgroundColor: colors.sepia, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 },
   stackContent: { paddingTop: 9 },
-  stackBadge: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.8, color: colors.sepia, opacity: 0.85 },
+  stackBadge: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.8, color: colors.sepia },
   /**
    * `adjustsFontSizeToFit` is gone from both of these. Paired with
    * `numberOfLines`, it shrinks a long title until it fits — so a wall of
@@ -298,9 +298,10 @@ const s = StyleSheet.create({
    * screen was the largest. Two lines and an ellipsis, at one size, always.
    */
   stackTitle: { fontFamily: fonts.display, fontSize: 13, lineHeight: 17, color: colors.parchment, marginTop: 5 },
-  // 0.8, not 0.75 — measured at 4.16:1 against the page ground, under the
-  // 4.5:1 this size of text needs. 0.79 reaches it; 0.8 is the round number.
-  stackDesc: { fontFamily: fonts.bodyItalic, fontSize: 10.5, lineHeight: 15, color: colors.fog, opacity: 0.8, marginTop: 4 },
+  // Solid fogQuiet. It was fog at 0.75 (4.16:1 on the page ground, under the
+  // 4.5 this size needs), then 0.8 — which scraped past on the old black and
+  // not on a lit card. A word no longer borrows its contrast from the ground.
+  stackDesc: { fontFamily: fonts.bodyItalic, fontSize: 10.5, lineHeight: 15, color: colors.fogQuiet, marginTop: 4 },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rankedBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(184,137,26,0.1)', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.3)' },
   rankedText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1, color: colors.sepia },

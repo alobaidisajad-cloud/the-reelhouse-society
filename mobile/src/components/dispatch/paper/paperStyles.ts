@@ -288,8 +288,7 @@ export const p = StyleSheet.create({
    * so the text is the only part that can, and it must yield from the end.
    */
   runHeadText: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia,
-    opacity: 0.95, includeFontPadding: false, flex: 1, minWidth: 0,
+    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false, flex: 1, minWidth: 0,
   },
   runHeadTools: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 
@@ -590,7 +589,7 @@ export const p = StyleSheet.create({
    *  neighbours so the eye reaches the words first. */
   bylineName: {
     fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2,
-    color: colors.bone, opacity: 0.82, includeFontPadding: false,
+    color: colors.bone, includeFontPadding: false,
     /** Nine characters is the floor: below that a byline stops being a name. */
     flexShrink: 1, minWidth: 56,
   },
@@ -805,8 +804,7 @@ export const p = StyleSheet.create({
     marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', paddingTop: 12,
   },
   fieldLabel: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
-    opacity: 0.85, marginBottom: 6, includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, marginBottom: 6, includeFontPadding: false,
   },
   fieldValue: { fontFamily: fonts.body, fontSize: 12.5, color: colors.parchment },
 
@@ -975,8 +973,8 @@ export const p = StyleSheet.create({
    */
   cardBallotQ: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment, marginBottom: 8 },
   dossierLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.dossier, includeFontPadding: false },
-  series: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, opacity: 0.85, marginTop: 8, includeFontPadding: false },
-  excerpt: { fontFamily: fonts.serif, fontSize: 13.5, lineHeight: 24, color: colors.bone, opacity: 0.86, flex: 1, paddingTop: 2 },
+  series: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, marginTop: 8, includeFontPadding: false },
+  excerpt: { fontFamily: fonts.serif, fontSize: 13.5, lineHeight: 24, color: colors.bone, flex: 1, paddingTop: 2 },
 
   // ── section head + empty ──────────────────────────────────────────────────
   /** FilmSectionHeader's exact anatomy, plus a tint the shared component does
@@ -1022,8 +1020,7 @@ export const p = StyleSheet.create({
   emptyRules: { alignSelf: 'stretch', flex: 1 },
   emptyRule: { flex: 1, borderBottomWidth: 1 },
   emptyTitle: {
-    fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment,
-    opacity: 0.92, textAlign: 'center', marginBottom: 12, maxWidth: 288,
+    fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment, textAlign: 'center', marginBottom: 12, maxWidth: 288,
   },
   emptyBody: {
     fontFamily: fonts.bodyItalic, fontSize: 12.5, lineHeight: 21, color: colors.bone,
@@ -1032,7 +1029,7 @@ export const p = StyleSheet.create({
   btn: { borderWidth: 1, borderColor: colors.sepia, borderRadius: 2, paddingVertical: 8, paddingHorizontal: 16 },
   btnText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.parchment, includeFontPadding: false },
   btnBrass: { borderColor: 'rgba(240,232,176,0.30)', overflow: 'hidden' },
-  quiet: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia, opacity: 0.95, marginTop: 16, includeFontPadding: false },
+  quiet: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia, marginTop: 16, includeFontPadding: false },
   endRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 },
   endLine: { width: 32, height: 1, backgroundColor: colors.sepia, opacity: 0.35 },
   /** The ornament between the two rules. Typed by hand in two files before it
@@ -1070,7 +1067,7 @@ export const p = StyleSheet.create({
   /** What is being shared, named, so the sheet is about a thing and not a verb. */
   sharePreview: {
     fontFamily: fonts.serifItalic, fontSize: 14, lineHeight: 21,
-    color: colors.parchment, opacity: 0.9, paddingHorizontal: 4,
+    color: colors.parchment, paddingHorizontal: 4,
   },
   spineBody: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   spineKind: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false },
@@ -1085,7 +1082,7 @@ export const p = StyleSheet.create({
 
   comment: { flexDirection: 'row', gap: 8, paddingVertical: 12, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.14)' },
   commentName: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.bone, marginBottom: 4, includeFontPadding: false },
-  commentBody: { fontFamily: fonts.serif, fontSize: 13.5, lineHeight: 21, color: colors.parchment, opacity: 0.92 },
+  commentBody: { fontFamily: fonts.serif, fontSize: 13.5, lineHeight: 21, color: colors.parchment },
   commentMeta: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog, marginTop: 6, includeFontPadding: false },
   commentMine: { backgroundColor: 'rgba(184,137,26,0.06)' },
   topMark: { color: colors.sepia },
@@ -1105,7 +1102,7 @@ export const p = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
     backgroundColor: colors.ink,
   },
-  dockInput: { flex: 1, fontFamily: fonts.serif, fontSize: 13.5, color: colors.bone, opacity: 0.78 },
+  dockInput: { flex: 1, fontFamily: fonts.serif, fontSize: 13.5, color: colors.fog },
 
   // ── the copy desk ─────────────────────────────────────────────────────────
   /**
@@ -1193,7 +1190,7 @@ export const p = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center', justifyContent: 'center',
   },
-  kbdLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.fog, opacity: 0.55, includeFontPadding: false },
+  kbdLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.fogQuiet, includeFontPadding: false },
 
   // ── states ────────────────────────────────────────────────────────────────
   /** Spoilered text is NOT DRAWN. A blur can be sharpened; an absent node cannot. */
@@ -1203,7 +1200,7 @@ export const p = StyleSheet.create({
   },
   veilText: {
     fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, lineHeight: 15,
-    color: colors.bone, opacity: 0.85, textAlign: 'center', marginBottom: 12, includeFontPadding: false,
+    color: colors.bone, textAlign: 'center', marginBottom: 12, includeFontPadding: false,
   },
   veilAction: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false },
   removed: {
@@ -1212,5 +1209,5 @@ export const p = StyleSheet.create({
   },
   /** Flush left, like every other line on the page. It was centred — a leftover
    *  from when this was a full-width block — and read as a different design. */
-  removedText: { fontFamily: fonts.bodyItalic, fontSize: 12.5, color: colors.fog, opacity: 0.8 },
+  removedText: { fontFamily: fonts.bodyItalic, fontSize: 12.5, color: colors.fogQuiet },
 });

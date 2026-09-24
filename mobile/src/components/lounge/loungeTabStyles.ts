@@ -49,9 +49,9 @@ export const s = StyleSheet.create({
     fontSize: 7,
     letterSpacing: 4,
     color: colors.sepia,
-    // 0.65 measured 3.22:1 at 7pt. 0.85 gives 4.78:1 — this line names who the
+    // 0.65 measured 3.22:1 at 7pt. 0.85 gave 4.78:1 — this line names who the
     // room is for, so it should be readable rather than merely present.
-    opacity: 0.85,
+    // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
     marginTop: 4,
     marginBottom: 14,
     textAlign: 'center',
@@ -144,17 +144,17 @@ export const s = StyleSheet.create({
     fontSize: 7.5,
     letterSpacing: 3,
     color: colors.sepia,
-    // 0.8 gave 4.35:1 — just shy. 0.85 = 4.78:1 and clears AA.
-    opacity: 0.85,
+    // 0.8 gave 4.35:1 — just shy. 0.85 made 4.78:1 and cleared AA.
+    // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
     includeFontPadding: false,
   },
   sectionSubtext: {
     fontFamily: fonts.bodyItalic,
     fontSize: 9,
-    color: colors.fog,
+    color: colors.fogQuiet,
     // 0.5 measured 2.44:1 — below the floor WCAG allows even for LARGE
-    // text. This line explains what the directory IS. 0.8 = 4.59:1.
-    opacity: 0.8,
+    // text. This line explains what the directory IS. 0.8 made 4.59:1.
+    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
     paddingHorizontal: 20,
     marginBottom: 14,
     textAlign: 'center',
@@ -207,9 +207,9 @@ export const s = StyleSheet.create({
   emptyPublicHint: {
     fontFamily: fonts.sub,
     fontSize: 8,
-    color: colors.fog,
+    color: colors.fogQuiet,
     // 0.5 was 2.44:1 — the invitation shown when the directory is empty.
-    opacity: 0.8,
+    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
     letterSpacing: 1.5,
     includeFontPadding: false,
   },

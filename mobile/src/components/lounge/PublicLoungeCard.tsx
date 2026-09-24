@@ -146,7 +146,6 @@ const s = StyleSheet.create({
     color: colors.bone,
     lineHeight: 19,
     marginBottom: 14,
-    opacity: 0.85,
   },
   publicFooter: {
     flexDirection: 'row',

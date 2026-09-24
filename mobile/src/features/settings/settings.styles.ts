@@ -54,7 +54,7 @@ export const st = StyleSheet.create({
   endMarkLine: { width: 30, height: 1, backgroundColor: colors.sepia, opacity: 0.3 },
   heritageCopyright: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, textAlign: 'center' },
   // Where a club record carries its number, and the first thing support asks for.
-  edition: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, opacity: 0.55, marginTop: 14, includeFontPadding: false },
+  edition: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fogQuiet, marginTop: 14, includeFontPadding: false },
 
   // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },

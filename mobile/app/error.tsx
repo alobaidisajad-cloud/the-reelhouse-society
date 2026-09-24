@@ -105,9 +105,8 @@ const s = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.body,
     fontSize: 15,
-    color: colors.bone,
+    color: colors.fog,
     textAlign: 'center',
-    opacity: 0.8,
     lineHeight: 24,
     marginBottom: 40,
     paddingHorizontal: 16,

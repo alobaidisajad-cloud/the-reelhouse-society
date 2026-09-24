@@ -65,11 +65,11 @@ const s = StyleSheet.create({
   emptyDesc: {
     fontFamily: fonts.body,
     fontSize: 10,
-    color: colors.fog,
+    color: colors.fogQuiet,
     lineHeight: 16,
     textAlign: 'center',
-    // 0.7 was 3.75:1. 0.8 = 4.59:1.
-    opacity: 0.8,
+    // Solid, not dimmed: fog at 0.8 scraped 4.59:1 on the old black and failed
+    // on a lit card. fogQuiet is the quieter tone as a colour of its own.
     marginBottom: 24,
   },
   ctaBtn: {

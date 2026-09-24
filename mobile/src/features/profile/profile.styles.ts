@@ -25,9 +25,9 @@ export const st = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.25)', opacity: 0.5,
   },
   heroEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  heroEyebrow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 5, color: colors.sepia, opacity: 0.8 },
+  heroEyebrow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 5, color: colors.sepia },
   heroTitle: { fontFamily: fonts.display, fontSize: 32, color: colors.parchment, lineHeight: 36, marginBottom: 6, ...effects.textGlowSepia, textShadowRadius: 25 },
-  heroDesc: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, opacity: 0.6, fontStyle: 'italic', textAlign: 'center', lineHeight: 20, letterSpacing: 0.5, marginBottom: 16 },
+  heroDesc: { fontFamily: fonts.body, fontSize: 13, color: colors.fogQuiet, fontStyle: 'italic', textAlign: 'center', lineHeight: 20, letterSpacing: 0.5, marginBottom: 16 },
   heroRuleBottom: { width: '80%', height: 6, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', borderBottomWidth: 3, borderBottomColor: colors.sepia, opacity: 0.5 },
   
   // Fields
@@ -78,5 +78,5 @@ export const st = StyleSheet.create({
   sealStamp: { alignItems: 'center', paddingVertical: 26, paddingHorizontal: 34, borderWidth: 2, borderColor: colors.bloodReel, borderRadius: 6, backgroundColor: 'rgba(20,8,5,0.4)', transform: [{ rotate: '-4deg' }] },
   sealRing: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: colors.crimson, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   sealTitle: { fontFamily: fonts.sub, fontSize: 15, letterSpacing: 4, color: colors.parchment },
-  sealSub: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 11, color: colors.bone, opacity: 0.7, marginTop: 6, letterSpacing: 0.5 },
+  sealSub: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 11, color: colors.fogQuiet, marginTop: 6, letterSpacing: 0.5 },
 });

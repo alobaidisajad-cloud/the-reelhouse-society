@@ -17,6 +17,8 @@ import { ToastHost } from '@/src/components/ToastHost';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const BLOOD = colors.crimson;
+/** The same red as WORDS — BANNED, REMOVE, BAN. The pigment is 2.78:1 as a word. */
+const BLOOD_INK = colors.crimsonInk;
 
 export interface LoungeSettingsPanelProps {
   lounge: LoungeRoom;
@@ -99,7 +101,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
           </View>
           <Text style={s.memberName} numberOfLines={1}>@{uname}</Text>
           {muted && <View style={s.statusTag}><VolumeX size={9} color={colors.fog} strokeWidth={2} /><Text style={s.statusTagText}>MUTED</Text></View>}
-          {banned && <View style={s.statusTag}><Ban size={9} color={BLOOD} strokeWidth={2} /><Text style={[s.statusTagText, { color: BLOOD }]}>BANNED</Text></View>}
+          {banned && <View style={s.statusTag}><Ban size={9} color={BLOOD} strokeWidth={2} /><Text style={[s.statusTagText, { color: BLOOD_INK }]}>BANNED</Text></View>}
           {isFounder ? (
             <View style={s.founderBadge}>
               <Crown size={9} color={colors.sepia} strokeWidth={2} />
@@ -131,7 +133,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
               onPress={() => confirmAction('Remove member?', `@${uname} will leave the salon. They can return later.`, 'Remove', () => removeMember(lounge.id, item.user_id))}
             >
               <DoorClosed size={12} color={BLOOD} strokeWidth={1.5} />
-              <Text style={[s.memberActionText, { color: BLOOD }]}>REMOVE</Text>
+              <Text style={[s.memberActionText, { color: BLOOD_INK }]}>REMOVE</Text>
             </PressableScale>
 
             <PressableScale hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
@@ -142,7 +144,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
                 : confirmAction('Ban member?', `@${uname} will be removed and blocked from returning until you unban them.`, 'Ban', () => setMemberStatus(lounge.id, item.user_id, 'banned'))}
             >
               <Ban size={12} color={BLOOD} strokeWidth={1.5} />
-              <Text style={[s.memberActionText, { color: BLOOD }]}>{banned ? 'UNBAN' : 'BAN'}</Text>
+              <Text style={[s.memberActionText, { color: BLOOD_INK }]}>{banned ? 'UNBAN' : 'BAN'}</Text>
             </PressableScale>
           </AnimatedView>
         )}
@@ -232,8 +234,9 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment },
   subtitle: { fontFamily: fonts.serif, fontSize: 13, color: colors.fog, marginTop: 4, lineHeight: 18 },
-  // 0.8 gave 4.35:1. 0.85 = 4.78:1.
-  label: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.85, marginBottom: 12, includeFontPadding: false },
+  // 0.8 gave 4.35:1. 0.85 made 4.78:1.
+  // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
+  label: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
 
   memberBlock: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
   memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 10 },

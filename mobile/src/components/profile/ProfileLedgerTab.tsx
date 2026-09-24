@@ -204,7 +204,7 @@ const LedgerRow = React.memo(function LedgerRow({
                 : <Minus size={8} color={colors.sepia} strokeWidth={2} />}
               <Text
                 {...scaledTextProps}
-                style={[s.markText, { color: halfLife.trajectory === 'ASCENDING' ? colors.validation : halfLife.trajectory === 'DECAYING' ? colors.crimson : colors.sepia }]}
+                style={[s.markText, { color: halfLife.trajectory === 'ASCENDING' ? colors.validationInk : halfLife.trajectory === 'DECAYING' ? colors.crimsonInk : colors.sepia }]}
               >
                 ×{halfLife.count}
               </Text>
@@ -608,7 +608,7 @@ const s = StyleSheet.create({
   rowTitle: { flex: 1, fontFamily: fonts.display, fontSize: type.title, lineHeight: 20, color: colors.parchment },
   rowYear: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
   rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 5, flexWrap: 'wrap' },
-  rowUnrated: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.8, color: colors.fog, opacity: 0.7 },
+  rowUnrated: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.8, color: colors.fogQuiet },
   markRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   markText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.sepia },
   /**
@@ -628,7 +628,7 @@ const s = StyleSheet.create({
    * which is what was doing the work all along. Shrinking the words was never
    * what made the title read first.
    */
-  rowWords: { fontFamily: fonts.bodyItalic, fontSize: type.voice, lineHeight: 20, color: colors.bone, opacity: 0.82, marginTop: 6 },
+  rowWords: { fontFamily: fonts.bodyItalic, fontSize: type.voice, lineHeight: 20, color: colors.bone, marginTop: 6 },
   /** The editorial desk's headline — champagne, so it reads as a title. */
   rowHeadline: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.champagne, marginTop: 6 },
   rowWith: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.6, color: colors.fog, marginTop: 5 },

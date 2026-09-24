@@ -225,7 +225,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',
     marginTop: 8, marginBottom: 6, minHeight: 14,
   },
-  reviewText: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.9 },
+  reviewText: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 20 },
 
   pullQuoteWrap: { marginTop: 2, marginBottom: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: 'rgba(184,137,26,0.4)', paddingVertical: 2 },
   pullQuoteWrapAuteur: { borderLeftColor: colors.crimson, backgroundColor: colors.crimsonFaint, paddingVertical: 6, borderRadius: 2 },
@@ -239,7 +239,7 @@ const s = StyleSheet.create({
     marginTop: 8,
   },
   readFullText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
-  openLogText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.sepia, opacity: 0.8, includeFontPadding: false },
+  openLogText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
 
   /**
    * ── UNBOXED, WITH EVERY OTHER EMPTY STATE ON THIS PAGE ────────────────────

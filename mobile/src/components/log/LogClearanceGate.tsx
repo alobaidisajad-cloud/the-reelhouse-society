@@ -37,7 +37,9 @@ import { st } from './LogModalStyles';
 export default React.memo(function LogClearanceGate({
   rank, standing = 'stranger', names, onPress,
 }: { rank: Rank; standing?: Standing; names: string; onPress: () => void }) {
-  const tint = rank === 'auteur' ? colors.crimson : colors.sepia;
+  // It only ever colours WORDS (the call to action), so it is an ink: the
+  // crimson pigment reads 2.78:1 as a word on a card.
+  const tint = rank === 'auteur' ? colors.crimsonInk : colors.sepia;
   const label = rank === 'auteur' ? 'The Auteur' : 'The Archivist';
   const lapsed = standing === 'lapsed';
 

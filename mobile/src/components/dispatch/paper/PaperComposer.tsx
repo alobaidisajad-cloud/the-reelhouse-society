@@ -243,7 +243,7 @@ export const PaperComposer = memo(function PaperComposer({
                     {...scaledTextProps}
                   />
                 ) : (
-                  <Text style={[p.fieldValue, !source && { color: colors.fog, opacity: 0.6 }]}
+                  <Text style={[p.fieldValue, !source && { color: colors.fogQuiet }]}
                     numberOfLines={1} {...scaledTextProps}>
                     {source || 'where did this come from?'}
                   </Text>

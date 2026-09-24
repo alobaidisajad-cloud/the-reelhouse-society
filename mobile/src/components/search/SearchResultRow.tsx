@@ -128,10 +128,10 @@ const st = StyleSheet.create({
   rowTitle: { fontFamily: fonts.display, fontSize: 14, color: colors.parchment, lineHeight: 17, marginBottom: 2 },
   rowSubRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   rowSub: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.sepia },
-  rowRating: { fontFamily: fonts.sub, fontSize: 7, color: colors.sepia, opacity: 0.7, letterSpacing: 1 },
-  rowExtra: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, opacity: 0.5 },
+  rowRating: { fontFamily: fonts.sub, fontSize: 7, color: colors.sepia, letterSpacing: 1 },
+  rowExtra: { fontFamily: fonts.sub, fontSize: 9, color: colors.fogQuiet },
   rowExcerpt: {
-    fontFamily: fonts.body, fontSize: 11, color: colors.bone, opacity: 0.45,
+    fontFamily: fonts.body, fontSize: 11, color: colors.fogQuiet,
     fontStyle: 'italic', marginTop: 2, lineHeight: 14,
   },
   /** The badge brings its own box; this only places it in the row. */

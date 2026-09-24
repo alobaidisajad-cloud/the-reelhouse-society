@@ -820,7 +820,7 @@ const s = StyleSheet.create({
     // Rank Styling
     rankWrap: { width: 36, alignItems: 'center', justifyContent: 'center', marginRight: 4, marginLeft: 2 },
     rankWrapActive: { transform: [{ scale: 1.1 }] },
-    rankText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, opacity: 0.5, fontVariant: ['tabular-nums'], letterSpacing: 1 },
+    rankText: { fontFamily: fonts.body, fontSize: 13, color: colors.fogQuiet, fontVariant: ['tabular-nums'], letterSpacing: 1 },
     rankTextActive: { color: colors.sepia, opacity: 1, textShadowColor: 'rgba(218,165,32,0.4)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 },
 
     // Empty list state
@@ -829,7 +829,7 @@ const s = StyleSheet.create({
     // array order whether or not the stack is ranked. "Unranked" means
     // unnumbered, not unordered — and nothing on this page ever said so while
     // the grip sat there in both modes.
-    dragLine: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.fog, opacity: 0.8, paddingHorizontal: 20, marginTop: 14, marginBottom: 8, includeFontPadding: false },
+    dragLine: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.fogQuiet, paddingHorizontal: 20, marginTop: 14, marginBottom: 8, includeFontPadding: false },
     // Brass, not blood. Nothing has gone wrong here — a very large index simply
     // cannot be rewritten from a sheet, which is a house rule, not an error. Red
     // would have the member hunting for the mistake they had made.

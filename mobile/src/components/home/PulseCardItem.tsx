@@ -247,7 +247,7 @@ const s = StyleSheet.create({
   pulseContentFlex: { flex: 1 },
   pulseFilmTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.parchment, marginBottom: 6, letterSpacing: 0.5, includeFontPadding: false },
   pulseRatingWrap: { marginBottom: 8 },
-  pulseReview: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, fontStyle: 'italic', opacity: 0.9, paddingBottom: 6, includeFontPadding: false },
+  pulseReview: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, fontStyle: 'italic', paddingBottom: 6, includeFontPadding: false },
   pulseWatchedWith: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, marginTop: 8, includeFontPadding: false },
   pulseWatchedWithName: { color: colors.bone, includeFontPadding: false },
   pulseAutopsyTag: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimsonInk, marginTop: 4, marginBottom: 8, includeFontPadding: false },
@@ -259,12 +259,13 @@ const s = StyleSheet.create({
   pulseReadMoreRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, paddingTop: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.15)' },
   pulseReadMoreRule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(184,137,26,0.1)' },
   // 0.6 measured 2.90:1 — under the 3:1 large-text floor, on 8pt. This is the
-  // line that tells a member the card opens, so it cannot be a rumour. 0.85 = 4.78:1.
-  pulseReadMoreText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.85, includeFontPadding: false },
+  // line that tells a member the card opens, so it cannot be a rumour. 0.85 made 4.78:1.
+  // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
+  pulseReadMoreText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },
   editorialBanner: { width: '100%', height: 90, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.2)' },
   editorialBannerImg: { width: '100%', height: '100%', opacity: 0.6 },
   editorialBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(30,25,20,0.7)', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
-  editorialBadgeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: 'rgba(218,165,32,0.9)', includeFontPadding: false },
+  editorialBadgeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.marqueeGold, includeFontPadding: false },
   premiumBanner: { width: '100%', height: 60, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },
   premiumBannerImg: { width: '100%', height: '150%', top: '-25%', opacity: 0.45 },
   abandonedBadge: {

@@ -188,8 +188,7 @@ const s = StyleSheet.create({
   pullQuoteAuteur: { color: colors.crimsonInk },
   review: {
     includeFontPadding: false, textAlignVertical: 'center',
-    fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 22,
-    opacity: 0.9, marginTop: 10,
+    fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 22, marginTop: 10,
   },
   dropCapReview: { lineHeight: undefined },
   dropCapLetter: {

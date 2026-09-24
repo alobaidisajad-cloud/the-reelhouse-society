@@ -263,7 +263,7 @@ export const r = StyleSheet.create({
   chipOn: { borderColor: 'rgba(184,137,26,0.30)' },
   chipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
   chipTextOn: { color: colors.sepia },
-  chipCount: { fontFamily: fonts.body, fontSize: 9, color: colors.fog, opacity: 0.6 },
+  chipCount: { fontFamily: fonts.body, fontSize: 9, color: colors.fogQuiet },
   /**
    * The live chip is underlined rather than filled — quieter, and it reads like
    * a tab in a ledger instead of a web button. It sits INSIDE the chip at
@@ -302,11 +302,11 @@ export const r = StyleSheet.create({
   railLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.15)' },
   railLabel: { fontFamily: fonts.display, fontSize: type.rail, color: colors.sepia },
   /**
-   * 0.8, not 0.7. Measured against the page ground the old value came out at
-   * 3.75:1 — under the 4.5:1 needed for text this size. 0.79 reaches it; 0.8
-   * is the round number above.
+   * Solid fogQuiet. fog at 0.7 measured 3.75:1 on the page ground — under the
+   * 4.5 this size needs — and the 0.8 that fixed it held only on the old black.
+   * A word no longer borrows its contrast from the ground behind it.
    */
-  railCount: { fontFamily: fonts.body, fontSize: 9, color: colors.fog, opacity: 0.8 },
+  railCount: { fontFamily: fonts.body, fontSize: 9, color: colors.fogQuiet },
 
   // The rhythm bar — see RoomRail. Indented past the year so the bars line up
   // with each other rather than with the varying width of "2026".
@@ -366,7 +366,7 @@ export const r = StyleSheet.create({
   stateInvite: { borderStyle: 'dashed' as const, borderColor: 'rgba(184,137,26,0.30)', backgroundColor: 'rgba(184,137,26,0.06)' },
   stateIcon: { opacity: 0.85 },
   stateTitle: { fontFamily: fonts.display, fontSize: 17, color: colors.parchment, marginTop: 12, textAlign: 'center' as const },
-  stateBody: { fontFamily: fonts.bodyItalic, fontSize: 11, lineHeight: 17, color: colors.bone, opacity: 0.7, marginTop: 8, textAlign: 'center' as const },
+  stateBody: { fontFamily: fonts.bodyItalic, fontSize: 11, lineHeight: 17, color: colors.fogQuiet, marginTop: 8, textAlign: 'center' as const },
   stateAct: { marginTop: 16, minHeight: 44, justifyContent: 'center' as const, paddingHorizontal: 22, borderWidth: 1, borderColor: colors.sepia, borderRadius: 2, backgroundColor: 'rgba(184,137,26,0.06)' },
   stateActText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.4, color: colors.sepia },
   stateSeal: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.6, color: colors.sepia },
@@ -397,7 +397,7 @@ export const r = StyleSheet.create({
    * true, in the same voice the profile uses: RETRIEVING DOSSIER.
    */
   retrieve: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 9, paddingVertical: 74 },
-  retrieveText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia, opacity: 0.85 },
+  retrieveText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia },
   retrieveMark: { fontSize: 8, color: colors.sepia, opacity: 0.5 },
 
   // ══════════════════════════════════════════════════════════════════════════

@@ -220,10 +220,9 @@ const styles = StyleSheet.create({
   errorIdText: {
     fontSize: 9,
     fontFamily: fonts.body,
-    color: colors.fog,
+    color: colors.fogQuiet,
     letterSpacing: 1,
     marginBottom: 16,
-    opacity: 0.5,
   },
   retryButtonDisabled: {
     opacity: 0.4,

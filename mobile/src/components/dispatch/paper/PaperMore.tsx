@@ -1439,7 +1439,7 @@ const m = StyleSheet.create({
   },
   caseBody: {
     fontFamily: fonts.serifItalic, fontSize: 13.5, lineHeight: 24,
-    color: colors.parchmentBright, opacity: 0.9,
+    color: colors.parchment,
   },
   verdicts: {
     flexDirection: 'row', gap: 8, marginTop: 12,

@@ -317,8 +317,8 @@ const s = StyleSheet.create({
     posterBlankTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, textAlign: 'center' },
 
     // Picking
-    scanningText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, opacity: 0.7, marginBottom: 16 },
-    gateFooter: { fontFamily: fonts.body, fontSize: 10, letterSpacing: 1, color: colors.fog, marginTop: 14, opacity: 0.7 },
+    scanningText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, marginBottom: 16 },
+    gateFooter: { fontFamily: fonts.body, fontSize: 10, letterSpacing: 1, color: colors.fogQuiet, marginTop: 14 },
 
     // Result
     oracleSpoken: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, marginBottom: 16 },

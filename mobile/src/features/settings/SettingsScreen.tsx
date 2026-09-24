@@ -669,7 +669,7 @@ export function SettingsScreen() {
               keyboardType="number-pad"
               maxLength={6}
               placeholder="000000"
-              placeholderTextColor={colors.ash}
+              placeholderTextColor={colors.fog}
               selectionColor={colors.selection}
               editable={!otpVerifying}
               autoFocus

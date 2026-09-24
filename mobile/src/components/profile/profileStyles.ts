@@ -88,7 +88,7 @@ export const s = StyleSheet.create({
     ...effects.shadowSurface,
   },
   statValue: { fontFamily: fonts.display, fontSize: 18, color: colors.silverScreen, lineHeight: 22, ...effects.textGlowSepia },
-  statLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fog, marginTop: 4, opacity: 0.8 },
+  statLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fogQuiet, marginTop: 4 },
 
   // ── The Sealed Dossier (private accounts) ──
   sealedWrap: { paddingHorizontal: 24, paddingVertical: 48, backgroundColor: colors.ink },
@@ -98,7 +98,7 @@ export const s = StyleSheet.create({
     paddingVertical: 28, paddingHorizontal: 20, alignItems: 'center' as const,
   },
   sealedTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, marginBottom: 10 },
-  sealedBody: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.bone, opacity: 0.85, textAlign: 'center' as const, lineHeight: 19 },
+  sealedBody: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.bone, textAlign: 'center' as const, lineHeight: 19 },
 
   // ── Recently Watched poster overlays ──
   posterImg: { width: '100%' as const, height: '100%' as const, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)' },
@@ -250,7 +250,7 @@ export const s = StyleSheet.create({
   // ── Founder's Mark ──
   founderText: {
     fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5,
-    color: 'rgba(184,137,26,0.7)', textAlign: 'center' as const,
+    color: colors.sepia, textAlign: 'center' as const,
   },
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -315,10 +315,10 @@ export const s = StyleSheet.create({
   nameRule: { height: 1, marginTop: 11 },
   heroHandle: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2, color: colors.fog, marginTop: 9 },
   heroStand: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.2, marginTop: 11 },
-  heroSerial: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.9, color: colors.fog, opacity: 0.9, marginTop: 6 },
+  heroSerial: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.9, color: colors.fogQuiet, marginTop: 6 },
 
   // ── the bio, in the house's own quotation marks ──
-  heroBio: { position: 'relative' as const, zIndex: 5, fontFamily: fonts.bodyItalic, color: colors.bone, opacity: 0.92, textAlign: 'center' as const, paddingHorizontal: 22, paddingTop: 20 },
+  heroBio: { position: 'relative' as const, zIndex: 5, fontFamily: fonts.bodyItalic, color: colors.bone, textAlign: 'center' as const, paddingHorizontal: 22, paddingTop: 20 },
   bioMark: { color: colors.sepia, opacity: 0.6, fontStyle: 'normal' as const },
   bioMarkRuby: { color: colors.crimson, opacity: 0.75, fontStyle: 'normal' as const },
 
@@ -332,7 +332,7 @@ export const s = StyleSheet.create({
   statCell: { flex: 1, minHeight: 56, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 4, paddingHorizontal: 2 },
   statCellRule: { borderLeftWidth: 1, borderLeftColor: 'rgba(184,137,26,0.10)' },
   statNum: { fontFamily: fonts.display, fontSize: 17, lineHeight: 20, color: colors.silverScreen, textShadowColor: 'rgba(184,137,26,0.35)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
-  statCap: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.4, color: colors.fog, opacity: 0.85 },
+  statCap: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.4, color: colors.fogQuiet },
 
   // ── the two acts ──
   actsRow: { position: 'relative' as const, zIndex: 5, flexDirection: 'row' as const, gap: 10, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 24 },
@@ -362,10 +362,10 @@ export const s = StyleSheet.create({
   latelyPosterEmpty: { alignItems: 'center' as const, justifyContent: 'center' as const },
   latelyText: { flex: 1, minWidth: 0 },
   latelyTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1.2, color: colors.bone },
-  latelyYear: { fontFamily: fonts.body, fontSize: 10, color: colors.fog, opacity: 0.75, marginTop: 4 },
+  latelyYear: { fontFamily: fonts.body, fontSize: 10, color: colors.fogQuiet, marginTop: 4 },
   latelyRight: { flexShrink: 0, alignItems: 'flex-end' as const },
-  latelyWhen: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 0.9, color: colors.fog, opacity: 0.7, marginTop: 4 },
-  latelyRewatch: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 0.9, color: colors.sepia, opacity: 0.85, marginTop: 4 },
+  latelyWhen: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 0.9, color: colors.fogQuiet, marginTop: 4 },
+  latelyRewatch: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 0.9, color: colors.sepia, marginTop: 4 },
 
   // ══ THE HOLDINGS ══
   // Six 122pt cards in a 3-wide grid spent ~286pt saying six numbers, and put a
@@ -393,15 +393,16 @@ export const s = StyleSheet.create({
    * first: the count is a number and must stay whole, the gloss is a word and
    * can take an ellipsis.
    *
-   * IT WAS BELOW THE READABLE FLOOR. fog at 0.7 is 3.75:1 on ink — under the
+   * IT WAS BELOW THE READABLE FLOOR. fog at 0.7 was 3.75:1 on ink — under the
    * 4.5 that 9.5pt text needs. The one line explaining the room was the least
-   * readable thing on the card. 0.8 gives 4.59:1 and clears it, which is the
-   * step theme.ts already documents as the last one that does.
+   * readable thing on the card. 0.8 made 4.59:1 on the old black and failed on
+   * the lit card, so it is solid `fogQuiet` now: a word no longer borrows its
+   * contrast from the ground behind it.
    */
-  holdSub: { fontFamily: fonts.body, fontSize: 9.5, color: colors.fog, opacity: 0.8, flexShrink: 1, minWidth: 0 },
+  holdSub: { fontFamily: fonts.body, fontSize: 9.5, color: colors.fogQuiet, flexShrink: 1, minWidth: 0 },
   holdLeader: { flex: 1, minWidth: 8, marginBottom: 4, borderBottomWidth: 1, borderStyle: 'dotted' as const, borderBottomColor: 'rgba(184,137,26,0.30)' },
   holdCount: { fontFamily: fonts.display, fontSize: 14, lineHeight: 17, color: colors.sepia, flexShrink: 0, textShadowColor: 'rgba(184,137,26,0.3)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 },
-  holdCountLock: { fontFamily: fonts.sub, fontSize: 11, color: 'rgba(184,137,26,0.5)', textShadowRadius: 0 },
+  holdCountLock: { fontFamily: fonts.sub, fontSize: 11, color: colors.sepia, textShadowRadius: 0 },
 
   // ── a door ──
   doorRow: {

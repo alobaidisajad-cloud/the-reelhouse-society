@@ -133,7 +133,7 @@ export const WireDesk = memo(function WireDesk({
 
             <View style={d.field}>
               <Text style={d.fieldLabel} {...decorativeTextProps}>SOURCE — REQUIRED</Text>
-              <Text style={[d.fieldValue, !source && { color: colors.fog, opacity: 0.6 }]}
+              <Text style={[d.fieldValue, !source && { color: colors.fogQuiet }]}
                 numberOfLines={1} {...scaledTextProps}>
                 {source || 'where did this come from?'}
               </Text>
@@ -554,8 +554,7 @@ const d = StyleSheet.create({
     marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', paddingTop: 12,
   },
   fieldLabel: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
-    opacity: 0.85, marginBottom: 6, includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, marginBottom: 6, includeFontPadding: false,
   },
   fieldValue: { fontFamily: fonts.body, fontSize: 12.5, color: colors.parchment },
 
@@ -588,16 +587,14 @@ const d = StyleSheet.create({
     borderRadius: 2, paddingHorizontal: 8,
   },
   slotAdd: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia,
-    opacity: 0.85, includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false,
   },
   closesRow: {
     marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', paddingTop: 12,
   },
   closesChoices: { flexDirection: 'row', gap: 16 },
   choice: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.bone,
-    opacity: 0.8, includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false,
   },
   choiceOn: { color: KIND_RULE.ballot, opacity: 1 },
 
@@ -610,11 +607,10 @@ const d = StyleSheet.create({
     marginTop: 8, includeFontPadding: false,
   },
   dossierAdd: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia,
-    opacity: 0.7, marginTop: 8, includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia, marginTop: 8, includeFontPadding: false,
   },
   dossierBody: {
-    fontFamily: fonts.serif, fontSize: 16.5, lineHeight: 27, color: colors.parchment, opacity: 0.94,
+    fontFamily: fonts.serif, fontSize: 16.5, lineHeight: 27, color: colors.parchment,
   },
 
   // ── the film finder ───────────────────────────────────────────────────────

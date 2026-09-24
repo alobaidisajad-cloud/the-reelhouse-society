@@ -41,7 +41,10 @@ const CHECK_LABELS: [keyof ReturnType<typeof getChecks>, string][] = [
 function getStrength(passed: number) {
   const labels = ['', 'WEAK', 'FAIR', 'FAIR', 'STRONG', 'VERY STRONG'];
   const clrs   = ['', colors.crimson, '#c4a000', '#c4a000', colors.sepia, colors.flicker];
-  return { label: labels[passed], color: clrs[passed] };
+  // The WORD's ink. Only WEAK needed a different one: crimson is a pigment,
+  // 2.78:1 as a word on the card; the other steps already clear.
+  const inks   = clrs.map((c, i) => (i === 1 ? colors.crimsonInk : c));
+  return { label: labels[passed], color: clrs[passed], ink: inks[passed] };
 }
 
 export default function ResetPasswordScreen() {
@@ -63,7 +66,7 @@ export default function ResetPasswordScreen() {
   const checks = getChecks(password);
   const passed = Object.values(checks).filter(Boolean).length;
   const strong = passed === 5;
-  const { label: strengthLabel, color: strengthColor } = getStrength(passed);
+  const { label: strengthLabel, color: strengthColor, ink: strengthInk } = getStrength(passed);
 
   // BUG FIX #4: Check for active session on mount
   useEffect(() => {
@@ -288,7 +291,7 @@ export default function ResetPasswordScreen() {
                     ]}
                   />
                 ))}
-                <Text style={[s.strengthLabel, { color: strengthColor }]}>{strengthLabel}</Text>
+                <Text style={[s.strengthLabel, { color: strengthInk }]}>{strengthLabel}</Text>
               </View>
 
               {/* Individual checks */}

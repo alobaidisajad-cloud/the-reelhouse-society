@@ -276,15 +276,15 @@ const styles = StyleSheet.create({
     textAlign: 'center', lineHeight: 32, marginBottom: 6,
   },
   tagline: {
-    includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.bone,
-    textAlign: 'center', marginBottom: 14, opacity: 0.75,
+    includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.fog,
+    textAlign: 'center', marginBottom: 14,
   },
   /** Genres carry a touch more presence than the particulars beneath them —
       that difference is what tells the eye they are two kinds of fact. */
   genreLine: {
     includeFontPadding: false, textAlignVertical: 'center',
     fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 1.6, color: colors.bone,
-    textAlign: 'center', lineHeight: 15, marginBottom: 5, opacity: 0.85,
+    textAlign: 'center', lineHeight: 15, marginBottom: 5,
   },
   metaLine: {
     includeFontPadding: false, textAlignVertical: 'center',

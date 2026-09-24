@@ -339,10 +339,10 @@ const s = StyleSheet.create({
   fieldCharCount: {
     fontFamily: fonts.sub,
     fontSize: 7,
-    color: colors.fog,
+    color: colors.fogQuiet,
     // 0.35 measured 1.75:1 — effectively invisible, while being the thing
-    // that tells you how much room is left. 0.8 = 4.59:1.
-    opacity: 0.8,
+    // that tells you how much room is left. 0.8 made 4.59:1.
+    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
     textAlign: 'right',
     marginTop: 4,
     includeFontPadding: false,

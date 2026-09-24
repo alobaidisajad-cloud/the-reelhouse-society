@@ -450,7 +450,7 @@ const s = StyleSheet.create({
 
   welcomeHeader: { alignItems: 'center' },
   welcomeSealWrap: { alignItems: 'center', marginBottom: 14 },
-  welcomeEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 7, color: colors.sepia, marginBottom: 12, opacity: 0.75 },
+  welcomeEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 7, color: colors.sepia, marginBottom: 12 },
   welcomeTitle: {
     fontFamily: fonts.display, fontSize: 38, color: colors.parchment,
     textAlign: 'center', lineHeight: 46, ...effects.textGlowSepia, textShadowRadius: 20,
@@ -458,8 +458,8 @@ const s = StyleSheet.create({
   // `welcomeEstRow`, `welcomeEstLine` and `welcomeEstText` left with the
   // "EST. 1924" rule they drew.
   welcomeTagline: {
-    fontFamily: fonts.sub, fontSize: 12, color: colors.bone, textAlign: 'center',
-    lineHeight: 22, fontStyle: 'italic', opacity: 0.8, marginTop: 16, letterSpacing: 0.3,
+    fontFamily: fonts.sub, fontSize: 12, color: colors.fog, textAlign: 'center',
+    lineHeight: 22, fontStyle: 'italic', marginTop: 16, letterSpacing: 0.3,
   },
   societyRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24, opacity: 0.4, paddingHorizontal: 4 },
   societyRuleLine: { flex: 1, height: 1 },
@@ -485,9 +485,10 @@ const s = StyleSheet.create({
   // Rhythm: every section-to-section gap on the page resolves to 36px.
   heroSection: { alignItems: 'center', paddingHorizontal: 16, marginBottom: 36, marginTop: 10 },
   heroEyebrow: {
-    // 0.6 measured 2.90:1. 0.85 gives 4.78:1. The shadow below helps over a
+    // 0.6 measured 2.90:1. 0.85 gave 4.78:1. The shadow below helps over a
     // bright still, but it cannot rescue a base contrast under the large-text floor.
-    fontFamily: fonts.sub, fontSize: 11, letterSpacing: 12, color: colors.sepia, opacity: 0.85, marginBottom: 6,
+    // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
+    fontFamily: fonts.sub, fontSize: 11, letterSpacing: 12, color: colors.sepia, marginBottom: 6,
     // Sits over the feature backdrop — soft dark shadow keeps it legible on a bright still.
     textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6,
   },
@@ -503,13 +504,13 @@ const s = StyleSheet.create({
     fontFamily: fonts.bodyItalic,
     fontSize: 10,
     lineHeight: 15,
-    color: colors.fog,
-    // 0.65 measured 3.36:1 against ink; 0.80 gives 4.58:1 and clears AA. This is
+    color: colors.fogQuiet,
+    // 0.65 measured 3.36:1 against ink; 0.80 gave 4.58:1 and cleared AA. This is
     // the line that changes with the hour — a signature detail, and one that
     // should be readable rather than merely atmospheric. It also sits over the
     // feature backdrop, so the figure is the floor rather than a guarantee; the
     // shadow below carries it over a bright still.
-    opacity: 0.8,
+    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
     letterSpacing: 0.5,
     marginTop: 10,
     textAlign: 'center',
@@ -532,11 +533,12 @@ const s = StyleSheet.create({
   // `lobbyFooterText` removed — it was already orphaned before this pass, with
   // no JSX referencing it.
   // `lobbyFooterSub` removed with the "Est. 1924 · The Society is watching." line.
-  // 0.30 measured 1.58:1 against ink — effectively invisible outdoors. 0.60 gives
-  // 3.02:1. Deliberately NOT taken to 4.5: this is a closing flourish, and making
-  // it prominent would flatten the fade-to-black the footer is built around.
-  // Legible, still a whisper.
-  lobbyFooterWhisper: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fog, opacity: 0.6, fontStyle: 'italic', marginBottom: 18, letterSpacing: 1 },
+  // 0.30 measured 1.58:1 against ink — effectively invisible outdoors — and 0.60
+  // made 3.02:1, deliberately short of 4.5 so the closing flourish would not
+  // flatten the footer's fade-to-black. The house has since stopped drawing
+  // words see-through, so it is `fogQuiet`: the quietest solid ink there is.
+  // Still the whisper, now one you can read.
+  lobbyFooterWhisper: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fogQuiet, fontStyle: 'italic', marginBottom: 18, letterSpacing: 1 },
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx

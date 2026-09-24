@@ -202,6 +202,15 @@ export const colors = {
   selection: 'rgba(184, 137, 26, 0.35)',
   // ── Semantic ──
   validation: '#5B8C3E', // Archive-approved green — form validation only
+  /**
+   * The same green and the same rust as WORDS. `validation` measures 4.37:1 on
+   * a card and `rust` 2.46 — fine for a filled bar or a tick, not for a 9pt
+   * "VERY STRONG" or "×3". Each lifted along its own hue (all channels scaled
+   * together) until it clears 4.6 on raised, the lightest ground: the green by
+   * 8%, which is the same green; the rust by 55%, which is the same copper lit.
+   */
+  validationInk: '#629743',
+  rustInk: '#D76B1D',
   errorBackground: 'rgba(139,26,26,0.1)',
   errorBorder: 'rgba(139,26,26,0.5)',
 

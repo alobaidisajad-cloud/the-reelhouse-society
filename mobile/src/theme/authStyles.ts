@@ -88,19 +88,18 @@ export const loginStyles = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.bodyItalic,
     fontSize: 12,
-    color: colors.bone,
+    color: colors.fog,
     textAlign: 'center',
-    opacity: 0.8,
   },
   loreTransmission: {
     fontFamily: fonts.bodyItalic,
     fontSize: 10,
-    color: colors.fog,
+    color: colors.fogQuiet,
     textAlign: 'center',
     marginTop: 12,
     // 0.6 measured 3.04:1 on ink — under the floor WCAG allows even for LARGE
-    // text, on 10pt italic. 0.8 = 4.59:1 and still reads as a whisper.
-    opacity: 0.8,
+    // text, on 10pt italic. 0.8 made 4.59:1 and still reads as a whisper.
+    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
     lineHeight: 16,
     maxWidth: 280,
     alignSelf: 'center',
@@ -148,7 +147,6 @@ export const loginStyles = StyleSheet.create({
     fontSize: 16,
     color: colors.sepia,
     zIndex: 2,
-    opacity: 0.8,
   },
   input: {
     backgroundColor: 'transparent',
@@ -268,13 +266,13 @@ export const loginStyles = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 0.5,
-    color: colors.fog,
+    color: colors.fogQuiet,
     textAlign: 'center',
     lineHeight: 14,
     // This is the terms-of-service line — the one piece of text on the page a
-    // member is legally taken to have read. It measured 3.04:1. 0.8 = 4.59:1.
-    opacity: 0.8,
-  },
+    // member is legally taken to have read. It measured 3.04:1. 0.8 made 4.59:1.
+    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    },
 });
 
 // Film-strip perforation styles now live with the shared auth chrome:

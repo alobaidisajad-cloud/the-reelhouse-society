@@ -23,10 +23,13 @@ export const PW_CHECK_LABELS: [PwCheckKey, string][] = [
 ];
 
 export function getStrengthInfo(passed: number) {
-  // Brand tarnish ladder: blood → rust → brass → archive-approved green
+  // Brand tarnish ladder: blood → rust → brass → archive-approved green.
+  // `color` fills the BARS; `ink` prints the WORD. One value did both, so the
+  // word read "WEAK" at 1.48:1 and "FAIR" at 2.46 — the pigments are for shapes.
   const labels = ['', 'WEAK', 'FAIR', 'FAIR', 'STRONG', 'VERY STRONG'];
   const clrs   = ['', colors.bloodReel, colors.rust, colors.rust, colors.sepia, colors.validation];
-  return { label: labels[passed], color: clrs[passed] };
+  const inks   = ['', colors.crimsonInk, colors.rustInk, colors.rustInk, colors.sepia, colors.validationInk];
+  return { label: labels[passed], color: clrs[passed], ink: inks[passed] };
 }
 
 export function PasswordStrengthMeter({ password }: { password: string }) {
@@ -34,7 +37,7 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
 
   const pwChecks = getPasswordChecks(password);
   const pwPassed = Object.values(pwChecks).filter(Boolean).length;
-  const { label: pwStrengthLabel, color: pwStrengthColor } = getStrengthInfo(pwPassed);
+  const { label: pwStrengthLabel, color: pwStrengthColor, ink: pwStrengthInk } = getStrengthInfo(pwPassed);
 
   return (
     <Animated.View entering={FadeInDown.duration(300)} style={s.strengthWrap}>
@@ -48,7 +51,7 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
             ]}
           />
         ))}
-        <Text style={[s.strengthLabel, { color: pwStrengthColor }]}>{pwStrengthLabel}</Text>
+        <Text style={[s.strengthLabel, { color: pwStrengthInk }]}>{pwStrengthLabel}</Text>
       </View>
       <View style={s.checksGrid}>
         {PW_CHECK_LABELS.map(([key, label]) => (
@@ -56,7 +59,7 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
             <Text style={[s.checkIcon, { color: pwChecks[key] ? colors.validation : colors.fog }]}>
               {pwChecks[key] ? '✓' : '○'}
             </Text>
-            <Text style={[s.checkLabel, { color: pwChecks[key] ? colors.validation : colors.fog }]}>
+            <Text style={[s.checkLabel, { color: pwChecks[key] ? colors.validationInk : colors.fog }]}>
               {label}
             </Text>
           </View>

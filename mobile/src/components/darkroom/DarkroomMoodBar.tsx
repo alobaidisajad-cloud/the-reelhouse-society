@@ -136,12 +136,12 @@ const s = StyleSheet.create({
   moodSub: {
     fontFamily: fonts.body,
     fontSize: 10,
-    color: colors.fog,
+    color: colors.fogQuiet,
     marginTop: 4,
     // 0.6 measured 3.04:1 — this line is what tells you what a mood MEANS
-    // ("Heavy, profound stories"), so it earns AA. 0.8 = 4.59:1.
-    opacity: 0.8,
-  },
+    // ("Heavy, profound stories"), so it earns AA. 0.8 made 4.59:1.
+    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    },
   moodSubActive: {
     opacity: 0.9,
     color: colors.flicker,

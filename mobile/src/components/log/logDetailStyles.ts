@@ -60,7 +60,7 @@ export const s = StyleSheet.create({
   // says the same thing. logPage.test.ts recomputes this rather than trusting
   // another comment.
   eyebrowWrap: { position: 'absolute', top: 0, bottom: 0, left: 104, right: 104, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.sepia, opacity: 0.72, includeFontPadding: false },
+  eyebrow: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   shareBtnText: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 1.5, includeFontPadding: false },
   moreBtn: { paddingHorizontal: 2, paddingVertical: 8 },
@@ -126,14 +126,14 @@ export const s = StyleSheet.create({
   // line. Android resolves direction itself; textAlign is what puts the block
   // on the side it reads from, on both.
   rtlText: { writingDirection: 'rtl', textAlign: 'right' } as import('react-native').TextStyle,
-  reviewParagraph: { fontFamily: fonts.body, fontSize: 14, lineHeight: 24, color: colors.bone, opacity: 0.9 },
-  dropCapParagraph: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, opacity: 0.9 },
+  reviewParagraph: { fontFamily: fonts.body, fontSize: 14, lineHeight: 24, color: colors.bone },
+  dropCapParagraph: { fontFamily: fonts.body, fontSize: 14, color: colors.bone },
   reviewParagraphSpaced: { marginBottom: 14 },
   dropCapLetter: { fontFamily: fonts.display, fontSize: 34, color: colors.sepia, lineHeight: 36, textShadowColor: 'rgba(184,137,26,0.2)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
 
   // ── Editorial Badge ──
   editorialBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, position: 'absolute', left: 16, backgroundColor: 'rgba(13,11,9,0.5)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 2, borderWidth: 1, borderColor: colors.sepiaBorder },
-  editorialBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.2, color: 'rgba(220,166,58,0.85)', includeFontPadding: false },
+  editorialBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.2, color: colors.champagne, includeFontPadding: false },
 
   // ── Viewing Chronicle ──
   chronicleWrap: { marginTop: 8, marginBottom: 16, backgroundColor: colors.inkwell, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder, borderRadius: 2, overflow: 'hidden' },
@@ -148,8 +148,8 @@ export const s = StyleSheet.create({
   chronicleLabelTextCurrent: { color: colors.sepia },
   chronicleDateText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 0.8, color: colors.fog, includeFontPadding: false },
   chronicleRatingWrap: { marginBottom: 6 },
-  chronicleReviewText: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.75 },
-  chronicleReviewTextCurrent: { fontSize: 14, lineHeight: 22, opacity: 0.9, fontStyle: 'normal' },
+  chronicleReviewText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, lineHeight: 20 },
+  chronicleReviewTextCurrent: { color: colors.bone, fontSize: 14, lineHeight: 22, fontStyle: 'normal' },
   chronicleReviewTextPast: { fontStyle: 'italic' },
   chronicleWatchedWith: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 6, includeFontPadding: false },
   chronicleDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: 10, paddingTop: 4 },
@@ -162,7 +162,7 @@ export const s = StyleSheet.create({
   autopsyToggleInner: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   autopsyPulse: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.bloodReel, shadowColor: 'rgba(107,26,10,0.9)', shadowOffset: { width: 0, height: 0 }, shadowRadius: 8, shadowOpacity: 1 },
   autopsyToggleTitle: { fontFamily: fonts.display, fontSize: 12, letterSpacing: 2, color: colors.parchment },
-  autopsyToggleConf: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 3, color: colors.sepia, opacity: 0.6, includeFontPadding: false },
+  autopsyToggleConf: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 3, color: colors.sepia, includeFontPadding: false },
   rotated: { transform: [{ rotate: '180deg' }] },
 
   // ── Action Deck ──
@@ -245,7 +245,7 @@ export const s = StyleSheet.create({
   },
   filingLabel: {
     fontFamily: fonts.sub, fontSize: 7, letterSpacing: 3,
-    color: colors.sepia, opacity: 0.85, includeFontPadding: false,
+    color: colors.sepia, includeFontPadding: false,
   },
   filingEntry: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   filingDot: { color: colors.ash, fontSize: 10, includeFontPadding: false },

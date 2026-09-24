@@ -616,10 +616,10 @@ const s = StyleSheet.create({
         lineHeight: 12,
         color: colors.silverScreen,
     },
-    gallYear: { fontFamily: fonts.body, fontSize: 7.5, lineHeight: 10, color: colors.fog, opacity: 0.7, textAlign: 'center', marginTop: 3 },
+    gallYear: { fontFamily: fonts.body, fontSize: 7.5, lineHeight: 10, color: colors.fogQuiet, textAlign: 'center', marginTop: 3 },
     // Same pixels, two voices: a fact for a visitor, an invitation on your own file.
-    gallEmpty: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.2, lineHeight: 10, color: colors.fog, opacity: 0.5, textAlign: 'center' },
-    gallInvite: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.2, lineHeight: 10, color: colors.sepia, opacity: 0.8, textAlign: 'center' },
+    gallEmpty: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.2, lineHeight: 10, color: colors.fogQuiet, textAlign: 'center' },
+    gallInvite: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.2, lineHeight: 10, color: colors.sepia, textAlign: 'center' },
 
     // ── the rail ──
     railRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14 },
@@ -682,7 +682,7 @@ const s = StyleSheet.create({
         marginBottom: 14,
     },
 
-    plateEyebrow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, textAlign: 'center', opacity: 0.75 },
+    plateEyebrow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, textAlign: 'center' },
     plateTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, color: colors.parchment, textAlign: 'center', marginTop: 6, marginBottom: 16 },
     plateAction: {
         flexDirection: 'row',

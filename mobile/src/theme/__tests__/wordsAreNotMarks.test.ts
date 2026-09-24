@@ -8,20 +8,27 @@
  * `bloodReel` 1.48, and `ash` — the border colour — 1.10, which is to say the
  * word is not there at all.
  *
- * Fifty-eight words were painted that way when this was written: the
+ * Seventy-odd words were painted that way when this was written: the
  * settings page's DELETE ACCOUNT at 1.66:1, every "ABANDONED" stamp, an
- * Auteur's pull quote, three sign-in errors, a founding member's own title.
- * Each was somebody reaching for "the red" or "the quiet grey" and finding the
- * pigment first.
+ * Auteur's pull quote, three sign-in errors, a founding member's own title,
+ * every Auteur index entry's name, "WEAK" on the password meter at 1.48, and
+ * twelve placeholders in the border colour — hints nobody could see.
  *
- * So a style that sets a mark pigment as its `color` must be on the list
- * below, with what it DRAWS. Anything else is a word, and a word wears an ink:
+ * ── THE PIGMENT LIST IS COMPUTED, NOT CHOSEN ──────────────────────────────
+ * The first version of this file listed five pigments by hand, and the green
+ * (`validation`, 4.37 on a card) and `rust` (2.46) walked straight past it.
+ * So: every solid colour in the theme that is lighter than a card and still
+ * fails 4.5:1 on one is a pigment. A new one joins the list by existing.
  *
- *   crimson / bloodReel  →  crimsonInk     ash  →  fogQuiet
+ * A pigment anywhere in a `color:` expression — a ternary included — must be
+ * a named mark below, with what it draws. A placeholder is always a word.
+ * Anything else wears the family's ink: crimsonInk, fogQuiet or fog,
+ * validationInk, rustInk.
  *
  * What this cannot see: a pigment held in a variable and handed to `color`
- * later (`const tierText = … '#B42D2D' …` was one). The rendered-screen
- * contrast sweep is the backstop for those; this is the gate at the door.
+ * later. Those were found by tracing every pigment held in a name to where it
+ * lands (the index entry, the strength meter, lounge settings, the clearance
+ * gates); the rendered-screen contrast sweep is the standing backstop.
  */
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -30,16 +37,37 @@ import { colors } from '../theme';
 const ROOT = join(__dirname, '..', '..', '..');
 const SCAN = ['src', 'app'];
 
-/** The pigments, by token and by every spelling of their value. */
-const PIGMENT_TOKENS = ['bloodReel', 'crimson', 'ash', 'tarnish', 'tarnishDeep'] as const;
-const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(',');
+// ── contrast ──────────────────────────────────────────────────────────────
+const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const lum = (c: number[]) => {
+  const s = c.map((v) => {
+    const u = v / 255;
+    return u <= 0.03928 ? u / 12.92 : ((u + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * s[0] + 0.7152 * s[1] + 0.0722 * s[2];
+};
+const ratio = (a: number[], b: number[]) => {
+  const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+};
+const CARD = rgb(colors.soot);
+
+/** Every solid token lighter than a card that fails 4.5:1 on one. */
+const SOLID = Object.entries(colors as Record<string, string>)
+  .filter(([, v]) => /^#[0-9A-Fa-f]{6}$/.test(v));
+const PIGMENTS = new Map<string, string>(
+  SOLID.filter(([, v]) => lum(rgb(v)) > lum(CARD) && ratio(rgb(v), CARD) < 4.5)
+    .map(([k]) => [k, k]),
+);
+/** …and every spelling of their values, so a hex or an rgb() cannot hide one. */
 const PIGMENT_VALUES = new Map<string, string>(
-  PIGMENT_TOKENS.map((t) => [channels((colors as Record<string, string>)[t]), t]),
+  [...PIGMENTS.keys()].map((k) => [rgb((colors as Record<string, string>)[k]).join(','), k]),
 );
 
 /**
- * THE MARKS. Keyed `file · style key` (or `file · inline:<what it prints>`),
- * each with what it draws. A shape, a glyph, or a fill — never a word.
+ * THE MARKS. Keyed `file · name`, where the name is the style key, or the
+ * named style an inline override rides on, or the const it is assigned to —
+ * each with what it draws. A shape, a glyph, an icon or a fill; never a word.
  */
 const MARKS: Record<string, string> = {
   'src/components/AutopsyGauge.tsx · headerStar': '✦ beside the heading',
@@ -48,7 +76,7 @@ const MARKS: Record<string, string> = {
   'src/components/ErrorBoundary.tsx · glyph': '⊗ / ✦ at 48pt, the page’s emblem',
   'app/+not-found.tsx · glyph': '⊗ / ✦ at 48pt, the page’s emblem',
   'app/auth-callback.tsx · errorIcon': '✕ at 28pt beside the words that say what failed',
-  'app/reset-password.tsx · inline:✕': '✕ above SESSION EXPIRED, which carries the meaning',
+  'app/reset-password.tsx · successIcon': '✕ above SESSION EXPIRED, which carries the meaning',
   'src/components/log/logDetailStyles.ts · filingDot': '· between two filing facts',
   'src/components/profile/Achievements.tsx · glyphLocked': 'a locked badge’s glyph; its title is inked',
   'src/components/profile/CinematicInsights.tsx · avatarFallback': '✦ standing in for a missing portrait',
@@ -58,6 +86,12 @@ const MARKS: Record<string, string> = {
   'app/(admin)/tribunal.tsx · suspend': 'the verdict button’s FILL; its title reads `ink`',
   'app/(admin)/tribunal.tsx · ban': 'the verdict button’s FILL; its title reads `ink`',
   'app/(admin)/tribunal.tsx · permanent_exile': 'the verdict button’s FILL; its title reads `ink`',
+  'src/components/auth/PasswordStrengthMeter.tsx · checkIcon': '✓ / ○ beside a requirement; the label is inked',
+  'src/components/darkroom/DarkroomHeader.tsx · animatedSearchProps': 'the search icon’s ember',
+  'src/components/profile/ProfileLedgerTab.tsx · animatedSearchProps': 'the search icon’s ember',
+  'src/components/profile/ProfileWatchlistTab.tsx · animatedSearchProps': 'the search icon’s ember',
+  'src/components/profile/ProfileTriptych.tsx · animatedSearchProps': 'the search icon’s ember',
+  'app/(modals)/list-modal.tsx · animatedIconProps': 'the search icon’s ember',
 };
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -70,100 +104,125 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-/** The style key a `color:` sits inside: the nearest enclosing `key: {`. */
-function keyAt(lines: string[], i: number, col: number): string {
+/** What a `color:` at (line, col) belongs to — see MARKS for the naming. */
+function nameAt(lines: string[], i: number, col: number): string {
+  // 1 · the enclosing `key: {`
   let depth = 0;
-  for (let j = i; j >= 0; j--) {
+  for (let j = i; j >= 0 && j > i - 40; j--) {
     const seg = j === i ? lines[j].slice(0, col) : lines[j];
     for (let k = seg.length - 1; k >= 0; k--) {
       if (seg[k] === '}') depth++;
       else if (seg[k] === '{') {
         if (depth === 0) {
-          const m = /([A-Za-z_$][\w$]*)\s*:\s*$/.exec(seg.slice(0, k));
-          return m ? m[1] : '';
+          const before = seg.slice(0, k);
+          const key = /([A-Za-z_$][\w$]*)\s*:\s*$/.exec(before);
+          if (key && !/^(style|contentContainerStyle)$/.test(key[1])) return key[1];
+          // 2 · an inline override riding on a named style: [s.checkIcon, { color: … }]
+          const rides = /\b\w+\.(\w+)\s*,\s*[^,[]*$/.exec(before);
+          if (rides) return rides[1];
+          // 3 · the const it is assigned to: const animatedSearchProps = useAnimatedProps(() => ({
+          for (let b = j; b >= 0 && b > j - 3; b--) {
+            const c = /const\s+(\w+)\s*=/.exec(lines[b]);
+            if (c) return c[1];
+          }
+          return '?';
         }
         depth--;
       }
     }
   }
-  return '';
+  return '?';
 }
 
-/** Every `color:` in the app that resolves to a mark pigment. */
+/** The value expression after `color:` — up to the comma or brace that ends it. */
+function exprAfter(ln: string, from: number): string {
+  let d = 0, out = '';
+  for (let k = from; k < ln.length; k++) {
+    const ch = ln[k];
+    if (ch === '(' || ch === '[' || ch === '{') d++;
+    else if (ch === ')' || ch === ']' || ch === '}') { if (d === 0) break; d--; }
+    else if (ch === ',' && d === 0) break;
+    out += ch;
+  }
+  return out;
+}
+
+/** The pigments an expression names, by token or by any spelling of the value. */
+function pigmentsIn(expr: string): string[] {
+  const found: string[] = [];
+  for (const m of expr.matchAll(/colors\.(\w+)/g)) if (PIGMENTS.has(m[1])) found.push(m[1]);
+  for (const m of expr.matchAll(/'(#[0-9A-Fa-f]{6})'|'rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/g)) {
+    const key = m[1] ? rgb(m[1]).join(',') : `${+m[2]},${+m[3]},${+m[4]}`;
+    const p = PIGMENT_VALUES.get(key);
+    if (p) found.push(p);
+  }
+  return found;
+}
+
 function census() {
-  const hits: { at: string; key: string }[] = [];
-  const COLOR = /(^|[^A-Za-z])color:\s*(colors\.(\w+)|'([^']+)'|"([^"]+)")/g;
+  const colour: { at: string; key: string }[] = [];
+  const placeholders: string[] = [];
   for (const dir of SCAN) {
     for (const file of walk(dir)) {
       if (file === 'src/theme/theme.ts') continue;
       const lines = readFileSync(join(ROOT, file), 'utf8').split('\n');
       lines.forEach((ln, i) => {
         if (/^\s*(\/\/|\*|\/\*)/.test(ln)) return;
-        for (const m of ln.matchAll(COLOR)) {
-          const token = m[3];
-          const literal = m[4] ?? m[5];
-          let pigment: string | undefined;
-          if (token && (PIGMENT_TOKENS as readonly string[]).includes(token)) pigment = token;
-          if (literal) {
-            const hex = /^#([0-9a-fA-F]{6})$/.exec(literal);
-            const fn = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(literal);
-            const ch = hex ? channels(literal) : fn ? `${+fn[1]},${+fn[2]},${+fn[3]}` : '';
-            pigment = PIGMENT_VALUES.get(ch);
-          }
-          if (!pigment) continue;
+        for (const m of ln.matchAll(/(^|[^A-Za-z])color\s*:\s*/g)) {
           const col = (m.index ?? 0) + m[1].length;
-          let key = keyAt(lines, i, col);
-          // an inline style names itself by what it prints
-          if (!key || /^(style|s|st)$/.test(key)) {
-            const printed = />([^<{]+)</.exec(ln.slice(col));
-            key = `inline:${printed ? printed[1].trim() : '?'}`;
-          }
-          hits.push({ at: `${file}:${i + 1} (${pigment})`, key: `${file} · ${key}` });
+          const ps = pigmentsIn(exprAfter(ln, col + m[0].length - m[1].length));
+          if (!ps.length) continue;
+          colour.push({ at: `${file}:${i + 1} (${ps.join(', ')})`, key: `${file} · ${nameAt(lines, i, col)}` });
+        }
+        for (const m of ln.matchAll(/placeholderTextColor=\{([^}]*)\}/g)) {
+          if (pigmentsIn(m[1]).length) placeholders.push(`${file}:${i + 1} ${m[1].trim()}`);
         }
       });
     }
   }
-  return hits;
+  return { colour, placeholders };
 }
 
 describe('words are not marks', () => {
-  const hits = census();
+  const { colour, placeholders } = census();
+
+  it('computes a pigment list that holds every colour the pass found painted as a word', () => {
+    // The two the hand-written list missed, and the five it had.
+    for (const p of ['bloodReel', 'crimson', 'ash', 'tarnish', 'tarnishDeep', 'validation', 'rust']) {
+      expect(PIGMENTS.has(p)).toBe(true);
+    }
+    // …and no ink: a word-ink on this list would make every word a mark.
+    for (const ink of ['crimsonInk', 'fogQuiet', 'fog', 'validationInk', 'rustInk', 'sepia', 'bone', 'parchment']) {
+      expect(PIGMENTS.has(ink)).toBe(false);
+    }
+  });
 
   it('found the pigments at all', () => {
     // A detector that matches nothing reports a clean app. Every mark on the
     // list is a real site, so the census can never be smaller than the list.
-    expect(hits.length).toBeGreaterThanOrEqual(Object.keys(MARKS).length);
+    expect(colour.length).toBeGreaterThanOrEqual(Object.keys(MARKS).length);
   });
 
   it('paints no word in a pigment — every pigment colour is a named mark', () => {
-    const words = hits.filter((h) => !(h.key in MARKS));
+    const words = colour.filter((h) => !(h.key in MARKS));
     expect(words.map((h) => `${h.at}  ${h.key}`)).toEqual([]);
   });
 
+  it('never writes a placeholder in a pigment — a hint is a word', () => {
+    expect(placeholders).toEqual([]);
+  });
+
   it('and every mark on the list is still a mark somebody draws', () => {
-    // An allow-list nobody prunes is how fifty-eight words got in.
-    const seen = new Set(hits.map((h) => h.key));
+    // An allow-list nobody prunes is how seventy words got in.
+    const seen = new Set(colour.map((h) => h.key));
     expect(Object.keys(MARKS).filter((k) => !seen.has(k))).toEqual([]);
   });
 
-  it('keeps the inks the words moved to clear the floor on the lightest ground', () => {
-    // The replacement is only a fix if it holds where it is hardest: the
-    // raised surface, the lightest of the five.
-    const lum = (hex: string) => {
-      const s = [1, 3, 5].map((i) => {
-        const u = parseInt(hex.slice(i, i + 2), 16) / 255;
-        return u <= 0.03928 ? u / 12.92 : ((u + 0.055) / 1.055) ** 2.4;
-      });
-      return 0.2126 * s[0] + 0.7152 * s[1] + 0.0722 * s[2];
-    };
-    const ratio = (a: string, b: string) => {
-      const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
-      return (x + 0.05) / (y + 0.05);
-    };
-    for (const ink of [colors.crimsonInk, colors.fogQuiet]) {
-      for (const ground of [colors.inkwell, colors.ink, colors.well, colors.soot, colors.sootAuteur, colors.surfaceRaised]) {
-        expect(ratio(ink, ground)).toBeGreaterThanOrEqual(4.5);
-      }
+  it('keeps every word-ink clear of the floor on every ground a word can sit on', () => {
+    // The replacement is only a fix if it holds where it is hardest.
+    const grounds = [colors.inkwell, colors.ink, colors.well, colors.soot, colors.sootAuteur, colors.surfaceRaised];
+    for (const ink of [colors.crimsonInk, colors.fogQuiet, colors.fog, colors.validationInk, colors.rustInk]) {
+      for (const g of grounds) expect(ratio(rgb(ink), rgb(g))).toBeGreaterThanOrEqual(4.5);
     }
   });
 });
