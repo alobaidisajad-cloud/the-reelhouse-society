@@ -89,8 +89,8 @@ const s = StyleSheet.create({
   hint: {
     includeFontPadding: false,
     fontFamily: fonts.body,
-    fontSize: 9,
-    letterSpacing: 1.5,
+    fontSize: 10,
+    letterSpacing: 1.2,
     color: colors.fog,
   },
 });

@@ -189,3 +189,20 @@ describe('the rarity stamp, only where it means something', () => {
     expect(render(<FilmHero {...base} score={10} />).queryByText('MAINSTREAM')).toBeNull();
   });
 });
+
+describe('the tagline', () => {
+  /**
+   * TMDB sets some taglines as one long word: `Sensational...Daring...
+   * Unforgettable...` — 45 characters with no space. With nowhere to wrap the
+   * phone broke it mid-letter (or shrank the line below the type floor). It is
+   * offered a break AFTER each ellipsis, as a poster would set it.
+   */
+  it('wraps a spaceless tagline after its ellipses, never inside a word', () => {
+    const tagline = 'A Hollywood Story: Sensational...Daring...Unforgettable...Sunset Blvd';
+    const t = render(<FilmHero {...base} film={{ ...(film as object), tagline } as never} />);
+    const node = t.getByText(/Hollywood Story/);
+    const text = [node.props.children].flat(3).filter((c: unknown) => typeof c === 'string').join('');
+    expect(text).toContain('Sensational...\u200B');
+    expect(text.replace(/\u200B/g, '')).toContain(tagline);
+  });
+});

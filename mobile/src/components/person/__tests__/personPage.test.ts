@@ -99,12 +99,17 @@ describe('text can grow without leaving its line box', () => {
   });
 
   it('the grid title reserves room for the two lines it now allows', () => {
-    const body = style(read(STYLES), 'gridTitle');
-    const lh = num(body, 'lineHeight')!;
-    const h = num(body, 'height')!;
-    // A fixed height is what keeps a three-column grid's rows level when one
-    // title wraps and its neighbour does not.
-    expect(h).toBeGreaterThanOrEqual(lh * 2);
+    // A two-line box is what keeps a three-column grid's rows level when one
+    // title wraps and its neighbour does not. It is two lines AT THE SIZE THE
+    // PHONE DRAWS: the box is the constant × the set-line scale, applied where
+    // the card is drawn. (A fixed 26 cut the second line off at large type.)
+    const { GRID_TITLE_BOX } = require('@/src/components/person/personStyles');
+    const src = read(STYLES);
+    expect(src).toMatch(/lineHeight: GRID_TITLE_LINE/);
+    expect(src).toMatch(/GRID_TITLE_BOX = GRID_TITLE_LINE \* 2/);
+    expect(GRID_TITLE_BOX).toBe(26);
+    expect(read('src/components/person/PersonFilmography.tsx'))
+      .toMatch(/\{ height: GRID_TITLE_BOX \* titleScale \}/);
   });
 });
 

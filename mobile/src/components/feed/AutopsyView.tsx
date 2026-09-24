@@ -212,8 +212,8 @@ const s = StyleSheet.create({
   },
   stripTurn: {
     fontFamily: fonts.sub,
-    fontSize: 7,
-    letterSpacing: 2,
+    fontSize: 10,
+    letterSpacing: 1,
     color: colors.sepia,
     // 0.7 measured 3.56:1 at 7pt. 0.9 gave 5.25:1 — this is the affordance
     // that tells you the card turns over, so it should not be a rumour.
@@ -259,7 +259,7 @@ const s = StyleSheet.create({
   },
   backFiledBy: {
     fontFamily: fonts.bodyItalic,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.fogQuiet,
     // 0.7 was 3.75:1; 0.8 gave 4.59:1 and cleared AA for small text.
     // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
@@ -291,8 +291,8 @@ const s = StyleSheet.create({
   },
   cellLabel: {
     fontFamily: fonts.sub,
-    fontSize: 7,
-    letterSpacing: 1.5,
+    fontSize: 10,
+    letterSpacing: 0.7,
     color: colors.fog,
     includeFontPadding: false,
     flexShrink: 1,
@@ -349,8 +349,8 @@ const s = StyleSheet.create({
   },
   returnText: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 2.5,
+    fontSize: 10,
+    letterSpacing: 1.6,
     color: colors.sepia,
     includeFontPadding: false,
   },

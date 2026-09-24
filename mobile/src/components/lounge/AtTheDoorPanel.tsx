@@ -127,5 +127,5 @@ const s = StyleSheet.create({
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 8 },
   declineBtn: { width: 38, height: 34, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.crimsonBorder },
   admitBtn: { backgroundColor: colors.sepia, paddingHorizontal: 14, height: 34 },
-  admitText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 1.5, color: colors.ink, includeFontPadding: false },
+  admitText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.ink, includeFontPadding: false },
 });

@@ -166,7 +166,7 @@ const s = StyleSheet.create({
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
   headerTextWrap: { flex: 1 },
-  headerEyebrow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
+  headerEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
   headerTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment },
   centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { paddingTop: 20, paddingBottom: 100 },

@@ -95,7 +95,7 @@ const s = StyleSheet.create({
   },
   debug: {
     fontFamily: fonts.body,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.crimsonInk,
     textAlign: 'center',
     marginTop: 4,

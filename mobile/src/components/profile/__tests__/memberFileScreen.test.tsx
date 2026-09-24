@@ -151,6 +151,24 @@ describe('the ident block', () => {
     expect(r.getAllByText(/^@?TOMASREYES$/)).toHaveLength(1);
   });
 
+  /**
+   * A handle is one word, and a word cannot wrap. At the default size
+   * TOMASREYES fits the column at 26pt; at the largest text size (26 × 1.2) it
+   * ran 3.6pt past it and the phone broke it mid-letter. The step is lowered —
+   * only there — so the word stays whole (heroNameSize.ts).
+   */
+  it.each([[1, 26], [1.35, 20]])('sets a one-word handle whole at text size %s (%spt)', async (fontScale, size) => {
+    const dims = jest.spyOn(require('react-native'), 'useWindowDimensions')
+      .mockReturnValue({ width: 390, height: 844, scale: 3, fontScale });
+    try {
+      const r = await mount({}, { targetUser: baseUser({ display_name: null, persona: null }) });
+      const flat = Object.assign({}, ...[r.getByText('TOMASREYES').props.style].flat(3).filter(Boolean));
+      expect(flat.fontSize).toBe(size);
+    } finally {
+      dims.mockRestore();
+    }
+  });
+
   it('but keeps the handle when it genuinely differs from the name', async () => {
     const r = await mount();
     expect(r.getByText('TOMAS')).toBeTruthy();
@@ -399,6 +417,17 @@ describe('the page survives the edges', () => {
       bio: 'x'.repeat(600),
     }) });
     expect(r.getByText(/BARTHOLOMEW/)).toBeTruthy();
+  });
+
+  it('a pasted link in a bio is offered places to wrap, at its joints', async () => {
+    // Without them the phone breaks a long address mid-letter wherever the
+    // line runs out. Render-only: the stored bio is not changed.
+    const link = 'https://www.bfi.org.uk/news/napoleon-restoration-tour';
+    const r = await mount({}, { targetUser: baseUser({ bio: `Programme at ${link}` }) });
+    const shown = r.getByText(/Programme at/);
+    const text = [shown.props.children].flat(3).filter((c) => typeof c === 'string').join('');
+    expect(text).toContain('​');
+    expect(text.replace(/​/g, '')).toContain(link);
   });
 
   it('preferences being null does not break the page', async () => {

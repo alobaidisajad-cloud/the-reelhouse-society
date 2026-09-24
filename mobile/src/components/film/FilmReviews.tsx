@@ -239,8 +239,8 @@ const s = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginTop: 8,
   },
-  readFullText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
-  openLogText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
+  readFullText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.sepia, includeFontPadding: false },
+  openLogText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
 
   /**
    * ── UNBOXED, WITH EVERY OTHER EMPTY STATE ON THIS PAGE ────────────────────
@@ -267,7 +267,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: colors.sepiaBorder,
     elevation: 8, ...effects.flat,
   },
-  readAllText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia, includeFontPadding: false },
+  readAllText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.sepia, includeFontPadding: false },
 
   abandonedBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -277,7 +277,7 @@ const s = StyleSheet.create({
     flexShrink: 1,
   },
   abandonedText: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.crimsonInk,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.crimsonInk,
     includeFontPadding: false, flexShrink: 1,
   },
 });

@@ -24,6 +24,11 @@
  * because a throw raised inside a catch block is what an outer catch swallows
  * again.
  */
+/** A capture run draws every screen a test mounts (mockups/capture.ts). */
+if (process.env.MOCKUPS_CAPTURE) {
+  require('./mockups/capture').captureAfterEach();
+}
+
 const G = globalThis as Record<string, unknown>;
 const gaps = () => G.__mockGaps as string[] | undefined;
 

@@ -356,8 +356,10 @@ describe('the page speaks in one type scale', () => {
     'src/components/log/LogSealBar.tsx',
     'src/components/log/EditorialDesk.tsx',
   ];
-  // FINE · LABEL · ASIDE · PROSE · TITLE · HERO
-  const SCALE = [7.5, 9, 11, 14, 17, 28];
+  // BADGE · LABEL · ASIDE · PROSE · TITLE · HERO
+  // The type floor (theTypeFloor.test.ts) merged the old 7.5 FINE step into
+  // LABEL at 10; only the two corner badges (EDIT, ALT) keep a smaller 9.
+  const SCALE = [9, 10, 11, 14, 17, 28];
 
   it('uses six sizes, and only those six', () => {
     // It had FOURTEEN, all at one volume — the single largest reason the page

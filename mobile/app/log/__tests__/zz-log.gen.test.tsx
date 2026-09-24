@@ -3,18 +3,16 @@
  * and converts the resolved React Native tree to HTML, so its light — and the
  * join where the picture behind it meets the room — can be measured.
  *
- * Run: MOCKUPS=1 npx jest zz-log.gen
+ * Run: MOCKUPS=1 npx jest zz-log.gen  (see mockups/README.md)
  */
 import React, { act } from 'react';
 import { render } from '@testing-library/react-native';
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { toHtml } from '@/src/components/profile/__tests__/zz-render.lib';
+import { whenRendering, writeScreen } from '@/mockups/paths';
 import { POSTERS, POSTER_PATHS, LOCAL_ART } from '@/src/components/profile/__tests__/zz-art.gen';
 
 import LogDetailScreen from '../[id]';
 
-const OUT = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/mockups';
 const LOG_ID = '22222222-2222-4222-8222-222222222222';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
@@ -82,16 +80,13 @@ const STATES: [string, Record<string, unknown>][] = [
   ['log-noart', { data: { log: { ...LOG, poster_path: null }, profile: PROFILE, comments: [], commentTotal: 0 }, isLoading: false }],
 ];
 
-const RUN = !!process.env.MOCKUPS;
-const gate = RUN ? describe : describe.skip;
-gate('log page generator', () => {
+whenRendering('log page generator', () => {
   it.each(STATES)('writes %s', async (name, q) => {
-    mkdirSync(OUT, { recursive: true });
     mockQuery = q;
     let r!: ReturnType<typeof render>;
     await act(async () => { r = render(<LogDetailScreen />); });
     const html = toHtml(r.toJSON(), { posters: POSTERS, local: LOCAL_ART });
-    writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
+    writeScreen(name, html);
     console.log(`WROTE ${name}: ${html.length} bytes`);
     expect(html.length).toBeGreaterThan(3000);
   });

@@ -95,8 +95,8 @@ const st = StyleSheet.create({
   },
   charCount: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 1,
+    fontSize: 10,
+    letterSpacing: 0.6,
     color: colors.fogQuiet,
     textAlign: 'right',
     marginTop: 4,

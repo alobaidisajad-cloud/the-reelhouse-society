@@ -470,8 +470,10 @@ describe('the hero is a composition, not a stack of eleven centred rows', () => 
   it('sizes the name and the bio in fixed steps, not by auto-shrinking', () => {
     // adjustsFontSizeToFit measures at layout and picks any fraction it likes,
     // so two members side by side get two different sizes for no visible
-    // reason. Three fixed steps mean a name always renders the same.
-    expect(CODE_SCREEN).toMatch(/nameSize\s*=\s*heroName\.length/);
+    // reason. Three fixed steps mean a name always renders the same. The step
+    // is chosen in heroNameSize (by length, lowered only where a word would
+    // break) — heroNameSize.test.ts holds the arithmetic.
+    expect(CODE_SCREEN).toMatch(/nameSize\s*=\s*heroNameSize\(heroName,/);
     expect(CODE_SCREEN).toMatch(/bioSize\s*=\s*bioText\.length/);
     const heroBlock = CODE_SCREEN.slice(CODE_SCREEN.indexOf('s.heroName'), CODE_SCREEN.indexOf('s.socialLinksRow'));
     expect(heroBlock).not.toMatch(/adjustsFontSizeToFit/);

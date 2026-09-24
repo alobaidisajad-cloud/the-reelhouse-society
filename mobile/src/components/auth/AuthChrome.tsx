@@ -240,8 +240,8 @@ const est = StyleSheet.create({
   },
   text: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 3,
+    fontSize: 10,
+    letterSpacing: 1.9,
     color: colors.fog,
   },
 });

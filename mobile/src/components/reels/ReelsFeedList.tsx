@@ -161,8 +161,8 @@ const fs = StyleSheet.create({
   },
   footerText: {
     fontFamily: fonts.sub,
-    fontSize: 7,
-    letterSpacing: 3,
+    fontSize: 10,
+    letterSpacing: 1.5,
     color: colors.fogQuiet,
     // 0.6 was 3.04:1 at 7pt — the end-of-feed marker was a rumour. 0.8 made 4.59:1.
     // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.

@@ -165,8 +165,8 @@ const s = StyleSheet.create({
     },
     trailerLabel: {
         fontFamily: fonts.sub,
-        fontSize: 8,
-        letterSpacing: 3,
+        fontSize: 10,
+        letterSpacing: 1.9,
         color: colors.fog,
         marginTop: 12,
         textAlign: 'center',

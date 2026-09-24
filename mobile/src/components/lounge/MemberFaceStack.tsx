@@ -106,8 +106,8 @@ const s = StyleSheet.create({
   },
   avatarOverlap: { marginLeft: -OVERLAP },
   avatarImg: { width: '100%', height: '100%' },
-  initial: { fontFamily: fonts.display, fontSize: 9, color: colors.parchment, includeFontPadding: false },
-  overflow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, marginLeft: 7, includeFontPadding: false },
-  count: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog, marginLeft: 7, includeFontPadding: false },
+  initial: { fontFamily: fonts.display, fontSize: 10, color: colors.parchment, includeFontPadding: false },
+  overflow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, marginLeft: 7, includeFontPadding: false },
+  count: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog, marginLeft: 7, includeFontPadding: false },
   lock: { marginLeft: 6 },
 });

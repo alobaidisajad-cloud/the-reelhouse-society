@@ -145,7 +145,7 @@ const s = StyleSheet.create({
   // appears, rather than three screens each drawing something close to it.
   gate: { alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingTop: 16, paddingBottom: 6 },
   heading: {
-    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.fog,
     marginBottom: 8, textAlign: 'center', includeFontPadding: false,
   },
   line: {
@@ -153,7 +153,7 @@ const s = StyleSheet.create({
     includeFontPadding: false,
   },
   cta: {
-    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, textAlign: 'center',
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, textAlign: 'center',
     includeFontPadding: false,
   },
   /** The same 0.4 the log already used. Not a new number. */

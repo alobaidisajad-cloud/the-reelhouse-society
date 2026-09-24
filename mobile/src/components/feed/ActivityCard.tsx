@@ -382,8 +382,8 @@ const s = StyleSheet.create({
   },
   editorialBadgeText: {
     fontFamily: fonts.sub,
-    fontSize: 7,
-    letterSpacing: 2.5,
+    fontSize: 9,
+    letterSpacing: 1.5,
     color: colors.marqueeGold,
     includeFontPadding: false,
   },
@@ -421,8 +421,8 @@ const s = StyleSheet.create({
   },
   cardYear: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 3,
+    fontSize: 10,
+    letterSpacing: 2.4,
     color: colors.fog,
     marginTop: 5,
     marginBottom: 6,

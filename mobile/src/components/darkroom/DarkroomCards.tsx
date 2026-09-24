@@ -274,8 +274,8 @@ const s = StyleSheet.create({
   suggestionSubTitle: {
     color: colors.fog,
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 1,
+    fontSize: 10,
+    letterSpacing: 0.8,
   },
   posterWrap: { ...EDGE_LIT,
     width: '100%',
@@ -324,8 +324,8 @@ const s = StyleSheet.create({
   },
   undevelopedTitle: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 1,
+    fontSize: 10,
+    letterSpacing: 0.8,
     // No fixed lineHeight. React Native does NOT scale lineHeight with Dynamic
     // Type, so `lineHeight: 13` on 9pt text meant that at 1.35x the glyphs grew
     // to 12.15 inside a line box still fixed at 13 — cramped, descenders
@@ -338,8 +338,8 @@ const s = StyleSheet.create({
   },
   undevelopedYear: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 2,
+    fontSize: 10,
+    letterSpacing: 1.3,
     color: colors.sepia,
     // No opacity. This plate sits on ash, not ink, so the usual sums do not
     // apply: 0.85 measured 4.00:1 against ash, just under AA at 8pt, while
@@ -387,8 +387,8 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(13,11,9,0.85)',
     color: colors.parchment,
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 0.5,
+    fontSize: 10,
+    letterSpacing: 0.4,
     textAlign: 'center',
     paddingVertical: 6,
   },

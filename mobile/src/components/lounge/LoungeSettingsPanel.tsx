@@ -236,7 +236,7 @@ const s = StyleSheet.create({
   subtitle: { fontFamily: fonts.serif, fontSize: 13, color: colors.fog, marginTop: 4, lineHeight: 18 },
   // 0.8 gave 4.35:1. 0.85 made 4.78:1.
   // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
-  label: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
+  label: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
 
   memberBlock: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
   memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 10 },
@@ -247,12 +247,12 @@ const s = StyleSheet.create({
   memberAvatarImg: { width: '100%', height: '100%' },
   memberName: { flex: 1, fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.bone, includeFontPadding: false },
   statusTag: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  statusTagText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+  statusTagText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.8, color: colors.fog, includeFontPadding: false },
   founderBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 2,
     backgroundColor: 'rgba(184,137,26,0.08)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)',
   },
-  founderText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
+  founderText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
 
   actionRow: { flexDirection: 'row', gap: 8, paddingBottom: 12, paddingLeft: 42 },
   memberAction: {
@@ -260,11 +260,11 @@ const s = StyleSheet.create({
     borderRadius: 7, paddingVertical: 7, paddingHorizontal: 11,
   },
   memberActionBan: { borderColor: colors.crimsonBorder },
-  memberActionText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+  memberActionText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.7, color: colors.fog, includeFontPadding: false },
 
   footer: { marginTop: 28, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash, paddingTop: 20 },
   leaveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, gap: 10 },
-  leaveText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+  leaveText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.8, color: colors.sepia, includeFontPadding: false },
 
   coverBlock: { marginBottom: 22 },
   coverRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
@@ -272,8 +272,8 @@ const s = StyleSheet.create({
   coverActions: { flex: 1, flexDirection: 'row', gap: 8 },
   coverBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.25)' },
   coverBtnRemove: { borderColor: colors.crimsonBorder },
-  coverBtnText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.5, color: colors.parchment, includeFontPadding: false },
+  coverBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.parchment, includeFontPadding: false },
   coverBtnTextRemove: { color: colors.crimsonInk },
   coverEmpty: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 3, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(184,137,26,0.25)', backgroundColor: 'rgba(184,137,26,0.06)' },
-  coverEmptyText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
+  coverEmptyText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
 });

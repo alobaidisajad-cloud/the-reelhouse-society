@@ -66,7 +66,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink, paddingHorizontal: 20 },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 },
   headerText: { flex: 1 },
-  eyebrow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 6, includeFontPadding: false },
+  eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.9, color: colors.sepia, marginBottom: 6, includeFontPadding: false },
   title: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, letterSpacing: 1 },
   hint: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, marginBottom: 16, lineHeight: 18 },
   searchWrap: { flex: 1 },

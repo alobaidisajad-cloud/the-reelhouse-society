@@ -4,13 +4,12 @@
  * drawing of it. Mock setup follows memberFileScreen.test.tsx, which already
  * knew how to stand this page up.
  *
- * Run: npx jest zz-memberfile.gen
+ * Run: MOCKUPS=1 npx jest zz-memberfile.gen  (see mockups/README.md)
  */
 import React, { act } from 'react';
 import { render } from '@testing-library/react-native';
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { toHtml } from './zz-render.lib';
+import { LAYOUTS, atLayout, whenRendering, writeScreen } from '@/mockups/paths';
 import { s } from '../profileStyles';
 import { POSTERS, POSTER_PATHS, POSTER_TITLES, LOCAL_ART } from './zz-art.gen';
 
@@ -18,13 +17,12 @@ import UserProfileScreen from '@/app/user/[username]';
 
 const ART = { posters: POSTERS, local: LOCAL_ART };
 
-const OUT = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/mockups';
 
 // The phone is 390pt. The renderer says 750 by default, which sizes every grid
 // for a tablet — see the note in zz-mockup.gen.
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
+  default: () => ({ width: 390, height: 844, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
 }));
 
 type Ctl = Record<string, unknown>;
@@ -154,32 +152,33 @@ const VARIANTS: [string, Ctl][] = [
     .map((tab): [string, Ctl] => [`memberfile-tab-${tab}`, { ...CTL, activeTab: tab }]),
 ];
 
-const RUN = !!process.env.MOCKUPS;
-const gate = RUN ? describe : describe.skip;
-gate('member file generator', () => {
-  it.each(VARIANTS)('writes %s', async (name, ctl) => {
-    mkdirSync(OUT, { recursive: true });
+// Each state in every layout: the name's size step reads the text size.
+const RUNS = VARIANTS.flatMap(([name, ctl]) => LAYOUTS.map((l) => [`${name}${l.suffix}`, ctl, l] as const));
+
+whenRendering('member file generator', () => {
+  it.each(RUNS)('writes %s', async (name, ctl, layout) => {
     mockCtl = ctl;
-    let r!: ReturnType<typeof render>;
-    await act(async () => { r = render(<UserProfileScreen />); });
-    // The test renderer never lays anything out, so the plate never reports
-    // where it ends and the room's light never learns to hang from the
-    // picture. Tell it what the browser lays the plate out at: 390×484 from the
-    // top, measured WITH the app's fonts loaded (without them the text sets
-    // taller and the plate measures 504 — a hem 20pt below the picture's own
-    // edge, which hid a line exactly there). The re-render this causes
-    // is also what lets the plate's develop animation reach its resting
-    // state: without it the atmosphere is drawn at opacity 0, and the render
-    // shows a plate no member ever sees.
-    // (A tab's own room has no plate: nothing to lay out.)
-    const bio = r.queryAllByText(/Nitrate, mostly/)[0];
-    let plate = bio ? bio.parent : null;
-    while (plate && !(plate.props.style === s.headerWrap && typeof plate.props.onLayout === 'function')) plate = plate.parent;
-    if (bio && !plate) throw new Error('the membership plate was not found');
-    if (plate) await act(async () => { plate!.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 484 } } }); });
-    const html = toHtml(r.toJSON(), ART);
-    writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
-     
+    const html = await atLayout(layout, async () => {
+      let r!: ReturnType<typeof render>;
+      await act(async () => { r = render(<UserProfileScreen />); });
+      // The test renderer never lays anything out, so the plate never reports
+      // where it ends and the room's light never learns to hang from the
+      // picture. Tell it what the browser lays the plate out at: 390×484 from the
+      // top, measured WITH the app's fonts loaded (without them the text sets
+      // taller and the plate measures 504 — a hem 20pt below the picture's own
+      // edge, which hid a line exactly there). The re-render this causes
+      // is also what lets the plate's develop animation reach its resting
+      // state: without it the atmosphere is drawn at opacity 0, and the render
+      // shows a plate no member ever sees.
+      // (A tab's own room has no plate: nothing to lay out.)
+      const bio = r.queryAllByText(/Nitrate, mostly/)[0];
+      let plate = bio ? bio.parent : null;
+      while (plate && !(plate.props.style === s.headerWrap && typeof plate.props.onLayout === 'function')) plate = plate.parent;
+      if (bio && !plate) throw new Error('the membership plate was not found');
+      if (plate) await act(async () => { plate!.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 484 } } }); });
+      return toHtml(r.toJSON(), ART);
+    });
+    writeScreen(name, html);
     console.log(`WROTE ${name}: ${html.length} bytes`);
     expect(html.length).toBeGreaterThan(3000);
   });

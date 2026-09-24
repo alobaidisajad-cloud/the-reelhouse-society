@@ -174,10 +174,10 @@ const s = StyleSheet.create({
 
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
   headerLine: { flex: 1, height: 1, backgroundColor: colors.sepia, opacity: 0.25 },
-  headerText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5, color: colors.sepia },
+  headerText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia },
   // 0.7 was 3.75:1; 0.8 gave 4.59:1. Same for `serial` below.
   // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
-  subtitle: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fogQuiet, textAlign: 'center', marginBottom: 12 },
+  subtitle: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fogQuiet, textAlign: 'center', marginBottom: 12 },
 
   list: {},
   row: {
@@ -198,7 +198,7 @@ const s = StyleSheet.create({
   rowText: { flex: 1 },
   name: { fontFamily: fonts.body, fontSize: 12, color: colors.parchment, letterSpacing: 0.5, marginBottom: 2 },
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  serial: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1, color: colors.fogQuiet },
+  serial: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.6, color: colors.fogQuiet },
 
   stamp: {
     borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(184,137,26,0.45)',
@@ -206,6 +206,6 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(184,137,26,0.05)', marginLeft: 8,
   },
   stampDone: { borderStyle: 'solid', borderColor: 'rgba(184,137,26,0.3)', backgroundColor: 'rgba(184,137,26,0.12)' },
-  stampText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia },
+  stampText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia },
   stampTextDone: { color: colors.sepia, opacity: 0.9 },
 });

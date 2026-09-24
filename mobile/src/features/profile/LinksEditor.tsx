@@ -78,7 +78,7 @@ const st = StyleSheet.create({
   // minHeight keeps this row exactly as tall as it was when the × lived inside
   // it, so pulling the × out onto the card moves nothing below it.
   linkItemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, minHeight: 22 },
-  linkItemTitle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog },
+  linkItemTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog },
   // 48 × 48 by its own geometry, which is the only thing either platform's
   // accessibility layer can see — a halo is invisible to both, so this needs
   // none and takes nothing from its neighbours.
@@ -88,12 +88,12 @@ const st = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   fieldWrap: { marginBottom: 16 },
-  fieldLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, marginBottom: 6 },
+  fieldLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, marginBottom: 6 },
   fieldInput: { width: '100%', paddingHorizontal: 14, paddingVertical: 11, backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 3, color: colors.parchment, fontFamily: fonts.body, fontSize: 14 },
-  errorText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimsonInk, marginTop: 4 },
+  errorText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.crimsonInk, marginTop: 4 },
   addLinkBtn: { width: '100%', padding: 14, backgroundColor: 'rgba(184,137,26,0.05)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderStyle: 'dashed', borderRadius: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
   addLinkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
-  linksCount: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fogQuiet, textAlign: 'center', marginTop: 10 },
+  linksCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fogQuiet, textAlign: 'center', marginTop: 10 },
   linkDragHandleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   linkDragHandleIcon: { opacity: 0.4 },
 });

@@ -167,9 +167,9 @@ export const loginStyles = StyleSheet.create({
   },
   fieldHint: {
     fontFamily: fonts.sub,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.sepia,
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
     marginTop: 2,
   },
 
@@ -192,8 +192,8 @@ export const loginStyles = StyleSheet.create({
   },
   showText: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 1.5,
+    fontSize: 10,
+    letterSpacing: 1.2,
     color: colors.sepia,
   },
 
@@ -265,11 +265,11 @@ export const loginStyles = StyleSheet.create({
   },
   footerText: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 0.5,
+    fontSize: 10,
+    letterSpacing: 0.3,
     color: colors.fogQuiet,
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: 17.5,
     // This is the terms-of-service line — the one piece of text on the page a
     // member is legally taken to have read. It measured 3.04:1. 0.8 made 4.59:1.
     // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.

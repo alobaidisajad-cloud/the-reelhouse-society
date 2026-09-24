@@ -67,9 +67,9 @@ export const s = StyleSheet.create({
   // says the same thing. logPage.test.ts recomputes this rather than trusting
   // another comment.
   eyebrowWrap: { position: 'absolute', top: 0, bottom: 0, left: 104, right: 104, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+  eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
   shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  shareBtnText: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 1.5, includeFontPadding: false },
+  shareBtnText: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 1.2, includeFontPadding: false },
   moreBtn: { paddingHorizontal: 2, paddingVertical: 8 },
 
   content: { paddingBottom: 40 },
@@ -146,25 +146,25 @@ export const s = StyleSheet.create({
 
   // ── Editorial Badge ──
   editorialBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, position: 'absolute', left: 16, backgroundColor: 'rgba(13,11,9,0.5)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 2, borderWidth: 1, borderColor: colors.sepiaBorder },
-  editorialBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.2, color: colors.champagne, includeFontPadding: false },
+  editorialBadgeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.3, color: colors.champagne, includeFontPadding: false },
 
   // ── Viewing Chronicle ──
   chronicleWrap: { marginTop: 8, marginBottom: 16, backgroundColor: colors.inkwell, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder, borderRadius: 2, overflow: 'hidden' },
   chronicleHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.sepiaBorder },
   chronicleDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia },
-  chronicleTitle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
+  chronicleTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
   chronicleCard: { padding: 14 },
   chronicleLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   chronicleLabelBadge: { borderRadius: 2 },
   chronicleLabelBadgeCurrent: { backgroundColor: colors.sepiaSubtle, paddingHorizontal: 6, paddingVertical: 2 },
-  chronicleLabelText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+  chronicleLabelText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, includeFontPadding: false },
   chronicleLabelTextCurrent: { color: colors.sepia },
-  chronicleDateText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 0.8, color: colors.fog, includeFontPadding: false },
+  chronicleDateText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.5, color: colors.fog, includeFontPadding: false },
   chronicleRatingWrap: { marginBottom: 6 },
   chronicleReviewText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, lineHeight: 20 },
   chronicleReviewTextCurrent: { color: colors.bone, fontSize: 14, lineHeight: 22, fontStyle: 'normal' },
   chronicleReviewTextPast: { fontStyle: 'italic' },
-  chronicleWatchedWith: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 6, includeFontPadding: false },
+  chronicleWatchedWith: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.5, color: colors.fog, marginTop: 6, includeFontPadding: false },
   chronicleDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: 10, paddingTop: 4 },
   chronicleDotIndicator: { width: 6, height: 2, borderRadius: 1, backgroundColor: colors.sepiaBorder },
   chronicleDotActive: { backgroundColor: colors.sepia, width: 12 },
@@ -182,7 +182,7 @@ export const s = StyleSheet.create({
   actionDeckWrap: { marginTop: 8 },
   actionDeck: { flexDirection: 'row', backgroundColor: colors.inkwell, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder, marginBottom: 16, overflow: 'hidden', padding: 1, gap: StyleSheet.hairlineWidth, zIndex: 1 },
   deckBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 18, gap: 6, backgroundColor: colors.ink, borderRadius: 1 },
-  deckLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
+  deckLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog, includeFontPadding: false },
   deckLabelActive: { color: colors.sepia },
   deckLabelCertified: { color: colors.crimsonInk },
 
@@ -198,7 +198,7 @@ export const s = StyleSheet.create({
   commentAvatarText: { fontFamily: fonts.display, fontSize: 11, color: colors.parchment, includeFontPadding: false, textAlignVertical: 'center' },
   commUsername: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.sepia, includeFontPadding: false, flexShrink: 1 },
   commBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },
-  commDate: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog, marginLeft: 'auto', includeFontPadding: false, flexShrink: 0 },
+  commDate: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog, marginLeft: 'auto', includeFontPadding: false, flexShrink: 0 },
   commDeleteBtn: { marginTop: 8, alignSelf: 'flex-end' },
   // Bone, not crimson. Crimson measures 3.18:1 on ink and cannot reach AA at
   // any opacity — exactly the finding already written up for the ABANDONED
@@ -212,11 +212,11 @@ export const s = StyleSheet.create({
   // is the one red in the palette that clears the bar (5.2:1) while still
   // unmistakably being a red. The dossier's identical row reads from the same
   // decision.
-  commDelete: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.danger, includeFontPadding: false },
+  commDelete: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.danger, includeFontPadding: false },
 
   // Show earlier/more critiques
   showMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'center', marginTop: 16, paddingVertical: 9, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2 },
-  showMoreText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+  showMoreText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, includeFontPadding: false },
 
   // ── Compose critique (top of the section) ──
   composeWrap: { marginTop: 4 },
@@ -240,7 +240,7 @@ export const s = StyleSheet.create({
   // ── Abandoned Badge (crimson, shrink-guarded) ──
   abandonedWrap: { marginTop: 12, alignItems: 'center', width: '100%', paddingHorizontal: 8 },
   abandonedBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.crimsonFaint, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4, borderWidth: 1, borderColor: colors.crimsonBorder, flexShrink: 1, maxWidth: '100%' },
-  abandonedText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.crimsonInk, includeFontPadding: false, flexShrink: 1 },
+  abandonedText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.crimsonInk, includeFontPadding: false, flexShrink: 1 },
 
   // ── Watched Metadata Row ──
   // ── The filing mark ──
@@ -257,13 +257,13 @@ export const s = StyleSheet.create({
     borderColor: colors.sepiaBorder,
   },
   filingLabel: {
-    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 3,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5,
     color: colors.sepia, includeFontPadding: false,
   },
   filingEntry: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   filingDot: { color: colors.ash, fontSize: 10, includeFontPadding: false },
   filingValue: {
-    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3,
     color: colors.bone, includeFontPadding: false,
   },
   // The companion keeps the brass — who you watched it with is the warm fact
@@ -285,8 +285,8 @@ export const s = StyleSheet.create({
   vaultNoteCompact: { marginTop: 14, paddingVertical: 10, paddingLeft: 12, paddingRight: 8 },
   vaultNoteHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   vaultNoteHeaderCompact: { marginBottom: 6 },
-  vaultNoteLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, flex: 1, includeFontPadding: false },
-  vaultNoteLabelCompact: { fontSize: 8.5 },
+  vaultNoteLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, flex: 1, includeFontPadding: false },
+  vaultNoteLabelCompact: { fontSize: 10 },
   vaultNoteLabelName: { color: colors.sepia },
   vaultNoteLabelWho: { color: colors.fog },
   // Bone, not fog: this is the member's own writing and it is read, not skimmed.

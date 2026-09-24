@@ -12,10 +12,16 @@
  * ordinary eyesight cannot read and could not enlarge, because it also wore
  * `decorativeTextProps` — the prop for stamps and watermarks.
  *
- * The chrome paid for the type instead: padding 8, minimum 48, 6pt gaps, names
- * at the house's own 8.5pt label size, and `scaledTextProps` so they grow with
- * the member's setting. Measured against the real rendered rail: 365pt. All six
- * still fit, with 25pt spare instead of 2.
+ * The chrome paid for the type instead: padding 8, minimum 48, 6pt gaps, and
+ * `scaledTextProps` so the names grow with the member's setting. The names went
+ * to the house's 8.5pt label size first (365pt, 25 spare), then to the 10pt type
+ * floor (theTypeFloor.test.ts), with their tracking tightened from 1.2 to 0.9 so
+ * they grew taller rather than wider. Measured against the real rendered rail:
+ * 379pt. All six still fit a 390pt phone, with 11pt spare instead of 2.
+ *
+ * (The first 10pt measurement read 358pt a button: the renderer drew a
+ * horizontal ScrollView's content as a column. It lays it in a row now, as the
+ * phone does, and the widths below are the row's.)
  *
  * ── WHY THIS TEST IS NOT JUST AGREEING WITH ITSELF ──────────────────────────
  * Jest has no layout engine, so the widths are MODELLED from the style
@@ -28,19 +34,20 @@
 const TOOLS = ['BOLD', 'ITALIC', 'HEADING', 'QUOTE', 'BREAK', 'LINK'];
 
 /**
- * Widths measured in a browser against the real rendered rail at 8.5pt names,
- * 8pt padding and a 48pt minimum — button boxes, in points.
+ * Widths measured in a browser against the real rendered rail (a capture of the
+ * writing room's own screen test — mockups/capture.ts) at 10pt names with 0.9
+ * tracking, 8pt padding and a 48pt minimum — button boxes, in points.
  */
 const MEASURED: Record<string, number> = {
-  BOLD: 48, ITALIC: 51, HEADING: 60, QUOTE: 48, BREAK: 48, LINK: 48,
+  BOLD: 48, ITALIC: 54.3, HEADING: 64.3, QUOTE: 51.2, BREAK: 50.6, LINK: 48,
 };
-const MEASURED_TOTAL = 365; // including the five 6pt gaps and the rail's 32pt padding
+const MEASURED_TOTAL = 379; // 346.5 of buttons and gaps, and the rail's 32pt padding
 
 /**
  * The advance width of one character in the sub face, as a fraction of the font
  * size. Solved from the measurement: HEADING is 7 characters and rendered a
- * 60pt box at 8.5pt with 1.2 letter-spacing and 8pt padding a side, so
- *   (60 - 16) / 7 = 6.29 = 8.5k + 1.2  ->  k = 0.599
+ * 64.3pt box at 10pt with 0.9 letter-spacing and 8pt padding a side, so
+ *   (64.3 - 16) / 7 = 6.9 = 10k + 0.9  ->  k = 0.6
  * which is the advance ratio of a typewriter face, and a sane answer.
  */
 const ADVANCE = 0.6;
@@ -52,7 +59,7 @@ describe('the writing room rail fits one screen', () => {
   // The screen's stylesheet is not exported, so the numbers are written here and
   // pinned against the source in the last two cases below — which is what makes
   // a change to any one of them fail this rather than slip past it.
-  const TOOL_WORD = { fontSize: 8.5, letterSpacing: 1.2 };
+  const TOOL_WORD = { fontSize: 10, letterSpacing: 0.9 };
   const TOOL_BTN = { paddingHorizontal: 8, minWidth: 48 };
   const RAIL = { gap: 6, paddingHorizontal: 16 };
   const PHONE = 390;
@@ -77,13 +84,16 @@ describe('the writing room rail fits one screen', () => {
     const content = TOOLS.reduce((sum, w) => sum + boxFor(w), 0)
       + (TOOLS.length - 1) * RAIL.gap
       + RAIL.paddingHorizontal * 2;
-    expect(`${Math.round(content)}pt of ${PHONE}pt`).toBe(`368pt of ${PHONE}pt`);
+    expect(`${Math.round(content)}pt of ${PHONE}pt`).toBe(`381pt of ${PHONE}pt`);
     expect(content).toBeLessThan(PHONE);
   });
 
   it('the measured total agrees, and leaves real room — not two points of it', () => {
     expect(MEASURED_TOTAL).toBeLessThan(PHONE);
-    expect(PHONE - MEASURED_TOTAL).toBeGreaterThanOrEqual(20);
+    // 11pt: the type floor spent 14 of the 25 the chrome bought, on names a
+    // member can read. Ten is the least this rail may keep before the next
+    // change to it has to be measured again.
+    expect(PHONE - MEASURED_TOTAL).toBeGreaterThanOrEqual(10);
   });
 
   it('the old numbers would NOT fit — the budget is the reason they changed', () => {
@@ -112,7 +122,7 @@ describe('the writing room rail fits one screen', () => {
     // at the end of the style object, so when `toolWord` was mutated to 6.5 the
     // pattern simply ran on and found a different `fontSize: 8.5` further down
     // the file and passed. That mutant survived until this line was narrowed.
-    expect(src).toMatch(/toolWord:\s*\{[^}]*?fontSize:\s*8\.5\b/);
+    expect(src).toMatch(/toolWord:\s*\{[^}]*?fontSize:\s*10\b[^}]*?letterSpacing:\s*0\.9\b/);
     expect(src).toMatch(/toolBtn:\s*\{[^}]*?paddingHorizontal:\s*8\b/);
     expect(src).toMatch(/toolBtn:\s*\{[^}]*?minWidth:\s*48\b/);
     expect(src).toMatch(/toolsScroll:\s*\{[^}]*?gap:\s*6\b/);

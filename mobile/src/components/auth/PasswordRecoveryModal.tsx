@@ -193,8 +193,8 @@ const s = StyleSheet.create({
   },
   modalSubText: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 1,
+    fontSize: 10,
+    letterSpacing: 0.8,
     color: colors.fog,
     textAlign: 'center',
     marginBottom: 20,

@@ -130,7 +130,7 @@ const s = StyleSheet.create({
         paddingHorizontal: 20, paddingTop: 12,
     },
     line: {
-        fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.4, color: colors.fog,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog,
         textAlign: 'center', marginBottom: 11, includeFontPadding: false,
     },
     // The act this page exists for measured 46pt — two short of the floor, on
@@ -146,7 +146,7 @@ const s = StyleSheet.create({
     pressSealed: { backgroundColor: colors.flicker },
     mark: { width: 16, height: 16 },
     pressText: {
-        fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.ink,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.ink,
         includeFontPadding: false,
     },
 });

@@ -23,7 +23,7 @@
  * marks, the same spine when the head scrolls away.
  */
 import { memo, type ReactNode } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from 'lucide-react-native';
@@ -32,7 +32,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { KIND_RULE, KIND_NAME, UNSPOKEN, DOC_PAD } from './paperMetrics';
+import { KIND_RULE, KIND_NAME, UNSPOKEN, DOC_PAD, AVATAR } from './paperMetrics';
 import { softBreak } from './paperText';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { EDGE_LIT } from '@/src/theme/light';
@@ -56,29 +56,24 @@ export const ESSAY_BODY = {
 } as const;
 
 /**
- * How far the leading opens as the type does.
+ * ── THE LEADING OPENS BY ITSELF — DO NOT OPEN IT AGAIN ──────────────────────
+ * React Native scales `lineHeight` with the member's text size, by the same
+ * capped factor as `fontSize`, on both platforms:
  *
- * React Native's `lineHeight` is an absolute number: `fontSize` answers the
- * member's type-size setting and the leading does not. Measured on the reader,
- * the essay went from a ratio of 1.70 — generous, right for a long read — to
- * 1.26 at the largest setting, which crowds. The screen built for reading got
- * harder to read at exactly the setting chosen by people who need bigger type.
+ *   iOS      RCTAttributedTextUtils.mm   lineHeight * RCTEffectiveFontSizeMultiplier…
+ *   Android  TextAttributes.kt           PixelUtil.toPixelFromSP(lineHeight, effectiveMax…)
  *
- * Scaled by the SAME ceiling the type carries, read from `scaledTextProps`
- * rather than written again, so the ratio the design chose is the ratio at
- * every setting. `useWindowDimensions` and not `PixelRatio.getFontScale()`:
- * the second reads once and goes stale when a member changes the setting while
- * the app is open.
+ * So 16.5/28 is a ratio of 1.70 at every setting with nothing done here.
+ *
+ * This file used to believe otherwise, and multiplied the leading by the text
+ * scale itself (`useEssayLeading` / `withLeading`). The phone then scaled it
+ * again: at the largest setting the essay was set at 1.35 × 1.35 ≈ 1.82 times
+ * its leading, a ratio of 2.30, and the one screen built for long reading came
+ * apart into loose lines for exactly the members who had asked for bigger
+ * type. Nothing that renders a picture could see it, because a picture is laid
+ * out at the default size and grown once. `theEssayAtLargeType.test.tsx` now
+ * forbids a line height being scaled in JavaScript anywhere in the app.
  */
-export function useEssayLeading(): number {
-  const { fontScale } = useWindowDimensions();
-  return Math.min(fontScale, scaledTextProps.maxFontSizeMultiplier);
-}
-
-/** The same style with its leading opened to match the type. */
-export function withLeading<T extends { lineHeight?: number }>(style: T, scale: number): T {
-  return style.lineHeight ? { ...style, lineHeight: style.lineHeight * scale } : style;
-}
 
 export const EssayHead = memo(function EssayHead({
   title, series, author, readTime, filed, film, onSeries, onAuthor, onFilm,
@@ -112,13 +107,18 @@ export const EssayHead = memo(function EssayHead({
       {series ? (
         <PressableScale style={e.seriesRow} haptic="selection" onPress={onSeries}
           accessibilityRole="button" accessibilityLabel={`${series}. Open the series.`}>
-          <Text style={e.series} numberOfLines={1} {...scaledTextProps}>{series.toUpperCase()}</Text>
+          <Text style={e.series} numberOfLines={2} {...scaledTextProps}>{series.toUpperCase()}</Text>
           <ChevronRight size={12} strokeWidth={2} color={colors.sepia} />
         </PressableScale>
       ) : null}
 
+      {/* The read time and the date on their own line, under the name. In a
+          feed row they trail the name and give way first; an essay's head has
+          the room to keep them whole, and at the largest text size a trailing
+          "· 12 MIN · AUGUST 24" was cut to "· 12 MIN · AUG…". */}
       <View style={e.bylineRow}>
-        <Byline author={author} onPress={onAuthor} trailing={`${readTime} · ${filed}`} />
+        <Byline author={author} onPress={onAuthor} />
+        <Text style={e.headMeta} {...scaledTextProps}>{`${readTime} · ${filed}`}</Text>
       </View>
       {film ? <View style={{ marginTop: 4 }}><Credit film={film} onPress={onFilm} /></View> : null}
       <View style={[p.hair, { marginTop: 16, marginBottom: 16 }]} />
@@ -152,12 +152,11 @@ export const EssayHead = memo(function EssayHead({
  */
 export const EssayOpening = memo(function EssayOpening({ text }: { text: string }) {
   const cap = text.slice(0, 1);
-  const lead = useEssayLeading();
   return (
-    <Text style={withLeading(e.body, lead)} {...scaledTextProps}>
-      {/* Does NOT scale. The line it sits in is a fixed 28, so a cap that grew
-          with the type would be clipped by it at the largest setting — the body
-          may grow into the leading, the initial may not. */}
+    <Text style={e.body} {...scaledTextProps}>
+      {/* Does NOT scale. It is a mark set at the size the design drew it, and
+          at the default size it already stands taller than its line; grown
+          with the type it would stand taller still, into the line above. */}
       <Text style={e.cap} {...decorativeTextProps}>{cap}</Text>
       {softBreak(text.slice(1))}
     </Text>
@@ -165,9 +164,8 @@ export const EssayOpening = memo(function EssayOpening({ text }: { text: string 
 });
 
 export const EssayPara = memo(function EssayPara({ children }: { children: ReactNode }) {
-  const lead = useEssayLeading();
   return (
-    <Text style={[withLeading(e.body, lead), { marginTop: 16 }]} {...scaledTextProps}>
+    <Text style={[e.body, { marginTop: 16 }]} {...scaledTextProps}>
       {children}
     </Text>
   );
@@ -294,7 +292,9 @@ export const SeriesList = memo(function SeriesList({
             </View>
             <View style={[p.column, x.current && { borderLeftColor: KIND_RULE.dossier }]}>
               <Text style={[e.partTitle, x.toCome && { color: TO_COME_INK.title }]} numberOfLines={2} {...displayTextProps}>{x.title}</Text>
-              <Text style={[e.partMeta, x.toCome && { color: TO_COME_INK.meta }]} numberOfLines={1} {...scaledTextProps}>
+              {/* Up to two lines: three facts at the largest text size need them,
+                  and none of the three can be read anywhere else on this page. */}
+              <Text style={[e.partMeta, x.toCome && { color: TO_COME_INK.meta }]} numberOfLines={2} {...scaledTextProps}>
                 {x.toCome
                   ? 'TO COME'
                   : [x.readTime, x.certified ? `${x.certified} CERTIFIED` : null,
@@ -332,10 +332,17 @@ const e = StyleSheet.create({
   },
   seriesRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingVertical: 4 },
   series: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia,
     includeFontPadding: false, flexShrink: 1,
   },
   bylineRow: { marginTop: 12 },
+  /** Set exactly as the byline's trailing facts are, under the name: indented
+   *  past the avatar and the row's gap so the two lines share one edge. The
+   *  byline's own 8pt foot is taken back so the pair reads as one credit. */
+  headMeta: {
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog,
+    includeFontPadding: false, paddingLeft: AVATAR + 6, marginTop: -4,
+  },
 
   /** The essay's measure — see ESSAY_BODY, which is the one definition of it. */
   body: ESSAY_BODY,
@@ -364,12 +371,12 @@ const e = StyleSheet.create({
     paddingTop: 16, marginTop: 34, paddingBottom: 8,
   },
   nextLabel: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia,
     includeFontPadding: false, marginBottom: 8,
   },
   nextTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, color: colors.parchment },
   nextMeta: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog,
     marginTop: 6, includeFontPadding: false,
   },
 
@@ -384,7 +391,7 @@ const e = StyleSheet.create({
   /** Where the shrink has to live for the name's own flexShrink to mean anything. */
   seriesByline: { flexShrink: 1, minWidth: 0 },
   seriesCount: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia,
     includeFontPadding: false,
     /** Explicit, not inherited: this is the half of the row that must not move. */
     flexShrink: 0,
@@ -392,7 +399,7 @@ const e = StyleSheet.create({
   part: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 12 },
   partTitle: { fontFamily: fonts.display, fontSize: 16.5, lineHeight: 22, color: colors.parchment },
   partMeta: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog,
     marginTop: 8, includeFontPadding: false,
   },
 });

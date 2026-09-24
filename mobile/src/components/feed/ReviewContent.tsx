@@ -161,12 +161,12 @@ const s = StyleSheet.create({
     //
     // Previous note, kept because it explains the fill and border:
     // Crimson, not bloodReel — the deep stamp red was near-invisible on soot.
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.bone,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.bone,
   },
   ratingWrap: { marginTop: 2, marginBottom: 4, alignItems: 'flex-start' },
   watchedWith: {
     includeFontPadding: false, textAlignVertical: 'center',
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1,
     color: colors.sepia, marginTop: 8,
   },
   watchedWithName: { color: colors.bone },

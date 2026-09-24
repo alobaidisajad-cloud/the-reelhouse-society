@@ -10,8 +10,10 @@
  *
  * Usage: Wrap the root <Stack /> in _layout.tsx
  */
-import { Text, TextInput, type TextProps, type TextInputProps } from 'react-native';
+import { Platform, Text, TextInput, type TextProps, type TextInputProps } from 'react-native';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { currentFontScale } from '@/src/hooks/useTextScale';
+import { androidTracking } from './androidTracking';
 
 // ── Apply global Text defaults ──
 // React Native's Text component accepts defaultProps to set baseline
@@ -31,7 +33,14 @@ try {
   if (origTextRender) {
     // RN 0.81+ uses forwardRef, so we patch render
     (Text as any).render = function (props: TextProps, ref: React.Ref<Text>) {
-      return origTextRender.call(this, { ...scaledTextProps, ...props }, ref);
+      const merged = { ...scaledTextProps, ...props };
+      // Android spaces letters by the text size with no ceiling; iOS does not
+      // grow the spacing at all. Drawn iOS's way on both (androidTracking.ts).
+      if (Platform.OS === 'android') {
+        const fix = androidTracking(merged.style, merged.allowFontScaling, currentFontScale());
+        if (fix) merged.style = [merged.style, fix];
+      }
+      return origTextRender.call(this, merged, ref);
     };
   } else {
     // Fallback: defaultProps approach for older RN internals

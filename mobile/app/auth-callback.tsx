@@ -251,7 +251,7 @@ const s = StyleSheet.create({
   stateWrap: { alignItems: 'center', maxWidth: 340 },
 
   eyebrow: {
-    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3.2,
     color: colors.sepia, marginBottom: 12,
   },
   title: {

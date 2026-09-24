@@ -46,8 +46,8 @@ export const s = StyleSheet.create({
   },
   headerMetaLine: {
     fontFamily: fonts.sub,
-    fontSize: 7,
-    letterSpacing: 4,
+    fontSize: 10,
+    letterSpacing: 2,
     color: colors.sepia,
     // 0.65 measured 3.22:1 at 7pt. 0.85 gave 4.78:1 — this line names who the
     // room is for, so it should be readable rather than merely present.
@@ -96,8 +96,8 @@ export const s = StyleSheet.create({
   },
   btnPrimaryText: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 1.5,
+    fontSize: 10,
+    letterSpacing: 1,
     color: colors.ink,
     includeFontPadding: false,
   },
@@ -117,8 +117,8 @@ export const s = StyleSheet.create({
   },
   loadingText: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 4,
+    fontSize: 10,
+    letterSpacing: 2.6,
     color: colors.fog,
     includeFontPadding: false,
   },
@@ -141,8 +141,8 @@ export const s = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: fonts.sub,
-    fontSize: 7.5,
-    letterSpacing: 3,
+    fontSize: 10,
+    letterSpacing: 1.7,
     color: colors.sepia,
     // 0.8 gave 4.35:1 — just shy. 0.85 made 4.78:1 and cleared AA.
     // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
@@ -150,7 +150,7 @@ export const s = StyleSheet.create({
   },
   sectionSubtext: {
     fontFamily: fonts.bodyItalic,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.fogQuiet,
     // 0.5 measured 2.44:1 — below the floor WCAG allows even for LARGE
     // text. This line explains what the directory IS. 0.8 made 4.59:1.
@@ -206,11 +206,11 @@ export const s = StyleSheet.create({
   },
   emptyPublicHint: {
     fontFamily: fonts.sub,
-    fontSize: 8,
+    fontSize: 10,
     color: colors.fogQuiet,
     // 0.5 was 2.44:1 — the invitation shown when the directory is empty.
     // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
-    letterSpacing: 1.5,
+    letterSpacing: 1,
     includeFontPadding: false,
   },
 });

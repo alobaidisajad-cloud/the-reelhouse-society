@@ -300,8 +300,8 @@ const s = StyleSheet.create({
   sheetHeaderWrap: { marginBottom: 28 },
   sheetEyebrow: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 3,
+    fontSize: 10,
+    letterSpacing: 1.9,
     color: colors.sepia,
     marginBottom: 8,
     includeFontPadding: false,
@@ -315,8 +315,8 @@ const s = StyleSheet.create({
   field: { marginBottom: 22 },
   fieldLabel: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 2.5,
+    fontSize: 10,
+    letterSpacing: 1.6,
     color: colors.sepia,
     marginBottom: 8,
     includeFontPadding: false,
@@ -338,7 +338,7 @@ const s = StyleSheet.create({
   },
   fieldCharCount: {
     fontFamily: fonts.sub,
-    fontSize: 7,
+    fontSize: 10,
     color: colors.fogQuiet,
     // 0.35 measured 1.75:1 — effectively invisible, while being the thing
     // that tells you how much room is left. 0.8 made 4.59:1.
@@ -362,8 +362,8 @@ const s = StyleSheet.create({
   },
   toggleLabel: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 1.5,
+    fontSize: 10,
+    letterSpacing: 1.2,
     color: colors.parchment,
     includeFontPadding: false,
   },
@@ -387,8 +387,8 @@ const s = StyleSheet.create({
   },
   sheetBtnGhostText: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2.5,
+    fontSize: 10,
+    letterSpacing: 2,
     color: colors.parchment,
     includeFontPadding: false,
   },
@@ -403,8 +403,8 @@ const s = StyleSheet.create({
   },
   sheetBtnPrimaryText: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2.5,
+    fontSize: 10,
+    letterSpacing: 2,
     color: colors.ink,
     includeFontPadding: false,
   },

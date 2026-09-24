@@ -7,6 +7,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    useWindowDimensions,
     View
 } from 'react-native';
 import AnimatedRN, { Easing, Extrapolation, FadeIn, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
@@ -79,6 +80,9 @@ import { StatCard } from '@/src/components/profile/ProfileHelpers';
 import { ProfilePosterCard } from '@/src/components/profile/ProfilePosterCard';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { decorativeTextProps, displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
+import { useTextScale } from '@/src/hooks/useTextScale';
+import { heroNameSize } from '@/src/components/profile/heroNameSize';
+import { softBreak } from '@/src/utils/softBreak';
  
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
@@ -380,8 +384,16 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
    * scale survives contact with a long one. Two lines at the smallest step hold
    * roughly 46 characters — past that it ellipsizes rather than shrinking into
    * illegibility.
+   *
+   * The step is lowered, never raised, when the name's longest WORD would not
+   * fit the column at the size the phone draws — a word cannot wrap, and a
+   * character count cannot see how wide it is (heroNameSize.ts).
    */
-  const nameSize = heroName.length <= 16 ? 26 : heroName.length <= 28 ? 20 : 16;
+  const { width: windowWidth } = useWindowDimensions();
+  // The letters' width grows with the font (capped at the name's own 1.2), so
+  // useTextScale; the spacing does not grow at all.
+  const nameScale = useTextScale(displayTextProps.maxFontSizeMultiplier);
+  const nameSize = heroNameSize(heroName, windowWidth, nameScale);
   const nameStyle = { fontSize: nameSize, lineHeight: Math.round(nameSize * 1.16), letterSpacing: nameSize >= 26 ? 1.4 : 1 };
 
   const bioText = targetUser?.bio?.trim() || (isSelf ? 'No bio yet. Tell the society who you are.' : 'No bio on file.');
@@ -1196,7 +1208,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   on the page that would not grow — leaving the quote marks
                   small around a bio that had grown around them. */}
               <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>« </Text>
-              {bioText}
+              {/* A bio is the member's own words, and may hold a pasted link:
+                  offered a place to wrap at its joints, as the Dispatch does. */}
+              {softBreak(bioText)}
               {/* The guillemets sit INSIDE the bio and inherit its size, so they
                   must inherit its ceiling too. A blanket "anything called a
                   mark is decorative" rule had made them the one piece of text

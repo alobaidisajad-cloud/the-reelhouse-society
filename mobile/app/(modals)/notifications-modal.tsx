@@ -351,12 +351,12 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
   },
   closeBtn: { width: 80 },
-  closeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, includeFontPadding: false },
+  closeText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
   titleBlock: { flex: 1, alignItems: 'center' },
   title: { fontFamily: fonts.display, fontSize: 18, color: colors.bone },
-  eyebrow: { fontFamily: fonts.sub, fontSize: 6, letterSpacing: 2.5, color: colors.sepia, marginTop: 3, includeFontPadding: false },
+  eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia, marginTop: 3, includeFontPadding: false },
   markReadBtn: { width: 80, alignItems: 'flex-end' },
-  markReadText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
+  markReadText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
 
   // ── At the Door banner ──
   doorBanner: {
@@ -397,7 +397,7 @@ const s = StyleSheet.create({
   itemContent: { flex: 1 },
   itemMessage: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },
   itemUser: { fontFamily: fonts.sub, color: colors.parchment },
-  itemTime: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, marginTop: 4, includeFontPadding: false },
+  itemTime: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, marginTop: 4, includeFontPadding: false },
   miniPoster: {
     width: 24, height: 36, borderRadius: 2,
     backgroundColor: colors.soot,
@@ -418,7 +418,7 @@ const s = StyleSheet.create({
   },
 
   loadingWrap: { alignItems: 'center', paddingVertical: 20, gap: 8 },
-  loadingText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
+  loadingText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog, includeFontPadding: false },
 
   // Footer loading indicator for pagination
   footerLoadingWrap: { alignItems: 'center', paddingVertical: 16 },

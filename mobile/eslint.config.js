@@ -38,7 +38,7 @@ module.exports = defineConfig([
     rules: { 'no-restricted-imports': 'off' },
   },
   {
-    files: ['scripts/**/*.js', 'test-utils/**/*.js'],
+    files: ['scripts/**/*.js', 'test-utils/**/*.js', 'mockups/tools/**/*.cjs'],
     languageOptions: {
       globals: {
         __dirname: 'readonly',
@@ -61,7 +61,9 @@ module.exports = defineConfig([
   {
     // Test files and the Jest setup use inline mock components that don't need
     // display names, and CommonJS-style requires.
-    files: ['**/__tests__/**', 'jest.setup.ts'],
+    // mockups/*.ts is test support too: the generators' and the capture's
+    // shared paths, loaded inside jest.
+    files: ['**/__tests__/**', 'jest.setup.ts', 'jest.afterEnv.ts', 'mockups/*.ts'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
       'react/display-name': 'off',

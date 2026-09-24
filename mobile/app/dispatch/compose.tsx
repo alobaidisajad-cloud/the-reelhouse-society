@@ -1219,23 +1219,23 @@ const styles = StyleSheet.create({
     },
     cancelBtn: {
         fontFamily: fonts.sub,
-        fontSize: 9,
+        fontSize: 10,
         color: colors.fog,
-        letterSpacing: 1.5,
+        letterSpacing: 1.2,
         includeFontPadding: false,
     },
     headerTitle: {
         fontFamily: fonts.sub,
-        fontSize: 9,
-        letterSpacing: 3,
+        fontSize: 10,
+        letterSpacing: 2.4,
         color: colors.sepia,
         includeFontPadding: false,
     },
     previewBtn: {
         fontFamily: fonts.sub,
-        fontSize: 9,
+        fontSize: 10,
         color: colors.parchment,
-        letterSpacing: 1.5,
+        letterSpacing: 1.2,
         includeFontPadding: false,
     },
     workspace: {
@@ -1285,9 +1285,10 @@ const styles = StyleSheet.create({
         // enlarge — see `toolWord`.
         //
         // Measured against the real rail: padding 8, minimum 48 and 6pt gaps
-        // cost 365pt at 8.5pt names. All six still fit, with 25pt to spare
-        // instead of 2, and the names are a third larger. The rhythm survives —
-        // five buttons land on the 48 minimum, HEADING sets its own 60.
+        // cost 379pt at 10pt names (the house's type floor). All six still fit
+        // a 390pt phone, with 11pt to spare instead of 2, and the names are half
+        // as large again as they were. At a larger text setting the rail scrolls,
+        // which is why it is a scroller.
         paddingHorizontal: 8,
         backgroundColor: 'rgba(184,137,26,0.1)',
         borderRadius: 4,
@@ -1295,11 +1296,11 @@ const styles = StyleSheet.create({
     },
     toolWord: {
         fontFamily: fonts.sub,
-        // 8.5pt is the house's label size — the same one the slot values, the
-        // stamps and every rail label on the page are set in. The rail was the
-        // one place that went below it.
-        fontSize: 8.5,
-        letterSpacing: 1.2,
+        // 10pt is the house's type floor — no word a member reads is set
+        // smaller (theTypeFloor.test.ts). The rail was once the one place that
+        // went below the label size; it now sits on the floor with the rest.
+        fontSize: 10,
+        letterSpacing: 0.9,
         color: colors.bone,
         includeFontPadding: false,
     },
@@ -1318,8 +1319,8 @@ const styles = StyleSheet.create({
     },
     statText: {
         fontFamily: fonts.sub,
-        fontSize: 8,
-        letterSpacing: 2,
+        fontSize: 10,
+        letterSpacing: 1.3,
         color: colors.fog,
         marginBottom: 4,
         includeFontPadding: false,
@@ -1343,8 +1344,8 @@ const styles = StyleSheet.create({
     },
     publishBtnText: {
         fontFamily: fonts.sub,
-        fontSize: 9,
-        letterSpacing: 2,
+        fontSize: 10,
+        letterSpacing: 1.6,
         color: colors.ink,
         includeFontPadding: false,
     },
@@ -1352,8 +1353,8 @@ const styles = StyleSheet.create({
     // Preview
     previewEyebrow: {
         fontFamily: fonts.sub,
-        fontSize: 9,
-        letterSpacing: 3,
+        fontSize: 10,
+        letterSpacing: 2.4,
         color: colors.sepia,
         marginBottom: 16,
         textAlign: 'center',
@@ -1405,13 +1406,13 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)',
     },
     restoredText: {
-        flexShrink: 1, fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+        flexShrink: 1, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
         color: colors.sepia, includeFontPadding: false,
     },
     /** Crimson, because this one is a loss rather than a courtesy. */
     restoredLost: { color: colors.crimsonInk },
     restoredAct: {
-        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
         color: colors.parchment, includeFontPadding: false,
     },
     /**
@@ -1429,21 +1430,21 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16,
     },
     elsewhereHead: {
-        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
         color: colors.parchment, marginBottom: 8, includeFontPadding: false,
     },
     elsewhereLine: {
-        fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.4,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8,
         color: colors.sepia, marginTop: 2, includeFontPadding: false,
     },
     elsewhereActs: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 12 },
     elsewhereTake: {
-        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
         color: colors.parchment, includeFontPadding: false,
     },
     /** Equal weight. A choice where one act is louder is not a choice. */
     elsewhereKeep: {
-        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
         color: colors.parchment, includeFontPadding: false,
     },
     previewContent: {
@@ -1467,12 +1468,12 @@ const styles = StyleSheet.create({
      * future language shrinks rather than spilling into the value beside it.
      */
     slotLabel: {
-        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.8, color: colors.sepia,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia,
         width: 54, includeFontPadding: false,
     },
     /** Unset reads as an invitation; set reads as a fact. */
     slotValue: {
-        fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog,
         includeFontPadding: false, flex: 1, minWidth: 0,
     },
     slotValueSet: { color: colors.parchment },

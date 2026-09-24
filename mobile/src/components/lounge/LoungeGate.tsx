@@ -111,8 +111,8 @@ const s = StyleSheet.create({
   // `gateEst` removed with the "EST. 1924" line it drew.
   gateSub: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 3,
+    fontSize: 10,
+    letterSpacing: 1.9,
     color: colors.sepia,
     marginBottom: 20,
   },
@@ -136,14 +136,14 @@ const s = StyleSheet.create({
   },
   gateCtaText: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2.5,
+    fontSize: 10,
+    letterSpacing: 2,
     color: colors.ink,
   },
   gateKeyLine: {
     fontFamily: fonts.sub,
-    fontSize: 7,
-    letterSpacing: 2.5,
+    fontSize: 10,
+    letterSpacing: 1.2,
     color: colors.sepia,
     // 0.6 was 2.90:1 in sepia. 0.85 made 4.78:1.
     // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
@@ -153,8 +153,8 @@ const s = StyleSheet.create({
   },
   gateFootnote: {
     fontFamily: fonts.sub,
-    fontSize: 7,
-    letterSpacing: 2.5,
+    fontSize: 10,
+    letterSpacing: 1.2,
     color: colors.fogQuiet,
     // 0.4 was 1.96:1. 0.8 made 4.59:1.
     // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.

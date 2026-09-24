@@ -135,8 +135,8 @@ const s = StyleSheet.create({
   },
   publicPrivateText: {
     fontFamily: fonts.sub,
-    fontSize: 6.5,
-    letterSpacing: 1.5,
+    fontSize: 9,
+    letterSpacing: 0.8,
     color: colors.sepia,
     includeFontPadding: false,
   },
@@ -162,8 +162,8 @@ const s = StyleSheet.create({
   },
   publicMetaText: {
     fontFamily: fonts.sub,
-    fontSize: 7.5,
-    letterSpacing: 1.5,
+    fontSize: 10,
+    letterSpacing: 0.8,
     color: colors.fog,
     includeFontPadding: false,
   },
@@ -175,8 +175,8 @@ const s = StyleSheet.create({
   },
   publicEnterText: {
     fontFamily: fonts.sub,
-    fontSize: 7.5,
-    letterSpacing: 1.5,
+    fontSize: 10,
+    letterSpacing: 0.8,
     color: colors.sepia,
     includeFontPadding: false,
     flexShrink: 1,

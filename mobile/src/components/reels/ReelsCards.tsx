@@ -308,8 +308,8 @@ const st = StyleSheet.create({
   },
   stackCardRefText: {
     fontFamily: fonts.sub,
-    fontSize: 7,
-    letterSpacing: 2,
+    fontSize: 9,
+    letterSpacing: 1.2,
     color: colors.parchment,
   },
   stackCardContent: {
@@ -322,10 +322,10 @@ const st = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 
   },
   stackCardBadgeText: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia
+    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.sepia
   },
   stackCertifyText: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.flicker
+    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.flicker
   },
   stackCardMetaDivider: {
     flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)',
@@ -341,7 +341,7 @@ const st = StyleSheet.create({
     opacity: 0.8,
   },
   stackCardCuratorName: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog
   },
   beamAbsolute: {
     ...StyleSheet.absoluteFillObject,

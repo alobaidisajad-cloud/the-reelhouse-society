@@ -560,7 +560,7 @@ const st = StyleSheet.create({
   createStackGlow: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
   },
-  createStackText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.parchment },
+  createStackText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.parchment },
 
 
   emptyWrap: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32 },
@@ -574,7 +574,7 @@ const st = StyleSheet.create({
     borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, borderStyle: 'dashed',
     paddingVertical: 12, paddingHorizontal: 28,
   },
-  emptyBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia },
+  emptyBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.sepia },
 
   // The six `gate*` styles that dressed the "Admit One Required" wall went with
   // it. Leaving them would have left the next reader looking for the screen

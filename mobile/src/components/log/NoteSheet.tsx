@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   },
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.08)', alignSelf: 'center', marginBottom: 22 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  title: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, includeFontPadding: false },
+  title: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, includeFontPadding: false },
   titleName: { color: colors.sepia },
   titleWho: { color: colors.fog },
   viewing: { fontFamily: fonts.sub, fontSize: 12, letterSpacing: 1.6, color: colors.parchment, marginBottom: 16 },

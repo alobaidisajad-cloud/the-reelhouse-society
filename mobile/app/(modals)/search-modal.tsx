@@ -337,19 +337,19 @@ const st = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.02)',
   },
   tabActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
-  tabText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.2, color: colors.fog },
+  tabText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog },
   tabTextActive: { color: colors.ink },
   tabCountBg: {
     backgroundColor: 'rgba(184,137,26,0.12)',
     paddingHorizontal: 4, paddingVertical: 1, borderRadius: 6, minWidth: 16, alignItems: 'center',
   },
   tabCountBgActive: { backgroundColor: 'rgba(0,0,0,0.18)' },
-  tabCountNum: { fontFamily: fonts.sub, fontSize: 7, color: colors.fog },
+  tabCountNum: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog },
   tabCountNumActive: { color: colors.ink },
 
   // Count bar
   countBar: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 },
-  countText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.fogQuiet },
+  countText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fogQuiet },
 
   resultsWrap: { flex: 1 },
 

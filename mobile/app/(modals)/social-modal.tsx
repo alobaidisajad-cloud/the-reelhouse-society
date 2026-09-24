@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     },
     userInfo: { marginLeft: 14, flex: 1 },
     username: { fontFamily: fonts.sub, fontSize: 15, color: colors.parchment, marginBottom: 2 },
-    role: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+    role: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog },
 
     // ── Lounge Row ──
     loungeIconWrap: {
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(184,137,26,0.08)',
     },
     shareChipText: {
-        fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
         color: colors.bone,
     },
 

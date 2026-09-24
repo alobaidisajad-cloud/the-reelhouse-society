@@ -171,8 +171,8 @@ const s = StyleSheet.create({
   },
   filterSectionTitle: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2,
+    fontSize: 10,
+    letterSpacing: 1.6,
     color: colors.sepia,
     marginBottom: spacing.sm,
   },

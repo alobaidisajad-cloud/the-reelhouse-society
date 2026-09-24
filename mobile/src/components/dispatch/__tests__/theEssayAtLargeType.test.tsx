@@ -106,25 +106,60 @@ describe('every shape in a dossier has a ceiling on how far it may grow', () => 
   });
 });
 
-describe('the leading opens as the type does', () => {
-  it('holds the essay at the ratio it was set at, whatever the member chooses', () => {
-    // 16.5/28 is a ratio of 1.70, which is what a long read wants. Fixed, it
-    // falls to 1.26 at the ceiling — this asserts the ratio, not the number.
-    const { fontSize, lineHeight } = require('@/src/components/dispatch/paper/PaperEssay').ESSAY_BODY;
-    const designed = lineHeight / fontSize;
-    expect(designed).toBeGreaterThan(1.6);
+/**
+ * ── THE LEADING IS THE PHONE'S TO GROW, ONCE ────────────────────────────────
+ * This section used to assert the opposite: that `lineHeight` is fixed and the
+ * essay must grow it. React Native grows it itself, by the same capped factor
+ * as the type (iOS RCTAttributedTextUtils.mm, Android TextAttributes.kt), so
+ * the essay's own growing was a second one — at the largest setting a ratio of
+ * 2.30 where the design set 1.70. What is asserted now is what the phone is
+ * handed: the designed number, at every setting, for the phone to grow once.
+ */
+describe('the leading is grown once, by the phone', () => {
+  const { ESSAY_BODY } = require('@/src/components/dispatch/paper/PaperEssay');
 
-    const ceiling = scaledTextProps.maxFontSizeMultiplier;
-    const atCeiling = (lineHeight * ceiling) / (fontSize * ceiling);
-    expect(atCeiling).toBeCloseTo(designed, 5);
+  /** Every line height the essay hands the phone, flattened. */
+  const leadingsIn = (tree: unknown): number[] => {
+    const out: number[] = [];
+    const flat = (s: any): any => (Array.isArray(s) ? Object.assign({}, ...s.map(flat)) : s ?? {});
+    const walk = (n: any) => {
+      if (!n || typeof n === 'string') return;
+      const lh = flat(n.props?.style).lineHeight;
+      if (n.type === 'Text' && typeof lh === 'number') out.push(lh);
+      (n.children ?? []).forEach(walk);
+    };
+    walk(tree);
+    return out;
+  };
+
+  it('is set for a long read: 16.5/28, a ratio above 1.6', () => {
+    expect(ESSAY_BODY.lineHeight / ESSAY_BODY.fontSize).toBeGreaterThan(1.6);
   });
 
-  it('scales the leading by the same ceiling the type carries, not a second number', () => {
-    // Two numbers drift. The leading reads its ceiling from scaledTextProps so
-    // there is one place to change and no way for them to disagree.
-    const src = require('fs').readFileSync(
-      require('path').join(__dirname, '..', 'paper', 'PaperEssay.tsx'), 'utf8',
-    );
-    expect(src).toMatch(/Math\.min\(fontScale,\s*scaledTextProps\.maxFontSizeMultiplier\)/);
-  });
+  it.each([1, 1.2, scaledTextProps.maxFontSizeMultiplier, 2])(
+    'hands the phone the designed leading at text size %s, never one already grown',
+    (fontScale) => {
+      const dims = jest.spyOn(require('react-native'), 'useWindowDimensions')
+        .mockReturnValue({ width: 390, height: 844, scale: 3, fontScale });
+      try {
+        // The markdown path the app reads, and the design's own pieces the
+        // plates are drawn with — a plate set at twice its leading would
+        // mislead the next measurement as surely as the app would mislead a member.
+        const { EssayOpening, EssayPara } = require('@/src/components/dispatch/paper/PaperEssay');
+        const { toJSON } = render(
+          <>
+            <EssayBody text={'The opening line of the essay.\n\nA second paragraph.\n\n# A heading'} />
+            <EssayOpening text="An opening set by hand." />
+            <EssayPara>A paragraph set by hand.</EssayPara>
+          </>,
+        );
+        const leadings = leadingsIn(toJSON());
+        expect(leadings).toContain(ESSAY_BODY.lineHeight);
+        // Nothing larger than any leading the design wrote down.
+        expect(Math.max(...leadings)).toBeLessThanOrEqual(ESSAY_BODY.lineHeight);
+      } finally {
+        dims.mockRestore();
+      }
+    },
+  );
 });

@@ -194,8 +194,8 @@ const s = StyleSheet.create({
     },
     yearLabel: {
         fontFamily: fonts.sub,
-        fontSize: 8,
-        letterSpacing: 3,
+        fontSize: 10,
+        letterSpacing: 1.9,
         color: colors.fog,
         marginTop: 2,
         includeFontPadding: false,
@@ -211,8 +211,8 @@ const s = StyleSheet.create({
     },
     weekLabel: {
         fontFamily: fonts.sub,
-        fontSize: 8,
-        letterSpacing: 1,
+        fontSize: 10,
+        letterSpacing: 0.6,
         color: colors.fogQuiet,
         includeFontPadding: false,
     },
@@ -275,8 +275,8 @@ const s = StyleSheet.create({
     },
     selectedText: {
         fontFamily: fonts.sub,
-        fontSize: 9,
-        letterSpacing: 2,
+        fontSize: 10,
+        letterSpacing: 1.6,
         color: colors.sepia,
         includeFontPadding: false,
     },

@@ -113,6 +113,6 @@ const sub = StyleSheet.create({
   videoPlayOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 48, justifyContent: 'center', alignItems: 'center' },
   videoPlayCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(30,25,20,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)', justifyContent: 'center', alignItems: 'center' },
   videoLabelWrap: { marginTop: 8 },
-  videoType: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
+  videoType: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
   videoName: { fontFamily: fonts.body, fontSize: 11, color: colors.bone },
 });

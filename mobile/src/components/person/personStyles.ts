@@ -19,6 +19,10 @@ import { EDGE_LIT } from '@/src/theme/light';
 const PORTRAIT_W = 130;
 const POSTER_GRID_GAP = 10;
 const RAIL = 20;
+/** A filmography title's line, and the two-line box it is set in at the
+ *  default size. The box is multiplied by the text size where it is drawn. */
+const GRID_TITLE_LINE = 13;
+export const GRID_TITLE_BOX = GRID_TITLE_LINE * 2;
 
 // ════════════════════════════════════════════════════════════
 //  MAIN STYLES — NITRATE NOIR
@@ -40,7 +44,7 @@ export const s = StyleSheet.create({
 
   // ── Not Found / Error ──
   notFoundContainer: { justifyContent: 'center', alignItems: 'center', padding: 32 },
-  notFoundLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
+  notFoundLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3.2, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
   notFoundTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8, ...effects.textGlowSepia },
   notFoundBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 22 },
 
@@ -116,7 +120,7 @@ export const s = StyleSheet.create({
     borderWidth: 1, borderColor: colors.sepiaBorder,
     marginBottom: 10,
   },
-  deptLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3.5, color: colors.sepia, includeFontPadding: false },
+  deptLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false },
   personName: {
     fontFamily: fonts.display, fontSize: 28, color: colors.parchment,
     // 34 gave 1.21 — already at the edge of the 1.2 tier this text declares, and
@@ -138,7 +142,7 @@ export const s = StyleSheet.create({
   },
   recordRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 8 },
   recordLabel: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.9, color: colors.sepia,
     // 62 is not arbitrary. The longest label the card can emit is RECORD, which
     // measures 54.1pt at the 1.2 tier this text declares — letterSpacing is a
     // fixed point value in RN and does NOT shrink back when the font grows, so
@@ -147,8 +151,8 @@ export const s = StyleSheet.create({
     width: 62, paddingTop: 1, includeFontPadding: false,
   },
   recordValue: {
-    flex: 1, fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2,
-    color: colors.bone, lineHeight: 15, includeFontPadding: false,
+    flex: 1, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1,
+    color: colors.bone, lineHeight: 16.5, includeFontPadding: false,
   },
   // The pressable KNOWN FOR row fills its value column, so the tap target is the
   // whole line rather than the glyphs.
@@ -166,7 +170,7 @@ export const s = StyleSheet.create({
     backgroundColor: colors.soot,
     marginBottom: 14,
   },
-  loungeBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+  loungeBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
 
   // ── Beat 4: the progress — THE AUTEUR HUNT (full rail width) ──
   auteurHunt: {
@@ -177,8 +181,8 @@ export const s = StyleSheet.create({
     marginBottom: 8,
   },
   auteurHuntHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 } as import('react-native').ViewStyle,
-  auteurHuntTitle: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
-  auteurHuntCount: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.parchment, includeFontPadding: false },
+  auteurHuntTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, includeFontPadding: false },
+  auteurHuntCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.parchment, includeFontPadding: false },
   auteurHuntTrack: { height: 8, backgroundColor: colors.soot, borderRadius: 2, overflow: 'hidden', position: 'relative' },
   auteurHuntFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.sepia, borderRadius: 2 } as import('react-native').ViewStyle,
   // Frame notches — the strip reads as film, not as a loading bar.
@@ -186,7 +190,7 @@ export const s = StyleSheet.create({
   auteurHuntNotch: { width: 1, height: '100%', backgroundColor: 'rgba(13,11,9,0.55)' } as import('react-native').ViewStyle,
   auteurHuntMastery: { shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 10, elevation: 10 } as import('react-native').ViewStyle,
   auteurComplete: {
-    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
     color: colors.flicker, marginTop: 7, textAlign: 'center', includeFontPadding: false,
   },
 
@@ -201,7 +205,7 @@ export const s = StyleSheet.create({
     position: 'relative', overflow: 'hidden',
   },
   bioTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1 } as import('react-native').ViewStyle,
-  bioLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
+  bioLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.9, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
   bioTextWrap: { position: 'relative' },
   bioText: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, lineHeight: 24 },
   bioFadeMask: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
@@ -210,7 +214,7 @@ export const s = StyleSheet.create({
     borderWidth: 1, borderColor: colors.sepiaBorder,
     backgroundColor: colors.soot, borderRadius: 2,
   },
-  toggleTicketText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, includeFontPadding: false },
+  toggleTicketText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.9, color: colors.sepia, includeFontPadding: false },
 
   // ── Sections (one rail, one header grammar) ──
   section: { marginTop: 8, marginBottom: 16, paddingHorizontal: RAIL },
@@ -227,7 +231,7 @@ export const s = StyleSheet.create({
     borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 4, backgroundColor: 'rgba(30,25,20,0.4)',
   },
-  emptyLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
+  emptyLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.9, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.bone, marginBottom: 4 },
   emptyBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
 
@@ -248,7 +252,7 @@ export const st = StyleSheet.create({
   // INDIE" invited the question "51 of what?", and the word already carries the
   // whole meaning. The score still decides the word and the colour.
   obsBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 7, paddingVertical: 4, borderWidth: 1, borderRadius: 2 },
-  obsLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, includeFontPadding: false },
+  obsLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, includeFontPadding: false },
 
   // ── Film-strip Perforations ──
   perfRow: {
@@ -278,13 +282,13 @@ export const st = StyleSheet.create({
   gridTitle: {
     fontFamily: fonts.sub, fontSize: 10, color: colors.bone,
     marginTop: 5, width: '100%', includeFontPadding: false,
-    lineHeight: 13,
+    lineHeight: GRID_TITLE_LINE,
     // Two lines at a readable size beats one line shrunk to 7pt — "Untitled
-    // Daniels Event Film" was unreadable. The fixed height is what keeps a
-    // three-column grid's rows level when some titles wrap and others do not.
-    height: 26,
+    // Daniels Event Film" was unreadable. A two-line box is what keeps a
+    // three-column grid's rows level when some titles wrap and others do not;
+    // its height is set where the card is drawn (GRID_TITLE_BOX × text size).
   },
-  gridYear: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, letterSpacing: 1, marginTop: 2, includeFontPadding: false },
+  gridYear: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 0.6, marginTop: 2, includeFontPadding: false },
 
   // ── Grid Column Spacing (pre-computed for FlashList hot path) ──
   gridColLeft: { flex: 1, paddingLeft: 20, paddingRight: 0, marginBottom: POSTER_GRID_GAP } as import('react-native').ViewStyle,
@@ -306,7 +310,7 @@ export const st = StyleSheet.create({
   } as import('react-native').ViewStyle,
   defTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, lineHeight: 16 },
   defMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  defYear: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+  defYear: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, includeFontPadding: false },
   defBadgeWrap: { marginTop: 6 },
   defSeparator: { width: 12 },
 });

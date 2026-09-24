@@ -795,8 +795,10 @@ export const PaperPost = memo(function PaperPost({
             </Text>
           ) : null}
 
+          {/* Two lines, not one: this is a sentence the member must read whole,
+              and at the 10pt floor it no longer fits a column in one. */}
           {pending ? (
-            <Text style={p.wireSource} numberOfLines={1} {...scaledTextProps}>
+            <Text style={p.wireSource} numberOfLines={2} {...scaledTextProps}>
               NOT SENT YET · THE HOUSE HAS NOT SEEN THIS
             </Text>
           ) : null}

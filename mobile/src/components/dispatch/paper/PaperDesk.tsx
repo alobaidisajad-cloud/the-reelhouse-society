@@ -542,7 +542,7 @@ const d = StyleSheet.create({
     backgroundColor: colors.sepia, opacity: 0.32, marginBottom: 16,
   },
   sheetHead: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia,
     marginBottom: 4, includeFontPadding: false,
   },
   sheetFoot: {
@@ -555,7 +555,7 @@ const d = StyleSheet.create({
     marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', paddingTop: 12,
   },
   fieldLabel: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, marginBottom: 6, includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia, marginBottom: 6, includeFontPadding: false,
   },
   fieldValue: { fontFamily: fonts.body, fontSize: 12.5, color: colors.parchment },
 
@@ -578,8 +578,8 @@ const d = StyleSheet.create({
     width: 26, height: 39, borderRadius: 1, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.18)', backgroundColor: colors.soot,
   },
-  slotTitle: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.parchment, includeFontPadding: false },
-  slotMeta: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.fog, marginTop: 4, includeFontPadding: false },
+  slotTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.parchment, includeFontPadding: false },
+  slotMeta: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, marginTop: 4, includeFontPadding: false },
   /** An empty slot is a DASHED frame the height of a filled one, so adding a
    *  film never changes the height of the form under your thumb. */
   slotEmpty: {
@@ -588,14 +588,14 @@ const d = StyleSheet.create({
     borderRadius: 2, paddingHorizontal: 8,
   },
   slotAdd: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false,
   },
   closesRow: {
     marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', paddingTop: 12,
   },
   closesChoices: { flexDirection: 'row', gap: 16 },
   choice: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog, includeFontPadding: false,
   },
   choiceOn: { color: KIND_RULE.ballot, opacity: 1 },
 
@@ -604,11 +604,11 @@ const d = StyleSheet.create({
     fontFamily: fonts.display, fontSize: 26, lineHeight: 34, color: colors.parchment,
   },
   dossierSeries: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia,
     marginTop: 8, includeFontPadding: false,
   },
   dossierAdd: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia, marginTop: 8, includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia, marginTop: 8, includeFontPadding: false,
   },
   dossierBody: {
     fontFamily: fonts.serif, fontSize: 16.5, lineHeight: 27, color: colors.parchment,
@@ -626,8 +626,8 @@ const d = StyleSheet.create({
     width: 30, height: 45, borderRadius: 1, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.18)', backgroundColor: colors.soot,
   },
-  resultTitle: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.parchment, includeFontPadding: false },
-  resultMeta: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.fog, marginTop: 4, includeFontPadding: false },
+  resultTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.parchment, includeFontPadding: false },
+  resultMeta: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, marginTop: 4, includeFontPadding: false },
 
   // ── reporting ───────────────────────────────────────────────────────────────
   reason: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
@@ -643,7 +643,7 @@ const d = StyleSheet.create({
   preview: { marginBottom: 16 },
   dest: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   destLabel: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.parchment,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.parchment,
     includeFontPadding: false,
   },
   destSub: {

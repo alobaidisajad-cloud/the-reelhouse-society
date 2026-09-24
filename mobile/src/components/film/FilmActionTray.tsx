@@ -273,7 +273,7 @@ const s = StyleSheet.create({
   headPosterEmpty: { backgroundColor: colors.soot },
   headText: { flex: 1, minWidth: 0 },
   headTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment, includeFontPadding: false },
-  headMeta: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.4, color: colors.fog, marginTop: 3, includeFontPadding: false },
+  headMeta: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.fog, marginTop: 3, includeFontPadding: false },
 
   acts: { flexShrink: 1 },
   actsContent: { paddingBottom: 2 },
@@ -295,7 +295,7 @@ const s = StyleSheet.create({
   rowGloss: { fontFamily: fonts.bodyItalic, fontSize: 11.5, color: colors.fogQuiet, includeFontPadding: false },
   rowGlossPrimary: { color: ON_BRASS_MUTED, opacity: 1 },
   chip: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia,
     borderWidth: 1, borderColor: colors.sepiaBorderStrong, borderRadius: 2,
     backgroundColor: colors.sepiaSubtle,
     paddingHorizontal: 6, paddingVertical: 3, overflow: 'hidden', includeFontPadding: false,

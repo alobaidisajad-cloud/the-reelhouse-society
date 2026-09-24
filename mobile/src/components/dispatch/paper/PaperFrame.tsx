@@ -221,7 +221,10 @@ export const RunningHead = memo(function RunningHead({
       {/* The issue number and the day, in one line — this replaces BOTH the old
           folio and the first day divider. The date is the EDITION's, not the
           posts', so it is equally true under either ordering. */}
-      <Text style={p.runHeadText} numberOfLines={1} {...decorativeTextProps}>
+      {/* Two lines at most, never a cut: a date cut short is a WRONG date
+          (AUGUST 28 → AUGUST 2). On a phone too narrow for one line, the day
+          goes to a second line whole. */}
+      <Text style={p.runHeadText} numberOfLines={2} {...decorativeTextProps}>
         {title ?? `No. ${issueOf(date)} · ${dayLabel}`}
       </Text>
       <View style={p.runHeadTools}>

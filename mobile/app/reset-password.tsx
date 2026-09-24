@@ -378,7 +378,7 @@ const s = StyleSheet.create({
 
   // Back
   backBtn: { position: 'absolute', left: 0, zIndex: 10, padding: 8 },
-  backText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+  backText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog },
 
   // Header
   header: { alignItems: 'center', marginBottom: 28 },
@@ -391,7 +391,7 @@ const s = StyleSheet.create({
     ...effects.glowSepia,
   },
 
-  eyebrow: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 5, color: colors.sepia, marginBottom: 10 },
+  eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 4, color: colors.sepia, marginBottom: 10 },
   title: {
     fontFamily: fonts.display, fontSize: 28, color: colors.parchment,
     textAlign: 'center', lineHeight: 34,
@@ -412,7 +412,7 @@ const s = StyleSheet.create({
 
   // Fields
   fieldGroup: { gap: 6 },
-  inputLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.fog, textTransform: 'uppercase' },
+  inputLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.fog, textTransform: 'uppercase' },
   inputWrap: { position: 'relative' },
   input: {
     backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash,
@@ -420,20 +420,20 @@ const s = StyleSheet.create({
     fontSize: 14, fontFamily: fonts.body, color: colors.parchment,
   },
   showBtn: { position: 'absolute', right: 14, top: 0, bottom: 0, justifyContent: 'center' },
-  showText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia },
+  showText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia },
 
   // Strength
   strengthWrap: { gap: 10 },
   strengthBarRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   strengthSegment: { flex: 1, height: 3, borderRadius: 2 },
-  strengthLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, marginLeft: 8, minWidth: 80 },
+  strengthLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, marginLeft: 8, minWidth: 80 },
   checksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '48%' as import('react-native').DimensionValue },
   checkIcon: { fontFamily: fonts.sub, fontSize: 11 },
-  checkLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.5 },
+  checkLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.4 },
 
   // Mismatch
-  mismatchText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimsonInk, marginTop: 2 },
+  mismatchText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.crimsonInk, marginTop: 2 },
 
   // Submit
   submitBtn: {
@@ -454,12 +454,12 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginBottom: 20,
   },
   successIcon: { fontSize: 28, color: colors.sepia, fontFamily: fonts.sub },
-  successEyebrow: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4, color: colors.sepia, marginBottom: 10 },
+  successEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3.2, color: colors.sepia, marginBottom: 10 },
   successTitle: {
     fontFamily: fonts.display, fontSize: 26, color: colors.parchment,
     textAlign: 'center', lineHeight: 32, marginBottom: 16,
     ...effects.textShadowDeep,
   },
   successBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 22, marginBottom: 20 },
-  successRedirect: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog },
+  successRedirect: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog },
 });

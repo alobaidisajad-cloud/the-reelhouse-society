@@ -3,14 +3,15 @@
  * Native tree into HTML with the same computed styles, so the mockup is derived
  * from the components rather than drawn from memory.
  *
- * Run: npx jest zz-mockup.gen --silent
+ * Run: MOCKUPS=1 npx jest zz-mockup.gen  (see mockups/README.md)
  * Writes: scratchpad/mockups/<room>.html fragment + a manifest.
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from './zz-render.lib';
+import { OUT, whenRendering, writeScreen } from '@/mockups/paths';
 import { POSTERS, POSTER_PATHS, POSTER_TITLES, LOCAL_ART, FACE_PATHS } from './zz-art.gen';
 
 const ART = { posters: POSTERS, local: LOCAL_ART };
@@ -52,45 +53,7 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 // above the imports and its plugin reads the raw identifiers, so a `Record<…>`
 // in here reads as an out-of-scope variable reference and the suite refuses to
 // run.
-jest.mock('@shopify/flash-list', () => {
-  const mockRN = require('react-native');
-  const mockReact = require('react');
-  const Mocked = mockReact.forwardRef(function MockFlashList(props: any, ref: any) {
-    const data = props.data || [];
-    const numColumns = props.numColumns || 1;
-    const asEl = (C: any) => (!C ? null : mockReact.isValidElement(C) ? C : mockReact.createElement(C));
-    const items = data.map((item: any, index: number) =>
-      mockReact.createElement(
-        mockRN.View,
-        { key: props.keyExtractor ? props.keyExtractor(item, index) : String(index) },
-        props.renderItem ? props.renderItem({ item, index }) : null,
-      ),
-    );
-    let body = items;
-    if (numColumns > 1) {
-      body = [];
-      for (let i = 0; i < items.length; i += numColumns) {
-        body.push(
-          mockReact.createElement(
-            mockRN.View,
-            { key: 'r' + i, style: { flexDirection: 'row' } },
-            items.slice(i, i + numColumns),
-          ),
-        );
-      }
-    }
-    return mockReact.createElement(
-      mockRN.View,
-      { ref, style: props.contentContainerStyle },
-      asEl(props.ListHeaderComponent),
-      data.length === 0 ? asEl(props.ListEmptyComponent) : body,
-      asEl(props.ListFooterComponent),
-    );
-  });
-  return { FlashList: Mocked, FlashListProps: {} };
-});
-
-const OUT = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/mockups';
+jest.mock('@shopify/flash-list', () => require('@/mockups/tabs/flashListMock').makeFlashListMock());
 
 // ── fixtures ────────────────────────────────────────────────────────────────
 const TITLES = POSTER_TITLES;
@@ -196,15 +159,12 @@ const ROOMS: [string, string, () => React.ReactElement][] = [
   }],
 ];
 
-const RUN = !!process.env.MOCKUPS;
-const gate = RUN ? describe : describe.skip;
-gate('mockup generator', () => {
+whenRendering('mockup generator', () => {
   it('writes an HTML fragment per room', () => {
-    mkdirSync(OUT, { recursive: true });
     const manifest: { id: string; label: string; bytes: number }[] = [];
     for (const [id, label, build] of ROOMS) {
       const html = toHtml(render(build()).toJSON(), ART);
-      writeFileSync(join(OUT, `${id}.html`), html, 'utf8');
+      writeScreen(id, html);
       manifest.push({ id, label, bytes: html.length });
     }
     writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');

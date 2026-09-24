@@ -3,22 +3,19 @@
  * React Native tree to HTML, so its light — and the join where its hero meets
  * the room — can be measured rather than argued.
  *
- * Run: MOCKUPS=1 npx jest zz-person.gen
+ * Run: MOCKUPS=1 npx jest zz-person.gen  (see mockups/README.md)
  */
 import React, { act } from 'react';
 import { render } from '@testing-library/react-native';
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { toHtml } from '@/src/components/profile/__tests__/zz-render.lib';
+import { LAYOUTS, atLayout, whenRendering, writeScreen } from '@/mockups/paths';
 import { POSTERS, POSTER_PATHS, POSTER_TITLES, LOCAL_ART } from '@/src/components/profile/__tests__/zz-art.gen';
 
 import PersonDetailScreen from '../[id]';
 
-const OUT = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/mockups';
-
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
+  default: () => ({ width: 390, height: 844, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
 }));
 
 let mockQuery: Record<string, unknown>;
@@ -57,21 +54,12 @@ jest.mock('@/src/lib/tmdb', () => {
     },
   };
 });
-jest.mock('@/src/components/layout/CinematicFlashList', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  const render = (c: React.ReactNode) => (typeof c === 'function' ? React.createElement(c as never) : c);
-  return { CinematicFlashList: ({ ListHeaderComponent, ListFooterComponent, data, renderItem, contentContainerStyle }: {
-    ListHeaderComponent?: React.ReactNode; ListFooterComponent?: React.ReactNode; data?: unknown[];
-    renderItem?: (a: { item: unknown; index: number }) => React.ReactNode; contentContainerStyle?: unknown;
-  }) => React.createElement(View, { style: { flex: 1 } },
-    React.createElement(View, { style: contentContainerStyle },
-      render(ListHeaderComponent),
-      React.createElement(View, { style: { flexDirection: 'row', flexWrap: 'wrap' } },
-        ...(data ?? []).map((item, index) =>
-          React.createElement(React.Fragment, { key: index }, renderItem ? renderItem({ item, index }) : null))),
-      render(ListFooterComponent))) };
-});
+// The shared, faithful list stand-in. A hand-made one here laid the three-
+// column filmography out as six 65pt columns (it never read `numColumns`), and
+// a measurement then reported film titles too wide for cards half their size.
+jest.mock('@/src/components/layout/CinematicFlashList', () => ({
+  CinematicFlashList: require('@/mockups/tabs/flashListMock').makeFlashListMock().FlashList,
+}));
 
 const PERSON = {
   name: 'Wong Kar-wai', profile_path: null, birthday: '1958-07-17', deathday: null,
@@ -93,16 +81,18 @@ const STATES: [string, Record<string, unknown>][] = [
   ['person-loading', { data: undefined, isLoading: true, error: null }],
 ];
 
-const RUN = !!process.env.MOCKUPS;
-const gate = RUN ? describe : describe.skip;
-gate('person page generator', () => {
-  it.each(STATES)('writes %s', async (name, q) => {
-    mkdirSync(OUT, { recursive: true });
+// Each state in every layout: the filmography's title box grows with the text.
+const RUNS = STATES.flatMap(([name, q]) => LAYOUTS.map((l) => [`${name}${l.suffix}`, q, l] as const));
+
+whenRendering('person page generator', () => {
+  it.each(RUNS)('writes %s', async (name, q, layout) => {
     mockQuery = { ...q, refetch: jest.fn() };
-    let r!: ReturnType<typeof render>;
-    await act(async () => { r = render(<PersonDetailScreen />); });
-    const html = toHtml(r.toJSON(), { posters: POSTERS, local: LOCAL_ART });
-    writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
+    const html = await atLayout(layout, async () => {
+      let r!: ReturnType<typeof render>;
+      await act(async () => { r = render(<PersonDetailScreen />); });
+      return toHtml(r.toJSON(), { posters: POSTERS, local: LOCAL_ART });
+    });
+    writeScreen(name, html);
     console.log(`WROTE ${name}: ${html.length} bytes`);
     expect(html.length).toBeGreaterThan(1500);
   });

@@ -91,6 +91,32 @@ describe('softBreak — where a line may break', () => {
     // on a line of its own.
     expect(segmentsOf('#thelongsilenceinozu')[0].startsWith('#the')).toBe(true);
   });
+
+  /**
+   * ── AN ELLIPSIS CLOSES WHAT CAME BEFORE IT ─────────────────────────────────
+   * A real TMDB tagline, which has no space in it for 45 characters. One dot
+   * opens the next part of an address; three end a word. Broken before the
+   * dots, it read `Sensational` / `...Daring`, and a line that begins with an
+   * ellipsis reads as a line that lost its start.
+   */
+  it('breaks after an ellipsis, never inside or before one', () => {
+    const tagline = 'Sensational...Daring...Unforgettable...Sunset';
+    const segs = segmentsOf(tagline);
+    expect(segs.join('')).toBe(tagline);
+    for (const s of segs.slice(0, -1)) expect(s.endsWith('...')).toBe(true);
+    for (const s of segs.slice(1)) expect(s.startsWith('.')).toBe(false);
+    for (const s of segs) expect(s.length).toBeLessThanOrEqual(MAX_RUN);
+  });
+
+  it('treats the single-character ellipsis the same way', () => {
+    const segs = segmentsOf('Sensational…Daring…Unforgettable…Sunset');
+    for (const s of segs.slice(0, -1)) expect(s.endsWith('…')).toBe(true);
+  });
+
+  it('still breaks an address BEFORE its single dots', () => {
+    // The ellipsis rule must not turn `www.bfi` / `.org` into `www.` / `bfi.org`.
+    expect(segmentsOf('https://www.bfi.org.uk/news/x')[1].startsWith('.org')).toBe(true);
+  });
 });
 
 describe('clipToSentence — where an excerpt stops', () => {

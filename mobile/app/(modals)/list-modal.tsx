@@ -744,11 +744,11 @@ const s = StyleSheet.create({
     // 48 by geometry. A halo is invisible to both platforms' accessibility
     // layers, so only the box itself answers "is this big enough".
     closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, minHeight: 48, marginRight: -8 },
-    closeBtnText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
+    closeBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog, includeFontPadding: false },
 
     sec: { paddingHorizontal: 20, marginTop: 20 },
     secTight: { paddingHorizontal: 20, marginTop: 8 },
-    label: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
+    label: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
     input: {
         backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
         padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment,
@@ -790,7 +790,7 @@ const s = StyleSheet.create({
     },
     dropPoster: { width: 28, height: 42, borderRadius: 2 },
     dropTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.parchment },
-    dropMeta: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, letterSpacing: 1, marginTop: 2, includeFontPadding: false },
+    dropMeta: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 0.6, marginTop: 2, includeFontPadding: false },
 
     // Film list
     containerFlex: { flex: 1 },
@@ -829,7 +829,7 @@ const s = StyleSheet.create({
     // array order whether or not the stack is ranked. "Unranked" means
     // unnumbered, not unordered — and nothing on this page ever said so while
     // the grip sat there in both modes.
-    dragLine: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.fogQuiet, paddingHorizontal: 20, marginTop: 14, marginBottom: 8, includeFontPadding: false },
+    dragLine: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fogQuiet, paddingHorizontal: 20, marginTop: 14, marginBottom: 8, includeFontPadding: false },
     // Brass, not blood. Nothing has gone wrong here — a very large index simply
     // cannot be rewritten from a sheet, which is a house rule, not an error. Red
     // would have the member hunting for the mistake they had made.
@@ -837,7 +837,7 @@ const s = StyleSheet.create({
         padding: 12, borderRadius: 4,
         backgroundColor: 'rgba(184,137,26,0.07)', borderWidth: 1, borderColor: colors.sepiaBorder,
     },
-    lockNoteText: { fontFamily: fonts.sub, fontSize: 9, lineHeight: 15, letterSpacing: 0.6, color: colors.bone, includeFontPadding: false },
+    lockNoteText: { fontFamily: fonts.sub, fontSize: 10, lineHeight: 16.5, letterSpacing: 0.5, color: colors.bone, includeFontPadding: false },
 
     // Privacy toggle
     toggleRow: { flexDirection: 'row', gap: 8 },
@@ -846,7 +846,7 @@ const s = StyleSheet.create({
         minHeight: 48, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
     },
     toggleActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
-    toggleText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.5, color: colors.fog, includeFontPadding: false },
+    toggleText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.fog, includeFontPadding: false },
     toggleTextActive: { color: colors.ink },
 
     // Submit
@@ -866,12 +866,12 @@ const s = StyleSheet.create({
         borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,
         paddingHorizontal: 20, paddingTop: 12,
     },
-    barLine: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.4, color: colors.fog, textAlign: 'center', marginBottom: 11, includeFontPadding: false },
+    barLine: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog, textAlign: 'center', marginBottom: 11, includeFontPadding: false },
     barPress: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9,
         backgroundColor: colors.sepia, borderRadius: 4, minHeight: 48,
     },
-    barPressText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.ink, includeFontPadding: false },
+    barPressText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.ink, includeFontPadding: false },
     barDim: { opacity: 0.42 },
     // A way out should not carry the weight of the act it sits beside.
 
@@ -881,7 +881,7 @@ const s = StyleSheet.create({
     descInput: { minHeight: 72 },
     // Appears only near the ceiling — a counter present from the first
     // character is a warning about a limit nobody was approaching.
-    counter: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1, color: colors.fog, textAlign: 'right', marginTop: 6, includeFontPadding: false },
+    counter: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, textAlign: 'right', marginTop: 6, includeFontPadding: false },
 });
 
 

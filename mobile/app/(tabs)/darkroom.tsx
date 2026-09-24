@@ -408,8 +408,8 @@ const s = StyleSheet.create({
   },
   paginationRetrieving: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 3,
+    fontSize: 10,
+    letterSpacing: 2.4,
     color: colors.sepia,
     // 0.6 was 2.90:1 — under the large-text floor. This is the only thing that
     // tells you more prints are on the way. 0.85 made 4.78:1.
@@ -453,8 +453,8 @@ const s = StyleSheet.create({
   },
   emptyBtnText: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2.5,
+    fontSize: 10,
+    letterSpacing: 2,
     color: colors.sepia,
   },
   skeletonGrid: {

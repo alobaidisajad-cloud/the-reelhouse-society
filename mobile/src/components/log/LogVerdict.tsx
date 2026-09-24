@@ -103,7 +103,7 @@ const s = StyleSheet.create({
     // where a capability comes from; a verdict is not a capability.
     wordAbandoned: { color: colors.crimsonInk, textShadowColor: 'rgba(180,45,45,0.25)' },
     waiting: { fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.fogQuiet, includeFontPadding: false },
-    value: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.bone, marginTop: 9, includeFontPadding: false },
-    hint: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2, color: colors.fogQuiet, marginTop: 9, includeFontPadding: false },
+    value: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.bone, marginTop: 9, includeFontPadding: false },
+    hint: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.fogQuiet, marginTop: 9, includeFontPadding: false },
     subSpacer: { height: 20 },
 });

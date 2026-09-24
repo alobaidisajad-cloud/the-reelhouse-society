@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 import { LOCAL_ART, POSTERS as REPO_POSTERS } from '../../../src/components/profile/__tests__/zz-art.gen';
+import { FIXTURES } from '../../paths';
 
 import { PaperPost as RawPaperPost, type PaperAuthor } from '@/src/components/dispatch/paper/PaperPost';
 import { PaperBallot as RawPaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
@@ -138,8 +139,8 @@ const COL = columnWidth(W);
  * every measurement this harness feeds (boxes, overflow, contrast of type) is
  * about layout, not pictures.
  */
-const ART = process.env.PAPER_ART
-  ?? 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/art';
+// The art now lives in the project (mockups/fixtures); PAPER_ART still overrides.
+const ART = process.env.PAPER_ART ?? FIXTURES;
 
 /**
  * `empty` says what the fallback actually IS, because the message was wrong the

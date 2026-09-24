@@ -668,7 +668,28 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
      * dropping it drew every such page with its last lines trapped under the
      * bar — a fault the device does not have. It wraps the content, as RN does.
      */
-    const inner = p.contentContainerStyle ? css(flat(p.contentContainerStyle), false) : '';
+    /**
+     * ── AND A HORIZONTAL ONE LAYS ITS CONTENT IN A ROW ──────────────────────
+     * React Native gives a horizontal scroll view's content container
+     * `flexDirection: 'row'` (ScrollView's `contentContainerHorizontal`), sized
+     * to its content, under whatever `contentContainerStyle` says. Without it
+     * every rail drawn straight from a ScrollView was drawn as a COLUMN — the
+     * writing room's six tools each 358pt wide, stacked — and a measurement of
+     * the rail measured something the phone never draws.
+     */
+    const ccs = p.contentContainerStyle ? flat(p.contentContainerStyle) : null;
+    const box = { ...(p.horizontal ? { flexDirection: 'row' } : {}), ...(ccs ?? {}) };
+    const inner = Object.keys(box).length ? css(box, false) + (p.horizontal ? ';width:max-content' : '') : '';
+    // Jest's ScrollView renders `<RCTScrollView>{refreshControl}<View>{children}</View>`:
+    // that bare View IS the content container, so it takes the container's
+    // style — wrapped again, the children would sit in a column inside the row.
+    const raw = n.children || [];
+    const last = raw[raw.length - 1] as { type?: string; props?: { style?: unknown }; children?: unknown[] } | undefined;
+    if (inner && last && typeof last === 'object' && last.type === 'View' && !last.props?.style) {
+      const before = raw.slice(0, -1).map((c) => toHtml(c, opts, inSvg)).join('');
+      const content = (last.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
+      return `<div class="${cls}" style="${css(st, false)}">${before}<div style="${inner}">${content}</div></div>`;
+    }
     return `<div class="${cls}" style="${css(st, false)}">${inner ? `<div style="${inner}">${kids}</div>` : kids}</div>`;
   }
 

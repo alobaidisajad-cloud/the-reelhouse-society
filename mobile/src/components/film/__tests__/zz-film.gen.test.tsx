@@ -3,20 +3,15 @@
  * payload and converts the resolved tree to HTML, so the mockup is the page
  * rather than a drawing of it.
  *
- * Run: npx jest zz-film.gen
+ * Run: MOCKUPS=1 npx jest zz-film.gen  (see mockups/README.md)
  */
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { toHtml } from '../../profile/__tests__/zz-render.lib';
 import { LOCAL_ART } from '../../profile/__tests__/zz-art.gen';
+import { LAYOUTS, atLayout, readFixture, whenRendering, writeScreen } from '@/mockups/paths';
 import { FilmDetailLayout } from '../FilmDetailLayout';
 import { FilmDetailProvider } from '@/src/providers/FilmDetailProvider';
-
-const SP = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad';
-const ART = join(SP, 'art');
-const OUT = join(SP, 'mockups');
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
@@ -59,76 +54,27 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 // The phone is 390pt; the test renderer says 750 and would lay out for a tablet.
+// The text size is set per layout: the cast rail sizes itself from it, so the
+// large-type picture has to be laid out at large type, not just drawn larger.
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
+  default: () => ({ width: 390, height: 844, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
 }));
 // FlashList measures off-screen; lay the children out plainly so the geometry
 // in the mockup is the geometry the phone draws.
-jest.mock('@shopify/flash-list', () => {
-  const mockRN = require('react-native');
-  const mockReact = require('react');
-  const Mocked = mockReact.forwardRef(function MockFlashList(props: any, ref: any) {
-    const data = props.data || [];
-    const asEl = (C: any) => (!C ? null : mockReact.isValidElement(C) ? C : mockReact.createElement(C));
-    const items = data.map((item: any, index: number) =>
-      mockReact.createElement(
-        mockRN.View,
-        { key: props.keyExtractor ? props.keyExtractor(item, index) : String(index) },
-        props.renderItem ? props.renderItem({ item, index }) : null,
-      ),
-    );
-    const sep = props.ItemSeparatorComponent;
-    const withSeps: any[] = [];
-    items.forEach((el: any, i: number) => {
-      withSeps.push(el);
-      if (sep && i < items.length - 1) withSeps.push(mockReact.createElement(sep, { key: 's' + i }));
-    });
-    return mockReact.createElement(
-      mockRN.View,
-      { ref, style: [props.horizontal ? { flexDirection: 'row' } : null, props.contentContainerStyle] },
-      asEl(props.ListHeaderComponent),
-      withSeps,
-      asEl(props.ListFooterComponent),
-    );
-  });
-  return { FlashList: Mocked, FlashListProps: {} };
-});
+jest.mock('@shopify/flash-list', () => require('@/mockups/tabs/flashListMock').makeFlashListMock());
 
 /**
- * ── THE FIXTURE LIVES IN A DIRECTORY THE OS DELETES ─────────────────────────
- * `odyssey.json` is a TMDB film fetched once into a scratch directory. It is not
- * decoration — it is the film this generator draws — so without it there is
- * nothing to render.
- *
- * It was read with a bare `readFileSync` at module load, so when Windows cleaned
- * that temp folder the suite failed with an ENOENT stack that reads exactly like
- * a broken import. It is not a code fault and it must not look like one.
- *
- * So the fixture is OPTIONAL and its absence is announced. The generator skips
- * with a reason a human can act on, rather than going red for a file that has
- * nothing to do with the code under it — and rather than being silently `.skip`,
- * which is the other way to make a suite stop telling the truth.
- *
- * The permanent fix is for this fixture to live in the repo. It cannot be
- * regenerated here: the TMDB key is server-side only by design.
+ * ── THE FIXTURE LIVES IN THE PROJECT ─────────────────────────────────────────
+ * `odyssey.json` is a TMDB film, fetched once; it is the film this generator
+ * draws. It used to sit in a temporary folder the operating system clears, and
+ * the generator had to skip itself when it vanished. It is in `mockups/fixtures`
+ * now, committed — it cannot be re-fetched here, because the TMDB key is
+ * server-side only by design.
  */
-let detail: any = null;
-let posters: Record<string, { title: string; data: string }> = {};
-let fixtureMissing = '';
-try {
-  detail = JSON.parse(readFileSync(join(ART, 'odyssey.json'), 'utf8'));
-  const rawArt = JSON.parse(readFileSync(join(ART, 'odyssey-art.json'), 'utf8')) as Record<string, string>;
-  for (const [p, data] of Object.entries(rawArt)) posters[p] = { title: '', data };
-} catch (e) {
-  fixtureMissing = `${ART} — ${(e as Error).message}`;
-   
-  console.warn(
-    '[film generator] fixture missing, skipping. It lives in a temp directory the ' +
-    'OS clears; re-fetch it or move it into the repo to make this permanent.\n  ' + fixtureMissing,
-  );
-  detail = { id: 0, title: '', credits: { crew: [], cast: [] }, images: {}, videos: { results: [] } };
-}
+const detail = readFixture<any>('odyssey.json');
+const posters: Record<string, { title: string; data: string }> = {};
+for (const [p, data] of Object.entries(readFixture<Record<string, string>>('odyssey-art.json'))) posters[p] = { title: '', data };
 
 /** Derived exactly as app/film/[id].tsx derives it. */
 const crew = detail.credits?.crew ?? [];
@@ -219,25 +165,29 @@ const STATES: [string, Record<string, unknown>, boolean][] = [
   ['film-built-signedout', { isAuthenticated: false, isArchivist: false, existingLog: null }, true],
 ];
 
-// `describe` either way, so the run REPORTS the skip and its reason rather than
-// the suite quietly not existing.
-const generator = fixtureMissing ? describe.skip : describe;
+/**
+ * Each state in every layout (see `LAYOUTS`). The measuring tools open the
+ * large ones when they measure at large sizes, so a box that sizes itself from
+ * the text size is seen at its real size.
+ */
+const RUNS = STATES.flatMap(([name, over, tray]) => LAYOUTS.map((l) => [`${name}${l.suffix}`, over, tray, l] as const));
 
-generator('film page generator', () => {
-  it.each(STATES)('writes %s from the built page', async (name, over, openTray) => {
-    mkdirSync(OUT, { recursive: true });
-    const r = render(
-      <FilmDetailProvider value={{ ...(value as object), ...over } as never}>
-        <FilmDetailLayout />
-      </FilmDetailProvider>,
-    );
-    if (openTray) {
-      // The real control, pressed. State never flushes synchronously here, so
-      // this MUST be awaited or the tray is photographed shut.
-      await fireEvent.press(r.getByTestId('film-stub'));
-    }
-    const html = toHtml(r.toJSON(), { posters, local: LOCAL_ART });
-    writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
+whenRendering('film page generator', () => {
+  it.each(RUNS)('writes %s from the built page', async (name, over, openTray, layout) => {
+    const html = await atLayout(layout, async () => {
+      const r = render(
+        <FilmDetailProvider value={{ ...(value as object), ...over } as never}>
+          <FilmDetailLayout />
+        </FilmDetailProvider>,
+      );
+      if (openTray) {
+        // The real control, pressed. State never flushes synchronously here, so
+        // this MUST be awaited or the tray is photographed shut.
+        await fireEvent.press(r.getByTestId('film-stub'));
+      }
+      return toHtml(r.toJSON(), { posters, local: LOCAL_ART });
+    });
+    writeScreen(name, html);
     console.log(`${name}:`, html.length, 'bytes |',
       (html.match(/<img /g) || []).length, 'images |',
       (html.match(/class="poster"/g) || []).length, 'empty frames');
@@ -248,9 +198,12 @@ generator('film page generator', () => {
      * "something rendered", so each state gets the floor it can actually meet.
      */
     const CHROME_ONLY = ['film-built-loading', 'film-built-notfound', 'film-built-error'];
-    expect(html.length).toBeGreaterThan(CHROME_ONLY.includes(name) ? 1500 : 5000);
+    expect(html.length).toBeGreaterThan(CHROME_ONLY.includes(name.split('@')[0]) ? 1500 : 5000);
   });
+});
 
+// A real test, not a picture: it runs on every test run.
+describe('the film page', () => {
   it('the tray really opens — otherwise every tray shot is a shut one', async () => {
     const r = render(
       <FilmDetailProvider value={value as never}>

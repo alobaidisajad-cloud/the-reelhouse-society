@@ -189,7 +189,7 @@ export const p = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   indexLabel: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9,
     color: colors.bone, opacity: INDEX_INACTIVE, includeFontPadding: false,
   },
   /**
@@ -229,7 +229,7 @@ export const p = StyleSheet.create({
     zIndex: 2, elevation: 2,
   },
   toolLabel: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
     color: colors.fog, includeFontPadding: false,
   },
 
@@ -255,7 +255,7 @@ export const p = StyleSheet.create({
     gap: 8, flexWrap: 'wrap', marginBottom: 12,
   },
   mastMeta: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6,
     color: colors.sepia, includeFontPadding: false,
   },
   pip: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.bloodReel, opacity: 0.85 },
@@ -290,15 +290,21 @@ export const p = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.25)',
   },
   /**
-   * `flex: 1` and one line, so on a narrow screen the DATE gives way and the
-   * issue number — the thing that makes this a folio — never does. Measured at
-   * 320pt the full line overran by 40pt; the tools are pinned and cannot yield,
-   * so the text is the only part that can, and it must yield from the end.
+   * `flex: 1`, so on a narrow screen the text is what yields — the tools are
+   * pinned. Measured at 320pt the full line overran by 40pt. It yields by
+   * WRAPPING (two lines at most, see PaperFrame), never by an ellipsis: cut
+   * from the end, `AUGUST 28` read `AUGUST 2`, which is not a shorter date but
+   * a wrong one. The issue number leads the line, so it is never the part lost.
    */
   runHeadText: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false, flex: 1, minWidth: 0,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false, flex: 1, minWidth: 0,
   },
-  runHeadTools: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  /**
+   * 10, not 12, between the two tools — and the issue line's tracking at 1.0:
+   * together the 8 points the issue line needed when the type floor raised it
+   * to 10pt and the sort label grew beside it at the largest text size.
+   */
+  runHeadTools: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
   // ── ornament / dividers ───────────────────────────────────────────────────
   orn: { flexDirection: 'row', alignItems: 'center', gap: 8, opacity: 0.5, marginVertical: 24 },
@@ -346,7 +352,7 @@ export const p = StyleSheet.create({
     opacity: 0.4,
   },
   dayLabel: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6,
     color: colors.sepia, includeFontPadding: false,
   },
 
@@ -355,7 +361,7 @@ export const p = StyleSheet.create({
    *  block without bleeding into its neighbours. */
   post: { paddingVertical: POST_PAD_V, position: 'relative', overflow: 'hidden' },
   kind: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6,
     color: colors.sepia, marginBottom: 8, includeFontPadding: false,
   },
 
@@ -383,7 +389,7 @@ export const p = StyleSheet.create({
    */
   margin: { width: MARGIN_W, alignItems: 'flex-end', paddingTop: 6, paddingEnd: 6 },
   marginValue: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 0.8,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6,
     color: colors.sepia, includeFontPadding: false,
   },
   /** The dash is the mark that says nothing has been certified yet. It has to
@@ -483,7 +489,7 @@ export const p = StyleSheet.create({
    *  authoritative position on the page handed to anyone who wanted it. */
   wireDateline: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.wire, includeFontPadding: false },
   wireSource: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog,
     marginTop: 8, paddingLeft: BYLINE_INDENT, includeFontPadding: false,
   },
 
@@ -537,7 +543,7 @@ export const p = StyleSheet.create({
    * holds them to one colour, so this is written to MATCH rather than chosen.
    */
   critiqueWithdraw: {
-    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8,
     color: colors.danger, includeFontPadding: false,
   },
   // (bylineFlush removed: it set paddingLeft: 0 on a row that has no padding, and
@@ -596,7 +602,7 @@ export const p = StyleSheet.create({
   /** A credit, not a headline. Dimmer and a hair smaller than the writing's
    *  neighbours so the eye reaches the words first. */
   bylineName: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9,
     color: colors.bone, includeFontPadding: false,
     /** Nine characters is the floor: below that a byline stops being a name. */
     flexShrink: 1, minWidth: 56,
@@ -625,11 +631,16 @@ export const p = StyleSheet.create({
    * measured, the pair overran the column by 20pt. Now the name keeps a floor
    * of 56pt (about nine characters, still recognisably a name) and past that
    * the trail is the one that gives.
+   *
+   * No margin of its own: the row's gap spaces it, as it spaces every other
+   * part of the byline. A 4pt margin on top made this the one 10pt gap in a row
+   * of 6s — and when the type floor raised the byline to 10pt, those 4 points
+   * were exactly what "· 5 CRITIQUES" needed to stay whole.
    */
   bylineTrail: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9,
     color: colors.fog, includeFontPadding: false,
-    flexShrink: 1, minWidth: 0, marginLeft: 4,
+    flexShrink: 1, minWidth: 0,
   },
 
   // ── the plate ─────────────────────────────────────────────────────────────
@@ -653,7 +664,7 @@ export const p = StyleSheet.create({
    *  (a yellow one-sheet, a saturated re-release) is the loudest thing on a page
    *  built out of ink and brass, and it drags the eye off the writing. */
   artHeld: { opacity: 0.86 },
-  plateTitle: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.parchment, includeFontPadding: false },
+  plateTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.parchment, includeFontPadding: false },
   /** When a still is present the plate collapses to one line — no second poster
    *  of the same film in the same block. */
   /**
@@ -696,12 +707,12 @@ export const p = StyleSheet.create({
    *  way only when the line is full, so a short title does not push the year to
    *  the far edge of the column with a corridor of nothing between them. */
   creditText: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.bone,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.bone,
     includeFontPadding: false, flexShrink: 1, minWidth: 0,
   },
   /** Fixed. Never shrinks, never truncates — see the note in `Credit`. */
   creditYear: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.bone,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.bone,
     includeFontPadding: false, flexShrink: 0,
   },
 
@@ -812,7 +823,7 @@ export const p = StyleSheet.create({
     marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', paddingTop: 12,
   },
   fieldLabel: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, marginBottom: 6, includeFontPadding: false,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia, marginBottom: 6, includeFontPadding: false,
   },
   fieldValue: { fontFamily: fonts.body, fontSize: 12.5, color: colors.parchment },
 
@@ -855,7 +866,7 @@ export const p = StyleSheet.create({
    * deck, for a reason that was measured and then looked at.
    */
   actionLabel: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9,
     color: colors.fog, includeFontPadding: false,
   },
   /** Full strength: the certified label is the one that must be readable. */
@@ -916,7 +927,7 @@ export const p = StyleSheet.create({
 
   // ── the ballot ────────────────────────────────────────────────────────────
   ballotHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  ballotClose: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.fog, includeFontPadding: false },
+  ballotClose: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog, includeFontPadding: false },
   ballotQ: {
     fontFamily: fonts.display, fontSize: 20, lineHeight: 28,
     color: colors.parchment, textAlign: 'center', marginBottom: 4,
@@ -945,24 +956,24 @@ export const p = StyleSheet.create({
   /** 9 and 1.1, not 9.5 and 1.3. Measured: a 28-character title left 1.8pt of
    *  slack in the option row, so ordinary long titles truncated at normal text
    *  size. Easing both buys 15pt and stops the common case ellipsizing. */
-  optionTitle: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.parchment, includeFontPadding: false },
-  optionMeta: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.fog, marginTop: 4, includeFontPadding: false },
+  optionTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.parchment, includeFontPadding: false },
+  optionMeta: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, marginTop: 4, includeFontPadding: false },
   percent: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.parchment, includeFontPadding: false },
   /** A rule that fills, not a coloured progress bar. */
   fillTrack: { height: 3, borderRadius: 2, backgroundColor: 'rgba(184,137,26,0.14)', marginTop: 6, overflow: 'hidden' },
   fillBar: { height: '100%', borderRadius: 2 },
   ballotFoot: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog,
     textAlign: 'center', marginTop: 12, includeFontPadding: false,
   },
   wonWrap: { alignItems: 'center', paddingTop: 6 },
-  wonLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
+  wonLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
   wonPoster: { overflow: 'hidden',
     width: 74, height: 111, borderRadius: 2, marginBottom: 12,
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.26)', backgroundColor: colors.soot,
   },
   wonTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 6, textAlign: 'center' },
-  wonMeta: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
+  wonMeta: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog, includeFontPadding: false },
 
   // ── the dossier ───────────────────────────────────────────────────────────
   cover: { ...EDGE_LIT,
@@ -981,7 +992,7 @@ export const p = StyleSheet.create({
    */
   cardBallotQ: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment, marginBottom: 8 },
   dossierLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.dossier, includeFontPadding: false },
-  series: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, marginTop: 8, includeFontPadding: false },
+  series: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia, marginTop: 8, includeFontPadding: false },
   excerpt: { fontFamily: fonts.serif, fontSize: 13.5, lineHeight: 24, color: colors.bone, flex: 1, paddingTop: 2 },
 
   // ── section head + empty ──────────────────────────────────────────────────
@@ -1035,9 +1046,9 @@ export const p = StyleSheet.create({
     opacity: QUIET, textAlign: 'center', marginBottom: 24, maxWidth: 264,
   },
   btn: { borderWidth: 1, borderColor: colors.sepia, borderRadius: 2, paddingVertical: 8, paddingHorizontal: 16 },
-  btnText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.parchment, includeFontPadding: false },
+  btnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.parchment, includeFontPadding: false },
   btnBrass: { borderColor: 'rgba(240,232,176,0.30)', overflow: 'hidden' },
-  quiet: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia, marginTop: 16, includeFontPadding: false },
+  quiet: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginTop: 16, includeFontPadding: false },
   endRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 },
   endLine: { width: 32, height: 1, backgroundColor: colors.sepia, opacity: 0.35 },
   /** The ornament between the two rules. Typed by hand in two files before it
@@ -1078,32 +1089,36 @@ export const p = StyleSheet.create({
     color: colors.parchment, paddingHorizontal: 4,
   },
   spineBody: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  spineKind: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false },
+  spineKind: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
   spineText: { fontFamily: fonts.serifItalic, fontSize: 12.5, color: colors.bone, flex: 1 },
-  spineCount: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
+  spineCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog, includeFontPadding: false },
 
   critiqueHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, marginBottom: 4 },
-  critiqueLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false },
+  critiqueLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
   critiqueSortRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  critiqueSort: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.bone, opacity: INDEX_INACTIVE, includeFontPadding: false },
+  critiqueSort: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.bone, opacity: INDEX_INACTIVE, includeFontPadding: false },
   critiqueSortOn: { color: colors.parchment, opacity: 1 },
 
   comment: { flexDirection: 'row', gap: 8, paddingVertical: 12, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.14)' },
-  commentName: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.bone, marginBottom: 4, includeFontPadding: false },
+  commentName: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.bone, marginBottom: 4, includeFontPadding: false },
   commentBody: { fontFamily: fonts.serif, fontSize: 13.5, lineHeight: 21, color: colors.parchment },
-  commentMeta: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog, marginTop: 6, includeFontPadding: false },
+  commentMeta: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog, marginTop: 6, includeFontPadding: false },
   commentMine: { backgroundColor: 'rgba(184,137,26,0.06)' },
   topMark: { color: colors.sepia },
 
   /** One docked thing, ever: the composer REPLACES the action bar. Padding is
-   *  16, not 20 — at `CERTIFIED 2.1K · CRITIQUE 5.2K` the wider gutter pushed
-   *  SAVE off the screen, which the render showed and the arithmetic had not. */
+   *  16, not 20 — back when the counts sat in the labels, `CERTIFIED 2.1K ·
+   *  CRITIQUE 5.2K` in a wider gutter pushed SAVE off the screen, which the
+   *  render showed and the arithmetic had not. */
   dock: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingTop: 12, paddingHorizontal: 16,
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
     backgroundColor: colors.ink,
   },
+  /** A dock mark's icon and its count, side by side. The row is never taller
+   *  than the icon, so the dock keeps its height whether a count shows or not. */
+  dockFigure: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 16 },
   dockCompose: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingTop: 12, paddingHorizontal: 16,
@@ -1129,9 +1144,9 @@ export const p = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.sepiaBorder,
     backgroundColor: colors.ink,
   },
-  chs: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.fog, includeFontPadding: false },
+  chs: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
   chsGo: { color: colors.parchment },
-  chm: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 3, color: colors.sepia, includeFontPadding: false },
+  chm: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false },
   cb: { ...EDGE_LIT, flex: 1, minHeight: 0, paddingHorizontal: 16, paddingTop: 16, backgroundColor: colors.soot },
 
   /** The desk's document FILLS the writing area. A sheet that stops halfway down
@@ -1192,13 +1207,13 @@ export const p = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
     backgroundColor: colors.ink,
   },
-  rl: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.bone, includeFontPadding: false },
+  rl: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.bone, includeFontPadding: false },
   kbd: { ...EDGE_LIT,
     height: 210, backgroundColor: colors.keyWell,
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center', justifyContent: 'center',
   },
-  kbdLabel: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.fogQuiet, includeFontPadding: false },
+  kbdLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fogQuiet, includeFontPadding: false },
 
   // ── states ────────────────────────────────────────────────────────────────
   /** Spoilered text is NOT DRAWN. A blur can be sharpened; an absent node cannot. */
@@ -1207,10 +1222,10 @@ export const p = StyleSheet.create({
     borderRadius: 2, paddingVertical: 16, paddingHorizontal: 16, alignItems: 'center',
   },
   veilText: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, lineHeight: 15,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, lineHeight: 17.5,
     color: colors.bone, textAlign: 'center', marginBottom: 12, includeFontPadding: false,
   },
-  veilAction: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false },
+  veilAction: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
   removed: {
     paddingVertical: 16, alignItems: 'center',
     borderTopWidth: 1, borderBottomWidth: 1, borderColor: 'rgba(184,137,26,0.14)',

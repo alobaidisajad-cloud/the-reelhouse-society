@@ -213,7 +213,7 @@ const s = StyleSheet.create({
   markerDone: { backgroundColor: 'rgba(184,137,26,0.4)' },
 
   beatContent: { alignItems: 'center', minHeight: 208, justifyContent: 'center' },
-  eyebrow: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia, marginBottom: 10 },
+  eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.sepia, marginBottom: 10 },
   title: { fontFamily: fonts.display, fontSize: 23, color: colors.parchment, textAlign: 'center', lineHeight: 30, marginBottom: 12 },
   body: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 21, maxWidth: 300 },
 
@@ -233,7 +233,7 @@ const s = StyleSheet.create({
   footerSpacer: { width: 1, height: 1 },
   nextBtn: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 3, paddingVertical: 10, paddingHorizontal: 20 },
   nextText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
-  quietText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fogQuiet, textDecorationLine: 'underline', includeFontPadding: false },
+  quietText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fogQuiet, textDecorationLine: 'underline', includeFontPadding: false },
 
-  societyTag: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 4, color: colors.fogQuiet, textAlign: 'center', marginTop: 22 },
+  societyTag: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.fogQuiet, textAlign: 'center', marginTop: 22 },
 });

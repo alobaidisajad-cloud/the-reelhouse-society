@@ -112,7 +112,7 @@ const s = StyleSheet.create({
   },
   label: {
     includeFontPadding: false,
-    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog,
   },
   value: {
     includeFontPadding: false,

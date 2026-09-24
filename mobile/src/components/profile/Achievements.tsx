@@ -193,7 +193,11 @@ export function Achievements({ logs, analytics, totalFilms }: { logs: Achievemen
             <Text {...decorativeTextProps} style={[s.badgeGlyph, badge.unlocked ? s.glyphUnlocked : s.glyphLocked]}>
               {badge.glyph}
             </Text>
-            <Text {...scaledTextProps} style={[s.badgeTitle, badge.unlocked ? s.titleUnlocked : s.titleLocked]} numberOfLines={2}>
+            {/* A title is two words at most, and a word must not break. At the
+                largest text size CONNOISSEUR is ~9pt wider than a third of the
+                case, and the phone split it mid-letter; it now gives up just
+                enough size to stay whole. At the default size nothing shrinks. */}
+            <Text {...scaledTextProps} style={[s.badgeTitle, badge.unlocked ? s.titleUnlocked : s.titleLocked]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
               {badge.title}
             </Text>
           </PressableScale>

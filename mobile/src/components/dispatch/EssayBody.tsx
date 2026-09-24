@@ -22,8 +22,8 @@
  * This said "every later one as an `EssayPara`". It does not, and cannot: the
  * markdown renderer builds its own paragraph nodes, and a component cannot be
  * threaded into the middle of that. They are set by the `paragraph` rule below,
- * on the `body` style, which reads `ESSAY_BODY` and takes the same leading
- * through `withLeading` — so the TYPE is identical by construction, which is
+ * on the `body` style, which reads `ESSAY_BODY` and so carries the same
+ * leading — so the TYPE is identical by construction, which is
  * what the sentence was reaching for. Naming a component the file does not
  * import is how a docstring starts describing a version of the code that no
  * longer exists.
@@ -38,7 +38,7 @@ import { capMarkdownForRender, onMarkdownLinkPress } from '@/src/utils/markdownS
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import {
-  EssayBreak, EssayOpening, ESSAY_BODY, useEssayLeading, withLeading,
+  EssayBreak, EssayOpening, ESSAY_BODY,
 } from './paper/PaperEssay';
 
 /**
@@ -150,24 +150,13 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
    *
    * Rebuilt each render, which is what the paragraph above always described.
    */
-  /**
-   * The whole style map, with every leading opened to match the type.
-   *
-   * Applied to the MAP rather than to one style, because the library hands each
-   * rule its own entry from it — a heading, a fenced block and a quotation all
-   * fix a line height, and all of them crowd at the largest setting for the same
-   * reason the body did. Memoised on the scale, so it is rebuilt when the member
-   * changes their setting and not on every render of a long essay.
+  /*
+   * The style map is used as written. Every line height in it already grows
+   * with the member's text size — React Native does that itself (see the note
+   * above `EssayHead` in PaperEssay). This used to scale them again here, so at
+   * the largest setting every heading, quotation and paragraph was set at
+   * nearly twice its leading.
    */
-  const lead = useEssayLeading();
-  const scaled = useMemo(() => {
-    const out: Record<string, unknown> = {};
-    for (const [key, style] of Object.entries(essayMarkdown)) {
-      out[key] = withLeading(style as { lineHeight?: number }, lead);
-    }
-    return out as typeof essayMarkdown;
-  }, [lead]);
-
   let seen = 0;
   const rules = {
     paragraph: (node: any, children: React.ReactNode) => {
@@ -175,7 +164,7 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
       seen += 1;
       if (!first) {
         return (
-          <Text key={node.key} style={[scaled.body, scaled.paragraph]} {...scaledTextProps}>
+          <Text key={node.key} style={[essayMarkdown.body, essayMarkdown.paragraph]} {...scaledTextProps}>
             {children}
           </Text>
         );
@@ -189,7 +178,7 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
         return <EssayOpening key={node.key} text={plain} />;
       }
       return (
-        <Text key={node.key} style={[scaled.body, scaled.paragraph]} {...scaledTextProps}>
+        <Text key={node.key} style={[essayMarkdown.body, essayMarkdown.paragraph]} {...scaledTextProps}>
           {children}
         </Text>
       );
@@ -247,7 +236,7 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
     image: (node: any) => {
       const alt = String(node?.attributes?.alt ?? '').trim();
       return (
-        <Text key={node.key} style={[scaled.body, scaled.imageNote]} {...scaledTextProps}>
+        <Text key={node.key} style={[essayMarkdown.body, essayMarkdown.imageNote]} {...scaledTextProps}>
           {alt ? `[image: ${alt}]` : '[image]'}
         </Text>
       );
@@ -258,7 +247,7 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
 
   return (
     <View>
-      <Markdown style={scaled} rules={rules} onLinkPress={onMarkdownLinkPress}>
+      <Markdown style={essayMarkdown} rules={rules} onLinkPress={onMarkdownLinkPress}>
         {safe}
       </Markdown>
     </View>

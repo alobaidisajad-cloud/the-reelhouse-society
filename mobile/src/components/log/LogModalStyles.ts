@@ -29,12 +29,12 @@ export const st = StyleSheet.create({
      */
     backBtn: { width: 48, height: 48, alignItems: 'flex-start', justifyContent: 'center' },
     editBadge: { backgroundColor: colors.bloodReel, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 2, alignSelf: 'flex-start', marginBottom: 4 },
-    editBadgeText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2, color: colors.parchmentBright, includeFontPadding: false },
+    editBadgeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.4, color: colors.parchmentBright, includeFontPadding: false },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 10 },
     closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, minHeight: 48 },
-    closeBtnText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
+    closeBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.fog, includeFontPadding: false },
     signInBtn: { marginTop: 20, backgroundColor: colors.sepia, borderRadius: 2, paddingVertical: 14, paddingHorizontal: 28, minHeight: 48, justifyContent: 'center' },
-    signInBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
+    signInBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.ink, includeFontPadding: false },
 
     // Search
     searchStep: { flex: 1, paddingHorizontal: 20 },
@@ -42,9 +42,9 @@ export const st = StyleSheet.create({
     searchIcon: { position: 'absolute', left: 12, top: 14, zIndex: 1 },
     searchInput: { backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingLeft: 38, paddingRight: 12, paddingVertical: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
     searchingWrap: { alignItems: 'center', paddingVertical: 20 },
-    searchingText: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 3, includeFontPadding: false },
+    searchingText: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 2.4, includeFontPadding: false },
     searchBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-    searchBadge: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, includeFontPadding: false },
+    searchBadge: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, includeFontPadding: false },
     searchBadgeSepia: { color: colors.sepia },
     searchBadgeFlicker: { color: colors.flicker },
     searchResults: { marginTop: 8 },
@@ -54,7 +54,7 @@ export const st = StyleSheet.create({
     resultFlex: { flex: 1 },
     resultTitle: { fontFamily: fonts.sub, fontSize: 14, color: colors.parchment },
     resultMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-    resultMeta: { fontFamily: fonts.sub, fontSize: 7.5, color: colors.fog, letterSpacing: 1.5, includeFontPadding: false },
+    resultMeta: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 0.8, includeFontPadding: false },
     noResultsWrap: { alignItems: 'center', paddingVertical: 40 },
     noResultsText: { fontFamily: fonts.sub, fontSize: 14, color: colors.fog },
 
@@ -71,30 +71,30 @@ export const st = StyleSheet.create({
     // Previous Take (rewatch context)
     prevTakeBox: { backgroundColor: 'rgba(184,137,26,0.06)', borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 8, padding: 14, marginBottom: -4 },
     prevTakeHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-    prevTakeLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
+    prevTakeLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
     prevTakeCountBadge: { backgroundColor: 'rgba(255,255,255,0.04)', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 },
-    prevTakeCountText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 0.8, color: colors.fog, includeFontPadding: false },
+    prevTakeCountText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.5, color: colors.fog, includeFontPadding: false },
     prevTakeRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
-    prevTakeRatingNum: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, includeFontPadding: false },
+    prevTakeRatingNum: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
     prevTakeReview: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, lineHeight: 20, fontStyle: 'italic' },
     // iOS has no writingDirection unless it is stated, so an Arabic review
     // inherited the app's left-to-right base — the full stop landed at the far
     // LEFT of the line. Android resolves it itself. Same style as the record.
     rtlText: { writingDirection: 'rtl', textAlign: 'right' } as import('react-native').TextStyle,
-    prevTakeDate: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 0.8, color: colors.fog, marginTop: 6, includeFontPadding: false },
+    prevTakeDate: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.5, color: colors.fog, marginTop: 6, includeFontPadding: false },
     filmInfoCol: { flex: 1 },
     // A hero, not a thumbnail: it sits ON the film now, and at 3× a 120pt
     // poster wants ~360 physical pixels — which is why the docket also moved
     // to w342. Tappable for an Auteur; that is Curatorial Control.
     poster: { width: 120, height: 180, borderRadius: 3, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder },
     altBadge: { position: 'absolute', top: 4, right: 4, backgroundColor: colors.sepia, paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2 },
-    altBadgeText: { fontFamily: fonts.sub, fontSize: 7.5, color: colors.ink, letterSpacing: 1, includeFontPadding: false },
+    altBadgeText: { fontFamily: fonts.sub, fontSize: 9, color: colors.ink, letterSpacing: 0.7, includeFontPadding: false },
     filmTitle: { fontFamily: fonts.display, fontSize: 17, color: colors.parchment, lineHeight: 22 },
-    filmYear: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, letterSpacing: 2, marginTop: 4, includeFontPadding: false },
+    filmYear: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 1.6, marginTop: 4, includeFontPadding: false },
     statusRow: { flexDirection: 'row', gap: 8 },
     statusBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, minHeight: 48, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
     statusActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
-    statusText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, includeFontPadding: false },
+    statusText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
     statusTextActive: { color: colors.ink },
     tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     // minWidth matches the box around it. Without it a short pill — DVD and
@@ -105,7 +105,7 @@ export const st = StyleSheet.create({
     // carelessness without being nameable.
     tag: { minWidth: 48, alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     tagActive: { backgroundColor: colors.flicker, borderColor: colors.flicker },
-    tagText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+    tagText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog, includeFontPadding: false },
     tagTextActive: { color: colors.ink },
 
     // Rating
@@ -117,22 +117,22 @@ export const st = StyleSheet.create({
     quickDateRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
     qDateBtn: { paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     qDateActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
-    qDateText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+    qDateText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog, includeFontPadding: false },
     qDateTextActive: { color: colors.ink },
     calendarWrap: { marginTop: 8 },
 
     // Review — THE MANUSCRIPT
     manuscriptFrame: { borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 4, backgroundColor: colors.ink, overflow: 'hidden' },
     manuscriptHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)', backgroundColor: 'rgba(184,137,26,0.05)' },
-    manuscriptHeaderText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false, flexShrink: 1 },
+    manuscriptHeaderText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false, flexShrink: 1 },
     reviewInput: { padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment, minHeight: 170, lineHeight: 22, letterSpacing: 0.2 },
     reviewFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.12)' },
     spoilerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48 },
     cbox: { width: 16, height: 16, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     cboxOn: { backgroundColor: colors.bloodReel, borderColor: colors.bloodReel },
     cboxSepia: { backgroundColor: colors.sepia, borderColor: colors.sepia },
-    spoilerText: { fontFamily: fonts.sub, fontSize: 7.5, color: colors.fog, letterSpacing: 1, includeFontPadding: false },
-    charCount: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+    spoilerText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 0.6, includeFontPadding: false },
+    charCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, includeFontPadding: false },
     charCountWarn: { color: colors.flicker },
     privateNotesInput: { minHeight: 80, backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
     // While the Vault is being opened. Same height as the field it replaces, so
@@ -140,7 +140,7 @@ export const st = StyleSheet.create({
     vaultWaiting: { minHeight: 80, backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
     // LABEL on the composer's six-size scale — the same size every other line of
     // chrome in this form uses. It is a state, not prose.
-    vaultWaitingText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.fog, textAlign: 'center' },
+    vaultWaitingText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog, textAlign: 'center' },
     // Said under the field on a rewatch, where the blank box would otherwise
     // read as writing that has gone missing.
     vaultHint: { fontFamily: fonts.body, fontSize: 11, lineHeight: 17, color: colors.fog, marginTop: 8 },
@@ -150,17 +150,17 @@ export const st = StyleSheet.create({
     vaultKeptText: { flex: 1, fontFamily: fonts.body, fontSize: 11, color: colors.fog },
     // 48pt tall, the floor every control on this page is held to.
     vaultKeptRemove: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingHorizontal: 4 },
-    vaultKeptRemoveText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.parchment },
+    vaultKeptRemoveText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.parchment },
 
     // Editorial (dead-dup keys kept swept — leaf owns live styles)
     editDesk: { padding: 16, borderWidth: 1, borderColor: colors.sepia, borderRadius: 6, backgroundColor: 'rgba(184,137,26,0.05)', gap: 16, marginBottom: 20 },
     editRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    editLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.bone, marginBottom: 8, includeFontPadding: false },
-    editToggleText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, includeFontPadding: false },
+    editLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.bone, marginBottom: 8, includeFontPadding: false },
+    editToggleText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
     pullQuoteInput: { backgroundColor: 'rgba(13,11,9,0.8)', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 14, fontStyle: 'italic', color: colors.parchment },
     stillThumb: { width: 80, height: 45, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     stillActive: { backgroundColor: colors.sepia, borderColor: colors.sepia, borderWidth: 2 },
-    stillNone: { fontFamily: fonts.sub, fontSize: 7.5, color: colors.fog, includeFontPadding: false },
+    stillNone: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
     stillImg: { width: 80, height: 45, borderRadius: 2, borderWidth: 1, borderColor: 'transparent' },
     stillImgActive: { borderWidth: 2, borderColor: colors.sepia },
     stillImgFaded: { opacity: 0.4 },
@@ -170,7 +170,7 @@ export const st = StyleSheet.create({
     // Auteur (dead-dup keys kept swept — leaf owns live styles; autopsy blood is deliberate)
     pThumb: { width: 48, height: 72, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     pThumbActive: { backgroundColor: colors.sepia, borderColor: colors.sepia, borderWidth: 2 },
-    pDefault: { fontFamily: fonts.sub, fontSize: 7.5, color: colors.fog, includeFontPadding: false },
+    pDefault: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
     pImg: { width: 48, height: 72, borderRadius: 2, borderWidth: 1, borderColor: 'transparent' },
     pImgActive: { borderWidth: 2, borderColor: colors.bloodReel },
     pImgFaded: { opacity: 0.4 },
@@ -210,29 +210,29 @@ export const st = StyleSheet.create({
     // inside its own target.
     listChip: { minWidth: 48, justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     listChipOn: { backgroundColor: colors.sepia, borderColor: colors.sepia },
-    listChipText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, maxWidth: 120, includeFontPadding: false },
+    listChipText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, maxWidth: 120, includeFontPadding: false },
     listChipTextActive: { color: colors.ink },
 
     // Delete (destructive → house crimson, not the bright alert red)
     deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, minHeight: 48, borderWidth: 1, borderColor: colors.crimsonBorder, borderRadius: 4, marginBottom: 16 },
-    deleteBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimsonInk, includeFontPadding: false },
+    deleteBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.crimsonInk, includeFontPadding: false },
     deleteConfirm: { ...effects.shadowPrimary, backgroundColor: 'rgba(50,0,0,0.6)', borderWidth: 1, borderColor: colors.crimson, borderRadius: 4, padding: 20, alignItems: 'center', marginBottom: 16, ...effects.flat, },
     deleteConfirmText: { fontFamily: fonts.sub, fontSize: 11, color: colors.crimsonInk, marginBottom: 16, textAlign: 'center' },
     deleteConfirmRow: { flexDirection: 'row', gap: 12 },
     deleteYes: { flex: 1, backgroundColor: colors.crimson, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
     deleteNo: { flex: 1, borderWidth: 1, borderColor: colors.ash, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
-    deleteBtnLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.parchmentBright, includeFontPadding: false },
+    deleteBtnLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.parchmentBright, includeFontPadding: false },
 
     // Submit — SEAL THE RECORD
     discardBtn: { minHeight: 48, justifyContent: 'center' },
-    cancelText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
+    cancelText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog, includeFontPadding: false },
     flatListGap: { gap: 8 },
     flatListGapPad: { gap: 8, paddingVertical: 4 },
 
     // Autocomplete suggestions
     autoSuggestWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
     autoSuggestItem: { backgroundColor: 'rgba(184,137,26,0.12)', borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 3, paddingHorizontal: 10, paddingVertical: 5 },
-    autoSuggestText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
+    autoSuggestText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.sepia, includeFontPadding: false },
 
     // Over the film the header is chrome, not a container: its hairline would
     // cut straight across the picture.
@@ -275,8 +275,8 @@ export const st = StyleSheet.create({
         paddingVertical: 13, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,
     },
     idxDot: { width: 5, height: 5, borderRadius: 2.5, borderWidth: 1 },
-    idxName: { flex: 1, fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, includeFontPadding: false },
-    idxValue: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog, textAlign: 'right', maxWidth: 170, includeFontPadding: false },
+    idxName: { flex: 1, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, includeFontPadding: false },
+    idxValue: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog, textAlign: 'right', maxWidth: 170, includeFontPadding: false },
     idxBody: { paddingBottom: 16 },
 
     // A ruled field: a line under it, never a box around it. The filing half of
@@ -290,13 +290,13 @@ export const st = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.sepiaBorder, paddingBottom: 9,
     },
     ruledValue: { fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
-    ruledAction: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
-    fieldLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginBottom: 9, includeFontPadding: false },
+    ruledAction: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.sepia, includeFontPadding: false },
+    fieldLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginBottom: 9, includeFontPadding: false },
 
     // ── THE CLEARANCE GATE ───────────────────────────────────────────────────
     gate: { alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingTop: 16, paddingBottom: 6 },
-    gateSub: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.fog, marginBottom: 8, textAlign: 'center', includeFontPadding: false },
-    gateCta: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, textAlign: 'center', includeFontPadding: false },
+    gateSub: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.fog, marginBottom: 8, textAlign: 'center', includeFontPadding: false },
+    gateCta: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, textAlign: 'center', includeFontPadding: false },
     // The instrument itself, shown but inert. `premiumLocked` above is the same
     // 0.4 the app already uses for this.
     lockedPanel: { opacity: 0.4 },
@@ -317,8 +317,8 @@ export const st = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10,
     },
     deskFootName: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
-    deskFootText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
-    deskFootValue: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+    deskFootText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
+    deskFootValue: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, includeFontPadding: false },
     deskBody: {
         borderWidth: 1, borderTopWidth: 0, borderColor: colors.sepiaBorder,
         borderBottomLeftRadius: 4, borderBottomRightRadius: 4,

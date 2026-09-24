@@ -1,0 +1,3 @@
+# Rendered screens: regenerate with `MOCKUPS=1 npx jest zz-<name>.gen`
+# (see mockups/README.md) rather than commit them.
+out/

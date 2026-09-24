@@ -1150,7 +1150,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  reportMeta: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+  reportMeta: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   typeBadge: {
     backgroundColor: 'rgba(180,45,45,0.12)',
@@ -1160,7 +1160,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(180,45,45,0.35)',
   },
-  typeBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimsonInk },
+  typeBadgeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.crimsonInk },
 
   reasonTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 14 },
 
@@ -1184,7 +1184,7 @@ const s = StyleSheet.create({
   accusedAvatarImg: { width: '100%', height: '100%' },
   accusedAvatarLetter: { fontFamily: fonts.sub, fontSize: 11, color: colors.sepia, includeFontPadding: false },
   accusedInfo: { flex: 1 },
-  accusedLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog },
+  accusedLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog },
   accusedName: { fontFamily: fonts.sub, fontSize: 13, color: colors.sepia, marginTop: 1 },
   accusedUnknown: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog, marginTop: 2 },
 
@@ -1199,21 +1199,21 @@ const s = StyleSheet.create({
   },
   contextLabel: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2,
+    fontSize: 10,
+    letterSpacing: 1.6,
     color: colors.fogQuiet,
     marginBottom: 4,
   },
   contextValue: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 19 },
   evidenceTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, marginBottom: 4 },
-  evidenceOpen: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginTop: 8 },
+  evidenceOpen: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginTop: 8 },
   evidenceDestroyed: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog },
   summonBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderStyle: 'dashed',
     borderRadius: 3, paddingVertical: 10,
   },
-  summonText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia },
+  summonText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia },
 
   // ── Action Grid ────────────────────────────────────────────────────────
   actionGrid: { gap: 8 },
@@ -1249,8 +1249,8 @@ const s = StyleSheet.create({
   },
   warningBadgeText: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 1,
+    fontSize: 9,
+    letterSpacing: 0.8,
     color: colors.sepia,
   },
 
@@ -1268,8 +1268,8 @@ const s = StyleSheet.create({
   },
   reportCountBadgeText: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 1,
+    fontSize: 9,
+    letterSpacing: 0.8,
     color: colors.crimsonInk,
   },
 
@@ -1282,8 +1282,8 @@ const s = StyleSheet.create({
   },
   historyLabel: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2,
+    fontSize: 10,
+    letterSpacing: 1.6,
     color: colors.fog,
     marginBottom: 8,
   },
@@ -1304,7 +1304,7 @@ const s = StyleSheet.create({
     color: colors.bone,
   },
   historyReason: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, marginTop: 2 },
-  historyDate: { fontFamily: fonts.sub, fontSize: 9, color: colors.fogQuiet, marginTop: 2 },
+  historyDate: { fontFamily: fonts.sub, fontSize: 10, color: colors.fogQuiet, marginTop: 2 },
 
   // ── Modal ──────────────────────────────────────────────────────────────
   modalOverlay: {
@@ -1351,8 +1351,8 @@ const s = StyleSheet.create({
   inputGroup: { marginBottom: spacing.md },
   inputLabel: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2,
+    fontSize: 10,
+    letterSpacing: 1.6,
     color: colors.fog,
     marginBottom: 6,
   },
@@ -1461,8 +1461,8 @@ const s = StyleSheet.create({
   },
   toolbarBtnText: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2,
+    fontSize: 10,
+    letterSpacing: 1.6,
     color: colors.fog,
   },
   toolbarBtnTextActive: {
@@ -1479,8 +1479,8 @@ const s = StyleSheet.create({
   },
   bulkDismissBtnText: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2,
+    fontSize: 10,
+    letterSpacing: 1.6,
     color: colors.parchment,
   },
 

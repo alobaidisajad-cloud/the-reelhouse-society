@@ -412,17 +412,27 @@ export const PostDock = memo(function PostDock({
         {/* The same pulse as the card's. The dock and the card are two places a
             member makes one mark, and a mark that behaves differently depending
             on which of them they used is the app feeling assembled. */}
-        <PaperStrike on={certified}>
-          <Heart size={15} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} />
-        </PaperStrike>
+        {/* The count rides beside the icon, not after the word. `CERTIFIED 2.1K`
+            is 14 characters in a quarter that is 72pt on a 320pt phone, and at
+            the cap it did not fit even at the smallest shrink. The icon line has
+            room to spare, and the word underneath is now the card's own word. */}
+        <View style={p.dockFigure}>
+          <PaperStrike on={certified}>
+            <Heart size={15} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} />
+          </PaperStrike>
+          {c ? <Text style={[p.actionLabel, certified && p.actionLabelOn]} {...actionLabelProps}>{c}</Text> : null}
+        </View>
         <Text style={[p.actionLabel, certified && p.actionLabelOn]} {...actionLabelProps}>
-          {certified ? 'CERTIFIED' : 'CERTIFY'}{c ? ` ${c}` : ''}
+          {certified ? 'CERTIFIED' : 'CERTIFY'}
         </Text>
       </PressableScale>
       <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={onCritique}
         accessibilityRole="button" accessibilityLabel="Write a critique">
-        <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
-        <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE{k ? ` ${k}` : ''}</Text>
+        <View style={p.dockFigure}>
+          <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
+          {k ? <Text style={p.actionLabel} {...actionLabelProps}>{k}</Text> : null}
+        </View>
+        <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE</Text>
       </PressableScale>
       <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={onShare}
         accessibilityRole="button" accessibilityLabel="Share">

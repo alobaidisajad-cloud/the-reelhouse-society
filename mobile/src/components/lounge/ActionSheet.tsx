@@ -196,7 +196,7 @@ const r = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth, borderColor: 'transparent',
   },
   pickIconMine: { backgroundColor: 'rgba(184,137,26,0.12)', borderColor: 'rgba(184,137,26,0.5)' },
-  pickLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 0.5, color: colors.fog, includeFontPadding: false },
+  pickLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.2, color: colors.fog, includeFontPadding: false },
 });
 
 export { ActionSheet };

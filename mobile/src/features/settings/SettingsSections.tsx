@@ -694,12 +694,12 @@ const st = StyleSheet.create({
   dimmed: { opacity: 0.5 },
 
   fieldWrap: { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
-  fieldLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 8, includeFontPadding: false },
+  fieldLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog, marginBottom: 8, includeFontPadding: false },
   fieldBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, marginVertical: 16, paddingHorizontal: 16 },
   fieldBodyFlush: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },
   // 7pt with 2pt tracking wrapped to two lines and crowded the card's edge; the
   // dropped clause ("SECURE CHECKOUT") was reassurance nobody had asked for.
-  microNote: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.fogQuiet, textAlign: 'center', padding: 16, paddingBottom: 18, marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.1)', includeFontPadding: false },
+  microNote: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fogQuiet, textAlign: 'center', padding: 16, paddingBottom: 18, marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.1)', includeFontPadding: false },
 
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   // The one line stating who you are in the house was set smaller than a
@@ -713,9 +713,9 @@ const st = StyleSheet.create({
   // the app puts a weight on fonts.display, and this used to.
   rankAuteur: { color: colors.crimsonInk },
   activeBadge: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: 'rgba(184,137,26,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 2 },
-  activeBadgeText: { fontFamily: fonts.sub, fontSize: 8, color: colors.sepia, letterSpacing: 1, includeFontPadding: false },
+  activeBadgeText: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 0.8, includeFontPadding: false },
   ladder: { flexDirection: 'row', alignItems: 'center', marginTop: 12, flexWrap: 'wrap' },
-  ladderRank: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.fogQuiet, includeFontPadding: false },
+  ladderRank: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.fogQuiet, includeFontPadding: false },
   ladderRankNow: { color: colors.sepia, opacity: 1 },
   ladderMark: { width: 4, height: 4, backgroundColor: colors.fog, opacity: 0.35, transform: [{ rotate: '45deg' }], marginHorizontal: 9 },
 
@@ -723,7 +723,7 @@ const st = StyleSheet.create({
   primaryBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.ink, fontWeight: '700', includeFontPadding: false },
 
   recordValue: { fontFamily: fonts.body, fontSize: 13, color: colors.parchment, paddingBottom: 9, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },
-  recordNote: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.fogQuiet, marginTop: 7, includeFontPadding: false },
+  recordNote: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fogQuiet, marginTop: 7, includeFontPadding: false },
   toggleUnderDesc: { marginTop: 12, alignSelf: 'flex-start' },
 
   actionBtnSpaced: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 48, backgroundColor: 'rgba(184,137,26,0.03)' },
@@ -735,7 +735,7 @@ const st = StyleSheet.create({
   pwMeter: { marginTop: 10 },
   pwBars: { flexDirection: 'row', gap: 5 },
   pwBar: { flex: 1, height: 3, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 1 },
-  pwStrength: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, marginTop: 8, includeFontPadding: false },
+  pwStrength: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, marginTop: 8, includeFontPadding: false },
   pwChecks: { fontFamily: fonts.body, fontSize: 10.5, color: colors.fog, lineHeight: 16, marginTop: 6 },
   pwMismatch: { fontFamily: fonts.body, fontSize: 11, color: colors.crimsonInk, marginTop: 8 },
   saveFieldBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.sepia, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 2 },
@@ -743,7 +743,7 @@ const st = StyleSheet.create({
 
   privacyGroup: { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
   privacyGroupLast: { borderBottomWidth: 0 },
-  privacyGroupLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 6, includeFontPadding: false },
+  privacyGroupLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog, marginBottom: 6, includeFontPadding: false },
   radioOption: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 },
   radioDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 1, borderColor: colors.ash, backgroundColor: 'transparent' },
   radioDotActive: { borderColor: colors.sepia, backgroundColor: colors.sepia },
@@ -764,10 +764,10 @@ const st = StyleSheet.create({
   // asked, or has been told no. Red would have the member hunting for a mistake.
   permNotice: { marginHorizontal: 16, marginTop: 16, marginBottom: 4, padding: 12, borderRadius: 4, backgroundColor: 'rgba(184,137,26,0.07)', borderWidth: 1, borderColor: colors.sepiaBorder },
   permTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
-  permTitle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, flex: 1, includeFontPadding: false },
+  permTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, flex: 1, includeFontPadding: false },
   permText: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, lineHeight: 16 },
   permBtn: { marginTop: 11, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.sepia, borderRadius: 2 },
-  permBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+  permBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
 
   deskIntro: { paddingHorizontal: 16, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
   deskLine: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.bone },

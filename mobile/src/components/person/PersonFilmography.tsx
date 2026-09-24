@@ -16,8 +16,9 @@ import { nav } from '@/src/utils/typedRouter';
 import PressableScale from '@/src/components/PressableScale';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { Film as FilmIcon, Check } from 'lucide-react-native';
-import { s, st, GRID_COL_STYLES } from '@/src/components/person/personStyles';
+import { s, st, GRID_COL_STYLES, GRID_TITLE_BOX } from '@/src/components/person/personStyles';
 import { displayTextProps } from '@/src/constants/textScaling';
+import { useLineScale } from '@/src/hooks/useTextScale';
 
 // A 110pt-wide poster is 330 physical pixels on a 3x screen; w185 left nearly
 // half the detail to the upscaler. 2x devices are already served by w185 and
@@ -59,6 +60,8 @@ export const FilmStripPerforations = memo(function FilmStripPerforations() {
 // ── Film Poster Card (grid item) ─────────────────────────────
 export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: { film: PersonCredit; screened?: boolean }) {
   const posterUri = film.poster_path ? tmdb.poster(film.poster_path, GRID_POSTER_SIZE) : null;
+  // The title SETS its lineHeight, so its box grows the way a set line does.
+  const titleScale = useLineScale(displayTextProps.maxFontSizeMultiplier);
 
   const handlePress = useCallback(() => {
     nav.push(`/film/${film.id}`);
@@ -98,9 +101,11 @@ export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: {
         )}
       </View>
       {/* Two lines at a readable size rather than one line squeezed to 7pt —
-          "Untitled Daniels Event Film" was unreadable. The style carries a fixed
-          height so a wrapped title cannot knock its row out of line. */}
-      <Text style={st.gridTitle} numberOfLines={2} {...displayTextProps}>{film.title || film.name}</Text>
+          "Untitled Daniels Event Film" was unreadable. The box is two lines tall
+          whatever the title, so a wrapped title cannot knock its row out of
+          line — two lines at the size the phone draws, or at a large setting
+          the second line is cut off ("In the Mood for"). */}
+      <Text style={[st.gridTitle, { height: GRID_TITLE_BOX * titleScale }]} numberOfLines={2} {...displayTextProps}>{film.title || film.name}</Text>
       <Text style={st.gridYear} {...displayTextProps}>{film.release_date ? film.release_date.slice(0, 4) : 'TBA'}</Text>
     </PressableScale>
   );

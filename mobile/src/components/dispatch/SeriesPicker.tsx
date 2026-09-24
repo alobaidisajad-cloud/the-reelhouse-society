@@ -298,8 +298,8 @@ const x = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: 18,
   },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  headText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.bone, includeFontPadding: false },
-  headClear: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.fog, includeFontPadding: false },
+  headText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.bone, includeFontPadding: false },
+  headClear: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
   blurb: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 18, color: colors.fog, marginTop: 6, marginBottom: 10 },
 
   // Bounded so a member with many series cannot push the confirmation and the
@@ -314,9 +314,9 @@ const x = StyleSheet.create({
   rowText: { flex: 1, minWidth: 0 },
   rowTitle: { fontFamily: fonts.display, fontSize: 13, lineHeight: 17, color: colors.parchment },
   rowTitleOn: { color: colors.parchmentBright },
-  rowSub: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.4, color: colors.fog, marginTop: 3, includeFontPadding: false },
-  next: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
-  begin: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
+  rowSub: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.7, color: colors.fog, marginTop: 3, includeFontPadding: false },
+  next: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia, includeFontPadding: false },
+  begin: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, includeFontPadding: false },
 
   field: {
     fontFamily: fonts.display, fontSize: 15, color: colors.parchmentBright,
@@ -328,14 +328,14 @@ const x = StyleSheet.create({
     marginTop: 16, borderWidth: 1, borderColor: 'rgba(184,137,26,0.30)',
     paddingHorizontal: 12, paddingVertical: 11,
   },
-  confirmLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.8, color: colors.sepia, marginBottom: 6, includeFontPadding: false },
+  confirmLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia, marginBottom: 6, includeFontPadding: false },
   confirmRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
   confirmTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.parchmentBright, flex: 1, minWidth: 0 },
-  confirmPartLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.6, color: colors.fog, includeFontPadding: false },
+  confirmPartLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
   confirmPart: { fontFamily: fonts.display, fontSize: 17, color: colors.sepia },
 
   set: { borderWidth: 1, borderColor: colors.sepia, paddingVertical: 10, alignItems: 'center', marginTop: 14 },
   setOff: { borderColor: colors.ash },
-  setText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+  setText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.sepia, includeFontPadding: false },
   setTextOff: { color: colors.fog, opacity: 0.6 },
 });

@@ -27,7 +27,7 @@ export const st = StyleSheet.create({
   heroRuleTop: { width: 100, height: 2, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.sepia, marginBottom: 16, opacity: 0.5 },
   heroRuleBottom: { width: 100, height: 2, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.sepia, marginTop: 24, opacity: 0.5 },
   heroEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  heroEyebrow: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4, color: colors.sepia, includeFontPadding: false },
+  heroEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3.2, color: colors.sepia, includeFontPadding: false },
   /**
    * `textAlign: 'center'` is the whole fix for the crooked title.
    *
@@ -50,12 +50,12 @@ export const st = StyleSheet.create({
   divider: { height: 1, backgroundColor: 'rgba(184,137,26,0.1)' },
   heritageFooter: { marginTop: 40, paddingHorizontal: 24, alignItems: 'center', paddingBottom: 44 },
   disabledBtn: { opacity: 0.5 },
-  memberSince: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.parchment, marginBottom: 32, includeFontPadding: false },
+  memberSince: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.parchment, marginBottom: 32, includeFontPadding: false },
   endMarkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   endMarkLine: { width: 30, height: 1, backgroundColor: colors.sepia, opacity: 0.3 },
   heritageCopyright: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, textAlign: 'center' },
   // Where a club record carries its number, and the first thing support asks for.
-  edition: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fogQuiet, marginTop: 14, includeFontPadding: false },
+  edition: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fogQuiet, marginTop: 14, includeFontPadding: false },
 
   // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
@@ -68,7 +68,7 @@ export const st = StyleSheet.create({
   modalFail: { fontFamily: fonts.body, fontSize: 12, color: colors.crimsonInk, lineHeight: 18, marginBottom: 16 },
   otpInput: { backgroundColor: colors.well, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 24, padding: 16, borderRadius: 4, textAlign: 'center', marginBottom: 16, letterSpacing: 8 },
   modalResend: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  modalResendText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+  modalResendText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
   modalResendTextDim: { color: colors.fog, opacity: 0.6 },
   modalActions: { flexDirection: 'row', gap: 12 },
   // 48 by geometry. These two sat 12pt apart carrying 15pt halos each, so the

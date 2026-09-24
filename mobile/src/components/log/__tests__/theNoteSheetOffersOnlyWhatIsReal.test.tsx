@@ -9,6 +9,9 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import { act, fireEvent, render, renderHook } from '@testing-library/react-native';
+// Loaded under the mocks below: jest hoists every jest.mock above the imports.
+import NoteSheet from '../NoteSheet';
+import { useVault } from '@/src/hooks/useVault';
 
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
@@ -61,9 +64,6 @@ jest.mock('@/src/stores/vaultStore', () => {
   };
   return { useVaultStore: (sel: (s: typeof state) => unknown) => sel(state) };
 });
-
-import NoteSheet from '../NoteSheet';
-import { useVault } from '@/src/hooks/useVault';
 
 const LOG = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 

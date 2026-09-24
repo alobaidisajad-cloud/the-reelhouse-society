@@ -220,10 +220,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   errorIdText: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: fonts.body,
     color: colors.fogQuiet,
-    letterSpacing: 1,
+    letterSpacing: 0.8,
     marginBottom: 16,
   },
   retryButtonDisabled: {

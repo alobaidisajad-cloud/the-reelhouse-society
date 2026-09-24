@@ -533,8 +533,8 @@ const styles = StyleSheet.create({
     bottom: 8,
     right: 12,
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 0.5,
+    fontSize: 10,
+    letterSpacing: 0.4,
   },
   // ── Block Toggle ──
   blockRow: {

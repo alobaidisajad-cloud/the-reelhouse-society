@@ -84,8 +84,8 @@ const s = StyleSheet.create({
   },
   ctaBtnText: {
     fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 2.5,
+    fontSize: 10,
+    letterSpacing: 2,
     color: colors.ink,
     includeFontPadding: false,
   },

@@ -1104,7 +1104,7 @@ export const LoungeCard = memo(function LoungeCard({
         ) : (
           <Text style={[m.loungeBody, isRTLText(body) && p.rtlText]} numberOfLines={3} {...scaledTextProps}>
             {isRTLText(body) ? RTL_MARK : null}
-            <Text style={[p.leadIn, { fontSize: 8.5, color: ink }]}>{nameOf(kind)} — </Text>
+            <Text style={[p.leadIn, { fontSize: 10, color: ink }]}>{nameOf(kind)} — </Text>
             {body}
           </Text>
         )}
@@ -1281,7 +1281,7 @@ const m = StyleSheet.create({
     backgroundColor: colors.sepia, opacity: 0.32, marginBottom: 16,
   },
   pickHead: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia,
     marginBottom: 4, includeFontPadding: false,
   },
   formRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
@@ -1299,17 +1299,17 @@ const m = StyleSheet.create({
     paddingVertical: 12,
   },
   rulesLink: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia,
     includeFontPadding: false,
   },
   lockRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   /** Sepia, not crimson: an unfinished piece is a fact, not a warning. */
   inProgress: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia,
     includeFontPadding: false,
   },
   lockText: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia,
     includeFontPadding: false,
   },
 
@@ -1317,11 +1317,11 @@ const m = StyleSheet.create({
   gate: { alignSelf: 'stretch', paddingHorizontal: 8, marginTop: 4 },
   gateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 },
   gateLabel: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog,
     includeFontPadding: false,
   },
   gateValue: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.parchment,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.parchment,
     includeFontPadding: false,
   },
 
@@ -1336,7 +1336,7 @@ const m = StyleSheet.create({
   },
   clause: { fontFamily: fonts.body, fontSize: 12.5, lineHeight: 21, color: colors.parchment },
   rulesFoot: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia,
     textAlign: 'center', marginTop: 16, includeFontPadding: false,
   },
 
@@ -1351,7 +1351,7 @@ const m = StyleSheet.create({
     color: colors.parchment, includeFontPadding: false,
   },
   searchMark: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia,
     includeFontPadding: false,
   },
   found: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingTop: 16, paddingBottom: 16 },
@@ -1362,11 +1362,11 @@ const m = StyleSheet.create({
   },
   foundTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment },
   foundMeta: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog,
     marginTop: 4, includeFontPadding: false,
   },
   foundCount: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia,
     marginTop: 8, includeFontPadding: false,
   },
   /** A candidate film, before one has been chosen. */
@@ -1381,7 +1381,7 @@ const m = StyleSheet.create({
     includeFontPadding: false,
   },
   archiveMeta: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia,
     marginTop: 4, includeFontPadding: false,
   },
 
@@ -1409,11 +1409,11 @@ const m = StyleSheet.create({
     marginTop: -4,
   },
   roomNo: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia,
     includeFontPadding: false,
   },
   roomCount: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia,
     includeFontPadding: false,
   },
   /**
@@ -1429,13 +1429,13 @@ const m = StyleSheet.create({
     alignSelf: 'flex-start', marginLeft: AVATAR + 6, marginTop: 10,
   },
   roomFileText: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia,
     includeFontPadding: false,
   },
 
   // ── the docket ────────────────────────────────────────────────────────────
   caseReasons: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.6, color: CRIMSON_INK,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: CRIMSON_INK,
     marginBottom: 8, includeFontPadding: false,
   },
   caseBody: {
@@ -1454,7 +1454,7 @@ const m = StyleSheet.create({
   },
   verdictStrike: { borderColor: 'rgba(180,45,45,0.42)' },
   verdictText: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.parchment,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.parchment,
     includeFontPadding: false,
   },
 
@@ -1669,7 +1669,7 @@ const m = StyleSheet.create({
   /** A dossier's name gets the display face and its own line, the way it does
    *  on the page and on the card. Set as running body it read as a sentence
    *  somebody had started, not as the title of an essay. */
-  loungeKind: { fontSize: 8.5, marginBottom: 3 },
+  loungeKind: { fontSize: 10, marginBottom: 3 },
   /** 15.5, matching the card's reading size rather than sitting half a point
    *  under it. Two sizes that close are one size and a loose end. */
   loungeTitle: {
@@ -1680,7 +1680,7 @@ const m = StyleSheet.create({
    *  that has been answered — in that kind's ink, so the colour code that runs
    *  the whole page still holds inside somebody else's conversation. */
   loungeFact: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
     marginTop: 6, includeFontPadding: false,
   },
   loungeGone: {
@@ -1706,7 +1706,7 @@ const m = StyleSheet.create({
    * lounge byline joins it rather than sitting half a point away from it.
    */
   loungeBy: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9,
     color: colors.parchmentBright, includeFontPadding: false, flexShrink: 1,
   },
   /** 0.8, the house's tightest tracking. 0.9 existed only here, one tenth of a
@@ -1714,7 +1714,7 @@ const m = StyleSheet.create({
    *  reader and a third number in a scale that needs two. */
   loungeByNo: { color: colors.fog, letterSpacing: 0.8 },
   loungeMeta: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.2, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.7, color: colors.fog,
     marginTop: 5, includeFontPadding: false,
   },
 
@@ -1737,14 +1737,14 @@ const m = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
   },
   newText: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.6, color: colors.ink,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.ink,
     includeFontPadding: false,
   },
 
   // ── an event ──────────────────────────────────────────────────────────────
   unread: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.sepia },
   eventLine: {
-    flex: 1, minWidth: 0, fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.2,
+    flex: 1, minWidth: 0, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9,
     color: colors.fog, includeFontPadding: false,
   },
   eventActor: { color: colors.parchment },
@@ -1763,7 +1763,7 @@ const m = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.sepiaBorder,
   },
   backLabel: {
-    fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia,
     includeFontPadding: false,
   },
 });

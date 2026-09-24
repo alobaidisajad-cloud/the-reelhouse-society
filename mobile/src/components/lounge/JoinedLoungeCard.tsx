@@ -139,8 +139,8 @@ const s = StyleSheet.create({
   },
   unreadSealText: {
     fontFamily: fonts.sub,
-    fontSize: 6.5,
-    letterSpacing: 0.5,
+    fontSize: 9,
+    letterSpacing: 0.3,
     color: colors.flicker,
     includeFontPadding: false,
   },
@@ -180,8 +180,8 @@ const s = StyleSheet.create({
   },
   awaitingText: {
     fontFamily: fonts.sub,
-    fontSize: 6.5,
-    letterSpacing: 1,
+    fontSize: 9,
+    letterSpacing: 0.5,
     color: colors.sepia,
     includeFontPadding: false,
   },

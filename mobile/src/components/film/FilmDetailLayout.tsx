@@ -634,9 +634,9 @@ const s = StyleSheet.create({
   mine: { paddingLeft: 17, paddingRight: 4, paddingVertical: 2, overflow: 'hidden' },
   mineEdge: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 3 },
   mineHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 9 },
-  mineMeta: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, letterSpacing: 1.3, includeFontPadding: false },
+  mineMeta: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 1.1, includeFontPadding: false },
   mineBody: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 22 },
-  mineMore: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 1.6, marginTop: 9, includeFontPadding: false },
+  mineMore: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 1.3, marginTop: 9, includeFontPadding: false },
 
   /** The crescendo, made of space: the one block where members talk to each
       other gets more air than the utility sections around it. */
@@ -653,7 +653,7 @@ const s = StyleSheet.create({
   societyAir: { marginTop: 14, marginBottom: 20 },
 
   credit: { alignItems: 'center', marginBottom: 30, paddingHorizontal: 24 },
-  creditRole: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 3, color: colors.fog, marginBottom: 7, includeFontPadding: false },
+  creditRole: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.2, color: colors.fog, marginBottom: 7, includeFontPadding: false },
   creditName: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, textAlign: 'center', includeFontPadding: false },
   creditRule: { width: 96, height: 1, backgroundColor: colors.sepia, marginTop: 9, opacity: 0.65 },
   section: { marginBottom: 30, paddingHorizontal: 24 },

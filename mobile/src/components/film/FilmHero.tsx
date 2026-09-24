@@ -14,6 +14,7 @@ import type { FilmVerdict } from '@/src/services/FilmService';
 import type { TMDBMovieDetail } from '@/src/lib/tmdb';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { EDGE_LIT } from '@/src/theme/light';
+import { softBreak } from '@/src/utils/softBreak';
 
 const POSTER_W = 140;
 const POSTER_H = POSTER_W * 1.5;
@@ -148,7 +149,12 @@ export const FilmHero = memo(function FilmHero({
 
         <Text style={styles.filmTitle} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.7}>{film.title}</Text>
 
-        {film.tagline ? <Text style={styles.tagline} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>&ldquo;{film.tagline}&rdquo;</Text> : null}
+        {/* softBreak: TMDB sets some taglines as one 45-character word
+            ("Sensational...Daring...Unforgettable..."). With nowhere to wrap,
+            the phone either broke it mid-letter or shrank the whole line
+            below the type floor. It now wraps after an ellipsis, as a poster
+            would. */}
+        {film.tagline ? <Text style={styles.tagline} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>&ldquo;{softBreak(film.tagline)}&rdquo;</Text> : null}
 
         {/**
           * ── TWO LINES, NOT ONE, AND NOT THREE ──────────────────────────────
@@ -271,7 +277,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 5, borderRadius: 3, overflow: 'hidden',
   },
   loggedBadgeContent: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  loggedBadgeText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.ink },
+  loggedBadgeText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.ink },
   infoBlock: { alignItems: 'center', paddingHorizontal: 8, width: '100%' },
   filmTitle: {
     includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.display, fontSize: 26, color: colors.parchment,
@@ -285,19 +291,19 @@ const styles = StyleSheet.create({
       that difference is what tells the eye they are two kinds of fact. */
   genreLine: {
     includeFontPadding: false, textAlignVertical: 'center',
-    fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 1.6, color: colors.bone,
-    textAlign: 'center', lineHeight: 15, marginBottom: 5,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.bone,
+    textAlign: 'center', lineHeight: 16, marginBottom: 5,
   },
   metaLine: {
     includeFontPadding: false, textAlignVertical: 'center',
-    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog,
-    textAlign: 'center', lineHeight: 15, marginBottom: 12,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog,
+    textAlign: 'center', lineHeight: 16.5, marginBottom: 12,
   },
 
   /** The house's verdict. Nothing else in the app wears these reels. */
   verdictRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   verdictScore: { includeFontPadding: false, fontFamily: fonts.body, fontSize: 13, color: colors.parchment },
-  verdictWho: { includeFontPadding: false, fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.4, color: colors.fog },
+  verdictWho: { includeFontPadding: false, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.fog },
 
   /** And when it has not spoken: a statement, ruled like a title card. */
   silentRow: {
@@ -307,7 +313,7 @@ const styles = StyleSheet.create({
   silentRule: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.22)' },
   silentText: {
     includeFontPadding: false,
-    fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.2, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.fog,
   },
 });
 
@@ -320,7 +326,7 @@ const sub = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
     marginBottom: 12, alignSelf: 'center',
   },
-  prestigeText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.flicker },
+  prestigeText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.flicker },
   obsBadge: { 
     flexDirection: 'row', alignItems: 'center', gap: 6, 
     paddingHorizontal: 10, paddingVertical: 4, 
@@ -329,5 +335,5 @@ const sub = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 3, elevation: 3, 
   },
   obsScore: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 14 },
-  obsLabel: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog },
+  obsLabel: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog },
 });

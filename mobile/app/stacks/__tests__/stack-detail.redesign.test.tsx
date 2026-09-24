@@ -243,9 +243,16 @@ describe('the colophon', () => {
 describe('the index', () => {
   it('reserves a caption box so the rows share a baseline', () => {
     // numberOfLines={2} with no reserved height let a one-line title make a
-    // short cell and a two-line title a tall one, and the grid rippled.
+    // short cell and a two-line title a tall one, and the grid rippled. The
+    // reserve is two lines at the size the phone draws them — a fixed 28 was
+    // two lines only at the default size — so it is set on the card, from
+    // the caption's own line and the set-line scale, on BOTH caption styles.
     const cap = SOURCE.slice(SOURCE.indexOf('filmTitle: {'));
-    expect(cap.slice(0, cap.indexOf('}'))).toMatch(/minHeight: 28/);
+    expect(cap.slice(0, cap.indexOf('}'))).toMatch(/lineHeight: FILM_TITLE_LINE/);
+    expect(SOURCE).toMatch(/const FILM_TITLE_LINE = 14;/);
+    expect(SOURCE).toMatch(/const titleBox = \{ minHeight: FILM_TITLE_LINE \* 2 \* useLineScale\(\) \};/);
+    expect(SOURCE).toMatch(/style=\{\[s\.filmTitleInline, titleBox\]\}/);
+    expect(SOURCE).toMatch(/style=\{\[s\.filmTitle, titleBox\]\}/);
   });
 
   it('keeps the rank off the artwork', () => {
@@ -479,7 +486,7 @@ describe('the states a real stack arrives in', () => {
     // by its own caption rather than by slicing between loose delimiters, which
     // is how the first version of this matched the whole component.
     const ranked = SOURCE.indexOf('<View style={s.filmCaptionRow}>');
-    const plain = SOURCE.indexOf('<Text style={s.filmTitle} numberOfLines={2}>');
+    const plain = SOURCE.indexOf('<Text style={[s.filmTitle, titleBox]} numberOfLines={2}>');
     expect(plain).toBeGreaterThan(ranked);
     expect(SOURCE.slice(plain, plain + 120)).not.toContain('filmRank');
   });

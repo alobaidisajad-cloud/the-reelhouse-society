@@ -30,6 +30,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { formatDateMonthYear, timeAgo } from '@/src/utils/timeAgo';
 import { z } from 'zod';
 import { EDGE_LIT } from '@/src/theme/light';
+import { useLineScale } from '@/src/hooks/useTextScale';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
@@ -37,6 +38,8 @@ const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 /** The epigraph folds past this many lines — the clamp and the test for the
  *  fold must be the same number, or the page offers to open what is not shut. */
 const DESC_CLAMP_LINES = 4;
+/** A film caption's line. Its two-line box is this × 2 × the text size. */
+const FILM_TITLE_LINE = 14;
 
 /** The hero's fade into the room: how much house it lays down, top to hem. */
 const HERO_VEIL: VeilStops = [[0, 0.4], [0.6, 0.9], [1, 1]];
@@ -142,6 +145,10 @@ const StackDetailFilmCard = React.memo(({
   // the bottom of the artwork under a gradient, which covered the one thing a
   // reader opened the page to look at.
   const isFirst = isRanked && index === 0;
+  // Two lines of the caption, at the size the phone draws it. A fixed 28 was
+  // two lines only at the default size; at a larger setting a one-line title's
+  // cell came out shorter than a two-line one and the row lost its baseline.
+  const titleBox = { minHeight: FILM_TITLE_LINE * 2 * useLineScale() };
   return (
     <Animated.View entering={index < 15 ? FadeInUp.duration(400).delay(index * 30).reduceMotion(ReduceMotion.System) : undefined} style={[s.filmItem, { width: itemWidth }]}>
       <PressableScale
@@ -177,10 +184,10 @@ const StackDetailFilmCard = React.memo(({
       {isRanked ? (
         <View style={s.filmCaptionRow}>
           <Text style={[s.filmRank, isFirst && s.filmRankFirst]}>{index + 1}</Text>
-          <Text style={s.filmTitleInline} numberOfLines={2}>{item.title}</Text>
+          <Text style={[s.filmTitleInline, titleBox]} numberOfLines={2}>{item.title}</Text>
         </View>
       ) : (
-        <Text style={s.filmTitle} numberOfLines={2}>{item.title}</Text>
+        <Text style={[s.filmTitle, titleBox]} numberOfLines={2}>{item.title}</Text>
       )}
     </Animated.View>
   );
@@ -1184,11 +1191,11 @@ const s = StyleSheet.create({
   metaText: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 10, lineHeight: 16, letterSpacing: 1.5, color: colors.fog },
   metaSep: { color: colors.sepia },
   metaChip: { flexDirection: 'row', alignItems: 'center', gap: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
-  metaChipText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
+  metaChipText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.9, color: colors.sepia, includeFontPadding: false },
   // The epigraph — prose wears Courier italic, folded past four lines.
   descWrap: { marginBottom: 24 },
   desc: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.bone, lineHeight: 21 },
-  descToggle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginTop: 8 },
+  descToggle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginTop: 8 },
   // Out of flow and invisible: it exists only to be laid out once, so it must
   // occupy the same width as the real epigraph and none of its height.
   descMeasure: { position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 },
@@ -1204,7 +1211,7 @@ const s = StyleSheet.create({
   // its own geometry rather than a 36pt control wearing a halo neither
   // platform's accessibility layer can see.
   actionItem: { flex: 1, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  actionLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+  actionLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog },
   actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
 
   // ── Critiques Panel ──
@@ -1219,15 +1226,15 @@ const s = StyleSheet.create({
   commentBodyWrap: { flex: 1 },
   commentHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
   commentUserPress: { flexShrink: 1 },
-  commentUser: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.5, color: colors.sepia },
+  commentUser: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.4, color: colors.sepia },
   // colors.ash is this app's BORDER colour, and it was being used as text:
   // 1.27:1 against the panel, where 4.5 is the floor for small type. Every
   // critique on the page was effectively undated. fog reads at 5.9:1.
-  commentTime: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 0.5, color: colors.fog, includeFontPadding: false },
+  commentTime: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.3, color: colors.fog, includeFontPadding: false },
   commentBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, lineHeight: 18, marginTop: 2 },
 
   trackRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 20 },
-  trackLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
+  trackLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
   trackLine: { flex: 1, height: 1 },
   
   // The gutters disagreed — 8 across, 24 down — so the sheet read tight
@@ -1245,12 +1252,13 @@ const s = StyleSheet.create({
    *
    * numberOfLines={2} with no reserved height meant a one-line title made a
    * short cell and a two-line title a tall one, so the rows stopped sharing a
-   * baseline and the index rippled. minHeight is two lines of its own
-   * lineHeight — computed, not typed — so it still grows rather than clips when
-   * the reader enlarges text.
+   * baseline and the index rippled. The reserve is two lines of its own
+   * lineHeight at the size the phone draws them — set on the card, as
+   * `titleBox`, because it changes with the member's text size. A minimum, so
+   * it still grows rather than clips.
    */
   filmTitle: {
-    fontFamily: fonts.sub, fontSize: 11, lineHeight: 14, minHeight: 28,
+    fontFamily: fonts.sub, fontSize: 11, lineHeight: FILM_TITLE_LINE,
     color: colors.fog, marginTop: 8, textAlign: 'center', paddingHorizontal: 2,
   },
   // The rank, off the artwork and into the catalogue line. A 28pt numeral under
@@ -1259,7 +1267,7 @@ const s = StyleSheet.create({
   filmCaptionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 5, marginTop: 8 },
   filmRank: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
   filmRankFirst: { color: colors.flicker },
-  filmTitleInline: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 11, lineHeight: 14, minHeight: 28, color: colors.fog, textAlign: 'center' },
+  filmTitleInline: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 11, lineHeight: FILM_TITLE_LINE, color: colors.fog, textAlign: 'center' },
   
   /* ── THE CRITIQUES ── an overlay, so the index behind it never moves ── */
   // The strip of page left visible above the sheet. Dimmed so the sheet reads
@@ -1282,7 +1290,7 @@ const s = StyleSheet.create({
   },
   critiqueTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },
   critiqueCountChip: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 1 },
-  critiqueCountText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+  critiqueCountText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog, includeFontPadding: false },
   // 48 by geometry, glyph hard right, so the box extends into empty chrome.
   critiqueClose: { marginLeft: 'auto', width: 48, height: 48, alignItems: 'flex-end', justifyContent: 'center', paddingRight: 4 },
   critiqueBody: { flex: 1 },

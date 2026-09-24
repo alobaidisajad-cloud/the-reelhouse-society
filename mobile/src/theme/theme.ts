@@ -482,8 +482,8 @@ export const typography = {
   body: { fontSize: 14, lineHeight: 24, fontFamily: fonts.body },
   bodyBold: { fontSize: 14, lineHeight: 24, fontFamily: fonts.bodyBold },
   caption: { fontSize: 10, lineHeight: 15, fontFamily: fonts.body },
-  micro: { fontSize: 8, lineHeight: 12, fontFamily: fonts.sub, letterSpacing: 2 },
-  label: { fontSize: 9, lineHeight: 12, fontFamily: fonts.sub, letterSpacing: 3, textTransform: 'uppercase' as const },
+  micro: { fontSize: 10, lineHeight: 15, fontFamily: fonts.sub, letterSpacing: 1.3 },
+  label: { fontSize: 10, lineHeight: 13.5, fontFamily: fonts.sub, letterSpacing: 2.4, textTransform: 'uppercase' as const },
 } as const;
 
 export const metrics = {

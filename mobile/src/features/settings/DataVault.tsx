@@ -549,7 +549,7 @@ const s = StyleSheet.create({
   // ── Import ──
   importSection: { marginBottom: 12 },
   subLabel: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1,
     color: colors.sepia, marginBottom: 10,
   },
   importDesc: {
@@ -567,7 +567,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.display, fontSize: 14, color: colors.parchment, marginBottom: 4,
   },
   uploadHint: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.2, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog,
   },
 
   // ── Progress ──
@@ -580,10 +580,10 @@ const s = StyleSheet.create({
     alignItems: 'center', marginBottom: 10,
   },
   progressPhase: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia,
   },
   progressCount: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog,
   },
   progressTrack: {
     width: '100%', height: 4, borderRadius: 2,
@@ -623,7 +623,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.display, fontSize: 20, color: colors.parchment,
   },
   statLabel: {
-    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fog, marginTop: 2,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.7, color: colors.fog, marginTop: 2,
   },
 
   // ── Skipped / Errors ──
@@ -632,7 +632,7 @@ const s = StyleSheet.create({
     marginTop: 10,
   },
   skippedText: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog,
   },
   errorScroll: { marginTop: 8 },
   errorLine: {

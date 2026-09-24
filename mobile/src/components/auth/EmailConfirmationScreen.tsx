@@ -151,8 +151,8 @@ const s = StyleSheet.create({
     color: colors.flicker, textAlign: 'center',
   },
   confirmInstructions: {
-    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1,
-    color: colors.fog, textAlign: 'center', lineHeight: 16,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6,
+    color: colors.fog, textAlign: 'center', lineHeight: 20,
     marginBottom: 24,
   },
   manualConfirmBtn: {

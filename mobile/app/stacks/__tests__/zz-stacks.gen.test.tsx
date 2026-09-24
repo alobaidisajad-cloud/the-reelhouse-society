@@ -4,23 +4,21 @@
  * Mock setup follows stack-detail.redesign.test.tsx, which already knew how to
  * stand this page up; the gradients here are the real ones, so they render.
  *
- * Run: MOCKUPS=1 npx jest zz-stacks.gen
+ * Run: MOCKUPS=1 npx jest zz-stacks.gen  (see mockups/README.md)
  */
 import React, { act } from 'react';
 import { render } from '@testing-library/react-native';
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { toHtml } from '@/src/components/profile/__tests__/zz-render.lib';
+import { LAYOUTS, atLayout, whenRendering, writeScreen } from '@/mockups/paths';
 import { POSTERS, POSTER_PATHS, POSTER_TITLES, LOCAL_ART } from '@/src/components/profile/__tests__/zz-art.gen';
 
 import StackDetailScreen from '../[id]';
 
-const OUT = 'C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/e2141512-2b50-44d3-be60-96590e558dd6/scratchpad/mockups';
 const STACK_ID = '11111111-1111-4111-8111-111111111111';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
+  default: () => ({ width: 390, height: 844, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
 }));
 
 let mockStackData: Record<string, unknown>;
@@ -64,20 +62,11 @@ jest.mock('@/src/utils/offlineQueue', () => ({
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 // The real address shape, so the renderer finds each poster's art by its path.
 jest.mock('@/src/lib/tmdb', () => ({ tmdb: { poster: (p: string, size: string) => `https://image.tmdb.org/t/p/${size}${p}` } }));
-jest.mock('@/src/components/layout/CinematicFlashList', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  const render = (c: React.ReactNode) => (typeof c === 'function' ? React.createElement(c as never) : c);
-  return { CinematicFlashList: ({ ListHeaderComponent, data, renderItem, contentContainerStyle }: {
-    ListHeaderComponent?: React.ReactNode; data?: unknown[];
-    renderItem?: (a: { item: unknown; index: number }) => React.ReactNode; contentContainerStyle?: unknown;
-  }) => React.createElement(View, { style: { flex: 1 } },
-    React.createElement(View, { style: contentContainerStyle },
-      render(ListHeaderComponent),
-      React.createElement(View, { style: { flexDirection: 'row', flexWrap: 'wrap' } },
-        ...(data ?? []).map((item, index) =>
-          React.createElement(React.Fragment, { key: index }, renderItem ? renderItem({ item, index }) : null))))) };
-});
+// The shared, faithful list stand-in: it gives each cell 1/numColumns of the
+// width, as the phone does. A hand-made one here never read `numColumns`.
+jest.mock('@/src/components/layout/CinematicFlashList', () => ({
+  CinematicFlashList: require('@/mockups/tabs/flashListMock').makeFlashListMock().FlashList,
+}));
 jest.mock('@/src/components/ShareToLoungeModal', () => () => null);
 jest.mock('@/src/components/moderation/ReportSheet', () => () => null);
 jest.mock('@/src/components/moderation/ContentActionSheet', () => ({ ContentActionSheet: () => null }));
@@ -96,16 +85,18 @@ const STATES: [string, Record<string, unknown>][] = [
   ['stack-noart', { films: FILMS.map((f) => ({ ...f, poster_path: null })) }],
 ];
 
-const RUN = !!process.env.MOCKUPS;
-const gate = RUN ? describe : describe.skip;
-gate('stack page generator', () => {
-  it.each(STATES)('writes %s', async (name, over) => {
-    mkdirSync(OUT, { recursive: true });
+// Each state in every layout: the captions' two-line box grows with the text.
+const RUNS = STATES.flatMap(([name, over]) => LAYOUTS.map((l) => [`${name}${l.suffix}`, over, l] as const));
+
+whenRendering('stack page generator', () => {
+  it.each(RUNS)('writes %s', async (name, over, layout) => {
     mockStackData = { list: { ...STACK, ...over }, endorseCount: 3 };
-    let r!: ReturnType<typeof render>;
-    await act(async () => { r = render(<StackDetailScreen />); });
-    const html = toHtml(r.toJSON(), { posters: POSTERS, local: LOCAL_ART });
-    writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
+    const html = await atLayout(layout, async () => {
+      let r!: ReturnType<typeof render>;
+      await act(async () => { r = render(<StackDetailScreen />); });
+      return toHtml(r.toJSON(), { posters: POSTERS, local: LOCAL_ART });
+    });
+    writeScreen(name, html);
     console.log(`WROTE ${name}: ${html.length} bytes`);
     expect(html.length).toBeGreaterThan(3000);
   });

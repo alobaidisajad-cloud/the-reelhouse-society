@@ -812,7 +812,7 @@ const s = StyleSheet.create({
 
   // ── Edge states ──
   centered: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 32 },
-  edgeLoad: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.fog, includeFontPadding: false },
+  edgeLoad: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.fog, includeFontPadding: false },
   crestSmall: {
     width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(184,137,26,0.35)', alignItems: 'center', justifyContent: 'center',
@@ -833,16 +833,16 @@ const s = StyleSheet.create({
   headerCrest: { marginBottom: 5, opacity: 0.95 },
   headerTitle: { fontFamily: fonts.sub, fontSize: 16, color: colors.parchment, letterSpacing: 0.3 },
   headerMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
-  headerMetaText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
+  headerMetaText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, includeFontPadding: false },
   metaDot: { width: 2, height: 2, borderRadius: 1, backgroundColor: colors.fog, marginHorizontal: 3 },
-  metaPrivate: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
+  metaPrivate: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.sepia, includeFontPadding: false },
   // THE HOUSE PULSE — a true brass ember, lit only when others are present.
   presenceEmber: {
     width: 5, height: 5, borderRadius: 3, backgroundColor: colors.marqueeGold,
     shadowColor: colors.marqueeGold, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4, elevation: 3,
     marginRight: 1,
   },
-  presenceText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.marqueeGold, includeFontPadding: false },
+  presenceText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.marqueeGold, includeFontPadding: false },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   doorBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.sepia,
@@ -856,7 +856,7 @@ const s = StyleSheet.create({
   dateDivider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 18 },
   dateLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.ash },
   dateSprocket: { width: 3, height: 3, borderRadius: 1, backgroundColor: 'rgba(184,137,26,0.45)' },
-  dateText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.fog, includeFontPadding: false },
+  dateText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog, includeFontPadding: false },
 
   row: { marginTop: 10 },
   rowSending: { opacity: 0.55 },
@@ -871,7 +871,7 @@ const s = StyleSheet.create({
   authorNameSelf: { color: colors.sepia },
   // 0.6 was 3.04:1 — every timestamp in every conversation. 0.8 made 4.59:1.
   // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
-  authorTime: { fontFamily: fonts.sub, fontSize: 8, color: colors.fogQuiet, includeFontPadding: false },
+  authorTime: { fontFamily: fonts.sub, fontSize: 10, color: colors.fogQuiet, includeFontPadding: false },
 
   contentCol: { paddingLeft: 32 },
   contentColSelf: { paddingLeft: 13, marginLeft: 11, borderLeftWidth: 2, borderLeftColor: 'rgba(184,137,26,0.45)' },
@@ -883,13 +883,13 @@ const s = StyleSheet.create({
   tombstoneText: { fontFamily: fonts.serifItalic, fontSize: 13.5, color: colors.fog },
 
   stateLine: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 5 },
-  stateLineText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, includeFontPadding: false },
+  stateLineText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
   // A word: the PANNED icon's pigment reads 2.78:1 as text, so the family's ink.
   stateLineFail: { color: colors.crimsonInk },
 
   // ── Reply pull-quote ──
   replyQuote: { borderLeftWidth: 2, borderLeftColor: colors.sepia, paddingLeft: 10, marginBottom: 7 },
-  replyQuoteAuthor: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 0.5, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
+  replyQuoteAuthor: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.4, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
   replyQuoteContent: { fontFamily: fonts.serifItalic, fontSize: 12.5, color: colors.fog, lineHeight: 17 },
 
   // ── Reactions ──
@@ -915,9 +915,9 @@ const s = StyleSheet.create({
   sharedGlyph: { fontFamily: fonts.display, fontSize: 22, color: colors.sepia, includeFontPadding: false },
   sharedInfo: { padding: 10, flex: 1, justifyContent: 'center' },
   sharedTypeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
-  sharedTypeText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
+  sharedTypeText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.sepia, includeFontPadding: false },
   sharedTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, lineHeight: 17 },
-  sharedByline: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.2, color: colors.fog, marginTop: 4 },
+  sharedByline: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog, marginTop: 4 },
 
   emptyChat: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 10 },
 
@@ -937,13 +937,13 @@ const s = StyleSheet.create({
   typingLine: { height: 16, justifyContent: 'center', marginBottom: 2 },
   typingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   typingDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia, opacity: 0.8 },
-  typingText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
+  typingText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.sepia, includeFontPadding: false },
   replyBanner: { ...EDGE_LIT,
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.soot, paddingVertical: 8, paddingHorizontal: 12,
     borderRadius: 4, marginBottom: 8, borderLeftWidth: 2, borderLeftColor: colors.sepia, gap: 10,
   },
   replyBannerCol: { flex: 1 },
-  replyBannerAuthor: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 0.5, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
+  replyBannerAuthor: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.4, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
   replyBannerText: { fontFamily: fonts.serif, fontSize: 12.5, color: colors.fog },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   input: {
@@ -978,9 +978,9 @@ const s = StyleSheet.create({
   gateCrest: { marginBottom: 6, opacity: 0.95 },
   gateName: { fontFamily: fonts.display, fontSize: 26, color: colors.parchment, textAlign: 'center', lineHeight: 32 },
   gatePrivateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  gatePrivateLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },
+  gatePrivateLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   gateDesc: { fontFamily: fonts.serif, fontSize: 15, color: colors.bone, textAlign: 'center', lineHeight: 23 },
-  gateMembers: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog, marginTop: 2, includeFontPadding: false },
+  gateMembers: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog, marginTop: 2, includeFontPadding: false },
   gateCopy: { fontFamily: fonts.serifItalic, fontSize: 13.5, color: colors.fog, textAlign: 'center', lineHeight: 21, marginTop: 4 },
   gateBtn: { marginTop: 14, backgroundColor: colors.sepia, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 4, minWidth: 200, alignItems: 'center' },
   gateBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.ink, includeFontPadding: false },

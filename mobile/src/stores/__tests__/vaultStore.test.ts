@@ -13,6 +13,9 @@
  *   · signing out empties the store AND the key on disk.
  */
 import { useAuthStore } from '../auth';
+// Loaded under the mocks below: jest hoists every jest.mock above the imports.
+import { useVaultStore } from '../vaultStore';
+import { resetAllStores } from '../resetAllStores';
 
 const mockFetch = jest.fn();
 const mockSet = jest.fn();
@@ -43,9 +46,6 @@ jest.mock('../mmkv-storage', () => ({
   zustandMMKVStorageSensitive: { getItem: () => null, setItem: jest.fn(), removeItem: (k: string) => mockRemoveItem(k) },
   createAsyncMMKVStorage: () => ({ getItem: () => null, setItem: jest.fn(), removeItem: jest.fn() }),
 }));
-
-import { useVaultStore } from '../vaultStore';
-import { resetAllStores } from '../resetAllStores';
 
 const ALICE = '11111111-1111-4111-8111-111111111111';
 const BOB = '22222222-2222-4222-8222-222222222222';
