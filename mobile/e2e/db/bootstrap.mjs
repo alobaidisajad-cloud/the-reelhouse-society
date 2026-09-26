@@ -13,7 +13,7 @@
  *                                kinds of statement postgres may not run, which
  *                                run as supabase_admin in step 3
  *   3. those statements          as supabase_admin
- *   4. live-outside-public.sql   as supabase_admin (an event trigger needs it)
+ *   4. live-outside-public.sql   as postgres, which owns those objects in production
  *   5. a stand-in for each vault secret the snapshot names
  *
  * Then it proves the world is SEALED: the database's one outbound call (the push
@@ -83,7 +83,10 @@ runSql('2. public (live-schema.sql), as postgres', AS_POSTGRES, lines.filter((l)
 runSql(`3. ${adminLines.length} default-privilege rules for supabase_admin`, AS_ADMIN, adminLines.join('\n'));
 
 // ── 4. everything outside public ─────────────────────────────────────────────
-runSql('4. outside public (live-outside-public.sql)', AS_ADMIN, read('live-outside-public.sql'));
+// As postgres: in production postgres owns the event trigger, the realtime
+// publication and the cron job. (Supabase refuses a superuser-owned event
+// trigger that runs a postgres-owned function, which is how this was found.)
+runSql('4. outside public (live-outside-public.sql), as postgres', AS_POSTGRES, read('live-outside-public.sql'));
 
 // ── 5. vault stand-ins ────────────────────────────────────────────────────────
 // Production's secrets never leave production. Each name the snapshot records
