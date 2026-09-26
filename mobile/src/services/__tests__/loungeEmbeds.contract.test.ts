@@ -58,8 +58,14 @@ function fromEnvFile(key: string): string | undefined {
   return undefined;
 }
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? fromEnvFile('EXPO_PUBLIC_SUPABASE_URL');
-const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? fromEnvFile('EXPO_PUBLIC_SUPABASE_ANON_KEY');
+/*
+ * CI hands the values in as CONTRACT_SUPABASE_* — names only this test reads.
+ * It used to set EXPO_PUBLIC_* on the whole Jest step, which gave all 4,000
+ * tests a live URL: exactly the trade described above. `src/lib` branch coverage
+ * then measured 0.8% lower on CI than anywhere else, and the ratchet failed.
+ */
+const SUPABASE_URL = process.env.CONTRACT_SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL ?? fromEnvFile('EXPO_PUBLIC_SUPABASE_URL');
+const ANON_KEY = process.env.CONTRACT_SUPABASE_ANON_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? fromEnvFile('EXPO_PUBLIC_SUPABASE_ANON_KEY');
 
 const EMBEDS: { table: string; select: string }[] = [
   { table: 'lounge_messages', select: 'id,profiles!lounge_messages_user_id_fkey(username,avatar_url)' },

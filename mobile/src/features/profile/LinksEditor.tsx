@@ -45,7 +45,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                       <Text {...scaledTextProps} style={st.fieldLabel}>TITLE</Text>
                       <ControlledInput
                         name={`links.${index}.title` as const}
-                        style={st.fieldInput} placeholder="e.g. My Portfolio, Blog, Channel..." placeholderTextColor={colors.fog} maxLength={40} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia}
+                        style={st.fieldInput} placeholder="Portfolio, Blog, Channel…" placeholderTextColor={colors.fog} maxLength={40} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia}
                       />
                   </View>
                   

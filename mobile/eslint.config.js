@@ -38,7 +38,7 @@ module.exports = defineConfig([
     rules: { 'no-restricted-imports': 'off' },
   },
   {
-    files: ['scripts/**/*.js', 'test-utils/**/*.js', 'mockups/tools/**/*.cjs'],
+    files: ['scripts/**/*.js', 'test-utils/**/*.js', 'mockups/tools/**/*.cjs', '.claude/hooks/**/*.cjs'],
     languageOptions: {
       globals: {
         __dirname: 'readonly',

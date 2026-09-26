@@ -79,10 +79,12 @@ export const DarkroomHero = React.memo(function DarkroomHero({
                Dynamic Type setting cut it (as it does in production). A
                TextInput placeholder cannot use adjustsFontSizeToFit, so the
                string itself had to give. "Film" is redundant inside a film app,
-               under a heading that reads THE NEGATIVES; this keeps every piece
-               of information and buys headroom to 1.36x — just past the 1.35
-               cap applied above, so the two agree. */
-            placeholder="Title, director, actor…"
+               under a heading that reads THE NEGATIVES.
+               That second version claimed headroom to 1.36x; measured again
+               (mockups/tools/layout.cjs, with the field's 46/40 insets) it held
+               only to 1.29x and ended "actor…" at 1.35. "Cast" says what
+               "actor…" said in fewer letters: 231pt of a 238pt slot at 1.35. */
+            placeholder="Title, director, cast"
             placeholderTextColor={colors.fog}
             selectionColor={colors.selection}
             value={inputVal}

@@ -373,7 +373,7 @@ export function PasswordChangePanel() {
               </View>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>NEW PASSWORD</Text>
-                <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="Society encryption standard" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="New password" {...scaledTextProps} />
+                <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="To the Society's standard" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="New password" {...scaledTextProps} />
                 {newPassword.length > 0 && (
                   <View style={st.pwMeter} accessible accessibilityRole="progressbar" accessibilityLabel={`Cipher strength: ${strength.label}`}>
                     <View style={st.pwBars}>

@@ -191,12 +191,19 @@ for (const v of Object.values(POSTERS)) {
   if (RELABEL[v.title]) v.title = RELABEL[v.title];
 }
 
-/** The house's real mark, inlined, for the card that leaves the app. */
+/**
+ * The house's real mark, inlined, for the card that leaves the app.
+ *
+ * Read from the repository (public/, beside mobile/), never from one machine's
+ * disk. This was `C:/Users/…` — on CI's Linux runner that file does not exist,
+ * the whole suite failed to load, the Dispatch lost the coverage this suite
+ * gives it, and the native Jest job was red on every push from 2026-09-10.
+ */
 const LOGO_KEY = '/reelhouselogo.jpg';
 IMAGES[LOGO_KEY] = {
   title: '',
   data: 'data:image/png;base64,' + readFileSync(
-    'C:/Users/OMEN/OneDrive/Desktop/divisionops/reelhouse/public/reelhouse-logo-transparent.png',
+    join(__dirname, '..', '..', '..', '..', 'public', 'reelhouse-logo-transparent.png'),
   ).toString('base64'),
 };
 

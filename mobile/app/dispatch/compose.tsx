@@ -1043,6 +1043,17 @@ function ComposeDossierScreen() {
                             // `MAX_LENGTHS` is where that number is decided, and
                             // it already agrees with the ceiling checked live.
                             maxLength={MAX_LENGTHS.filingTitle}
+                            // ── A HEADLINE YOU CAN SEE WHILE YOU WRITE IT ──────
+                            // One line at 30pt holds about twenty characters,
+                            // and a title may run to two hundred: past the first
+                            // few words the start scrolled away, so a member wrote
+                            // their headline blind. It wraps and grows now. Return
+                            // still ends the title — a headline has no line breaks.
+                            multiline
+                            scrollEnabled={false}
+                            submitBehavior="blurAndSubmit"
+                            returnKeyType="done"
+                            textAlignVertical="top"
                             cursorColor={colors.sepia}
                             selectionColor="rgba(184,137,26,0.3)"
                             keyboardAppearance="dark"

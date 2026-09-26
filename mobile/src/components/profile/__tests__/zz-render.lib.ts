@@ -644,9 +644,40 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
       ? (typeof p.minimumFontScale === 'number' ? p.minimumFontScale : 0.5)
       : 0;
     const capAttr = ` data-scale-cap="${cap}"${fit ? ` data-fit-min="${fit}"` : ''}`;
-    return `<span${capAttr} style="${css(st, true)}${clamp}">${(n.children || []).map((c) => toHtml(c, opts, inSvg)).join('')}</span>`;
+    // The harness holds every text to its parent's width (RN measures text
+    // against the space it is given) — but a Text with its OWN width keeps it,
+    // as it does in Yoga: the ticket's rotated ADMIT ONE is 96pt inside a 42pt
+    // stub, and capped it read as 36pt cut when it fits with 18 to spare.
+    const ownWidth = st.width !== undefined && st.width !== null && st.width !== 'auto' ? ';max-width:none' : '';
+    return `<span${capAttr} style="${css(st, true)}${clamp}${ownWidth}">${(n.children || []).map((c) => toHtml(c, opts, inSvg)).join('')}</span>`;
   }
   if (t === 'ActivityIndicator') return '<div class="spinner"></div>';
+
+  /**
+   * ── A FIELD SHOWS WHAT IS IN IT, OR WHAT IT ASKS FOR ──────────────────────
+   * A TextInput has no children — its text lives in `value` / `placeholder` —
+   * so every field in every render was an empty box, and no placeholder in
+   * the app had ever been measured for fit or colour ("Search salons…" drew
+   * as a blank black slot). It is drawn now with the same text-size cap a Text
+   * carries: one line vertically centred (a long placeholder ends in "…", as
+   * iOS draws it); a multiline field wraps; a secret field shows its dots.
+   */
+  if (t === 'TextInput') {
+    const raw = typeof p.value === 'string' && p.value ? p.value
+      : typeof p.defaultValue === 'string' && p.defaultValue ? p.defaultValue : '';
+    const isPlaceholder = !raw && typeof p.placeholder === 'string';
+    const shown: string = raw ? (p.secureTextEntry ? '•'.repeat(raw.length) : raw) : isPlaceholder ? String(p.placeholder) : '';
+    const cap = p.allowFontScaling === false ? 1 : (typeof p.maxFontSizeMultiplier === 'number' ? p.maxFontSizeMultiplier : 0);
+    const colour = isPlaceholder && typeof p.placeholderTextColor === 'string' ? `color:${p.placeholderTextColor};` : '';
+    // A multiline field breaks a word wider than itself mid-letter, as the phone
+    // does — and wraps its spaces too: `pre-wrap` lets a space at a line's end
+    // hang past the box, which the audit then measured as overflow.
+    const layout = p.multiline === true
+      ? 'display:block;white-space:break-spaces;overflow-wrap:anywhere'
+      : 'display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:auto;margin-bottom:auto';
+    const text = shown ? `<span data-scale-cap="${cap}" style="${colour}${layout}">${esc(shown)}</span>` : '';
+    return `<div style="${css(st, false)}">${text}</div>`;
+  }
 
   const kids = (n.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
 

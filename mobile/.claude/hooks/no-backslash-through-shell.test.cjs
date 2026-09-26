@@ -1,6 +1,6 @@
 // Proves the guard blocks the real trap and lets innocent commands through.
 const { execFileSync } = require('child_process');
-const HOOK = 'C:/Users/OMEN/OneDrive/Desktop/divisionops/reelhouse/mobile/.claude/hooks/no-backslash-through-shell.cjs';
+const HOOK = require('path').join(__dirname, 'no-backslash-through-shell.cjs');
 
 const run = (command) => {
   try {

@@ -89,11 +89,15 @@ jobs:
       # suite" in the totals. Verified locally against the live database before
       # enabling: 3/3 pass. If the secrets are not configured it simply skips again,
       # exactly as it does today, so this cannot turn the build red.
+      #
+      # CONTRACT_* names, read by that one test only. As EXPO_PUBLIC_* they reached
+      # every test in the run — a live URL where the suite relies on a dummy one —
+      # and moved src/lib branch coverage 0.8% below every other machine's.
       - name: Jest (with coverage gate)
         working-directory: ./mobile
         env:
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          CONTRACT_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          CONTRACT_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           set -o pipefail
           npx jest --coverage --ci --maxWorkers=2 2>&1 | tee jest-output.txt
@@ -130,8 +134,8 @@ jobs:
         working-directory: ./mobile
         env:
           TZ: America/Los_Angeles
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          CONTRACT_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          CONTRACT_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: npx jest --ci --silent --maxWorkers=2
 
       # The ratchet has existed, calibrated, since June and NOTHING has ever run it —
