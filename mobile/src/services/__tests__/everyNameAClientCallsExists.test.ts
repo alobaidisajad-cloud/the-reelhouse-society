@@ -12,7 +12,7 @@
  * So both clients are held to the database as it IS: every `.from('table')`,
  * `.rpc('function')` and `storage.from('bucket')` in the mobile app and the web
  * app must name something in the committed snapshot of production —
- * supabase/schema/live-schema.sql and live-state.txt, which `npm run
+ * supabase/schema/live-schema.sql and live-outside-public.sql, which `npm run
  * schema:check` compares against the live database.
  */
 import { readdirSync, readFileSync } from 'fs';
@@ -21,15 +21,12 @@ import { join, relative } from 'path';
 const MOBILE = join(__dirname, '..', '..', '..');
 const REPO = join(MOBILE, '..');
 const SCHEMA = readFileSync(join(MOBILE, 'supabase', 'schema', 'live-schema.sql'), 'utf8');
-const STATE = readFileSync(join(MOBILE, 'supabase', 'schema', 'live-state.txt'), 'utf8');
+const OUTSIDE = readFileSync(join(MOBILE, 'supabase', 'schema', 'live-outside-public.sql'), 'utf8');
 
 const collect = (re: RegExp, src: string) => new Set([...src.matchAll(re)].map(m => m[1]));
 const TABLES = collect(/CREATE (?:TABLE|VIEW|MATERIALIZED VIEW) public\.([a-z_0-9]+) /g, SCHEMA);
 const FUNCTIONS = collect(/CREATE FUNCTION public\.([a-z_0-9]+)\(/g, SCHEMA);
-const BUCKETS = (() => {
-  const section = STATE.split('[storage buckets]')[1]?.split('\n[')[0] ?? '';
-  return new Set(section.split('\n').map(l => l.trim().split(/\s+/)[0]).filter(Boolean));
-})();
+const BUCKETS = collect(/^INSERT INTO storage\.buckets \([^)]*\) VALUES \('([^']+)'/gm, OUTSIDE);
 
 const walk = (dir: string, out: string[] = []): string[] => {
   for (const e of readdirSync(dir, { withFileTypes: true })) {

@@ -42,25 +42,25 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 CREATE FUNCTION public.accept_follow_request(requester_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  -- Convert follow_request → follow
-  UPDATE public.interactions
-  SET type = 'follow'
-  WHERE user_id = requester_id
-    AND target_user_id = auth.uid()
-    AND type = 'follow_request';
-
-  -- Increment follower count for current user
-  UPDATE public.profiles
-  SET followers_count = COALESCE(followers_count, 0) + 1
-  WHERE id = auth.uid();
-
-  -- Increment following count for the requester
-  UPDATE public.profiles
-  SET following_count = COALESCE(following_count, 0) + 1
-  WHERE id = requester_id;
-END;
+    AS $$
+BEGIN
+  -- Convert follow_request → follow
+  UPDATE public.interactions
+  SET type = 'follow'
+  WHERE user_id = requester_id
+    AND target_user_id = auth.uid()
+    AND type = 'follow_request';
+
+  -- Increment follower count for current user
+  UPDATE public.profiles
+  SET followers_count = COALESCE(followers_count, 0) + 1
+  WHERE id = auth.uid();
+
+  -- Increment following count for the requester
+  UPDATE public.profiles
+  SET following_count = COALESCE(following_count, 0) + 1
+  WHERE id = requester_id;
+END;
 $$;
 
 
@@ -71,11 +71,11 @@ $$;
 CREATE FUNCTION public.apply_entitlement(p_user_id uuid, p_tier text) RETURNS TABLE(out_role text, out_tier text)
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  RETURN QUERY SELECT r.out_role, r.out_tier
-    FROM public.grant_entitlement(p_user_id, p_tier, 'legacy') r;
-END;
+    AS $$
+BEGIN
+  RETURN QUERY SELECT r.out_role, r.out_tier
+    FROM public.grant_entitlement(p_user_id, p_tier, 'legacy') r;
+END;
 $$;
 
 
@@ -86,19 +86,19 @@ $$;
 CREATE FUNCTION public.approve_lounge_member(p_lounge_id uuid, p_user_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_lname text;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  IF auth.uid() IS DISTINCT FROM (SELECT creator_id FROM public.lounges WHERE id = p_lounge_id) THEN
-    RAISE EXCEPTION 'Only the host can admit members'; END IF;
-  UPDATE public.lounge_members SET status = 'approved'
-   WHERE lounge_id = p_lounge_id AND user_id = p_user_id AND status = 'pending';
-  IF FOUND THEN
-    SELECT name INTO v_lname FROM public.lounges WHERE id = p_lounge_id;
-    INSERT INTO public.notifications (user_id, type, from_user_id, message, related_lounge_id)
-    VALUES (p_user_id, 'system', auth.uid(), 'You were admitted to ' || COALESCE(v_lname,'the lounge') || '.', p_lounge_id);
-  END IF;
+    AS $$
+DECLARE v_lname text;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  IF auth.uid() IS DISTINCT FROM (SELECT creator_id FROM public.lounges WHERE id = p_lounge_id) THEN
+    RAISE EXCEPTION 'Only the host can admit members'; END IF;
+  UPDATE public.lounge_members SET status = 'approved'
+   WHERE lounge_id = p_lounge_id AND user_id = p_user_id AND status = 'pending';
+  IF FOUND THEN
+    SELECT name INTO v_lname FROM public.lounges WHERE id = p_lounge_id;
+    INSERT INTO public.notifications (user_id, type, from_user_id, message, related_lounge_id)
+    VALUES (p_user_id, 'system', auth.uid(), 'You were admitted to ' || COALESCE(v_lname,'the lounge') || '.', p_lounge_id);
+  END IF;
 END $$;
 
 
@@ -109,16 +109,16 @@ END $$;
 CREATE FUNCTION public.assign_list_item_position() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF NEW.rank_position IS NULL THEN
-    SELECT COALESCE(MAX(li.rank_position) + 1, 0)
-      INTO NEW.rank_position
-      FROM public.list_items li
-     WHERE li.list_id = NEW.list_id;
-  END IF;
-  RETURN NEW;
-END;
+    AS $$
+BEGIN
+  IF NEW.rank_position IS NULL THEN
+    SELECT COALESCE(MAX(li.rank_position) + 1, 0)
+      INTO NEW.rank_position
+      FROM public.list_items li
+     WHERE li.list_id = NEW.list_id;
+  END IF;
+  RETURN NEW;
+END;
 $$;
 
 
@@ -129,15 +129,15 @@ $$;
 CREATE FUNCTION public.audience_allows(p_actor uuid, p_owner uuid, p_pref text) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT CASE
-    WHEN p_owner IS NULL THEN TRUE
-    WHEN p_actor = p_owner THEN TRUE
-    WHEN COALESCE(p_pref, 'everyone') = 'everyone' THEN TRUE
-    WHEN COALESCE(p_pref, 'everyone') = 'nobody' THEN FALSE
-    ELSE EXISTS (SELECT 1 FROM public.interactions
-                 WHERE type = 'follow' AND user_id = p_actor AND target_user_id = p_owner)
-  END;
+    AS $$
+  SELECT CASE
+    WHEN p_owner IS NULL THEN TRUE
+    WHEN p_actor = p_owner THEN TRUE
+    WHEN COALESCE(p_pref, 'everyone') = 'everyone' THEN TRUE
+    WHEN COALESCE(p_pref, 'everyone') = 'nobody' THEN FALSE
+    ELSE EXISTS (SELECT 1 FROM public.interactions
+                 WHERE type = 'follow' AND user_id = p_actor AND target_user_id = p_owner)
+  END;
 $$;
 
 
@@ -148,30 +148,30 @@ $$;
 CREATE FUNCTION public.bulk_dismiss_reports(p_report_ids uuid[], p_admin_id uuid, p_reason text DEFAULT 'Bulk dismissed'::text) RETURNS integer
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_admin_id uuid := auth.uid();
-  v_count int;
-BEGIN
-  IF v_admin_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = v_admin_id AND role = 'admin') THEN
-    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
-  END IF;
-
-  UPDATE reports
-  SET status = 'resolved', resolved_at = now(), resolved_by = v_admin_id, resolution_action = 'dismiss'
-  WHERE id = ANY(p_report_ids) AND status = 'pending';
-
-  GET DIAGNOSTICS v_count = ROW_COUNT;
-
-  INSERT INTO mod_actions (report_id, target_user_id, admin_id, action, reason)
-  SELECT r.id, r.target_user_id, v_admin_id, 'dismiss', p_reason
-  FROM reports r WHERE r.id = ANY(p_report_ids);
-
-  RETURN v_count;
-END;
+    AS $$
+DECLARE
+  v_admin_id uuid := auth.uid();
+  v_count int;
+BEGIN
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = v_admin_id AND role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
+  END IF;
+
+  UPDATE reports
+  SET status = 'resolved', resolved_at = now(), resolved_by = v_admin_id, resolution_action = 'dismiss'
+  WHERE id = ANY(p_report_ids) AND status = 'pending';
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  INSERT INTO mod_actions (report_id, target_user_id, admin_id, action, reason)
+  SELECT r.id, r.target_user_id, v_admin_id, 'dismiss', p_reason
+  FROM reports r WHERE r.id = ANY(p_report_ids);
+
+  RETURN v_count;
+END;
 $$;
 
 
@@ -182,10 +182,10 @@ $$;
 CREATE FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT public.audience_allows(p_actor, l.user_id,
-    (SELECT preferences->>'privacy_annotations' FROM public.profiles WHERE id = l.user_id))
-  FROM public.lists l WHERE l.id = p_list_id;
+    AS $$
+  SELECT public.audience_allows(p_actor, l.user_id,
+    (SELECT preferences->>'privacy_annotations' FROM public.profiles WHERE id = l.user_id))
+  FROM public.lists l WHERE l.id = p_list_id;
 $$;
 
 
@@ -196,10 +196,10 @@ $$;
 CREATE FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT public.audience_allows(p_actor, l.user_id,
-    (SELECT preferences->>'privacy_annotations' FROM public.profiles WHERE id = l.user_id))
-  FROM public.logs l WHERE l.id = p_log_id;
+    AS $$
+  SELECT public.audience_allows(p_actor, l.user_id,
+    (SELECT preferences->>'privacy_annotations' FROM public.profiles WHERE id = l.user_id))
+  FROM public.logs l WHERE l.id = p_log_id;
 $$;
 
 
@@ -210,19 +210,19 @@ $$;
 CREATE FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id uuid, p_list_id uuid) RETURNS boolean
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_owner uuid; v_pref text;
-BEGIN
-  IF p_type = 'endorse_log' THEN
-    SELECT user_id INTO v_owner FROM public.logs WHERE id = p_log_id;
-  ELSIF p_type = 'endorse_list' THEN
-    SELECT user_id INTO v_owner FROM public.lists WHERE id = p_list_id;
-  ELSE
-    RETURN TRUE;
-  END IF;
-  SELECT preferences->>'privacy_endorsements' INTO v_pref FROM public.profiles WHERE id = v_owner;
-  RETURN public.audience_allows(p_actor, v_owner, v_pref);
-END;
+    AS $$
+DECLARE v_owner uuid; v_pref text;
+BEGIN
+  IF p_type = 'endorse_log' THEN
+    SELECT user_id INTO v_owner FROM public.logs WHERE id = p_log_id;
+  ELSIF p_type = 'endorse_list' THEN
+    SELECT user_id INTO v_owner FROM public.lists WHERE id = p_list_id;
+  ELSE
+    RETURN TRUE;
+  END IF;
+  SELECT preferences->>'privacy_endorsements' INTO v_pref FROM public.profiles WHERE id = v_owner;
+  RETURN public.audience_allows(p_actor, v_owner, v_pref);
+END;
 $$;
 
 
@@ -233,26 +233,26 @@ $$;
 CREATE FUNCTION public.can_view_user_data(target_uid uuid) RETURNS boolean
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  is_private    boolean;
-  profile_found boolean;
-  is_following  boolean;
-BEGIN
-  IF auth.uid() = target_uid THEN RETURN TRUE; END IF;
-
-  SELECT is_social_private, TRUE INTO is_private, profile_found
-    FROM public.profiles WHERE id = target_uid;
-
-  IF NOT COALESCE(profile_found, false) THEN RETURN FALSE; END IF;
-  IF NOT COALESCE(is_private, false)   THEN RETURN TRUE;  END IF;
-
-  SELECT EXISTS (
-    SELECT 1 FROM public.interactions
-    WHERE type = 'follow' AND user_id = auth.uid() AND target_user_id = target_uid
-  ) INTO is_following;
-
-  RETURN COALESCE(is_following, false);
+    AS $$
+DECLARE
+  is_private    boolean;
+  profile_found boolean;
+  is_following  boolean;
+BEGIN
+  IF auth.uid() = target_uid THEN RETURN TRUE; END IF;
+
+  SELECT is_social_private, TRUE INTO is_private, profile_found
+    FROM public.profiles WHERE id = target_uid;
+
+  IF NOT COALESCE(profile_found, false) THEN RETURN FALSE; END IF;
+  IF NOT COALESCE(is_private, false)   THEN RETURN TRUE;  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.interactions
+    WHERE type = 'follow' AND user_id = auth.uid() AND target_user_id = target_uid
+  ) INTO is_following;
+
+  RETURN COALESCE(is_following, false);
 END $$;
 
 
@@ -263,17 +263,17 @@ END $$;
 CREATE FUNCTION public.check_interaction_rate_limit() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM interactions 
-    WHERE user_id = NEW.user_id 
-    AND created_at > (NOW() - INTERVAL '1 second')
-  ) THEN
-    RAISE EXCEPTION 'PGRST301: Too many requests. Please wait a moment.';
-  END IF;
-  RETURN NEW;
-END;
+    AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM interactions 
+    WHERE user_id = NEW.user_id 
+    AND created_at > (NOW() - INTERVAL '1 second')
+  ) THEN
+    RAISE EXCEPTION 'PGRST301: Too many requests. Please wait a moment.';
+  END IF;
+  RETURN NEW;
+END;
 $$;
 
 
@@ -284,25 +284,25 @@ $$;
 CREATE FUNCTION public.claim_films_to_sync(p_limit integer DEFAULT 20) RETURNS TABLE(id integer)
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_limit integer := LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100);
-BEGIN
-  RETURN QUERY
-  UPDATE public.films f
-     SET sync_claimed_at = now()
-   WHERE f.id IN (
-     SELECT c.id
-       FROM public.films c
-      WHERE c.synced_at IS NULL
-        AND c.sync_failed < 3
-        AND (c.sync_claimed_at IS NULL OR c.sync_claimed_at < now() - interval '10 minutes')
-      ORDER BY c.id
-      LIMIT v_limit
-      FOR UPDATE SKIP LOCKED
-   )
-  RETURNING f.id;
-END;
+    AS $$
+DECLARE
+  v_limit integer := LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100);
+BEGIN
+  RETURN QUERY
+  UPDATE public.films f
+     SET sync_claimed_at = now()
+   WHERE f.id IN (
+     SELECT c.id
+       FROM public.films c
+      WHERE c.synced_at IS NULL
+        AND c.sync_failed < 3
+        AND (c.sync_claimed_at IS NULL OR c.sync_claimed_at < now() - interval '10 minutes')
+      ORDER BY c.id
+      LIMIT v_limit
+      FOR UPDATE SKIP LOCKED
+   )
+  RETURNING f.id;
+END;
 $$;
 
 
@@ -313,37 +313,37 @@ $$;
 CREATE FUNCTION public.claim_founding_seat(p_user_id uuid, p_max_seats integer DEFAULT 100) RETURNS boolean
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_seats_claimed INTEGER;
-  v_already_founding BOOLEAN;
-BEGIN
-  SELECT is_founding INTO v_already_founding
-  FROM public.profiles WHERE id = p_user_id;
-
-  IF v_already_founding THEN
-    RETURN true;
-  END IF;
-
-  SELECT seats_claimed INTO v_seats_claimed
-  FROM public.founding_seat_counter
-  WHERE id = 1
-  FOR UPDATE;
-
-  IF v_seats_claimed >= p_max_seats THEN
-    RETURN false;
-  END IF;
-
-  UPDATE public.founding_seat_counter
-  SET seats_claimed = seats_claimed + 1
-  WHERE id = 1;
-
-  UPDATE public.profiles
-  SET is_founding = true
-  WHERE id = p_user_id;
-
-  RETURN true;
-END;
+    AS $$
+DECLARE
+  v_seats_claimed INTEGER;
+  v_already_founding BOOLEAN;
+BEGIN
+  SELECT is_founding INTO v_already_founding
+  FROM public.profiles WHERE id = p_user_id;
+
+  IF v_already_founding THEN
+    RETURN true;
+  END IF;
+
+  SELECT seats_claimed INTO v_seats_claimed
+  FROM public.founding_seat_counter
+  WHERE id = 1
+  FOR UPDATE;
+
+  IF v_seats_claimed >= p_max_seats THEN
+    RETURN false;
+  END IF;
+
+  UPDATE public.founding_seat_counter
+  SET seats_claimed = seats_claimed + 1
+  WHERE id = 1;
+
+  UPDATE public.profiles
+  SET is_founding = true
+  WHERE id = p_user_id;
+
+  RETURN true;
+END;
 $$;
 
 
@@ -376,19 +376,19 @@ END $$;
 CREATE FUNCTION public.decline_all_follow_requests() RETURNS integer
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_count integer;
-BEGIN
-  WITH deleted AS (
-    DELETE FROM public.interactions
-    WHERE target_user_id = auth.uid()
-      AND type = 'follow_request'
-    RETURNING 1
-  )
-  SELECT COUNT(*) INTO v_count FROM deleted;
-  RETURN COALESCE(v_count, 0);
-END;
+    AS $$
+DECLARE
+  v_count integer;
+BEGIN
+  WITH deleted AS (
+    DELETE FROM public.interactions
+    WHERE target_user_id = auth.uid()
+      AND type = 'follow_request'
+    RETURNING 1
+  )
+  SELECT COUNT(*) INTO v_count FROM deleted;
+  RETURN COALESCE(v_count, 0);
+END;
 $$;
 
 
@@ -399,13 +399,13 @@ $$;
 CREATE FUNCTION public.decline_follow_request(requester_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  DELETE FROM public.interactions
-  WHERE user_id = requester_id
-    AND target_user_id = auth.uid()
-    AND type = 'follow_request';
-END;
+    AS $$
+BEGIN
+  DELETE FROM public.interactions
+  WHERE user_id = requester_id
+    AND target_user_id = auth.uid()
+    AND type = 'follow_request';
+END;
 $$;
 
 
@@ -416,12 +416,12 @@ $$;
 CREATE FUNCTION public.decline_lounge_member(p_lounge_id uuid, p_user_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  IF auth.uid() IS DISTINCT FROM (SELECT creator_id FROM public.lounges WHERE id = p_lounge_id) THEN
-    RAISE EXCEPTION 'Only the host can decline requests'; END IF;
-  DELETE FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = p_user_id AND status = 'pending';
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  IF auth.uid() IS DISTINCT FROM (SELECT creator_id FROM public.lounges WHERE id = p_lounge_id) THEN
+    RAISE EXCEPTION 'Only the host can decline requests'; END IF;
+  DELETE FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = p_user_id AND status = 'pending';
 END $$;
 
 
@@ -432,27 +432,27 @@ END $$;
 CREATE FUNCTION public.delete_list_cascade(p_list_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_owner_id UUID;
-BEGIN
-  SELECT user_id INTO v_owner_id
-  FROM lists
-  WHERE id = p_list_id;
-
-  IF v_owner_id IS NULL THEN
-    RAISE EXCEPTION 'List not found';
-  END IF;
-
-  IF v_owner_id != auth.uid() THEN
-    RAISE EXCEPTION 'Unauthorized: you do not own this list';
-  END IF;
-
-  DELETE FROM list_items WHERE list_id = p_list_id;
-  DELETE FROM list_comments WHERE list_id = p_list_id;
-  DELETE FROM interactions WHERE target_list_id = p_list_id;
-  DELETE FROM lists WHERE id = p_list_id;
-END;
+    AS $$
+DECLARE
+  v_owner_id UUID;
+BEGIN
+  SELECT user_id INTO v_owner_id
+  FROM lists
+  WHERE id = p_list_id;
+
+  IF v_owner_id IS NULL THEN
+    RAISE EXCEPTION 'List not found';
+  END IF;
+
+  IF v_owner_id != auth.uid() THEN
+    RAISE EXCEPTION 'Unauthorized: you do not own this list';
+  END IF;
+
+  DELETE FROM list_items WHERE list_id = p_list_id;
+  DELETE FROM list_comments WHERE list_id = p_list_id;
+  DELETE FROM interactions WHERE target_list_id = p_list_id;
+  DELETE FROM lists WHERE id = p_list_id;
+END;
 $$;
 
 
@@ -463,19 +463,19 @@ $$;
 CREATE FUNCTION public.derive_author_username_column() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_handle text;
-BEGIN
-  IF NEW.user_id IS NULL THEN
-    RETURN NEW;
-  END IF;
-  SELECT username INTO v_handle FROM public.profiles WHERE id = NEW.user_id;
-  IF v_handle IS NULL THEN
-    RETURN NEW;
-  END IF;
-  NEW.author_username := v_handle;
-  RETURN NEW;
-END;
+    AS $$
+DECLARE v_handle text;
+BEGIN
+  IF NEW.user_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  SELECT username INTO v_handle FROM public.profiles WHERE id = NEW.user_id;
+  IF v_handle IS NULL THEN
+    RETURN NEW;
+  END IF;
+  NEW.author_username := v_handle;
+  RETURN NEW;
+END;
 $$;
 
 
@@ -486,19 +486,19 @@ $$;
 CREATE FUNCTION public.derive_username_column() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_handle text;
-BEGIN
-  IF NEW.user_id IS NULL THEN
-    RETURN NEW;
-  END IF;
-  SELECT username INTO v_handle FROM public.profiles WHERE id = NEW.user_id;
-  IF v_handle IS NULL THEN
-    RETURN NEW;
-  END IF;
-  NEW.username := v_handle;
-  RETURN NEW;
-END;
+    AS $$
+DECLARE v_handle text;
+BEGIN
+  IF NEW.user_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  SELECT username INTO v_handle FROM public.profiles WHERE id = NEW.user_id;
+  IF v_handle IS NULL THEN
+    RETURN NEW;
+  END IF;
+  NEW.username := v_handle;
+  RETURN NEW;
+END;
 $$;
 
 
@@ -509,17 +509,17 @@ $$;
 CREATE FUNCTION public.dispatch_comments_pin_columns() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF current_user IN ('postgres', 'service_role', 'supabase_admin') THEN
-    RETURN NEW;
-  END IF;
-  NEW.certify_count := OLD.certify_count;
-  NEW.created_at    := OLD.created_at;
-  -- A critique belongs to the filing it was written under. Moving it puts a
-  -- member's words beneath somebody else's writing.
-  NEW.post_id       := OLD.post_id;
-  RETURN NEW;
+    AS $$
+BEGIN
+  IF current_user IN ('postgres', 'service_role', 'supabase_admin') THEN
+    RETURN NEW;
+  END IF;
+  NEW.certify_count := OLD.certify_count;
+  NEW.created_at    := OLD.created_at;
+  -- A critique belongs to the filing it was written under. Moving it puts a
+  -- member's words beneath somebody else's writing.
+  NEW.post_id       := OLD.post_id;
+  RETURN NEW;
 END $$;
 
 
@@ -530,25 +530,25 @@ END $$;
 CREATE FUNCTION public.dispatch_count_cert() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    IF NEW.post_id IS NOT NULL THEN
-      UPDATE public.dispatch_posts SET certify_count = certify_count + 1 WHERE id = NEW.post_id;
-    ELSE
-      UPDATE public.dispatch_comments SET certify_count = certify_count + 1 WHERE id = NEW.comment_id;
-    END IF;
-    RETURN NEW;
-  ELSE
-    IF OLD.post_id IS NOT NULL THEN
-      UPDATE public.dispatch_posts
-         SET certify_count = GREATEST(0, certify_count - 1) WHERE id = OLD.post_id;
-    ELSE
-      UPDATE public.dispatch_comments
-         SET certify_count = GREATEST(0, certify_count - 1) WHERE id = OLD.comment_id;
-    END IF;
-    RETURN OLD;
-  END IF;
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.post_id IS NOT NULL THEN
+      UPDATE public.dispatch_posts SET certify_count = certify_count + 1 WHERE id = NEW.post_id;
+    ELSE
+      UPDATE public.dispatch_comments SET certify_count = certify_count + 1 WHERE id = NEW.comment_id;
+    END IF;
+    RETURN NEW;
+  ELSE
+    IF OLD.post_id IS NOT NULL THEN
+      UPDATE public.dispatch_posts
+         SET certify_count = GREATEST(0, certify_count - 1) WHERE id = OLD.post_id;
+    ELSE
+      UPDATE public.dispatch_comments
+         SET certify_count = GREATEST(0, certify_count - 1) WHERE id = OLD.comment_id;
+    END IF;
+    RETURN OLD;
+  END IF;
 END $$;
 
 
@@ -559,16 +559,16 @@ END $$;
 CREATE FUNCTION public.dispatch_count_comment() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    UPDATE public.dispatch_posts SET comment_count = comment_count + 1 WHERE id = NEW.post_id;
-    RETURN NEW;
-  ELSE
-    UPDATE public.dispatch_posts
-       SET comment_count = GREATEST(0, comment_count - 1) WHERE id = OLD.post_id;
-    RETURN OLD;
-  END IF;
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE public.dispatch_posts SET comment_count = comment_count + 1 WHERE id = NEW.post_id;
+    RETURN NEW;
+  ELSE
+    UPDATE public.dispatch_posts
+       SET comment_count = GREATEST(0, comment_count - 1) WHERE id = OLD.post_id;
+    RETURN OLD;
+  END IF;
 END $$;
 
 
@@ -579,13 +579,13 @@ END $$;
 CREATE FUNCTION public.dispatch_door() RETURNS TABLE(films integer, films_needed integer, days integer, days_needed integer, may_file boolean)
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT (SELECT count(DISTINCT film_id) FROM public.logs WHERE user_id = p.id)::int,
-         5,
-         GREATEST(0, floor(extract(epoch FROM now() - p.created_at) / 86400))::int,
-         2,
-         public.may_file()
-    FROM public.profiles p WHERE p.id = auth.uid();
+    AS $$
+  SELECT (SELECT count(DISTINCT film_id) FROM public.logs WHERE user_id = p.id)::int,
+         5,
+         GREATEST(0, floor(extract(epoch FROM now() - p.created_at) / 86400))::int,
+         2,
+         public.may_file()
+    FROM public.profiles p WHERE p.id = auth.uid();
 $$;
 
 
@@ -615,23 +615,23 @@ $$;
 CREATE FUNCTION public.dispatch_no_hard_delete() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF coalesce(current_setting('dispatch.allow_hard_delete', true), '') = 'on' THEN
-    RETURN OLD;
-  END IF;
-
-  -- already ended: nothing to erase, and nothing to delete either
-  IF OLD.ended_at IS NOT NULL THEN RETURN NULL; END IF;
-
-  UPDATE public.dispatch_posts
-     SET body = '', full_content = NULL, title = NULL, subject_image = NULL, source = NULL,
-         spoiler_label = NULL, ended_at = now(),
-         ended_by = CASE WHEN OLD.user_id IS NOT DISTINCT FROM auth.uid()
-                         THEN 'author' ELSE 'house' END
-   WHERE id = OLD.id;
-
-  RETURN NULL;   -- the delete does not happen
+    AS $$
+BEGIN
+  IF coalesce(current_setting('dispatch.allow_hard_delete', true), '') = 'on' THEN
+    RETURN OLD;
+  END IF;
+
+  -- already ended: nothing to erase, and nothing to delete either
+  IF OLD.ended_at IS NOT NULL THEN RETURN NULL; END IF;
+
+  UPDATE public.dispatch_posts
+     SET body = '', full_content = NULL, title = NULL, subject_image = NULL, source = NULL,
+         spoiler_label = NULL, ended_at = now(),
+         ended_by = CASE WHEN OLD.user_id IS NOT DISTINCT FROM auth.uid()
+                         THEN 'author' ELSE 'house' END
+   WHERE id = OLD.id;
+
+  RETURN NULL;   -- the delete does not happen
 END $$;
 
 
@@ -642,23 +642,23 @@ END $$;
 CREATE FUNCTION public.dispatch_notify(p_to uuid, p_from uuid, p_type text, p_message text, p_meta jsonb, p_group text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF p_to IS NULL OR p_from IS NULL OR p_to = p_from THEN RETURN; END IF;
-
-  -- a block in either direction silences the notice. `is_hidden_by` reads the
-  -- SESSION's viewer, which inside a trigger is the actor rather than the
-  -- recipient, so the pair is asked for directly here.
-  IF EXISTS (
-    SELECT 1 FROM public.user_blocks
-     WHERE (blocker_id = p_to AND blocked_id = p_from)
-        OR (blocker_id = p_from AND blocked_id = p_to AND type = 'block')
-  ) THEN RETURN; END IF;
-
-  INSERT INTO public.notifications
-    (user_id, from_user_id, from_username, type, message, metadata, group_key)
-  SELECT p_to, p_from, pr.username, p_type, p_message, p_meta, p_group
-    FROM public.profiles pr WHERE pr.id = p_from;
+    AS $$
+BEGIN
+  IF p_to IS NULL OR p_from IS NULL OR p_to = p_from THEN RETURN; END IF;
+
+  -- a block in either direction silences the notice. `is_hidden_by` reads the
+  -- SESSION's viewer, which inside a trigger is the actor rather than the
+  -- recipient, so the pair is asked for directly here.
+  IF EXISTS (
+    SELECT 1 FROM public.user_blocks
+     WHERE (blocker_id = p_to AND blocked_id = p_from)
+        OR (blocker_id = p_from AND blocked_id = p_to AND type = 'block')
+  ) THEN RETURN; END IF;
+
+  INSERT INTO public.notifications
+    (user_id, from_user_id, from_username, type, message, metadata, group_key)
+  SELECT p_to, p_from, pr.username, p_type, p_message, p_meta, p_group
+    FROM public.profiles pr WHERE pr.id = p_from;
 END $$;
 
 
@@ -669,19 +669,19 @@ END $$;
 CREATE FUNCTION public.dispatch_notify_answer() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE c record;
-BEGIN
-  IF NEW.answer_id IS NULL OR NEW.answer_id IS NOT DISTINCT FROM OLD.answer_id THEN
-    RETURN NEW;
-  END IF;
-  SELECT id, user_id INTO c FROM public.dispatch_comments WHERE id = NEW.answer_id;
-  PERFORM public.dispatch_notify(
-    c.user_id, NEW.user_id, 'comment',
-    'took your critique as the answer.',
-    jsonb_build_object('dispatch_post_id', NEW.id, 'kind', NEW.kind, 'comment_id', c.id),
-    'endorse:post:' || NEW.id);
-  RETURN NEW;
+    AS $$
+DECLARE c record;
+BEGIN
+  IF NEW.answer_id IS NULL OR NEW.answer_id IS NOT DISTINCT FROM OLD.answer_id THEN
+    RETURN NEW;
+  END IF;
+  SELECT id, user_id INTO c FROM public.dispatch_comments WHERE id = NEW.answer_id;
+  PERFORM public.dispatch_notify(
+    c.user_id, NEW.user_id, 'comment',
+    'took your critique as the answer.',
+    jsonb_build_object('dispatch_post_id', NEW.id, 'kind', NEW.kind, 'comment_id', c.id),
+    'endorse:post:' || NEW.id);
+  RETURN NEW;
 END $$;
 
 
@@ -692,22 +692,22 @@ END $$;
 CREATE FUNCTION public.dispatch_notify_ballot_closed() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v record; msg text;
-BEGIN
-  IF NEW.frozen_totals IS NULL OR OLD.frozen_totals IS NOT NULL THEN RETURN NEW; END IF;
-  msg := CASE WHEN btrim(coalesce(NEW.title,'')) = ''
-              THEN 'A ballot you voted in has closed.'
-              ELSE 'The ballot “' || btrim(NEW.title) || '” you voted in has closed.' END;
-  FOR v IN SELECT DISTINCT user_id FROM public.dispatch_votes WHERE post_id = NEW.id LOOP
-    INSERT INTO public.notifications (user_id, type, message, metadata, group_key)
-    SELECT v.user_id, 'system', msg,
-           jsonb_build_object('dispatch_post_id', NEW.id, 'kind', 'ballot',
-                              'title', NEW.title),
-           'endorse:post:' || NEW.id
-     WHERE EXISTS (SELECT 1 FROM public.profiles WHERE id = v.user_id);
-  END LOOP;
-  RETURN NEW;
+    AS $$
+DECLARE v record; msg text;
+BEGIN
+  IF NEW.frozen_totals IS NULL OR OLD.frozen_totals IS NOT NULL THEN RETURN NEW; END IF;
+  msg := CASE WHEN btrim(coalesce(NEW.title,'')) = ''
+              THEN 'A ballot you voted in has closed.'
+              ELSE 'The ballot “' || btrim(NEW.title) || '” you voted in has closed.' END;
+  FOR v IN SELECT DISTINCT user_id FROM public.dispatch_votes WHERE post_id = NEW.id LOOP
+    INSERT INTO public.notifications (user_id, type, message, metadata, group_key)
+    SELECT v.user_id, 'system', msg,
+           jsonb_build_object('dispatch_post_id', NEW.id, 'kind', 'ballot',
+                              'title', NEW.title),
+           'endorse:post:' || NEW.id
+     WHERE EXISTS (SELECT 1 FROM public.profiles WHERE id = v.user_id);
+  END LOOP;
+  RETURN NEW;
 END $$;
 
 
@@ -718,27 +718,27 @@ END $$;
 CREATE FUNCTION public.dispatch_notify_certify() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE p record; c record;
-BEGIN
-  IF NEW.post_id IS NOT NULL THEN
-    SELECT id, user_id, kind, title INTO p
-      FROM public.dispatch_posts WHERE id = NEW.post_id;
-    PERFORM public.dispatch_notify(
-      p.user_id, NEW.user_id, 'endorse',
-      'certified ' || public.dispatch_names(p.kind, p.title) || '.',
-      jsonb_build_object('dispatch_post_id', p.id, 'kind', p.kind, 'title', p.title),
-      'endorse:post:' || p.id);
-  ELSE
-    SELECT id, user_id, post_id INTO c
-      FROM public.dispatch_comments WHERE id = NEW.comment_id;
-    PERFORM public.dispatch_notify(
-      c.user_id, NEW.user_id, 'endorse',
-      'certified your critique.',
-      jsonb_build_object('dispatch_post_id', c.post_id, 'comment_id', c.id),
-      'endorse:post:' || c.post_id);
-  END IF;
-  RETURN NEW;
+    AS $$
+DECLARE p record; c record;
+BEGIN
+  IF NEW.post_id IS NOT NULL THEN
+    SELECT id, user_id, kind, title INTO p
+      FROM public.dispatch_posts WHERE id = NEW.post_id;
+    PERFORM public.dispatch_notify(
+      p.user_id, NEW.user_id, 'endorse',
+      'certified ' || public.dispatch_names(p.kind, p.title) || '.',
+      jsonb_build_object('dispatch_post_id', p.id, 'kind', p.kind, 'title', p.title),
+      'endorse:post:' || p.id);
+  ELSE
+    SELECT id, user_id, post_id INTO c
+      FROM public.dispatch_comments WHERE id = NEW.comment_id;
+    PERFORM public.dispatch_notify(
+      c.user_id, NEW.user_id, 'endorse',
+      'certified your critique.',
+      jsonb_build_object('dispatch_post_id', c.post_id, 'comment_id', c.id),
+      'endorse:post:' || c.post_id);
+  END IF;
+  RETURN NEW;
 END $$;
 
 
@@ -749,18 +749,18 @@ END $$;
 CREATE FUNCTION public.dispatch_notify_critique() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE p record;
-BEGIN
-  SELECT id, user_id, kind, title INTO p
-    FROM public.dispatch_posts WHERE id = NEW.post_id;
-  PERFORM public.dispatch_notify(
-    p.user_id, NEW.user_id, 'comment',
-    'left a critique on ' || public.dispatch_names(p.kind, p.title) || '.',
-    jsonb_build_object('dispatch_post_id', p.id, 'kind', p.kind,
-                       'title', p.title, 'comment_id', NEW.id),
-    'endorse:post:' || p.id);
-  RETURN NEW;
+    AS $$
+DECLARE p record;
+BEGIN
+  SELECT id, user_id, kind, title INTO p
+    FROM public.dispatch_posts WHERE id = NEW.post_id;
+  PERFORM public.dispatch_notify(
+    p.user_id, NEW.user_id, 'comment',
+    'left a critique on ' || public.dispatch_names(p.kind, p.title) || '.',
+    jsonb_build_object('dispatch_post_id', p.id, 'kind', p.kind,
+                       'title', p.title, 'comment_id', NEW.id),
+    'endorse:post:' || p.id);
+  RETURN NEW;
 END $$;
 
 
@@ -837,12 +837,12 @@ COMMENT ON FUNCTION public.dispatch_room_totals(p_user_id uuid) IS 'The two numb
 CREATE FUNCTION public.dispatch_scrub_departed() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF NEW.user_id IS NULL AND OLD.user_id IS NOT NULL THEN
-    NEW.author_username := '[deleted]';
-  END IF;
-  RETURN NEW;
+    AS $$
+BEGIN
+  IF NEW.user_id IS NULL AND OLD.user_id IS NOT NULL THEN
+    NEW.author_username := '[deleted]';
+  END IF;
+  RETURN NEW;
 END $$;
 
 
@@ -853,18 +853,18 @@ END $$;
 CREATE FUNCTION public.divert_private_notes() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v text := NULLIF(btrim(NEW.private_notes), '');
-BEGIN
-  IF v IS NOT NULL AND public.has_tier_at_least(1) THEN
-    INSERT INTO public.log_private_notes (log_id, viewing_id, user_id, notes, updated_at)
-    VALUES (NEW.id, NEW.viewing_id, NEW.user_id, left(v, 1000), now())
-    ON CONFLICT (viewing_id) DO UPDATE SET notes = EXCLUDED.notes, updated_at = now();
-  END IF;
-  -- Below the rank a note is discarded, not refused: refusing would fail the
-  -- whole log write and wedge an offline queue that cannot re-gate it.
-  UPDATE public.logs SET private_notes = NULL WHERE id = NEW.id;
-  RETURN NULL;
+    AS $$
+DECLARE v text := NULLIF(btrim(NEW.private_notes), '');
+BEGIN
+  IF v IS NOT NULL AND public.has_tier_at_least(1) THEN
+    INSERT INTO public.log_private_notes (log_id, viewing_id, user_id, notes, updated_at)
+    VALUES (NEW.id, NEW.viewing_id, NEW.user_id, left(v, 1000), now())
+    ON CONFLICT (viewing_id) DO UPDATE SET notes = EXCLUDED.notes, updated_at = now();
+  END IF;
+  -- Below the rank a note is discarded, not refused: refusing would fail the
+  -- whole log write and wedge an offline queue that cannot re-gate it.
+  UPDATE public.logs SET private_notes = NULL WHERE id = NEW.id;
+  RETURN NULL;
 END $$;
 
 
@@ -875,18 +875,18 @@ END $$;
 CREATE FUNCTION public.dossier_certifications_write() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    INSERT INTO public.dispatch_certifications (user_id, post_id)
-    VALUES (NEW.user_id, NEW.dossier_id)
-    RETURNING id INTO NEW.id;
-    RETURN NEW;
-  ELSE
-    DELETE FROM public.dispatch_certifications
-     WHERE user_id = OLD.user_id AND post_id = OLD.dossier_id;
-    RETURN OLD;
-  END IF;
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO public.dispatch_certifications (user_id, post_id)
+    VALUES (NEW.user_id, NEW.dossier_id)
+    RETURNING id INTO NEW.id;
+    RETURN NEW;
+  ELSE
+    DELETE FROM public.dispatch_certifications
+     WHERE user_id = OLD.user_id AND post_id = OLD.dossier_id;
+    RETURN OLD;
+  END IF;
 END $$;
 
 
@@ -897,32 +897,32 @@ END $$;
 CREATE FUNCTION public.dossier_comments_write() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    INSERT INTO public.dispatch_comments (post_id, user_id, author_username, body)
-    VALUES (NEW.dossier_id, NEW.user_id, coalesce(NEW.username, ''), NEW.body)
-    RETURNING id INTO NEW.id;
-    RETURN NEW;
-
-  ELSIF TG_OP = 'UPDATE' THEN
-    UPDATE public.dispatch_comments
-       SET body            = NEW.body,
-           user_id         = NEW.user_id,
-           author_username = NEW.username,
-           -- only a real edit is marked as one. An erasure changes the name and
-           -- nothing else, and a critique that reads "edited" because its author
-           -- closed their account is the app telling a small lie about a person
-           -- who is no longer there to correct it.
-           edited_at       = CASE WHEN NEW.body IS DISTINCT FROM OLD.body
-                                  THEN now() ELSE edited_at END
-     WHERE id = OLD.id;
-    RETURN NEW;
-
-  ELSE
-    DELETE FROM public.dispatch_comments WHERE id = OLD.id;
-    RETURN OLD;
-  END IF;
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO public.dispatch_comments (post_id, user_id, author_username, body)
+    VALUES (NEW.dossier_id, NEW.user_id, coalesce(NEW.username, ''), NEW.body)
+    RETURNING id INTO NEW.id;
+    RETURN NEW;
+
+  ELSIF TG_OP = 'UPDATE' THEN
+    UPDATE public.dispatch_comments
+       SET body            = NEW.body,
+           user_id         = NEW.user_id,
+           author_username = NEW.username,
+           -- only a real edit is marked as one. An erasure changes the name and
+           -- nothing else, and a critique that reads "edited" because its author
+           -- closed their account is the app telling a small lie about a person
+           -- who is no longer there to correct it.
+           edited_at       = CASE WHEN NEW.body IS DISTINCT FROM OLD.body
+                                  THEN now() ELSE edited_at END
+     WHERE id = OLD.id;
+    RETURN NEW;
+
+  ELSE
+    DELETE FROM public.dispatch_comments WHERE id = OLD.id;
+    RETURN OLD;
+  END IF;
 END $$;
 
 
@@ -933,35 +933,35 @@ END $$;
 CREATE FUNCTION public.dossiers_write() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    INSERT INTO public.dispatch_posts
-      (kind, user_id, author_username, title, body, full_content, is_published)
-    VALUES ('dossier', NEW.user_id, NEW.author_username, NEW.title,
-            coalesce(NEW.excerpt,''), NEW.full_content, coalesce(NEW.is_published,true))
-    RETURNING id INTO NEW.id;
-    RETURN NEW;
-
-  ELSIF TG_OP = 'UPDATE' THEN
-    UPDATE public.dispatch_posts
-       SET title           = NEW.title,
-           body            = coalesce(NEW.excerpt,''),
-           full_content    = NEW.full_content,
-           is_published    = NEW.is_published,
-           -- carried, so an erasure through this name is a real erasure
-           user_id         = NEW.user_id,
-           author_username = NEW.author_username,
-           -- an erasure is not an edit: it must not move the essay up the feed
-           updated_at      = CASE WHEN NEW.user_id IS NULL AND OLD.user_id IS NOT NULL
-                                  THEN updated_at ELSE now() END
-     WHERE id = OLD.id;
-    RETURN NEW;
-
-  ELSE
-    DELETE FROM public.dispatch_posts WHERE id = OLD.id;
-    RETURN OLD;
-  END IF;
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO public.dispatch_posts
+      (kind, user_id, author_username, title, body, full_content, is_published)
+    VALUES ('dossier', NEW.user_id, NEW.author_username, NEW.title,
+            coalesce(NEW.excerpt,''), NEW.full_content, coalesce(NEW.is_published,true))
+    RETURNING id INTO NEW.id;
+    RETURN NEW;
+
+  ELSIF TG_OP = 'UPDATE' THEN
+    UPDATE public.dispatch_posts
+       SET title           = NEW.title,
+           body            = coalesce(NEW.excerpt,''),
+           full_content    = NEW.full_content,
+           is_published    = NEW.is_published,
+           -- carried, so an erasure through this name is a real erasure
+           user_id         = NEW.user_id,
+           author_username = NEW.author_username,
+           -- an erasure is not an edit: it must not move the essay up the feed
+           updated_at      = CASE WHEN NEW.user_id IS NULL AND OLD.user_id IS NOT NULL
+                                  THEN updated_at ELSE now() END
+     WHERE id = OLD.id;
+    RETURN NEW;
+
+  ELSE
+    DELETE FROM public.dispatch_posts WHERE id = OLD.id;
+    RETURN OLD;
+  END IF;
 END $$;
 
 
@@ -1019,33 +1019,33 @@ COMMENT ON FUNCTION public.end_filing(p_post uuid, p_by text) IS 'Withdraw a fil
 CREATE FUNCTION public.enforce_log_insert_ceiling() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_existing integer;
-  v_incoming integer;
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RETURN NULL;
-  END IF;
-
-  SELECT count(*) INTO v_incoming FROM inserted WHERE user_id = auth.uid();
-  IF v_incoming = 0 THEN
-    RETURN NULL;
-  END IF;
-
-  SELECT count(*) INTO v_existing
-    FROM public.logs
-   WHERE user_id = auth.uid()
-     AND created_at > now() - interval '1440 minutes';
-
-  IF v_existing > 20000 THEN
-    RAISE EXCEPTION
-      'Daily log limit reached (20000 in 24 hours). % rows in this write would exceed it.',
-      v_incoming
-      USING ERRCODE = '54000';
-  END IF;
-
-  RETURN NULL;
+    AS $$
+DECLARE
+  v_existing integer;
+  v_incoming integer;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT count(*) INTO v_incoming FROM inserted WHERE user_id = auth.uid();
+  IF v_incoming = 0 THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT count(*) INTO v_existing
+    FROM public.logs
+   WHERE user_id = auth.uid()
+     AND created_at > now() - interval '1440 minutes';
+
+  IF v_existing > 20000 THEN
+    RAISE EXCEPTION
+      'Daily log limit reached (20000 in 24 hours). % rows in this write would exceed it.',
+      v_incoming
+      USING ERRCODE = '54000';
+  END IF;
+
+  RETURN NULL;
 END $$;
 
 
@@ -1056,34 +1056,34 @@ END $$;
 CREATE FUNCTION public.enforce_log_tier_fields() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_auteur boolean; v_archivist boolean;
-BEGIN
-  IF auth.uid() IS NULL THEN RETURN NEW; END IF;
-  v_auteur    := public.has_tier_at_least(2);
-  v_archivist := public.has_tier_at_least(1);
-
-  IF TG_OP = 'INSERT' THEN
-    IF NOT v_auteur THEN
-      NEW.autopsy := NULL; NEW.is_autopsied := false; NEW.alt_poster := NULL;
-    END IF;
-    IF NOT v_archivist THEN
-      NEW.editorial_header := NULL; NEW.pull_quote := NULL; NEW.drop_cap := false;
-    END IF;
-  ELSE
-    IF NOT v_auteur THEN
-      NEW.autopsy      := OLD.autopsy;
-      NEW.is_autopsied := OLD.is_autopsied;
-      NEW.alt_poster   := OLD.alt_poster;
-    END IF;
-    IF NOT v_archivist THEN
-      NEW.editorial_header := OLD.editorial_header;
-      NEW.pull_quote       := OLD.pull_quote;
-      NEW.drop_cap         := OLD.drop_cap;
-    END IF;
-  END IF;
-
-  RETURN NEW;
+    AS $$
+DECLARE v_auteur boolean; v_archivist boolean;
+BEGIN
+  IF auth.uid() IS NULL THEN RETURN NEW; END IF;
+  v_auteur    := public.has_tier_at_least(2);
+  v_archivist := public.has_tier_at_least(1);
+
+  IF TG_OP = 'INSERT' THEN
+    IF NOT v_auteur THEN
+      NEW.autopsy := NULL; NEW.is_autopsied := false; NEW.alt_poster := NULL;
+    END IF;
+    IF NOT v_archivist THEN
+      NEW.editorial_header := NULL; NEW.pull_quote := NULL; NEW.drop_cap := false;
+    END IF;
+  ELSE
+    IF NOT v_auteur THEN
+      NEW.autopsy      := OLD.autopsy;
+      NEW.is_autopsied := OLD.is_autopsied;
+      NEW.alt_poster   := OLD.alt_poster;
+    END IF;
+    IF NOT v_archivist THEN
+      NEW.editorial_header := OLD.editorial_header;
+      NEW.pull_quote       := OLD.pull_quote;
+      NEW.drop_cap         := OLD.drop_cap;
+    END IF;
+  END IF;
+
+  RETURN NEW;
 END $$;
 
 
@@ -1094,27 +1094,27 @@ END $$;
 CREATE FUNCTION public.enforce_lounge_identity_freeze() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_banned boolean;
-  v_until  timestamptz;
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RETURN NEW;
-  END IF;
-
-  SELECT is_banned, suspended_until INTO v_banned, v_until
-    FROM public.profiles WHERE id = auth.uid();
-
-  IF COALESCE(v_banned, false)
-     OR (v_until IS NOT NULL AND v_until > now()) THEN
-    NEW.name        := OLD.name;
-    NEW.description := OLD.description;
-    NEW.cover_image := OLD.cover_image;
-    NEW.is_private  := OLD.is_private;
-  END IF;
-
-  RETURN NEW;
+    AS $$
+DECLARE
+  v_banned boolean;
+  v_until  timestamptz;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT is_banned, suspended_until INTO v_banned, v_until
+    FROM public.profiles WHERE id = auth.uid();
+
+  IF COALESCE(v_banned, false)
+     OR (v_until IS NOT NULL AND v_until > now()) THEN
+    NEW.name        := OLD.name;
+    NEW.description := OLD.description;
+    NEW.cover_image := OLD.cover_image;
+    NEW.is_private  := OLD.is_private;
+  END IF;
+
+  RETURN NEW;
 END $$;
 
 
@@ -1125,31 +1125,31 @@ END $$;
 CREATE FUNCTION public.enforce_not_restricted() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_banned boolean;
-  v_until  timestamptz;
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RETURN NEW;
-  END IF;
-
-  SELECT is_banned, suspended_until
-    INTO v_banned, v_until
-    FROM public.profiles WHERE id = auth.uid();
-
-  IF COALESCE(v_banned, false) THEN
-    RAISE EXCEPTION 'Your account has been silenced by The Society.'
-      USING ERRCODE = '42501';
-  END IF;
-
-  IF v_until IS NOT NULL AND v_until > now() THEN
-    RAISE EXCEPTION 'Your account is suspended until %.',
-      to_char(v_until AT TIME ZONE 'UTC', 'DD Mon YYYY HH24:MI "UTC"')
-      USING ERRCODE = '42501';
-  END IF;
-
-  RETURN NEW;
+    AS $$
+DECLARE
+  v_banned boolean;
+  v_until  timestamptz;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT is_banned, suspended_until
+    INTO v_banned, v_until
+    FROM public.profiles WHERE id = auth.uid();
+
+  IF COALESCE(v_banned, false) THEN
+    RAISE EXCEPTION 'Your account has been silenced by The Society.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  IF v_until IS NOT NULL AND v_until > now() THEN
+    RAISE EXCEPTION 'Your account is suspended until %.',
+      to_char(v_until AT TIME ZONE 'UTC', 'DD Mon YYYY HH24:MI "UTC"')
+      USING ERRCODE = '42501';
+  END IF;
+
+  RETURN NEW;
 END $$;
 
 
@@ -1160,19 +1160,19 @@ END $$;
 CREATE FUNCTION public.enforce_privacy_on_follow() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-    v_is_private BOOLEAN;
-BEGIN
-    IF NEW.type = 'follow' THEN
-        SELECT is_social_private INTO v_is_private FROM public.profiles WHERE id = NEW.target_user_id;
-        IF v_is_private THEN
-            -- Automatically downgrade the 'follow' to a 'follow_request' at the database level.
-            NEW.type := 'follow_request';
-        END IF;
-    END IF;
-    RETURN NEW;
-END;
+    AS $$
+DECLARE
+    v_is_private BOOLEAN;
+BEGIN
+    IF NEW.type = 'follow' THEN
+        SELECT is_social_private INTO v_is_private FROM public.profiles WHERE id = NEW.target_user_id;
+        IF v_is_private THEN
+            -- Automatically downgrade the 'follow' to a 'follow_request' at the database level.
+            NEW.type := 'follow_request';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
 $$;
 
 
@@ -1183,35 +1183,35 @@ $$;
 CREATE FUNCTION public.enforce_profile_identity_freeze() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_banned boolean;
-  v_until  timestamptz;
-BEGIN
-  IF auth.uid() IS NULL OR auth.uid() <> NEW.id THEN
-    RETURN NEW;
-  END IF;
-
-  NEW.is_banned         := OLD.is_banned;
-  NEW.banned_at         := OLD.banned_at;
-  NEW.suspended_until   := OLD.suspended_until;
-  NEW.suspension_reason := OLD.suspension_reason;
-  NEW.warning_count     := OLD.warning_count;
-
-  SELECT is_banned, suspended_until INTO v_banned, v_until
-    FROM public.profiles WHERE id = auth.uid();
-
-  IF COALESCE(v_banned, false)
-     OR (v_until IS NOT NULL AND v_until > now()) THEN
-    NEW.username     := OLD.username;
-    NEW.display_name := OLD.display_name;
-    NEW.bio          := OLD.bio;
-    NEW.avatar_url   := OLD.avatar_url;
-    NEW.social_links := OLD.social_links;
-    NEW.persona      := OLD.persona;
-  END IF;
-
-  RETURN NEW;
+    AS $$
+DECLARE
+  v_banned boolean;
+  v_until  timestamptz;
+BEGIN
+  IF auth.uid() IS NULL OR auth.uid() <> NEW.id THEN
+    RETURN NEW;
+  END IF;
+
+  NEW.is_banned         := OLD.is_banned;
+  NEW.banned_at         := OLD.banned_at;
+  NEW.suspended_until   := OLD.suspended_until;
+  NEW.suspension_reason := OLD.suspension_reason;
+  NEW.warning_count     := OLD.warning_count;
+
+  SELECT is_banned, suspended_until INTO v_banned, v_until
+    FROM public.profiles WHERE id = auth.uid();
+
+  IF COALESCE(v_banned, false)
+     OR (v_until IS NOT NULL AND v_until > now()) THEN
+    NEW.username     := OLD.username;
+    NEW.display_name := OLD.display_name;
+    NEW.bio          := OLD.bio;
+    NEW.avatar_url   := OLD.avatar_url;
+    NEW.social_links := OLD.social_links;
+    NEW.persona      := OLD.persona;
+  END IF;
+
+  RETURN NEW;
 END $$;
 
 
@@ -1222,13 +1222,13 @@ END $$;
 CREATE FUNCTION public.enforce_tier_gate() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF auth.uid() IS NOT NULL
-     AND NOT public.has_tier_at_least(TG_ARGV[0]::integer) THEN
-    RAISE EXCEPTION '%', TG_ARGV[1] USING ERRCODE = '42501';
-  END IF;
-  RETURN NEW;
+    AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL
+     AND NOT public.has_tier_at_least(TG_ARGV[0]::integer) THEN
+    RAISE EXCEPTION '%', TG_ARGV[1] USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
 END $$;
 
 
@@ -1239,114 +1239,114 @@ END $$;
 CREATE FUNCTION public.enforce_username_policy() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  reserved text[] := ARRAY[
-    'admin','administrator','mod','moderator','support','help',
-    'reelhouse','system','root','official','staff','team','bot',
-    'null','undefined','anonymous','anon','deleted','unknown',
-    'api','www','mail','email','noreply','no_reply',
-    'settings','login','signup','logout','feed','discover',
-    'profile','edit','delete','create','new','user','users'
-  ];
-  profanity text[] := ARRAY[
-    'f+u+c+k','s+h+i+t','a+s+s+h+o+l+e','b+i+t+c+h',
-    'd+i+c+k','p+u+s+s+y','c+u+n+t','n+i+g+g',
-    'f+a+g+g','r+e+t+a+r+d','w+h+o+r+e','s+l+u+t'
-  ];
-  v_raw    text;
-  v_clean  text;
-  v_pat    text;
-  v_hex    text;
-  v_base   text;
-  v_n      integer;
-BEGIN
-  IF TG_OP = 'UPDATE' AND NEW.username IS NOT DISTINCT FROM OLD.username THEN
-    RETURN NEW;
-  END IF;
-
-  IF TG_OP = 'UPDATE'
-     AND NEW.username = regexp_replace(
-           regexp_replace(lower(btrim(coalesce(OLD.username, ''))), '[[:space:]]+', '_', 'g'),
-           '[^a-z0-9_]', '', 'g') THEN
-    NEW.username := OLD.username;
-    RETURN NEW;
-  END IF;
-
-  v_raw := coalesce(NEW.username, '');
-
-  v_clean := regexp_replace(
-               regexp_replace(lower(btrim(v_raw)), '[[:space:]]+', '_', 'g'),
-               '[^a-z0-9_]', '', 'g');
-
-  IF TG_OP = 'UPDATE' THEN
-    IF v_clean IS DISTINCT FROM v_raw THEN
-      RAISE EXCEPTION 'Usernames may only contain lowercase letters, numbers and underscores.'
-        USING ERRCODE = '23514';
-    END IF;
-    IF length(v_clean) < 3 THEN
-      RAISE EXCEPTION 'Username must be at least 3 characters.' USING ERRCODE = '23514';
-    END IF;
-    IF length(v_clean) > 30 THEN
-      RAISE EXCEPTION 'Username must be 30 characters or less.' USING ERRCODE = '23514';
-    END IF;
-    IF left(v_clean, 1) = '_' OR right(v_clean, 1) = '_' THEN
-      RAISE EXCEPTION 'Username cannot start or end with an underscore.' USING ERRCODE = '23514';
-    END IF;
-    IF position('__' in v_clean) > 0 THEN
-      RAISE EXCEPTION 'Username cannot have consecutive underscores.' USING ERRCODE = '23514';
-    END IF;
-    IF v_clean = ANY(reserved) THEN
-      RAISE EXCEPTION 'This username is reserved.' USING ERRCODE = '23514';
-    END IF;
-    FOREACH v_pat IN ARRAY profanity LOOP
-      IF v_clean ~ v_pat THEN
-        RAISE EXCEPTION 'This username is not allowed.' USING ERRCODE = '23514';
-      END IF;
-    END LOOP;
-    IF EXISTS (SELECT 1 FROM public.profiles
-                WHERE lower(username) = v_clean AND id <> NEW.id) THEN
-      RAISE EXCEPTION 'This username is already taken.' USING ERRCODE = '23505';
-    END IF;
-
-    NEW.username := v_clean;
-    RETURN NEW;
-  END IF;
-
-  v_hex := replace(NEW.id::text, '-', '');
-
-  v_clean := regexp_replace(v_clean, '_+', '_', 'g');
-  v_clean := btrim(v_clean, '_');
-  v_clean := left(v_clean, 30);
-  v_clean := btrim(v_clean, '_');
-
-  IF length(v_clean) < 3 THEN
-    v_clean := 'user_' || substr(v_hex, 1, 6);
-  END IF;
-
-  FOREACH v_pat IN ARRAY profanity LOOP
-    IF v_clean ~ v_pat THEN
-      v_clean := 'user_' || substr(v_hex, 1, 6);
-      EXIT;
-    END IF;
-  END LOOP;
-
-  v_base := btrim(left(v_clean, 23), '_');
-  v_n    := 0;
-  WHILE v_clean = ANY(reserved)
-        OR EXISTS (SELECT 1 FROM public.profiles
-                    WHERE lower(username) = v_clean AND id <> NEW.id)
-  LOOP
-    v_n := v_n + 1;
-    IF v_n > 20 THEN
-      RAISE EXCEPTION 'Could not derive an available username.' USING ERRCODE = '23505';
-    END IF;
-    v_clean := v_base || '_' || substr(v_hex, v_n, 6);
-  END LOOP;
-
-  NEW.username := v_clean;
-  RETURN NEW;
-END;
+    AS $$
+DECLARE
+  reserved text[] := ARRAY[
+    'admin','administrator','mod','moderator','support','help',
+    'reelhouse','system','root','official','staff','team','bot',
+    'null','undefined','anonymous','anon','deleted','unknown',
+    'api','www','mail','email','noreply','no_reply',
+    'settings','login','signup','logout','feed','discover',
+    'profile','edit','delete','create','new','user','users'
+  ];
+  profanity text[] := ARRAY[
+    'f+u+c+k','s+h+i+t','a+s+s+h+o+l+e','b+i+t+c+h',
+    'd+i+c+k','p+u+s+s+y','c+u+n+t','n+i+g+g',
+    'f+a+g+g','r+e+t+a+r+d','w+h+o+r+e','s+l+u+t'
+  ];
+  v_raw    text;
+  v_clean  text;
+  v_pat    text;
+  v_hex    text;
+  v_base   text;
+  v_n      integer;
+BEGIN
+  IF TG_OP = 'UPDATE' AND NEW.username IS NOT DISTINCT FROM OLD.username THEN
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'UPDATE'
+     AND NEW.username = regexp_replace(
+           regexp_replace(lower(btrim(coalesce(OLD.username, ''))), '[[:space:]]+', '_', 'g'),
+           '[^a-z0-9_]', '', 'g') THEN
+    NEW.username := OLD.username;
+    RETURN NEW;
+  END IF;
+
+  v_raw := coalesce(NEW.username, '');
+
+  v_clean := regexp_replace(
+               regexp_replace(lower(btrim(v_raw)), '[[:space:]]+', '_', 'g'),
+               '[^a-z0-9_]', '', 'g');
+
+  IF TG_OP = 'UPDATE' THEN
+    IF v_clean IS DISTINCT FROM v_raw THEN
+      RAISE EXCEPTION 'Usernames may only contain lowercase letters, numbers and underscores.'
+        USING ERRCODE = '23514';
+    END IF;
+    IF length(v_clean) < 3 THEN
+      RAISE EXCEPTION 'Username must be at least 3 characters.' USING ERRCODE = '23514';
+    END IF;
+    IF length(v_clean) > 30 THEN
+      RAISE EXCEPTION 'Username must be 30 characters or less.' USING ERRCODE = '23514';
+    END IF;
+    IF left(v_clean, 1) = '_' OR right(v_clean, 1) = '_' THEN
+      RAISE EXCEPTION 'Username cannot start or end with an underscore.' USING ERRCODE = '23514';
+    END IF;
+    IF position('__' in v_clean) > 0 THEN
+      RAISE EXCEPTION 'Username cannot have consecutive underscores.' USING ERRCODE = '23514';
+    END IF;
+    IF v_clean = ANY(reserved) THEN
+      RAISE EXCEPTION 'This username is reserved.' USING ERRCODE = '23514';
+    END IF;
+    FOREACH v_pat IN ARRAY profanity LOOP
+      IF v_clean ~ v_pat THEN
+        RAISE EXCEPTION 'This username is not allowed.' USING ERRCODE = '23514';
+      END IF;
+    END LOOP;
+    IF EXISTS (SELECT 1 FROM public.profiles
+                WHERE lower(username) = v_clean AND id <> NEW.id) THEN
+      RAISE EXCEPTION 'This username is already taken.' USING ERRCODE = '23505';
+    END IF;
+
+    NEW.username := v_clean;
+    RETURN NEW;
+  END IF;
+
+  v_hex := replace(NEW.id::text, '-', '');
+
+  v_clean := regexp_replace(v_clean, '_+', '_', 'g');
+  v_clean := btrim(v_clean, '_');
+  v_clean := left(v_clean, 30);
+  v_clean := btrim(v_clean, '_');
+
+  IF length(v_clean) < 3 THEN
+    v_clean := 'user_' || substr(v_hex, 1, 6);
+  END IF;
+
+  FOREACH v_pat IN ARRAY profanity LOOP
+    IF v_clean ~ v_pat THEN
+      v_clean := 'user_' || substr(v_hex, 1, 6);
+      EXIT;
+    END IF;
+  END LOOP;
+
+  v_base := btrim(left(v_clean, 23), '_');
+  v_n    := 0;
+  WHILE v_clean = ANY(reserved)
+        OR EXISTS (SELECT 1 FROM public.profiles
+                    WHERE lower(username) = v_clean AND id <> NEW.id)
+  LOOP
+    v_n := v_n + 1;
+    IF v_n > 20 THEN
+      RAISE EXCEPTION 'Could not derive an available username.' USING ERRCODE = '23505';
+    END IF;
+    v_clean := v_base || '_' || substr(v_hex, v_n, 6);
+  END LOOP;
+
+  NEW.username := v_clean;
+  RETURN NEW;
+END;
 $$;
 
 
@@ -1357,38 +1357,38 @@ $$;
 CREATE FUNCTION public.freeze_closed_ballots() RETURNS integer
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE n integer;
-BEGIN
-  WITH tallied AS (
-    SELECT p.id,
-           jsonb_build_object(
-             -- sum(v.n), not count(v.id): `v` is already GROUPED BY option, so
-             -- it has no id to count and one row per option rather than one per
-             -- vote. Counting its rows would have recorded "2 ballots cast" for
-             -- a ballot with two options and two hundred voters — a permanent,
-             -- plausible, wrong number, written once and never recomputed.
-             'total', coalesce(sum(v.n), 0),
-             'counts', coalesce(jsonb_object_agg(v.option_index, v.n)
-                                FILTER (WHERE v.option_index IS NOT NULL), '{}'::jsonb),
-             'frozen_at', now()
-           ) AS totals
-      FROM public.dispatch_posts p
-      LEFT JOIN (
-        SELECT post_id, option_index, count(*) AS n
-          FROM public.dispatch_votes GROUP BY post_id, option_index
-      ) v ON v.post_id = p.id
-     WHERE p.kind = 'ballot'
-       AND p.closes_at <= now()
-       AND p.frozen_totals IS NULL
-     GROUP BY p.id
-  )
-  UPDATE public.dispatch_posts p
-     SET frozen_totals = t.totals
-    FROM tallied t
-   WHERE p.id = t.id;
-  GET DIAGNOSTICS n = ROW_COUNT;
-  RETURN n;
+    AS $$
+DECLARE n integer;
+BEGIN
+  WITH tallied AS (
+    SELECT p.id,
+           jsonb_build_object(
+             -- sum(v.n), not count(v.id): `v` is already GROUPED BY option, so
+             -- it has no id to count and one row per option rather than one per
+             -- vote. Counting its rows would have recorded "2 ballots cast" for
+             -- a ballot with two options and two hundred voters — a permanent,
+             -- plausible, wrong number, written once and never recomputed.
+             'total', coalesce(sum(v.n), 0),
+             'counts', coalesce(jsonb_object_agg(v.option_index, v.n)
+                                FILTER (WHERE v.option_index IS NOT NULL), '{}'::jsonb),
+             'frozen_at', now()
+           ) AS totals
+      FROM public.dispatch_posts p
+      LEFT JOIN (
+        SELECT post_id, option_index, count(*) AS n
+          FROM public.dispatch_votes GROUP BY post_id, option_index
+      ) v ON v.post_id = p.id
+     WHERE p.kind = 'ballot'
+       AND p.closes_at <= now()
+       AND p.frozen_totals IS NULL
+     GROUP BY p.id
+  )
+  UPDATE public.dispatch_posts p
+     SET frozen_totals = t.totals
+    FROM tallied t
+   WHERE p.id = t.id;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  RETURN n;
 END $$;
 
 
@@ -1436,23 +1436,23 @@ $$;
 CREATE FUNCTION public.get_dispatch_feed(p_limit integer DEFAULT 20, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE(id text, title text, excerpt text, author_username text, user_id text, views integer, certify_count integer, created_at timestamp with time zone)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-      SELECT p.id::text,
-             p.title,
-             p.body            AS excerpt,
-             p.author_username,
-             p.user_id::text,
-             0                 AS views,
-             p.certify_count,
-             p.created_at
-        FROM public.dispatch_posts p
-       WHERE p.kind = 'dossier'
-         AND p.is_published
-         AND p.withheld_at IS NULL
-         AND p.ended_at IS NULL
-         AND (p_cursor_created_at IS NULL OR p.created_at < p_cursor_created_at)
-       ORDER BY p.created_at DESC, p.id DESC
-       LIMIT greatest(1, least(coalesce(p_limit, 20), 100));
+    AS $$
+      SELECT p.id::text,
+             p.title,
+             p.body            AS excerpt,
+             p.author_username,
+             p.user_id::text,
+             0                 AS views,
+             p.certify_count,
+             p.created_at
+        FROM public.dispatch_posts p
+       WHERE p.kind = 'dossier'
+         AND p.is_published
+         AND p.withheld_at IS NULL
+         AND p.ended_at IS NULL
+         AND (p_cursor_created_at IS NULL OR p.created_at < p_cursor_created_at)
+       ORDER BY p.created_at DESC, p.id DESC
+       LIMIT greatest(1, least(coalesce(p_limit, 20), 100));
     $$;
 
 
@@ -1463,18 +1463,18 @@ CREATE FUNCTION public.get_dispatch_feed(p_limit integer DEFAULT 20, p_cursor_cr
 CREATE FUNCTION public.get_email_by_username(lookup_username text) RETURNS text
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  found_email TEXT;
-BEGIN
-  SELECT au.email INTO found_email
-  FROM auth.users au
-  INNER JOIN public.profiles p ON p.id = au.id
-  WHERE LOWER(p.username) = LOWER(lookup_username)
-  LIMIT 1;
-  
-  RETURN found_email;
-END;
+    AS $$
+DECLARE
+  found_email TEXT;
+BEGIN
+  SELECT au.email INTO found_email
+  FROM auth.users au
+  INNER JOIN public.profiles p ON p.id = au.id
+  WHERE LOWER(p.username) = LOWER(lookup_username)
+  LIMIT 1;
+  
+  RETURN found_email;
+END;
 $$;
 
 
@@ -1544,48 +1544,48 @@ CREATE TABLE public.logs (
 CREATE FUNCTION public.get_featured_critique() RETURNS SETOF public.logs
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    l.id,                              -- 1
-    l.user_id,                         -- 2
-    l.film_id,                         -- 3
-    l.film_title,                      -- 4
-    l.rating,                          -- 5
-    l.review,                          -- 6
-    NULL::date,                        -- 7  watched_date
-    NULL::text,                        -- 8  format
-    l.created_at,                      -- 9
-    l.poster_path,                     -- 10
-    NULL::text,                        -- 11 year
-    l.status,                          -- 12
-    l.is_spoiler,                      -- 13
-    l.watched_with,                    -- 14
-    NULL::text,                        -- 15 private_notes   <-- the leak, closed
-    l.abandoned_reason,                -- 16
-    NULL::text,                        -- 17 physical_media
-    l.is_autopsied,                    -- 18
-    l.autopsy,                         -- 19
-    NULL::text,                        -- 20 alt_poster
-    l.editorial_header,                -- 21
-    l.drop_cap,                        -- 22
-    l.pull_quote,                      -- 23
-    NULL::timestamptz,                 -- 24 updated_at
-    NULL::text,                        -- 25 video_url
-    NULL::jsonb,                       -- 26 viewing_history <-- also closed
-    NULL::integer,                     -- 27 view_count
-    NULL::uuid                         -- 28 viewing_id      <-- 2026-09-17
-  FROM public.logs l
-  JOIN public.profiles p ON p.id = l.user_id
-  WHERE l.review IS NOT NULL
-    AND l.review <> ''
-    AND LENGTH(l.review) > 100
-    AND l.rating >= 4
-    AND COALESCE(p.is_social_private, false) = false
-  ORDER BY l.created_at DESC
-  LIMIT 1;
-END;
+    AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    l.id,                              -- 1
+    l.user_id,                         -- 2
+    l.film_id,                         -- 3
+    l.film_title,                      -- 4
+    l.rating,                          -- 5
+    l.review,                          -- 6
+    NULL::date,                        -- 7  watched_date
+    NULL::text,                        -- 8  format
+    l.created_at,                      -- 9
+    l.poster_path,                     -- 10
+    NULL::text,                        -- 11 year
+    l.status,                          -- 12
+    l.is_spoiler,                      -- 13
+    l.watched_with,                    -- 14
+    NULL::text,                        -- 15 private_notes   <-- the leak, closed
+    l.abandoned_reason,                -- 16
+    NULL::text,                        -- 17 physical_media
+    l.is_autopsied,                    -- 18
+    l.autopsy,                         -- 19
+    NULL::text,                        -- 20 alt_poster
+    l.editorial_header,                -- 21
+    l.drop_cap,                        -- 22
+    l.pull_quote,                      -- 23
+    NULL::timestamptz,                 -- 24 updated_at
+    NULL::text,                        -- 25 video_url
+    NULL::jsonb,                       -- 26 viewing_history <-- also closed
+    NULL::integer,                     -- 27 view_count
+    NULL::uuid                         -- 28 viewing_id      <-- 2026-09-17
+  FROM public.logs l
+  JOIN public.profiles p ON p.id = l.user_id
+  WHERE l.review IS NOT NULL
+    AND l.review <> ''
+    AND LENGTH(l.review) > 100
+    AND l.rating >= 4
+    AND COALESCE(p.is_social_private, false) = false
+  ORDER BY l.created_at DESC
+  LIMIT 1;
+END;
 $$;
 
 
@@ -1596,45 +1596,45 @@ $$;
 CREATE FUNCTION public.get_filtered_stacks_auth_cursor(p_search text DEFAULT ''::text, p_filter_following boolean DEFAULT false, p_limit integer DEFAULT 60, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, title text, description text, username text, user_id uuid, created_at timestamp with time zone, films jsonb, certify_count bigint, is_ranked boolean)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT
-    l.id, l.title, l.description,
-    p.username, l.user_id, l.created_at,
-    COALESCE(
-      (SELECT jsonb_agg(
-        jsonb_build_object('id', li.film_id, 'title', li.film_title, 'poster_path', li.poster_path)
-        ORDER BY li.created_at ASC
-      )
-      FROM list_items li WHERE li.list_id = l.id),
-      '[]'::jsonb
-    ) AS films,
-    (SELECT COUNT(*) FROM interactions i
-     WHERE i.target_list_id = l.id AND i.type = 'endorse_list') AS certify_count,
-    l.is_ranked
-  FROM lists l
-  JOIN profiles p ON p.id = l.user_id
-  WHERE l.is_private = false
-    AND (auth.uid() IS NULL OR NOT is_hidden_by(auth.uid(), l.user_id))
-    AND (
-      COALESCE(p_search, '') = ''
-      OR l.title    ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-      OR p.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-    )
-    AND (
-      p_filter_following = false
-      OR EXISTS (
-        SELECT 1 FROM interactions i
-        WHERE i.target_user_id = l.user_id
-          AND i.user_id = auth.uid()
-          AND i.type = 'follow'
-      )
-    )
-    AND (
-      p_cursor_created_at IS NULL
-      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
-    )
-  ORDER BY l.created_at DESC, l.id DESC
-  LIMIT p_limit;
+    AS $$
+  SELECT
+    l.id, l.title, l.description,
+    p.username, l.user_id, l.created_at,
+    COALESCE(
+      (SELECT jsonb_agg(
+        jsonb_build_object('id', li.film_id, 'title', li.film_title, 'poster_path', li.poster_path)
+        ORDER BY li.created_at ASC
+      )
+      FROM list_items li WHERE li.list_id = l.id),
+      '[]'::jsonb
+    ) AS films,
+    (SELECT COUNT(*) FROM interactions i
+     WHERE i.target_list_id = l.id AND i.type = 'endorse_list') AS certify_count,
+    l.is_ranked
+  FROM lists l
+  JOIN profiles p ON p.id = l.user_id
+  WHERE l.is_private = false
+    AND (auth.uid() IS NULL OR NOT is_hidden_by(auth.uid(), l.user_id))
+    AND (
+      COALESCE(p_search, '') = ''
+      OR l.title    ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+      OR p.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+    )
+    AND (
+      p_filter_following = false
+      OR EXISTS (
+        SELECT 1 FROM interactions i
+        WHERE i.target_user_id = l.user_id
+          AND i.user_id = auth.uid()
+          AND i.type = 'follow'
+      )
+    )
+    AND (
+      p_cursor_created_at IS NULL
+      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
+    )
+  ORDER BY l.created_at DESC, l.id DESC
+  LIMIT p_limit;
 $$;
 
 
@@ -1645,50 +1645,50 @@ $$;
 CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT ''::text, p_filter_following boolean DEFAULT false, p_limit integer DEFAULT 60, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid, p_poster_count integer DEFAULT 4) RETURNS TABLE(id uuid, title text, description text, username text, user_id uuid, created_at timestamp with time zone, films jsonb, film_count bigint, certify_count bigint, is_ranked boolean)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT
-    l.id, l.title, l.description,
-    p.username, l.user_id, l.created_at,
-    COALESCE(
-      (SELECT jsonb_agg(f ORDER BY f_created_at ASC)
-       FROM (
-         SELECT jsonb_build_object('id', li.film_id, 'title', li.film_title,
-                                   'poster_path', li.poster_path) AS f,
-                li.created_at AS f_created_at
-         FROM list_items li
-         WHERE li.list_id = l.id AND li.poster_path IS NOT NULL
-         ORDER BY li.created_at ASC
-         LIMIT LEAST(GREATEST(p_poster_count, 0), 10)
-       ) top_films),
-      '[]'::jsonb
-    ) AS films,
-    (SELECT COUNT(*) FROM list_items li WHERE li.list_id = l.id) AS film_count,
-    public.list_certify_count(l.id) AS certify_count,
-    l.is_ranked
-  FROM lists l
-  JOIN profiles p ON p.id = l.user_id
-  WHERE l.is_private = false
-    AND (auth.uid() IS NULL OR NOT is_hidden_by(auth.uid(), l.user_id))
-    AND (
-      COALESCE(p_search, '') = ''
-      OR l.title    ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-      OR p.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-    )
-    AND (
-      p_filter_following = false
-      OR EXISTS (
-        SELECT 1 FROM interactions i
-        WHERE i.target_user_id = l.user_id
-          AND i.user_id = auth.uid()
-          AND i.type = 'follow'
-      )
-    )
-    AND (
-      p_cursor_created_at IS NULL
-      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
-    )
-  ORDER BY l.created_at DESC, l.id DESC
-  LIMIT p_limit;
+    AS $$
+  SELECT
+    l.id, l.title, l.description,
+    p.username, l.user_id, l.created_at,
+    COALESCE(
+      (SELECT jsonb_agg(f ORDER BY f_created_at ASC)
+       FROM (
+         SELECT jsonb_build_object('id', li.film_id, 'title', li.film_title,
+                                   'poster_path', li.poster_path) AS f,
+                li.created_at AS f_created_at
+         FROM list_items li
+         WHERE li.list_id = l.id AND li.poster_path IS NOT NULL
+         ORDER BY li.created_at ASC
+         LIMIT LEAST(GREATEST(p_poster_count, 0), 10)
+       ) top_films),
+      '[]'::jsonb
+    ) AS films,
+    (SELECT COUNT(*) FROM list_items li WHERE li.list_id = l.id) AS film_count,
+    public.list_certify_count(l.id) AS certify_count,
+    l.is_ranked
+  FROM lists l
+  JOIN profiles p ON p.id = l.user_id
+  WHERE l.is_private = false
+    AND (auth.uid() IS NULL OR NOT is_hidden_by(auth.uid(), l.user_id))
+    AND (
+      COALESCE(p_search, '') = ''
+      OR l.title    ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+      OR p.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+    )
+    AND (
+      p_filter_following = false
+      OR EXISTS (
+        SELECT 1 FROM interactions i
+        WHERE i.target_user_id = l.user_id
+          AND i.user_id = auth.uid()
+          AND i.type = 'follow'
+      )
+    )
+    AND (
+      p_cursor_created_at IS NULL
+      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
+    )
+  ORDER BY l.created_at DESC, l.id DESC
+  LIMIT p_limit;
 $$;
 
 
@@ -1738,26 +1738,26 @@ $$;
 CREATE FUNCTION public.get_following_feed_cursor(p_usernames text[], p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT
-    l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
-    l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
-    l.user_id,
-    p.username, p.avatar_url, p.role,
-    l.editorial_header, l.pull_quote, l.watched_with,
-    l.is_autopsied, l.autopsy
-  FROM logs l
-  JOIN profiles p ON p.id = l.user_id
-  WHERE p.username = ANY(p_usernames)
-    AND l.review IS NOT NULL
-    AND l.review <> ''
-    AND (
-      p_cursor_created_at IS NULL
-      OR
-      (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
-    )
-  ORDER BY l.created_at DESC, l.id DESC
-  LIMIT p_limit;
+    AS $$
+  SELECT
+    l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
+    l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
+    l.user_id,
+    p.username, p.avatar_url, p.role,
+    l.editorial_header, l.pull_quote, l.watched_with,
+    l.is_autopsied, l.autopsy
+  FROM logs l
+  JOIN profiles p ON p.id = l.user_id
+  WHERE p.username = ANY(p_usernames)
+    AND l.review IS NOT NULL
+    AND l.review <> ''
+    AND (
+      p_cursor_created_at IS NULL
+      OR
+      (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
+    )
+  ORDER BY l.created_at DESC, l.id DESC
+  LIMIT p_limit;
 $$;
 
 
@@ -1795,21 +1795,21 @@ $$;
 CREATE FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer DEFAULT 5) RETURNS TABLE(id uuid, report_id uuid, target_user_id uuid, admin_id uuid, action text, reason text, duration_hours integer, expires_at timestamp with time zone, created_at timestamp with time zone)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT r.id, r.report_id, r.target_user_id, r.admin_id, r.action, r.reason,
-         r.duration_hours, r.expires_at, r.created_at
-  FROM (
-    SELECT m.*,
-           ROW_NUMBER() OVER (PARTITION BY m.target_user_id ORDER BY m.created_at DESC, m.id DESC) AS rn
-    FROM public.mod_actions m
-    WHERE m.target_user_id = ANY(COALESCE(p_user_ids, ARRAY[]::uuid[]))
-      AND EXISTS (
-        SELECT 1 FROM public.profiles p
-        WHERE p.id = auth.uid() AND p.role = 'admin'
-      )
-  ) r
-  WHERE r.rn <= LEAST(GREATEST(COALESCE(p_per_user, 5), 0), 20)
-  ORDER BY r.target_user_id, r.created_at DESC, r.id DESC;
+    AS $$
+  SELECT r.id, r.report_id, r.target_user_id, r.admin_id, r.action, r.reason,
+         r.duration_hours, r.expires_at, r.created_at
+  FROM (
+    SELECT m.*,
+           ROW_NUMBER() OVER (PARTITION BY m.target_user_id ORDER BY m.created_at DESC, m.id DESC) AS rn
+    FROM public.mod_actions m
+    WHERE m.target_user_id = ANY(COALESCE(p_user_ids, ARRAY[]::uuid[]))
+      AND EXISTS (
+        SELECT 1 FROM public.profiles p
+        WHERE p.id = auth.uid() AND p.role = 'admin'
+      )
+  ) r
+  WHERE r.rn <= LEAST(GREATEST(COALESCE(p_per_user, 5), 0), 20)
+  ORDER BY r.target_user_id, r.created_at DESC, r.id DESC;
 $$;
 
 
@@ -1820,37 +1820,37 @@ $$;
 CREATE FUNCTION public.get_priority_reports(p_limit integer DEFAULT 20, p_cursor_count bigint DEFAULT NULL::bigint, p_cursor_created timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, content_id text, content_type text, reason text, details text, reporter_id uuid, target_user_id uuid, created_at timestamp with time zone, report_count bigint)
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin') THEN
-    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
-  END IF;
-
-  RETURN QUERY
-  WITH scored AS (
-    SELECT
-      r.id, r.content_id, r.content_type, r.reason, r.details,
-      r.reporter_id, r.target_user_id, r.created_at,
-      COUNT(*) OVER (PARTITION BY r.content_id) AS report_count
-    FROM reports r
-    WHERE r.status = 'pending'
-  )
-  SELECT
-    s.id, s.content_id, s.content_type, s.reason, s.details,
-    s.reporter_id, s.target_user_id, s.created_at, s.report_count
-  FROM scored s
-  WHERE
-    p_cursor_count IS NULL
-    OR s.report_count < p_cursor_count
-    OR (s.report_count = p_cursor_count AND s.created_at > p_cursor_created)
-    OR (s.report_count = p_cursor_count AND s.created_at = p_cursor_created
-        AND s.id > p_cursor_id)
-  ORDER BY s.report_count DESC, s.created_at ASC, s.id ASC
-  LIMIT LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100);
-END;
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  WITH scored AS (
+    SELECT
+      r.id, r.content_id, r.content_type, r.reason, r.details,
+      r.reporter_id, r.target_user_id, r.created_at,
+      COUNT(*) OVER (PARTITION BY r.content_id) AS report_count
+    FROM reports r
+    WHERE r.status = 'pending'
+  )
+  SELECT
+    s.id, s.content_id, s.content_type, s.reason, s.details,
+    s.reporter_id, s.target_user_id, s.created_at, s.report_count
+  FROM scored s
+  WHERE
+    p_cursor_count IS NULL
+    OR s.report_count < p_cursor_count
+    OR (s.report_count = p_cursor_count AND s.created_at > p_cursor_created)
+    OR (s.report_count = p_cursor_count AND s.created_at = p_cursor_created
+        AND s.id > p_cursor_id)
+  ORDER BY s.report_count DESC, s.created_at ASC, s.id ASC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100);
+END;
 $$;
 
 
@@ -1861,23 +1861,23 @@ $$;
 CREATE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS json
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT json_build_object(
-    'logs_count',      CASE WHEN public.can_view_user_data(p_user_id)
-                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id) ELSE 0 END,
-    'ledger_count',    CASE WHEN public.can_view_user_data(p_user_id)
-                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id
-                                    AND (rating > 0 OR COALESCE(review, '') <> '')) ELSE 0 END,
-    'watchlist_count', CASE WHEN public.can_view_user_data(p_user_id)
-                            THEN (SELECT COUNT(*) FROM watchlists WHERE user_id = p_user_id) ELSE 0 END,
-    'vault_count',     CASE WHEN public.can_view_user_data(p_user_id)
-                            THEN (SELECT COUNT(*) FROM physical_archive WHERE user_id = p_user_id) ELSE 0 END,
-    'lists_count',     CASE WHEN public.can_view_user_data(p_user_id)
-                            THEN (SELECT COUNT(*) FROM lists WHERE user_id = p_user_id
-                                    AND (is_private = false OR user_id = auth.uid())) ELSE 0 END,
-    'followers_count', (SELECT COUNT(*) FROM interactions WHERE target_user_id = p_user_id AND type = 'follow'),
-    'following_count', (SELECT COUNT(*) FROM interactions WHERE user_id = p_user_id AND type = 'follow')
-  );
+    AS $$
+  SELECT json_build_object(
+    'logs_count',      CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id) ELSE 0 END,
+    'ledger_count',    CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id
+                                    AND (rating > 0 OR COALESCE(review, '') <> '')) ELSE 0 END,
+    'watchlist_count', CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM watchlists WHERE user_id = p_user_id) ELSE 0 END,
+    'vault_count',     CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM physical_archive WHERE user_id = p_user_id) ELSE 0 END,
+    'lists_count',     CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM lists WHERE user_id = p_user_id
+                                    AND (is_private = false OR user_id = auth.uid())) ELSE 0 END,
+    'followers_count', (SELECT COUNT(*) FROM interactions WHERE target_user_id = p_user_id AND type = 'follow'),
+    'following_count', (SELECT COUNT(*) FROM interactions WHERE user_id = p_user_id AND type = 'follow')
+  );
 $$;
 
 
@@ -1888,50 +1888,50 @@ $$;
 CREATE FUNCTION public.get_profile_metrics(uid uuid) RETURNS json
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-    total_logs int;
-    avg_rating numeric;
-    decades json;
-    autopsy_avg json;
-    result json;
-BEGIN
-    -- 1. Get total logs and global average rating (ignoring 0 ratings)
-    SELECT COUNT(*), COALESCE(AVG(NULLIF(rating, 0)), 0)
-    INTO total_logs, avg_rating
-    FROM logs
-    WHERE user_id = uid;
-
-    -- 2. Aggregate Decades (e.g., "1990s": 14, "2000s": 42)
-    SELECT json_object_agg(decade, count) INTO decades
-    FROM (
-        SELECT CONCAT(FLOOR(year / 10) * 10, 's') AS decade, COUNT(*) as count
-        FROM logs
-        WHERE user_id = uid AND year IS NOT NULL
-        GROUP BY FLOOR(year / 10) * 10
-        ORDER BY count DESC
-    ) AS decade_counts;
-
-    -- 3. Aggregate Autopsy Radar Chart Averages
-    SELECT json_build_object(
-        'story', COALESCE(AVG((autopsy->>'story')::numeric), 0),
-        'cinematography', COALESCE(AVG((autopsy->>'cinematography')::numeric), 0),
-        'sound', COALESCE(AVG((autopsy->>'sound')::numeric), 0),
-        'pacing', COALESCE(AVG((autopsy->>'pacing')::numeric), 0)
-    ) INTO autopsy_avg
-    FROM logs
-    WHERE user_id = uid AND is_autopsied = true AND autopsy IS NOT NULL;
-
-    -- Construct final JSON response to send over the wire (8KB instead of 5MB)
-    result := json_build_object(
-        'total_logs', total_logs,
-        'avg_rating', avg_rating,
-        'decades', COALESCE(decades, '{}'::json),
-        'avg_autopsy', autopsy_avg
-    );
-
-    RETURN result;
-END;
+    AS $$
+DECLARE
+    total_logs int;
+    avg_rating numeric;
+    decades json;
+    autopsy_avg json;
+    result json;
+BEGIN
+    -- 1. Get total logs and global average rating (ignoring 0 ratings)
+    SELECT COUNT(*), COALESCE(AVG(NULLIF(rating, 0)), 0)
+    INTO total_logs, avg_rating
+    FROM logs
+    WHERE user_id = uid;
+
+    -- 2. Aggregate Decades (e.g., "1990s": 14, "2000s": 42)
+    SELECT json_object_agg(decade, count) INTO decades
+    FROM (
+        SELECT CONCAT(FLOOR(year / 10) * 10, 's') AS decade, COUNT(*) as count
+        FROM logs
+        WHERE user_id = uid AND year IS NOT NULL
+        GROUP BY FLOOR(year / 10) * 10
+        ORDER BY count DESC
+    ) AS decade_counts;
+
+    -- 3. Aggregate Autopsy Radar Chart Averages
+    SELECT json_build_object(
+        'story', COALESCE(AVG((autopsy->>'story')::numeric), 0),
+        'cinematography', COALESCE(AVG((autopsy->>'cinematography')::numeric), 0),
+        'sound', COALESCE(AVG((autopsy->>'sound')::numeric), 0),
+        'pacing', COALESCE(AVG((autopsy->>'pacing')::numeric), 0)
+    ) INTO autopsy_avg
+    FROM logs
+    WHERE user_id = uid AND is_autopsied = true AND autopsy IS NOT NULL;
+
+    -- Construct final JSON response to send over the wire (8KB instead of 5MB)
+    result := json_build_object(
+        'total_logs', total_logs,
+        'avg_rating', avg_rating,
+        'decades', COALESCE(decades, '{}'::json),
+        'avg_autopsy', autopsy_avg
+    );
+
+    RETURN result;
+END;
 $$;
 
 
@@ -1942,62 +1942,62 @@ $$;
 CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS jsonb
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $_$
-  SELECT CASE
-    WHEN auth.uid() IS NULL OR NOT public.can_view_user_data(p_user_id)
-      THEN '{"error": "forbidden"}'::jsonb
-    ELSE (
-      WITH user_logs AS (
-        SELECT *,
-          -- THE ONLY CHANGE IN THIS FUNCTION: was '^\d+$'
-          CASE WHEN year::text ~ '^\d{1,4}$' THEN year::text::int END AS year_int
-        FROM public.logs WHERE user_id = p_user_id
-      ),
-      stamps AS (
-        SELECT
-          COUNT(*) AS total_logs,
-          COUNT(*) FILTER (WHERE year_int < 1960) AS pre_1960_count,
-          COUNT(*) FILTER (WHERE rating = 5) AS perfect_ratings_count,
-          bool_or(physical_media IS NOT NULL) AS has_physical_media,
-          bool_or(status = 'abandoned') AS has_abandoned,
-          COUNT(DISTINCT (year_int / 10) * 10) FILTER (WHERE year_int IS NOT NULL) AS decades_logged_count,
-          EXISTS(SELECT 1 FROM user_logs GROUP BY film_id HAVING COUNT(*) > 1) AS has_rewatched
-        FROM user_logs
-      ),
-      decades AS (
-        SELECT (year_int / 10) * 10 AS decade, COUNT(*) AS c
-        FROM user_logs WHERE year_int IS NOT NULL
-        GROUP BY decade ORDER BY c DESC LIMIT 3
-      ),
-      dna AS (
-        SELECT
-          AVG(rating) FILTER (WHERE rating > 0) AS avg_rating,
-          (SELECT jsonb_agg(jsonb_build_object(d.decade::text || 's', d.c)) FROM decades d) AS top_decades
-        FROM user_logs
-      ),
-      autopsies AS (
-        SELECT
-          AVG(CASE WHEN (autopsy::jsonb) ? '_v'
-                THEN COALESCE(((autopsy::jsonb)->>'story')::numeric, ((autopsy::jsonb)->>'screenplay')::numeric, ((autopsy::jsonb)->>'script')::numeric)
-                ELSE NULLIF(COALESCE((autopsy::jsonb)->>'story', (autopsy::jsonb)->>'screenplay', (autopsy::jsonb)->>'script')::numeric, 0)
-              END) AS avg_story,
-          AVG(CASE WHEN (autopsy::jsonb) ? '_v'
-                THEN COALESCE(((autopsy::jsonb)->>'cinematography')::numeric, ((autopsy::jsonb)->>'visuals')::numeric, ((autopsy::jsonb)->>'acting')::numeric)
-                ELSE NULLIF(COALESCE((autopsy::jsonb)->>'cinematography', (autopsy::jsonb)->>'visuals', (autopsy::jsonb)->>'acting')::numeric, 0)
-              END) AS avg_cinematography,
-          AVG(CASE WHEN (autopsy::jsonb) ? '_v'
-                THEN COALESCE(((autopsy::jsonb)->>'sound')::numeric, ((autopsy::jsonb)->>'score')::numeric, ((autopsy::jsonb)->>'editing')::numeric)
-                ELSE NULLIF(COALESCE((autopsy::jsonb)->>'sound', (autopsy::jsonb)->>'score', (autopsy::jsonb)->>'editing')::numeric, 0)
-              END) AS avg_sound
-        FROM user_logs WHERE is_autopsied = true AND autopsy IS NOT NULL
-      )
-      SELECT jsonb_build_object(
-        'stamps', (SELECT to_jsonb(s.*) FROM stamps s),
-        'dna', (SELECT to_jsonb(d.*) FROM dna d),
-        'autopsy_math', (SELECT to_jsonb(a.*) FROM autopsies a)
-      )
-    )
-  END;
+    AS $_$
+  SELECT CASE
+    WHEN auth.uid() IS NULL OR NOT public.can_view_user_data(p_user_id)
+      THEN '{"error": "forbidden"}'::jsonb
+    ELSE (
+      WITH user_logs AS (
+        SELECT *,
+          -- THE ONLY CHANGE IN THIS FUNCTION: was '^\d+$'
+          CASE WHEN year::text ~ '^\d{1,4}$' THEN year::text::int END AS year_int
+        FROM public.logs WHERE user_id = p_user_id
+      ),
+      stamps AS (
+        SELECT
+          COUNT(*) AS total_logs,
+          COUNT(*) FILTER (WHERE year_int < 1960) AS pre_1960_count,
+          COUNT(*) FILTER (WHERE rating = 5) AS perfect_ratings_count,
+          bool_or(physical_media IS NOT NULL) AS has_physical_media,
+          bool_or(status = 'abandoned') AS has_abandoned,
+          COUNT(DISTINCT (year_int / 10) * 10) FILTER (WHERE year_int IS NOT NULL) AS decades_logged_count,
+          EXISTS(SELECT 1 FROM user_logs GROUP BY film_id HAVING COUNT(*) > 1) AS has_rewatched
+        FROM user_logs
+      ),
+      decades AS (
+        SELECT (year_int / 10) * 10 AS decade, COUNT(*) AS c
+        FROM user_logs WHERE year_int IS NOT NULL
+        GROUP BY decade ORDER BY c DESC LIMIT 3
+      ),
+      dna AS (
+        SELECT
+          AVG(rating) FILTER (WHERE rating > 0) AS avg_rating,
+          (SELECT jsonb_agg(jsonb_build_object(d.decade::text || 's', d.c)) FROM decades d) AS top_decades
+        FROM user_logs
+      ),
+      autopsies AS (
+        SELECT
+          AVG(CASE WHEN (autopsy::jsonb) ? '_v'
+                THEN COALESCE(((autopsy::jsonb)->>'story')::numeric, ((autopsy::jsonb)->>'screenplay')::numeric, ((autopsy::jsonb)->>'script')::numeric)
+                ELSE NULLIF(COALESCE((autopsy::jsonb)->>'story', (autopsy::jsonb)->>'screenplay', (autopsy::jsonb)->>'script')::numeric, 0)
+              END) AS avg_story,
+          AVG(CASE WHEN (autopsy::jsonb) ? '_v'
+                THEN COALESCE(((autopsy::jsonb)->>'cinematography')::numeric, ((autopsy::jsonb)->>'visuals')::numeric, ((autopsy::jsonb)->>'acting')::numeric)
+                ELSE NULLIF(COALESCE((autopsy::jsonb)->>'cinematography', (autopsy::jsonb)->>'visuals', (autopsy::jsonb)->>'acting')::numeric, 0)
+              END) AS avg_cinematography,
+          AVG(CASE WHEN (autopsy::jsonb) ? '_v'
+                THEN COALESCE(((autopsy::jsonb)->>'sound')::numeric, ((autopsy::jsonb)->>'score')::numeric, ((autopsy::jsonb)->>'editing')::numeric)
+                ELSE NULLIF(COALESCE((autopsy::jsonb)->>'sound', (autopsy::jsonb)->>'score', (autopsy::jsonb)->>'editing')::numeric, 0)
+              END) AS avg_sound
+        FROM user_logs WHERE is_autopsied = true AND autopsy IS NOT NULL
+      )
+      SELECT jsonb_build_object(
+        'stamps', (SELECT to_jsonb(s.*) FROM stamps s),
+        'dna', (SELECT to_jsonb(d.*) FROM dna d),
+        'autopsy_math', (SELECT to_jsonb(a.*) FROM autopsies a)
+      )
+    )
+  END;
 $_$;
 
 
@@ -2008,57 +2008,57 @@ $_$;
 CREATE FUNCTION public.get_report_evidence(p_report_id uuid) RETURNS jsonb
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_admin_id   uuid := auth.uid();
-  v_type       text;
-  v_content_id uuid;
-  v_title      text;
-  v_body       text;
-  v_route      text;
-BEGIN
-  -- ── Admin gate: identical to resolve_moderation_report_v2 ──
-  -- Uses auth.uid() (canonical identity), never a caller-supplied param.
-  IF v_admin_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = v_admin_id AND role = 'admin') THEN
-    RAISE EXCEPTION 'Not authorized';
-  END IF;
-
-  -- ── Resolve the report ──
-  SELECT content_type, content_id
-    INTO v_type, v_content_id
-  FROM reports
-  WHERE id = p_report_id;
-
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object('found', false);
-  END IF;
-
-  -- ── Fetch the exhibit by content type (columns verified against live schema) ──
-  IF v_type = 'log' THEN
-    SELECT film_title, review, '/log/' || id::text
-      INTO v_title, v_body, v_route FROM logs WHERE id = v_content_id;
-
-  ELSIF v_type = 'list' THEN
-    SELECT title, description, '/stacks/' || id::text
-      INTO v_title, v_body, v_route FROM lists WHERE id = v_content_id;
-
-  ELSIF v_type = 'log_comment' THEN               -- log_comments.body
-    SELECT body, '/log/' || log_id::text
-      INTO v_body, v_route FROM log_comments WHERE id = v_content_id;
-
-  ELSIF v_type = 'list_comment' THEN              -- list_comments.content
-    SELECT content, '/stacks/' || list_id::text
-      INTO v_body, v_route FROM list_comments WHERE id = v_content_id;
-
-  ELSIF v_type = 'dossier' THEN
-    SELECT title, full_content, '/dossier/' || id::text
-      INTO v_title, v_body, v_route FROM dispatch_dossiers WHERE id = v_content_id;
-
-  ELSIF v_type = 'dossier_comment' THEN           -- dossier_comments.body
-    SELECT body, '/dossier/' || dossier_id::text
+    AS $$
+DECLARE
+  v_admin_id   uuid := auth.uid();
+  v_type       text;
+  v_content_id uuid;
+  v_title      text;
+  v_body       text;
+  v_route      text;
+BEGIN
+  -- ── Admin gate: identical to resolve_moderation_report_v2 ──
+  -- Uses auth.uid() (canonical identity), never a caller-supplied param.
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = v_admin_id AND role = 'admin') THEN
+    RAISE EXCEPTION 'Not authorized';
+  END IF;
+
+  -- ── Resolve the report ──
+  SELECT content_type, content_id
+    INTO v_type, v_content_id
+  FROM reports
+  WHERE id = p_report_id;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('found', false);
+  END IF;
+
+  -- ── Fetch the exhibit by content type (columns verified against live schema) ──
+  IF v_type = 'log' THEN
+    SELECT film_title, review, '/log/' || id::text
+      INTO v_title, v_body, v_route FROM logs WHERE id = v_content_id;
+
+  ELSIF v_type = 'list' THEN
+    SELECT title, description, '/stacks/' || id::text
+      INTO v_title, v_body, v_route FROM lists WHERE id = v_content_id;
+
+  ELSIF v_type = 'log_comment' THEN               -- log_comments.body
+    SELECT body, '/log/' || log_id::text
+      INTO v_body, v_route FROM log_comments WHERE id = v_content_id;
+
+  ELSIF v_type = 'list_comment' THEN              -- list_comments.content
+    SELECT content, '/stacks/' || list_id::text
+      INTO v_body, v_route FROM list_comments WHERE id = v_content_id;
+
+  ELSIF v_type = 'dossier' THEN
+    SELECT title, full_content, '/dossier/' || id::text
+      INTO v_title, v_body, v_route FROM dispatch_dossiers WHERE id = v_content_id;
+
+  ELSIF v_type = 'dossier_comment' THEN           -- dossier_comments.body
+    SELECT body, '/dossier/' || dossier_id::text
       INTO v_body, v_route FROM dossier_comments WHERE id = v_content_id;
 
   ELSIF v_type = 'dispatch_post' THEN
@@ -2067,36 +2067,36 @@ BEGIN
 
   ELSIF v_type = 'dispatch_comment' THEN
     SELECT body, '/dispatch/' || post_id::text
-      INTO v_body, v_route FROM dispatch_comments WHERE id = v_content_id;
-
-  ELSIF v_type = 'lounge_message' THEN            -- lounge_messages.content
-    SELECT content, '/lounge/' || lounge_id::text
-      INTO v_body, v_route FROM lounge_messages WHERE id = v_content_id;
-
-  ELSIF v_type = 'lounge' THEN
-    SELECT name, description, '/lounge/' || id::text
-      INTO v_title, v_body, v_route FROM lounges WHERE id = v_content_id;
-
-  ELSIF v_type = 'profile' THEN                   -- route uses username, not id
-    SELECT username, bio, '/user/' || username
-      INTO v_title, v_body, v_route FROM profiles WHERE id = v_content_id;
-
-  ELSE
-    RETURN jsonb_build_object('found', false);     -- unknown type → graceful miss
-  END IF;
-
-  -- Content deleted since the report was filed → route never got set
-  IF v_route IS NULL THEN
-    RETURN jsonb_build_object('found', false);
-  END IF;
-
-  RETURN jsonb_build_object(
-    'found', true,
-    'title', v_title,
-    'body',  v_body,
-    'route', v_route
-  );
-END;
+      INTO v_body, v_route FROM dispatch_comments WHERE id = v_content_id;
+
+  ELSIF v_type = 'lounge_message' THEN            -- lounge_messages.content
+    SELECT content, '/lounge/' || lounge_id::text
+      INTO v_body, v_route FROM lounge_messages WHERE id = v_content_id;
+
+  ELSIF v_type = 'lounge' THEN
+    SELECT name, description, '/lounge/' || id::text
+      INTO v_title, v_body, v_route FROM lounges WHERE id = v_content_id;
+
+  ELSIF v_type = 'profile' THEN                   -- route uses username, not id
+    SELECT username, bio, '/user/' || username
+      INTO v_title, v_body, v_route FROM profiles WHERE id = v_content_id;
+
+  ELSE
+    RETURN jsonb_build_object('found', false);     -- unknown type → graceful miss
+  END IF;
+
+  -- Content deleted since the report was filed → route never got set
+  IF v_route IS NULL THEN
+    RETURN jsonb_build_object('found', false);
+  END IF;
+
+  RETURN jsonb_build_object(
+    'found', true,
+    'title', v_title,
+    'body',  v_body,
+    'route', v_route
+  );
+END;
 $$;
 
 
@@ -2107,25 +2107,25 @@ $$;
 CREATE FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) RETURNS TABLE(lounge_id uuid, username text, avatar_url text, rn integer)
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  WITH ranked AS (
-    SELECT
-      lm.lounge_id, p.username, p.avatar_url,
-      row_number() OVER (PARTITION BY lm.lounge_id ORDER BY lm.joined_at ASC, lm.user_id ASC) AS rn
-    FROM public.lounge_members lm
-    JOIN public.profiles p ON p.id = lm.user_id
-    WHERE lm.lounge_id = ANY(p_lounge_ids)
-      AND lm.status = 'approved'
-      AND p.username IS NOT NULL
-      AND NOT public.is_hidden_by(auth.uid(), lm.user_id)
-      AND (
-        EXISTS (SELECT 1 FROM public.lounge_members me
-                WHERE me.lounge_id = lm.lounge_id AND me.user_id = auth.uid() AND me.status = 'approved')
-        OR auth.uid() = (SELECT creator_id FROM public.lounges WHERE id = lm.lounge_id)
-      )
-  )
-  SELECT lounge_id, username, avatar_url, rn::integer
-  FROM ranked WHERE rn <= 3 ORDER BY lounge_id, rn;
+    AS $$
+  WITH ranked AS (
+    SELECT
+      lm.lounge_id, p.username, p.avatar_url,
+      row_number() OVER (PARTITION BY lm.lounge_id ORDER BY lm.joined_at ASC, lm.user_id ASC) AS rn
+    FROM public.lounge_members lm
+    JOIN public.profiles p ON p.id = lm.user_id
+    WHERE lm.lounge_id = ANY(p_lounge_ids)
+      AND lm.status = 'approved'
+      AND p.username IS NOT NULL
+      AND NOT public.is_hidden_by(auth.uid(), lm.user_id)
+      AND (
+        EXISTS (SELECT 1 FROM public.lounge_members me
+                WHERE me.lounge_id = lm.lounge_id AND me.user_id = auth.uid() AND me.status = 'approved')
+        OR auth.uid() = (SELECT creator_id FROM public.lounges WHERE id = lm.lounge_id)
+      )
+  )
+  SELECT lounge_id, username, avatar_url, rn::integer
+  FROM ranked WHERE rn <= 3 ORDER BY lounge_id, rn;
 $$;
 
 
@@ -2136,84 +2136,84 @@ $$;
 CREATE FUNCTION public.get_taste_profile(p_user_id uuid) RETURNS json
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  result JSON;
-BEGIN
-  IF NOT public.can_view_user_data(p_user_id) THEN
-    RETURN json_build_object('error', 'forbidden');
-  END IF;
-
-  WITH mine AS (
-    SELECT DISTINCT l.film_id
-      FROM public.logs l
-     WHERE l.user_id = p_user_id AND l.film_id > 0
-  ),
-  known AS (
-    SELECT f.*
-      FROM public.films f
-      JOIN mine m ON m.film_id = f.id
-     WHERE f.synced_at IS NOT NULL
-  )
-  SELECT json_build_object(
-    'films_total', (SELECT COUNT(*) FROM mine),
-    'films_known', (SELECT COUNT(*) FROM known),
-
-    'genres', (
-      SELECT COALESCE(json_agg(row_to_json(g)), '[]'::json) FROM (
-        SELECT genre AS name, COUNT(*) AS count
-          FROM known, LATERAL unnest(known.genres) AS genre
-         GROUP BY genre
-         ORDER BY count DESC, genre
-         LIMIT 12
-      ) g
-    ),
-
-    'actors', (
-      SELECT COALESCE(json_agg(row_to_json(a)), '[]'::json) FROM (
-        SELECT p.id,
-               MAX(p.name) AS name,
-               MAX(p.profile) AS profile_path,
-               COUNT(*) AS count
-          FROM known,
-               LATERAL unnest(known.cast_ids, known.cast_names, known.cast_profiles)
-                    AS p(id, name, profile)
-         WHERE p.id IS NOT NULL AND p.name IS NOT NULL AND p.name <> ''
-         GROUP BY p.id
-         ORDER BY count DESC, name
-         LIMIT 10
-      ) a
-    ),
-
-    'directors', (
-      SELECT COALESCE(json_agg(row_to_json(d)), '[]'::json) FROM (
-        SELECT director_id AS id,
-               MAX(director) AS name,
-               MAX(director_profile) AS profile_path,
-               COUNT(*) AS count
-          FROM known
-         WHERE director_id IS NOT NULL AND director IS NOT NULL AND director <> ''
-         GROUP BY director_id
-         ORDER BY count DESC, name
-         LIMIT 10
-      ) d
-    ),
-
-    'countries', (
-      SELECT COALESCE(json_agg(row_to_json(c)), '[]'::json) FROM (
-        SELECT code, COUNT(*) AS count
-          FROM known, LATERAL unnest(known.country_codes) AS code
-         GROUP BY code
-         ORDER BY count DESC, code
-         LIMIT 20
-      ) c
-    ),
-
-    'total_runtime', (SELECT COALESCE(SUM(runtime), 0) FROM known WHERE runtime > 0)
-  ) INTO result;
-
-  RETURN result;
-END;
+    AS $$
+DECLARE
+  result JSON;
+BEGIN
+  IF NOT public.can_view_user_data(p_user_id) THEN
+    RETURN json_build_object('error', 'forbidden');
+  END IF;
+
+  WITH mine AS (
+    SELECT DISTINCT l.film_id
+      FROM public.logs l
+     WHERE l.user_id = p_user_id AND l.film_id > 0
+  ),
+  known AS (
+    SELECT f.*
+      FROM public.films f
+      JOIN mine m ON m.film_id = f.id
+     WHERE f.synced_at IS NOT NULL
+  )
+  SELECT json_build_object(
+    'films_total', (SELECT COUNT(*) FROM mine),
+    'films_known', (SELECT COUNT(*) FROM known),
+
+    'genres', (
+      SELECT COALESCE(json_agg(row_to_json(g)), '[]'::json) FROM (
+        SELECT genre AS name, COUNT(*) AS count
+          FROM known, LATERAL unnest(known.genres) AS genre
+         GROUP BY genre
+         ORDER BY count DESC, genre
+         LIMIT 12
+      ) g
+    ),
+
+    'actors', (
+      SELECT COALESCE(json_agg(row_to_json(a)), '[]'::json) FROM (
+        SELECT p.id,
+               MAX(p.name) AS name,
+               MAX(p.profile) AS profile_path,
+               COUNT(*) AS count
+          FROM known,
+               LATERAL unnest(known.cast_ids, known.cast_names, known.cast_profiles)
+                    AS p(id, name, profile)
+         WHERE p.id IS NOT NULL AND p.name IS NOT NULL AND p.name <> ''
+         GROUP BY p.id
+         ORDER BY count DESC, name
+         LIMIT 10
+      ) a
+    ),
+
+    'directors', (
+      SELECT COALESCE(json_agg(row_to_json(d)), '[]'::json) FROM (
+        SELECT director_id AS id,
+               MAX(director) AS name,
+               MAX(director_profile) AS profile_path,
+               COUNT(*) AS count
+          FROM known
+         WHERE director_id IS NOT NULL AND director IS NOT NULL AND director <> ''
+         GROUP BY director_id
+         ORDER BY count DESC, name
+         LIMIT 10
+      ) d
+    ),
+
+    'countries', (
+      SELECT COALESCE(json_agg(row_to_json(c)), '[]'::json) FROM (
+        SELECT code, COUNT(*) AS count
+          FROM known, LATERAL unnest(known.country_codes) AS code
+         GROUP BY code
+         ORDER BY count DESC, code
+         LIMIT 20
+      ) c
+    ),
+
+    'total_runtime', (SELECT COALESCE(SUM(runtime), 0) FROM known WHERE runtime > 0)
+  ) INTO result;
+
+  RETURN result;
+END;
 $$;
 
 
@@ -2224,93 +2224,93 @@ $$;
 CREATE FUNCTION public.get_user_analytics(p_user_id uuid) RETURNS json
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $_$
-DECLARE
-  result JSON;
-  v_vault JSON := '[]'::json;
-  v_decades JSON := '[]'::json;
-BEGIN
-  -- The check the other two functions already had. This one had none.
-  IF NOT public.can_view_user_data(p_user_id) THEN
-    RETURN json_build_object('error', 'forbidden');
-  END IF;
-
-  -- The two NEW fields, where a failure cannot reach the rest of the payload.
-  BEGIN
-    SELECT COALESCE(json_agg(row_to_json(vf)), '[]'::json) INTO v_vault
-    FROM (
-      SELECT COALESCE(f, 'unfiled') AS format, COUNT(*) AS count
-      FROM physical_archive pa
-      LEFT JOIN LATERAL unnest(NULLIF(pa.formats, '{}')) AS f ON TRUE
-      WHERE pa.user_id = p_user_id
-      GROUP BY 1 ORDER BY count DESC
-    ) vf;
-  EXCEPTION WHEN OTHERS THEN v_vault := '[]'::json;
-  END;
-
-  BEGIN
-    SELECT COALESCE(json_agg(row_to_json(wd)), '[]'::json) INTO v_decades
-    FROM (
-      -- {1,4} not + : an unbounded pattern accepts a 20-digit string and the
-      -- int cast then raises 22003, aborting everything.
-      SELECT ((year::text)::int / 10) * 10 AS decade, COUNT(*) AS count
-      FROM watchlists
-      WHERE user_id = p_user_id
-        AND year::text ~ '^\d{1,4}$'
-        AND (year::text)::int > 0
-      GROUP BY 1 ORDER BY 1 DESC
-    ) wd;
-  EXCEPTION WHEN OTHERS THEN v_decades := '[]'::json;
-  END;
-
-  SELECT json_build_object(
-    'total_logs', (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id),
-    'avg_rating', (SELECT COALESCE(ROUND(AVG(rating)::numeric, 2), 0)
-                   FROM logs WHERE user_id = p_user_id AND rating > 0),
-    'rating_distribution', (
-      SELECT COALESCE(json_agg(row_to_json(rd)), '[]'::json) FROM (
-        SELECT rating, COUNT(*) as count FROM logs
-        WHERE user_id = p_user_id AND rating > 0
-        GROUP BY rating ORDER BY rating) rd),
-
-    -- the 12-month window is gone
-    'monthly_activity', (
-      SELECT COALESCE(json_agg(row_to_json(ma)), '[]'::json) FROM (
-        SELECT TO_CHAR(COALESCE(watched_date::date, created_at::date), 'YYYY-MM') as month,
-               COUNT(*) as count
-        FROM logs WHERE user_id = p_user_id
-        GROUP BY month ORDER BY month DESC) ma),
-
-    -- FIXED: was 1 or 0 for every member. ASCENDING is what holds the grouping still.
-    'current_streak', (
-      WITH dates AS (SELECT DISTINCT COALESCE(watched_date::date, created_at::date) as log_date
-                     FROM logs WHERE user_id = p_user_id),
-      streak AS (SELECT log_date, log_date - (ROW_NUMBER() OVER (ORDER BY log_date))::int AS grp
-                 FROM dates)
-      SELECT COALESCE((SELECT COUNT(*) FROM streak WHERE grp = (
-        SELECT grp FROM streak WHERE log_date >= CURRENT_DATE - 1
-        ORDER BY log_date DESC LIMIT 1)), 0)),
-
-    'longest_streak', (
-      WITH dates AS (SELECT DISTINCT COALESCE(watched_date::date, created_at::date) as log_date
-                     FROM logs WHERE user_id = p_user_id),
-      streak AS (SELECT log_date, log_date - (ROW_NUMBER() OVER (ORDER BY log_date))::int AS grp
-                 FROM dates)
-      SELECT COALESCE(MAX(cnt), 0) FROM (SELECT COUNT(*) as cnt FROM streak GROUP BY grp) s),
-
-    -- unchanged: this is logs.format, how a film was watched — NOT the Vault
-    'format_breakdown', (
-      SELECT COALESCE(json_agg(row_to_json(fb)), '[]'::json) FROM (
-        SELECT format, COUNT(*) as count FROM logs
-        WHERE user_id = p_user_id AND format IS NOT NULL AND format != ''
-        GROUP BY format ORDER BY count DESC) fb),
-
-    'vault_formats', v_vault,
-    'watchlist_decades', v_decades
-  ) INTO result;
-
-  RETURN result;
-END;
+    AS $_$
+DECLARE
+  result JSON;
+  v_vault JSON := '[]'::json;
+  v_decades JSON := '[]'::json;
+BEGIN
+  -- The check the other two functions already had. This one had none.
+  IF NOT public.can_view_user_data(p_user_id) THEN
+    RETURN json_build_object('error', 'forbidden');
+  END IF;
+
+  -- The two NEW fields, where a failure cannot reach the rest of the payload.
+  BEGIN
+    SELECT COALESCE(json_agg(row_to_json(vf)), '[]'::json) INTO v_vault
+    FROM (
+      SELECT COALESCE(f, 'unfiled') AS format, COUNT(*) AS count
+      FROM physical_archive pa
+      LEFT JOIN LATERAL unnest(NULLIF(pa.formats, '{}')) AS f ON TRUE
+      WHERE pa.user_id = p_user_id
+      GROUP BY 1 ORDER BY count DESC
+    ) vf;
+  EXCEPTION WHEN OTHERS THEN v_vault := '[]'::json;
+  END;
+
+  BEGIN
+    SELECT COALESCE(json_agg(row_to_json(wd)), '[]'::json) INTO v_decades
+    FROM (
+      -- {1,4} not + : an unbounded pattern accepts a 20-digit string and the
+      -- int cast then raises 22003, aborting everything.
+      SELECT ((year::text)::int / 10) * 10 AS decade, COUNT(*) AS count
+      FROM watchlists
+      WHERE user_id = p_user_id
+        AND year::text ~ '^\d{1,4}$'
+        AND (year::text)::int > 0
+      GROUP BY 1 ORDER BY 1 DESC
+    ) wd;
+  EXCEPTION WHEN OTHERS THEN v_decades := '[]'::json;
+  END;
+
+  SELECT json_build_object(
+    'total_logs', (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id),
+    'avg_rating', (SELECT COALESCE(ROUND(AVG(rating)::numeric, 2), 0)
+                   FROM logs WHERE user_id = p_user_id AND rating > 0),
+    'rating_distribution', (
+      SELECT COALESCE(json_agg(row_to_json(rd)), '[]'::json) FROM (
+        SELECT rating, COUNT(*) as count FROM logs
+        WHERE user_id = p_user_id AND rating > 0
+        GROUP BY rating ORDER BY rating) rd),
+
+    -- the 12-month window is gone
+    'monthly_activity', (
+      SELECT COALESCE(json_agg(row_to_json(ma)), '[]'::json) FROM (
+        SELECT TO_CHAR(COALESCE(watched_date::date, created_at::date), 'YYYY-MM') as month,
+               COUNT(*) as count
+        FROM logs WHERE user_id = p_user_id
+        GROUP BY month ORDER BY month DESC) ma),
+
+    -- FIXED: was 1 or 0 for every member. ASCENDING is what holds the grouping still.
+    'current_streak', (
+      WITH dates AS (SELECT DISTINCT COALESCE(watched_date::date, created_at::date) as log_date
+                     FROM logs WHERE user_id = p_user_id),
+      streak AS (SELECT log_date, log_date - (ROW_NUMBER() OVER (ORDER BY log_date))::int AS grp
+                 FROM dates)
+      SELECT COALESCE((SELECT COUNT(*) FROM streak WHERE grp = (
+        SELECT grp FROM streak WHERE log_date >= CURRENT_DATE - 1
+        ORDER BY log_date DESC LIMIT 1)), 0)),
+
+    'longest_streak', (
+      WITH dates AS (SELECT DISTINCT COALESCE(watched_date::date, created_at::date) as log_date
+                     FROM logs WHERE user_id = p_user_id),
+      streak AS (SELECT log_date, log_date - (ROW_NUMBER() OVER (ORDER BY log_date))::int AS grp
+                 FROM dates)
+      SELECT COALESCE(MAX(cnt), 0) FROM (SELECT COUNT(*) as cnt FROM streak GROUP BY grp) s),
+
+    -- unchanged: this is logs.format, how a film was watched — NOT the Vault
+    'format_breakdown', (
+      SELECT COALESCE(json_agg(row_to_json(fb)), '[]'::json) FROM (
+        SELECT format, COUNT(*) as count FROM logs
+        WHERE user_id = p_user_id AND format IS NOT NULL AND format != ''
+        GROUP BY format ORDER BY count DESC) fb),
+
+    'vault_formats', v_vault,
+    'watchlist_decades', v_decades
+  ) INTO result;
+
+  RETURN result;
+END;
 $_$;
 
 
@@ -2321,12 +2321,12 @@ $_$;
 CREATE FUNCTION public.get_user_blocks(p_user_id uuid) RETURNS TABLE(blocked_id uuid, type text, created_at timestamp with time zone)
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  -- p_user_id is deliberately ignored; a member may only sync their own list.
-  SELECT ub.blocked_id, ub.type, ub.created_at
-  FROM public.user_blocks ub
-  WHERE ub.blocker_id = auth.uid()
-  ORDER BY ub.created_at DESC;
+    AS $$
+  -- p_user_id is deliberately ignored; a member may only sync their own list.
+  SELECT ub.blocked_id, ub.type, ub.created_at
+  FROM public.user_blocks ub
+  WHERE ub.blocker_id = auth.uid()
+  ORDER BY ub.created_at DESC;
 $$;
 
 
@@ -2337,47 +2337,47 @@ $$;
 CREATE FUNCTION public.get_user_lounges(p_user_id uuid) RETURNS TABLE(id uuid, name text, description text, is_private boolean, invite_code text, creator_id uuid, created_at timestamp with time zone, member_count integer, is_member boolean, unread_count bigint, last_message_at timestamp with time zone)
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  RETURN QUERY
-  WITH
-    my_memberships AS (
-      SELECT lm.lounge_id, lm.last_read_at
-      FROM lounge_members lm WHERE lm.user_id = p_user_id
-    ),
-    visible_lounges AS (
-      SELECT DISTINCT ON (l.id)
-        l.id, l.name, l.description, l.is_private, l.invite_code,
-        l.creator_id, l.created_at, l.member_count,
-        (mm.lounge_id IS NOT NULL OR l.creator_id = p_user_id) AS is_member
-      FROM lounges l
-      LEFT JOIN my_memberships mm ON mm.lounge_id = l.id
-      WHERE TRUE OR mm.lounge_id IS NOT NULL OR l.creator_id = p_user_id
-      ORDER BY l.id
-    ),
-    last_msgs AS (
-      SELECT DISTINCT ON (lmsg.lounge_id)
-        lmsg.lounge_id, lmsg.created_at AS last_msg_at
-      FROM lounge_messages lmsg
-      WHERE lmsg.lounge_id IN (SELECT vl.id FROM visible_lounges vl)
-      ORDER BY lmsg.lounge_id, lmsg.created_at DESC
-    ),
-    unread AS (
-      SELECT lmsg.lounge_id, COUNT(*) AS cnt
-      FROM lounge_messages lmsg
-      JOIN my_memberships mm ON mm.lounge_id = lmsg.lounge_id
-      WHERE mm.last_read_at IS NULL OR lmsg.created_at > mm.last_read_at
-      GROUP BY lmsg.lounge_id
-    )
-  SELECT vl.id, vl.name, vl.description, vl.is_private, vl.invite_code,
-    vl.creator_id, vl.created_at, vl.member_count, vl.is_member,
-    COALESCE(u.cnt, 0) AS unread_count, lm.last_msg_at AS last_message_at
-  FROM visible_lounges vl
-  LEFT JOIN last_msgs lm ON lm.lounge_id = vl.id
-  LEFT JOIN unread u ON u.lounge_id = vl.id
-  ORDER BY COALESCE(lm.last_msg_at, vl.created_at) DESC
-  LIMIT 50;
-END;
+    AS $$
+BEGIN
+  RETURN QUERY
+  WITH
+    my_memberships AS (
+      SELECT lm.lounge_id, lm.last_read_at
+      FROM lounge_members lm WHERE lm.user_id = p_user_id
+    ),
+    visible_lounges AS (
+      SELECT DISTINCT ON (l.id)
+        l.id, l.name, l.description, l.is_private, l.invite_code,
+        l.creator_id, l.created_at, l.member_count,
+        (mm.lounge_id IS NOT NULL OR l.creator_id = p_user_id) AS is_member
+      FROM lounges l
+      LEFT JOIN my_memberships mm ON mm.lounge_id = l.id
+      WHERE TRUE OR mm.lounge_id IS NOT NULL OR l.creator_id = p_user_id
+      ORDER BY l.id
+    ),
+    last_msgs AS (
+      SELECT DISTINCT ON (lmsg.lounge_id)
+        lmsg.lounge_id, lmsg.created_at AS last_msg_at
+      FROM lounge_messages lmsg
+      WHERE lmsg.lounge_id IN (SELECT vl.id FROM visible_lounges vl)
+      ORDER BY lmsg.lounge_id, lmsg.created_at DESC
+    ),
+    unread AS (
+      SELECT lmsg.lounge_id, COUNT(*) AS cnt
+      FROM lounge_messages lmsg
+      JOIN my_memberships mm ON mm.lounge_id = lmsg.lounge_id
+      WHERE mm.last_read_at IS NULL OR lmsg.created_at > mm.last_read_at
+      GROUP BY lmsg.lounge_id
+    )
+  SELECT vl.id, vl.name, vl.description, vl.is_private, vl.invite_code,
+    vl.creator_id, vl.created_at, vl.member_count, vl.is_member,
+    COALESCE(u.cnt, 0) AS unread_count, lm.last_msg_at AS last_message_at
+  FROM visible_lounges vl
+  LEFT JOIN last_msgs lm ON lm.lounge_id = vl.id
+  LEFT JOIN unread u ON u.lounge_id = vl.id
+  ORDER BY COALESCE(lm.last_msg_at, vl.created_at) DESC
+  LIMIT 50;
+END;
 $$;
 
 
@@ -2388,69 +2388,69 @@ $$;
 CREATE FUNCTION public.grant_entitlement(p_user_id uuid, p_tier text, p_source text) RETURNS TABLE(out_role text, out_tier text, out_source text, out_applied boolean, out_reason text)
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_db_value text; v_cur_tier text; v_cur_role text;
-  v_cur_found boolean; v_cur_src text; v_cur_w int; v_new_w int;
-BEGIN
-  IF p_user_id IS NULL THEN
-    RAISE EXCEPTION 'grant_entitlement: user id is required' USING ERRCODE = '22023';
-  END IF;
-  IF p_tier IS NULL OR p_tier NOT IN ('cinephile','archivist','auteur','founding') THEN
-    RAISE EXCEPTION 'grant_entitlement: unknown tier %', coalesce(p_tier,'<null>') USING ERRCODE = '22023';
-  END IF;
-  IF p_source IS NULL OR p_source NOT IN ('revenuecat','paytabs','manual','legacy') THEN
-    RAISE EXCEPTION 'grant_entitlement: unknown source %', coalesce(p_source,'<null>') USING ERRCODE = '22023';
-  END IF;
-
-  v_db_value := CASE WHEN p_tier = 'founding' THEN 'auteur' ELSE p_tier END;
-
-  SELECT p.tier, p.role, coalesce(p.is_founding,false), p.entitlement_source
-    INTO v_cur_tier, v_cur_role, v_cur_found, v_cur_src
-    FROM public.profiles p WHERE p.id = p_user_id FOR UPDATE;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'grant_entitlement: no profile with id %', p_user_id USING ERRCODE = 'P0002';
-  END IF;
-
-  v_cur_w := GREATEST(
-    CASE lower(coalesce(v_cur_tier,''))
-      WHEN 'founding' THEN 3 WHEN 'auteur' THEN 2 WHEN 'archivist' THEN 1 ELSE 0 END,
-    CASE WHEN v_cur_found THEN 3 ELSE
-      CASE lower(coalesce(v_cur_role,''))
-        WHEN 'founding' THEN 3 WHEN 'auteur' THEN 2 WHEN 'archivist' THEN 1 ELSE 0 END
-    END);
-  v_new_w := CASE p_tier
-      WHEN 'founding' THEN 3 WHEN 'auteur' THEN 2 WHEN 'archivist' THEN 1 ELSE 0 END;
-
-  IF v_cur_found AND v_new_w < 2 AND p_source <> 'manual' THEN
-    RETURN QUERY SELECT v_cur_role, v_cur_tier, v_cur_src, false,
-      format('refused: %s may not lower a founding seat below auteur', p_source);
-    RETURN;
-  END IF;
-
-  IF v_new_w < v_cur_w
-     AND p_source <> 'manual'
-     AND v_cur_src IS DISTINCT FROM p_source THEN
-    RETURN QUERY SELECT v_cur_role, v_cur_tier, v_cur_src, false,
-      format('refused: %s may not lower a tier granted by %s',
-             p_source, coalesce(v_cur_src,'an unknown source'));
-    RETURN;
-  END IF;
-
-  RETURN QUERY
-  UPDATE public.profiles p
-     SET role = CASE WHEN p.role = 'admin' THEN p.role ELSE v_db_value END,
-         tier = v_db_value,
-         entitlement_source = CASE
-           WHEN p_source = 'legacy'  THEN v_cur_src
-           WHEN p_source = 'manual'  THEN p_source
-           WHEN v_new_w  > v_cur_w   THEN p_source
-           ELSE v_cur_src END
-   WHERE p.id = p_user_id
-  RETURNING p.role, p.tier, p.entitlement_source, true,
-            format('applied: %s -> %s by %s', coalesce(v_cur_tier,'none'), v_db_value, p_source);
-END;
+    AS $$
+DECLARE
+  v_db_value text; v_cur_tier text; v_cur_role text;
+  v_cur_found boolean; v_cur_src text; v_cur_w int; v_new_w int;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'grant_entitlement: user id is required' USING ERRCODE = '22023';
+  END IF;
+  IF p_tier IS NULL OR p_tier NOT IN ('cinephile','archivist','auteur','founding') THEN
+    RAISE EXCEPTION 'grant_entitlement: unknown tier %', coalesce(p_tier,'<null>') USING ERRCODE = '22023';
+  END IF;
+  IF p_source IS NULL OR p_source NOT IN ('revenuecat','paytabs','manual','legacy') THEN
+    RAISE EXCEPTION 'grant_entitlement: unknown source %', coalesce(p_source,'<null>') USING ERRCODE = '22023';
+  END IF;
+
+  v_db_value := CASE WHEN p_tier = 'founding' THEN 'auteur' ELSE p_tier END;
+
+  SELECT p.tier, p.role, coalesce(p.is_founding,false), p.entitlement_source
+    INTO v_cur_tier, v_cur_role, v_cur_found, v_cur_src
+    FROM public.profiles p WHERE p.id = p_user_id FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'grant_entitlement: no profile with id %', p_user_id USING ERRCODE = 'P0002';
+  END IF;
+
+  v_cur_w := GREATEST(
+    CASE lower(coalesce(v_cur_tier,''))
+      WHEN 'founding' THEN 3 WHEN 'auteur' THEN 2 WHEN 'archivist' THEN 1 ELSE 0 END,
+    CASE WHEN v_cur_found THEN 3 ELSE
+      CASE lower(coalesce(v_cur_role,''))
+        WHEN 'founding' THEN 3 WHEN 'auteur' THEN 2 WHEN 'archivist' THEN 1 ELSE 0 END
+    END);
+  v_new_w := CASE p_tier
+      WHEN 'founding' THEN 3 WHEN 'auteur' THEN 2 WHEN 'archivist' THEN 1 ELSE 0 END;
+
+  IF v_cur_found AND v_new_w < 2 AND p_source <> 'manual' THEN
+    RETURN QUERY SELECT v_cur_role, v_cur_tier, v_cur_src, false,
+      format('refused: %s may not lower a founding seat below auteur', p_source);
+    RETURN;
+  END IF;
+
+  IF v_new_w < v_cur_w
+     AND p_source <> 'manual'
+     AND v_cur_src IS DISTINCT FROM p_source THEN
+    RETURN QUERY SELECT v_cur_role, v_cur_tier, v_cur_src, false,
+      format('refused: %s may not lower a tier granted by %s',
+             p_source, coalesce(v_cur_src,'an unknown source'));
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+  UPDATE public.profiles p
+     SET role = CASE WHEN p.role = 'admin' THEN p.role ELSE v_db_value END,
+         tier = v_db_value,
+         entitlement_source = CASE
+           WHEN p_source = 'legacy'  THEN v_cur_src
+           WHEN p_source = 'manual'  THEN p_source
+           WHEN v_new_w  > v_cur_w   THEN p_source
+           ELSE v_cur_src END
+   WHERE p.id = p_user_id
+  RETURNING p.role, p.tier, p.entitlement_source, true,
+            format('applied: %s -> %s by %s', coalesce(v_cur_tier,'none'), v_db_value, p_source);
+END;
 $$;
 
 
@@ -2471,19 +2471,19 @@ CREATE FUNCTION public.handle_follow_count_change() RETURNS trigger
 CREATE FUNCTION public.handle_new_user() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  INSERT INTO public.profiles (id, username, role, email, preferences)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
-    CASE WHEN NEW.raw_user_meta_data->>'role' = 'venue_owner' THEN 'venue_owner' ELSE 'cinephile' END,
-    NEW.email,
-    '{}'::JSONB
-  )
-  ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, updated_at = NOW();
-  RETURN NEW;
-END;
+    AS $$
+BEGIN
+  INSERT INTO public.profiles (id, username, role, email, preferences)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
+    CASE WHEN NEW.raw_user_meta_data->>'role' = 'venue_owner' THEN 'venue_owner' ELSE 'cinephile' END,
+    NEW.email,
+    '{}'::JSONB
+  )
+  ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, updated_at = NOW();
+  RETURN NEW;
+END;
 $$;
 
 
@@ -2494,46 +2494,46 @@ $$;
 CREATE FUNCTION public.handle_privacy_switch() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-    v_updated_user_ids UUID[];
-    v_count INT;
-BEGIN
-    -- If switching from Private (true) to Public (false)
-    IF OLD.is_social_private = true AND NEW.is_social_private = false THEN
-        
-        -- 1. Bulk update interactions and capture the affected user_ids
-        WITH updated AS (
-            UPDATE public.interactions 
-            SET type = 'follow' 
-            WHERE target_user_id = NEW.id AND type = 'follow_request'
-            RETURNING user_id
-        )
-        SELECT array_agg(user_id), count(*) INTO v_updated_user_ids, v_count
-        FROM updated;
-
-        IF v_count > 0 THEN
-            -- 2. Increment target user's followers_count atomically in memory
-            NEW.followers_count := COALESCE(NEW.followers_count, 0) + v_count;
-            
-            -- 3. Bulk increment following_count for all requesters
-            UPDATE public.profiles 
-            SET following_count = COALESCE(following_count, 0) + 1 
-            WHERE id = ANY(v_updated_user_ids);
-            
-            -- 4. Bulk insert acceptance notifications
-            INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
-            SELECT u_id, 'follow_accept', NEW.username, NEW.id, 'accepted your follow request. You can now view their archive.'
-            FROM unnest(v_updated_user_ids) AS u_id;
-            
-            -- 5. Bulk delete the pending request notifications for the target user
-            DELETE FROM public.notifications 
-            WHERE user_id = NEW.id AND type = 'follow_request' AND from_user_id = ANY(v_updated_user_ids);
-        END IF;
-        
-    END IF;
-    RETURN NEW;
-END;
+    AS $$
+DECLARE
+    v_updated_user_ids UUID[];
+    v_count INT;
+BEGIN
+    -- If switching from Private (true) to Public (false)
+    IF OLD.is_social_private = true AND NEW.is_social_private = false THEN
+        
+        -- 1. Bulk update interactions and capture the affected user_ids
+        WITH updated AS (
+            UPDATE public.interactions 
+            SET type = 'follow' 
+            WHERE target_user_id = NEW.id AND type = 'follow_request'
+            RETURNING user_id
+        )
+        SELECT array_agg(user_id), count(*) INTO v_updated_user_ids, v_count
+        FROM updated;
+
+        IF v_count > 0 THEN
+            -- 2. Increment target user's followers_count atomically in memory
+            NEW.followers_count := COALESCE(NEW.followers_count, 0) + v_count;
+            
+            -- 3. Bulk increment following_count for all requesters
+            UPDATE public.profiles 
+            SET following_count = COALESCE(following_count, 0) + 1 
+            WHERE id = ANY(v_updated_user_ids);
+            
+            -- 4. Bulk insert acceptance notifications
+            INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
+            SELECT u_id, 'follow_accept', NEW.username, NEW.id, 'accepted your follow request. You can now view their archive.'
+            FROM unnest(v_updated_user_ids) AS u_id;
+            
+            -- 5. Bulk delete the pending request notifications for the target user
+            DELETE FROM public.notifications 
+            WHERE user_id = NEW.id AND type = 'follow_request' AND from_user_id = ANY(v_updated_user_ids);
+        END IF;
+        
+    END IF;
+    RETURN NEW;
+END;
 $$;
 
 
@@ -2544,16 +2544,16 @@ $$;
 CREATE FUNCTION public.handle_user_deletion() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  DELETE FROM public.logs WHERE user_id = OLD.id;
-  DELETE FROM public.watchlists WHERE user_id = OLD.id;
-  DELETE FROM public.lists WHERE user_id = OLD.id;
-  DELETE FROM public.interactions WHERE user_id = OLD.id;
-  DELETE FROM public.notifications WHERE user_id = OLD.id;
-  DELETE FROM public.profiles WHERE id = OLD.id;
-  RETURN OLD;
-END;
+    AS $$
+BEGIN
+  DELETE FROM public.logs WHERE user_id = OLD.id;
+  DELETE FROM public.watchlists WHERE user_id = OLD.id;
+  DELETE FROM public.lists WHERE user_id = OLD.id;
+  DELETE FROM public.interactions WHERE user_id = OLD.id;
+  DELETE FROM public.notifications WHERE user_id = OLD.id;
+  DELETE FROM public.profiles WHERE id = OLD.id;
+  RETURN OLD;
+END;
 $$;
 
 
@@ -2564,11 +2564,11 @@ $$;
 CREATE FUNCTION public.has_tier_at_least(min_weight integer) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.profiles p
-     WHERE p.id = auth.uid()
-       AND public.profile_tier_weight(p.tier, p.role, p.is_founding) >= min_weight);
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles p
+     WHERE p.id = auth.uid()
+       AND public.profile_tier_weight(p.tier, p.role, p.is_founding) >= min_weight);
 $$;
 
 
@@ -2579,10 +2579,10 @@ $$;
 CREATE FUNCTION public.increment_dossier_views(dossier_uuid uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-    BEGIN
-      -- deliberately nothing. See above.
-      RETURN;
+    AS $$
+    BEGIN
+      -- deliberately nothing. See above.
+      RETURN;
     END $$;
 
 
@@ -2593,14 +2593,14 @@ CREATE FUNCTION public.increment_dossier_views(dossier_uuid uuid) RETURNS void
 CREATE FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  -- viewer_id is deliberately ignored; the session decides who the viewer is.
-  -- The second branch is intentionally narrower: only a 'block' is mutual.
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_blocks
-    WHERE (blocker_id = auth.uid()  AND blocked_id = author_id)
-       OR (blocker_id = author_id   AND blocked_id = auth.uid() AND type = 'block')
-  );
+    AS $$
+  -- viewer_id is deliberately ignored; the session decides who the viewer is.
+  -- The second branch is intentionally narrower: only a 'block' is mutual.
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_blocks
+    WHERE (blocker_id = auth.uid()  AND blocked_id = author_id)
+       OR (blocker_id = author_id   AND blocked_id = auth.uid() AND type = 'block')
+  );
 $$;
 
 
@@ -2611,14 +2611,14 @@ $$;
 CREATE FUNCTION public.is_lounge_member_or_host(_lounge_id uuid) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.lounges
-    WHERE id = _lounge_id AND creator_id = auth.uid()
-  ) OR EXISTS (
-    SELECT 1 FROM public.lounge_members
-    WHERE lounge_id = _lounge_id AND user_id = auth.uid() AND status = 'approved'
-  );
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.lounges
+    WHERE id = _lounge_id AND creator_id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM public.lounge_members
+    WHERE lounge_id = _lounge_id AND user_id = auth.uid() AND status = 'approved'
+  );
 $$;
 
 
@@ -2629,13 +2629,13 @@ $$;
 CREATE FUNCTION public.is_user_not_banned() RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT NOT EXISTS (
-    SELECT 1 FROM public.profiles
-     WHERE id = auth.uid()
-       AND (is_banned = true
-            OR (suspended_until IS NOT NULL AND suspended_until > now()))
-  );
+    AS $$
+  SELECT NOT EXISTS (
+    SELECT 1 FROM public.profiles
+     WHERE id = auth.uid()
+       AND (is_banned = true
+            OR (suspended_until IS NOT NULL AND suspended_until > now()))
+  );
 $$;
 
 
@@ -2653,19 +2653,19 @@ COMMENT ON FUNCTION public.is_user_not_banned() IS 'TRUE when the caller may wri
 CREATE FUNCTION public.join_public_lounge(p_lounge_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_private boolean; v_status text;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  SELECT is_private INTO v_private FROM public.lounges WHERE id = p_lounge_id;
-  IF v_private IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
-  IF v_private THEN RAISE EXCEPTION 'This lounge is private — request to join'; END IF;
-  SELECT status INTO v_status FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = auth.uid();
-  IF v_status = 'banned' THEN RAISE EXCEPTION 'You cannot join this lounge'; END IF;
-  INSERT INTO public.lounge_members (lounge_id, user_id, status)
-  VALUES (p_lounge_id, auth.uid(), 'approved')
-  ON CONFLICT (user_id, lounge_id) DO UPDATE SET status = 'approved'
-    WHERE public.lounge_members.status <> 'banned';
+    AS $$
+DECLARE v_private boolean; v_status text;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  SELECT is_private INTO v_private FROM public.lounges WHERE id = p_lounge_id;
+  IF v_private IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
+  IF v_private THEN RAISE EXCEPTION 'This lounge is private — request to join'; END IF;
+  SELECT status INTO v_status FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = auth.uid();
+  IF v_status = 'banned' THEN RAISE EXCEPTION 'You cannot join this lounge'; END IF;
+  INSERT INTO public.lounge_members (lounge_id, user_id, status)
+  VALUES (p_lounge_id, auth.uid(), 'approved')
+  ON CONFLICT (user_id, lounge_id) DO UPDATE SET status = 'approved'
+    WHERE public.lounge_members.status <> 'banned';
 END $$;
 
 
@@ -2676,8 +2676,8 @@ END $$;
 CREATE FUNCTION public.like_escape(p_term text) RETURNS text
     LANGUAGE sql IMMUTABLE PARALLEL SAFE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT replace(replace(replace(COALESCE(p_term, ''), '\', '\\'), '%', '\%'), '_', '\_');
+    AS $$
+  SELECT replace(replace(replace(COALESCE(p_term, ''), '\', '\\'), '%', '\%'), '_', '\_');
 $$;
 
 
@@ -2688,16 +2688,16 @@ $$;
 CREATE FUNCTION public.list_certify_count(p_list_id uuid) RETURNS bigint
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT count(*)::bigint
-  FROM public.interactions i
-  WHERE i.target_list_id = p_list_id
-    AND i.type = 'endorse_list'
-    AND EXISTS (
-      SELECT 1 FROM public.lists l
-      WHERE l.id = p_list_id
-        AND (l.is_private = false OR l.user_id = auth.uid())
-    );
+    AS $$
+  SELECT count(*)::bigint
+  FROM public.interactions i
+  WHERE i.target_list_id = p_list_id
+    AND i.type = 'endorse_list'
+    AND EXISTS (
+      SELECT 1 FROM public.lists l
+      WHERE l.id = p_list_id
+        AND (l.is_private = false OR l.user_id = auth.uid())
+    );
 $$;
 
 
@@ -2715,19 +2715,19 @@ COMMENT ON FUNCTION public.list_certify_count(p_list_id uuid) IS 'True endorseme
 CREATE FUNCTION public.list_certify_counts(p_list_ids uuid[]) RETURNS TABLE(list_id uuid, certify_count bigint)
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT t.id, (
-    SELECT count(*)::bigint
-    FROM public.interactions i
-    WHERE i.target_list_id = t.id
-      AND i.type = 'endorse_list'
-      AND EXISTS (
-        SELECT 1 FROM public.lists l
-        WHERE l.id = t.id
-          AND (l.is_private = false OR l.user_id = auth.uid())
-      )
-  )
-  FROM unnest(p_list_ids) AS t(id);
+    AS $$
+  SELECT t.id, (
+    SELECT count(*)::bigint
+    FROM public.interactions i
+    WHERE i.target_list_id = t.id
+      AND i.type = 'endorse_list'
+      AND EXISTS (
+        SELECT 1 FROM public.lists l
+        WHERE l.id = t.id
+          AND (l.is_private = false OR l.user_id = auth.uid())
+      )
+  )
+  FROM unnest(p_list_ids) AS t(id);
 $$;
 
 
@@ -2745,59 +2745,59 @@ COMMENT ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) IS 'Batch form
 CREATE FUNCTION public.log_viewing_add(p_log_id uuid, p_viewing_id uuid, p_fields jsonb DEFAULT '{}'::jsonb) RETURNS uuid
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $_$
-DECLARE
-  l public.logs%ROWTYPE;
-  r public.logs%ROWTYPE;
-  f jsonb := COALESCE(p_fields, '{}'::jsonb);
-  a jsonb := public.viewing_fields()->'archived';
-  v_entry   jsonb;
-  v_payload jsonb;
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
-  END IF;
-  IF p_viewing_id IS NULL THEN
-    RAISE EXCEPTION 'A viewing needs an identity.' USING ERRCODE = '22004';
-  END IF;
-
-  SELECT * INTO l FROM public.logs WHERE id = p_log_id AND user_id = auth.uid() FOR UPDATE;
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Log not found' USING ERRCODE = 'P0002';
-  END IF;
-
-  IF l.viewing_id = p_viewing_id
-     OR EXISTS (SELECT 1 FROM jsonb_array_elements(l.viewing_history) x WHERE x->>'viewingId' = p_viewing_id::text) THEN
-    RETURN p_viewing_id;
-  END IF;
-
-  SELECT jsonb_object_agg(m->>'key', to_jsonb(l)->col) INTO v_entry
-    FROM jsonb_each(a) AS x(col, m);
-  v_entry := v_entry || jsonb_build_object('viewingId', l.viewing_id);
-
-  SELECT COALESCE(jsonb_object_agg(col, f->col), '{}'::jsonb) INTO v_payload
-    FROM jsonb_each(a) AS x(col, m) WHERE f ? col;
-  BEGIN
-    r := jsonb_populate_record(l, v_payload);
-  EXCEPTION WHEN others THEN
-    RAISE EXCEPTION 'A viewing was given a value of the wrong kind.' USING ERRCODE = '22023';
-  END;
-  IF NOT (f ? 'watched_date') THEN r.watched_date := current_date; END IF;
-  IF NOT (f ? 'status')       THEN r.status       := 'rewatched';  END IF;
-
-  BEGIN
-    EXECUTE format('UPDATE public.logs SET viewing_id = $1, viewing_history = $2, %s WHERE id = $3',
-                   public.viewing_set_list())
-      USING p_viewing_id,
-            jsonb_build_array(v_entry) || COALESCE(l.viewing_history, '[]'::jsonb),
-            p_log_id,
-            r;
-  EXCEPTION WHEN unique_violation THEN
-    RAISE EXCEPTION 'That viewing belongs to another log.'
-      USING ERRCODE = '23505', HINT = 'A new viewing needs a new identity.';
-  END;
-
-  RETURN p_viewing_id;
+    AS $_$
+DECLARE
+  l public.logs%ROWTYPE;
+  r public.logs%ROWTYPE;
+  f jsonb := COALESCE(p_fields, '{}'::jsonb);
+  a jsonb := public.viewing_fields()->'archived';
+  v_entry   jsonb;
+  v_payload jsonb;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+  IF p_viewing_id IS NULL THEN
+    RAISE EXCEPTION 'A viewing needs an identity.' USING ERRCODE = '22004';
+  END IF;
+
+  SELECT * INTO l FROM public.logs WHERE id = p_log_id AND user_id = auth.uid() FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Log not found' USING ERRCODE = 'P0002';
+  END IF;
+
+  IF l.viewing_id = p_viewing_id
+     OR EXISTS (SELECT 1 FROM jsonb_array_elements(l.viewing_history) x WHERE x->>'viewingId' = p_viewing_id::text) THEN
+    RETURN p_viewing_id;
+  END IF;
+
+  SELECT jsonb_object_agg(m->>'key', to_jsonb(l)->col) INTO v_entry
+    FROM jsonb_each(a) AS x(col, m);
+  v_entry := v_entry || jsonb_build_object('viewingId', l.viewing_id);
+
+  SELECT COALESCE(jsonb_object_agg(col, f->col), '{}'::jsonb) INTO v_payload
+    FROM jsonb_each(a) AS x(col, m) WHERE f ? col;
+  BEGIN
+    r := jsonb_populate_record(l, v_payload);
+  EXCEPTION WHEN others THEN
+    RAISE EXCEPTION 'A viewing was given a value of the wrong kind.' USING ERRCODE = '22023';
+  END;
+  IF NOT (f ? 'watched_date') THEN r.watched_date := current_date; END IF;
+  IF NOT (f ? 'status')       THEN r.status       := 'rewatched';  END IF;
+
+  BEGIN
+    EXECUTE format('UPDATE public.logs SET viewing_id = $1, viewing_history = $2, %s WHERE id = $3',
+                   public.viewing_set_list())
+      USING p_viewing_id,
+            jsonb_build_array(v_entry) || COALESCE(l.viewing_history, '[]'::jsonb),
+            p_log_id,
+            r;
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'That viewing belongs to another log.'
+      USING ERRCODE = '23505', HINT = 'A new viewing needs a new identity.';
+  END;
+
+  RETURN p_viewing_id;
 END $_$;
 
 
@@ -2808,68 +2808,68 @@ END $_$;
 CREATE FUNCTION public.log_viewing_remove(p_log_id uuid, p_viewing_id uuid) RETURNS uuid
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $_$
-DECLARE
-  l public.logs%ROWTYPE;
-  r public.logs%ROWTYPE;
-  a jsonb := public.viewing_fields()->'archived';
-  e jsonb;
-  v_payload jsonb := '{}'::jsonb;
-  v_col  text;
-  v_map  jsonb;
-  v_val  jsonb;
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
-  END IF;
-
-  SELECT * INTO l FROM public.logs WHERE id = p_log_id AND user_id = auth.uid() FOR UPDATE;
-  IF NOT FOUND THEN
-    RETURN NULL;
-  END IF;
-  IF l.viewing_id <> p_viewing_id THEN
-    RETURN l.viewing_id;
-  END IF;
-  IF jsonb_array_length(l.viewing_history) = 0 THEN
-    RAISE EXCEPTION 'The only viewing of a log is removed by deleting the log.'
-      USING ERRCODE = 'P0001', HINT = 'Delete the log instead.';
-  END IF;
-
-  e := l.viewing_history->0;
-
-  -- Read the viewing back field by field. Histories written by older builds
-  -- hold whatever those builds wrote, so a value that is not the kind its
-  -- column takes is replaced by the declared fallback rather than failing a
-  -- member's removal.
-  FOR v_col, v_map IN SELECT key, value FROM jsonb_each(a) LOOP
-    v_val := COALESCE(e->(v_map->>'key'), v_map->'fallback');
-    -- Ask the COLUMN itself whether it can take this value, by trying it.
-    -- Asking by type NAME cannot be done here: pg_input_is_valid keeps the type
-    -- of its first call at a given place in the code and answers about THAT
-    -- type ever after — so a loop over columns of different types gets nonsense.
-    BEGIN
-      PERFORM jsonb_populate_record(NULL::public.logs, jsonb_build_object(v_col, v_val));
-    EXCEPTION WHEN others THEN
-      v_val := v_map->'fallback';
-    END;
-    v_payload := v_payload || jsonb_build_object(v_col, v_val);
-  END LOOP;
-
-  -- Every viewing has a date. One that never recorded its own keeps the log's.
-  IF v_payload->'watched_date' IS NULL OR jsonb_typeof(v_payload->'watched_date') = 'null' THEN
-    v_payload := v_payload || jsonb_build_object('watched_date', to_jsonb(l.watched_date));
-  END IF;
-
-  r := jsonb_populate_record(NULL::public.logs, v_payload);
-  -- Older builds wrote "None" for no disc and "" for nobody; both mean nothing.
-  IF r.physical_media IN ('None', '') THEN r.physical_media := NULL; END IF;
-  IF r.watched_with = ''              THEN r.watched_with   := NULL; END IF;
-
-  EXECUTE format('UPDATE public.logs SET viewing_id = $1, viewing_history = $2, %s WHERE id = $3',
-                 public.viewing_set_list())
-    USING (e->>'viewingId')::uuid, l.viewing_history - 0, p_log_id, r;
-
-  RETURN (e->>'viewingId')::uuid;
+    AS $_$
+DECLARE
+  l public.logs%ROWTYPE;
+  r public.logs%ROWTYPE;
+  a jsonb := public.viewing_fields()->'archived';
+  e jsonb;
+  v_payload jsonb := '{}'::jsonb;
+  v_col  text;
+  v_map  jsonb;
+  v_val  jsonb;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT * INTO l FROM public.logs WHERE id = p_log_id AND user_id = auth.uid() FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+  IF l.viewing_id <> p_viewing_id THEN
+    RETURN l.viewing_id;
+  END IF;
+  IF jsonb_array_length(l.viewing_history) = 0 THEN
+    RAISE EXCEPTION 'The only viewing of a log is removed by deleting the log.'
+      USING ERRCODE = 'P0001', HINT = 'Delete the log instead.';
+  END IF;
+
+  e := l.viewing_history->0;
+
+  -- Read the viewing back field by field. Histories written by older builds
+  -- hold whatever those builds wrote, so a value that is not the kind its
+  -- column takes is replaced by the declared fallback rather than failing a
+  -- member's removal.
+  FOR v_col, v_map IN SELECT key, value FROM jsonb_each(a) LOOP
+    v_val := COALESCE(e->(v_map->>'key'), v_map->'fallback');
+    -- Ask the COLUMN itself whether it can take this value, by trying it.
+    -- Asking by type NAME cannot be done here: pg_input_is_valid keeps the type
+    -- of its first call at a given place in the code and answers about THAT
+    -- type ever after — so a loop over columns of different types gets nonsense.
+    BEGIN
+      PERFORM jsonb_populate_record(NULL::public.logs, jsonb_build_object(v_col, v_val));
+    EXCEPTION WHEN others THEN
+      v_val := v_map->'fallback';
+    END;
+    v_payload := v_payload || jsonb_build_object(v_col, v_val);
+  END LOOP;
+
+  -- Every viewing has a date. One that never recorded its own keeps the log's.
+  IF v_payload->'watched_date' IS NULL OR jsonb_typeof(v_payload->'watched_date') = 'null' THEN
+    v_payload := v_payload || jsonb_build_object('watched_date', to_jsonb(l.watched_date));
+  END IF;
+
+  r := jsonb_populate_record(NULL::public.logs, v_payload);
+  -- Older builds wrote "None" for no disc and "" for nobody; both mean nothing.
+  IF r.physical_media IN ('None', '') THEN r.physical_media := NULL; END IF;
+  IF r.watched_with = ''              THEN r.watched_with   := NULL; END IF;
+
+  EXECUTE format('UPDATE public.logs SET viewing_id = $1, viewing_history = $2, %s WHERE id = $3',
+                 public.viewing_set_list())
+    USING (e->>'viewingId')::uuid, l.viewing_history - 0, p_log_id, r;
+
+  RETURN (e->>'viewingId')::uuid;
 END $_$;
 
 
@@ -2880,55 +2880,55 @@ END $_$;
 CREATE FUNCTION public.logs_keep_viewings() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_old       jsonb;
-  v_old_ids   text[];
-  v_new_ids   text[];
-  v_moved     boolean;
-  v_is_add    boolean := false;
-  v_is_remove boolean := false;
-BEGIN
-  NEW.viewing_history := public.normalize_viewing_history(NEW.viewing_history);
-
-  IF TG_OP = 'UPDATE' THEN
-    -- The stored history as it really is. A row from before the repair carries
-    -- no identities, so nothing about it can be read as a loss.
-    v_old := CASE WHEN jsonb_typeof(OLD.viewing_history) = 'array' THEN OLD.viewing_history ELSE '[]'::jsonb END;
-    SELECT array_agg(x->>'viewingId') INTO v_old_ids
-      FROM jsonb_array_elements(v_old) x
-     WHERE jsonb_typeof(x) = 'object' AND x ? 'viewingId';
-
-    v_moved := NEW.viewing_id <> OLD.viewing_id;
-
-    IF v_moved THEN
-      v_is_add := jsonb_array_length(NEW.viewing_history) = jsonb_array_length(v_old) + 1
-              AND NEW.viewing_history->0->>'viewingId' = OLD.viewing_id::text
-              AND (NEW.viewing_history - 0) = v_old;
-
-      v_is_remove := jsonb_array_length(v_old) > 0
-              AND NEW.viewing_id::text = v_old->0->>'viewingId'
-              AND NEW.viewing_history = (v_old - 0);
-
-      IF NOT (v_is_add OR v_is_remove) THEN
-        RAISE EXCEPTION 'A log moves to another viewing by adding one or removing one.'
-          USING ERRCODE = 'P0001', HINT = 'Use log_viewing_add or log_viewing_remove.';
-      END IF;
-    END IF;
-
-    -- Outside a removal, no past viewing may be lost.
-    IF NOT v_is_remove AND v_old_ids IS NOT NULL THEN
-      SELECT array_agg(x->>'viewingId') INTO v_new_ids FROM jsonb_array_elements(NEW.viewing_history) x;
-      IF NOT (v_old_ids <@ COALESCE(v_new_ids, '{}'::text[])) THEN
-        RAISE EXCEPTION 'A past viewing can only be removed by removing it.'
-          USING ERRCODE = 'P0001', HINT = 'Use log_viewing_remove.';
-      END IF;
-    END IF;
-  END IF;
-
-  -- The count is the history's, never a client's arithmetic.
-  NEW.view_count := jsonb_array_length(NEW.viewing_history) + 1;
-  RETURN NEW;
+    AS $$
+DECLARE
+  v_old       jsonb;
+  v_old_ids   text[];
+  v_new_ids   text[];
+  v_moved     boolean;
+  v_is_add    boolean := false;
+  v_is_remove boolean := false;
+BEGIN
+  NEW.viewing_history := public.normalize_viewing_history(NEW.viewing_history);
+
+  IF TG_OP = 'UPDATE' THEN
+    -- The stored history as it really is. A row from before the repair carries
+    -- no identities, so nothing about it can be read as a loss.
+    v_old := CASE WHEN jsonb_typeof(OLD.viewing_history) = 'array' THEN OLD.viewing_history ELSE '[]'::jsonb END;
+    SELECT array_agg(x->>'viewingId') INTO v_old_ids
+      FROM jsonb_array_elements(v_old) x
+     WHERE jsonb_typeof(x) = 'object' AND x ? 'viewingId';
+
+    v_moved := NEW.viewing_id <> OLD.viewing_id;
+
+    IF v_moved THEN
+      v_is_add := jsonb_array_length(NEW.viewing_history) = jsonb_array_length(v_old) + 1
+              AND NEW.viewing_history->0->>'viewingId' = OLD.viewing_id::text
+              AND (NEW.viewing_history - 0) = v_old;
+
+      v_is_remove := jsonb_array_length(v_old) > 0
+              AND NEW.viewing_id::text = v_old->0->>'viewingId'
+              AND NEW.viewing_history = (v_old - 0);
+
+      IF NOT (v_is_add OR v_is_remove) THEN
+        RAISE EXCEPTION 'A log moves to another viewing by adding one or removing one.'
+          USING ERRCODE = 'P0001', HINT = 'Use log_viewing_add or log_viewing_remove.';
+      END IF;
+    END IF;
+
+    -- Outside a removal, no past viewing may be lost.
+    IF NOT v_is_remove AND v_old_ids IS NOT NULL THEN
+      SELECT array_agg(x->>'viewingId') INTO v_new_ids FROM jsonb_array_elements(NEW.viewing_history) x;
+      IF NOT (v_old_ids <@ COALESCE(v_new_ids, '{}'::text[])) THEN
+        RAISE EXCEPTION 'A past viewing can only be removed by removing it.'
+          USING ERRCODE = 'P0001', HINT = 'Use log_viewing_remove.';
+      END IF;
+    END IF;
+  END IF;
+
+  -- The count is the history's, never a client's arithmetic.
+  NEW.view_count := jsonb_array_length(NEW.viewing_history) + 1;
+  RETURN NEW;
 END $$;
 
 
@@ -2939,30 +2939,30 @@ END $$;
 CREATE FUNCTION public.logs_register_viewings() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_ids uuid[];
-BEGIN
-  SELECT array_agg(DISTINCT id) INTO v_ids FROM (
-    SELECT NEW.viewing_id AS id
-    UNION ALL
-    SELECT (e->>'viewingId')::uuid FROM jsonb_array_elements(NEW.viewing_history) e
-  ) s;
-
-  BEGIN
-    INSERT INTO public.viewings (viewing_id, log_id)
-    SELECT id, NEW.id FROM unnest(v_ids) AS id
-     WHERE NOT EXISTS (SELECT 1 FROM public.viewings v WHERE v.viewing_id = id AND v.log_id = NEW.id);
-  EXCEPTION WHEN unique_violation THEN
-    RAISE EXCEPTION 'That viewing belongs to another log.'
-      USING ERRCODE = '23505', HINT = 'A new viewing needs a new identity.';
-  END;
-
-  IF TG_OP = 'UPDATE' THEN
-    DELETE FROM public.viewings WHERE log_id = NEW.id AND viewing_id <> ALL (v_ids);
-  END IF;
-
-  RETURN NULL;
+    AS $$
+DECLARE
+  v_ids uuid[];
+BEGIN
+  SELECT array_agg(DISTINCT id) INTO v_ids FROM (
+    SELECT NEW.viewing_id AS id
+    UNION ALL
+    SELECT (e->>'viewingId')::uuid FROM jsonb_array_elements(NEW.viewing_history) e
+  ) s;
+
+  BEGIN
+    INSERT INTO public.viewings (viewing_id, log_id)
+    SELECT id, NEW.id FROM unnest(v_ids) AS id
+     WHERE NOT EXISTS (SELECT 1 FROM public.viewings v WHERE v.viewing_id = id AND v.log_id = NEW.id);
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'That viewing belongs to another log.'
+      USING ERRCODE = '23505', HINT = 'A new viewing needs a new identity.';
+  END;
+
+  IF TG_OP = 'UPDATE' THEN
+    DELETE FROM public.viewings WHERE log_id = NEW.id AND viewing_id <> ALL (v_ids);
+  END IF;
+
+  RETURN NULL;
 END $$;
 
 
@@ -2973,21 +2973,21 @@ END $$;
 CREATE FUNCTION public.lpn_belongs_to_its_viewing() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF TG_OP = 'UPDATE' AND (NEW.viewing_id <> OLD.viewing_id OR NEW.log_id <> OLD.log_id OR NEW.user_id <> OLD.user_id) THEN
-    RAISE EXCEPTION 'A note stays with the viewing it was written about.' USING ERRCODE = '23514';
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM public.viewings v JOIN public.logs l ON l.id = v.log_id
-     WHERE v.viewing_id = NEW.viewing_id AND v.log_id = NEW.log_id AND l.user_id = NEW.user_id
-  ) THEN
-    RAISE EXCEPTION 'That note has no viewing of its writer to belong to.' USING ERRCODE = '23503';
-  END IF;
-
-  NEW.notes := btrim(NEW.notes);
-  RETURN NEW;
+    AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND (NEW.viewing_id <> OLD.viewing_id OR NEW.log_id <> OLD.log_id OR NEW.user_id <> OLD.user_id) THEN
+    RAISE EXCEPTION 'A note stays with the viewing it was written about.' USING ERRCODE = '23514';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.viewings v JOIN public.logs l ON l.id = v.log_id
+     WHERE v.viewing_id = NEW.viewing_id AND v.log_id = NEW.log_id AND l.user_id = NEW.user_id
+  ) THEN
+    RAISE EXCEPTION 'That note has no viewing of its writer to belong to.' USING ERRCODE = '23503';
+  END IF;
+
+  NEW.notes := btrim(NEW.notes);
+  RETURN NEW;
 END $$;
 
 
@@ -2998,11 +2998,11 @@ END $$;
 CREATE FUNCTION public.mark_film_sync_failed(p_film_id integer) RETURNS void
     LANGUAGE sql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  UPDATE public.films
-     SET sync_failed = sync_failed + 1,
-         sync_claimed_at = NULL
-   WHERE id = p_film_id;
+    AS $$
+  UPDATE public.films
+     SET sync_failed = sync_failed + 1,
+         sync_claimed_at = NULL
+   WHERE id = p_film_id;
 $$;
 
 
@@ -3013,12 +3013,12 @@ $$;
 CREATE FUNCTION public.may_file() RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.profiles p
-     WHERE p.id = auth.uid()
-       AND now() >= p.created_at + interval '2 days'
-       AND (SELECT count(DISTINCT film_id) FROM public.logs WHERE user_id = p.id) >= 5);
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles p
+     WHERE p.id = auth.uid()
+       AND now() >= p.created_at + interval '2 days'
+       AND (SELECT count(DISTINCT film_id) FROM public.logs WHERE user_id = p.id) >= 5);
 $$;
 
 
@@ -3029,85 +3029,85 @@ $$;
 CREATE FUNCTION public.normalize_viewing_history(p_history jsonb, p_depth integer DEFAULT 0) RETURNS jsonb
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_out   jsonb := '[]'::jsonb;
-  v_run   text  := '';
-  v_seen  text[] := '{}';
-  v_e     jsonb;
-  v_entry jsonb;
-  v_part  jsonb;
-  v_id    text;
-BEGIN
-  -- A string of a string of a string is still recoverable; beyond this it is noise.
-  IF p_depth > 6 OR p_history IS NULL OR jsonb_typeof(p_history) = 'null' THEN
-    RETURN '[]'::jsonb;
-  END IF;
-
-  -- Stored as a JSON string (the web's JSON.stringify): decode it.
-  IF jsonb_typeof(p_history) = 'string' THEN
-    IF pg_input_is_valid(p_history #>> '{}', 'jsonb') THEN
-      RETURN public.normalize_viewing_history((p_history #>> '{}')::jsonb, p_depth + 1);
-    END IF;
-    RETURN '[]'::jsonb;
-  END IF;
-
-  IF jsonb_typeof(p_history) = 'object' THEN
-    p_history := jsonb_build_array(p_history);
-  ELSIF jsonb_typeof(p_history) <> 'array' THEN
-    RETURN '[]'::jsonb;
-  END IF;
-
-  FOR v_e IN SELECT x.value FROM jsonb_array_elements(p_history) WITH ORDINALITY AS x(value, ord) ORDER BY x.ord
-  LOOP
-    -- The web's rewatch spread a string into single characters. Consecutive
-    -- string elements are joined back together and decoded in place.
-    IF jsonb_typeof(v_e) = 'string' THEN
-      v_run := v_run || (v_e #>> '{}');
-      CONTINUE;
-    END IF;
-    IF v_run <> '' THEN
-      v_part := public.normalize_viewing_history(to_jsonb(v_run), p_depth + 1);
-      v_run := '';
-      FOR v_entry IN SELECT y.value FROM jsonb_array_elements(v_part) WITH ORDINALITY AS y(value, ord) ORDER BY y.ord LOOP
-        v_id := v_entry->>'viewingId';
-        IF v_id = ANY (v_seen) THEN
-          v_entry := v_entry || jsonb_build_object('viewingId', gen_random_uuid());
-          v_id := v_entry->>'viewingId';
-        END IF;
-        v_seen := v_seen || v_id;
-        v_out := v_out || jsonb_build_array(v_entry);
-      END LOOP;
-    END IF;
-
-    IF jsonb_typeof(v_e) = 'object' THEN
-      -- A note never lives in a history anybody else can read.
-      v_entry := v_e - 'privateNotes' - 'private_notes';
-      v_id := v_entry->>'viewingId';
-      IF v_id IS NULL OR NOT pg_input_is_valid(v_id, 'uuid') OR v_id = ANY (v_seen) THEN
-        v_entry := v_entry || jsonb_build_object('viewingId', gen_random_uuid());
-        v_id := v_entry->>'viewingId';
-      END IF;
-      v_seen := v_seen || v_id;
-      v_out := v_out || jsonb_build_array(v_entry);
-    END IF;
-    -- Numbers, booleans and nulls are not viewings: dropped.
-  END LOOP;
-
-  IF v_run <> '' THEN
-    v_part := public.normalize_viewing_history(to_jsonb(v_run), p_depth + 1);
-    FOR v_entry IN SELECT y.value FROM jsonb_array_elements(v_part) WITH ORDINALITY AS y(value, ord) ORDER BY y.ord LOOP
-      v_id := v_entry->>'viewingId';
-      IF v_id = ANY (v_seen) THEN
-        v_entry := v_entry || jsonb_build_object('viewingId', gen_random_uuid());
-        v_id := v_entry->>'viewingId';
-      END IF;
-      v_seen := v_seen || v_id;
-      v_out := v_out || jsonb_build_array(v_entry);
-    END LOOP;
-  END IF;
-
-  RETURN v_out;
+    AS $$
+DECLARE
+  v_out   jsonb := '[]'::jsonb;
+  v_run   text  := '';
+  v_seen  text[] := '{}';
+  v_e     jsonb;
+  v_entry jsonb;
+  v_part  jsonb;
+  v_id    text;
+BEGIN
+  -- A string of a string of a string is still recoverable; beyond this it is noise.
+  IF p_depth > 6 OR p_history IS NULL OR jsonb_typeof(p_history) = 'null' THEN
+    RETURN '[]'::jsonb;
+  END IF;
+
+  -- Stored as a JSON string (the web's JSON.stringify): decode it.
+  IF jsonb_typeof(p_history) = 'string' THEN
+    IF pg_input_is_valid(p_history #>> '{}', 'jsonb') THEN
+      RETURN public.normalize_viewing_history((p_history #>> '{}')::jsonb, p_depth + 1);
+    END IF;
+    RETURN '[]'::jsonb;
+  END IF;
+
+  IF jsonb_typeof(p_history) = 'object' THEN
+    p_history := jsonb_build_array(p_history);
+  ELSIF jsonb_typeof(p_history) <> 'array' THEN
+    RETURN '[]'::jsonb;
+  END IF;
+
+  FOR v_e IN SELECT x.value FROM jsonb_array_elements(p_history) WITH ORDINALITY AS x(value, ord) ORDER BY x.ord
+  LOOP
+    -- The web's rewatch spread a string into single characters. Consecutive
+    -- string elements are joined back together and decoded in place.
+    IF jsonb_typeof(v_e) = 'string' THEN
+      v_run := v_run || (v_e #>> '{}');
+      CONTINUE;
+    END IF;
+    IF v_run <> '' THEN
+      v_part := public.normalize_viewing_history(to_jsonb(v_run), p_depth + 1);
+      v_run := '';
+      FOR v_entry IN SELECT y.value FROM jsonb_array_elements(v_part) WITH ORDINALITY AS y(value, ord) ORDER BY y.ord LOOP
+        v_id := v_entry->>'viewingId';
+        IF v_id = ANY (v_seen) THEN
+          v_entry := v_entry || jsonb_build_object('viewingId', gen_random_uuid());
+          v_id := v_entry->>'viewingId';
+        END IF;
+        v_seen := v_seen || v_id;
+        v_out := v_out || jsonb_build_array(v_entry);
+      END LOOP;
+    END IF;
+
+    IF jsonb_typeof(v_e) = 'object' THEN
+      -- A note never lives in a history anybody else can read.
+      v_entry := v_e - 'privateNotes' - 'private_notes';
+      v_id := v_entry->>'viewingId';
+      IF v_id IS NULL OR NOT pg_input_is_valid(v_id, 'uuid') OR v_id = ANY (v_seen) THEN
+        v_entry := v_entry || jsonb_build_object('viewingId', gen_random_uuid());
+        v_id := v_entry->>'viewingId';
+      END IF;
+      v_seen := v_seen || v_id;
+      v_out := v_out || jsonb_build_array(v_entry);
+    END IF;
+    -- Numbers, booleans and nulls are not viewings: dropped.
+  END LOOP;
+
+  IF v_run <> '' THEN
+    v_part := public.normalize_viewing_history(to_jsonb(v_run), p_depth + 1);
+    FOR v_entry IN SELECT y.value FROM jsonb_array_elements(v_part) WITH ORDINALITY AS y(value, ord) ORDER BY y.ord LOOP
+      v_id := v_entry->>'viewingId';
+      IF v_id = ANY (v_seen) THEN
+        v_entry := v_entry || jsonb_build_object('viewingId', gen_random_uuid());
+        v_id := v_entry->>'viewingId';
+      END IF;
+      v_seen := v_seen || v_id;
+      v_out := v_out || jsonb_build_array(v_entry);
+    END LOOP;
+  END IF;
+
+  RETURN v_out;
 END $$;
 
 
@@ -3118,18 +3118,18 @@ END $$;
 CREATE FUNCTION public.note_film() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF NEW.film_id IS NULL OR NEW.film_id <= 0 THEN
-    RETURN NEW;
-  END IF;
-
-  INSERT INTO public.films (id, title)
-  VALUES (NEW.film_id, NULLIF(NEW.film_title, ''))
-  ON CONFLICT (id) DO NOTHING;
-
-  RETURN NEW;
-END;
+    AS $$
+BEGIN
+  IF NEW.film_id IS NULL OR NEW.film_id <= 0 THEN
+    RETURN NEW;
+  END IF;
+
+  INSERT INTO public.films (id, title)
+  VALUES (NEW.film_id, NULLIF(NEW.film_title, ''))
+  ON CONFLICT (id) DO NOTHING;
+
+  RETURN NEW;
+END;
 $$;
 
 
@@ -3140,21 +3140,21 @@ $$;
 CREATE FUNCTION public.note_film_verdict() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF TG_OP = 'DELETE' THEN
-    PERFORM public.refresh_film_verdict(OLD.film_id);
-    RETURN OLD;
-  END IF;
-
-  PERFORM public.refresh_film_verdict(NEW.film_id);
-
-  IF TG_OP = 'UPDATE' AND OLD.film_id IS DISTINCT FROM NEW.film_id THEN
-    PERFORM public.refresh_film_verdict(OLD.film_id);
-  END IF;
-
-  RETURN NEW;
-END;
+    AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    PERFORM public.refresh_film_verdict(OLD.film_id);
+    RETURN OLD;
+  END IF;
+
+  PERFORM public.refresh_film_verdict(NEW.film_id);
+
+  IF TG_OP = 'UPDATE' AND OLD.film_id IS DISTINCT FROM NEW.film_id THEN
+    PERFORM public.refresh_film_verdict(OLD.film_id);
+  END IF;
+
+  RETURN NEW;
+END;
 $$;
 
 
@@ -3165,25 +3165,25 @@ $$;
 CREATE FUNCTION public.notify_on_dossier_certify() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-    target_user UUID;
-    sender_user TEXT;
-    v_title TEXT;
-BEGIN
-    SELECT username INTO sender_user FROM public.profiles WHERE id = NEW.user_id;
-    SELECT user_id, title INTO target_user, v_title FROM public.dispatch_dossiers WHERE id = NEW.dossier_id;
-
-    IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message,
-                                          group_key, title)
-        VALUES (target_user, 'endorse', sender_user, NEW.user_id,
-                'certified your dossier “' || COALESCE(v_title, 'Untitled') || '”.',
-                'endorse:dossier:' || NEW.dossier_id, v_title);
-    END IF;
-
-    RETURN NEW;
-END;
+    AS $$
+DECLARE
+    target_user UUID;
+    sender_user TEXT;
+    v_title TEXT;
+BEGIN
+    SELECT username INTO sender_user FROM public.profiles WHERE id = NEW.user_id;
+    SELECT user_id, title INTO target_user, v_title FROM public.dispatch_dossiers WHERE id = NEW.dossier_id;
+
+    IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
+        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message,
+                                          group_key, title)
+        VALUES (target_user, 'endorse', sender_user, NEW.user_id,
+                'certified your dossier “' || COALESCE(v_title, 'Untitled') || '”.',
+                'endorse:dossier:' || NEW.dossier_id, v_title);
+    END IF;
+
+    RETURN NEW;
+END;
 $$;
 
 
@@ -3194,23 +3194,23 @@ $$;
 CREATE FUNCTION public.notify_on_dossier_comment() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-    target_user UUID;
-    sender_user TEXT;
-    v_title TEXT;
-BEGIN
-    SELECT username INTO sender_user FROM public.profiles WHERE id = NEW.user_id;
-    SELECT user_id, title INTO target_user, v_title FROM public.dispatch_dossiers WHERE id = NEW.dossier_id;
-
-    IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
-        VALUES (target_user, 'comment', sender_user, NEW.user_id,
-                'left a critique on your dossier “' || COALESCE(v_title, 'Untitled') || '”.');
-    END IF;
-
-    RETURN NEW;
-END;
+    AS $$
+DECLARE
+    target_user UUID;
+    sender_user TEXT;
+    v_title TEXT;
+BEGIN
+    SELECT username INTO sender_user FROM public.profiles WHERE id = NEW.user_id;
+    SELECT user_id, title INTO target_user, v_title FROM public.dispatch_dossiers WHERE id = NEW.dossier_id;
+
+    IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
+        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
+        VALUES (target_user, 'comment', sender_user, NEW.user_id,
+                'left a critique on your dossier “' || COALESCE(v_title, 'Untitled') || '”.');
+    END IF;
+
+    RETURN NEW;
+END;
 $$;
 
 
@@ -3221,55 +3221,55 @@ $$;
 CREATE FUNCTION public.notify_on_interaction() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-    target_user UUID;
-    sender_user TEXT;
-    v_title TEXT;
-    v_film_id BIGINT;
-    v_poster TEXT;
-BEGIN
-    SELECT username INTO sender_user FROM public.profiles WHERE id = NEW.user_id;
-
-    IF NEW.type = 'follow' THEN
-        target_user := NEW.target_user_id;
-        IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-            INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
-            VALUES (target_user, 'follow', sender_user, NEW.user_id, 'is following you.');
-        END IF;
-
-    ELSIF NEW.type = 'follow_request' THEN
-        target_user := NEW.target_user_id;
-        IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-            INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
-            VALUES (target_user, 'follow_request', sender_user, NEW.user_id, 'is at your door — asking to follow you.');
-        END IF;
-
-    ELSIF NEW.type = 'endorse_log' THEN
-        SELECT user_id, film_title, film_id, poster_path
-          INTO target_user, v_title, v_film_id, v_poster
-          FROM public.logs WHERE id = NEW.target_log_id;
-        IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-            INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message,
-                                              group_key, title, film_id, poster_path)
-            VALUES (target_user, 'endorse', sender_user, NEW.user_id,
-                    'certified your log of ' || COALESCE(v_title, 'a film') || '.',
-                    'endorse:log:' || NEW.target_log_id, v_title, v_film_id, v_poster);
-        END IF;
-
-    ELSIF NEW.type = 'endorse_list' THEN
-        SELECT user_id, title INTO target_user, v_title FROM public.lists WHERE id = NEW.target_list_id;
-        IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-            INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message,
-                                              group_key, title)
-            VALUES (target_user, 'endorse', sender_user, NEW.user_id,
-                    'certified your stack “' || COALESCE(v_title, 'Untitled') || '”.',
-                    'endorse:list:' || NEW.target_list_id, v_title);
-        END IF;
-    END IF;
-
-    RETURN NEW;
-END;
+    AS $$
+DECLARE
+    target_user UUID;
+    sender_user TEXT;
+    v_title TEXT;
+    v_film_id BIGINT;
+    v_poster TEXT;
+BEGIN
+    SELECT username INTO sender_user FROM public.profiles WHERE id = NEW.user_id;
+
+    IF NEW.type = 'follow' THEN
+        target_user := NEW.target_user_id;
+        IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
+            INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
+            VALUES (target_user, 'follow', sender_user, NEW.user_id, 'is following you.');
+        END IF;
+
+    ELSIF NEW.type = 'follow_request' THEN
+        target_user := NEW.target_user_id;
+        IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
+            INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
+            VALUES (target_user, 'follow_request', sender_user, NEW.user_id, 'is at your door — asking to follow you.');
+        END IF;
+
+    ELSIF NEW.type = 'endorse_log' THEN
+        SELECT user_id, film_title, film_id, poster_path
+          INTO target_user, v_title, v_film_id, v_poster
+          FROM public.logs WHERE id = NEW.target_log_id;
+        IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
+            INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message,
+                                              group_key, title, film_id, poster_path)
+            VALUES (target_user, 'endorse', sender_user, NEW.user_id,
+                    'certified your log of ' || COALESCE(v_title, 'a film') || '.',
+                    'endorse:log:' || NEW.target_log_id, v_title, v_film_id, v_poster);
+        END IF;
+
+    ELSIF NEW.type = 'endorse_list' THEN
+        SELECT user_id, title INTO target_user, v_title FROM public.lists WHERE id = NEW.target_list_id;
+        IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
+            INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message,
+                                              group_key, title)
+            VALUES (target_user, 'endorse', sender_user, NEW.user_id,
+                    'certified your stack “' || COALESCE(v_title, 'Untitled') || '”.',
+                    'endorse:list:' || NEW.target_list_id, v_title);
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
 $$;
 
 
@@ -3280,23 +3280,23 @@ $$;
 CREATE FUNCTION public.notify_on_list_comment() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-    target_user UUID;
-    sender_user TEXT;
-    v_title TEXT;
-BEGIN
-    SELECT username INTO sender_user FROM public.profiles WHERE id = NEW.user_id;
-    SELECT user_id, title INTO target_user, v_title FROM public.lists WHERE id = NEW.list_id;
-
-    IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
-        VALUES (target_user, 'comment', sender_user, NEW.user_id,
-                'left a critique on your stack “' || COALESCE(v_title, 'Untitled') || '”.');
-    END IF;
-
-    RETURN NEW;
-END;
+    AS $$
+DECLARE
+    target_user UUID;
+    sender_user TEXT;
+    v_title TEXT;
+BEGIN
+    SELECT username INTO sender_user FROM public.profiles WHERE id = NEW.user_id;
+    SELECT user_id, title INTO target_user, v_title FROM public.lists WHERE id = NEW.list_id;
+
+    IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
+        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
+        VALUES (target_user, 'comment', sender_user, NEW.user_id,
+                'left a critique on your stack “' || COALESCE(v_title, 'Untitled') || '”.');
+    END IF;
+
+    RETURN NEW;
+END;
 $$;
 
 
@@ -3307,23 +3307,23 @@ $$;
 CREATE FUNCTION public.notify_on_log_comment() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-    target_user UUID;
-    sender_user TEXT;
-    target_film_title TEXT;
-BEGIN
-    SELECT username INTO sender_user FROM public.profiles WHERE id = NEW.user_id;
-    SELECT user_id, film_title INTO target_user, target_film_title FROM public.logs WHERE id = NEW.log_id;
-
-    IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
-        VALUES (target_user, 'comment', sender_user, NEW.user_id,
-                'left a critique on your log of ' || COALESCE(target_film_title, 'a film') || '.');
-    END IF;
-
-    RETURN NEW;
-END;
+    AS $$
+DECLARE
+    target_user UUID;
+    sender_user TEXT;
+    target_film_title TEXT;
+BEGIN
+    SELECT username INTO sender_user FROM public.profiles WHERE id = NEW.user_id;
+    SELECT user_id, film_title INTO target_user, target_film_title FROM public.logs WHERE id = NEW.log_id;
+
+    IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
+        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
+        VALUES (target_user, 'comment', sender_user, NEW.user_id,
+                'left a critique on your log of ' || COALESCE(target_film_title, 'a film') || '.');
+    END IF;
+
+    RETURN NEW;
+END;
 $$;
 
 
@@ -3334,11 +3334,11 @@ $$;
 CREATE FUNCTION public.profile_tier_weight(p_tier text, p_role text, p_is_founding boolean) RETURNS integer
     LANGUAGE sql IMMUTABLE PARALLEL SAFE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT GREATEST(
-    public.tier_weight(p_tier),
-    public.tier_weight(CASE WHEN coalesce(p_is_founding, false)
-                            THEN 'founding' ELSE p_role END));
+    AS $$
+  SELECT GREATEST(
+    public.tier_weight(p_tier),
+    public.tier_weight(CASE WHEN coalesce(p_is_founding, false)
+                            THEN 'founding' ELSE p_role END));
 $$;
 
 
@@ -3349,14 +3349,14 @@ $$;
 CREATE FUNCTION public.protect_lounge_member_status() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF NEW.status IS DISTINCT FROM OLD.status
-     AND auth.uid() IS NOT NULL
-     AND auth.uid() <> (SELECT creator_id FROM public.lounges WHERE id = NEW.lounge_id) THEN
-    RAISE EXCEPTION 'Only the host can change membership status';
-  END IF;
-  RETURN NEW;
+    AS $$
+BEGIN
+  IF NEW.status IS DISTINCT FROM OLD.status
+     AND auth.uid() IS NOT NULL
+     AND auth.uid() <> (SELECT creator_id FROM public.lounges WHERE id = NEW.lounge_id) THEN
+    RAISE EXCEPTION 'Only the host can change membership status';
+  END IF;
+  RETURN NEW;
 END $$;
 
 
@@ -3367,23 +3367,23 @@ END $$;
 CREATE FUNCTION public.protect_privileged_profile_fields() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF current_user IN ('authenticated', 'anon') THEN
-    NEW.role := OLD.role;
-    NEW.tier := OLD.tier;
-    NEW.is_founding := OLD.is_founding;
-    NEW.member_no := OLD.member_no;
-    NEW.is_banned := OLD.is_banned;
-    NEW.ban_reason := OLD.ban_reason;
-    NEW.banned_at := OLD.banned_at;
-    NEW.suspended_until := OLD.suspended_until;
-    NEW.suspension_reason := OLD.suspension_reason;
-    NEW.warning_count := OLD.warning_count;
-    NEW.entitlement_source := OLD.entitlement_source;
-  END IF;
-  RETURN NEW;
-END;
+    AS $$
+BEGIN
+  IF current_user IN ('authenticated', 'anon') THEN
+    NEW.role := OLD.role;
+    NEW.tier := OLD.tier;
+    NEW.is_founding := OLD.is_founding;
+    NEW.member_no := OLD.member_no;
+    NEW.is_banned := OLD.is_banned;
+    NEW.ban_reason := OLD.ban_reason;
+    NEW.banned_at := OLD.banned_at;
+    NEW.suspended_until := OLD.suspended_until;
+    NEW.suspension_reason := OLD.suspension_reason;
+    NEW.warning_count := OLD.warning_count;
+    NEW.entitlement_source := OLD.entitlement_source;
+  END IF;
+  RETURN NEW;
+END;
 $$;
 
 
@@ -3394,16 +3394,16 @@ $$;
 CREATE FUNCTION public.protect_video_review_metrics() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  -- Revert ownership or metric tampering back to their original state
-  NEW.user_id = OLD.user_id;
-  NEW.username = OLD.username;
-  NEW.views = OLD.views;
-  NEW.tip_total = OLD.tip_total;
-  
-  RETURN NEW;
-END;
+    AS $$
+BEGIN
+  -- Revert ownership or metric tampering back to their original state
+  NEW.user_id = OLD.user_id;
+  NEW.username = OLD.username;
+  NEW.views = OLD.views;
+  NEW.tip_total = OLD.tip_total;
+  
+  RETURN NEW;
+END;
 $$;
 
 
@@ -3414,13 +3414,13 @@ $$;
 CREATE FUNCTION public.public_prefs(p jsonb) RETURNS jsonb
     LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT COALESCE(jsonb_object_agg(k, p -> k), '{}'::jsonb)
-  FROM unnest(ARRAY[
-    'programmes','favorites','hide_stats','backdrop',
-    'privacy_annotations','privacy_endorsements','social_visibility'
-  ]) AS k
-  WHERE jsonb_exists(p, k);
+    AS $$
+  SELECT COALESCE(jsonb_object_agg(k, p -> k), '{}'::jsonb)
+  FROM unnest(ARRAY[
+    'programmes','favorites','hide_stats','backdrop',
+    'privacy_annotations','privacy_endorsements','social_visibility'
+  ]) AS k
+  WHERE jsonb_exists(p, k);
 $$;
 
 
@@ -3431,16 +3431,16 @@ $$;
 CREATE FUNCTION public.rate_limit_check(table_name text, user_col text, max_count integer, window_minutes integer DEFAULT 1440) RETURNS boolean
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-    current_count INTEGER;
-BEGIN
-    EXECUTE format(
-        'SELECT COUNT(*) FROM %I WHERE %I = auth.uid() AND created_at > now() - interval ''%s minutes''',
-        table_name, user_col, window_minutes
-    ) INTO current_count;
-    RETURN current_count < max_count;
-END;
+    AS $$
+DECLARE
+    current_count INTEGER;
+BEGIN
+    EXECUTE format(
+        'SELECT COUNT(*) FROM %I WHERE %I = auth.uid() AND created_at > now() - interval ''%s minutes''',
+        table_name, user_col, window_minutes
+    ) INTO current_count;
+    RETURN current_count < max_count;
+END;
 $$;
 
 
@@ -3508,14 +3508,14 @@ COMMENT ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_
 CREATE FUNCTION public.recount_lounge_members() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_lounge uuid := COALESCE(NEW.lounge_id, OLD.lounge_id);
-BEGIN
-  UPDATE public.lounges
-     SET member_count = (SELECT count(*) FROM public.lounge_members
-                          WHERE lounge_id = v_lounge AND status = 'approved')
-   WHERE id = v_lounge;
-  RETURN COALESCE(NEW, OLD);
+    AS $$
+DECLARE v_lounge uuid := COALESCE(NEW.lounge_id, OLD.lounge_id);
+BEGIN
+  UPDATE public.lounges
+     SET member_count = (SELECT count(*) FROM public.lounge_members
+                          WHERE lounge_id = v_lounge AND status = 'approved')
+   WHERE id = v_lounge;
+  RETURN COALESCE(NEW, OLD);
 END $$;
 
 
@@ -3526,25 +3526,25 @@ END $$;
 CREATE FUNCTION public.refresh_film_verdict(p_film_id integer) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF p_film_id IS NULL OR p_film_id <= 0 THEN
-    RETURN;
-  END IF;
-
-  INSERT INTO public.films AS f (id, avg_rating, rating_count, log_count)
-  SELECT
-    p_film_id,
-    ROUND(AVG(l.rating) FILTER (WHERE l.rating > 0), 2),
-    COUNT(*) FILTER (WHERE l.rating > 0),
-    COUNT(*)
-  FROM public.logs l
-  WHERE l.film_id = p_film_id
-  ON CONFLICT (id) DO UPDATE
-    SET avg_rating   = EXCLUDED.avg_rating,
-        rating_count = EXCLUDED.rating_count,
-        log_count    = EXCLUDED.log_count;
-END;
+    AS $$
+BEGIN
+  IF p_film_id IS NULL OR p_film_id <= 0 THEN
+    RETURN;
+  END IF;
+
+  INSERT INTO public.films AS f (id, avg_rating, rating_count, log_count)
+  SELECT
+    p_film_id,
+    ROUND(AVG(l.rating) FILTER (WHERE l.rating > 0), 2),
+    COUNT(*) FILTER (WHERE l.rating > 0),
+    COUNT(*)
+  FROM public.logs l
+  WHERE l.film_id = p_film_id
+  ON CONFLICT (id) DO UPDATE
+    SET avg_rating   = EXCLUDED.avg_rating,
+        rating_count = EXCLUDED.rating_count,
+        log_count    = EXCLUDED.log_count;
+END;
 $$;
 
 
@@ -3555,22 +3555,22 @@ $$;
 CREATE FUNCTION public.register_push_token(p_token text, p_platform text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
-
-  -- Detach this device token from any other account.
-  DELETE FROM public.push_tokens
-   WHERE token = p_token AND user_id <> auth.uid();
-
-  -- Claim it for the current user (refresh token on the existing platform row).
-  INSERT INTO public.push_tokens (user_id, token, platform, updated_at)
-  VALUES (auth.uid(), p_token, p_platform, now())
-  ON CONFLICT (user_id, platform)
-  DO UPDATE SET token = EXCLUDED.token, updated_at = now();
-END;
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Detach this device token from any other account.
+  DELETE FROM public.push_tokens
+   WHERE token = p_token AND user_id <> auth.uid();
+
+  -- Claim it for the current user (refresh token on the existing platform row).
+  INSERT INTO public.push_tokens (user_id, token, platform, updated_at)
+  VALUES (auth.uid(), p_token, p_platform, now())
+  ON CONFLICT (user_id, platform)
+  DO UPDATE SET token = EXCLUDED.token, updated_at = now();
+END;
 $$;
 
 
@@ -3612,15 +3612,15 @@ COMMENT ON FUNCTION public.relinquish_rank() IS 'Lowers the CALLER''S OWN rank t
 CREATE FUNCTION public.remove_lounge_member(p_lounge_id uuid, p_user_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_creator uuid;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  SELECT creator_id INTO v_creator FROM public.lounges WHERE id = p_lounge_id;
-  IF v_creator IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
-  IF auth.uid() IS DISTINCT FROM v_creator THEN RAISE EXCEPTION 'Only the host can remove members'; END IF;
-  IF p_user_id IS NOT DISTINCT FROM v_creator THEN RAISE EXCEPTION 'The host cannot be removed'; END IF;
-  DELETE FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = p_user_id;
+    AS $$
+DECLARE v_creator uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  SELECT creator_id INTO v_creator FROM public.lounges WHERE id = p_lounge_id;
+  IF v_creator IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
+  IF auth.uid() IS DISTINCT FROM v_creator THEN RAISE EXCEPTION 'Only the host can remove members'; END IF;
+  IF p_user_id IS NOT DISTINCT FROM v_creator THEN RAISE EXCEPTION 'The host cannot be removed'; END IF;
+  DELETE FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = p_user_id;
 END $$;
 
 
@@ -3631,35 +3631,35 @@ END $$;
 CREATE FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb DEFAULT '[]'::jsonb) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_user_id uuid;
-BEGIN
-  v_user_id := auth.uid();
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
-  END IF;
-
-  -- Verify ownership (defense-in-depth beyond RLS)
-  IF NOT EXISTS (SELECT 1 FROM lists WHERE id = p_list_id AND user_id = v_user_id) THEN
-    RAISE EXCEPTION 'Unauthorized: list does not belong to user'
-      USING ERRCODE = '42501';
-  END IF;
-
-  -- Atomic delete + insert in a single transaction
-  DELETE FROM list_items WHERE list_id = p_list_id;
-
-  IF jsonb_array_length(p_items) > 0 THEN
-    INSERT INTO list_items (list_id, film_id, film_title, poster_path, rank_position)
-    SELECT
-      p_list_id,
-      (item->>'film_id')::INT,
-      COALESCE(item->>'film_title', 'Unknown'),
-      item->>'poster_path',
-      (item->>'rank_position')::INT
-    FROM jsonb_array_elements(p_items) AS item;
-  END IF;
-END;
+    AS $$
+DECLARE
+  v_user_id uuid;
+BEGIN
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+
+  -- Verify ownership (defense-in-depth beyond RLS)
+  IF NOT EXISTS (SELECT 1 FROM lists WHERE id = p_list_id AND user_id = v_user_id) THEN
+    RAISE EXCEPTION 'Unauthorized: list does not belong to user'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- Atomic delete + insert in a single transaction
+  DELETE FROM list_items WHERE list_id = p_list_id;
+
+  IF jsonb_array_length(p_items) > 0 THEN
+    INSERT INTO list_items (list_id, film_id, film_title, poster_path, rank_position)
+    SELECT
+      p_list_id,
+      (item->>'film_id')::INT,
+      COALESCE(item->>'film_title', 'Unknown'),
+      item->>'poster_path',
+      (item->>'rank_position')::INT
+    FROM jsonb_array_elements(p_items) AS item;
+  END IF;
+END;
 $$;
 
 
@@ -3677,60 +3677,60 @@ COMMENT ON FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb) IS 
 CREATE FUNCTION public.request_account_deletion() RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  uid      uuid := auth.uid();
-  v_handle text;
-BEGIN
-  IF uid IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
-
-  SELECT username INTO v_handle FROM public.profiles WHERE id = uid;
-
-  UPDATE public.lounges l
-     SET creator_id = (
-           SELECT m.user_id FROM public.lounge_members m
-            WHERE m.lounge_id = l.id AND m.user_id <> uid AND m.status = 'approved'
-            ORDER BY m.joined_at ASC NULLS LAST
-            LIMIT 1)
-   WHERE l.creator_id = uid
-     AND EXISTS (SELECT 1 FROM public.lounge_members m
-                  WHERE m.lounge_id = l.id AND m.user_id <> uid AND m.status = 'approved');
-
-  UPDATE public.log_comments
-     SET user_id = NULL, username = '[deleted]'
-   WHERE user_id = uid;
-
-  UPDATE public.dossier_comments
-     SET user_id = NULL, username = '[deleted]'
-   WHERE user_id = uid;
-
-  UPDATE public.dispatch_dossiers
-     SET user_id = NULL, author_username = '[deleted]'
-   WHERE user_id = uid;
-
-  UPDATE public.lounge_messages
-     SET reply_to_username = '[deleted]'
-   WHERE reply_to_id IN (SELECT id FROM public.lounge_messages WHERE user_id = uid);
-
-  DELETE FROM public.notifications WHERE from_user_id = uid;
-
-  IF v_handle IS NOT NULL THEN
-    UPDATE public.lounge_messages
-       SET metadata = (metadata - 'owner_username') - 'author_username'
-     WHERE metadata->>'owner_username' = v_handle
-        OR metadata->>'author_username' = v_handle;
-  END IF;
-
-  UPDATE public.list_comments   SET user_id = NULL WHERE user_id = uid;
-  UPDATE public.lounge_messages SET user_id = NULL WHERE user_id = uid;
-
-  PERFORM set_config('storage.allow_delete_query', 'true', true);
-  DELETE FROM storage.objects WHERE owner = uid;
-
-  DELETE FROM auth.users WHERE id = uid;
-END
+    AS $$
+DECLARE
+  uid      uuid := auth.uid();
+  v_handle text;
+BEGIN
+  IF uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  SELECT username INTO v_handle FROM public.profiles WHERE id = uid;
+
+  UPDATE public.lounges l
+     SET creator_id = (
+           SELECT m.user_id FROM public.lounge_members m
+            WHERE m.lounge_id = l.id AND m.user_id <> uid AND m.status = 'approved'
+            ORDER BY m.joined_at ASC NULLS LAST
+            LIMIT 1)
+   WHERE l.creator_id = uid
+     AND EXISTS (SELECT 1 FROM public.lounge_members m
+                  WHERE m.lounge_id = l.id AND m.user_id <> uid AND m.status = 'approved');
+
+  UPDATE public.log_comments
+     SET user_id = NULL, username = '[deleted]'
+   WHERE user_id = uid;
+
+  UPDATE public.dossier_comments
+     SET user_id = NULL, username = '[deleted]'
+   WHERE user_id = uid;
+
+  UPDATE public.dispatch_dossiers
+     SET user_id = NULL, author_username = '[deleted]'
+   WHERE user_id = uid;
+
+  UPDATE public.lounge_messages
+     SET reply_to_username = '[deleted]'
+   WHERE reply_to_id IN (SELECT id FROM public.lounge_messages WHERE user_id = uid);
+
+  DELETE FROM public.notifications WHERE from_user_id = uid;
+
+  IF v_handle IS NOT NULL THEN
+    UPDATE public.lounge_messages
+       SET metadata = (metadata - 'owner_username') - 'author_username'
+     WHERE metadata->>'owner_username' = v_handle
+        OR metadata->>'author_username' = v_handle;
+  END IF;
+
+  UPDATE public.list_comments   SET user_id = NULL WHERE user_id = uid;
+  UPDATE public.lounge_messages SET user_id = NULL WHERE user_id = uid;
+
+  PERFORM set_config('storage.allow_delete_query', 'true', true);
+  DELETE FROM storage.objects WHERE owner = uid;
+
+  DELETE FROM auth.users WHERE id = uid;
+END
 $$;
 
 
@@ -3741,23 +3741,23 @@ $$;
 CREATE FUNCTION public.request_lounge_membership(p_lounge_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_private boolean; v_creator uuid; v_status text; v_uname text; v_lname text;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  SELECT is_private, creator_id, name INTO v_private, v_creator, v_lname FROM public.lounges WHERE id = p_lounge_id;
-  IF v_private IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
-  SELECT status INTO v_status FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = auth.uid();
-  IF v_status = 'banned' THEN RAISE EXCEPTION 'You cannot request this lounge'; END IF;
-  IF v_status IN ('approved','pending') THEN RETURN; END IF;
-  INSERT INTO public.lounge_members (lounge_id, user_id, status) VALUES (p_lounge_id, auth.uid(), 'pending')
-  ON CONFLICT (user_id, lounge_id) DO UPDATE SET status = 'pending'
-    WHERE public.lounge_members.status NOT IN ('banned','approved');
-  SELECT username INTO v_uname FROM public.profiles WHERE id = auth.uid();
-  IF v_creator IS NOT NULL AND v_creator <> auth.uid() THEN
-    INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, related_lounge_id)
-    VALUES (v_creator, 'system', v_uname, auth.uid(), '@' || UPPER(COALESCE(v_uname,'someone')) || ' is asking to enter ' || COALESCE(v_lname,'your lounge') || '.', p_lounge_id);
-  END IF;
+    AS $$
+DECLARE v_private boolean; v_creator uuid; v_status text; v_uname text; v_lname text;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  SELECT is_private, creator_id, name INTO v_private, v_creator, v_lname FROM public.lounges WHERE id = p_lounge_id;
+  IF v_private IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
+  SELECT status INTO v_status FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = auth.uid();
+  IF v_status = 'banned' THEN RAISE EXCEPTION 'You cannot request this lounge'; END IF;
+  IF v_status IN ('approved','pending') THEN RETURN; END IF;
+  INSERT INTO public.lounge_members (lounge_id, user_id, status) VALUES (p_lounge_id, auth.uid(), 'pending')
+  ON CONFLICT (user_id, lounge_id) DO UPDATE SET status = 'pending'
+    WHERE public.lounge_members.status NOT IN ('banned','approved');
+  SELECT username INTO v_uname FROM public.profiles WHERE id = auth.uid();
+  IF v_creator IS NOT NULL AND v_creator <> auth.uid() THEN
+    INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, related_lounge_id)
+    VALUES (v_creator, 'system', v_uname, auth.uid(), '@' || UPPER(COALESCE(v_uname,'someone')) || ' is asking to enter ' || COALESCE(v_lname,'your lounge') || '.', p_lounge_id);
+  END IF;
 END $$;
 
 
@@ -3768,153 +3768,153 @@ END $$;
 CREATE FUNCTION public.resolve_moderation_report_v2(p_report_id uuid, p_action text, p_admin_id uuid, p_reason text, p_duration_hours integer DEFAULT NULL::integer, p_notify_user boolean DEFAULT true) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_admin_id       uuid := auth.uid();
-  v_target_user_id uuid;
-  v_reporter_id    uuid;
-  v_content_id     uuid;
-  v_content_type   text;
-  v_expires_at     timestamptz;
-  v_notice         text;
-  v_snapshot       jsonb;
-BEGIN
-  IF v_admin_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = v_admin_id AND role = 'admin') THEN
-    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
-  END IF;
-
-  SELECT target_user_id, reporter_id, content_id, content_type
-  INTO v_target_user_id, v_reporter_id, v_content_id, v_content_type
-  FROM reports
-  WHERE id = p_report_id AND status = 'pending';
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Report not found or already resolved';
-  END IF;
-
-  IF v_target_user_id IS NULL AND p_action NOT IN ('dismiss', 'delete_content') THEN
-    RAISE EXCEPTION 'That member has deleted their account. Only dismiss or delete_content remain.'
-      USING ERRCODE = 'P0001';
-  END IF;
-
-  IF p_action IN ('suspend', 'mute_user') AND (p_duration_hours IS NULL OR p_duration_hours <= 0) THEN
-    RAISE EXCEPTION 'A duration in hours is required for %', p_action USING ERRCODE = 'P0001';
-  END IF;
-
-  IF p_action = 'delete_content' AND v_content_type = 'profile' THEN
-    RAISE EXCEPTION 'A profile is not content. Use ban or permanent_exile.' USING ERRCODE = 'P0001';
-  END IF;
-
-  IF p_duration_hours IS NOT NULL THEN
-    v_expires_at := now() + (p_duration_hours || ' hours')::interval;
-  END IF;
-
-  IF p_action = 'delete_content' THEN
-    v_snapshot := public.get_report_evidence(p_report_id);
-  END IF;
-
-  UPDATE reports
-  SET status = 'resolved',
-      resolved_at = now(),
-      resolved_by = v_admin_id,
-      resolution_action = p_action
-  WHERE id = p_report_id;
-
-  CASE p_action
-    WHEN 'warn' THEN
-      INSERT INTO warnings (user_id, admin_id, reason)
-      VALUES (v_target_user_id, v_admin_id, p_reason);
-      UPDATE profiles SET warning_count = warning_count + 1
-      WHERE id = v_target_user_id;
-
-    WHEN 'suspend' THEN
-      UPDATE profiles
-      SET suspended_until = v_expires_at, suspension_reason = p_reason
-      WHERE id = v_target_user_id;
-
-    WHEN 'ban' THEN
-      UPDATE profiles
-      SET is_banned = true, banned_at = now(), suspension_reason = p_reason
-      WHERE id = v_target_user_id;
-
-    WHEN 'permanent_exile' THEN
-      UPDATE profiles
-      SET is_banned = true, banned_at = now(), suspension_reason = 'PERMANENT EXILE: ' || p_reason
-      WHERE id = v_target_user_id;
-
-    WHEN 'mute_user' THEN
-      UPDATE profiles
-      SET suspended_until = v_expires_at, suspension_reason = 'Muted: ' || p_reason
-      WHERE id = v_target_user_id;
-
-    WHEN 'delete_content' THEN
-      CASE v_content_type
-        WHEN 'log'             THEN DELETE FROM logs              WHERE id = v_content_id;
-        WHEN 'list'            THEN DELETE FROM lists             WHERE id = v_content_id;
-        WHEN 'log_comment'     THEN DELETE FROM log_comments      WHERE id = v_content_id;
-        WHEN 'list_comment'    THEN DELETE FROM list_comments     WHERE id = v_content_id;
-        WHEN 'dossier'         THEN DELETE FROM dispatch_dossiers WHERE id = v_content_id;
+    AS $$
+DECLARE
+  v_admin_id       uuid := auth.uid();
+  v_target_user_id uuid;
+  v_reporter_id    uuid;
+  v_content_id     uuid;
+  v_content_type   text;
+  v_expires_at     timestamptz;
+  v_notice         text;
+  v_snapshot       jsonb;
+BEGIN
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = v_admin_id AND role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT target_user_id, reporter_id, content_id, content_type
+  INTO v_target_user_id, v_reporter_id, v_content_id, v_content_type
+  FROM reports
+  WHERE id = p_report_id AND status = 'pending';
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Report not found or already resolved';
+  END IF;
+
+  IF v_target_user_id IS NULL AND p_action NOT IN ('dismiss', 'delete_content') THEN
+    RAISE EXCEPTION 'That member has deleted their account. Only dismiss or delete_content remain.'
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  IF p_action IN ('suspend', 'mute_user') AND (p_duration_hours IS NULL OR p_duration_hours <= 0) THEN
+    RAISE EXCEPTION 'A duration in hours is required for %', p_action USING ERRCODE = 'P0001';
+  END IF;
+
+  IF p_action = 'delete_content' AND v_content_type = 'profile' THEN
+    RAISE EXCEPTION 'A profile is not content. Use ban or permanent_exile.' USING ERRCODE = 'P0001';
+  END IF;
+
+  IF p_duration_hours IS NOT NULL THEN
+    v_expires_at := now() + (p_duration_hours || ' hours')::interval;
+  END IF;
+
+  IF p_action = 'delete_content' THEN
+    v_snapshot := public.get_report_evidence(p_report_id);
+  END IF;
+
+  UPDATE reports
+  SET status = 'resolved',
+      resolved_at = now(),
+      resolved_by = v_admin_id,
+      resolution_action = p_action
+  WHERE id = p_report_id;
+
+  CASE p_action
+    WHEN 'warn' THEN
+      INSERT INTO warnings (user_id, admin_id, reason)
+      VALUES (v_target_user_id, v_admin_id, p_reason);
+      UPDATE profiles SET warning_count = warning_count + 1
+      WHERE id = v_target_user_id;
+
+    WHEN 'suspend' THEN
+      UPDATE profiles
+      SET suspended_until = v_expires_at, suspension_reason = p_reason
+      WHERE id = v_target_user_id;
+
+    WHEN 'ban' THEN
+      UPDATE profiles
+      SET is_banned = true, banned_at = now(), suspension_reason = p_reason
+      WHERE id = v_target_user_id;
+
+    WHEN 'permanent_exile' THEN
+      UPDATE profiles
+      SET is_banned = true, banned_at = now(), suspension_reason = 'PERMANENT EXILE: ' || p_reason
+      WHERE id = v_target_user_id;
+
+    WHEN 'mute_user' THEN
+      UPDATE profiles
+      SET suspended_until = v_expires_at, suspension_reason = 'Muted: ' || p_reason
+      WHERE id = v_target_user_id;
+
+    WHEN 'delete_content' THEN
+      CASE v_content_type
+        WHEN 'log'             THEN DELETE FROM logs              WHERE id = v_content_id;
+        WHEN 'list'            THEN DELETE FROM lists             WHERE id = v_content_id;
+        WHEN 'log_comment'     THEN DELETE FROM log_comments      WHERE id = v_content_id;
+        WHEN 'list_comment'    THEN DELETE FROM list_comments     WHERE id = v_content_id;
+        WHEN 'dossier'         THEN DELETE FROM dispatch_dossiers WHERE id = v_content_id;
         WHEN 'dossier_comment' THEN DELETE FROM dossier_comments  WHERE id = v_content_id;
         WHEN 'dispatch_post'    THEN DELETE FROM dispatch_posts    WHERE id = v_content_id;
-        WHEN 'dispatch_comment' THEN DELETE FROM dispatch_comments WHERE id = v_content_id;
-        WHEN 'lounge_message' THEN
-          UPDATE lounge_messages
-             SET content = '', deleted_at = now()
-           WHERE id = v_content_id;
-        ELSE
-          RAISE EXCEPTION 'Cannot remove content of type %', COALESCE(v_content_type, 'unknown')
-            USING ERRCODE = 'P0001';
-      END CASE;
-
-    WHEN 'dismiss' THEN
-      NULL;
-
-    ELSE
-      RAISE EXCEPTION 'Unknown moderation action: %', p_action USING ERRCODE = 'P0001';
-  END CASE;
-
-  INSERT INTO mod_actions (report_id, target_user_id, admin_id, action, reason,
-                           duration_hours, expires_at, content_snapshot)
-  VALUES (p_report_id, v_target_user_id, v_admin_id, p_action, p_reason,
-          p_duration_hours, v_expires_at, v_snapshot);
-
-  IF p_notify_user THEN
-    INSERT INTO notifications (user_id, type, title, body, message, metadata)
-    VALUES (
-      v_reporter_id,
-      'moderation',
-      'Your Report Was Reviewed',
-      'Thank you for looking after the house. Your report was reviewed, and the matter is settled.',
-      'Thank you for looking after the house. Your report was reviewed, and the matter is settled.',
-      jsonb_build_object('report_id', p_report_id, 'action', p_action)
-    );
-
-    IF p_action != 'dismiss' AND v_target_user_id IS NOT NULL THEN
-      v_notice := CASE p_action
-        WHEN 'warn' THEN 'After reviewing a report, the house has issued a formal warning.'
-        WHEN 'suspend' THEN 'After reviewing a report, the house has paused your membership for ' || COALESCE(p_duration_hours::text, 'a number of') || ' hours.'
-        WHEN 'mute_user' THEN 'After reviewing a report, the house has muted your account for a time.'
-        WHEN 'ban' THEN 'After reviewing a report, the house has closed your membership until further notice.'
-        WHEN 'permanent_exile' THEN 'After reviewing a report, the house has permanently closed your membership.'
-        WHEN 'delete_content' THEN 'After reviewing a report, the house has removed a piece of your content.'
-        ELSE 'The house has reviewed a report concerning your account.'
-      END || ' Reason: ' || p_reason;
-
-      INSERT INTO notifications (user_id, type, title, body, message, metadata)
-      VALUES (
-        v_target_user_id,
-        'moderation',
-        'A Notice from the House',
-        v_notice,
-        v_notice,
-        jsonb_build_object('action', p_action, 'reason', p_reason, 'expires_at', v_expires_at)
-      );
-    END IF;
-  END IF;
-END;
+        WHEN 'dispatch_comment' THEN DELETE FROM dispatch_comments WHERE id = v_content_id;
+        WHEN 'lounge_message' THEN
+          UPDATE lounge_messages
+             SET content = '', deleted_at = now()
+           WHERE id = v_content_id;
+        ELSE
+          RAISE EXCEPTION 'Cannot remove content of type %', COALESCE(v_content_type, 'unknown')
+            USING ERRCODE = 'P0001';
+      END CASE;
+
+    WHEN 'dismiss' THEN
+      NULL;
+
+    ELSE
+      RAISE EXCEPTION 'Unknown moderation action: %', p_action USING ERRCODE = 'P0001';
+  END CASE;
+
+  INSERT INTO mod_actions (report_id, target_user_id, admin_id, action, reason,
+                           duration_hours, expires_at, content_snapshot)
+  VALUES (p_report_id, v_target_user_id, v_admin_id, p_action, p_reason,
+          p_duration_hours, v_expires_at, v_snapshot);
+
+  IF p_notify_user THEN
+    INSERT INTO notifications (user_id, type, title, body, message, metadata)
+    VALUES (
+      v_reporter_id,
+      'moderation',
+      'Your Report Was Reviewed',
+      'Thank you for looking after the house. Your report was reviewed, and the matter is settled.',
+      'Thank you for looking after the house. Your report was reviewed, and the matter is settled.',
+      jsonb_build_object('report_id', p_report_id, 'action', p_action)
+    );
+
+    IF p_action != 'dismiss' AND v_target_user_id IS NOT NULL THEN
+      v_notice := CASE p_action
+        WHEN 'warn' THEN 'After reviewing a report, the house has issued a formal warning.'
+        WHEN 'suspend' THEN 'After reviewing a report, the house has paused your membership for ' || COALESCE(p_duration_hours::text, 'a number of') || ' hours.'
+        WHEN 'mute_user' THEN 'After reviewing a report, the house has muted your account for a time.'
+        WHEN 'ban' THEN 'After reviewing a report, the house has closed your membership until further notice.'
+        WHEN 'permanent_exile' THEN 'After reviewing a report, the house has permanently closed your membership.'
+        WHEN 'delete_content' THEN 'After reviewing a report, the house has removed a piece of your content.'
+        ELSE 'The house has reviewed a report concerning your account.'
+      END || ' Reason: ' || p_reason;
+
+      INSERT INTO notifications (user_id, type, title, body, message, metadata)
+      VALUES (
+        v_target_user_id,
+        'moderation',
+        'A Notice from the House',
+        v_notice,
+        v_notice,
+        jsonb_build_object('action', p_action, 'reason', p_reason, 'expires_at', v_expires_at)
+      );
+    END IF;
+  END IF;
+END;
 $$;
 
 
@@ -3958,21 +3958,21 @@ $$;
 CREATE FUNCTION public.set_lounge_cover(p_lounge_id uuid, p_cover_image text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $_$
-DECLARE
-  v_uid uuid := auth.uid();
-BEGIN
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM lounges WHERE id = p_lounge_id AND creator_id = v_uid) THEN
-    RAISE EXCEPTION 'Not authorized';
-  END IF;
-  IF p_cover_image IS NOT NULL AND p_cover_image !~ '^/[A-Za-z0-9._-]+$' THEN
-    RAISE EXCEPTION 'Invalid cover path';
-  END IF;
-  UPDATE lounges SET cover_image = p_cover_image WHERE id = p_lounge_id;
-END;
+    AS $_$
+DECLARE
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM lounges WHERE id = p_lounge_id AND creator_id = v_uid) THEN
+    RAISE EXCEPTION 'Not authorized';
+  END IF;
+  IF p_cover_image IS NOT NULL AND p_cover_image !~ '^/[A-Za-z0-9._-]+$' THEN
+    RAISE EXCEPTION 'Invalid cover path';
+  END IF;
+  UPDATE lounges SET cover_image = p_cover_image WHERE id = p_lounge_id;
+END;
 $_$;
 
 
@@ -3983,16 +3983,16 @@ $_$;
 CREATE FUNCTION public.set_lounge_member_status(p_lounge_id uuid, p_user_id uuid, p_status text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_creator uuid;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  SELECT creator_id INTO v_creator FROM public.lounges WHERE id = p_lounge_id;
-  IF v_creator IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
-  IF auth.uid() IS DISTINCT FROM v_creator THEN RAISE EXCEPTION 'Only the host can do this'; END IF;
-  IF p_user_id IS NOT DISTINCT FROM v_creator THEN RAISE EXCEPTION 'The host cannot be changed'; END IF;
-  IF p_status NOT IN ('approved','muted','banned') THEN RAISE EXCEPTION 'Invalid status'; END IF;
-  UPDATE public.lounge_members SET status = p_status WHERE lounge_id = p_lounge_id AND user_id = p_user_id;
+    AS $$
+DECLARE v_creator uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  SELECT creator_id INTO v_creator FROM public.lounges WHERE id = p_lounge_id;
+  IF v_creator IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
+  IF auth.uid() IS DISTINCT FROM v_creator THEN RAISE EXCEPTION 'Only the host can do this'; END IF;
+  IF p_user_id IS NOT DISTINCT FROM v_creator THEN RAISE EXCEPTION 'The host cannot be changed'; END IF;
+  IF p_status NOT IN ('approved','muted','banned') THEN RAISE EXCEPTION 'Invalid status'; END IF;
+  UPDATE public.lounge_members SET status = p_status WHERE lounge_id = p_lounge_id AND user_id = p_user_id;
 END $$;
 
 
@@ -4003,11 +4003,11 @@ END $$;
 CREATE FUNCTION public.set_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
 $$;
 
 
@@ -4018,15 +4018,15 @@ $$;
 CREATE FUNCTION public.sever_follows_on_block() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF NEW.type = 'block' THEN
-    DELETE FROM public.interactions
-    WHERE type = 'follow'
-      AND ((user_id = NEW.blocker_id AND target_user_id = NEW.blocked_id)
-        OR (user_id = NEW.blocked_id AND target_user_id = NEW.blocker_id));
-  END IF;
-  RETURN NEW;
+    AS $$
+BEGIN
+  IF NEW.type = 'block' THEN
+    DELETE FROM public.interactions
+    WHERE type = 'follow'
+      AND ((user_id = NEW.blocker_id AND target_user_id = NEW.blocked_id)
+        OR (user_id = NEW.blocked_id AND target_user_id = NEW.blocker_id));
+  END IF;
+  RETURN NEW;
 END $$;
 
 
@@ -4037,35 +4037,35 @@ END $$;
 CREATE FUNCTION public.submit_report(p_reporter_id uuid, p_content_id uuid, p_content_type text, p_reason text, p_details text DEFAULT NULL::text, p_target_user_id uuid DEFAULT NULL::uuid) RETURNS uuid
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_reporter_id uuid := auth.uid();
-  v_report_id uuid;
-  v_recent_count int;
-BEGIN
-  IF v_reporter_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
-  END IF;
-
-  SELECT COUNT(*) INTO v_recent_count
-  FROM reports
-  WHERE reporter_id = v_reporter_id
-    AND created_at > now() - interval '1 hour';
-
-  IF v_recent_count >= 10 THEN
-    RAISE EXCEPTION 'Rate limit exceeded: maximum 10 reports per hour';
-  END IF;
-
-  IF p_content_type = 'profile' AND v_reporter_id = p_target_user_id THEN
-    RAISE EXCEPTION 'Cannot report your own profile';
-  END IF;
-
-  INSERT INTO reports (reporter_id, content_id, content_type, reason, details, target_user_id, status)
-  VALUES (v_reporter_id, p_content_id, p_content_type, p_reason, p_details, p_target_user_id, 'pending')
-  RETURNING id INTO v_report_id;
-
-  RETURN v_report_id;
-END;
+    AS $$
+DECLARE
+  v_reporter_id uuid := auth.uid();
+  v_report_id uuid;
+  v_recent_count int;
+BEGIN
+  IF v_reporter_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+
+  SELECT COUNT(*) INTO v_recent_count
+  FROM reports
+  WHERE reporter_id = v_reporter_id
+    AND created_at > now() - interval '1 hour';
+
+  IF v_recent_count >= 10 THEN
+    RAISE EXCEPTION 'Rate limit exceeded: maximum 10 reports per hour';
+  END IF;
+
+  IF p_content_type = 'profile' AND v_reporter_id = p_target_user_id THEN
+    RAISE EXCEPTION 'Cannot report your own profile';
+  END IF;
+
+  INSERT INTO reports (reporter_id, content_id, content_type, reason, details, target_user_id, status)
+  VALUES (v_reporter_id, p_content_id, p_content_type, p_reason, p_details, p_target_user_id, 'pending')
+  RETURNING id INTO v_report_id;
+
+  RETURN v_report_id;
+END;
 $$;
 
 
@@ -4076,33 +4076,33 @@ $$;
 CREATE FUNCTION public.sync_denormalized_username() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF NEW.username IS DISTINCT FROM OLD.username THEN
-
-    UPDATE public.dispatch_posts
-       SET author_username = NEW.username
-     WHERE user_id = NEW.id
-       AND author_username IS DISTINCT FROM NEW.username;
-
-    UPDATE public.dispatch_comments
-       SET author_username = NEW.username
-     WHERE user_id = NEW.id
-       AND author_username IS DISTINCT FROM NEW.username;
-
-    UPDATE public.log_comments
-       SET username = NEW.username
-     WHERE user_id = NEW.id
-       AND username IS DISTINCT FROM NEW.username;
-
-    UPDATE public.video_reviews
-       SET username = NEW.username
-     WHERE user_id = NEW.id
-       AND username IS DISTINCT FROM NEW.username;
-
-  END IF;
-
-  RETURN NULL;  -- AFTER trigger: the return value is ignored
+    AS $$
+BEGIN
+  IF NEW.username IS DISTINCT FROM OLD.username THEN
+
+    UPDATE public.dispatch_posts
+       SET author_username = NEW.username
+     WHERE user_id = NEW.id
+       AND author_username IS DISTINCT FROM NEW.username;
+
+    UPDATE public.dispatch_comments
+       SET author_username = NEW.username
+     WHERE user_id = NEW.id
+       AND author_username IS DISTINCT FROM NEW.username;
+
+    UPDATE public.log_comments
+       SET username = NEW.username
+     WHERE user_id = NEW.id
+       AND username IS DISTINCT FROM NEW.username;
+
+    UPDATE public.video_reviews
+       SET username = NEW.username
+     WHERE user_id = NEW.id
+       AND username IS DISTINCT FROM NEW.username;
+
+  END IF;
+
+  RETURN NULL;  -- AFTER trigger: the return value is ignored
 END $$;
 
 
@@ -4113,51 +4113,51 @@ END $$;
 CREATE FUNCTION public.tg_notify_push() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_secret   text;
-  v_pref_key text;
-BEGIN
-  IF NEW.from_user_id IS NOT NULL AND EXISTS (
-    SELECT 1 FROM public.user_blocks
-    WHERE (blocker_id = NEW.user_id      AND blocked_id = NEW.from_user_id)
-       OR (blocker_id = NEW.from_user_id AND blocked_id = NEW.user_id AND type = 'block')
-  ) THEN
-    RETURN NEW;
-  END IF;
-
-  v_pref_key := CASE NEW.type
-                  WHEN 'follow'         THEN 'notif_follows'
-                  WHEN 'follow_request' THEN 'notif_follows'
-                  WHEN 'follow_accept'  THEN 'notif_follows'
-                  WHEN 'endorse'        THEN 'notif_endorsements'
-                  WHEN 'endorse_log'    THEN 'notif_endorsements'
-                  WHEN 'comment'        THEN 'notif_comments'
-                  WHEN 'annotate'       THEN 'notif_comments'
-                  WHEN 'system'         THEN 'notif_system'
-                  ELSE NULL
-                END;
-
-  IF v_pref_key IS NOT NULL THEN
-    IF (SELECT preferences ->> v_pref_key
-          FROM public.profiles
-         WHERE id = NEW.user_id) = 'false'
-    THEN
-      RETURN NEW;
-    END IF;
-  END IF;
-
-  SELECT decrypted_secret INTO v_secret
-  FROM vault.decrypted_secrets
-  WHERE name = 'notify_push_secret' LIMIT 1;
-
-  PERFORM net.http_post(
-    url     := 'https://wihyqkpoymwcvbprslyz.supabase.co/functions/v1/notify-push',
-    headers := jsonb_build_object('Content-Type','application/json','x-function-secret', v_secret),
-    body    := jsonb_build_object('type','INSERT','table','notifications','record', to_jsonb(NEW))
-  );
-  RETURN NEW;
-END;
+    AS $$
+DECLARE
+  v_secret   text;
+  v_pref_key text;
+BEGIN
+  IF NEW.from_user_id IS NOT NULL AND EXISTS (
+    SELECT 1 FROM public.user_blocks
+    WHERE (blocker_id = NEW.user_id      AND blocked_id = NEW.from_user_id)
+       OR (blocker_id = NEW.from_user_id AND blocked_id = NEW.user_id AND type = 'block')
+  ) THEN
+    RETURN NEW;
+  END IF;
+
+  v_pref_key := CASE NEW.type
+                  WHEN 'follow'         THEN 'notif_follows'
+                  WHEN 'follow_request' THEN 'notif_follows'
+                  WHEN 'follow_accept'  THEN 'notif_follows'
+                  WHEN 'endorse'        THEN 'notif_endorsements'
+                  WHEN 'endorse_log'    THEN 'notif_endorsements'
+                  WHEN 'comment'        THEN 'notif_comments'
+                  WHEN 'annotate'       THEN 'notif_comments'
+                  WHEN 'system'         THEN 'notif_system'
+                  ELSE NULL
+                END;
+
+  IF v_pref_key IS NOT NULL THEN
+    IF (SELECT preferences ->> v_pref_key
+          FROM public.profiles
+         WHERE id = NEW.user_id) = 'false'
+    THEN
+      RETURN NEW;
+    END IF;
+  END IF;
+
+  SELECT decrypted_secret INTO v_secret
+  FROM vault.decrypted_secrets
+  WHERE name = 'notify_push_secret' LIMIT 1;
+
+  PERFORM net.http_post(
+    url     := 'https://wihyqkpoymwcvbprslyz.supabase.co/functions/v1/notify-push',
+    headers := jsonb_build_object('Content-Type','application/json','x-function-secret', v_secret),
+    body    := jsonb_build_object('type','INSERT','table','notifications','record', to_jsonb(NEW))
+  );
+  RETURN NEW;
+END;
 $$;
 
 
@@ -4168,12 +4168,12 @@ $$;
 CREATE FUNCTION public.tier_weight(t text) RETURNS integer
     LANGUAGE sql IMMUTABLE PARALLEL SAFE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT CASE lower(coalesce(t, ''))
-           WHEN 'archivist' THEN 1
-           WHEN 'auteur'    THEN 2
-           WHEN 'founding'  THEN 3
-           ELSE 0 END;
+    AS $$
+  SELECT CASE lower(coalesce(t, ''))
+           WHEN 'archivist' THEN 1
+           WHEN 'auteur'    THEN 2
+           WHEN 'founding'  THEN 3
+           ELSE 0 END;
 $$;
 
 
@@ -4184,20 +4184,20 @@ $$;
 CREATE FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) RETURNS boolean
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-    DECLARE already boolean;
-    BEGIN
-      SELECT EXISTS(SELECT 1 FROM public.dispatch_certifications
-                     WHERE user_id = auth.uid() AND post_id = dossier_uuid) INTO already;
-      IF already THEN
-        DELETE FROM public.dispatch_certifications
-         WHERE user_id = auth.uid() AND post_id = dossier_uuid;
-        RETURN FALSE;
-      ELSE
-        INSERT INTO public.dispatch_certifications (user_id, post_id)
-        VALUES (auth.uid(), dossier_uuid);
-        RETURN TRUE;
-      END IF;
+    AS $$
+    DECLARE already boolean;
+    BEGIN
+      SELECT EXISTS(SELECT 1 FROM public.dispatch_certifications
+                     WHERE user_id = auth.uid() AND post_id = dossier_uuid) INTO already;
+      IF already THEN
+        DELETE FROM public.dispatch_certifications
+         WHERE user_id = auth.uid() AND post_id = dossier_uuid;
+        RETURN FALSE;
+      ELSE
+        INSERT INTO public.dispatch_certifications (user_id, post_id)
+        VALUES (auth.uid(), dossier_uuid);
+        RETURN TRUE;
+      END IF;
     END $$;
 
 
@@ -4208,12 +4208,12 @@ CREATE FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) RETURNS boolean
 CREATE FUNCTION public.update_my_preferences(p_preferences jsonb) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_user_id UUID := auth.uid();
-BEGIN
-  IF v_user_id IS NULL THEN RAISE EXCEPTION 'Not authenticated.'; END IF;
-  UPDATE public.profiles SET preferences = preferences || p_preferences, updated_at = NOW() WHERE id = v_user_id;
-END;
+    AS $$
+DECLARE v_user_id UUID := auth.uid();
+BEGIN
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'Not authenticated.'; END IF;
+  UPDATE public.profiles SET preferences = preferences || p_preferences, updated_at = NOW() WHERE id = v_user_id;
+END;
 $$;
 
 
@@ -4224,30 +4224,30 @@ $$;
 CREATE FUNCTION public.viewing_fields() RETURNS jsonb
     LANGUAGE sql IMMUTABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT '{
-    "archived": {
-      "watched_date":     {"key": "date",            "fallback": null},
-      "rating":           {"key": "rating",          "fallback": 0},
-      "review":           {"key": "review",          "fallback": ""},
-      "format":           {"key": "format",          "fallback": "digital"},
-      "status":           {"key": "status",          "fallback": "watched"},
-      "is_spoiler":       {"key": "isSpoiler",       "fallback": false},
-      "watched_with":     {"key": "watchedWith",     "fallback": null},
-      "abandoned_reason": {"key": "abandonedReason", "fallback": null},
-      "physical_media":   {"key": "physicalMedia",   "fallback": null},
-      "is_autopsied":     {"key": "isAutopsied",     "fallback": false},
-      "autopsy":          {"key": "autopsy",         "fallback": null},
-      "alt_poster":       {"key": "altPoster",       "fallback": null},
-      "editorial_header": {"key": "editorialHeader", "fallback": null},
-      "drop_cap":         {"key": "dropCap",         "fallback": false},
-      "pull_quote":       {"key": "pullQuote",       "fallback": ""},
-      "video_url":        {"key": "videoUrl",        "fallback": null}
-    },
-    "not_a_viewing": ["id", "user_id", "film_id", "film_title", "poster_path",
-                      "year", "created_at", "updated_at", "private_notes",
-                      "viewing_history", "view_count", "viewing_id"]
-  }'::jsonb;
+    AS $$
+  SELECT '{
+    "archived": {
+      "watched_date":     {"key": "date",            "fallback": null},
+      "rating":           {"key": "rating",          "fallback": 0},
+      "review":           {"key": "review",          "fallback": ""},
+      "format":           {"key": "format",          "fallback": "digital"},
+      "status":           {"key": "status",          "fallback": "watched"},
+      "is_spoiler":       {"key": "isSpoiler",       "fallback": false},
+      "watched_with":     {"key": "watchedWith",     "fallback": null},
+      "abandoned_reason": {"key": "abandonedReason", "fallback": null},
+      "physical_media":   {"key": "physicalMedia",   "fallback": null},
+      "is_autopsied":     {"key": "isAutopsied",     "fallback": false},
+      "autopsy":          {"key": "autopsy",         "fallback": null},
+      "alt_poster":       {"key": "altPoster",       "fallback": null},
+      "editorial_header": {"key": "editorialHeader", "fallback": null},
+      "drop_cap":         {"key": "dropCap",         "fallback": false},
+      "pull_quote":       {"key": "pullQuote",       "fallback": ""},
+      "video_url":        {"key": "videoUrl",        "fallback": null}
+    },
+    "not_a_viewing": ["id", "user_id", "film_id", "film_title", "poster_path",
+                      "year", "created_at", "updated_at", "private_notes",
+                      "viewing_history", "view_count", "viewing_id"]
+  }'::jsonb;
 $$;
 
 
@@ -4258,13 +4258,13 @@ $$;
 CREATE FUNCTION public.viewing_fields_uncovered() RETURNS text[]
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT COALESCE(array_agg(a.attname ORDER BY a.attnum), '{}'::text[])
-    FROM pg_attribute a
-   WHERE a.attrelid = 'public.logs'::regclass
-     AND a.attnum > 0 AND NOT a.attisdropped
-     AND NOT (public.viewing_fields()->'archived' ? a.attname)
-     AND NOT (public.viewing_fields()->'not_a_viewing' @> to_jsonb(a.attname));
+    AS $$
+  SELECT COALESCE(array_agg(a.attname ORDER BY a.attnum), '{}'::text[])
+    FROM pg_attribute a
+   WHERE a.attrelid = 'public.logs'::regclass
+     AND a.attnum > 0 AND NOT a.attisdropped
+     AND NOT (public.viewing_fields()->'archived' ? a.attname)
+     AND NOT (public.viewing_fields()->'not_a_viewing' @> to_jsonb(a.attname));
 $$;
 
 
@@ -4275,12 +4275,12 @@ $$;
 CREATE FUNCTION public.viewing_note_remove(p_viewing_id uuid) RETURNS void
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
-  END IF;
-  DELETE FROM public.log_private_notes WHERE viewing_id = p_viewing_id AND user_id = auth.uid();
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+  DELETE FROM public.log_private_notes WHERE viewing_id = p_viewing_id AND user_id = auth.uid();
 END $$;
 
 
@@ -4291,30 +4291,30 @@ END $$;
 CREATE FUNCTION public.viewing_note_set(p_log_id uuid, p_viewing_id uuid, p_notes text) RETURNS void
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v text := NULLIF(btrim(COALESCE(p_notes, '')), '');
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
-  END IF;
-
-  IF v IS NULL THEN
-    DELETE FROM public.log_private_notes WHERE viewing_id = p_viewing_id AND user_id = auth.uid();
-    RETURN;
-  END IF;
-  IF char_length(v) > 1000 THEN
-    RAISE EXCEPTION 'A note holds 1,000 characters at most.' USING ERRCODE = '22001';
-  END IF;
-
-  INSERT INTO public.log_private_notes (log_id, viewing_id, user_id, notes, updated_at)
-  VALUES (p_log_id, p_viewing_id, auth.uid(), v, now())
-  ON CONFLICT (viewing_id) DO UPDATE
-    SET notes = EXCLUDED.notes, updated_at = now()
-    WHERE public.log_private_notes.user_id = auth.uid();
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'That viewing is not yours.' USING ERRCODE = '42501';
-  END IF;
+    AS $$
+DECLARE v text := NULLIF(btrim(COALESCE(p_notes, '')), '');
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  IF v IS NULL THEN
+    DELETE FROM public.log_private_notes WHERE viewing_id = p_viewing_id AND user_id = auth.uid();
+    RETURN;
+  END IF;
+  IF char_length(v) > 1000 THEN
+    RAISE EXCEPTION 'A note holds 1,000 characters at most.' USING ERRCODE = '22001';
+  END IF;
+
+  INSERT INTO public.log_private_notes (log_id, viewing_id, user_id, notes, updated_at)
+  VALUES (p_log_id, p_viewing_id, auth.uid(), v, now())
+  ON CONFLICT (viewing_id) DO UPDATE
+    SET notes = EXCLUDED.notes, updated_at = now()
+    WHERE public.log_private_notes.user_id = auth.uid();
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'That viewing is not yours.' USING ERRCODE = '42501';
+  END IF;
 END $$;
 
 
@@ -4325,9 +4325,9 @@ END $$;
 CREATE FUNCTION public.viewing_set_list() RETURNS text
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $_$
-  SELECT string_agg(format('%I = ($4::public.logs).%I', col, col), ', ' ORDER BY col)
-    FROM jsonb_object_keys(public.viewing_fields()->'archived') AS col;
+    AS $_$
+  SELECT string_agg(format('%I = ($4::public.logs).%I', col, col), ', ' ORDER BY col)
+    FROM jsonb_object_keys(public.viewing_fields()->'archived') AS col;
 $_$;
 
 
@@ -4338,16 +4338,16 @@ $_$;
 CREATE FUNCTION public.withdraw_lounge_message(p_message_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE v_author uuid; v_lounge uuid; v_creator uuid;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  SELECT user_id, lounge_id INTO v_author, v_lounge FROM public.lounge_messages WHERE id = p_message_id;
-  IF v_author IS NULL THEN RETURN; END IF;
-  SELECT creator_id INTO v_creator FROM public.lounges WHERE id = v_lounge;
-  IF auth.uid() IS DISTINCT FROM v_author AND auth.uid() IS DISTINCT FROM v_creator THEN
-    RAISE EXCEPTION 'You can only withdraw your own dispatch'; END IF;
-  UPDATE public.lounge_messages SET content = '', deleted_at = now() WHERE id = p_message_id;
+    AS $$
+DECLARE v_author uuid; v_lounge uuid; v_creator uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  SELECT user_id, lounge_id INTO v_author, v_lounge FROM public.lounge_messages WHERE id = p_message_id;
+  IF v_author IS NULL THEN RETURN; END IF;
+  SELECT creator_id INTO v_creator FROM public.lounges WHERE id = v_lounge;
+  IF auth.uid() IS DISTINCT FROM v_author AND auth.uid() IS DISTINCT FROM v_creator THEN
+    RAISE EXCEPTION 'You can only withdraw your own dispatch'; END IF;
+  UPDATE public.lounge_messages SET content = '', deleted_at = now() WHERE id = p_message_id;
 END $$;
 
 
