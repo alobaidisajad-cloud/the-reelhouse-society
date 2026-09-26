@@ -97,7 +97,13 @@ jobs:
         env:
           SNAPSHOT_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
           SNAPSHOT_SAME_MAJOR: '1'
-        run: node mobile/scripts/schema-snapshot.mjs --check
+        run: |
+          set +e
+          node mobile/scripts/schema-snapshot.mjs --check > "$RUNNER_TEMP/fidelity.txt" 2>&1
+          rc=$?
+          cat "$RUNNER_TEMP/fidelity.txt"
+          [ $rc -eq 0 ] || node mobile/e2e/annotate.mjs "E2E fidelity — the copy differs from production" "$RUNNER_TEMP/fidelity.txt"
+          exit $rc
 
       - name: Keys for the local stack
         working-directory: mobile/e2e
