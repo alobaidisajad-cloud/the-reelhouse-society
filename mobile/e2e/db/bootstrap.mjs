@@ -106,15 +106,31 @@ runSql('6. the empty migration ledger', AS_ADMIN, `
 // inside every container. Fire one and read how pg_net says it ended.
 const pushUrl = /url\s*:=\s*'(https:\/\/[^']+)'/.exec(dump)?.[1];
 if (!pushUrl) fail('7. sealed', 'could not find the push sender\'s URL in live-schema.sql — has it moved?');
-const id = query(AS_ADMIN, `SELECT net.http_post(url := '${pushUrl}', body := '{"e2e":"seal check"}'::jsonb)`);
-let outcome = '';
-for (let i = 0; i < 40 && !outcome; i++) {
-  execFileSync('sleep', ['0.5']);
-  outcome = query(AS_ADMIN, `SELECT coalesce(status_code::text, '') || '|' || coalesce(error_msg, '') FROM net._http_response WHERE id = ${Number(id)}`);
-}
-if (!outcome) fail('7. sealed', `pg_net never answered request ${id} — cannot tell whether it reached production`);
-const [status, error] = outcome.split('|');
-if (status) fail('7. sealed', `the database reached ${new URL(pushUrl).host} (HTTP ${status}). The world is NOT sealed.`);
-console.log(`→ 7. sealed: the push sender cannot reach ${new URL(pushUrl).host} (${error.slice(0, 80)})`);
+
+/** Fire one request from inside the database; return how pg_net says it ended. */
+const probe = (url) => {
+  const id = Number(query(AS_ADMIN, `SELECT net.http_post(url := '${url}', body := '{"e2e":"seal check"}'::jsonb)`));
+  for (let i = 0; i < 60; i++) {
+    execFileSync('sleep', ['0.5']);
+    const row = query(AS_ADMIN, `SELECT coalesce(status_code::text, '') || '|' || coalesce(error_msg, '') FROM net._http_response WHERE id = ${id}`);
+    if (row) { const [status, error] = row.split('|'); return { status, error }; }
+  }
+  return null;
+};
+const sealedAgainst = (label, url) => {
+  const r = probe(url);
+  if (!r) fail('7. sealed', `pg_net never answered ${label} — cannot tell whether it reached production`);
+  if (r.status) fail('7. sealed', `the database reached ${label} (HTTP ${r.status}). The world is NOT sealed.`);
+  console.log(`→ 7. sealed against ${label}: ${r.error.slice(0, 70)}`);
+};
+// By name — the call the push sender really makes.
+sealedAgainst(new URL(pushUrl).host, pushUrl);
+// By address — the firewall, for a container that ignores the hosts file.
+// Plain http on purpose: a connection that got through is answered with a
+// status by Cloudflare, where https to a bare address would fail on the
+// certificate and look blocked.
+const ips = (process.env.E2E_PROD_IPS ?? '').split(',').filter(Boolean);
+if (!ips.length) fail('7. sealed', 'E2E_PROD_IPS is empty — e2e.yml must seal the addresses before bootstrap runs');
+for (const ip of ips) sealedAgainst(`${ip} (an address of ${new URL(pushUrl).host})`, `http://${ip}/`);
 
 console.log('\n✓ The E2E database is production\'s shape, and it cannot reach production.');

@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: '24'
 
-      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:
           version: 2.118.0
 
@@ -60,22 +60,35 @@ jobs:
         working-directory: mobile/e2e
         run: supabase start -x studio,imgproxy,logflare,vector,supavisor,postgres-meta
 
-      - name: Seal it — production's host goes nowhere, on the runner and in every container
+      # Two locks, so no container has to be trusted to behave:
+      #   · the firewall rejects every address production's host resolves to, for
+      #     ALL container traffic (DOCKER-USER) — including containers with no
+      #     shell, and ones that start later (the functions runtime)
+      #   · production's name points at 0.0.0.0 on the runner, and inside every
+      #     container that has a shell to write it with
+      # Proved twice: here from the runner, and in bootstrap from inside the database.
+      - name: Seal it — production's host goes nowhere, from the runner or any container
         run: |
           HOST=$(node -e "console.log(new URL(require('./mobile/eas.json').build.production.env.EXPO_PUBLIC_SUPABASE_URL).hostname)")
           echo "E2E_PROD_HOST=$HOST" >> "$GITHUB_ENV"
+          V4=$(getent ahostsv4 "$HOST" | awk '{print $1}' | sort -u)
+          V6=$(getent ahostsv6 "$HOST" | awk '{print $1}' | grep ':' | sort -u || true)
+          [ -n "$V4" ] || { echo "::error title=E2E seal::could not resolve $HOST to seal it"; exit 1; }
+          # Containers only. Production sits behind Cloudflare, whose addresses are
+          # shared with other sites; the runner itself keeps them for its own tools.
+          for ip in $V4; do sudo iptables -I DOCKER-USER -d "$ip" -j REJECT; done
+          for ip in $V6; do sudo ip6tables -I DOCKER-USER -d "$ip" -j REJECT 2>/dev/null || true; done
+          echo "E2E_PROD_IPS=$(echo $V4 | tr ' ' ',')" >> "$GITHUB_ENV"
+          echo "firewalled $(echo $V4 $V6 | wc -w) address(es) of $HOST for every container"
           echo "0.0.0.0 $HOST" | sudo tee -a /etc/hosts > /dev/null
           for c in $(docker ps --format '{{.Names}}' | grep reelhouse-e2e); do
-            if docker exec -u root "$c" sh -c "echo '0.0.0.0 $HOST' >> /etc/hosts" 2>/dev/null; then
-              echo "sealed $c"
-            else
-              echo "::error title=E2E seal::could not seal container $c"; exit 1
-            fi
+            docker exec -u root "$c" sh -c "echo '0.0.0.0 $HOST' >> /etc/hosts" 2>/dev/null \
+              && echo "named away in $c" || echo "no shell in $c — the firewall covers it"
           done
           if curl -sS -m 5 -o /dev/null "https://$HOST"; then
-            echo "::error title=E2E seal::the runner can still reach $HOST"; exit 1
+            echo "::error title=E2E seal::the runner can still reach $HOST by name"; exit 1
           fi
-          echo "The runner cannot reach $HOST."
+          echo "The runner cannot reach $HOST by name; bootstrap proves no container can reach any of its addresses."
 
       - name: Build production's shape from the snapshot
         run: node mobile/e2e/db/bootstrap.mjs
@@ -106,10 +119,10 @@ jobs:
             sleep 2
           done
           [ "$code" = "200" ] || { echo "::error title=E2E functions::the functions never came up"; cat "$RUNNER_TEMP/functions.log"; exit 1; }
-          # The runtime is a new container; seal it too.
+          # The runtime is a new container; the firewall already covers it. Name the host away too.
           for c in $(docker ps --format '{{.Names}}' | grep -i edge_runtime); do
-            docker exec -u root "$c" sh -c "echo '0.0.0.0 $E2E_PROD_HOST' >> /etc/hosts" || { echo "::error title=E2E seal::could not seal $c"; exit 1; }
-            echo "sealed $c"
+            docker exec -u root "$c" sh -c "echo '0.0.0.0 $E2E_PROD_HOST' >> /etc/hosts" 2>/dev/null \
+              && echo "named away in $c" || echo "no shell in $c — the firewall covers it"
           done
 
       - name: The functions answer as the app needs
@@ -129,7 +142,7 @@ jobs:
 
       - name: Keep the logs of a failed run
         if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: e2e-world-logs
           path: ${{ runner.temp }}/functions.log
