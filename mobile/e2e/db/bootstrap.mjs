@@ -83,10 +83,17 @@ runSql('2. public (live-schema.sql), as postgres', AS_POSTGRES, lines.filter((l)
 runSql(`3. ${adminLines.length} default-privilege rules for supabase_admin`, AS_ADMIN, adminLines.join('\n'));
 
 // ── 4. everything outside public ─────────────────────────────────────────────
-// As postgres: in production postgres owns the event trigger, the realtime
-// publication and the cron job. (Supabase refuses a superuser-owned event
-// trigger that runs a postgres-owned function, which is how this was found.)
-runSql('4. outside public (live-outside-public.sql), as postgres', AS_POSTGRES, read('live-outside-public.sql'));
+// As postgres: in production postgres owns the event trigger and the realtime
+// publication (Supabase refuses a superuser-owned event trigger that runs a
+// postgres-owned function, which is how this was found). Except the scheduled
+// jobs: pg_cron lets only the superuser create a job in another role's name,
+// and each job records the role it runs as — postgres — exactly as production.
+const outside = read('live-outside-public.sql');
+const sections = outside.split(/^(?=-- ── )/m);
+const isJobs = (s) => s.startsWith('-- ── scheduled jobs');
+if (sections.filter(isJobs).length !== 1) fail('4. outside public', 'expected exactly one "scheduled jobs" section in live-outside-public.sql');
+runSql('4a. outside public (live-outside-public.sql), as postgres', AS_POSTGRES, sections.filter((s) => !isJobs(s)).join(''));
+runSql('4b. scheduled jobs, as supabase_admin (each runs as the role it names)', AS_ADMIN, sections.find(isJobs));
 
 // ── 5. vault stand-ins ────────────────────────────────────────────────────────
 // Production's secrets never leave production. Each name the snapshot records
