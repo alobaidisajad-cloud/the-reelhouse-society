@@ -23,11 +23,17 @@ import PressableScale from '@/src/components/PressableScale';
 import { ActivityCard } from '@/src/components/feed/ActivityCard';
 import { FeedItemSchema, type FeedItem } from '@/src/schemas/feed.schema';
 import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
+import { logCountsSelect, withLogCountFilters } from '@/src/services/logCounts';
+import { tellMarks } from '@/src/stores/tellMarks';
+import { useAuthStore } from '@/src/stores/auth';
 
 const PAGE_SIZE = 20;
 
-const LOG_COLUMNS =
-  'id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role)';
+// The Reel's columns, the Reel's two counts and the viewer's own mark: this
+// page draws the Reel's own card, and a card is not whole without the numbers
+// on its bar and the right heart.
+const LOG_COLUMNS = (viewerId: string | null) =>
+  `id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role), ${logCountsSelect(viewerId)}`;
 
 interface RawLogRow {
   [key: string]: unknown;
@@ -56,9 +62,11 @@ export default function FilmReviewsScreen() {
       setLoading(true);
     }
 
-    const { data } = await supabase
+    const askedAt = Date.now();
+    const viewer = useAuthStore.getState().user?.id ?? null;
+    const { data } = await withLogCountFilters(supabase
       .from('logs')
-      .select(LOG_COLUMNS)
+      .select(LOG_COLUMNS(viewer)), viewer)
       .eq('film_id', filmId)
       .not('review', 'is', null)
       .neq('review', '')
@@ -80,6 +88,7 @@ export default function FilmReviewsScreen() {
           return parsed.success ? parsed.data : null;
         })
         .filter((x): x is FeedItem => x !== null);
+      tellMarks('log', mapped.map((i) => ({ id: i.id, certify: i.certify_count, critique: i.critique_count, certified: i.certified })), askedAt);
 
       // HOOK-8 parity with the Reel: blocked/muted members stay invisible.
       const visible = filterContentByBlocks(mapped, (r) => r.user_id ?? '');

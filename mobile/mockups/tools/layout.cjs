@@ -13,6 +13,11 @@
  *            link, `Daring...Unforgettable...`. The phone breaks such a word
  *            mid-letter (or shrinks it below the type floor), so it is a
  *            fault at every size, and it is checked before any shrink.
+ *   HANG     a mark's count (MarkFigure) that touches its icon, runs past its
+ *            reach (its own column, or for an 'open' bar the next icon), is
+ *            cut short, or was shrunk below the 10pt floor. None of those is a
+ *            text box crossing a clipping ancestor, so CUT and CLASH cannot
+ *            see them.
  *
  * What is NOT a fault, because the phone does it on purpose:
  *   · a one-line text that ellipsises, or a clamped one — the clamp IS the
@@ -22,15 +27,18 @@
  *     its floor does not fit;
  *   · anything inside a scroller, which is reached by scrolling.
  *
- *   node mockups/tools/layout.cjs [--src DIR] [--only a,b] [--skip c,d] [--passes ios@1,android@2] [--shorts] [--json OUT]
+ *   node mockups/tools/layout.cjs [--src DIR] [--only a,b] [--skip c,d] [--passes ios@1,android@2] [--width 360] [--shorts] [--json OUT]
  *   exits 1 when anything is found.
  */
 const fs = require('fs');
 const path = require('path');
-const { chromium, open, shrinkToFit, screens, MOBILE } = require('./harness.cjs');
+const { chromium, open, shrinkToFit, screens, MOBILE, WIDTH } = require('./harness.cjs');
 
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
+// The phone's width. 360 is the narrowest the app targets — see harness.open
+// for which renders are honest at a width other than the one they were made at.
+const PHONE_W = Number(opt('width', WIDTH));
 const SRC = path.resolve(opt('src', path.join(MOBILE, 'mockups', 'out', 'screens')));
 const ONLY = opt('only') ? opt('only').split(',') : null;
 // Plates that are not the app: a proposal kept for comparison, never shipped.
@@ -247,6 +255,45 @@ async function audit(page) {
         if (hit) found.push({ kind: 'CLASH', text: `${say(A.e)}  ×  ${say(B.e)}`, size: parseFloat(getComputedStyle(A.e).fontSize), by: `${hit.toFixed(1)}pt` });
       }
     }
+    // HANG: a mark's count, beside its icon. It is laid over the icon's line,
+    // absolutely, so nothing it does moves anything else — which is exactly
+    // why none of the checks above can see it go wrong. Its glyphs (a Range,
+    // not its box: a box stops where the ellipsis starts) must stand clear of
+    // the icon, end inside the column it belongs to, be whole, and be at least
+    // the type floor after the phone's shrink.
+    // A count's REACH (MarkFigure): `mark-count` stays inside its own column;
+    // `mark-count-open` may run on to the next column's icon, never onto it.
+    for (const hang of document.querySelectorAll('[data-t="mark-count"], [data-t="mark-count-open"]')) {
+      const t = hang.querySelector('span[data-scale-cap]');
+      if (!t || opacityOf(t) <= 0.05) continue;
+      const figure = hang.parentElement;
+      const icon = [...figure.children].find((c) => c !== hang);
+      const column = figure.parentElement;
+      const r = document.createRange(); r.selectNodeContents(t);
+      const q = r.getBoundingClientRect();
+      if (parked(q)) continue;
+      // The icon at REST. A capture can freeze the certify pulse mid-way (the
+      // heart at 1.15× for 160ms), and a transformed box is not the layout.
+      // offsetWidth ignores transforms; the icon is centred in the figure.
+      const fb = figure.getBoundingClientRect();
+      const ib = icon ? { right: fb.left + fb.width / 2 + icon.offsetWidth / 2 } : null;
+      const cb = column.getBoundingClientRect();
+      let limit = cb.right, past = 'past its column';
+      if (hang.dataset.t === 'mark-count-open') {
+        const nextFirst = column.nextElementSibling && column.nextElementSibling.firstElementChild;
+        const nextIcon = nextFirst && nextFirst.dataset.t === 'mark-figure' ? nextFirst.firstElementChild : nextFirst;
+        if (nextIcon) { limit = nextIcon.getBoundingClientRect().left - 1; past = 'into the next icon'; }
+      }
+      const size = parseFloat(getComputedStyle(t).fontSize);
+      const why = [];
+      if (ib && q.left < ib.right + 1) why.push(`${(ib.right + 1 - q.left).toFixed(1)}pt into its icon`);
+      if (q.right > limit + 0.5) why.push(`${(q.right - limit).toFixed(1)}pt ${past}`);
+      // Unrounded: scrollWidth/clientWidth are whole pixels and read a figure
+      // 0.1pt too wide for its box as fitting, while it is drawn "99…".
+      if (q.width > t.getBoundingClientRect().width + 0.05) why.push('cut short');
+      if (size < 10 - 0.01) why.push('below the 10pt floor');
+      if (why.length) found.push({ kind: 'HANG', text: say(t), size, by: why.join(', ') });
+    }
     return { found, texts: texts.length, invisible };
   }, SHORTS);
 }
@@ -257,11 +304,11 @@ async function audit(page) {
   let faults = 0;
   for (const name of screens(SRC, ONLY).filter((n) => !SKIP.includes(n))) {
     for (const { platform, f } of PASSES) {
-      const page = await open(browser, path.join(SRC, name + '.html'), { factor: f, platform });
+      const page = await open(browser, path.join(SRC, name + '.html'), { factor: f, platform, width: PHONE_W });
       // The whole page in view, so "which text is on top here" can be asked
       // anywhere on it, not only in the first screenful.
       const h = await page.evaluate(() => document.documentElement.scrollHeight);
-      await page.setViewportSize({ width: 390, height: Math.min(h, 16000) });
+      await page.setViewportSize({ width: PHONE_W, height: Math.min(h, 16000) });
       const r = await audit(page);
       await page.close();
       // iOS keeps the plain key, so reports written before Android was measured still compare.

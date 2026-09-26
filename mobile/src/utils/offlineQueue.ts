@@ -23,6 +23,7 @@ import { applyIdMapToPayload, executeMutation } from './mutationExecutor';
 import { isNetworkError, isTransientError } from './networkError';
 import reelToast from './reelToast';
 import { queryClient } from '../lib/queryClient';
+import { settleDelivered } from '../stores/markCounts';
 
 export interface QueuedMutation {
     id: string;
@@ -329,6 +330,16 @@ export async function flushOfflineQueue() {
     // or staleness checks are also removed from storage at the end, not just ones that
     // pass through executeMutation.
     const processedIds = new Set<string>();
+    /**
+     * A mutation the loop has finished with — delivered, already on the server,
+     * or refused for good. From this moment the server's answer is the truth
+     * about it, so a certify or critique tap that waited in the queue stops
+     * standing in for it (markCounts: an answer asked after this includes it).
+     */
+    const finished = (m: QueuedMutation) => {
+        processedIds.add(m.id);
+        settleDelivered(m);
+    };
 
     // Partition queue by ownership — only execute mutations
     // belonging to the currently authenticated user. Orphaned mutations from
@@ -409,7 +420,7 @@ export async function flushOfflineQueue() {
                         ...mutation,
                         payload: { ...mutation.payload, _failReason: `schema: ${parseResult.error.message}`, _failedAt: new Date().toISOString() }
                     });
-                    processedIds.add(mutation.id);
+                    finished(mutation);
                     continue;  // Skip to next mutation
                 }
             }
@@ -419,7 +430,7 @@ export async function flushOfflineQueue() {
             }
             successCount++;
             if (SOCIAL_MUTATION_TYPES.has(mutation.type)) socialMutationSynced = true;
-            processedIds.add(mutation.id);
+            finished(mutation);
         } catch (error: unknown) {
             const errMsg = (typeof error === 'object' && error !== null && 'message' in error)
                 ? String((error as any).message)
@@ -469,7 +480,7 @@ export async function flushOfflineQueue() {
                     ...mutation,
                     payload: { ...mutation.payload, _failReason: `schema: ${errMsg}`, _failedAt: new Date().toISOString() },
                 });
-                processedIds.add(mutation.id);
+                finished(mutation);
             } else if (errorClass === 'duplicate') {
                 // Genuine unique violation — the row is already there, so the write
                 // has effectively succeeded and the mutation can be dropped.
@@ -479,7 +490,7 @@ export async function flushOfflineQueue() {
                 // anywhere in the text, which is how 42P10 got in — and would have let
                 // in any future error that merely mentions a unique constraint.
                 if (__DEV__) console.warn(`[OfflineSync] Discarding duplicate mutation: ${mutation.type}`);
-                processedIds.add(mutation.id);
+                finished(mutation);
             } else if (isTransientError(error)) {
                 // Transient server failure (5xx / 429 / 408 / retryable PG code): the
                 // write reached the server but failed temporarily. Preserve it and retry
@@ -491,7 +502,7 @@ export async function flushOfflineQueue() {
                     // mutation can't wedge the queue forever; the rest still get a chance.
                     logger.warn(`[OfflineSync] Transient failure on ${mutation.type} exhausted ${MAX_TRANSIENT_RETRIES} retries (status=${status}, code=${code}). Dead-lettering.`);
                     deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: `transient-exhausted: ${errMsg}`, _failedAt: new Date().toISOString() } });
-                    processedIds.add(mutation.id);
+                    finished(mutation);
                 } else {
                     // Bump the retry counter (persisted via retryBumps in the final write)
                     // and halt the flush to preserve causal ordering for dependent child
@@ -503,7 +514,7 @@ export async function flushOfflineQueue() {
             } else {
                 // Unknown failure — log to dead-letter queue for diagnostics
                 deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: errMsg, _failedAt: new Date().toISOString() } });
-                processedIds.add(mutation.id);
+                finished(mutation);
             }
         }
     }

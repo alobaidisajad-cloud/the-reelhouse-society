@@ -6,7 +6,7 @@ import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MoreHorizontal, Send, Trash2, User, X } from 'lucide-react-native';
+import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, User, X } from 'lucide-react-native';
 import { ActivityIndicator, Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,12 +14,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
+import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
+import { deckLabelProps } from '@/src/constants/textScaling';
+import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { tmdb } from '@/src/lib/tmdb';
 import { StackService } from '@/src/services/StackService';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useListStore } from '@/src/stores/films';
+import { tellMarks } from '@/src/stores/tellMarks';
 import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
 import { logger } from '@/src/utils/logger';
@@ -299,9 +303,14 @@ export default function StackDetailScreen() {
   const { data: stackQueryData, isLoading: stackQueryLoading, isError } = useQuery({
     queryKey: ['stack', id],
     queryFn: async () => {
+      // Taken BEFORE the request: see tellMarkCounts.
+      const askedAt = Date.now();
       try {
         const payload = await StackService.getStackFullPayload(id);
-        
+        // The stack's card on the Reel reads this count from the shared store,
+        // and the heart here is the server's answer about this member's mark.
+        tellMarks('list', [{ id, certify: payload.endorseCount, certified: payload.certified }], askedAt);
+
         const listDetail: ListDetail = {
           id: payload.id,
           title: payload.title,
@@ -443,6 +452,8 @@ export default function StackDetailScreen() {
    * is nudged instead, exactly as the comment list itself already is.
    */
   const critiqueCount = (stackQueryData?.list as { critiqueCount?: number | null } | null)?.critiqueCount ?? null;
+  // The critique sheet's chip: nothing for none or for unknown, `1.2K` past a thousand.
+  const sheetCount = formatCount(critiqueCount ?? 0);
 
   const blockUser = useBlockStore(s => s.blockUser);
   const muteUser = useBlockStore(s => s.muteUser);
@@ -939,30 +950,39 @@ export default function StackDetailScreen() {
 
               {/* ── ACTION BAR: Certify · Critic · Share to Lounge ── */}
               <Animated.View entering={FadeInDown.duration(600).delay(350).reduceMotion(ReduceMotion.System)} style={s.actionBar}>
-                <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel={isCertified ? "Uncertify stack" : "Certify stack"}>
-                  <View pointerEvents="none"><Heart size={16} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'} /></View>
-                  <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-                    {certifyCount > 0 ? `${certifyCount} ` : ''}{isCertified ? 'CERTIFIED' : 'CERTIFY'}
+                {/* The house's one bar anatomy (MarkFigure): the icon over its
+                    word, the count hanging beside the icon, and the same three
+                    icons the log's bar uses for the same three acts. This bar
+                    was a row of icon-then-words — `12 CRITIQUES` beside a
+                    speech bubble that everywhere else means LOUNGE. */}
+                <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isCertified }} accessibilityLabel={certifyLabel(certifyCount, isCertified, 'this stack')}>
+                  <MarkFigure iconSize={15} count={certifyCount} style={[s.actionLabel, isCertified && s.actionLabelActive]}>
+                    <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'} />
+                  </MarkFigure>
+                  <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} pointerEvents="none" {...deckLabelProps}>
+                    {isCertified ? 'CERTIFIED' : 'CERTIFY'}
                   </Text>
                 </PressableScale>
 
                 <View style={s.actionDivider} />
 
-                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: showComments }} accessibilityLabel={critiqueCount === null ? 'Critiques' : `${critiqueCount} ${critiqueCount === 1 ? 'critique' : 'critiques'}`}>
-                  <View pointerEvents="none"><MessageCircle size={14} color={showComments ? colors.sepia : colors.fog} /></View>
-                  {/* The count is null when the server could not be asked — the
-                      button then says CRITIQUES rather than a confident 0, since
-                      "none" and "we could not count" are different statements. */}
-                  <Text style={[s.actionLabel, showComments && s.actionLabelOpen]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-                    {critiqueCount ? `${critiqueCount} ` : ''}CRITIQUES
+                {/* The count is null when the server could not be asked — the
+                    bar then draws no number rather than a confident 0, since
+                    "none" and "we could not count" are different statements. */}
+                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: showComments }} accessibilityLabel={critiqueLabel(critiqueCount, 'Critiques')}>
+                  <MarkFigure iconSize={16} count={critiqueCount} style={[s.actionLabel, showComments && s.actionLabelOpen]}>
+                    <MessageSquare size={16} strokeWidth={2} color={showComments ? colors.sepia : colors.fog} />
+                  </MarkFigure>
+                  <Text style={[s.actionLabel, showComments && s.actionLabelOpen]} pointerEvents="none" {...deckLabelProps}>
+                    CRITIQUE
                   </Text>
                 </PressableScale>
 
                 <View style={s.actionDivider} />
 
                 <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Share to lounge">
-                  <View pointerEvents="none"><Send size={14} color={colors.fog} /></View>
-                  <Text style={s.actionLabel} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>LOUNGE</Text>
+                  <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
+                  <Text style={s.actionLabel} pointerEvents="none" {...deckLabelProps}>LOUNGE</Text>
                 </PressableScale>
               </Animated.View>
 
@@ -1016,9 +1036,10 @@ export default function StackDetailScreen() {
             <View style={s.critiqueHandleWrap}><View style={s.critiqueHandle} /></View>
             <View style={s.critiqueHead}>
               <Text style={s.critiqueTitle}>THE CRITIQUES</Text>
-              {critiqueCount !== null && (
-                <View style={s.critiqueCountChip}><Text style={s.critiqueCountText}>{critiqueCount}</Text></View>
-              )}
+              {/* No chip for none, and the house's one number format. */}
+              {sheetCount ? (
+                <View style={s.critiqueCountChip}><Text style={s.critiqueCountText}>{sheetCount}</Text></View>
+              ) : null}
               <PressableScale style={s.critiqueClose} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Close critiques">
                 <X size={16} color={colors.fog} />
               </PressableScale>
@@ -1210,8 +1231,9 @@ const s = StyleSheet.create({
   // The row's padding moved into the items, so each one IS the target: 48 by
   // its own geometry rather than a 36pt control wearing a halo neither
   // platform's accessibility layer can see.
-  actionItem: { flex: 1, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  actionLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog },
+  // Icon over word, as every bar in the house is laid out.
+  actionItem: { flex: 1, minHeight: 48, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 5 },
+  actionLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
   actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
 
   // ── Critiques Panel ──

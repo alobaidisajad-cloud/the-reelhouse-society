@@ -74,6 +74,8 @@ const PROFILE = { id: 'u1', username: 'morpho', role: 'archivist', avatar_url: n
 
 const STATES: [string, Record<string, unknown>][] = [
   ['log', { data: { log: LOG, profile: PROFILE, comments: [], commentTotal: 0 }, isLoading: false }],
+  // The bar with its counts, the widest the formatter makes on the narrowest column.
+  ['log-counts', { data: { log: LOG, profile: PROFILE, comments: [], commentTotal: 999_000, certifyCount: 999_000 }, isLoading: false }],
   // An Auteur's record: the crimson sheet over the same picture.
   ['log-auteur', { data: { log: LOG, profile: { ...PROFILE, role: 'auteur' }, comments: [], commentTotal: 0 }, isLoading: false }],
   // No picture at all: no backdrop, so no veil and no bloom.

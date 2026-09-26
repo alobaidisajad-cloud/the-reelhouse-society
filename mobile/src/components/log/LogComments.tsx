@@ -4,6 +4,7 @@ import { SectionDivider } from '@/src/components/Decorative';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import PressableScale from '@/src/components/PressableScale';
 import { formatDate } from '@/src/utils/timeAgo';
+import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
 import { isRTLText } from '@/src/utils/text';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { colors } from '@/src/theme/theme';
@@ -174,7 +175,9 @@ export default function LogComments({
   return (
     <SectionErrorBoundary fallbackMessage="Critiques could not be loaded.">
       <View style={s.commentsSection} onLayout={(e) => onSectionLayout?.(e.nativeEvent.layout.y)}>
-        <SectionDivider label={`CRITIQUES (${commentTotal ?? comments.length})`} />
+        {/* No count for none: `CRITIQUES (0)` is a number about nobody, and
+            every count in the house is hidden at zero. */}
+        <SectionDivider label={formatCount(commentTotal ?? comments.length) ? `CRITIQUES (${formatCount(commentTotal ?? comments.length)})` : 'CRITIQUES'} />
 
         {/* Compose at the top — file a critique, watch it appear right beneath. */}
         <View style={s.composeWrap}>

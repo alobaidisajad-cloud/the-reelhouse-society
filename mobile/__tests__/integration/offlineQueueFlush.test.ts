@@ -232,4 +232,26 @@ describe('Offline Queue Flush Integration', () => {
     // Queue should be empty
     expect(getOfflineQueue()).toHaveLength(0);
   });
+
+  it('a queued certify stops standing in for itself the moment the queue delivers it', async () => {
+    // markCounts: a tap queued offline stays on top of every count until
+    // delivered. If the queue never said so, the tap would sit on top forever
+    // and every card would count the member's certification twice.
+    const { beginTap, queueTap, resetMarkCounts, tellMarkCounts, selectMarkCount, useMarkCounts } =
+      jest.requireActual('@/src/stores/markCounts');
+    resetMarkCounts();
+    tellMarkCounts([{ id: 'log-abc-123', certify: 4 }], Date.now() - 1000);
+    const tap = beginTap('certify', 'log-abc-123', 1);
+    queueTap('certify', 'log-abc-123', tap);
+    enqueueMutation({
+      type: 'endorse_log',
+      payload: { user_id: 'test-user-id', type: 'endorse_log', target_log_id: 'log-abc-123' },
+    });
+
+    await flushOfflineQueue();
+
+    // Delivered: an answer asked after now carries it, and replaces the tap.
+    tellMarkCounts([{ id: 'log-abc-123', certify: 5 }], Date.now() + 10_000);
+    expect(selectMarkCount(useMarkCounts.getState(), 'certify', 'log-abc-123')).toBe(5);
+  });
 });

@@ -19,6 +19,42 @@ const yearCoercer = z.union([z.number(), z.string()])
     return isNaN(parsed) ? null : parsed;
   });
 
+/**
+ * A mark's count, however it travelled.
+ * ──────────────────────────────────────
+ * The feed functions return it as a plain integer column. A direct query asks
+ * PostgREST for an embedded count — `certify_count:interactions!…(count)` —
+ * which arrives as `[{ count: 12 }]`. Both are the same fact and both become a
+ * number here.
+ *
+ * ABSENT is null, never zero: a shipped function that predates the column, or
+ * a query that did not ask, has not said "nobody" — it has said nothing, and a
+ * bar then draws no count rather than a confident wrong one.
+ */
+export const markCount = z.unknown()
+  .optional()
+  .transform((v): number | null => {
+    const raw = Array.isArray(v) ? (v[0] as { count?: unknown } | undefined)?.count : v;
+    const n = typeof raw === 'string' ? Number(raw) : raw;
+    return typeof n === 'number' && Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
+  });
+
+/**
+ * The VIEWER's own certification of a log, however it travelled.
+ * ───────────────────────────────────────────────────────────────
+ * The feed functions return `certified` as a boolean (20260926_03); a direct
+ * query embeds it as a count of the viewer's certifications — `[{ count: 1 }]`.
+ * Absent is null: a signed-out read, or a source that did not ask, has said
+ * nothing about the viewer, and the heart is then left as it was.
+ */
+export const mineMark = z.unknown()
+  .optional()
+  .transform((v): boolean | null => {
+    if (typeof v === 'boolean') return v;
+    const n = markCount.parse(v);
+    return n === null ? null : n > 0;
+  });
+
 export const FeedItemSchema = z.object({
   id: z.union([z.string(), z.number()]).transform(String),
   user_id: z.string().optional(),
@@ -41,6 +77,9 @@ export const FeedItemSchema = z.object({
   autopsy: z.unknown().nullable().optional(),
   abandoned_reason: z.string().nullable().optional(),
   is_spoiler: z.boolean().nullable().optional(),
+  certify_count: markCount,
+  critique_count: markCount,
+  certified: mineMark,
 });
 
 export type FeedItem = z.infer<typeof FeedItemSchema>;
@@ -76,6 +115,9 @@ export const CommunityFeedRowSchema = z.object({
   is_autopsied: z.boolean().nullable(),
   autopsy: z.unknown().nullable(),
   is_spoiler: z.boolean().nullable().optional(),
+  certify_count: markCount,
+  critique_count: markCount,
+  certified: mineMark,
   profiles: z.union([
     ProfileJoinSchema,
     z.array(ProfileJoinSchema),
@@ -111,6 +153,11 @@ export const FollowingFeedRowSchema = z.object({
   is_autopsied: z.boolean().nullable(),
   autopsy: z.unknown().nullable(),
   is_spoiler: z.boolean().nullable().optional(),
+  // Added to both feed functions at the END of their columns: the counts by
+  // 20260926_01, the viewer's own mark by 20260926_03.
+  certify_count: markCount,
+  critique_count: markCount,
+  certified: mineMark,
 });
 
 export type FollowingFeedRow = z.infer<typeof FollowingFeedRowSchema>;

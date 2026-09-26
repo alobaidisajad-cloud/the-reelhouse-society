@@ -11,7 +11,8 @@ import {
   scaledTextProps, decorativeTextProps, displayTextProps,
 } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { formatCount, stillHeight, KIND_RULE, KIND_NAME, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { stillHeight, KIND_RULE, KIND_NAME, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
@@ -301,16 +302,17 @@ export const PaperActions = memo(function PaperActions({
         accessibilityRole="button"
         accessibilityState={{ selected: !!certified, disabled: !canMark }}
         accessibilityLabel={
-          !canMark ? 'Certify this. Members only'
-            : certified
-              ? `Certified. ${counted(certifyCount ?? 0, 'member has', 'members have')} certified this`
-              : 'Certify this'
+          // Why it cannot be pressed comes before how many have pressed it.
+          !canMark ? `Certify this. Members only${certifyCount > 0 ? `. ${counted(certifyCount, 'member has', 'members have')} certified this` : ''}`
+            : certifyLabel(certifyCount, !!certified)
         }>
-        <PaperStrike on={certified}>
-          <Heart size={15} strokeWidth={2}
-            color={certified ? colors.crimson : colors.fog}
-            fill={certified ? colors.crimson : 'transparent'} />
-        </PaperStrike>
+        <MarkFigure iconSize={15} count={certifyCount} reach="open" style={[p.actionLabel, certified && p.actionLabelOn]}>
+          <PaperStrike on={certified}>
+            <Heart size={15} strokeWidth={2}
+              color={certified ? colors.crimson : colors.fog}
+              fill={certified ? colors.crimson : 'transparent'} />
+          </PaperStrike>
+        </MarkFigure>
         <Text style={[p.actionLabel, certified && p.actionLabelOn]} {...actionLabelProps}>
           {certified ? 'CERTIFIED' : 'CERTIFY'}
         </Text>
@@ -318,8 +320,10 @@ export const PaperActions = memo(function PaperActions({
 
       <PressableScale style={p.action} hitSlop={SLOP} haptic
         onPress={onCritique}
-        accessibilityRole="button" accessibilityLabel={`Critique. ${counted(commentCount ?? 0, 'critique', 'critiques')}`}>
-        <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
+        accessibilityRole="button" accessibilityLabel={critiqueLabel(commentCount)}>
+        <MarkFigure iconSize={16} count={commentCount} reach="open" style={p.actionLabel}>
+          <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
+        </MarkFigure>
         <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE</Text>
       </PressableScale>
 
@@ -512,12 +516,9 @@ export const PaperPost = memo(function PaperPost({
             here: you cannot certify writing that no longer exists, share an
             empty page, or keep one.
 
-            Worse, the count. `PaperActions` carries counts only in its
-            accessibility labels; the visible number lives in the byline's
-            trailing slot — and a tombstone HAS no byline, so the critique
-            count was invisible. The whole reason this row survives is that the
-            conversation underneath it survives, and the page was making that
-            claim while showing no evidence of it.
+            The whole reason this row survives is that the conversation
+            underneath it survives, so its one control carries the count, in
+            the same place every bar in the house carries it: beside the icon.
 
             So: one control, and it says how many. */}
         <View style={p.actions}>
@@ -525,14 +526,14 @@ export const PaperPost = memo(function PaperPost({
             onPress={onCritique}
             accessibilityRole="button"
             accessibilityLabel={
-              `Critique. ${counted(commentCount ?? 0, 'critique remains', 'critiques remain')} under this filing`
+              (commentCount ?? 0) > 0
+                ? `Critique. ${counted(commentCount ?? 0, 'critique remains', 'critiques remain')} under this filing`
+                : 'Critique'
             }>
-            <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
-            <Text style={p.actionLabel} {...actionLabelProps}>
-              {formatCount(commentCount ?? 0)
-                ? counted(commentCount ?? 0, 'CRITIQUE', 'CRITIQUES', formatCount)
-                : 'CRITIQUE'}
-            </Text>
+            <MarkFigure iconSize={16} count={commentCount} style={p.actionLabel}>
+              <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
+            </MarkFigure>
+            <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE</Text>
           </PressableScale>
         </View>
       </View>
@@ -618,11 +619,9 @@ export const PaperPost = memo(function PaperPost({
                     onPress={onAuthor}
                     /**
                      * ── ONE SLOT, AND THE KIND CHOOSES WHAT GOES IN IT ─────
-                     * The stamp bar cannot carry counts — four equal quarters
-                     * have no room for `CERTIFIED 2.1K`. So the byline's
-                     * trailing slot, which already exists for facts that must
-                     * not truncate, carries the ONE fact that kind is defined
-                     * by:
+                     * The byline's trailing slot, which exists for facts that
+                     * must not truncate, carries the one fact a kind is
+                     * defined by:
                      *
                      *   a wire     its source. The house rule says a wire
                      *              carries its source; it belonged with the
@@ -630,19 +629,18 @@ export const PaperPost = memo(function PaperPost({
                      *              dateline goes — not orphaned on its own line
                      *              beneath the credit, where it read as debris.
                      *   a dossier  how long it takes to read.
-                     *   the rest   how much conversation it drew, which is the
-                     *              only count a reader needs at a glance. The
-                     *              certify count already orders the page under
-                     *              CERTIFIED, so it is already in the margin.
                      *
-                     * One fact, one home, chosen by kind — and it fills the
-                     * dead half of a line that was carrying a name and nothing
-                     * else.
+                     * The counts are NOT here. They sat here once, because the
+                     * bar drew no numbers; now every bar in the house carries
+                     * its counts beside their icons (MarkFigure), and a count
+                     * printed twice on one card is a card that cannot decide
+                     * where its numbers live. It also gave a long name back
+                     * the room the count was taking from it.
                      */
                     trailing={[
                       kind === 'wire' ? source?.toUpperCase()
                         : kind === 'dossier' ? readTime
-                        : commentCount ? counted(commentCount, 'CRITIQUE', 'CRITIQUES', formatCount) : null,
+                        : null,
                       edited ? 'EDITED' : null,
                     ].filter(Boolean).join(' · ') || undefined}
                   />

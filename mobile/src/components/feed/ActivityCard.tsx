@@ -266,6 +266,8 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
                 posterPath={item.poster_path ?? null}
                 year={item.year ?? undefined}
                 ownerUsername={item.username}
+                certifyCount={item.certify_count}
+                critiqueCount={item.critique_count}
               />
             </View>
 

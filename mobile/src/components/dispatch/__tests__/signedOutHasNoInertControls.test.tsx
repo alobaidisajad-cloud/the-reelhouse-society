@@ -48,7 +48,8 @@ describe('a control with no handler is disabled, not silent', () => {
     const { getByLabelText } = render(
       <PaperActions certifyCount={9} commentCount={2} onCritique={() => {}} onShare={() => {}} />,
     );
-    for (const label of ['Certify this. Members only', 'Save this. Members only']) {
+    // Why it cannot be pressed first, then how many have pressed it.
+    for (const label of ['Certify this. Members only. 9 members have certified this', 'Save this. Members only']) {
       const control = getByLabelText(label);
       expect(control.props.accessibilityState.disabled).toBe(true);
     }
@@ -63,7 +64,7 @@ describe('a control with no handler is disabled, not silent', () => {
     const { getByLabelText } = render(
       <PaperActions certifyCount={9} commentCount={2} onCertify={(n) => marked.push(n)} />,
     );
-    const control = getByLabelText('Certify this');
+    const control = getByLabelText('Certify this. 9 members have certified this');
     expect(control.props.accessibilityState.disabled).toBe(false);
     fireEvent.press(control);
     expect(marked).toEqual([true]);
@@ -119,7 +120,7 @@ describe('a control with no handler is disabled, not silent', () => {
       />,
     );
     expect(
-      getByLabelText('Certify this critique. Members only').props.accessibilityState.disabled,
+      getByLabelText('Certify this critique. Members only. 4 members have certified it').props.accessibilityState.disabled,
     ).toBe(true);
   });
 });

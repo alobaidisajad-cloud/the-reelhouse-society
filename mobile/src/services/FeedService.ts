@@ -9,6 +9,9 @@ import {
     StackFeedRowSchema,
 } from '@/src/schemas/feed.schema';
 
+import { tellMarks } from '@/src/stores/tellMarks';
+import { useAuthStore } from '@/src/stores/auth';
+import { logCountsSelect, withLogCountFilters } from '@/src/services/logCounts';
 import { buildSearchPattern } from '@/src/utils/searchPattern';
 import { logger } from '@/src/utils/logger';
 import { reportValidationTelemetry } from '@/src/utils/validateWithTelemetry';
@@ -90,6 +93,15 @@ function parseRowsSafely<T>(data: unknown[], schema: z.ZodType<T>, context: stri
  */
 const STACK_CARD_POSTERS = 4;
 
+/** Tell the shared count store what this page of logs said, and when it was asked. */
+function tellFeed(items: FeedItem[], askedAt: number): FeedItem[] {
+  tellMarks('log', items.map((i) => ({ id: i.id, certify: i.certify_count, critique: i.critique_count, certified: i.certified })), askedAt);
+  return items;
+}
+
+/** Who is asking — the viewer's own mark is only asked for when there is one. */
+const viewerId = (): string | null => useAuthStore.getState().user?.id ?? null;
+
 const ISO_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}(:?\d{2})?|Z)?$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -122,6 +134,8 @@ export const FeedService = {
   async getCommunityFeed({ pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}): Promise<FeedItem[]> {
     const limit = 40;
     const { cursorDate, cursorId } = parseCursor(pageParam);
+    // Taken BEFORE the request: see tellMarkCounts.
+    const askedAt = Date.now();
 
     // ── Strategy 1: Block-aware cursor RPC ──
     // Filters blocked/muted authors server-side so the page length used for
@@ -136,7 +150,7 @@ export const FeedService = {
       if (!rpcResult.error) {
         if (!rpcResult.data || rpcResult.data.length === 0) return [];
         const rows = parseRowsSafely(rpcResult.data, FollowingFeedRowSchema, 'getCommunityFeed.rpc');
-        return rows.map((d) => FeedItemSchema.parse(d));
+        return tellFeed(rows.map((d) => FeedItemSchema.parse(d)), askedAt);
       }
 
       const msg = rpcResult.error.message || '';
@@ -162,10 +176,12 @@ export const FeedService = {
     // `logs` carries column grants for anon rather than a table grant.)
     // (The old note here said
     // "deploy it to close that gap" — it was deployed, and the note outlived
-    // the work. Verified against pg_proc, 21 OUT columns matching
-    // FollowingFeedRowSchema field for field.)
-    let query = supabase.from('logs')
-      .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role)')
+    // the work. Verified against pg_proc, 23 OUT columns matching
+    // FollowingFeedRowSchema field for field — the last two, the counts,
+    // added by 20260926_01.)
+    const viewer = viewerId();
+    let query = withLogCountFilters(supabase.from('logs')
+      .select(`id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role), ${logCountsSelect(viewer)}`), viewer)
       .not('review', 'is', null).neq('review', '')
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -186,7 +202,7 @@ export const FeedService = {
 
     const rows = parseRowsSafely(data, CommunityFeedRowSchema, 'getCommunityFeed.direct');
 
-    return rows.map((d) => {
+    return tellFeed(rows.map((d) => {
       const profile = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
       const rawItem = {
         ...d,
@@ -195,7 +211,7 @@ export const FeedService = {
         role: profile?.role,
       };
       return FeedItemSchema.parse(rawItem);
-    });
+    }), askedAt);
   },
 
   /**
@@ -208,6 +224,8 @@ export const FeedService = {
   async getFollowingFeed({ pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}, fallbackFollowing?: string[]): Promise<FeedItem[]> {
     const limit = 40;
     const { cursorDate, cursorId } = parseCursor(pageParam);
+    // Taken BEFORE the request: see tellMarkCounts.
+    const askedAt = Date.now();
 
     // ── Strategy 1: Server-side cursor RPC ──
     try {
@@ -219,7 +237,7 @@ export const FeedService = {
 
       if (!rpcResult.error && rpcResult.data && rpcResult.data.length > 0) {
         const rows = parseRowsSafely(rpcResult.data, FollowingFeedRowSchema, 'getFollowingFeed.rpc');
-        return rows.map((d) => FeedItemSchema.parse(d));
+        return tellFeed(rows.map((d) => FeedItemSchema.parse(d)), askedAt);
       }
 
       if (rpcResult.error) {
@@ -254,8 +272,9 @@ export const FeedService = {
     if (profileError) throw new FeedServiceError(profileError);
     if (!profiles || profiles.length === 0) return [];
 
-    let query = supabase.from('logs')
-      .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role)')
+    const viewer = viewerId();
+    let query = withLogCountFilters(supabase.from('logs')
+      .select(`id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role), ${logCountsSelect(viewer)}`), viewer)
       .in('user_id', profiles.map(p => p.id))
       .not('review', 'is', null).neq('review', '')
       .order('created_at', { ascending: false })
@@ -276,7 +295,7 @@ export const FeedService = {
 
     // Direct query returns CommunityFeedRow shape (with profiles join)
     const rows = parseRowsSafely(data, CommunityFeedRowSchema, 'getFollowingFeed.direct');
-    return rows.map((d) => {
+    return tellFeed(rows.map((d) => {
       const profile = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
       return FeedItemSchema.parse({
         ...d,
@@ -284,7 +303,7 @@ export const FeedService = {
         avatar_url: profile?.avatar_url,
         role: profile?.role,
       });
-    });
+    }), askedAt);
   },
 
   /**
@@ -301,6 +320,15 @@ export const FeedService = {
 
     const limit = 60;
     const { cursorDate, cursorId } = parseCursor(pageParam);
+    // Taken BEFORE the request: see tellMarkCounts. A stack's card shows its
+    // certify count, and certifying on the stack's page moves it at once.
+    const askedAt = Date.now();
+    // The card draws no heart, so only the count is told (the stack's page
+    // learns the viewer's own mark when it opens).
+    const tellStacks = (stacks: StackData[]) => {
+      tellMarks('list', stacks.map((st) => ({ id: st.id, certify: st.certifyCount })), askedAt);
+      return stacks;
+    };
 
     // ── Strategy 1: Server-side cursor RPC ──
     try {
@@ -327,7 +355,7 @@ export const FeedService = {
         if (rpcResult.data.length === 0) return [];
 
         const stackRows = parseRowsSafely(rpcResult.data, StackFeedRowSchema, 'getStacksFeed.rpc');
-        return stackRows.map((l) => {
+        return tellStacks(stackRows.map((l) => {
           const rawStack = {
             id: l.id,
             title: l.title,
@@ -343,7 +371,7 @@ export const FeedService = {
             isRanked: l.is_ranked,
           };
           return StackDataSchema.parse(rawStack);
-        });
+        }));
       }
 
       if (rpcResult.error) {
@@ -442,7 +470,7 @@ export const FeedService = {
       }
     }
 
-    return lists.map((l: any) => {
+    return tellStacks(lists.map((l: any) => {
       const curator = Array.isArray(l.profiles) ? l.profiles[0]?.username : l.profiles?.username;
       const films = (itemsMap[l.id] ?? []).map((item) => ({
         id: item.film_id,
@@ -463,6 +491,6 @@ export const FeedService = {
         certifyCount: endorseMap[l.id] ?? 0,
         isRanked: l.is_ranked ?? false,
       });
-    });
+    }));
   }
 };

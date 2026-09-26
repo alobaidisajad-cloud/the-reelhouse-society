@@ -88,6 +88,10 @@ const feed = canon.slice(0, 8).map((f, i) => ({
   status: i === 4 ? 'rewatched' : 'watched', created_at: new Date(Date.now() - (i + 1) * 2 * 3600e3).toISOString(),
   editorial_header: null, pull_quote: null, drop_cap: i === 0, watched_with: null, is_autopsied: false, autopsy: null,
   abandoned_reason: null, is_spoiler: false,
+  // Every shape a count takes on a bar: none (drawn as nothing), one, a few,
+  // and the widest the formatter makes (`999K` fits the narrowest column).
+  certify_count: [12, 0, 1, 214, 2140, 999_000, 3, 0][i],
+  critique_count: [3, 0, 1, 31, 0, 9_900, 0, 58][i],
 }));
 whenRendering('reel generator', () => {
   it('writes the Reel', async () => {

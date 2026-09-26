@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { logger } from '@/src/utils/logger';
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
 import { captureError } from '@/src/lib/sentry';
+import { useAuthStore } from '@/src/stores/auth';
 
 const CommentPayloadSchema = z.object({
   list_id: z.string().uuid(),
@@ -55,7 +56,8 @@ const STACK_ITEMS_LIMIT = 500;
 
 export const StackService = {
   async getStackFullPayload(stackId: string) {
-    const [listRes, itemsRes, filmCountRes, endorseRes, critiqueCountRes] = await Promise.all([
+    const viewer = useAuthStore.getState().user?.id ?? null;
+    const [listRes, itemsRes, filmCountRes, endorseRes, critiqueCountRes, mineRes] = await Promise.all([
       supabase.from('lists')
         .select('id, title, description, user_id, is_private, is_ranked, created_at, profiles(username)')
         .eq('id', stackId)
@@ -87,6 +89,17 @@ export const StackService = {
       supabase.from('list_comments')
         .select('id', { count: 'exact', head: true })
         .eq('list_id', stackId),
+      // Whether THIS member certified it — the heart. It came from the index
+      // filled at sign-in with the member's newest 500 certifications, so an
+      // older one drew an empty heart. Head-only, beside the others: no extra
+      // round trip. A member always sees their own interactions under RLS.
+      viewer
+        ? supabase.from('interactions')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', viewer)
+          .eq('target_list_id', stackId)
+          .eq('type', 'endorse_list')
+        : Promise.resolve(null),
     ]);
 
     if (listRes.error) throw listRes.error;
@@ -143,6 +156,8 @@ export const StackService = {
       isRanked: listRes.data.is_ranked ?? false,
       // The RPC returns the count as `data`, not as PostgREST's `count` header.
       endorseCount: Number(endorseRes.data ?? 0) || 0,
+      // null when signed out or the question failed: the heart is left as it was.
+      certified: mineRes && !mineRes.error ? (mineRes.count ?? 0) > 0 : null,
     };
   },
 

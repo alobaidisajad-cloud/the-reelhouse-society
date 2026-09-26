@@ -307,18 +307,18 @@ describe('a member’s room', () => {
     mockRows = [filing({ certify_count: 5 })];
     const { getByLabelText, queryByLabelText } = await mount();
 
-    // Not certified: five is the house's total and the label does not carry it.
-    expect(getByLabelText('Certify this')).toBeTruthy();
+    // Not certified: five, the house's total.
+    expect(getByLabelText('Certify this. 5 members have certified this')).toBeTruthy();
 
     // Certified — six, immediately.
     await act(async () => { store({ certifiedIds: new Set(['f1']) }); });
-    expect(getByLabelText(/6 members have certified this/)).toBeTruthy();
+    expect(getByLabelText('Certified. 6 members have certified this')).toBeTruthy();
 
     // The write is refused and the store rolls its set back. The count has to
     // come back with it; an optimistic +1 held on this screen would not.
     await act(async () => { store({ certifiedIds: new Set() }); });
-    expect(queryByLabelText(/members have certified this/)).toBeNull();
-    expect(getByLabelText('Certify this')).toBeTruthy();
+    expect(queryByLabelText(/6 members/)).toBeNull();
+    expect(getByLabelText('Certify this. 5 members have certified this')).toBeTruthy();
   });
 
   it('does not count the member’s own certification twice', async () => {

@@ -4,9 +4,10 @@ import { supabase } from '../../lib/supabase';
 import { InteractionService } from '../../services/InteractionService';
 import { Interaction } from '../../types';
 import { isNetworkError } from '../../utils/networkError';
-import { enqueueMutation, flushOfflineQueue } from '../../utils/offlineQueue';
+import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { useAuthStore } from '../auth';
+import { beginTap, queueTap, settleTap, tappedSince, withdrawTap } from '../markCounts';
 
 // The implementation that used to live here is now shared — the watchlist had
 // the same problem and solved it by growing a map in Zustand state forever.
@@ -39,6 +40,12 @@ export interface InteractionSlice extends InteractionSliceData {
     toggleListEndorse: (listId: string) => Promise<void>;
     hasListEndorsed: (listId: string) => boolean;
     fetchListEndorsements: () => Promise<void>;
+
+    /**
+     * What the SERVER says about the member's own certification of each post
+     * it just sent (see the body for why this exists).
+     */
+    learnEndorsements: (kind: 'log' | 'list', rows: { id: string; certified: boolean | null | undefined }[], askedAt: number) => void;
 }
 
 export const createInteractionSlice: StateCreator<InteractionSlice, [], [], InteractionSlice> = (set, get) => ({
@@ -49,6 +56,8 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
             const user = useAuthStore.getState().user;
             if (!user) return;
             const exists = get()._endorsedIndex[targetId];
+            // Every bar showing this log's count moves with the heart, at once.
+            const tap = beginTap('certify', targetId, exists ? -1 : 1);
 
             if (exists) {
                 const current = get().interactions;
@@ -79,6 +88,7 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                     });
                     try { require('react-native').AccessibilityInfo.announceForAccessibility('Entry certified'); } catch { /* test env */ }
                 }
+                settleTap('certify', targetId, tap);
             } catch (e: any) {
                 // Two EXPECTED failures are excluded: 23505 is a duplicate row
                 // (idempotent success, handled just below) and a network error is
@@ -93,9 +103,12 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 if (!stillSignedIn(user.id)) return;
                 // Idempotent: silently succeed if the row already exists
                 if (e?.code === '23505') {
+                    // The server already held this certification — so every count
+                    // it has sent includes it, and the +1 would count it twice.
+                    withdrawTap('certify', targetId, tap);
                     return;
                 }
-                
+
                 if (isNetworkError(e)) {
                     // Queue BOTH add and remove for offline sync
                     if (exists) {
@@ -104,7 +117,11 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                         enqueueMutation({ type: 'endorse_log', payload: { user_id: user.id, type: 'endorse_log', target_log_id: targetId } });
                     }
                     flushOfflineQueue();
+                    // Queued, not delivered: it stays on top of every count until
+                    // the queue delivers it (markCounts.settleDelivered).
+                    queueTap('certify', targetId, tap);
                 } else {
+                    withdrawTap('certify', targetId, tap);
                     if (exists) {
                         set((state) => {
                             const next = [...state.interactions, exists];
@@ -168,6 +185,8 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
             const user = useAuthStore.getState().user;
             if (!user) return;
             const exists = get()._listEndorsedIndex[listId];
+            // The stack's card on the Reel moves with it (see markCounts).
+            const tap = beginTap('certify', listId, exists ? -1 : 1);
 
             if (exists) {
                 const next = get().interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list'));
@@ -194,6 +213,7 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                         target_list_id: listId,
                     });
                 }
+                settleTap('certify', listId, tap);
             } catch (e: any) {
                 // Two EXPECTED failures are excluded: 23505 is a duplicate row
                 // (idempotent success, handled just below) and a network error is
@@ -208,9 +228,11 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 if (!stillSignedIn(user.id)) return;
                 // Idempotent: silently succeed if the row already exists
                 if (e?.code === '23505') {
+                    // Already held by the server, so already in every count it sent.
+                    withdrawTap('certify', listId, tap);
                     return;
                 }
-                
+
                 if (isNetworkError(e)) {
                     // Queue BOTH add and remove for offline sync
                     if (exists) {
@@ -219,7 +241,9 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                         enqueueMutation({ type: 'endorse_list', payload: { user_id: user.id, type: 'endorse_list', target_list_id: listId } });
                     }
                     flushOfflineQueue();
+                    queueTap('certify', listId, tap);
                 } else {
+                    withdrawTap('certify', listId, tap);
                     // FIX 7: Race Condition in Rollback fix
                     if (exists) {
                         set((state) => {
@@ -242,6 +266,54 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
     },
 
     hasListEndorsed: (listId) => !!get()._listEndorsedIndex[listId],
+
+    /**
+     * ── THE HEART IS THE SERVER'S ANSWER, POST BY POST ─────────────────────
+     * The indexes above are filled once, at sign-in, with the member's newest
+     * 500 certifications. A member who certified a post before those 500 saw
+     * its heart empty — and tapping it "certified" it again. Loading every
+     * certification ever made to fix that grows without end; asking the server
+     * about exactly the posts on screen does not. So every fetch that brings
+     * posts (the Reel, a film's archive, a log's page, a stack's page) also
+     * brings, per post, whether THIS member certified it, and hands it here.
+     *
+     * Two things outrank the answer, both because the answer may predate them:
+     *   · a tap on that heart since the question was asked, or still in flight
+     *     (markCounts.tappedSince) — the member's latest act wins;
+     *   · a certify or un-certify for it still waiting in the offline queue,
+     *     which the server has not seen and survives a restart.
+     */
+    learnEndorsements: (kind, rows, askedAt) => {
+        const user = useAuthStore.getState().user;
+        if (!user || rows.length === 0) return;
+        const queued = new Set(
+            getOfflineQueue()
+                .filter((q) => q.type === 'endorse_log' || q.type === 'endorse_list' || q.type === 'remove_endorsement')
+                .map((q) => String((q.payload as Record<string, unknown>).target_log_id ?? (q.payload as Record<string, unknown>).target_list_id ?? '')),
+        );
+        const type = kind === 'log' ? ('endorse' as const) : ('endorse_list' as const);
+        set((state) => {
+            const key = kind === 'log' ? '_endorsedIndex' : '_listEndorsedIndex';
+            const idx: Record<string, Interaction> = { ...state[key] };
+            let interactions = state.interactions;
+            let changed = false;
+            for (const { id, certified } of rows) {
+                if (typeof certified !== 'boolean') continue;      // the source could not say
+                if (tappedSince('certify', id, askedAt) || queued.has(id)) continue;
+                if (certified && !idx[id]) {
+                    const i: Interaction = { type, targetId: id, timestamp: new Date(askedAt).toISOString() };
+                    idx[id] = i;
+                    interactions = [...interactions, i];
+                    changed = true;
+                } else if (!certified && idx[id]) {
+                    delete idx[id];
+                    interactions = interactions.filter((i) => !(i.targetId === id && i.type === type));
+                    changed = true;
+                }
+            }
+            return changed ? { [key]: idx, interactions } as Partial<InteractionSlice> : state;
+        });
+    },
 
     fetchListEndorsements: async () => {
         const user = useAuthStore.getState().user;

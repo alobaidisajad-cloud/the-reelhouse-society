@@ -73,9 +73,11 @@ function makeFeedRow(id: string, createdAt: string) {
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 /**
- * The RPC row is what the DEPLOYED function returns: 21 flat columns, checked
- * against pg_get_function_result for get_community_feed_auth_cursor. It has no
- * nested `profiles` — username, avatar_url and role come back flat.
+ * The RPC row is the deployed function's first 21 flat columns, checked against
+ * pg_get_function_result for get_community_feed_auth_cursor. It has no nested
+ * `profiles` — username, avatar_url and role come back flat. The two counts
+ * 20260926_01 added at the end are left off here on purpose, so this is also
+ * the row an older deploy sends; the counts' own tests below add them.
  */
 function makeRpcRow(id: string, createdAt: string) {
   return {
@@ -148,6 +150,8 @@ describe('Feed Flow Integration', () => {
 
     const feedChain: Record<string, jest.Mock> = {};
     feedChain.select = jest.fn().mockReturnValue(feedChain);
+    // `.eq` narrows the embedded certify count to certifications (logCounts).
+    feedChain.eq = jest.fn().mockReturnValue(feedChain);
     feedChain.not = jest.fn().mockReturnValue(feedChain);
     feedChain.neq = jest.fn().mockReturnValue(feedChain);
     feedChain.order = jest.fn().mockReturnValue(feedChain);
@@ -188,6 +192,7 @@ describe('Feed Flow Integration', () => {
     let callCount = 0;
     const feedChain: Record<string, jest.Mock> = {};
     feedChain.select = jest.fn().mockReturnValue(feedChain);
+    feedChain.eq = jest.fn().mockReturnValue(feedChain);
     feedChain.not = jest.fn().mockReturnValue(feedChain);
     feedChain.neq = jest.fn().mockReturnValue(feedChain);
     feedChain.order = jest.fn().mockReturnValue(feedChain);
@@ -316,6 +321,116 @@ describe('Feed Flow Integration', () => {
       const { FeedService } = require('@/src/services/FeedService');
       await expect(FeedService.getCommunityFeed({})).rejects.toThrow();
       expect(mockFrom).not.toHaveBeenCalled();
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // THE COUNTS EVERY CARD DRAWS
+  // 20260926_01 added certify_count and critique_count to both feed functions;
+  // the fallback asks PostgREST for the same two numbers as embedded counts.
+  // Both must reach the card, AND the shared store every bar reads.
+  // ══════════════════════════════════════════════════════════════════════════
+  describe('the counts every card draws', () => {
+    const { resetMarkCounts, selectMarkCount, useMarkCounts } = jest.requireActual('@/src/stores/markCounts');
+    const told = (id: string) => [
+      selectMarkCount(useMarkCounts.getState(), 'certify', id),
+      selectMarkCount(useMarkCounts.getState(), 'critique', id),
+    ];
+    beforeEach(() => resetMarkCounts());
+
+    it('carries the function’s two counts, and tells the store', async () => {
+      mockRpc.mockResolvedValue({
+        data: [{ ...makeRpcRow('log-1', '2024-06-01T10:00:00Z'), certify_count: 12, critique_count: 3 }],
+        error: null,
+      });
+      const { FeedService } = require('@/src/services/FeedService');
+      const [item] = await FeedService.getCommunityFeed({});
+      expect([item.certify_count, item.critique_count]).toEqual([12, 3]);
+      expect(told('log-1')).toEqual([12, 3]);
+    });
+
+    it('a function without the columns (an older deploy) says nothing, never zero', async () => {
+      mockRpc.mockResolvedValue({ data: [makeRpcRow('log-1', '2024-06-01T10:00:00Z')], error: null });
+      const { FeedService } = require('@/src/services/FeedService');
+      const [item] = await FeedService.getCommunityFeed({});
+      expect([item.certify_count, item.critique_count]).toEqual([null, null]);
+      expect(told('log-1')).toEqual([null, null]);
+    });
+
+    it('the fallback reads the embedded counts, narrowed to certifications', async () => {
+      const chain: Record<string, jest.Mock> = {};
+      for (const k of ['select', 'eq', 'not', 'neq', 'order', 'limit', 'or', 'lt']) chain[k] = jest.fn().mockReturnValue(chain);
+      chain.then = jest.fn((cb) => Promise.resolve(cb({
+        data: [{ ...makeFeedRow('log-2', '2024-06-01T10:00:00Z'), certify_count: [{ count: 4 }], critique_count: [{ count: 9 }] }],
+        error: null,
+      })));
+      mockFrom.mockImplementation(() => chain);
+      const { FeedService } = require('@/src/services/FeedService');
+      const [item] = await FeedService.getCommunityFeed({});
+      expect(chain.select.mock.calls[0][0]).toMatch(/certify_count:interactions!interactions_target_log_id_fkey\(count\)/);
+      expect(chain.select.mock.calls[0][0]).toMatch(/critique_count:log_comments!log_comments_log_id_fkey\(count\)/);
+      // Without this, the certify count counts retransmits and reactions too.
+      // By ALIAS: `interactions` is embedded twice when a member is signed in.
+      expect(chain.eq).toHaveBeenCalledWith('certify_count.type', 'endorse_log');
+      expect([item.certify_count, item.critique_count]).toEqual([4, 9]);
+      expect(told('log-2')).toEqual([4, 9]);
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // THE HEART IS THE SERVER'S ANSWER (20260926_03, learnEndorsements)
+  // ══════════════════════════════════════════════════════════════════════════
+  describe('the heart every card draws', () => {
+    const { useFilmStore } = jest.requireActual('@/src/stores/films');
+    const hearted = (id: string) => !!useFilmStore.getState()._endorsedIndex[id];
+    const { resetMarkCounts } = jest.requireActual('@/src/stores/markCounts');
+    const ME = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    beforeEach(() => {
+      resetMarkCounts();
+      useFilmStore.setState({ _endorsedIndex: {}, interactions: [] });
+      useAuthStore.setState({ user: { ...createMockUser(), id: ME } } as never);
+    });
+
+    it('fills from the feed row — however long ago the member certified it', async () => {
+      mockRpc.mockResolvedValue({
+        data: [
+          { ...makeRpcRow('log-old', '2024-06-01T10:00:00Z'), certify_count: 3, critique_count: 0, certified: true },
+          { ...makeRpcRow('log-new', '2024-06-01T09:00:00Z'), certify_count: 1, critique_count: 0, certified: false },
+        ],
+        error: null,
+      });
+      const { FeedService } = require('@/src/services/FeedService');
+      await FeedService.getCommunityFeed({});
+      expect([hearted('log-old'), hearted('log-new')]).toEqual([true, false]);
+    });
+
+    it('the fallback asks for the member’s own mark, each embed narrowed by its alias', async () => {
+      const chain: Record<string, jest.Mock> = {};
+      for (const k of ['select', 'eq', 'not', 'neq', 'order', 'limit', 'or', 'lt']) chain[k] = jest.fn().mockReturnValue(chain);
+      chain.then = jest.fn((cb) => Promise.resolve(cb({
+        data: [{ ...makeFeedRow('log-9', '2024-06-01T10:00:00Z'), certify_count: [{ count: 2 }], critique_count: [{ count: 0 }], certified: [{ count: 1 }] }],
+        error: null,
+      })));
+      mockFrom.mockImplementation(() => chain);
+      const { FeedService } = require('@/src/services/FeedService');
+      await FeedService.getCommunityFeed({});
+      expect(chain.select.mock.calls[0][0]).toMatch(/certified:interactions!interactions_target_log_id_fkey\(count\)/);
+      expect(chain.eq).toHaveBeenCalledWith('certify_count.type', 'endorse_log');
+      expect(chain.eq).toHaveBeenCalledWith('certified.type', 'endorse_log');
+      expect(chain.eq).toHaveBeenCalledWith('certified.user_id', ME);
+      expect(hearted('log-9')).toBe(true);
+    });
+
+    it('a visitor’s fallback does not ask for a mark nobody signed in could have', async () => {
+      useAuthStore.setState({ user: null } as never);
+      const chain: Record<string, jest.Mock> = {};
+      for (const k of ['select', 'eq', 'not', 'neq', 'order', 'limit', 'or', 'lt']) chain[k] = jest.fn().mockReturnValue(chain);
+      chain.then = jest.fn((cb) => Promise.resolve(cb({ data: [], error: null })));
+      mockFrom.mockImplementation(() => chain);
+      const { FeedService } = require('@/src/services/FeedService');
+      await FeedService.getCommunityFeed({});
+      expect(chain.select.mock.calls[0][0]).not.toMatch(/certified:/);
+      expect(chain.eq.mock.calls.map((c) => c[0])).toEqual(['certify_count.type']);
     });
   });
 });

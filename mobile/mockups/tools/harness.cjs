@@ -3,7 +3,10 @@
  * ──────────────────────────────────────────────────────────────────────────
  * A render (`mockups/out/screens/<name>.html`, or `mockups/paper/out/*.html`)
  * is an HTML fragment of the app's resolved tree. This lays it on a phone —
- * 390pt wide, the house colour behind it — with the app's OWN font files
+ * 390pt wide unless `width` says otherwise (360 is the narrowest the app
+ * targets; a box sized in JS from the window is still sized for 390, so only
+ * a layout made of flex alone is honest at another width), the house colour
+ * behind it — with the app's OWN font files
  * embedded (never a web font service: a measurement must not depend on a
  * network), and, when asked, at a larger text size exactly as the app allows
  * it: each text grows by the size it carries, capped by its own
@@ -95,8 +98,8 @@ const GROWTH = {
  * that is the one opened. The text in it is still at its base size (the phone
  * grows text natively, not in the style), so it is grown here just the same.
  */
-async function open(browser, file, { factor = 1, height = HEIGHT, platform = 'ios' } = {}) {
-  const page = await browser.newPage({ viewport: { width: WIDTH, height }, deviceScaleFactor: 1 });
+async function open(browser, file, { factor = 1, height = HEIGHT, platform = 'ios', width = WIDTH } = {}) {
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
   // A generator that lays a screen out at large sizes writes `@1.35` (iOS) and
   // `@android-1.35` / `@android-2`. iOS grows nothing past 1.35, so its larger
   // settings reuse `@1.35`.
@@ -106,7 +109,7 @@ async function open(browser, file, { factor = 1, height = HEIGHT, platform = 'io
   const html = fs.readFileSync(sized || file, 'utf8');
   await page.setContent(
     `<!doctype html><html><head><meta charset="utf-8"><style>${fonts()}${RN_RULES}</style></head>` +
-    `<body style="margin:0;background:${HOUSE}"><div class="phone" style="width:${WIDTH}px;min-height:${HEIGHT}px;position:relative;background:${HOUSE}">${html}</div></body></html>`,
+    `<body style="margin:0;background:${HOUSE}"><div class="phone" style="width:${width}px;min-height:${HEIGHT}px;position:relative;background:${HOUSE}">${html}</div></body></html>`,
     { waitUntil: 'load' },
   );
   await page.evaluate(() => document.fonts.ready);
@@ -167,17 +170,32 @@ async function shrinkToFit(page) {
       }
       // No tolerance: a label a fraction of a point too wide is still drawn with
       // "…" — the phone shrinks it that last fraction, so this does too.
-      return (e.scrollWidth <= e.clientWidth && e.scrollHeight <= e.clientHeight) || getComputedStyle(e).display === 'inline';
+      if (getComputedStyle(e).display === 'inline') return true;
+      // scrollWidth and clientWidth are WHOLE pixels: 23.4pt of figures in a
+      // 23.3pt box reads 23 and 23, "fits", and is drawn "99…". The glyphs'
+      // own extent against the box is measured unrounded.
+      const box = e.getBoundingClientRect();
+      const r = document.createRange(); r.selectNodeContents(e);
+      if (r.getBoundingClientRect().width > box.width + 0.05) return false;
+      return e.scrollWidth <= e.clientWidth && e.scrollHeight <= e.clientHeight;
     };
     for (const e of document.querySelectorAll('span[data-fit-min]')) {
       const min = Number(e.dataset.fitMin || 0);
       if (!min || fits(e)) continue;
       const base = parseFloat(getComputedStyle(e).fontSize);
       const ls = parseFloat(getComputedStyle(e).letterSpacing) || 0;
+      let fitted = false;
       for (let k = 0.97; k >= min - 1e-6; k -= 0.03) {
         e.style.fontSize = base * k + 'px';
         if (ls) e.style.letterSpacing = ls * k + 'px';
-        if (fits(e)) break;
+        if (fits(e)) { fitted = true; break; }
+      }
+      // The phone shrinks smoothly, down to EXACTLY its floor; steps of 0.03
+      // stop short of it (from 12pt with a 10pt floor the last step is 10.2).
+      // So the floor itself is tried last, as the phone would reach it.
+      if (!fitted) {
+        e.style.fontSize = base * min + 'px';
+        if (ls) e.style.letterSpacing = ls * min + 'px';
       }
     }
   });

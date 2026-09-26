@@ -7,13 +7,14 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK, nameOf } from './paperMetrics';
+import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK, nameOf, UNSPOKEN } from './paperMetrics';
 import { EndMark } from './PaperFrame';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted } from './paperText';
 import { isRTLText } from '@/src/utils/text';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Credit, initialOf, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 
 export interface Critique {
   id: string;
@@ -190,17 +191,22 @@ export const CritiqueRow = memo(function CritiqueRow({
             disabled={!onCertify}
             accessibilityRole="button"
             accessibilityState={{ selected: !!c.certified, disabled: !onCertify }}
+            // The count is said here, as on every bar; the number beside the
+            // heart is hidden so it is not read twice.
             accessibilityLabel={
-              !onCertify ? 'Certify this critique. Members only'
-                : c.certified ? 'Certified' : 'Certify this critique'
+              !onCertify ? `Certify this critique. Members only${c.certifyCount > 0 ? `. ${counted(c.certifyCount, 'member has', 'members have')} certified it` : ''}`
+                : certifyLabel(c.certifyCount, !!c.certified, 'this critique')
             }
           >
             <Heart size={12} strokeWidth={2}
               color={c.certified ? colors.crimson : colors.fog}
               fill={c.certified ? colors.crimson : 'transparent'} />
-            <Text style={[p.commentMeta, { marginTop: 0 }, c.certified && { color: CRIMSON_INK }]} {...scaledTextProps}>
-              {n ?? ''}
-            </Text>
+            {/* None is drawn as nothing — not an empty slot beside the heart. */}
+            {n ? (
+              <Text style={[p.commentMeta, { marginTop: 0 }, c.certified && { color: CRIMSON_INK }]} {...scaledTextProps} {...UNSPOKEN}>
+                {n}
+              </Text>
+            ) : null}
           </PressableScale>
           <Text style={[p.commentMeta, { marginTop: 0 }]} {...scaledTextProps}>{c.age}</Text>
           {canTake && !c.mine ? (
@@ -402,36 +408,35 @@ export const PostDock = memo(function PostDock({
   onShare?: () => void;
   onSave?: (next: boolean) => void;
 }) {
-  const c = formatCount(certifyCount);
-  const k = formatCount(commentCount);
   const SLOP = { top: 6, bottom: 6, left: 0, right: 0 };
   return (
     <View style={[p.dock, { paddingBottom: bottomInset }]}>
       <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={() => onCertify?.(!certified)}
-        accessibilityRole="button" accessibilityState={{ selected: !!certified }} accessibilityLabel="Certify">
+        accessibilityRole="button" accessibilityState={{ selected: !!certified }}
+        // "this filing", not "this": the page above carries its own certify
+        // control, and two controls with one name are one control to a
+        // screen reader.
+        accessibilityLabel={certifyLabel(certifyCount, !!certified, 'this filing')}>
         {/* The same pulse as the card's. The dock and the card are two places a
             member makes one mark, and a mark that behaves differently depending
             on which of them they used is the app feeling assembled. */}
-        {/* The count rides beside the icon, not after the word. `CERTIFIED 2.1K`
-            is 14 characters in a quarter that is 72pt on a 320pt phone, and at
-            the cap it did not fit even at the smallest shrink. The icon line has
-            room to spare, and the word underneath is now the card's own word. */}
-        <View style={p.dockFigure}>
+        {/* The count hangs beside the icon, as it does on every bar in the
+            house (MarkFigure): the icon stays over its word, and the word is
+            the card's own word. */}
+        <MarkFigure iconSize={15} count={certifyCount} reach="open" style={[p.actionLabel, certified && p.actionLabelOn]}>
           <PaperStrike on={certified}>
             <Heart size={15} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} />
           </PaperStrike>
-          {c ? <Text style={[p.actionLabel, certified && p.actionLabelOn]} {...actionLabelProps}>{c}</Text> : null}
-        </View>
+        </MarkFigure>
         <Text style={[p.actionLabel, certified && p.actionLabelOn]} {...actionLabelProps}>
           {certified ? 'CERTIFIED' : 'CERTIFY'}
         </Text>
       </PressableScale>
       <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={onCritique}
-        accessibilityRole="button" accessibilityLabel="Write a critique">
-        <View style={p.dockFigure}>
+        accessibilityRole="button" accessibilityLabel={critiqueLabel(commentCount, 'Write a critique')}>
+        <MarkFigure iconSize={16} count={commentCount} reach="open" style={p.actionLabel}>
           <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
-          {k ? <Text style={p.actionLabel} {...actionLabelProps}>{k}</Text> : null}
-        </View>
+        </MarkFigure>
         <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE</Text>
       </PressableScale>
       <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={onShare}

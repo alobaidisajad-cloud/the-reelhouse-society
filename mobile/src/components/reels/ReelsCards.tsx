@@ -10,6 +10,10 @@ import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import Buster from '@/src/components/Buster';
 import { StackData, StackFilm } from './types';
+import { Heart } from 'lucide-react-native';
+import { useMarkCount } from '@/src/stores/markCounts';
+import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
+import { counted } from '@/src/components/dispatch/paper/paperText';
 
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
@@ -137,6 +141,9 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
   
   const hash = stackIdStr ? stackIdStr.charCodeAt(0) : 0;
   const gradientColors = PRESET_GRADIENTS[Math.abs(hash) % PRESET_GRADIENTS.length];
+  // Live: certifying on the stack's own page moves this card's number too.
+  const certifyCount = useMarkCount('certify', stackIdStr, stack.certifyCount);
+  const certifyShown = formatCount(certifyCount ?? 0);
 
   return (
     <PressableScale onPress={onPress} style={st.stackCard} haptic>
@@ -186,9 +193,17 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
           {stack.isRanked && (
             <Text style={[st.stackCertifyText, { color: colors.sepia }]}>✦ RANKED</Text>
           )}
-          {stack.certifyCount > 0 && (
-            <Text style={st.stackCertifyText}>✦ {stack.certifyCount}</Text>
-          )}
+          {/* The certify mark and its count, as every bar in the house draws
+              them: the heart, then the number. It was `✦ 3` — the same star
+              RANKED wears one word to the left, so the two read as one fact. */}
+          {certifyShown ? (
+            <View style={st.stackCertify}>
+              <Heart size={9} strokeWidth={2.2} color={colors.flicker} />
+              <Text style={st.stackCertifyText} accessibilityLabel={counted(certifyCount ?? 0, 'certification', 'certifications')}>
+                {certifyShown}
+              </Text>
+            </View>
+          ) : null}
           <View style={st.stackCardMetaDivider} />
         </View>
 
@@ -324,6 +339,7 @@ const st = StyleSheet.create({
   stackCardBadgeText: {
     fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.sepia
   },
+  stackCertify: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   stackCertifyText: {
     fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.6, color: colors.flicker
   },

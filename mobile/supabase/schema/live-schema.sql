@@ -1396,28 +1396,36 @@ END $$;
 -- Name: get_community_feed_auth_cursor(integer, timestamp with time zone, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean)
+CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean, certify_count integer, critique_count integer, certified boolean)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT
-    l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
-    l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
-    l.user_id,
-    p.username, p.avatar_url, p.role,
-    l.editorial_header, l.pull_quote, l.watched_with,
-    l.is_autopsied, l.autopsy, l.is_spoiler
-  FROM logs l
-  JOIN profiles p ON p.id = l.user_id
-  WHERE l.review IS NOT NULL
-    AND l.review <> ''
-    AND (auth.uid() IS NULL OR NOT is_hidden_by(auth.uid(), l.user_id))
-    AND (
-      p_cursor_created_at IS NULL
-      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
-    )
-  ORDER BY l.created_at DESC, l.id DESC
-  LIMIT p_limit;
+    AS $$
+  SELECT
+    l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
+    l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
+    l.user_id,
+    p.username, p.avatar_url, p.role,
+    l.editorial_header, l.pull_quote, l.watched_with,
+    l.is_autopsied, l.autopsy, l.is_spoiler,
+    (SELECT count(*)::integer FROM interactions ie
+      WHERE ie.target_log_id = l.id AND ie.type = 'endorse_log') AS certify_count,
+    (SELECT count(*)::integer FROM log_comments lc
+      WHERE lc.log_id = l.id) AS critique_count,
+    (auth.uid() IS NOT NULL AND EXISTS (
+      SELECT 1 FROM interactions im
+       WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
+    )) AS certified
+  FROM logs l
+  JOIN profiles p ON p.id = l.user_id
+  WHERE l.review IS NOT NULL
+    AND l.review <> ''
+    AND (auth.uid() IS NULL OR NOT is_hidden_by(auth.uid(), l.user_id))
+    AND (
+      p_cursor_created_at IS NULL
+      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
+    )
+  ORDER BY l.created_at DESC, l.id DESC
+  LIMIT p_limit;
 $$;
 
 
@@ -1688,30 +1696,38 @@ $$;
 -- Name: get_following_feed_auth_cursor(integer, timestamp with time zone, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean)
+CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean, certify_count integer, critique_count integer, certified boolean)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT
-    l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
-    l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
-    l.user_id,
-    p.username, p.avatar_url, p.role,
-    l.editorial_header, l.pull_quote, l.watched_with,
-    l.is_autopsied, l.autopsy, l.is_spoiler
-  FROM logs l
-  JOIN profiles p ON p.id = l.user_id
-  JOIN interactions i ON i.target_user_id = l.user_id AND i.type = 'follow'
-  WHERE i.user_id = auth.uid()
-    AND l.review IS NOT NULL
-    AND l.review <> ''
-    AND NOT is_hidden_by(auth.uid(), l.user_id)
-    AND (
-      p_cursor_created_at IS NULL
-      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
-    )
-  ORDER BY l.created_at DESC, l.id DESC
-  LIMIT p_limit;
+    AS $$
+  SELECT
+    l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
+    l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
+    l.user_id,
+    p.username, p.avatar_url, p.role,
+    l.editorial_header, l.pull_quote, l.watched_with,
+    l.is_autopsied, l.autopsy, l.is_spoiler,
+    (SELECT count(*)::integer FROM interactions ie
+      WHERE ie.target_log_id = l.id AND ie.type = 'endorse_log') AS certify_count,
+    (SELECT count(*)::integer FROM log_comments lc
+      WHERE lc.log_id = l.id) AS critique_count,
+    (auth.uid() IS NOT NULL AND EXISTS (
+      SELECT 1 FROM interactions im
+       WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
+    )) AS certified
+  FROM logs l
+  JOIN profiles p ON p.id = l.user_id
+  JOIN interactions i ON i.target_user_id = l.user_id AND i.type = 'follow'
+  WHERE i.user_id = auth.uid()
+    AND l.review IS NOT NULL
+    AND l.review <> ''
+    AND NOT is_hidden_by(auth.uid(), l.user_id)
+    AND (
+      p_cursor_created_at IS NULL
+      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
+    )
+  ORDER BY l.created_at DESC, l.id DESC
+  LIMIT p_limit;
 $$;
 
 
@@ -9294,6 +9310,13 @@ GRANT SELECT(viewing_history) ON TABLE public.logs TO anon;
 --
 
 GRANT SELECT(view_count) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.viewing_id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(viewing_id) ON TABLE public.logs TO anon;
 
 
 --

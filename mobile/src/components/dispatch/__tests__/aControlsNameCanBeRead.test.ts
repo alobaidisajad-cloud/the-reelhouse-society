@@ -137,7 +137,9 @@ describe("a control's name can be read", () => {
     // `deckLabelProps` is scaling PLUS numberOfLines 1 and adjustsFontSizeToFit,
     // so a label in a row that cannot reflow shrinks instead of breaking it.
     const more = readFileSync(join(DISPATCH, 'paper', 'PaperMore.tsx'), 'utf8');
-    expect((more.match(/deckLabelProps/g) ?? []).length).toBeGreaterThanOrEqual(15);
+    // 14: the lounge card's counts line (one of the 15) was removed on
+    // 2026-09-26 — a card shared into a room carries no counts.
+    expect((more.match(/deckLabelProps/g) ?? []).length).toBeGreaterThanOrEqual(14);
     const picker = readFileSync(join(DISPATCH, 'SeriesPicker.tsx'), 'utf8');
     expect(picker).toMatch(/>SET THE SERIES<|SET THE SERIES/);
     expect((picker.match(/deckLabelProps/g) ?? []).length).toBeGreaterThanOrEqual(3);

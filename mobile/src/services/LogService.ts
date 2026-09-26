@@ -3,6 +3,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
 import { PUBLIC_LOG_COLUMNS } from '@/src/utils/mappers';
+import { logCertifySelect, withLogCountFilters } from '@/src/services/logCounts';
 import { resolveTier } from '@/src/utils/tier';
 import { validateWithTelemetry } from '@/src/utils/validateWithTelemetry';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
@@ -132,9 +133,13 @@ export const LogService = {
         throw new Error('Log not found');
     }
 
-    let query = supabase
+    // The certify count rides in the same request (`certify_count: [{ count }]`);
+    // the critique count comes from getLogComments' exact total.
+    // …and the viewer's own mark (`certified: [{ count }]`), so the heart is
+    // the server's answer and not the sign-in index's (learnEndorsements).
+    let query = withLogCountFilters(supabase
       .from('logs')
-      .select(`${PUBLIC_LOG_COLUMNS}, profiles!logs_user_id_fkey(username, avatar_url, role, display_name, member_no)`)
+      .select(`${PUBLIC_LOG_COLUMNS}, profiles!logs_user_id_fkey(username, avatar_url, role, display_name, member_no), ${logCertifySelect(currentUserId)}`), currentUserId)
       .eq('id', logId)
       .maybeSingle();
 

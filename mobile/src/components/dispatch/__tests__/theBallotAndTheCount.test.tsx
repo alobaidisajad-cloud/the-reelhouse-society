@@ -96,15 +96,21 @@ describe('a ballot in the feed', () => {
 });
 
 describe('the house counts in English', () => {
+  // The count is drawn as a bare figure beside the icon now (MarkFigure), so
+  // the noun — and with it the plural — lives in what the button SAYS.
   it('says one critique, not one critiques', () => {
-    // It rides in the byline's trailing facts, which is why it reads `· 1 …`.
-    const { getByText } = card({ kind: 'take', body: 'A take.', commentCount: 1 });
-    expect(getByText('· 1 CRITIQUE')).toBeTruthy();
+    const { getByLabelText } = card({ kind: 'take', body: 'A take.', commentCount: 1, onCritique: () => {} });
+    expect(getByLabelText('Critique. 1 critique')).toBeTruthy();
   });
 
   it('and two critiques', () => {
-    const { getByText } = card({ kind: 'take', body: 'A take.', commentCount: 2 });
-    expect(getByText('· 2 CRITIQUES')).toBeTruthy();
+    const { getByLabelText } = card({ kind: 'take', body: 'A take.', commentCount: 2, onCritique: () => {} });
+    expect(getByLabelText('Critique. 2 critiques')).toBeTruthy();
+  });
+
+  it('and one member, not one members', () => {
+    const { getByLabelText } = card({ kind: 'take', body: 'A take.', certifyCount: 1, onCertify: () => {} });
+    expect(getByLabelText('Certify this. 1 member has certified this')).toBeTruthy();
   });
 
   it('says it to a screen reader too', () => {

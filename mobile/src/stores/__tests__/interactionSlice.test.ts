@@ -210,4 +210,133 @@ describe('interactionSlice', () => {
             expect(useLogStore.getState()._listEndorsedIndex['list-002']).toBeUndefined();
         });
     });
+
+    // ── The count moves with the heart, on every card (markCounts) ──
+
+    describe('the count every bar draws', () => {
+        const { InteractionService } = jest.requireMock('../../services/InteractionService');
+        const { resetMarkCounts, tellMarkCounts, useMarkCounts, selectMarkCount } = jest.requireActual('../markCounts');
+        const shown = (kind: string, id: string) => selectMarkCount(useMarkCounts.getState(), kind, id);
+
+        beforeEach(() => {
+            resetMarkCounts();
+            InteractionService.addEndorsement.mockReset().mockResolvedValue(undefined);
+            InteractionService.removeEndorsement.mockReset().mockResolvedValue(undefined);
+        });
+
+        it('moves with the heart, and stays moved once the server has it', async () => {
+            tellMarkCounts([{ id: 'log-1', certify: 4 }], Date.now() - 1000);
+            let answer: () => void = () => {};
+            InteractionService.addEndorsement.mockReturnValue(new Promise<void>((r) => { answer = r; }));
+            const pending = useLogStore.getState().toggleEndorse('log-1');
+            // The toggle runs behind a per-log lock, a microtask later; the heart
+            // and the number change in the same step, while the server is silent.
+            for (let i = 0; i < 20 && !useLogStore.getState()._endorsedIndex['log-1']; i++) await Promise.resolve();
+            expect(useLogStore.getState()._endorsedIndex['log-1']).toBeTruthy();
+            expect(shown('certify', 'log-1')).toBe(5);
+            answer();
+            await pending;
+            expect(shown('certify', 'log-1')).toBe(5);
+            // …and an answer asked after the server had it replaces the tap, not adds to it.
+            tellMarkCounts([{ id: 'log-1', certify: 5 }], Date.now() + 1);
+            expect(shown('certify', 'log-1')).toBe(5);
+        });
+
+        it('takes the tap back when the write is refused', async () => {
+            tellMarkCounts([{ id: 'log-1', certify: 4 }], Date.now() - 1000);
+            InteractionService.addEndorsement.mockRejectedValue(Object.assign(new Error('refused'), { code: '42501' }));
+            await expect(useLogStore.getState().toggleEndorse('log-1')).rejects.toBeTruthy();
+            expect(shown('certify', 'log-1')).toBe(4);
+        });
+
+        it('does not count a certification the server already held', async () => {
+            tellMarkCounts([{ id: 'log-1', certify: 4 }], Date.now() - 1000);
+            InteractionService.addEndorsement.mockRejectedValue(Object.assign(new Error('dup'), { code: '23505' }));
+            await useLogStore.getState().toggleEndorse('log-1');
+            expect(shown('certify', 'log-1')).toBe(4);
+        });
+
+        it('keeps the tap when it is queued offline', async () => {
+            tellMarkCounts([{ id: 'log-1', certify: 4 }], Date.now() - 1000);
+            InteractionService.addEndorsement.mockRejectedValue(new TypeError('Network request failed'));
+            await useLogStore.getState().toggleEndorse('log-1');
+            expect(shown('certify', 'log-1')).toBe(5);
+        });
+
+        it('a queued (offline) tap stays on top until the queue delivers it', async () => {
+            const { settleDelivered } = jest.requireActual('../markCounts');
+            tellMarkCounts([{ id: 'log-1', certify: 4 }], Date.now() - 1000);
+            InteractionService.addEndorsement.mockRejectedValue(new TypeError('Network request failed'));
+            await useLogStore.getState().toggleEndorse('log-1');
+            // A refresh that lands BEFORE the queue delivers still says 4: the tap stays.
+            tellMarkCounts([{ id: 'log-1', certify: 4 }], Date.now() + 5);
+            expect(shown('certify', 'log-1')).toBe(5);
+            // The queue delivers it; an answer asked after that carries it, and replaces the tap.
+            settleDelivered({ type: 'endorse_log', payload: { target_log_id: 'log-1' } });
+            tellMarkCounts([{ id: 'log-1', certify: 5 }], Date.now() + 10_000);
+            expect(shown('certify', 'log-1')).toBe(5);
+        });
+
+        it('moves a stack’s card the same way', async () => {
+            tellMarkCounts([{ id: 'list-9', certify: 2 }], Date.now() - 1000);
+            await useLogStore.getState().toggleListEndorse('list-9');
+            expect(shown('certify', 'list-9')).toBe(3);
+            await useLogStore.getState().toggleListEndorse('list-9');
+            expect(shown('certify', 'list-9')).toBe(2);
+        });
+    });
+
+    // ── The heart is the server's answer, post by post (learnEndorsements) ──
+
+    describe('the heart', () => {
+        const { resetMarkCounts, beginTap } = jest.requireActual('../markCounts');
+        const { enqueueMutation } = jest.requireActual('../../utils/offlineQueue');
+        const learn = (kind: 'log' | 'list', rows: { id: string; certified: boolean | null }[], askedAt = Date.now()) =>
+            useLogStore.getState().learnEndorsements(kind, rows, askedAt);
+        const hearted = (id: string) => !!useLogStore.getState()._endorsedIndex[id];
+
+        beforeEach(() => resetMarkCounts());
+
+        it('fills for a certification older than the sign-in index held', () => {
+            // The index knows the newest 500; this is the 501st.
+            learn('log', [{ id: 'old-log', certified: true }]);
+            expect(hearted('old-log')).toBe(true);
+            expect(useLogStore.getState().interactions.some(i => i.targetId === 'old-log' && i.type === 'endorse')).toBe(true);
+        });
+
+        it('empties for one withdrawn elsewhere (another device)', () => {
+            useLogStore.setState({ _endorsedIndex: { 'log-z': endorsement('log-z') }, interactions: [endorsement('log-z') as never] });
+            learn('log', [{ id: 'log-z', certified: false }]);
+            expect(hearted('log-z')).toBe(false);
+            expect(useLogStore.getState().interactions).toHaveLength(0);
+        });
+
+        it('says nothing when the source could not say', () => {
+            useLogStore.setState({ _endorsedIndex: { 'log-z': endorsement('log-z') } });
+            learn('log', [{ id: 'log-z', certified: null }]);
+            expect(hearted('log-z')).toBe(true);
+        });
+
+        it('a tap since the question was asked outranks the answer', () => {
+            const askedAt = Date.now() - 1000;
+            beginTap('certify', 'log-t', 1);              // in flight now
+            learn('log', [{ id: 'log-t', certified: false }], askedAt);
+            useLogStore.setState({ _endorsedIndex: { 'log-t': endorsement('log-t') } });
+            learn('log', [{ id: 'log-t', certified: false }], askedAt);
+            expect(hearted('log-t')).toBe(true);
+        });
+
+        it('a certification still waiting in the offline queue outranks the answer — even after a restart', () => {
+            enqueueMutation({ type: 'endorse_log', payload: { user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', type: 'endorse_log', target_log_id: 'log-q' } });
+            useLogStore.setState({ _endorsedIndex: { 'log-q': endorsement('log-q') } });
+            learn('log', [{ id: 'log-q', certified: false }]);
+            expect(hearted('log-q')).toBe(true);
+        });
+
+        it('keeps a stack’s heart in its own index', () => {
+            learn('list', [{ id: 'list-old', certified: true }]);
+            expect(!!useLogStore.getState()._listEndorsedIndex['list-old']).toBe(true);
+            expect(hearted('list-old')).toBe(false);
+        });
+    });
 });

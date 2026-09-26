@@ -279,16 +279,21 @@ describe('the index', () => {
 });
 
 describe('the critiques action', () => {
+  // The count hangs beside the icon (MarkFigure) and the word is the house's
+  // one word for the act, CRITIQUE, as on every other bar.
   it('says what it holds', async () => {
     const r = mount({ critiqueCount: 12 });
-    await waitFor(() => expect(r.getByText(/12\s*CRITIQUES/)).toBeTruthy());
+    await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
+    expect(r.getByText('12', { includeHiddenElements: true })).toBeTruthy();
+    expect(r.getByLabelText('Critiques. 12 critiques')).toBeTruthy();
   });
 
   it('says nothing rather than a confident zero when the count failed', async () => {
     // null is "we could not ask", which is not the same statement as "none".
     const r = mount({ critiqueCount: null });
-    await waitFor(() => expect(r.getByText(/CRITIQUES/)).toBeTruthy());
-    expect(r.queryByText(/0\s*CRITIQUES/)).toBeNull();
+    await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
+    expect(r.queryByText('0', { includeHiddenElements: true })).toBeNull();
+    expect(r.getByLabelText('Critiques')).toBeTruthy();
   });
 
   it('is one source of truth, so a refetch cannot double-count', () => {
@@ -347,7 +352,7 @@ describe('the page is legible and reachable', () => {
 describe('the critiques overlay', () => {
   const openIt = async (over: Record<string, unknown> = {}) => {
     const r = mount(over);
-    await waitFor(() => expect(r.getByText(/CRITIQUES/)).toBeTruthy());
+    await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
     const action = r.getByLabelText(/critiques?/i);
     await act(async () => { fireEvent.press(action); });
     return r;
@@ -392,6 +397,18 @@ describe('the critiques overlay', () => {
     const r = await openIt({ critiqueCount: 12 });
     await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
     expect(r.getAllByText('12').length).toBeGreaterThan(0);
+  });
+
+  it('and prints no zero in the sheet when there are none', async () => {
+    const r = await openIt({ critiqueCount: 0 });
+    await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+    expect(r.queryAllByText('0', { includeHiddenElements: true })).toHaveLength(0);
+  });
+
+  it('and uses the house’s one number format there', async () => {
+    const r = await openIt({ critiqueCount: 1200 });
+    await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+    expect(r.getByText('1.2K')).toBeTruthy();
   });
 
   it('invites the first critique rather than showing an empty box', async () => {
@@ -718,7 +735,7 @@ describe('the film card, actually rendered', () => {
 describe('filing a critique — what the action actually does', () => {
   const open = async (over: Record<string, unknown> = {}) => {
     const r = mount({ critiqueCount: 3, ...over });
-    await waitFor(() => expect(r.getByText(/CRITIQUES/)).toBeTruthy());
+    await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
     await act(async () => { fireEvent.press(r.getByLabelText(/critiques?/i)); });
     await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
     return r;
@@ -806,7 +823,7 @@ describe('filing a critique — what the action actually does', () => {
 describe('the overlay’s back button, driven', () => {
   it('closes the critiques and leaves the page standing', async () => {
     const r = mount({ critiqueCount: 2 });
-    await waitFor(() => expect(r.getByText(/CRITIQUES/)).toBeTruthy());
+    await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
     await act(async () => { fireEvent.press(r.getByLabelText(/critiques?/i)); });
     await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
 

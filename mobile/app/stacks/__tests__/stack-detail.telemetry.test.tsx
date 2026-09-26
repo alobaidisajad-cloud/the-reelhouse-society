@@ -112,7 +112,7 @@ beforeEach(() => {
 describe('certify toggle — the bare catch that could not log', () => {
     const certify = async () => {
         const screen = render(<StackDetailScreen />);
-        await fireEvent.press(await screen.findByLabelText('Certify stack'));
+        await fireEvent.press(await screen.findByLabelText(/^Certify this stack/));
     };
 
     it('reports a genuine defect', async () => {

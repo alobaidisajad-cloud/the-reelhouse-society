@@ -2,6 +2,9 @@
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useFilmStore, useInteractionStore } from '@/src/stores/films';
+import { beginTap, queueTap, settleTap, useMarkCount, withdrawTap } from '@/src/stores/markCounts';
+import { tellMarks } from '@/src/stores/tellMarks';
+import { markCount, mineMark } from '@/src/schemas/feed.schema';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -123,6 +126,8 @@ export default function LogDetailScreen() {
   const { data: logQueryData, isLoading: logQueryLoading } = useQuery({
     queryKey: ['log', id],
     queryFn: async ({ signal }) => {
+      // Taken BEFORE the requests: see tellMarkCounts.
+      const askedAt = Date.now();
       try {
         const logData = await LogService.getLogDetails(id, signal);
 
@@ -176,11 +181,23 @@ export default function LogDetailScreen() {
         // The total counts what the SERVER holds, plus anything queued offline
         // that is not in it yet — mirroring the dossier screen.
         const pendingNotYetCounted = finalComments.length - mappedComments.length;
+        const total = Math.max(commentTotal + pendingNotYetCounted, finalComments.length);
+        // The bar's two numbers, told to the store every card reads — so the
+        // Reel's card for this log shows what this page shows the moment the
+        // member goes back. Null when the log came from the offline queue.
+        const certifyCount = markCount.parse(logData?.certify_count);
+        // The SERVER's critique total, not this page's: the page adds what is
+        // still waiting in the offline queue, and those are already held as
+        // queued taps in the store — telling it `total` would count them twice.
+        // With the viewer's own mark, from the same request: the heart is the
+        // server's answer, not the sign-in index's newest 500.
+        tellMarks('log', [{ id, certify: certifyCount, critique: commentTotal, certified: mineMark.parse(logData?.certified) }], askedAt);
         return {
           log: logData as LogDetail | null,
           profile: profile as LogProfile | null,
           comments: finalComments as LogComment[],
-          commentTotal: Math.max(commentTotal + pendingNotYetCounted, finalComments.length),
+          commentTotal: total,
+          certifyCount,
         };
       } catch (err: unknown) {
         const cachedData = queryClient.getQueryData(['log', id]);
@@ -243,6 +260,8 @@ export default function LogDetailScreen() {
             comments: finalComments,
             // Offline: the queued comments ARE the whole truth we have.
             commentTotal: finalComments.length,
+            // And nobody has certified a log the server has not seen yet.
+            certifyCount: null,
           };
         }
         throw err;
@@ -256,6 +275,12 @@ export default function LogDetailScreen() {
   const profile = logQueryData?.profile ?? null;
   const comments = logQueryData?.comments ?? [];
   const commentTotal = logQueryData?.commentTotal ?? comments.length;
+  // CERTIFY reads the shared store, as every card of this log does; the cached
+  // page's number stands in until a fresh answer has been told to it. CRITIQUE
+  // is this page's own total — the one the section header prints — because this
+  // page moves it by hand on every post and delete; it tells the store too, and
+  // records each post as a tap, so the cards follow it.
+  const certifyShown = useMarkCount('certify', id, logQueryData?.certifyCount ?? null);
   const loading = logQueryLoading;
 
   /**
@@ -411,7 +436,9 @@ export default function LogDetailScreen() {
     // filtering out this one optimistic comment, which preserves any comment
     // that arrived while the write was in flight.
     updateComments(list => [...list, optimisticComment]);
-    
+    // The same +1, for every card of this log (see markCounts).
+    const tap = beginTap('critique', id, 1);
+
     setNewComment('');
     TactileEngine.success();
 
@@ -434,10 +461,11 @@ export default function LogDetailScreen() {
         };
         // Ensure UI displays the saved data (profiles etc.)
         updateComments(list => list.map(c => (c.id === commentId ? mappedData : c)));
+        settleTap('critique', id, tap);
       } else {
         throw new Error('Insert failed');
       }
-    } catch (error: unknown) { 
+    } catch (error: unknown) {
       if (isNetworkError(error)) {
         enqueueMutation({
            type: 'add_log_comment',
@@ -449,9 +477,13 @@ export default function LogDetailScreen() {
            }
         });
         flushOfflineQueue();
+        // Queued, not delivered: it stays on top of every count until the
+        // queue delivers it (markCounts.settleDelivered).
+        queueTap('critique', id, tap);
         TactileEngine.success();
       } else {
         updateComments(list => list.filter(c => c.id !== commentId));
+        withdrawTap('critique', id, tap);
         reelToast.error(isForbiddenError(error) ? 'This member limits who may annotate their critiques.' : 'Failed to file critique.');
       }
     } finally {
@@ -467,21 +499,29 @@ export default function LogDetailScreen() {
     const targetComment = previousData?.comments?.find((c: LogComment) => c.id === commentId);
     
     updateComments(list => list.filter(c => c.id !== commentId));
-    
+    // A critique that was on the page is counted in every card's number.
+    const tap = targetComment ? beginTap('critique', id, -1) : null;
+
     try {
       await LogService.deleteLogComment(commentId);
+      if (tap) settleTap('critique', id, tap);
     } catch (error: unknown) {
       if (error instanceof Error && error.message === 'Already deleted') {
+          if (tap) settleTap('critique', id, tap);
           return;
       }
       if (isNetworkError(error)) {
         enqueueMutation({
             type: 'remove_log_comment',
-            payload: { comment_id: commentId, user_id: user?.id }
+            // log_id rides along so the queue can say WHICH log's count its
+            // delivery settles (markCounts.settleDelivered).
+            payload: { comment_id: commentId, user_id: user?.id, log_id: id }
         });
         flushOfflineQueue();
+        if (tap) queueTap('critique', id, tap);
         TactileEngine.success();
       } else {
+        if (tap) withdrawTap('critique', id, tap);
         if (targetComment) updateComments(list => [...list, targetComment].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
         reelToast.error('Failed to delete critique.');
       }
@@ -734,10 +774,14 @@ export default function LogDetailScreen() {
             log={log}
             isOwner={isOwner}
             endorsed={endorsed}
+            certifyCount={certifyShown}
+            critiqueCount={commentTotal}
             autopsyOpen={autopsyOpen}
             filmSaved={filmSaved}
             onSavePress={handleToggleSave}
-            onToggleEndorse={() => { toggleEndorse(id); }}
+            // The store has already rolled back and said so; a rejection left
+            // unhandled here would only reach the error tracker as noise.
+            onToggleEndorse={() => { toggleEndorse(id).catch(() => {}); }}
             onToggleAutopsy={() => { setAutopsyOpen(!autopsyOpen); }}
             onCritiquePress={() => {
                // Scroll to the compose box at the top of the critiques section, then focus it.

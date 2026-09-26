@@ -272,7 +272,8 @@ describe('the reader', () => {
 
   it('moves the marks from the docked bar', async () => {
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Certify')); });
+    // The dock names what it certifies — the page above has its own control.
+    await act(async () => { fireEvent.press(getByLabelText(/^Certify this filing/)); });
     expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
 
     await act(async () => { fireEvent.press(getByLabelText('Save')); });
@@ -286,7 +287,7 @@ describe('the reader', () => {
     await act(async () => { fireEvent.press(getByLabelText('Write a critique')); });
 
     expect(getByLabelText('Your critique')).toBeTruthy();
-    expect(queryByLabelText('Certify')).toBeNull();
+    expect(queryByLabelText(/^Certify this filing/)).toBeNull();
   });
 
   it('sends a critique, and puts it on the page', async () => {
@@ -590,7 +591,8 @@ describe('the reader', () => {
       mockRow = row(over as Record<string, unknown>);
       const { getByLabelText, unmount } = await mount();
 
-      await act(async () => { fireEvent.press(getByLabelText('Certify this')); });
+      // The page's own control (the dock's says "this filing").
+      await act(async () => { fireEvent.press(getByLabelText(/^Certify this($|\. \d)/)); });
       expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
       await act(async () => { fireEvent.press(getByLabelText('Save this')); });
       expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
@@ -609,7 +611,7 @@ describe('the reader', () => {
       created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
     }];
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Certify this critique')); });
+    await act(async () => { fireEvent.press(getByLabelText('Certify this critique. 2 members have certified this critique')); });
     expect(useDispatch.getState().certifiedCritiqueIds.has('c1')).toBe(true);
     expect(useDispatch.getState().critiques.f1[0].certifyCount).toBe(3);
   });
@@ -1068,7 +1070,8 @@ describe('the ways out, and the ways it fails', () => {
     // the first page and the list flashes for nothing.
     const { getByLabelText } = await mount();
     const before = useDispatch.getState().critiquesOrder.f1;
-    await act(async () => { fireEvent.press(getByLabelText(/CERTIFIED/i)); });
+    // By its own label: the certify controls say "certified" too now.
+    await act(async () => { fireEvent.press(getByLabelText('Order by certified')); });
     expect(useDispatch.getState().critiquesOrder.f1).toBe(before);
   });
 

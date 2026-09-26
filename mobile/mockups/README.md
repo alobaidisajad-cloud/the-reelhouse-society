@@ -62,8 +62,17 @@ Every text, in four passes — iOS at 1× and 1.35×, Android at 1.35× and 2× 
 grown exactly as React Native 0.81 grows it on that platform (`harness.cjs`,
 `GROWTH`). Reports **CUT** (clipped, or a line under a box too short for it),
 **OFF** (off the phone), **CLASH** (over another text), **RUN** (a word wider than
-its line — the phone would break it mid-letter). `--shorts` also lists text the
-phone shortens with "…" or a clamp (not a fault). Exits 1 on any fault.
+its line — the phone would break it mid-letter), **HANG** (a mark's count beside
+its icon — `MarkFigure` — that crowds the icon at rest, runs past its reach, is
+cut short, or was shrunk under 10pt). `--shorts` also lists text the phone
+shortens with "…" or a clamp (not a fault). Exits 1 on any fault.
+
+`--width 360` (or 320) lays the renders on a narrower phone. Only a layout made
+of flex alone is honest there: a box a screen sized in JS from the window was
+sized for 390, and the browser will not shrink a flex item below its text the
+way the phone does — so a row of name, badge and time can report OFF at 320
+that the phone lays out by shortening the name. Use it for bars and rows you
+know are flex, and read what it reports.
 
 `node mockups/tools/selftest.cjs` proves the tool can say **no**: it plants each
 fault in a small screen, plus a clean one, and fails unless every fault — and
@@ -88,3 +97,6 @@ nothing else — is reported. Run it after changing the tool.
 - A horizontal ScrollView lays its content in a row.
 - A label that may shrink is shrunk as the phone shrinks it — until it truly fits its width and
   its line limit, never below its floor — by ONE function both the audit and the camera use.
+  It measures the glyphs UNROUNDED (a browser's scrollWidth is whole pixels, and read `999K` at
+  23.4pt in a 23.3pt box as fitting while drawing "99…"), and it tries the floor itself last,
+  as the phone reaches it.

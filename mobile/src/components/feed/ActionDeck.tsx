@@ -12,6 +12,8 @@ import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing } from 'react-native-reanimated';
 import { useClearance } from '@/src/hooks/useClearance';
+import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
+import { useMarkCount } from '@/src/stores/markCounts';
 
 interface ActionDeckProps {
   itemId: string;
@@ -20,6 +22,11 @@ interface ActionDeckProps {
   posterPath: string | null;
   year?: number;
   ownerUsername: string;
+  /** The counts this card's page arrived with — shown until the shared store
+   *  has been told fresher ones (a page restored from the cache on a cold start
+   *  was never told). Null when the source could not say. */
+  certifyCount?: number | null;
+  critiqueCount?: number | null;
 }
 
 export const ActionDeck = React.memo(function ActionDeck({
@@ -29,11 +36,15 @@ export const ActionDeck = React.memo(function ActionDeck({
   posterPath,
   year,
   ownerUsername,
+  certifyCount: certifyFallback = null,
+  critiqueCount: critiqueFallback = null,
 }: ActionDeckProps) {
   const router = useRouter();
-  
+
   // Zustand slices purely for THIS specific component. ActivityCard won't re-render.
   const endorsed = useWatchlistStore(s => !!s._endorsedIndex[itemId]);
+  const certifyCount = useMarkCount('certify', itemId, certifyFallback);
+  const critiqueCount = useMarkCount('critique', itemId, critiqueFallback);
   const filmSaved = useWatchlistStore(s => !!s._watchlistIndex[filmId]);
   
   const toggleEndorse = useWatchlistStore(s => s.toggleEndorse);
@@ -161,10 +172,12 @@ export const ActionDeck = React.memo(function ActionDeck({
   return (
     <>
       <View style={s.actionDeck}>
-        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleCertify} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: endorsed }} accessibilityLabel={endorsed ? 'Remove certification from this critique' : 'Certify this critique'}>
-          <Animated.View style={animatedHeartStyle}>
-            <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
-          </Animated.View>
+        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleCertify} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: endorsed }} accessibilityLabel={certifyLabel(certifyCount, endorsed, 'this critique')}>
+          <MarkFigure iconSize={15} count={certifyCount} style={[s.actionLabel, endorsed && s.actionLabelCertified]}>
+            <Animated.View style={animatedHeartStyle}>
+              <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
+            </Animated.View>
+          </MarkFigure>
           {/* Four labels, one line each, at every text size the app allows.
               The cap does the work: at 1.35 the widest of them ('CERTIFIED')
               needs ~79pt of an ~81pt column, and shrink-to-fit absorbs the
@@ -173,8 +186,10 @@ export const ActionDeck = React.memo(function ActionDeck({
           <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]} {...deckLabelProps}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
         </PressableScale>
 
-        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleCritique} accessibilityRole="button" accessibilityLabel="Write a critique">
-          <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
+        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleCritique} accessibilityRole="button" accessibilityLabel={critiqueLabel(critiqueCount, 'Write a critique')}>
+          <MarkFigure iconSize={16} count={critiqueCount} style={s.actionLabel}>
+            <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
+          </MarkFigure>
           <Text style={s.actionLabel} {...deckLabelProps}>CRITIQUE</Text>
         </PressableScale>
 

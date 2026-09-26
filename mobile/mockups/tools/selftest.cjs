@@ -18,6 +18,25 @@ const { spawnSync } = require('child_process');
 const DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'layout-selftest-'));
 const T = (style, text, cap = 0, extra = '') => `<span data-scale-cap="${cap}"${extra} style="position:relative;font-family:'Special Elite', monospace;${style}">${text}</span>`;
 const box = (style, inner) => `<div style="position:relative;display:flex;flex-direction:column;${style}">${inner}</div>`;
+/**
+ * A bar column with a mark's count hung beside its 15pt icon, built the way
+ * MarkFigure builds it: the figure spans the column, the count's box runs from
+ * the column's centre (plus half the icon and the gap) to its far edge.
+ */
+const hung = ({ col, count, hangLeft = 11.5, hangRight = '0', marginRight = 2, open = false, fit = ' data-fit-min="0.8333"', span = 'max-width:100%;overflow:hidden;text-overflow:ellipsis' }) =>
+  `<div style="display:flex;flex-direction:row;width:${col * 2}px">` +
+    `<div style="flex:1;display:flex;flex-direction:column;align-items:center">` +
+      `<div data-t="mark-figure" style="align-self:stretch;display:flex;align-items:center;justify-content:center;position:relative">` +
+        `<div style="width:15px;height:15px;background:#777"></div>` +
+        `<div data-t="${open ? 'mark-count-open' : 'mark-count'}" style="position:absolute;left:50%;right:${hangRight};top:0;bottom:0;margin-left:${hangLeft}px;margin-right:${marginRight}px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start">` +
+          T(`font-size:10px;white-space:nowrap;display:block;${span}`, count, 1.2, fit) +
+        `</div>` +
+      `</div>` +
+    `</div>` +
+    // The next column: its own icon, centred, as every bar draws it.
+    `<div style="flex:1;display:flex;flex-direction:column;align-items:center"><div style="width:15px;height:15px;background:#777"></div></div>` +
+  `</div>`;
+const EVERY = { 'ios@1': ['HANG'], 'ios@1.35': ['HANG'], 'android@1.35': ['HANG'], 'android@2': ['HANG'] };
 
 /** name → [the screen, { pass: expected kinds }] (a pass not listed must be clean) */
 const CASES = {
@@ -44,6 +63,25 @@ const CASES = {
   // a label clipped by its cell, whose shrink cannot save it
   clip: [box('width:40px;overflow:hidden', T('font-size:12px;white-space:nowrap', 'CERTIFIED 2.1K', 0, ' data-fit-min="0.75"')),
     { 'ios@1': ['CUT'], 'ios@1.35': ['CUT'], 'android@1.35': ['CUT'], 'android@2': ['CUT'] }],
+  // a count hung properly in a column with room: nothing to report
+  hangclean: [hung({ col: 80, count: '12' }), {}],
+  // a count laid over its own icon (no offset past the icon's half)
+  hangicon: [hung({ col: 80, count: '12', hangLeft: 0 }), EVERY],
+  // a count whose box runs on into the NEXT column, and whose glyphs follow it
+  hangpast: [hung({ col: 40, count: '999K', hangRight: '-60px', span: '' }), EVERY],
+  // a count its box is too narrow for, with no shrink: ellipsised — while its
+  // glyphs still end inside the column, so ONLY the cut can report it
+  hangcut: [hung({ col: 80, count: '12', hangRight: '20px', fit: '' }), EVERY],
+  // a count a FRACTION too wide: 999K is 23.4px at 10px in this face, its box 23.1px.
+  // Whole-pixel widths read 23 and 23 and passed it; the browser drew "99…".
+  hangsub: [hung({ col: 73.2, count: '999K', fit: '' }), EVERY],
+  // a count that fits only by shrinking under the floor (0.75 of 10pt)
+  hangfloor: [hung({ col: 60, count: '9.9K', fit: ' data-fit-min="0.75"' }), EVERY],
+  // an OPEN bar: the count runs past its column's edge, clear of the next icon — fine
+  // (50pt columns: the figures end ~6pt past their own column and ~10pt short of the next icon)
+  hangopen: [hung({ col: 50, count: '9.9K', open: true, hangRight: '-50%', marginRight: 11.5, span: '' }), {}],
+  // an OPEN bar whose count runs onto the next icon
+  hangopenicon: [hung({ col: 40, count: '999K 999K', open: true, hangRight: '-200%', marginRight: 0, span: '' }), EVERY],
 };
 
 for (const [name, [html]] of Object.entries(CASES)) fs.writeFileSync(path.join(DIR, `${name}.html`), html);

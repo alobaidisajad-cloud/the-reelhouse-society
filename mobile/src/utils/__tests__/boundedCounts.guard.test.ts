@@ -72,8 +72,11 @@ describe('#44 · log critiques are bounded, and still counted honestly', () => {
   });
 
   it('the header renders the total, not the array length', () => {
+    // Formatted and hidden at zero now (`CRITIQUES (1.2K)`, or `CRITIQUES`);
+    // still the TOTAL. Rendered with no comments loaded and a total of 1,200 in
+    // theCountHangsBesideItsMark.test.tsx, which reads `CRITIQUES (1.2K)`.
     const ui = stripComments(read('src/components/log/LogComments.tsx'));
-    expect(ui).toMatch(/CRITIQUES \(\$\{commentTotal \?\? comments\.length\}\)/);
+    expect(ui).toMatch(/CRITIQUES \(\$\{formatCount\(commentTotal \?\? comments\.length\)\}\)/);
   });
 
   it('the page is large enough that nothing is unreachable YET', () => {

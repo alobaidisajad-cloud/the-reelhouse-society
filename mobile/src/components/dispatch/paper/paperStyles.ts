@@ -1129,9 +1129,6 @@ export const p = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
     backgroundColor: colors.ink,
   },
-  /** A dock mark's icon and its count, side by side. The row is never taller
-   *  than the icon, so the dock keeps its height whether a count shows or not. */
-  dockFigure: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 16 },
   dockCompose: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingTop: 12, paddingHorizontal: 16,

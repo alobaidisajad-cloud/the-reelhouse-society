@@ -22,10 +22,19 @@ const migration = read('supabase/migrations/20260809_01_authoritative_certify_co
 describe('#39 · the endorsement count does not depend on who is looking', () => {
   it('no service counts endorse_list rows through the viewer\'s own RLS', () => {
     // Both shapes: a PostgREST exact-count, and fetching the rows to tally them.
+    //
+    // ONE read of endorse_list is allowed, and it is not a count of the stack's
+    // certifications: the stack page asks whether THIS member certified it
+    // (the heart — 20260926, learnEndorsements), filtered to the member's own
+    // row. So every such read must carry that filter; one without it is the
+    // viewer-dependent count this guards against.
     for (const [name, src] of [['StackService', stackSvc], ['FeedService', feedSvc]] as const) {
-      expect(`${name}:${/from\('interactions'\)[\s\S]{0,200}?endorse_list/.test(src)}`)
-        .toBe(`${name}:false`);
+      const reads = [...src.matchAll(/from\('interactions'\)[\s\S]{0,200}?endorse_list/g)].map((m) => m[0]);
+      const counts = reads.filter((r) => !/\.eq\('user_id', viewer\)/.test(r));
+      expect(`${name}:${counts.length}`).toBe(`${name}:0`);
     }
+    // …and that one read exists where it should, so this is not passing on nothing.
+    expect(stackSvc).toMatch(/from\('interactions'\)[\s\S]{0,120}\.eq\('user_id', viewer\)[\s\S]{0,120}\.eq\('type', 'endorse_list'\)/);
   });
 
   it('both call sites use the authoritative functions', () => {

@@ -119,6 +119,9 @@ const mount = async () => {
 
 beforeEach(() => { mockUser = { id: 'u1', username: 'me' }; mockPushed.length = 0; put({}); });
 
+/** A filing's certify control — its label says how many have certified it, when any have. */
+const CERTIFY = /^Certify this($|\. \d)/;
+
 describe('the Dispatch feed', () => {
   it('prints a filing, with the hour in the margin under LATEST', async () => {
     put({ filings: [filing()] });
@@ -191,7 +194,7 @@ describe('the Dispatch feed', () => {
 
     expect(getByText(/A take about a film/)).toBeTruthy();
 
-    const certify = getByLabelText('Certify this. Members only');
+    const certify = getByLabelText(/^Certify this\. Members only/);
     expect(certify.props.accessibilityState.disabled).toBe(true);
     const keep = getByLabelText('Save this. Members only');
     expect(keep.props.accessibilityState.disabled).toBe(true);
@@ -233,7 +236,7 @@ describe('the Dispatch feed', () => {
   it('moves the marks from a card', async () => {
     put({ filings: [filing()] });
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Certify this')); });
+    await act(async () => { fireEvent.press(getByLabelText(CERTIFY)); });
     expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
     await act(async () => { fireEvent.press(getByLabelText('Save this')); });
     expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
@@ -306,7 +309,7 @@ describe('the Dispatch feed', () => {
   it('gives a member the live marks', async () => {
     put({ filings: [filing()] });
     const { getByLabelText } = await mount();
-    expect(getByLabelText('Certify this').props.accessibilityState.disabled).toBe(false);
+    expect(getByLabelText(CERTIFY).props.accessibilityState.disabled).toBe(false);
     expect(getByLabelText('Save this').props.accessibilityState.disabled).toBe(false);
   });
 });
@@ -492,7 +495,9 @@ describe('the page, in the rest of its states', () => {
   it('flips the ordering from the running head', async () => {
     put({ filings: [filing()], sort: 'LATEST' });
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText(/order|LATEST|CERTIFIED/i)); });
+    // The running head's own label: a certify control now says "members have
+    // certified this", so a looser pattern would find two controls.
+    await act(async () => { fireEvent.press(getByLabelText(/Sorted by latest/i)); });
     expect(useDispatch.getState().sort).toBe('CERTIFIED');
   });
 

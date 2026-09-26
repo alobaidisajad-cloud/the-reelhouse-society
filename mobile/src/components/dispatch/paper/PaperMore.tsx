@@ -1156,9 +1156,9 @@ export const LoungeCard = memo(function LoungeCard({
           </Text>
         </View>
 
-        <Text style={m.loungeMeta} {...deckLabelProps}>
-          {`${certifyCount} CERTIFIED · ${counted(commentCount ?? 0, 'CRITIQUE', 'CRITIQUES')}`}
-        </Text>
+        {/* No counts. A card shared into a room is a message pointing at a
+            post, and a count printed on it is frozen at the moment of sharing.
+            The live counts are one tap away, on the post itself. */}
       </View>
     </PressableScale>
   );
@@ -1713,10 +1713,6 @@ const m = StyleSheet.create({
    *  point from a value used on four other styles — a distinction with no
    *  reader and a third number in a scale that needs two. */
   loungeByNo: { color: colors.fog, letterSpacing: 0.8 },
-  loungeMeta: {
-    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.7, color: colors.fog,
-    marginTop: 5, includeFontPadding: false,
-  },
 
   // ── held filings ──────────────────────────────────────────────────────────
   /**
