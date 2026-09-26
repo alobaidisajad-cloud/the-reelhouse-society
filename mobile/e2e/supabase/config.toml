@@ -4,6 +4,13 @@
 # the database as it IS, not as the migration files say it should be.
 #
 # Only what differs from the CLI's defaults, or what the app depends on, is set.
+#
+# .temp/{postgres,gotrue,rest,storage}-version pin production's exact images
+# (read with `supabase link` on 2026-09-27: Postgres 17.6.1.084, auth v2.197.0,
+# PostgREST v14.5, storage v1.77.5). The CLI's defaults are other builds — the
+# first run failed because the default Postgres had no pg_net 0.20.0, which
+# production runs. If production is upgraded, the fidelity check fails on the
+# extension versions; re-read them the same way and update these files.
 
 project_id = "reelhouse-e2e"
 
