@@ -1,0 +1,116 @@
+name: 🔔 CI alert
+
+# ── WHEN MAIN GOES RED, SOMEBODY HEARS ABOUT IT ─────────────────────────────────
+# Native Jest failed on every push to main for two weeks (2026-09-10 → 09-24) and
+# the Android device job for two more, and nobody knew: the logs need a signed-in
+# member, a red cross on a commit page is seen only by someone who goes looking,
+# and GitHub's failure emails were switched off because they arrived on EVERY push.
+#
+# So a failure raises ONE issue, assigned to the repository owner — which reaches
+# them the way everything else on GitHub does, by email and on the phone app —
+# and nothing is sent while things are green:
+#
+#   red, no open alert        → open an issue naming the failing jobs, assigned
+#   red again, same jobs      → nothing (the issue already says it)
+#   red again, jobs changed   → one comment saying what changed
+#   green                     → one comment ("green again at <sha>"), issue closed
+#   cancelled / skipped       → nothing (a newer push superseded the run)
+#
+# One alert per workflow, found by a marker in the issue body, so two workflows
+# failing at once are two issues that each close on their own.
+#
+# workflow_run fires only for runs on the default branch's copy of this file, and
+# pull requests from forks never reach it — this never runs untrusted code: it
+# reads the finished run's metadata and writes an issue, nothing else.
+
+on:
+  workflow_run:
+    workflows:
+      - "🏛️ Nitrate Noir - God-Tier CI Matrix"
+      - "DB Security Integration Tests"
+    types: [completed]
+
+permissions:
+  issues: write
+  actions: read
+
+jobs:
+  alert:
+    if: github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const { owner, repo } = context.repo;
+            const conclusion = run.conclusion;
+            const red = ['failure', 'timed_out', 'startup_failure'].includes(conclusion);
+            const green = conclusion === 'success';
+            if (!red && !green) {
+              core.info(`"${run.name}" ended ${conclusion} — nothing to say.`);
+              return;
+            }
+
+            const LABEL = 'ci-red';
+            const marker = `<!-- ci-alert:${run.path} -->`;
+            const sha = run.head_sha.slice(0, 7);
+
+            // The one open alert for THIS workflow, if there is one.
+            const open = (await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', labels: LABEL, per_page: 100,
+            })).find((i) => (i.body || '').includes(marker));
+
+            if (green) {
+              if (!open) { core.info(`"${run.name}" is green and no alert is open.`); return; }
+              await github.rest.issues.createComment({ owner, repo, issue_number: open.number,
+                body: `✅ Green again at \`${sha}\` — [the run](${run.html_url}). Closing.` });
+              await github.rest.issues.update({ owner, repo, issue_number: open.number, state: 'closed', state_reason: 'completed' });
+              core.info(`Closed #${open.number}.`);
+              return;
+            }
+
+            // What failed, by job — and the step inside each job that failed.
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              owner, repo, run_id: run.id, per_page: 100,
+            });
+            const failed = jobs.filter((j) => j.conclusion === 'failure' || j.conclusion === 'timed_out');
+            const lines = failed.map((j) => {
+              const step = (j.steps || []).find((s) => s.conclusion === 'failure' || s.conclusion === 'timed_out');
+              return `- **${j.name}** — ${j.conclusion}${step ? ` at “${step.name}”` : ''} ([log](${j.html_url}))`;
+            });
+            const signature = failed.map((j) => j.name).sort().join(' | ') || conclusion;
+
+            if (open) {
+              // Same failure as the one already reported: say nothing more.
+              if ((open.body || '').includes(`<!-- jobs:${signature} -->`)) {
+                core.info(`#${open.number} already reports this failure.`);
+                return;
+              }
+              await github.rest.issues.createComment({ owner, repo, issue_number: open.number,
+                body: `Still red at \`${sha}\`, and what is failing changed — [the run](${run.html_url}):\n\n${lines.join('\n') || `- the run ended **${conclusion}** before any job reported`}` });
+              await github.rest.issues.update({ owner, repo, issue_number: open.number,
+                body: (open.body || '').replace(/<!-- jobs:[^>]*-->/, `<!-- jobs:${signature} -->`) });
+              core.info(`Updated #${open.number}.`);
+              return;
+            }
+
+            // First failure: make sure the label exists, then open the alert.
+            try { await github.rest.issues.getLabel({ owner, repo, name: LABEL }); }
+            catch { await github.rest.issues.createLabel({ owner, repo, name: LABEL, color: 'b60205', description: 'CI on main is failing (opened and closed by ci-alert.yml)' }); }
+
+            const body = [
+              marker,
+              `<!-- jobs:${signature} -->`,
+              `**${run.name}** failed on \`main\` at \`${sha}\` (${run.event}).`,
+              '',
+              lines.join('\n') || `- the run ended **${conclusion}** before any job reported`,
+              '',
+              `[Open the run](${run.html_url})`,
+              '',
+              'This issue closes itself the next time this workflow is green on `main`.',
+            ].join('\n');
+            const created = await github.rest.issues.create({ owner, repo,
+              title: `CI is red: ${run.name}`, body, labels: [LABEL], assignees: [owner] });
+            core.info(`Opened #${created.data.number}.`);

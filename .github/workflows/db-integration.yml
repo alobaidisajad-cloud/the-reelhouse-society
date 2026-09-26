@@ -10,10 +10,14 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Weekly, with no push behind it — the same rot check as god_tier_ci.yml.
+  schedule:
+    - cron: '0 6 * * 1'
 
 jobs:
   db-security:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     services:
       postgres:
         image: postgres:17
@@ -27,7 +31,8 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      # Pinned to one commit (see god_tier_ci.yml).
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Run database security integration tests
         env:

@@ -105,3 +105,7 @@ dist-ssr
 # Vercel env pull output — contains real values, never commit
 .env.vercel.pull
 .env*.pull
+
+# A local AI tool's folder. Its skills folder is a git repo of its own, so
+# committing it records a submodule CI's checkout cannot fetch (exit code 128).
+.gemini/
