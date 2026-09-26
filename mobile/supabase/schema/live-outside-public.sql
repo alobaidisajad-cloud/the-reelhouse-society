@@ -21,15 +21,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types, avif_autodetection) VALUES ('avatars', 'avatars', 't', 2097152, '{image/jpeg,image/png,image/webp,image/gif}'::text[], 'f');
 
 -- ── row-level security on tables outside public
-CREATE POLICY "Avatar images are publicly accessible." ON storage.objects AS PERMISSIVE FOR SELECT TO public USING ((bucket_id = 'avatars'::text));
-CREATE POLICY "Users can delete their own avatar." ON storage.objects AS PERMISSIVE FOR DELETE TO public USING (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
-CREATE POLICY "Users can update mathematically verified images" ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated USING (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]))) WITH CHECK (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]) AND (name ~* '\.(png|jpg|jpeg|webp)$'::text)));
-CREATE POLICY "Users can update their own avatar." ON storage.objects AS PERMISSIVE FOR UPDATE TO public USING (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
-CREATE POLICY "Users can upload mathematically verified images" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]) AND (name ~* '\.(png|jpg|jpeg|webp)$'::text)));
-CREATE POLICY "Users can upload their own avatar." ON storage.objects AS PERMISSIVE FOR INSERT TO public WITH CHECK (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
-CREATE POLICY auth_upload ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (((bucket_id = 'screening-room'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
-CREATE POLICY owner_delete ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated USING (((bucket_id = 'screening-room'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
-CREATE POLICY public_read ON storage.objects AS PERMISSIVE FOR SELECT TO public USING ((bucket_id = 'screening-room'::text));
+CREATE POLICY avatars_delete_own ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated USING (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text)));
+CREATE POLICY avatars_read_own ON storage.objects AS PERMISSIVE FOR SELECT TO authenticated USING (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text)));
+CREATE POLICY avatars_replace_own ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated USING (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))) WITH CHECK (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text) AND (name ~* '\.(png|jpe?g|webp|gif)$'::text)));
+CREATE POLICY avatars_upload_own ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text) AND (name ~* '\.(png|jpe?g|webp|gif)$'::text)));
 
 -- ── scheduled jobs
 SELECT cron.schedule_in_database('freeze-closed-ballots', '*/5 * * * *', 'SELECT public.freeze_closed_ballots();', 'postgres', 'postgres', 't');

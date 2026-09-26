@@ -63,6 +63,22 @@ it('sees outside public — the parts pg_dump -n public cannot', () => {
   expect(read('live-extensions.sql')).toMatch(/^CREATE EXTENSION IF NOT EXISTS pg_cron /m);
 });
 
+/**
+ * Storage rules are ORed, so ONE loose rule opens what every strict one closes.
+ * That is how an extension check never bound: a looser twin let any name
+ * through. And a rule for visitors let anyone list every avatar folder — every
+ * member id. A public bucket needs no rule to SHOW a file; rules only govern
+ * the API, and every act there is a member's, in their own folder.
+ */
+it('every storage rule is for signed-in members, in their own folder — and a write keeps an image extension', () => {
+  const rules = read('live-outside-public.sql').split('\n').filter((l) => / ON storage\.objects /.test(l));
+  expect(rules.length).toBeGreaterThanOrEqual(4);
+  const own = /\(storage\.foldername\(name\)\)\[1\] = \(\( SELECT auth\.uid\(\) AS uid\)\)::text/;
+  expect(rules.filter((l) => !/ TO authenticated /.test(l) || !own.test(l))).toEqual([]);
+  const writes = rules.filter((l) => / FOR (INSERT|UPDATE) /.test(l));
+  expect(writes.filter((l) => !/ WITH CHECK \(.*name ~\* /.test(l))).toEqual([]);
+});
+
 it('each file says where it runs in the build order', () => {
   expect(read('live-extensions.sql')).toContain('Run FIRST: live-extensions.sql, then live-schema.sql, then live-outside-public.sql.');
   expect(read('live-outside-public.sql')).toContain('Run LAST, after live-schema.sql.');
