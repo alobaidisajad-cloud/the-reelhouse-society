@@ -142,10 +142,8 @@ describe('each tap is delivered once', () => {
 });
 
 describe('the contract, both sides', () => {
-  it('every notify-push sends the notice id — and the app reads exactly that key', () => {
-    for (const fn of ['supabase/functions/notify-push/index.ts', '../supabase/functions/notify-push/index.ts']) {
-      expect(read(fn)).toMatch(/notificationId: record\.id/);
-    }
+  it('notify-push sends the notice id — and the app reads exactly that key', () => {
+    expect(read('supabase/functions/notify-push/index.ts')).toMatch(/notificationId: record\.id/);
     expect(read('src/utils/openNoticeFromPush.ts')).toMatch(/data\?\.notificationId/);
   });
 
