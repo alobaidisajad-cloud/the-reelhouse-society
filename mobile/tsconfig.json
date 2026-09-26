@@ -19,6 +19,7 @@
   ],
   "exclude": [
     "jest.config.js",
-    "supabase/**"
+    "supabase/**",
+    "e2e/supabase/**"
   ]
 }

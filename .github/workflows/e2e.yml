@@ -1,0 +1,136 @@
+name: 🎬 Sealed E2E
+
+# ── THE APP, END TO END, IN A WORLD THAT CANNOT TOUCH PRODUCTION ────────────────
+# The old device job built with EAS (15 free Android builds a month, all used by
+# 2026-09-11) and signed in as test@reelhouse.app, an account that does not
+# exist in production. It could not pass, so it proved nothing.
+#
+# This builds its own world on the runner, every run, from nothing:
+#   · a local Supabase with production's exact shape, built from the committed
+#     snapshot (mobile/supabase/schema/*.sql), and CHECKED against it with
+#     schema:check — a copy that differs proves nothing about production
+#   · production's host pointed at 0.0.0.0, on the runner and inside every
+#     container, and proved: the database's one outbound call cannot connect
+#   · members made through the auth API, with a fresh password each run
+#   · TMDB answered from recordings (e2e/supabase/functions/tmdb-proxy), and
+#     every request with no recording listed on the run's summary
+#
+# Free: the repository is public, so Actions minutes cost nothing.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  world:
+    name: 🌍 Sealed world — production's shape, production out of reach
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
+        with:
+          version: 2.118.0
+
+      # The snapshot was taken with pg_dump 18; the fidelity check must read the
+      # copy with the same major, or every line of formatting looks like drift.
+      - name: Postgres 18 client tools
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+
+      - name: Start the local stack
+        working-directory: mobile/e2e
+        run: supabase start -x studio,imgproxy,logflare,vector,supavisor,postgres-meta
+
+      - name: Seal it — production's host goes nowhere, on the runner and in every container
+        run: |
+          HOST=$(node -e "console.log(new URL(require('./mobile/eas.json').build.production.env.EXPO_PUBLIC_SUPABASE_URL).hostname)")
+          echo "E2E_PROD_HOST=$HOST" >> "$GITHUB_ENV"
+          echo "0.0.0.0 $HOST" | sudo tee -a /etc/hosts > /dev/null
+          for c in $(docker ps --format '{{.Names}}' | grep reelhouse-e2e); do
+            if docker exec -u root "$c" sh -c "echo '0.0.0.0 $HOST' >> /etc/hosts" 2>/dev/null; then
+              echo "sealed $c"
+            else
+              echo "::error title=E2E seal::could not seal container $c"; exit 1
+            fi
+          done
+          if curl -sS -m 5 -o /dev/null "https://$HOST"; then
+            echo "::error title=E2E seal::the runner can still reach $HOST"; exit 1
+          fi
+          echo "The runner cannot reach $HOST."
+
+      - name: Build production's shape from the snapshot
+        run: node mobile/e2e/db/bootstrap.mjs
+
+      - name: Fidelity — the copy must produce the same snapshot as production
+        env:
+          SNAPSHOT_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          SNAPSHOT_SAME_MAJOR: '1'
+        run: node mobile/scripts/schema-snapshot.mjs --check
+
+      - name: Keys for the local stack
+        working-directory: mobile/e2e
+        run: supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' | sed 's/"//g' >> "$GITHUB_ENV"
+
+      - name: Seed the members
+        run: node mobile/e2e/db/seed.mjs
+
+      # sign-in-with-username is production's own function, served as it is;
+      # tmdb-proxy is the recorded stand-in.
+      - name: Serve the functions
+        run: |
+          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          cd mobile/e2e
+          nohup supabase functions serve --no-verify-jwt > "$RUNNER_TEMP/functions.log" 2>&1 &
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS "$API_URL/functions/v1/tmdb-proxy" || true)
+            [ "$code" = "200" ] && break
+            sleep 2
+          done
+          [ "$code" = "200" ] || { echo "::error title=E2E functions::the functions never came up"; cat "$RUNNER_TEMP/functions.log"; exit 1; }
+          # The runtime is a new container; seal it too.
+          for c in $(docker ps --format '{{.Names}}' | grep -i edge_runtime); do
+            docker exec -u root "$c" sh -c "echo '0.0.0.0 $E2E_PROD_HOST' >> /etc/hosts" || { echo "::error title=E2E seal::could not seal $c"; exit 1; }
+            echo "sealed $c"
+          done
+
+      - name: The functions answer as the app needs
+        run: node mobile/e2e/db/verify-functions.mjs
+
+      - name: TMDB requests with no recording
+        if: always()
+        run: |
+          MISSES=$(grep -o 'E2E-TMDB-MISS .*' "$RUNNER_TEMP/functions.log" 2>/dev/null | sort -u || true)
+          {
+            echo "### TMDB requests with no recording"
+            if [ -z "$MISSES" ]; then echo "None."; else
+              echo 'Record them with `node e2e/tmdb/record.mjs --from <this list>` (run in mobile/):'
+              echo '```'; echo "$MISSES"; echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the logs of a failed run
+        if: failure()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: e2e-world-logs
+          path: ${{ runner.temp }}/functions.log
+          if-no-files-found: ignore

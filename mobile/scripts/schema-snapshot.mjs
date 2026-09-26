@@ -66,8 +66,15 @@ const SCHEMA_FILE = join(OUT_DIR, 'live-schema.sql');
 const OUTSIDE_FILE = join(OUT_DIR, 'live-outside-public.sql');
 const CHECK = process.argv.includes('--check');
 
-/** Read SUPABASE_DB_URL the same way check-backend-live.mjs does. */
+/**
+ * The database to read. Production's, from SUPABASE_DB_URL in .env.local (the
+ * way check-backend-live.mjs reads it) — unless SNAPSHOT_DB_URL names another.
+ * The sealed E2E world sets it to its local copy and runs --check: the copy
+ * must produce the same three files as production, or the tests run on it
+ * prove nothing about production.
+ */
 function dbUrl() {
+  if (process.env.SNAPSHOT_DB_URL) return process.env.SNAPSHOT_DB_URL;
   for (const f of ['.env.local', '.env']) {
     const p = join(HERE, '..', f);
     if (!existsSync(p)) continue;
@@ -270,9 +277,18 @@ const committedSchema = readFileSync(SCHEMA_FILE, 'utf8');
 // A version mismatch produces formatting differences indistinguishable from real
 // drift. Say so plainly rather than printing a 500-line diff nobody can read.
 const recorded = committedSchema.match(/^-- pg_dump: (.+)$/m)?.[1];
-if (recorded && recorded !== version) {
+// SNAPSHOT_SAME_MAJOR=1 accepts another minor release of the same major (the
+// CI runner installs the current 18.x). The format changes between majors.
+const major = (v) => v?.match(/\) (\d+)\./)?.[1];
+const sameMajorAllowed = process.env.SNAPSHOT_SAME_MAJOR === '1' && major(recorded) && major(recorded) === major(version);
+if (recorded && recorded !== version && !sameMajorAllowed) {
   console.error(`✗ pg_dump version mismatch.\n    snapshot taken with: ${recorded}\n    yours:               ${version}\n  Formatting differs between versions, so any diff below would be noise.\n  Use the recorded version, or re-take the snapshot deliberately.`);
   process.exit(2);
+}
+if (sameMajorAllowed && recorded !== version) {
+  console.log(`  (pg_dump ${version} accepted for a snapshot taken with ${recorded}: same major)`);
+  const at = live.findIndex(([file]) => file === SCHEMA_FILE);
+  live[at][1] = live[at][1].replace(`-- pg_dump: ${version}`, `-- pg_dump: ${recorded}`);
 }
 
 /**

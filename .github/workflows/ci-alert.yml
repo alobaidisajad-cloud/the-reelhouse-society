@@ -28,6 +28,7 @@ on:
     workflows:
       - "🏛️ Nitrate Noir - God-Tier CI Matrix"
       - "DB Security Integration Tests"
+      - "🎬 Sealed E2E"
     types: [completed]
 
 permissions:
