@@ -164,6 +164,37 @@ describe.each(Object.entries(BARS))('%s', (_name, bar) => {
   });
 });
 
+describe('the number itself', () => {
+  const { formatCount } = jest.requireActual('@/src/components/dispatch/paper/paperMetrics');
+  it.each([
+    [0, null], [0.4, null], [-3, null], [NaN, null],
+    [1, '1'], [7, '7'], [12, '12'], [999, '999'],
+    [1000, '1K'], [1050, '1K'], [1960, '1.9K'], [2140, '2.1K'], [9999, '9.9K'],
+    [10_000, '10K'], [24_310, '24K'], [999_999, '999K'],
+    [1_000_000, '1M'], [1_250_000, '1.2M'], [9_999_999, '9.9M'], [10_000_000, '10M'], [999_999_999, '999M'],
+    [1_000_000_000, '1B'], [3_700_000_000, '3.7B'], [5e13, '999B'],
+  ])('%p → %p', (n, want) => {
+    expect(formatCount(n)).toBe(want);
+  });
+
+  it('never claims more than happened, and never runs past four characters', () => {
+    // Every count from 1 to a million, and a sweep past it: parsed back, the
+    // label is never above the true number, and never five characters long.
+    const back = (s: string) => {
+      const m = /^([\d.]+)([KMB]?)$/.exec(s)!;
+      return Number(m[1]) * ({ '': 1, K: 1e3, M: 1e6, B: 1e9 } as Record<string, number>)[m[2]];
+    };
+    for (let n = 1; n <= 1_000_000; n += n < 2000 ? 1 : 37) {
+      const s = formatCount(n)!;
+      if (back(s) > n + 1e-6 || s.length > 4) throw new Error(`${n} → ${s}`);
+    }
+    for (let n = 1e6; n < 1e12; n *= 1.37) {
+      const s = formatCount(n)!;
+      if (back(s) > n + 1e-3 || s.length > 4) throw new Error(`${n} → ${s}`);
+    }
+  });
+});
+
 describe('how far a count may reach', () => {
   // A bar drawn on seams keeps each number inside its own column; a bar set on
   // the bare page lets it run on toward the next icon (MarkFigure, `reach`).

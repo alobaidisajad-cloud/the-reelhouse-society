@@ -1,21 +1,21 @@
 {
   "total": {
-    "lines": 56.22,
-    "branches": 48.11,
-    "functions": 52.84,
-    "statements": 54.45
+    "lines": 56.24,
+    "branches": 48.12,
+    "functions": 52.85,
+    "statements": 54.47
   },
   "./src/components/dispatch/": {
-    "lines": 93.6,
-    "branches": 84.87,
-    "functions": 92.34,
-    "statements": 91.95
+    "lines": 93.95,
+    "branches": 85.14,
+    "functions": 92.38,
+    "statements": 92.27
   },
   "./src/components/": {
-    "lines": 58.15,
-    "branches": 50.38,
-    "functions": 52.02,
-    "statements": 56.51
+    "lines": 58.22,
+    "branches": 50.41,
+    "functions": 52.05,
+    "statements": 56.58
   },
   "./src/utils/": {
     "lines": 84.28,

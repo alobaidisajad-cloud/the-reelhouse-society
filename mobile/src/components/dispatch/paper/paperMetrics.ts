@@ -378,7 +378,6 @@ export const SECTION_COLOR: Record<string, string> = {
   ESSAYS: KIND_RULE.dossier,
 };
 
-/** `12` · `1.2K` · `1M` — and nothing at all at zero, which is the point. */
 /**
  * `25000` → `25,000`. A grouped number, not an abbreviated one.
  *
@@ -407,13 +406,35 @@ export const groupDigits = (n: number): string => {
   return negative ? '-' + out : out;
 };
 
+/**
+ * `7` · `12` · `999` · `1K` · `2.1K` · `24K` · `999K` · `1.2M` · `3B` — and
+ * nothing at all at zero, which is the point. Not capped: thousands, millions
+ * and billions each have their letter.
+ *
+ * ── TRUNCATED, NEVER ROUNDED UP ─────────────────────────────────────────────
+ * It rounded. So 999,999 read `1000K` — five characters, in a bar measured for
+ * four, and a unit a reader has to convert — and 1,960 read `2K`, more than
+ * had actually certified. A count shown on the house's own mark must never
+ * claim more than happened, so every figure is cut, not rounded: 1,960 is
+ * `1.9K`, 999,999 is `999K`, 1,000,000 is `1M`. The arithmetic is in whole
+ * numbers (tenths), because `2.14 * 10` in floating point is not always 21.4.
+ *
+ * Never wider than four characters (`999K`, `9.9M`, `999B`): MarkFigure's
+ * room on the narrowest bar is measured for exactly that.
+ */
+const COUNT_UNITS: readonly (readonly [number, string])[] = [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+
 export const formatCount = (n: number): string | null => {
-  if (!n || n < 1) return null;
-  if (n < COUNT_EXACT_BELOW) return String(n);
-  if (n < 1_000_000) {
-    const k = n / 1000;
-    return `${k < 10 ? k.toFixed(1).replace(/\.0$/, '') : Math.round(k)}K`;
+  if (!Number.isFinite(n) || n < 1) return null;
+  const whole = Math.floor(n);
+  if (whole < COUNT_EXACT_BELOW) return String(whole);
+  const [size, unit] = COUNT_UNITS.find(([s]) => whole >= s)!;
+  const tenths = Math.floor((whole * 10) / size);
+  if (tenths < 100) {
+    const units = Math.floor(tenths / 10);
+    const tenth = tenths % 10;
+    return tenth ? `${units}.${tenth}${unit}` : `${units}${unit}`;
   }
-  const m = n / 1_000_000;
-  return `${m < 10 ? m.toFixed(1).replace(/\.0$/, '') : Math.round(m)}M`;
+  // A trillion and past it: still four characters, still no more than true.
+  return `${Math.min(Math.floor(tenths / 10), 999)}${unit}`;
 };
