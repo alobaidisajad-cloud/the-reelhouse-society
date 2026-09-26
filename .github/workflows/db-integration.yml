@@ -9,14 +9,22 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Run by hand from the Actions tab. With the fire drill ticked, the run fails on
+  # purpose, which proves a red main still reaches the owner (ci-alert.yml opens an
+  # issue). Run it again without the tick and the issue closes itself.
   workflow_dispatch:
+    inputs:
+      fire_drill:
+        description: 'Fire drill: fail on purpose to prove the CI alert reaches you'
+        type: boolean
+        default: false
   # Weekly, with no push behind it — the same rot check as god_tier_ci.yml.
   schedule:
     - cron: '0 6 * * 1'
 
 jobs:
   db-security:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     services:
       postgres:
@@ -31,6 +39,12 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
+      - name: Fire drill — fail on purpose
+        if: ${{ inputs.fire_drill }}
+        run: |
+          echo "::error title=Fire drill::This run failed on purpose, to prove the CI alert opens an issue. Run this workflow again without the fire drill to close it."
+          exit 1
+
       # Pinned to one commit (see god_tier_ci.yml).
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 

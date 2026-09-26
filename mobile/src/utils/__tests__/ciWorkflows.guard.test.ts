@@ -4,8 +4,9 @@
  * 1. Every outside action runs at one exact commit. A tag (`@v5`) is a pointer
  *    its owner can move to other code, and that code runs with this repo's
  *    secrets. The version it was pinned at is written beside it.
- * 2. Every job has a time limit. Without one a hung step holds a runner for six
- *    hours and reports nothing.
+ * 2. Every job has a time limit, and names its runner image. Without a limit a
+ *    hung step holds a runner for six hours and reports nothing; `-latest`
+ *    moves to a new OS on GitHub's date, not ours.
  * 3. Every workflow that runs on `main` is watched by ci-alert.yml — by its exact
  *    name, which is how workflow_run finds it. Rename a workflow and forget the
  *    alert, and its failures would go back to being silent.
@@ -21,7 +22,7 @@ const { parse } = require(require.resolve('yaml/package.json').replace(/package\
 
 const DIR = join(__dirname, '..', '..', '..', '..', '.github', 'workflows');
 type Step = { uses?: string };
-type Job = { 'timeout-minutes'?: number; steps?: Step[] };
+type Job = { 'timeout-minutes'?: number; 'runs-on'?: string; steps?: Step[] };
 type Workflow = { name: string; on: Record<string, unknown> | string | string[]; jobs: Record<string, Job> };
 
 const files = readdirSync(DIR).filter((f) => /\.ya?ml$/.test(f));
@@ -49,6 +50,13 @@ describe.each(workflows.map((w) => [w.file, w] as const))('%s', (_file, { text, 
     for (const [name, job] of Object.entries(wf.jobs)) {
       expect({ job: name, limit: typeof job['timeout-minutes'] === 'number' && job['timeout-minutes'] > 0 })
         .toEqual({ job: name, limit: true });
+    }
+  });
+
+  it('runs every job on a named runner image, never a moving -latest', () => {
+    for (const [name, job] of Object.entries(wf.jobs)) {
+      const image = String(job['runs-on'] ?? '');
+      expect({ job: name, named: /^[a-z]+-\d+(\.\d+)?$/.test(image) }).toEqual({ job: name, named: true });
     }
   });
 });

@@ -8,7 +8,7 @@ on:
 jobs:
   lighthouse:
     name: Lighthouse Audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       # Pinned to one commit (see god_tier_ci.yml).

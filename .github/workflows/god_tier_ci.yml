@@ -18,6 +18,9 @@ on:
 # and that code runs with this repository's secrets. Each `uses:` names the exact
 # commit, with the release it was on the day it was pinned. Moving one is a
 # decision someone makes in a commit, never something that happens to us.
+#
+# The runner too: `ubuntu-latest` moves to a new Ubuntu on GitHub's date, not ours
+# (to 26 from 2026-10-19). Every job names ubuntu-24.04.
 
 # A run a newer push has already superseded is cancelled instead of finishing work
 # nobody will read. (A cancelled run raises no alert — see ci-alert.yml.)
@@ -35,7 +38,7 @@ concurrency:
 jobs:
   strict-analysis:
     name: 🔬 Strict Architecture Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Every job has a ceiling. A hung step used to hold a runner for the
     # default six hours and report nothing; now it fails, and the alert says so.
     timeout-minutes: 20
@@ -80,7 +83,7 @@ jobs:
 
   native-unit-tests:
     name: 🧪 Native Jest Unit Tests + Coverage Gate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     needs: strict-analysis
     steps:
@@ -172,7 +175,7 @@ jobs:
 
   web-unit-tests:
     name: 🧪 Web Vitest Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     needs: strict-analysis
     steps:
@@ -197,7 +200,7 @@ jobs:
 
   web-visual-regression:
     name: 📸 Web Playwright Visual Regression
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     needs: strict-analysis
     steps:
@@ -218,7 +221,7 @@ jobs:
 
   native-smoke-test:
     name: 📱 Maestro Flow YAML Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     needs: strict-analysis
     steps:
