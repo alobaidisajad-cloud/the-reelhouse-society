@@ -58,21 +58,32 @@ node mockups/tools/layout.cjs --src mockups/paper/out --skip r2-ratio-1x1,r3-rat
 node mockups/tools/layout.cjs --src mockups/out/captured
 ```
 
-Every text, in four passes — iOS at 1× and 1.35×, Android at 1.35× and 2× — each
-grown exactly as React Native 0.81 grows it on that platform (`harness.cjs`,
-`GROWTH`). Reports **CUT** (clipped, or a line under a box too short for it),
+Every text, in five passes — iOS at 1×, 1.35× and 3.1× (its largest accessibility
+size), Android at 1.35× and 2× — each grown exactly as React Native 0.81 grows it
+on that platform (`harness.cjs`, `GROWTH`). A text with a ceiling of its own stops
+there; a text with NONE grows to the system's largest size, because that is what a
+phone does (the app's Text in `src/components/text` gives every text the house
+1.35, so one with none escaped it). Reports **CUT** (clipped, or a line under a box too short for it),
 **OFF** (off the phone), **CLASH** (over another text), **RUN** (a word wider than
 its line — the phone would break it mid-letter), **HANG** (a mark's count beside
 its icon — `MarkFigure` — that crowds the icon at rest, runs past its reach, is
 cut short, or was shrunk under 10pt). `--shorts` also lists text the phone
 shortens with "…" or a clamp (not a fault). Exits 1 on any fault.
 
-`--width 360` (or 320) lays the renders on a narrower phone. Only a layout made
-of flex alone is honest there: a box a screen sized in JS from the window was
-sized for 390, and the browser will not shrink a flex item below its text the
-way the phone does — so a row of name, badge and time can report OFF at 320
-that the phone lays out by shortening the name. Use it for bars and rows you
-know are flex, and read what it reports.
+**Other devices.** Every width the app is drawn at is in `devices.json` — 320 (the
+narrowest phone iOS 15.1 runs on) to 1024 (iPad Pro 13, since `supportsTablet` is
+on), each with its own height. Draw AT a width, then measure there:
+
+```powershell
+$env:MOCKUPS=1; $env:MOCKUPS_WIDTH=320; npx jest "zz-.*\.gen"     # → mockups/out/screens-320
+node mockups/tools/layout.cjs --src mockups/out/screens-320 --width 320
+```
+
+Drawn at the width, a box a screen sizes in code from the window is sized for that
+device, and the measurement is honest. (Measuring a 390 render at 320 reported a
+poster rail and a stack grid running off a phone they were never laid out for.)
+A flex item that may shrink goes as far as Yoga lets it — to zero, unless it sets
+a minWidth — so a name shortens beside its date as on the phone (`zz-render.lib.ts`).
 
 `node mockups/tools/selftest.cjs` proves the tool can say **no**: it plants each
 fault in a small screen, plus a clean one, and fails unless every fault — and
@@ -92,8 +103,9 @@ nothing else — is reported. Run it after changing the tool.
   parent gives it (`RN_RULES`).
 - Font size AND line height grow with the text setting, to each text's own
   ceiling; iOS never grows letter spacing, and Android's is brought to iOS's by
-  `src/providers/androidTracking.ts`. Android grows a set line height past any
-  ceiling.
+  the app's Text (`src/components/text`, using `androidTracking.ts`) — for a text
+  that escaped it, Android spaces it × the setting. Android grows a set line
+  height past any ceiling.
 - A horizontal ScrollView lays its content in a row.
 - A label that may shrink is shrunk as the phone shrinks it — until it truly fits its width and
   its line limit, never below its floor — by ONE function both the audit and the camera use.

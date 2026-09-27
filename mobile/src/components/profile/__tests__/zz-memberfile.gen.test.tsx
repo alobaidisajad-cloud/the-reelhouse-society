@@ -22,7 +22,7 @@ const ART = { posters: POSTERS, local: LOCAL_ART };
 // for a tablet — see the note in zz-mockup.gen.
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
+  default: () => ({ ...require('@/mockups/paths').PHONE, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
 }));
 
 type Ctl = Record<string, unknown>;
@@ -175,7 +175,7 @@ whenRendering('member file generator', () => {
       let plate = bio ? bio.parent : null;
       while (plate && !(plate.props.style === s.headerWrap && typeof plate.props.onLayout === 'function')) plate = plate.parent;
       if (bio && !plate) throw new Error('the membership plate was not found');
-      if (plate) await act(async () => { plate!.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 484 } } }); });
+      if (plate) await act(async () => { plate!.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: require('@/mockups/paths').PHONE.width, height: 484 } } }); });
       return toHtml(r.toJSON(), ART);
     });
     writeScreen(name, html);

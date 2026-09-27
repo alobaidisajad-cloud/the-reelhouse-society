@@ -40,7 +40,7 @@ jest.mock('expo-sharing', () => ({ shareAsync: jest.fn(), isAvailableAsync: jest
  */
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
+  default: () => ({ ...require('@/mockups/paths').PHONE, scale: 3, fontScale: 1 }),
 }));
 
 /**

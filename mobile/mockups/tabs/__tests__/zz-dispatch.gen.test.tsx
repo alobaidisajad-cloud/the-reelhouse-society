@@ -29,12 +29,12 @@ jest.mock('react-native-safe-area-context', () => {
     SafeAreaProvider: ({ children }: any) => mockReact.createElement(View, null, children),
     SafeAreaView: ({ children, ...props }: any) => mockReact.createElement(View, props, children),
     useSafeAreaInsets: () => ({ top: 59, bottom: 34, left: 0, right: 0 }),
-    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
+    useSafeAreaFrame: () => ({ x: 0, y: 0, ...require('@/mockups/paths').PHONE }),
   };
 });
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
+  default: () => ({ ...require('@/mockups/paths').PHONE, scale: 3, fontScale: 1 }),
 }));
 jest.mock('@shopify/flash-list', () => require('../flashListMock').makeFlashListMock());
 jest.mock('@/src/lib/supabase', () => {

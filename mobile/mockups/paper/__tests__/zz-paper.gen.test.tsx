@@ -107,7 +107,7 @@ jest.mock('react-native-safe-area-context', () => {
   return {
     SafeAreaProvider: ({ children }: any) => R.createElement(V, null, children),
     useSafeAreaInsets: () => ({ top: 59, bottom: 34, left: 0, right: 0 }),
-    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
+    useSafeAreaFrame: () => ({ x: 0, y: 0, ...require('@/mockups/paths').PHONE }),
   };
 });
 
@@ -119,7 +119,7 @@ const NavSpace = () => (
 
 const TODAY = new Date(2026, 7, 28);
 
-const W = 390;
+const W: number = require('@/mockups/paths').PHONE.width;
 const COL = columnWidth(W);
 
 /**

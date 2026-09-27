@@ -44,12 +44,13 @@ const ONLY = opt('only') ? opt('only').split(',') : null;
 // Plates that are not the app: a proposal kept for comparison, never shipped.
 const SKIP = opt('skip') ? opt('skip').split(',') : [];
 /**
- * The passes: a platform and a text-size setting each. iOS grows nothing past
- * the app's 1.35, so 1.35 is its largest case. Android grows line height and
- * tracking with no ceiling (see harness GROWTH), so it is measured at its own
- * largest setting, 2, as well. `--passes ios@1,android@2` to choose.
+ * The passes: a platform and a text-size setting each. A text with a cap grows
+ * no further than it; a text WITHOUT one grows to the system's largest size —
+ * iOS's largest accessibility size is 3.1×, Android's setting reaches 2 — so
+ * both are measured. Android also grows line height past any cap (see harness
+ * GROWTH). `--passes ios@1,android@2` to choose.
  */
-const PASSES = opt('passes', opt('factors') ? opt('factors').split(',').map((f) => `ios@${f}`).join(',') : 'ios@1,ios@1.35,android@1.35,android@2')
+const PASSES = opt('passes', opt('factors') ? opt('factors').split(',').map((f) => `ios@${f}`).join(',') : 'ios@1,ios@1.35,ios@3.1,android@1.35,android@2')
   .split(',').map((p) => { const [platform, f] = p.split('@'); return { platform, f: Number(f) }; });
 const JSON_OUT = opt('json');
 // Also list every text the phone shortens ("…" or a clamp) — for reading, not a fault.

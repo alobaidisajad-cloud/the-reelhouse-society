@@ -2,10 +2,11 @@
  * The one page every measuring tool opens a rendered screen in.
  * ──────────────────────────────────────────────────────────────────────────
  * A render (`mockups/out/screens/<name>.html`, or `mockups/paper/out/*.html`)
- * is an HTML fragment of the app's resolved tree. This lays it on a phone —
- * 390pt wide unless `width` says otherwise (360 is the narrowest the app
- * targets; a box sized in JS from the window is still sized for 390, so only
- * a layout made of flex alone is honest at another width), the house colour
+ * is an HTML fragment of the app's resolved tree. This lays it on a device from
+ * mockups/devices.json — 390pt unless `width` says otherwise, at that device's
+ * own height. A screen that sizes boxes in code from the window is honest only
+ * at the width it was DRAWN at: draw it there first (MOCKUPS_WIDTH=320 writes
+ * out/screens-320) and measure that — the house colour
  * behind it — with the app's OWN font files
  * embedded (never a web font service: a measurement must not depend on a
  * network), and, when asked, at a larger text size exactly as the app allows
@@ -21,8 +22,15 @@ const MOBILE = path.join(__dirname, '..', '..');
 const { chromium } = require(path.join(MOBILE, '..', 'node_modules', 'playwright'));
 
 const HOUSE = '#0D0B09';
-const WIDTH = 390;
-const HEIGHT = 844;
+// The one device list (mockups/devices.json), shared with the generators.
+const DEVICES = JSON.parse(fs.readFileSync(path.join(MOBILE, 'mockups', 'devices.json'), 'utf8'));
+const WIDTH = DEVICES.default;
+const HEIGHT = DEVICES.heightAt[WIDTH];
+const heightAt = (width) => {
+  const h = DEVICES.heightAt[width];
+  if (!h) throw new Error(`width ${width} is not in mockups/devices.json (${Object.keys(DEVICES.heightAt).join(', ')})`);
+  return h;
+};
 
 const FACES = [
   ['Rye', 'rye/400Regular/Rye_400Regular.ttf', 400, 'normal'],
@@ -45,15 +53,24 @@ function fonts() {
 }
 
 /**
- * Two layout rules where the browser and React Native disagree, set the
+ * Three layout rules where the browser and React Native disagree, set the
  * phone's way for every render:
  *   · a box's width INCLUDES its padding and border (RN is border-box);
  *   · a text is never measured wider than the space its parent gives it — RN
  *     measures text against the available width, so a one-line label in a
  *     narrow cell ellipsises or shrinks to fit INSIDE the cell; a browser lets
- *     a centred text grow to its natural width and spill over its neighbour.
+ *     a centred text grow to its natural width and spill over its neighbour;
+ *   · a box laid in a COLUMN is at most as wide as that column. Yoga measures
+ *     it "at most" the parent's width, so a row inside shrinks whatever may
+ *     shrink; a browser gives it its content's width and lets it hang out both
+ *     sides (the film page's verdict row hung 9pt off a 320pt phone that draws
+ *     it whole). Not a box with a width of its own — Yoga lets that overflow,
+ *     and so must this — nor one placed absolutely. The lib writes each box's
+ *     style as `position:relative;…;width:Npx;…`, so `;width:` is its own width
+ *     and never `min-width` or `border-width`.
  */
-const RN_RULES = '*,*::before,*::after{box-sizing:border-box}span[data-scale-cap]{max-width:100%}';
+const RN_RULES = '*,*::before,*::after{box-sizing:border-box}span[data-scale-cap]{max-width:100%}'
+  + 'div[style*="flex-direction:column"]>div:not([style*=";width:"]):not([style^="width:"]):not([style*="position:absolute"]){max-width:100%}';
 
 /**
  * Every render in a folder, by name. A `<name>@<size>.html` is not a screen of
@@ -85,7 +102,10 @@ function screens(dir, only) {
  */
 const GROWTH = {
   ios: (f, cap) => ({ size: Math.min(f, cap), line: Math.min(f, cap), track: 1 }),
-  android: (f, cap) => ({ size: Math.min(f, cap), line: cap === 1 ? 1 : f, track: 1 }),
+  // Tracking: a text with a cap of its own was drawn by the app's Text (the one
+  // wrapper that also hands Android spacing ÷ f); a text with none escaped it,
+  // and Android spaces it × f.
+  android: (f, cap) => ({ size: Math.min(f, cap), line: cap === 1 ? 1 : f, track: Number.isFinite(cap) ? 1 : f }),
 };
 
 /**
@@ -98,7 +118,7 @@ const GROWTH = {
  * that is the one opened. The text in it is still at its base size (the phone
  * grows text natively, not in the style), so it is grown here just the same.
  */
-async function open(browser, file, { factor = 1, height = HEIGHT, platform = 'ios', width = WIDTH } = {}) {
+async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH, height = heightAt(width) } = {}) {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
   // A generator that lays a screen out at large sizes writes `@1.35` (iOS) and
   // `@android-1.35` / `@android-2`. iOS grows nothing past 1.35, so its larger
@@ -109,7 +129,7 @@ async function open(browser, file, { factor = 1, height = HEIGHT, platform = 'io
   const html = fs.readFileSync(sized || file, 'utf8');
   await page.setContent(
     `<!doctype html><html><head><meta charset="utf-8"><style>${fonts()}${RN_RULES}</style></head>` +
-    `<body style="margin:0;background:${HOUSE}"><div class="phone" style="width:${width}px;min-height:${HEIGHT}px;position:relative;background:${HOUSE}">${html}</div></body></html>`,
+    `<body style="margin:0;background:${HOUSE}"><div class="phone" style="width:${width}px;min-height:${height}px;position:relative;background:${HOUSE}">${html}</div></body></html>`,
     { waitUntil: 'load' },
   );
   await page.evaluate(() => document.fonts.ready);
@@ -121,10 +141,12 @@ async function open(browser, file, { factor = 1, height = HEIGHT, platform = 'io
       const all = [...document.querySelectorAll('[data-scale-cap]')];
       const plan = all.map((e) => {
         const cs = getComputedStyle(e);
-        // 0 means the Text set no cap of its own: AccessibilityProvider gives
-        // every Text the app-wide 1.35 (scaledTextProps). 1 means frozen.
+        // 0 means the Text carries no cap of its own — and on a phone that is
+        // NO cap: it grows to the system's largest size. (The app-wide 1.35 was
+        // once applied by patching Text's defaults, which React 19 never reads
+        // for a function component, so no phone ever had it.) 1 means frozen.
         const cap = Number(e.dataset.scaleCap);
-        const g = grow(f, cap === 0 ? 1.35 : cap);
+        const g = grow(f, cap === 0 ? Infinity : cap);
         const ls = parseFloat(cs.letterSpacing);
         return [e, parseFloat(cs.fontSize) * g.size,
           cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight) * g.line,

@@ -1,0 +1,14 @@
+{
+  "_": "Every width (portrait, points) the app is drawn and measured at, with each device's height. Read by mockups/paths.ts (the generators) and mockups/tools/harness.cjs (the measuring tools), so the two cannot disagree. 320: iPhone SE 1st gen, the narrowest phone iOS 15.1 runs on. 360: common narrow Android. 375: iPhone SE 2nd/3rd gen and 13 mini. 390: iPhone 13-15, the default. 430: the largest iPhones. 744 / 820 / 1024: iPad mini / Air / Pro 13, because supportsTablet is on.",
+  "default": 390,
+  "heightAt": {
+    "320": 568,
+    "360": 800,
+    "375": 667,
+    "390": 844,
+    "430": 932,
+    "744": 1133,
+    "820": 1180,
+    "1024": 1366
+  }
+}

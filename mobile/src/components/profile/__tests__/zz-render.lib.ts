@@ -246,6 +246,19 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
     out.push(`text-shadow:${o?.width ?? 0}px ${o?.height ?? 0}px ${(st.textShadowRadius as number) ?? 0}px ${ts}`);
   }
 
+  /**
+   * ── A BOX THAT MAY SHRINK, SHRINKS AS FAR AS YOGA LETS IT ─────────────────
+   * In Yoga a flex item that may shrink (flexShrink > 0, or any non-zero flex)
+   * has no automatic minimum: it goes down to its minWidth, which is 0 unless
+   * set. A browser stops it at its content (`min-width: auto`) — so a row of
+   * name, badge and time, where the phone shortens the name, was reported OFF
+   * at 320pt. Set here, BEFORE the style's own values, so a real minWidth or
+   * minHeight still wins (it used to be pushed later, and overrode them).
+   */
+  const shrinks = (typeof st.flexShrink === 'number' && st.flexShrink > 0)
+    || (typeof st.flex === 'number' && st.flex !== 0);
+  if (shrinks) out.push('min-width:0', 'min-height:0');
+
   for (const [k, v] of Object.entries(st)) {
     if (v === undefined || v === null) continue;
     if (k === 'fontFamily') {
@@ -267,7 +280,7 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
      * 0 → grow 0, shrink 0, basis auto; negative → grow 0, shrink 1, basis auto.
      */
     if (k === 'flex' && typeof v === 'number') {
-      if (v > 0) out.push(`flex:${v} 1 0%`, 'min-width:0', 'min-height:0');
+      if (v > 0) out.push(`flex:${v} 1 0%`);
       else if (v === 0) out.push('flex:0 0 auto');
       else out.push('flex:0 1 auto');
       continue;

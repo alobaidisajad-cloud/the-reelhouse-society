@@ -15,7 +15,7 @@ import PersonDetailScreen from '../[id]';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
+  default: () => ({ ...require('@/mockups/paths').PHONE, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
 }));
 
 let mockQuery: Record<string, unknown>;

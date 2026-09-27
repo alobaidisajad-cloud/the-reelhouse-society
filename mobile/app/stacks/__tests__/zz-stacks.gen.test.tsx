@@ -18,7 +18,7 @@ const STACK_ID = '11111111-1111-4111-8111-111111111111';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
+  default: () => ({ ...require('@/mockups/paths').PHONE, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
 }));
 
 let mockStackData: Record<string, unknown>;

@@ -13,7 +13,8 @@
  *
  * The testing library's own cleanup is switched off for the run, and this
  * cleans up instead — AFTER the picture — so the screen is still mounted when
- * it is drawn. The window is a 390pt phone (jest.setup.ts), not jest-expo's
+ * it is drawn. The window is the device from mockups/devices.json — 390pt unless
+ * MOCKUPS_WIDTH picks another (jest.setup.ts) — not jest-expo's
  * 750pt tablet, so a width the screen computes is a phone's width.
  *
  * What a captured screen is NOT: art (no posters are loaded) or light. It is

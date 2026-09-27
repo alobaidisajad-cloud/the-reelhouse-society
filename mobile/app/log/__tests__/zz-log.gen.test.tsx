@@ -17,7 +17,7 @@ const LOG_ID = '22222222-2222-4222-8222-222222222222';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
+  default: () => ({ ...require('@/mockups/paths').PHONE, scale: 3, fontScale: 1 }),
 }));
 
 let mockQuery: Record<string, unknown>;

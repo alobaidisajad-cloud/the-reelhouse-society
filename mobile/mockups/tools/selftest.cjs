@@ -36,33 +36,63 @@ const hung = ({ col, count, hangLeft = 11.5, hangRight = '0', marginRight = 2, o
     // The next column: its own icon, centred, as every bar draws it.
     `<div style="flex:1;display:flex;flex-direction:column;align-items:center"><div style="width:15px;height:15px;background:#777"></div></div>` +
   `</div>`;
-const EVERY = { 'ios@1': ['HANG'], 'ios@1.35': ['HANG'], 'android@1.35': ['HANG'], 'android@2': ['HANG'] };
+const EVERY = { 'ios@1': ['HANG'], 'ios@1.35': ['HANG'], 'ios@3.1': ['HANG'], 'android@1.35': ['HANG'], 'android@2': ['HANG'] };
+const ALL = (kind) => ({ 'ios@1': [kind], 'ios@1.35': [kind], 'ios@3.1': [kind], 'android@1.35': [kind], 'android@2': [kind] });
 
 /** name → [the screen, { pass: expected kinds }] (a pass not listed must be clean) */
 const CASES = {
   control: [box('padding:20px', T('font-size:12px;line-height:16px', 'Ozu frames a room and then leaves it.')), {}],
   // a word wider than its line, in a clamp — the tagline this tool once missed
   run: [box('width:120px', T('font-size:12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden', 'Sensational...Daring...Unforgettable')),
-    { 'ios@1': ['RUN'], 'ios@1.35': ['RUN'], 'android@1.35': ['RUN'], 'android@2': ['RUN'] }],
+    ALL('RUN')],
   // a two-line clamp in a box one line tall at large sizes — the filmography title
   cut: [box('width:110px', T('font-size:10px;line-height:13px;height:26px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden', 'In the Mood for Love', 1.2)),
-    { 'ios@1.35': ['CUT'], 'android@1.35': ['CUT'], 'android@2': ['CUT'] }],
+    { 'ios@1.35': ['CUT'], 'ios@3.1': ['CUT'], 'android@1.35': ['CUT'], 'android@2': ['CUT'] }],
+  // a label with NO cap of its own, in a cell sized for 1.35: on a phone it grows
+  // to the system's largest size (iOS 3.1, Android 2) — the app-wide 1.35 was a
+  // patch no phone ever ran — so it is cut there, and only there
+  uncapped: [box('width:66px;overflow:hidden', T('font-size:12px;white-space:nowrap;display:block', 'LOBBY', 0)),
+    { 'ios@3.1': ['CUT'], 'android@2': ['CUT'] }],
+  // the same label WITH a cap: it stops at 1.35 everywhere, and fits
+  capped: [box('width:66px;overflow:hidden', T('font-size:12px;white-space:nowrap;display:block', 'LOBBY', 1.35)), {}],
+  // a spaced label with no cap, in a cell it fits at iOS's 1.35: Android also
+  // spaces an uncapped text × its setting, and that alone pushes it over
+  androidtrack: [box('width:112px;overflow:hidden', T('font-size:10px;letter-spacing:4px;white-space:nowrap;display:block', 'ARCHIVIST', 0)),
+    { 'ios@3.1': ['CUT'], 'android@1.35': ['CUT'], 'android@2': ['CUT'] }],
   // a box sized for iOS's ceiling that Android's ceiling-less line outgrows
   androidline: [box('width:200px', T('font-size:10px;line-height:13px;height:36px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden', 'A caption that wraps onto a second line here', 1.35)),
     { 'android@2': ['CUT'] }],
   // runs off the phone
-  off: [box('padding-left:300px', T('font-size:12px;white-space:nowrap', 'SEVENTEEN LETTERS')),
-    { 'ios@1': ['OFF'], 'ios@1.35': ['OFF'], 'android@1.35': ['OFF'], 'android@2': ['OFF'] }],
+  off: [box('padding-left:300px', T('font-size:12px;white-space:nowrap', 'SEVENTEEN LETTERS')), ALL('OFF')],
   // two texts drawn over each other
   clash: [box('position:relative;height:40px', T('position:absolute;top:0;left:20px;font-size:14px', 'FIRST WORDS') + T('position:absolute;top:2px;left:30px;font-size:14px', 'SECOND WORDS')),
-    { 'ios@1': ['CLASH'], 'ios@1.35': ['CLASH'], 'android@1.35': ['CLASH'], 'android@2': ['CLASH'] }],
+    ALL('CLASH')],
+  // a row in a centred column, holding a mark and a one-line label that MAY shrink:
+  // Yoga holds the row to the column's width, so the label ellipsises inside it.
+  // (A browser let the row take its content's width and hang past the phone.)
+  colcap: [box('width:300px;margin-left:80px;align-items:center',
+    `<div style="position:relative;z-index:0;flex-shrink:0;display:flex;flex-direction:row;align-items:center">` +
+      `<div style="position:relative;z-index:0;flex-shrink:0;display:flex;flex-direction:column;width:90px;height:18px;background:#777"></div>` +
+      T('font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;min-width:0;display:block', 'THE HOUSE · 30 VOICES · AND MORE', 1.35) +
+    `</div>`), {}],
+  // the same row, but the label may NOT shrink: on the phone it truly runs off
+  colcapfixed: [box('width:300px;margin-left:80px;align-items:center',
+    `<div style="position:relative;z-index:0;flex-shrink:0;display:flex;flex-direction:row;align-items:center">` +
+      `<div style="position:relative;z-index:0;flex-shrink:0;display:flex;flex-direction:column;width:90px;height:18px;background:#777"></div>` +
+      T('font-size:14px;white-space:nowrap;flex-shrink:0;display:block', 'THE HOUSE · 30 VOICES · AND MORE', 1.35) +
+    `</div>`), ALL('OFF')],
+  // a box with a width OF ITS OWN, wider than its column: Yoga lets it overflow,
+  // so its far end — and the word set there — really is off the phone
+  colownwidth: [box('width:300px;margin-left:20px',
+    `<div style="position:relative;z-index:0;flex-shrink:0;display:flex;flex-direction:row;width:450px;justify-content:flex-end">` +
+      T('font-size:12px;white-space:nowrap;display:block', 'EDGE', 1.35) +
+    `</div>`), ALL('OFF')],
   // a label that fits its cell ONLY once shrunk, as the phone shrinks it: not a fault
   // (CERTIFIED at 12pt measures 63.7pt: unshrunk it runs 7.7pt past this 56pt cell and
   // is CUT, so this case fails if the shrink does not run; at its 0.75 floor it is 47.8)
   shrinks: [box('width:56px;overflow:hidden', T('font-size:12px;white-space:nowrap;display:block', 'CERTIFIED', 1, ' data-fit-min="0.75"')), {}],
   // a label clipped by its cell, whose shrink cannot save it
-  clip: [box('width:40px;overflow:hidden', T('font-size:12px;white-space:nowrap', 'CERTIFIED 2.1K', 0, ' data-fit-min="0.75"')),
-    { 'ios@1': ['CUT'], 'ios@1.35': ['CUT'], 'android@1.35': ['CUT'], 'android@2': ['CUT'] }],
+  clip: [box('width:40px;overflow:hidden', T('font-size:12px;white-space:nowrap', 'CERTIFIED 2.1K', 0, ' data-fit-min="0.75"')), ALL('CUT')],
   // a count hung properly in a column with room: nothing to report
   hangclean: [hung({ col: 80, count: '12' }), {}],
   // a count laid over its own icon (no offset past the icon's half)
@@ -90,7 +120,7 @@ spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', DIR, '
 const report = JSON.parse(fs.readFileSync(json, 'utf8'));
 
 let bad = 0;
-const PASSES = ['ios@1', 'ios@1.35', 'android@1.35', 'android@2'];
+const PASSES = ['ios@1', 'ios@1.35', 'ios@3.1', 'android@1.35', 'android@2'];
 for (const [name, [, expect]] of Object.entries(CASES)) {
   for (const pass of PASSES) {
     const [platform, f] = pass.split('@');

@@ -158,6 +158,33 @@ describe('7 — flex means opposite things in the two languages', () => {
   });
 });
 
+describe('7b — a box that may shrink goes as far as Yoga lets it', () => {
+  // Yoga gives a shrinking flex item no automatic minimum (min-width: auto in
+  // CSS stops it at its content). Without this, a row of name, badge and time
+  // where the phone shortens the name reported the TIME running off at 320pt.
+  it('any shrinking box — flexShrink, a positive flex, a negative flex — may reach zero', () => {
+    for (const style of [{ flexShrink: 1 }, { flex: 1 }, { flex: -1 }]) {
+      const o = css(style, false);
+      expect([wins(o, 'min-width'), wins(o, 'min-height')]).toEqual(['min-width:0', 'min-height:0']);
+    }
+    // a shrinking TEXT too: the phone ellipsises it rather than letting it push
+    expect(wins(css({ flexShrink: 1 }, true), 'min-width')).toBe('min-width:0');
+  });
+
+  it('a box that does not shrink keeps CSS\'s floor', () => {
+    expect(wins(css({ flex: 0 }, false), 'min-width')).toBeNull();
+    expect(wins(css({}, false), 'min-width')).toBeNull();
+    expect(wins(css({ flexShrink: 0 }, false), 'min-width')).toBeNull();
+  });
+
+  it('a real minWidth wins, whichever order the style lists them in', () => {
+    // It used to lose when it came FIRST: the flex branch pushed min-width:0 later.
+    expect(wins(css({ minWidth: 40, flex: 1 }, false), 'min-width')).toBe('min-width:40px');
+    expect(wins(css({ flex: 1, minWidth: 40 }, false), 'min-width')).toBe('min-width:40px');
+    expect(wins(css({ minHeight: 12, flexShrink: 1 }, false), 'min-height')).toBe('min-height:12px');
+  });
+});
+
 describe('8 — transform units are per function', () => {
   it('leaves scale unitless', () => {
     // `scale(1px)` is invalid, and one invalid function voids the WHOLE list —

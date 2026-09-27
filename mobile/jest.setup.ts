@@ -708,8 +708,9 @@ const realDimensionsGet = RNDimensions.get.bind(RNDimensions);
 jest.spyOn(RNDimensions, 'get').mockImplementation((...args: unknown[]) => ({
   ...realDimensionsGet(args[0] as 'window' | 'screen'),
   // A capture run (mockups/capture.ts) draws what the tests mount, so it lays
-  // them out on a phone, not on jest-expo's 750pt tablet.
-  ...(process.env.MOCKUPS_CAPTURE ? { width: 390, height: 844 } : null),
+  // them out on a phone (mockups/devices.json; MOCKUPS_WIDTH picks another),
+  // not on jest-expo's 750pt tablet.
+  ...(process.env.MOCKUPS_CAPTURE ? require('./mockups/paths').PHONE : null),
   fontScale: 1,
 }));
 

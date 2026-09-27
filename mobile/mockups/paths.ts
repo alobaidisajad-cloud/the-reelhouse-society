@@ -19,7 +19,32 @@ import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
 export const FIXTURES = join(__dirname, 'fixtures');
-export const OUT = process.env.MOCKUPS_OUT ?? join(__dirname, 'out', 'screens');
+
+/**
+ * Every width the app is drawn and measured at — ONE list, in devices.json,
+ * which the measuring tools (harness.cjs) read too. 320 is the narrowest phone
+ * iOS 15.1 (our floor) runs on; 375 the iPhone SE 2/3 and mini; 744–1024 the
+ * iPads, since supportsTablet is on. Each carries its own height, because a frame's height decides what
+ * scrolls.
+ */
+const DEVICES = JSON.parse(readFileSync(join(__dirname, 'devices.json'), 'utf8')) as { default: number; heightAt: Record<string, number> };
+export const WIDTHS = Object.keys(DEVICES.heightAt).map(Number);
+export const HEIGHT_AT: Record<number, number> = Object.fromEntries(Object.entries(DEVICES.heightAt).map(([w, h]) => [Number(w), h]));
+
+/**
+ * The device the screens are drawn ON. 390×844 unless MOCKUPS_WIDTH names
+ * another width from WIDTHS — and then the screen is DRAWN at it, not only
+ * measured at it: a box a screen sizes in code from the window is sized for
+ * that device. (Measuring a 390 render at 320 reported a poster rail and a
+ * stack grid running off a phone they were never laid out for.)
+ */
+const asked = Number(process.env.MOCKUPS_WIDTH ?? DEVICES.default);
+if (!WIDTHS.includes(asked)) throw new Error(`MOCKUPS_WIDTH=${process.env.MOCKUPS_WIDTH} is not one of ${WIDTHS.join(', ')}`);
+export const PHONE = { width: asked, height: HEIGHT_AT[asked] };
+
+/** Screens drawn at the default width land in out/screens; at another, out/screens-<width>. */
+export const OUT = process.env.MOCKUPS_OUT
+  ?? join(__dirname, 'out', PHONE.width === DEVICES.default ? 'screens' : `screens-${PHONE.width}`);
 
 /**
  * The largest text size the app lets a word grow to (`scaledTextProps`). Most

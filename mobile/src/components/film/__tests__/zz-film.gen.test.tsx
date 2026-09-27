@@ -50,7 +50,7 @@ jest.mock('react-native-safe-area-context', () => {
     SafeAreaProvider: ({ children }: any) => mockReact.createElement(View, null, children),
     SafeAreaView: ({ children, ...props }: any) => mockReact.createElement(View, props, children),
     useSafeAreaInsets: () => ({ top: 59, bottom: 34, left: 0, right: 0 }),
-    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
+    useSafeAreaFrame: () => ({ x: 0, y: 0, ...require('@/mockups/paths').PHONE }),
   };
 });
 // The phone is 390pt; the test renderer says 750 and would lay out for a tablet.
@@ -58,7 +58,7 @@ jest.mock('react-native-safe-area-context', () => {
 // large-type picture has to be laid out at large type, not just drawn larger.
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: 390, height: 844, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
+  default: () => ({ ...require('@/mockups/paths').PHONE, scale: 3, fontScale: require('@/mockups/paths').textSize.scale }),
 }));
 // FlashList measures off-screen; lay the children out plainly so the geometry
 // in the mockup is the geometry the phone draws.
