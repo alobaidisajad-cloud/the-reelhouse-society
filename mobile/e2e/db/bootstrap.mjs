@@ -65,7 +65,13 @@ runSql('0. clear public', AS_ADMIN, `
   CREATE SCHEMA public AUTHORIZATION pg_database_owner;`);
 
 // ── 1. extensions ─────────────────────────────────────────────────────────────
-runSql('1. extensions (live-extensions.sql)', AS_ADMIN, read('live-extensions.sql'));
+const extFile = read('live-extensions.sql');
+runSql('1. extensions (live-extensions.sql)', AS_ADMIN, extFile);
+// The local stack installs extensions production does not have (pg_graphql —
+// GraphQL is off in production). Anything the snapshot does not list goes.
+const wanted = new Set([...extFile.matchAll(/^CREATE EXTENSION IF NOT EXISTS "?([\w-]+)"?/gm)].map((m) => m[1]).concat('plpgsql'));
+const extra = query(AS_ADMIN, 'SELECT extname FROM pg_extension ORDER BY 1').split('\n').filter((e) => e && !wanted.has(e));
+if (extra.length) runSql(`1b. remove ${extra.join(', ')} (not in production)`, AS_ADMIN, extra.map((e) => `DROP EXTENSION "${e}" CASCADE;`).join('\n'));
 
 // ── 2 & 3. public ─────────────────────────────────────────────────────────────
 // Two kinds of statement in the dump need more than postgres: creating the
@@ -81,6 +87,46 @@ if (created !== 1) fail('2. public (live-schema.sql)', `expected one "CREATE SCH
 const adminLines = lines.filter(isAdminDefault);
 runSql('2. public (live-schema.sql), as postgres', AS_POSTGRES, lines.filter((l) => !isCreatePublic(l) && !isAdminDefault(l)).join('\n'));
 runSql(`3. ${adminLines.length} default-privilege rules for supabase_admin`, AS_ADMIN, adminLines.join('\n'));
+
+// ── 2b. the carriage returns production's function bodies hold ──────────────
+// 118 functions were saved with CRLF, and the CR is part of their stored text.
+// psql drops a CR at the end of every line it reads from a file, so step 2
+// made them without it. Each is made again as one query passed whole (psql -c
+// sends it as it is), so its bytes arrive intact. Found by the fidelity check.
+const functionStatements = (text) => {
+  const out = [];
+  const starts = /^CREATE FUNCTION /gm;
+  let m;
+  while ((m = starts.exec(text))) {
+    const open = /\bAS (\$[A-Za-z_]*\$)/g;
+    open.lastIndex = m.index;
+    const o = open.exec(text);
+    if (!o) fail('2b. function bodies', `no dollar quote after the function at offset ${m.index}`);
+    // pg_dump picks a tag that never appears in the body, so its next use closes it.
+    const close = text.indexOf(o[1], o.index + o[0].length);
+    const end = close < 0 ? -1 : text.indexOf(';', close + o[1].length);
+    if (end < 0) fail('2b. function bodies', `the function at offset ${m.index} never closes`);
+    out.push(text.slice(m.index, end + 1));
+    starts.lastIndex = end + 1;
+  }
+  return out;
+};
+const withCr = functionStatements(dump).filter((s) => s.includes('\r'));
+const crTotal = dump.split('\r').length - 1;
+const crCovered = withCr.reduce((n, s) => n + s.split('\r').length - 1, 0);
+if (crCovered !== crTotal) fail('2b. function bodies', `${crTotal} CRs in the dump but ${crCovered} inside functions — something else holds one`);
+console.log(`→ 2b. ${withCr.length} function bodies again, with their ${crTotal} carriage returns`);
+for (const stmt of withCr) {
+  try {
+    execFileSync('psql', [AS_POSTGRES, '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-c', stmt.replace(/^CREATE FUNCTION /, 'CREATE OR REPLACE FUNCTION ')], {
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+      // As in the dump's own preamble: names are qualified, and bodies are not checked at creation.
+      env: { ...process.env, PGOPTIONS: '-c search_path= -c check_function_bodies=off' },
+    });
+  } catch (e) {
+    fail('2b. function bodies', `${stmt.slice(16, 80)}…: ${(e.stderr || e.message).trim()}`);
+  }
+}
 
 // ── 4. everything outside public ─────────────────────────────────────────────
 // As postgres: in production postgres owns the event trigger and the realtime
