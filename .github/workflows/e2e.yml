@@ -90,6 +90,8 @@ jobs:
       # A release build, as a store build is made — only its backend differs:
       # the runner, seen from the emulator as 10.0.2.2. app.config.js allows
       # plain http and turns updates off for E2E=1, and the manifest is checked.
+      # Gradle gets 6 GB and 2 GB of Metaspace: the template's 512 MB Metaspace
+      # ran out in a library's release lint (the runner has 16 GB).
       - name: Build the E2E app (release APK)
         working-directory: mobile
         env:
@@ -103,7 +105,8 @@ jobs:
           {
             npx expo prebuild --platform android --no-install --clean \
             && grep -q 'android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml \
-            && (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain)
+            && (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain \
+                  "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError")
           } > "$RUNNER_TEMP/build.log" 2>&1
           rc=$?
           tail -n 200 "$RUNNER_TEMP/build.log"

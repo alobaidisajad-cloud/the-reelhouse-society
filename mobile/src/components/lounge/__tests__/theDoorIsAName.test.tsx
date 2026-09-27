@@ -62,11 +62,26 @@ describe('the door is a name, not a rank', () => {
     // match failed on both. Each flow is two YAML documents — config, then steps.
     const yaml = require('js-yaml') as { loadAll: (s: string) => unknown[] };
     const [, steps] = yaml.loadAll(readFileSync(join(ROOT, '.maestro', 'lounge_flow.yaml'), 'utf8')) as [unknown, Record<string, unknown>[]];
-    const visible = steps.map((s) => s.assertVisible).filter((v): v is string => typeof v === 'string');
-    const notVisible = steps.map((s) => s.assertNotVisible).filter((v): v is string => typeof v === 'string');
-    expect(visible).not.toContain('CLEARANCE REQUIRED');
-    expect(visible).toEqual(expect.arrayContaining(['MEMBERS ONLY', 'READ ANY SALON · ARCHIVISTS TAKE A SEAT']));
-    expect(notVisible).toContain('CLEARANCE REQUIRED');
+    // What the flow waits to SEE, and what it insists is NOT there — in order,
+    // from asserts and from waits alike.
+    const seen: string[] = [];
+    const unseen: string[] = [];
+    for (const s of steps) {
+      if (typeof s.assertVisible === 'string') seen.push(s.assertVisible);
+      if (typeof s.assertNotVisible === 'string') unseen.push(s.assertNotVisible);
+      const wait = s.extendedWaitUntil as { visible?: unknown; notVisible?: unknown } | undefined;
+      if (typeof wait?.visible === 'string') seen.push(wait.visible);
+      if (typeof wait?.notVisible === 'string') unseen.push(wait.notVisible);
+    }
+    const members = /MEMBERS ONLY/;
+    // The visitor meets the membership gate first; the signed-in member then
+    // sees the open corridor — and not the gate.
+    const gate = seen.findIndex((t) => members.test(t));
+    expect(gate).toBeGreaterThanOrEqual(0);
+    expect(gate).toBeLessThan(seen.indexOf('READ ANY SALON · ARCHIVISTS TAKE A SEAT'));
+    expect(seen).toContain('READ ANY SALON · ARCHIVISTS TAKE A SEAT');
+    expect(unseen.some((t) => members.test(t))).toBe(true);
+    expect(seen.some((t) => /CLEARANCE REQUIRED/.test(t))).toBe(false);
   });
 });
 

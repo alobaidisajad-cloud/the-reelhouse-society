@@ -132,7 +132,14 @@ jobs:
         working-directory: ./mobile
         run: |
           [ -f jest-output.txt ] || exit 0
-          { grep -E "^FAIL |● |Jest: |threshold|Error: " jest-output.txt | head -40; echo "── last lines ──"; tail -n 30 jest-output.txt; } > jest-failure.txt
+          # The failing files, then Jest's own summary of each failing test. Not
+          # every "● " line: each captured console call prints "● Console", and
+          # those filled all forty lines, so the report never named the failure.
+          {
+            grep -E "^FAIL " jest-output.txt | sort -u | head -20
+            sed -n '/Summary of all failing tests/,/^Test Suites:/p' jest-output.txt | grep -v "● Console" | head -60
+            grep -E "^Tests:|^Test Suites:|threshold" jest-output.txt | tail -5
+          } > jest-failure.txt
           echo "::error title=Jest failed::$(sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g' jest-failure.txt)"
 
       # ── The same suite, run from the Americas ────────────────────────────────

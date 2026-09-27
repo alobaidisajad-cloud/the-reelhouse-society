@@ -30,7 +30,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_TMDB_API_KEY: ${{ secrets.VITE_TMDB_API_KEY }}
+          # No TMDB key: the web reaches TMDB only through the tmdb-proxy function
+          # (src/vite-env.d.ts), and a VITE_ value is inlined into the bundle.
 
       - name: Run Vitest
         run: npx vitest run

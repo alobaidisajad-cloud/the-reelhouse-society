@@ -61,6 +61,24 @@ this app, and none may hold an account. Eight of the old thirteen flows named
 markers the app had dropped, and nothing said so; now a change to the app that
 strands a flow fails CI the same day.
 
+## When a flow fails only sometimes
+
+No retries. A retry turns "this fails one run in five" into green, and the
+one-in-five is usually a real race a member will also hit. A flow that fails
+without a change behind it is a finding: read its screen notice, and either
+fix the race in the app or make the flow wait for the true signal (an element,
+never a sleep). If it cannot be fixed that day, take it out of the run in its
+own commit, with an issue that names it — never by loosening its checks.
+
+## iOS
+
+Not in the sealed world, on purpose. GitHub's macOS runners have no Docker, so
+a local backend cannot run beside the iOS simulator, and pointing the flows at
+a hosted project would mean a second production-like database to keep in
+step. The Android run exercises the same JavaScript, the same backend and the
+same flows; what it cannot see is iOS-only native behaviour, which the device
+checks in the launch checklist cover.
+
 ## Running them yourself
 
 The sealed world needs Docker (for the local Supabase), a JDK 17, the Android
