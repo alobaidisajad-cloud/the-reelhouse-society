@@ -16,6 +16,13 @@ OUT=${RUNNER_TEMP:-/tmp}
 MAESTRO=${MAESTRO_BIN:-$HOME/.maestro/bin/maestro}
 
 adb install -r "$APK" || { echo "::error title=E2E::the app would not install"; exit 1; }
+# A freshly booted emulator on a software GPU is slow enough that its own
+# launcher misses a deadline, and Android puts "Pixel Launcher isn't
+# responding" over everything — the flows then look for the app under a system
+# dialog. Such dialogs are hidden (the app's own crash still reaches the log
+# below), and any already showing is closed.
+adb shell settings put global hide_error_dialogs 1
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1 || true
 adb logcat -c   # this run's log only, so a crash below is this run's crash
 
 "$MAESTRO" test "$FLOWS" \
@@ -33,10 +40,18 @@ if [ $rc -ne 0 ]; then
   "$MAESTRO" hierarchy > "$OUT/screen.json" 2>/dev/null || true
   node mobile/e2e/screen.mjs "$OUT/screen.json" > "$OUT/screen.txt"
   node mobile/e2e/annotate.mjs "What was on the screen when it failed" "$OUT/screen.txt" notice
-  # If the app is not on screen at all, it crashed: Android's log says why.
+  # What the APP said — not the whole emulator, whose own noise buried it:
+  # Android's crash buffer (a native or Java crash of any process), the
+  # JavaScript side's console, and every line from the app's process if it is
+  # still alive.
   adb logcat -d > "$OUT/logcat.txt" 2>/dev/null || true
-  grep -E "FATAL EXCEPTION|AndroidRuntime|ReactNativeJS|com.reelhouse.society|Error:|Exception" "$OUT/logcat.txt" \
-    | grep -v "^--" | tail -n 40 > "$OUT/crash.txt"
-  [ -s "$OUT/crash.txt" ] && node mobile/e2e/annotate.mjs "What the app said before it failed (logcat)" "$OUT/crash.txt"
+  {
+    adb logcat -d -b crash 2>/dev/null
+    adb logcat -d -s ReactNativeJS:V ReactNative:V 2>/dev/null
+    pid=$(adb shell pidof com.reelhouse.society 2>/dev/null | tr -d '\r')
+    [ -n "$pid" ] && adb logcat -d --pid="$pid" 2>/dev/null | grep -E " [EWF] "
+  } | grep -v "^--------- beginning of" | tail -n 60 > "$OUT/crash.txt"
+  [ -s "$OUT/crash.txt" ] || echo "(the app wrote nothing to the crash buffer or its own log)" > "$OUT/crash.txt"
+  node mobile/e2e/annotate.mjs "What the app said before it failed (logcat)" "$OUT/crash.txt"
 fi
 exit $rc

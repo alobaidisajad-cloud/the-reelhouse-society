@@ -11,10 +11,12 @@ appId: com.reelhouse.society
 # will timeout.
 - launchApp
 
+# A release build's first cold start on a CI emulator (software GPU) takes
+# far longer than on a phone.
 - extendedWaitUntil:
     visible:
       id: "home-tab"
-    timeout: 15000
+    timeout: 60000
 
 # Verify the full tab bar is rendered (proves navigation tree mounted
 # correctly).
