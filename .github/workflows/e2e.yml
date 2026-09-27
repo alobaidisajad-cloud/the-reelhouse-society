@@ -54,6 +54,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: 'gradle'
+          # android/ is made by prebuild, so there is no Gradle file to key on yet.
+          # The lock file changes whenever a native dependency does.
+          cache-dependency-path: mobile/package-lock.json
 
       - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:
