@@ -277,4 +277,5 @@ jobs:
             ${{ runner.temp }}/maestro-report.xml
             ${{ runner.temp }}/maestro-debug
             ${{ runner.temp }}/screen.txt
+            ${{ runner.temp }}/logcat.txt
           if-no-files-found: ignore

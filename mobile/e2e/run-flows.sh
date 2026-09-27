@@ -7,6 +7,8 @@
 # the screen at that moment as a notice.
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
+# Maestro sends usage analytics unless told not to; nothing leaves the sealed world.
+export MAESTRO_CLI_NO_ANALYTICS=1
 
 APK=mobile/android/app/build/outputs/apk/release/app-release.apk
 FLOWS=${E2E_FLOWS:-mobile/.maestro}
@@ -14,6 +16,7 @@ OUT=${RUNNER_TEMP:-/tmp}
 MAESTRO=${MAESTRO_BIN:-$HOME/.maestro/bin/maestro}
 
 adb install -r "$APK" || { echo "::error title=E2E::the app would not install"; exit 1; }
+adb logcat -c   # this run's log only, so a crash below is this run's crash
 
 "$MAESTRO" test "$FLOWS" \
   -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" \
@@ -30,5 +33,10 @@ if [ $rc -ne 0 ]; then
   "$MAESTRO" hierarchy > "$OUT/screen.json" 2>/dev/null || true
   node mobile/e2e/screen.mjs "$OUT/screen.json" > "$OUT/screen.txt"
   node mobile/e2e/annotate.mjs "What was on the screen when it failed" "$OUT/screen.txt" notice
+  # If the app is not on screen at all, it crashed: Android's log says why.
+  adb logcat -d > "$OUT/logcat.txt" 2>/dev/null || true
+  grep -E "FATAL EXCEPTION|AndroidRuntime|ReactNativeJS|com.reelhouse.society|Error:|Exception" "$OUT/logcat.txt" \
+    | grep -v "^--" | tail -n 40 > "$OUT/crash.txt"
+  [ -s "$OUT/crash.txt" ] && node mobile/e2e/annotate.mjs "What the app said before it failed (logcat)" "$OUT/crash.txt"
 fi
 exit $rc

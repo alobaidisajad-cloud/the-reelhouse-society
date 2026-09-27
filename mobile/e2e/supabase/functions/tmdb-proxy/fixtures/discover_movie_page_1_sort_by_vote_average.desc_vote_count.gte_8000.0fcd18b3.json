@@ -1,0 +1,421 @@
+{
+ "path": "/discover/movie?page=1&sort_by=vote_average.desc&vote_count.gte=8000",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/pNjh59JSxChQktamG3LMp9ZoQzp.jpg",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "id": 278,
+    "title": "The Shawshank Redemption",
+    "original_language": "en",
+    "original_title": "The Shawshank Redemption",
+    "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+    "popularity": 67.511,
+    "poster_path": "/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg",
+    "release_date": "1994-09-23",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.731,
+    "vote_count": 31425
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/tSPT36ZKlP2WVHJLM4cQPLSzv3b.jpg",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "id": 238,
+    "title": "The Godfather",
+    "original_language": "en",
+    "original_title": "The Godfather",
+    "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+    "popularity": 63.3707,
+    "poster_path": "/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
+    "release_date": "1972-03-14",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.688,
+    "vote_count": 23647
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/qqHQsStV6exghCM7zbObuYBiYxw.jpg",
+    "genre_ids": [
+     18
+    ],
+    "id": 389,
+    "title": "12 Angry Men",
+    "original_language": "en",
+    "original_title": "12 Angry Men",
+    "overview": "The defense and the prosecution have rested and the jury is filing into the jury room to decide if a young Spanish-American is guilty or innocent of murdering his father. What begins as an open and shut case soon becomes a mini-drama of each of the jurors' prejudices and preconceptions about the trial, the accused, and each other.",
+    "popularity": 35.295,
+    "poster_path": "/zhG3vKWyDRaZYoaww1UVAi29T9h.jpg",
+    "release_date": "1957-04-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.572,
+    "vote_count": 10405
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/kGzFbGhp99zva6oZODW5atUtnqi.jpg",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "id": 240,
+    "title": "The Godfather Part II",
+    "original_language": "en",
+    "original_title": "The Godfather Part II",
+    "overview": "In the continuing saga of the Corleone crime family, a young Vito Corleone grows up in Sicily and in 1910s New York. In the 1950s, Michael Corleone attempts to expand the family business into Las Vegas, Hollywood and Cuba.",
+    "popularity": 37.9594,
+    "poster_path": "/8a1lJs7mFyGhGhZZDT1azJUoQiZ.jpg",
+    "release_date": "1974-12-20",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.6,
+    "vote_count": 14376
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/zb6fM1CX41D9rF9hdgclu0peUmy.jpg",
+    "genre_ids": [
+     18,
+     36,
+     10752
+    ],
+    "id": 424,
+    "title": "Schindler's List",
+    "original_language": "en",
+    "original_title": "Schindler's List",
+    "overview": "The true story of how businessman Oskar Schindler saved over a thousand Jewish lives from the Nazis while they worked as slaves in his factory during World War II.",
+    "popularity": 31.1797,
+    "poster_path": "/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg",
+    "release_date": "1993-12-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.569,
+    "vote_count": 17952
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/9FE5eD92WfVCiivM9Pq9GVSrlWk.jpg",
+    "genre_ids": [
+     28,
+     53,
+     80
+    ],
+    "id": 155,
+    "title": "The Dark Knight",
+    "original_language": "en",
+    "original_title": "The Dark Knight",
+    "overview": "Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations that plague the streets. The partnership proves to be effective, but they soon find themselves prey to a reign of chaos unleashed by a rising criminal mastermind known to the terrified citizens of Gotham as the Joker.",
+    "popularity": 63.6572,
+    "poster_path": "/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+    "release_date": "2008-07-16",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.536,
+    "vote_count": 36818
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/6oaL4DP75yABrd5EbC4H2zq5ghc.jpg",
+    "genre_ids": [
+     16,
+     10751,
+     14
+    ],
+    "id": 129,
+    "title": "Spirited Away",
+    "original_language": "ja",
+    "original_title": "千と千尋の神隠し",
+    "overview": "A young girl, Chihiro, becomes trapped in a strange new world of spirits. When her parents undergo a mysterious transformation, she must call upon the courage she never knew she had to free her family.",
+    "popularity": 40.0203,
+    "poster_path": "/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
+    "release_date": "2001-07-20",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.535,
+    "vote_count": 18947
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/amZavErrjrdgDwhsIdpWxHNenIx.jpg",
+    "genre_ids": [
+     14,
+     18,
+     80
+    ],
+    "id": 497,
+    "title": "The Green Mile",
+    "original_language": "en",
+    "original_title": "The Green Mile",
+    "overview": "A supernatural tale set on death row in a Southern prison, where gentle giant John Coffey possesses the mysterious power to heal people's ailments. When the cell block's head guard, Paul Edgecomb, recognizes Coffey's miraculous gift, he tries desperately to help stave off the condemned man's execution.",
+    "popularity": 41.0759,
+    "poster_path": "/8VG8fDNiy50H4FedGwdSVUPoaJe.jpg",
+    "release_date": "1999-12-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.506,
+    "vote_count": 19861
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/ctiw6FZK4N36LmkjSklWEbuvlq9.jpg",
+    "genre_ids": [
+     12,
+     14,
+     28
+    ],
+    "id": 122,
+    "title": "The Lord of the Rings: The Return of the King",
+    "original_language": "en",
+    "original_title": "The Lord of the Rings: The Return of the King",
+    "overview": "As armies mass for a final battle that will decide the fate of the world--and powerful, ancient forces of Light and Dark compete to determine the outcome--one member of the Fellowship of the Ring is revealed as the noble heir to the throne of the Kings of Men. Yet, the sole hope for triumph over evil lies with a brave hobbit, Frodo, who, accompanied by his loyal friend Sam and the hideous, wretched Gollum, ventures deep into the very dark heart of Mordor on his seemingly impossible quest to destroy the Ring of Power.​",
+    "popularity": 49.6711,
+    "poster_path": "/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg",
+    "release_date": "2003-12-17",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.505,
+    "vote_count": 27429
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/hiKmpZMGZsrkA3cdce8a7Dpos1j.jpg",
+    "genre_ids": [
+     35,
+     53,
+     18
+    ],
+    "id": 496243,
+    "title": "Parasite",
+    "original_language": "ko",
+    "original_title": "기생충",
+    "overview": "All unemployed, Ki-taek's family takes peculiar interest in the wealthy and glamorous Parks for their livelihood until they get entangled in an unexpected incident.",
+    "popularity": 38.221,
+    "poster_path": "/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg",
+    "release_date": "2019-05-30",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.49,
+    "vote_count": 21375
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mMtUybQ6hL24FXo0F3Z4j2KG7kZ.jpg",
+    "genre_ids": [
+     16,
+     10749,
+     18
+    ],
+    "id": 372058,
+    "title": "Your Name.",
+    "original_language": "ja",
+    "original_title": "君の名は。",
+    "overview": "High schoolers Mitsuha and Taki are complete strangers living separate lives. But one night, they suddenly switch places. Mitsuha wakes up in Taki’s body, and he in hers. This bizarre occurrence continues to happen randomly, and the two must adjust their lives around each other.",
+    "popularity": 29.5393,
+    "poster_path": "/vfJFJPepRKapMd5G2ro7klIRysq.jpg",
+    "release_date": "2016-07-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.487,
+    "vote_count": 13029
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/8sNiAPPYU14PUepFNeSNGUTiHW.jpg",
+    "genre_ids": [
+     12,
+     18,
+     878
+    ],
+    "id": 157336,
+    "title": "Interstellar",
+    "original_language": "en",
+    "original_title": "Interstellar",
+    "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+    "popularity": 73.4799,
+    "poster_path": "/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg",
+    "release_date": "2014-11-05",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.488,
+    "vote_count": 41277
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg",
+    "genre_ids": [
+     53,
+     80,
+     35
+    ],
+    "id": 680,
+    "title": "Pulp Fiction",
+    "original_language": "en",
+    "original_title": "Pulp Fiction",
+    "overview": "A burger-loving hit man, his philosophical partner, a drug-addled gangster's moll and a washed-up boxer converge in this sprawling, comedic crime caper. Their adventures unfurl in three stories that ingeniously trip back and forth in time.",
+    "popularity": 49.8321,
+    "poster_path": "/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg",
+    "release_date": "1994-09-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.48,
+    "vote_count": 30952
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/x4biAVdPVCghBlsVIzB6NmbghIz.jpg",
+    "genre_ids": [
+     37
+    ],
+    "id": 429,
+    "title": "The Good, the Bad and the Ugly",
+    "original_language": "it",
+    "original_title": "Il buono, il brutto, il cattivo",
+    "overview": "While the Civil War rages on between the Union and the Confederacy, three men – a quiet loner, a ruthless hitman, and a Mexican bandit – comb the American Southwest in search of a strongbox containing $200,000 in stolen gold.",
+    "popularity": 28.455,
+    "poster_path": "/bX2xnavhMYjWDoZp1VM6VnU1xwe.jpg",
+    "release_date": "1966-12-23",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.468,
+    "vote_count": 9971
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/66Kn4XWhkuPkJxOJyPEx4U2CUfN.jpg",
+    "genre_ids": [
+     35,
+     18,
+     10749
+    ],
+    "id": 13,
+    "title": "Forrest Gump",
+    "original_language": "en",
+    "original_title": "Forrest Gump",
+    "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+    "popularity": 38.7929,
+    "poster_path": "/Cw4hIUIAmSYfK9QfaUW5igp9La.jpg",
+    "release_date": "1994-06-23",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.461,
+    "vote_count": 30531
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/gILte6Zd7m1YneIr6MVhh30S9pr.jpg",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "id": 769,
+    "title": "GoodFellas",
+    "original_language": "en",
+    "original_title": "GoodFellas",
+    "overview": "The true story of Henry Hill, a half-Irish, half-Sicilian Brooklyn kid who is adopted by neighbourhood gangsters at an early age and climbs the ranks of a Mafia family under the guidance of Jimmy Conway.",
+    "popularity": 30.3217,
+    "poster_path": "/9OkCLM73MIU2CrKZbqiT8Ln1wY2.jpg",
+    "release_date": "1990-09-12",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.45,
+    "vote_count": 14792
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/oiwc338EoBgS4sEI2ixAny4KQKg.jpg",
+    "genre_ids": [
+     12,
+     14,
+     28
+    ],
+    "id": 120,
+    "title": "The Lord of the Rings: The Fellowship of the Ring",
+    "original_language": "en",
+    "original_title": "The Lord of the Rings: The Fellowship of the Ring",
+    "overview": "Young hobbit Frodo Baggins, after inheriting a mysterious ring from his uncle Bilbo, must leave his home in order to keep it from falling into the hands of its evil creator. Along the way, a fellowship is formed to protect the ringbearer and make sure that the ring arrives at its final destination: Mt. Doom, the only place where it can be destroyed.",
+    "popularity": 53.546,
+    "poster_path": "/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
+    "release_date": "2001-12-18",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.445,
+    "vote_count": 28426
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/c6OLXfKAk5BKeR6broC8pYiCquX.jpg",
+    "genre_ids": [
+     18,
+     53
+    ],
+    "id": 550,
+    "title": "Fight Club",
+    "original_language": "en",
+    "original_title": "Fight Club",
+    "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+    "popularity": 46.8587,
+    "poster_path": "/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg",
+    "release_date": "1999-10-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.437,
+    "vote_count": 32924
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/6aNKD81RHR1DqUUa8kOZ1TBY1Lp.jpg",
+    "genre_ids": [
+     35,
+     18
+    ],
+    "id": 637,
+    "title": "Life Is Beautiful",
+    "original_language": "it",
+    "original_title": "La vita è bella",
+    "overview": "A touching story of an Italian book seller of Jewish ancestry who lives in his own little fairy tale. His creative and happy life would come to an abrupt halt when his entire family is deported to a concentration camp during World War II. While locked up he tries to convince his son that the whole thing is just a game.",
+    "popularity": 23.8078,
+    "poster_path": "/74hLDKjD5aGYOotO6esUVaeISa2.jpg",
+    "release_date": "1997-12-20",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.436,
+    "vote_count": 14269
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/6G73mNyooWAEQTpckPSnFxFoNmc.jpg",
+    "genre_ids": [
+     12,
+     14,
+     28
+    ],
+    "id": 121,
+    "title": "The Lord of the Rings: The Two Towers",
+    "original_language": "en",
+    "original_title": "The Lord of the Rings: The Two Towers",
+    "overview": "Frodo Baggins and the other members of the Fellowship continue on their sacred quest to destroy the One Ring--but on separate paths. Their destinies lie at two towers--Orthanc Tower in Isengard, where the corrupt wizard Saruman awaits, and Sauron's fortress at Barad-dur, deep within the dark lands of Mordor.",
+    "popularity": 42.4314,
+    "poster_path": "/5VTN0pR8gcqV3EPUHHfMGnJYN9L.jpg",
+    "release_date": "2002-12-18",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.429,
+    "vote_count": 24636
+   }
+  ],
+  "total_pages": 28,
+  "total_results": 554
+ }
+}
