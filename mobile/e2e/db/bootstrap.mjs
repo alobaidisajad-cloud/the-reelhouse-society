@@ -60,9 +60,13 @@ const query = (url, sql) => execFileSync('psql', [url, '-X', '-q', '-tA', '-c', 
 const read = (f) => readFileSync(join(SCHEMA, f), 'utf8');
 
 // ── 0. an empty public, owned as production's is ─────────────────────────────
+// The GRANT is Postgres's own default for a new database's public schema
+// (initdb makes it); a schema made by hand lacks it, and the fidelity check
+// showed the copy with a REVOKE production does not have.
 runSql('0. clear public', AS_ADMIN, `
   DROP SCHEMA IF EXISTS public CASCADE;
-  CREATE SCHEMA public AUTHORIZATION pg_database_owner;`);
+  CREATE SCHEMA public AUTHORIZATION pg_database_owner;
+  GRANT USAGE ON SCHEMA public TO PUBLIC;`);
 
 // ── 1. extensions ─────────────────────────────────────────────────────────────
 const extFile = read('live-extensions.sql');
