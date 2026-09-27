@@ -148,9 +148,11 @@ jobs:
       # address. sign-in-with-username is production's own function, served as
       # it is; tmdb-proxy is the recorded stand-in (e2e/supabase/config.toml
       # opens both, and ships the stand-in's recordings).
-      - name: Serve the functions, warmed before the seal
+      # `supabase start` already serves every function in e2e/supabase/functions.
+      # A second `functions serve` replaced that runtime and killed it mid-request
+      # (sign-in-with-username answered 502 from a dead container), so there is none.
+      - name: The functions, warmed before the seal
         run: |
-          ( cd mobile/e2e && nohup supabase functions serve --no-verify-jwt > "$RUNNER_TEMP/functions.log" 2>&1 & )
           call() { curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
                      -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" -d "$2" "$API_URL/functions/v1/$1" || true; }
           for i in $(seq 1 60); do
@@ -167,16 +169,12 @@ jobs:
             set +e
             T="$RUNNER_TEMP/functions-tail.txt"
             echo "(tmdb-proxy answered HTTP ${tmdb:-none}; sign-in-with-username HTTP ${signin:-none})" > "$T"
-            # A function that crashes while it starts writes only to the runtime
-            # container's own log, not to `functions serve`'s output.
+            # The functions runtime writes to its container's own log.
             echo "── containers: $(docker ps -a --format '{{.Names}}' | tr '\n' ' ')" >> "$T"
             for c in $(docker ps -a --format '{{.Names}}' | grep -i edge); do
               echo "── docker logs $c (last 30) ──" >> "$T"
               docker logs --tail 30 "$c" >> "$T" 2>&1
             done
-            echo "── functions serve (last 10) ──" >> "$T"
-            tail -n 10 "$RUNNER_TEMP/functions.log" >> "$T" 2>&1
-            cat "$RUNNER_TEMP/functions.log"
             node mobile/e2e/annotate.mjs "E2E functions never came up — the runtime's last words" "$RUNNER_TEMP/functions-tail.txt"
             exit 1
           fi
@@ -256,7 +254,9 @@ jobs:
       - name: TMDB requests with no recording
         if: always()
         run: |
-          # The seal check asks for one path on purpose; it is not a gap.
+          # Everything the functions runtime printed, kept for the logs artifact too.
+          docker logs supabase_edge_runtime_reelhouse-e2e > "$RUNNER_TEMP/functions.log" 2>&1 || true
+          # The checks ask for two paths on purpose; they are not gaps.
           grep -o 'E2E-TMDB-MISS .*' "$RUNNER_TEMP/functions.log" 2>/dev/null | grep -v 'e2e-never-recorded\|/movie/999999999' \
             | sed 's/^E2E-TMDB-MISS //' | sort -u > "$RUNNER_TEMP/tmdb-misses.txt" || true
           if [ -s "$RUNNER_TEMP/tmdb-misses.txt" ]; then
