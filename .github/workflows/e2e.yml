@@ -163,7 +163,15 @@ jobs:
           signin=$(call sign-in-with-username '{"username":"warm","password":"up"}')
           if [ "$tmdb" != "200" ] || [ "$signin" != "401" ]; then
             cat "$RUNNER_TEMP/functions.log"
-            { tail -n 40 "$RUNNER_TEMP/functions.log"; echo "(tmdb-proxy answered HTTP ${tmdb:-none}; sign-in-with-username HTTP ${signin:-none})"; } > "$RUNNER_TEMP/functions-tail.txt"
+            # A function that crashes while it starts writes only to the runtime
+            # container's own log, not to `functions serve`'s output.
+            {
+              echo "(tmdb-proxy answered HTTP ${tmdb:-none}; sign-in-with-username HTTP ${signin:-none})"
+              for c in $(docker ps -a --format '{{.Names}}' | grep -i edge_runtime); do
+                echo "── docker logs $c (last 30) ──"; docker logs --tail 30 "$c" 2>&1
+              done
+              echo "── functions serve (last 10) ──"; tail -n 10 "$RUNNER_TEMP/functions.log"
+            } > "$RUNNER_TEMP/functions-tail.txt"
             node mobile/e2e/annotate.mjs "E2E functions never came up — the runtime's last words" "$RUNNER_TEMP/functions-tail.txt"
             exit 1
           fi
