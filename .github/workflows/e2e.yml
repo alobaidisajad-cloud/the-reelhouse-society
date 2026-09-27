@@ -75,9 +75,20 @@ jobs:
           sudo apt-get install -y -q postgresql-client-18
           echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
 
+      # sign-in-with-username is production's own function, copied in BEFORE the
+      # stack starts: config.toml names it, and the CLI checks what it names.
       - name: Start the local stack
-        working-directory: mobile/e2e
-        run: supabase start -x studio,imgproxy,logflare,vector,supavisor,postgres-meta
+        run: |
+          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          set +e
+          (cd mobile/e2e && supabase start -x studio,imgproxy,logflare,vector,supavisor,postgres-meta) > "$RUNNER_TEMP/start.log" 2>&1
+          rc=$?
+          cat "$RUNNER_TEMP/start.log"
+          if [ $rc -ne 0 ]; then
+            tail -n 30 "$RUNNER_TEMP/start.log" > "$RUNNER_TEMP/start-tail.txt"
+            node mobile/e2e/annotate.mjs "E2E local stack would not start" "$RUNNER_TEMP/start-tail.txt"
+          fi
+          exit $rc
 
       - name: Keys for the local stack
         working-directory: mobile/e2e
@@ -139,8 +150,7 @@ jobs:
       # opens both, and ships the stand-in's recordings).
       - name: Serve the functions, warmed before the seal
         run: |
-          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
-          ( cd mobile/e2e && nohup supabase functions serve > "$RUNNER_TEMP/functions.log" 2>&1 & )
+          ( cd mobile/e2e && nohup supabase functions serve --no-verify-jwt > "$RUNNER_TEMP/functions.log" 2>&1 & )
           call() { curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
                      -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" -d "$2" "$API_URL/functions/v1/$1" || true; }
           for i in $(seq 1 60); do
