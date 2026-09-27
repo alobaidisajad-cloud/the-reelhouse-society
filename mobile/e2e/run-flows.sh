@@ -45,12 +45,16 @@ if [ $rc -ne 0 ]; then
   # JavaScript side's console, and every line from the app's process if it is
   # still alive.
   adb logcat -d > "$OUT/logcat.txt" 2>/dev/null || true
+  adb logcat -d -b crash 2>/dev/null | grep -v "^--------- beginning of" > "$OUT/crashbuf.txt"
   {
-    adb logcat -d -b crash 2>/dev/null
-    adb logcat -d -s ReactNativeJS:V ReactNative:V 2>/dev/null
+    # A crash's NAME and message are at the top of its stack, and what caused
+    # it in its "Caused by" lines; the bottom is just the draw loop it ran in.
+    grep -E -m 2 -A 14 "FATAL EXCEPTION" "$OUT/crashbuf.txt"
+    grep -E "Caused by" "$OUT/crashbuf.txt" | head -n 10
+    adb logcat -d -s ReactNativeJS:V ReactNative:V 2>/dev/null | grep -v "^--------- beginning of" | tail -n 20
     pid=$(adb shell pidof com.reelhouse.society 2>/dev/null | tr -d '\r')
-    [ -n "$pid" ] && adb logcat -d --pid="$pid" 2>/dev/null | grep -E " [EWF] "
-  } | grep -v "^--------- beginning of" | tail -n 60 > "$OUT/crash.txt"
+    [ -n "$pid" ] && adb logcat -d --pid="$pid" 2>/dev/null | grep -E " [EWF] " | tail -n 20
+  } > "$OUT/crash.txt"
   [ -s "$OUT/crash.txt" ] || echo "(the app wrote nothing to the crash buffer or its own log)" > "$OUT/crash.txt"
   node mobile/e2e/annotate.mjs "What the app said before it failed (logcat)" "$OUT/crash.txt"
 fi
