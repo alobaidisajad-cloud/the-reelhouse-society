@@ -93,12 +93,15 @@ function run(cmd, args, opts = {}) {
 
 /**
  * psql and pg_dump on Windows write stdout in text mode: every \n they print
- * arrives as \r\n. Undo exactly that one layer. A function body saved with
+ * arrives as \r\n. Undo exactly that one layer, and only there. A function body saved with
  * CRLF holds a real \r\n in the database, printed as \r\r\n; this turns it
  * back into \r\n, so the database's own text survives byte for byte, and the
  * files are the same whichever machine takes them.
  */
-const undoHostNewlines = (s) => s.replace(/\r\n/g, '\n');
+const undoHostNewlines = (s) => (process.platform === 'win32' ? s.replace(/\r\n/g, '\n') : s);
+// Only on Windows: elsewhere nothing is added, and the same replace would
+// delete the database's own CRs (the sealed E2E world's first fidelity checks
+// on Linux reported exactly those 2,651 lines missing).
 
 /** One query, with search_path pinned so every printed expression is schema-qualified. */
 function psql(url, sql) {

@@ -137,14 +137,14 @@ jobs:
       - name: TMDB requests with no recording
         if: always()
         run: |
-          MISSES=$(grep -o 'E2E-TMDB-MISS .*' "$RUNNER_TEMP/functions.log" 2>/dev/null | sort -u || true)
-          {
-            echo "### TMDB requests with no recording"
-            if [ -z "$MISSES" ]; then echo "None."; else
-              echo 'Record them with `node e2e/tmdb/record.mjs --from <this list>` (run in mobile/):'
-              echo '```'; echo "$MISSES"; echo '```'
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          # The seal check asks for one path on purpose; it is not a gap.
+          grep -o 'E2E-TMDB-MISS .*' "$RUNNER_TEMP/functions.log" 2>/dev/null | grep -v 'e2e-never-recorded\|/movie/999999999' \
+            | sed 's/^E2E-TMDB-MISS //' | sort -u > "$RUNNER_TEMP/tmdb-misses.txt" || true
+          if [ -s "$RUNNER_TEMP/tmdb-misses.txt" ]; then
+            node mobile/e2e/annotate.mjs "TMDB requests with no recording — record with: node e2e/tmdb/record.mjs --from <list>" "$RUNNER_TEMP/tmdb-misses.txt" notice
+          else
+            echo "### TMDB requests with no recording" >> "$GITHUB_STEP_SUMMARY"; echo "None." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Keep the logs of a failed run
         if: failure()

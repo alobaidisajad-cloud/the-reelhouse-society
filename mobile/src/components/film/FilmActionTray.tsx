@@ -123,6 +123,9 @@ const ActRow = memo(function ActRow({ act }: { act: TrayAct }) {
       hitSlop={{ top: 0, bottom: 0, left: 8, right: 8 }}
       accessibilityRole="button"
       accessibilityLabel={`${act.label}. ${act.gloss}`}
+      // Named by the act, not its label: a label changes with state ("LOG THIS
+      // FILM" → "EDIT YOUR LOG"); the act does not. The E2E flows find it here.
+      testID={`film-act-${act.key}`}
       style={[s.row, act.primary && s.rowPrimary]}
     >
       {act.primary && <BrassFace />}
