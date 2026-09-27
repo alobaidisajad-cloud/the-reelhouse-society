@@ -162,16 +162,21 @@ jobs:
           # proves it loaded, imports and all.
           signin=$(call sign-in-with-username '{"username":"warm","password":"up"}')
           if [ "$tmdb" != "200" ] || [ "$signin" != "401" ]; then
-            cat "$RUNNER_TEMP/functions.log"
+            # The report must come out even if gathering it half-fails: Actions
+            # runs this with -e, and a failing `docker logs` ended the step silently.
+            set +e
+            T="$RUNNER_TEMP/functions-tail.txt"
+            echo "(tmdb-proxy answered HTTP ${tmdb:-none}; sign-in-with-username HTTP ${signin:-none})" > "$T"
             # A function that crashes while it starts writes only to the runtime
             # container's own log, not to `functions serve`'s output.
-            {
-              echo "(tmdb-proxy answered HTTP ${tmdb:-none}; sign-in-with-username HTTP ${signin:-none})"
-              for c in $(docker ps -a --format '{{.Names}}' | grep -i edge_runtime); do
-                echo "── docker logs $c (last 30) ──"; docker logs --tail 30 "$c" 2>&1
-              done
-              echo "── functions serve (last 10) ──"; tail -n 10 "$RUNNER_TEMP/functions.log"
-            } > "$RUNNER_TEMP/functions-tail.txt"
+            echo "── containers: $(docker ps -a --format '{{.Names}}' | tr '\n' ' ')" >> "$T"
+            for c in $(docker ps -a --format '{{.Names}}' | grep -i edge); do
+              echo "── docker logs $c (last 30) ──" >> "$T"
+              docker logs --tail 30 "$c" >> "$T" 2>&1
+            done
+            echo "── functions serve (last 10) ──" >> "$T"
+            tail -n 10 "$RUNNER_TEMP/functions.log" >> "$T" 2>&1
+            cat "$RUNNER_TEMP/functions.log"
             node mobile/e2e/annotate.mjs "E2E functions never came up — the runtime's last words" "$RUNNER_TEMP/functions-tail.txt"
             exit 1
           fi
