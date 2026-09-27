@@ -190,7 +190,13 @@ jobs:
             [ "$code" = "200" ] && break
             sleep 2
           done
-          [ "$code" = "200" ] || { echo "::error title=E2E functions::the functions never came up"; cat "$RUNNER_TEMP/functions.log"; exit 1; }
+          if [ "$code" != "200" ]; then
+            cat "$RUNNER_TEMP/functions.log"
+            tail -n 40 "$RUNNER_TEMP/functions.log" > "$RUNNER_TEMP/functions-tail.txt"
+            echo "(last answer to OPTIONS /functions/v1/tmdb-proxy: HTTP ${code:-none})" >> "$RUNNER_TEMP/functions-tail.txt"
+            node mobile/e2e/annotate.mjs "E2E functions never came up — the runtime's last words" "$RUNNER_TEMP/functions-tail.txt"
+            exit 1
+          fi
           # The runtime is a new container; the firewall already covers it. Name the host away too.
           for c in $(docker ps --format '{{.Names}}' | grep -i edge_runtime); do
             docker exec -u root "$c" sh -c "echo '0.0.0.0 $E2E_PROD_HOST' >> /etc/hosts" 2>/dev/null \
