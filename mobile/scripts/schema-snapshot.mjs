@@ -288,7 +288,11 @@ if (recorded && recorded !== version && !sameMajorAllowed) {
 if (sameMajorAllowed && recorded !== version) {
   console.log(`  (pg_dump ${version} accepted for a snapshot taken with ${recorded}: same major)`);
   const at = live.findIndex(([file]) => file === SCHEMA_FILE);
-  live[at][1] = live[at][1].replace(`-- pg_dump: ${version}`, `-- pg_dump: ${recorded}`);
+  // pg_dump names its own version twice: our header, and its "Dumped by" line.
+  const dumpedBy = /^-- Dumped by pg_dump version .*$/m;
+  live[at][1] = live[at][1]
+    .replace(`-- pg_dump: ${version}`, `-- pg_dump: ${recorded}`)
+    .replace(dumpedBy, committedSchema.match(dumpedBy)?.[0] ?? '$&');
 }
 
 /**
@@ -335,11 +339,14 @@ function diff(label, a, b) {
   // ("CREATE TABLE public._drift_probe") below twenty separators. Noise is
   // counted, not displayed.
   const meaningful = (l) => l.trim() !== '' && !/^--+$/.test(l.trim()) && !/^--\s*$/.test(l);
+  // A CR or a tab is invisible in a terminal, so a line that differs only by
+  // one would print twice, identically. Mark them so the difference shows.
+  const visible = (l) => l.replace(/\r/g, '␍').replace(/\t/g, '→');
   const show = (arr, sign, word) => {
     if (!arr.length) return;
     const real = arr.filter(meaningful);
     const noise = arr.length - real.length;
-    for (const l of real.slice(0, 20)) console.error(`    ${sign} ${l}`);
+    for (const l of real.slice(0, 20)) console.error(`    ${sign} ${visible(l)}`);
     if (real.length > 20) console.error(`    … ${real.length - 20} more ${word}`);
     if (noise) console.error(`    (+ ${noise} blank/separator line${noise === 1 ? '' : 's'})`);
   };

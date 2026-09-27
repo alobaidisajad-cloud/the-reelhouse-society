@@ -127,6 +127,13 @@ for (const stmt of withCr) {
     fail('2b. function bodies', `${stmt.slice(16, 80)}…: ${(e.stderr || e.message).trim()}`);
   }
 }
+// Measured, not assumed: the stored text must now hold them.
+const holding = Number(query(AS_ADMIN, "SELECT count(*) FROM pg_proc WHERE pronamespace = 'public'::regnamespace AND strpos(prosrc, chr(13)) > 0"));
+const crsStored = Number(query(AS_ADMIN, "SELECT coalesce(sum(length(prosrc) - length(replace(prosrc, chr(13), ''))), 0) FROM pg_proc WHERE pronamespace = 'public'::regnamespace"));
+if (holding !== withCr.length || crsStored !== crTotal) {
+  fail('2b. function bodies', `after re-making them, ${holding} functions hold ${crsStored} CRs; production's ${withCr.length} hold ${crTotal}`);
+}
+console.log(`   stored: ${holding} functions hold ${crsStored} carriage returns, as in production`);
 
 // ── 4. everything outside public ─────────────────────────────────────────────
 // As postgres: in production postgres owns the event trigger and the realtime
