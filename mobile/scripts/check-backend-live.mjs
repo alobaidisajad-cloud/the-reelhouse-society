@@ -995,6 +995,16 @@ if (DB_URL) {
       if (mv) posture.push(`materialized view readable by anon/authenticated (RLS cannot protect it): ${mv}`);
     }
 
+    // 8. No test account lives in production. The sealed E2E world makes its
+    //    members at e2e.test (reserved by RFC 2606 — no real inbox can exist)
+    //    with fresh passwords on every run; the old device job signed in as
+    //    test@reelhouse.app. Either one here means a test run could write
+    //    among real members.
+    const testAccounts = q(
+      `SELECT count(*) FROM auth.users WHERE lower(email) LIKE '%@e2e.test' OR lower(email) = 'test@reelhouse.app'`,
+    );
+    if (testAccounts !== '0') posture.push(`${testAccounts} test account(s) exist in production (…@e2e.test or test@reelhouse.app)`);
+
     //    Guarded on an admin existing: with no admin row, set_config would write a
     //    null subject and every one of these RPCs would raise "Not authenticated",
     //    reporting the whole admin surface broken when nothing is. A guard that
