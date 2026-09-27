@@ -74,3 +74,15 @@ max_frequency = "1s"
 enabled = true
 policy = "per_worker"
 deno_version = 2
+
+# The TMDB stand-in reads its recordings from files at start. The runtime only
+# ships files a function imports, or that are listed here — without this line
+# the stand-in could not find its own index and never answered.
+[functions.tmdb-proxy]
+verify_jwt = false
+static_files = ["./functions/tmdb-proxy/fixtures/*.json"]
+
+# Production's own function, copied in by e2e.yml; open, as it is in production
+# (it is called before there is a session).
+[functions.sign-in-with-username]
+verify_jwt = false

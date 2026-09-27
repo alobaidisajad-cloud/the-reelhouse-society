@@ -130,6 +130,35 @@ jobs:
           unzip -q "$RUNNER_TEMP/maestro.zip" -d "$HOME/.maestro-dist"
           echo "MAESTRO_BIN=$HOME/.maestro-dist/maestro/bin/maestro" >> "$GITHUB_ENV"
 
+      # Started BEFORE the seal, and each function called once. The runtime
+      # fetches a function's remote imports (deno.land, esm.sh) on first use,
+      # and those sit on Cloudflare like production does — so they load while
+      # the network is whole, and the seal cannot starve them by sharing an
+      # address. sign-in-with-username is production's own function, served as
+      # it is; tmdb-proxy is the recorded stand-in (e2e/supabase/config.toml
+      # opens both, and ships the stand-in's recordings).
+      - name: Serve the functions, warmed before the seal
+        run: |
+          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          ( cd mobile/e2e && nohup supabase functions serve > "$RUNNER_TEMP/functions.log" 2>&1 & )
+          call() { curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
+                     -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" -d "$2" "$API_URL/functions/v1/$1" || true; }
+          for i in $(seq 1 60); do
+            tmdb=$(call tmdb-proxy '{"path":"/trending/movie/week"}')
+            [ "$tmdb" = "200" ] && break
+            sleep 2
+          done
+          # No member exists yet, so the answer is its ordinary refusal — which
+          # proves it loaded, imports and all.
+          signin=$(call sign-in-with-username '{"username":"warm","password":"up"}')
+          if [ "$tmdb" != "200" ] || [ "$signin" != "401" ]; then
+            cat "$RUNNER_TEMP/functions.log"
+            { tail -n 40 "$RUNNER_TEMP/functions.log"; echo "(tmdb-proxy answered HTTP ${tmdb:-none}; sign-in-with-username HTTP ${signin:-none})"; } > "$RUNNER_TEMP/functions-tail.txt"
+            node mobile/e2e/annotate.mjs "E2E functions never came up — the runtime's last words" "$RUNNER_TEMP/functions-tail.txt"
+            exit 1
+          fi
+          echo "tmdb-proxy $tmdb, sign-in-with-username $signin: both loaded"
+
       # Two locks, so no container has to be trusted to behave:
       #   · the firewall rejects every address production's host resolves to, for
       #     ALL container traffic (DOCKER-USER) — including containers with no
@@ -177,32 +206,6 @@ jobs:
 
       - name: Seed the members
         run: node mobile/e2e/db/seed.mjs
-
-      # sign-in-with-username is production's own function, served as it is;
-      # tmdb-proxy is the recorded stand-in.
-      - name: Serve the functions
-        run: |
-          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
-          cd mobile/e2e
-          nohup supabase functions serve --no-verify-jwt > "$RUNNER_TEMP/functions.log" 2>&1 &
-          for i in $(seq 1 60); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS "$API_URL/functions/v1/tmdb-proxy" || true)
-            [ "$code" = "200" ] && break
-            sleep 2
-          done
-          if [ "$code" != "200" ]; then
-            cat "$RUNNER_TEMP/functions.log"
-            tail -n 40 "$RUNNER_TEMP/functions.log" > "$RUNNER_TEMP/functions-tail.txt"
-            echo "(last answer to OPTIONS /functions/v1/tmdb-proxy: HTTP ${code:-none})" >> "$RUNNER_TEMP/functions-tail.txt"
-            # This step cd'd into mobile/e2e to serve; the helper is named from the workspace.
-            node "$GITHUB_WORKSPACE/mobile/e2e/annotate.mjs" "E2E functions never came up — the runtime's last words" "$RUNNER_TEMP/functions-tail.txt"
-            exit 1
-          fi
-          # The runtime is a new container; the firewall already covers it. Name the host away too.
-          for c in $(docker ps --format '{{.Names}}' | grep -i edge_runtime); do
-            docker exec -u root "$c" sh -c "echo '0.0.0.0 $E2E_PROD_HOST' >> /etc/hosts" 2>/dev/null \
-              && echo "named away in $c" || echo "no shell in $c — the firewall covers it"
-          done
 
       - name: The functions answer as the app needs
         run: node mobile/e2e/db/verify-functions.mjs
