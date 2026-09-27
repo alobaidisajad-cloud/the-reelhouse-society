@@ -194,7 +194,8 @@ jobs:
             cat "$RUNNER_TEMP/functions.log"
             tail -n 40 "$RUNNER_TEMP/functions.log" > "$RUNNER_TEMP/functions-tail.txt"
             echo "(last answer to OPTIONS /functions/v1/tmdb-proxy: HTTP ${code:-none})" >> "$RUNNER_TEMP/functions-tail.txt"
-            node mobile/e2e/annotate.mjs "E2E functions never came up — the runtime's last words" "$RUNNER_TEMP/functions-tail.txt"
+            # This step cd'd into mobile/e2e to serve; the helper is named from the workspace.
+            node "$GITHUB_WORKSPACE/mobile/e2e/annotate.mjs" "E2E functions never came up — the runtime's last words" "$RUNNER_TEMP/functions-tail.txt"
             exit 1
           fi
           # The runtime is a new container; the firewall already covers it. Name the host away too.
