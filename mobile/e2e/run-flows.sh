@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # run-flows.sh — install the E2E app on the emulator and run the Maestro flows.
 #
-# Run by e2e.yml inside the emulator step, from the repository root. A failed
-# flow explains itself on the run page: Maestro's own report as an error
-# annotation, and what was on the screen at that moment as a notice.
+# Run by e2e.yml inside the emulator step, and by `npm run test:e2e`, from
+# anywhere: it works from the repository root. A failed flow explains itself
+# on the run page: Maestro's own report as an error annotation, and what was on
+# the screen at that moment as a notice.
 set -uo pipefail
+cd "$(dirname "$0")/../.." || exit 1
 
 APK=mobile/android/app/build/outputs/apk/release/app-release.apk
 FLOWS=${E2E_FLOWS:-mobile/.maestro}

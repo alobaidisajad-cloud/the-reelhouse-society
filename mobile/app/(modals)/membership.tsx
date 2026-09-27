@@ -454,7 +454,8 @@ export default function MembershipScreen() {
   const showFounding = founder || (foundingCount !== null && foundingCount < 100);
 
   return (
-    <View style={st.container}>
+    // The E2E flows land here from every rope in the app (e2e: society-page).
+    <View style={st.container} testID="society-page">
       <RoomLight room="default" />
       {/* Nav */}
       <View style={[st.navBar, { paddingTop: insets.top + 4 }]}>

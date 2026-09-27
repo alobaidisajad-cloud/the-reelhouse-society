@@ -1,0 +1,4 @@
+# Maestro workspace: the flows are the files in this folder. subflows/ holds
+# steps the flows share (signing in, opening a film), never run on their own.
+flows:
+  - "*"

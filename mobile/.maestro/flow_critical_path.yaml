@@ -1,68 +1,36 @@
 appId: com.reelhouse.society
 ---
-# Critical Path: Login → Search Film → Log Film → Verify Persistence
-# The end-to-end happiest path through the app. Builds on the same
-# verified elements as login_flow.yaml / log_film_flow.yaml, but adds a
-# persistence check: after the modal closes, the underlying film detail
-# screen (app/film/[id].tsx) reads existingLog reactively from
-# useFilmStore, so its CTA should now read "EDIT LOG" instead of
-# "LOG THIS FILM" (FilmActionRow.tsx) — proving the submit actually wrote
-# a record rather than just closing the modal.
+# The critical path: sign in → find a film → log it with a review → the log is
+# kept. Kept is proved twice: the film's tray now offers to EDIT the log, and
+# after the run e2e/db/verify-writes.mjs finds the row in the database.
 - launchApp:
     clearState: true
-
-# Authenticate (via Profile tab's sign-in prompt — see login_flow.yaml)
+- runFlow: subflows/sign_in.yaml
+- runFlow:
+    file: subflows/open_a_film.yaml
+    env:
+      FILM: "The Godfather"
 - tapOn:
-    id: "profile-tab"
-- assertVisible:
-    id: "profile-sign-in-prompt"
+    id: "film-stub"
 - tapOn:
-    id: "profile-sign-in-prompt"
-- assertVisible:
-    id: "email-input"
-- tapOn:
-    id: "email-input"
-- inputText: "test@reelhouse.app"
-- tapOn:
-    id: "password-input"
-- inputText: "password123"
-- tapOn:
-    id: "sign-in-submit"
-- waitForAnimationToEnd
-
-# Navigate to Darkroom and find a film
-- tapOn:
-    id: "darkroom-tab"
-- tapOn:
-    id: "darkroom-search-input"
-- inputText: "The Godfather"
-- waitForAnimationToEnd
-- assertVisible:
-    id: "darkroom-suggestion-row"
-- tapOn:
-    id: "darkroom-suggestion-row"
-    index: 0
-- waitForAnimationToEnd
-
-# Log the film with a written review — a rating or review is required to
-# submit a non-abandoned status (see validateLogSubmission in
-# useLogFlow.ts)
-- assertVisible:
-    id: "log-film-button"
-- tapOn:
-    id: "log-film-button"
-- assertVisible:
-    id: "review-input"
+    id: "film-act-log"
+- extendedWaitUntil:
+    visible:
+      id: "review-input"
+    timeout: 15000
 - tapOn:
     id: "review-input"
-- inputText: "Absolute masterpiece. Essential viewing for the society."
+- inputText: "E2E critical path: an offer the archive could not refuse."
+- hideKeyboard
 - tapOn:
     id: "submit-log-button"
-- waitForAnimationToEnd
-
-# Modal closes (router.back()), landing back on the film detail screen.
-- assertNotVisible:
-    id: "submit-log-button"
-
-# Verify the log actually persisted to the store.
-- assertVisible: "EDIT LOG"
+# The form closes back onto the film.
+- extendedWaitUntil:
+    notVisible:
+      id: "submit-log-button"
+    timeout: 15000
+- tapOn:
+    id: "film-stub"
+- extendedWaitUntil:
+    visible: "EDIT YOUR LOG"
+    timeout: 15000

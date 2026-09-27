@@ -1,30 +1,11 @@
 appId: com.reelhouse.society
 ---
-# Darkroom Search: typing in the search field shows an inline suggestion
-# dropdown (DarkroomHeader's debounced TMDB lookup); selecting a suggestion
-# navigates straight to the film detail screen. There is no separate
-# "search-films-input" testID or "THE DARKROOM" header text in the app —
-# the real input is "darkroom-search-input" on DarkroomHero.tsx.
+# The Darkroom's search: typing shows suggestions (the debounced TMDB lookup),
+# and a suggestion opens the film's page. No account needed.
 - launchApp:
     clearState: true
-
-- tapOn:
-    id: "darkroom-tab"
-- assertVisible:
-    id: "darkroom-search-input"
-- tapOn:
-    id: "darkroom-search-input"
-- inputText: "Pulp Fiction"
-- waitForAnimationToEnd
-
-# Suggestion dropdown row (added testID alongside film-card today).
-- assertVisible:
-    id: "darkroom-suggestion-row"
-- tapOn:
-    id: "darkroom-suggestion-row"
-    index: 0
-- waitForAnimationToEnd
-
-# Should navigate to film detail.
-- assertVisible:
-    id: "log-film-button"
+- extendedWaitUntil:
+    visible:
+      id: "darkroom-tab"
+    timeout: 20000
+- runFlow: subflows/open_a_film.yaml

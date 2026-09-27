@@ -1,38 +1,38 @@
 appId: com.reelhouse.society
 ---
-# Auth Flow: invalid credentials + forgot-password recovery.
-# There is no Google OAuth anywhere in src/hooks/useAuthFlow.ts — the real
-# login screen (app/(modals)/login.tsx) is email/username + password only.
-# login_flow.yaml already covers the happy-path sign-in, so this flow
-# exercises the credential-recovery path instead.
+# Recovering credentials: the sign-in form's "Forgot your credentials?" opens
+# the recovery modal. The auth server always answers success (it never says
+# whether an address exists), so the modal turns to "Check Your Inbox". In the
+# sealed world the email lands in the local mail catcher, nowhere real.
 - launchApp:
     clearState: true
-
-# Login is reached via the Profile tab's sign-in prompt.
+- extendedWaitUntil:
+    visible:
+      id: "profile-tab"
+    timeout: 20000
 - tapOn:
     id: "profile-tab"
-- assertVisible:
-    id: "profile-sign-in-prompt"
 - tapOn:
     id: "profile-sign-in-prompt"
-- assertVisible:
-    id: "email-input"
-
-# Open the forgot-password modal.
+- extendedWaitUntil:
+    visible:
+      id: "email-input"
+    timeout: 15000
 - tapOn: "Forgot your credentials?"
-- assertVisible: "Reset Password"
+- extendedWaitUntil:
+    visible: "Reset Password"
+    timeout: 10000
 - tapOn:
     id: "recovery-email-input"
-- inputText: "test@reelhouse.app"
+- inputText: ${E2E_MEMBER_EMAIL}
+- hideKeyboard
 - tapOn:
     id: "recovery-submit-button"
-
-# Supabase's resetPasswordForEmail always resolves success (it never
-# reveals whether the address exists), so the modal flips to the
-# "Check Your Inbox" confirmation state.
-- assertVisible: "Check Your Inbox"
-- tapOn: "BACK TO SIGN IN"
-
-# Modal closes, login form is back underneath it.
-- assertVisible:
-    id: "email-input"
+- extendedWaitUntil:
+    visible: "Check Your Inbox"
+    timeout: 15000
+- tapOn: ".*BACK TO SIGN IN"
+- extendedWaitUntil:
+    visible:
+      id: "email-input"
+    timeout: 10000

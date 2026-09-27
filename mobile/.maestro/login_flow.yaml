@@ -1,38 +1,11 @@
 appId: com.reelhouse.society
 ---
-# Login is reached via the Profile tab's sign-in prompt — there is no
-# global auth redirect, so a guest lands on the Lobby tab by default.
+# Signing in: a guest lands on the Lobby; the Profile tab asks who they are;
+# after signing in, the same tab is their own member file.
 - launchApp:
     clearState: true
-
-# The branded Preloader runs a deterministic ~2.4s "3...2...1" countdown
-# AFTER real boot work (encrypted storage init, store rehydration, session
-# restore) completes — give it real headroom rather than racing it.
-- extendedWaitUntil:
-    visible:
-      id: "profile-tab"
-    timeout: 15000
-- tapOn:
-    id: "profile-tab"
-- assertVisible:
-    id: "profile-sign-in-prompt"
-- tapOn:
-    id: "profile-sign-in-prompt"
-- assertVisible:
-    id: "email-input"
-- tapOn:
-    id: "email-input"
-- inputText: "test@reelhouse.app"
-- tapOn:
-    id: "password-input"
-- inputText: "password123"
-- tapOn:
-    id: "sign-in-submit"
-- waitForAnimationToEnd
-
-# Confirm we're actually authenticated — the sign-in prompt should be
-# replaced by real profile content.
-- tapOn:
-    id: "profile-tab"
+- runFlow: subflows/sign_in.yaml
 - assertNotVisible:
     id: "profile-sign-in-prompt"
+- assertVisible:
+    id: "collection-card-watchlist"

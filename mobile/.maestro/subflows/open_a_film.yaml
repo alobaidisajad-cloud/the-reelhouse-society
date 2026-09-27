@@ -1,0 +1,22 @@
+appId: com.reelhouse.society
+---
+# Search the Darkroom for a film and open its page from the suggestion row.
+# The film comes from recorded TMDB answers (e2e/tmdb), so the same search
+# finds the same film on every run. FILM defaults to The Godfather.
+- tapOn:
+    id: "darkroom-tab"
+- tapOn:
+    id: "darkroom-search-input"
+- inputText: ${FILM || 'The Godfather'}
+- extendedWaitUntil:
+    visible:
+      id: "darkroom-suggestion-row"
+    timeout: 15000
+- tapOn:
+    id: "darkroom-suggestion-row"
+    index: 0
+# The film page: its stub, the one door to every act on the film.
+- extendedWaitUntil:
+    visible:
+      id: "film-stub"
+    timeout: 15000

@@ -1,59 +1,27 @@
 appId: com.reelhouse.society
 ---
-# Film Log: the "abandoned" status path. log_film_flow.yaml already covers
-# the "watched + review" path; abandoning a film takes a different branch
-# through LogForm — it requires a reason instead of a rating/review to
-# submit (see validateLogSubmission in src/hooks/useLogFlow.ts).
+# Abandoning a film: a different branch of the log form, which asks for a
+# reason instead of a rating or review (validateLogSubmission, useLogFlow.ts).
 - launchApp:
     clearState: true
-
-# Authenticate (via Profile tab's sign-in prompt — see login_flow.yaml)
+- runFlow: subflows/sign_in.yaml
+- runFlow:
+    file: subflows/open_a_film.yaml
+    env:
+      FILM: "The Matrix"
 - tapOn:
-    id: "profile-tab"
-- assertVisible:
-    id: "profile-sign-in-prompt"
+    id: "film-stub"
 - tapOn:
-    id: "profile-sign-in-prompt"
-- assertVisible:
-    id: "email-input"
-- tapOn:
-    id: "email-input"
-- inputText: "test@reelhouse.app"
-- tapOn:
-    id: "password-input"
-- inputText: "password123"
-- tapOn:
-    id: "sign-in-submit"
-- waitForAnimationToEnd
-
-# Navigate to Darkroom and find a film
-- tapOn:
-    id: "darkroom-tab"
-- tapOn:
-    id: "darkroom-search-input"
-- inputText: "The Matrix"
-- waitForAnimationToEnd
-- assertVisible:
-    id: "darkroom-suggestion-row"
-- tapOn:
-    id: "darkroom-suggestion-row"
-    index: 0
-- waitForAnimationToEnd
-
-# Open the log form
-- assertVisible:
-    id: "log-film-button"
-- tapOn:
-    id: "log-film-button"
-
-# Mark as abandoned and pick a reason — no rating/review required for this
-# status.
+    id: "film-act-log"
+- extendedWaitUntil:
+    visible:
+      id: "submit-log-button"
+    timeout: 15000
 - tapOn: "ABANDONED"
 - tapOn: "Too Slow"
 - tapOn:
     id: "submit-log-button"
-- waitForAnimationToEnd
-
-# A successful submit calls router.back(), closing the modal.
-- assertNotVisible:
-    id: "submit-log-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "submit-log-button"
+    timeout: 15000

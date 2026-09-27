@@ -231,7 +231,7 @@ jobs:
       # The flows themselves run in the sealed test world (e2e.yml).
       - name: Lint All Maestro Flows
         run: |
-          pip install --quiet yamllint
+          pip install --quiet yamllint==1.38.0
           yamllint -d relaxed mobile/.maestro/
 
   # The Android device run moved to e2e.yml — the SEALED test world: a private

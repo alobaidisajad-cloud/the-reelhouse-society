@@ -1,46 +1,15 @@
 appId: com.reelhouse.society
 ---
-# Social Pulse Smoke Test — verifies the Lobby's horizontal FlashList
-# cover-flow feed (src/components/home/SocialPulse.tsx) renders without
-# crashing. "The Pulse" is the section title shared by BOTH the empty
-# state ("The screening room is dark.") and the populated state ("THE
-# TELEGRAPH" + the FlashList) — it's the one assertion that holds
-# regardless of whatever test data other flows have logged into the
-# shared backend by the time this runs. There is no "social_pulse_scroll"
-# testID and no "Email"/"Password" plain-text fields on the real login
-# screen (those are accessibilityLabels on testID="email-input" /
-# "password-input").
+# The Lobby's Pulse renders for a member without crashing. "The Pulse" is the
+# section title in BOTH states — the empty room and the full feed — so it holds
+# whatever the other flows have logged by the time this one runs.
 - launchApp:
     clearState: true
-
-- tapOn:
-    id: "profile-tab"
-- assertVisible:
-    id: "profile-sign-in-prompt"
-- tapOn:
-    id: "profile-sign-in-prompt"
-- assertVisible:
-    id: "email-input"
-- tapOn:
-    id: "email-input"
-- inputText: "test@reelhouse.app"
-- tapOn:
-    id: "password-input"
-- inputText: "password123"
-- tapOn:
-    id: "sign-in-submit"
-- waitForAnimationToEnd
-
+- runFlow: subflows/sign_in.yaml
 - tapOn:
     id: "home-tab"
 - scrollUntilVisible:
     element: "The Pulse"
     direction: DOWN
-    timeout: 10000
-
-# If the feed has data, confirm a card's full-log link renders too.
-- runFlow:
-    when:
-      visible: "OPEN FULL LOG"
-    commands:
-      - assertVisible: "OPEN FULL LOG"
+    timeout: 20000
+- assertNotVisible: "PROJECTION FAILURE"

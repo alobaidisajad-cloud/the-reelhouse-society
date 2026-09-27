@@ -1,58 +1,42 @@
 appId: com.reelhouse.society
 ---
-# Lounge: there is no "Lounges" tab — Tabs.Screen name="lounge" is hidden
-# (href: null in app/(tabs)/_layout.tsx). It is reached through the /lounge
-# deep-link alias (app/lounge.tsx, redirects to /(tabs)/lounge) or the nav's
-# Lounge icon.
-#
-# This flow used to sign in and then assert the LoungeGate's CLEARANCE REQUIRED.
-# The corridor opened to every member, so a signed-in account has not seen that
-# gate since — the flow was failing against the app as built. It now walks the
-# two doors that exist: a VISITOR meets a gate that asks for membership (free),
-# and a MEMBER without the rank walks into the corridor and meets the rope at
-# the act that needs it.
+# The Lounge's two doors. It has no tab of its own: it is reached by the
+# /lounge link (app/lounge.tsx) or the nav's Lounge icon.
+#   1. A visitor meets a gate that asks for membership, which is free.
+#   2. A member without a rank walks into the corridor, and meets the rope at
+#      the one act that needs the rank: founding a salon opens the Society.
 
-# ── 1. Signed out: the door asks for a name, not a rank ──
+# ── 1. Signed out ──
 - launchApp:
     clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "home-tab"
+    timeout: 20000
 - openLink: "reelhouse://lounge"
-- assertVisible: "The Lounge"
-- assertVisible: "MEMBERS ONLY"
-- assertNotVisible: "CLEARANCE REQUIRED"
+- extendedWaitUntil:
+    visible: ".*MEMBERS ONLY.*"
+    timeout: 15000
 - assertVisible:
     id: "lounge-gate-cta"
 - tapOn:
     id: "lounge-gate-cta"
-# Joining is the sign-up form.
-- assertVisible:
-    id: "email-input"
+- extendedWaitUntil:
+    visible:
+      id: "email-input"
+    timeout: 15000
 
-# ── 2. Signed in without the rank: the corridor is open ──
+# ── 2. Signed in, with no rank ──
 - launchApp:
     clearState: true
-- tapOn:
-    id: "profile-tab"
-- assertVisible:
-    id: "profile-sign-in-prompt"
-- tapOn:
-    id: "profile-sign-in-prompt"
-- assertVisible:
-    id: "email-input"
-- tapOn:
-    id: "email-input"
-- inputText: "test@reelhouse.app"
-- tapOn:
-    id: "password-input"
-- inputText: "password123"
-- tapOn:
-    id: "sign-in-submit"
-- waitForAnimationToEnd
-
+- runFlow: subflows/sign_in.yaml
 - openLink: "reelhouse://lounge"
-- assertVisible: "The Lounge"
-- assertVisible: "READ ANY SALON · ARCHIVISTS TAKE A SEAT"
-- assertNotVisible: "MEMBERS ONLY"
-
-# Founding a salon is the rank's act: ESTABLISH opens the Society page.
+- extendedWaitUntil:
+    visible: "READ ANY SALON · ARCHIVISTS TAKE A SEAT"
+    timeout: 15000
+- assertNotVisible: ".*MEMBERS ONLY.*"
 - tapOn: "ESTABLISH"
-- assertVisible: "ELEVATE YOUR DEVOTION"
+- extendedWaitUntil:
+    visible:
+      id: "society-page"
+    timeout: 15000

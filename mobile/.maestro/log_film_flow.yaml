@@ -1,75 +1,42 @@
 appId: com.reelhouse.society
 ---
-# Critical Path: Login → Search Film → Log Film → Confirm Modal Closes
+# Logging from the full results, not the suggestion row: submit the search,
+# then open the first film card. A review is what makes a log submittable.
 - launchApp:
     clearState: true
-
-# The branded Preloader runs a deterministic ~2.4s "3...2...1" countdown
-# AFTER real boot work (encrypted storage init, store rehydration, session
-# restore) completes — give it real headroom rather than racing it.
-- extendedWaitUntil:
-    visible:
-      id: "profile-tab"
-    timeout: 15000
-
-# Authenticate (via Profile tab's sign-in prompt — see login_flow.yaml)
-- tapOn:
-    id: "profile-tab"
-- assertVisible:
-    id: "profile-sign-in-prompt"
-- tapOn:
-    id: "profile-sign-in-prompt"
-- assertVisible:
-    id: "email-input"
-- tapOn:
-    id: "email-input"
-- inputText: "test@reelhouse.app"
-- tapOn:
-    id: "password-input"
-- inputText: "password123"
-- tapOn:
-    id: "sign-in-submit"
-- waitForAnimationToEnd
-
-# Navigate to Darkroom (Search/Discover)
+- runFlow: subflows/sign_in.yaml
 - tapOn:
     id: "darkroom-tab"
-
-# Search for a film
 - tapOn:
     id: "darkroom-search-input"
 - inputText: "Blade Runner"
-- waitForAnimationToEnd
-
-# Tap the first search result
-- assertVisible:
-    id: "film-card"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: "film-card"
+    timeout: 15000
 - tapOn:
     id: "film-card"
     index: 0
-
-# Verify film detail screen loaded
-- assertVisible:
-    id: "log-film-button"
-
-# Tap Log Film button
+- extendedWaitUntil:
+    visible:
+      id: "film-stub"
+    timeout: 15000
 - tapOn:
-    id: "log-film-button"
-
-# Verify log modal opened — a rating or review is required to submit, so
-# write a short review rather than instrumenting the custom star-rating
-# control.
-- assertVisible:
-    id: "review-input"
+    id: "film-stub"
+- tapOn:
+    id: "film-act-log"
+- extendedWaitUntil:
+    visible:
+      id: "review-input"
+    timeout: 15000
 - tapOn:
     id: "review-input"
-- inputText: "Great film, loved the cinematography."
-
-# Submit the log
+- inputText: "E2E results path: more human than human."
+- hideKeyboard
 - tapOn:
     id: "submit-log-button"
-- waitForAnimationToEnd
-
-# A successful submit calls router.back(), closing the modal.
-- assertNotVisible:
-    id: "submit-log-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "submit-log-button"
+    timeout: 15000

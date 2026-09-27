@@ -1,82 +1,68 @@
 # End-to-End Tests (Maestro)
 
-These are the app's **end-to-end tests** — they drive the *real* app like a user
-(tap, type, navigate) and verify whole flows from screen → backend → screen.
-They're the strongest proof the app actually works. Run them during QA before a
-release. **Free** — no paid services required.
+These flows drive the **real app** like a person does — tap, type, wait — and
+check whole journeys from the screen to the database and back.
 
-> Coverage: 13 flows — login, log-a-film (+ persistence), browse vault, search,
-> social pulse, lounge, offline resilience, deep links, boot, error recovery.
-> Every `testID` these flows use has been verified to exist in the current app.
+They run on every push to `main`, and weekly, in **🎬 Sealed E2E**
+(`.github/workflows/e2e.yml`): a world built from nothing on GitHub's runner,
+that cannot touch production.
 
----
+- **The backend** is a local Supabase on the runner, running production's exact
+  images, with production's exact shape laid over it from the committed
+  snapshot (`supabase/schema/*.sql`, by `e2e/db/bootstrap.mjs`). It is then
+  checked with `schema:check`: the copy must produce the same three files as
+  production, or the run stops. A copy that differs proves nothing.
+- **Sealed:** production's host is pointed at nothing, on the runner and inside
+  every container, and firewalled for all container traffic. The bootstrap
+  proves it from inside the database: the one outbound call the schema makes
+  (the push sender) must fail to connect.
+- **Members** are made through the auth API (`e2e/db/seed.mjs`), so production's
+  own trigger makes their profiles. Their addresses are on the reserved `.test`
+  domain, and their passwords are new on every run and reach the flows as
+  `${E2E_MEMBER_EMAIL}` / `${E2E_MEMBER_PASSWORD}`. No flow holds an account.
+- **TMDB** is answered from recordings (`e2e/supabase/functions/tmdb-proxy`), so
+  the same search finds the same film every time. A request with no recording
+  is answered as TMDB answers "nothing", and listed on the run page. Record the
+  list with `node e2e/tmdb/record.mjs --from <file>` (in `mobile/`).
+- **The app** is a release APK built on the runner (`app.config.js` with `E2E=1`:
+  plain http to the runner, no over-the-air updates), on an Android 34 emulator.
+- **After the flows,** `e2e/db/verify-writes.mjs` finds, in the database, the row
+  each logging flow must have written, with the exact words it typed.
 
-## One-time setup
-
-1. **Install Maestro** (free, open-source) — follow the official guide for your OS:
-   https://maestro.mobile.dev/getting-started/installing-maestro
-   - macOS / Linux: `curl -Ls "https://get.maestro.mobile.dev" | bash`
-   - **Windows:** install inside **WSL2** (Maestro runs on Linux/macOS); the
-     emulator/device on Windows is still reachable from WSL.
-
-2. **Have a device to run on** (either one):
-   - an **Android emulator** (Android Studio → Device Manager → create + start one), or
-   - a **physical phone** plugged in with USB debugging on.
-
-3. **Install the app onto that device** — the normal dev build:
-   ```bash
-   cd mobile
-   npx expo run:android        # or: run:ios (macOS only)
-   ```
-   (App id: `com.reelhouse.society`.)
-
-4. **Make sure the test account exists.** The flows sign in as
-   **`test@reelhouse.app` / `password123`**. Create that user once (sign up in the
-   app, or seed it) or the login-based flows will fail at the sign-in step.
-
----
-
-## Running the tests
-
-From the `mobile/` folder, with the app installed and the emulator/phone running:
-
-```bash
-# Run the whole suite
-npm run test:e2e
-
-# …or a single flow while debugging
-maestro test .maestro/login_flow.yaml
-maestro test .maestro/flow_critical_path.yaml
-```
-
-Maestro prints each step and a ✓ / ✗ per flow. Green across the board = the app's
-critical user journeys work end-to-end.
-
----
+A failed run explains itself on the run page, where anyone can read it:
+Maestro's report as an error, and what was on the screen as a notice.
 
 ## The flows
 
 | File | What it proves |
 |---|---|
-| `boot_verification.yaml` | the app boots to the Lobby cleanly |
-| `login_flow.yaml` | sign-in via the Profile tab prompt |
-| `auth_flow.yaml` / `auth_deep_link.yaml` | auth + deep-link entry |
-| `flow_critical_path.yaml` | login → search → log a film → **it persists** |
-| `log_film_flow.yaml` / `film_log.yaml` | logging a film |
-| `darkroom_search.yaml` | film search |
-| `browse_vault.yaml` | the vault/collections |
-| `social_pulse_flow.yaml` | the home feed / pulse |
-| `lounge_flow.yaml` | lounge chat |
-| `offline_resilience.yaml` | offline queue behavior |
-| `error_recovery.yaml` | graceful error handling |
+| `boot_verification.yaml` | the app boots, and the whole tab bar is there |
+| `login_flow.yaml` | signing in through the Profile tab lands on your member file |
+| `auth_flow.yaml` | forgot-password: the recovery modal, and back to sign-in |
+| `auth_deep_link.yaml` | `reelhouse://reset-password` with no session gets the rescue screen |
+| `darkroom_search.yaml` | the Darkroom's suggestions open a film page (no account) |
+| `flow_critical_path.yaml` | sign in → find → log with a review → the tray offers to edit it; the row is in the database |
+| `log_film_flow.yaml` | logging from the full results, not the suggestion row |
+| `film_log.yaml` | abandoning a film with a reason |
+| `browse_vault.yaml` | a member opens a room from their holdings |
+| `social_pulse_flow.yaml` | the Lobby's Pulse renders for a member |
+| `lounge_flow.yaml` | the Lounge's two doors: the visitor's gate, and the member's rope at ESTABLISH |
+| `offline_resilience.yaml` | a log made offline is queued, and sent on reconnect |
+| `error_recovery.yaml` | rapid tab switching never trips the error screen |
 
----
+`subflows/` holds the steps the flows share: signing in, and opening a film.
 
-## Notes
+## Kept true
 
-- **iOS** E2E needs a Mac (Xcode + simulator). **Android** works on macOS, Linux,
-  or Windows-via-WSL — start there.
-- **Automating in CI** is possible and free (Android emulator on GitHub's free
-  Linux runners), but building the Expo app inside CI needs a debugging pass — set
-  it up once you can watch a CI run and iterate. Local runs are the reliable path
-  pre-launch.
+`src/utils/__tests__/maestroFlows.guard.test.ts` reads every flow on every push:
+each id must be a testID in the app, each text must match (as Maestro matches:
+the whole text, as a pattern) something the app writes, each flow must drive
+this app, and none may hold an account. Eight of the old thirteen flows named
+markers the app had dropped, and nothing said so; now a change to the app that
+strands a flow fails CI the same day.
+
+## Running them yourself
+
+The sealed world needs Docker (for the local Supabase), a JDK 17, the Android
+SDK and Maestro. `e2e.yml` is the exact recipe, step by step; on a machine with
+those, follow it from "Start the local stack" to "The flows".

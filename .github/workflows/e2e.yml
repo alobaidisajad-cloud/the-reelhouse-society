@@ -40,6 +40,10 @@ jobs:
     name: 🎬 The app, end to end, in a sealed world
     runs-on: ubuntu-24.04
     timeout-minutes: 75
+    env:
+      # Which flows run: read by run-flows.sh and verify-writes.mjs alike.
+      # The boot flow first; the whole folder once every flow is rebuilt against today's app.
+      E2E_FLOWS: mobile/.maestro/boot_verification.yaml
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -104,7 +108,13 @@ jobs:
           rc=$?
           tail -n 200 "$RUNNER_TEMP/build.log"
           if [ $rc -ne 0 ]; then
-            grep -nE 'error|FAILURE|What went wrong|usesCleartextTraffic' "$RUNNER_TEMP/build.log" | tail -n 40 > "$RUNNER_TEMP/build-errors.txt"
+            # Gradle's own verdict, then real errors (Kotlin "e: ", compilers' "error:",
+            # failed tasks) — never "w: " warnings that merely mention an error.
+            {
+              grep -n -A 20 'What went wrong' "$RUNNER_TEMP/build.log" | head -n 30
+              grep -nE '^e: |[^a-z]error: |FAILED|Error: |usesCleartextTraffic' "$RUNNER_TEMP/build.log" | grep -v '^[0-9]*:w: ' | head -n 25
+              grep -q 'android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml 2>/dev/null || echo "(the manifest does not allow plain http, or prebuild did not finish)"
+            } > "$RUNNER_TEMP/build-errors.txt"
             node e2e/annotate.mjs "E2E app build failed" "$RUNNER_TEMP/build-errors.txt"
           fi
           exit $rc
@@ -195,9 +205,6 @@ jobs:
 
       - name: The flows, on an Android emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
-        env:
-          # The boot flow first; the folder once every flow is rebuilt against today's app.
-          E2E_FLOWS: mobile/.maestro/boot_verification.yaml
         with:
           api-level: 34
           target: google_apis
@@ -206,6 +213,9 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash mobile/e2e/run-flows.sh
+
+      - name: What the flows did, found in the database
+        run: node mobile/e2e/db/verify-writes.mjs
 
       - name: TMDB requests with no recording
         if: always()

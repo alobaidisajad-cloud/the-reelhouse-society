@@ -10,7 +10,7 @@
     "lint": "expo lint",
     "check:routes": "node ./scripts/check-app-routes.js",
     "check:backend": "node ./scripts/check-backend-live.mjs",
-    "test:e2e": "maestro test .maestro/",
+    "test:e2e": "bash e2e/run-flows.sh",
     "test": "jest",
     "docs:generate": "typedoc",
     "docs:check": "typedoc --emit none --logLevel Warn",

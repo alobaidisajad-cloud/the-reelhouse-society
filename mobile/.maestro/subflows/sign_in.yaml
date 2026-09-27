@@ -1,0 +1,33 @@
+appId: com.reelhouse.society
+---
+# Sign in as the seeded member (e2e/db/seed.mjs), through the Profile tab's
+# prompt, the way a person does. The address and a fresh password arrive from
+# the run (run-flows.sh passes them); no flow holds an account.
+- extendedWaitUntil:
+    visible:
+      id: "profile-tab"
+    timeout: 20000
+- tapOn:
+    id: "profile-tab"
+- tapOn:
+    id: "profile-sign-in-prompt"
+- tapOn:
+    id: "email-input"
+- inputText: ${E2E_MEMBER_EMAIL}
+- tapOn:
+    id: "password-input"
+- inputText: ${E2E_MEMBER_PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: "sign-in-submit"
+# Signed in = your own member file, with its holdings, under the Profile tab.
+- extendedWaitUntil:
+    notVisible:
+      id: "sign-in-submit"
+    timeout: 20000
+- tapOn:
+    id: "profile-tab"
+- extendedWaitUntil:
+    visible:
+      id: "collection-card-watchlist"
+    timeout: 20000
