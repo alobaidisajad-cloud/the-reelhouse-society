@@ -43,6 +43,16 @@ module.exports = defineConfig([
       'no-restricted-syntax': ['error', {
         selector: "MemberExpression[object.name='Animated'][property.name='Text']",
         message: "Use AnimatedText from '@/src/components/text' — it is Reanimated's animated Text made from the app's Text, so it keeps the ceiling and the spacing.",
+      }, {
+        // An SVG's font sizes and spacings are NUMBERS on Android: react-native-svg
+        // reads a word there as a number and throws while drawing. The logo,
+        // exported from a design tool with fontSize="none", crashed every
+        // Android launch (the sealed E2E run found it).
+        selector: "JSXAttribute[name.name=/^(fontSize|letterSpacing|wordSpacing|kerning)$/] > Literal[value=/[^0-9.\\s-]/]",
+        message: 'An SVG font size or spacing must be a number — Android throws on a word such as "none".',
+      }, {
+        selector: "JSXAttribute[name.name=/^(fontFamily|fontWeight|fontStyle|textAnchor)$/] > Literal[value='none']",
+        message: 'Leave the attribute out instead of "none" — a design tool\'s "none" is not an SVG value, and Android does not forgive it.',
       }],
     },
   },
