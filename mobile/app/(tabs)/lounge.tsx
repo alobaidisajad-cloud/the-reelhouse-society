@@ -6,10 +6,8 @@
  * everyone else meets the LoungeGate's velvet rope.
  */
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import {
-  View, Text, ScrollView, TextInput,
-  RefreshControl, ActivityIndicator, AppState,
-} from 'react-native';
+import { View, ScrollView, RefreshControl, ActivityIndicator, AppState } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import Animated, {
   FadeIn,
   useSharedValue, withTiming, useAnimatedProps, useAnimatedStyle, useAnimatedScrollHandler,

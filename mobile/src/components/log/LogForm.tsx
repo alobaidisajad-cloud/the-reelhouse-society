@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, ScrollView, Alert } from 'react-native';
+import { View, ScrollView, Alert } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import VaultNote from '@/src/components/log/VaultNote';
 import reelToast from '@/src/utils/reelToast';
 

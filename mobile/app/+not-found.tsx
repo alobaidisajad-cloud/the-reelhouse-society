@@ -7,7 +7,8 @@
  * Displays a themed "Not in the Archive" screen with a
  * return-home action.
  */
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { useRouter } from 'expo-router';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';

@@ -9,7 +9,8 @@
  * the dagger (†) in crimson for the departed. No skulls in this house.
  */
 import { memo, useCallback, useMemo } from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';

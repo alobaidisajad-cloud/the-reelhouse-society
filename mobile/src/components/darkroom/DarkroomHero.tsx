@@ -2,7 +2,8 @@
 // DarkroomHero — extracted from DarkroomHeader.tsx
 // ============================================================
 import React from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, X } from 'lucide-react-native';

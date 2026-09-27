@@ -17,7 +17,8 @@
  * — or simply appears and goes, for a member who has asked for less motion.
  */
 import React, { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions, Platform, AccessibilityInfo, Pressable } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, Platform, AccessibilityInfo, Pressable } from 'react-native';
+import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,

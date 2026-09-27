@@ -1,5 +1,7 @@
 import React, { memo, useEffect } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
+import { AnimatedText } from '@/src/components/text/AnimatedText';
 import Animated, {
   SharedValue, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, interpolate, cancelAnimation
 } from 'react-native-reanimated';
@@ -273,9 +275,9 @@ export const TungstenSpooling = memo(function TungstenSpooling() {
       <Animated.View style={[style, st.spoolingIconWrap]}>
         <Buster size={40} mood="thinking" />
       </Animated.View>
-      <Animated.Text style={[style, st.spoolingText]}>
+      <AnimatedText style={[style, st.spoolingText]}>
          SPOOLING
-      </Animated.Text>
+      </AnimatedText>
     </View>
   );
 });

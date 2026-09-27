@@ -16,7 +16,8 @@
  *     MEMBER Nº renders only when the real serial reached this client.
  */
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 

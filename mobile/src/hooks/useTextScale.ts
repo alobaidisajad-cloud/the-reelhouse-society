@@ -36,17 +36,31 @@
  * `useWindowDimensions`, not `PixelRatio.getFontScale()`: the second reads once
  * and goes stale when a member changes the setting while the app is open.
  */
-import { PixelRatio, Platform, useWindowDimensions } from 'react-native';
+import { useSyncExternalStore } from 'react';
+import { Dimensions, Platform, useWindowDimensions } from 'react-native';
 import { scaledTextProps } from '@/src/constants/textScaling';
 
 /**
- * The setting itself, read once, for code that runs inside EVERY <Text> render
- * (AccessibilityProvider) — a hook there would subscribe every text on screen
- * to window changes. Android recreates the screen when the setting changes, so
- * a read at render time is current.
+ * The setting itself, live, for the app's Text (src/components/text), which
+ * runs inside EVERY word on screen. ONE listener for the whole app: a hook
+ * that subscribed each text to window changes would multiply the work of every
+ * render by the number of words. A member who changes the setting while the
+ * app is open is seen by every text at once.
  */
-export function currentFontScale(): number {
-  return PixelRatio.getFontScale() || 1;
+let fontScale = Dimensions.get('window').fontScale || 1;
+const listeners = new Set<() => void>();
+Dimensions.addEventListener('change', ({ window }) => {
+  const next = window.fontScale || 1;
+  if (next === fontScale) return;
+  fontScale = next;
+  listeners.forEach((l) => l());
+});
+const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
+const readFontScale = () => fontScale;
+
+/** The member's text-size setting, as every Text sees it. */
+export function useFontScale(): number {
+  return useSyncExternalStore(subscribe, readFontScale, readFontScale);
 }
 
 /** The factor a line with no set lineHeight grows by: the font's, capped. */

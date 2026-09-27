@@ -9,15 +9,8 @@ import { FlashList } from '@shopify/flash-list';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-    ActivityIndicator,
-    InteractionManager,
-    Keyboard,
-    Platform,
-    StyleSheet,
-    Text, TextInput,
-    View,
-} from 'react-native';
+import { ActivityIndicator, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 
 import TactileEngine from '@/src/utils/TactileEngine';
 import {

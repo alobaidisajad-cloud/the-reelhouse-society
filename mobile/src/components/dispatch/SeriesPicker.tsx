@@ -26,7 +26,8 @@
  * offering to put words in their sequence.
  */
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import * as Crypto from 'expo-crypto';
 
 import { supabase } from '@/src/lib/supabase';

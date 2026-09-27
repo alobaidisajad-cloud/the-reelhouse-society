@@ -14,7 +14,8 @@
  *     count in the same spot: worst case is exactly today's card.
  */
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { Users, Lock } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { GripVertical, Plus, X } from 'lucide-react-native';
 import { ControlledInput } from '@/src/components/ControlledInput';
 import PressableScale from '@/src/components/PressableScale';

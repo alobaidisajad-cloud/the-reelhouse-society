@@ -1,8 +1,7 @@
 import { useEffect, useCallback, useState, useMemo, useRef, memo } from 'react';
-import {
-  View, Text, StyleSheet,
-  TextInput, Keyboard
-} from 'react-native';
+import { View, StyleSheet, Keyboard } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
+import { AnimatedText } from '@/src/components/text/AnimatedText';
 
 import Animated, {
   FadeInDown, useSharedValue, useAnimatedStyle, withTiming, useDerivedValue, Easing
@@ -367,7 +366,7 @@ export default function ReelScreen() {
     <>
       <SharedReelHeader section={section} variant="stacks" userRole={resolvedRole} onTabSwitch={switchSection} />
       <View style={st.searchWrap}>
-        <Animated.Text style={st.searchIcon}>✦</Animated.Text>
+        <AnimatedText style={st.searchIcon}>✦</AnimatedText>
         <AutonomousSearchBar 
           value={stackSearch} 
           onChangeText={handleStackSearchChange} 

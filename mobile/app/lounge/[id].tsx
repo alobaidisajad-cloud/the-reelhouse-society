@@ -37,15 +37,8 @@ import {
     X,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-    ActivityIndicator,
-    AppState,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from 'react-native';
+import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import Animated, { FadeIn, FadeInDown, FadeOut, SlideInDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { nav } from '@/src/utils/typedRouter';

@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert, Platform } from 'react-native';
+import { View, StyleSheet, Alert, Platform } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming,

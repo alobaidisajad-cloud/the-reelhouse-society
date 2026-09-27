@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Share } from 'react-native';
+import { View, StyleSheet, Share } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -313,7 +314,10 @@ const s = StyleSheet.create({
     },
     certCornerTL: { position: 'absolute', top: 10, left: 12, fontFamily: fonts.display, fontSize: 32, color: colors.sepia, opacity: 0.15 },
     certCornerBR: { position: 'absolute', bottom: 10, right: 12, fontFamily: fonts.display, fontSize: 32, color: colors.sepia, opacity: 0.15 },
-    certSociety: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, marginBottom: 12, textAlign: 'center' },
+    // Held clear of the corner ✦: on a 320pt phone at large type this line fills
+    // the card's width and ran under the ornament. Centred, it never reaches it
+    // on a wider phone, so nothing there moves.
+    certSociety: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, marginBottom: 12, marginHorizontal: 8, textAlign: 'center' },
     certTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 12, textAlign: 'center' },
     certBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 20, maxWidth: 300, marginBottom: 20 },
     certBadge: { borderWidth: 1, paddingHorizontal: 24, paddingVertical: 8, transform: [{ rotate: '-5deg' }] },

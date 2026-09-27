@@ -2,7 +2,8 @@
  * FeaturedCritique — The lead story/featured log section on the Lobby.
  */
 import { memo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -80,7 +81,9 @@ function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number
 
       <View style={s.critiqueHeaderRow}>
         <LinearGradient colors={[colors.sepia, colors.flicker]} style={s.sectionAccentBar} />
-        <View>
+        {/* The rest of the row, so the line under the title wraps at large
+            type on a narrow phone instead of running off it. */}
+        <View style={s.critiqueHeaderText}>
           <Text style={s.sectionTitle} accessibilityRole="header">Featured Critique</Text>
           <Text style={s.sectionLoreSub}>Handpicked by the Editorial Tribunal</Text>
         </View>
@@ -110,6 +113,7 @@ const s = StyleSheet.create({
   // style is duplicated verbatim across three Lobby sections.
   // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
   sectionLoreSub: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fogQuiet, letterSpacing: 0.3 },
+  critiqueHeaderText: { flex: 1 },
   critiqueCardWrap: { marginHorizontal: 0 },
   critiqueSubmitBtn: { ...EDGE_LIT,
     backgroundColor: colors.soot, marginTop: 12, borderRadius: 6,

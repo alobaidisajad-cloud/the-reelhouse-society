@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useEffect } from 'react';
-import { RefreshControl, InteractionManager, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
+import { RefreshControl, InteractionManager, ActivityIndicator, View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
 import { ActivityCard, FeedItem } from '@/src/components/feed/ActivityCard';
 import Animated, { useAnimatedScrollHandler, runOnJS, type SharedValue, useSharedValue } from 'react-native-reanimated';

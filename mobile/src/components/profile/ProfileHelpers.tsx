@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { s } from '@/src/components/profile/profileStyles';
 import { scaledTextProps } from '@/src/constants/textScaling';

@@ -4,7 +4,8 @@
  * never stars — the Society has its own instruments.
  */
 import { useCallback, memo } from 'react';
-import { View, Text, PixelRatio } from 'react-native';
+import { View, PixelRatio } from 'react-native';
+import { Text } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';

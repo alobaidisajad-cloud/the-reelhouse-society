@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
+import { AnimatedText } from '@/src/components/text/AnimatedText';
 import Animated, { FadeInDown, useSharedValue, withTiming, withRepeat, Easing, cancelAnimation } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -281,9 +283,9 @@ export default function DarkRoomScreen() {
     if (loading && page > 1) {
       return (
         <View style={s.footerLoading}>
-           <Animated.Text entering={FadeInDown} style={s.paginationRetrieving}>
+           <AnimatedText entering={FadeInDown} style={s.paginationRetrieving}>
              [ DEVELOPING THE NEXT BATCH... ]
-           </Animated.Text>
+           </AnimatedText>
         </View>
       );
     }

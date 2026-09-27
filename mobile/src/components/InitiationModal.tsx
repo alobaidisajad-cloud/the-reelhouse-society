@@ -14,7 +14,8 @@
  * Motion: transform/opacity only, house timing curves, no bounce anywhere.
  */
 import React, { useEffect, useState } from 'react';
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
+import { Text } from '@/src/components/text';
 import { BlurView } from 'expo-blur';
 import Animated, { FadeIn, FadeOut, Easing, useSharedValue, useAnimatedStyle, withDelay, withTiming } from 'react-native-reanimated';
 

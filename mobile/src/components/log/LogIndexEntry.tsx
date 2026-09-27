@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/src/components/text';
 import { KeyRound } from 'lucide-react-native';
 
 import { colors } from '@/src/theme/theme';

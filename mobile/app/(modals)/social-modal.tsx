@@ -3,7 +3,8 @@ import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, InteractionManager, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, InteractionManager, StyleSheet, View } from 'react-native';
+import { Text } from '@/src/components/text';
 
 import { EmptyState } from '@/src/components/EmptyStates';
 import PressableScale from '@/src/components/PressableScale';

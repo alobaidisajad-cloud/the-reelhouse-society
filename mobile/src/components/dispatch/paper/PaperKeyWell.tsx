@@ -25,7 +25,8 @@
  * is no keyboard and no handler — it draws the block the design expects.
  */
 import { memo } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
 import { p } from './paperStyles';

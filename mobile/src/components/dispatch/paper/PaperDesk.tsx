@@ -12,7 +12,8 @@
  * the page opens on somebody else's filing (report it).
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { Image } from 'expo-image';
 import {
   FilmIcon, ImageIcon, AlertTriangle, Search, X, Plus, Calendar,

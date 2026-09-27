@@ -2,7 +2,8 @@
  * PersonBio — Collapsible classified dossier biography section.
  */
 import { memo } from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import PressableScale from '@/src/components/PressableScale';
 import { s } from '@/src/components/person/personStyles';

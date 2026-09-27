@@ -2,7 +2,8 @@ import { nav } from '@/src/utils/typedRouter';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, InteractionManager, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, InteractionManager, Platform, RefreshControl, StyleSheet, View } from 'react-native';
+import { Text } from '@/src/components/text';
 
 import { AppNotification, useNotificationStore } from '@/src/stores/notificationStore';
 import { useSocialStore } from '@/src/stores/followStore';

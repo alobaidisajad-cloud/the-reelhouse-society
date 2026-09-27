@@ -2,7 +2,8 @@
 // DarkroomMoodBar — extracted from DarkroomHeader.tsx
 // ============================================================
 import React from 'react';
-import { View, Text, StyleSheet , ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts, effects } from '@/src/theme/theme';

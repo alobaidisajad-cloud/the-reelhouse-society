@@ -1,10 +1,8 @@
 import { nav } from '@/src/utils/typedRouter';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import {
-    Text,
-    View,
-} from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

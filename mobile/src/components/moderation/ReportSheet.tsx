@@ -11,16 +11,8 @@
  */
 import { BlurView } from 'expo-blur';
 import React, { useCallback, useState } from 'react';
-import {
-    useWindowDimensions,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    View,
-} from 'react-native';
+import { useWindowDimensions, Modal, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import Animated, {

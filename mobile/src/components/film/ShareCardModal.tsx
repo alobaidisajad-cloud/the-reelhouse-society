@@ -5,7 +5,8 @@
  * card template itself lives in NitrateFileCard (shared with the log page).
  */
 import React, { useRef, useState, memo, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, Share, Pressable, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Modal, Share, Pressable, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';

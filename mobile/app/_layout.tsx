@@ -31,7 +31,6 @@ import OfflineBanner from '@/src/components/OfflineBanner';
 import { initSentry } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import { noteCurrentPath } from '@/src/utils/openSociety';
-import '@/src/providers/AccessibilityProvider';
 export { RouterErrorBoundary as ErrorBoundary };
 
 // Font scaling lock removed temporarily to prevent React Native Hermes segfault.

@@ -1,5 +1,6 @@
 import React, { memo, useEffect } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, withSpring, interpolate, cancelAnimation } from 'react-native-reanimated';
 import { useIsFocused } from '@react-navigation/native';
 import { colors, fonts, effects } from '@/src/theme/theme';

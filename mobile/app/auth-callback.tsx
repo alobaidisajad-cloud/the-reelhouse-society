@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, InteractionManager } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, InteractionManager } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { FadeIn, FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/src/lib/supabase';

@@ -19,7 +19,8 @@
  * and are hidden.
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import Svg, { Line } from 'react-native-svg';

@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, Linking, Platform } from 'react-native';
+import { View, StyleSheet, Linking, Platform } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import Animated from 'react-native-reanimated';

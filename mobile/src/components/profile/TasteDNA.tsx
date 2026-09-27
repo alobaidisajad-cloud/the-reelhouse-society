@@ -20,7 +20,8 @@
  * number set and draws it.
  */
 import React, { memo, useMemo, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { FadeIn, FadeInRight, runOnJS } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
 import * as Sharing from 'expo-sharing';

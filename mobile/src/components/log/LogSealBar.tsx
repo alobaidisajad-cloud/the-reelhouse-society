@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, StyleSheet, Image } from 'react-native';
+import { StyleSheet, Image } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

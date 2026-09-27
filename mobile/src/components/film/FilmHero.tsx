@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -211,7 +212,11 @@ export const FilmHero = memo(function FilmHero({
           <View style={styles.verdictRow}>
             <ReelRating rating={verdict.avg_rating} size={18} />
             <Text {...scaledTextProps} style={styles.verdictScore}>{verdict.avg_rating.toFixed(1)}</Text>
-            <Text {...scaledTextProps} style={styles.verdictWho} numberOfLines={1}>
+            {/* On a 320pt phone at large type this ran 9pt off the screen. An
+                ellipsis would cut the count, which is the fact; instead it gives
+                back what large type added — down to its designed size, no smaller. */}
+            <Text {...scaledTextProps} style={styles.verdictWho} numberOfLines={1}
+              adjustsFontSizeToFit minimumFontScale={1 / scaledTextProps.maxFontSizeMultiplier}>
               {verdict.rating_count >= HOUSE_QUORUM
                 ? `THE HOUSE · ${verdict.rating_count} VOICES`
                 : verdict.rating_count === 1 ? 'ONE VOICE' : `${verdict.rating_count} VOICES`}
@@ -303,7 +308,7 @@ const styles = StyleSheet.create({
   /** The house's verdict. Nothing else in the app wears these reels. */
   verdictRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   verdictScore: { includeFontPadding: false, fontFamily: fonts.body, fontSize: 13, color: colors.parchment },
-  verdictWho: { includeFontPadding: false, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.fog },
+  verdictWho: { includeFontPadding: false, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.fog, flexShrink: 1 },
 
   /** And when it has not spoken: a statement, ruled like a title card. */
   silentRow: {

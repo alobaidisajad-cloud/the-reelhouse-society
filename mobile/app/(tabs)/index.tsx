@@ -1,7 +1,6 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
-import {
-  View, Text, StyleSheet, RefreshControl, ScrollView, useWindowDimensions
-} from 'react-native';
+import { View, StyleSheet, RefreshControl, ScrollView, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import Animated, {
   FadeInDown, FadeIn,

@@ -7,7 +7,8 @@
  * `FREE_PROMISES` guards — no table they rest on may ever carry a tier gate.
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 
 import { colors, fonts } from '@/src/theme/theme';
 import { deckLabelProps, displayTextProps, scaledTextProps } from '@/src/constants/textScaling';

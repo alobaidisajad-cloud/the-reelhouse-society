@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { View, Pressable, StyleSheet, ActivityIndicator, Modal } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { KeyRound, X } from 'lucide-react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';

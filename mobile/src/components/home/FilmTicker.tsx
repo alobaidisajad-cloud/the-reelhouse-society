@@ -3,7 +3,8 @@
  * Infinitely loops a duplicate strip for continuous wrapping.
  */
 import { memo, useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, withDelay,
   Easing, cancelAnimation, useReducedMotion

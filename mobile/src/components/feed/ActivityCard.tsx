@@ -17,7 +17,8 @@
  * get a plain crossfade.
  */
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, AccessibilityInfo, PixelRatio } from 'react-native';
+import { View, StyleSheet, AccessibilityInfo, PixelRatio } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';

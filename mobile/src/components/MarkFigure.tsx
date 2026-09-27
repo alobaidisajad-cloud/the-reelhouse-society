@@ -57,7 +57,8 @@
  * `critiqueLabel` below are the only wording, so every bar says it the same way.
  */
 import React, { memo, type ReactNode } from 'react';
-import { StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
+import { Text } from '@/src/components/text';
 import { formatCount, UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { counted } from '@/src/components/dispatch/paper/paperText';
 

@@ -10,7 +10,8 @@
  * only renders when a crash actually occurs.
  */
 import React, { Component, ReactNode } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
+import { Text } from '@/src/components/text';
 import { AlertTriangle } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import { logger } from '@/src/utils/logger';

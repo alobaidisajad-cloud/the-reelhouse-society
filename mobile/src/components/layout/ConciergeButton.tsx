@@ -33,7 +33,8 @@
  * on Android is a weak tint at best, and its experimental method flickers).
  */
 import React, { memo, useCallback, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, Platform, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Modal, Pressable, Platform, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

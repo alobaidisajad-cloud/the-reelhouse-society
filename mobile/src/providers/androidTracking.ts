@@ -17,8 +17,8 @@
  * grows anything under 8sp linearly (its non-linear curve starts at 8sp), so
  * handing it `spacing ÷ setting` makes it draw exactly `spacing` — iOS's number.
  *
- * Applied in AccessibilityProvider's one wrapper around every <Text>, so no
- * label has to know. A text that does not scale (`allowFontScaling={false}`) is
+ * Applied by the app's Text (src/components/text) — the one Text every screen
+ * imports — so no label has to know. A text that does not scale (`allowFontScaling={false}`) is
  * drawn by Android as written and is left alone.
  *
  * One edge it cannot see: a FROZEN text nested inside a scaling one inherits

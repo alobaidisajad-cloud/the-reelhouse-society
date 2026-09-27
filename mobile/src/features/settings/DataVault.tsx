@@ -6,9 +6,8 @@
  * Zero competitor names.
  */
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  View, Text, StyleSheet, Alert,
-} from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import {
   Upload, Download, CheckCircle, AlertCircle, Undo2,

@@ -6,7 +6,8 @@
  * Uses the official Buster mascot with mood-aware personality + lore fragments.
  */
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, {
     FadeIn, useSharedValue, useAnimatedStyle,
     withRepeat, withSequence, withTiming, Easing, cancelAnimation,

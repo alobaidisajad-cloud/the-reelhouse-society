@@ -10,7 +10,8 @@
 import { BlurView } from 'expo-blur';
 import { Ban, ShieldAlert, Unlock, Volume2, VolumeX } from 'lucide-react-native';
 import React from 'react';
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
     Easing,

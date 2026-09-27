@@ -12,7 +12,8 @@
  * timing only, never a spring (the house no-bounce law).
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
+import { View, StyleSheet, Pressable, Modal } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';

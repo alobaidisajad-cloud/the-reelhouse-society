@@ -1,5 +1,6 @@
 import { memo, type ReactNode } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, ScrollView } from 'react-native';
+import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Bookmark, ChevronsUpDown, Search } from 'lucide-react-native';
 

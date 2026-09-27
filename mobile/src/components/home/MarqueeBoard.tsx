@@ -20,7 +20,8 @@
  * the Ken Burns poster inside the rounded cabinet.
  */
 import { memo, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming,

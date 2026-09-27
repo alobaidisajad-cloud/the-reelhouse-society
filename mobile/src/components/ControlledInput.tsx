@@ -1,5 +1,6 @@
 import React from 'react';
-import { TextInput, TextInputProps, View, Text, StyleSheet } from 'react-native';
+import { TextInputProps, View, StyleSheet } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { useController, useFormContext } from 'react-hook-form';
 import { colors, fonts } from '@/src/theme/theme';
 

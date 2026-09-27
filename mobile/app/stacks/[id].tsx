@@ -7,7 +7,9 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, User, X } from 'lucide-react-native';
-import { ActivityIndicator, Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
+import { AnimatedText } from '@/src/components/text/AnimatedText';
 import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -283,7 +285,13 @@ export default function StackDetailScreen() {
   const deleteList = useListStore(s => s.deleteList);
   const isCertified = useListStore(s => !!s._listEndorsedIndex[id]);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const ITEM_WIDTH = (windowWidth - 18 - 42) / 3;   // 9*2 page + 7*2 per cell x3
+  /**
+   * Three across on every phone but the narrowest. On a 320pt phone (an iPhone
+   * SE) a third is ~87pt, and at large type a one-word title ("Chungking") is
+   * wider than that, so the phone broke it mid-letter. Below 360pt it is two.
+   */
+  const COLUMNS = windowWidth < 360 ? 2 : 3;
+  const ITEM_WIDTH = (windowWidth - 18 - 14 * COLUMNS) / COLUMNS;   // 9*2 page + 7*2 per cell
   const ITEM_HEIGHT = ITEM_WIDTH * 1.5;
   /**
    * The hero is measured from the safe area, not from the phone.
@@ -844,7 +852,7 @@ export default function StackDetailScreen() {
       <CinematicFlashList
         data={list.films}
         keyExtractor={(item: any) => String(item.id)}
-        numColumns={3}
+        numColumns={COLUMNS}
         contentContainerStyle={s.scrollContent}
         externalScrollY={scrollY}
         bottomInset={insets.bottom}
@@ -873,13 +881,13 @@ export default function StackDetailScreen() {
                   before any content on the page most guilty of chrome. A
                   catalogue does not print its own category above its title. */}
 
-              <Animated.Text
+              <AnimatedText
                 entering={FadeInDown.duration(600).delay(100).reduceMotion(ReduceMotion.System)}
                 style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]}
                 numberOfLines={titleType.numberOfLines}
               >
                 {list.title.toUpperCase()}
-              </Animated.Text>
+              </AnimatedText>
 
               {/* Colophon — curator (tappable) · reel count · curation date · chips.
                   flexWrap lets long names push the chips to a second line, never cramping. */}

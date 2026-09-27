@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TextInput, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, X } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';

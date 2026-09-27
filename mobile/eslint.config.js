@@ -2,6 +2,25 @@
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 
+// flash-list's exported `AnimatedFlashList` is built on React Native's
+// Animated. Feeding it a Reanimated `useAnimatedScrollHandler` worklet
+// crashes RecyclerView with "undefined is not a function" on the New
+// Architecture (Sentry REACT-NATIVE-6, build 31/34). Use CinematicFlashList
+// — or Reanimated's own Animated.createAnimatedComponent(FlashList) — instead.
+const FLASH_LIST_RULE = {
+  name: '@shopify/flash-list',
+  importNames: ['AnimatedFlashList'],
+  message: "Don't use flash-list's AnimatedFlashList (RN-Animated based) with Reanimated worklets — it crashes RecyclerView on the New Architecture. Use CinematicFlashList (src/components/layout) instead.",
+};
+
+// React Native's own Text applies neither the house ceiling nor Android's
+// letter spacing on a phone (see src/components/text).
+const TEXT_RULE = {
+  name: 'react-native',
+  importNames: ['Text', 'TextInput'],
+  message: "Import Text / TextInput from '@/src/components/text'. React Native's own grow to the system's largest size (3.1x on iOS) and double Android's letter spacing: the app's carry the 1.35 ceiling and iOS's spacing.",
+};
+
 module.exports = defineConfig([
   expoConfig,
   {
@@ -18,24 +37,26 @@ module.exports = defineConfig([
         ignoreRestSiblings: true,
         varsIgnorePattern: '^_',
       }],
-      // flash-list's exported `AnimatedFlashList` is built on React Native's
-      // Animated. Feeding it a Reanimated `useAnimatedScrollHandler` worklet
-      // crashes RecyclerView with "undefined is not a function" on the New
-      // Architecture (Sentry REACT-NATIVE-6, build 31/34). Use CinematicFlashList
-      // — or Reanimated's own Animated.createAnimatedComponent(FlashList) — instead.
       'no-restricted-imports': ['error', {
-        paths: [{
-          name: '@shopify/flash-list',
-          importNames: ['AnimatedFlashList'],
-          message: "Don't use flash-list's AnimatedFlashList (RN-Animated based) with Reanimated worklets — it crashes RecyclerView on the New Architecture. Use CinematicFlashList (src/components/layout) instead.",
-        }],
+        paths: [FLASH_LIST_RULE, TEXT_RULE],
+      }],
+      'no-restricted-syntax': ['error', {
+        selector: "MemberExpression[object.name='Animated'][property.name='Text']",
+        message: "Use AnimatedText from '@/src/components/text' — it is Reanimated's animated Text made from the app's Text, so it keeps the ceiling and the spacing.",
       }],
     },
   },
   {
-    // CinematicFlashList is the sanctioned Reanimated wrapper around FlashList.
+    // The one place React Native's Text and TextInput are wrapped — and where a
+    // name is both the component and the type of its ref, on purpose.
+    files: ['src/components/text/index.tsx'],
+    rules: { 'no-restricted-imports': 'off', 'no-restricted-syntax': 'off', '@typescript-eslint/no-redeclare': 'off' },
+  },
+  {
+    // CinematicFlashList is the sanctioned Reanimated wrapper around FlashList —
+    // it may import AnimatedFlashList, and nothing else changes.
     files: ['src/components/layout/CinematicFlashList.tsx'],
-    rules: { 'no-restricted-imports': 'off' },
+    rules: { 'no-restricted-imports': ['error', { paths: [TEXT_RULE] }] },
   },
   {
     files: ['scripts/**/*.js', 'test-utils/**/*.js', 'mockups/tools/**/*.cjs', '.claude/hooks/**/*.cjs'],
@@ -65,6 +86,9 @@ module.exports = defineConfig([
     // shared paths, loaded inside jest.
     files: ['**/__tests__/**', 'jest.setup.ts', 'jest.afterEnv.ts', 'mockups/*.ts'],
     rules: {
+      // Tests find React Native's own Text by type — that is what renders.
+      'no-restricted-imports': ['error', { paths: [FLASH_LIST_RULE] }],
+      'no-restricted-syntax': 'off',
       '@typescript-eslint/no-require-imports': 'off',
       'react/display-name': 'off',
       // fast-check's documented usage is `import fc from 'fast-check'; fc.assert(...)`.

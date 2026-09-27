@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Eye, Sparkles } from 'lucide-react-native';

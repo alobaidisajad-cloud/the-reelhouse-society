@@ -10,7 +10,8 @@
  * per-frame JS), and pointerEvents-safe.
  */
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import type { LucideIcon } from 'lucide-react-native';

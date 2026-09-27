@@ -1,5 +1,6 @@
 import { memo, useState } from 'react';
-import { View, Text, ActivityIndicator, TextInput } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { ArrowLeft, ChevronUp, Heart, MessageSquare, MoreHorizontal, Share2, Bookmark } from 'lucide-react-native';
 

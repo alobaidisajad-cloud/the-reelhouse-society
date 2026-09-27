@@ -25,7 +25,8 @@
  * moment — whatever the act is.
  */
 import React, { memo, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ticket, Bookmark, ChevronUp, ChevronDown } from 'lucide-react-native';
 

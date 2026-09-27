@@ -1,9 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  View, Text, TextInput, StyleSheet,
-  ScrollView, ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import Animated, {
   FadeInDown, FadeIn, ReduceMotion,
 } from 'react-native-reanimated';

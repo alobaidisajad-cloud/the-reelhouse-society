@@ -173,7 +173,9 @@ describe('one column', () => {
     const cell = num('filmItem', 'marginHorizontal');
     expect(page + cell).toBe(16);
     expect(page + wrap).toBe(page + cell);          // title and posters, one edge
-    expect(SOURCE).toMatch(/const ITEM_WIDTH = \(windowWidth - 18 - 42\) \/ 3;/);
+    // The cell width is the window less both page margins and both of each
+    // column's cell margins — the same 9 and 7 — however many columns there are.
+    expect(SOURCE).toContain(`const ITEM_WIDTH = (windowWidth - ${page * 2} - ${cell * 2} * COLUMNS) / COLUMNS;`);
   });
 });
 

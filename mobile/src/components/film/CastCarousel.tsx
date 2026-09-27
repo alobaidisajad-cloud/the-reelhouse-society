@@ -1,5 +1,6 @@
 import { useCallback, memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

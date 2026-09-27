@@ -19,7 +19,8 @@
  * phone's screen and leave the writing in a slot.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Platform, ScrollView, Share, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, ScrollView, Share, View } from 'react-native';
+import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

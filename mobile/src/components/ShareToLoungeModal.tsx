@@ -3,7 +3,8 @@
  */
 import { FlashList } from '@shopify/flash-list';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 

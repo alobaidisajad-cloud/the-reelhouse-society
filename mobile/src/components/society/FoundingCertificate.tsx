@@ -11,7 +11,8 @@
  * seat goes; a founder sees their own certificate instead.
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import PressableScale from '@/src/components/PressableScale';

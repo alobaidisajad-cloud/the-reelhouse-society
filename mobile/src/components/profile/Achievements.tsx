@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
@@ -169,6 +170,17 @@ export function Achievements({ logs, analytics, totalFilms }: { logs: Achievemen
 
   const unlockedCount = earned.filter(b => b.unlocked).length;
 
+  /**
+   * Three across leaves a badge about 64pt on a 320pt phone (an iPhone SE),
+   * and at large type CONNOISSEUR is ~15pt wider than that even at its
+   * smallest allowed size, so the phone broke it mid-letter — and still 1pt
+   * wider on a 360pt Android. Below 375pt the badges sit two across; from the
+   * iPhone mini up they keep the approved three. Measured at every width in
+   * mockups/devices.json.
+   */
+  const { width } = useWindowDimensions();
+  const narrow = width < 375;
+
   return (
     <View style={s.container}>
       <View style={s.headerRow}>
@@ -183,6 +195,7 @@ export function Achievements({ logs, analytics, totalFilms }: { logs: Achievemen
             onPress={() => reelToast(`${badge.title}: ${badge.desc}`)}
             style={[
               s.badgeItem,
+              narrow && s.badgeItemNarrow,
               badge.unlocked ? s.badgeUnlocked : s.badgeLocked,
             ]}
             pressedScale={0.93}
@@ -248,6 +261,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 3,
   },
+  badgeItemNarrow: { minWidth: '45%' },
   badgeUnlocked: {
     backgroundColor: 'rgba(184,137,26,0.06)',
     borderColor: 'rgba(184,137,26,0.2)',

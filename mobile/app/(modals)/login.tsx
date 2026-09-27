@@ -1,8 +1,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import {
-  View, Text, TextInput,
-  ScrollView
-} from 'react-native';
+import { View, ScrollView } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
+import { AnimatedText } from '@/src/components/text/AnimatedText';
 import { X, Sparkles, Check } from 'lucide-react-native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import Animated, {
@@ -30,7 +29,6 @@ import { EmailConfirmationScreen } from '@/src/components/auth/EmailConfirmation
 import { PasswordRecoveryModal } from '@/src/components/auth/PasswordRecoveryModal';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
-const AnimatedText = Animated.createAnimatedComponent(Text);
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
 
 WebBrowser.maybeCompleteAuthSession();

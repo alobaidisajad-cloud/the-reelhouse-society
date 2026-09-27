@@ -3,7 +3,8 @@
  * Uses FlashList with cover-flow physics (3D rotation + scale on scroll).
  */
 import { memo, useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, {
   FadeInDown, SharedValue,
   useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming,

@@ -8,7 +8,8 @@
  * marked-up contact sheet of the artist's career.
  */
 import { useCallback, memo } from 'react';
-import { View, Text, PixelRatio, useWindowDimensions } from 'react-native';
+import { View, PixelRatio, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Sparkles, X, Film as FilmIcon } from 'lucide-react-native';

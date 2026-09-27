@@ -29,7 +29,8 @@
  * promise you are not keeping.
  */
 import React, { memo, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, BackHandler, Pressable, ScrollView } from 'react-native';
+import { View, StyleSheet, BackHandler, Pressable, ScrollView } from 'react-native';
+import { Text } from '@/src/components/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, ReduceMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';

@@ -1,5 +1,6 @@
 import React, { memo, useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';

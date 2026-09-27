@@ -9,7 +9,8 @@
  *   · visible boolean → self-contained share modal
  */
 import { useRef, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Modal, Share, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Modal, Share, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';

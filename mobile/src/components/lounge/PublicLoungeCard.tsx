@@ -6,7 +6,8 @@
  * No fake lights — a plaque never lies.
  */
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { nav } from '@/src/utils/typedRouter';
 import { LinearGradient } from 'expo-linear-gradient';

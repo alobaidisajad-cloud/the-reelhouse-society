@@ -15,7 +15,8 @@
  * prop / undefined component takes the screen down.
  */
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ErrorBoundaryProps } from 'expo-router';
 

@@ -10,7 +10,8 @@
  * film's page, so the card must never stack a duplicate on top of it.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';

@@ -1,6 +1,7 @@
 import { logger } from '@/src/utils/logger';
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
+import { Text } from '@/src/components/text';
 import { ErrorBoundaryProps } from 'expo-router';
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';

@@ -16,7 +16,8 @@
  * "which film is this" is a real question.
  */
 import React, { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';

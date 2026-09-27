@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView,
-  ActivityIndicator, InteractionManager, Platform, AccessibilityInfo
-} from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, InteractionManager, Platform, AccessibilityInfo } from 'react-native';
+import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';

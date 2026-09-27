@@ -8,7 +8,8 @@
  */
 import { router } from 'expo-router';
 import React, { Component, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/src/components/text';
 import { captureError } from '../lib/sentry';
 import { colors, fonts } from '../theme/theme';
 import PressableScale from './PressableScale';

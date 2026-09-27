@@ -5,7 +5,8 @@
  * in DarkroomHeader.tsx. Zero visual change.
  */
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import Animated, { FadeInDown, SlideOutDown } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 

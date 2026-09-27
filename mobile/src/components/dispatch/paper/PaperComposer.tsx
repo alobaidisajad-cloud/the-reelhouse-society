@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { View, Text, TextInput } from 'react-native';
+import { View } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { FilmIcon, ImageIcon, AlertTriangle } from 'lucide-react-native';
 

@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
-import { View, ScrollView, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Film as FilmIcon, Search, X } from 'lucide-react-native';
 import { Image } from 'expo-image';

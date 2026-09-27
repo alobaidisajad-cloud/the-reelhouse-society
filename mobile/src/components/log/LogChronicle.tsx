@@ -1,6 +1,7 @@
  
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, ScrollView } from 'react-native';
+import { Text } from '@/src/components/text';
 import { ReelRating } from '@/src/components/Decorative';
 import { stripHTML, isRTLText } from '@/src/utils/text';
 import { dateParts, formatDate } from '@/src/utils/timeAgo';

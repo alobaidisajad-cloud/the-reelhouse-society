@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useCallback, useState, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { LayoutList, Lock, ListOrdered, Search } from 'lucide-react-native';

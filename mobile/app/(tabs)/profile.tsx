@@ -8,7 +8,8 @@
  *
  * ZERO inline styles. ZERO cheap emoji. All Lucide icons.
  */
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { useAuthStore } from '@/src/stores/auth';
 import { useRouter } from 'expo-router';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

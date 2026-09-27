@@ -29,7 +29,8 @@
  * stops the two from being said twice.
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { fonts } from '@/src/theme/theme';

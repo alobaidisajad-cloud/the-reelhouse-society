@@ -31,7 +31,8 @@
  * Nothing bypasses the guards, and nothing about the page changes.
  */
 import { memo, useMemo } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/src/components/text';
 import Markdown from 'react-native-markdown-display';
 
 import { capMarkdownForRender, onMarkdownLinkPress } from '@/src/utils/markdownSafety';

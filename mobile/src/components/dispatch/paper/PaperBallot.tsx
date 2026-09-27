@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 
 import PressableScale from '@/src/components/PressableScale';

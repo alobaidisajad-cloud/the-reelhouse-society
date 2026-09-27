@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, TextInput, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Pressable, Modal, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { Image } from 'expo-image';
 import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';

@@ -11,7 +11,8 @@
  * cell by cell, which would be seventeen rows of "diamond, dash, diamond".
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 
 import { colors, fonts } from '@/src/theme/theme';
 import { deckLabelProps, displayTextProps, scaledTextProps } from '@/src/constants/textScaling';

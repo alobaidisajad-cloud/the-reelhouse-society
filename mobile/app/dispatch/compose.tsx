@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
+import { View, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 // The preview mounts `EssayBody`, which carries the link guard and the render
 // cap itself — so this screen no longer holds its own copy of either.
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';

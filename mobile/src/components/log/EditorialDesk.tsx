@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { Image } from 'expo-image';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import TactileEngine from '@/src/utils/TactileEngine';

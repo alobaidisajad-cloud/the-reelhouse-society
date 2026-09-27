@@ -10,7 +10,8 @@
  * scrolled clear of the window instead of living under it.
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import PressableScale from '@/src/components/PressableScale';

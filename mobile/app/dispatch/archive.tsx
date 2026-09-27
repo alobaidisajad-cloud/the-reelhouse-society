@@ -23,7 +23,8 @@
  * all of it in one place — and that is where the rope is.
  */
 import { useCallback } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';

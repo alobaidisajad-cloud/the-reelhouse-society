@@ -1,7 +1,8 @@
 /**
  * RatingLegend — Visual legend for the ReelHouse rating scale.
  */
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import { EDGE_LIT } from '@/src/theme/light';

@@ -16,10 +16,8 @@
  *  · Velvet-rope lounge: archivists share, cinephiles see the brass key
  */
 import { useState, useMemo, useCallback } from 'react';
-import {
-  View, Text, StyleSheet,
-  RefreshControl, useWindowDimensions,
-} from 'react-native';
+import { View, StyleSheet, RefreshControl, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { useSharedValue, useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { LinearGradient } from 'expo-linear-gradient';

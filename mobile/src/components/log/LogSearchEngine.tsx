@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import Animated, { FadeIn, Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, cancelAnimation } from 'react-native-reanimated';

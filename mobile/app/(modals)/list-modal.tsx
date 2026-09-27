@@ -17,16 +17,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    AccessibilityInfo,
-    InteractionManager,
-    Keyboard,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
-} from 'react-native';
+import { AccessibilityInfo, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import Animated, { cancelAnimation, FadeIn, ReduceMotion, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 

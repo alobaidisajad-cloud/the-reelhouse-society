@@ -1,5 +1,6 @@
 import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions, InteractionManager } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, InteractionManager } from 'react-native';
+import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';

@@ -12,7 +12,8 @@
  * mid-scroll. The back is painted on the same card: height never moves.
  */
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts } from '@/src/theme/theme';

@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View, Text, StyleSheet,
-  Alert, Modal, TextInput, KeyboardAvoidingView
-} from 'react-native';
+import { View, StyleSheet, Alert, Modal, KeyboardAvoidingView } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
+import { AnimatedText } from '@/src/components/text/AnimatedText';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -501,7 +500,7 @@ export function SettingsScreen() {
             scrolled away. Hidden from assistive tech in both dialects: a reader
             already has the real <header>, and would otherwise meet the word
             "Settings" twice before reaching anything it can act on. */}
-        <Animated.Text
+        <AnimatedText
           style={[st.navTitle, navTitleStyle]}
           numberOfLines={1}
           accessibilityElementsHidden
@@ -509,7 +508,7 @@ export function SettingsScreen() {
           {...displayTextProps}
         >
           Settings
-        </Animated.Text>
+        </AnimatedText>
 
         <PressableScale
           onPress={handleSave}

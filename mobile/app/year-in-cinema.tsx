@@ -5,7 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Film, X } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { ReelRating } from '@/src/components/Decorative';

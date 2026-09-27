@@ -9,7 +9,8 @@
  * feed does not have, it is written here rather than bent into `paperStyles`.
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import Animated, { FadeInUp, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';

@@ -15,7 +15,8 @@
  *     even on a two-line review
  */
 import React, { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { XCircle } from 'lucide-react-native';

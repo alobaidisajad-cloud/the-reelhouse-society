@@ -5,7 +5,8 @@
  * ObscurityBadge: Displays obscurity score label per film card.
  */
 import { useEffect, memo } from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, {
   useSharedValue, useAnimatedStyle,
   withTiming, Easing,

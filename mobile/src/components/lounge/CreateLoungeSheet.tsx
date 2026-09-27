@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, Modal, Switch, Keyboard, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Modal, Switch, Keyboard, ActivityIndicator } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {

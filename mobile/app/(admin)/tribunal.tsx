@@ -18,18 +18,8 @@ import {
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import React, { useCallback, useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Modal,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import Animated, { FadeInDown, FadeInUp, SlideOutRight } from 'react-native-reanimated';
 
 import PressableScale from '@/src/components/PressableScale';

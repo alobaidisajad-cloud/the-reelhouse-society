@@ -17,6 +17,7 @@ import { storage } from '@/src/stores/mmkv-storage';
 import { useReducedMotion } from '@/src/hooks/useReducedMotion';
 import { useDeviceThrottling } from '@/src/hooks/useDeviceThrottling';
 import { EDGE_LIT } from '@/src/theme/light';
+import { AnimatedText } from '@/src/components/text/AnimatedText';
 
 
 const D1    = 580;
@@ -77,9 +78,9 @@ function Digit({ d }: { d: DigitConfig }) {
 
     const { width } = useWindowDimensions();
     return (
-      <Animated.Text style={[styles.digit, style, { fontSize: Math.min(120, width * 0.28) }]}>
+      <AnimatedText style={[styles.digit, style, { fontSize: Math.min(120, width * 0.28) }]}>
       {d.char}
-    </Animated.Text>
+    </AnimatedText>
   );
 }
 
@@ -277,9 +278,9 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 
       {/* ── Status Label — the projector is only "threading" during the ceremony ── */}
       {playCeremony && (
-        <Animated.Text style={[styles.statusLabel, flickerStyle]}>
+        <AnimatedText style={[styles.statusLabel, flickerStyle]}>
           THREADING PROJECTOR…
-        </Animated.Text>
+        </AnimatedText>
       )}
 
       {/* ── Warm Bloom ── */}

@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { Text } from '@/src/components/text';
 import React, { useMemo, memo } from 'react';
 import Svg, { Circle, Text as SvgText, Line } from 'react-native-svg';
 import Animated, { FadeIn } from 'react-native-reanimated';

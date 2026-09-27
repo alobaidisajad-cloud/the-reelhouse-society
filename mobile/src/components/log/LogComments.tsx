@@ -13,7 +13,8 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Image } from 'expo-image';
 import { Sparkles, ChevronDown } from 'lucide-react-native';
 import React, { RefObject, useMemo, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { View } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 
 interface LogComment {
   id: string;

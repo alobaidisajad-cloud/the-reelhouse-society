@@ -17,7 +17,8 @@
  * has said what it is would be the poster getting in the way of itself.
  */
 import { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import Svg, { Defs, RadialGradient, Stop, Path, G } from 'react-native-svg';
 

@@ -27,7 +27,8 @@
  *   month — complete underneath its heading, and 44pt wide, which a date is not.
  */
 import { useCallback, useMemo } from 'react';
-import { ActivityIndicator, View, Text } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

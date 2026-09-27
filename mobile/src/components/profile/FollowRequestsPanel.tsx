@@ -8,7 +8,8 @@
  * so it behaves identically at 3 requests or 3,000.
  */
 import React from 'react';
-import { Modal, View, Text, StyleSheet, TextInput, ActivityIndicator, Pressable } from 'react-native';
+import { Modal, View, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { Text, TextInput } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';

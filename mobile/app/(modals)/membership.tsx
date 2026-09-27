@@ -17,7 +17,8 @@
  * really go somewhere.
  */
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, AppState, useWindowDimensions, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, AppState, useWindowDimensions, Platform } from 'react-native';
+import { Text } from '@/src/components/text';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { nav } from '@/src/utils/typedRouter';
