@@ -18,6 +18,7 @@
 // with explicit, compile-time-checked conversions.
 
 import type { DomainLog, FilmList, PhysicalArchiveItem, WatchlistItem } from '../types';
+import { formatDate } from './timeAgo';
 import type { ProfileList, ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '../types/profile.types';
 
 function safeJsonParse(val: string) {
@@ -65,9 +66,8 @@ export function mapDossierRow(d: DossierRow): Dossier {
     authorId: d.user_id,
     views: d.views ?? 0,
     certifyCount: d.certify_count ?? 0,
-    date: new Date(d.created_at).toLocaleDateString('en-US', {
-      month: 'short', day: '2-digit', year: 'numeric',
-    }).toUpperCase(),
+    // The house formatter, not Intl (which the phone's Hermes has no polyfill for).
+    date: formatDate(d.created_at),
     raw_created_at: d.created_at,
   };
 }

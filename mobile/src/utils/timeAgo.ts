@@ -265,11 +265,31 @@ export function formatLongCalendarDate(value: string | null | undefined): string
  * comes back, so a byline reading "AUG 5" becomes "8/5/2026" or worse. Same
  * month table as everything else in this file, so there is nothing to ignore.
  */
-export function formatDateMonthDay(dateStr: string | Date | undefined | null): string {
+export function formatDateMonthDay(dateStr: string | Date | undefined | null, format: 'short' | 'long' = 'short'): string {
   if (!dateStr) return '';
   const resolved = toParts(dateStr);
   if (!resolved) return echo(dateStr);
-  return `${MONTHS_SHORT[resolved.parts.month]} ${resolved.parts.day}`;
+  return `${(format === 'long' ? MONTHS_LONG : MONTHS_SHORT)[resolved.parts.month]} ${resolved.parts.day}`;
+}
+
+/**
+ * The time on the reader's clock — "08:30 PM" — for a message in a room.
+ *
+ * The Lounge built this with `toLocaleTimeString([], { hour: '2-digit', minute:
+ * '2-digit' })`: Intl, which the phone's Hermes has no polyfill for, so the
+ * options were a hope and the result was whatever the engine chose. Written
+ * out here as that call wrote it on an American phone, from the local hours
+ * and minutes — no Intl, so nothing to ignore. Only an INSTANT has a time: a
+ * calendar date, or anything unreadable, returns ''.
+ */
+export function formatClockTime(value: string | Date | undefined | null): string {
+  if (!value || (typeof value === 'string' && parseCalendarDate(value))) return '';
+  const t = toInstant(value);
+  if (t === null) return '';
+  const d = new Date(t);
+  const h = d.getHours();
+  const hh = String(h % 12 === 0 ? 12 : h % 12).padStart(2, '0');
+  return `${hh}:${String(d.getMinutes()).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
 }
 
 /**

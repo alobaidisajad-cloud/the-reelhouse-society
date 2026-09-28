@@ -19,6 +19,7 @@ import { Film as FilmIcon, MessageCircle, KeyRound } from 'lucide-react-native';
 import { nav } from '@/src/utils/typedRouter';
 import { s } from '@/src/components/person/personStyles';
 import { displayTextProps } from '@/src/constants/textScaling';
+import { dateParts, formatDate } from '@/src/utils/timeAgo';
 import { FilmStripPerforations } from '@/src/components/person/PersonFilmography';
 import { RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import type { SharedValue } from 'react-native-reanimated';
@@ -89,15 +90,10 @@ const HUNT_NOTCHES = Array.from({ length: 11 }, (_, i) => i);
 export function formatDossierDate(dateStr: string | null): string {
   if (!dateStr) return '';
   if (dateStr.length === 4) return dateStr;
-  try {
-    const isoString = dateStr.length === 10 ? `${dateStr}T12:00:00Z` : dateStr;
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
-
-  } catch (e) {
-    return dateStr;
-  }
+  // A birthday is a calendar date, read from its own digits by the house
+  // formatter. This leaned on Hermes honouring `timeZone: 'UTC'` — Intl, which
+  // the phone has no polyfill for (see src/utils/timeAgo.ts).
+  return dateParts(dateStr) ? formatDate(dateStr) : dateStr;
 }
 
 // ── Utility — career span in years ──────────────────────────

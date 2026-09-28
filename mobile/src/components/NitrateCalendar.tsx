@@ -18,6 +18,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { EDGE_LIT } from '@/src/theme/light';
+import { formatLongCalendarDate } from '@/src/utils/timeAgo';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -80,7 +81,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
         <View style={s.container}>
             {/* Header: Month navigator */}
             <View style={s.header}>
-                <PressableScale onPress={prevMonth} style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Previous month">
+                <PressableScale onPress={prevMonth} style={s.navBtn} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Previous month">
                     <ChevronLeft size={16} color={colors.sepia} />
                 </PressableScale>
 
@@ -89,7 +90,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
                     <Text style={s.yearLabel}>{viewYear}</Text>
                 </View>
 
-                <PressableScale onPress={nextMonth} style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Next month">
+                <PressableScale onPress={nextMonth} style={s.navBtn} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Next month">
                     <ChevronRight size={16} color={colors.sepia} />
                 </PressableScale>
             </View>
@@ -115,10 +116,15 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
                         const future = isFuture(day);
 
                         return (
-                            <PressableScale hitSlop={{ top: 1, bottom: 1, left: 0, right: 0 }}
+                            <PressableScale hitSlop={null}
                                 key={ci}
                                 disabled={future}
                                 onPress={() => selectDay(day)}
+                                // A day, not a digit: "9" alone told a screen
+                                // reader neither the month nor that it was chosen.
+                                accessibilityRole="button"
+                                accessibilityLabel={`${MONTH_NAMES[viewMonth]} ${day}, ${viewYear}`}
+                                accessibilityState={{ selected: isSelected, disabled: future }}
                                 style={[
                                     s.dayCell,
                                     isSelected && s.daySelected,
@@ -154,9 +160,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
             {value ? (
                 <View style={s.selectedDisplay}>
                     <Text style={s.selectedText}>
-                        {new Date(value + 'T12:00:00').toLocaleDateString('en-US', {
-                            weekday: 'short', day: 'numeric', month: 'long', year: 'numeric'
-                        }).toUpperCase()}
+                        {formatLongCalendarDate(value).toUpperCase()}
                     </Text>
                 </View>
             ) : null}
@@ -179,8 +183,13 @@ const s = StyleSheet.create({
         marginBottom: 10,
         paddingHorizontal: 4,
     },
+    // 48 by its own box, no halo — a halo is invisible to both platforms'
+    // accessibility layers. (It was a 28pt chevron lifted by 15 all round.)
     navBtn: {
-        padding: 6,
+        minWidth: 48,
+        minHeight: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
         borderRadius: 4,
     },
     headerCenter: {
@@ -221,9 +230,13 @@ const s = StyleSheet.create({
         flexDirection: 'row',
         marginBottom: 2,
     },
+    // Seven to a row, so a day is as wide as the phone allows (42–46pt on the
+    // narrowest, a named exception in mockups/touch-small-exceptions.txt) —
+    // and never less than 48 tall, with no halo to reach the next row.
     dayCell: {
         flex: 1,
         aspectRatio: 1,
+        minHeight: 48,
         alignItems: 'center',
         justifyContent: 'center',
     },

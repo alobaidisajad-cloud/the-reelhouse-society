@@ -26,7 +26,9 @@
  *
  * Rendering either one the other way is the whole bug.
  */
-import { formatDate, formatDateMonthYear, timeAgo } from '../timeAgo';
+import { formatDate, formatDateMonthYear, formatDateMonthDay, formatClockTime, localCalendarDate, timeAgo } from '../timeAgo';
+import { formatDossierDate } from '@/src/components/person/PersonHero';
+import { buildFilingMark } from '@/src/components/log/logRecord';
 
 /** The zone the suite is currently running under — reported so a green run is auditable. */
 const TZ = process.env.TZ ?? '(system default)';
@@ -129,6 +131,64 @@ describe(`timestamps still render in local time [TZ=${TZ}]`, () => {
 
   it('never renders a future timestamp as a negative age', () => {
     expect(timeAgo(new Date(Date.now() + 60_000).toISOString())).toBe('MOMENTS AGO');
+  });
+});
+
+/**
+ * The last places that asked Intl — the Lounge's clock and day, the person
+ * page's birthday — now ask the tables. The lint rule keeps Intl out; these say
+ * what came in its place prints what the screens printed.
+ */
+describe(`the Lounge's clock, and a birthday, without Intl [TZ=${TZ}]`, () => {
+  it('a message time is the reader\'s clock, as an American phone wrote it', () => {
+    // Built from LOCAL parts, so it is 8:05 in the evening in every zone.
+    expect(formatClockTime(new Date(2026, 7, 16, 20, 5))).toBe('08:05 PM');
+    expect(formatClockTime(new Date(2026, 7, 16, 0, 0))).toBe('12:00 AM');
+    expect(formatClockTime(new Date(2026, 7, 16, 12, 30))).toBe('12:30 PM');
+    expect(formatClockTime(new Date(2026, 7, 16, 9, 7).toISOString())).toBe('09:07 AM');
+  });
+
+  it('only an instant has a time', () => {
+    expect(formatClockTime('2026-08-16')).toBe('');
+    expect(formatClockTime('not-a-date')).toBe('');
+    expect(formatClockTime(null)).toBe('');
+  });
+
+  it('a day in the Lounge reads in full, and a calendar day keeps its own day', () => {
+    expect(formatDateMonthDay('2026-08-16', 'long')).toBe('AUGUST 16');
+    expect(formatDateMonthDay('2026-01-01', 'long')).toBe('JANUARY 1');
+    expect(formatDateMonthDay('2026-08-16')).toBe('AUG 16');
+  });
+
+  it('"today" is the member’s own day, even at 11:30 at night', () => {
+    // toISOString().slice(0, 10) is UTC: late in the evening west of UTC it is
+    // already tomorrow, and early in the morning east of it, still yesterday.
+    // The person page's canon and Hunt, and the log form's TODAY, ask this.
+    jest.useFakeTimers();
+    try {
+      jest.setSystemTime(new Date(2026, 7, 15, 23, 30));   // local by construction
+      expect(localCalendarDate()).toBe('2026-08-15');
+      expect(localCalendarDate(-1)).toBe('2026-08-14');
+      jest.setSystemTime(new Date(2026, 7, 15, 0, 30));
+      expect(localCalendarDate()).toBe('2026-08-15');
+      jest.setSystemTime(new Date(2026, 11, 31, 23, 59));
+      expect(localCalendarDate(1)).toBe('2027-01-01');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('a record’s filing mark is the day the member chose, in every zone', () => {
+    // logRecord once built its own date — and got it wrong twice over.
+    expect(buildFilingMark({ watched_date: '2026-01-01' })[0].value).toBe('JAN 1, 2026');
+    expect(buildFilingMark({ watched_date: '2026-08-05' })[0].value).toBe('AUG 5, 2026');
+  });
+
+  it('a birthday is the day it says, in every zone', () => {
+    expect(formatDossierDate('1956-03-02')).toBe('MAR 2, 1956');
+    expect(formatDossierDate('1899-12-31')).toBe('DEC 31, 1899');
+    expect(formatDossierDate('1956')).toBe('1956');
+    expect(formatDossierDate('sometime')).toBe('sometime');
   });
 });
 

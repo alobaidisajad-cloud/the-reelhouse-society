@@ -10,6 +10,9 @@ import { safeOpenURL } from '@/src/utils/linking';
 
 const getDeviceRegion = () => {
   try {
+    // Not a date: the device's region, to choose whose streaming services to
+    // show. Where Hermes has no Intl this throws, and the catch answers US.
+    // eslint-disable-next-line no-restricted-syntax
     const locale = Intl.DateTimeFormat().resolvedOptions().locale || '';
     const parts = locale.split('-');
     if (parts.length > 1) {

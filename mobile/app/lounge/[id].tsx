@@ -45,6 +45,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { formatClockTime, formatDateMonthDay } from '@/src/utils/timeAgo';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -215,7 +216,7 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
               {isSelf ? 'You' : msg.username}
             </Text>
             <Text style={s.authorTime}>
-              {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {formatClockTime(msg.created_at)}
             </Text>
           </View>
         )}
@@ -269,7 +270,7 @@ function formatDay(iso: string): string {
   const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   if (sameDay(d, today)) return 'TODAY';
   if (sameDay(d, yesterday)) return 'YESTERDAY';
-  return d.toLocaleDateString([], { month: 'long', day: 'numeric' }).toUpperCase();
+  return formatDateMonthDay(d, 'long');
 }
 
 // ════════════════════════════════════════════════════════════

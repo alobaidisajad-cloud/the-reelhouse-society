@@ -22,8 +22,12 @@ export function extractDropCap(text: string): { first: string; rest: string } {
     let first = '';
     let rest = '';
 
+    // Not a date: splitting off the first letter, asked of Intl only where it
+    // exists, with the fallback below where it does not.
+    /* eslint-disable no-restricted-syntax */
     if (typeof Intl !== 'undefined' && Intl.Segmenter) {
         const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+        /* eslint-enable no-restricted-syntax */
         const segments = segmenter.segment(coreText);
         first = segments[Symbol.iterator]().next().value?.segment ?? coreText.charAt(0);
         rest = coreText.slice(first.length);

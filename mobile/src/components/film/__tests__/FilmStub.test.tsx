@@ -134,12 +134,8 @@ describe('the things that are invisible when wrong', () => {
     expect(t.getByTestId('film-stub').props.accessibilityLabel).toMatch(/Closes film actions/i);
   });
 
-  it('never formats a date itself', async () => {
-    // Dates are formatted by the caller. Hermes may ship without Intl, and a
-    // component that reaches for it fails silently on exactly one platform.
-    const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'FilmStub.tsx'), 'utf8');
-    expect(src).not.toMatch(/toLocaleDateString|Intl\./);
-  });
+  // (Dates are formatted by the caller, never through Intl — the app-wide lint
+  // rule holds that for this file and every other.)
 
   it('presses once per press', async () => {
     const onPress = jest.fn();

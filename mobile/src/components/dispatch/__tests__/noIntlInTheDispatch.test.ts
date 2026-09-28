@@ -11,64 +11,14 @@
  * under a dossier, and the over-limit warning in the writing room twice. On
  * device they printed `24310` where the design says `24,310`.
  *
- * Two things are held here — the rule, and the replacement — because the rule
- * alone would pass against a `groupDigits` that returned the wrong string.
+ * THE RULE is the app-wide lint rule now (eslint.config.js: no `Intl.`, no
+ * `toLocale…String`), which reaches every file — this file's own sweep reached
+ * the Dispatch alone, while the log's calendar, the Lounge's clock and the
+ * person page went on asking Intl beside it. THE REPLACEMENT is held here,
+ * because a rule is worth nothing against a `groupDigits` that returns the
+ * wrong string.
  */
-import fs from 'fs';
-import path from 'path';
-
 import { groupDigits, formatCount } from '@/src/components/dispatch/paper/paperMetrics';
-
-const ROOTS = [
-  path.join(__dirname, '..'),
-  path.join(__dirname, '..', '..', '..', '..', 'app', 'dispatch'),
-];
-
-/** Every source file of the Dispatch, tests excluded. */
-function sources(): { label: string; text: string }[] {
-  const out: { label: string; text: string }[] = [];
-  const walk = (dir: string, prefix: string) => {
-    if (!fs.existsSync(dir)) return;
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (entry.name !== '__tests__') walk(full, prefix + entry.name + '/');
-      } else if (/\.tsx?$/.test(entry.name)) {
-        out.push({ label: prefix + entry.name, text: fs.readFileSync(full, 'utf8') });
-      }
-    }
-  };
-  walk(ROOTS[0], 'src/components/dispatch/');
-  walk(ROOTS[1], 'app/dispatch/');
-  return out;
-}
-
-describe('the Dispatch never asks Hermes for something it does not have', () => {
-  const files = sources();
-
-  it('read the files at all', () => {
-    // A walker that finds nothing makes every assertion below vacuous, and this
-    // suite would then be a green light over an unchecked feature.
-    expect(files.length).toBeGreaterThan(15);
-    expect(files.some((f) => f.label.endsWith('paperMetrics.ts'))).toBe(true);
-    expect(files.some((f) => f.label.startsWith('app/dispatch/'))).toBe(true);
-  });
-
-  it('uses no Intl API anywhere', () => {
-    // Comments are stripped first: three files DISCUSS `toLocaleDateString` at
-    // length, and matching those would make the guard permanently red for
-    // explaining itself — which is how a guard gets deleted.
-    const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-    const offenders: string[] = [];
-    for (const f of files) {
-      const code = strip(f.text);
-      for (const api of ['toLocaleString', 'toLocaleDateString', 'toLocaleTimeString', 'Intl.']) {
-        if (code.includes(api)) offenders.push(f.label + ' → ' + api);
-      }
-    }
-    expect(offenders).toEqual([]);
-  });
-});
 
 describe('groupDigits', () => {
   it('groups in threes', () => {

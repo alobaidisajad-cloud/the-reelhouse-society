@@ -53,6 +53,18 @@ module.exports = defineConfig([
       }, {
         selector: "JSXAttribute[name.name=/^(fontFamily|fontWeight|fontStyle|textAnchor)$/] > Literal[value='none']",
         message: 'Leave the attribute out instead of "none" — a design tool\'s "none" is not an SVG value, and Android does not forgive it.',
+      }, {
+        // The phone runs Hermes with no Intl polyfill: whether it honours a
+        // locale or a timeZone option cannot be checked from here, and a date
+        // that is right in Node and wrong on the phone is the bug the whole of
+        // src/utils/timeAgo.ts exists to end. It was a per-file test once, over
+        // four files — while the log's own calendar, the Lounge's clock and the
+        // person page went on formatting through Intl beside them.
+        selector: "MemberExpression[object.name='Intl']",
+        message: "No Intl: the phone's Hermes has no polyfill. Dates and times come from src/utils/timeAgo.ts, which builds them from tables.",
+      }, {
+        selector: "CallExpression[callee.property.name=/^toLocale(Date|Time)?String$/]",
+        message: "toLocale…String is Intl underneath, and the phone's Hermes has no polyfill. Use src/utils/timeAgo.ts (dates, times) or a house formatter (numbers).",
       }],
     },
   },

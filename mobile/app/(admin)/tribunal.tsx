@@ -34,6 +34,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { formatDate } from '@/src/utils/timeAgo';
 
 interface TribunalTarget {
   id: string;
@@ -106,7 +107,7 @@ function EnforcementHistory({ history, isLoading }: { history: ModActionRecord[]
               {record.reason}
             </Text>
             <Text style={s.historyDate}>
-              {new Date(record.created_at).toLocaleDateString()}
+              {formatDate(record.created_at)}
             </Text>
           </View>
         </View>
@@ -696,6 +697,7 @@ export default function TribunalScreen() {
         {/* ── View Toggle Tabs ─────────────────────────────────────────── */}
         <View style={s.viewToggleRow}>
           <PressableScale
+            hitSlop={VIEW_TAB_SLOP}
             style={[s.viewTab, activeView === 'pending' && s.viewTabActive]}
             onPress={() => switchView('pending')}
             haptic="selection"
@@ -711,6 +713,7 @@ export default function TribunalScreen() {
           </PressableScale>
 
           <PressableScale
+            hitSlop={VIEW_TAB_SLOP}
             style={[s.viewTab, activeView === 'priority' && s.viewTabActive]}
             onPress={() => switchView('priority')}
             haptic="selection"
@@ -730,6 +733,7 @@ export default function TribunalScreen() {
         {activeView === 'pending' && (
           <View style={s.toolbarRow}>
             <PressableScale
+              hitSlop={TOOLBAR_SLOP}
               style={[s.toolbarBtn, multiSelectMode && s.toolbarBtnActive]}
               onPress={toggleMultiSelect}
               haptic="selection"
@@ -850,7 +854,7 @@ export default function TribunalScreen() {
 
                     <View style={s.cardHeader}>
                       <Text style={s.reportMeta}>
-                        CASE FILED {new Date(item.created_at).toLocaleDateString()}
+                        CASE FILED {formatDate(item.created_at)}
                       </Text>
                       <View style={s.badgeRow}>
                         <ReportCountBadge count={item.report_count} />
@@ -1104,6 +1108,16 @@ export default function TribunalScreen() {
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────
+
+/**
+ * THE DOCKET and URGENT sit VIEW_GAP apart, and the toolbar TOOLBAR_GAP below
+ * them. Each control reaches half the gap toward its neighbour, no more — at
+ * the default 15 the tabs overlapped by 22pt and the later one took the tap.
+ */
+const VIEW_GAP = 8;
+const TOOLBAR_GAP = 12;
+const VIEW_TAB_SLOP = { top: 15, bottom: TOOLBAR_GAP / 2, left: VIEW_GAP / 2, right: VIEW_GAP / 2 };
+const TOOLBAR_SLOP = { top: TOOLBAR_GAP / 2, bottom: 15, left: 4, right: 4 };
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
@@ -1399,7 +1413,7 @@ const s = StyleSheet.create({
   // ── View Toggle ────────────────────────────────────────────────────────
   viewToggleRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: VIEW_GAP,
     marginTop: 16,
   },
   viewTab: {
@@ -1433,7 +1447,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 12,
+    marginTop: TOOLBAR_GAP,
   },
   toolbarBtn: {
     flexDirection: 'row',
