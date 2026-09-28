@@ -139,14 +139,16 @@ const ActRow = memo(function ActRow({ act }: { act: TrayAct }) {
           torn ticket rather than a sheet and a bar. */}
       <View style={[s.perfRule, act.primary && { borderLeftColor: ON_BRASS_RULE }]} />
       <View style={s.rowBody}>
-        {/* Both capped at one line so every row keeps its height in any
+        {/* The label holds one line, so every row keeps its height in any
             language and at any type size. The gloss is a SENTENCE, though —
             "Listen in. Archivists take a seat." is the tray telling a member
             what their rank does — and at the largest size it lost its last
-            words. It gives back the growth instead: it may shrink to the size
-            it was designed at, and no smaller (GLOSS_FLOOR). */}
+            words. It gives back the growth first: it may shrink to the size
+            it was designed at, and no smaller (GLOSS_FLOOR). Where even that
+            does not hold it — the narrowest phones, 320pt, where it lost a
+            third of itself — it takes a second line rather than its words. */}
         <Text {...scaledTextProps} style={[s.rowLabel, { color: tint }]} numberOfLines={1}>{act.label}</Text>
-        <Text {...scaledTextProps} style={[s.rowGloss, act.primary && s.rowGlossPrimary]} numberOfLines={1}
+        <Text {...scaledTextProps} style={[s.rowGloss, act.primary && s.rowGlossPrimary]} numberOfLines={2}
           adjustsFontSizeToFit minimumFontScale={GLOSS_FLOOR}>
           {act.gloss}
         </Text>

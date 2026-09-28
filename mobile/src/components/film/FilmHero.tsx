@@ -306,7 +306,10 @@ const styles = StyleSheet.create({
   },
 
   /** The house's verdict. Nothing else in the app wears these reels. */
-  verdictRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  // Wraps: where the reels, the score and "THE HOUSE · 30 VOICES" do not fit on
+  // one line (320pt at large type — 30pt short even at the designed size), the
+  // count takes the line below, whole, rather than losing its number.
+  verdictRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 10, rowGap: 4, marginBottom: 10 },
   verdictScore: { includeFontPadding: false, fontFamily: fonts.body, fontSize: 13, color: colors.parchment },
   verdictWho: { includeFontPadding: false, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.fog, flexShrink: 1 },
 

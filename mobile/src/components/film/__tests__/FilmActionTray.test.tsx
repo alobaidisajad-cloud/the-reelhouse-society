@@ -49,10 +49,13 @@ describe('what the tray shows', () => {
     expect(t.queryByText('PLAY THE TRAILER')).toBeNull();
   });
 
-  it('caps both lines of a row so its height survives any language', () => {
+  it('caps a row so its height survives any language, and the gloss keeps its words', () => {
     const t = render(<FilmActionTray {...base} />);
     expect(t.getByText('LOG THIS FILM').props.numberOfLines).toBe(1);
-    expect(t.getByText('Set it down in your Ledger.').props.numberOfLines).toBe(1);
+    // The gloss shrinks first, then takes a second line — never a third, never an ellipsis at 320pt.
+    const gloss = t.getByText('Set it down in your Ledger.').props;
+    expect(gloss.numberOfLines).toBe(2);
+    expect(gloss.adjustsFontSizeToFit).toBe(true);
   });
 
   it('marks only the acts that travel', () => {
@@ -159,8 +162,5 @@ describe('the tray fits the screen it is on', () => {
     expect(JSON.stringify(t.toJSON())).toContain('"paddingBottom":103');
   });
 
-  it('never formats a date itself', () => {
-    const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'FilmActionTray.tsx'), 'utf8');
-    expect(src).not.toMatch(/toLocaleDateString|Intl\./);
-  });
+  // (Never a date through Intl: the app-wide lint rule.)
 });

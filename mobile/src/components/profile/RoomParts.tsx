@@ -55,7 +55,10 @@ export function RoomPlate({
           <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.6} />
         </PressableScale>
         <View style={r.plateText}>
-          <Text {...scaledTextProps} style={r.plateName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+          {/* It may give back what large type added — down to its designed
+              size, no smaller. At 0.8 "The Cinematic Passport" still lost its
+              last letters on a 320pt phone at large type. */}
+          <Text {...scaledTextProps} style={r.plateName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={1 / scaledTextProps.maxFontSizeMultiplier}>
             {name}
           </Text>
           <Text {...scaledTextProps} style={r.plateSub} numberOfLines={1}>
