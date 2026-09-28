@@ -33,11 +33,14 @@ appId: com.reelhouse.society
     text: ${E2E_MEMBER_EMAIL}
 - tapOn:
     id: "sign-in-submit"
-# Signed in = your own member file, with its holdings, under the Profile tab.
+# Signing in returns to the Lobby (the form replaces itself with the tabs). The
+# button leaving is not enough: it also leaves when the form becomes another
+# screen, and then the tab below is never found and the failure names the wrong step.
 - extendedWaitUntil:
-    notVisible:
-      id: "sign-in-submit"
-    timeout: 20000
+    visible:
+      id: "home-tab"
+    timeout: 30000
+# Signed in = your own member file, with its holdings, under the Profile tab.
 - tapOn:
     id: "profile-tab"
 - extendedWaitUntil:

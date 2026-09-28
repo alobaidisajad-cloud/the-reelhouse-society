@@ -19,7 +19,15 @@ const fs = require('fs');
 const path = require('path');
 
 const MOBILE = path.join(__dirname, '..', '..');
-const { chromium } = require(path.join(MOBILE, '..', 'node_modules', 'playwright'));
+const playwright = require(path.join(MOBILE, '..', 'node_modules', 'playwright'));
+
+// Text is measured UNHINTED, as a phone sets it. At one pixel per point Linux hints glyphs,
+// snapping each advance to a whole pixel, while Windows keeps fractions: a letterspaced
+// word measured 2.8pt wider in CI than here. Windows ignores the flag; it is already unhinted.
+const chromium = Object.create(playwright.chromium);
+chromium.launch = (options = {}) => playwright.chromium.launch({
+  ...options, args: [...(options.args || []), '--font-render-hinting=none'],
+});
 
 const HOUSE = '#0D0B09';
 // The one device list (mockups/devices.json), shared with the generators.

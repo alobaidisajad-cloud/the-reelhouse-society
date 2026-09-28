@@ -32,7 +32,8 @@ const walk = (node) => {
   const text = (a.text || '').trim();
   const label = (a.accessibilityText || a['content-desc'] || '').trim();
   const top = Number(/\[\d+,(\d+)\]/.exec(a.bounds || '')?.[1] ?? 0);
-  if (id || text || label) {
+  // The system's status bar is left out, so an annotation's forty lines are the app.
+  if ((id || text || label) && !id.startsWith('com.android.systemui')) {
     const parts = [];
     if (id) parts.push(`#${id}`);
     if (text) parts.push(`"${text.slice(0, 60)}"`);

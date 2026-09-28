@@ -251,7 +251,7 @@ jobs:
             --allow-short mockups/shortened-on-purpose.txt > layout.txt 2>&1
           rc=$?
           cat layout.txt
-          [ $rc -eq 0 ] || node e2e/annotate.mjs "A word does not fit at ${{ matrix.width }}pt" layout.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A word does not fit at ${{ matrix.width }}pt" layout.txt error --drop 'clean +\('
           exit $rc
 
       # The composer's touch law (it was logTouchTargets.test.ts, read out of
@@ -272,7 +272,7 @@ jobs:
           node mockups/tools/layout.cjs --src mockups/out/ci --width ${{ matrix.width }} --only "$screens" \
             --kinds SMALL --allow mockups/touch-small-exceptions.txt >> touch.txt 2>&1 || rc=1
           cat touch.txt
-          [ $rc -eq 0 ] || node e2e/annotate.mjs "A composer control is undrawn, or under 48pt, at ${{ matrix.width }}pt" touch.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A composer control is undrawn, or under 48pt, at ${{ matrix.width }}pt" touch.txt error --drop 'clean +\('
           exit $rc
 
       # The measuring rules themselves, against pages whose answer is known.
@@ -339,7 +339,7 @@ jobs:
             --kinds STEAL,NAMELESS,UNDER,SHADOW --require mockups/touch-measured.txt > captures.txt 2>&1
           rc=$?
           grep -E "^\s+(STEAL|NAMELESS|UNDER|SHADOW)|^LOST|finding|CLEAN" captures.txt
-          [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, name, bar or shadow fault" captures.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, name, bar or shadow fault" captures.txt error --drop 'clean +\('
           exit $rc
 
   web-unit-tests:

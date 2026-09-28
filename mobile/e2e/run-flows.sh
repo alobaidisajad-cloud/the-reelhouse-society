@@ -45,6 +45,15 @@ if [ $rc -ne 0 ]; then
     n=$((n + 1))
     [ $n -le 9 ] && node mobile/e2e/annotate.mjs "$(basename "$f" .txt) at the moment it failed" "$f" notice
   done
+  # A probe that finds nothing says so, and shows where it looked.
+  if [ $n -eq 0 ]; then
+    { echo "flow-screens found no flow records under $OUT/maestro-debug. What is there:"
+      find "$OUT/maestro-debug" -maxdepth 4 2>/dev/null | head -n 60
+      [ -d "$OUT/maestro-debug" ] || echo "(the folder was never made)"
+      echo "and under ~/.maestro/tests:"
+      find "$HOME/.maestro/tests" -maxdepth 3 2>/dev/null | head -n 30; } > "$OUT/debug-listing.txt"
+    node mobile/e2e/annotate.mjs "No per-flow screens: where Maestro put its records" "$OUT/debug-listing.txt" notice
+  fi
   "$MAESTRO" hierarchy > "$OUT/screen.json" 2>/dev/null || true
   node mobile/e2e/screen.mjs "$OUT/screen.json" > "$OUT/screen.txt"
   node mobile/e2e/annotate.mjs "What was on the screen after the last flow" "$OUT/screen.txt" notice
