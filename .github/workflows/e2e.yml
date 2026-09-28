@@ -132,6 +132,9 @@ jobs:
             } > "$RUNNER_TEMP/build-errors.txt"
             node e2e/annotate.mjs "E2E app build failed" "$RUNNER_TEMP/build-errors.txt"
           fi
+          # The Kotlin compiler's daemon outlives a --no-daemon build, holding
+          # gigabytes the emulator will need.
+          pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
           exit $rc
 
       # Maestro at one release, checked against the digest recorded when it was pinned.
@@ -239,6 +242,9 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: The flows, on an Android emulator
+        # A backstop under the job's limit, so the steps after it still run. The
+        # flows' own budget (run-flows.sh, 35 minutes) is inside this one.
+        timeout-minutes: 50
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34

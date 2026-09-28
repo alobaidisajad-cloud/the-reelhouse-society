@@ -32,7 +32,7 @@ const walk = (d) => {
   for (const e of readdirSync(d)) {
     const p = join(d, e);
     if (statSync(p).isDirectory()) walk(p);
-    else if (/^commands-.*\.json$/.test(e)) files.push(p);
+    else if (/^commands.*\.json$/.test(e)) files.push(p);
   }
 };
 walk(debugDir);
@@ -75,7 +75,9 @@ for (const f of files) {
   if (!Array.isArray(entries)) continue;
   const failed = entries.find((e) => e?.metadata?.status === 'FAILED');
   if (!failed) continue;
-  const flow = basename(f).replace(/^commands-\(?/, '').replace(/\)?\.json$/, '');
+  // `commands-(<flow>).json`, or a bare `commands.json` inside the flow's own folder.
+  const own = basename(f).replace(/^commands-?\(?/, '').replace(/\)?\.json$/, '');
+  const flow = own || basename(join(f, '..'));
   const done = entries.filter((e) => e?.metadata?.status === 'COMPLETED').length;
   const lines = [
     `${flow}: failed at step ${done + 1} of ${entries.length} — ${nameOf(failed.command)}`,
