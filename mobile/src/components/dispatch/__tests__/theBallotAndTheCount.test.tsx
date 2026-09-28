@@ -39,7 +39,7 @@ const wordsOf = (node: any, out: string[] = []): string[] => {
 
 const card = (props: Record<string, unknown>) => render(
   <PaperPost
-    author={author} order="14" measureWidth={390}
+    author={author} order="14" orderIs="count" measureWidth={390}
     certifyCount={3} commentCount={2}
     {...(props as any)}
   />,

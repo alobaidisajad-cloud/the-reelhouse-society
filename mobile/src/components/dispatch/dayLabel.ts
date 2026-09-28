@@ -4,27 +4,18 @@
  * `WEDNESDAY, AUGUST 28` — the divider that gives an endless feed a shape, and
  * the line the running head prints beside the issue number.
  *
- * ── WHY THIS EXISTS RATHER THAN A ONE-LINE toLocaleDateString ───────────────
- * `Intl` is not in Hermes and this app ships no polyfill, so every date the app
- * formats is built from its own tables — `timeAgo.ts` has done it that way from
- * the start. A `toLocaleDateString('en-US', { weekday: 'long' })` here would
- * throw on device and work perfectly in every test, which is the worst possible
- * combination.
+ * ── WHY NOT toLocaleDateString ──────────────────────────────────────────────
+ * The app uses no `Intl`: Hermes on the phone ships no polyfill, so its answer
+ * is whatever the engine chooses, while every test in Node gets the right one.
+ * Every date is built from the app's own tables, as `timeAgo.ts` does. Those
+ * carry short weekdays (`Wed`); the paper sets full caps and full weekdays, so
+ * the long forms live here, beside the app's.
  *
- * The app's own tables carry SHORT weekdays (`Wed`) and title-case months. The
- * paper sets its dividers in full caps and full weekdays, so the long forms live
- * here — beside the app's, not instead of them.
- *
- * ── AND WHY THE DEVICE'S CLOCK, NOT UTC ────────────────────────────────────
- * A filing made at 11pm belongs to the day the member made it, in the room they
- * made it in. `new Date(iso)` gives local time on the device, and the divider is
- * a human's idea of a day rather than an astronomer's.
+ * ── THE DEVICE'S CLOCK, NOT UTC ─────────────────────────────────────────────
+ * A filing made at 11pm belongs to the day the member made it, where they made
+ * it: `new Date(iso)` gives the device's local time.
  */
-/**
- * Exported because the writing room names the day a draft was last written, and
- * a second copy of seven strings is a second thing to keep in step. `Intl` is
- * not an option — see the note above.
- */
+/** Exported for the writing room, which names the day a draft was last written. */
 export const WEEKDAYS = [
   'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
 ] as const;
@@ -70,13 +61,9 @@ export function monthLabel(iso: string): string {
 }
 
 /**
- * `28` — the day of the month, for the margin of a room.
- *
- * The margin is 44pt and never scales, so it holds about six fixed characters.
- * A full date does not fit and a date with a year fits even less; under a month
- * divider a bare day is complete, which is how an archive index has always been
- * set. Empty rather than `NaN` for a date that cannot be read — the margin
- * prints a dash for that, as it does for every other missing ordering value.
+ * `28`, for the margin of a room: a full date cannot fit its 38pt, and under a
+ * month divider a bare day is complete. Empty for an unreadable date (the
+ * caller prints the margin's dash), never `NaN`.
  */
 export function dayOfMonth(iso: string): string {
   const d = new Date(iso);
@@ -84,7 +71,10 @@ export function dayOfMonth(iso: string): string {
   return String(d.getDate());
 }
 
-/** `21:40` — the ordering value the margin prints under LATEST. */
+/**
+ * `21:40`, what the margin prints under LATEST. Always 24-hour: the margin has
+ * 38pt of room, `21:40` is 27.4pt and `10:40 PM` 43.8, at normal text size.
+ */
 export function hourLabel(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';

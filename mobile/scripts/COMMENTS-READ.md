@@ -90,7 +90,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/+not-found.tsx | — |  |
 | app/auth-callback.tsx | — |  |
 | app/dispatch/[id].tsx | — |  |
-| app/dispatch/archive.tsx | — |  |
+| app/dispatch/archive.tsx | 2026-09-29 | history removed; margin label now said as a day (was '28 certified') |
 | app/dispatch/compose.tsx | 2026-09-28 | Three claims were false: 'no cover, nowhere for a backdrop to live' (subject_backdrop is saved), 'counted once a second' (400ms) with a useDeferredValue the file never used, and names of draft functions that no longer exist. Two notes described code elsewhere and were moved to it. Dead style previewTitle removed. History removed. |
 | app/dispatch/room/[username].tsx | — |  |
 | app/dispatch/rules.tsx | — |  |
@@ -135,7 +135,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | — |  |
 | jest.config.js | — |  |
-| jest.setup.ts | — |  |
+| jest.setup.ts | 2026-09-29 | 15 findings; each mock's discovery story cut to the rule it keeps |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
@@ -263,6 +263,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theEssayAtLargeType.test.tsx | — |  |
 | src/components/dispatch/__tests__/theHardcodedWidthIsHarmless.test.ts | — |  |
 | src/components/dispatch/__tests__/theInvitationHasAnAddress.test.tsx | — |  |
+| src/components/dispatch/__tests__/theMarginSaysWhatItCounts.test.tsx | 2026-09-29 | new |
 | src/components/dispatch/__tests__/theNumberIsAMembershipFact.test.tsx | — |  |
 | src/components/dispatch/__tests__/theParagraphKnowsItsDirection.test.tsx | — |  |
 | src/components/dispatch/__tests__/thePreviewIsThePage.test.tsx | — |  |
@@ -275,7 +276,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
 | src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | — |  |
 | src/components/dispatch/ComposeDesks.tsx | — |  |
-| src/components/dispatch/dayLabel.ts | — |  |
+| src/components/dispatch/dayLabel.ts | 2026-09-29 | 24-hour reason moved here from paperMetrics; 'margin never scales' was false (displayTextProps 1.2) |
 | src/components/dispatch/EssayBody.tsx | — |  |
 | src/components/dispatch/excerpt.ts | — |  |
 | src/components/dispatch/paper/PaperBallot.tsx | — |  |
@@ -287,7 +288,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperFill.tsx | — |  |
 | src/components/dispatch/paper/PaperFrame.tsx | — |  |
 | src/components/dispatch/paper/PaperKeyWell.tsx | — |  |
-| src/components/dispatch/paper/paperMetrics.ts | — |  |
+| src/components/dispatch/paper/paperMetrics.ts | 2026-09-29 | 33 fixed: stale names (NewsService, volumeNumber, chromeHeight, plate styles, noRawKindOnThePage) gone; measure example 375->318 corrected; formatCount branch comment was wrong |
 | src/components/dispatch/paper/PaperMore.tsx | 2026-09-28 | 61 findings fixed; 3 style notes contradicted their own values (loungeBy '8.5 and 1.2', the 14% story band, shareTitle 'from titleType'); 15 dead styles removed (card*, event*, unread, loungeByNo); the share-card test read this file's comment, now renders the card |
 | src/components/dispatch/paper/paperMotion.ts | — |  |
 | src/components/dispatch/paper/paperPerf.ts | — |  |

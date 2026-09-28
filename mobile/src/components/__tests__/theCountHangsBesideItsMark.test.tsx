@@ -224,7 +224,7 @@ describe('how far a count may reach', () => {
 
 describe('the tombstone keeps its one control', () => {
   const tomb = (n: number) => (
-    <PaperPost kind="take" author={null} body="" order="—" measureWidth={300} ended="author" commentCount={n} onCritique={noop} />
+    <PaperPost kind="take" author={null} body="" order="—" orderIs="count" measureWidth={300} ended="author" commentCount={n} onCritique={noop} />
   );
 
   it('carries its count beside the icon, and says CRITIQUE', () => {
@@ -246,7 +246,7 @@ describe('a filing’s byline no longer carries a count', () => {
   it('the number is on the bar, once', () => {
     const r = render(
       <PaperPost kind="take" author={{ name: 'Ana', no: 17, rank: 'cinephile' } as never} body="Two hours twenty."
-        order="3" measureWidth={300} certifyCount={4} commentCount={31} onCritique={noop} onCertify={noop} onShare={noop} onSave={noop} />,
+        order="3" orderIs="count" measureWidth={300} certifyCount={4} commentCount={31} onCritique={noop} onCertify={noop} onShare={noop} onSave={noop} />,
     );
     expect(texts(r).filter((s) => /31/.test(s))).toEqual(['31']);
     expect(texts(r).some((s) => /CRITIQUES/.test(s))).toBe(false);

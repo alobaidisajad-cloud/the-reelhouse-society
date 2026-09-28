@@ -2,43 +2,20 @@
 // jest.setup.ts — Global mocks for ReelHouse mobile test suite
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── THE APP'S SUPABASE CONFIG IS DELIBERATELY *NOT* SET HERE ────────────────
-// Loading the real URL and anon key globally was tried and reverted, for two
-// reasons — the second one is the important one:
-//
-//   1. `src/lib/supabase.ts` and `src/lib/tmdb.ts` read them as
-//      `process.env.X || 'dummy'`. With the variables unset both operands
-//      evaluate, so the fallback is covered; setting them makes the fallback
-//      unreachable and dropped ./src/lib/ branch coverage under its floor.
-//
-//   2. THE FALLBACKS ARE A SAFETY NET. `'https://dummy.supabase.co'` is what
-//      guarantees a unit test that accidentally builds a real client cannot
-//      reach PRODUCTION. Handing every one of 4,000 tests a live URL and a
-//      working anon key to save one contract test from skipping is a bad trade.
-//
-// The one test that genuinely needs credentials reads them itself — see
-// `src/services/__tests__/loungeEmbeds.contract.test.ts`.
+// The app's Supabase URL and key are deliberately NOT set here: `src/lib/supabase.ts`
+// falls back to a dummy host, which is what keeps a test that builds a real client
+// off PRODUCTION. The one test that needs credentials reads them itself
+// (loungeEmbeds.contract.test.ts).
 
-// Mock AccessibilityInfo (used by stores for announceForAccessibility)
-//
-// It MUST carry a `default`. React Native's index.js reads this module as
-// `require(…/AccessibilityInfo).default` (index.js:153-156), so a mock without
-// one makes `import { AccessibilityInfo } from 'react-native'` resolve to
-// **undefined** — and every component that announces something throws the
-// instant a test renders that path. The same class of gap as the missing
-// `ReduceMotion` and `Extrapolation` below: invisible until the first test
-// mounts the code that needs it, which for ActivityCard's two announcements had
-// never happened. Purely additive; the named exports stay for anyone importing
-// the module path directly.
+// AccessibilityInfo, WITH a `default`: React Native's own index reads this module's
+// default, so without one `AccessibilityInfo` from 'react-native' is undefined.
 const mockAccessibilityInfo = {
   announceForAccessibility: jest.fn(),
   isReduceMotionEnabled: jest.fn().mockResolvedValue(false),
   addEventListener: jest.fn(() => ({ remove: jest.fn() })),
   isBoldTextEnabled: jest.fn().mockResolvedValue(false),
   isScreenReaderEnabled: jest.fn().mockResolvedValue(false),
-  // A toast that carries an action moves VoiceOver focus onto its message
-  // (ToastHost). React Native's own mock carries these; this hand-list did not,
-  // so the first suite to draw such a toast on iOS threw.
+  // An action toast moves VoiceOver focus onto its message (ToastHost).
   sendAccessibilityEvent: jest.fn(),
   setAccessibilityFocus: jest.fn(),
 };
@@ -60,27 +37,11 @@ if (!RN.AccessibilityInfo?.announceForAccessibility) {
 }
 
 // ── FlashList, rendered SYNCHRONOUSLY ───────────────────────────────────────
-// The real FlashList measures itself one tick after mount and sets state, so
-// every suite that renders one emitted "An update to ForwardRef(FlashList)
-// inside a test was not wrapped in act(...)" — eighteen of them across twelve
-// suites, none of which is a defect in this app's code and all of which are
-// noise a real warning can hide behind.
-//
-// It also lays nothing out in the test renderer: cells come back zero-wide, so
-// the real component was never giving these tests anything the mock does not.
-// Rendering the rows straight through is strictly MORE truthful here — a test
-// can now assert on the rows a list was asked to draw.
-//
-// Every prop is spread onto the host view, because suites assert on what the
-// list RECEIVED (keyboardShouldPersistTaps, onScroll, estimatedItemSize). The
-// ref carries the scroll methods callers use, as no-ops.
-//
-// The host is a ScrollView, because FlashList is one: it grows to fill its
-// screen and lays its rows out with no height limit, and `contentContainerStyle`
-// wraps them. Drawn as a plain View, a captured list screen collapsed every
-// `flex: 1` row inside it under Yoga, the phone's layout — a page no phone draws
-// (mockups/tools/yoga-parity.cjs found it; mockups/tabs/flashListMock.tsx, the
-// design generators' own stand-in, is a ScrollView for the same reason).
+// The real one measures a tick after mount (an act() warning in every suite) and
+// lays nothing out in the test renderer, so its rows are drawn straight through:
+// a test can assert on what a list was asked to draw. Every prop reaches the host,
+// as suites assert on what the list RECEIVED; the ref's scroll methods are no-ops.
+// The host is a ScrollView, as FlashList is one (a plain View shrinks its rows).
 jest.mock('@shopify/flash-list', () => {
   const RNActual = jest.requireActual('react-native');
   const ReactActual = jest.requireActual('react');
@@ -101,8 +62,7 @@ jest.mock('@shopify/flash-list', () => {
       typeof C === 'function' ? ReactActual.createElement(C as never) : (C ?? null);
 
     const rows = Array.isArray(data) ? data : [];
-    // The separator goes BETWEEN rows, as FlashList draws it — a shelf spaced
-    // by one was drawn flush without it, and its cards measured as overlapping.
+    // The separator goes BETWEEN rows, as FlashList draws it.
     const Separator = (rest as { ItemSeparatorComponent?: unknown }).ItemSeparatorComponent;
     const body = rows.length === 0
       ? node(ListEmptyComponent)
@@ -162,12 +122,8 @@ jest.mock('./src/stores/mmkv-storage', () => ({
     setItem: jest.fn((key: string, value: string) => { _mockMMKVStore[key] = value; }),
     removeItem: jest.fn((key: string) => { delete _mockMMKVStore[key]; }),
   },
-  // ── The encryption gate ────────────────────────────────────────────────────
-  // Member content is no longer written to disk unless storage is encrypted:
-  // the film store persists logs carrying `privateNotes`, and the profile cache
-  // carries the member's email. These stand in for the ENCRYPTED case, which is
-  // what almost every suite means to exercise; the refusal has its own guard
-  // test that drives the real module.
+  // Member content reaches disk only when storage is encrypted: these stand in for
+  // that case; the refusal has its own guard test, on the real module.
   zustandMMKVStorageSensitive: {
     getItem: jest.fn((key: string) => _mockMMKVStore[key] ?? null),
     setItem: jest.fn((key: string, value: string) => { _mockMMKVStore[key] = value; }),
@@ -190,20 +146,8 @@ jest.mock('./src/stores/mmkv-storage', () => ({
   initEncryptedStorage: jest.fn().mockResolvedValue(undefined),
 }));
 
-// Mock expo-crypto (native module)
-//
-// ── THE ID MUST BE A REAL UUID ──────────────────────────────────────────────
-// This used to return `'test-uuid-' + random`. That is not a UUID, and a dozen
-// call sites feed `Crypto.randomUUID()` straight into a payload whose Zod
-// schema says `z.string().uuid()` — lounge messages, dispatch filings, offline
-// queue entries, log comments. Under the old mock every one of those writes
-// failed validation and returned `false` BEFORE reaching the network, so any
-// test asserting "it refused" passed for a reason that does not exist in the
-// app. It cost a whole guard: a send-throttle test went green with the
-// throttle deleted, because both sends were dying at the schema instead.
-//
-// Deterministic and sequential, so a failure is reproducible and two ids in one
-// test are never accidentally equal.
+// expo-crypto: a REAL uuid (payload schemas demand one, and a fake one refuses a
+// write for a reason the app never has), sequential so two are never equal.
 jest.mock('expo-crypto', () => {
   let seq = 0;
   return {
@@ -313,22 +257,7 @@ jest.mock('expo-router', () => {
     Stack: { Screen: ({ children }: any) => children || null },
     Tabs: { Screen: ({ children }: any) => children || null },
     Slot: () => null,
-    /**
-     * ── THE CLEANUP HAS TO RUN, OR EVERY TIMER LEAKS ─────────────────────────
-     * This was `(cb) => cb()`: it called the callback DURING RENDER and threw
-     * the returned cleanup away.
-     *
-     * The real hook behaves like `useEffect` scoped to focus — run on focus,
-     * clean up on blur or unmount. Discarding the cleanup meant the Dispatch
-     * feed's ninety-second poll set an interval on every mount and cleared
-     * none: `--detectOpenHandles` found THIRTY-FIVE leaked timers, jest
-     * reported "a worker process has failed to exit gracefully", and an
-     * unrelated suite failed intermittently because of it.
-     *
-     * `useEffect` with `[cb]` matches the real signature, which expects a
-     * `useCallback`-wrapped function — so a screen that memoises its callback
-     * runs once, exactly as it does in the app.
-     */
+    // An effect WITH its cleanup, as the real hook is; a memoised callback runs once.
     useFocusEffect: (cb: any) => React.useEffect(cb, [cb]),
   };
 });
@@ -357,16 +286,8 @@ jest.mock('expo-haptics', () => ({
 // Mock expo-image — native module
 // ─────────────────────────────────────────────────────────────────────────────
 jest.mock('expo-image', () => {
-  // `Image` has to be BOTH: a component, because plenty of screens render one,
-  // and a carrier for the static `prefetch` that list screens call. It used to
-  // be only the latter — a plain object — which meant any component showing an
-  // image failed to mount with "element type is invalid", and four separate
-  // test files had grown their own local copy of this workaround.
-  //
-  // A host element rather than RN's Image: expo-image takes props RN's does not
-  // (contentFit, cachePolicy, recyclingKey, placeholder, transition), and
-  // passing those to a real component only produces warnings. As a host element
-  // they are simply recorded, so tests can assert on them.
+  // `Image` is BOTH a component and the carrier of the static `prefetch`; a host
+  // element (not RN's Image), so expo-image's own props are recorded, not warned on.
   const React = require('react');
   const Image: React.FC<Record<string, unknown>> & { prefetch: jest.Mock } =
     Object.assign(
@@ -466,13 +387,8 @@ jest.mock('react-native-reanimated', () => {
       FlatList: animatedComponent(View),
       createAnimatedComponent: animatedComponent,
     },
-    // STABLE ACROSS RENDERS, because the real one is. This used to return a
-    // fresh `{ value }` on every render, which meant any effect listing a
-    // shared value in its deps re-ran on EVERY render under test — a loop that
-    // cannot happen in the app. It was caught by a deferred fade running twice
-    // in a component that starts it exactly once; on the device it is correct.
-    // A mock that invents a re-render is worse than no mock: it fails good code
-    // and, when an effect's work is idempotent, passes bad code silently.
+    // STABLE across renders, as the real one is: a fresh one each render re-runs
+    // every effect that lists it, a loop the app cannot have.
     useSharedValue: jest.fn((v: any) => {
       const ref: { current: { value: any } | null } = React.useRef(null);
       if (ref.current === null) ref.current = { value: v };
@@ -486,9 +402,6 @@ jest.mock('react-native-reanimated', () => {
     withSequence: jest.fn((...args: any[]) => args[0]),
     withRepeat: jest.fn((v: any) => v),
     withDelay: jest.fn((_d: any, v: any) => v),
-    // `in`, `out` and the curve names were absent, so any component reaching for
-    // the ordinary `Easing.out(Easing.quad)` threw the moment a test rendered
-    // it. Purely additive — nothing can depend on these being missing.
     Easing: {
       inOut: jest.fn(() => jest.fn()),
       in: jest.fn(() => jest.fn()),
@@ -499,25 +412,9 @@ jest.mock('react-native-reanimated', () => {
       linear: 'linear',
       bezier: jest.fn(),
     },
-    // CHAINABLE, because the real builders are. Every modifier on a reanimated
-    // entering/exiting builder returns the builder, so they compose in any
-    // order and any number. These were hand-listed one modifier at a time, so
-    // a component reaching for one nobody had needed yet — .easing() on a
-    // Fade — threw the moment a test rendered it. The only reason that was
-    // survivable is that the component using it had never been mounted.
-    //
-    // The MODIFIERS were made chainable after being hand-listed. The BUILDER
-    // NAMES stayed a hand list, which is the same lesson one level up, and it
-    // bit exactly as you would expect: `FadeInRight` was not on it, so
-    // CinematicInsights — a component that has been in the app for months —
-    // could not be rendered by a test at all. `FadeInRight.delay is undefined`
-    // reads like a broken component, so the natural response is to stop writing
-    // the test rather than to fix the harness.
-    //
-    // Reanimated's builders follow a closed naming scheme, so generate it.
-    // Names the real library lacks are harmless here — a mock that offers an
-    // unused builder costs nothing, while a missing one silently costs a test.
-    // `tsc` is what catches a genuinely wrong import name.
+    // Every entering/exiting builder, GENERATED from Reanimated's closed naming scheme
+    // (a hand list always misses one), each modifier chainable as the real ones are.
+    // An extra name costs nothing; tsc catches a wrong import.
     ...Object.fromEntries((() => {
       const names = ['Layout', 'LinearTransition', 'CurvedTransition', 'FadingTransition',
         'SequencedTransition', 'JumpingTransition', 'EntryExitTransition'];
@@ -535,24 +432,12 @@ jest.mock('react-native-reanimated', () => {
       });
     })()),
     cancelAnimation: jest.fn(),
-    // scrollBridge.ts calls makeMutable(0) at MODULE load, so without this any
-    // test that so much as imports TopNavBar threw before rendering a line.
-    // That is why the nav bar had no test at all. Purely additive.
+    // scrollBridge.ts calls makeMutable(0) at module load.
     makeMutable: jest.fn((v: any) => ({ value: v })),
     runOnJS: jest.fn((fn: any) => fn),
     runOnUI: jest.fn((fn: any) => fn),
-    /**
-     * ── A STUB THAT RETURNED ITS INPUT WAS ANSWERING WRONG, NOT ABSTAINING ──
-     * `(v) => v` handed back the scroll offset in place of the mapped value, so
-     * every resting style resolved to whatever the input happened to be. At
-     * scroll 0 that is 0 — and `interpolate(0, [0, h], [1, 0.3])`, which is an
-     * OPAQUE backdrop, came out as `opacity: 0`. The film page's backdrop and
-     * its floating back button were both invisible in a render, and nothing
-     * failed, because a transform of 0 at rest is also 0 and looked correct.
-     *
-     * The real function is a piecewise linear map, so it is implemented here.
-     * `extend` is reanimated's default; `clamp` and `identity` are honoured.
-     */
+    // The real piecewise linear map (a stub returning its input draws an opaque
+    // backdrop at opacity 0). `extend` is the default; `clamp`, `identity` honoured.
     interpolate: jest.fn((v: any, input?: any, output?: any, extrapolate?: any) => {
       if (!Array.isArray(input) || !Array.isArray(output)) return v;
       const n = Math.min(input.length, output.length);
@@ -570,15 +455,8 @@ jest.mock('react-native-reanimated', () => {
       return output[n - 1];
     }),
     Extrapolate: { CLAMP: 'clamp', EXTEND: 'extend' },
-    // `Extrapolation` is the current name; `Extrapolate` is the deprecated one.
-    // Only the old name was here, so a component using the current API would
-    // throw on `Extrapolation.CLAMP` the moment a test rendered it — the same
-    // trap that made TopNavBar untestable via makeMutable. Purely additive.
+    // `Extrapolation` is the current name; `Extrapolate` the deprecated one.
     Extrapolation: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
-    // Same class of gap as Extrapolation above: real components pass
-    // `reduceMotion: ReduceMotion.System` to withTiming, and an undefined enum
-    // throws the instant a test renders one — which is exactly how this was
-    // found. SocietySeal, the auth chrome and the verdict all rely on it.
     ReduceMotion: { System: 'system', Always: 'always', Never: 'never' },
     createAnimatedComponent: animatedComponent,
     useAnimatedRef: jest.fn(() => ({ current: null })),
@@ -606,21 +484,13 @@ jest.mock('./src/utils/imagePrefetcher', () => ({
     prefetchImage: jest.fn(),
   },
 }));
-// The same hand-list problem as the reanimated builders above: this mock had
-// two of the real module's SIX pure URL builders, so a component reaching for
-// `tmdb.profile()` — the one that draws the faces in CinematicInsights — died
-// with "tmdb.profile is not a function" the moment a test rendered it. The URL
-// builders are pure string functions, so the mock implements them for real
-// rather than stubbing them; tmdbMockCoverage.test.ts re-derives the set the
-// app calls and fails if this falls behind again.
+// The URL builders are pure, so implemented for real; tmdbMockCoverage.test.ts
+// fails if the set the app calls outgrows this mock.
 jest.mock('./src/lib/tmdb', () => {
   const IMG = 'https://image.tmdb.org/t/p';
   return {
     tmdb: {
-      // Each stub resolves to the SAME fallback the real module returns when a
-      // request fails, so a component rendered here behaves exactly as it does
-      // when TMDB is unreachable — a defined state the app already handles,
-      // rather than a shape invented for the test.
+      // Each resolves to the real module's own failure fallback: TMDB unreachable.
       trending: jest.fn().mockResolvedValue({ results: [] }),
       search: jest.fn().mockResolvedValue({ results: [] }),
       movie: jest.fn().mockResolvedValue({}),
@@ -630,12 +500,10 @@ jest.mock('./src/lib/tmdb', () => {
       person: jest.fn().mockResolvedValue(null),
       personCredits: jest.fn().mockResolvedValue(null),
       movieImages: jest.fn().mockResolvedValue({ posters: [], backdrops: [], logos: [] }),
-      // Synchronous in the real module — a cache peek, not a request. Returning
-      // a promise here would make `peekDetail(id)?.title` a truthy object.
+      // Synchronous, as the real cache peek is (a promise would be a truthy object).
       peekDetail: jest.fn(() => undefined),
-      // poster/backdrop return `null` where the real module returns `undefined`.
-      // Kept as-is deliberately: tests have been asserting against it for a long
-      // time, and both are falsy everywhere the app checks them.
+      // null where the real module gives undefined: tests assert it, and the app
+      // only ever tests either for falsiness.
       poster: jest.fn((path: string, size?: string) => path ? `${IMG}/${size || 'w500'}${path}` : null),
       backdrop: jest.fn((path: string, size?: string) => path ? `${IMG}/${size || 'original'}${path}` : null),
       profile: jest.fn((path?: string | null, size = 'w185') => path ? `${IMG}/${size}${path}` : undefined),
@@ -644,21 +512,8 @@ jest.mock('./src/lib/tmdb', () => {
       youtubeThumbnail: jest.fn((key: string) => `https://img.youtube.com/vi/${key}/hqdefault.jpg`),
     },
 
-    /**
-     * ── THE MODULE'S OTHER EXPORTS ─────────────────────────────────────────
-     * `src/lib/tmdb` exports three plain functions beside the `tmdb` object,
-     * and this mock carried none of them. Any component importing one was
-     * unmountable — `formatRuntime is not a function`, thrown at render.
-     *
-     * That is SIX files, including FilmHero, FilmDossier and FilmDetailLayout:
-     * the entire core of the film page. It has no tests not through neglect
-     * but because the door was locked, and the error names a function rather
-     * than a mock, so it reads as a broken component every time.
-     *
-     * Implemented for real rather than stubbed. They are pure formatters, and
-     * a stub returning undefined would print "undefined" into a rendered page
-     * and let a passing test call it correct.
-     */
+    // The module's pure formatters, implemented for real: a stub would print
+    // "undefined" into a page and let a test call it correct.
     formatRuntime: (minutes?: number | null) => {
       if (!minutes) return '—';
       const h = Math.floor(minutes / 60);
@@ -692,10 +547,7 @@ jest.mock('expo-notifications', () => ({
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock react-native-safe-area-context
 // ─────────────────────────────────────────────────────────────────────────────
-// The provider is `flex: 1`, as the real one is (its `styles.fill`). A bare View
-// here collapsed every `flex: 1` screen inside it to nothing under Yoga — the
-// phone's layout — so a captured screen measured a page no phone draws
-// (mockups/tools/yoga-parity.cjs found it).
+// The provider is `flex: 1`, as the real one is (a bare View collapses its screen).
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -707,44 +559,22 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// THE TEST ENVIRONMENT READS AT ORDINARY TYPE
-// ─────────────────────────────────────────────────────────────────────────────
-// jest-expo answers `Dimensions.get('window')` with `fontScale: 2` — a member
-// who has doubled their type size. Nothing read it, so nothing noticed, until
-// the essay's leading began deriving from it: every mockup was then drawn with
-// the leading already at its ceiling, and the plates showed normal type set far
-// looser than the app sets it.
-//
-// A test should render the ordinary case unless it says otherwise, so the scale
-// is 1 here and a test that wants a larger one sets it deliberately.
-// ─────────────────────────────────────────────────────────────────────────────
-// Required here rather than at the top: this file registers its mocks first and
-// has no import block of its own.
- 
+// ── ORDINARY TYPE: jest-expo reports `fontScale: 2`; a test that wants a larger
+// scale sets it. (Required here: this file registers its mocks first.)
 const { Dimensions: RNDimensions } = require('react-native');
 const realDimensionsGet = RNDimensions.get.bind(RNDimensions);
 jest.spyOn(RNDimensions, 'get').mockImplementation((...args: unknown[]) => ({
   ...realDimensionsGet(args[0] as 'window' | 'screen'),
-  // A capture run (mockups/capture.ts) draws what the tests mount, so it lays
-  // them out on a phone (mockups/devices.json; MOCKUPS_WIDTH picks another),
-  // not on jest-expo's 750pt tablet.
+  // A capture run lays tests out on a phone (devices.json), not jest-expo's tablet.
   ...(process.env.MOCKUPS_CAPTURE ? require('./mockups/paths').PHONE : null),
   fontScale: 1,
 }));
 
-// A drawing run also records WHERE each control and each text was written
-// (mockups/srcMark.ts), so the checks in mockups/tools/layout.cjs can name the
-// source line of what they measured, and an exception can name the file it
-// excuses. Capture and generator runs only: an ordinary test run sees the real
-// components.
+// Drawing runs only: each control and text records WHERE it was written
+// (mockups/srcMark.ts), so a layout finding names its source line.
 if (process.env.MOCKUPS_CAPTURE || process.env.MOCKUPS) {
-  // React records those stacks for only the first 10,000 elements, and resets
-  // the count only when a second has passed since the last reset. Tests render
-  // faster than that, so past the first few states of a file every control
-  // lost its site — the composer's last three drawings carried none. Drawing
-  // runs pin the count at zero: every element keeps its stack, at a cost only
-  // they pay.
+  // React keeps those stacks for 10,000 elements a second, which tests outrun:
+  // the count is pinned at zero, a cost only drawing runs pay.
   const internals = (require('react') as Record<string, Record<string, unknown>>)
     .__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
   if (internals && 'recentlyCreatedOwnerStacks' in internals) {
@@ -779,37 +609,17 @@ console.warn = (...args: any[]) => {
   originalWarn(...args);
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// A MOCK THAT IS MISSING A PIECE MUST NOT PASS QUIETLY
-//
-// jest.setup.ts mocks mmkv-storage with its whole export surface. A test file
-// that re-mocks the same module WINS, and 109 local factories do — several with
-// a shorter hand-list. When the code under test then calls a dropped export it
-// throws `X is not a function`, the store's own try/catch swallows it, and the
-// suite stays green having exercised nothing:
-//
-//   followStore.persistFollowing -> setSensitive is not a function  (6 suites)
-//   socialSlice.hydrateFollowing -> data.forEach is not a function  (1 suite)
-//
-// Both were invisible for as long as they have existed. The failure is always
-// a TypeError reported through a logger, so that is where it is caught: any
-// such text in a warn or error fails the test that produced it. Recorded and
-// asserted afterwards rather than thrown on the spot, because throwing inside
-// a catch block is exactly what an outer catch would swallow again.
-// ─────────────────────────────────────────────────────────────────────────────
-// This file is a `setupFiles` entry, which runs BEFORE the test framework is
-// installed — there is no `beforeEach` here. So it only RECORDS, on the shared
-// global, and jest.afterEnv.ts does the asserting.
-// Every phrasing a mock gap surfaces as. The "Cannot read propert…" forms are
-// here because three FeedService tests hit one: `supabase.rpc` was a bare
-// jest.fn() answering `undefined`, so `rpcResult.error` threw, the catch
-// swallowed it, and all three silently tested the fallback branch instead of
-// the RPC the live app actually uses. Suite-wide count of these is now zero,
-// so any new one is a new gap.
+// ── A MOCK MISSING A PIECE MUST NOT PASS QUIETLY (see noteIfMockGap) ──────────
 const MOCK_GAP =
   /\b(?:is not a function|is not a constructor|is not iterable|is not defined)\b|Cannot read propert(?:y|ies) .*of (?:undefined|null)|undefined is not an object/;
 (globalThis as Record<string, unknown>).__mockGaps = [] as string[];
 
+/**
+ * A test's own mock replaces this file's, and a shorter one throws "X is not a
+ * function" inside a store's try/catch: the suite passes having tested nothing.
+ * Every phrasing of that in a warn or error is RECORDED (a setupFiles entry has
+ * no beforeEach) and fails its test in jest.afterEnv.ts. The suite has none.
+ */
 function noteIfMockGap(args: any[]): void {
   const text = args
     .map((a) => (a instanceof Error ? a.message : typeof a === 'string' ? a : ''))

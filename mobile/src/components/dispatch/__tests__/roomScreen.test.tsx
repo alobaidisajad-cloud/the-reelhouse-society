@@ -257,7 +257,7 @@ describe('a member’s room', () => {
       filing({ id: 'f2', created_at: at(2026, 8, 3) }),
       filing({ id: 'f3', created_at: at(2025, 3, 9) }),
     ];
-    const { getByText, queryByText } = await mount();
+    const { getByText, queryByText, getByLabelText } = await mount();
 
     // The year is the point: a room runs back far enough that `MONDAY, MARCH 3`
     // appears twice with nothing to tell the two apart.
@@ -268,6 +268,10 @@ describe('a member’s room', () => {
     expect(getByText('28')).toBeTruthy();
     expect(getByText('3')).toBeTruthy();
     expect(getByText('9')).toBeTruthy();
+    // Said as a day: the same `28` on the feed's CERTIFIED order is 28 marks.
+    expect(getByLabelText('Filed on the 28th')).toBeTruthy();
+    expect(getByLabelText('Filed on the 3rd')).toBeTruthy();
+    expect(getByLabelText('Filed on the 9th')).toBeTruthy();
   });
 
   it('asks only for what the paper itself would show, newest first', async () => {

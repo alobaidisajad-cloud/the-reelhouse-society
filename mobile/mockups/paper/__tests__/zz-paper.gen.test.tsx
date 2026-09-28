@@ -207,12 +207,12 @@ add('t4-unbreakable', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost kind="wire" order="23:41" author={ANA} measureWidth={COL}
+      <PaperPost kind="wire" order="23:41" orderIs="hour" author={ANA} measureWidth={COL}
         source="bfi.org.uk"
         body="Full programme at https://www.bfi.org.uk/news/napoleon-restoration-tour-2026-full-city-listing" />
-      <PaperPost kind="take" order="21:04" author={SAM} measureWidth={COL}
+      <PaperPost kind="take" order="21:04" orderIs="hour" author={SAM} measureWidth={COL}
         body="Rindfleischetikettierungsueberwachungsaufgabenuebertragungsgesetz is a real word and a better film title than most" />
-      <PaperPost kind="seeking" order="19:30" author={SAJAD} measureWidth={COL}
+      <PaperPost kind="seeking" order="19:30" orderIs="hour" author={SAJAD} measureWidth={COL}
         body="something like 東京物語 — 小津安二郎の映画をもっと見たい" commentCount={4} />
     </PaperSheet>
   </View>
@@ -225,13 +225,13 @@ add('t2-iphone-se', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost kind="dossier" order="14:20" author={LONGNAME} measureWidth={SE_COL} film={TOKYO}
+      <PaperPost kind="dossier" order="14:20" orderIs="hour" author={LONGNAME} measureWidth={SE_COL} film={TOKYO}
         body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
         readTime="12 MIN" edited certifyCount={61} commentCount={14} />
-      <PaperPost kind="take" order="19:02" author={MIRA} measureWidth={SE_COL} film={STALKER}
+      <PaperPost kind="take" order="19:02" orderIs="hour" author={MIRA} measureWidth={SE_COL} film={STALKER}
         body={LONGEST} certifyCount={2140} commentCount={61} certified />
       {/* A seeking's larger face on the narrowest column, with the longest take's text. */}
-      <PaperPost kind="seeking" order="17:44" author={SAJAD} measureWidth={SE_COL}
+      <PaperPost kind="seeking" order="17:44" orderIs="hour" author={SAJAD} measureWidth={SE_COL}
         body={LONGEST} commentCount={9} />
     </PaperSheet>
   </View>
@@ -244,10 +244,10 @@ add('t3-android-360', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost kind="dossier" order="14:20" author={LONGNAME} measureWidth={AND_COL} film={TOKYO}
+      <PaperPost kind="dossier" order="14:20" orderIs="hour" author={LONGNAME} measureWidth={AND_COL} film={TOKYO}
         body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
         readTime="12 MIN" edited certifyCount={61} commentCount={14} />
-      <PaperPost kind="seeking" order="20:15" author={SAJAD} measureWidth={AND_COL}
+      <PaperPost kind="seeking" order="20:15" orderIs="hour" author={SAJAD} measureWidth={AND_COL}
         body="something to watch after a funeral. No irony, no uplift. I have three hours."
         certifyCount={47} commentCount={22} />
     </PaperSheet>
@@ -267,15 +267,15 @@ add('t7-byline-worst-case', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost kind="dossier" order="14:20" author={MAX_AUTEUR} measureWidth={AND_COL} film={TOKYO}
+      <PaperPost kind="dossier" order="14:20" orderIs="hour" author={MAX_AUTEUR} measureWidth={AND_COL} film={TOKYO}
         body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
         readTime="12 MIN" edited certifyCount={61} commentCount={14} />
-      <PaperPost kind="take" order="2.1K" author={MAX_AUTEUR} measureWidth={AND_COL}
+      <PaperPost kind="take" order="2.1K" orderIs="count" author={MAX_AUTEUR} measureWidth={AND_COL}
         body={LONGEST} certifyCount={2140} commentCount={61} certified />
       {/* The other badge at the same width, so the two can be compared without
           switching plates — an Archivist is the common case and the one that
           decides whether the feed reads as a wall of medals. */}
-      <PaperPost kind="seeking" order="88" author={LONGNAME} measureWidth={AND_COL}
+      <PaperPost kind="seeking" order="88" orderIs="count" author={LONGNAME} measureWidth={AND_COL}
         body="Where do I start with Ozu? I have two evenings and no idea which door to open."
         certifyCount={88} commentCount={31} />
     </PaperSheet>
@@ -289,11 +289,11 @@ add('t1-tablet', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost kind="take" order="21:40" author={DAN} measureWidth={TAB_COL}
+      <PaperPost kind="take" order="21:40" orderIs="hour" author={DAN} measureWidth={TAB_COL}
         body="tbh Odyssey was bad" film={LOST} commentCount={31} certifyCount={4} />
-      <PaperPost kind="take" order="19:02" author={MIRA} measureWidth={TAB_COL} film={TOKYO}
+      <PaperPost kind="take" order="19:02" orderIs="hour" author={MIRA} measureWidth={TAB_COL} film={TOKYO}
         body={LONGEST} certifyCount={214} commentCount={31} saved />
-      <PaperPost kind="seeking" order="20:15" author={SAJAD} measureWidth={TAB_COL}
+      <PaperPost kind="seeking" order="20:15" orderIs="hour" author={SAJAD} measureWidth={TAB_COL}
         body="any good horror movies? nothing with gore" commentCount={12} />
     </PaperSheet>
   </View>
@@ -306,15 +306,15 @@ add('a1-paper-latest', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost kind="take" order="21:40" author={DAN} measureWidth={COL}
+      <PaperPost kind="take" order="21:40" orderIs="hour" author={DAN} measureWidth={COL}
         body="tbh Odyssey was bad" film={LOST} commentCount={31} certifyCount={4} />
-      <PaperPost kind="seeking" order="20:15" author={SAJAD} measureWidth={COL}
+      <PaperPost kind="seeking" order="20:15" orderIs="hour" author={SAJAD} measureWidth={COL}
         body="any good horror movies? nothing with gore" commentCount={12} />
-      <PaperPost kind="take" order="19:02" author={MIRA} measureWidth={COL} film={TOKYO}
+      <PaperPost kind="take" order="19:02" orderIs="hour" author={MIRA} measureWidth={COL} film={TOKYO}
         body="Tokyo Story is the only film that has ever made me telephone my mother the same night."
         certifyCount={214} commentCount={31} saved />
       <DayDivider label="TUESDAY, AUGUST 26" />
-      <PaperPost kind="wire" order="23:41" author={ANA} measureWidth={COL} film={GODFATHER}
+      <PaperPost kind="wire" order="23:41" orderIs="hour" author={ANA} measureWidth={COL} film={GODFATHER}
         headline="BFI" source="bfi.org.uk"
         body="The restored NAPOLEON will tour eleven cities before it reaches any streaming service."
         certifyCount={31} commentCount={9} />
@@ -329,14 +329,14 @@ add('a2-paper-certified', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="CERTIFIED" />
-      <PaperPost kind="take" order="2.1K" author={ANA} measureWidth={COL} film={STALKER} still
+      <PaperPost kind="take" order="2.1K" orderIs="count" author={ANA} measureWidth={COL} film={STALKER} still
         body={LONGEST} certifyCount={2140} commentCount={61} certified />
-      <PaperPost kind="take" order="214" author={MIRA} measureWidth={COL} film={TOKYO}
+      <PaperPost kind="take" order="214" orderIs="count" author={MIRA} measureWidth={COL} film={TOKYO}
         body="Tokyo Story is the only film that has ever made me telephone my mother the same night."
         certifyCount={214} commentCount={31} saved />
-      <PaperPost kind="take" order="—" author={DAN} measureWidth={COL} film={LOST}
+      <PaperPost kind="take" order="—" orderIs="count" author={DAN} measureWidth={COL} film={LOST}
         body="tbh Odyssey was bad" commentCount={31} />
-      <PaperPost kind="seeking" order="—" author={SAJAD} measureWidth={COL}
+      <PaperPost kind="seeking" order="—" orderIs="count" author={SAJAD} measureWidth={COL}
         body="any good horror movies? nothing with gore" commentCount={12} />
     </PaperSheet>
   </View>
@@ -412,7 +412,7 @@ add('a7-end-signed-out', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost kind="take" order="08:12" author={SAM} measureWidth={COL} film={CHUNGKING}
+      <PaperPost kind="take" order="08:12" orderIs="hour" author={SAM} measureWidth={COL} film={CHUNGKING}
         body="Chungking Express gets better every year and I no longer trust anyone who disagrees."
         certifyCount={88} commentCount={12} />
       <PaperEmpty title="The house is open to read."
@@ -453,14 +453,14 @@ add('e1-saved', (
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="" sort="LATEST" saved title="SAVED · 34" />
       <DayDivider label="WEDNESDAY, AUGUST 28" />
-      <PaperPost kind="take" order="21:12" author={MIRA} measureWidth={COL} film={TOKYO}
+      <PaperPost kind="take" order="21:12" orderIs="hour" author={MIRA} measureWidth={COL} film={TOKYO}
         body="Tokyo Story is the only film that has ever made me telephone my mother the same night."
         certifyCount={214} commentCount={31} saved />
-      <PaperPost kind="dossier" order="16:40" author={ANA} measureWidth={COL} film={TOKYO}
+      <PaperPost kind="dossier" order="16:40" orderIs="hour" author={ANA} measureWidth={COL} film={TOKYO}
         body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
         readTime="12 MIN" certifyCount={61} commentCount={14} saved />
       <DayDivider label="SATURDAY, AUGUST 23" />
-      <PaperPost kind="seeking" order="09:58" author={SAJAD} measureWidth={COL}
+      <PaperPost kind="seeking" order="09:58" orderIs="hour" author={SAJAD} measureWidth={COL}
         body="something to watch after a funeral. No irony, no uplift. I have three hours."
         certifyCount={47} commentCount={22} saved />
     </PaperSheet>
@@ -488,7 +488,7 @@ add('e2-saved-empty', (
 add('b1-seeking-answered', (
   <View style={p.screen}>
     <PaperSheet top>
-      <PaperPost kind="seeking" order="20:15" author={SAJAD} measureWidth={COL}
+      <PaperPost kind="seeking" order="20:15" orderIs="hour" author={SAJAD} measureWidth={COL}
         body="something to watch after a funeral. No irony, no uplift. I have three hours."
         answer={{ film: COME, body: 'Two hours and twenty minutes, and you will not want company afterwards. That is the point.', author: MIRA }}
         answered certifyCount={47} commentCount={22} />
@@ -533,7 +533,7 @@ add('b5-dossier', (
   <View style={p.screen}>
     <PaperSheet top>
       {/* A credit that agrees with its headline (an essay on Ozu, on an Ozu film). */}
-      <PaperPost kind="dossier" order="14:20" author={ANA} measureWidth={COL} still film={TOKYO}
+      <PaperPost kind="dossier" order="14:20" orderIs="hour" author={ANA} measureWidth={COL} still film={TOKYO}
         body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
         readTime="12 MIN" certifyCount={61} commentCount={14} certified />
     </PaperSheet>
@@ -543,16 +543,16 @@ add('b5-dossier', (
 add('b6-states', (
   <View style={p.screen}>
     <PaperSheet top>
-      <PaperPost kind="take" order="21:40" author={ANA} measureWidth={COL} film={CACHE}
+      <PaperPost kind="take" order="21:40" orderIs="hour" author={ANA} measureWidth={COL} film={CACHE}
         body="—" spoiler="This discusses the ending of Cache" certifyCount={9} commentCount={3} />
-      <PaperPost kind="take" order="18:03" author={DAN} measureWidth={COL} withheld
+      <PaperPost kind="take" order="18:03" orderIs="hour" author={DAN} measureWidth={COL} withheld
         body="Every Marvel film since 2019 has been the same film with different weather." />
       {/* Both tombstones: withdrawn by its author, struck by the house. Never one sentence. */}
-      <PaperPost kind="take" order="—" author={null} measureWidth={COL} ended="author"
+      <PaperPost kind="take" order="—" orderIs="count" author={null} measureWidth={COL} ended="author"
         body="" commentCount={200} />
-      <PaperPost kind="take" order="—" author={null} measureWidth={COL} ended="house"
+      <PaperPost kind="take" order="—" orderIs="count" author={null} measureWidth={COL} ended="house"
         body="" commentCount={41} />
-      <PaperPost kind="take" order="09:11" author={MIRA} measureWidth={COL} edited film={CHUNGKING}
+      <PaperPost kind="take" order="09:11" orderIs="hour" author={MIRA} measureWidth={COL} edited film={CHUNGKING}
         body="Chungking Express gets better every year." certifyCount={9} />
     </PaperSheet>
   </View>
@@ -612,9 +612,9 @@ add('f1-picker', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost kind="take" order="21:40" author={DAN} measureWidth={COL}
+      <PaperPost kind="take" order="21:40" orderIs="hour" author={DAN} measureWidth={COL}
         body="tbh Odyssey was bad" film={LOST} commentCount={31} certifyCount={4} />
-      <PaperPost kind="seeking" order="20:15" author={SAJAD} measureWidth={COL}
+      <PaperPost kind="seeking" order="20:15" orderIs="hour" author={SAJAD} measureWidth={COL}
         body="any good horror movies? nothing with gore" commentCount={12} />
     </PaperSheet>
     {/* The scrim is the page still being there, dimmed — you are choosing a form
@@ -672,9 +672,9 @@ add('f4-archive', (
     <PaperBack label="THE ARCHIVE" />
     <PaperSheet>
       <PaperArchive query="Stalker" film={STALKER} count={41} span="2019–2026">
-        <PaperPost kind="take" order="2.1K" author={ANA} measureWidth={COL}
+        <PaperPost kind="take" order="2.1K" orderIs="count" author={ANA} measureWidth={COL}
           body={LONGEST} certifyCount={2140} commentCount={61} certified />
-          <PaperPost kind="seeking" order="88" author={SAM} measureWidth={COL}
+          <PaperPost kind="seeking" order="88" orderIs="count" author={SAM} measureWidth={COL}
           body="Is Stalker the one to start Tarkovsky on, or the one to end on?"
           certifyCount={88} commentCount={31} />
       </PaperArchive>
@@ -696,12 +696,12 @@ add('f5-member-room', (
           has ever filed, so `AUGUST` alone names two different Augusts once the
           house is two years old. */}
       <DayDivider label="AUGUST 2026" />
-      <PaperPost noByline kind="take" order="28" author={ANA} measureWidth={COL} film={STALKER}
+      <PaperPost noByline kind="take" order="28" orderIs="day" author={ANA} measureWidth={COL} film={STALKER}
         body={LONGEST} certifyCount={2140} commentCount={61} certified />
-      <PaperPost noByline kind="dossier" order="24" author={ANA} measureWidth={COL} film={TOKYO}
+      <PaperPost noByline kind="dossier" order="24" orderIs="day" author={ANA} measureWidth={COL} film={TOKYO}
         body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
         readTime="12 MIN" certifyCount={61} commentCount={14} />
-      <PaperPost noByline kind="wire" order="21" author={ANA} measureWidth={COL} film={GODFATHER}
+      <PaperPost noByline kind="wire" order="21" orderIs="day" author={ANA} measureWidth={COL} film={GODFATHER}
         source="bfi.org.uk"
         body="The restored NAPOLEON will tour eleven cities before it reaches any streaming service."
         certifyCount={31} commentCount={9} />
@@ -1090,11 +1090,11 @@ add('g2-not-sent', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost pending kind="take" order="21:46" author={ANA} measureWidth={COL} film={CHUNGKING}
+      <PaperPost pending kind="take" order="21:46" orderIs="hour" author={ANA} measureWidth={COL} film={CHUNGKING}
         body="Chungking Express gets better every year and I no longer trust anyone who disagrees." />
-      <PaperPost kind="take" order="21:40" author={DAN} measureWidth={COL}
+      <PaperPost kind="take" order="21:40" orderIs="hour" author={DAN} measureWidth={COL}
         body="tbh Odyssey was bad" film={LOST} commentCount={31} certifyCount={4} />
-      <PaperPost kind="seeking" order="20:15" author={SAJAD} measureWidth={COL}
+      <PaperPost kind="seeking" order="20:15" orderIs="hour" author={SAJAD} measureWidth={COL}
         body="any good horror movies? nothing with gore" commentCount={12} />
     </PaperSheet>
   </View>
@@ -1110,10 +1110,10 @@ add('g3-new-filings', (
         {/* The room the pill sits in. In the app this is the list's own top
             padding while filings are held, not a spacer view. */}
         <View style={{ height: NEW_FILINGS_ROOM }} />
-        <PaperPost kind="take" order="19:02" author={MIRA} measureWidth={COL} film={TOKYO}
+        <PaperPost kind="take" order="19:02" orderIs="hour" author={MIRA} measureWidth={COL} film={TOKYO}
           body="Tokyo Story is the only film that has ever made me telephone my mother the same night."
           certifyCount={214} commentCount={31} saved />
-          <PaperPost kind="wire" order="18:41" author={ANA} measureWidth={COL} film={GODFATHER}
+          <PaperPost kind="wire" order="18:41" orderIs="hour" author={ANA} measureWidth={COL} film={GODFATHER}
           source="bfi.org.uk"
           body="The restored NAPOLEON will tour eleven cities before it reaches any streaming service."
           certifyCount={31} commentCount={9} />
@@ -1142,13 +1142,13 @@ add('d1-composer-take', (
 add('y0-rtl', (
   <View style={p.screen}>
     <PaperSheet top>
-      <PaperPost kind="take" order="22:15" author={ANA} measureWidth={COL} film={TOKYO}
+      <PaperPost kind="take" order="22:15" orderIs="hour" author={ANA} measureWidth={COL} film={TOKYO}
         certifyCount={64} commentCount={11}
         body="لا شيء في السينما اليابانية يضاهي تلك اللحظة التي تبقى فيها الغرفة فارغة بعد خروج الجميع." />
-      <PaperPost kind="seeking" order="21:02" author={SAJAD} measureWidth={COL}
+      <PaperPost kind="seeking" order="21:02" orderIs="hour" author={SAJAD} measureWidth={COL}
         commentCount={4}
         body="من أين أبدأ مع أوزو؟ عندي مساءان اثنان ولا أعرف أي باب أفتح." />
-      <PaperPost kind="take" order="20:40" author={MIRA} measureWidth={COL} film={STALKER}
+      <PaperPost kind="take" order="20:40" orderIs="hour" author={MIRA} measureWidth={COL} film={STALKER}
         certifyCount={9}
         body="Stalker is not slow, it is patient — and the difference is the whole film." />
     </PaperSheet>

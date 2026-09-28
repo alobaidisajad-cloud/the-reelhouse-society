@@ -42,6 +42,7 @@ import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { measure, KIND_NAME } from '@/src/components/dispatch/paper/paperMetrics';
 import { roomOf } from '@/src/components/dispatch/roomLink';
+import { hourLabel } from '@/src/components/dispatch/dayLabel';
 import { useAuthStore } from '@/src/stores/auth';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { useDispatch } from '@/src/stores/dispatch';
@@ -67,12 +68,6 @@ const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
  * answer and gave different ones.
  */
 const FIRST_ORDER: CritiqueOrder = 'CERTIFIED';
-
-/** How the margin prints an hour. Set once, not on a timer. */
-const hourOf = (iso: string) => {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-};
 
 export default function FilingReader() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -617,7 +612,8 @@ export default function FilingReader() {
               body={live.body}
               source={live.source ?? undefined}
               film={live.film}
-              order={hourOf(live.createdAt)}
+              order={hourLabel(live.createdAt)}
+              orderIs="hour"
               measureWidth={width}
               certifyCount={live.certifyCount}
               commentCount={live.commentCount}

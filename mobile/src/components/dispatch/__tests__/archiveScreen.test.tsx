@@ -258,6 +258,8 @@ describe('the archive', () => {
     expect(r.getByText(/60 FILINGS/)).toBeTruthy();
     // And 2019–2026, which needs the OLDEST row: the page in hand is all 2026.
     expect(r.getByText(/2019–2026/)).toBeTruthy();
+    // The margin's `28` is the day it was filed, and is said as one.
+    expect(r.getByLabelText('Filed on the 28th')).toBeTruthy();
     const filings = mockAsked.find((a) => a.range !== undefined);
     expect(filings?.opts).toEqual({ count: 'exact' });
     expect(filings?.eq.subject_id).toBe(42);

@@ -22,6 +22,21 @@ import { isRTLText, RTL_MARK } from '@/src/utils/text';
 
 export type PaperKind = 'take' | 'seeking' | 'wire' | 'ballot' | 'dossier';
 export type PaperTier = 'free' | 'archivist' | 'auteur';
+/** What the margin's ordering value is: a room's `28` is a day, CERTIFIED's is a count. */
+export type PaperOrder = 'hour' | 'count' | 'day';
+
+const ordinal = (day: string) => {
+  const n = Number(day);
+  const teen = n % 100 >= 11 && n % 100 <= 13;
+  return day + (teen ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'));
+};
+
+/** The margin prints a bare value, as a ledger does; the ear is told what it is. */
+const SAY_ORDER: Record<PaperOrder, (value: string) => string> = {
+  hour: (v) => (v === '—' ? 'Time not known' : `Filed at ${v}`),
+  count: (v) => (v === '—' ? 'Not certified' : `${v} certified`),
+  day: (v) => (v === '—' ? 'Date not known' : `Filed on the ${ordinal(v)}`),
+};
 
 export interface PaperAuthor {
   name: string;
@@ -399,7 +414,7 @@ const Stamp = memo(function Stamp({
  * saying what the post already says.
  */
 export const PaperPost = memo(function PaperPost({
-  kind, author, body, headline, source, film, still, order, measureWidth,
+  kind, author, body, headline, source, film, still, order, orderIs, measureWidth,
   certifyCount, commentCount, certified, saved,
   answer, answered, spoiler, withheld, ended, edited, series, readTime, noByline, pending,
   onOpen, onCertify, onCritique, onShare, onSave, onFilm, onAuthor,
@@ -413,6 +428,7 @@ export const PaperPost = memo(function PaperPost({
   still?: boolean;
   /** The ordering value. A dash where there is none. */
   order: string;
+  orderIs: PaperOrder;
   measureWidth: number;
   certifyCount?: number;
   commentCount?: number;
@@ -564,20 +580,7 @@ export const PaperPost = memo(function PaperPost({
         <View style={p.margin}>
           <Text
             style={[p.marginValue, order === '—' && p.marginNil]}
-
-            /* A reader walks the tree and reaches this BEFORE the filing. Bare, it
-
-               announces "21:40" on LATEST and "2.1K" on CERTIFIED — a number with
-
-               nothing attached to say what it counts. The label names the fact; the
-
-               column keeps printing the value alone, which is what a ledger does. */
-
-            accessibilityLabel={
-              order === '—' ? 'Not certified'
-                : order.includes(':') ? `Filed at ${order}`
-                : `${order} certified`
-            }
+            accessibilityLabel={SAY_ORDER[orderIs](order)}
             {...displayTextProps}
           >
             {order}

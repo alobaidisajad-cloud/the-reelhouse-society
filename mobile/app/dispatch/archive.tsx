@@ -7,20 +7,12 @@
  * it, and the entries beneath are the same entries they are anywhere else.
  *
  * ── THE SEARCH RUNS FOR EVERYONE ────────────────────────────────────────────
- * This file used to say the opposite: that a member below Archivist is shown
- * what the room is but NOT the search box, "because a search that refuses to
- * search is worse than no search".
- *
- * The reasoning was sound and the premise was wrong — the search does not have
- * to refuse. Nothing it finds is secret. Its own next paragraph said so: every
- * filing this gathers is public and already on the page, so a guest could read
- * all of it by scrolling the Dispatch. Hiding the search protected nothing and
- * cost a member the one thing that would make them want the rank: seeing that
- * eleven people have argued about Stalker since 2019.
- *
- * So a guest may search, and see which films the house has written about and
- * how much. What the rank buys is the GATHERING — opening one film and reading
- * all of it in one place — and that is where the rope is.
+ * Nothing it finds is secret: every filing it gathers is public and already on
+ * the page, so hiding the search would protect nothing, and would hide the one
+ * thing that makes a member want the rank: seeing that eleven people have
+ * argued about Stalker since 2019. A guest may search, and see which films the
+ * house has written about and how much. What the rank buys is the GATHERING,
+ * opening one film and reading all of it in one place, and the rope is there.
  */
 import { useCallback } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
@@ -60,27 +52,9 @@ export default function ArchiveScreen() {
   const width = columnWidth(390);
 
   const back = useCallback(() => {
-    // The film first, then the screen. A member deep in one film's archive
-    // pressing back expects to return to their search, not to the paper — and
-    // the search is still there, with what they typed still in it.
+    // Back to the search, with what they typed, first; out of the archive second.
     if (film) clear(); else nav.back();
   }, [film, clear]);
-
-  /**
-   * ── THE WALL IS GONE, AND IT WAS THE WORST ONE ──────────────────────────
-   * This screen used to return a full-screen page that explained the rank and
-   * then offered NO WAY TO GET IT. It said "ARCHIVIST AND ABOVE" as a closing
-   * statement — a door that tells you the name of the key and then shuts.
-   *
-   * Its own copy also gave away why the wall was unnecessary: "Every filing in
-   * it is public and already on the page." A member could read every one of
-   * those filings by scrolling the Dispatch. Hiding the SEARCH for them
-   * protected nothing; what the rank buys is the GATHERING, and gathering is
-   * the act that is now gated.
-   *
-   * So the search runs for everyone, the films come back for everyone, and the
-   * rope sits on opening one — where the value actually is.
-   */
 
   return (
     <View style={p.screen}>
@@ -118,6 +92,7 @@ export default function ArchiveScreen() {
                   // the page answering a question it already answered.
                   film={null}
                   order={dayOfMonth(f.createdAt) || '—'}
+                  orderIs="day"
                   measureWidth={width}
                   certifyCount={f.certifyCount}
                   commentCount={f.commentCount}
@@ -143,18 +118,15 @@ export default function ArchiveScreen() {
                   key={m.subjectId}
                   film={m.film}
                   filings={m.filings}
-                  // A guest may search and see WHAT the house has written about
-                  // and how much of it. Opening the gathering is the rank.
+                  // Anyone may search; opening the gathering is what the rank buys.
                   onPress={() => (gathering.held ? choose(m) : gathering.open())}
                 />
               ))
             )}
           </PaperArchive>
 
-          {/* The rope, once, under the results a guest just found — not over
-              the page before they were allowed to look. */}
-          {/* `gathering.held`, the same answer the tap above asks — this read a
-              separate bare tier check one line from the rope that already knew. */}
+          {/* The rope, once, under the results a guest just found, not over the
+              page before they could look; `gathering.held`, as the tap asks. */}
           {!gathering.held && !film && matches.length > 0 ? (
             <ClearanceGate
               rank={gathering.rank}

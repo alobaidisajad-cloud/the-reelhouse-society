@@ -48,6 +48,7 @@ import { BallotDesk, FilmFinder } from '@/src/components/dispatch/paper/PaperDes
 import type { PaperFilm } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { BALLOT_MIN, BALLOT_MAX } from '@/src/components/dispatch/paper/paperMetrics';
+import { hourLabel } from '@/src/components/dispatch/dayLabel';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
@@ -61,10 +62,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 /** Set when the desk OPENS. A clock would re-render the composer every sixty
  *  seconds while somebody is typing, for a number nobody is watching. */
 function useOpeningHour(): string {
-  return useMemo(() => {
-    const d = new Date();
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  }, []);
+  return useMemo(() => hourLabel(new Date().toISOString()), []);
 }
 
 /** The four facts a byline draws, for the member at the desk. */

@@ -122,7 +122,7 @@ const draw = (kind: PaperKind, words: string) => render(
     author={author}
     body={words}
     headline={words}
-    order="14"
+    order="14" orderIs="count"
     measureWidth={390}
     certifyCount={3}
     commentCount={2}

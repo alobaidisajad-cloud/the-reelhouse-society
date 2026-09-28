@@ -81,7 +81,7 @@ const draw = (kind: PaperKind, props: Record<string, unknown>) => wordsOf(
       kind={kind}
       author={author}
       body={BODY}
-      order="14"
+      order="14" orderIs="count"
       measureWidth={390}
       certifyCount={3}
       commentCount={2}

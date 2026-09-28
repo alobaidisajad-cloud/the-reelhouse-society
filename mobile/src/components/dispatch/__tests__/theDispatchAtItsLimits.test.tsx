@@ -55,7 +55,7 @@ const strings = (node: unknown, out: string[] = []): string[] => {
  * reporting itself as twenty-four product defects.
  */
 const base = (kind: PaperKind, over: Record<string, unknown> = {}) => ({
-  kind, author, order: '14', measureWidth: 390,
+  kind, author, order: '14', orderIs: 'count' as const, measureWidth: 390,
   // A default body so the spread always satisfies the required prop; every
   // test that cares overrides it.
   body: 'The ending is the whole film.',

@@ -142,6 +142,7 @@ export default function MemberRoomScreen() {
         film={f.film}
         // The day of the month, under the month's own divider.
         order={dayOfMonth(f.createdAt) || '—'}
+        orderIs="day"
         measureWidth={width}
         certifyCount={count}
         commentCount={f.commentCount}

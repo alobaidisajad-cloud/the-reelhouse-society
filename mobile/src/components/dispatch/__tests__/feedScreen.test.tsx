@@ -125,20 +125,22 @@ const CERTIFY = /^Certify this($|\. \d)/;
 describe('the Dispatch feed', () => {
   it('prints a filing, with the hour in the margin under LATEST', async () => {
     put({ filings: [filing()] });
-    const { getByText } = await mount();
+    const { getByText, getByLabelText } = await mount();
     // A regex, not the exact string: the kind names itself INSIDE the same Text
     // as the body — `TAKE — A take about a film.` — so the composed text of the
     // host element is never the body alone.
     expect(getByText(/A take about a film/)).toBeTruthy();
     expect(getByText('21:00')).toBeTruthy();
+    expect(getByLabelText('Filed at 21:00')).toBeTruthy();
   });
 
   it('prints the certify count in the margin under CERTIFIED', async () => {
     // The margin always shows the number the page is actually ORDERED by, so
     // the column is never a fact the ordering does not use.
     put({ filings: [filing({ certifyCount: 3 })], sort: 'CERTIFIED' });
-    const { getByText, queryByText } = await mount();
+    const { getByText, queryByText, getByLabelText } = await mount();
     expect(getByText('3')).toBeTruthy();
+    expect(getByLabelText('3 certified')).toBeTruthy();
     expect(queryByText('21:00')).toBeNull();
   });
 

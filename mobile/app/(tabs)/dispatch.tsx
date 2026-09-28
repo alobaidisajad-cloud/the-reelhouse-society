@@ -247,6 +247,7 @@ export default function DispatchScreen() {
         // shows the number the page is actually ordered by — and a dash where
         // there is none, which is what a ledger prints for an empty cell.
         order={sort === 'LATEST' ? hourLabel(f.createdAt) : (formatCount(f.certifyCount) ?? '—')}
+        orderIs={sort === 'LATEST' ? 'hour' : 'count'}
         measureWidth={width}
         certifyCount={f.certifyCount}
         commentCount={f.commentCount}
