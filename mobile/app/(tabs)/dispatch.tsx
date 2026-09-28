@@ -4,13 +4,10 @@
  * A feed of filings: takes, seekings, wires, ballots and dossiers, in one column
  * of one document, indexed by department across the top.
  *
- * ── WHAT LEFT, AND WHY ──────────────────────────────────────────────────────
- * The Global Wire is gone, and `NewsService` with it. It fetched RSS from
- * outside the house and printed it as if the house had said it; the members ARE
- * the wire now, and a `wire` filing is one of them bringing the news with their
- * name on it. The trending-films hero and the editor's note went with it: eight
- * rows of chrome before the first thing a member wrote is the exact fault this
- * app already carries on Stacks, and the design that replaced them is a feed.
+ * ── NOTHING FROM OUTSIDE THE HOUSE ──────────────────────────────────────────
+ * No outside news feed: the members ARE the wire, and a `wire` filing is one of
+ * them bringing the news with their name on it. And no hero or editor's note
+ * above it: the first thing on the page is the first thing a member wrote.
  *
  * ── THE DOCUMENT WRAPS THE LIST, NOT EACH ROW ───────────────────────────────
  * The page's side rails are borders on one container. Drawn per row they would
@@ -49,13 +46,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
-/**
- * A row is a filing or the divider announcing the day it belongs to.
- *
- * Interleaved into ONE array rather than grouped into sections, because a
- * section list re-measures every header on every data change and this page's
- * data changes on every certify. One flat list, one cell type each.
- */
+/** A filing, or a day's divider: one flat list, as a section list re-measures on every certify. */
 type Row =
   | { type: 'day'; key: string; label: string }
   | { type: 'filing'; key: string; filing: Filing };
@@ -87,11 +78,7 @@ const EMPTY: Record<Section, { title: string; body: string; action?: string }> =
     body: 'Auteurs call the votes. When one opens, the whole house marks it.',
   },
   ESSAYS: {
-    // The department's name, which is the FORM's name — see `KIND_NAME`. The
-    // column still says `dossier` and always will; a dossier is a file compiled
-    // about a subject, which is what the profile, the film panel and a person's
-    // biography are. This is somebody's argument, at length, and the word for
-    // that is an essay.
+    // ESSAYS, though the column says `dossier`: see `KIND_NAME`.
     title: 'No essays yet.',
     body: 'The long form, at length. Auteurs file these, and the house reads them.',
   },
@@ -111,8 +98,7 @@ export default function DispatchScreen() {
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const savedIds = useDispatch((s) => s.savedIds);
 
-  // The floating header draws OVER content, so the page reserves its height from
-  // the bar's own constants rather than a copied number — see navMetrics.
+  // The floating bar's height, from its own constants (navMetrics), not a copy.
   const topPad = navTopPadding(insets.top) + NAV_ROW_MIN_H + 8;
 
   const scrollY = useSharedValue(0);
@@ -145,15 +131,8 @@ export default function DispatchScreen() {
     if (useDispatch.getState().filings.length === 0) void useDispatch.getState().fetch();
   }, []);
 
-  /**
-   * ── IS THERE NEW PAPER? ───────────────────────────────────────────────────
-   * Asked when the tab regains focus, and every ninety seconds while it is
-   * focused — never while it is not. A check that keeps running on a screen
-   * nobody is looking at is a request the member pays for and cannot see.
-   *
-   * The interval is cleared by the same cleanup that runs on blur, so leaving
-   * the tab stops it in the same breath rather than one tick later.
-   */
+  // Is there new paper? Asked on focus and every 90s while focused, never on a
+  // screen nobody is looking at: blurring the tab clears the interval at once.
   useFocusEffect(
     useCallback(() => {
       void useDispatch.getState().checkForNew();
@@ -168,14 +147,8 @@ export default function DispatchScreen() {
     void useDispatch.getState().fetch();
   }, []);
 
-  /**
-   * The rows, with a divider wherever the day changes.
-   *
-   * Only under LATEST. Ordered by certifications the list is not chronological,
-   * so a day divider would be announcing a boundary that is not there — three
-   * filings from Tuesday, one from June, two more from Tuesday. Under CERTIFIED
-   * the margin already prints the count, which is what orders the page.
-   */
+  // A divider wherever the day changes, under LATEST only: ordered by
+  // certifications the list is not chronological, so no day boundary is real.
   const rows = useMemo<Row[]>(() => {
     const out: Row[] = [];
     let day = '';
@@ -184,9 +157,7 @@ export default function DispatchScreen() {
         const k = dayKey(f.createdAt);
         if (k && k !== day) {
           day = k;
-          // The first day is NOT drawn: the running head above already names it,
-          // and printing it again would be the same sentence twice, ten points
-          // apart, at the top of the page.
+          // Never above the first: the running head already names that day.
           if (out.length > 0) out.push({ type: 'day', key: `day-${k}`, label: dayLabel(f.createdAt) });
         }
       }
@@ -207,20 +178,10 @@ export default function DispatchScreen() {
   }, []);
 
   /**
-   * ── RECYCLE LIKE INTO LIKE ────────────────────────────────────────────────
-   * FlashList reuses a row's mounted tree for the next row of the same type.
-   * With no `getItemType` there is exactly one type, so a ballot's tree — six
-   * posters, six boxes — is torn down and a take's single sentence is built in
-   * its place, on a scroll frame, both ways, forever.
-   *
-   * `paperPerf.ts` calls this "the single largest win available on this screen
-   * and it costs one function". It had been written and never wired: nothing in
-   * the app imported that module at all, so the whole file was documentation of
-   * an optimisation nobody had applied.
-   *
-   * The type has to include anything that changes the SHAPE, not just the kind:
-   * a filing with film art is a different tree from one without, and an ended
-   * filing is a tombstone rather than a post.
+   * FlashList reuses a row's tree for the next row of the same TYPE, so the type
+   * names everything that changes the shape: the kind, film art, and whether it
+   * is a tombstone. With one type a ballot's six posters would be torn down to
+   * build a take's one sentence, on a scroll frame.
    */
   const getItemType = useCallback(
     (r: Row) => (r.type === 'day' ? 'day' : itemType({
@@ -242,10 +203,7 @@ export default function DispatchScreen() {
         body={f.kind === 'dossier' ? (f.title ?? f.body) : f.body}
         source={f.source ?? undefined}
         film={f.film}
-        // The ordering VALUE, printed in the margin. It is the hour under
-        // LATEST and the certify count under CERTIFIED, so the column always
-        // shows the number the page is actually ordered by — and a dash where
-        // there is none, which is what a ledger prints for an empty cell.
+        // The margin prints what the page is ordered by: the hour, or the count.
         order={sort === 'LATEST' ? hourLabel(f.createdAt) : (formatCount(f.certifyCount) ?? '—')}
         orderIs={sort === 'LATEST' ? 'hour' : 'count'}
         measureWidth={width}
@@ -263,9 +221,7 @@ export default function DispatchScreen() {
         onCritique={() => nav.push(`/dispatch/${f.id}`)}
         onCertify={me ? (next) => useDispatch.getState().certify(f.id, next) : undefined}
         onSave={me ? (next) => useDispatch.getState().save(f.id, next) : undefined}
-        // Share and the film both open from the reader, where the sheet and the
-        // film page have room. On a card the four marks are already the row's
-        // full width; a fifth destination would be a target nobody can hit.
+        // Share opens the reader, where the sheet has room.
         onShare={() => nav.push(`/dispatch/${f.id}`)}
         onFilm={f.subjectId ? () => nav.push(`/film/${f.subjectId}`) : undefined}
         onAuthor={f.author ? () => nav.push(roomOf(f.author!.name)) : undefined}
@@ -275,24 +231,13 @@ export default function DispatchScreen() {
 
   const empty = EMPTY[section];
   const today = new Date();
-  /**
-   * The empty BALLOTS and ESSAYS pages end in "WHAT AN AUTEUR CAN DO →". It was
-   * a bare push to the Society, so the page could not say which form was reached
-   * for and the funnel never saw the tap — and it was shown to Auteurs too, who
-   * already can. It is each department's own rope now, shown only to a member
-   * who does not hold it.
-   */
+  // The empty BALLOTS and ESSAYS pages' "WHAT AN AUTEUR CAN DO →": each its own
+  // rope, so the tap names the form reached for; never shown to who holds it.
   const ballots = useClearance('ballots', '/dispatch');
   const essays = useClearance('essays', '/dispatch');
   const formRope = section === 'BALLOTS' ? ballots : essays;
 
-  /**
-   * Day one prints the whole masthead; every other day prints the running head.
-   *
-   * The frame a member learns in their first minute should not appear and
-   * disappear — so the index is drawn above either way, and only the nameplate
-   * is reserved for a page that has nothing on it yet.
-   */
+  // An empty paper prints the whole masthead; any other, the running head.
   const header = (
     <>
       {filings.length === 0 && !loading && section === 'ALL' && !savedOnly ? (
@@ -318,16 +263,12 @@ export default function DispatchScreen() {
     <FrozenTab>
       <View style={p.screen}>
         <RoomLight room="dispatch" />
-        {/* The index, pinned under the floating bar. It never scrolls: it is how
-            you change what the page is, and a control that leaves the screen is
-            a control you have to go and find. */}
+        {/* The index, pinned under the floating bar: it never scrolls away. */}
         <View style={{ paddingTop: topPad }}>
           <PaperChrome
             section={section as PaperSection}
             onSection={(s) => useDispatch.getState().setSection(s as Section)}
-            // Drawn for everyone, not only Archivists. A feature you cannot see
-            // is one you never learn exists; the archive itself says what the
-            // rank buys, which is the gathering and not the reading.
+            // For everyone: the archive itself says what the rank buys.
             onArchive={() => nav.push('/dispatch/archive')}
           />
         </View>
@@ -339,25 +280,14 @@ export default function DispatchScreen() {
               data={rows}
               keyExtractor={(r: Row) => r.key}
               getItemType={getItemType}
-              // No `estimatedItemSize`. FlashList 2 removed it and sizes itself;
-              // `src/types/flash-list.d.ts` keeps the prop declared so the older
-              // call sites still typecheck, and the library spreads what it does
-              // not recognise onto a ScrollView that ignores it. Passing 190 said
-              // this list had been measured when nothing had measured it.
+              // No `estimatedItemSize`: FlashList 2 sizes itself and ignores it.
               scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
               onScroll={onScroll}
               topInset={0}
               bottomInset={insets.bottom + 49}
               contentContainerStyle={{
-                // ── THE PILL GETS A GUTTER, NOT A SEAT ON THE WRITING ───────
-                // `NEW_FILINGS_ROOM` exists precisely for this and nothing
-                // reserved it, so the pill — absolutely positioned at the top of
-                // the list — sat across the first byline. `newWrap`'s own note
-                // records that this was found once already and fixed there; the
-                // half of the fix that lives on the PAGE was never applied.
-                //
-                // Reserved only while filings are held, so a page with nothing
-                // new above it does not carry an empty band at the top.
+                // Room for the new-filings pill, only while it shows, so it
+                // never sits across the first byline.
                 paddingTop: newCount > 0 ? NEW_FILINGS_ROOM : 0,
                 paddingBottom: insets.bottom + 64,
               }}
@@ -389,9 +319,7 @@ export default function DispatchScreen() {
                     title="The house is open to read."
                     body="Filing is for members."
                     action="JOIN THE SOCIETY"
-                    // Membership is free — filing takes, seekings and wires needs
-                    // nothing more. This sent a visitor to the paid ranks to
-                    // "join", which is the sign-UP form's job.
+                    // Sign-up, not the ranks: membership is free, and so is filing.
                     onAction={() => nav.push('/login', { action: 'signup' })}
                     end
                   />
@@ -403,10 +331,7 @@ export default function DispatchScreen() {
                     onAction={openCompose}
                   />
                 ) : (
-                  // BALLOTS and ESSAYS are AUTEURS-only to file. Offering the
-                  // act to somebody the door will refuse is a button that exists
-                  // to say no, so the quiet line explains instead — and it is a
-                  // link, because "what an auteur can do" is a real page.
+                  // Auteurs file these: to anyone else, a line that explains.
                   formRope.held ? (
                     <PaperEmpty title={empty.title} body={empty.body} />
                   ) : (
@@ -430,13 +355,7 @@ export default function DispatchScreen() {
           </View>
         </View>
 
-        {/* ── NEW PAPER ──────────────────────────────────────────────────────
-            Above the list, never IN it. Splicing arrivals into a feed somebody
-            is reading moves the words under their thumb — so the page stays
-            exactly where they left it and offers to go and get them.
-
-            It is drawn only while there is something to fetch: a pill announcing
-            nothing is chrome. */}
+        {/* New paper is offered above the list, never spliced in under a reader's thumb. */}
         {newCount > 0 ? <NewFilings count={newCount} onPress={takeTheNew} /> : null}
       </View>
     </FrozenTab>

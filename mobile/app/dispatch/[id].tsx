@@ -1,16 +1,13 @@
 /**
  * THE READER — one screen for all five kinds of filing.
  * ─────────────────────────────────────────────────────────────────────────────
- * It replaces two: `app/dossier/[id].tsx` and the `ArticleReaderModal` the feed
- * opened over itself. Two readers for one kind of thing meant two places to fix
- * a spoiler veil, two markdown guards to remember, and a modal that could not be
- * linked to from a notification.
+ * One reader, so a spoiler veil and a markdown guard are fixed in one place.
  *
  * ── WHY A ROUTE AND NOT A MODAL ─────────────────────────────────────────────
  * A filing has an address. A notification points at one, a lounge message quotes
  * one, a share card carries a link to one — and none of those can open a modal
- * that only exists while the feed is mounted. `/dossier/[id]` stays as a redirect
- * so every link already in the world still lands.
+ * that only exists while the feed is mounted. `/dossier/[id]` redirects here so
+ * every older link still lands.
  *
  * ── ONE DOCKED THING, EVER ──────────────────────────────────────────────────
  * The action bar and the critique composer occupy the same place and never
@@ -61,12 +58,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
 
-/**
- * How a filing's critiques are ordered before anyone chooses.
- *
- * Named, and used in both places, because the two places used to hold their own
- * answer and gave different ones.
- */
+/** The critiques' order before anyone chooses: for the state AND the first read. */
 const FIRST_ORDER: CritiqueOrder = 'CERTIFIED';
 
 export default function FilingReader() {
@@ -76,19 +68,7 @@ export default function FilingReader() {
 
   const filings = useDispatch((s) => s.filings);
   const critiques = useDispatch((s) => s.critiques);
-  /**
-   * The part after this one, when this filing is part of a series.
-   *
-   * ── WHY THIS EXISTS ────────────────────────────────────────────────────────
-   * `EssayNext` was drawn, built, labelled "NEXT IN THE SERIES" in the mockup —
-   * and never mounted. Its own docstring says why it should be: "an essay in
-   * four parts that ends with nothing is an essay the reader has to go and hunt
-   * for." A dossier ended at its critiques and left the reader to find the SERIES
-   * control back up at the head.
-   *
-   * Read here rather than in the store for the same reason the series page reads
-   * locally: it is one row, for one screen, and nothing else wants it.
-   */
+  /** The next part of this essay's series; one row, for one screen, so not in the store. */
   const [nextPart, setNextPart] = useState<Filing | null>(null);
   const opened = useDispatch((s) => s.opened);
   const critiquesLoading = useDispatch((s) => s.critiquesLoading);
@@ -100,32 +80,13 @@ export default function FilingReader() {
 
   const [filing, setFiling] = useState<Filing | null>(() => filings.find((f) => f.id === id) ?? null);
   const [loading, setLoading] = useState(!filing);
-  /**
-   * The house shows the most certified first. ONE constant, used by both the
-   * state and the first read — they were written separately and disagreed:
-   * `useState('CERTIFIED')` beside a `fetchCritiques(id)` that defaulted to
-   * NEWEST. The header lit CERTIFIED over a list ordered by date, and pressing
-   * CERTIFIED did nothing, because it was already the selected value.
-   */
   const [order, setOrder] = useState<CritiqueOrder>(FIRST_ORDER);
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
-  /**
-   * ── A CRITIQUE IS KEPT TOO ───────────────────────────────────────────────
-   * Eight hundred words under somebody's essay is work, and it had no
-   * protection at all: a phone call took every one of them.
-   *
-   * Scoped to the FILING, so a member reading two essays does not have one
-   * critique bleeding into the other — and bounded by eviction rather than by a
-   * single slot, because "one at a time" is tidy right up until somebody goes
-   * back to the first one.
-   *
-   * The short desks keep no draft on purpose — a take is a sentence, and
-   * restoring one three days later is the app putting words in a member's
-   * mouth. A critique is not a sentence.
-   */
+  // A critique's draft survives a phone call, kept per FILING so two essays'
+  // critiques never mix. (The short desks keep none: a take is a sentence.)
   useEffect(() => {
     if (!id || !me?.id) return;
     const held = readDraft<{ body?: string }>(me.id, 'critique', id);
@@ -144,32 +105,15 @@ export default function FilingReader() {
   /** The off-screen clipping, captured when an essay is shared out of the app. */
   const cardRef = useRef<ViewShot>(null);
 
-  /**
-   * The sheets. Two, and which one opens depends on whose filing it is.
-   *
-   * `report` carries what is being reported rather than assuming the filing —
-   * a critique is reportable in its own right, and a member reporting the third
-   * critique on a page must not silently report the page.
-   */
   const [actions, setActions] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [toLounge, setToLounge] = useState(false);
+  // WHAT is reported: reporting a critique must not report the page it is on.
   const [report, setReport] = useState<
     { type: 'dispatch_post' | 'dispatch_comment'; id: string; userId: string; username: string } | null
   >(null);
 
-  // The store's copy is authoritative once it has one — an act performed on this
-  // screen updates the store, and reading through it is what keeps the number
-  // under the thumb and the number in the feed the same number.
-  /**
-   * The feed's copy, then the store's record of what was opened, then this
-   * screen's own.
-   *
-   * The middle one is what makes an act VISIBLE here after a cold open. Reached
-   * from a notification the filing is not in the feed, so every optimistic
-   * update landed somewhere this screen was not looking and the page sat
-   * unchanged while the write went through.
-   */
+  // The store's copies first (`opened`: reached from a notification), so a mark shows.
   const live = filings.find((f) => f.id === id) ?? opened[id] ?? filing;
 
   useEffect(() => {
@@ -185,10 +129,8 @@ export default function FilingReader() {
     return () => { cancelled = true; };
   }, [id]);
 
-  // ── WHAT COMES NEXT, IF ANYTHING DOES ─────────────────────────────────────
-  // One row: the lowest part number above this one, in the same series, that a
-  // reader could actually open. The same three gates the series page uses, so a
-  // withheld or withdrawn part is never offered as "next".
+  // The next part: the lowest part number above this one that a reader could
+  // open, behind the series page's three gates, so a withheld part is never next.
   useEffect(() => {
     const seriesId = live?.seriesId;
     const part = live?.partNumber;
@@ -210,35 +152,16 @@ export default function FilingReader() {
         if (cancelled) return;
         setNextPart(parseFilingRows(data ?? []).filings[0] ?? null);
       } catch {
-        // The foot simply does not appear. A part that could not be looked up
-        // must not become a control that goes nowhere.
-        if (!cancelled) setNextPart(null);
+        if (!cancelled) setNextPart(null); // no foot, rather than one that goes nowhere
       }
     })();
     return () => { cancelled = true; };
   }, [live?.seriesId, live?.partNumber]);
 
-  /**
-   * ── THE ORDER IS THE SERVER'S NOW ─────────────────────────────────────────
-   * This used to sort on the device, over whatever had been loaded. That was
-   * defensible while the whole list arrived at once, and it stopped being true
-   * the moment critiques were paged: CERTIFIED would have ranked the newest
-   * thirty and presented them as the most certified of the filing.
-   *
-   * So the list is taken exactly as the store holds it, and changing the order
-   * re-reads from the first page.
-   */
+  /** In the server's order, never re-sorted here: the critiques come in pages. */
   const rows = critiques[id] ?? [];
 
-  /**
-   * Their ROOM, not their file.
-   *
-   * The byline has told a screen reader "Open their room." since the design was
-   * drawn, and it opened the profile — six rooms about films, not one of them
-   * the Dispatch. The room offers the file at its own head, so nothing is lost
-   * by arriving there first, and the paper stops handing a reader out of the
-   * paper at the one place it names a person.
-   */
+  /** Their Dispatch ROOM, which the byline promises; the room links their file. */
   const openAuthor = useCallback((username?: string | null) => {
     if (username) nav.push(roomOf(username));
   }, []);
@@ -248,73 +171,23 @@ export default function FilingReader() {
   }, [live?.subjectId]);
 
   /**
-   * ── SHARE IS TWO DESTINATIONS, NOT ONE ────────────────────────────────────
-   * The design's sheet offers the LOUNGE first and everywhere else second,
-   * because the first is the house and the second is the world. Handing this
-   * straight to the OS sheet would have made the salons — the thing the app is
-   * for — one row down a list of messaging apps.
+   * ELSEWHERE, the world (the sheet offers the house's LOUNGE first). An essay
+   * leaves as a clipping: a picture of somebody's take or question is a
+   * poster nobody makes. The link is the DEPARTMENT, which exists: a custom
+   * `reelhouse://` link opens nothing without the app, and the web has no
+   * page for one filing yet (DEFERRED-ACTIONS.md, "A web page for one filing").
    */
   const shareElsewhere = useCallback(async () => {
     if (!live) return;
     setSharing(false);
 
-    /**
-     * ── AN ESSAY LEAVES AS A CLIPPING, EVERYTHING ELSE AS A LINE ────────────
-     * `DossierShareCard` was drawn for exactly this and never mounted, so the
-     * one asset the design calls "the house's introduction to strangers" went
-     * out as plain text. The app already had the whole pipeline — ViewShot and
-     * `Sharing.shareAsync` carry the log card, the film card and the profile.
-     *
-     * Only a dossier gets an image, which is the design's own rule: a take
-     * shared as a poster is a poster of somebody's opinion, and a seeking is a
-     * poster of somebody's question. Nobody makes those.
-     */
-    /**
-     * ── WHERE THIS CAME FROM, NOT A LINK TO NOWHERE ────────────────────────
-     * Three URLs were considered and two of them are broken:
-     *
-     *   reelhouse://dispatch/<id>          the original. A custom scheme opens
-     *                                      nothing for anyone without the app —
-     *                                      which is everyone a share reaches —
-     *                                      and many clients strip it outright.
-     *   https://reelhouse.app/dispatch/<id>  what I replaced it with, and it is
-     *                                      a 404: the web app routes /dispatch
-     *                                      and /dispatch/compose and has no page
-     *                                      for one filing, and `app.json` claims
-     *                                      no associated domain, so it does not
-     *                                      open the app either.
-     *
-     * So the link is the DEPARTMENT, which exists and renders. That is coherent
-     * with what now goes out beside it: for an essay the clipping carries the
-     * masthead, the title, the opening and the byline — a stranger reads the
-     * writing from the image and follows the link to the house.
-     *
-     * A per-filing web page would be better and is a change to the WEB app, not
-     * this one. Recorded in DEFERRED-ACTIONS.md rather than papered over with a
-     * URL that does not resolve.
-     */
     const link = 'https://reelhouse.app/dispatch';
     if (live.kind === 'dossier' && cardRef.current) {
       try {
         const uri = await captureRef(cardRef, { format: 'png', quality: 1, result: 'tmpfile' });
-        /**
-         * ── THE LINK WAS BEING DROPPED ON THE PATH THAT ACTUALLY RUNS ───────
-         * This tried `Sharing.shareAsync` FIRST, and on iOS that always
-         * succeeds — so iOS always took it. `shareAsync` sends a FILE and
-         * nothing else: its only options are a mime type and an Android dialog
-         * title, neither of which travels with the image. The link never left
-         * the phone.
-         *
-         * Which defeats the whole point stated three paragraphs above: "a
-         * stranger reads the writing from the image and FOLLOWS THE LINK to the
-         * house." They got a picture and no way back.
-         *
-         * React Native's `Share.share({ url, message })` carries both on iOS,
-         * so that is the path now. It is genuinely iOS-only: on Android `Share`
-         * ignores `url` entirely and would send the text while silently losing
-         * the clipping, so Android keeps `shareAsync` and sends the image —
-         * which is the best either API can do there, and is what it did before.
-         */
+        // iOS: `Share.share` carries the picture AND the link (`shareAsync`
+        // sends a file only). Android's `Share` ignores `url`, so there the
+        // picture goes alone through `shareAsync`.
         if (Platform.OS === 'ios') {
           await Share.share({ url: uri, message: `${live.title ?? ''}\n\n${link}` });
           return;
@@ -326,15 +199,11 @@ export default function FilingReader() {
         await Share.share({ message: `${live.title ?? ''}\n\n${link}` });
         return;
       } catch {
-        // Falls through to the line below. A capture that failed must not cost
-        // the member the share.
+        // A failed capture falls through to the plain line below.
       }
     }
 
     try {
-      // `https`, not `reelhouse://`. A custom scheme opens nothing for anybody
-      // who does not already have the app — which is everybody this is being
-      // sent to. `ShareCardModal` has always used the web link; this did not.
       await Share.share({ message: `${live.title || live.body}\n\nThe Dispatch — ${link}` });
     } catch {
       // A share sheet the member dismissed is not an error.
@@ -347,50 +216,20 @@ export default function FilingReader() {
     try {
       await useDispatch.getState().addCritique(live.id, draft);
       setDraft('');
-      // Only once the house has it. The store keeps the text on a refusal so
-      // the member can try again — throwing the draft away here would undo
-      // exactly that.
-      clearDraft(me?.id, 'critique', live.id);
+      clearDraft(me?.id, 'critique', live.id); // only once the house has it
       setComposing(false);
     } catch {
-      // The store rolls the row back and keeps the text, so the member can try
-      // again with what they wrote rather than retyping it.
+      // The store rolls the row back and keeps the text for another try.
       reelToast.error('That critique did not go.');
     } finally {
       setSending(false);
     }
-    // `me?.id` belongs here: it is the KEY the draft is cleared under. Without
-    // it this closure keeps whichever member was signed in when it was last
-    // rebuilt, so after a sign-out and a sign-in the wrong member's draft key is
-    // the one erased — and this member's critique stays behind. The same class
-    // of fault as a draft key with no member in it.
+    // `me?.id` is the draft's KEY: without it, after a change of member, the
+    // wrong member's draft would be the one cleared.
   }, [live, draft, sending, me?.id]);
 
-  /**
-   * ── THE MORE CONTROL, AND WHY IT IS TWO DIFFERENT THINGS ──────────────────
-   * On your own filing there is one act: withdraw it. On anyone else's there is
-   * the app's standard sheet — report, block, mute — the same one a log and a
-   * stack open, so what a member learns once works everywhere.
-   *
-   * Withdrawing is confirmed, and the confirmation says what actually happens:
-   * the words go and the argument underneath stays. "Delete?" would be a lie
-   * about a row that is not deleted.
-   */
-  /**
-   * ── AMENDING ────────────────────────────────────────────────────────────
-   * The same desk the filing was written at, opened on the filing itself. A
-   * member who has written a take once should not have to learn a second
-   * screen to fix a word in it.
-   *
-   * NOT OFFERED ON A BALLOT. Its options are what members voted on and its
-   * question is what they answered; changing either turns a result into an
-   * answer to something else. A ballot is withdrawn and called again.
-   *
-   * NOT OFFERED ON A WITHHELD OR ENDED FILING either — the house is reading
-   * that one, or has already struck it. The database refuses both since
-   * 20260905_02, so this is the app agreeing with the rule rather than the
-   * only thing holding it.
-   */
+  // Never a ballot (a changed question makes the votes answer something else), nor
+  // a withheld or ended filing, which the database refuses too (20260905_02).
   const amendable = !!live && !!me && live.authorId === me.id
     && !live.withheldAt && !live.endedAt && live.kind !== 'ballot';
 
@@ -425,14 +264,14 @@ export default function FilingReader() {
     );
   }, [live]);
 
+  /**
+   * More: on your own filing, amend or withdraw (withdrawing always asks again,
+   * and says the critiques stay: "Delete?" would be untrue). On anyone else's,
+   * the app's one report/block/mute sheet.
+   */
   const openMore = useCallback(() => {
     if (!live) return;
     if (!!me && live.authorId === me.id) {
-      /**
-       * Two acts now, so the first sheet asks WHICH — and withdrawing keeps its
-       * own confirmation underneath, because it is the irreversible one and a
-       * single tap should never reach it.
-       */
       if (amendable) {
         Alert.alert(
           'This filing',
@@ -449,9 +288,6 @@ export default function FilingReader() {
       return;
     }
     setActions(true);
-    // confirmWithdraw is named even though it turns over in step with `live`,
-    // which is already here. It costs nothing today and stops this sheet from
-    // going quietly stale the day that callback grows a dependency of its own.
   }, [live, me, amendable, openAmend, confirmWithdraw]);
 
   if (loading) {
@@ -463,14 +299,7 @@ export default function FilingReader() {
     );
   }
 
-  /**
-   * A filing that is not there.
-   *
-   * Reachable from a notification about something the house has since removed
-   * entirely, or from a stale link. It is a real state and it gets a real page —
-   * a blank screen with a spinner that never stops is how an app tells somebody
-   * their tap did nothing.
-   */
+  // Gone, reached from an old notification or link: a real page, not a spinner.
   if (!live) {
     return (
       <View style={p.screen}>
@@ -495,9 +324,7 @@ export default function FilingReader() {
   const saved = savedIds.has(live.id);
   const width = measure(390);
 
-  // A signed-out reader is offered nothing to do TO the filing — every act
-  // behind this control needs an account, and a menu whose every row bounces you
-  // to a sign-in you did not ask for is worse than no menu.
+  // A signed-out reader gets no More: every act behind it needs an account.
   const more = me ? openMore : undefined;
 
   const head = live.kind === 'dossier'
@@ -571,9 +398,7 @@ export default function FilingReader() {
               options={(live.options ?? []).map((o, i) => ({
                 title: o.title,
                 posterPath: o.poster_path ?? null,
-                // The tally comes from the frozen record once there is one, and
-                // from nothing before — an open ballot shows no numbers at all
-                // until you have marked it, which is the whole engine.
+                // From the frozen count only: an open ballot shows no numbers.
                 votes: live.frozenTotals?.counts?.[String(i)] ?? 0,
               }))}
               myVote={myVotes[live.id] ?? null}
@@ -588,16 +413,8 @@ export default function FilingReader() {
               commentCount={live.commentCount}
               certified={certified}
               saved={saved}
-              // ── EVERY ACT IS GATED ON THERE BEING A MEMBER ─────────────────
-              // This screen already says a signed-out reader is offered nothing
-              // to do TO the filing, and then applied that to the More menu
-              // alone. These four were passed unconditionally, and each fails
-              // silently without an account: `vote` and `certify` return on
-              // their first line, and `setComposing(true)` sets a flag whose
-              // composer is itself behind `{me ? …}`. Four controls that looked
-              // live and answered a press with nothing.
-              // SHARE, the byline and the film stay open to everyone — none of
-              // them need an account, and the page is public to read.
+              // Acts need a member; without one each would do nothing on a press.
+              // Share, the byline and the film need no account.
               onVote={me ? (i) => useDispatch.getState().vote(live.id, i) : undefined}
               onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
               onCritique={me ? () => setComposing(true) : undefined}
@@ -621,10 +438,7 @@ export default function FilingReader() {
               saved={saved}
               answered={!!live.answerId}
               spoiler={live.spoilerLabel}
-              // Only its author can be looking at a withheld filing — the feed
-              // excludes them and RLS refuses everyone else — so the plate is
-              // telling the one person entitled to know that the house is
-              // reading it, rather than that it has gone.
+              // Only its author can see a withheld filing (RLS refuses the rest).
               withheld={!!live.withheldAt}
               ended={live.endedBy ?? undefined}
               edited={!!live.editedAt}
@@ -639,11 +453,8 @@ export default function FilingReader() {
           )}
 
           {/* ── THE CRITIQUES ──────────────────────────────────────────────
-              They survive the filing they sit under, so this is drawn for an
-              ended filing too. */}
-          {/* Changing the order re-reads from the first page, because the order
-              is the server's. Setting the state alone would leave the old
-              order's rows on screen under the new label. */}
+              Drawn under an ended filing too: they survive it. A new order
+              re-reads from the first page, as the order is the server's. */}
           <CritiqueHead
             count={live.commentCount}
             order={order}
@@ -668,15 +479,10 @@ export default function FilingReader() {
                 mine: !!me && c.authorId === me.id,
                 taken: live.answerId === c.id,
               }}
-              // Only the member who asked can take an answer, only on a seeking,
-              // and never their own. The control is absent in every other case
-              // AND the server refuses it, so hiding a button is not the only
-              // thing standing in the way.
+              // Only who asked, only on a seeking; the server refuses the rest too.
               canTake={live.kind === 'seeking' && mine && !ended}
               onTake={() => useDispatch.getState().takeAnswer(live.id, c.id)}
-              // Gated like every other act. Without an account `certifyCritique`
-              // returns on its first line, so the mark under each critique was
-              // live-looking and inert for a signed-out reader.
+              // Gated on a member, like every act.
               onCertify={me ? (next) => useDispatch.getState().certifyCritique(c.id, live.id, next) : undefined}
               onAuthor={() => openAuthor(c.author?.name)}
               onDelete={
@@ -699,9 +505,7 @@ export default function FilingReader() {
                   : undefined
               }
               onReport={
-                // Reportable only when there is somebody to report. A departed
-                // member's critique keeps its words and has no account behind
-                // it, so the row would open a sheet with nowhere to send.
+                // Not a departed member's: there is no account to report.
                 me && c.authorId && c.authorId !== me.id && c.author
                   ? () => setReport({
                     type: 'dispatch_comment',
@@ -725,24 +529,14 @@ export default function FilingReader() {
       </ScrollView>
 
       {/* ── ONE DOCKED THING ───────────────────────────────────────────────
-          The composer REPLACES the bar. A signed-out reader gets neither: the
-          page is public to read and the acts are not, and a control that
-          bounces you to a sign-in you did not ask for is worse than no control. */}
+          The composer REPLACES the bar. A signed-out reader gets neither. */}
       {me ? (
         composing ? (
           <CritiqueComposer
             me={{
               name: me.username ?? '',
               memberNo: (me as { member_no?: number }).member_no ?? 0,
-              // Their OWN rank. This was hardcoded 'free', so EVERY member
-              // writing a critique — Archivist, Auteur, Founding — was shown a
-              // byline that was not theirs, on the one view whose job is to
-              // show them what they are about to publish.
-              //
-              // ComposeDesks carries a comment saying this exact defect was
-              // found and fixed for the filing desks. It survived here, and in
-              // the ballot desk, because each screen builds its own author
-              // object by hand. `paperTierOf` is the one place that decides.
+              // Their own rank, from the one place that decides it.
               tier: paperTierOf(me),
               avatar: (me as { avatar_url?: string | null }).avatar_url ?? null,
             }}
@@ -768,15 +562,9 @@ export default function FilingReader() {
       ) : null}
 
       {/* ── THE CLIPPING, RENDERED OFF-SCREEN ────────────────────────────────
-          Mounted only while the share sheet is open on a dossier, and parked at
-          a negative offset rather than hidden: `ViewShot` cannot capture a tree
-          with `display: none`, and `opacity: 0` on iOS captures as transparent.
-          Off the left edge is the one placement that reliably renders and is
-          never seen — and it is unmounted the moment the sheet closes, so a page
-          a member is only reading never carries it.
-
-          Logo passed as the app's own bundled mark. The house's introduction to
-          strangers does not go out with a stand-in glyph. */}
+          Only while the share sheet is open on an essay. Parked off the left
+          edge, not hidden: `ViewShot` cannot capture `display: none`, and
+          `opacity: 0` captures as transparent on iOS. */}
       {sharing && live.kind === 'dossier' ? (
         <View style={{ position: 'absolute', left: -10000, top: 0 }} pointerEvents="none">
           <ViewShot ref={cardRef} options={{ format: 'png', quality: 1 }}>
@@ -814,10 +602,7 @@ export default function FilingReader() {
           }}
           onBlock={() => {
             setActions(false);
-            // Blocking removes their filings from every feed, including this
-            // one — so staying on a page that is about to be empty would leave
-            // the member looking at a filing they just said they did not want.
-            nav.back();
+            nav.back(); // blocked: their filing is not what the member wants to see
           }}
         />
       ) : null}
@@ -832,10 +617,7 @@ export default function FilingReader() {
       />
 
       {/* ── WHERE IT GOES ──────────────────────────────────────────────────
-          The house first, the world second. SAVE THE CARD is offered only for
-          a dossier, because the card is an essay's card — a take has nothing
-          to set in it, and a row that produces an empty picture is worse than
-          a row that is not there. */}
+          The house first, the world second. No SAVE THE CARD: see `card`. */}
       {sharing ? (
         <View style={[p.sheetHost, { paddingBottom: insets.bottom }]}>
           <PressableScale
@@ -859,10 +641,8 @@ export default function FilingReader() {
       <ShareToLoungeModal
         visible={toLounge}
         onClose={() => setToLounge(false)}
-        // The Dispatch shares every kind down this one path. The prop names say
-        // "dossier" because the message type and its metadata key do, and both
-        // have to stay for the messages already sitting in rooms; `dossierKind`
-        // is what makes the card say TAKE when it is a take.
+        // Every kind goes this way. "dossier" is the message type's name, kept
+        // for the messages already in rooms; `dossierKind` makes a take say TAKE.
         dossierId={live.id}
         dossierTitle={live.title || live.body}
         dossierAuthor={author?.name}

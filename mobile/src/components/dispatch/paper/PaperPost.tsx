@@ -46,21 +46,9 @@ export interface PaperAuthor {
 }
 
 /**
- * ── THE MARK ON A MEMBER'S DISC ─────────────────────────────────────────────
- * A member's HOUSE NUMBER is a fact about their membership, not about the thing
- * they just wrote — so it is printed where membership is: their room, their
- * file card, and the card a filing travels as. It used to be printed twice on
- * every post, in the byline and again inside the disc, which made a serial
- * number the loudest thing about a stranger's opinion of a film.
- *
- * What stands in for a face is their initial. The house already has a mark for
- * a letter standing in for something — the raised initial that opens a dossier —
- * so this is that gesture at nineteen points rather than a generic app avatar.
- * Set in the DISPLAY face for the same reason: a letter in Rye is a monogram, a
- * number in the typewriter face was a serial.
- *
- * Empty when there is no name to take a letter from, which is what a departed
- * member's disc already shows.
+ * The mark on a member's disc when they have no picture: their initial, a
+ * monogram like an essay's raised initial (their house NUMBER belongs to their
+ * room and file, not to every post). Empty with no name, as a departed disc is.
  */
 export function initialOf(name: string | null | undefined): string {
   const first = (name ?? '').trim().slice(0, 1);
@@ -76,14 +64,8 @@ export interface PaperFilm {
 }
 
 /**
- * ── THE BYLINE ───────────────────────────────────────────────────────────────
- * Heads the column, the way a correspondent's name heads a letter. It is HERE
- * and not in the margin because a 30-character username wrapped to three lines
- * in a 44pt margin — making the apparatus taller than a one-line post, which is
- * the exact disease this layout exists to cure.
- *
- * No username is stored on a post; this renders what the join returned, and
- * when the join returns nothing there is one fallback for the whole app.
+ * The byline heads the column, as a correspondent's name heads a letter; in the
+ * 44pt margin a long name wrapped to three lines. No author: the one fallback.
  */
 export const Byline = memo(function Byline({
   author, trailing, onPress,
@@ -102,10 +84,7 @@ export const Byline = memo(function Byline({
       onPress, haptic: 'selection' as const,
       hitSlop: { top: 4, bottom: 4, left: 0, right: 0 },
       accessibilityRole: 'link' as const,
-      // The rank rides the ROW's label because an iOS control with a label of
-      // its own swallows its children: a badge left to speak for itself inside
-      // this Pressable would be silent, and a member's rank would be the one
-      // fact on the byline a screen reader never reached.
+      // The rank rides the ROW's label: a labelled iOS control silences its children.
       accessibilityLabel: `${author.name}${word ? `, ${word}` : ''}. Open their room.`,
     }
     : {};
@@ -118,33 +97,20 @@ export const Byline = memo(function Byline({
         author?.tier === 'archivist' && p.avatarArchivist,
         author?.tier === 'auteur' && p.avatarAuteur,
       ]}>
-        {/* `recyclingKey` on the avatar because this byline sits in EVERY row of
-            a recycling list. Without it FlashList hands the reused <Image> the
-            next member's uri while the previous member's bitmap is still
-            mounted, and the row shows the wrong face for a frame — the most
-            visible artefact a recycling list produces, on the one element that
-            says who wrote the thing. */}
+        {/* `recyclingKey`: in a recycled row the reused <Image> would show the
+            previous member's face for a frame. */}
         {!departed && author.avatar ? (
           <Image source={{ uri: author.avatar }} style={p.plateArt} contentFit="cover"
             recyclingKey={author.avatar} transition={0} cachePolicy="memory-disk" />
         ) : !departed ? (
-          // UNSPOKEN. The mark stands in for a face a member has not set, and
-          // the name is printed directly beside it — read aloud, a disc that
-          // said its own letter would open every row with "T. TOMASREYES".
+          // UNSPOKEN: the name is beside it, and "T. TOMASREYES" is a stutter.
           <Text style={p.avatarMark} {...UNSPOKEN} {...decorativeTextProps}>
             {initialOf(author.name)}
           </Text>
         ) : null}
       </View>
-      {/* ── THE TRAILING FACTS ARE NOT PART OF THE NAME ────────────────────
-          They used to be concatenated into this line, and this line truncates.
-          Measured: a fourteen-character name with `· No. 10248 · 12 MIN ·
-          EDITED` comes to 292pt in a 256pt column AT NORMAL TEXT SIZE — so the
-          dossier's read time was the first thing to disappear, and it
-          disappeared for anyone whose name was slightly long.
-
-          The name truncates. The facts do not. Each gets its own box, and only
-          the one that can be re-read elsewhere is allowed to give way. */}
+      {/* The name truncates; the rank and the trailing facts sit in their own
+          boxes. Measured: a 14-letter name with its facts needs 292pt of 256. */}
       <Text
         style={[p.bylineName, rank === 'auteur' && p.bylineNameAuteur]}
         numberOfLines={1}
@@ -152,12 +118,8 @@ export const Byline = memo(function Byline({
       >
         {departed ? 'A MEMBER, DEPARTED' : author.name.toUpperCase()}
       </Text>
-      {/* ── THE RANK ────────────────────────────────────────────────────────
-          The app's own badge, not a Dispatch variant of it. It never gives
-          way: the name truncates and the trailing facts truncate, because a
-          name can be recognised from its first characters and a count can be
-          read elsewhere on the screen — a rank shortened to `★ AUT` is just
-          wrong. `silent` inside a control that already says the rank. */}
+      {/* The app's own badge, which never truncates (`★ AUT` is wrong);
+          `silent` inside a control whose label already says the rank. */}
       <RankBadge rank={rank} silent={pressable} />
       {trailing ? (
         <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>
@@ -169,34 +131,11 @@ export const Byline = memo(function Byline({
 });
 
 /**
- * A film, named. Type only.
- *
- * ── THREE THINGS THE RENDER SETTLED ──────────────────────────────────────────
- * NO DIRECTOR. `IN THE MOOD FOR LOVE · 2000 · WONG KAR-…` truncated in a 259pt
- * column and would truncate constantly. Title and year identify a film; the
- * director is one tap away on the film page.
- *
- * NO POSTER. This carried an 18x27 thumbnail, and the comment sitting directly
- * above it said an 18x27 poster "is not an image, it is a speck: it neither
- * carries the film's identity nor gets out of the way". The comment was right
- * and the code drew one anyway. Rendered side by side, the type-only credit is
- * cleaner, denser and more certain of itself — and the feed's photography is
- * now the avatar and the deliberate still, both of which are big enough to be
- * looked at.
- *
- * THE YEAR NEVER TRUNCATES. Title and year were one string in one truncating
- * Text: measured, `THE LORD OF THE RINGS: THE RETURN OF THE KING · 2003` runs
- * 331pt in a 256pt column at normal size, so the YEAR was cut — the one part
- * that separates a remake from the film it remade. Two boxes now: the title
- * yields, the year is fixed.
- */
-/**
- * The film a filing is about, named.
- *
- * It is a destination when there is somewhere to go — a filing carries the
- * film's id, so the credit opens the film's page — and plain text when there is
- * not. Rendering a control that leads nowhere would be a dead end wearing the
- * costume of a link, which is worse than a label.
+ * The film a filing is about, named in type only: title and year identify it
+ * (a director truncated constantly; an 18x27 poster is a speck). The title
+ * yields and the year never does, as the year tells a remake from its original
+ * (`THE LORD OF THE RINGS: THE RETURN OF THE KING · 2003` needs 331pt of 256).
+ * A link to the film's page when there is one; plain text when there is not.
  */
 export const Credit = memo(function Credit({
   film, bare, onPress,
@@ -217,9 +156,7 @@ export const Credit = memo(function Credit({
   return (
     <PressableScale
       style={p.credit} onPress={onPress} haptic="selection"
-      // No horizontal slop. The credit sits directly above the stamp bar, and
-      // PressableScale's 15pt default would reach into CERTIFY — where the
-      // later sibling wins the touch and a member certifies by aiming at a film.
+      // Not the 15pt default, which would reach into CERTIFY just below.
       hitSlop={{ top: 4, bottom: 0, left: 0, right: 0 }}
       accessibilityRole="link"
       accessibilityLabel={`${film.title}${film.year ? `, ${film.year}` : ''}. Open the film.`}
@@ -229,55 +166,16 @@ export const Credit = memo(function Credit({
   );
 });
 
-/**
- * ── THE STAMP BAR ────────────────────────────────────────────────────────────
- * I described the old version of this as "the app's four marks, unchanged" and
- * then defended it on consistency grounds. It was not the app's deck. I had
- * built a different control and argued for it with the other one's authority.
- *
- * The shipped `ActionDeck` is:
- *   · the icon ABOVE its label, not beside it
- *   · four EQUAL TILES on ink, divided by hairlines over an inkwell ground —
- *     its own comment calls it "a flush stamp bar, a seam across the full card
- *     width, not a floating box"
- *   · 8pt at two points of tracking, twelve points of padding
- *   · no counts at all
- *
- * And it is better than what I made. A ruled band of four stamps IS the 1924
- * thing I kept saying this row was missing; my floating row of icon-beside-word
- * was the app-toolbar shape I was complaining about. So the anatomy is the
- * app's, exactly, and the marks run flush to the document's rails — the entry's
- * foot is a ruled band, which is also what lets the separating hairline between
- * entries go.
- *
- * TWO DELIBERATE DIVERGENCES, both stated rather than smuggled:
- *
- *   1. THE COUNTS LEAVE. Four equal quarters cannot hold `CERTIFIED 2.1K` —
- *      measured, it needs 95pt of a 91pt tile before scaling. The app has no
- *      counts here for the same reason. The one count a discussion page truly
- *      needs at a glance is how much conversation a filing drew, and that moves
- *      to the byline's trailing slot, which already exists for facts that must
- *      not truncate. The certify count is what orders the page under CERTIFIED,
- *      so it is already in the margin.
- *
- *   2. THE FOURTH MARK IS SHARE, NOT LOUNGE. The app's fourth action shares to
- *      a salon. The Dispatch's share sheet does that AND sends the card out of
- *      the app entirely, so SHARE is a superset of LOUNGE rather than a
- *      different idea — the Lounge is its first row.
- */
+// The stamp bar's reach: upward only, clear of the credit and the next entry.
 const SLOP = { top: 7, bottom: 0, left: 0, right: 0 };
 
 /**
- * The four marks under a filing.
- *
- * Every handler is optional so this still draws in the render harness with
- * nothing behind it — but a control with no handler is a dead end in the app,
- * so `dispatchNoDeadControls.test.ts` requires each of the four to be passed one
- * everywhere this is mounted for real.
- *
- * CERTIFY and SAVE take the state they are moving TO rather than toggling, for
- * the same reason the mutations do: a toggle replayed from an offline queue
- * lands on whichever side of the coin the delay leaves it.
+ * The four marks under a filing: the app's stamp-bar anatomy (four equal
+ * tiles, the icon above its word, flush to the rails), each count beside its
+ * icon. The fourth is SHARE, not LOUNGE: the share sheet's first row IS the
+ * Lounge. CERTIFY and SAVE pass the state they move TO, never a toggle, which
+ * an offline replay could land on either side. Handlers are optional only for
+ * the render harness; `dispatchNoDeadControls.test.ts` requires them in the app.
  */
 export const PaperActions = memo(function PaperActions({
   certifyCount = 0, commentCount = 0, certified, saved, dimmed,
@@ -290,23 +188,7 @@ export const PaperActions = memo(function PaperActions({
   onShare?: () => void;
   onSave?: (next: boolean) => void;
 }) {
-  /**
-   * ── A HANDLER THAT IS ABSENT IS NOT A CONTROL ──────────────────────────────
-   * The feed passes `onCertify={me ? … : undefined}`, because certifying needs
-   * an account. The press here was `() => onCertify?.(!certified)`, which turns
-   * a missing handler into a tap that silently does nothing — and reads as
-   * enabled to a sighted member and to a screen reader alike.
-   *
-   * It also passed the dead-control audit: that guard requires an `onPress` to
-   * EXIST, and this one existed. The optional call inside it is what made the
-   * control dead, and no scan of the tag would ever see that.
-   *
-   * The reader screen already gets this right — it offers a signed-out reader
-   * nothing rather than something that bounces. The card now agrees: the mark
-   * is dimmed, announced as unavailable, and cannot be pressed. CRITIQUE and
-   * SHARE stay live for everyone, because both simply open the filing, and the
-   * filing is public to read.
-   */
+  // No handler (signed out): dimmed, disabled and said so, never a silent tap.
   const canMark = !!onCertify;
   const canKeep = !!onSave;
 
@@ -438,40 +320,16 @@ export const PaperPost = memo(function PaperPost({
   answered?: boolean;
   spoiler?: string | null;
   withheld?: boolean;
-  /**
-   * WHO ended it, not merely THAT it ended — because the tombstone has to name
-   * the right party. A boolean could only ever tell one of the two stories, and
-   * the one it told blamed the author for the house's decisions.
-   */
+  /** WHO ended it, so the tombstone never blames the author for the house's act. */
   ended?: 'author' | 'house';
   edited?: boolean;
   series?: string;
   readTime?: string;
-  /** A member's own room prints no byline. The head already says whose room it
-   *  is; repeating `ANA · No. 17` down twenty consecutive entries is the same
-   *  name twenty times to say something the page said once. */
+  /** A member's room: its head already says whose. */
   noByline?: boolean;
-  /**
-   * Filed with no signal. The app queues it and sends it later, and until then
-   * the honest thing is to show it in place, readable, saying plainly that the
-   * house has not seen it — with its marks dimmed, because certifying a post
-   * nobody else can read yet is an act with nothing on the other end.
-   *
-   * A post that vanishes until the network returns is the worst thing a page
-   * that takes writing can do; so is one that pretends it went.
-   */
+  /** Filed offline, not yet sent: says so under the words. Drawn; no screen passes it yet. */
   pending?: boolean;
-  /**
-   * What the entry does when it is touched.
-   *
-   * `onOpen` is the whole card — the filing, its critiques, its ballot. The four
-   * marks get their own so a member can certify without leaving the page, which
-   * is the point of having them on the card at all.
-   *
-   * All optional, because the render harness mounts this with nothing behind it.
-   * In the app they are required, and a test enforces that rather than trusting
-   * whoever adds the next mount to remember.
-   */
+  /** The whole card opens the filing; optional for the harness, required in the app by a test. */
   onOpen?: () => void;
   onCertify?: (next: boolean) => void;
   onCritique?: () => void;
@@ -484,33 +342,10 @@ export const PaperPost = memo(function PaperPost({
 }) {
   const tier = author?.tier ?? 'free';
 
-  /**
-   * Derived once, not per branch: all four kinds set the same `body`, and four
-   * calls to the same function on the same string is four chances for one of
-   * them to be forgotten when a fifth kind arrives.
-   *
-   * Note what is NOT flipped. The lead-in — `TAKE —`, `WIRE —` — is the HOUSE
-   * speaking, and the house speaks left to right; it stays put and the member's
-   * sentence sets itself around it. Only the writing turns.
-   */
+  // The member's words turn; the house's lead-in (`TAKE —`) stays left to right.
   const rtl = isRTLText(body);
 
-  /**
-   * A withdrawn filing keeps its room: the words go, the critiques stay, and the
-   * margin prints a dash because there is no author and no hour left to show.
-   *
-   * ── TWO EVENTS, TWO SENTENCES ──────────────────────────────────────────────
-   * This said "This POST was REMOVED by its author" and had no second sentence
-   * at all — so a filing the HOUSE struck showed a tombstone blaming the member
-   * for something the house did. On the page a member reads to find out what
-   * happened to their own writing.
-   *
-   * A copy audit found it by asking a question none of the pixel audits can:
-   * the house says FILING nine times and POST once, and the lounge card — same
-   * event, different component — was already saying it correctly with both
-   * sentences. Two components describing one event in two vocabularies is how
-   * a voice stops being a voice.
-   */
+  // A withdrawn filing keeps its room: the words go, the critiques stay.
   if (ended) {
     return (
       <View style={p.post}>
@@ -527,17 +362,8 @@ export const PaperPost = memo(function PaperPost({
           </View>
         </View>
 
-        {/* ── ONE ACT, AND THE COUNT VISIBLE ────────────────────────────────
-            This drew the whole row — CERTIFY, CRITIQUE, SHARE, SAVE — on a
-            filing whose words are gone. Three of those four are meaningless
-            here: you cannot certify writing that no longer exists, share an
-            empty page, or keep one.
-
-            The whole reason this row survives is that the conversation
-            underneath it survives, so its one control carries the count, in
-            the same place every bar in the house carries it: beside the icon.
-
-            So: one control, and it says how many. */}
+        {/* One act on words that are gone: the critiques, which survive, with
+            their count beside the icon as on every bar. */}
         <View style={p.actions}>
           <PressableScale style={p.action} hitSlop={SLOP} haptic
             onPress={onCritique}
@@ -559,23 +385,8 @@ export const PaperPost = memo(function PaperPost({
 
   return (
     <View style={p.post}>
-      {/* ── NO WASH BEHIND THE WRITING ─────────────────────────────────────
-          Every post that carried film art printed that art full-bleed behind
-          its own text at 0.13 opacity, under a warm gradient. The intention was
-          atmosphere. Rendered and looked at, it is a STAIN: a brown smear
-          behind two entries out of four, absent from the others, so the page
-          carried tonal blotches that mean nothing — on a design whose entire
-          premise is a clean printed page.
-
-          It also cost the page its evenness. With the wash gone the four
-          entries have equal weight and the eye runs down the hour column
-          instead of catching on patches; and the deliberate STILL is now the
-          only photograph in the feed, which is what makes the lead entry read
-          as a lead.
-
-          A film's identity was never carried by the smear. It is carried by the
-          credit, which names it. */}
-
+      {/* No film art behind the writing: rendered, a faint wash reads as a
+          stain on a printed page. The deliberate STILL is the one photograph. */}
       <View style={p.postRow}>
         <View style={p.margin}>
           <Text
@@ -587,15 +398,9 @@ export const PaperPost = memo(function PaperPost({
           </Text>
         </View>
 
-        {/* ── THE ENTRY IS BRACKETED ON TWO AXES ─────────────────────────────
-            Horizontally by its KIND: the lead-in names it above, the closing
-            rule repeats it below. Vertically by its RANK: this rule, running
-            the whole height of the filing.
-
-            A cinephile's rule is ink. An Archivist's is the house's brass ramp.
-            An Auteur's is crimson. Rank was a 19pt ring you had to look for;
-            it is now the full edge of the entry, and the superior ranks read
-            from across the room without a word being added to the page. */}
+        {/* Bracketed on two axes: its KIND in the lead-in and the closing rule,
+            its author's RANK in this rule down the whole entry: ink for a
+            cinephile, the brass ramp for an Archivist, crimson for an Auteur. */}
         <View style={[p.column, tier !== 'free' && p.columnRanked]}>
           {tier === 'archivist' ? (
             <LinearGradient
@@ -615,32 +420,12 @@ export const PaperPost = memo(function PaperPost({
           {noByline && !withheld ? null : (
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flex: 1, minWidth: 0 }}>
-                {/* Read time and EDITED belong in the byline, not orphaned on
-                    their own line under the credit where they read as debris. */}
                 {noByline ? null : (
                   <Byline
                     author={author}
                     onPress={onAuthor}
-                    /**
-                     * ── ONE SLOT, AND THE KIND CHOOSES WHAT GOES IN IT ─────
-                     * The byline's trailing slot, which exists for facts that
-                     * must not truncate, carries the one fact a kind is
-                     * defined by:
-                     *
-                     *   a wire     its source. The house rule says a wire
-                     *              carries its source; it belonged with the
-                     *              correspondent all along, which is where a
-                     *              dateline goes — not orphaned on its own line
-                     *              beneath the credit, where it read as debris.
-                     *   a dossier  how long it takes to read.
-                     *
-                     * The counts are NOT here. They sat here once, because the
-                     * bar drew no numbers; now every bar in the house carries
-                     * its counts beside their icons (MarkFigure), and a count
-                     * printed twice on one card is a card that cannot decide
-                     * where its numbers live. It also gave a long name back
-                     * the room the count was taking from it.
-                     */
+                    // Beside the name, as a dateline: a wire's source or an
+                    // essay's read time, and EDITED. The counts are on the bar.
                     trailing={[
                       kind === 'wire' ? source?.toUpperCase()
                         : kind === 'dossier' ? readTime
@@ -654,20 +439,13 @@ export const PaperPost = memo(function PaperPost({
             </View>
           )}
 
-          {/* ── THE WRITING IS THE DOOR ──────────────────────────────────────
-              The entry opens by touching what it says, not by a control added
-              beside it. Three SIBLING targets, never nested: the writing opens
-              the filing, the credit opens the film, the byline opens the member.
-              Nesting them would make the outer one swallow the inner on some
-              platforms, and this app has already been bitten by two touch
-              targets that overlap and let the later sibling win.
-
-              A veiled post's target is the same one — UNCOVER IT and READ IT are
-              the same act, so a spoiler is one tap to open and not two. */}
+          {/* The writing is the door. Three SIBLING targets, never nested (an
+              outer one swallows the inner): the writing opens the filing, the
+              credit the film, the byline the member. Uncovering a spoiler and
+              opening the filing are one act, one tap. */}
           <PressableScale
             onPress={onOpen} haptic="selection" pressedScale={0.995}
-            // Zero horizontal slop: the entry already spans the column, and the
-            // 15pt default would reach under the rank rule and the margin.
+            // No sideways reach under the rank rule and the margin.
             hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
             accessibilityRole="button"
             accessibilityLabel={spoiler ? `Uncover: ${spoiler}` : 'Open this filing'}
@@ -675,11 +453,7 @@ export const PaperPost = memo(function PaperPost({
           {spoiler ? (
             <View style={p.veil}>
               <Text style={p.veilText} {...scaledTextProps}>{spoiler.toUpperCase()}</Text>
-              {/* UNCOVER IT, not TAP TO READ. "Tap" is the language of a
-                  tutorial, it names the gesture rather than the act, and it is
-                  wrong for anyone not using a finger — a screen reader, a
-                  keyboard. Every other act in this house is a verb and its
-                  object: FILE IT, STRIKE IT, LET IT STAND, TAKE THIS ONE. */}
+              {/* The act, not the gesture: not everyone taps. */}
               <Text style={p.veilAction} {...scaledTextProps}>UNCOVER IT</Text>
             </View>
           ) : (
@@ -692,7 +466,7 @@ export const PaperPost = memo(function PaperPost({
                       recyclingKey={film.backdropPath} transition={0} cachePolicy="memory-disk"
                     />
                   ) : null}
-                  {/* The wash folded into the ramp — one layer, as above. */}
+                  {/* One scrim, darkening toward the words below. */}
                   <LinearGradient
                     colors={['rgba(30,25,20,0.48)', 'rgba(13,11,9,0.70)', 'rgba(13,11,9,0.93)']}
                     locations={[0, 0.5, 1]} style={p.stillScrim}
@@ -700,9 +474,7 @@ export const PaperPost = memo(function PaperPost({
                 </View>
               ) : null}
 
-              {/* A take does not announce itself — it dashes and speaks. The
-                  em-rule is the same device the other kinds use, which is what
-                  makes them a family, and it carries the kind's colour. */}
+              {/* Every kind opens with its name and a dash, in its colour. */}
               {kind === 'take' && (
                 <Text style={[p.take, rtl && p.rtlText]} {...scaledTextProps}>
                   {rtl ? RTL_MARK : null}<Text style={[p.leadIn, LEAD_STYLE.take]}>TAKE — </Text>{softBreak(body)}
@@ -715,31 +487,13 @@ export const PaperPost = memo(function PaperPost({
                 </Text>
               )}
 
-              {/* The lead-in is the SOURCE, not a date. Real wire copy leads with
-                  the agency, and a date here would print twice — the margin
-                  already carries it. */}
               {kind === 'wire' && (
                 <Text style={[p.wire, rtl && p.rtlText]} {...scaledTextProps}>
                   {rtl ? RTL_MARK : null}<Text style={p.wireDateline}>WIRE — </Text>{softBreak(body)}
                 </Text>
               )}
 
-              {/* ── THE BALLOTS DEPARTMENT PRINTED NOTHING ────────────────
-                  There were four branches here — take, seeking, wire, dossier —
-                  and no ballot. The feed carries ballots (BALLOTS is one of the
-                  six departments in the index, and ALL filters by no kind at
-                  all), so every ballot card in the paper showed a byline, four
-                  marks and NO QUESTION. An entire department of blank entries.
-
-                  The desk files the question into `title` and `body` both, so
-                  the words were always on the card — nothing was ever asked to
-                  print them.
-
-                  The options are not here on purpose: the card carries the
-                  question and the whole card opens the ballot, which is what
-                  this component's own note about `onOpen` already said it does.
-                  A take card shows the take and you tap to critique; a ballot
-                  card shows the question and you tap to vote. */}
+              {/* The question only (filed into `body` too); the card opens the vote. */}
               {kind === 'ballot' && (
                 <Text style={[p.cardBallotQ, rtl && p.rtlText]} numberOfLines={3} {...displayTextProps}>
                   {rtl ? RTL_MARK : null}<Text style={p.ballotLead}>BALLOT — </Text>{softBreak(body)}
@@ -762,15 +516,6 @@ export const PaperPost = memo(function PaperPost({
 
           {film && !spoiler ? <Credit film={film} bare={!!still} onPress={onFilm} /> : null}
           {spoiler && film ? <Credit film={film} onPress={onFilm} /> : null}
-
-          {/* The source moved up into the byline, where a dateline belongs. It
-              printed here as a fourth orphaned line under the credit — the exact
-              "debris at the foot" this design already fixed once for the read
-              time, and I had left the wire doing it.
-
-              It was left as `{false ? … : null}`, which is a branch that can
-              never run sitting in the app's most recycled component. The note is
-              worth keeping; the corpse is not. */}
 
           {answer ? (
             <View style={p.answer}>
@@ -797,8 +542,7 @@ export const PaperPost = memo(function PaperPost({
             </Text>
           ) : null}
 
-          {/* Two lines, not one: this is a sentence the member must read whole,
-              and at the 10pt floor it no longer fits a column in one. */}
+          {/* Two lines: at the 10pt floor it does not fit one, and must be read whole. */}
           {pending ? (
             <Text style={p.wireSource} numberOfLines={2} {...scaledTextProps}>
               NOT SENT YET · THE HOUSE HAS NOT SEEN THIS
@@ -807,8 +551,7 @@ export const PaperPost = memo(function PaperPost({
         </View>
       </View>
 
-      {/* A spoilered post keeps its marks — you can certify, share and save
-          something you have chosen not to uncover. */}
+      {/* A spoilered post keeps its marks. */}
       {!withheld && (
         <PaperActions
           certifyCount={certifyCount} commentCount={commentCount}
@@ -818,24 +561,7 @@ export const PaperPost = memo(function PaperPost({
         />
       )}
 
-      {/* ── THE ENTRY IS CLOSED IN ITS OWN INK ─────────────────────────────
-          The seam used to sit ABOVE the marks, which meant the rule separated
-          an entry from its own footer — and with nothing beneath them the marks
-          floated between two filings, belonging visibly to neither. You could
-          not tell whose they were, which is the one thing a control must never
-          leave unclear.
-
-          I tried bracketing instead: the marks inside the column, wrapped by
-          the kind's vertical rule. Measured, it does not fit — `CERTIFIED`
-          needs 61.9pt of a 64pt quarter and overflows the moment text scales.
-          A device that only works at one text size is not a device.
-
-          So the rule moved to the FOOT, where a printed letter has always ended
-          — and it is drawn in the filing's own colour. Each entry now opens
-          with its kind named in an ink and closes with a rule in the same ink,
-          and everything between the two lines belongs to it. Nothing was added
-          to the page: the seam that was in the wrong place is now in the right
-          one, carrying information it was not carrying before. */}
+      {/* Closed UNDER its marks, in its kind's ink, so they plainly belong to it. */}
       <View style={[p.entryEnd, { backgroundColor: KIND_RULE[kind] }]} />
     </View>
   );

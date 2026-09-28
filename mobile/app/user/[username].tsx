@@ -19,8 +19,6 @@ import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import { CinematicInsights } from '@/src/components/profile/CinematicInsights';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors } from '@/src/theme/theme';
-// CinematicMap is missing from workspace, commenting out to avoid compilation errors
-// import { CinematicMap } from '@/src/components/profile/CinematicMap';
  
 import { useProfileController } from '@/src/hooks/useProfileController';
  
@@ -123,8 +121,7 @@ const TAB_TITLES: Record<string, string> = {
   projector: 'The Projector Room', calendar: 'The Viewing Calendar',
 };
 
-// ── The projector's pool of light — a true radial, tier-tinted ──
-// (Replaces the old rounded-rectangle "spotlight"; static SVG, painted once.)
+// ── The projector's pool of light — a true radial, tier-tinted, painted once ──
 function SpotlightPool({ tint, opacity }: { tint: string; opacity: number }) {
   return (
     <View style={spotStyles.wrap} pointerEvents="none">
@@ -144,8 +141,7 @@ const spotStyles = StyleSheet.create({
   wrap: { position: 'absolute', top: -30, left: 0, right: 0, height: 340, zIndex: 1 },
 });
 
-/** Small numbers read better as words on a plate. Module scope: it is a
- *  constant, and rebuilding it on every render of the screen was waste. */
+/** Small numbers read better as words on a plate. */
 const WORD = ['no', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
 
 // ── The velvet rope — locked rooms invite, they never dead-end ──
@@ -175,9 +171,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const params = useLocalSearchParams<{ username: string; tab?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  // The screen no longer measures the window: each room derives its own grid
-  // from `posterColumns`, which re-runs on rotation where a value read once
-  // here did not.
 
   const scrollY = useSharedValue(0);
 
@@ -213,17 +206,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ── Moderation State ──
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
-  // "At the door" used to be duplicated here, with its own count subscription
-  // and its own refresh. It lives in Notices now — one place to check, one
-  // place to keep in step. Notices refreshes the count on mount and owns the
-  // same panel, so removing the copy took nothing with it.
   const isBlocked = useBlockStore((state) => state.isBlocked(targetUser?.id ?? ''));
   const isMuted = useBlockStore((state) => state.isMuted(targetUser?.id ?? ''));
   const blockStore = useBlockStore();
-
-  // The poster grids used to be sized here — `(windowWidth - 32 - 18) / 4`,
-  // reserving 18pt of gaps for a row that was then laid out with 24. Each room
-  // derives its own from `posterColumns` now, from the gap it actually draws.
 
   const breatheAnim = useSharedValue(0.4);
   const pulseStyle = useAnimatedStyle(() => ({ opacity: breatheAnim.value }));
@@ -260,15 +245,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const { refreshing, onRefresh, dnaCardOpen, setDnaCardOpen, rouletteOpen, setRouletteOpen, followLoading, toggleFollow } = ctrl;
   const { toEditProfile: navToEditProfile, toSettings: navToSettings, toMembership: navToMembership, toFollowers: navToFollowers, toFollowing: navToFollowing, toCalendar: navToCalendar, openSocialLink, handleBack } = nav;
   const closeDnaCard = useCallback(() => setDnaCardOpen(false), [setDnaCardOpen]);
-  /**
-   * A member's own Physical Archive, locked below the Archivist, was a bare push to
-   * the Society — so the page could not say it was the Physical Archive they
-   * reached for, and the funnel never saw the tap. It is that feature's rope now.
-   *
-   * The Viewing Calendar beside it keeps its plain push ON PURPOSE: nothing on
-   * the Society page sells a calendar, so there is no feature to name. Whether
-   * it should be sold or simply given is an open product decision.
-   */
+  // The locked Physical Archive's own rope, so the Society page names what was reached for.
   const shelfRope = useClearance('physical-archive');
   const closeRoulette = useCallback(() => setRouletteOpen(false), [setRouletteOpen]);
   const onRouletteSelect = useCallback((id: number) => { setRouletteOpen(false); (router.push as any)(`/film/${id}` as never); }, [setRouletteOpen, router]);
@@ -293,46 +270,27 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const isAuteurPlus = isAuteurPlusTier(targetUser);
   const isPrivate = targetUser?.is_social_private && !isSelf && !isFollowing;
 
-  /**
-   * The breathing gold wash behind an Archivist's plate.
-   *
-   * ── IT NOW RUNS ONLY WHERE IT IS SEEN ────────────────────────────────────
-   * `pulseStyle` used to drive the avatar ring as well, which every member had,
-   * so starting the animation unconditionally was right. The composition
-   * replaced that ring with a mounted print, and the ONLY consumer left is the
-   * Archivist gradient below — a Cinephile renders a flat dark base and an
-   * Auteur renders their backdrop, neither of which reads it. The animation
-   * went on running anyway: a worklet re-evaluated every frame for seventy-two
-   * seconds, on two members out of three, to set an opacity nothing painted.
-   *
-   * It also never asked about reduce-motion, which the developing plate below
-   * has always honoured. A pulsing wash is atmosphere; it holds still for
-   * anyone who has asked the system to stop things moving.
-   */
+  // The breathing gold wash: only on an Archivist's plate, the one place it is
+  // painted, and still under reduce-motion.
   const showsPulse = isArchivistPlus && !isAuteurPlus;
   useEffect(() => {
     if (!showsPulse || reducedMotion) return;
-    // Capped at 20 repeats (approx 72 seconds) to allow UI thread idling and prevent battery drain
+    // 20 half-breaths of 1.8s, about 36 seconds, then the UI thread rests.
     breatheAnim.value = withRepeat(withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }), 20, true);
     return () => cancelAnimation(breatheAnim);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showsPulse, reducedMotion]);
 
-  // Tier echo — the member's tier color resonates through the hero (founder
-  // mark + stats panel). Cinephile = house brass (understated); Archivist =
-  // champagne; Auteur = ruby. The avatar ring/badge stay the primary signal.
+  // The rank's colour, echoed through the plate: brass, champagne, ruby.
   const tierLine = isAuteurPlus ? 'rgba(180,45,45,0.45)' : isArchivistPlus ? 'rgba(196,150,26,0.5)' : 'rgba(184,137,26,0.3)';
-  // WORDS, so solid inks of the same three colours: the ruby as pigment is
-  // 2.78:1 on the card this line sits on, and the house brass at 0.7 is a word
-  // painted see-through. The line, the border and the spot beside it are marks
-  // and keep their pigments.
+  // For WORDS, solid inks (the ruby pigment is 2.78:1 on this card); the line,
+  // border and spot are marks and keep their pigments.
   const tierText = isAuteurPlus ? colors.crimsonInk : isArchivistPlus ? colors.champagne : colors.sepia;
   const tierStatsBorder = isAuteurPlus ? 'rgba(180,45,45,0.5)' : isArchivistPlus ? 'rgba(196,150,26,0.6)' : 'rgba(184,137,26,0.3)';
   const tierSpot = isAuteurPlus ? '#B42D2D' : isArchivistPlus ? colors.champagne : '#B8891A';
   const tierSpotOpacity = isAuteurPlus ? 0.2 : isArchivistPlus ? 0.26 : 0.18;
 
-  // MEMBER Nº — the real serial, padded to four while small, growing
-  // naturally after; hidden gracefully until the migration has run.
+  // MEMBER Nº: the real serial, padded to four digits; hidden when there is none.
   const memberNo = (targetUser as any)?.member_no
     ? String((targetUser as any).member_no).padStart(4, '0')
     : null;
@@ -355,38 +313,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   ).toUpperCase();
   const heroHandle = `@${(targetUser?.username || 'unknown').toUpperCase()}`;
 
-  /**
-   * The handle earns a line only when it says something the name does not.
-   *
-   * The old hero had no handle line at all — it fell back to `@username` in the
-   * NAME slot and stopped there. Giving the composition a handle line beneath
-   * the name reintroduced a duplicate for two very ordinary members: one who
-   * has set no display name, and one whose display name simply IS their
-   * handle. Both would have had the same word printed twice, stacked, in 26pt
-   * and 9.5pt. The name keeps the fallback; the handle steps aside when it
-   * would only be an echo.
-   */
+  /** The handle's line, only when it is not the name again (no display name, or the same). */
   const showHandle = heroHandle.slice(1) !== heroName;
 
-  /**
-   * A DETERMINISTIC step-down, not `adjustsFontSizeToFit`.
-   *
-   * Auto-shrinking measures at layout time and picks any fraction it likes, so
-   * two members side by side get two different sizes for no reason a reader can
-   * see, and on Android it interacts badly with a second line. Three fixed
-   * steps mean the same name always renders at the same size, and the type
-   * scale survives contact with a long one. Two lines at the smallest step hold
-   * roughly 46 characters — past that it ellipsizes rather than shrinking into
-   * illegibility.
-   *
-   * The step is lowered, never raised, when the name's longest WORD would not
-   * fit the column at the size the phone draws — a word cannot wrap, and a
-   * character count cannot see how wide it is (heroNameSize.ts).
-   */
   const { width: windowWidth } = useWindowDimensions();
-  // The letters' width grows with the font (capped at the name's own 1.2), so
-  // useTextScale; the spacing does not grow at all.
+  // Letters widen with the text size (capped at 1.2); the spacing never does.
   const nameScale = useTextScale(displayTextProps.maxFontSizeMultiplier);
+  // Fixed steps (heroNameSize.ts), not `adjustsFontSizeToFit`: one name, one size.
   const nameSize = heroNameSize(heroName, windowWidth, nameScale);
   const nameStyle = { fontSize: nameSize, lineHeight: Math.round(nameSize * 1.16), letterSpacing: nameSize >= 26 ? 1.4 : 1 };
 
@@ -397,22 +330,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const bioStyle = { fontSize: bioSize, lineHeight: Math.round(bioSize * 1.52) };
   const bioLines = bioText.length <= 90 ? 4 : bioText.length <= 170 ? 5 : 6;
 
-  /**
-   * `Nº 0147 · ADMITTED MARCH 2026` — one line where there were two.
-   *
-   * The month is built by the house formatter, NOT `toLocaleDateString(…, {
-   * month, year })`: those options travel through Intl, which this codebase
-   * does not assume Hermes provides. When it is missing the options are ignored
-   * silently and the line renders as `3/14/2026` — the failure looks like a
-   * design choice, which is why it survives.
-   */
-  /*
-   * At the largest text sizes the line no longer fits one line, and it used to
-   * end "ADMITTED NOVEMBER…" — the year, the one fact in it, was the part cut.
-   * It may take a second line now, and it breaks only where a reader would:
-   * after the dot, or before the month. NO-BREAK SPACES hold `Nº 0147` and
-   * `MARCH 2026` together, so a number or a year is never left alone on a line.
-   */
+  // `Nº 0147 · ADMITTED MARCH 2026`, the month by the house formatter (no Intl).
+  // At large text it may wrap, only where a reader would: no-break spaces keep
+  // `Nº 0147` and `MARCH 2026` whole, so the year is never the part cut.
   const NBSP = ' ';
   const admittedFull = formatDateMonthYear(targetUser?.created_at);
   const admitted = (() => {
@@ -421,25 +341,11 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   })();
   const serialLine = [memberNo ? `Nº${NBSP}${memberNo}` : '', admitted].filter(Boolean).join(' · ');
 
-  // The rank is stamped on the corner of the print by `RankBadge`, which takes
-  // the member and applies the Highest Watermark Rule itself — so a founding
-  // member reads AUTEUR here exactly as they do in every other place. This file
-  // no longer computes a label for it; a second computation of one fact is how
-  // two surfaces start disagreeing.
-  // Founding is a FLAG, not a rank — it cannot appear as "ARCHIVIST · FOUNDING".
-  // It gets the one line the stamp cannot carry, and nobody else pays for it.
+  // Founding is a FLAG, not a rank (`RankBadge` decides the rank): its own line.
   const isFounding = !!(targetUser as any)?.is_founding;
 
-  /**
-   * Where the ident row starts.
-   *
-   * The old hero used a flat `paddingTop: 120` for both cases. Your OWN file is
-   * a TAB — it has no back button — so 120 there was ~50pt of nothing above
-   * your own portrait, on every phone. A pushed profile has the absolutely
-   * positioned back button to clear, and how far down that sits depends on the
-   * notch, so the number has to be derived from the same expression the button
-   * itself uses rather than guessed at once.
-   */
+  // Your own file is a tab, with no back button; a pushed one clears the button,
+  // from the expression the button itself is placed by.
   const heroTop = usernameOverride
     ? insets.top + 16
     : Math.max(insets.top + 10, 40) + 46;   // topNav padding + the 40pt button + 6
@@ -452,20 +358,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     displayLists,
     totalFilms,
     totalWatchlist,
-    // The Room Plate states what a room holds, from the same reconciled totals
-    // the profile's own tab pills use — never from the windowed array a room
-    // was handed, which caps at 150.
+    // Reconciled totals, never the room's windowed array (it caps at 150).
     totalLedger,
     totalLists,
     totalVault,
     statsLevel,
     statsColor,
     statsProgress,
-    // The run the member is on. This was computed here and thrown away: the
-    // hook fetched it, profileComputed resolved it against a local fallback,
-    // and no line of the screen ever asked for it — so the SQL fix that made
-    // `current_streak` correct (it returned 1 or 0 for every member) repaired a
-    // number nobody could see.
     streak,
     archiveFiltered,
     ledgerFiltered,
@@ -511,25 +410,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     serverDecades: analyticsShape?.watchlist_decades,
   });
 
-  // THE ROOM'S LIGHT. A member's file has a reading lamp; where an Auteur's
-  // backdrop hangs over the plate, the lamp hangs from its hem and the film's
-  // own colour blooms onto the page beneath — the same picture the backdrop
-  // shows, from the same rule. The hem is the plate's height as laid out.
+  // The reading lamp hangs from the backdrop's hem (the plate's laid-out height),
+  // and the same film's colour blooms onto the page beneath.
   const heroArt = backdropSource(targetUser as never, displayLogs as never);
   const [plateH, setPlateH] = useState(0);
   const lit = heroArt && plateH > 0 ? { hem: plateH, art: heroArt } : {};
 
-  /**
-   * What the Society plate says, and it has to be TRUE at every rank.
-   *
-   * "One room remains closed to you" is only worth saying if the page can
-   * actually count the closed rooms, so it counts the ones it draws as locked —
-   * the holdings wearing a key — rather than asserting a number from the tier
-   * name. (The calendar was added on here while it was locked; it is every
-   * member's now, so a Cinephile has ONE closed room, not two.) An Archivist
-   * has none locked but is still not at the top, so that case gets its own
-   * line instead of the false "every door is open".
-   */
+  // True at every rank: it counts the rooms it DRAWS locked, not a number from
+  // the tier's name; an Archivist, none locked, is still told of rooms above.
   const lockedRooms = COLLECTION_CARDS.filter((c: any) => c.locked).length;
   const ranksSub = isAuteurPlus
     ? 'You hold the highest rank. Every door in the house is open to you.'
@@ -541,15 +429,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // THE ROOMS
   // ════════════════════════════════════════════════════════════
 
-  /**
-   * What the Room Plate says a room holds.
-   *
-   * From the RECONCILED totals, never from the array the room was handed —
-   * those are windowed at 150, so a member with 247 films would have been told
-   * 150 by any count taken from the list itself. This is the same number their
-   * own profile shows, through the same `tally`: an em dash for a room nobody
-   * has filed anything in, and thousands grouped without going near Intl.
-   */
+  // What a room holds, from the reconciled totals through the profile's `tally`.
   const roomCount = useMemo(() => {
     const say = (n: number, one: string, many: string) => `${tally(n)} ${n === 1 ? one : many}`;
     switch (activeTab) {
@@ -562,29 +442,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     }
   }, [activeTab, totalFilms, totalLedger, totalWatchlist, totalLists, totalVault]);
 
-  /**
-   * Leaving a room.
-   *
-   * The old header PUSHED `/user/:name` to go "back" — while opening a room
-   * pushed the same route with a tab param. So profile → Archive → back →
-   * Ledger → back left six entries in the history, and Android's system back
-   * button then walked the member through every one of them instead of leaving
-   * the profile. A room was pushed, so a room pops.
-   */
+  // A room was pushed, so a room pops (a push would pile up Android's history).
   const handleRoomBack = useCallback(() => {
     if (router.canGoBack()) router.back();
     else (router.replace as any)(`/user/${username}` as never);
   }, [router, username]);
 
-  /**
-   * Whether a room may describe its own contents yet.
-   *
-   * A room decided it was empty by asking whether its list was empty, and never
-   * whether the data had ARRIVED — so the first open of the Physical Archive told a member
-   * with 286 discs that nothing was on the shelves. Own rooms hydrate from the
-   * local store before first paint, so they are ready immediately; a visitor's
-   * room is ready once its fetch has landed, which the reconciled count proves.
-   */
+  // Whether a room's data has ARRIVED, before it may call itself empty. Your own
+  // rooms hydrate before first paint; a visitor's, once the count proves it.
   const roomReady = useMemo(() => {
     if (isSelf) return true;
     switch (activeTab) {
@@ -597,14 +462,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     }
   }, [isSelf, activeTab, displayLogs.length, displayWatchlist.length, displayLists.length, displayVault.length, counts]);
 
-  /**
-   * The six films the member rated highest.
-   *
-   * `.filter(r >= 4).slice(0, 6)` took the six most RECENTLY logged films that
-   * cleared four reels — which under a heading reading HIGHEST RATED is simply
-   * untrue for anyone with more than six of them. Rating first, then recency to
-   * settle a tie, so the card matches its own title.
-   */
+  // The six rated highest: by rating, then recency to break a tie, as the title says.
   const highestRated = useMemo(() => {
     return displayLogs
       .filter((l: ProfileLog) => l.rating >= 4)
@@ -669,9 +527,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ════════════════════════════════════════════════════════════
   // EARLY RETURNS
   // ════════════════════════════════════════════════════════════
-  // repairingHandle: we already know this handle is our own stale one and the route is
-  // being corrected — showing "Member Not Found" on the way past would be a lie (#87).
-  // It self-clears after 4s, so this can never become a permanent spinner.
+  // repairingHandle: the route is our own stale handle, being corrected, so not
+  // "Member Not Found"; it clears itself after 4s, never a permanent spinner.
   if (loading || repairingHandle) return (
     <View style={[s.container, s.centeredFull]}>
       <RoomLight room="member" />
@@ -746,10 +603,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         <RoomLight room="member" />
         {/* ── THE ROOM PLATE — one threshold for all six ── */}
         <RoomPlate
-          /* Title case, not caps. The display face (Rye) is set title-case
-             everywhere else in the app — "The Projector Room", "Certificate of
-             Obsession" — and the ALL-CAPS treatment belongs to the sub face, on
-             the member-and-count line directly beneath. */
+          /* Title case, as the display face is set everywhere; caps are the sub face's. */
           name={TAB_TITLES[activeTab] ?? activeTab}
           member={heroName}
           count={roomCount}
@@ -759,17 +613,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         />
 
         {/* ── THE SEALED ROOM ──
-            `if (activeTab)` returns before the profile's own privacy check, so
-            a private member's room rendered its ordinary empty state: "this
-            member hasn't watched any films yet", to a visitor looking at
-            someone with two thousand of them. No data ever leaked — the fetch
-            layer has a hard gate — but the sentence was false, and the counts
-            ARE fetched on the sealed path, so the plate above already knows the
-            truth. */}
+            A private member's room says it is sealed, never "no films yet":
+            this branch runs before the profile's own privacy check. */}
         {isPrivate ? (
-          // The seal is rendered straight into the container, not into a list,
-          // so it carries the room inset itself — every other room gets it from
-          // `r.listContent`.
+          // Straight into the container, so it carries the room inset itself.
           <View style={s.sealedPad}>
             <RoomSealed />
             <RoomFoot tier={tier} />
@@ -838,10 +685,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 renderPosterCard={renderPosterCard}
                 ready={roomReady}
                 tier={tier}
-                /* The decade belongs in this guard for the same reason the sort
-                   does: with any filter live the room reads the SERVER page,
-                   so paging must come from the server's cursor and not from
-                   the unfiltered local store. */
+                /* With any filter live the room reads the SERVER's pages, so it
+                   pages by the server's cursor, not the unfiltered local store. */
                 onLoadMore={(isSelf && watchlistSearch.trim() === '' && watchlistSort === 'default' && watchlistDecade === null) ? (filmStore.watchlistHasMore ? loadMoreWatchlist : undefined) : (hasMoreWatchlist ? loadMoreWatchlist : undefined)}
                 isLoadingMore={(isSelf && watchlistSearch.trim() === '' && watchlistSort === 'default' && watchlistDecade === null) ? filmStore._fetchingWatchlist : isLoadingMore.watchlist}
                 isSelf={isSelf}
@@ -891,12 +736,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   vaultFormats={analyticsShape?.vault_formats}
                   physicalSearch={physicalSearch}
                   setPhysicalSearch={setPhysicalSearch}
-                  /* `physicalFilter === 'all'` was never true: no filter is
-                     `null`, and 'all' is not a format. So the member's OWN
-                     shelves took the visitor branch on all three of these — it
-                     paged through a fixed 150-item window and stopped, while
-                     the store had the rest. `!physicalFilter` is the state the
-                     chip actually sets. */
+                  /* No filter is `null` (the chip's own state), not 'all'. */
                   onLoadMore={(isSelf && !physicalFilter) ? (filmStore.archiveHasMore ? loadMoreVault : undefined) : (hasMoreVault ? loadMoreVault : undefined)}
                   isLoadingMore={(isSelf && !physicalFilter) ? filmStore._fetchingArchive : isLoadingMore.vault}
                   hasMore={(isSelf && !physicalFilter) ? filmStore.archiveHasMore : hasMoreVault}
@@ -930,13 +770,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             {/* Analytics is a base feature (see the tiers page) — open to every member. */}
             {activeTab === 'projector' && (
                 <View style={s.projectorGap}>
-                  {/* The room used to announce itself TWICE: the header above
-                      already reads THE PROJECTOR ROOM, and this block repeated
-                      it in the display face directly underneath, with a third
-                      line of prose under that. Three lines of chrome before a
-                      single number. The plate says which room you are in. */}
-
-                  {/* Cinema DNA CTA */}
+                  {/* Cinema DNA CTA (the plate above already names the room) */}
                   <View style={s.tabContentPad}>
                     <PressableScale style={s.ctaBtn} onPress={() => { setDnaCardOpen(true); data.loadTabData('projector'); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic accessibilityRole="button" accessibilityLabel="View cinema DNA">
                       <View style={s.ctaBtnRow}>
@@ -958,14 +792,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     </View>
                   )}
 
-                  {/* Projector Room.
-                      It sat OUTSIDE any inset while the two buttons above and
-                      every section below sat 16pt in — so the one bordered card
-                      on the page ran edge to edge, 32pt wider than its
-                      neighbours, with its 3pt corner radius pressed flat
-                      against the screen. The dial inside is a fixed 140pt, so
-                      it clears the narrower box on the smallest phone we
-                      support with room to spare. */}
+                  {/* Projector Room, inset like its neighbours; its 140pt dial
+                      fits the smallest phone. */}
                   <View style={s.tabContentPad}>
                     <ProjectorRoom stats={{ count: totalFilms, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} record={analyticsShape} streak={streak} />
                   </View>
@@ -989,12 +817,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       <Achievements {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics, totalFilms} as any} />
                     </View>
 
-                    {/* HIGHEST RATED — and now actually the highest rated.
-                        This took the first six logs rated 4 or better in the
-                        order they were LOGGED, so a member with two hundred
-                        five-star films was shown whichever six they happened
-                        to file most recently, under a heading promising the
-                        best. Sorted by rating, then by recency to break a tie. */}
+                    {/* HIGHEST RATED (`highestRated`) */}
                     {highestRated.length > 0 && (
                       <View>
                         <SectionDivider label="HIGHEST RATED" />
@@ -1006,12 +829,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                                 key={log.id}
                                 style={s.favouriteRow}
                                 onPress={() => log.filmId && (router.push as any)(`/film/${log.filmId}` as any)}
-                                // Six rows stacked in a card with `gap: 10`, so
-                                // each may claim 5 vertically. At the 15pt
-                                // default they reached 20pt into each other and
-                                // the LATER row won: tapping the bottom of one
-                                // film opened the film below it. The row is
-                                // 42pt tall, so 5 each side still clears 44.
+                                // 5, half the 10pt gap: the 15pt default let a
+                                // row's tap open the film below. 42 + 10 clears 44.
                                 hitSlop={{ top: 5, bottom: 5, left: 8, right: 8 }}
                                 haptic
                                 accessibilityRole="button"
@@ -1019,9 +838,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                               >
                                 {posterUri
                                   ? <Image source={{ uri: posterUri }} style={s.favPosterThumb} transition={50} cachePolicy="memory-disk" />
-                                  /* An unposterd film used to collapse the row
-                                     to the text alone, so a card of six sat at
-                                     two different indents. */
+                                  /* A blank frame keeps every row at one indent. */
                                   : <View style={[s.favPosterThumb, s.favPosterEmpty]} />}
                                 <View style={s.favTextWrap}>
                                   <Text {...scaledTextProps} style={s.favTitle} numberOfLines={1}>{log.title}</Text>
@@ -1052,9 +869,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             )}
 
             {/* ═══ CALENDAR TAB ═══ */}
-            {/* Every member's. It was locked below the Archivist while nothing on
-                the Society page sold it; a calendar of your own evenings is the
-                kind of thing that brings a member back, so it is given. */}
+            {/* Every member's: a calendar of your own evenings brings you back. */}
             {activeTab === 'calendar' && (
               <View style={s.tabContentPad}>
                 <SectionDivider label="VIEWING HISTORY" />
@@ -1078,10 +893,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
       {/* Back button (only when navigated to, not on own tab) */}
       {!usernameOverride && (
         <View style={[s.topNav, { paddingTop: Math.max(insets.top + 10, 40) }]}>
-          {/* Icon-only, so it has NO text child to borrow a name from: without
-              this label a screen reader announced nothing at all for the one
-              control that leaves the page. The tab-view's back button has had
-              a name all along; this one never did. */}
+          {/* Icon-only: the label is its only name for a screen reader. */}
           <PressableScale
             onPress={handleBack}
             style={s.topNavBtn}
@@ -1106,10 +918,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             {isAuteurPlus ? (
               <ProfileBackdrop {...{user: targetUser, logs: displayLogs} as any} hem={plateH || undefined} scrollY={scrollY} />
             ) : isArchivistPlus ? (
-              /* A brass tint at the top, fading to nothing — never to the house
-                 colour. The plate used to be painted solid over the room, which
-                 blacked out the room's light exactly where it is brightest and
-                 left an edge where the plate ended. */
+              /* Brass fading to NOTHING, so the room's light shows through. */
               <View style={s.headerArchivistBase}>
                  <LinearGradient colors={['rgba(196,150,26,0.15)', 'rgba(196,150,26,0)']} locations={[0, 0.4]} style={StyleSheet.absoluteFillObject} />
                  <AnimatedView style={[StyleSheet.absoluteFillObject, pulseStyle]} pointerEvents="none">
@@ -1125,26 +934,16 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           {/* Film grain texture overlay */}
           <View style={s.filmGrainOverlay} pointerEvents="none" />
 
-          {/* A breath of dark at the very top so the status bar and the back
-              button recede into the plate instead of competing with a bright
-              backdrop for the same pixels. */}
+          {/* Dark at the very top, so the status bar and back button read on a bright backdrop. */}
           <LinearGradient colors={['rgba(6,5,4,0.72)', 'transparent']} style={s.heroTopFade} pointerEvents="none" />
 
           {/* Bottom structural edge */}
           <View style={[s.headerGoldEdge, isAuteurPlus && { backgroundColor: 'rgba(180,45,45,0.35)' }]} pointerEvents="none" />
 
-          {/* ── Header Content ──
-              No horizontal padding here: the ident row, the bio, the figures
-              and the acts each set their own, exactly as the design does. A
-              shared 20pt pad plus alignItems:'center' is what produced the old
-              single centred column. */}
+          {/* ── Header Content ── no shared padding: each block sets its own. */}
           <View style={[s.headerContent, { paddingTop: heroTop }]}>
 
-            {/* ══ THE IDENT — a mounted print, and the particulars beside it ══
-                This replaces ten centred blocks stacked down the middle of the
-                screen. Everything that was in them is still here; it is set as
-                a composition instead of a list, which is why it now fits in one
-                glance instead of one and a half screens. */}
+            {/* ══ THE IDENT — a mounted print, and the particulars beside it ══ */}
             <AnimatedView style={[s.identRow, portraitDevelop]}>
               <View style={s.portraitWrap}>
                 <View style={s.plate}>
@@ -1171,17 +970,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   <View style={[s.corner, s.cornerBR]} pointerEvents="none" />
                 </View>
 
-                {/* The rank, stamped on the corner at a hand's angle — and it
-                    literally stamps down, on the last beat of the develop. */}
-                {/* The house's mark, from the one component that draws it.
-                    This corner is where the construction CAME from — the style
-                    it replaces carried the note "this is where rank lives now"
-                    — but the profile only ever draws one, so it could never
-                    show the two faults a feed does: a brass hairline outshining
-                    a crimson one, and `crimson` as a WORD at 3.16:1.
-
-                    `style` carries the POSITION and the develop animation only.
-                    Nothing about the mark's own look is set from here. */}
+                {/* The rank, stamped on the corner at a hand's angle, on the
+                    develop's last beat. `style` is the position only: the mark's
+                    look is RankBadge's alone. */}
                 <AnimatedView style={stampDevelop}>
                   <RankBadge rank={rankOf(targetUser)} style={s.tierStamp} />
                 </AnimatedView>
@@ -1204,20 +995,11 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
             {/* ── The bio, in the house's own quotation marks ── */}
             <Text {...scaledTextProps} style={[s.heroBio, bioStyle]} numberOfLines={bioLines}>
-              {/* The guillemets sit INSIDE the bio and inherit its size, so they
-                  must inherit its ceiling too. A blanket "anything called a
-                  mark is decorative" rule had made them the one piece of text
-                  on the page that would not grow — leaving the quote marks
-                  small around a bio that had grown around them. */}
+              {/* The guillemets grow with the bio they sit inside. */}
               <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>« </Text>
               {/* A bio is the member's own words, and may hold a pasted link:
                   offered a place to wrap at its joints, as the Dispatch does. */}
               {softBreak(bioText)}
-              {/* The guillemets sit INSIDE the bio and inherit its size, so they
-                  must inherit its ceiling too. A blanket "anything called a
-                  mark is decorative" rule had made them the one piece of text
-                  on the page that would not grow — leaving the quote marks
-                  small around a bio that had grown around them. */}
               <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}> »</Text>
             </Text>
 
@@ -1229,11 +1011,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     key={i}
                     style={s.socialLinkChip}
                     onPress={() => openSocialLink(link.url)}
-                    // The chips wrap, so a chip has neighbours on BOTH axes,
-                    // 8pt away — 4 per side is the whole budget. The chip
-                    // itself is 36pt tall so 36+8 still clears the 44pt floor;
-                    // it used to be ~20pt tall with the full 15pt default,
-                    // which was under the floor AND overlapping its neighbour.
+                    // Wrapping chips 8pt apart on both axes: 4 a side; 36+8 clears 44.
                     hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                     haptic
                     accessibilityRole="link"
@@ -1246,15 +1024,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               </View>
             )}
 
-            {/* ── The four figures ──
-                This row was once gated on a `hide_stats` preference. That preference was
-                removed: it hid these four numbers while the films they count stayed
-                browsable in the tabs below and readable from the API by anyone, so it
-                promised a privacy it never delivered. Members who want to be unreadable
-                have `is_social_private`, which the database actually enforces.
-
-                FILMS and WATCHLIST now sit together, and the two social counts
-                together — the two pairs a reader actually compares. */}
+            {/* ── The four figures, in the two pairs a reader compares ──
+                No "hide stats": privacy is `is_social_private`, which the
+                database enforces; hiding numbers whose films stay readable is not. */}
             <View style={[s.statsBox, { borderColor: tierStatsBorder }]}>
               <StatCard label="FILMS" value={tally(totalFilms)} />
               <StatCard label="WATCHLIST" value={tally(totalWatchlist)} rule />
@@ -1268,8 +1040,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 <PressableScale
                   style={s.act}
                   onPress={navToEditProfile}
-                  // 48pt tall and flex:1 — no halo needed, and the pair is
-                  // only 10pt apart, so 5 is the entire per-side budget.
+                  // 48pt tall already; 5 a side is half the 10pt between the pair.
                   hitSlop={{ top: 0, bottom: 0, left: 5, right: 5 }}
                   haptic
                   accessibilityRole="button"
@@ -1354,13 +1125,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             </View>
           )}
 
-          {/* ══ LATELY — a ledger, numbered ══
-              Three poster tiles said "here are three pictures". A numbered
-              ledger says "these are the last three films, in order, and here is
-              what each one got". It is about 35pt TALLER than the three tiles
-              were, and worth every point: a tile showed a poster and a date, a
-              row shows the title, the year, the rating, and whether the film
-              was a rewatch — which says more than any date does. */}
+          {/* ══ LATELY — a numbered ledger: the last films, in order, each with
+              its title, year, rating, and whether it was a rewatch ══ */}
           {recentLogs.length > 0 && (
             <View style={s.latelySection}>
               <SectionDivider label="LATELY" />
@@ -1370,9 +1136,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     key={log.id}
                     style={[s.latelyRow, i === recentLogs.length - 1 && s.latelyRowLast]}
                     onPress={() => (router.push as any)(`/log/${log.id}` as never)}
-                    // Rows sit edge to edge: the default 15pt of vertical slop
-                    // would put the bottom of each row inside the NEXT one, and
-                    // the later sibling wins. 66pt is target enough on its own.
+                    // Edge-to-edge rows, 66pt tall: no vertical reach into the next.
                     hitSlop={{ top: 0, bottom: 0, left: 12, right: 12 }}
                     haptic
                     accessibilityRole="button"
@@ -1405,12 +1169,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             </View>
           )}
 
-          {/* ══ THE HOLDINGS ══
-              Six 122pt cards in a 3-wide grid spent ~286pt saying six numbers,
-              and put a decorative icon circle above each one. Three rows in two
-              columns say the same six in ~156pt, and a dotted leader carries the
-              eye from the room to its count the way a printed index does. That
-              130pt is what pays for the altarpiece's centre being large. */}
+          {/* ══ THE HOLDINGS ══ two columns of three, a dotted leader carrying
+              the eye from each room to its count, as a printed index does. */}
           <SectionDivider label="THE HOLDINGS" />
           <View style={s.holdWrap}>
             {[0, 1].map(col => {
@@ -1423,9 +1183,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       testID={`collection-card-${item.id}`}
                       style={[s.holdRow, i === rooms.length - 1 && s.holdRowLast]}
                       onPress={() => (router.push as any)({ pathname: `/user/${username}`, params: { tab: item.id } } as any)}
-                      // Vertical slop would spill into the row below (later
-                      // sibling wins); 7pt horizontal exactly fills the 14pt
-                      // gutter between the columns without crossing it.
+                      // None vertical (the row below); 7 fills half the 14pt gutter.
                       hitSlop={{ top: 0, bottom: 0, left: 7, right: 7 }}
                       haptic
                       accessibilityRole="button"
@@ -1466,12 +1224,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             <ChevronRight size={11} color={colors.sepia} strokeWidth={2} />
           </PressableScale>
 
-          {/* ══ THE DESK — your own file only ══
-              "AT THE DOOR" used to live here as well as in Notices. Follow
-              requests are notices; keeping a second, stateful copy of them on
-              the profile meant two places to check and two places to get out of
-              step. Notices already carries the pinned banner and the very same
-              panel, so nothing was lost by taking this one out. */}
+          {/* ══ THE DESK — your own file only (follow requests are in Notices) ══ */}
           {isSelf && (
             <>
               <SectionDivider label="THE DESK" />
@@ -1490,9 +1243,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 </PressableScale>
               </View>
 
-              {/* The way into the society page — at EVERY rank. This is the
-                  door, not an upsell, so it does not disappear once you reach
-                  the top; at the top it simply stops shouting. */}
+              {/* The Society's door at EVERY rank; at the top it stops shouting. */}
               <View style={s.ranksPlate}>
                 <Text {...scaledTextProps} style={s.ranksTitle} numberOfLines={1}>THE SOCIETY RANKS</Text>
                 <Text {...scaledTextProps} style={s.ranksSub}>{ranksSub}</Text>

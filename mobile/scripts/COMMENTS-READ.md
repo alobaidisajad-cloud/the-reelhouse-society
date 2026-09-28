@@ -82,17 +82,17 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/social-modal.tsx | — |  |
 | app/(tabs)/_layout.tsx | — |  |
 | app/(tabs)/darkroom.tsx | — |  |
-| app/(tabs)/dispatch.tsx | — |  |
+| app/(tabs)/dispatch.tsx | 2026-09-29 | 12 fixed; NewsService history and the pill-fix story cut |
 | app/(tabs)/index.tsx | — |  |
 | app/(tabs)/lounge.tsx | — |  |
 | app/(tabs)/profile.tsx | — |  |
 | app/(tabs)/reels.tsx | — |  |
 | app/+not-found.tsx | — |  |
 | app/auth-callback.tsx | — |  |
-| app/dispatch/[id].tsx | — |  |
+| app/dispatch/[id].tsx | 2026-09-29 | 26 fixed; 'SAVE THE CARD offered for a dossier' was false (the sheet never gets card); history of 3 fixes cut |
 | app/dispatch/archive.tsx | 2026-09-29 | history removed; margin label now said as a day (was '28 certified') |
 | app/dispatch/compose.tsx | 2026-09-28 | Three claims were false: 'no cover, nowhere for a backdrop to live' (subject_backdrop is saved), 'counted once a second' (400ms) with a useDeferredValue the file never used, and names of draft functions that no longer exist. Two notes described code elsewhere and were moved to it. Dead style previewTitle removed. History removed. |
-| app/dispatch/room/[username].tsx | — |  |
+| app/dispatch/room/[username].tsx | 2026-09-29 | 6 fixed; history of the byline fix cut |
 | app/dispatch/rules.tsx | — |  |
 | app/dispatch/series/[id].tsx | — |  |
 | app/dossier/[id].tsx | — |  |
@@ -115,7 +115,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | — |  |
-| app/user/[username].tsx | — |  |
+| app/user/[username].tsx | 2026-09-29 | 33 fixed + ~15 unflagged history notes; commented-out CinematicMap import removed; '72 seconds' was 36 |
 | app/year-in-cinema.tsx | — |  |
 | ARCHITECTURE.md | — |  |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
@@ -275,7 +275,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts | — |  |
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
 | src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | — |  |
-| src/components/dispatch/ComposeDesks.tsx | — |  |
+| src/components/dispatch/ComposeDesks.tsx | 2026-09-29 | 16 fixed; 'FILE IT unlit until the film is named' was false (it waits for the SOURCE) |
 | src/components/dispatch/dayLabel.ts | 2026-09-29 | 24-hour reason moved here from paperMetrics; 'margin never scales' was false (displayTextProps 1.2) |
 | src/components/dispatch/EssayBody.tsx | — |  |
 | src/components/dispatch/excerpt.ts | — |  |
@@ -292,7 +292,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperMore.tsx | 2026-09-28 | 61 findings fixed; 3 style notes contradicted their own values (loungeBy '8.5 and 1.2', the 14% story band, shareTitle 'from titleType'); 15 dead styles removed (card*, event*, unread, loungeByNo); the share-card test read this file's comment, now renders the card |
 | src/components/dispatch/paper/paperMotion.ts | — |  |
 | src/components/dispatch/paper/paperPerf.ts | — |  |
-| src/components/dispatch/paper/PaperPost.tsx | — |  |
+| src/components/dispatch/paper/PaperPost.tsx | 2026-09-29 | 17 fixed; 3 FALSE: 'the counts leave' (they sit by the icons), 'there is no kind label' (every kind leads with one), 'rule material set by tier' misread; pending/dimmed never wired (logged) |
 | src/components/dispatch/paper/PaperStrike.tsx | — |  |
 | src/components/dispatch/paper/paperStyles.ts | 2026-09-28 | Rewritten to the rule. Seven comments contradicted their values (16 vs 16.5, 9/1.1 vs 10/0.9, tracking 1.2 vs 0.9, a serial number where a monogram is drawn, a speck poster that is drawn); two blocks disagreed on what the rule carries; history removed. |
 | src/components/dispatch/paper/paperText.ts | — |  |

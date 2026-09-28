@@ -54,7 +54,7 @@ export const POST_PAD_V = 13;
 
 /** The ordering column: the hour under LATEST, the count under CERTIFIED. */
 export const MARGIN_W = 44;
-/** 3, not 2: at two points the kind colours could not be told apart at a glance. */
+/** The column's rule. 3, not 2: at two points its colours were not told apart at a glance. */
 export const RULE_W = 3;
 export const RULE_GAP = 12;
 
@@ -129,9 +129,9 @@ export const issueOf = (d: Date) => {
 export const folioOf = (d: Date) => `VOL. ${volumeOf(d)} · No. ${issueOf(d)}`;
 
 /**
- * The rule beside a post carries its KIND, which changes how you read it; the
- * member's rank is on the avatar's ring. Five hues chosen to be told apart;
- * the theme's colours say why each is that pigment.
+ * The KIND's hue, on the lead-in that opens an entry and the rule that closes
+ * it. (Rank is the member's: the avatar's ring and the column's rule.) Five
+ * hues chosen to be told apart; the theme's colours say why each is that pigment.
  */
 export const KIND_RULE = {
   /** Heat, opinion — an ember, not a formal red. */

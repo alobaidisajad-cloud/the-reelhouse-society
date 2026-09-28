@@ -1,30 +1,17 @@
 /**
- * A MEMBER'S ROOM — everything one member has filed to the paper.
+ * A MEMBER'S ROOM — everything one member has filed to the paper, where every
+ * byline in the Dispatch leads ("Open their room").
  * ─────────────────────────────────────────────────────────────────────────────
- * Every byline in the Dispatch is a control, and every one of them already told
- * a screen reader "Open their room." It opened the member FILE instead — the
- * profile, six rooms of films, not one of them the Dispatch — so the paper's one
- * gesture toward a person led out of the paper, and the words on the control
- * were a promise the app did not keep. This is the room.
+ * The same document and the same entries as the feed: a filing in a room is the
+ * filing. Two things differ, because the page's subject does:
  *
- * ── IT IS THE PAGE, NOT A PAGE ABOUT THE PAGE ───────────────────────────────
- * The same document, the same rails, the same entries. Nothing is re-styled for
- * having been gathered by author: a filing in a member's room is the filing, and
- * a reader who has learned the feed has already learned this.
+ *   NO BYLINE ON THE ENTRIES. The head says whose room this is; twenty rows of
+ *   `ANA · No. 17` would say one thing twenty times.
  *
- * Two things differ, and both because the page's subject changed:
- *
- *   NO BYLINE ON THE ENTRIES. The head says whose room this is. Printing
- *   `ANA · No. 17` down twenty consecutive rows says one thing twenty times.
- *   `PaperPost` has carried `noByline` since it was drawn; this is its first
- *   caller.
- *
- *   MONTHS, NOT DAYS. The feed divides by day and prints the hour in the
- *   margin, which is right for something read the morning it is filed. A room
- *   runs back through everything a member has ever written, and `MONDAY, MARCH
- *   3` appears once a year with nothing to tell the two apart. So the divider
- *   carries the month AND the year, and the margin carries the day of the
- *   month — complete underneath its heading, and 44pt wide, which a date is not.
+ *   MONTHS, NOT DAYS. A room runs back through everything a member ever wrote,
+ *   where `MONDAY, MARCH 3` comes round every year. So the divider carries the
+ *   month AND the year, and the margin the day of the month, complete under
+ *   its heading and narrow enough for the margin, which a date is not.
  */
 import { useCallback, useMemo } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -65,9 +52,7 @@ export default function MemberRoomScreen() {
     loading, loadingMore, missing, more, loadMore,
   } = useMemberRoom(username);
 
-  // The member's own marks. Read from the store, which is where every screen
-  // that draws a filing keeps them, so a certification made in the feed is
-  // already lit when the room opens.
+  // The reader's marks, from the store: one made in the feed is already lit here.
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const savedIds = useDispatch((s) => s.savedIds);
 
@@ -78,9 +63,7 @@ export default function MemberRoomScreen() {
       const k = monthKey(f.createdAt);
       if (k && k !== month) {
         month = k;
-        // Not above the first: the head is already the top of the page, and a
-        // divider directly under it would be a second heading for the same
-        // thing. The feed's own dividers follow exactly this rule.
+        // Never above the first entry: the head already tops the page (as in the feed).
         if (out.length > 0) out.push({ type: 'month', key: `m-${k}`, label: monthLabel(f.createdAt) });
       }
       out.push({ type: 'filing', key: f.id, filing: f });
@@ -93,16 +76,7 @@ export default function MemberRoomScreen() {
   /** Whose room this is. Only the owner is offered the way to write in it. */
   const mine = !!me && !!author && me.username === author.name;
 
-  /**
-   * The bar names the member, which is the design record's own decision — and
-   * the house NUMBER is not repeated in it, because the head prints that one
-   * line below and a screen saying `No. 147` twice in its top forty points is a
-   * screen shouting a serial at you.
-   *
-   * The ROUTE's handle until the profile answers, so the bar is never blank and
-   * never shifts under the reader; the resolved name after, because that is who
-   * the member is now and the two differ for a moment after a rename.
-   */
+  /** The member's name (their number is in the head); the route's until the profile answers. */
   const barLabel = (author?.name ?? username ?? '').toUpperCase();
 
   const getItemType = useCallback(
@@ -118,15 +92,8 @@ export default function MemberRoomScreen() {
     if (item.type === 'month') return <DayDivider label={item.label} />;
 
     const f = item.filing;
-    /**
-     * The count the member sees, and the only honest way to compute it here.
-     *
-     * `certifyCount` is the house's total at the moment this page was fetched;
-     * `certifiedIds` is the live truth about THIS member's own mark. Adding the
-     * difference means the number moves the instant they tap — and moves back
-     * on its own if the write is refused, because the store rolls that set back.
-     * A local ±1 would not: it would leave the room one ahead of the house.
-     */
+    // The house's total when fetched, corrected by the reader's live mark: it
+    // moves on a tap and moves back on its own if the store rolls a refusal back.
     const count = f.certifyCount
       + (certifiedIds.has(f.id) ? 1 : 0)
       - (certifiedAtFetch.has(f.id) ? 1 : 0);
@@ -160,19 +127,12 @@ export default function MemberRoomScreen() {
         onSave={me ? (next) => useDispatch.getState().save(f.id, next) : undefined}
         onShare={() => nav.push(`/dispatch/${f.id}`)}
         onFilm={f.subjectId ? () => nav.push(`/film/${f.subjectId}`) : undefined}
-        // No `onAuthor`. Every entry here has the same author and this is their
-        // room — a control that opens the page you are standing on.
+        // No `onAuthor`: it would open the room you are standing in.
       />
     );
   }, [width, certifiedIds, savedIds, certifiedAtFetch, me]);
 
-  /**
-   * A handle nobody answers to.
-   *
-   * Reachable from a stale link, from a member who has closed their account, and
-   * from a read that failed — and all three are the same fact to a reader, so
-   * they get one page rather than a spinner that never stops.
-   */
+  // A stale link, a closed account or a failed read: one fact to a reader, one page.
   if (missing && !loading) {
     return (
       <View style={p.screen}>
@@ -212,9 +172,7 @@ export default function MemberRoomScreen() {
                   // at all rather than `0 FILED` over somebody's twelve.
                   filed={totalsKnown ? filed : null}
                   certified={totalsKnown ? certified : null}
-                  // The way out to the rest of the member — their file, and its
-                  // six rooms of films. This room is one of seven, not a
-                  // replacement for the other six.
+                  // Out to the rest of the member: their file.
                   onFile={() => nav.push(`/user/${author.name}`)}
                 />
               ) : null
@@ -245,11 +203,7 @@ export default function MemberRoomScreen() {
                   <ActivityIndicator size="small" color={colors.sepia} />
                 </View>
               ) : more || filings.length === 0 ? null : (
-                // The house's own closing mark — the same one the critiques and
-                // the empty pages set, so a room read to its end finishes the
-                // way everything else in the paper finishes. Not under an EMPTY
-                // room: there is nothing for it to be the end of.
-                <EndMark />
+                <EndMark /> // the paper's closing mark; not under an empty room
               )
             }
           />
