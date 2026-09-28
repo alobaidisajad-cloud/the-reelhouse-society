@@ -19,6 +19,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { stripComments } from '@/test-utils/readCode';
 
 const ROOT = path.resolve(__dirname, '../../../..');
 
@@ -54,7 +55,8 @@ describe('inside the Dispatch, the printed word is ESSAY', () => {
   it('no member-facing sentence says "dossier" — enumerated', () => {
     const offences: string[] = [];
     for (const f of dispatchFiles()) {
-      const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+      // Comments blanked by the parser (lines kept): an apostrophe in prose is not a quote.
+      const src = stripComments(fs.readFileSync(path.join(ROOT, f), 'utf8'), f);
       for (const { line, text } of proseStrings(src)) {
         if (/dossier/i.test(text)) offences.push(`${f}:${line}  "${text.slice(0, 80)}"`);
       }

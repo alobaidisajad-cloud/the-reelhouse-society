@@ -38,14 +38,7 @@ jest.mock('../../lib/supabase', () => ({
       const chain: Record<string, unknown> = {};
       const self = () => chain;
       let selected = '';
-      /**
-       * Set by `update`, so `then` can answer with a row.
-       *
-       * An UPDATE now asks for its rows back — `.select('id')` — because a row
-       * RLS refuses matches NOTHING, and matching nothing is not an error. A
-       * mock that answers `[]` to everything makes every amendment look
-       * refused.
-       */
+      // Set by `update`, so `then` answers an UPDATE's `.select('id')` with a row, not `[]`.
       let updated = false;
       chain.select = (c: string) => { selected = c ?? ''; return self(); };
       chain.eq = () => self();
@@ -142,9 +135,7 @@ describe('opening one filing', () => {
     mockRow = row({ full_content: 'The whole essay.', kind: 'dossier', title: 'A Dossier' });
     const got = await useDispatch.getState().hydrate('f1');
     expect(got?.fullContent).toBe('The whole essay.');
-    // Cached on the row rather than held in the screen: a body kept in a
-    // component is discarded on the next render and the essay silently falls
-    // back to its 500-character opening.
+    // On the row, where the reader reads it, not held in the screen.
     expect(useDispatch.getState().filings[0].fullContent).toBe('The whole essay.');
   });
 
@@ -190,9 +181,7 @@ describe('what this member has already done', () => {
 
 describe('the session guard', () => {
   it('does not write the previous member’s state back after a sign-out', async () => {
-    // The rollback runs after an await. If the member signed out during it, the
-    // store has already been cleared — and writing here would restore their
-    // counts AND re-create the persisted copy the logout reset deletes.
+    // A rollback after a sign-out would restore the last member's counts to a cleared store.
     mockOutcome = 'refused';
     reset({ filings: [filing({ certifyCount: 10 })] });
 
@@ -273,6 +262,23 @@ describe('the row a filing is sent as', () => {
     expect(r.spoiler_label).toBe('SPOILERS');
   });
 
+  it('carries an essay’s cover, capped to its column, and shows it before the server answers', async () => {
+    await useDispatch.getState().file({
+      kind: 'dossier', title: 'On Ozu', body: 'An opening.', fullContent: 'The essay.',
+      film: { id: 42, title: 'Tokyo Story', image: '/poster.jpg', backdrop: '/still.jpg' },
+    });
+    expect(sent().subject_backdrop).toBe('/still.jpg');
+    expect(useDispatch.getState().filings[0].film?.backdropPath).toBe('/still.jpg');
+
+    await useDispatch.getState().file({
+      kind: 'dossier', title: 'Long', body: 'An opening.', fullContent: 'The essay.',
+      film: { id: 42, title: 'Tokyo Story', backdrop: '/' + 'a'.repeat(3000) },
+    });
+    const long = sentTo('dispatch_posts', 'insert').at(-1)!.row as Record<string, unknown>;
+    expect(long.title).toBe('Long');
+    expect((long.subject_backdrop as string).length).toBeLessThanOrEqual(2048);
+  });
+
   it('omits every field the draft did not carry', async () => {
     // Not `null` for each — omitted, so the column's own default applies and a
     // NOT NULL column is never handed an explicit null.
@@ -298,8 +304,7 @@ describe('the row an amendment is sent as', () => {
     expect(r.source).toBe('New');
     expect(r.source_url).toBe('https://x');
     expect(r.series_title).toBe('A Series');
-    // Clearing a spoiler label has to SEND the null, or the flag can never be
-    // taken off once it is on.
+    // A cleared spoiler label SENDS the null, or the flag could never come off.
     expect(r).toHaveProperty('spoiler_label', null);
   });
 });
@@ -573,14 +578,8 @@ describe('an act the house refuses, with the member still here', () => {
  */
 describe('a superseded read', () => {
   it('does not land its rows under a department nobody asked for', async () => {
-    /**
-     * The FIRST read is held open; every later one answers empty at once.
-     *
-     * Sharing one promise between them was the first attempt, and it could not
-     * tell the two apart: changing department starts a second read, that read
-     * resolved from the same deferred, and the row it delivered looked exactly
-     * like the stale one landing. The test failed against correct code.
-     */
+    // The FIRST read is held open and every later one answers empty at once: one shared
+    // promise could not tell the stale answer from the new read's.
     let release: (rows: unknown[]) => void = () => {};
     const held = new Promise<unknown[]>((res) => { release = res; });
     let call = 0;

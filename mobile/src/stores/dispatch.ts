@@ -78,49 +78,18 @@ const SECTION_KIND: Record<Section, FilingKind | null> = {
   ESSAYS: 'dossier',
 };
 
-/**
- * One page. Twenty is what the old feed asked for and what the RPC still caps.
- *
- * Taken from `dispatchTypes` rather than declared here, because the empty state
- * and the skeleton row in `paperMetrics` print numbers about this page and used
- * to hold their own copy of it. One binding, so they cannot drift.
- */
+/** One page: PAGE_SIZE, the one binding paperMetrics' empty state and skeleton also read. */
 const PAGE = PAGE_SIZE;
 
-/**
- * Every read is bounded AND its cursor is derived from the same bound.
- *
- * Batch 20's finding, in one sentence: bounding a query and keeping its "is
- * there more?" answer honest are ONE job. A page that asks for 20 and decides
- * `hasMore` from anything other than "did I get 20 back" will either stop early
- * or loop forever.
- */
+/** "Is there more?" is "did a full page come back": any other test stops early or loops. */
 const gotFullPage = (n: number) => n === PAGE;
 
 // ── STATE ───────────────────────────────────────────────────────────────────
 
 export interface DispatchState {
   filings: Filing[];
-  /**
-   * Filings opened by their own address, which the FEED does not hold.
-   *
-   * ── WHY THIS HAD TO EXIST ──────────────────────────────────────────────────
-   * `filings` is the page, not a cache of everything — so a filing opened from a
-   * notification, a share link or a lounge quote was never in it. Three acts
-   * looked the filing up there before doing anything:
-   *
-   *     const filing = get().filings.find((f) => f.id === id);
-   *     if (!user || !filing) return;
-   *
-   * so on a cold open WITHDRAW did nothing, silently, and AMEND did nothing
-   * while the writing room said "Dossier updated" and navigated away. An edit
-   * reported as saved and discarded is the worst failure this app has.
-   *
-   * `hydrate` records what it read here, every act keeps the two in step, and
-   * the reader reads whichever holds the filing.
-   */
+  /** Filings opened by address (a notice, a link), which the page does not hold. See heldFiling. */
   opened: Record<string, Filing>;
-  /** Filed by this member and not yet acknowledged by the server. */
   section: Section;
   sort: Sort;
   savedOnly: boolean;
@@ -155,41 +124,12 @@ export interface DispatchState {
 
   fetch: () => Promise<void>;
   loadMore: () => Promise<void>;
-  /**
-   * Is there new paper above what is on screen?
-   *
-   * ── WHY A COUNT AND NOT A SOCKET ─────────────────────────────────────────
-   * The obvious build is a realtime subscription. It is the wrong tool here for
-   * three reasons, and each one is a cost the member pays:
-   *
-   *   · it needs `dispatch_posts` in the realtime publication, so EVERY write
-   *     to the table — every certify, every counter tick — is replicated to
-   *     every subscriber, to answer a question asked once a minute;
-   *   · it is a second persistent connection on the app's main tab, beside the
-   *     one the Lounge already holds for chat, which genuinely needs it;
-   *   · a feed that gains a few filings an hour is not a chat. The pill's whole
-   *     job is "there is new paper", and a HEAD count answers that exactly as
-   *     well for the price of one bounded query.
-   *
-   * It is RLS-filtered like any other read, so a filing from somebody the member
-   * has blocked is not counted — a pill that promises three and delivers two is
-   * the page lying about something the member can check in one tap.
-   */
+  /** Is there new paper above the page? A count, not a socket (see its implementation). */
   checkForNew: () => Promise<void>;
   /** One filing, with its essay, for the reader. */
   hydrate: (id: string) => Promise<Filing | null>;
 
-  /**
-   * What this member has already done to a set of filings THIS STORE DID NOT
-   * FETCH — certified, saved, voted.
-   *
-   * The feed and the reader both fill these in for their own rows, privately.
-   * A member's room fetches its own page of filings, so without this every mark
-   * on it would draw empty: a member would open their own room and see nothing
-   * certified, tap the mark that is already true, and the insert would come back
-   * as a duplicate-key refusal. The marks are the member's memory of the page
-   * and they have to arrive with any page that shows them.
-   */
+  /** This member's marks on filings the store did not fetch (a room's own page). */
   loadMarks: (filings: Filing[]) => Promise<void>;
 
   file: (draft: FilingDraft) => Promise<{ id: string; offline?: boolean } | null>;
@@ -201,15 +141,7 @@ export interface DispatchState {
   vote: (id: string, optionIndex: number) => void;
   takeAnswer: (postId: string, critiqueId: string | null) => void;
 
-  /**
-   * `order` is REQUIRED, not defaulted.
-   *
-   * It had a default of NEWEST, and the reader's own state started at CERTIFIED.
-   * Two defaults, in two files, and they disagreed: the header lit CERTIFIED
-   * over a list ordered by date, and pressing CERTIFIED changed nothing because
-   * it was already selected. A default here is a second opinion about something
-   * the screen already knows.
-   */
+  /** `order` is required: the screen knows it, and a default here would be a second opinion. */
   fetchCritiques: (postId: string, order: CritiqueOrder) => Promise<void>;
   loadMoreCritiques: (postId: string) => Promise<void>;
   addCritique: (postId: string, body: string) => Promise<void | { offline: boolean }>;
@@ -244,44 +176,22 @@ export interface FilingDraft {
 
 export type FilingUpdate = Partial<Omit<FilingDraft, 'kind' | 'options' | 'closesAt'>>;
 
-// A fetch in flight, and the generation that decides whether its answer is still
-// wanted. Changing section or sort bumps the generation, so a slow response for
-// TAKES can never paint over a fast one for WIRE.
+// A fetch in flight, and the generation that says whether its answer is still wanted:
+// a slow TAKES response never paints over a fast WIRE one.
 let inflight: Promise<void> | null = null;
 let generation = 0;
 
 /**
- * What the page is asking for has changed; the answer on its way is not it.
- *
- * ── THIS DID NOT EXIST, AND THE COMMENT ABOVE SAID IT DID ──────────────────
- * `fetch` opens with `if (inflight) return inflight`, and the three index
- * controls did not touch `inflight` — so tapping WIRE while the first page was
- * still loading handed back the ALL request, and:
- *
- *   · that response passed its generation check and painted takes into WIRE,
- *   · and no request for WIRE was ever issued at all,
- *
- * so the member sat on a department showing another department's filings until
- * they pulled to refresh. It only happens during the first seconds after a cold
- * open, which is exactly when somebody is most likely to be tapping around.
- *
- * Bumping the generation alone would have discarded the stale answer and left
- * the page empty forever, because the new `fetch` would still return the same
- * in-flight promise. Both have to go.
+ * The page now asks for something else. Both go: the stale answer must not paint
+ * the new department, and the next fetch must not be handed the old request
+ * (`fetch` returns whatever is in flight).
  */
 const invalidateInflight = () => {
   generation++;
   inflight = null;
 };
 
-/**
- * How many opened filings are kept.
- *
- * Twelve, because the only thing this map is for is letting an act find the row
- * the member is looking at — and nobody acts on the twelfth filing back. A
- * dossier holds up to 25,000 characters, so an unbounded map is an evening's
- * reading held in memory for no reason.
- */
+/** Twelve: the map only lets an act find the row being read, and an essay is 25,000 chars. */
 const OPENED_KEPT = 12;
 
 /** Insertion-ordered, oldest dropped. `delete` first so a re-open moves to the end. */
@@ -298,13 +208,8 @@ function capOpened(
   return next;
 }
 
-/**
- * The filing, wherever it is being held.
- *
- * The feed when the member scrolled to it, the opened map when they arrived by
- * its address. Every act that needs the ROW — rather than only its id — asks
- * here, so none of them can quietly do nothing again.
- */
+/** The filing, wherever it is held — the page, or the map of those opened by address.
+ *  Every act that needs the ROW asks here, so none quietly does nothing on a cold open. */
 const heldFiling = (st: DispatchState, id: string): Filing | null =>
   st.filings.find((f) => f.id === id) ?? st.opened[id] ?? null;
 
@@ -397,10 +302,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         if (!isNetworkError(e)) captureError(e, { where: 'dispatch.fetch' });
         throw e;
       } finally {
-        // BOTH guarded by the generation. Clearing `inflight` unconditionally
-        // meant a superseded request could null out the slot holding the one
-        // that replaced it — and the next call would then issue a second query
-        // for a page already on its way.
+        // Both guarded: a superseded request must not clear the slot of the one that replaced it.
         if (gen === generation) {
           set({ loading: false });
           inflight = null;
@@ -412,14 +314,13 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     return run;
   },
 
+  // A HEAD count, not a realtime socket: a socket needs the table in the publication (every
+  // certify replicated to every reader) and a second connection, to answer "is there new
+  // paper?" once a minute. RLS filters it, so a blocked member's filing is not counted.
   checkForNew: async () => {
     const s = get();
-    // Only under LATEST, and only once there is a page to be newer THAN.
-    //
-    // Under CERTIFIED the list is not chronological, so "new above you" names a
-    // position that does not exist — a filing certified once an hour from now
-    // belongs in the middle of the page, not at the top. And the saved page is
-    // not an edition: nothing arrives on it that the member did not put there.
+    // Only under LATEST, once there is a page to be newer than: under CERTIFIED "above you" is
+    // no position, and the saved page gains only what the member puts there.
     if (s.sort !== 'LATEST' || s.savedOnly || s.filings.length === 0) return;
     if (s.loading || s.loadingMore) return;
 
@@ -439,23 +340,18 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       const { count, error } = await timed((sig) => withAbortSignal(q, sig), 'dispatch.checkForNew');
       if (error) throw error;
       if (!memberUnchanged(startedAs)) return;
-      // The generation guard matters here too: a check begun under TAKES that
-      // lands after the member moved to WIRE would announce takes on a page of
-      // wires.
+      // A check that lands after the member changed the page announces nothing.
       if (get().sort !== 'LATEST' || get().savedOnly) return;
       set({ newCount: count ?? 0 });
     } catch (e) {
-      // A pill that could not be counted simply does not appear. Failing the
-      // feed over an ornament would be the wrong trade.
+      // An uncounted pill simply does not appear.
       if (!isNetworkError(e)) captureError(e, { where: 'dispatch.checkForNew' });
     }
   },
 
   loadMore: async () => {
     const s = get();
-    // Three separate reasons not to: already fetching a page, already at the
-    // end, or nothing loaded yet — in which case this is a first fetch and
-    // `fetch` owns it.
+    // Not while a page is on its way, at the end, or before the first page (fetch's job).
     if (s.loadingMore || s.loading || !s.hasMore || s.filings.length === 0) return;
     const gen = generation;
     const startedAs = useAuthStore.getState().user?.id ?? null;
@@ -464,9 +360,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       const rows = await pageQuery(s, s.filings[s.filings.length - 1]);
       if (gen !== generation || !memberUnchanged(startedAs)) return;
       const { filings: page } = parseFilingRows(rows);
-      // De-duplicated on the way in. A row filed between the two requests shifts
-      // the window, and without this the same filing appears twice — which
-      // FlashList then renders with a duplicate key.
+      // De-duplicated: a filing can arrive twice, and FlashList would draw a duplicate key.
       const seen = new Set(get().filings.map((f) => f.id));
       const fresh = page.filter((f) => !seen.has(f.id));
       set((st) => ({ filings: [...st.filings, ...fresh], hasMore: gotFullPage(rows.length) }));
@@ -494,19 +388,13 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       const { filings } = parseFilingRows([data]);
       const one = filings[0] ?? null;
       if (!one) return null;
-      // Kept on the row rather than in the reader's own state: the reader reads
-      // the store, so a body held in a component would be discarded on the next
-      // render and the essay would silently fall back to its 500-character
-      // opening. Caching it also makes re-opening instant.
+      // Kept on the row, where the reader reads it: in a component the essay would fall back
+      // to its 500-character opening on the next render. Re-opening is then instant.
       set((st) => ({
         filings: st.filings.some((f) => f.id === id)
           ? st.filings.map((f) => (f.id === id ? one : f))
           : st.filings,
-        // Recorded whether or not the feed holds it, so the acts that need the
-        // ROW can find it after a cold open — and BOUNDED, because a dossier
-        // carries up to 25,000 characters and a member reading for an evening
-        // would otherwise accumulate every one of them for the life of the
-        // process. The most recent handful is all any act needs.
+        // Recorded (bounded) whether or not the page holds it, so acts find it after a cold open.
         opened: capOpened(st.opened, id, one),
       }));
       await loadViewerState([one], set, startedAs);
@@ -517,9 +405,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     }
   },
 
-  // The same three reads the feed and the reader already make for their own
-  // rows, offered to a screen that fetched its own. It merges — it never clears
-  // — so one page filling in its marks cannot wipe another page's.
+  // Without these a member's own room draws every mark empty, and tapping one already true
+  // is refused as a duplicate. It merges, never clears, so pages cannot wipe each other.
   loadMarks: async (filings) => {
     await loadViewerState(filings, set, useAuthStore.getState().user?.id ?? null);
   },
@@ -530,9 +417,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     if (!user) return null;
     const startedAs = user.id;
 
-    // One choke point. The optimistic row, the online insert and the queued
-    // payload all read the SAME cleaned values, so what is shown, what is sent
-    // and what is replayed can never be three different strings.
+    // One choke point: what is shown, sent and replayed are the same cleaned values.
     const clean = cleanDraft(draft);
     const id = Crypto.randomUUID();
     const now = new Date().toISOString();
@@ -548,7 +433,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         avatar: (user as { avatar_url?: string | null }).avatar_url ?? null,
       },
       film: clean.film
-        ? { title: clean.film.title, director: clean.film.sub ?? null, posterPath: clean.film.image ?? null }
+        ? {
+          title: clean.film.title, director: clean.film.sub ?? null,
+          posterPath: clean.film.image ?? null, backdropPath: clean.film.backdrop ?? null,
+        }
         : null,
       subjectId: clean.film?.id ?? null,
       subjectKind: clean.film ? 'film' : null,
@@ -565,8 +453,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       seriesTitle: clean.seriesTitle ?? null,
       partNumber: clean.partNumber ?? null,
       spoilerLabel: clean.spoilerLabel ?? null,
-      // Nothing the member has just written is under review. The house has not
-      // seen it yet.
+      // Nothing just written is under review: the house has not seen it yet.
       withheldAt: null,
       endedAt: null,
       endedBy: null,
@@ -576,9 +463,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       editedAt: null,
     };
 
-    // Shown only where it belongs. Filing a wire while reading TAKES must not
-    // drop a wire into the takes column — the row is real either way, and the
-    // next fetch of its own department will show it.
+    // Shown only where it belongs: a wire filed from TAKES waits for its own department.
     const visibleHere = get().section === 'ALL' || SECTION_KIND[get().section] === clean.kind;
     if (visibleHere && !get().savedOnly) {
       set((st) => ({ filings: [optimistic, ...st.filings] }));
@@ -605,33 +490,12 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   },
 
   /**
-   * ⚠️ NOTHING IN THIS APP CALLS THIS, AND THAT IS ON PURPOSE — BUT SAY SO.
-   *
-   * `amend` is reachable only from `/dispatch/compose?edit=<id>`, and no screen
-   * ever navigates there: swept the whole of `src` and `app` for an `edit`
-   * param and for anything supplying `initialTitle`/`initialContent`, and there
-   * is nothing. `amendCritique` below has no caller at all.
-   *
-   * That matches the decision the reader states in its own words — "on your own
-   * filing there is one act: withdraw it" — so this is an unbuilt door, not a
-   * broken one. A member cannot fix a typo in a filing or a critique. Whether
-   * that is right is a product question and it is recorded in
-   * DEFERRED-ACTIONS.md rather than answered here.
-   *
-   * It is kept rather than deleted for one concrete reason: the offline queue
-   * carries `update_filing` and `update_critique` mutation types, and removing
-   * the path that drains them is only safe once nothing can have enqueued one.
-   *
-   * The EDITED mark a card prints reads `edited_at`, which this app therefore
-   * never sets. On 2026-09-04 the live table held no row with it set — and one
-   * filing in total, so that proves the column is unused rather than proving
-   * this app is what would have used it.
+   * An amend, from the reader's AMEND (`/dispatch/compose?edit=<id>`): the writing room
+   * for an essay, the short desks for the rest. It sets `edited_at`, which the card's
+   * EDITED mark reads.
    */
   amend: async (id, updates) => {
     const user = useAuthStore.getState().user;
-    // Wherever it is held. This read the feed alone, so amending a filing
-    // opened by its own address did nothing while the writing room reported
-    // success and navigated away.
     const filing = heldFiling(get(), id);
     if (!user || !filing) return;
     const startedAs = user.id;
@@ -653,21 +517,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     const dbUpdates = toUpdateRow(clean);
     try {
-      /**
-       * ── A REFUSED ROW IS NOT AN ERROR, AND THAT IS THE TRAP ────────────────
-       * `posts_update_own` no longer reaches a filing that is WITHHELD or
-       * ENDED — the house is reading it, or has already struck it. RLS refuses
-       * those by matching no ROW, which is not an error: PostgREST answers 200
-       * with nothing changed.
-       *
-       * So `if (error) throw` sees nothing wrong, the optimistic edit stays on
-       * screen, and the member is told their words were saved while the
-       * database refused them. `.select('id')` is what turns silence into an
-       * answer — an empty array means the row was not theirs to change.
-       *
-       * Selecting `id` is safe under the narrowed grants: a member can always
-       * read their own filing.
-       */
+      // `posts_update_own` refuses a WITHHELD or ENDED filing by matching no row, which
+      // PostgREST answers with 200. `.select('id')` turns that silence into an answer.
       const { data, error } = await supabase
         .from('dispatch_posts')
         .update({ ...dbUpdates, edited_at: now, updated_at: now })
@@ -701,9 +552,6 @@ export const useDispatch = create<DispatchState>((set, get) => ({
    */
   end: async (id) => {
     const user = useAuthStore.getState().user;
-    // Wherever it is held — the feed, or the map of what has been opened by its
-    // own address. This read the feed alone, so WITHDRAW on a filing reached
-    // from a notification did nothing at all, and said nothing about it.
     const before = heldFiling(get(), id);
     if (!user || !before) return;
     const startedAs = user.id;
@@ -732,9 +580,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   },
 
   // ── THE ACTS ──────────────────────────────────────────────────────────────
-  // Each moves the number the member can see, then writes the row that makes the
-  // trigger move it for real. The local count and the server count therefore
-  // agree by construction on the next fetch, without this file ever writing one.
+  // Each moves the visible number, then writes the row a trigger counts; this file never
+  // writes a count, so the two agree on the next fetch.
   certify: (id, next) => {
     const user = useAuthStore.getState().user;
     if (!user) return;
@@ -784,23 +631,14 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     if (!user) return;
     if (get().savedIds.has(id) === next) return;
 
-    /**
-     * Where it was, so it can go back there.
-     *
-     * The optimistic step below takes the card off the saved page, and the undo
-     * used to restore only `savedIds` — so a REFUSED unsave left the filing
-     * saved according to the store and gone from the screen, the two disagreeing
-     * silently until the next refresh. Every other act in this file rolls back
-     * everything it moved; this one moved two things and put back one.
-     */
+    // Where it was: an unsave takes the card off the saved page, and a refusal puts back both.
     const removedAt = get().filings.findIndex((f) => f.id === id);
     const removed = removedAt >= 0 ? get().filings[removedAt] : null;
 
     set((st) => {
       const ids = new Set(st.savedIds);
       if (next) ids.add(id); else ids.delete(id);
-      // On the saved page, unsaving removes the entry — it no longer belongs to
-      // the page it is on, and leaving it there would be the page lying.
+      // On the saved page, an unsaved entry no longer belongs there.
       const filings = !next && st.savedOnly ? st.filings.filter((f) => f.id !== id) : st.filings;
       return { savedIds: ids, filings };
     });
@@ -819,9 +657,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         set((st) => {
           const ids = new Set(st.savedIds);
           if (next) ids.delete(id); else ids.add(id);
-          // Back where it was, not at the top — the same rule `removeCritique`
-          // already follows. A card that jumps to the front because the network
-          // failed is the app rewriting the page's order.
+          // Back where it was, not at the top (as removeCritique does).
           const gone = removed && !st.filings.some((f) => f.id === id);
           const filings = gone ? [...st.filings] : st.filings;
           if (gone) filings.splice(Math.min(removedAt, filings.length), 0, removed);
@@ -870,7 +706,6 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
   takeAnswer: (postId, critiqueId) => {
     const user = useAuthStore.getState().user;
-    // Wherever it is held, for the same reason as `end` and `amend`.
     const before = heldFiling(get(), postId);
     if (!user || !before) return;
 
@@ -878,9 +713,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     void writeThrough(
       async () => {
-        // `.select('id')` for the same reason as `amend`: taking an answer on a
-        // filing that has been withheld or ended matches no row, and a refusal
-        // that matches no row comes back as a success with nothing changed.
+        // `.select('id')`, as in amend: a withheld or ended filing matches no row, silently.
         const { data, error } = await supabase
           .from('dispatch_posts')
           .update({ answer_id: critiqueId })
@@ -904,11 +737,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
   // ── CRITIQUES ─────────────────────────────────────────────────────────────
   fetchCritiques: async (postId, order) => {
-    // readCritiquePage guards its own writes; this one is the caller's, and it
-    // lands after the await too. Without the guard a logout mid-read put this
-    // filing's id back into a store the reset had just cleared — the previous
-    // member's post id sitting in the next member's state. See staleWriteGuard:
-    // these two were invisible to it until its boundary walker was fixed.
+    // The write after the await is guarded too: a logout mid-read must not put this id
+    // back into a store the reset just cleared (staleWriteGuard).
     const startedAs = useAuthStore.getState().user?.id ?? null;
     set((st) => ({
       critiquesLoading: { ...st.critiquesLoading, [postId]: true },
@@ -919,27 +749,13 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     set((st) => ({ critiquesLoading: { ...st.critiquesLoading, [postId]: false } }));
   },
 
-  /**
-   * The next page of critiques.
-   *
-   * ── WHY THIS EXISTS ────────────────────────────────────────────────────────
-   * It did not, and the page said it did. `CritiqueFooter` printed
-   * `162 MORE · 30 AT A TIME` under a filing whose critiques stopped at the
-   * fiftieth, and that line was a Text — not a control, not a spinner, nothing
-   * to press. A hundred and sixty-two critiques a member could see counted and
-   * could not reach, with the page telling them so.
-   *
-   * Two numbers were wrong at once, which is how it stayed hidden: the store
-   * fetched 50 and the footer promised 30. Both now come from COMMENT_PAGE_SIZE,
-   * so there is one number and no way for them to disagree again.
-   */
+  /** The next page of critiques: COMMENT_PAGE_SIZE, the one number the footer also prints. */
   loadMoreCritiques: async (postId) => {
     const st0 = get();
     if (st0.critiquesLoading[postId] || st0.critiquesLoadingMore[postId]) return;
     if (!st0.critiquesHasMore[postId]) return;
 
-    // Same as fetchCritiques: the trailing write is this function's own and
-    // lands after the await.
+    // Its own write lands after the await too, so it is guarded as fetchCritiques' is.
     const startedAs = useAuthStore.getState().user?.id ?? null;
     const order = st0.critiquesOrder[postId] ?? 'NEWEST';
     const from = (st0.critiques[postId] ?? []).length;
@@ -1019,10 +835,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     }));
 
     try {
-      // `.select('id')` for the same reason as `amend`: a critique under a
-      // filing that has been withheld or ended matches no row, and a refusal
-      // that matches no row is not an error. Without this the member is told
-      // their amendment went through while the database refused it.
+      // `.select('id')`, as in amend: under a withheld or ended filing no row matches, silently.
       const { data, error } = await supabase
         .from('dispatch_comments')
         .update({ body: clean, edited_at: now })
@@ -1065,15 +878,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     }));
 
     try {
-      // ── A REFUSED DELETE IS NOT AN ERROR ──────────────────────────────────
-      // PostgREST answers 200 with an empty body when the predicate or the RLS
-      // policy matches no row, so `error` stays null. Without asking for the
-      // row back, a refusal was indistinguishable from success: the critique
-      // vanished from its author's screen and the filing's count dropped by
-      // one, while the critique went on standing for every other member.
-      //
-      // `.select('id')` turns that into the rollback below, which is what the
-      // author should see. Same class as leaveLounge and deleteLounge.
+      // A refused delete matches no row and answers 200: `.select('id')` turns it into the
+      // rollback below, or the critique vanishes for its author and stands for everyone else.
       const { data: removed, error } = await supabase
         .from('dispatch_comments')
         .delete()
@@ -1088,8 +894,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         flushOfflineQueue();
         return;
       }
-      // Put back where it was, not at the top — a critique that jumps position
-      // because the network failed is the app rewriting the argument's order.
+      // Back where it was, not at the top: a failed network must not reorder an argument.
       if (memberUnchanged(startedAs)) {
         set((st) => {
           const next = [...(st.critiques[postId] ?? [])];
@@ -1145,32 +950,12 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
 registerStoreReset(() => {
   useDispatch.setState(emptyState());
-  // ── THE FETCH THE PREVIOUS MEMBER LEFT IN THE AIR ──────────────────────────
-  // `emptyState()` is zustand state; `inflight` and `generation` are module
-  // variables and the reset could not see them. `fetch` opens with
-  // `if (inflight) return inflight`, so a member signing in while the last
-  // member's request was still flying got handed THAT promise — which then
-  // failed its own `memberUnchanged` check, painted nothing, and left them on
-  // an empty Dispatch until they pulled to refresh.
-  //
-  // `invalidateInflight()` is the store's own primitive for exactly this: it
-  // bumps the generation AND drops the promise, because doing only the first
-  // discards the stale answer and still hands back the stale promise.
+  // The module's own request too: the next member must not be handed the last one's fetch.
   invalidateInflight();
 });
 
-/**
- * A timed, cancellable read — without the two casts per call site.
- *
- * A Supabase query builder is THENABLE but is not a Promise, so `withTimeout`'s
- * signature refuses it; `content.ts` gets past that with `as any` on the way in
- * and `as { data: any; error: any }` on the way out, at every call. That second
- * cast is the costly one: it throws away the row type, so a column renamed in
- * the select is no longer a compile error anywhere downstream.
- *
- * Awaiting the builder inside is all it takes. The types survive, the timeout
- * still fires, and the abort signal still cancels the request in flight.
- */
+/** A timed, cancellable read that keeps the row type: a query builder is thenable, not a
+ *  Promise, and awaiting it inside is what spares every call site a type-erasing cast. */
 function timed<T>(build: (signal: AbortSignal) => PromiseLike<T>, label: string): Promise<T> {
   return withTimeout(async (signal) => await build(signal), 15_000, label);
 }
@@ -1199,15 +984,8 @@ async function writeThrough(
       flushOfflineQueue();
       return;
     }
-    // ── THE UNDO RUNS AFTER AN AWAIT, AND THAT IS THE WHOLE PROBLEM ────────
-    // If the member signed out while the write was in flight, the store has
-    // already been cleared by the logout reset — and this rollback would write
-    // the PREVIOUS member's counts straight back into it. A store change also
-    // triggers a disk write, so it can re-create the persisted copy the reset
-    // exists to delete.
-    //
-    // Nothing to roll back for a member who is no longer here: their whole
-    // store is gone, which is a stronger undo than this one.
+    // After a logout the store is already clear: undoing would write the last member's
+    // counts back into it (and to disk). Their whole store is gone, a stronger undo.
     if (!memberUnchanged(startedAs)) return;
     undo();
     captureError(e, { where });
@@ -1238,8 +1016,7 @@ async function pageQuery(state: DispatchState, after: Filing | null): Promise<un
 
   if (state.savedOnly) {
     const ids = [...state.savedIds];
-    // No saved filings means no page — and asking with an empty `in.()` list is
-    // a request PostgREST refuses, so the empty case is answered here.
+    // PostgREST refuses an empty `in.()`, so no saved filings is answered here.
     if (ids.length === 0) return [];
     q = q.in('id', ids);
   }
@@ -1247,8 +1024,7 @@ async function pageQuery(state: DispatchState, after: Filing | null): Promise<un
   if (state.sort === 'CERTIFIED') {
     q = q.order('certify_count', { ascending: false }).order('id', { ascending: false });
     if (after) {
-      // Two columns order this page, so the cursor needs both or the tie is
-      // broken differently on each request and a row can be skipped.
+      // Two columns order the page, so the cursor carries both or a tied row is skipped.
       q = q.or(
         `certify_count.lt.${after.certifyCount},and(certify_count.eq.${after.certifyCount},id.lt.${after.id})`,
       );
@@ -1303,8 +1079,7 @@ async function loadViewerState(
       return { certifiedIds: certified, savedIds: saved, myVotes };
     });
   } catch (e) {
-    // A page that draws without the member's own marks is still a readable page.
-    // Failing the whole feed because the marks did not arrive would be worse.
+    // A page without the member's marks is still a readable page.
     if (!isNetworkError(e)) captureError(e, { where: 'dispatch.viewerState' });
   }
 }
@@ -1321,11 +1096,10 @@ async function loadViewerState(
  * with a tiebreaker, and a wrong one silently skips rows rather than failing.
  *
  * ── THE ORDER IS THE SERVER'S ──────────────────────────────────────────────
- * It used to be done on the device, over whatever had been loaded. That is fine
- * when everything is loaded and a lie the moment it is not: CERTIFIED would have
- * ranked the fifty newest and called them the most certified. Ordering here means
- * both orders are true about the whole filing, and changing order re-reads from
- * the first page — which is why `critiquesOrder` is recorded.
+ * Ordered on the device, CERTIFIED would rank only what is loaded and call it the
+ * most certified. Ordered here, both orders are true of the whole filing, and a
+ * change of order re-reads from the first page — which is why `critiquesOrder`
+ * is recorded.
  *
  * A page is merged rather than appended, keyed by id: an optimistic critique the
  * member has just written is already at the top, and the server will hand it back
@@ -1345,8 +1119,7 @@ async function readCritiquePage(
       .eq('post_id', postId);
 
     q = order === 'CERTIFIED'
-      // `created_at` is the tiebreaker, so two critiques on the same count keep
-      // a stable order between pages instead of drifting and duplicating.
+      // created_at breaks ties, so equal counts keep one order across pages.
       ? q.order('certify_count', { ascending: false }).order('created_at', { ascending: false })
       : q.order('created_at', { ascending: false });
 
@@ -1375,9 +1148,7 @@ async function readCritiquePage(
     });
     await loadCritiqueCertifications(critiques, set, startedAs);
   } catch (e) {
-    // The footer keeps its control, so a failed page can simply be pressed
-    // again. Marking it as "no more" would turn one bad request into a
-    // permanent dead end.
+    // Not marked "no more": the footer's control stays, so a failed page can be pressed again.
     if (!isNetworkError(e)) captureError(e, { where: 'dispatch.readCritiquePage' });
   }
 }
@@ -1431,6 +1202,7 @@ function cleanDraft(d: FilingDraft): FilingDraft {
         title: sanitizeInput(d.film.title, 'subjectTitle'),
         sub: d.film.sub ? sanitizeInput(d.film.sub, 'subjectSub') : null,
         image: d.film.image ? sanitizeInput(d.film.image, 'subjectImage') : null,
+        backdrop: d.film.backdrop ? sanitizeInput(d.film.backdrop, 'subjectBackdrop') : null,
       }
       : null,
     options: d.options

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-// The preview mounts `EssayBody`, which carries the link guard and the render
-// cap itself — so this screen no longer holds its own copy of either.
+// The preview mounts `EssayBody`, which carries the link guard and the render cap.
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -16,8 +15,7 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { showTierDoor } from '@/src/utils/tierDoor';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
-// isOverLimit / remainingChars shipped in the sanitiser with ZERO callers — this
-// screen is the one that needed them.
+// The fence an essay is filed against (see `limit`).
 import { isOverLimit, remainingChars, MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import PressableScale from '@/src/components/PressableScale';
 import { ComposeBallotScreen, ComposeShortScreen, FilmPicker } from '@/src/components/dispatch/ComposeDesks';
@@ -43,36 +41,16 @@ import {
   groupDigits, DOC_MARGIN, DOC_PAD, DOC_RAIL, actionLabelProps,
 } from '@/src/components/dispatch/paper/paperMetrics';
 import { excerptFor } from '@/src/components/dispatch/excerpt';
-/**
- * The writing room was the one Dispatch screen with no font-scaling props on any
- * of its text. React Native's default is `allowFontScaling` with NO ceiling, so
- * at accessibility sizes every label here grew without limit — the header's
- * three-across row and the counter row worst, because neither can reflow.
- */
+// Every text here takes a ceiling: React Native's own default scales without one.
 import { scaledTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
-// A long essay must survive a background-kill. Drafts persist here, new-dossiers only.
-/* The draft's key is NOT here any more. It used to be one member-less string,
-   which is how one member's unpublished essay ended up waiting in the writing
-   room for the next person to sign in on that phone. Whose a draft is, where it
-   lives, and what happens to the ones written before the keys were split are all
-   answered once, in `src/utils/memberDrafts.ts` — which owns every draft this
-   app keeps, because the fault was never one key. It was that erasing them on
-   logout was a LIST somebody had to remember, and four keys in a row were
-   forgotten. They share a prefix now and logout sweeps the prefix. */
+// A long essay survives a background-kill. Whose each draft is: src/utils/memberDrafts.ts.
 
-/**
- * How close to the fence before the counter appears.
- *
- * The limit is ~4,350 words. Showing a counter from the first sentence would
- * make a memory fence feel like an editorial one, so it stays out of the way
- * until the last ~870 words — enough warning to finish a thought and trim,
- * without hovering over anyone writing an ordinary piece.
- */
+/** The counter shows only in the last ~870 words: from the first, a fence would feel editorial. */
 const LIMIT_WARNING_CHARS = 5000;
 
 /**
@@ -114,29 +92,13 @@ export default function ComposeScreen() {
     const user = useAuthStore((s) => s.user);
     const kind = (params.kind ?? (params.edit ? 'dossier' : '')) as FilingKind | '';
 
-    /**
-     * ── NOBODY IS SIGNED IN ──────────────────────────────────────────────────
-     * Answered HERE, before the picker draws, rather than at each desk.
-     *
-     * The brass Concierge sits in the nav bar for everyone and its "File to the
-     * Dispatch" row is not gated, so a signed-out reader reached this route,
-     * was shown all five forms, tapped one — and the desk rendered NOTHING. Read
-     * back off the tree, the whole screen was `[]`: no header, no back, no
-     * sentence.
-     *
-     * Locking the rows instead would have been a lie. The picker's lock says
-     * AUTEURS, which is a different reason and the wrong one; being told the
-     * long form is for auteurs when the real answer is "you are not a member"
-     * teaches somebody something untrue about what membership costs.
-     *
-     * So: the same sentence the feed already gives a signed-out reader, and the
-     * way back, before any form is offered.
-     */
     const isMounted = useRef(true);
     useEffect(() => {
         isMounted.current = true;
         return () => { isMounted.current = false; };
     }, []);
+    // Signed out: said here, before any form. The Concierge offers "File to the Dispatch" to
+    // everyone, and a desk has nothing to draw for a reader who is not a member.
     useEffect(() => {
         if (user) return;
         reelToast.error('Filing is for members.');
@@ -147,23 +109,8 @@ export default function ComposeScreen() {
         });
     }, [user]);
 
-    /**
-     * ── THE DOOR ─────────────────────────────────────────────────────────────
-     * Checked HERE, above the picker and above every desk, for the same reason
-     * the AUTEURS gate is: a member who cannot file must never reach a desk to
-     * find out at the end.
-     *
-     * And this one was worse than a locked desk. `posts_door` — two days a
-     * member, five distinct films logged — has been enforced by the database all
-     * along and NOTHING in the app referenced it. A new member wrote a take, or
-     * an essay, pressed FILE and got `Transmission failed`. No reason, no
-     * number, no way to find out; the likeliest next thing they did was write it
-     * again.
-     *
-     * `useDoor` fails OPEN, so a read that times out lets them through to the
-     * refusal the server was always going to give rather than locking them out
-     * of their own app.
-     */
+    // The door (`posts_door`: two days a member, five films) is checked above every desk. useDoor
+    // fails OPEN: a read that times out meets the server's refusal, never a lockout.
     const door = useDoor();
     if (user && !door.loading && !door.open) return <TheDoor door={door} />;
 
@@ -188,12 +135,7 @@ export default function ComposeScreen() {
  */
 function KindPicker() {
     const user = useAuthStore((s) => s.user);
-    /**
-     * Each locked form ropes its OWN feature. They share a rank today because
-     * the database gates them with one trigger, but the Society page is told
-     * which was reached for — a member who tapped BALLOT should read about
-     * ballots — and the registry, not this file, decides who may file each.
-     */
+    // Each locked form ropes its OWN feature, so the Society page is told which was reached for.
     const essays = useClearance('essays', '/dispatch/compose');
     const ballots = useClearance('ballots', '/dispatch/compose');
     const holds = (k: string) => (k === 'ballot' ? ballots.held : essays.held);
@@ -214,16 +156,13 @@ function KindPicker() {
                     forms={FORMS.map((f) => ({
                         ...f,
                         locked: f.locked ? !holds(f.kind) : false,
-                        // The room keeps ONE unfinished dossier. Until this said
-                        // so, beginning a second essay overwrote the first with
-                        // no word — the limit was a surprise instead of a fact.
+                        // The room keeps ONE unfinished essay; the picker says so.
                         inProgress: f.kind === 'dossier' && hasDossierDraft,
                     }))}
                     onPick={(k) => router.setParams({ kind: k })}
                     onLocked={(k) => (k === 'ballot' ? ballots.open() : essays.open())}
                     lockedStanding={essays.standing}
-                    // The rules, at the door every filing goes through. They
-                    // were nine clauses on a page nothing opened.
+                    // The house rules, at the door every filing goes through.
                     onRules={() => (router.push as (h: string) => void)('/dispatch/rules')}
                 />
             </View>
@@ -260,15 +199,9 @@ function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
                     filmsNeeded={door.filmsNeeded}
                     days={door.days ?? 0}
                     daysNeeded={door.daysNeeded}
-                    // An Auteur can pay on day one and still be behind the door,
-                    // so a member can reach this screen holding an unfinished
-                    // essay. The door says the room is keeping it rather than
-                    // leaving them to guess.
+                    // An Auteur can be behind the door holding an essay: the door says it is kept.
                     held={hasHeldWork}
-                    // The one act that moves the count. It replaces this screen
-                    // rather than stacking on it: a member who logs a film and
-                    // presses back should land on the paper, not on the door
-                    // they have just been let through.
+                    // Replaces the door, so back from logging a film lands on the paper.
                     onLog={() => (router.replace as (h: string) => void)('/log-modal')}
                 />
             </ScrollView>
@@ -282,8 +215,7 @@ function ComposeDossierScreen() {
     const insets = useSafeAreaInsets();
     /** Publishing the long form is the Auteur's act — asked from the registry. */
     const essay = useClearance('essays', '/dispatch/compose');
-    // One answer, not two: this was a bare tier check sitting one line above the
-    // rope that asks the registry the same question.
+    // The registry's one answer, not a second tier check beside it.
     const canWrite = essay.held;
 
     const keyboard = useAnimatedKeyboard();
@@ -298,21 +230,9 @@ function ComposeDossierScreen() {
     const [isPreview, setIsPreview] = useState(false);
 
     /**
-     * ── WHAT THE PIECE IS, AS OPPOSED TO HOW IT IS SET ───────────────────────
-     * The reader has always drawn a dossier's film and its series — `EssayHead`
-     * prints a film credit and a series line, and the feed prints "Part II of
-     * …". The store has always accepted them: `FilingDraft` carries `film`,
-     * `seriesId`, `seriesTitle` and `partNumber`, and the database holds a
-     * series together with `series_whole`, which refuses a half-set one.
-     *
-     * Only this screen never set them. So an Auteur could write the long form
-     * and had no way to say which film it was about.
-     *
-     * NO COVER. `EssayHead` also draws one, from `film.backdropPath` — but
-     * `dispatch_posts` has a single image column, `subject_image`, and `toFilm`
-     * maps it to the POSTER. There is nowhere for a backdrop to live, so a
-     * cover control here would be a button that saves nothing. It needs a
-     * column before it needs a picker.
+     * The essay's film and series, as `EssayHead` and the feed draw them. The film carries two
+     * pictures: the poster (`subject_image`) and the cover (`subject_backdrop`). A series is
+     * held whole by `series_whole`, which refuses a half-set one.
      */
     const [film, setFilm] = useState<{
         id: number; title: string; sub: string | null;
@@ -334,21 +254,12 @@ function ComposeDossierScreen() {
     // Refs mirror state so the AppState flush reads the latest without re-subscribing.
     const titleRef = useRef(title); titleRef.current = title;
     const contentRef = useRef(content); contentRef.current = content;
-    // The film and the series ride the same flush. Without these the background
-    // write would save the words and drop the two things beside them — which is
-    // the fault this pass exists to close, reintroduced at the one moment it
-    // matters most.
+    // The film and series ride the same flush: a background write must not save the words
+    // and drop the two things beside them.
     const filmRef = useRef(film); filmRef.current = film;
     const seriesRef = useRef(series); seriesRef.current = series;
 
-    /**
-     * What the room found when it opened, and whether the phone is refusing to
-     * keep it.
-     *
-     * `restored` is an ISO time, `'unknown'` for a draft written before drafts
-     * carried one, or `'unreadable'`. Null means an ordinary empty room, which
-     * says nothing at all.
-     */
+    /** What the room opened with: an ISO time, 'unknown' (no time kept), 'unreadable', or null. */
     const [restored, setRestored] = useState<string | null>(null);
     const [saveFailed, setSaveFailed] = useState(false);
     /** The house is holding something newer, written somewhere else. */
@@ -386,7 +297,7 @@ function ComposeDossierScreen() {
         return `${WEEKDAYS[d.getDay()]} · ${hourLabel(restored)}`;
     }, [restored]);
 
-    // Mirrors the ref three sibling modals keep, for the guard just below.
+    // Guards the delayed back() below against a screen already gone.
     const isMounted = useRef(true);
     useEffect(() => {
         isMounted.current = true;
@@ -395,37 +306,22 @@ function ComposeDossierScreen() {
 
     useEffect(() => {
         if (!canWrite) {
-            /**
-             * A lapsed Auteur is turned away from a room that is still holding
-             * four thousand of their words, and used to be told only that they
-             * lacked the tier. The essay is theirs and it is not going anywhere;
-             * saying so is the difference between a wall and a door.
-             */
+            // A lapsed Auteur is told their unfinished essay is kept: a door, not a wall.
             const held = readDraft(user?.id, 'dossier') !== null;
             reelToast.error(held
                 ? 'The essay is an Auteur’s. Your unfinished one is kept.'
                 : 'The essay is an Auteur’s to file.');
             InteractionManager.runAfterInteractions(() => {
-                // This fires while the screen is still animating in, so the wait is
-                // long enough for the member to tap back themselves. Unguarded, both
-                // pops land and they lose two screens instead of one.
+                // Waits out the entry animation; unguarded, two pops would land.
                 if (isMounted.current) router.back();
             });
         }
     }, [canWrite, user?.id]);
 
     /**
-     * ── DRAFT RESTORE ────────────────────────────────────────────────────────
-     * New dossiers only; an edit loads from the server.
-     *
-     * Everything about whose draft this is lives in `dispatchDrafts` — the key
-     * used to carry no member at all, so an essay written by one member was
-     * waiting in the writing room for the next person to sign in on that phone,
-     * readable and filable under their name.
-     *
-     * `adoptLegacyDraft` runs first and once: a draft written before the keys
-     * were split is claimed only if `last_user_id` proves nobody has signed out
-     * since, and is deleted unread otherwise.
+     * Draft restore — new essays only; an amend loads from the server. Whose draft this is
+     * lives in memberDrafts.ts: `adoptLegacyDrafts` claims a draft that carries no member only
+     * if this member was the phone's last (`last_user_id`), and deletes it unread otherwise.
      */
     useEffect(() => {
         if (edit) return;
@@ -433,11 +329,8 @@ function ComposeDossierScreen() {
         const held = readDraft<DossierDraft>(user?.id, 'dossier');
         const d = held?.data;
         if (!d) {
-            // `readDraft` returns null for a draft it could not parse AND clears
-            // it. The room must not simply open blank in that case: somebody
-            // wrote something and it is gone, and saying nothing teaches them
-            // the room forgets. `wasUnreadable` is only true when there WAS a
-            // key — an ordinary empty room says nothing at all.
+            // readDraft clears a draft it cannot parse; the room says so, or it seems to forget.
+            // True only when there WAS one — an empty room says nothing.
             if (unreadableDraftFound(user?.id, 'dossier')) setRestored('unreadable');
             return;
         }
@@ -527,20 +420,9 @@ function ComposeDossierScreen() {
     }, [user?.id, edit]);
 
     /**
-     * ── AN AMEND IS KEPT TOO, AND SEPARATELY ─────────────────────────────────
-     * Every draft effect in this room began `if (edit) return`, so rewriting a
-     * filed essay had NO protection at all: a phone call took the rewrite, and
-     * a member who had spent an hour on it got the old version back with no
-     * word about what had happened.
-     *
-     * Scoped to the FILING, never to the room. Sharing one slot with the new
-     * essay would mean an amend quietly overwriting an unfinished dossier —
-     * which is what the existing test "never touches the NEW-dossier draft"
-     * exists to prevent, and it still holds.
-     *
-     * Several are kept, oldest evicted. One slot per member looks tidier and
-     * eats the rewrite of essay A the moment you open essay B, which is the
-     * fault all of this exists to close.
+     * An amend is kept too, in a slot per FILING: the new essay's slot would let an amend
+     * overwrite an unfinished one, and one slot per member would lose essay A's amend the
+     * moment essay B opened. Several are kept, oldest evicted.
      */
     useEffect(() => {
         if (!edit || !user?.id) return;
@@ -555,9 +437,7 @@ function ComposeDossierScreen() {
     useEffect(() => {
         if (!edit || !user?.id) return;
         const t = setTimeout(() => {
-            // An amend always has words — it opened with them — so there is no
-            // "empty means clear" branch here. It is cleared when the amend
-            // lands, and by START CLEAN.
+            // An amend opens with words: cleared on landing or by START CLEAN, never by emptiness.
             setSaveFailed(!writeDraft(user.id, 'edit', { title, content }, edit));
         }, 1000);
         return () => clearTimeout(t);
@@ -606,18 +486,8 @@ function ComposeDossierScreen() {
         return () => sub.remove();
     }, [edit, user?.id]);
 
-    /**
-     * ── COUNTED ONCE A SECOND, NOT ONCE A KEYSTROKE ──────────────────────────
-     * This split the WHOLE essay on whitespace inside a `useMemo` keyed on
-     * `content` — so every letter typed scanned up to 25,000 characters, between
-     * one keypress and the next, in the one room where typing has to feel like
-     * nothing at all.
-     *
-     * The count is a fact about a paragraph, not about a letter. It settles a
-     * beat after the typing stops, which is also when a member ever looks at it.
-     * `useDeferredValue` hands React the stale number while the input stays
-     * responsive; the debounce below is what stops the work happening at all.
-     */
+    // Counted 400ms after typing stops, not per keystroke: splitting 25,000 characters on
+    // every letter would lag the one room where typing must feel like nothing.
     const [counted, setCounted] = useState('');
     useEffect(() => {
         const t = setTimeout(() => setCounted(content), 400);
@@ -630,15 +500,9 @@ function ComposeDossierScreen() {
     }, [counted]);
 
     /**
-     * How close this essay is to the fence, and whether it may be filed.
-     *
-     * There was no signal at all. `sanitizeInput` cuts silently — the truncation
-     * has no presence in its return type — so an essay over the limit was
-     * shortened without a word, the publish reported success, and the draft was
-     * deleted on the strength of that success. The writer lost the ending.
-     *
-     * `isOverLimit` and `remainingChars` already existed in the sanitiser,
-     * tested, with ZERO callers. They are wired here.
+     * How close the essay is to the fence, and whether it may be filed. sanitizeInput cuts
+     * silently, so an essay over the limit would lose its ending while the filing reported
+     * success and the draft was deleted; it is refused here instead.
      */
     const limit = useMemo(() => {
         const trimmed = content.trim();
@@ -675,19 +539,7 @@ function ComposeDossierScreen() {
 
     const handlePublish = async () => {
         if (!canWrite) {
-            /**
-             * A DOOR, NOT A TOAST.
-             *
-             * This said `Auteur tier required` and stopped — four words of
-             * jargon at the end of writing an essay, naming a rank without
-             * saying what it is or how to hold it, on the one screen where a
-             * member has just spent an hour. The whole app's velvet rope
-             * existed and this was the single place that shouted instead.
-             *
-             * The draft is already kept by the room's own autosave, so a member
-             * who goes to read the ranks comes back to their words — which is
-             * the difference between a wall and a door.
-             */
+            // A door, not a toast: the ranks, explained, and autosave keeps the words meanwhile.
             essay.open();
             return;
         }
@@ -698,15 +550,8 @@ function ComposeDossierScreen() {
         // mode moves from "your essay was silently shortened and your draft is
         // gone" to "this cannot be filed yet, and every word is still here".
         if (limit.over) {
-            // "essay", not "dossier". `dossier` is the wire word — the kind
-            // value in the database, the table names, the mutation types — and
-            // it stays there. The word printed at a member is ESSAY, and this
-            // toast was missed when the rest of the desk was renamed because it
-            // is a sentence rather than a label.
-            //
-            // Written plainly rather than through `nameOf()`: that table yields
-            // the label form (ESSAY, in capitals) for headers and card kinds,
-            // which is not what belongs mid-sentence.
+            // "essay", the word a member reads (dossier is the database's), written plainly:
+            // nameOf() gives the label form, in capitals.
             reelToast.error(
                 `This essay is ${groupDigits(Math.abs(limit.remaining))} characters over the limit. Trim it and file again — nothing has been lost.`
             );
@@ -717,10 +562,7 @@ function ComposeDossierScreen() {
         setIsPublishing(true);
 
         try {
-            // The card's opening, as prose. `excerptFor` unwraps markdown rather
-            // than deleting its characters wherever they appear: the old line
-            // turned `a well-made film (see below)` into `a wellmade film see
-            // below`, and turned a link into its own URL.
+            // The card's opening as prose: excerptFor unwraps markdown, not deleting characters.
             const excerpt = excerptFor(content);
 
             if (edit) {
@@ -729,7 +571,7 @@ function ComposeDossierScreen() {
                     body: excerpt,
                     fullContent: content.trim(),
                 });
-                // The rewrite is the house's now, so the copy on the phone goes.
+                // The amended words are the house's now, so the phone's copy goes.
                 clearDraft(user?.id, 'edit', edit);
                 // And the backup, which exists only until the house has the words.
                 void dropDraft(user?.id, 'edit', edit);
@@ -751,29 +593,15 @@ function ComposeDossierScreen() {
                     seriesTitle: series?.title ?? null,
                     partNumber: series?.part ?? null,
                 });
-                // The draft is deleted only after the write is accepted. It used
-                // to be deleted on the strength of a success that a silent
-                // truncation had already spoiled; now nothing is thrown away
-                // until there is a row to throw it away for.
+                // Deleted only once the write is accepted: nothing goes before there is a row.
                 if (filed) { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
                 reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Essay filed');
             }
             router.replace('/(tabs)/dispatch');
 
         } catch (err) {
-            /**
-             * ── AND IT SAYS THE WORDS ARE SAFE, BECAUSE THEY ARE ─────────────
-             * The draft is deliberately kept when a filing is refused — there
-             * is a test for it — and the member was told only "Transmission
-             * failed". The one moment they most need to know their evening
-             * survived was the one moment nothing said so.
-             *
-             * `saveFailed` is the exception and it is not a detail: if the
-             * phone also refused the draft, promising the words are kept would
-             * be a lie told at the worst possible moment.
-             */
-            // Out of space outranks everything: it is the one case where the
-            // words are NOT safe, and the member must not close this.
+            // A refused filing keeps the draft and SAYS so — unless the phone also refused the
+            // draft (saveFailed): then the words are not safe, and that outranks the door.
             if (!saveFailed && showTierDoor(err, {
                 returnTo: '/dispatch/compose?kind=dossier',
                 also: 'Your words are kept.',
@@ -793,18 +621,7 @@ function ComposeDossierScreen() {
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <PressableScale onPress={() => {
                     if (title.trim() || content.trim()) {
-                        /**
-                         * ── THE ONE PLACE A FAILED SAVE IS WORTH SAYING ──────
-                         * There is no save indicator in this room and there is
-                         * not going to be one: a mark that only ever confirms is
-                         * decoration, and no app worth copying has one.
-                         *
-                         * But if the phone genuinely refused the write, silence
-                         * here is how somebody walks away from four thousand
-                         * words believing they are safe. So the warning lives at
-                         * the exit — the only moment the loss becomes real — and
-                         * nowhere else.
-                         */
+                        // No save mark anywhere; a refused save is said here, at the exit.
                         const lost = saveFailed && !edit;
                         Alert.alert(
                             lost ? 'This is not being kept' : 'Discard this essay?',
@@ -814,11 +631,8 @@ function ComposeDossierScreen() {
                             [
                                 { text: lost ? 'Go back' : 'Keep writing', style: 'cancel' },
                                 { text: 'Discard', style: 'destructive', onPress: () => {
-                                    // Whichever one this room is holding. Discarding
-                                    // an amend must not touch an unfinished new
-                                    // essay sitting in the other slot.
-                                    // The backup goes with it: a discarded
-                                    // essay must not reappear on the next phone.
+                                    // This room's copy only, and its backup too,
+                                    // or it reappears on the next phone.
                                     if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
                                     else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
                                     router.back();
@@ -831,9 +645,7 @@ function ComposeDossierScreen() {
                 }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic
                     accessibilityRole="button"
                     accessibilityLabel="Cancel, and leave the writing room">
-                    {/* The header is three across and cannot reflow, so its
-                        labels take the deck cap: one line, and shrink-to-fit
-                        rather than push a neighbour off the row. */}
+                    {/* Three across, no reflow: the deck cap, one line, shrink to fit. */}
                     <Text style={styles.cancelBtn} {...deckLabelProps}>CANCEL</Text>
                 </PressableScale>
                 <Text style={styles.headerTitle} {...deckLabelProps}>THE WRITING ROOM</Text>
@@ -843,9 +655,7 @@ function ComposeDossierScreen() {
                     }}
                     haptic="medium"
                     accessibilityRole="button"
-                    // The label says what the press DOES, and the state says
-                    // where you are. A control announced only as "Preview" gives
-                    // a reader no way to know it is already showing one.
+                    // The label says what a press does; the state says where you are.
                     accessibilityState={{ selected: isPreview }}
                     accessibilityLabel={isPreview ? 'Back to editing' : 'Preview the essay'}
                 >
@@ -855,47 +665,8 @@ function ComposeDossierScreen() {
 
             {isPreview ? (
                 <CinematicScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false} bottomInset={insets.bottom}>
-                    {/* ── THIS IS THE READER, NOT A PICTURE OF IT ──────────────
-                        The preview used to set an essay in Courier 15/24 in
-                        `bone`, with its own heading sizes, while the page it
-                        would appear on sets it in Spectral 16.5/28 in
-                        `parchment`, opens it with a raised initial, and prints
-                        a section break as an ornament. Two different documents.
-                        A member could not learn anything here about how their
-                        writing would actually read.
-
-                        `EssayBody` is the component the Dispatch itself mounts,
-                        so the answer can no longer drift: there is one essay
-                        typography and this is it.
-
-                        ── AND IT IS CAPPED NOW, WHICH THE OLD NOTE REFUSED ────
-                        That note said capping the preview would be "the app
-                        fighting its user". It was written about truncation, but
-                        the cap is not a style rule — it is the guard against two
-                        markdown rules that are QUADRATIC, and the preview runs
-                        the same renderer the reader does. Uncapped, a very long
-                        draft could stall the composer exactly as it would stall
-                        the page.
-
-                        Nothing publishable is affected: `filingEssay` and
-                        `dossierContent` are both 25,000, and sanitizeInput says
-                        that is "not by accident". A draft ALREADY over the limit
-                        now shows an ellipsis at the point the composer already
-                        refuses to file past — which tells a member where the
-                        limit bites rather than hiding it. */}
                     <Text style={styles.previewEyebrow} {...scaledTextProps}>AS THE HOUSE WILL SET IT</Text>
-                    {/* ── AND THE HEAD IS THE READER'S TOO ────────────────────
-                        The note above is about the BODY, and the body was the
-                        half that got fixed. The head stayed a hand-rolled
-                        eyebrow and a `previewTitle` — so a preview promising
-                        "as the house will set it" set the title in a style the
-                        house does not use, printed no DOSSIER label, no byline,
-                        no read time, no series line, and no COVER.
-
-                        The cover is the one that decides it. A member picks a
-                        film, the essay gets a 176pt band of its backdrop at the
-                        top of the page, and until now there was nowhere to see
-                        that before filing. Now the preview IS the head. */}
+                    {/* The reader's own head, cover and all, so the preview is the page. */}
                     {title || film ? (
                         <EssayHead
                             title={title}
@@ -903,9 +674,7 @@ function ComposeDossierScreen() {
                             author={{
                                 name: user?.username ?? '',
                                 memberNo: user?.member_no ?? 0,
-                                // Their real rank, so an Auteur previewing their
-                                // own essay sees their own mark — the same
-                                // resolution the byline uses everywhere else.
+                                // Their real rank, resolved as every byline does.
                                 tier: paperTierOf(user),
                                 avatar: user?.avatar_url ?? null,
                             }}
@@ -917,20 +686,16 @@ function ComposeDossierScreen() {
                                 posterPath: film.image,
                                 backdropPath: film.backdrop,
                             } : null}
-                            // No handlers: there is nothing to open from a
-                            // preview, and a control that leads nowhere is worse
-                            // than none.
+                            // No handlers: nothing opens from a preview.
                         />
                     ) : null}
+                    {/* The reader's own renderer and cap (the cap guards two quadratic markdown
+                        rules): a draft over the limit shows where the limit bites. */}
                     {content ? (
                         <EssayBody text={content} />
                     ) : (
                         <View style={styles.emptyPreview}>
-                            {/* The form's name, and none of the flourish. The
-                                room already says THE WRITING ROOM above and
-                                DOSSIER on the button below; "your cinematic
-                                essay" is a third word for the same thing, in a
-                                register nothing else here uses. */}
+                            {/* The form's own name, not a third word for it. */}
                             <Text style={styles.emptyPreviewText} {...scaledTextProps}>Your essay will appear here, as the house will set it.</Text>
                         </View>
                     )}
@@ -938,22 +703,7 @@ function ComposeDossierScreen() {
             ) : (
                 <Animated.View style={[styles.kavFlex, animatedContainerStyle]}>
                     <CinematicScrollView style={styles.workspace} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bottomInset={insets.bottom}>
-                        {/* ── WORDS THAT APPEARED WITHOUT YOU TYPING THEM ─────
-                            This is not the room narrating its own plumbing —
-                            there is no "saved" mark anywhere and there will not
-                            be one. It explains writing that is on screen and was
-                            not typed just now, which is the one thing a member
-                            cannot work out for themselves.
-
-                            It goes on the first keystroke, because typing IS
-                            accepting it, and `START CLEAN` is here because
-                            otherwise a member who wants a fresh essay has to
-                            hand-delete four thousand characters. */}
-                        {/* ── A NEWER ONE WAS WRITTEN SOMEWHERE ELSE ─────────
-                            It asks; it never merges. And the question names
-                            BOTH sides with a time and a length, because "a
-                            newer version exists, replace?" is not a question
-                            anybody can answer about their own writing. */}
+                        {/* It asks, never merges: both sides with a time and a length. */}
                         {elsewhere ? (
                             <View style={styles.elsewhereBox}>
                                 <Text style={styles.elsewhereHead} {...scaledTextProps}>
@@ -989,6 +739,8 @@ function ComposeDossierScreen() {
                                 </View>
                             </View>
                         ) : null}
+                        {/* Explains words on screen that were not typed just now (there is no save
+                            mark); typing accepts them, START CLEAN clears them. */}
                         {restored ? (
                             <View
                                 style={styles.restoredRow}
@@ -1032,24 +784,10 @@ function ComposeDossierScreen() {
                             placeholderTextColor={colors.fog}
                             value={title}
                             onChangeText={(t) => { setTitle(t); setRestored(null); }}
-                            // ── ONE NUMBER, NOT THREE ──────────────────────
-                            // This was a literal 100 while `filingTitle` is 200
-                            // and the column's `title_ceiling` is 200 too. So
-                            // the box refused the second half of a headline the
-                            // sanitiser and the database would both have taken —
-                            // and `maxLength` simply stops accepting keystrokes,
-                            // so the member got no message either. They would
-                            // just find the title would not go any further.
-                            //
-                            // `MAX_LENGTHS` is where that number is decided, and
-                            // it already agrees with the ceiling checked live.
+                            // The sanitiser's number, which the column's title_ceiling also holds.
                             maxLength={MAX_LENGTHS.filingTitle}
-                            // ── A HEADLINE YOU CAN SEE WHILE YOU WRITE IT ──────
-                            // One line at 30pt holds about twenty characters,
-                            // and a title may run to two hundred: past the first
-                            // few words the start scrolled away, so a member wrote
-                            // their headline blind. It wraps and grows now. Return
-                            // still ends the title — a headline has no line breaks.
+                            // Wraps and grows (one 30pt line holds ~20 of 200 characters), so a
+                            // headline is never written blind. Return still ends it.
                             multiline
                             scrollEnabled={false}
                             submitBehavior="blurAndSubmit"
@@ -1060,12 +798,7 @@ function ComposeDossierScreen() {
                             keyboardAppearance="dark"
                             accessibilityLabel="Essay headline"
                         />
-                        {/* ── WHAT THE PIECE IS ────────────────────────────────
-                            Above the writing, and separate from it. The rail at
-                            the foot sets HOW the words read; these two say what
-                            the dossier is about, which is a different question
-                            and belongs with the title rather than with bold and
-                            italic. */}
+                        {/* What it is about, by the title; the rail below sets how it reads. */}
                         <View style={styles.slots}>
                             <PressableScale
                                 style={styles.slot} onPress={() => setFilmOpen(true)} haptic="selection"
@@ -1141,9 +874,7 @@ function ComposeDossierScreen() {
 
                     <BlurView intensity={90} tint="dark" style={styles.footer}>
                         <View style={styles.stats}>
-                            {/* The counter row is the other one that cannot
-                                reflow: three items sharing a fixed strip. The
-                                values nested inside inherit the cap. */}
+                            {/* A fixed strip of three: the deck cap, inherited by the values. */}
                             <Text style={styles.statText} {...deckLabelProps}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
                             <Text style={styles.statText} {...deckLabelProps}>READ TIME <Text style={styles.statVal}>~{stats.readMin}m</Text></Text>
                             {limit.show ? (
@@ -1161,10 +892,7 @@ function ComposeDossierScreen() {
                             onPress={handlePublish}
                             haptic="medium"
                             accessibilityRole="button"
-                            // Disabled is ANNOUNCED, not merely applied. Without
-                            // it the control reads as available and answers a
-                            // press with nothing, which is the exact experience
-                            // this whole audit exists to prevent.
+                            // Disabled is announced, or a press answers with nothing.
                             accessibilityState={{ disabled: !title || !content || isPublishing, busy: isPublishing }}
                             accessibilityLabel={
                                 isPublishing ? 'Filing the essay'
@@ -1172,9 +900,7 @@ function ComposeDossierScreen() {
                                         : edit ? 'Re-file the essay' : 'File the essay'
                             }
                         >
-                            {/* Keeps its own shrink-to-fit — 'FILE THE ESSAY'
-                                is the longest label on the screen — and gains
-                                the ceiling it never had. */}
+                            {/* The screen's longest label: shrink-to-fit, under the ceiling. */}
                             <Text style={styles.publishBtnText} {...scaledTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE ESSAY' : 'FILE THE ESSAY')}</Text>
                         </PressableScale>
                     </BlurView>
@@ -1196,8 +922,7 @@ function ComposeDossierScreen() {
                         title: f.title,
                         sub: [f.year, f.director].filter(Boolean).join(' · ') || null,
                         image: f.posterPath ?? null,
-                        // The essay's cover, which the head has been drawing
-                        // from nothing since it was written.
+                        // The essay's cover (subject_backdrop).
                         backdrop: f.backdropPath ?? null,
                     });
                     setFilmOpen(false);
@@ -1215,11 +940,8 @@ function ComposeDossierScreen() {
     );
 }
 
-/**
- * The writing tools sit TOOL_GAP apart, and each reaches half of it toward its
- * neighbour — no more, or the later tool takes the earlier one's taps. (The
- * slop was 4 against a gap of 6; the layout audit measured the overlap.)
- */
+// Each tool reaches half the gap toward its neighbour, never more, or the later one
+// takes the earlier one's taps.
 const TOOL_GAP = 6;
 const TOOL_SLOP = { top: 15, bottom: 15, left: TOOL_GAP / 2, right: TOOL_GAP / 2 };
 
@@ -1291,25 +1013,12 @@ const styles = StyleSheet.create({
         gap: TOOL_GAP,
     },
     toolBtn: {
-        // A column now — the mark, and its NAME under it. Six unlabelled icons
-        // meant a member had to already know what markdown was to use a rail
-        // that exists so they would not have to.
+        // A column: the mark and its name, so no one needs to know markdown.
         alignItems: 'center',
         gap: 3,
         paddingVertical: 6,
-        // ── THE CHROME PAID FOR THE TYPE ──────────────────────────────────────
-        // The names used to be 6.5pt, and the reason was arithmetic rather than
-        // taste: six buttons at 10pt padding, 52pt minimum and 8pt gaps cost
-        // 388pt of a 390pt phone, so 6.5 was the largest size at which all six
-        // tools still fit one screen. It bought that at the price of a label a
-        // member with ordinary eyesight cannot read, and one they could not
-        // enlarge — see `toolWord`.
-        //
-        // Measured against the real rail: padding 8, minimum 48 and 6pt gaps
-        // cost 379pt at 10pt names (the house's type floor). All six still fit
-        // a 390pt phone, with 11pt to spare instead of 2, and the names are half
-        // as large again as they were. At a larger text setting the rail scrolls,
-        // which is why it is a scroller.
+        // Padding 8, minimum 48, 6pt gaps: all six fit a 390pt phone (379pt) with names at the
+        // 10pt floor. At larger text the rail scrolls, which is why it is a scroller.
         paddingHorizontal: 8,
         backgroundColor: 'rgba(184,137,26,0.1)',
         borderRadius: 4,
@@ -1317,9 +1026,7 @@ const styles = StyleSheet.create({
     },
     toolWord: {
         fontFamily: fonts.sub,
-        // 10pt is the house's type floor — no word a member reads is set
-        // smaller (theTypeFloor.test.ts). The rail was once the one place that
-        // went below the label size; it now sits on the floor with the rest.
+        // The house's type floor (theTypeFloor.test.ts).
         fontSize: 10,
         letterSpacing: 0.9,
         color: colors.bone,
@@ -1381,15 +1088,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         includeFontPadding: false,
     },
-    previewTitle: {
-        // The reader's own head — `PaperEssay.title`, 26/34 in parchment. It was
-        // 30pt here, which is a fourth size for one thing on one screen.
-        fontFamily: fonts.display,
-        fontSize: 26,
-        lineHeight: 34,
-        color: colors.parchment,
-        marginBottom: 20,
-    },
     emptyPreview: {
         paddingVertical: 100,
         alignItems: 'center',
@@ -1400,21 +1098,6 @@ const styles = StyleSheet.create({
         color: colors.fog,
     },
     kavFlex: { flex: 1 },
-    /**
-     * ── THE PREVIEW'S MEASURE IS THE PAGE'S MEASURE ──────────────────────────
-     * This was `padding: 20`, and two things followed from the four points.
-     *
-     * The essay set to a 350pt column here and a 315pt column on the page, so
-     * every line broke somewhere else — on the one screen whose entire promise
-     * is "as the house will set it".
-     *
-     * And the COVER bled wrong. `EssayHead` draws it with `marginHorizontal:
-     * -24`, which reaches exactly the edge of the sheet's own 24pt gutter; in a
-     * 20pt one it reached four points PAST the container on each side.
-     *
-     * Derived, not typed: the sheet's own margin, rail and padding, so the
-     * preview follows the page if any of the three is ever re-cut.
-     */
     /**
      * The line that explains words you did not just type. Quiet — it is not an
      * alert and it is not chrome the room keeps; it leaves on the first
@@ -1437,14 +1120,8 @@ const styles = StyleSheet.create({
         color: colors.parchment, includeFontPadding: false,
     },
     /**
-     * The two-sided question. A BOX rather than a line, because unlike the
-     * restore notice this one is a decision and must not be mistaken for
-     * something that will go away by itself.
-     *
-     * Column, not a row: two labelled facts and two acts cannot share a line at
-     * the accessibility size without one of them being crushed, and this is the
-     * one place in the room where a member is choosing between two versions of
-     * their own work.
+     * A box, not a line: a decision, not a notice that goes by itself. A column, so two
+     * facts and two acts are not crushed at the largest text.
      */
     elsewhereBox: {
         borderWidth: 1, borderColor: 'rgba(184,137,26,0.30)', borderRadius: 2,
@@ -1468,6 +1145,8 @@ const styles = StyleSheet.create({
         fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
         color: colors.parchment, includeFontPadding: false,
     },
+    /** The page's own measure, so lines break as they will there and the cover's -24 bleed
+     *  meets the sheet's edge exactly. */
     previewContent: {
         paddingHorizontal: DOC_MARGIN + DOC_RAIL + DOC_PAD,
         paddingVertical: 20,
@@ -1480,14 +1159,7 @@ const styles = StyleSheet.create({
         paddingVertical: 4, marginBottom: 14,
     },
     slot: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
-    /**
-     * FILM and SERIES name the two things a member sets before writing, and they
-     * were 7pt and frozen. The column they sit in is a fixed width, so the size
-     * and the width move together: SERIES wants 41pt at 8.5 and 47pt at the 1.2
-     * ceiling `actionLabelProps` puts on it, both inside 54. `adjustsFontSizeToFit`
-     * in that same prop is the floor under the arithmetic — a longer word in a
-     * future language shrinks rather than spilling into the value beside it.
-     */
+    /** A fixed 54pt column: actionLabelProps' shrink-to-fit keeps a longer word inside it. */
     slotLabel: {
         fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia,
         width: 54, includeFontPadding: false,

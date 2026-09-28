@@ -5,9 +5,9 @@
  *   • CSV archives (diary, reviews, watchlist, list CSVs inside a ZIP)
  *   • ReelHouse JSON exports (ZIP or raw .json)
  *
- * Zero competitor names. Format-agnostic header detection.
- * TMDB resolution for CSV imports (title+year → id+poster).
- * Batch upsert with ignoreDuplicates for idempotent imports.
+ * The member is never shown another service's name. Headers are recognised by
+ * meaning, CSV films are resolved through TMDB (title + year → id + poster), and
+ * rows are upserted with ignoreDuplicates, so an import can run twice.
  */
 import JSZip from 'jszip';
 import { localCalendarDate, calendarDateString } from '@/src/utils/timeAgo';
@@ -17,8 +17,7 @@ import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
-// FEAT-1: imported review/notes text is untrusted (from arbitrary third-party
-// exports) — run it through the same sanitizer as in-app writes.
+// Imported text comes from any exporter, so it passes the same sanitiser as in-app writes.
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
 import { ImportReceipt, emptyReceipt } from './importReceipt';
 import { saveReceipt } from './undoImport';
@@ -62,9 +61,7 @@ interface ParsedDiaryEntry {
   isRewatch: boolean;
   uri: string;
   tags: string;
-  /** Which service this row came from — fixes the rating scale exactly.
-   *  Identical for every row of a file; carried per-entry so the import
-   *  stage can read it without re-threading the parse result. */
+  /** The service the file came from (one per file), which fixes the rating scale. */
   source?: ImportSource;
 }
 
@@ -124,15 +121,8 @@ const HEADER_MAP: Record<string, string[]> = {
  */
 export function parseCSVRows(text: string): string[][] {
   const rows = tokenize(text, true);
-  // If the file ended INSIDE a quoted field, the quoting is malformed — an
-  // exporter that failed to double a quote, or a hand-edited file. Quote-aware
-  // tokenizing then swallows every remaining line into one field, so a stray
-  // quote on row 3 of a 3,000-film history silently discards the other 2,997
-  // and the import reports success.
-  //
-  // Re-read it treating quotes as ordinary characters. That costs a few visible
-  // stray quote marks inside titles or reviews — obvious, and fixable by the
-  // member — instead of losing almost everything with nothing to show for it.
+  // Ending inside a quote means broken quoting, which would swallow every later row into one
+  // field. Re-read with quotes as plain text: a few stray marks, not a lost history.
   if (rows.unterminated) return tokenize(text, false).cells;
   return rows.cells;
 }
@@ -220,11 +210,7 @@ export function parseCSV(text: string): Record<string, string>[] {
     .map(row => {
       const obj: Record<string, string> = {};
       headers.forEach((h, idx) => {
-        // FIRST occurrence wins. Assigning unconditionally meant a file with a
-        // repeated column name silently lost the earlier one — and since the
-        // title column is the one everything keys on, a second "Name" column
-        // (a director, a note) replaced the film title and every lookup after
-        // it resolved the wrong film.
+        // First occurrence wins: a second "Name" column must not replace the title.
         if (!(h in obj)) obj[h] = row[idx] ?? '';
       });
       return obj;
@@ -235,12 +221,10 @@ export function parseCSV(text: string): Record<string, string>[] {
 //  HEADER RESOLVER — Format-agnostic column detection
 // ═══════════════════════════════════════════════════════════════
 
-type HeaderMapping = Record<string, string>; // ourField → csvHeader
+type HeaderMapping = Record<string, string>; // our field → the file's header, e.g. title → 'Name'
 
 /**
- * Maps detected CSV headers to our internal field names.
- * Returns a mapping of { ourFieldName: actualCSVHeader } or null if
- * no recognizable title column is found.
+ * Maps the file's headers to our field names, or null when there is no title column.
  */
 function resolveHeaders(csvHeaders: string[]): HeaderMapping | null {
   const mapping: HeaderMapping = {};
@@ -275,21 +259,16 @@ function getField(row: Record<string, string>, mapping: HeaderMapping, field: st
 // ═══════════════════════════════════════════════════════════════
 
 
-/**
- * Detects if a set of ratings is on a 1–10 scale by checking the max value.
- * If detected, forces the 1–10 conversion path.
- */
+/** The exporting service, as far as its header row proves it. */
 export type ImportSource = 'uri_diary' | 'const_titles' | 'snake_timestamps' | 'unknown';
 
 /**
  * Identifies the exporting service from the header row. Every service uses a
  * FIXED rating scale, so knowing the source removes the guess entirely.
  *
- * This is the fix for the worst silent corruption in import: an IMDb export
- * from someone whose highest score was a 5 looks identical, by max value, to a
- * 5-star export. Read by max alone it is misread as half-five and EVERY rating
- * is doubled — permanently, because logs upserts with ignoreDuplicates.
- * Exported for tests.
+ * Without it, an out-of-10 export whose highest score is a 5 looks, by max
+ * value, exactly like a 5-star one: read as half-five, EVERY rating doubles —
+ * permanently, because logs upserts with ignoreDuplicates. Exported for tests.
  */
 export function detectSource(headers: string[]): ImportSource {
   const h = headers.map(x => x.trim().toLowerCase());
@@ -297,20 +276,14 @@ export function detectSource(headers: string[]): ImportSource {
 
   const matches: Exclude<ImportSource, 'unknown'>[] = [];
 
-  // The exporting service stamps this exact column into every export it makes.
-  // Matched as a WHOLE header, never a substring: a hand-made sheet with a note
-  // column that merely mentions the service is not an export from it, and
-  // treating it as one would force the wrong rating scale.
+  // A whole header, never a substring: a note that merely names the service is not its export.
   if (has('letterboxd uri') || has('letterboxd url')) matches.push('uri_diary');
   // A title-id column that never ships alone.
   if (has('const') && (has('title type') || has('your rating') || has('imdb rating'))) matches.push('const_titles');
   // snake_case timestamps no other exporter emits.
   if (has('rated_at') || has('watched_at') || has('trakt_rating')) matches.push('snake_timestamps');
 
-  // Exactly one fingerprint is evidence. Two different ones is a merged or
-  // hand-assembled file, where taking the first match would be picking a
-  // rating scale by declaration order. Contradictory evidence means we do not
-  // know, and the numeric ladder decides instead.
+  // One fingerprint is evidence; two (a merged file) contradict, and the numeric ladder decides.
   return matches.length === 1 ? matches[0] : 'unknown';
 }
 
@@ -328,34 +301,19 @@ const SOURCE_SCALE: Record<Exclude<ImportSource, 'unknown'>, { scale: 'half-five
 };
 
 /**
- * Decides the rating scale of an export. A decision ladder, strongest evidence
- * first — every rung is a fact, not a heuristic:
+ * Decides an export's rating scale, strongest evidence first:
+ *   1. a recognised source whose data fits its ceiling  -> that service's scale
+ *   2. max > 10 -> hundred     3. max > 5 -> ten     4. otherwise -> half-five
  *
- *   1. a recognised source, and the data fits what that service can emit
- *                           -> that service's published scale
- *   2. max > 10             -> hundred
- *   3. max > 5              -> ten
- *   4. otherwise            -> half-five
+ * The ceiling keeps a fingerprint honest: a "five-star" file holding a 9 is not
+ * that service's data, and forcing half-five would clamp 7, 9 and 10 to 5 reels.
  *
- * Rung 1 is checked against the source's CEILING rather than trusted blindly.
- * A file fingerprinted as a five-star export but carrying a 9 cannot really be
- * data, and forcing half-five onto it would clamp 7, 9 and 10 all to 5 reels.
- * When the data contradicts the fingerprint, the data wins and we fall to the
- * numeric ladder.
+ * There is no "a fraction proves five stars" rung. Where max <= 5 the answer is
+ * half-five anyway; above it, a 0.5–10 tracker emits both fractions and a max
+ * over 5, and the rung would clamp its 7.5 and 9 to 5.
  *
- * WHY THERE IS NO "a fractional value proves a 5-star scale" RUNG:
- * it reads as compelling — an integer 1–10 scale cannot emit 3.5 — but it is
- * only sound when the maximum is already at or below 5, where the answer is
- * half-five regardless. Above that it is actively wrong: a tracker using
- * 0.5–10 in half steps emits BOTH fractional values and a max above 5, and
- * treating it as half-five clamps 7, 7.5 and 9 all to a flat 5 reels. So the
- * check would be redundant where it is right and destructive where it is not.
- * Max alone is the honest signal once the source is unknown.
- *
- * Rung 4 is the only genuinely undecidable case (a hand-made file, no
- * recognisable source, nothing above 5) — out-of-5 and out-of-10 produce
- * byte-identical data there, so no algorithm can separate them. That case is
- * covered by making the import reversible, not by guessing harder.
+ * Rung 4 is undecidable — out-of-5 and out-of-10 data are identical there — so
+ * it is covered by making the import reversible (importReceipt), not by guessing.
  */
 export function detectRatingScale(
   ratings: number[],
@@ -382,9 +340,9 @@ export function detectRatingScale(
 /**
  * Decides DD/MM vs MM/DD for an ENTIRE file, in one pass.
  *
- * Deciding this per row is why a European export half-imports today:
- * 25/03/2024 parses correctly (25 cannot be a month) while 05/03/2024 silently
- * becomes 3 May. Half the dates are wrong and nothing looks broken.
+ * Decided per row, a European export half-imports: 25/03/2024 parses
+ * correctly (25 cannot be a month) while 05/03/2024 silently becomes 3 May.
+ * Half the dates are wrong and nothing looks broken.
  *
  * BOTH formats leave proof, and both sides must be counted:
  *   first  number > 12  ->  day-first  (25/03 — no month exceeds 12)
@@ -393,7 +351,7 @@ export function detectRatingScale(
  * Taking the first day-first row as decisive would let ONE malformed or
  * hand-typed row flip an entire month-first file, transposing every ambiguous
  * date in it. So the side with more evidence wins, and a file with no proof
- * either way keeps today's MM/DD default (the common export format).
+ * either way reads MM/DD, the common export format.
  */
 export function detectDateFormat(dates: string[]): 'MDY' | 'DMY' {
   let dayFirst = 0;
@@ -437,12 +395,6 @@ export function normalizeRatingWithScale(raw: number, scale: 'half-five' | 'ten'
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Normalizes date strings to YYYY-MM-DD (the logs.watched_date column is DATE).
- * Handles: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, ISO timestamps.
- * Future dates are clamped to today — a native log can't be created in the
- * future, so imports must not be either. Exported for tests.
- */
-/**
  * True only for a calendar date that actually exists. `2024-02-31` and
  * `2024-13-01` are well-formed strings and pass a naive comparison, but both
  * fail an INSERT against a DATE column — taking their whole batch with them
@@ -454,16 +406,19 @@ function isRealDate(iso: string): boolean {
   const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
   if (mo < 1 || mo > 12 || d < 1) return false;
   const probe = new Date(Date.UTC(y, mo - 1, d));
-  // Date rolls overflow forward (Feb 31 -> Mar 2), so a real date is one that
-  // survives the round trip unchanged.
+  // Date rolls Feb 31 on to Mar 2: a real date survives the round trip unchanged.
   return probe.getUTCFullYear() === y && probe.getUTCMonth() === mo - 1 && probe.getUTCDate() === d;
 }
 
+/**
+ * Normalizes date strings to YYYY-MM-DD (the logs.watched_date column is DATE).
+ * Handles: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, ISO timestamps.
+ * Future dates are clamped to today — a native log can't be created in the
+ * future, so imports must not be either. Exported for tests.
+ */
 export function normalizeDate(raw: string, format: 'MDY' | 'DMY' = 'MDY'): string {
-  // localCalendarDate, not the UTC date. This value is BOTH the fallback for an
-  // unparseable row AND the ceiling that rejects future dates. With the UTC day, a
-  // member east of UTC importing in the morning had every entry watched TODAY silently
-  // clamped back to yesterday — data loss on the one path that brings in years at once.
+  // The member's day, not UTC's: it is the fallback AND the future ceiling, and a UTC
+  // "today" would clamp a morning's watches east of UTC back to yesterday.
   const today = localCalendarDate();
   if (!raw) return today;
 
@@ -485,32 +440,24 @@ export function normalizeDate(raw: string, format: 'MDY' | 'DMY' = 'MDY'): strin
     const pad = (n: number) => String(n).padStart(2, '0');
     const build = (mo: number, dy: number) => `${yr}-${pad(mo)}-${pad(dy)}`;
 
-    // A first number above 12 is proof on its own — no month exceeds 12.
-    // Otherwise defer to the FILE-level verdict from detectDateFormat, which
-    // saw every row. Deciding per row is what makes a European export
-    // half-correct: 25/03 survives, 05/03 silently becomes 3 May.
+    // A first number above 12 is proof on its own (no month exceeds 12); otherwise
+    // the FILE's verdict (detectDateFormat), which saw every row, decides.
     const dayFirst = numA > 12 || format === 'DMY';
     const preferred = dayFirst ? build(numB, numA) : build(numA, numB);
     if (isRealDate(preferred)) return clamp(preferred);
 
-    // The preferred reading is not a real date (month 13, 31 April, 29 Feb in a
-    // common year). Try the other reading before giving up: in a day-first file
-    // a stray 05/13 is meaningless as day 5 of month 13, but is a perfectly good
-    // 13 May read the other way. Rescuing it keeps a film the member would
-    // otherwise lose — an impossible date fails its INSERT against a DATE column.
+    // Not a real date (05/13 in a day-first file)? The other reading may be (13 May):
+    // an impossible date fails its INSERT and would cost the member that film.
     const alternate = dayFirst ? build(numA, numB) : build(numB, numA);
     if (isRealDate(alternate)) return clamp(alternate);
 
-    // Neither reading is a real date, so the row is simply corrupt. Fall through
-    // to the same today-fallback the parser already uses for unparseable input,
-    // rather than emitting something that cannot be stored.
+    // Neither reading exists: a corrupt row gets the unparseable-input fallback.
     return today;
   }
 
   // Fallback — try native Date parsing
   const parsed = new Date(trimmed);
-  // The LOCAL day of that instant. toISOString() takes the UTC day, so "Jul 25, 2026"
-  // imported from Tokyo was stored as 2026-07-24.
+  // The instant's LOCAL day: toISOString's UTC day would file Tokyo's Jul 25 as Jul 24.
   const asCalendar = isNaN(parsed.getTime()) ? null : calendarDateString(parsed);
   if (asCalendar) return clamp(asCalendar);
 
@@ -589,13 +536,10 @@ async function resolveFilm(title: string, year: string): Promise<TMDBMatch | nul
       return null;
     }
 
-    // CONFIDENCE GATE. tmdb.search already reports HOW it found a result, and
-    // this resolver used to ignore it and take movies[0] regardless. 'semantic'
-    // is keyword discovery — it will happily return *a* film for a title that
-    // has no genuine match, and the member's review is then filed against a
-    // film they have never seen. 'person' matched an actor or director, not a
-    // title. Neither is evidence of the right film, so neither is accepted.
-    // A rejected row is reported as unmatched; a wrong match is invisible forever.
+    // Confidence gate. 'semantic' (keyword discovery) returns *a* film for any title,
+    // and 'person' matched a name, not a title: neither proves the film. A rejected row
+    // is reported as unmatched; a wrong match would file a review against an unseen film,
+    // invisibly and for ever.
     const st = searchResult.searchType;
     if (st === 'semantic' || st === 'person' || st === 'failed') {
       resolutionCache.set(key, null);
@@ -613,9 +557,7 @@ async function resolveFilm(title: string, year: string): Promise<TMDBMatch | nul
       ? movies.find(m => m.release_date?.startsWith(String(yearNum)))
       : null;
 
-    // No year agreement. The title alone has to carry it, so accept the top
-    // result only for an exact title match — a typo correction with a year that
-    // also disagrees has nothing corroborating it and is declined.
+    // No year agrees: only an exact title match may carry it (a typo fix has no corroboration).
     if (!best && (!yearNum || st === 'exact' || st === undefined)) best = movies[0] ?? null;
 
     if (!best) {
@@ -633,16 +575,7 @@ async function resolveFilm(title: string, year: string): Promise<TMDBMatch | nul
     return match;
   } catch (err: unknown) {
     logger.warn('[archiveImport] TMDB resolve failed for', title, err);
-    // Deliberately NOT cached. The nulls above are answers — TMDB was asked and
-    // had no confident match. This one is a FAILURE to ask: a dropped
-    // connection, a rate limit, a timeout, which is not an answer about the film.
-    //
-    // Today this is belt-and-braces rather than a live bug: the cache is cleared
-    // per import (importArchiveZip) and callers dedupe by cacheKey before
-    // resolving, so no key is looked up twice in one run. It matters the moment
-    // either of those stops being true — and a cached failure is the kind of
-    // thing that then goes unnoticed, because it looks exactly like a real
-    // "no such film".
+    // Not cached: a failure to ask (a dropped connection, a rate limit) is no answer about a film.
     return null;
   }
 }
@@ -712,9 +645,7 @@ function parseDiaryCSV(text: string): ParsedDiaryEntry[] {
   const mapping = resolveHeaders(headers);
   if (!mapping) return [];
 
-  // Two decisions that belong to the FILE, not to a row. Made once, here,
-  // where every row is in hand — the parse boundary is the only place that
-  // sees the whole export.
+  // Two decisions that belong to the FILE, made here: the only place that sees every row.
   const source = detectSource(headers);
   const dateFormat = detectDateFormat(rows.map(r => getField(r, mapping, 'watchedDate')));
 
@@ -767,10 +698,7 @@ function parseWatchlistCSV(text: string): ParsedWatchlistEntry[] {
   const mapping = resolveHeaders(headers);
   if (!mapping) return [];
 
-  // The watchlist gets the same file-wide date verdict as the diary. Without
-  // it a European member's "added" dates were still half-transposed — the fix
-  // applied to one parser and not the other, which is worse than either
-  // consistently, because two exports from the same account disagree.
+  // The same file-wide date verdict as the diary: two exports of one account must agree.
   const dateFormat = detectDateFormat(rows.map(r => getField(r, mapping, 'watchedDate')));
 
   return rows.map(row => {
@@ -778,21 +706,18 @@ function parseWatchlistCSV(text: string): ParsedWatchlistEntry[] {
     return {
       title:     getField(row, mapping, 'title'),
       year:      getField(row, mapping, 'year'),
-      // Resolved here, where the whole file is visible. Empty stays empty so
-      // the caller can still tell "no date given" from "dated today".
+      // Empty stays empty: "no date given" is not "dated today".
       addedDate: raw ? normalizeDate(raw, dateFormat) : '',
     };
   }).filter(e => e.title.length > 0);
 }
 
-/**
- * True when a raw CSV row *is* a header row: at least 3 of its cells are
- * literal known column names, one of them a title synonym. The real film-table
- * header of a two-section list export ("Position,Name,Year,URL,Description")
- * matches 5; a genuine film row would need three cells that are literally
- * header words to false-positive — effectively impossible.
- */
 const ALL_HEADER_SYNONYMS = new Set(Object.values(HEADER_MAP).flat());
+/**
+ * True when a raw row IS a header row: 3+ cells are known column names, one a
+ * title synonym. A list export's film table ("Position,Name,Year,URL,…") has 5;
+ * a film row would need three cells that are literally header words.
+ */
 function isHeaderRow(cells: string[]): boolean {
   const lowered = cells.map(c => c.toLowerCase().trim());
   if (!lowered.some(c => HEADER_MAP.title.includes(c))) return false;
@@ -913,15 +838,7 @@ export interface AggregatedDiaryFilm {
   latest: ParsedDiaryEntry;
   /** Earlier watches, oldest→newest — archived into viewing_history. */
   earlier: ParsedDiaryEntry[];
-  /**
-   * Every watch of this film as it appeared in the FILE, oldest→newest.
-   *
-   * `latest` carries a merged rating/review (an unrated rewatch inherits the
-   * previous one), so counting reviews from `latest` + `earlier` double-counts
-   * an inherited review — the same text lives on the log row and in
-   * viewing_history. Anything reporting on what the member actually wrote must
-   * count from here instead.
-   */
+  /** Every watch as the FILE has it: count what was written here (`latest` may inherit). */
   sourceWatches: ParsedDiaryEntry[];
   viewCount: number;
   isRewatch: boolean;
@@ -1012,6 +929,7 @@ export function buildViewingHistory(
 //  DATABASE IMPORTERS — Batch upsert with error collection
 // ═══════════════════════════════════════════════════════════════
 
+const MAX_COLLECTED_ERRORS = 20;
 /**
  * Upserts a batch and returns the ids of the rows ACTUALLY written.
  *
@@ -1026,9 +944,8 @@ export function buildViewingHistory(
  *
  * If the whole batch fails (e.g. one row violates a CHECK constraint), retries
  * row-by-row so a single bad row can't sink its 49 neighbors; per-row errors
- * are collected, capped so a filthy file can't flood the report.
+ * are collected, capped (MAX_COLLECTED_ERRORS) so a filthy file can't flood the report.
  */
-const MAX_COLLECTED_ERRORS = 20;
 async function upsertCounted(
   table: string,
   batch: Record<string, unknown>[],
@@ -1072,12 +989,10 @@ async function upsertCounted(
  * Does this CSV's HEADER ROW actually look like the kind of file we are about
  * to treat it as?
  *
- * The filename fallback alone is not enough. A member's list named after a
- * film ("Overrating the 80s") matches the 'rating' substring, and claiming an
+ * The filename alone is not enough. A member's list named after a film
+ * ("Overrating the 80s") matches the 'rating' substring, and claiming an
  * unfilled slot on that basis both loses the list and imports it as something
- * it is not. Content is the honest discriminator, and the classifier's own
- * comment always promised it ("Classify by filename first, then by header
- * content") — it simply was never written.
+ * it is not. The header row is the honest discriminator.
  *
  * Deliberately permissive: it only has to reject a LIST export, whose columns
  * are Position / Name / Year / URL / Description.
@@ -1104,6 +1019,7 @@ export function csvLooksLike(text: string, kind: 'diary' | 'reviews' | 'watchlis
   }
 }
 
+const ITEM_PAGE = 1000;
 /**
  * Every existing item of one stack, paginated.
  *
@@ -1112,11 +1028,9 @@ export function csvLooksLike(text: string, kind: 'diary' | 'reviews' | 'watchlis
  * the rank offset would be computed from a partial set and collide with real
  * placements, and — far worse — films the member already owned would be absent
  * from preExistingFilmIds and therefore look like rows this import created,
- * which would let UNDO delete their own films. Paginate rather than trust the
- * default. Returns null if any page errors, so callers can fail safe instead of
- * acting on a partial answer.
+ * which would let UNDO delete their own films. Returns null if any page errors,
+ * so callers can fail safe instead of acting on a partial answer.
  */
-const ITEM_PAGE = 1000;
 async function fetchAllListItems(
   listId: string,
 ): Promise<{ film_id: unknown; rank_position: unknown }[] | null> {
@@ -1158,8 +1072,7 @@ async function importLogs(
     ? detectRatingScale(allRatings, source)
     : 'half-five';
 
-  // Native rewatch semantics: one row per film, latest watch current, earlier
-  // watches archived into viewing_history (see aggregateDiaryEntries).
+  // One row per film, the latest watch current, earlier ones in viewing_history.
   const films = aggregateDiaryEntries(diary);
 
   // Build payloads
@@ -1168,9 +1081,7 @@ async function importLogs(
     const key = cacheKey(agg.title, agg.year);
     const film = resolvedFilms.get(key);
     if (!film) {
-      // One unidentified FILM, not one per viewing. The UI labels this
-      // "films could not be matched", so a film watched six times used to
-      // report six unmatched films and inflate the number the member sees.
+      // One unmatched FILM, not one per viewing: the member is told films, not watches.
       skipped += 1;
       continue;
     }
@@ -1181,18 +1092,10 @@ async function importLogs(
     if (reviewFromFile && reviewFromFile.length > review.length) {
       review = reviewFromFile;
     }
-    review = sanitizeInput(review, 'review'); // FEAT-1
-    // Counted from the SOURCE watches, after sanitising. Two traps here:
-    //   • counting only the latest under-reports — earlier watches keep their
-    //     own reviews in viewing_history and those are written too;
-    //   • counting latest + earlier OVER-reports, because an unrated rewatch
-    //     inherits the previous review, so the same text sits on the log row
-    //     AND in viewing_history and would be counted twice.
-    // The file is the truth: how many watches the member actually wrote about.
+    review = sanitizeInput(review, 'review');
+    // Reviews counted from the FILE's watches: the latest alone misses earlier ones, and latest +
+    // earlier counts an inherited one twice. reviews.csv may add one the diary lacked.
     const reviewedWatches = agg.sourceWatches.filter(w => sanitizeInput(w.review, 'review').length > 0).length;
-    // reviews.csv can also supply a review for a film whose diary rows carried
-    // none — that is a real review the member wrote, and counting only the
-    // diary would miss it entirely.
     reviewCount += reviewedWatches > 0 ? reviewedWatches : (review.length > 0 ? 1 : 0);
 
     // Native-parity timeline: the row was created at the FIRST watch and last
@@ -1244,8 +1147,7 @@ async function importLogs(
     });
     const newLogIds = await upsertCounted('logs', batch, 'user_id,film_id', true, 'Film log', errors);
     imported += newLogIds.length;
-    // ignoreDuplicates: true — these ids are rows that did NOT exist before,
-    // so undo can delete them without touching anything the member already had.
+    // ignoreDuplicates: these rows did not exist before, so undo never touches the member's own.
     receipt.logIds.push(...newLogIds);
   }
 
@@ -1321,8 +1223,7 @@ async function importLists(
     });
 
     try {
-      // FEAT-1: list name/description come from untrusted files — sanitize with
-      // the same caps the in-app editor enforces (lossless for native content).
+      // Untrusted text, held to the in-app editor's caps (lossless for our own exports).
       const safeTitle = sanitizeInput(list.name, 'listTitle') || 'Imported Stack';
       const safeDescription = sanitizeInput(list.description, 'listDescription');
 
@@ -1341,10 +1242,8 @@ async function importLists(
         id:          listId,
         user_id:     userId,
         title:       safeTitle,
-        // Round-trip the member's settings instead of overwriting them. The
-        // hardcoded `false` here meant importing a file that happened to share
-        // a title with an existing PRIVATE stack published it — no warning, no
-        // trace. Their own description wins; the imported one only fills a gap.
+        // The member's settings, kept: a file sharing a PRIVATE stack's title must not
+        // publish it. Their description wins; the imported one only fills a gap.
         description: existing ? (existing.description || safeDescription) : safeDescription,
         is_private:  existing?.is_private ?? false,
         is_ranked:   existing?.is_ranked ?? false,
@@ -1355,26 +1254,18 @@ async function importLists(
         continue;
       }
 
-      // A stack we created is ours to remove entirely on undo. A stack that
-      // already existed is the member's — only the films we add to it may be
-      // taken back, never the stack itself.
+      // Undo removes a stack this import made; of the member's own, only the films it added.
       if (!existing?.id) receipt.listsCreated.push(listId);
 
-      // Appending to a stack the member already has must not renumber what is
-      // already in it. Start after their last film instead of restarting at 0,
-      // which would collide every imported film onto an existing rank and
-      // scramble the order of a ranked stack they had curated by hand.
+      // Appended after their last film, never from 0: restarting would land imported films
+      // on existing ranks and scramble a ranked stack the member ordered by hand.
       let rankOffset = 0;
       let preExistingFilmIds = new Set<number>();
-      // Only safe to record undo entries for this stack if we know EXACTLY what
-      // was in it beforehand. A failed probe means we don't, and guessing could
-      // let undo delete the member's own films.
+      // Undo entries only when we know EXACTLY what was here; a guess could delete their films.
       let priorItemsKnown = true;
       if (existing?.id) {
-        // list_items is upserted with ignoreDuplicates: false, so its .select()
-        // returns updated rows as well as inserted ones and cannot be trusted to
-        // say what is new. Establish that here instead: anything already present
-        // is the member's and must survive an undo.
+        // list_items upserts without ignoreDuplicates, so its result mixes updates with
+        // inserts: what is new is established here, and anything present is the member's.
         const priorItems = await fetchAllListItems(listId);
         if (priorItems === null) {
           priorItemsKnown = false;
@@ -1388,9 +1279,7 @@ async function importLists(
         }
       }
 
-      // Resolve and insert list items in order — rank_position is the app's
-      // ordering column (0-based, matching listSlice), so every film lands in
-      // its right placement.
+      // In order: rank_position is the app's 0-based ordering column (as listSlice writes it).
       const items: Record<string, unknown>[] = [];
       for (const entry of list.entries) {
         const key = cacheKey(entry.title, entry.year);
@@ -1414,13 +1303,9 @@ async function importLists(
           await upsertCounted('list_items', batch, 'list_id,film_id', false, `List items "${safeTitle}"`, errors);
         }
 
-        // Only films that were NOT already in this stack are ours to undo. For a
-        // stack we created the whole list is on the receipt already, so its items
-        // would be removed by the FK cascade — recording them again would be
-        // redundant, not wrong, but we keep the receipt minimal and honest.
-        // priorItemsKnown gates this: if the probe failed we cannot tell our
-        // films from theirs, so we record NOTHING. A smaller undo is a fair
-        // price; deleting a film the member added themselves is not.
+        // Only films not already in their stack are ours to undo (a stack we created goes whole,
+        // items by the cascade). An unknown prior state records nothing: a smaller undo beats
+        // deleting a film the member added themselves.
         if (existing?.id && priorItemsKnown) {
           const addedFilmIds = items
             .map(it => Number(it.film_id))
@@ -1498,12 +1383,12 @@ async function runJSONImport(
         poster_path:      (log.poster ?? log.poster_path ?? null) as string | null,
         year:             (log.year ?? null) as number | null,
         rating:           clampRating(log.rating), // hard DB CHECK is [0,5]
-        review:           sanitizeInput((log.review ?? '') as string, 'review'), // FEAT-1
+        review:           sanitizeInput((log.review ?? '') as string, 'review'),
         status:           (log.status ?? 'watched') as string,
         watched_date:     watchedDate,
         is_spoiler:       (log.isSpoiler ?? log.is_spoiler ?? false) as boolean,
         watched_with:     (log.watchedWith ?? log.watched_with ?? null) as string | null,
-        // FEAT-1: sanitize the owner-private notes too (strip zero-width/control chars).
+        // Owner-private notes are sanitised too (zero-width and control characters).
         private_notes:    ((log.privateNotes ?? log.private_notes ?? null) as string | null)
                             ? sanitizeInput((log.privateNotes ?? log.private_notes) as string, 'review')
                             : null,
@@ -1597,8 +1482,7 @@ async function runJSONImport(
         poster_path: (item.poster ?? item.poster_path ?? null) as string | null,
         year:        (item.year ?? null) as number | null,
         formats:     (item.formats ?? []) as string[],
-        // FEAT-1: vault notes are untrusted text — same sanitizer as reviews
-        // ('review' cap = 5000, lossless for anything written in-app).
+        // Untrusted text: the review sanitiser and cap (lossless for anything written in-app).
         notes:       rawNotes ? sanitizeInput(rawNotes, 'review') : null,
         condition:   (item.condition ?? null) as string | null,
         ...(originalCreated ? { created_at: originalCreated } : {}),
@@ -1633,7 +1517,7 @@ async function runJSONImport(
       });
 
       try {
-        // FEAT-1: untrusted title/description — same caps as the in-app editor.
+        // Untrusted title and description: the in-app editor's caps.
         const listTitle = sanitizeInput((list.title ?? 'Untitled') as string, 'listTitle') || 'Imported Stack';
         const listDescription = sanitizeInput((list.description ?? '') as string, 'listDescription');
         const originalCreated = importableTimestamp(list.createdAt ?? list.created_at);
@@ -1788,8 +1672,8 @@ export async function importArchiveZip(
   const rawBase64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
   const zip = await JSZip.loadAsync(rawBase64, { base64: true });
 
-  // FEAT-2: zip-bomb defense — bound entry count and total uncompressed size
-  // BEFORE reading any entry (a few-KB ZIP can decompress to gigabytes).
+  // Zip-bomb defence: entry count and total uncompressed size are bounded BEFORE any
+  // entry is read (a few-KB ZIP can decompress to gigabytes).
   const MAX_ZIP_ENTRIES = 2000;
   const MAX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024; // 50 MB
   const entryNames = Object.keys(zip.files);
@@ -1800,10 +1684,8 @@ export async function importArchiveZip(
   let unmeasurable = 0;
   for (const name of entryNames) {
     if (zip.files[name].dir) continue; // directory entries carry no payload
-    // JSZip exposes the uncompressed size on an INTERNAL field. Reading it with
-    // `?? 0` made this guard fail OPEN: if that internal is ever renamed by a
-    // JSZip upgrade, every entry scores 0, the total never grows, and the cap
-    // silently stops existing — which is precisely when a zip bomb gets through.
+    // The size is on an INTERNAL JSZip field. Never `?? 0`: were it renamed, every entry would
+    // score 0 and the cap would silently stop existing. An unreadable size is counted instead.
     const size = (zip.files[name] as unknown as { _data?: { uncompressedSize?: unknown } })?._data?.uncompressedSize;
     if (typeof size === 'number' && Number.isFinite(size)) totalUncompressed += size;
     else unmeasurable++;
@@ -1811,16 +1693,8 @@ export async function importArchiveZip(
       throw new Error('This archive is too large to import.');
     }
   }
-  // Fail CLOSED on ANY unmeasurable entry.
-  //
-  // This used to require that EVERY entry be unmeasurable — it also tested that
-  // the running total was still zero — which left a gap: ONE measurable entry
-  // alongside 1,999 unmeasurable ones passed both caps, and those 1,999 then
-  // decompress unbounded.
-  //
-  // Rejecting any unmeasurable entry costs nothing on real archives — verified
-  // against the installed JSZip 3.10.1 by building an export the way the app does
-  // and re-loading it: every entry reported its size, none was unmeasurable.
+  // Fail CLOSED on ANY unmeasurable entry (one measured beside 1,999 unmeasured would pass
+  // the caps). Real exports lose nothing: under JSZip 3.10.1 every entry reports its size.
   if (unmeasurable > 0) {
     throw new Error('This archive could not be inspected safely. Try exporting it again.');
   }
@@ -1837,15 +1711,11 @@ export async function importArchiveZip(
     try {
       parsed = JSON.parse(jsonText) as ReelHouseArchive;
     } catch {
-      // Unguarded, a malformed archive surfaced as a raw SyntaxError — the
-      // member saw a generic failure with nothing telling them the FILE is the
-      // problem. Mirrors the message DataVault already gives for a loose .json.
+      // Tells the member the FILE is the problem, as the single-JSON-file path does.
       throw new Error('Invalid JSON format.');
     }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      // Valid JSON is not automatically an archive: "null", "42" and "[]" all
-      // parse. Reaching the importer with one of those would read every section
-      // as empty and report a cheerful, entirely empty success.
+      // "null", "42" and "[]" parse too, and would import as a cheerful, empty success.
       throw new Error('This file is not a ReelHouse archive.');
     }
     return importArchiveJSON(parsed, user.id, onProgress);
@@ -1867,15 +1737,8 @@ async function importCSVArchive(
   userId: string,
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<ImportResult> {
-  // Accumulates exactly what this import creates, so it can be taken back.
-  // See importReceipt.ts for why undo is the answer to the one rating case
-  // that is genuinely undecidable.
-  //
-  // try/finally, not a trailing call: if anything throws after the first rows
-  // land — a dropped connection mid-resolve, an unexpected error in a list —
-  // those rows are already in the database. A half-imported archive with no
-  // receipt is the one situation where undo matters most, so the receipt is
-  // persisted on the way out whether we succeeded, failed, or threw.
+  // What this import creates, so it can be taken back (importReceipt.ts). Saved in a
+  // `finally`: a half-imported archive, thrown mid-way, is when undo matters most.
   const receipt = emptyReceipt(userId, 'your archive');
   try {
     return await runCSVImport(zip, userId, receipt, onProgress);
@@ -1903,14 +1766,9 @@ async function runCSVImport(
   let ratingsText = '';
   const listTexts: { name: string; text: string }[] = [];
 
-  // Read every CSV once, then classify in two passes.
-  //
-  // A single substring pass is catastrophic here. Members name lists after
-  // films, and "Bridget Jones's Diary", "Diary of a Country Priest" and "The
-  // Diary of Anne Frank" all contain "diary" — so a 12-film list silently
-  // REPLACED the member's real diary.csv and their entire history vanished
-  // from the import. "Overrating the 80s" was absorbed as ratings.csv the same
-  // way. Both the history and the list were lost, with nothing to show it.
+  // Read once, classified in two passes. One substring pass would let a list named
+  // "Diary of a Country Priest" replace the real diary.csv, and the member's whole
+  // history would vanish from the import along with the list.
   const loaded: { base: string; text: string }[] = [];
   for (const [name, file] of csvFiles) {
     loaded.push({ base: name.split('/').pop()?.toLowerCase() ?? '', text: await file.async('string') });
@@ -1954,8 +1812,7 @@ async function runCSVImport(
   ratingsText = slot.ratings ?? '';
   // Some exports ship watched.csv instead of a diary.
   if (!diaryText && slot.watched) diaryText = slot.watched;
-  // Everything still unclaimed is a list — including the ones that used to be
-  // swallowed by the substring pass.
+  // Everything still unclaimed is a list.
   for (const f of unclaimed) listTexts.push({ name: f.base, text: f.text });
 
   // If no diary but we have ratings, use ratings as the diary source

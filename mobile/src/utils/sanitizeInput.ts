@@ -1,40 +1,14 @@
 /**
  * sanitizeInput.ts — Input Sanitization for User-Generated Content
  * ────────────────────────────────────────────────────────────────
- * 10/10 S-01: Strips zero-width characters, control characters,
- * and enforces max length per field type. Applied at the store
- * mutation layer so it's impossible to bypass.
+ * Strips zero-width and control characters and caps each field's length, at the
+ * store's mutation layer and again at the offline queue's replay.
  */
 
-/**
- * Known zero-width / invisible Unicode characters.
- *
- * \u26A0\uFE0F U+202A\u2013U+202E WERE MISSING, and they are the ones that matter most.
- *
- * Unicode has THREE families of bidirectional control, and this set originally had
- * two of them:
- *   \u2022 marks      U+200E, U+200F                     \u2014 were covered
- *   \u2022 isolates   U+2066\u2013U+2069                      \u2014 were covered
- *   \u2022 embeddings and OVERRIDES  U+202A\u2013U+202E       \u2014 were NOT
- *
- * U+202E RIGHT-TO-LEFT OVERRIDE is the canonical Trojan-Source character: it reverses
- * the rendering of everything after it, so text can be made to display in an order
- * that has nothing to do with what is stored. U+202D is its mirror. Both passed
- * straight through every sanitised surface in the app \u2014 reviews, comments, lounge
- * messages, dossiers \u2014 because the guard caught the two quieter families and stopped.
- *
- * Found by asserting the whole class rather than the listed members: the test enumerates
- * every bidi codepoint and demands each one be removed, which is why this survived a
- * regex that looked thorough.
- */
-/**
- * The class body alone, so other guards can test for these characters without
- * duplicating the list. Exported as a STRING rather than the regex below because that
- * one carries /g: `.test()` on a global regex advances lastIndex and therefore returns
- * alternating answers for the same input. Callers build their own non-global RegExp.
- */
+// Invisible characters, all THREE bidi families (the test enumerates every bidi codepoint):
+// marks, isolates, embeddings/overrides \u2014 U+202E reorders what is shown from what is stored.
+// A string, so guards build a NON-global RegExp: a /g regex's test() alternates its answers.
 export const INVISIBLE_CHAR_CLASS = '\\u200B\\u200C\\u200D\\u200E\\u200F\\u202A-\\u202E\\uFEFF\\u00AD\\u034F\\u2028\\u2029\\u2060\\u2061\\u2062\\u2063\\u2064\\u2066\\u2067\\u2068\\u2069\\u206A-\\u206F';
-
 const INVISIBLE_CHARS = new RegExp(`[${INVISIBLE_CHAR_CLASS}]`, 'g');
 
 /** Control characters except newline (\n), carriage return (\r), and tab (\t) */
@@ -50,15 +24,10 @@ export const MAX_LENGTHS = {
   listComment: 2000,
   logComment: 2000,
   dossierComment: 2000,
-  // 60, because `lounges_name_len` on the column is 60 and CreateLoungeSheet's
-  // box and counter both offer 60. This was 50 — the only one of the four that
-  // disagreed — so a member typing up to the 60 the app told them they had got
-  // a name silently cut to 50, with no error and no sign it had happened.
-  loungeName: 60,
+  loungeName: 60,  // lounges_name_len, and what CreateLoungeSheet's box and counter offer
   username: 30,
-  // Matched to ProfileUpdateSchema's own limits so the two cannot disagree:
-  // bio 160, display_name 50, persona 50 (schemas/profile.schema.ts:26-31).
-  // Zod caps their LENGTH; these exist so the character classes get stripped too.
+  // ProfileUpdateSchema's own limits (schemas/profile.schema.ts); Zod caps the length,
+  // these strip the character classes too.
   displayName: 50,
   persona: 50,
   // Free text a member writes ABOUT another member, read by moderators in the
@@ -66,114 +35,37 @@ export const MAX_LENGTHS = {
   reportDetails: 500,
   dossierTitle: 200,
   dossierExcerpt: 500,
-  /**
-   * The title on a card shared into a lounge — `lounge_messages.film_title`.
-   *
-   * The column's own CHECK is 300, and the Dispatch was sending a take's whole
-   * BODY down this path: `dossierTitle={live.title || live.body}`, and a take
-   * runs to 2,000 characters. Anything past 300 was refused by the constraint,
-   * and the modal had already closed — so a member sharing a longer take saw a
-   * raw Postgres error about `lounge_messages_film_title_len` and their filing
-   * never arrived in the room.
-   *
-   * 180 rather than 300, because the card sets this in two lines and the
-   * ceiling that matters is the one the design can hold, not the one the column
-   * will accept.
-   */
-  loungeShareTitle: 180,
-  // Essays are longform by design: ~4,350 words at this app's measured 5.75
-  // characters per word. This is the sanitizer's memory/abuse fence, not an
-  // editorial limit.
-  //
-  // ── WHY THIS NUMBER DOES NOT MOVE ────────────────────────────────────────
-  // It was raised to 60,000 during batch 21 and put back. The reasoning for
-  // raising it was that 4,350 words is an ordinary longform essay — which is
-  // true — but it missed that this number is ALSO the render cap
-  // (capMarkdownForRender), deliberately, and that two markdown rules are
-  // quadratic. Measured against markdown-it 10.0.0: nested emphasis 6877ms at
-  // 80k. At 60,000 that is seconds of frozen JS thread from input someone can
-  // author on purpose, and worse on a phone than on the machine that measured it.
-  //
-  // It is load-bearing for BOTH clients, not just this one: the web app writes
-  // `dispatch_dossiers.full_content` to this same table with no sanitiser and no
-  // length cap, so this bound is what protects a mobile reader from an essay
-  // this app never wrote.
-  //
-  // So the fence stays where the RENDER cost allows, and the real defect — that
-  // exceeding it silently truncated the essay and then deleted the draft — is
-  // fixed instead: the composer now refuses to file, keeps every word, and says
-  // by how much.
+  loungeShareTitle: 180, // a shared card's two lines, under lounge_messages.film_title's 300
+  // ~4,350 words, and the render cap too: two markdown rules are quadratic, so it never moves.
   dossierContent: 25000,
 
+  // Every column a client writes on the Dispatch, at or under its CHECK (dispatchFieldCaps):
+  // past it a filing fails after FILE with an error naming a column.
   // ── THE DISPATCH ─────────────────────────────────────────────────────────
-  // One entry per text column the client can write on dispatch_posts and
-  // dispatch_comments, and every number is the live CHECK constraint on that
-  // column rather than a fresh judgement.
-  //
-  // ── WHY EVERY COLUMN AND NOT JUST THE PROSE ──────────────────────────────
-  // A cap here is not only an editorial limit; it is what stops a member losing
-  // their filing. Without it the string travels to Postgres, fails the CHECK,
-  // and the write comes back as a constraint error naming a column the member
-  // has never heard of — after they pressed FILE. So the rule is: every column
-  // the client writes has a cap here, and that cap is at or below the fence.
-  // No exceptions, because dispatchFieldCaps.test.ts checks the whole class and
-  // a rule with an exception is a rule it could not check.
-  //
-  // `seriesTitle` is the one deliberately TIGHTER than its fence (200 against
-  // 300): a series name sits under a dossier title on the card, and a title is
-  // already capped at 200, so a longer series name than title would look wrong
-  // long before the database minded.
   filingTitle:   200,    // dispatch_posts.title          — title_ceiling
   filingBody:    2000,   // dispatch_posts.body           — body_ceiling
   filingExcerpt: 500,    // ditto, when kind = 'dossier'  — excerpt_ceiling
-  // The same 25,000 as dossierContent, for the same reason and not by accident:
-  // it is the markdown RENDER cap as well as the write cap, and two markdown
-  // rules are quadratic. See the note above dossierContent before moving either.
+  // dossierContent's 25,000, for its reason: the render cap too. Never moved alone.
   filingEssay:   25000,  // dispatch_posts.full_content   — essay_ceiling
   wireSource:    100,    // dispatch_posts.source         — source_ceiling
   sourceUrl:     2048,   // dispatch_posts.source_url     — source_url_ceiling
   spoilerLabel:  80,     // dispatch_posts.spoiler_label  — spoiler_ceiling
-  seriesTitle:   200,    // dispatch_posts.series_title   — series_title_ceiling (300)
+  seriesTitle:   200,    // series_title_ceiling is 300; 200, as the title it sits under
   subjectTitle:  300,    // dispatch_posts.subject_title  — subject_title_ceiling
   subjectSub:    300,    // dispatch_posts.subject_sub    — subject_sub_ceiling
   subjectImage:  2048,   // dispatch_posts.subject_image  — subject_image_ceiling
-  // Per OPTION, not per ballot — the column's fence is on the SERIALISED length
-  // of the whole jsonb array, and each option carries a film's id, title and
-  // poster path.
-  //
-  // 150 was the first number here and it was wrong: dispatchFieldCaps.test.ts
-  // builds the worst honest ballot and measured 1399 bytes against a 1200 fence,
-  // so a member filing six films with ordinary titles would have been refused
-  // after pressing FILE. The fence moved to 4000 (migration 03) and the title
-  // cap to 200; six at 200 is about 1720. The test reconciles the two, so
-  // neither can move alone again.
+  subjectBackdrop: 2048, // dispatch_posts.subject_backdrop — subject_backdrop_ceiling
+  // Per option: six at 200 serialise to ~1720 of the array's 4000 (dispatchFieldCaps).
   ballotOption:  200,    // dispatch_posts.options        — options_ceiling (4000 total)
-  // dispatch_comments.body — critique_ceiling. Deliberately its own entry rather
-  // than reusing dossierComment: the two are the same number today but on
-  // different tables, and dossierComment retires with the old reader in step 3.
-  critique:      2000,
+  critique:      2000,   // dispatch_comments.body        — critique_ceiling (its own table)
 } as const;
 
 export type FieldType = keyof typeof MAX_LENGTHS;
 
 /**
- * Sanitize user input text.
- * - Strips zero-width / invisible Unicode characters
- * - Strips control characters (preserves newlines, tabs)
- * - Normalizes excessive whitespace runs
- * - Trims leading/trailing whitespace
- * - Enforces max length for the given field type
- */
-/**
- * The cleaning half, without the cap.
- *
- * Split out so that "how long is this really?" has ONE answer. The length that
- * matters is the length AFTER cleaning — invisible characters removed, runs of
- * blank lines and spaces collapsed, trimmed — because that is what gets stored.
- * `isOverLimit` and `remainingChars` measured the RAW string, so a composer could
- * refuse an essay that would in fact have fitted. Never the reverse (cleaning
- * only ever shortens), so nothing was at risk — but a writer told to trim when
- * they needn't is still the app lying to them.
+ * The cleaning half, without the cap: invisible and control characters removed,
+ * runs of blank lines and spaces collapsed, trimmed. What is stored, so "how long
+ * is this?" (isOverLimit, remainingChars) has one answer.
  */
 export function cleanForStorage(text: string): string {
   if (!text) return '';
@@ -185,27 +77,18 @@ export function cleanForStorage(text: string): string {
     .trim();
 }
 
+/** Cleans (cleanForStorage) and caps to the field's MAX_LENGTHS. */
 export function sanitizeInput(text: string, fieldType: FieldType): string {
   if (!text) return '';
 
   const clean = cleanForStorage(text);
   const maxLen = MAX_LENGTHS[fieldType];
 
-  // Still the last-resort fence. Callers that can warn a member SHOULD ask
-  // isOverLimit first — the dossier composer does — because a truncation here
-  // has no presence in the return type and cannot be noticed downstream.
+  // The last-resort fence: a cut here is silent, so a caller that can warn asks isOverLimit.
   if (clean.length <= maxLen) return clean;
 
-  // `slice` cuts on UTF-16 code units, so cutting at maxLen can land BETWEEN the
-  // two halves of an emoji and leave a lone surrogate. That is not merely ugly:
-  // supabase-js serialises it as an unpaired \uD83C escape and PostgreSQL REFUSES
-  // the whole request — `invalid input syntax for type json: Unicode low surrogate
-  // must follow a high surrogate`. The member's comment vanishes behind an error
-  // that names neither comments nor length. Verified against PostgreSQL 17.
-  //
-  // No composer can reach this today (every one caps typing at 500, every cap here
-  // is >= 500), so this changes nothing now — it removes the trap so that raising
-  // a maxLength later stays the harmless edit it looks like.
+  // A cut can split an emoji's surrogate pair, and PostgreSQL (17) refuses the whole
+  // request over the lone half — so the dangling high surrogate is dropped.
   const cut = clean.slice(0, maxLen);
   const last = cut.charCodeAt(maxLen - 1);
   // A high surrogate in the final position lost its partner to the cut; drop it.
