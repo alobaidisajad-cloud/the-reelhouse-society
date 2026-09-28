@@ -279,7 +279,11 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         {s === 'watched' && <Eye size={14} color={status === s ? colors.ink : colors.fog} />}
                         {s === 'rewatched' && <History size={14} color={status === s ? colors.ink : colors.fog} />}
                         {s === 'abandoned' && <X size={14} color={status === s ? colors.ink : colors.fog} />}
-                        <Text style={[st.statusText, status === s && st.statusTextActive]}>{s.toUpperCase()}</Text>
+                        {/* A third of a 320pt row: large type is given back, down to 10pt, on one line. */}
+                        <Text style={[st.statusText, status === s && st.statusTextActive]} {...scaledTextProps}
+                            numberOfLines={1} adjustsFontSizeToFit minimumFontScale={1 / scaledTextProps.maxFontSizeMultiplier}>
+                            {s.toUpperCase()}
+                        </Text>
                     </PressableScale>
                 ))}
             </View>
