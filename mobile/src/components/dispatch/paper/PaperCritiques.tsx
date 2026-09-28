@@ -125,7 +125,11 @@ export const CritiqueHead = memo(function CritiqueHead({
         {(['NEWEST', 'CERTIFIED'] as const).map((o) => (
           <PressableScale
             key={o} onPress={() => onOrder?.(o)} haptic="selection"
-            hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
+            // Down, only the 4pt to what follows (critiqueHead marginBottom):
+            // the foot's READ MORE can sit right there, and 10 reached 6pt into
+            // it. Nothing beneath reaches up, so all 4 are this pair's. Sideways,
+            // half the 8pt between the two.
+            hitSlop={{ top: 10, bottom: 4, left: 4, right: 4 }}
             accessibilityRole="button"
             accessibilityState={{ selected: o === order }}
             accessibilityLabel={`Order by ${o.toLowerCase()}`}
@@ -301,6 +305,10 @@ export const CritiqueFooter = memo(function CritiqueFooter({
   return (
     <PressableScale
       style={{ paddingVertical: 16, alignItems: 'center' }}
+      // The whole width, near 48 tall: large enough as drawn. The default halo
+      // reached up over the last critique's CERTIFY and REPORT, and over the
+      // ORDER BY pair when the thread opens on this footer.
+      hitSlop={null}
       onPress={loadingMore ? undefined : onMore}
       haptic="selection"
       disabled={!!loadingMore}

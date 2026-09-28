@@ -105,7 +105,9 @@ export const PaperPicker = memo(function PaperPicker({
           {i > 0 && <View style={p.hair} />}
           <PressableScale
             style={[m.formRow, f.locked && { opacity: 0.85 }]}
-            hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
+            // Rows a hairline apart, each a whole target: a halo only reached
+            // into the next kind, and the later row took the tap.
+            hitSlop={null}
             onPress={() => (f.locked ? onLocked?.(f.kind) : onPick?.(f.kind))}
             haptic="medium" disabled={f.locked && !onLocked}
             accessibilityRole="button"
@@ -147,7 +149,8 @@ export const PaperPicker = memo(function PaperPicker({
           <View style={p.hair} />
           <PressableScale
             style={m.rulesRow} haptic="selection"
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            // Nothing above: the last kind is a hairline away.
+            hitSlop={{ top: 0, bottom: 6, left: 6, right: 6 }}
             onPress={onRules}
             accessibilityRole="link" accessibilityLabel="Read the house rules"
           >

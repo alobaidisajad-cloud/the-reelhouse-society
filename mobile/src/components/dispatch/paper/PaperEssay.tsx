@@ -107,6 +107,8 @@ export const EssayHead = memo(function EssayHead({
 
       {series ? (
         <PressableScale style={e.seriesRow} haptic="selection" onPress={onSeries}
+          // The byline is 12pt below and answers taps too: half of that, no more.
+          hitSlop={{ top: 15, bottom: 6, left: 15, right: 15 }}
           accessibilityRole="button" accessibilityLabel={`${series}. Open the series.`}>
           <Text style={e.series} numberOfLines={2} {...scaledTextProps}>{series.toUpperCase()}</Text>
           <ChevronRight size={12} strokeWidth={2} color={colors.sepia} />
@@ -188,7 +190,10 @@ export const EssayNext = memo(function EssayNext({
   label, title, readTime, onPress,
 }: { label: string; title: string; readTime: string; onPress?: () => void }) {
   return (
-    <PressableScale style={e.next} haptic="medium" onPress={onPress}
+    // The whole measure, two lines and more tall: big enough as drawn. Its size
+    // comes from its words, not its style, so PressableScale cannot see it is
+    // big and would add 15pt all round — down over the ORDER BY pair beneath.
+    <PressableScale style={e.next} haptic="medium" onPress={onPress} hitSlop={null}
       accessibilityRole="button" accessibilityLabel={`${label}. ${title}. ${readTime}.`}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={e.nextLabel} {...deckLabelProps}>{label}</Text>

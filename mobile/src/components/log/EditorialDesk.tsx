@@ -40,12 +40,16 @@ const backdropKeyExtractor = (p: { file_path: string }) => p.file_path;
 export default React.memo(function EditorialDesk({
     dropCap, setDropCap, pullQuote, setPullQuote, editorialHeader, setEditorialHeader, availableBackdrops
 }: Props) {
-    const renderBackdropItem = React.useCallback(({ item: p }: { item: { file_path: string } }) => p.file_path === '__none__' ? (
-        <PressableScale onPress={() => { setEditorialHeader(null); }} style={[st.stillThumb, editorialHeader === null && st.stillActive]} haptic="selection" pressedScale={0.96} hitSlop={null}>
+    // Each still is a picture, so it is NAMED — a bare image button read as
+    // "button" and nothing else, and said nothing about which one was chosen.
+    const renderBackdropItem = React.useCallback(({ item: p, index }: { item: { file_path: string }; index: number }) => p.file_path === '__none__' ? (
+        <PressableScale onPress={() => { setEditorialHeader(null); }} style={[st.stillThumb, editorialHeader === null && st.stillActive]} haptic="selection" pressedScale={0.96} hitSlop={null}
+            accessibilityLabel="No header still" accessibilityState={{ selected: editorialHeader === null }}>
             <Text style={[st.stillNone, editorialHeader === null && st.stillNoneActive]}>NONE</Text>
         </PressableScale>
     ) : (
-        <PressableScale onPress={() => { setEditorialHeader(p.file_path); }} haptic="selection" pressedScale={0.96} hitSlop={null}>
+        <PressableScale onPress={() => { setEditorialHeader(p.file_path); }} haptic="selection" pressedScale={0.96} hitSlop={null}
+            accessibilityLabel={`Header still ${index}`} accessibilityState={{ selected: editorialHeader === p.file_path }}>
             <Image source={{ uri: tmdb.backdrop(p.file_path, 'w300') }} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && st.stillImgFaded]} contentFit="cover" cachePolicy="memory-disk" transition={150} />
         </PressableScale>
     ), [editorialHeader, setEditorialHeader]);
@@ -58,7 +62,10 @@ export default React.memo(function EditorialDesk({
         <View style={st.editDesk}>
             <View style={st.editRow}>
                 <Text style={st.editLabel}>STYLIZED DROP CAP</Text>
-                <PressableScale style={st.spoilerRow} onPress={() => { setDropCap(!dropCap); }} hitSlop={{top: 15, left: 15, bottom: 15, right: 15}} haptic="selection" pressedScale={0.96}>
+                {/* Named, and said to be on or off: it read "ENABLE, button"
+                    — not what it enables, nor whether it already was. */}
+                <PressableScale style={st.spoilerRow} onPress={() => { setDropCap(!dropCap); }} hitSlop={null} haptic="selection" pressedScale={0.96}
+                    accessibilityRole="checkbox" accessibilityLabel="Stylized drop cap" accessibilityState={{ checked: dropCap }}>
                     <View style={[st.cbox, dropCap && st.cboxSepia]}>{dropCap && <Check size={10} color={colors.ink} />}</View>
                     <Text style={st.editToggleText}>ENABLE</Text>
                 </PressableScale>
@@ -80,8 +87,8 @@ export default React.memo(function EditorialDesk({
                     virtualisation; a scroller is cheaper and certain to draw. */}
                 {availableBackdrops.length > 0 ? (
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.flatListGap} keyboardShouldPersistTaps="handled">
-                        {[{ file_path: '__none__' }, ...availableBackdrops].map(p => (
-                            <React.Fragment key={backdropKeyExtractor(p)}>{renderBackdropItem({ item: p })}</React.Fragment>
+                        {[{ file_path: '__none__' }, ...availableBackdrops].map((p, i) => (
+                            <React.Fragment key={backdropKeyExtractor(p)}>{renderBackdropItem({ item: p, index: i })}</React.Fragment>
                         ))}
                     </ScrollView>
                 ) : <Text style={st.noData}>No stills found.</Text>}
@@ -96,7 +103,12 @@ const st = StyleSheet.create({
     editLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.bone, marginBottom: 8, includeFontPadding: false },
     editToggleText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
     pullQuoteInput: { backgroundColor: colors.well, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 14, fontStyle: 'italic', color: colors.parchment },
-    spoilerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    // The drop-cap toggle: 48 tall by its own box, as every control on the
+    // composer is. This file's own `spoilerRow` shadows LogModalStyles' (which
+    // has the floor), so the toggle was a 16pt target lifted by a halo — and a
+    // halo is invisible to both platforms' accessibility layers. The source
+    // test read the OTHER style and passed; the drawn page measured 59×16.
+    spoilerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48 },
     cbox: { width: 16, height: 16, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     cboxSepia: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     stillThumb: { width: 80, height: 48, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },

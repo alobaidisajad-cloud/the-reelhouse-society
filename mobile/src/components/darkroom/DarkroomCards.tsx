@@ -8,7 +8,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Bookmark } from 'lucide-react-native';
 
-import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH, castOf, liftOf } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { tmdb } from '@/src/lib/tmdb';
 import { type DiscoverFilm } from '@/src/stores/discover';
@@ -131,9 +131,13 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
 
   return (
     <View style={s.posterWrap}>
+      <View style={s.posterClip}>
       <PressableScale
         testID="film-card"
         style={StyleSheet.absoluteFillObject}
+        // No halo: the whole poster is the target, and a halo on a grid of
+        // posters 8pt apart only reached onto the next one's face.
+        hitSlop={null}
         onPress={handlePress}
         haptic
         accessibilityRole="button"
@@ -184,6 +188,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
           </Text>
         )}
       </PressableScale>
+      </View>
 
       {!isPerson && (
         <PressableScale 
@@ -278,22 +283,25 @@ const s = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 0.8,
   },
-  posterWrap: { ...EDGE_LIT,
+  // A short lift, straight down: a 20pt drop with a 30pt blur was a dark
+  // cloud round every print on the lit house. Grid cells never overlap, so
+  // the lower elevation changes Android's paint order for nothing.
+  //
+  // Split across two views (see castOf): the print clips its corners, and on
+  // iOS a view that clips casts nothing — this lift never drew on an iPhone.
+  posterWrap: {
     width: '100%',
     aspectRatio: 2/3,
+    ...castOf({ shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.8, shadowRadius: 12 }),
+  },
+  posterClip: { ...EDGE_LIT,
+    ...StyleSheet.absoluteFillObject,
     borderRadius: 6,
     overflow: 'hidden',
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.5)',
-    // A short lift, straight down: a 20pt drop with a 30pt blur was a dark
-    // cloud round every print on the lit house. Grid cells never overlap, so
-    // the lower elevation changes Android's paint order for nothing.
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.8,
-    shadowRadius: 12,
+    ...liftOf({ elevation: 6 }),
   },
   posterBorderEngrave: {
     ...StyleSheet.absoluteFillObject,

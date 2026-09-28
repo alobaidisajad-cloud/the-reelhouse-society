@@ -59,7 +59,7 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteu
   return (
     <View style={st.tabsContainer}>
       <Animated.View style={[StyleSheet.absoluteFillObject, st.tabsActiveBg, pillStyle]} />
-      <PressableScale hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
+      <PressableScale hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
         <View style={st.tabInner}>
           <Animated.View style={[st.liveDot, auteur ? st.liveDotAuteur : st.liveDotDefault, pulseStyle]} />
           {/* The tab you are NOT on is quieter by its ink, not by being drawn
@@ -67,7 +67,7 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteu
           <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fogQuiet }]}>LOGS</Text>
         </View>
       </PressableScale>
-      <PressableScale hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }} style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
+      <PressableScale hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
         <Text style={[st.tabText, { color: activeTab === 'stacks' ? colors.parchmentDim : colors.fogQuiet }]}>STACKS</Text>
       </PressableScale>
     </View>
@@ -127,6 +127,8 @@ const st = StyleSheet.create({
     width: '50%', backgroundColor: colors.soot, borderColor: 'rgba(184,137,26,0.4)',
     borderWidth: 1, borderRadius: 4, ...effects.shadowFloat, elevation: 5
   },
+  // The bar is 46pt tall, so a tab is a whole target with no halo: a 15pt one
+  // reached the filter chips 16pt below, and the later chip took the tap.
   tabButton: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   tabInner: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   // 0.60 measured 3.04:1 on ink; 0.75 gives 4.16:1. The inactive tab should read

@@ -1069,7 +1069,8 @@ function ComposeDossierScreen() {
                         <View style={styles.slots}>
                             <PressableScale
                                 style={styles.slot} onPress={() => setFilmOpen(true)} haptic="selection"
-                                hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
+                                // The two slots touch: neither reaches into the other.
+                                hitSlop={{ top: 6, bottom: 0, left: 0, right: 0 }}
                                 accessibilityRole="button"
                                 accessibilityLabel={film ? `The film is ${film.title}. Change it.` : 'Name the film this is about'}
                             >
@@ -1080,7 +1081,7 @@ function ComposeDossierScreen() {
                             </PressableScale>
                             <PressableScale
                                 style={styles.slot} onPress={() => setSeriesOpen(true)} haptic="selection"
-                                hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
+                                hitSlop={{ top: 0, bottom: 6, left: 0, right: 0 }}
                                 accessibilityRole="button"
                                 accessibilityLabel={series ? `Part ${series.part} of ${series.title}. Change it.` : 'Make this part of a series'}
                             >
@@ -1111,27 +1112,27 @@ function ComposeDossierScreen() {
 
                     <View style={styles.toolbar}>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScroll} keyboardShouldPersistTaps="handled">
-                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
+                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
                                 <Bold size={15} color={colors.parchment} />
                                 <Text style={styles.toolWord} {...scaledTextProps}>BOLD</Text>
                             </PressableScale>
-                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
+                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
                                 <Italic size={15} color={colors.parchment} />
                                 <Text style={styles.toolWord} {...scaledTextProps}>ITALIC</Text>
                             </PressableScale>
-                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
+                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
                                 <Type size={15} color={colors.parchment} />
                                 <Text style={styles.toolWord} {...scaledTextProps}>HEADING</Text>
                             </PressableScale>
-                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
+                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
                                 <Quote size={15} color={colors.parchment} />
                                 <Text style={styles.toolWord} {...scaledTextProps}>QUOTE</Text>
                             </PressableScale>
-                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Horizontal rule">
+                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Horizontal rule">
                                 <Minus size={15} color={colors.parchment} />
                                 <Text style={styles.toolWord} {...scaledTextProps}>BREAK</Text>
                             </PressableScale>
-                            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }} style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
+                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
                                 <Link2 size={15} color={colors.parchment} />
                                 <Text style={styles.toolWord} {...scaledTextProps}>LINK</Text>
                             </PressableScale>
@@ -1214,6 +1215,14 @@ function ComposeDossierScreen() {
     );
 }
 
+/**
+ * The writing tools sit TOOL_GAP apart, and each reaches half of it toward its
+ * neighbour — no more, or the later tool takes the earlier one's taps. (The
+ * slop was 4 against a gap of 6; the layout audit measured the overlap.)
+ */
+const TOOL_GAP = 6;
+const TOOL_SLOP = { top: 15, bottom: 15, left: TOOL_GAP / 2, right: TOOL_GAP / 2 };
+
 const styles = StyleSheet.create({
     container: { ...EDGE_LIT,
         flex: 1,
@@ -1279,7 +1288,7 @@ const styles = StyleSheet.create({
     },
     toolsScroll: {
         paddingHorizontal: 16,
-        gap: 6,
+        gap: TOOL_GAP,
     },
     toolBtn: {
         // A column now — the mark, and its NAME under it. Six unlabelled icons

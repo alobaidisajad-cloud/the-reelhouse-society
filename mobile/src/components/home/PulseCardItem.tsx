@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
 import { useIsFocused } from '@react-navigation/native';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
+import { colors, fonts, effects, SEPIA_HASH, castOf, liftOf } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import { MoreHorizontal } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';
@@ -75,6 +75,9 @@ const MuseumBreather = memo(function MuseumBreather() {
   );
 });
 
+/** Between the name row and REPORT; each may reach half of it (touch rule). */
+const HEADER_GAP = 12;
+
 export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = false, cardWidth, onMute }: { act: PulseActivity, isFeatured?: boolean, cardWidth?: number, onMute?: (id: string) => void }) {
 
   const reportMutation = useReportUser();
@@ -113,7 +116,7 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
   }, [act.id, act.user_id, reportMutation, onMute]);
 
   return (
-    <View style={[s.pulseCardOuter, cardWidth ? { width: cardWidth } : { width: '82%' }, isFeatured && { width: '100%' }]}>
+    <View style={[s.pulseCardOuter, cardWidth ? { width: cardWidth } : { width: '82%' }, isFeatured && { width: '100%' }, isFeatured && s.pulseFeaturedGlow]}>
       <View style={[s.pulseCard, isPremium && s.pulsePremium, isAuteur && s.pulseCardAuteur, isFeatured && s.pulseFeaturedMuseum]}>
         
         {isFeatured && <MuseumBreather />}
@@ -125,7 +128,14 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
         ) : null}
 
         <View style={s.pulseCardHeader}>
-          <PressableScale style={s.pulseUserRow} onPress={() => { nav.push(`/user/${act.user}`); }} haptic="light" accessibilityLabel={`View profile of @${act.user}`}>
+          {/* 30pt tall: 7 below reaches 44, and stops short of the film's
+              title under it (15 reached onto it). */}
+          {/* Right: under half the header's gap. The name shrinks toward REPORT
+              on a narrow phone until the two meet — at 320pt their halos
+              overlapped by 25pt, and the later one, REPORT, took the taps. 4,
+              not 6: at the largest text the row presses the gap a point or two
+              narrower than its 12, and a halo at exactly half has no room. */}
+          <PressableScale style={s.pulseUserRow} hitSlop={{ top: 15, bottom: 7, left: 15, right: HEADER_GAP / 2 - 2 }} onPress={() => { nav.push(`/user/${act.user}`); }} haptic="light" accessibilityLabel={`View profile of @${act.user}`}>
             <View style={[s.pulseAvatar, { borderColor: accentColor }]}>
               {act.userAvatar ? (
                 <Image
@@ -140,7 +150,7 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
                 <Buster size={14} mood={act.rating >= 4 ? 'smiling' : 'neutral'} />
               )}
             </View>
-            <View style={[s.pulseUserTextWrap, { flexShrink: 1 }]}>
+            <View style={s.pulseUserTextWrap}>
               <Text style={s.pulseUsername} numberOfLines={1}>@{act.user}</Text>
               <Text style={s.pulseTime} numberOfLines={1}>{act.time}</Text>
             </View>
@@ -150,17 +160,21 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
                 surface and never reached this one. */}
             <RankBadge rank={isAuteur ? 'auteur' : isArchivist ? 'archivist' : null} />
           </PressableScale>
-          <PressableScale onPress={handleReport} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} accessibilityLabel="Report and mute">
+          <PressableScale onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: HEADER_GAP / 2, right: 10 }} accessibilityLabel="Report and mute">
             <MoreHorizontal size={16} color={colors.fog} opacity={0.4} />
           </PressableScale>
         </View>
 
-        <PressableScale onPress={() => { nav.push(`/log/${act.id}`); }} haptic="light" style={s.pulseCardContentPressable} accessibilityLabel={`Open full log for ${act.film?.title}`}>
+        {/* The whole body of the card is the target, so it needs no halo — one
+            reached up into the name row and REPORT, and onto the next card. */}
+        <PressableScale onPress={() => { nav.push(`/log/${act.id}`); }} haptic="light" hitSlop={null} style={s.pulseCardContentPressable} accessibilityLabel={`Open full log for ${act.film?.title}`}>
           <View style={s.pulseCardContent}>
              {posterUri && (
               <PressableScale style={s.pulsePosterWrap} onPressIn={() => { if(posterUri) Image.prefetch(posterUri).catch(() => {}); }} onPress={() => { if(act.film?.id) nav.push(`/film/${act.film.id}`); }} accessibilityLabel={`${act.film?.title} poster`}>
+                <View style={s.pulsePosterFrame}>
                  <AnimatedExpoImage {...({ sharedTransitionTag: `poster-${act.id}-${act.film?.id}` } as Record<string, string>)} source={{ uri: posterUri }} style={s.pulsePoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
                  <LinearGradient colors={['transparent', 'rgba(13,11,9,0.4)']} style={StyleSheet.absoluteFillObject} />
+                </View>
               </PressableScale>
             )}
             <View style={s.pulseContentFlex}>
@@ -225,24 +239,34 @@ const s = StyleSheet.create({
   pulsePremium: { borderColor: 'rgba(184,137,26,0.3)', backgroundColor: colors.ink },
   pulseFeaturedMuseum: {
     borderColor: 'rgba(218,165,32,0.6)', borderWidth: 1.5,
-    shadowColor: colors.sepia, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.6, shadowRadius: 15,
     ...Platform.select({ android: { elevation: 0 } })
   },
+  // The featured card's gold, on the wrapper: the card clips its corners, and on
+  // iOS a view that clips casts nothing — this glow never drew on an iPhone.
+  pulseFeaturedGlow: castOf({ shadowColor: colors.sepia, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.6, shadowRadius: 15 }),
   pulseCardAuteur: { ...EDGE_LIT, backgroundColor: colors.sootAuteur, borderColor: colors.crimsonBorder },
   pulseCardHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: HEADER_GAP,
     padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)',
   },
-  pulseUserRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  // The row is as wide as what is in it, and gives way before the report
+  // button does. The name column only SHRINKS: given `flex: 1`, React Native's
+  // Yoga (which keeps its old stretch rule) grew it across the whole header,
+  // shoving the rank stamp to the far side and the report button into the
+  // card's right margin.
+  pulseUserRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 },
   pulseAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.ash, borderWidth: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   pulseAvatarImg: { width: '100%', height: '100%' },
-  pulseUserTextWrap: { flex: 1, justifyContent: 'center' },
+  pulseUserTextWrap: { flexShrink: 1, justifyContent: 'center' },
   pulseUsername: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.parchment, includeFontPadding: false },
   pulseTime: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, marginTop: 2, includeFontPadding: false },
   pulseCardContent: { flexDirection: 'row', gap: 16, padding: 16, paddingBottom: 24 },
-  pulsePosterWrap: {
-    width: 60, height: 90, borderRadius: 4, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)', ...effects.shadowPrimary,
+  // The poster's shadow is split (see castOf): cast from the pressable, which
+  // does not clip; the frame inside clips the corners and carries Android's lift.
+  pulsePosterWrap: { width: 60, height: 90, ...castOf(effects.shadowPrimary) },
+  pulsePosterFrame: {
+    flex: 1, borderRadius: 4, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)', ...liftOf(effects.shadowPrimary),
   },
   pulsePoster: { width: '100%', height: '100%' },
   pulseContentFlex: { flex: 1 },

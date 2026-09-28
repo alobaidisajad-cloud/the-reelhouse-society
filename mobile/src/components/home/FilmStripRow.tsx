@@ -26,7 +26,7 @@ const FilmCard = memo(function FilmCard({ film, onPress }: { film: TMDBFilm; onP
   const posterHeight = posterWidth * 1.5;
   const posterUri = film.poster_path ? `${TMDB_IMG_W185}${film.poster_path}` : null;
   return (
-    <PressableScale style={[s.filmCard, { width: posterWidth }]} onPress={() => onPress(film.id)}>
+    <PressableScale style={[s.filmCard, { width: posterWidth }]} onPress={() => onPress(film.id)} accessibilityRole="link" accessibilityLabel={film.title || film.name || 'Film'}>
       <View style={[s.posterWrap, { width: posterWidth, height: posterHeight }, !posterUri && s.posterEmpty]}>
         {posterUri ? (
           <Image source={{ uri: posterUri }} style={s.posterImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />

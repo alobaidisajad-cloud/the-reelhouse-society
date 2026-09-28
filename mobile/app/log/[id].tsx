@@ -18,7 +18,7 @@ import { Text, TextInput } from '@/src/components/text';
 import Animated, { Easing, SlideInUp, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
  
-import { s, PARALLAX_PADDER_HEIGHT, BACKDROP_H } from '@/src/components/log/logDetailStyles';
+import { s, PARALLAX_PADDER_HEIGHT, BACKDROP_H, HEADER_ACTION_GAP } from '@/src/components/log/logDetailStyles';
 import { hasPhysicalFormat } from '@/src/components/log/logRecord';
 import LogShareCard from '@/src/components/film/LogShareCard';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
@@ -654,7 +654,7 @@ export default function LogDetailScreen() {
 
       <View style={[s.header, { paddingTop: Math.max(insets.top + 8, 56) }]}>
         <View style={s.headerRow}>
-          <PressableScale style={s.backBtn} onPress={() => { router.back(); }} hitSlop={{top:20,bottom:20,left:20,right:20}} haptic="selection" pressedScale={0.92}>
+          <PressableScale style={s.backBtn} onPress={() => { router.back(); }} hitSlop={{top:20,bottom:20,left:20,right:20}} haptic="selection" pressedScale={0.92} accessibilityLabel="Go back">
             <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
 
@@ -664,7 +664,7 @@ export default function LogDetailScreen() {
           </View>
 
           <View style={s.headerRight}>
-            <PressableScale style={s.shareBtn} onPress={() => { handleShare(); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.92}>
+            <PressableScale style={s.shareBtn} onPress={() => { handleShare(); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: HEADER_ACTION_GAP / 2 }} haptic="light" pressedScale={0.92}>
                <Share2 size={14} color={colors.sepia} strokeWidth={1.5} />
                <Text style={s.shareBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(!isReadyToShare || sharing) ? '...' : 'SHARE'}</Text>
             </PressableScale>
@@ -672,7 +672,7 @@ export default function LogDetailScreen() {
               <PressableScale
                 style={s.moreBtn}
                 onPress={() => setActionSheetVisible(true)}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                hitSlop={{ top: 15, bottom: 15, left: HEADER_ACTION_GAP / 2, right: 15 }}
                 haptic="selection"
                 pressedScale={0.92}
                 accessibilityLabel="More options"

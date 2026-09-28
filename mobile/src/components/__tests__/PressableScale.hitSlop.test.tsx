@@ -92,3 +92,25 @@ describe('PressableScale — no hitSlop prop does not mean no slop', () => {
         expect(slopOf({ hitSlop: null })).toBeNull();
     });
 });
+
+describe('PressableScale — the default halo only where a control is small', () => {
+    // On a control already at the floor, a halo only reaches into its
+    // neighbour — and both platforms give the overlap to the LATER control. A
+    // rail of posters 12pt apart handed the edge of every poster to the next.
+    it('a control 48pt or more across gets no default halo across; its height still does', () => {
+        expect(slopOf({ style: { width: 110 } })).toEqual({ top: 15, bottom: 15, left: 0, right: 0 });
+    });
+
+    it('and 48pt or more tall, none down either — minWidth and minHeight count too', () => {
+        expect(slopOf({ style: [{ minWidth: 60 }, { height: 48 }] })).toEqual({ top: 0, bottom: 0, left: 0, right: 0 });
+        expect(slopOf({ style: { minHeight: 52 } })).toEqual({ top: 0, bottom: 0, left: 15, right: 15 });
+    });
+
+    it('just under the floor keeps the full default', () => {
+        expect(slopOf({ style: { width: 47, height: 47 } })).toEqual({ top: 15, bottom: 15, left: 15, right: 15 });
+    });
+
+    it('a side written out is kept as written, whatever the size', () => {
+        expect(slopOf({ style: { width: 110, height: 160 }, hitSlop: { left: 6 } })).toEqual({ top: 0, bottom: 0, left: 6, right: 0 });
+    });
+});

@@ -234,7 +234,9 @@ export const PaperBallot = memo(function PaperBallot({
             {i > 0 && !closed && <View style={[p.hair, { opacity: 0.6 }]} />}
             <PressableScale
               style={[p.option, closed && { opacity: 0.82 }]}
-              hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+              // The options are a hairline apart: a halo on each reached into the
+              // next, and the later option took the mark meant for this one.
+              hitSlop={null}
               haptic
               onPress={onVote ? () => onVote(i) : undefined}
               // Closed, already marked, or nobody signed in. The second is the

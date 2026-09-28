@@ -80,8 +80,29 @@ export const SectionDivider = memo(function SectionDivider({ label }: { label?: 
 })
 
 export const ReelRating = memo(function ReelRating({ rating, size = 16, onChange }: { rating: number; size?: number; onChange?: (rating: number) => void }) {
+  /**
+   * To a screen reader, a rating you can SET is one control, not ten. The
+   * halves below are ten unnamed buttons, which VoiceOver read as "button"
+   * ten times with no score — a member who could not see could not rate a
+   * film. So the row is one adjustable control: named, its value spoken, and
+   * moved half a reel at a time by swiping up or down. The halves stay for
+   * fingers and are grouped under it.
+   */
+  const step = (by: number) => {
+    const next = Math.min(5, Math.max(0, rating + by));
+    if (next !== rating) onChange?.(next);
+  };
+  const adjustable = onChange ? {
+    accessible: true,
+    accessibilityRole: 'adjustable' as const,
+    accessibilityLabel: 'Your rating',
+    accessibilityValue: { text: rating > 0 ? `${rating} of 5` : 'not rated' },
+    accessibilityActions: [{ name: 'increment' as const }, { name: 'decrement' as const }],
+    onAccessibilityAction: (e: { nativeEvent: { actionName: string } }) =>
+      step(e.nativeEvent.actionName === 'increment' ? 0.5 : e.nativeEvent.actionName === 'decrement' ? -0.5 : 0),
+  } : {};
   return (
-    <View style={s.reelRow}>
+    <View style={s.reelRow} {...adjustable}>
       {[1, 2, 3, 4, 5].map((reel) => {
         const full = rating >= reel;
         const half = !full && rating >= reel - 0.5;

@@ -362,7 +362,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                     isCentre ? s.mountCentre : s.mountWing,
                     // TierGlow draws the frame itself for Archivist and above.
                     film && isArchivistPlus && s.mountNoBorder,
-                    isCentre && film && (isAuteurPlus ? s.mountCentreLitRuby : s.mountCentreLit),
+                    // Android's half of the centre's light: it casts from the
+                    // painted view. iOS's half is on the host around it (below).
+                    isCentre && film && s.mountCentreLitElevation,
                 ]}
                 onPress={() => openMount(index, film)}
                 // A visitor cannot act on an empty mount, and a posterless
@@ -410,9 +412,17 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
             </PressableScale>
         );
 
-        if (film && isAuteurPlus) return <TierGlow key={index} tier="auteur" style={size}>{face}</TierGlow>;
-        if (film && isArchivistPlus) return <TierGlow key={index} tier="archivist" style={size}>{face}</TierGlow>;
-        return <View key={index} style={size}>{face}</View>;
+        // The centre's light, on a host that does not clip. The panel clips its
+        // corners (overflow hidden), and on iOS a view that clips cannot cast
+        // anything outside itself — so while the glow sat on the panel, iOS
+        // drew no light on the prize at all.
+        const hung = isCentre && film
+            ? <View style={[s.mountFill, isAuteurPlus ? s.mountCentreLitRuby : s.mountCentreLit]}>{face}</View>
+            : face;
+
+        if (film && isAuteurPlus) return <TierGlow key={index} tier="auteur" style={size}>{hung}</TierGlow>;
+        if (film && isArchivistPlus) return <TierGlow key={index} tier="archivist" style={size}>{hung}</TierGlow>;
+        return <View key={index} style={size}>{hung}</View>;
     };
 
     return (
@@ -648,8 +658,11 @@ const s = StyleSheet.create({
     // Only the centre is lit, and the light is the rank.
     // The centre's glow, held close (12, not 30): on the lit house a 30pt halo
     // spread past the side panels and read as a stain, not a lamp on the prize.
-    mountCentreLit: { shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8 },
-    mountCentreLitRuby: { shadowColor: 'rgba(180,45,45,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.22, shadowRadius: 12, elevation: 8 },
+    // iOS draws these from the host AROUND the panel (the panel clips); Android
+    // draws the light from the panel's own elevation.
+    mountCentreLit: { shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.18, shadowRadius: 12 },
+    mountCentreLitRuby: { shadowColor: 'rgba(180,45,45,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.22, shadowRadius: 12 },
+    mountCentreLitElevation: { elevation: 8 },
     mountNoBorder: { borderWidth: 0 },
     mountBoard: { position: 'absolute', top: 4, left: 4, right: 4, bottom: 4, borderWidth: 1, borderColor: 'rgba(232,223,208,0.10)', zIndex: 3 },
     poster: { width: '100%', height: '100%' },

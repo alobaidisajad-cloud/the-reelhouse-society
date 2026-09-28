@@ -160,6 +160,8 @@ const StackDetailFilmCard = React.memo(({
       <PressableScale
         style={[s.filmCard, { width: itemWidth, height: itemHeight }, isFirst && s.filmCardFirst]}
         onPress={() => onPress(item.id)}
+        accessibilityRole="link"
+        accessibilityLabel={item.title}
       >
         {item.poster_path ? (
           <Image

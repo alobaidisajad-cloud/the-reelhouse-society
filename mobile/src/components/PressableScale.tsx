@@ -4,7 +4,7 @@
  * Runs entirely on the UI thread via Reanimated.
  */
 import React, { memo, useRef } from 'react';
-import { Pressable, ViewStyle, StyleProp, AccessibilityRole, AccessibilityState } from 'react-native';
+import { Pressable, StyleSheet, ViewStyle, StyleProp, AccessibilityRole, AccessibilityState } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -69,11 +69,25 @@ function PressableScale({
   // (iOS reads accessibilityFrame from the view's frame; RN installs no Android
   // TouchDelegate). A control under the 48dp floor is fixed with minHeight /
   // minWidth on the control itself — never by widening this halo.
+  //
+  // The default halo is 15pt — but only on an axis that NEEDS it. It exists so
+  // a small icon is easy for a finger; a control whose own size on an axis is
+  // already the floor (48, Android's, the higher of the two platforms') or more
+  // gets no default halo there, because all a halo does on a big
+  // control is reach into its neighbour. Both platforms give a touch in two
+  // overlapping areas to the LATER control, so a rail of 110pt posters 12pt
+  // apart handed the edge of every poster to the next one. (The layout audit's
+  // STEAL check measured it on every screen.) A side written out is kept as
+  // written; a size the style does not state keeps the 15.
+  const own: ViewStyle = StyleSheet.flatten(style) ?? {};
+  const big = (...v: unknown[]) => v.some((n) => typeof n === 'number' && n >= 48);
+  const across = big(own.width, own.minWidth) ? 0 : 15;
+  const down = big(own.height, own.minHeight) ? 0 : 15;
   const normalizedHitSlop = hitSlop === null ? null : typeof hitSlop === 'number' ? hitSlop : {
-    top: hitSlop?.top ?? 15,
-    bottom: hitSlop?.bottom ?? 15,
-    left: hitSlop?.left ?? 15,
-    right: hitSlop?.right ?? 15,
+    top: hitSlop?.top ?? down,
+    bottom: hitSlop?.bottom ?? down,
+    left: hitSlop?.left ?? across,
+    right: hitSlop?.right ?? across,
   };
 
   const animatedStyle = useAnimatedStyle(() => ({

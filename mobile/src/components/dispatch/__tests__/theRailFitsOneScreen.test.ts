@@ -125,7 +125,9 @@ describe('the writing room rail fits one screen', () => {
     expect(src).toMatch(/toolWord:\s*\{[^}]*?fontSize:\s*10\b[^}]*?letterSpacing:\s*0\.9\b/);
     expect(src).toMatch(/toolBtn:\s*\{[^}]*?paddingHorizontal:\s*8\b/);
     expect(src).toMatch(/toolBtn:\s*\{[^}]*?minWidth:\s*48\b/);
-    expect(src).toMatch(/toolsScroll:\s*\{[^}]*?gap:\s*6\b/);
+    // The gap is one constant now, shared with the tools' touch areas.
+    expect(src).toMatch(/const TOOL_GAP = 6;/);
+    expect(src).toMatch(/toolsScroll:\s*\{[^}]*?gap:\s*TOOL_GAP\b/);
     // The names must SCALE. A frozen label is what made 6.5pt unfixable from
     // the member's own settings.
     expect(src).toMatch(/style=\{styles\.toolWord\} \{\.\.\.scaledTextProps\}/);

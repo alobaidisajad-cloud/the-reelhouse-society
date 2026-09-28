@@ -216,9 +216,14 @@ export const st = StyleSheet.create({
     // Delete (destructive → house crimson, not the bright alert red)
     deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, minHeight: 48, borderWidth: 1, borderColor: colors.crimsonBorder, borderRadius: 4, marginBottom: 16 },
     deleteBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.crimsonInk, includeFontPadding: false },
-    deleteConfirm: { ...effects.shadowPrimary, backgroundColor: 'rgba(50,0,0,0.6)', borderWidth: 1, borderColor: colors.crimson, borderRadius: 4, padding: 20, alignItems: 'center', marginBottom: 16, ...effects.flat, },
+    deleteConfirm: { ...effects.shadowPrimary, backgroundColor: 'rgba(50,0,0,0.6)', borderWidth: 1, borderColor: colors.crimson, borderRadius: 4, padding: 20, alignItems: 'center', alignSelf: 'stretch', marginBottom: 16, ...effects.flat, },
     deleteConfirmText: { fontFamily: fonts.sub, fontSize: 11, color: colors.crimsonInk, marginBottom: 16, textAlign: 'center' },
-    deleteConfirmRow: { flexDirection: 'row', gap: 12 },
+    // Stretched on purpose — CONFIRM and CANCEL share the box's whole width.
+    // Left to content size under this centred box, the two `flex: 1` buttons
+    // were stretched across it by Yoga's old flex-basis rule on the phone (and
+    // the box with them), and drawn at their words' width everywhere else.
+    // Saying it removes the disagreement; the phone draws what it drew.
+    deleteConfirmRow: { flexDirection: 'row', gap: 12, alignSelf: 'stretch' },
     deleteYes: { flex: 1, backgroundColor: colors.crimson, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
     deleteNo: { flex: 1, borderWidth: 1, borderColor: colors.ash, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
     deleteBtnLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.parchmentBright, includeFontPadding: false },

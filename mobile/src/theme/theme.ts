@@ -434,6 +434,7 @@ export const effects = {
     shadowColor: 'transparent',
     shadowOpacity: 0,
   },
+  // (For a thing that clips its corners, see castOf / liftOf below.)
 
   // Outer glows for cards and interactive inputs
   glowSepia: {
@@ -468,6 +469,26 @@ export const effects = {
     textShadowRadius: 4,
   }
 } as const;
+
+/**
+ * A SHADOW ON A THING THAT CLIPS ITS CORNERS is two halves on two views.
+ *
+ * iOS casts from a layer that does NOT clip: `overflow: 'hidden'` sets
+ * clipsToBounds, and a layer masked to its bounds draws nothing outside them —
+ * the shadow never exists. Android casts from the painted view's outline, so
+ * its `elevation` belongs on the view with the background and the border.
+ *
+ *   <View style={castOf(effects.shadowPrimary)}>          // outer: never clips
+ *     <View style={[clipped, liftOf(effects.shadowPrimary)]}>  // inner: clips
+ *
+ * Every drawn screen is checked for the one-view version (mockups/tools/
+ * layout.cjs, SHADOW): it shipped on the altarpiece, the Lobby's marquee and
+ * three poster cards, each drawing no shadow at all on an iPhone.
+ */
+type Shadow = { shadowColor?: string; shadowOffset?: { width: number; height: number }; shadowOpacity?: number; shadowRadius?: number; elevation?: number };
+export const castOf = ({ shadowColor, shadowOffset, shadowOpacity, shadowRadius }: Shadow) =>
+  ({ shadowColor, shadowOffset, shadowOpacity, shadowRadius });
+export const liftOf = ({ elevation }: Shadow) => ({ elevation });
 
 /** Warm sepia-toned blurhash — universal placeholder while images load */
 export const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';

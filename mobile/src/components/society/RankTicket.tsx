@@ -250,7 +250,10 @@ const s = StyleSheet.create({
   // ── the face ──
   head: { paddingLeft: STUB + 16, paddingRight: 18, paddingTop: 16 },
   main: { paddingLeft: STUB + 16, paddingRight: 18, paddingTop: 16, paddingBottom: 16 },
-  top: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 24 },
+  // alignContent: a wrapping row's LINE sits at the top of the 24pt row by
+  // default in React Native (flex-start, where a browser stretches it), so the
+  // stamp and THE HOUSE RECOMMENDS sat 3pt high on the phone. Centred, as drawn.
+  top: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', alignContent: 'center', justifyContent: 'space-between', gap: 8, minHeight: 24 },
   recommend: { backgroundColor: colors.marqueeGold, paddingHorizontal: 7, paddingVertical: 4 },
   recommendText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
   yours: { borderWidth: 1, borderColor: colors.sepiaBorderStrong, paddingHorizontal: 7, paddingVertical: 4 },

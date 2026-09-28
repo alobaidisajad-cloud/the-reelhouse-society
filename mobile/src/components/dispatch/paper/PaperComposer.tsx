@@ -13,6 +13,7 @@ import { LEAD_STYLE } from './paperPerf';
 import { Credit, initialOf, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { PaperKeyWell } from './PaperKeyWell';
+import { DeskDoc } from './PaperDeskDoc';
 
 /**
  * ── THE COPY DESK ────────────────────────────────────────────────────────────
@@ -121,7 +122,7 @@ export const PaperComposer = memo(function PaperComposer({
       </View>
 
       {/* The document, filling the room — the same frame the feed uses. */}
-      <View style={p.deskDoc}>
+      <DeskDoc>
         <View style={p.postRow}>
           <View style={p.margin}>
             <Text style={p.marginValue} {...decorativeTextProps}>{hour}</Text>
@@ -255,7 +256,7 @@ export const PaperComposer = memo(function PaperComposer({
             {film ? <Credit film={film} /> : null}
           </View>
         </View>
-      </View>
+      </DeskDoc>
 
       {/* Tools and the count on one rail — the count now has something to
           belong to instead of floating in the middle of the page. */}

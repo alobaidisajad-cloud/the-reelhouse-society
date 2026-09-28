@@ -20,6 +20,8 @@ export const SPINE = 20;
  * header measures 96, and the header sits outside the scroll view entirely.)
  */
 export const PARALLAX_PADDER_HEIGHT = 80;
+/** SHARE and ··· side by side. Each reaches half of this toward the other, no more. */
+export const HEADER_ACTION_GAP = 14;
 
 /**
  * How tall the picture behind the record hangs. Exported because the room's
@@ -53,7 +55,7 @@ export const s = StyleSheet.create({
     minHeight: 24, position: 'relative',
   },
   backBtn: { width: 60, zIndex: 2 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 14, zIndex: 2 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: HEADER_ACTION_GAP, zIndex: 2 },
   // The eyebrow is absolutely centered so it never shifts owner↔visitor.
   // Gutters sized past the measured worst case: the visitor's right cluster
   // (SHARE + ⋯) measures 87.7pt, so 104 clears it with margin.

@@ -30,6 +30,7 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { PaperKeyWell } from './PaperKeyWell';
+import { DeskDoc } from './PaperDeskDoc';
 import { EDGE_LIT } from '@/src/theme/light';
 
 /** The head every desk wears. One component so three desks cannot drift. */
@@ -115,7 +116,7 @@ export const WireDesk = memo(function WireDesk({
   return (
     <View style={p.desk}>
       <DeskHead kind="wire" ready={!!source && !!headline} onBack={onBack} onFile={onFile} />
-      <View style={p.deskDoc}>
+      <DeskDoc>
         <View style={p.postRow}>
           <View style={p.margin}>
             <Text style={p.marginValue} {...decorativeTextProps}>{hour}</Text>
@@ -142,7 +143,7 @@ export const WireDesk = memo(function WireDesk({
             </View>
           </View>
         </View>
-      </View>
+      </DeskDoc>
       <DeskRail tools={[{ icon: 'film', label: 'FILM' }]} remaining={MAX_LENGTHS.filingBody - body.length} />
       <View style={p.kbd}><Text style={p.kbdLabel} {...decorativeTextProps}>KEYBOARD</Text></View>
     </View>
@@ -179,7 +180,7 @@ export const BallotDesk = memo(function BallotDesk({
   return (
     <View style={p.desk}>
       <DeskHead kind="ballot" ready={ready ?? (filled >= 2 && !!question)} onBack={onBack} onFile={onFile} />
-      <View style={p.deskDoc}>
+      <DeskDoc>
         <View style={p.postRow}>
           <View style={p.margin}>
             <Text style={p.marginValue} {...decorativeTextProps}>{hour}</Text>
@@ -269,7 +270,7 @@ export const BallotDesk = memo(function BallotDesk({
             </View>
           </View>
         </View>
-      </View>
+      </DeskDoc>
       <DeskRail tools={[{ icon: 'date', label: 'CLOSES', on: true }]}
         remaining={MAX_LENGTHS.filingTitle - question.length} />
       {/* Drawn in the harness, where `onQuestion` is absent; the keyboard's real
@@ -300,7 +301,7 @@ export const DossierDesk = memo(function DossierDesk({
   return (
     <View style={p.desk}>
       <DeskHead kind="dossier" ready={!!title && words > 0} onBack={onBack} onFile={onFile} />
-      <View style={[p.deskDoc, { paddingTop: 16 }]}>
+      <DeskDoc style={{ paddingTop: 16 }}>
         <Text style={d.dossierTitle} {...displayTextProps}>
           {title || 'Title'}
           {!title ? null : <Text style={p.caret} {...UNSPOKEN}>|</Text>}
@@ -315,7 +316,7 @@ export const DossierDesk = memo(function DossierDesk({
         )}
         <View style={[p.hair, { marginTop: 12, marginBottom: 16 }]} />
         <Text style={d.dossierBody} {...scaledTextProps}>{body}<Text style={p.caret} {...UNSPOKEN}>|</Text></Text>
-      </View>
+      </DeskDoc>
       <View style={p.rail}>
         <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onFilm}
           accessibilityRole="button" accessibilityLabel="Name a film">

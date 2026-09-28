@@ -83,7 +83,7 @@ export default function LogHero({
         {(isAuteur || isArchivist) && posterUri && (
           <View style={[s.posterGlow, isAuteur ? s.posterGlowAuteur : s.posterGlowArchivist]} />
         )}
-        <PressableScale onPress={onPressFilm} style={[s.posterBoundsShadow, isAuteur && s.posterBoundsShadowAuteur]} pressedScale={0.95} haptic="selection">
+        <PressableScale onPress={onPressFilm} style={[s.posterBoundsShadow, isAuteur && s.posterBoundsShadowAuteur]} pressedScale={0.95} haptic="selection" accessibilityRole="link" accessibilityLabel={`${log.film_title} poster. Open the film.`}>
         <View style={[s.posterBounds, isAuteur && s.posterBoundsAuteur]}>
           {posterUri ? (
             <Image source={{ uri: posterUri }} style={s.posterCentered} contentFit="cover" cachePolicy="memory-disk" transition={150} onLoadEnd={onPosterLoaded} />

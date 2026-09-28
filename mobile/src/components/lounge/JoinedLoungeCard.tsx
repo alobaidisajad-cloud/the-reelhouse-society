@@ -12,7 +12,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film as FilmIcon, DoorOpen, Hourglass } from 'lucide-react-native';
 import { LoungeRoom } from '@/src/stores/lounge';
-import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
+import { colors, fonts, effects, SEPIA_HASH, castOf } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
 import { MemberFaceStack } from '@/src/components/lounge/MemberFaceStack';
@@ -29,7 +29,7 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
   const unreadLabel = unread > 9 ? '9+ NEW' : `${unread} NEW`;
 
   return (
-    <View>
+    <View style={s.joinedCast}>
       <PressableScale
         style={s.joinedCard}
         onPress={() => nav.push(`/lounge/${lounge.id}`)}
@@ -92,6 +92,10 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
 JoinedLoungeCard.displayName = 'JoinedLoungeCard';
 
 const s = StyleSheet.create({
+  // A small lit card keeps a short lift, straight down (see effects.shadowFloat)
+  // — split across two views (see castOf): the card clips its corners, and on
+  // iOS a view that clips casts nothing, so this lift never drew on an iPhone.
+  joinedCast: castOf(effects.shadowFloat),
   joinedCard: { ...EDGE_LIT,
     width: 140,
     borderRadius: 3,
@@ -99,8 +103,6 @@ const s = StyleSheet.create({
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: colors.sepiaBorder,
-    // A small lit card keeps a short lift, straight down (see effects.shadowFloat).
-    ...effects.shadowFloat,
     elevation: 8,
   },
   joinedImgWrap: {

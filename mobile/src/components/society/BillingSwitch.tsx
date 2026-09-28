@@ -35,7 +35,9 @@ export const BillingSwitch = memo(function BillingSwitch({
             key={p}
             style={[s.seg, on && s.segOn]}
             onPress={() => { if (!on) onChange(p); }}
-            hitSlop={{ top: 6, bottom: 6 }}
+            // Left and right say 0 out loud: a side left out is filled with the
+            // 15pt default, which is the very overlap the header rules out.
+            hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
             haptic="selection"
             pressedScale={0.98}
             accessibilityRole="radio"

@@ -191,6 +191,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   errorBox: {
+    // As tall as the error, up to 120, and scrolls past that. A ScrollView
+    // GROWS by default (flexGrow 1), and inside this centred column React
+    // Native's Yoga let it grow to the full 120 around a two-line message —
+    // an empty band nobody drew (mockups/tools/yoga-parity.cjs found it).
+    flexGrow: 0,
     maxHeight: 120,
     width: '100%',
     backgroundColor: 'rgba(255,255,255,0.05)',
