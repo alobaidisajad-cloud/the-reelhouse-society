@@ -5,7 +5,7 @@
  *
  *   npm run comments:check              report every finding, exit 1 if any
  *   npm run comments:check -- --kinds LONG,NAME   only these kinds
- *   npm run comments:check -- --json out.json     also write the findings
+ *   npm run comments:check -- --json <file>       also write the findings
  *
  * A comment is read by the next person as fact. These are the ways it stops
  * being one, each checked by machine so none depends on anyone noticing:
@@ -16,7 +16,7 @@
  *   FILE     names a file that does not exist
  *   LINE     points at a line number, which moves on the next edit
  *   HISTORY  tells what the code was before, or when it changed; git keeps that
- *   TODO     a to-do marker: a promise the code does not keep
+ *   `TODO`   a to-do marker: a promise the code does not keep
  *   CODE     code switched off by commenting it out
  *   LONG     more lines than the code it explains
  *   WIDE     a line over 100 characters — LONG, dodged by cramming
@@ -158,7 +158,7 @@ function repoFiles() {
 }
 
 function fileExists(ref, from) {
-  // An opening bracket with no closing one is prose around the name: "(see a.ts".
+  // An opening bracket with no closing one is prose before the name, not part of it.
   const clean = ref.replace(/^@\//, '').replace(/^\((?![^)]*\))/, '').replace(/[.,;:)]+$/, '');
   const dir = path.dirname(path.join(MOBILE, from));
   const roots = [dir, MOBILE, REPO, path.join(MOBILE, 'node_modules'), path.join(MOBILE, 'src')];
@@ -181,7 +181,7 @@ function parse(file, text) {
   return ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, kindOf(file));
 }
 
-/** Every comment range in a parsed file, found through the token tree so JSX text is never mistaken for one. */
+/** Every comment range in a file, found through the token tree: JSX text is never one. */
 function commentRanges(sf) {
   const text = sf.text;
   const seen = new Map();
@@ -264,7 +264,8 @@ function tokenAfter(sf, pos) {
   let found;
   const visit = (node) => {
     if (found || node.end <= pos || isJsDoc(node)) return;
-    if (node.kind === ts.SyntaxKind.JsxText && !/\S/.test(node.text)) return; // the gap between JSX children
+    // The gap between JSX children is not a token.
+    if (node.kind === ts.SyntaxKind.JsxText && !/\S/.test(node.text)) return;
     const kids = node.getChildren(sf);
     if (kids.length === 0) { if (node.getStart(sf) >= pos) found = node; return; }
     for (const k of kids) { visit(k); if (found) return; }
@@ -283,12 +284,12 @@ function outermostAt(tok) {
 
 const CLOSERS = new Set([ts.SyntaxKind.CloseBraceToken, ts.SyntaxKind.CloseParenToken, ts.SyntaxKind.CloseBracketToken, ts.SyntaxKind.EndOfFileToken, ts.SyntaxKind.GreaterThanToken, ts.SyntaxKind.SlashToken]);
 
-/** The node a comment explains: the next thing after it, or the construct it closes, or the file it heads. */
+/** What a comment explains: the next thing, the construct it closes, or the file it heads. */
 function explained(sf, block, mask, firstCodeLine) {
   const line = (p) => sf.getLineAndCharacterOfPosition(p).line;
   const startLine = line(block.pos);
   const lineStart = sf.getLineStarts()[startLine];
-  // A comment after code on its own line explains that line (`{` opening a JSX comment is not code).
+  // After code on its line, it explains that line (a `{` opening a JSX comment is not code).
   if (/\S/.test(sf.text.slice(lineStart, block.pos).replace(/^\s*\{\s*$/, ''))) return { lines: 1, what: 'its line' };
   // A comment above the first code of the file heads the file.
   if (firstCodeLine === -1 || startLine < firstCodeLine) return { node: sf, what: 'the file' };
@@ -390,7 +391,7 @@ function textFindings(text, file, line, known, { skipNames = false } = {}) {
   // A value in backticks is an example (`2024-02-31`), not when something happened.
   const prose = plain.replace(TICKED, ' ');
   for (const re of HISTORY) { const m = prose.match(re); if (m) { say('HISTORY', m[0]); break; } }
-  const todo = plain.match(TODO);
+  const todo = prose.match(TODO);
   if (todo) say('TODO', todo[0]);
   for (const re of LINE_REF) { const m = plain.match(re); if (m) { say('LINE', m[0]); break; } }
   for (const m of plain.matchAll(FILE_REF)) if (!fileExists(m[1], file)) say('FILE', m[1]);
@@ -470,8 +471,8 @@ function scanHash(file, text, known) {
 }
 
 function scanDoc(file, text, known) {
-  // Docs are prose about code: a named file must exist, a named identifier must exist (ticked only —
-  // prose capitalises freely), and nothing points at a line.
+  // Docs are prose about code: a named file must exist, a ticked identifier must exist
+  // (prose capitalises freely), and nothing points at a line.
   const found = [];
   const fenced = text.replace(/```[\s\S]*?```/g, (s) => s.replace(/[^\n]/g, ' '));
   fenced.split('\n').forEach((l, i) => {

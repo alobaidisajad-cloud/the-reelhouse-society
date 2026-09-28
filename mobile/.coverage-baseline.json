@@ -1,21 +1,21 @@
 {
   "total": {
-    "lines": 58.32,
+    "lines": 58.3,
     "branches": 50.78,
-    "functions": 55.13,
-    "statements": 56.5
+    "functions": 55.11,
+    "statements": 56.49
   },
   "./src/components/dispatch/": {
-    "lines": 93.98,
-    "branches": 85.14,
-    "functions": 92.41,
-    "statements": 92.3
+    "lines": 94.04,
+    "branches": 85.25,
+    "functions": 92.54,
+    "statements": 92.37
   },
   "./src/components/": {
-    "lines": 60.84,
-    "branches": 53.82,
-    "functions": 55.25,
-    "statements": 59.17
+    "lines": 60.88,
+    "branches": 53.88,
+    "functions": 55.35,
+    "statements": 59.21
   },
   "./src/utils/": {
     "lines": 84.36,
@@ -42,10 +42,10 @@
     "statements": 35.47
   },
   "./src/hooks/": {
-    "lines": 40.58,
-    "branches": 33.86,
-    "functions": 43.51,
-    "statements": 39.71
+    "lines": 40.47,
+    "branches": 33.61,
+    "functions": 43.26,
+    "statements": 39.62
   },
   "./src/lib/": {
     "lines": 54.26,
@@ -54,9 +54,9 @@
     "statements": 53.75
   },
   "./app/": {
-    "lines": 47.06,
+    "lines": 46.95,
     "branches": 45.53,
-    "functions": 40.35,
-    "statements": 45.78
+    "functions": 40.19,
+    "statements": 45.68
   }
 }

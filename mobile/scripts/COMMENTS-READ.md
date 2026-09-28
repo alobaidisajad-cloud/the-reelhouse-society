@@ -167,7 +167,7 @@ without one). "Read" is the day its comments were last read against its code.
 | README.md | — |  |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route) |
 | scripts/check-backend-live.mjs | 2026-09-28 | 13 findings; section numbers ran 1-5,9,10,8,6,7,8 and the admin-RPC note sat above the TRUNCATE block — renumbering dropped, each note moved over its own code; '#24' output replaced with what it means |
-| scripts/comment-truth.js | — |  |
+| scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added |
 | scripts/coverage-ratchet.js | 2026-09-29 | the header's why-stories reduced to the rule |
 | scripts/edge-functions.cjs | 2026-09-29 | fetch-rss 'read by visitors' was stale (installed builds call it); history dropped |
 | scripts/functions-check.mjs | 2026-09-29 | now tells a comment-only difference (a note) from a code difference (a failure), by the compiler's tokens; a one-letter code change fails it |
@@ -219,7 +219,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/DarkroomCards.tsx | — |  |
 | src/components/darkroom/DarkroomFilterPanel.tsx | — |  |
 | src/components/darkroom/DarkroomHeader.tsx | — |  |
-| src/components/darkroom/DarkroomHero.tsx | — |  |
+| src/components/darkroom/DarkroomHero.tsx | 2026-09-29 | 6 fixed + autoCorrect off (E2E: last letter lost) |
 | src/components/darkroom/DarkroomMoodBar.tsx | — |  |
 | src/components/Decorative.tsx | — |  |
 | src/components/dispatch/__tests__/aControlsNameCanBeRead.test.ts | — |  |
@@ -249,7 +249,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/oneCapNotThree.test.ts | — |  |
 | src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | — |  |
 | src/components/dispatch/__tests__/paperTextLogic.test.ts | — |  |
-| src/components/dispatch/__tests__/readerScreen.test.tsx | — |  |
+| src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-09-29 | 25 fixed; FOUND a \u-eaten regex (Arabic never matched) |
 | src/components/dispatch/__tests__/roomScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/rulesScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/seriesScreen.test.tsx | — |  |
@@ -478,7 +478,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/NoirPassport.tsx | — |  |
 | src/components/profile/ProfileArchiveTab.tsx | — |  |
 | src/components/profile/ProfileBackdrop.tsx | — |  |
-| src/components/profile/profileComputed.ts | — |  |
+| src/components/profile/profileComputed.ts | 2026-09-29 | 24 fixed; T3 ticket notes, 'until the migration lands', histories cut |
 | src/components/profile/ProfileHelpers.tsx | — |  |
 | src/components/profile/ProfileLedgerTab.tsx | — |  |
 | src/components/profile/ProfileListsTab.tsx | — |  |
@@ -491,7 +491,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/ProjectorRoom.tsx | — |  |
 | src/components/profile/RadarChart.tsx | — |  |
 | src/components/profile/RoomParts.tsx | — |  |
-| src/components/profile/roomStyles.ts | — |  |
+| src/components/profile/roomStyles.ts | 2026-09-29 | 26 fixed; chip-halo note was stranded 100 lines from chipSlop; 'the Vault' renamed Physical Archive in prose |
 | src/components/profile/TasteDNA.tsx | — |  |
 | src/components/profile/TasteDNAExportCanvas.tsx | — |  |
 | src/components/profile/TasteMatch.tsx | — |  |
@@ -807,7 +807,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | — |  |
 | src/utils/__tests__/mutationExecutor.test.ts | — |  |
 | src/utils/__tests__/networkError.test.ts | — |  |
-| src/utils/__tests__/noControlCharacters.guard.test.ts | — |  |
+| src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-09-29 | extended: a \u eaten from a char class; red on the one damaged line, then green |
 | src/utils/__tests__/noMachinePaths.guard.test.ts | — |  |
 | src/utils/__tests__/notificationColumns.guard.test.ts | — |  |
 | src/utils/__tests__/offlineQueue.integration.test.ts | — |  |
@@ -826,6 +826,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/sanitize.test.ts | — |  |
 | src/utils/__tests__/sanitizeInput.test.ts | — |  |
 | src/utils/__tests__/schemaSnapshot.guard.test.ts | — |  |
+| src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts | 2026-09-29 | new guard |
 | src/utils/__tests__/searchPattern.test.ts | — |  |
 | src/utils/__tests__/searchWiring.guard.test.ts | — |  |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
