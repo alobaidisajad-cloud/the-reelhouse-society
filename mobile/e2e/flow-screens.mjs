@@ -2,16 +2,14 @@
 /**
  * flow-screens.mjs — each failed flow, at the moment it failed.
  *
- *   node e2e/flow-screens.mjs <maestro --debug-output dir> <out dir>
+ *   node e2e/flow-screens.mjs <maestro --debug-output dir> <out dir> [<hierarchy dir>]
  *
- * The run used to report ONE screen: the one left on the emulator after every
- * flow had finished — the last flow's, whichever failed. Eleven flows failed
- * for two different reasons and the page showed one of them. Maestro's debug
- * output keeps, per flow, every command it ran, its status, its error and (on
- * failure) the screen's hierarchy at that instant; this writes one file per
- * failed flow — `<out>/<flow>.txt`: the command that failed, why, and the app's
- * own elements on screen then (the system's status bar left out, so the part
- * that matters fits an annotation).
+ * The screen left at the end is only the last flow's. Maestro's debug output
+ * keeps, per flow, each command, its status, its error and (on failure) the
+ * screen's hierarchy then; this writes one `<out>/<flow>.txt` per failed flow:
+ * the command that failed, why, and the app's own elements on screen at that
+ * moment (the status bar left out, so it fits an annotation). Where Maestro kept
+ * no screen, `<hierarchy dir>/<flow>.json` (read by the runner as the flow failed).
  *
  * Prints the files it wrote, one per line. Reads nothing it cannot find: a flow
  * with no hierarchy says so rather than going silent.
@@ -19,9 +17,9 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
-const [debugDir, outDir] = process.argv.slice(2);
+const [debugDir, outDir, hierarchyDir] = process.argv.slice(2);
 if (!debugDir || !outDir) {
-  console.error('usage: node e2e/flow-screens.mjs <maestro-debug dir> <out dir>');
+  console.error('usage: node e2e/flow-screens.mjs <maestro-debug dir> <out dir> [<hierarchy dir>]');
   process.exit(2);
 }
 if (!existsSync(debugDir)) process.exit(0);
@@ -61,6 +59,17 @@ function describe(tree) {
   return rows.sort((x, y) => x[0] - y[0]).map(([, r]) => r).filter((r) => !seen.has(r) && seen.add(r));
 }
 
+/** The screen the runner read as `flow` failed, when Maestro kept none. */
+function screenRead(flow) {
+  const file = hierarchyDir && join(hierarchyDir, `${flow}.json`);
+  try {
+    const rows = describe(JSON.parse(readFileSync(file, 'utf8')));
+    return rows.length ? rows : ['(nothing on screen had an id, a text or a label)'];
+  } catch {
+    return ['(no screen was kept for this step, nor read as the flow failed)'];
+  }
+}
+
 /** A command, as a person would read it: its kind and what it pointed at. */
 function nameOf(command) {
   const [kind, body] = Object.entries(command ?? {}).find(([, v]) => v) ?? ['command', {}];
@@ -75,7 +84,7 @@ for (const f of files) {
   if (!Array.isArray(entries)) continue;
   const failed = entries.find((e) => e?.metadata?.status === 'FAILED');
   if (!failed) continue;
-  // `commands-(<flow>).json`, or a bare `commands.json` inside the flow's own folder.
+  // Named `commands-(<flow>)`, or plain `commands` inside the flow's own folder.
   const own = basename(f).replace(/^commands-?\(?/, '').replace(/\)?\.json$/, '');
   const flow = own || basename(join(f, '..'));
   const done = entries.filter((e) => e?.metadata?.status === 'COMPLETED').length;
@@ -83,7 +92,7 @@ for (const f of files) {
     `${flow}: failed at step ${done + 1} of ${entries.length} — ${nameOf(failed.command)}`,
     `why: ${failed.metadata?.error?.message ?? '(no message)'}`,
     'on the screen then:',
-    ...(failed.metadata?.hierarchy ? describe(failed.metadata.hierarchy) : ['(Maestro kept no screen for this step)']),
+    ...(failed.metadata?.hierarchy ? describe(failed.metadata.hierarchy) : screenRead(flow)),
   ];
   const out = join(outDir, `${flow}.txt`);
   writeFileSync(out, lines.join('\n') + '\n');

@@ -9,7 +9,9 @@ appId: com.reelhouse.society
 # app/(tabs)/_layout.tsx are the reliable signal that boot succeeded. If
 # AppBootstrapper or any critical subsystem fails to initialize, this test
 # will timeout.
-- launchApp
+# From a clean install, whatever flow ran before: a flow depends on no other.
+- launchApp:
+    clearState: true
 
 # A release build's first cold start on a CI emulator (software GPU) takes
 # far longer than on a phone.

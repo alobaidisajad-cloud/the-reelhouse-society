@@ -31,25 +31,38 @@ adb logcat -c   # this run's log only, so a crash below is this run's crash
 sampler=$!
 trap 'kill $sampler 2>/dev/null' EXIT
 
-# The flows get a budget of their own, well inside the job's: a hang that ran
-# into the job's limit would cancel the job, and everything below that explains
-# a failure would never run.
+# One flow at a time: Maestro's records keep no screen for a failed step, so the
+# screen is read the moment a flow fails, before the next one relaunches the app.
+# The flows share a budget well inside the job's (a job that runs out is killed
+# with nothing explained), and each has at most ten minutes of it.
 MINUTES=${E2E_FLOWS_MINUTES:-35}
-timeout --signal=INT --kill-after=60 "${MINUTES}m" "$MAESTRO" test "$FLOWS" \
-  -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" \
-  -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
-  -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" \
-  --format junit --output "$OUT/maestro-report.xml" \
-  --debug-output "$OUT/maestro-debug" \
-  > "$OUT/maestro.log" 2>&1
-rc=$?
+DEADLINE=$(( $(date +%s) + MINUTES * 60 ))
+mkdir -p "$OUT/flow-reports" "$OUT/flow-hierarchy"
+: > "$OUT/maestro.log"
+rc=0
+for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
+  name=$(basename "$flow" .yaml)
+  left=$(( DEADLINE - $(date +%s) ))
+  if [ $left -le 60 ]; then
+    echo "[Skipped] $name (the flows' ${MINUTES} minutes ran out)" >> "$OUT/maestro.log"; rc=1; continue
+  fi
+  echo "── $name" >> "$OUT/maestro.log"
+  timeout --signal=INT --kill-after=30 "$(( left < 600 ? left : 600 ))s" "$MAESTRO" test "$flow" \
+    -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" \
+    -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
+    -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" \
+    --format junit --output "$OUT/flow-reports/$name.xml" \
+    --debug-output "$OUT/maestro-debug/$name" \
+    >> "$OUT/maestro.log" 2>&1
+  frc=$?
+  if [ $frc -ne 0 ]; then
+    rc=1
+    [ $frc -eq 124 ] && echo "[Failed] $name (ran out of its time)" >> "$OUT/maestro.log"
+    timeout 60 "$MAESTRO" hierarchy > "$OUT/flow-hierarchy/$name.json" 2>/dev/null || true
+  fi
+done
 cat "$OUT/maestro.log"
-
-if [ $rc -eq 124 ] || [ $rc -eq 137 ]; then
-  # Where it stopped: the log's last lines are the flow and the step it was on.
-  tail -n 40 "$OUT/maestro.log" > "$OUT/maestro-tail.txt"
-  node mobile/e2e/annotate.mjs "E2E flows ran out of time after ${MINUTES} minutes — where they stopped" "$OUT/maestro-tail.txt"
-fi
+grep -E '^\[(Passed|Failed|Skipped)\]' "$OUT/maestro.log" > "$OUT/maestro-summary.txt" || true
 # Everything below that asks the device waits for it forever if it is gone, so
 # each such call has a limit, and a vanished device is reported as what it is.
 alive=1
@@ -65,12 +78,11 @@ if [ $alive -eq 0 ]; then
   node mobile/e2e/annotate.mjs "The emulator went away during the flows" "$OUT/device-gone.txt"
 fi
 if [ $rc -ne 0 ]; then
-  node mobile/e2e/annotate.mjs "E2E flows failed" "$OUT/maestro.log"
-  # Each failed flow's OWN screen, at the moment it failed — not the one left
-  # on the emulator at the end, which is only ever the last flow's. (A step
+  node mobile/e2e/annotate.mjs "E2E flows failed" "$OUT/maestro-summary.txt"
+  # Each failed flow's step, why, and its OWN screen at that moment. (A step
   # carries at most ten notices; the rest are on the run's summary.)
   n=0
-  for f in $(node mobile/e2e/flow-screens.mjs "$OUT/maestro-debug" "$OUT/flow-screens"); do
+  for f in $(node mobile/e2e/flow-screens.mjs "$OUT/maestro-debug" "$OUT/flow-screens" "$OUT/flow-hierarchy"); do
     n=$((n + 1))
     [ $n -le 9 ] && node mobile/e2e/annotate.mjs "$(basename "$f" .txt) at the moment it failed" "$f" notice
   done

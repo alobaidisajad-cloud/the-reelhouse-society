@@ -8,7 +8,9 @@ appId: com.reelhouse.society
 # "tab-profile"/"tab-lobby" etc., and no on-screen "Profile"/"Darkroom"/
 # "Dispatch" header text to assert against (TopNavBar has no title).
 
-- launchApp
+# Signed out, from a clean install: a flow depends on no other.
+- launchApp:
+    clearState: true
 - extendedWaitUntil:
     visible:
       id: "home-tab"

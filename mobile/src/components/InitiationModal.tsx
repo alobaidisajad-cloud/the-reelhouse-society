@@ -180,7 +180,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
               </PressableScale>
             ) : <View style={s.footerSpacer} />}
 
-            <PressableScale onPress={handleQuiet} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Skip and enter the lobby">
+            <PressableScale onPress={handleQuiet} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Skip and enter the lobby" testID="initiation-enter-quietly">
               <Text style={s.quietText}>ENTER QUIETLY</Text>
             </PressableScale>
           </View>

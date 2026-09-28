@@ -281,7 +281,8 @@ jobs:
             ${{ runner.temp }}/functions.log
             ${{ runner.temp }}/build.log
             ${{ runner.temp }}/maestro.log
-            ${{ runner.temp }}/maestro-report.xml
+            ${{ runner.temp }}/flow-reports
+            ${{ runner.temp }}/flow-screens
             ${{ runner.temp }}/maestro-debug
             ${{ runner.temp }}/screen.txt
             ${{ runner.temp }}/logcat.txt

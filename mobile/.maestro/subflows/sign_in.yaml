@@ -33,13 +33,19 @@ appId: com.reelhouse.society
     text: ${E2E_MEMBER_EMAIL}
 - tapOn:
     id: "sign-in-submit"
-# Signing in returns to the Lobby (the form replaces itself with the tabs). The
-# button leaving is not enough: it also leaves when the form becomes another
-# screen, and then the tab below is never found and the failure names the wrong step.
+# The seeded member is new on every run, so signing in opens THE INITIATION, as
+# it does for every member in their first 48 hours; they enter quietly. Then the
+# Lobby, with its tabs.
+- extendedWaitUntil:
+    visible:
+      id: "initiation-enter-quietly"
+    timeout: 30000
+- tapOn:
+    id: "initiation-enter-quietly"
 - extendedWaitUntil:
     visible:
       id: "home-tab"
-    timeout: 30000
+    timeout: 15000
 # Signed in = your own member file, with its holdings, under the Profile tab.
 - tapOn:
     id: "profile-tab"
