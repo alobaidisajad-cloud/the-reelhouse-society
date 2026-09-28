@@ -29,15 +29,17 @@ that cannot touch production.
 - **After the flows,** `e2e/db/verify-writes.mjs` finds, in the database, the row
   each logging flow must have written, with the exact words it typed.
 
-A failed run explains itself on the run page, where anyone can read it:
-Maestro's report as an error, and what was on the screen as a notice.
+A failed run explains itself on the run page, where anyone can read it: each
+flow's result as an error, and for each failed flow a notice naming the step,
+why it failed, and what was on the screen at that moment. The flows run one at
+a time, each from a clean install, so no flow depends on another.
 
 ## The flows
 
 | File | What it proves |
 |---|---|
 | `boot_verification.yaml` | the app boots, and the whole tab bar is there |
-| `login_flow.yaml` | signing in through the Profile tab lands on your member file |
+| `login_flow.yaml` | signing in through the Profile tab (through the Initiation, as a new member) lands on your member file |
 | `auth_flow.yaml` | forgot-password: the recovery modal, and back to sign-in |
 | `auth_deep_link.yaml` | `reelhouse://reset-password` with no session gets the rescue screen |
 | `darkroom_search.yaml` | the Darkroom's suggestions open a film page (no account) |
@@ -57,9 +59,8 @@ Maestro's report as an error, and what was on the screen as a notice.
 `src/utils/__tests__/maestroFlows.guard.test.ts` reads every flow on every push:
 each id must be a testID in the app, each text must match (as Maestro matches:
 the whole text, as a pattern) something the app writes, each flow must drive
-this app, and none may hold an account. Eight of the old thirteen flows named
-markers the app had dropped, and nothing said so; now a change to the app that
-strands a flow fails CI the same day.
+this app, and none may hold an account. A change to the app that strands a flow
+fails CI the same day.
 
 ## When a flow fails only sometimes
 

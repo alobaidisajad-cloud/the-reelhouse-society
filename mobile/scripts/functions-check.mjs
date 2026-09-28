@@ -14,20 +14,24 @@
  *   · verify_jwt differs                        — a gate added or dropped by a redeploy
  *   · source differs                            — what runs is not what you are reading
  *
+ * and, without failing, a file whose comments alone differ: the code that runs is
+ * the repo's, and the words beside it wait for the next deploy.
+ *
  * Read-only: it lists and downloads, never deploys. It needs the Supabase CLI
  * to be logged in (`npx supabase login`).
  *
- * Two differences are not differences, and are ignored: line endings (git on
- * Windows checks files out as CRLF, and a deploy uploads them as they are on
- * disk) and whitespace at the very end of a file (a function pasted into the
- * dashboard loses its final newline). Neither changes what runs.
+ * Line endings (git on Windows checks out CRLF, and a deploy uploads the disk's)
+ * and whitespace ending a file (the dashboard drops a final newline) are ignored.
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import fns from './edge-functions.cjs';
+
+const ts = createRequire(import.meta.url)('typescript');
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, '..', '..');
@@ -40,7 +44,7 @@ const REF = new URL(eas.build.production.env.EXPO_PUBLIC_SUPABASE_URL).hostname.
 const supabase = (args, cwd) =>
   execFileSync('npx', [...CLI, ...args, '--project-ref', REF], { cwd, encoding: 'utf8', shell: process.platform === 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
 
-/** Every file under a folder, as relative path → text with LF endings and no trailing whitespace. */
+/** Every file under a folder: relative path → text, LF endings, no trailing whitespace. */
 const filesIn = (root) => {
   const out = new Map();
   const walk = (d) => {
@@ -53,6 +57,25 @@ const filesIn = (root) => {
   if (existsSync(root)) walk(root);
   return out;
 };
+
+/**
+ * A source's tokens as the compiler parses it, comments left out (the scanner alone
+ * would misread a regex like /\/\// as a comment). Two files with the same tokens
+ * run the same code.
+ */
+const tokensOf = (file, text) => {
+  const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  const out = [];
+  const visit = (n) => {
+    if (n.kind >= ts.SyntaxKind.FirstJSDocNode && n.kind <= ts.SyntaxKind.LastJSDocNode) return;
+    const kids = n.getChildren(sf);
+    if (!kids.length) { const t = n.getText(sf); if (t) out.push(t); return; }
+    kids.forEach(visit);
+  };
+  visit(sf);
+  return out.join('\u0000');
+};
+const sameCode = (file, a, b) => /\.(ts|js|mjs)$/.test(file) && tokensOf(file, a) === tokensOf(file, b);
 
 let listed;
 try {
@@ -67,6 +90,8 @@ try {
 }
 
 const problems = [];
+/** Differences that change nothing that runs: reported, never failed. */
+const notes = [];
 const live = new Map(listed.map((f) => [f.slug, f]));
 
 for (const slug of live.keys()) {
@@ -90,10 +115,15 @@ try {
     const running = filesIn(join(scratch, 'supabase', 'functions', slug));
     const repo = filesIn(join(REPO, want.dir, slug));
     const names = [...new Set([...running.keys(), ...repo.keys()])].sort();
-    const differ = names.filter((n) => running.get(n) !== repo.get(n)).map((n) =>
+    const texts = names.filter((n) => running.get(n) !== repo.get(n));
+    const noted = texts.filter((n) => running.has(n) && repo.has(n) && sameCode(n, running.get(n), repo.get(n)));
+    const differ = texts.filter((n) => !noted.includes(n)).map((n) =>
       !running.has(n) ? `${n} (not deployed)` : !repo.has(n) ? `${n} (not in the repo)` : n);
     if (differ.length) {
       problems.push(`source differs: ${slug} — ${differ.join(', ')}\n      the repo copy is ${want.dir}/${slug}; if it is right, deploy it:\n      ${fns.deployCommand(slug)}`);
+    }
+    if (noted.length) {
+      notes.push(`comments differ, code identical: ${slug} — ${noted.join(', ')}. Deploy when convenient:\n      ${fns.deployCommand(slug)}`);
     }
   }
 } finally {
@@ -105,8 +135,9 @@ for (const [slug, { why }] of Object.entries(fns.NOT_DEPLOYED)) {
   else console.log(`  (not deployed, on purpose: ${slug} — ${why})`);
 }
 
+for (const n of notes) console.log('  · ' + n);
 if (!problems.length) {
-  console.log(`✓ All ${Object.keys(fns.DEPLOYED).length} deployed functions match their one copy in the repo, and their verify_jwt.`);
+  console.log(`✓ All ${Object.keys(fns.DEPLOYED).length} deployed functions run their one copy in the repo, with their verify_jwt.`);
   process.exit(0);
 }
 console.error(`\n✗ ${problems.length} problem(s):\n`);

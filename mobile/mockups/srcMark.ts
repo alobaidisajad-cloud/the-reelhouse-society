@@ -22,8 +22,8 @@ export function siteOutside(own: RegExp): string | undefined {
   const capture = (require('react') as { captureOwnerStack?: () => string | null }).captureOwnerStack;
   const stack = String(capture?.() ?? '');
   for (const line of stack.split('\n')) {
-    // "at Name (path:line:col)" or "at path:line:col". The path is taken
-    // greedily: route groups put parentheses IN it — app/(modals)/x.tsx.
+    // "at Name (path:line:col)" or "at path:line:col". The path is taken greedily:
+    // a route group puts parentheses IN it, as app/(modals)/ does.
     const m = /\((.+):(\d+):\d+\)\s*$/.exec(line) ?? /\bat (.+):(\d+):\d+\s*$/.exec(line);
     if (!m || m[1].includes('node_modules') || own.test(m[1])) continue;
     return `${relative(ROOT, m[1]).split(sep).join('/')}:${m[2]}`;

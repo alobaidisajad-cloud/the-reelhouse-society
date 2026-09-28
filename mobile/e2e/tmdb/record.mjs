@@ -3,7 +3,7 @@
  * record.mjs — record TMDB answers for the E2E stand-in.
  *
  *   node e2e/tmdb/record.mjs "/search/multi?query=The%20Godfather&page=1&include_adult=false" …
- *   node e2e/tmdb/record.mjs --from misses.txt     (one path per line, as the run summary lists them)
+ *   node e2e/tmdb/record.mjs --from misses.txt   (a path a line, as the run lists them)
  *
  * Each path is fetched ONCE from the production tmdb-proxy — the same request
  * the app makes, with the anon key the app ships — and saved under

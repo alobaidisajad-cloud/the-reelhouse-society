@@ -1,30 +1,11 @@
 /**
- * zz-final.gen.test.tsx — the final look. One design, no alternatives.
+ * zz-final.gen.test.tsx — the rank mark and the writing room, as designed before
+ * they shipped. A GENERATOR, not a test. Run: npx jest zz-final.gen
  *
- * A GENERATOR, not a test. Run: npx jest zz-final.gen
- *
- * ── THE MARK ────────────────────────────────────────────────────────────────
- * The house's own rank stamp — `profileStyles.tierStamp`, which already carries
- * the comment "this is where rank lives now" — corrected on the two faults the
- * profile could never reveal, because the profile only ever draws ONE:
- *
- *   1. IT INVERTED THE HIERARCHY. Both ranks sit together in a feed, and a
- *      brass hairline is brighter than a crimson one on near-black, so the
- *      lesser rank read louder. The Auteur is struck at full pressure now and
- *      the Archivist as a lighter impression — which is what a lesser stamp IS
- *      in printing. The medium carries the rank, not a second shape.
- *   2. ITS WORD FAILED CONTRAST. `colors.crimson` on that ground is 3.16:1 —
- *      over the app's 3:1 floor, under the 4.5 that 8pt type wants. `crimsonInk`
- *      exists for precisely this, at 5.4:1. Sepia is already 6.24:1.
- *
- * Plus the texture: six percent of the rank's own ink inside the box over a
- * graded ground, so it reads as a stamp pressed into card rather than an
- * outline. Six stays well under the ten `stampCrimson` uses for WITHHELD.
- *
- * ── IT IS THE SAME MARK IN EVERY PLACE ──────────────────────────────────────
- * One component, one construction, one size. The only thing that ever differs
- * is WHICH rank it says. Nothing gets a per-screen variant — that is what
- * produced three golds and four dresses in the first place.
+ * The mark: the profile's rank stamp, the Auteur struck at full pressure and the
+ * Archivist as a lighter impression (the medium carries the rank), its word in
+ * crimsonInk, one construction in every place. What shipped is RankBadge, built
+ * in theme/stamp.ts, whose wash differs from this drawing's.
  */
 import React from 'react';
 import { View, Text } from 'react-native';
@@ -59,21 +40,9 @@ const Mark = ({ rank, scale = 1 }: { rank: 'auteur' | 'archivist' | null; scale?
       paddingHorizontal: 7, paddingVertical: 2.5,
       borderWidth: a ? 1 : 0.5,
       borderColor: a ? colors.crimson : 'rgba(184,137,26,0.55)',
-      /* ── NO RADIUS, AND THEREFORE NO CLIPPING ──────────────────────────
-         A letterpress stamp has square corners, so there is no radius — and
-         with no radius the absolutely-positioned gradient, pinned to all four
-         edges of the padding box, already fills exactly the area it should.
-         There is nothing left to clip, so `overflow: 'hidden'` comes off.
-
-         That matters beyond tidiness: `overflow: hidden` combined with a
-         `transform` is the one construction here that renders differently on
-         Android, and there is no Android device to prove otherwise on. The
-         safest fix was not to test around it but to stop needing it. */
+      // Square corners, so no clipping (overflow hidden with a transform renders
+      // differently on Android); a rotated box paints ~0.6pt a side past its layout.
       transform: [{ rotate: '-3deg' }],
-      /* A rotated box PAINTS wider than the box layout reserved for it.
-         Measured on the rendered page: 0.65–1.13pt across, so ~0.6pt a side,
-         and it grows with the type. A point each side covers it to the 1.35
-         ceiling with room left. */
       marginHorizontal: 1, flexShrink: 0,
     }}>
       <LinearGradient
@@ -81,17 +50,7 @@ const Mark = ({ rank, scale = 1 }: { rank: 'auteur' | 'archivist' | null; scale?
           : ['rgba(184,137,26,0.10)', 'rgba(184,137,26,0.03)', 'rgba(10,9,6,0.96)']}
         start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
         style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
-      {/* ── IT SCALES ────────────────────────────────────────────────────
-          `scaledTextProps`, not `decorativeTextProps`. A rank is a LABEL a
-          member reads, and freezing it small on a page where everything else
-          grows is exactly the accessibility miss this app keeps catching.
-
-          The first draft of this drawing used the decorative prop, so the
-          plates showed a mark that never grew while the plan described one
-          that did — the picture and the plan were two different products.
-          With the real prop the converter stamps this element's own ceiling,
-          so the type-size switch above moves it and the fit can be MEASURED
-          rather than asserted. */}
+      {/* It SCALES: a rank is a label a member reads, never frozen small. */}
       <Text style={{
         fontFamily: fonts.sub, fontSize: 7.5 * scale, letterSpacing: 1.8,
         includeFontPadding: false, color: a ? colors.crimsonInk : colors.sepia,
@@ -180,16 +139,8 @@ add('a1-the-mark-everywhere', (
     ))}
 
     <View style={[p.hair, { marginTop: 12, marginBottom: 14 }]} />
-    {/* ── 6 · THE EVENTS ROW — RING AND NAME, AND DELIBERATELY NO MARK ────
-        This row draws its actor inside ONE truncating sentence: the name is a
-        nested Text inside "ANA  certified your filing". A stamp cannot go
-        there — a View inside a Text is not something React Native lays out
-        reliably — so the decision is forced rather than aesthetic.
-
-        What it DOES take is the name colour every other surface gives an
-        Auteur. It had the tier ring already and nothing else, which is how it
-        would have quietly drifted: the ring would have turned crimson with the
-        stylesheet and the name would have stayed parchment. */}
+    {/* 6 · An events row, as sketched: ring and name colour, no stamp (a View inside a
+        Text does not lay out reliably). The app's notices are the notifications modal. */}
     <Note dim>6 · THE DISPATCH EVENTS — RING AND NAME, NO MARK (SEE WHY, IN THE FILE)</Note>
     {[1, 0, 2].map((k, i) => (
       <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6 }}>
@@ -246,26 +197,9 @@ add('a2-in-the-feed', (
 ));
 
 /* ══════════════════════════════════════════════════════════════════════════
-   THE WRITING ROOM
-   ──────────────────────────────────────────────────────────────────────────
-   The room is already well built — a proper header, a discard confirmation,
-   a draft that survives the evening, a character fence that REFUSES rather than
-   truncating. Four things are wrong, and only four:
-
-     · six unlabelled icons. Bold and Italic read; Type, Quote, Minus and Link2
-       do not say heading, block quote, section break, link.
-     · the placeholder says "Use Markdown for formatting" — a wall to anyone who
-       does not know what that is, and redundant to anyone who does. Press
-       Heading and `##` appears in your text with no explanation.
-     · the preview lies. Courier 15/24 in bone, where the page is Spectral
-       16.5/28 in parchment with a raised initial.
-     · a dossier cannot carry a film, a cover or a series, though the reader
-       draws all three and the store already accepts every field.
-
-   The fix is one idea: SEPARATE WHAT THE PIECE IS FROM HOW THE WORDS ARE SET.
-   The sheet's head holds the title, the series and the film — what you are
-   filing. The rail holds the text tools — how it reads. The foot holds the
-   count. Three places, three jobs, nothing to learn.
+   THE WRITING ROOM: what the piece IS apart from how its words are SET. The head
+   holds the title, series and film; the rail the labelled text tools; the foot
+   the count. The preview is set as the page sets it.
    ══════════════════════════════════════════════════════════════════════════ */
 const Tool = ({ glyph, label }: { glyph: string; label: string }) => (
   <View style={{ alignItems: 'center', gap: 3, minWidth: 42 }}>
@@ -410,21 +344,9 @@ add('b3-the-preview-is-the-reader', (
 ));
 
 /* ══════════════════════════════════════════════════════════════════════════
-   C · THE MEMBERSHIP CARD — THE PROMISE, DELETED RATHER THAN REWRITTEN
-   ──────────────────────────────────────────────────────────────────────────
-   The Auteur tier is sold with `Gold Foil "Auteur" Badge` in its feature list.
-   Change the mark to crimson and that line is a lie on the paywall.
-   Rewriting it to say "crimson" only moves the lie one colour along: the copy
-   and the component would still be two places that have to agree, and the next
-   person to retune the mark will not think to open the membership file.
-
-   So the line is DELETED, and the card WEARS the mark instead. A card that
-   shows the badge cannot promise the wrong one. The bullet was describing
-   something the card can simply be.
-
-   It sits under the tier's label, where the eye already lands on the way to the
-   price — and the Cinephile card shows nothing there, which is the truest thing
-   the layout can say about an unranked member.
+   C · THE MEMBERSHIP CARD WEARS the mark, under the tier's label, instead of a
+   bullet describing it: a card that shows the badge cannot promise the wrong one.
+   The Cinephile card shows nothing there, the truth about an unranked member.
    ══════════════════════════════════════════════════════════════════════════ */
 const TierCard = ({ rank, name, label, price, period, features, cta }: {
   rank: 'auteur' | 'archivist' | null; name: string; label: string;

@@ -1,31 +1,17 @@
 /**
  * coverage-ratchet.js — One-Way Coverage Gate, PER DIRECTORY
  * ──────────────────────────────────────────────────────────
- * Reads coverage-summary.json and compares against .coverage-baseline.json.
- * If any metric drops below baseline (with a small tolerance), the script exits
- * non-zero — failing CI. If metrics improve, it raises the baseline itself.
+ * Reads Jest's coverage summary and compares it with .coverage-baseline.json:
+ * any metric below baseline (less a small tolerance) exits non-zero, failing CI;
+ * any improvement raises the baseline itself.
  *
  * Usage: node scripts/coverage-ratchet.js
  * Run AFTER: npx jest --ci --coverage
  *
- * ── WHY IT IS NO LONGER GLOBAL-ONLY ────────────────────────────────────────
- * It watched `summary.total` and nothing else. A whole directory could collapse
- * and stay inside the global tolerance, because global is an average over ~9,000
- * lines: `src/components/` losing twenty points moves the total by a couple.
- * That is not theoretical — the jest floors it sits beside had drifted 25 points
- * under actual without anything noticing, and this file's own baseline was
- * recording 24.9% against a real 46.4%.
- *
- * So it now ratchets each directory the thresholds name, plus the total. The
- * jest floors are the HARD floor, re-based by hand and rarely touched; this is
- * the live one-way gate that catches a slide the day it happens, and it
- * maintains itself so nobody has to remember to.
- *
- * ── WHY THIS AND NOT A GUARD TEST ──────────────────────────────────────────
- * A test asserting "no floor sits more than N points under actual" was the
- * obvious alternative and it is wrong: it fails whenever coverage IMPROVES,
- * forcing a manual jest.config edit on a good PR. Two mechanisms with opposite
- * philosophies. A ratchet already had the right one.
+ * PER DIRECTORY the thresholds name, plus the total: an average over thousands
+ * of lines hides one directory losing twenty points. The jest floors are the
+ * hard floor, re-based by hand; this is the live one-way gate. (A test that a
+ * floor sits near actual would fail on every improvement; a ratchet does not.)
  */
 const fs = require('fs');
 const path = require('path');
@@ -85,9 +71,8 @@ const current = {};
 for (const [key, match] of GROUPS) current[key] = measure(match);
 
 // ── Load, migrate, or seed the baseline ────────────────────────────────────
-// The old file was flat: { lines, branches, functions, statements }. Treat that
-// as the `total` group and seed the rest, so an existing checkout upgrades
-// without a spurious "everything improved" report or a lost history.
+// A flat baseline ({ lines, branches, … }) is read as the `total` group, the rest
+// seeded, so an old checkout upgrades without a false "everything improved".
 let baseline = {};
 let seeded = false;
 if (fs.existsSync(BASELINE_PATH)) {

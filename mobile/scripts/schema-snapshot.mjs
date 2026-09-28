@@ -6,22 +6,15 @@
  *   node scripts/schema-snapshot.mjs --check   compare live against it, exit 1 on drift
  *
  * ── Why a snapshot and not a migration ledger ──────────────────────────────
- * The obvious fix for "nothing records which migrations are live" is to backfill
- * supabase_migrations.schema_migrations. That table holds **0 rows**, the
- * database was built outside the migration system, and 143 SQL files across two
- * trees were applied by hand. Any backfill would be a guess recorded as fact.
- *
- * A snapshot records what IS, not what was intended, and it catches drift from
- * every source — a hand-run statement in the SQL editor, a dashboard click, an
- * extension upgrade — not just "a migration file was skipped". Hand-running SQL
- * is how this project actually works, so that is the drift that matters.
+ * supabase_migrations.schema_migrations holds no rows: the database was built
+ * outside the migration system, by hand, so a backfilled ledger would be a guess
+ * recorded as fact. A snapshot records what IS, and catches drift from every
+ * source: the SQL editor, a dashboard click, an extension upgrade.
  *
  * ── Three files, because `-n public` is blind outside public ───────────────
- * A `pg_dump --schema-only -n public` captures ZERO cron jobs and ZERO storage
- * buckets, because those are rows rather than DDL. The two worst things the
- * recent batches found lived exactly there: a PUBLIC storage bucket with no size
- * limit that any member could upload to, and a cron job that had failed 171,883
- * times. A DDL-only snapshot would have reported "clean" for both.
+ * A `pg_dump --schema-only -n public` captures no cron jobs and no storage
+ * buckets (rows, not DDL), and those are where a public unlimited bucket and a
+ * cron job failing by the hundred thousand once hid.
  *
  * It is just as blind to what this app attached to Supabase's own tables: the
  * triggers on auth.users that make and erase a profile, the upload rules on
@@ -91,17 +84,10 @@ function run(cmd, args, opts = {}) {
   return execFileSync(cmd, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...opts });
 }
 
-/**
- * psql and pg_dump on Windows write stdout in text mode: every \n they print
- * arrives as \r\n. Undo exactly that one layer, and only there. A function body saved with
- * CRLF holds a real \r\n in the database, printed as \r\r\n; this turns it
- * back into \r\n, so the database's own text survives byte for byte, and the
- * files are the same whichever machine takes them.
- */
-const undoHostNewlines = (s) => (process.platform === 'win32' ? s.replace(/\r\n/g, '\n') : s);
-// Only on Windows: elsewhere nothing is added, and the same replace would
-// delete the database's own CRs (the sealed E2E world's first fidelity checks
-// on Linux reported exactly those 2,651 lines missing).
+// Windows psql and pg_dump print \n as \r\n: that one layer is undone, there only (elsewhere
+// it would delete the database's own CRs), so a body saved with \r\n survives byte for byte.
+const undoHostNewlines = (s) =>
+  (process.platform === 'win32' ? s.replace(/\r\n/g, '\n') : s);
 
 /** One query, with search_path pinned so every printed expression is schema-qualified. */
 function psql(url, sql) {
@@ -277,11 +263,9 @@ if (absent.length) {
 
 const committedSchema = readFileSync(SCHEMA_FILE, 'utf8');
 
-// A version mismatch produces formatting differences indistinguishable from real
-// drift. Say so plainly rather than printing a 500-line diff nobody can read.
+// Another pg_dump version formats like real drift, so it is named, not diffed.
 const recorded = committedSchema.match(/^-- pg_dump: (.+)$/m)?.[1];
-// SNAPSHOT_SAME_MAJOR=1 accepts another minor release of the same major (the
-// CI runner installs the current 18.x). The format changes between majors.
+// SNAPSHOT_SAME_MAJOR=1 accepts another minor of the same major (CI installs 18.x).
 const major = (v) => v?.match(/\) (\d+)\./)?.[1];
 const sameMajorAllowed = process.env.SNAPSHOT_SAME_MAJOR === '1' && major(recorded) && major(recorded) === major(version);
 if (recorded && recorded !== version && !sameMajorAllowed) {
@@ -337,10 +321,7 @@ function diff(label, a, b) {
 
   console.error(`\n✗ ${label}: ${added.length} line(s) added, ${removed.length} removed`);
 
-  // Show the lines that say something. A pg_dump hunk is mostly blank lines and
-  // `--` rules; printing those first buried the one line that named the change
-  // ("CREATE TABLE public._drift_probe") below twenty separators. Noise is
-  // counted, not displayed.
+  // The lines that say something: blank lines and `--` rules are counted, not shown.
   const meaningful = (l) => l.trim() !== '' && !/^--+$/.test(l.trim()) && !/^--\s*$/.test(l);
   // A CR or a tab is invisible in a terminal, so a line that differs only by
   // one would print twice, identically. Mark them so the difference shows.

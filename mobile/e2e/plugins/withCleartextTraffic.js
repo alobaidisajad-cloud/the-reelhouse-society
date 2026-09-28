@@ -1,5 +1,5 @@
 /**
- * Lets the E2E build speak plain http — to the local backend on the runner, and nothing else exists there.
+ * Lets the E2E build speak plain http, to the local backend on the runner (all there is).
  *
  * Android refuses cleartext by default. Used only by app.config.js when E2E=1;
  * no real build ever includes this plugin (appConfig.guard.test.ts).

@@ -127,8 +127,7 @@ describe('a member’s room', () => {
     mkdirSync(OUT, { recursive: true });
 
     const r = render(<RoomScreen />);
-    // The profile read, the page, the totals and the marks all resolve on
-    // microtasks; without flushing them the plate is a spinner.
+    // Reads resolve on microtasks: unflushed, the plate is a spinner.
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
 
     const html = toHtml(r.toJSON());

@@ -3,14 +3,9 @@
  * app/-purity guard.
  *
  * Expo Router turns EVERY file under app/ into a navigable route (only `_layout`
- * and `+`-prefixed files are special). A module placed here that does not
- * default-export a React component becomes a reachable route whose default
- * export is `undefined` — rendering it throws:
- *   "Element type is invalid: expected a string ... but got: undefined."
- *
- * That is exactly the _loungeStyles crash (Sentry, build 31). This check fails
- * CI if any file under app/ is not a valid route, so the whole class of bug
- * can never ship again. Put styles/helpers/constants in src/ instead.
+ * and `+`-prefixed files are special). A module here with no default-exported
+ * component is a reachable route that throws when rendered ("Element type is
+ * invalid … got: undefined"). CI runs this; styles and helpers belong in src/.
  */
 const fs = require('fs');
 const path = require('path');

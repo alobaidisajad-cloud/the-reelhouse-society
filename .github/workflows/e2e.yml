@@ -1,11 +1,7 @@
 name: 🎬 Sealed E2E
 
 # ── THE APP, END TO END, IN A WORLD THAT CANNOT TOUCH PRODUCTION ────────────────
-# The old device job built with EAS (15 free Android builds a month, all used by
-# 2026-09-11) and signed in as test@reelhouse.app, an account that does not
-# exist in production. It could not pass, so it proved nothing.
-#
-# This builds its own world on the runner, every run, from nothing:
+# Its own world, built on the runner, every run, from nothing:
 #   · a local Supabase with production's exact shape, built from the committed
 #     snapshot (mobile/supabase/schema/*.sql), and CHECKED against it with
 #     schema:check — a copy that differs proves nothing about production
@@ -41,9 +37,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     env:
-      # Which flows run: read by run-flows.sh and verify-writes.mjs alike. The
-      # whole folder — its config.yaml names every flow, and subflows/ only
-      # the steps they share.
+      # Which flows run, for run-flows.sh and verify-writes.mjs alike: every flow
+      # in the folder (subflows/ holds only the steps they share).
       E2E_FLOWS: mobile/.maestro
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -146,15 +141,14 @@ jobs:
           echo "MAESTRO_BIN=$HOME/.maestro-dist/maestro/bin/maestro" >> "$GITHUB_ENV"
 
       # Started BEFORE the seal, and each function called once. The runtime
-      # fetches a function's remote imports (deno.land, esm.sh) on first use,
+      # fetches a function's remote imports (deno.land, the esm CDN) on first use,
       # and those sit on Cloudflare like production does — so they load while
       # the network is whole, and the seal cannot starve them by sharing an
       # address. sign-in-with-username is production's own function, served as
       # it is; tmdb-proxy is the recorded stand-in (e2e/supabase/config.toml
       # opens both, and ships the stand-in's recordings).
-      # `supabase start` already serves every function in e2e/supabase/functions.
-      # A second `functions serve` replaced that runtime and killed it mid-request
-      # (sign-in-with-username answered 502 from a dead container), so there is none.
+      # No `functions serve`: `supabase start` already serves e2e/supabase/functions,
+      # and a second runtime kills the first mid-request.
       - name: The functions, warmed before the seal
         run: |
           call() { curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \

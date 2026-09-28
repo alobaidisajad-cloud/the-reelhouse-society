@@ -20,9 +20,7 @@ const { execFileSync } = require('child_process');
 
 const MOBILE = path.join(__dirname, '..');
 
-// ── the claim ───────────────────────────────────────────────────────────────
-// Read from the TypeScript source rather than imported, so this script needs no
-// build step and cannot be fooled by a stale one.
+// ── the claim, read from source: no build step, so no stale build to fool it ──
 const src = fs.readFileSync(path.join(MOBILE, 'src/constants/gatedFeatures.ts'), 'utf8');
 
 const claimedTriggers = [...src.matchAll(/kind: 'refuses', table: '([a-z_]+)', trigger: '([a-z_]+)'(?:, kinds: \[([^\]]*)\])?/g)]
@@ -63,12 +61,8 @@ if (!dbUrl) {
 }
 
 /**
- * Split on the line ending, not on '\n' after a single trim().
- *
- * psql on Windows ends every row with CR. Trimming the whole output strips it
- * from the LAST row only, so exactly one row compared equal and the other five
- * reported as BOTH "missing from production" and "withheld unsold" — the
- * signature of a broken comparison, since a real disagreement cannot be both.
+ * Split on the line ending, CR included: psql on Windows ends every row with CR,
+ * and one trim() of the whole output would clean only the last row.
  */
 const q = (sql) =>
   execFileSync('psql', [dbUrl, '-t', '-A', '-F', '\t', '-c', sql], { encoding: 'utf8' })
@@ -106,14 +100,9 @@ for (const [tbl, trg] of liveTriggers) {
   }
 }
 /**
- * ── WHICH ROWS A TRIGGER WITHHOLDS, NOT JUST THAT IT EXISTS ─────────────────
- * Matching by trigger NAME hid a whole feature. `tr_tier_gate_dispatch` fires
- * WHEN kind IN ('ballot','dossier'); the registry claimed that trigger for
- * essays alone, so this script reported "nothing withheld unsold" while the
- * database refused every ballot from a Cinephile and nothing anywhere sold it.
- *
- * So for any trigger whose WHEN clause names kinds, the kinds the registry
- * claims for it must equal the kinds production withholds — both directions.
+ * WHICH ROWS a trigger withholds, not only that it exists: where its WHEN clause
+ * names kinds (tr_tier_gate_dispatch: ballot, dossier), the kinds the registry
+ * claims must equal the kinds production withholds, both ways.
  */
 const liveDefs = q(`
   SELECT c.relname, t.tgname, pg_get_triggerdef(t.oid)
@@ -202,13 +191,8 @@ if (dispatchWhen && !/WHEN .*kind = ANY .*ballot.*dossier/s.test(dispatchWhen)) 
   );
 }
 
-// ── can the app turn every refusal into a door? ─────────────────────────────
-//
-// Each trigger raises a sentence written for a person to read. `tierRefusal.ts`
-// is what turns one into a clearance gate — and a trigger whose wording it does
-// not recognise falls through to whatever generic "that did not save" copy the
-// calling screen happens to have, with no way forward. So the sentences the
-// database can raise and the sentences the app can read must be the same set.
+// ── can the app turn every refusal into a door? A sentence tierRefusal.ts does
+// not know falls through to a generic "did not save", so the two sets must match.
 const refusalSrc = fs.readFileSync(path.join(MOBILE, 'src/utils/tierRefusal.ts'), 'utf8');
 const knownSentences = [...refusalSrc.matchAll(/match: \/\^([^$]+)\$\//g)].map((m) => m[1]);
 
@@ -240,12 +224,8 @@ for (const k of knownSentences) {
 }
 
 /**
- * ── AND SOMEBODY HAS TO READ THEM ───────────────────────────────────────────
- * The two loops above passed for the entire life of tierRefusal.ts while
- * nothing in the app called it. The map matched production exactly and no
- * member ever saw a word of it: a lapsed member in a salon got "Failed to send
- * message." So a perfect sentence table is only a pass if a door reads it —
- * walked here from the source, not trusted from a list.
+ * AND SOMEBODY HAS TO READ THEM: a perfect sentence table passes only if a door
+ * in the app calls it, walked here from the source rather than trusted from a list.
  */
 const walk = (dir, out = []) => {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -271,7 +251,7 @@ if (doorCallers.length === 0) {
     + 'the sentence table is verified and disconnected, which is the defect this check exists for');
 }
 
-// ── the hole this whole study found: gated at the door, open in the room ────
+// ── the Lounge: gated at the door, open in the room? (reported, not failed) ──
 const unguarded = q(`
   SELECT 'lounge_messages', count(*)::text FROM pg_trigger t
     JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_proc p ON p.oid=t.tgfoid
@@ -286,16 +266,9 @@ const postingTriggers = Number(unguarded.find((r) => r[0] === 'lounge_messages')
 const freeInside = Number(unguarded.find((r) => r[0] === 'free members inside a salon')?.[1] ?? '0');
 
 // ── and can the funnel actually RECORD what the registry names? ─────────────
-//
-// The quiet failure. `record_gate_event` folds anything failing a shape check
-// into 'other' — by design, because anon may call it and the table must stay
-// bounded. But that means a feature id with an underscore or a capital would
-// have every one of its taps disappear into 'other' for ever, with no error
-// anywhere, and the funnel for that door would read a confident zero.
-//
-// Checked against the LIVE function's own regexes rather than a copy of them,
-// so tightening the rule in a migration cannot leave this agreeing with a
-// version of itself.
+// record_gate_event folds any id failing its shape check into 'other' (it is open
+// to anon and must stay bounded), so an ill-shaped id would count a silent zero.
+// Checked against the LIVE function's own regexes, never a copy.
 const fnSrc = q(
   `SELECT prosrc FROM pg_proc WHERE oid='public.record_gate_event(text,text,text,text)'::regprocedure`,
 )
@@ -308,13 +281,11 @@ if (!fnSrc.trim()) {
   const featureRule = /v_feature !~ '(\^[^']+\$)'/.exec(fnSrc);
   const vocabulary = /p_event NOT IN \(([^)]*)\)/.exec(fnSrc);
   if (!featureRule || !vocabulary) {
-    // Without this the loop below would pass over an empty rule set, which
-    // reads exactly like "every id is fine".
+    // An empty rule set would read as "every id is fine".
     problems.push("could not read record_gate_event's own rules — the vocabulary check would be vacuous");
   } else {
     const shape = new RegExp(featureRule[1]);
-    // The tripwire: prove the rule rejects something before trusting it to
-    // accept our ids.
+    // The tripwire: the rule must reject something before it is trusted to accept.
     if (shape.test('The_Archive')) {
       problems.push(`the live feature-id rule ${featureRule[1]} filters nothing`);
     }
@@ -345,8 +316,7 @@ if (!fnSrc.trim()) {
   }
 }
 
-// Distinct, because two features may share one trigger (essays and ballots both
-// ride tr_tier_gate_dispatch) — "12 claimed, 11 live" read like a mismatch.
+// Distinct: two features may share one trigger (essays and ballots, the dispatch one).
 const distinctClaimed = new Set(claimedTriggers.map((c) => `${c.table}.${c.trigger}`)).size;
 console.log(`triggers claimed: ${distinctClaimed}   live: ${liveTriggers.length}   (kind-scoped triggers checked: ${kindTriggersChecked})`);
 console.log(`stripped fields claimed: ${claimedStrips.length}   live: ${liveStripped.size}`);

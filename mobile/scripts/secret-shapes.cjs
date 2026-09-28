@@ -1,5 +1,5 @@
 /**
- * The shapes a key or token takes — used to refuse writing one into the repo.
+ * The shapes a key or token takes, so that none is ever written into the repo.
  *
  * schema-snapshot.mjs records cron commands and policy expressions, which are
  * free text, and a job that calls an HTTP endpoint is usually written with its

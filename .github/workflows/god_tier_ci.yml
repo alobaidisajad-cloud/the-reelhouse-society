@@ -5,22 +5,17 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  # A weekly run with no push behind it. Tools, runners and services change
-  # under a repo that does not; this is how that rot is found on a Monday
-  # rather than on the day a fix has to ship. It also proves, weekly, that the
-  # failure alert (ci-alert.yml) still fires.
+  # Weekly with no push: tools and services change under a repo that does not,
+  # and the failure alert (ci-alert.yml) is proved to still fire.
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
 # ── EVERY OUTSIDE ACTION IS PINNED TO ONE COMMIT ────────────────────────────────
-# A tag like `@v5` is a pointer its owner can move to different code at any time,
-# and that code runs with this repository's secrets. Each `uses:` names the exact
-# commit, with the release it was on the day it was pinned. Moving one is a
-# decision someone makes in a commit, never something that happens to us.
-#
-# The runner too: `ubuntu-latest` moves to a new Ubuntu on GitHub's date, not ours
-# (to 26 from 2026-10-19). Every job names ubuntu-24.04.
+# A tag like `@v5` is a pointer its owner can move to other code, which would run
+# with this repository's secrets; each `uses:` names a commit (and the release it
+# was). The runner too: `ubuntu-latest` moves on GitHub's date, so every job names
+# ubuntu-24.04.
 
 # A run a newer push has already superseded is cancelled instead of finishing work
 # nobody will read. (A cancelled run raises no alert — see ci-alert.yml.)
@@ -28,19 +23,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# ── NODE 24, EVERY JOB ─────────────────────────────────────────────────────────
-# This pinned Node 20, which reached end of life in April 2026 (GitHub's own runner
-# notice calls it deprecated). The app is developed on Node 24, and the two do not
-# agree: Node 20's TextDecoder reads windows-1252 as ISO-8859-1, so the encoding
-# guard (everyFileSurvivedTheShell) failed here on every push since 2026-09-10 while
-# passing on every developer machine. One version, the one the code is written on.
+# ── NODE 24, EVERY JOB: the version the code is written on. Versions disagree
+# (Node 20's TextDecoder reads windows-1252 as ISO-8859-1, and the encoding guard
+# everyFileSurvivedTheShell depends on it).
 
 jobs:
   strict-analysis:
     name: 🔬 Strict Architecture Analysis
     runs-on: ubuntu-24.04
-    # Every job has a ceiling. A hung step used to hold a runner for the
-    # default six hours and report nothing; now it fails, and the alert says so.
+    # Every job has a ceiling: a hung step fails, and alerts, within it.
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -63,21 +54,18 @@ jobs:
         working-directory: ./mobile
         run: npx tsc --noEmit
 
-      # No workflow has ever run eslint. The 32 warnings that finding #1 reported
-      # were cleaned up by hand and nothing has held the line since. --max-warnings=0
-      # makes zero the enforced state rather than the hoped-for one.
-      # Measured before enabling: 461 files, 0 warnings, 0 errors.
       - name: ESLint (Native, zero warnings enforced)
         working-directory: ./mobile
         run: npx eslint . --max-warnings=0
 
-      # ⚠️ This gate is WEAKER THAN IT LOOKS, and that is deliberate rather than hidden.
-      # eslint.config.js at the repo root matches only '**/*.{js,jsx}', so it sees 28
-      # JS files and NONE of the 181 TypeScript files that are the actual web app.
-      # It reports 0 problems because it is not looking at them. Linting the web's
-      # TypeScript needs typescript-eslint, which is not installed — filed as its own
-      # task rather than bolted on here, because it will surface real findings that
-      # must be measured before anything is gated on them.
+      # Every file under app/ is a route: one with no default-exported component
+      # is registered anyway, and throws when it is reached.
+      - name: Every file under app/ is a real route
+        working-directory: ./mobile
+        run: npm run -s check:routes
+
+      # ⚠️ WEAKER THAN IT LOOKS: the root eslint.config.js matches only JS and JSX,
+      # none of the web's TypeScript (that needs typescript-eslint, not installed).
       - name: ESLint (Web — JS/JSX only, see comment above)
         run: npx eslint . --max-warnings=0
 
@@ -98,20 +86,9 @@ jobs:
         working-directory: ./mobile
         run: npm ci
 
-      # Runs the full Jest suite AND enforces the coverage thresholds in
-      # jest.config.js. A failing test or a coverage regression now blocks merge.
-      #
-      # The env below is what makes loungeEmbeds.contract.test.ts actually RUN. It
-      # guards the build-31 regression (lounge profile embeds returning 400), and it
-      # skips itself when these variables are absent — which they always were, so it
-      # has skipped on every CI run since it was written. That is the "1 skipped
-      # suite" in the totals. Verified locally against the live database before
-      # enabling: 3/3 pass. If the secrets are not configured it simply skips again,
-      # exactly as it does today, so this cannot turn the build red.
-      #
-      # CONTRACT_* names, read by that one test only. As EXPO_PUBLIC_* they reached
-      # every test in the run — a live URL where the suite relies on a dummy one —
-      # and moved src/lib branch coverage 0.8% below every other machine's.
+      # The full suite, and jest.config.js's coverage floors. CONTRACT_* reach one
+      # test only (loungeEmbeds.contract, against the live API; it skips without
+      # them): as EXPO_PUBLIC_* they would reach every test and its dummy URL.
       - name: Jest (with coverage gate)
         working-directory: ./mobile
         env:
@@ -121,20 +98,14 @@ jobs:
           set -o pipefail
           npx jest --coverage --ci --maxWorkers=2 2>&1 | tee jest-output.txt
 
-      # ── A FAILURE THAT EXPLAINS ITSELF ────────────────────────────────────────
-      # This job failed on every push for two weeks and nobody could say why from
-      # the summary: job logs are shown only to signed-in members, and a red cross
-      # says nothing. On failure, the failing tests and the end of Jest's own output
-      # are posted as ONE annotation, which appears on the run's summary page (and in
-      # the public checks API) for anyone who opens it.
+      # ── A FAILURE THAT EXPLAINS ITSELF: logs need a sign-in, so the failing tests
+      # go to ONE annotation, on the run's page and in the public checks API.
       - name: Surface Jest's failure on the summary
         if: failure()
         working-directory: ./mobile
         run: |
           [ -f jest-output.txt ] || exit 0
-          # The failing files, then Jest's own summary of each failing test. Not
-          # every "● " line: each captured console call prints "● Console", and
-          # those filled all forty lines, so the report never named the failure.
+          # The failing files, then Jest's summary of each ("● Console" lines left out).
           {
             grep -E "^FAIL " jest-output.txt | sort -u | head -20
             sed -n '/Summary of all failing tests/,/^Test Suites:/p' jest-output.txt | grep -v "● Console" | head -60
@@ -142,20 +113,10 @@ jobs:
           } > jest-failure.txt
           echo "::error title=Jest failed::$(sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g' jest-failure.txt)"
 
-      # ── The same suite, run from the Americas ────────────────────────────────
-      # The step above runs in the runner's timezone, which is UTC — and a whole class
-      # of date bug is invisible from UTC. `logs.watched_date` is a `date` column, so
-      # "2026-07-25" parses as midnight UTC and rendered as JUL 24 for every member
-      # west of it: the entire Americas, on the film diary, which is the product. CI
-      # was green throughout, for months.
-      #
-      # Los Angeles is the cheap catch — one negative-offset zone, with daylight
-      # saving, finds the whole class. When it was first run against this repo it
-      # failed 9 date assertions AND an existing Year in Cinema test that had simply
-      # never been executed outside UTC.
-      #
-      # No coverage flag: the step above owns that gate, this one owns correctness.
-      # `npm run test:tz` runs the full six-zone matrix locally.
+      # ── The same suite, from the Americas: a whole class of date bug is invisible
+      # from the runner's UTC (a `date` column read as midnight UTC is the day before
+      # anywhere west). One negative zone with daylight saving catches the class;
+      # `npm run test:tz` runs all six zones locally.
       - name: Jest (America/Los_Angeles — dates are not a UTC-only concern)
         working-directory: ./mobile
         env:
@@ -164,33 +125,19 @@ jobs:
           CONTRACT_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: npx jest --ci --silent --maxWorkers=2
 
-      # The ratchet has existed, calibrated, since June and NOTHING has ever run it —
-      # not this workflow, not a package.json script. jest.config.js enforces absolute
-      # floors; this catches the slow slide between them, failing on any drop of more
-      # than 0.5% against .coverage-baseline.json.
-      #
-      # It reads coverage/coverage-summary.json, which the step above produces, so it
-      # must stay in this job and after it.
-      #
-      # ⚠️ On an improvement the script rewrites the baseline file. In CI that write is
-      # discarded — nothing commits it — so the baseline only ever RISES when someone
-      # runs it locally and commits the result. That is a deliberate property: CI can
-      # block a regression but cannot quietly move the goalposts on its own.
+      # The slow slide between jest.config.js's floors: any drop over 0.5% against
+      # .coverage-baseline.json fails. It reads the coverage the step above writes, so
+      # it stays after it. CI discards its baseline raises: only a commit moves the goalposts.
       - name: Coverage ratchet (no regression against baseline)
         working-directory: ./mobile
         run: node scripts/coverage-ratchet.js
 
   # ── EVERY SCREEN, LAID OUT AS THE PHONE LAYS IT ─────────────────────────────
-  # The screens are drawn from the app's own code (the zz-*.gen suites) and
-  # measured in a browser. Two checks, at every width the app is drawn at and at
-  # every text size it allows, that used to run only when someone remembered:
-  #   · yoga-parity — every box is laid out AGAIN by Yoga, React Native's own
-  #     engine with RN's own settings, and must land where the browser put it.
-  #     It is what makes the second check true: it found a Pulse card whose name
-  #     column the phone stretched across the whole header, and eight places the
-  #     drawing differed from the phone.
-  #   · layout — every word fits where it is set (nothing cut, off the screen,
-  #     overlapping, or shrunk below the type floor).
+  # The screens drawn from the app's own code (the zz-*.gen suites), measured in a
+  # browser at every width and every text size:
+  #   · yoga-parity — every box laid out AGAIN by Yoga, with RN's settings, must land
+  #     where the browser put it (which is what makes the next check true);
+  #   · layout — every word fits where it is set.
   mockups:
     name: 🖼️ Every screen, as the phone lays it out
     runs-on: ubuntu-24.04
@@ -254,11 +201,9 @@ jobs:
           [ $rc -eq 0 ] || node e2e/annotate.mjs "A word does not fit at ${{ matrix.width }}pt" layout.txt error --drop 'clean +\('
           exit $rc
 
-      # The composer's touch law (it was logTouchTargets.test.ts, read out of
-      # the stylesheets): every control on the page is DRAWN by some state of
-      # its generator, and every drawn control's own box is at least 48 — a halo
-      # is invisible to both platforms' accessibility layers. The page's
-      # exceptions are argued in mockups/touch-small-exceptions.txt.
+      # The composer's touch law: every control is DRAWN by some generator state, and
+      # its own box is at least 48 (a halo is invisible to accessibility); exceptions
+      # are argued in mockups/touch-small-exceptions.txt.
       - name: Every control on the composer is drawn, and 48 by its own box
         working-directory: ./mobile
         run: |
@@ -282,18 +227,11 @@ jobs:
         run: node mockups/tools/selftest.cjs
 
   captures:
-    # Every screen the unit tests and the generators BUILD — far more states
-    # than anyone drew on purpose: every sheet, error, empty and loading state —
-    # drawn and measured for what the tests' mocked content cannot distort:
-    # touch areas that overlap (STEAL), controls a screen reader cannot name
-    # (NAMELESS), lines stuck under a docked bar (UNDER), and shadows asked of a
-    # view that clips (SHADOW). Word fit is the generators' job (above): the
-    # tests carry deliberate stress content, like an unbreakable 48-letter title.
-    #
-    # --require: every file listed in mockups/touch-measured.txt must still have
-    # a control measured beside a neighbour. The hand-written touch rules that
-    # became this measurement are held to it (stackedRowHitSlop.test.ts), so a
-    # test that stops drawing one is a failure, not a check that quietly stopped.
+    # Every screen the tests and generators BUILD (every sheet, error, empty and
+    # loading state), measured for what mocked content cannot distort: STEAL,
+    # NAMELESS, UNDER, SHADOW. (Word fit is the generators' job: tests carry stress
+    # content.) --require: each file in mockups/touch-measured.txt must still have
+    # a control measured beside a neighbour, so a test that stops drawing one fails.
     name: 🧷 Every screen the tests build — touch, names, bars, shadows
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -356,14 +294,8 @@ jobs:
 
       - run: npm ci
 
-      # The web suite lived only in ci.yml, which triggers on pull_request and
-      # workflow_dispatch. This project ships straight to main and never opens a PR,
-      # so these 84 tests had never run in CI — and one of them was red: LogForm
-      # gained a _loggedIndex dependency and the fake store in core-flows.test.tsx
-      # was never updated, so the selector returned undefined and the component threw.
-      # Fixed first, verified 84/84 green, and only then moved onto the workflow that
-      # actually fires. ci.yml keeps Lighthouse on PR/manual — its push trigger was
-      # removed on purpose ("no more email spam on every push") and stays removed.
+      # Here, not only in ci.yml: that runs on pull requests, and this project pushes
+      # to main. (ci.yml keeps Lighthouse, on PR and by hand.)
       - name: Vitest
         run: npx vitest run
 
@@ -381,10 +313,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps
       
-      # Runs the maintained Playwright feed suite (testDir: ./tests per
-      # playwright.config.ts). The old src/test/e2e/feed.spec.ts path is a
-      # stale leftover from before the suite moved to ./tests/ — Playwright
-      # silently finds zero matching tests for any path outside testDir.
+      # A path outside playwright.config.ts's testDir (./tests) silently finds nothing.
       - name: Run E2E Feed Tests
         run: npx playwright test tests/feed.spec.ts
 
@@ -403,10 +332,4 @@ jobs:
           pip install --quiet yamllint==1.38.0
           yamllint -d relaxed mobile/.maestro/
 
-  # The Android device run moved to e2e.yml — the SEALED test world: a private
-  # backend built from the live schema snapshot, seeded test members, a stand-in
-  # for TMDB, and the app on an emulator. The job that stood here built on Expo's
-  # cloud (15 free Android builds a month, all spent on 2026-09-11) and signed in
-  # as a test account that never existed in the live database, so no flow that
-  # needed a member had ever passed — and had it existed, every run would have
-  # posted a test review into the real community feed.
+  # The app on a device is e2e.yml's: a SEALED world, never production.

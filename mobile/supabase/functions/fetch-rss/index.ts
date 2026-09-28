@@ -1,24 +1,13 @@
 /**
- * fetch-rss — RSS Feed Proxy Edge Function
+ * fetch-rss — an allowlisted RSS feed, fetched and parsed server-side, as JSON.
  * ────────────────────────────────────────────────────────
- * Fetches an allowlisted RSS feed server-side and returns a normalized
- * JSON item list for the Dispatch tab.
+ * No current source calls it: the Wire left the Dispatch. It stays deployed for
+ * the builds already installed, which call it with no auth header, so it MUST
+ * stay public:  supabase functions deploy fetch-rss --no-verify-jwt
  *
- * Why server-side:
- *   1. Avoids mobile CORS (direct RSS fetch is blocked in-app)
- *   2. CDN-edge caching (30min) reduces upstream calls
- *   3. 8s timeout prevents slow feeds from blocking the UI
- *   4. Graceful degradation (returns empty items[] on any failure)
- *
- * History: this function used to relay through api.rss2json.com. That free
- * third-party rate-limits shared datacenter IPs (it returned empty items[] to
- * this function's egress IP even while serving browsers fine), and it dropped
- * article images (thumbnail:""). We now fetch the feed XML directly and parse
- * it here — no third-party dependency, real images, and the F-11 open-relay
- * surface is gone (the function only ever fetches allowlisted hosts).
- *
- * Deploy (MUST keep it public — the app calls it with no auth header):
- *   supabase functions deploy fetch-rss --no-verify-jwt
+ * Server-side for CORS, 30-minute edge caching, an 8s timeout, and an empty
+ * items[] on any failure. It parses the XML itself (no third-party relay) and
+ * fetches only allowlisted https hosts, so it is no open relay.
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
@@ -28,8 +17,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, content-type, x-client-info, apikey',
 };
 
-// F-11: per-IP rate limit (best-effort, per-isolate) + a feed-host allowlist, so this
-// endpoint can't be used as an open relay. The app only ever requests the hosts below.
+// A per-IP rate limit (best-effort, per isolate) and a host allowlist: no open relay.
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 30;
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -106,7 +94,7 @@ function parseRss(xml: string): RssItem[] {
       guid: firstTag(block, 'guid') || firstTag(block, 'link'),
       pubDate: firstTag(block, 'pubDate'),
       author: decodeEntities(firstTag(block, 'dc:creator')),
-      // Client strips tags then decodes; return real (decoded) HTML like rss2json did.
+      // Decoded HTML: the client strips tags, then decodes.
       description: decodeEntities(firstTag(block, 'description')),
       categories: allTags(block, 'category').map(decodeEntities),
       thumbnail: image,
@@ -126,7 +114,7 @@ serve(async (req: Request) => {
     });
   }
 
-  // F-11: rate limit by client IP
+  // Rate limited by client IP
   const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || req.headers.get('cf-connecting-ip')
     || 'unknown';
@@ -148,7 +136,7 @@ serve(async (req: Request) => {
       });
     }
 
-    // F-11: only proxy allowlisted feed hosts over https (blocks open-relay abuse & non-http schemes)
+    // Only allowlisted feed hosts, only https: no open relay, no other scheme.
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(url);

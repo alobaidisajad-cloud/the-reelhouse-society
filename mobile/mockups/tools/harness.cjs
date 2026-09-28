@@ -112,7 +112,7 @@ async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH
       const all = [...document.querySelectorAll('[data-scale-cap]')];
       const plan = all.map((e) => {
         const cs = getComputedStyle(e);
-        // 0: no cap of its own, which on a phone is NO cap (there is no app-wide one).
+        // 0: it escaped the app's Text (which gives 1.35), so on a phone it has NO cap.
         const cap = Number(e.dataset.scaleCap);
         const g = grow(f, cap === 0 ? Infinity : cap);
         const ls = parseFloat(cs.letterSpacing);

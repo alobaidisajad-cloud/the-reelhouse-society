@@ -2,11 +2,8 @@
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 
-// flash-list's exported `AnimatedFlashList` is built on React Native's
-// Animated. Feeding it a Reanimated `useAnimatedScrollHandler` worklet
-// crashes RecyclerView with "undefined is not a function" on the New
-// Architecture (Sentry REACT-NATIVE-6, build 31/34). Use CinematicFlashList
-// — or Reanimated's own Animated.createAnimatedComponent(FlashList) — instead.
+// flash-list's AnimatedFlashList is React Native's Animated: fed a Reanimated scroll
+// worklet, it crashes RecyclerView on the New Architecture.
 const FLASH_LIST_RULE = {
   name: '@shopify/flash-list',
   importNames: ['AnimatedFlashList'],
@@ -44,22 +41,14 @@ module.exports = defineConfig([
         selector: "MemberExpression[object.name='Animated'][property.name='Text']",
         message: "Use AnimatedText from '@/src/components/text' — it is Reanimated's animated Text made from the app's Text, so it keeps the ceiling and the spacing.",
       }, {
-        // An SVG's font sizes and spacings are NUMBERS on Android: react-native-svg
-        // reads a word there as a number and throws while drawing. The logo,
-        // exported from a design tool with fontSize="none", crashed every
-        // Android launch (the sealed E2E run found it).
+        // react-native-svg on Android reads these as numbers and throws on a word.
         selector: "JSXAttribute[name.name=/^(fontSize|letterSpacing|wordSpacing|kerning)$/] > Literal[value=/[^0-9.\\s-]/]",
         message: 'An SVG font size or spacing must be a number — Android throws on a word such as "none".',
       }, {
         selector: "JSXAttribute[name.name=/^(fontFamily|fontWeight|fontStyle|textAnchor)$/] > Literal[value='none']",
         message: 'Leave the attribute out instead of "none" — a design tool\'s "none" is not an SVG value, and Android does not forgive it.',
       }, {
-        // The phone runs Hermes with no Intl polyfill: whether it honours a
-        // locale or a timeZone option cannot be checked from here, and a date
-        // that is right in Node and wrong on the phone is the bug the whole of
-        // src/utils/timeAgo.ts exists to end. It was a per-file test once, over
-        // four files — while the log's own calendar, the Lounge's clock and the
-        // person page went on formatting through Intl beside them.
+        // Hermes has no Intl polyfill: a date right in Node can be wrong on the phone.
         selector: "MemberExpression[object.name='Intl']",
         message: "No Intl: the phone's Hermes has no polyfill. Dates and times come from src/utils/timeAgo.ts, which builds them from tables.",
       }, {

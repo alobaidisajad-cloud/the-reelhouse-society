@@ -4,23 +4,12 @@
  *
  * A GENERATOR, not a test. Run: npx jest zz-choices.gen
  *
- * ── WHY THE LAST SET WAS WRONG ──────────────────────────────────────────────
- * The first badge sketches were built on `bloodReel` — the palette's DEEP STAMP
- * red, a brown-leaning pigment kept for destructive acts. The Auteur's colour is
- * `crimson`, which the theme names outright: "Auteur crimson — the single bright
- * red for dark surfaces". So none of them were actually the Auteur's colour, and
- * a red chip is not this house's idiom anyway.
+ * Every mark uses `crimson` for MARKS and `crimsonInk` for WORDS (the palette's
+ * split), drawn from the house's own vocabulary: the tilted letterpress stamp,
+ * the passport's seal ring, the page's hairline rules.
  *
- * Every mark below uses `crimson` (#B42D2D) for MARKS and `crimsonInk` (#E2564F)
- * for WORDS — the split the palette already made, because crimson as text
- * measured 2.49:1 on an Auteur's byline and crimsonInk clears 5.4:1.
- *
- * And they are drawn from the house's own vocabulary rather than from app
- * convention: the letterpress stamp it already tilts on a filing, the dashed
- * seal ring of the passport, the hairline rules that separate everything on the
- * page. A rounded filled pill is the one shape this app has never used.
- *
- * NOTHING HERE IS SHIPPED except where a plate says so. These are sketches.
+ * NOTHING HERE IS SHIPPED except where a plate says so. These are sketches; the
+ * rank mark that shipped is RankBadge (theme/stamp.ts).
  */
 import React from 'react';
 import { View, Text } from 'react-native';
@@ -226,19 +215,8 @@ add('m0-all-six', (
   </View>
 ));
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   THE WRITING ROOM
-   ───────────────────────────────────────────────────────────────────────────
-   What exists today: a title, a body, and a rail with FILM, COVER and a word
-   count. No bold, no italic, no pull quote, no drop cap, no section break, no
-   way to set a still — while the READER already renders every one of those, and
-   while the app's own `EditorialDesk` gives a film LOG a drop cap, a pull quote
-   and a still picker.
-
-   So a dossier — the long form, the thing an Auteur pays for — is written with
-   fewer tools than a film log. These are four ways to close that, and they are
-   not alternatives to each other so much as four different amounts of it.
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══ THE WRITING ROOM: four SKETCHES of the dossier's tools, from the fewest to the
+   most, against the bare desk it had then (W0). The room that shipped is DossierDesk. */
 
 /** A tool on a rail: a mark and a word, the way the existing rail draws FILM. */
 const Tool = ({ mark, label, on }: { mark: string; label: string; on?: boolean }) => (
@@ -356,9 +334,7 @@ add('w3-the-ritual', (
   </View>
 ));
 
-/** W4 · WRITE AND READ — the preview IS the reader, side by side with the desk.
- *  Today the preview sets your essay in a different face at a different size to
- *  the page it will appear on, so it tells you nothing about how it will read. */
+/** W4 · WRITE AND READ — the preview IS the reader, in the page's own face and size. */
 add('w4-write-and-read', (
   <View style={p.screen}>
     <View style={{ paddingHorizontal: 20, paddingTop: 34, paddingBottom: 10 }}>
@@ -394,9 +370,7 @@ add('w4-write-and-read', (
   </View>
 ));
 
-/** W0 · TODAY — the real DossierDesk's shape, so the four have something to be
- *  compared against. Drawn here rather than mounted because the desk needs live
- *  handlers; the styles are the app's own. */
+/** W0 · the bare desk the sketches were measured against, drawn in the app's styles. */
 add('w0-today', (
   <View style={p.screen}>
     <View style={{ paddingHorizontal: 20, paddingTop: 34, paddingBottom: 10 }}>
@@ -422,36 +396,8 @@ add('w0-today', (
   </View>
 ));
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   THE RECOMMENDATION, IN ALL FOUR PLACES IT LIVES
-   ───────────────────────────────────────────────────────────────────────────
-   THE CRIMSON LACQUER PLATE. The house's own lit-plate construction — the four
-   stops and the crown it already uses for brass — in the Auteur's own crimson,
-   with parchment letters.
-
-   Why this one, of the six:
-
-   · It is the Auteur's ACTUAL colour, which is the whole complaint about the
-     brass version.
-   · It is the house's own premium material, not a new one. Brass is what the
-     HOUSE is made of — the Concierge disc, the stamps, every rule. Crimson
-     lacquer is the same construction in the colour that belongs to this rank.
-   · It keeps the HIERARCHY right. The Archivist's mark is a flat brass wash;
-     this one is a lit solid. Filled beats tinted at a glance, in any language.
-     Every unfilled candidate — the rule, the brackets, the margin mark —
-     inverts that: the lesser rank would carry the heavier shape.
-   · It survives every context. A tinted word and a hairline depend on a paper
-     ground to read as typography; on the home pulse card and in a search row
-     they read as an underline or as a stray bar. A plate is a plate anywhere.
-   · Parchment on crimson measures 4.74:1 at the ramp's LIGHTEST stop and
-     improves as it darkens — so unlike gold, it clears the floor at every
-     point of the gradient rather than only in the middle.
-
-   And it is NOT the censor stamp, which was the closest rival: `stampCrimson`
-   is what a WITHHELD filing wears, and dressing the house's highest rank in the
-   costume of a censored post is the exact collision this whole exercise set out
-   to remove.
-   ═══════════════════════════════════════════════════════════════════════════ */
+// A SKETCH, in all four places it would live: crimson lacquer, the house's lit-plate
+// construction in the Auteur's crimson. Not what shipped (RankBadge's pressed stamp).
 const CRIMSON_RAMP = [colors.crimson, '#A32828', '#8E2222', '#6E1A1A'] as const;
 const CRIMSON_STOPS = [0, 0.34, 0.62, 1] as const;
 
@@ -583,34 +529,16 @@ add('f2-final-in-the-feed', (
   </View>
 ));
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   THE ONE THE APP ALREADY OWNS
-   ───────────────────────────────────────────────────────────────────────────
-   `profileStyles.tierStamp` — the rank, stamped on the corner of the print at a
-   hand's angle. Tilted −3.5°, a near-black ground, a hairline border, 7.5pt
-   caps tracked 1.8. Sepia for an Archivist, `tierStampRuby` turns the border and
-   the word CRIMSON for an Auteur.
-
-   Its own comment reads: "This is where rank lives now — the badge that used to
-   hang under the avatar and the pill that sat beside the name were two labels
-   for one fact." So the house has already chosen a rank mark, already chosen
-   crimson for the Auteur, and the feed simply never got the memo.
-
-   ONE CORRECTION to it, and only one: the profile paints the word in
-   `colors.crimson`, which on that near-black ground measures 3.16:1 — over the
-   app's 3:1 floor but under the 4.5 that 8pt type wants. `crimsonInk` exists in
-   the palette for exactly this ("words that must be crimson use this, at
-   5.4:1"), so the word takes it. Sepia on the same ground is already 6.24:1.
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* THE STAMP the profile already wore on the corner of its print (tilted, near-black
+   ground, hairline border), with its word in crimsonInk: the direction RankBadge took. */
 const Stamped = ({ auteur, scale = 1 }: { auteur?: boolean; scale?: number }) => (
   <View style={{
     paddingHorizontal: 7, paddingVertical: 2.5,
     borderWidth: 1, borderColor: auteur ? colors.crimson : colors.sepia,
     backgroundColor: 'rgba(10,9,6,0.92)',
     transform: [{ rotate: '-3deg' }],
-    // A rotated box is WIDER than the box layout reserved for it. Measured on
-    // the page: an 18pt-tall plate at 3 degrees grows about half a point each
-    // side, so a point of margin keeps its corners out of the name beside it.
+    // A rotated box is WIDER than its layout box (an 18pt plate at 3 degrees, by half a
+    // point a side): a point of margin keeps its corners out of the name beside it.
     marginHorizontal: 1,
     flexShrink: 0,
   }}>

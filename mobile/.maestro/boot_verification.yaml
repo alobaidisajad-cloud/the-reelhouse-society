@@ -1,15 +1,7 @@
 appId: com.reelhouse.society
 ---
-# Boot Verification Flow
-# ─────────────────────────────────────────────────────────────
-# Verifies that the app completes its full boot sequence by asserting the
-# tab navigator mounts. There is no header text rendered on any tab screen
-# (TopNavBar in src/components/layout/TopNavBar.tsx is just a logo + icon
-# buttons, no title) — the tab bar's real testIDs from
-# app/(tabs)/_layout.tsx are the reliable signal that boot succeeded. If
-# AppBootstrapper or any critical subsystem fails to initialize, this test
-# will timeout.
-# From a clean install, whatever flow ran before: a flow depends on no other.
+# The app boots: the whole tab bar mounts (its testIDs, from app/(tabs)/_layout.tsx,
+# are the signal; no tab screen prints a title). From a clean install.
 - launchApp:
     clearState: true
 
@@ -20,8 +12,7 @@ appId: com.reelhouse.society
       id: "home-tab"
     timeout: 60000
 
-# Verify the full tab bar is rendered (proves navigation tree mounted
-# correctly).
+# The full tab bar.
 - assertVisible:
     id: "dispatch-tab"
 - assertVisible:

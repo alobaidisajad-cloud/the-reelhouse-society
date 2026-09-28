@@ -12,7 +12,7 @@ const run = (command) => {
 };
 
 const cases = [
-  // the exact commands that burned me, all of which must be blocked
+  // the trap, in each shape it takes: all blocked
   ['BLOCK', `node -e "const re = new RegExp('s\\\\.' + n + '\\\\b');"`],
   ['BLOCK', `node - <<'EOF'\ns = s.replace(/\\s+/g, ' ');\nEOF`],
   ['BLOCK', `node -e "console.log('x'.match(/(\\d+)/))"`],
@@ -24,9 +24,7 @@ const cases = [
   ['ALLOW', 'node scripts/thing.cjs'],
   ['ALLOW', 'git commit -m "fixed the \\thing"'],
   ['ALLOW', 'npx tsc --noEmit'],
-  // The false positive this hook produced on its own first commit: a message
-  // that EXPLAINS the trap necessarily quotes `node -e` and the escapes it
-  // eats. A mention is not an invocation.
+  // a message that EXPLAINS the trap quotes it: a mention is not an invocation
   ['ALLOW', `git commit -F - <<'EOF'\nA regex through \`node -e\` loses \\s, \\d and \\b.\nEOF`],
   ['ALLOW', `echo "see node -e for why \\d breaks"`],
   // ...but a real invocation after && is still caught

@@ -3,9 +3,8 @@
  *
  * A GENERATOR, not a test. Run: npx jest zz-badge.gen
  *
- * ONE of these is the app. `A` mounts the real `RankBadge` that shipped in
- * 3b9e279 — brass ramp, ink lettering. The other three are SKETCHES drawn in
- * this file, so nothing here can be mistaken for a record of what exists.
+ * ONE of these is the app: `A` mounts the real `RankBadge`, whatever it is now.
+ * The other three are SKETCHES drawn in this file, never a record of what exists.
  *
  * Every candidate is drawn three times, because a badge is judged in a row and
  * not on a slab:
@@ -53,8 +52,7 @@ const TEXT = {
 const BOX = { borderRadius: 2, paddingHorizontal: 7, paddingVertical: 2, flexShrink: 0 } as const;
 const FILL = { position: 'absolute' as const, left: 0, right: 0, top: 0, bottom: 0 };
 
-/* ══ A · TODAY — BRASS RAMP, INK LETTERING ══════════════════════════════════
-   The real component. Gold foil as the GROUND. */
+/* ══ A · THE REAL COMPONENT, RankBadge, as it ships ═══════════════════════════ */
 const Today = () => <RankBadge rank="auteur" />;
 
 /* ══ B · OXBLOOD + GOLD FOIL ════════════════════════════════════════════════
@@ -82,12 +80,8 @@ const OxbloodRamp = () => (
   </View>
 );
 
-/* ══ D · BRIGHT CRIMSON + PARCHMENT ═════════════════════════════════════════
-   The literal reading of "make it crimson", drawn so it can be rejected on
-   sight rather than in the abstract. `colors.crimson` is the palette's own
-   "Auteur crimson", but gold on it is 2.85:1 and ink 3.18:1 — both fail — so
-   the lettering has to go pale, and bright red with off-white letters is the
-   grammar of a NEW tag. 4.74:1. */
+/* ══ D · BRIGHT CRIMSON + PARCHMENT, to be judged on sight: gold and ink fail on
+   crimson, so the letters go pale (4.74:1), which is the grammar of a NEW tag. */
 const BrightCrimson = () => (
   <View style={[BOX, { backgroundColor: colors.crimson }]}>
     <Text style={[TEXT, { color: colors.parchment }]} numberOfLines={1} {...scaledTextProps}>★ AUTEUR</Text>

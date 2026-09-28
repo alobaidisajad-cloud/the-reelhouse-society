@@ -1,23 +1,16 @@
 /**
  * Every edge function: which folder holds its one copy, and how it is deployed.
  *
- * Two folders hold functions — supabase/functions (the web's tree) and
- * mobile/supabase/functions — and both deploy to the same project. They once
- * held four same-named functions, every pair different, and only one of each
- * was running. Reading the repo did not tell you what ran, and the copy that
- * leaked the TMDB key was one nobody was reading.
- *
- * So each function has exactly ONE copy, named here, and it is the one that
- * runs:
+ * Two folders hold functions, supabase/functions (the web's tree) and
+ * mobile/supabase/functions, and both deploy to the same project, so each
+ * function has exactly ONE copy, named here, and it is the one that runs:
  *   · edgeFunctions.guard.test.ts — every folder is listed, in the right tree,
  *     and no name is in both.
  *   · npm run functions:check — downloads every deployed function and
  *     compares it with its copy here, file by file, and its verify_jwt.
  *
- * verifyJwt is the deploy flag. There is no config.toml to hold it, so a
- * redeploy without `--no-verify-jwt` silently puts a gate in front of a
- * function that must be open — visitors reading the news, the database
- * calling notify-push, RevenueCat calling its webhook.
+ * verifyJwt is the deploy flag, with no config.toml to hold it: a redeploy
+ * without `--no-verify-jwt` silently gates a function that must be open.
  */
 const WEB = 'supabase/functions';
 const MOBILE = 'mobile/supabase/functions';
@@ -28,10 +21,10 @@ const DEPLOYED = {
   'sign-in-with-username': { dir: WEB, verifyJwt: false }, // called before there is a session
   'sync-films': { dir: WEB, verifyJwt: true },
   'paytabs-handler': { dir: WEB, verifyJwt: true },
-  'fetch-rss': { dir: MOBILE, verifyJwt: false }, // read by visitors
-  'notify-push': { dir: MOBILE, verifyJwt: false }, // called by the database; checks FUNCTION_SHARED_SECRET
+  'fetch-rss': { dir: MOBILE, verifyJwt: false }, // installed builds call it signed out
+  'notify-push': { dir: MOBILE, verifyJwt: false }, // the database calls it; own secret
   'sync-entitlement': { dir: MOBILE, verifyJwt: true },
-  'revenuecat-webhook': { dir: MOBILE, verifyJwt: false }, // called by RevenueCat, checks its own secret
+  'revenuecat-webhook': { dir: MOBILE, verifyJwt: false }, // RevenueCat calls it; own secret
 };
 
 /** In the repo on purpose, not deployed — and why. */

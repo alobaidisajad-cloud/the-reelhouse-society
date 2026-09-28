@@ -1,10 +1,7 @@
 appId: com.reelhouse.society
 ---
-# Auth Deep Link: reelhouse://reset-password with no active Supabase
-# session. app/reset-password.tsx guards on supabase.auth.getSession() —
-# with no prior auth-callback exchange (the original "openLink straight to
-# reset-password" scenario), it shows the "No Active Session" rescue UI
-# rather than a live password form.
+# reelhouse://reset-password with no session: app/reset-password.tsx guards on
+# getSession(), so it shows the "No Active Session" rescue, not a password form.
 - launchApp:
     clearState: true
 

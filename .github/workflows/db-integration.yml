@@ -3,7 +3,7 @@ name: DB Security Integration Tests
 # Runs the REAL database security tests (RLS + triggers) against a throwaway
 # Postgres that GitHub spins up for free — no paid Supabase branching, no test
 # project needed. Unlike the Jest suite (mocked Supabase), this exercises the
-# actual security rules where the 2026-06-26 gaps were hiding.
+# actual security rules.
 
 on:
   push:

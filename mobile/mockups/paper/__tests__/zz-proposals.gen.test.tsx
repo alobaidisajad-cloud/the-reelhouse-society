@@ -3,15 +3,10 @@
  *
  * A GENERATOR, not a test. Run: npx jest zz-proposals.gen
  *
- * Most of what is proposed here already EXISTS as a component — that is the
- * finding. `DossierDesk` has FILM, COVER and SERIES and no screen mounts it;
- * `EssayHead` draws a film credit, a cover and a series line that nothing can
- * set; the series page is built and unreachable. So these plates are mostly the
- * real thing, shown in the place it would go, rather than a picture of an idea.
- *
- * Where a proposal has no component yet — the rank badge, the saved mark — it is
- * drawn HERE and labelled as a sketch, so nothing in this file can be mistaken
- * for a record of the app.
+ * As proposed: most were real components shown where they would go (DossierDesk,
+ * EssayHead's credit and cover, the series page), and have since shipped. What
+ * had no component then (the rank mark, the saved mark) is drawn HERE, labelled
+ * a sketch, so nothing in this file is a record of the app.
  */
 import React from 'react';
 import { View, Text } from 'react-native';

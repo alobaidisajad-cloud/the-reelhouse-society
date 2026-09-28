@@ -29,15 +29,13 @@ const screens = fs.readdirSync(SRC).filter((f) => f.startsWith(PREFIX) && f.ends
 for (const f of screens) {
   for (const m of fs.readFileSync(path.join(SRC, f), 'utf8').matchAll(/data-src="([^"]+)"/g)) drawn.add(m[1]);
 }
-// A drawing run with no sites (MOCKUPS unset, or a broken marker) would make
-// every control "undrawn" — or, checked the other way, prove nothing.
+// No sites at all (MOCKUPS unset, a broken marker) would prove nothing either way.
 if (!drawn.size) { console.error(`drawn.cjs: no drawn control carries a site in ${screens.length} screens under ${SRC}`); process.exit(2); }
 
 let missing = 0, total = 0;
 for (const rel of files) {
   const raw = fs.readFileSync(path.join(MOBILE, rel), 'utf8');
-  // Comments blanked by shape, so line numbers survive and a commented-out
-  // control is not counted.
+  // Comments blanked in place: line numbers survive, a commented-out control is not counted.
   const src = raw.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' ')).replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
   for (let i = src.indexOf('<PressableScale'); i !== -1; i = src.indexOf('<PressableScale', i + 1)) {
     total++;

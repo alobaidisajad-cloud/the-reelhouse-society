@@ -60,9 +60,7 @@ const query = (url, sql) => execFileSync('psql', [url, '-X', '-q', '-tA', '-c', 
 const read = (f) => readFileSync(join(SCHEMA, f), 'utf8');
 
 // ── 0. an empty public, owned as production's is ─────────────────────────────
-// The GRANT is Postgres's own default for a new database's public schema
-// (initdb makes it); a schema made by hand lacks it, and the fidelity check
-// showed the copy with a REVOKE production does not have.
+// The GRANT is initdb's default for a new database's public; a hand-made schema lacks it.
 runSql('0. clear public', AS_ADMIN, `
   DROP SCHEMA IF EXISTS public CASCADE;
   CREATE SCHEMA public AUTHORIZATION pg_database_owner;
@@ -71,8 +69,7 @@ runSql('0. clear public', AS_ADMIN, `
 // ── 1. extensions ─────────────────────────────────────────────────────────────
 const extFile = read('live-extensions.sql');
 runSql('1. extensions (live-extensions.sql)', AS_ADMIN, extFile);
-// The local stack installs extensions production does not have (pg_graphql —
-// GraphQL is off in production). Anything the snapshot does not list goes.
+// The local stack installs extensions production lacks (GraphQL's): unlisted ones go.
 const wanted = new Set([...extFile.matchAll(/^CREATE EXTENSION IF NOT EXISTS "?([\w-]+)"?/gm)].map((m) => m[1]).concat('plpgsql'));
 const extra = query(AS_ADMIN, 'SELECT extname FROM pg_extension ORDER BY 1').split('\n').filter((e) => e && !wanted.has(e));
 if (extra.length) runSql(`1b. remove ${extra.join(', ')} (not in production)`, AS_ADMIN, extra.map((e) => `DROP EXTENSION "${e}" CASCADE;`).join('\n'));
@@ -93,10 +90,9 @@ runSql('2. public (live-schema.sql), as postgres', AS_POSTGRES, lines.filter((l)
 runSql(`3. ${adminLines.length} default-privilege rules for supabase_admin`, AS_ADMIN, adminLines.join('\n'));
 
 // ── 2b. the carriage returns production's function bodies hold ──────────────
-// 118 functions were saved with CRLF, and the CR is part of their stored text.
-// psql drops a CR at the end of every line it reads from a file, so step 2
-// made them without it. Each is made again as one query passed whole (psql -c
-// sends it as it is), so its bytes arrive intact. Found by the fidelity check.
+// Functions saved with CRLF keep the CR in their stored text, and psql drops a CR
+// ending a line it reads from a file; so each is made again as one whole query
+// (psql -c sends it as it is), and its bytes arrive intact.
 const functionStatements = (text) => {
   const out = [];
   const starts = /^CREATE FUNCTION /gm;
@@ -140,11 +136,9 @@ if (holding !== withCr.length || crsStored !== crTotal) {
 console.log(`   stored: ${holding} functions hold ${crsStored} carriage returns, as in production`);
 
 // ── 4. everything outside public ─────────────────────────────────────────────
-// As postgres: in production postgres owns the event trigger and the realtime
-// publication (Supabase refuses a superuser-owned event trigger that runs a
-// postgres-owned function, which is how this was found). Except the scheduled
-// jobs: pg_cron lets only the superuser create a job in another role's name,
-// and each job records the role it runs as — postgres — exactly as production.
+// As postgres, who owns the event trigger and the realtime publication in production
+// (Supabase refuses a superuser-owned event trigger running a postgres function); the
+// scheduled jobs as the superuser, the only role pg_cron lets create one in postgres's name.
 const outside = read('live-outside-public.sql');
 const sections = outside.split(/^(?=-- ── )/m);
 const isJobs = (s) => s.startsWith('-- ── scheduled jobs');
@@ -168,9 +162,7 @@ runSql('6. the empty migration ledger', AS_ADMIN, `
   CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations (version text PRIMARY KEY, statements text[], name text);`);
 
 // ── 7. sealed? ────────────────────────────────────────────────────────────────
-// The push sender posts to production's notify-push. The call must not leave
-// the runner: e2e.yml points production's host at 0.0.0.0 on the runner and
-// inside every container. Fire one and read how pg_net says it ended.
+// The push sender's call to production must not leave the runner (e2e.yml sinks the host).
 const pushUrl = /url\s*:=\s*'(https:\/\/[^']+)'/.exec(dump)?.[1];
 if (!pushUrl) fail('7. sealed', 'could not find the push sender\'s URL in live-schema.sql — has it moved?');
 
@@ -192,10 +184,8 @@ const sealedAgainst = (label, url) => {
 };
 // By name — the call the push sender really makes.
 sealedAgainst(new URL(pushUrl).host, pushUrl);
-// By address — the firewall, for a container that ignores the hosts file.
-// Plain http on purpose: a connection that got through is answered with a
-// status by Cloudflare, where https to a bare address would fail on the
-// certificate and look blocked.
+// By address, for a container that ignores the hosts file: plain http, as https to a
+// bare address fails on the certificate and would look blocked when it got through.
 const ips = (process.env.E2E_PROD_IPS ?? '').split(',').filter(Boolean);
 if (!ips.length) fail('7. sealed', 'E2E_PROD_IPS is empty — e2e.yml must seal the addresses before bootstrap runs');
 for (const ip of ips) sealedAgainst(`${ip} (an address of ${new URL(pushUrl).host})`, `http://${ip}/`);

@@ -31,7 +31,7 @@ const index: Record<string, string> = JSON.parse(
   await Deno.readTextFile(new URL('./fixtures/index.json', import.meta.url)),
 );
 
-/** What TMDB says when it has nothing: a list endpoint answers empty, a single thing answers 404. */
+/** TMDB with nothing to say: a list answers empty, a single thing 404. */
 const nothing = (path: string) =>
   /^\/(movie|person)\/\d+(\?|$)/.test(path)
     ? json({ success: false, status_code: 34, status_message: 'The resource you requested could not be found.' }, 404)
@@ -61,6 +61,5 @@ Deno.serve(async (req) => {
   return json(recorded.body, recorded.status);
 });
 
-// Keeps fixtureName in this module's graph, so the stand-in and the recorder
-// can never disagree about the file a path lives in.
+// One fixtureName for the stand-in and the recorder alike.
 export { fixtureName };

@@ -1,15 +1,8 @@
 /**
- * A FAITHFUL stand-in for FlashList, for the design generators.
- *
- * The crude version (every cell at half width, headers laid out as flex items in
- * the row) drew the Darkroom as two columns with a squeezed 257pt header and
- * posters overhanging the screen — none of which the app does. It asks for THREE
- * columns, and its header spans the page.
- *
- * So: the header and footer span the full width, each cell is exactly
- * 100/numColumns percent of the list, and a horizontal list lays its children in
- * a row. Everything else — padding, aspect ratio, the card itself — comes from
- * the app's own styles, as it should.
+ * A FAITHFUL stand-in for FlashList, for the design generators: the header and
+ * footer span the full width, each cell is exactly 100/numColumns percent of the
+ * list, and a horizontal list lays its children in a row. Everything else (padding,
+ * aspect ratio, the card itself) comes from the app's own styles.
  */
 import React from 'react';
 import { ScrollView, View } from 'react-native';
@@ -64,15 +57,8 @@ export function makeFlashListMock() {
       ),
       footer ? React.createElement(View, { key: 'f', style: full }, footer) : null,
     );
-    // FlashList IS a scroll view, either way round, and is drawn as one. A
-    // horizontal list, so the design renderer marks it a rail and a measurement
-    // knows its far cards are reached by swiping, not cut off at the screen's
-    // edge. A vertical one because a scroll view lays its content out with no
-    // height limit — drawn as a plain View inside a screen of fixed height,
-    // Yoga gave each `flex: 1` cell of the Darkroom's grid its padding alone
-    // (8pt, the poster spilling out), where the real list's cells are the
-    // poster's height (mockups/tools/yoga-parity.cjs found it). Its own grow
-    // and shrink come from the scroll view, as on the phone.
+    // A scroll view, as FlashList is: a rail's far cards are reached by swiping, and a
+    // vertical list's content has no height limit (a plain View shrank its cells).
     return props.horizontal
       ? React.createElement(ScrollView, { ref, horizontal: true, style: props.style, showsHorizontalScrollIndicator: false }, content)
       : React.createElement(ScrollView, { ref, style: props.style, showsVerticalScrollIndicator: false }, content);

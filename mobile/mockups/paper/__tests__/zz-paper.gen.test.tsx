@@ -44,26 +44,12 @@ import { navTopPadding, NAV_ROW_MIN_H, NAV_BOTTOM_PADDING } from '@/src/componen
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth } from '@/src/components/dispatch/paper/paperMetrics';
 
-/** Nothing is pressed in a still. Present because the prop is REQUIRED — which
- *  is the point of it being required: the app cannot mount one without a
- *  handler, and this harness has to say out loud that it is a drawing. */
+/** Nothing is pressed in a still; required props say so out loud. */
 const NOOP = () => {};
 
-/**
- * ── THE SHEETS DRAW A MEMBER'S PAGE, NOT A STRANGER'S ───────────────────────
- * A mark with no handler is now DISABLED — dimmed to 0.62 and announced as
- * "Members only" — which is right in the app and wrong in a design record. The
- * generator passed no handlers, so every one of these screens was silently
- * drawn in the signed-out state: forty-five cards and six docks showing marks
- * that a member never sees that way.
- *
- * A contrast sweep caught it, measuring CERTIFY at 3.17:1 and finding an
- * effective opacity of 0.62 on a page nobody had asked to be dimmed.
- *
- * These wrappers hand every draw a handler, so the sheets show the page the
- * design is FOR. `a7-end-signed-out` is the one screen that deliberately shows
- * the other state, and it passes its own props.
- */
+// A MEMBER'S page, not a stranger's: a mark with no handler is drawn disabled
+// ("Members only", dimmed), so every draw gets handlers (`a7-end-signed-out` alone
+// shows the signed-out state, with its own props).
 const PaperPost = (props: React.ComponentProps<typeof RawPaperPost>) => (
   <RawPaperPost onCertify={NOOP} onSave={NOOP} {...props} />
 );
@@ -74,12 +60,7 @@ const PostDock = (props: React.ComponentProps<typeof RawPostDock>) => (
   <RawPostDock onCertify={NOOP} onSave={NOOP} {...props} />
 );
 
-/**
- * Where the sheets land. Defaults to `mockups/paper/out/` inside the repo so a
- * run is reproducible; PAPER_OUT overrides it. The old value was one session's
- * scratchpad, which meant every later run wrote its sheets somewhere that no
- * longer existed.
- */
+/** Where the sheets land: `mockups/paper/out/` in the repo unless PAPER_OUT says. */
 const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'out');
 
 jest.mock('expo-router', () => ({
@@ -122,33 +103,10 @@ const TODAY = new Date(2026, 7, 28);
 const W: number = require('@/mockups/paths').PHONE.width;
 const COL = columnWidth(W);
 
-/**
- * ── REAL ARTWORK, IF IT IS STILL THERE ──────────────────────────────────────
- * The posters are film stills fetched once into a scratch directory. They are
- * decoration for the screenshots — they are not part of the components and are
- * deliberately NOT committed, because they are somebody else's copyright.
- *
- * They were also a hard dependency, read with a bare `readFileSync` at module
- * load. When Windows cleaned that temp directory the whole harness stopped
- * running — and because a failing suite still prints "Ran all test suites", it
- * looked like a pass while measuring a render that had not happened. Two audits
- * came back with identical numbers before that was noticed.
- *
- * So the art is now OPTIONAL. Missing, the screens render with empty plates,
- * which is exactly the state `b7-plate-no-art` exists to check anyway — and
- * every measurement this harness feeds (boxes, overflow, contrast of type) is
- * about layout, not pictures.
- */
-// The art now lives in the project (mockups/fixtures); PAPER_ART still overrides.
+// OPTIONAL art (missing, plates draw empty): mockups/fixtures, unless PAPER_ART says.
 const ART = process.env.PAPER_ART ?? FIXTURES;
 
-/**
- * `empty` says what the fallback actually IS, because the message was wrong the
- * moment the posters moved into the repo: it went on announcing "empty plates"
- * while handing back seventeen real ones. A log line that describes a state the
- * code no longer has is worse than no log line — it sends the next person
- * looking for a missing file that stopped mattering.
- */
+/** An artwork file, or `fallback`; `empty` says whether that fallback draws nothing. */
 const readArt = <T,>(file: string, fallback: T, empty: boolean): T => {
   try {
     return JSON.parse(readFileSync(join(ART, file), 'utf8')) as T;
@@ -163,26 +121,14 @@ const readArt = <T,>(file: string, fallback: T, empty: boolean): T => {
   }
 };
 
-/**
- * The posters live IN THE REPO, inlined as data URIs by zz-art.gen. They used to
- * be read from a scratchpad belonging to whichever session generated them, so
- * every later run found nothing and drew the whole set with empty plates while
- * still reporting success. The external file is still honoured if PAPER_ART
- * points at one, but the repo's own artwork is the default now, which is the
- * only version of this that survives the session that made it.
- */
+// The posters, from the repo (zz-art.gen's data URIs) unless PAPER_ART holds a file.
 const POSTERS = readArt<Record<string, { title: string; data: string }>>('posters.json', REPO_POSTERS, false);
 const ODYSSEY = readArt<Record<string, string>>('odyssey-art.json', {}, true);
 
 const IMAGES: Record<string, { title: string; data: string }> = { ...POSTERS };
 for (const [path, data] of Object.entries(ODYSSEY)) IMAGES[path] = { title: '', data };
 
-/**
- * Two titles in the source data were wrong — checked by rendering all seventeen
- * posters and reading the artwork. "Persona" is Cache; "Wings of Desire" is All
- * Quiet on the Western Front. A plate whose label disagrees with its picture
- * breaks the illusion faster than any layout fault.
- */
+/** Two source titles name the wrong picture (checked against the artwork). */
 const RELABEL: Record<string, string> = {
   Persona: 'Cache',
   'Wings of Desire': 'All Quiet on the Western Front',
@@ -191,14 +137,8 @@ for (const v of Object.values(POSTERS)) {
   if (RELABEL[v.title]) v.title = RELABEL[v.title];
 }
 
-/**
- * The house's real mark, inlined, for the card that leaves the app.
- *
- * Read from the repository (public/, beside mobile/), never from one machine's
- * disk. This was `C:/Users/…` — on CI's Linux runner that file does not exist,
- * the whole suite failed to load, the Dispatch lost the coverage this suite
- * gives it, and the native Jest job was red on every push from 2026-09-10.
- */
+// The house's real mark, for the card that leaves the app: from the repository's
+// public/ (beside mobile/), never from one machine's disk.
 const LOGO_KEY = '/reelhouselogo.jpg';
 IMAGES[LOGO_KEY] = {
   title: '',
@@ -226,10 +166,7 @@ const film = (title: string, year: number, director: string, backdrop?: number) 
 });
 
 const STALKER = film('Stalker', 1979, 'Tarkovsky', 11);
-/** 14, not 19: at 19 the frame is a TITLE CARD reading "20,000 LEAGUES UNDER
- *  THE SEA", printed behind an essay called The Long Silence in Ozu. A backdrop
- *  is atmosphere, and atmosphere that spells out another film's name is not
- *  atmosphere, it is a mistake nobody can un-see. */
+/** A still that spells out no other film's title (19 is a title card). */
 const TOKYO = film('Tokyo Story', 1953, 'Ozu', 7);
 const COME = film('Come and See', 1985, 'Klimov');
 const CACHE = film('Cache', 2005, 'Haneke', 3);
@@ -248,28 +185,12 @@ const out: [string, React.ReactElement][] = [];
 const add = (name: string, el: React.ReactElement) => out.push([name, el]);
 
 // ══ A · THE PAPER ═══════════════════════════════════════════════════════════
-/**
- * ── THE ONE SCREEN SIZE NEVER RENDERED ──────────────────────────────────────
- * This app ships `supportsTablet: true`, and `PAPER_MAX = 560` exists solely
- * for it, justified by a paragraph about a 12.9" iPad setting forty words to a
- * line. That cap has never once been drawn. A number that guards a case nobody
- * has looked at is a number nobody has checked.
- *
- * 834pt is an iPad in portrait. The paper should cap at 560 and centre, with
- * the page's own ground showing either side — a broadsheet on a reading desk.
- */
+// An iPad in portrait (supportsTablet is on): the paper caps at PAPER_MAX and centres.
 const TAB = 834;
 const TAB_COL = columnWidth(TAB);
 
-/**
- * ── THE TWO NARROW WIDTHS ───────────────────────────────────────────────────
- * 320 is an iPhone SE and the floor iOS still reports. 360 is the most common
- * Android width in the world. Measured, ALL SEVEN unreflowable rows failed at
- * 320 and the byline failed at 360 — and neither had ever been drawn.
- *
- * They are drawn with the WORST content the app allows: the longest take, a
- * long name, and a dossier that was edited, which is the case that overran.
- */
+// The narrow widths, 320 (iOS's floor) and 360 (Android's commonest), drawn with the
+// WORST content the app allows: the longest take, a long name, an edited dossier.
 const SE = 320;
 const SE_COL = columnWidth(SE);
 const AND = 360;
@@ -277,17 +198,8 @@ const AND_COL = columnWidth(AND);
 
 const LONGNAME: PaperAuthor = { name: 'Archivist-Name', memberNo: 10248, tier: 'archivist', avatar: artPath('Setsuko Hara') };
 
-/**
- * ── WHAT A MEMBER CAN ACTUALLY TYPE ─────────────────────────────────────────
- * Every fixture so far has been prose I wrote, and prose I wrote wraps. The
- * caps bound how MANY characters a filing may carry; nothing bounds how long a
- * single unbroken RUN of them can be, and React Native does not break a word
- * that is wider than its box — it lets it out.
- *
- * A pasted link, a hashtag, a German compound, a member holding a key down.
- * Any of them is one token wider than a 254pt column, and none of them has
- * ever been drawn.
- */
+// What a member can type: nothing bounds an unbroken RUN (a pasted link, a compound,
+// a held key), and React Native does not break a word wider than its box.
 add('t4-unbreakable', (
   <View style={p.screen}>
     <TopNavBar />
@@ -318,10 +230,7 @@ add('t2-iphone-se', (
         readTime="12 MIN" edited certifyCount={61} commentCount={14} />
       <PaperPost kind="take" order="19:02" author={MIRA} measureWidth={SE_COL} film={STALKER}
         body={LONGEST} certifyCount={2140} commentCount={61} certified />
-      {/* A seeking at 16.5 on the narrowest screen the app supports. It was
-          Courier at 13.5 until this pass, so its new size has never been drawn
-          at 320pt — and the worst case for a bigger face is the smallest
-          column. Same text as the longest take, so the two are comparable. */}
+      {/* A seeking's larger face on the narrowest column, with the longest take's text. */}
       <PaperPost kind="seeking" order="17:44" author={SAJAD} measureWidth={SE_COL}
         body={LONGEST} commentCount={9} />
     </PaperSheet>
@@ -345,20 +254,8 @@ add('t3-android-360', (
   </View>
 ));
 
-/* ── THE BYLINE'S WORST CASE, DRAWN ──────────────────────────────────────────
-   The byline gained a rank badge, and a badge is weight in a row that already
-   truncates. Every plate that existed tested it with a four-letter name, or a
-   fourteen-letter name wearing the NARROWER of the two badges — so the case
-   that actually decides the layout had never been drawn.
-
-   Here it is: a thirty-character name (the username ceiling), the AUTEUR plate
-   (the wider badge, and the one with a border), the trailing facts, and the
-   narrowest column the app supports. No avatar either, so the disc draws its
-   monogram rather than a picture.
-
-   What must hold: the badge never shrinks and never wraps. The NAME gives way
-   first and the trailing facts give way with it, because a name is recognisable
-   from its opening characters and a critique count is on the screen twice. */
+// The byline's worst case: a 30-character name (the ceiling), the wider AUTEUR badge,
+// the trailing facts, the narrowest column. The badge never shrinks; the name gives way.
 const MAX_AUTEUR: PaperAuthor = {
   name: 'Katharine-Wentworth-Ashgrovely', memberNo: 10248, tier: 'auteur', avatar: null,
 };
@@ -471,10 +368,7 @@ add('a4-empty-seeking', (
     <NavSpace />
     <PaperChrome onArchive={() => {}} section="SEEKING" />
     <PaperSheet>
-      {/* No section head. The index above already names SEEKING, in the
-          section's own violet, underlined — and the head printed `THE SEEKING /
-          Ask the house.` directly over a button reading ASK THE HOUSE. The same
-          four words twice and the department's name twice, on an empty page. */}
+      {/* No section head: the index above already names SEEKING, in its violet. */}
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperEmpty title="No one is asking."
         body="Tell the house what you need tonight. Someone always knows."
@@ -638,9 +532,7 @@ add('b4-ballot-closed', (
 add('b5-dossier', (
   <View style={p.screen}>
     <PaperSheet top>
-      {/* An essay titled "The Long Silence in Ozu" was credited to a Wong
-          Kar-wai film. A credit that disagrees with its headline breaks the
-          illusion faster than any layout fault. */}
+      {/* A credit that agrees with its headline (an essay on Ozu, on an Ozu film). */}
       <PaperPost kind="dossier" order="14:20" author={ANA} measureWidth={COL} still film={TOKYO}
         body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
         readTime="12 MIN" certifyCount={61} commentCount={14} certified />
@@ -655,9 +547,7 @@ add('b6-states', (
         body="—" spoiler="This discusses the ending of Cache" certifyCount={9} commentCount={3} />
       <PaperPost kind="take" order="18:03" author={DAN} measureWidth={COL} withheld
         body="Every Marvel film since 2019 has been the same film with different weather." />
-      {/* Both tombstones. The house striking a filing and a member withdrawing
-          one are different events and must not wear the same sentence — this
-          drew only the author's, so a struck filing blamed its author. */}
+      {/* Both tombstones: withdrawn by its author, struck by the house. Never one sentence. */}
       <PaperPost kind="take" order="—" author={null} measureWidth={COL} ended="author"
         body="" commentCount={200} />
       <PaperPost kind="take" order="—" author={null} measureWidth={COL} ended="house"
@@ -731,25 +621,14 @@ add('f1-picker', (
         for the paper you can see behind it, not leaving for a different app. */}
     <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(6,5,3,0.72)' }} />
     <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
-      {/* `onRules` is passed because the app passes it. The house rules had been
-          written, drawn and unreachable; the picker is the door every filing
-          goes through and now carries the line that opens them. A plate that
-          leaves an optional prop off draws a screen the app does not have. */}
+      {/* `onRules`, as the app passes it: an optional prop left off is a screen it lacks. */}
       <PaperPicker onRules={() => {}} />
     </View>
   </View>
 ));
 
-/**
- * ── THE DOOR IS A SCREEN, NOT THE FEED'S EMPTY STATE ────────────────────────
- * This drew the door inside the paper, under a running head, which reads as
- * "here is what you get instead of the news". That is the opposite of what the
- * door says: the house lets a new member READ from the first minute, and their
- * feed is full. The door is what stands between them and FILING.
- *
- * So it is drawn where the app puts it — above the picker and above every desk,
- * on the way to the writing room, with a way back out.
- */
+// The door is a screen on the way to the writing room, not the feed's empty state: a new
+// member READS from the first minute; the door stands only between them and FILING.
 add('f2-door', (
   <View style={p.screen}>
     <PaperBack label="THE DISPATCH" />
@@ -760,17 +639,8 @@ add('f2-door', (
 ));
 
 /**
- * ── THE RULES PAGE SCROLLS, AND THE PLATE HAS TO SCROLL WITH IT ─────────────
- * This drew the sheet with no scroll view, and MEASURED, nine clauses come to
- * 962 points at the system text size and 1,151 at the accessibility ceiling,
- * inside a 740-point screen. The plate was showing a page bleeding 222 points
- * off its own frame — and reading it, nobody would have known whether that was
- * the design or the drawing, which is exactly what a design record must never
- * leave ambiguous.
- *
- * The screen has always been a `ScrollView`; the plate now is one too, so what
- * is drawn here is the top of a page a member scrolls rather than a page that
- * does not fit.
+ * The rules page scrolls in the app (its clauses outrun a screen at any size),
+ * so the plate is a scroll view too: the top of a page, not a page cut off.
  */
 add('f3-house-rules', (
   <View style={p.screen}>
@@ -781,14 +651,8 @@ add('f3-house-rules', (
   </View>
 ));
 
-/**
- * The archive BEFORE a film is chosen — the state the record did not have.
- *
- * `f4-archive` draws the result: a film plate with its filings under it. Getting
- * there takes a search, and the page a member spends most of their time on is
- * the list of films the house has actually written about. A record that draws
- * only the destination is a record of half a screen.
- */
+// The archive BEFORE a film is chosen: the list of films the house has written about
+// (`f4-archive` draws the result).
 add('f4b-archive-search', (
   <View style={p.screen}>
     <PaperBack label="THE ARCHIVE" />
@@ -826,10 +690,7 @@ add('f5-member-room', (
         serial at you. */}
     <PaperBack label="ANA" />
     <PaperSheet>
-      {/* The way out to the rest of the member — the profile and its six rooms
-          of films. It is a NAMED line rather than a tappable name: a `Byline`
-          that takes a press announces itself as "Open their room", and this is
-          their room. */}
+      {/* The way out to the member file, as the app passes it. */}
       <PaperRoom author={ANA} filed={128} certified={4102} onFile={() => {}} />
       {/* The month AND the year. A room runs back through everything a member
           has ever filed, so `AUGUST` alone names two different Augusts once the
@@ -879,11 +740,7 @@ add('f7-share-card', (
   </View>
 ));
 
-/* ── THREE SHAPES, ONE CARD ──────────────────────────────────────────────────
-   4:5 was chosen because it is the most-shared portrait ratio, and looked at
-   properly it reads narrow — the lines are short against the height. Rather
-   than argue the point, the same card at three proportions, each with the
-   opening budget its measure actually supports. */
+// The same card at three proportions, each with the opening its measure supports.
 add('r1-ratio-4x5', (
   <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>
     <DossierShareCard title="The Long Silence in Ozu" author={ANA}
@@ -918,12 +775,8 @@ add('f7b-share-card-short', (
   </View>
 ));
 
-/* ── WHAT A MEMBER CAN ACTUALLY WRITE ────────────────────────────────────────
-   The card is free marketing and the only asset that leaves the app, so it is
-   drawn against inputs chosen to break it rather than to flatter it: the title
-   ceiling, a title in a script Rye has no glyphs for, an opening with no
-   sentence end anywhere near the cut, an author who has closed their account.
-   Every one of these is a real row the database will hand this component. */
+// The share card against inputs chosen to BREAK it: the title ceiling, a script Rye
+// cannot draw, no sentence end near the cut, a departed author. All real rows.
 const S = (n: string, el: React.ReactNode) =>
   add(n, <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>{el}</View>);
 
@@ -1005,10 +858,7 @@ const Said = ({ who, text, mine }: { who: string; text: string; mine?: boolean }
       borderRadius: 3, paddingVertical: 9, paddingHorizontal: 12,
       borderWidth: 1, borderColor: mine ? 'rgba(184,137,26,0.24)' : 'rgba(184,137,26,0.10)',
     }}>
-      {/* parchment, not a hex of its own. The colour audit reads every painted
-          text colour off the rendered page and cannot tell scaffolding from
-          design — so a fixture inventing its own grey shows up as the design
-          carrying a fourteenth colour. Fixtures speak the token set too. */}
+      {/* A token, not a hex: the colour audit cannot tell a fixture from the design. */}
       <Text style={{ fontFamily: 'CourierPrime_400Regular', fontSize: 12.5, lineHeight: 19,
         color: '#E8DFD0' }}>{text}</Text>
     </View>
@@ -1017,9 +867,7 @@ const Said = ({ who, text, mine }: { who: string; text: string; mine?: boolean }
 
 add('f8c-lounge-in-room', (
   <View style={[p.screen, { justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 34 }]}>
-    {/* Names only. A name over a message is the same job as a byline over a
-        post, and a lounge that stamps a serial on every line anybody says is
-        the disease the byline was just cured of, in a second room. */}
+    {/* Names only over a message, as over a post: no serial on every line said. */}
     <Said who="DAN" text="did anyone actually finish the Ozu run or was that just me" />
     <Said who="MIRA" text="i got three in. the fourth broke me" />
     <View style={{ alignSelf: 'flex-start', maxWidth: '92%', marginBottom: 10 }}>
@@ -1034,15 +882,8 @@ add('f8c-lounge-in-room', (
   </View>
 ));
 
-/* `MAX_LENGTHS.username` is 30 and every byline so far was drawn with a
-   four-letter fixture. `MAXNAME` is exactly 30 — it was 28 while the comment
-   claimed 30, so the plate meant to prove the worst case was two characters
-   short of it. The dossier below carries a title too long for the bubble at the
-   same time, so both variable-length things in this card are at their worst
-   together.
-
-   The member number is no longer beside the name — it left every byline — so
-   the name now stands alone as the only thing here that can run long. */
+// Exactly MAX_LENGTHS.username (30), beside a title too long for the bubble: both of
+// the card's variable lengths at their worst together.
 const MAXNAME: PaperAuthor = {
   name: 'Katharine-Wentworth-Ashgrovely', memberNo: 10248,
   tier: 'archivist', avatar: artPath('Setsuko Hara'),
@@ -1209,26 +1050,10 @@ add('h6-film-finder', (
   </View>
 ));
 
-/* ── NO h7-report PLATE ────────────────────────────────────────────────────
- * It drew a paper report sheet that no screen mounted, next to a real one the
- * app has been shipping all along in `src/components/moderation/ReportSheet`.
- * The plate was the only thing keeping it alive — and it printed "Five members
- * report a filing and the house reads it", the clause already struck from the
- * rules page for being false.
- *
- * A plate that draws something the app does not mount is not a record. It is a
- * proposal, and one that will be mistaken for a record the moment nobody
- * remembers the difference. See the note in PaperDesk.tsx where the component
- * used to be.
- */
-
 add('h8-share', (
   <View style={[p.screen, { justifyContent: 'flex-end' }]}>
     <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(6,5,3,0.72)' }} />
-    {/* The preview the APP passes: two lines of the filing's own words. It
-        drew a `LoungeCard` here, which is a card the reader has never rendered
-        and which is only accurate for one of the three destinations — a plate
-        of a screen the app does not have. */}
+    {/* The preview the APP passes: two lines of the filing's own words. */}
     <ShareSheet preview={
       <Text style={p.sharePreview} numberOfLines={2}>
         Tokyo Story is the only film that has ever made me telephone my mother
@@ -1298,18 +1123,6 @@ add('g3-new-filings', (
   </View>
 ));
 
-/* ── NO g4-events PLATE ────────────────────────────────────────────────────
- * It drew a paper notices list that no screen mounted, beside a real one the
- * app ships in `app/(modals)/notifications-modal.tsx` — which is fed by four
- * live database triggers and routes a tap straight to the filing.
- *
- * The plate was the only thing keeping the component alive, and one of its four
- * rows — "shared a dossier" — was an event this database has no trigger for at
- * all. A record that draws a feature the schema would refuse is not a record.
- *
- * See the note in PaperMore.tsx where the component used to be.
- */
-
 // ══ D · WRITING ═════════════════════════════════════════════════════════════
 add('d1-composer-take', (
   <PaperComposer kind="take" me={ANA} hour="21:40" film={STALKER} remaining={246}
@@ -1342,32 +1155,14 @@ add('y0-rtl', (
   </View>
 ));
 
-/**
- * ── THE CARD THE APP ACTUALLY MOUNTS ────────────────────────────────────────
- * This drew `PaperConcierge`, which no screen mounted: a second copy of this
- * card, alive only because this file imported it. The plates promise the real
- * component, and for the concierge they were showing the other one.
- *
- * There was a second plate too — `y2-concierge-forms` — drawing the five forms
- * INSIDE the concierge card behind a back arrow. The app does not do that: "File
- * to the Dispatch" routes to /dispatch/compose, and the picker there is already
- * drawn as `f1-picker`. It was a superseded design that no member could reach.
- */
+// The concierge card the app mounts (its "file" act routes to compose: `f1-picker`).
 add('y1-concierge-acts', (
   <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>
     <ConciergeCard />
   </View>
 ));
 
-/* ── THE STATES NOTHING HAD EVER DRAWN ───────────────────────────────────────
-   Fifty-nine screens passed the pixel audit, but a screen only exercises the
-   props it is GIVEN. Six visual states had never been passed by any of them,
-   so six branches had never been drawn, measured, or looked at.
-
-   This is not hypothetical: the colour audit found `colors.crimson` set on
-   letterforms in four styles, and three sat behind conditions no mockup set.
-   I fixed them without ever seeing them. These screens are so that the next
-   fault in a branch like that is found by looking rather than by luck. */
+// Every visual state a prop can switch on, drawn: a screen measures only the props it is given.
 add('z1-composer-spoiler', (
   <PaperComposer kind="take" me={MIRA} hour="22:05" film={TOKYO} remaining={12} spoiler
     body="The ending of Tokyo Story only works because of what the father does NOT say on the last morning." />

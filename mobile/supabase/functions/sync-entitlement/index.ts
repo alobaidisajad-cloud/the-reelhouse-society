@@ -1,21 +1,19 @@
 /**
- * sync-entitlement — Server-Side Entitlement Validation
+ * sync-entitlement — a member's tier, from RevenueCat's own record
  * ──────────────────────────────────────────────────────
- * Validates RevenueCat entitlement data server-side before
- * writing subscription tier to the profiles table.
+ * The client cannot be trusted to name its own tier (a jailbroken device could
+ * claim 'auteur'), so it names nothing:
+ *   1. the caller is identified from their JWT;
+ *   2. their entitlements are fetched from RevenueCat, server to server;
+ *   3. the highest active one is granted through grant_entitlement, and the
+ *      founding seat claimed;
+ *   4. the tier actually in force is returned, with whether it was applied.
  *
- * Why this exists:
- *   The mobile client cannot be trusted to write its own
- *   subscription tier — a jailbroken device could set
- *   `role = 'auteur'` without paying. This Edge Function
- *   validates the tier is legitimate before writing.
- *
- * Flow:
- *   1. Client sends { tier } with auth JWT
- *   2. Edge Function validates JWT → extracts user_id
- *   3. Validates tier is one of the allowed values
- *   4. Writes to profiles.role using service-role key
- *   5. Returns { tier } on success
+ * Never a direct profile update: `role` is also the admin flag, which
+ * grant_entitlement keeps (Restore Purchases must not un-admin a moderator). Its
+ * source is 'revenuecat', as a provider may only lower a tier it granted, so a web
+ * purchase survives "this Apple ID bought nothing". It is its own name, never an
+ * overload of apply_entitlement: PostgREST ambiguity must not fail a payment.
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -36,7 +34,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    // 1. Validate auth
+    // Who is calling
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
@@ -62,7 +60,7 @@ serve(async (req: Request) => {
       });
     }
 
-    // 2. Fetch authoritative entitlements from RevenueCat (S2S)
+    // Their entitlements, from RevenueCat, server to server
     const rcSecretKey = Deno.env.get('REVENUECAT_SECRET_KEY');
     if (!rcSecretKey) {
       throw new Error('Missing REVENUECAT_SECRET_KEY');
@@ -79,8 +77,7 @@ serve(async (req: Request) => {
     let rcData;
     if (!rcResponse.ok) {
       if (rcResponse.status === 404) {
-        // 404 simply means the user has never made a purchase and has no RevenueCat history.
-        // It is perfectly safe to assume they have an empty entitlements object.
+        // 404: never purchased anything, so no entitlements.
         rcData = { subscriber: { entitlements: {} } };
       } else {
         return new Response(JSON.stringify({ error: 'Failed to verify subscriptions' }), {
@@ -94,8 +91,7 @@ serve(async (req: Request) => {
 
     const entitlements = rcData?.subscriber?.entitlements || {};
     
-    // Determine highest active tier (cryptographically verified truth)
-    // Mobile client relies on 'cinephile' as the base tier.
+    // The highest active tier, from RevenueCat's record; 'cinephile' is the base.
     let tier: Tier = 'cinephile';
     const now = new Date();
     
@@ -112,21 +108,10 @@ serve(async (req: Request) => {
     else if (isActive('archivist')) tier = 'archivist';
     else if (isActive('cinephile')) tier = 'cinephile';
 
-    // 3. The founding -> auteur mapping used to live here AND, copy-pasted, in
-    //    paytabs-handler. It now lives once, inside public.apply_entitlement.
-    //    'founding' is a purchase type, not a storable value: profiles_role_check
-    //    permits free|cinephile|archivist|auteur|projectionist|admin and not
-    //    'founding'. The seat itself is recorded by claim_founding_seat below.
-
-    // 4. Write with service-role key (bypasses RLS)
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // The 100-seat cap can only be enforced atomically inside claim_founding_seat
-    // (row-locked counter — see supabase/migrations/20260620_claim_founding_seat_rpc.sql).
-    // RevenueCat has already charged the user by the time this function runs, so even if
-    // the cap is reached we still grant the 'auteur' tier they paid for — we just don't
-    // mark them is_founding. seatClaimed=false in the response lets the client surface
-    // "founding seats are full, you've been granted Auteur tier instead" if desired.
+    // 'founding' is a purchase, stored as auteur; the seat is claim_founding_seat's,
+    // which caps atomically. The member has paid, so a full house still grants auteur.
     let seatClaimed = true;
     if (tier === 'founding') {
       const { data: claimed, error: claimError } = await adminClient.rpc('claim_founding_seat', {
@@ -141,31 +126,7 @@ serve(async (req: Request) => {
       seatClaimed = claimed === true;
     }
 
-    // ⚠️ #47 — this used to be `.update({ role: dbRole, tier: dbRole })`, which
-    // overwrote `role` unconditionally. `role` is BOTH the subscription tier and the
-    // admin permission flag, so an admin tapping "Restore Purchases" — a button
-    // Apple requires — had role rewritten to 'cinephile' and permanently lost the
-    // Tribunal. Every RLS policy that reads `role` gates on role='admin' (reports,
-    // mod_actions, warnings, dossier comment moderation), so one button destroyed
-    // the entire moderation system with no in-app way back.
-    //
-    // apply_entitlement preserves 'admin', still writes the tier into `role` for
-    // everyone else (the web has 27 gates reading `role` and zero reading `tier` —
-    // stop writing it and web purchasers get nothing), validates the tier, and
-    // raises if no profile matched instead of silently succeeding.
-    // ⚠️ p_source MUST be 'revenuecat' here. RevenueCat only knows about App Store /
-    // Play purchases. A member who bought on the WEBSITE through PayTabs and then taps
-    // "Restore Purchases" in the app gets a truthful "this Apple ID never bought
-    // anything" — and before the source rule existed, that answer overwrote their paid
-    // tier with cinephile, destroying the purchase on BOTH surfaces (same account).
-    // apply_entitlement now refuses a downgrade from a provider that did not grant the
-    // current tier. A genuinely lapsed App Store subscription still downgrades, because
-    // that IS a revenuecat-granted tier. See 20260803_01_entitlement_source.sql.
-    //
-    // The authority is grant_entitlement, NOT a third argument on apply_entitlement:
-    // two overloads of one name would make PostgREST resolve by argument-name set, and
-    // an ambiguity there would fail on a PAYMENT path. apply_entitlement stays
-    // single-signature as the legacy shim.
+    // Through grant_entitlement, source 'revenuecat' (see the header: both must stay).
     const { data: applyRows, error: updateError } = await adminClient
       .rpc('grant_entitlement', { p_user_id: user.id, p_tier: tier, p_source: 'revenuecat' });
 
@@ -176,14 +137,11 @@ serve(async (req: Request) => {
       });
     }
 
-    // A refusal is NOT an error — it is the rule working. But we must not report the
-    // requested tier back as though it had been applied, or the client would show a
-    // demotion that never happened to the account.
+    // A refusal is the rule working, not an error: report the tier in force, not the one asked.
     const applied = Array.isArray(applyRows) ? applyRows[0] : applyRows;
     const wasApplied = applied?.out_applied !== false;
     const effectiveTier = wasApplied ? tier : (applied?.out_tier ?? tier);
 
-    // 5. Success
     return new Response(JSON.stringify({
       tier: effectiveTier,
       userId: user.id,

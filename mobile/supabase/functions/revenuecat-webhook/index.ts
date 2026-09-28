@@ -1,30 +1,15 @@
+/**
+ * revenuecat-webhook — retire a subscription when it actually ends, without the
+ * member having to open the app.
+ *
+ * DEPLOY WITH --no-verify-jwt: RevenueCat has no Supabase login, and the gateway
+ * would answer 401 before this ran. REQUIRES REVENUECAT_WEBHOOK_SECRET, matching the
+ * webhook's Authorization header in the RevenueCat dashboard; unset, all is refused.
+ * This file is transport only; every decision is decide.ts's, tested with the suite.
+ */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { decide } from "./decide.ts"
-
-/**
- * revenuecat-webhook — retire a subscription when it actually ends.
- * ─────────────────────────────────────────────────────────────────
- * WHY THIS EXISTS
- *
- * Before this there was NO RevenueCat webhook. The only thing that ever downgraded a
- * lapsed subscription was the app's own sync, which runs when the member opens the app.
- * Someone who cancelled and never opened it again kept their paid rank indefinitely.
- *
- * ⚠️ DEPLOY WITH --no-verify-jwt. RevenueCat is a server calling a server; it has no
- * Supabase login token, so the platform gateway would reject it with 401 before this
- * code ran — the same mistake that left paytabs-handler unreachable.
- *
- * ⚠️ REQUIRES the secret REVENUECAT_WEBHOOK_SECRET, matching the Authorization header
- * configured on the webhook in the RevenueCat dashboard. Unset ⇒ everything is
- * rejected (fail closed) rather than trusting anonymous callers.
- *
- * ── WHY THE THINKING LIVES IN decide.ts ─────────────────────────────────────────
- * Everything subtle about RevenueCat's event semantics is a PURE function next door,
- * exercised by the normal Jest suite on every commit. This file is only transport:
- * authenticate, decide, apply, answer. There is nothing here to reason about that a
- * test cannot already see.
- */
 
 const WEBHOOK_SECRET = Deno.env.get('REVENUECAT_WEBHOOK_SECRET') ?? ''
 
@@ -36,8 +21,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 })
   }
 
-  // ── Authentication: fail closed ──────────────────────────────────────────────
-  // Length-checked before comparing so a wrong-length token cannot leak timing.
+  // ── Authentication: fail closed (a plain comparison, not a constant-time one) ──
   const auth = req.headers.get('Authorization') ?? ''
   if (!WEBHOOK_SECRET || auth.length !== WEBHOOK_SECRET.length || auth !== WEBHOOK_SECRET) {
     console.error('[revenuecat-webhook] rejected: missing or invalid Authorization header')
@@ -69,25 +53,19 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   )
 
-  // p_source MUST be 'revenuecat'. grant_entitlement refuses to LOWER a tier granted
-  // by another provider, and refuses to take ANY member below auteur while they hold a
-  // founding seat — so this can retire an App Store subscription it sold and can never
-  // wipe a website purchase, a hand-granted rank, or a lifetime seat.
-  // (20260803_01_entitlement_source.sql, 20260803_02_founding_seat_is_permanent.sql)
+  // p_source MUST be 'revenuecat': grant_entitlement lowers only a tier this provider granted,
+  // and never takes a founding seat below auteur, so a web or hand-granted rank survives.
   const { data, error } = await adminClient
     .rpc('grant_entitlement', { p_user_id: appUserId, p_tier: tier, p_source: 'revenuecat' })
 
   if (error) {
-    // ⚠️ P0002 = no profile with that id. The account was deleted, or never existed.
-    // Retrying can NEVER make that succeed, and RevenueCat retries every non-2xx —
-    // so returning 500 here would queue a permanent redelivery loop for every deleted
-    // account. Acknowledge it instead, loudly.
+    // No such profile (P0002): a retry can never succeed, and RevenueCat retries every
+    // non-2xx, so it is acknowledged, loudly.
     if ((error as any)?.code === 'P0002' || /no profile with id/i.test(String((error as any)?.message ?? ''))) {
       console.warn(`[revenuecat-webhook] no profile for ${appUserId} — acknowledged, not retried`)
       return ok({ ignored: 'no_such_profile' })
     }
-    // A real failure: 500 so RevenueCat retries. This is the one case where retrying
-    // is right — the event was valid and we simply could not record it.
+    // A valid event not recorded: 500, so RevenueCat retries.
     console.error(`[revenuecat-webhook] grant_entitlement failed for ${appUserId}:`, error)
     return new Response(JSON.stringify({ error: 'Failed to apply entitlement' }), { status: 500 })
   }

@@ -3,16 +3,10 @@
  *
  * A GENERATOR, not a test. Run: npx jest zz-cover.gen
  *
- * The cover bleeds with a NEGATIVE horizontal margin, so where its edge lands
- * depends entirely on the gutter of whatever contains it. It is drawn in two
- * different containers — the reader's sheet and the writing room's preview —
- * and until this pass those gutters were 24 and 20, so the same band reached
- * the page edge in one and four points past the container in the other.
- *
- * Both are derived from `DOC_PAD` now. This plate puts them side by side so the
- * claim can be measured rather than asserted: in each, the band's outer edge
- * must sit on the sheet's outer edge, `DOC_MARGIN + DOC_RAIL` in from the
- * screen.
+ * The cover bleeds by a NEGATIVE margin, so its edge lands wherever its
+ * container's gutter says. Both containers (the reader's sheet, the writing
+ * room's preview) take their gutter from `DOC_PAD`; side by side, the band's
+ * outer edge must sit on the sheet's, `DOC_MARGIN + DOC_RAIL` in from the screen.
  *
  * The backdrop is a remote URL that will not resolve in a browser. That is
  * fine and deliberate — the BOX is laid out by the stylesheet, not by the

@@ -2,18 +2,10 @@
 /**
  * test-timezones.js — run the suite from six places on Earth.
  *
- * ── WHY THIS EXISTS ──────────────────────────────────────────────────────────
- * A green suite in one timezone is not evidence about dates. Batch 13's bug —
- * `watched_date` is a `date` column, so "2026-07-25" parses as midnight UTC and
- * rendered as JUL 24 for every member west of UTC — was invisible to CI, invisible
- * in review, and invisible to anyone testing from Baghdad, Tokyo or London. It sat
- * in the product because nobody ever ran the tests from the Americas.
- *
- * ── WHY IT SETS TZ HERE AND NOT INSIDE A TEST ────────────────────────────────
- * Verified, not assumed: mutating `process.env.TZ` INSIDE a jest-expo test does
- * nothing — Los Angeles and Tokyo both returned "Jul 25, 2026". The obvious harness
- * passes while proving nothing. TZ has to be set before the process starts, which is
- * what this does.
+ * A green suite in one timezone is not evidence about dates: a `date` column's
+ * `2026-07-25` parses as midnight UTC and reads as the 24th anywhere west of it.
+ * TZ is set before each process starts, because setting it INSIDE a jest-expo
+ * test does nothing (verified: Los Angeles and Tokyo gave the same day).
  *
  * Usage:  npm run test:tz            (whole suite, every zone)
  *         npm run test:tz -- <path>  (one file, every zone)
@@ -34,12 +26,7 @@ const ZONES = [
 const passthrough = process.argv.slice(2);
 const failures = [];
 
-// Resolve Jest's own entry point and run it with THIS node binary.
-//
-// Not `npx jest`: on Windows that means spawning npx.cmd, which Node refuses with
-// EINVAL unless `shell: true` — and turning the shell on brings quoting rules that
-// differ between cmd and sh, so a path with a space would break on one platform and
-// not the other. Calling the JS entry directly has neither problem.
+// Jest's own entry on THIS node: `npx jest` needs a shell on Windows (and its quoting).
 const jestBin = require.resolve('jest/bin/jest');
 
 for (const tz of ZONES) {

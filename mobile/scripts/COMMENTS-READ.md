@@ -38,30 +38,30 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/utils/mappers.test.ts | — |  |
 | __tests__/utils/mutationExecutor.test.ts | — |  |
 | __tests__/utils/offlineQueue.test.ts | — |  |
-| ../.github/workflows/ci-alert.yml | — |  |
-| ../.github/workflows/ci.yml | — |  |
-| ../.github/workflows/db-integration.yml | — |  |
-| ../.github/workflows/e2e.yml | — |  |
-| ../.github/workflows/god_tier_ci.yml | — |  |
-| .claude/hooks/no-backslash-through-shell.cjs | — |  |
-| .claude/hooks/no-backslash-through-shell.test.cjs | — |  |
-| .maestro/auth_deep_link.yaml | — |  |
-| .maestro/auth_flow.yaml | — |  |
-| .maestro/boot_verification.yaml | — |  |
-| .maestro/browse_vault.yaml | — |  |
-| .maestro/config.yaml | — |  |
-| .maestro/darkroom_search.yaml | — |  |
-| .maestro/error_recovery.yaml | — |  |
-| .maestro/film_log.yaml | — |  |
-| .maestro/flow_critical_path.yaml | — |  |
-| .maestro/log_film_flow.yaml | — |  |
-| .maestro/login_flow.yaml | — |  |
-| .maestro/lounge_flow.yaml | — |  |
-| .maestro/offline_resilience.yaml | — |  |
-| .maestro/README.md | — |  |
-| .maestro/social_pulse_flow.yaml | — |  |
-| .maestro/subflows/open_a_film.yaml | — |  |
-| .maestro/subflows/sign_in.yaml | — |  |
+| ../.github/workflows/ci-alert.yml | 2026-09-29 | history reduced to the rule each step keeps |
+| ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
+| ../.github/workflows/db-integration.yml | 2026-09-29 | history reduced to the rule each step keeps |
+| ../.github/workflows/e2e.yml | 2026-09-29 | history reduced to the rule each step keeps |
+| ../.github/workflows/god_tier_ci.yml | 2026-09-29 | a route check added (the script claimed CI ran it); the story of each step reduced to what it guards |
+| .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
+| .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
+| .maestro/auth_deep_link.yaml | 2026-09-29 | header narrowed to what it proves |
+| .maestro/auth_flow.yaml | 2026-09-29 | true as written |
+| .maestro/boot_verification.yaml | 2026-09-29 | header narrowed to what it proves |
+| .maestro/browse_vault.yaml | 2026-09-29 | true as written |
+| .maestro/config.yaml | 2026-09-29 | true as written |
+| .maestro/darkroom_search.yaml | 2026-09-29 | true as written |
+| .maestro/error_recovery.yaml | 2026-09-29 | header narrowed to what it proves |
+| .maestro/film_log.yaml | 2026-09-29 | true as written |
+| .maestro/flow_critical_path.yaml | 2026-09-29 | true as written |
+| .maestro/log_film_flow.yaml | 2026-09-29 | true as written |
+| .maestro/login_flow.yaml | 2026-09-29 | true as written |
+| .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
+| .maestro/offline_resilience.yaml | 2026-09-29 | true as written |
+| .maestro/README.md | 2026-09-29 | brought up to date with the one-flow-at-a-time runner and the Initiation |
+| .maestro/social_pulse_flow.yaml | 2026-09-29 | true as written |
+| .maestro/subflows/open_a_film.yaml | 2026-09-29 | true as written |
+| .maestro/subflows/sign_in.yaml | 2026-09-29 | rewritten this session: passes through the Initiation |
 | ANDROID_LAUNCH.md | — |  |
 | app.config.js | — |  |
 | app/__tests__/boot-structure.test.tsx | — |  |
@@ -118,68 +118,63 @@ without one). "Read" is the day its comments were last read against its code.
 | app/user/[username].tsx | — |  |
 | app/year-in-cinema.tsx | — |  |
 | ARCHITECTURE.md | — |  |
-| audit/batch6/tier_mirror.mjs | — |  |
-| constants/theme.ts | — |  |
+| audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | — |  |
-| e2e/annotate.mjs | — |  |
-| e2e/db/bootstrap.mjs | — |  |
-| e2e/db/seed.mjs | — |  |
-| e2e/db/verify-functions.mjs | — |  |
-| e2e/db/verify-writes.mjs | — |  |
-| e2e/flow-screens.mjs | — |  |
-| e2e/plugins/withCleartextTraffic.js | — |  |
-| e2e/run-flows.sh | — |  |
-| e2e/screen.mjs | — |  |
-| e2e/supabase/functions/tmdb-proxy/index.ts | — |  |
-| e2e/supabase/functions/tmdb-proxy/normalize.mjs | — |  |
-| e2e/tmdb/record.mjs | — |  |
-| eslint.config.js | — |  |
-| hooks/use-color-scheme.ts | — |  |
-| hooks/use-color-scheme.web.ts | — |  |
-| hooks/use-theme-color.ts | — |  |
+| e2e/annotate.mjs | 2026-09-29 | true; one line narrowed |
+| e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
+| e2e/db/seed.mjs | 2026-09-29 | true as written |
+| e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
+| e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
+| e2e/flow-screens.mjs | 2026-09-29 | history reduced to the rule |
+| e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
+| e2e/run-flows.sh | 2026-09-29 | rewritten this session: one flow at a time, each failure's screen read at once |
+| e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
+| e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |
+| e2e/supabase/functions/tmdb-proxy/normalize.mjs | 2026-09-29 | true as written |
+| e2e/tmdb/record.mjs | 2026-09-29 | true as written |
+| eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | — |  |
 | jest.config.js | — |  |
 | jest.setup.ts | — |  |
-| metro.config.js | — |  |
-| mockups/capture.ts | — |  |
-| mockups/paper/__tests__/zz-badge.gen.test.tsx | — |  |
-| mockups/paper/__tests__/zz-choices.gen.test.tsx | — |  |
-| mockups/paper/__tests__/zz-cover.gen.test.tsx | — |  |
-| mockups/paper/__tests__/zz-drafts.gen.test.tsx | — |  |
-| mockups/paper/__tests__/zz-final.gen.test.tsx | — |  |
-| mockups/paper/__tests__/zz-memberroom.gen.test.tsx | — |  |
-| mockups/paper/__tests__/zz-paper.gen.test.tsx | — |  |
-| mockups/paper/__tests__/zz-proposals.gen.test.tsx | — |  |
-| mockups/paper/__tests__/zz-rank.gen.test.tsx | — |  |
-| mockups/paper/__tests__/zz-room.gen.test.tsx | — |  |
-| mockups/paths.ts | — |  |
-| mockups/README.md | — |  |
-| mockups/srcMark.ts | — |  |
-| mockups/tabs/__tests__/zz-dispatch.gen.test.tsx | — |  |
-| mockups/tabs/__tests__/zz-lobby.gen.test.tsx | — |  |
-| mockups/tabs/__tests__/zz-reel.gen.test.tsx | — |  |
-| mockups/tabs/__tests__/zz-rooms.gen.test.tsx | — |  |
-| mockups/tabs/__tests__/zz-settings.gen.test.tsx | — |  |
-| mockups/tabs/flashListMock.tsx | — |  |
-| mockups/tools/advances.cjs | — |  |
-| mockups/tools/drawn.cjs | — |  |
+| metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
+| mockups/capture.ts | 2026-09-29 | true as written |
+| mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
+| mockups/paper/__tests__/zz-choices.gen.test.tsx | 2026-09-29 | a kept proposal: its 'recommendation' was not what shipped, and 'today' described a desk since replaced; both now say so; stale hex values dropped |
+| mockups/paper/__tests__/zz-cover.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
+| mockups/paper/__tests__/zz-drafts.gen.test.tsx | 2026-09-29 | true as written |
+| mockups/paper/__tests__/zz-final.gen.test.tsx | 2026-09-29 | called itself 'the final look' but draws the design before it shipped (RankBadge's wash differs); the paywall line it argued against is long gone |
+| mockups/paper/__tests__/zz-memberroom.gen.test.tsx | 2026-09-29 | 1 finding |
+| mockups/paper/__tests__/zz-paper.gen.test.tsx | 2026-09-29 | 26 findings and 12 unflagged histories; TOKYO's note named backdrop 14 over a 7; two tombstone notes for deleted plates removed |
+| mockups/paper/__tests__/zz-proposals.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
+| mockups/paper/__tests__/zz-rank.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
+| mockups/paper/__tests__/zz-room.gen.test.tsx | 2026-09-29 | 1 finding |
+| mockups/paths.ts | 2026-09-29 | 6 findings; LARGE's JSDoc carried the layout rule, split to LAYOUTS |
+| mockups/README.md | 2026-09-29 | true as written; checked its claim that the app's Text gives 1.35 (it does, and the harness note I wrote otherwise is corrected) |
+| mockups/srcMark.ts | 2026-09-29 | an example path that names no file reworded |
+| mockups/tabs/__tests__/zz-dispatch.gen.test.tsx | 2026-09-29 | true as written |
+| mockups/tabs/__tests__/zz-lobby.gen.test.tsx | 2026-09-29 | true as written |
+| mockups/tabs/__tests__/zz-reel.gen.test.tsx | 2026-09-29 | true as written |
+| mockups/tabs/__tests__/zz-rooms.gen.test.tsx | 2026-09-29 | true as written |
+| mockups/tabs/__tests__/zz-settings.gen.test.tsx | 2026-09-29 | true as written |
+| mockups/tabs/flashListMock.tsx | 2026-09-29 | history reduced to the rule |
+| mockups/tools/advances.cjs | 2026-09-29 | true as written |
+| mockups/tools/drawn.cjs | 2026-09-29 | 1 finding |
 | mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
 | mockups/tools/layout.cjs | 2026-09-28 | 12 findings; the header said it measured 'x1 and x1.35' (it runs five passes, iOS to 3.1 and Android to 2) and left SMALL, SHORT and LOST unlisted; two stacked JSDocs merged |
 | mockups/tools/selftest.cjs | 2026-09-28 | 19 findings; the bordered-pair note sat over scaledbeside, moved to its case |
-| mockups/tools/shoot.cjs | — |  |
-| mockups/tools/yoga-parity.cjs | — |  |
+| mockups/tools/shoot.cjs | 2026-09-29 | true as written |
+| mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
 | README.md | — |  |
-| scripts/check-app-routes.js | — |  |
+| scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route) |
 | scripts/check-backend-live.mjs | 2026-09-28 | 13 findings; section numbers ran 1-5,9,10,8,6,7,8 and the admin-RPC note sat above the TRUNCATE block — renumbering dropped, each note moved over its own code; '#24' output replaced with what it means |
 | scripts/comment-truth.js | — |  |
-| scripts/coverage-ratchet.js | — |  |
-| scripts/edge-functions.cjs | — |  |
-| scripts/functions-check.mjs | — |  |
-| scripts/gates-check.js | — |  |
-| scripts/reset-project.js | — |  |
-| scripts/schema-snapshot.mjs | — |  |
-| scripts/secret-shapes.cjs | — |  |
-| scripts/test-timezones.js | — |  |
+| scripts/coverage-ratchet.js | 2026-09-29 | the header's why-stories reduced to the rule |
+| scripts/edge-functions.cjs | 2026-09-29 | fetch-rss 'read by visitors' was stale (installed builds call it); history dropped |
+| scripts/functions-check.mjs | 2026-09-29 | now tells a comment-only difference (a note) from a code difference (a failure), by the compiler's tokens; a one-letter code change fails it |
+| scripts/gates-check.js | 2026-09-28 | 5 findings plus 4 unflagged incident stories; passes against production after |
+| scripts/schema-snapshot.mjs | 2026-09-28 | 5 findings; an orphan note trailed its code; the case for the snapshot kept, the incident counts dropped |
+| scripts/secret-shapes.cjs | 2026-09-29 | true as written |
+| scripts/test-timezones.js | 2026-09-29 | the batch story reduced to the fact it guards |
 | src/assets/logo/reelhouse-logo-data.ts | — |  |
 | src/components/__tests__/ActionDeck.test.tsx | — |  |
 | src/components/__tests__/animation-parking.test.ts | — |  |
@@ -899,11 +894,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/withAbortSignal.ts | — |  |
 | src/utils/withRetry.ts | — |  |
 | src/utils/withTimeout.ts | — |  |
-| supabase/functions/fetch-rss/index.ts | — |  |
+| supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
 | supabase/functions/notify-push/index.ts | — |  |
-| supabase/functions/revenuecat-webhook/decide.ts | — |  |
-| supabase/functions/revenuecat-webhook/index.ts | — |  |
-| supabase/functions/sync-entitlement/index.ts | — |  |
+| supabase/functions/revenuecat-webhook/decide.ts | 2026-09-28 | 6 findings; the rules kept, shortened |
+| supabase/functions/revenuecat-webhook/index.ts | 2026-09-28 | the auth note claimed a length check stops timing leaks; the compare is a plain !== (reported); header moved above the imports |
+| supabase/functions/sync-entitlement/index.ts | 2026-09-28 | the header described a flow the code does not have (client sends a tier, which is validated); it trusts only RevenueCat's record. 'cryptographically verified' dropped (it is an HTTPS fetch) |
 | test-utils/__tests__/everySourceReaderIsLedgered.test.ts | — |  |
 | test-utils/__tests__/readCode.test.ts | — |  |
 | test-utils/contractEnv.ts | — |  |
@@ -911,4 +906,4 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/react-native-testing-library.js | — |  |
 | test-utils/readCode.ts | — |  |
 | test-utils/SOURCE-READING-TESTS.md | — |  |
-| types/react-test-renderer.d.ts | — |  |
+| types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |

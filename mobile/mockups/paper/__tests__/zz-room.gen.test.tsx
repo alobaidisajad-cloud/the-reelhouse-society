@@ -61,8 +61,7 @@ describe('the writing room', () => {
     mkdirSync(OUT, { recursive: true });
 
     const r = render(<ComposeScreen />);
-    // Let the mount's effects settle — the draft read, the limit memo, the
-    // keyboard listener — so the plate is the room as a member first sees it.
+    // The mount's effects settled: the room as a member first sees it.
     await act(async () => { await Promise.resolve(); });
 
     writeFileSync(join(OUT, 'w1-the-writing-room.html'), toHtml(r.toJSON()), 'utf8');

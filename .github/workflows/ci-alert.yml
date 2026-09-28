@@ -1,12 +1,8 @@
 name: 🔔 CI alert
 
 # ── WHEN MAIN GOES RED, SOMEBODY HEARS ABOUT IT ─────────────────────────────────
-# Native Jest failed on every push to main for two weeks (2026-09-10 → 09-24) and
-# the Android device job for two more, and nobody knew: the logs need a signed-in
-# member, a red cross on a commit page is seen only by someone who goes looking,
-# and GitHub's failure emails were switched off because they arrived on EVERY push.
-#
-# So a failure raises ONE issue, assigned to the repository owner — which reaches
+# A red cross is seen only by someone who goes looking, and failure emails on every
+# push get switched off. So a failure raises ONE issue, assigned to the owner — which reaches
 # them the way everything else on GitHub does, by email and on the phone app —
 # and nothing is sent while things are green:
 #

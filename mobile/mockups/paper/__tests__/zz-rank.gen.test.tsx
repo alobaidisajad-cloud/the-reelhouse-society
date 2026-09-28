@@ -3,28 +3,11 @@
  *
  * A GENERATOR, not a test. Run: npx jest zz-rank.gen
  *
- * ── THE DIAGNOSIS, MEASURED ─────────────────────────────────────────────────
- * The shipped pair differs in hue and in amounts nobody can see: a 0.5pt rim
- * against a 1pt one at eight-point type, and a wash of 0.06 against 0.09. On
- * luminance the Auteur is already ahead — 0.2339 to 0.1919 on the word — so the
- * problem is not that it is dimmer.
- *
- * The problem is that the two marks differ in DEGREE. Hue is a code, not a
- * rank: nothing in a crimson box says "more" than a brass one unless you have
- * been taught it. Two boxes of the same size, shape, tilt and construction, in
- * two colours, are two CATEGORIES — not a ladder.
- *
- * A gold star inside the crimson was drawn and REJECTED — the house does not
- * want two metals in one mark, and it would have made the Auteur a third colour
- * where every other rank is one.
- *
- * So the candidates below all make them differ in KIND.
- *
- * ── AND ONE DEFECT FOUND ON THE WAY ─────────────────────────────────────────
- * The Archivist's word is sepia at `opacity: 0.82`, which composites to 4.35:1
- * — under the 4.5 that eight-point type needs. The contrast guard tests the
- * COLOUR and not the opacity, so it reports a pass on something that fails.
- * Every candidate here drops that opacity, which raises it to 6.24:1.
+ * Two marks alike in size, shape, tilt and construction, in two colours, are two
+ * CATEGORIES, not a ladder: hue is a code, not a rank. So the candidates differ in
+ * KIND. (One metal per mark: a gold star in the crimson was drawn and rejected.)
+ * "As shipped" is the pair these were drawn against; what shipped from them is
+ * RankBadge, where only the Auteur is framed. No word is dimmed by opacity.
  */
 import React from 'react';
 import { View, Text } from 'react-native';
@@ -59,7 +42,7 @@ const BOX = {
 } as const;
 const FILL = { position: 'absolute' as const, left: 0, right: 0, top: 0, bottom: 0 };
 
-/* ══ AS SHIPPED ═════════════════════════════════════════════════════════════ */
+/* ══ AS SHIPPED THEN: the pair these candidates were drawn against ══════════ */
 const ShippedAuteur = () => (
   <View style={[BOX, { borderWidth: 1, borderColor: colors.crimson }]}>
     <LinearGradient colors={[colors.stampCrimsonHead, colors.stampGround]}
@@ -67,12 +50,7 @@ const ShippedAuteur = () => (
     <Text style={[WORD, { color: colors.crimsonInk }]} {...scaledTextProps}>★ AUTEUR</Text>
   </View>
 );
-/**
- * The Archivist AS IT SHIPPED, kept only so the plates can show what changed.
- * Its wash token is gone from the Ledger now, so the value is written here
- * rather than imported — a drawing of a past state, not a second definition of
- * a live one.
- */
+/** The Archivist as it shipped then: its wash written out, as its token is gone. */
 const ShippedArchivist = () => (
   <View style={[BOX, { borderWidth: 0.5, borderColor: colors.sepiaBorderStrong }]}>
     <LinearGradient colors={['rgba(184, 137, 26, 0.06)', colors.stampGround]}

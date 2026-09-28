@@ -2,7 +2,7 @@
 /**
  * screen.mjs — what was on the screen, as words.
  *
- *   maestro hierarchy > screen.json; node e2e/screen.mjs screen.json
+ *   maestro hierarchy > <file>; node e2e/screen.mjs <file>
  *
  * When a flow fails, the question is always "what WAS there?". A screenshot
  * needs a signed-in download; this prints every element that has an id, a

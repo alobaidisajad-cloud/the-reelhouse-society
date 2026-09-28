@@ -3,12 +3,9 @@
  * ──────────────────────────────────────────────────────────────────────────
  * Every measurement in mockups/ is taken on a BROWSER'S layout of the app's
  * tree. The phone lays the same tree out with Yoga, and where the two disagree
- * the audit measures a screen no phone draws. Two such disagreements were
- * found by their symptoms (a shrinkable item's minimum; a box in a column
- * wider than the column) and fixed in zz-render.lib / harness. This finds the
- * rest systematically: it lays every render out AGAIN with Yoga itself — the
- * yoga-layout package, Facebook's C++ engine compiled to WebAssembly, the one
- * React Native runs — and reports every box the two placed apart.
+ * the audit measures a screen no phone draws. So every render is laid out AGAIN
+ * with Yoga itself (the yoga-layout package: React Native's C++ engine compiled
+ * to WebAssembly) and every box the two placed apart is reported.
  *
  * How: the screens are drawn with MOCKUPS_YOGA=1, so each box carries its React
  * Native style (`data-rn`). Here each box becomes a Yoga node with that style;
@@ -20,9 +17,9 @@
  * Skipped, because they are not layout: a box under a transform (a transform
  * moves the drawing, not the box — and the browser reports the drawing).
  *
- * The ENGINE is React Native's, settings and all: RN lays out with every one
- * of Yoga's errata on (its old bugs, kept for compatibility), and so does
- * this. Its point grid is an iPhone's (a third of a point).
+ * The ENGINE is React Native's, settings and all: every one of Yoga's errata on
+ * (its old bugs, kept for compatibility). No pixel grid: neither engine snaps,
+ * so the two compare in exact coordinates.
  *
  *   MOCKUPS=1 MOCKUPS_YOGA=1 npx jest "zz-.*\.gen"       (draw with the styles on)
  *   node mockups/tools/yoga-parity.cjs [--src DIR] [--only a,b] [--width 390]
@@ -39,9 +36,8 @@ const opt = (k, d) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i
 const PHONE_W = Number(opt('width', WIDTH));
 const SRC = path.resolve(opt('src', path.join(MOBILE, 'mockups', 'out', 'screens')));
 const ONLY = opt('only') ? opt('only').split(',') : null;
-// A quarter of a point. A browser keeps sizes in 1/64-pixel steps, and across
-// a rail of eighteen cards that rounding alone reached 0.14pt; the smallest REAL
-// difference this has found was 0.36pt (a poster frame held off its ratio).
+// A quarter point: a browser's 1/64-pixel steps add to 0.14pt across eighteen cards;
+// the smallest REAL difference found was 0.36pt.
 const TOL = Number(opt('tolerance', 0.25));
 const SHOW = Number(opt('show', 12));
 // At a text size: the harness grows each text as that platform does (see
@@ -65,10 +61,8 @@ function readTree() {
     const isText = e.tagName === 'SPAN' && e.hasAttribute('data-scale-cap');
     const box = !!rn && !isText && e.tagName === 'DIV';
     const cs = getComputedStyle(e);
-    // A leaf's LAYOUT size. Its rect is what it draws, and under a rotation the
-    // drawing's bounding box is larger than the box — the Dispatch's tilted
-    // rank stamp measured 23.5pt tall and grew its row by 2.7pt in Yoga. The
-    // computed width and height are the box itself, untouched by transforms.
+    // A leaf's LAYOUT size: its computed width and height, which no transform
+    // touches (a rotated drawing's bounding box is larger than the box).
     const px = (v, fallback) => (/^[\d.]+px$/.test(v) ? parseFloat(v) : fallback);
     const r = rectOf(e);
     return {
@@ -142,26 +136,16 @@ function readTree() {
     if (s.overflow === 'hidden') n.setOverflow(Overflow.Hidden);
   };
 
-  /**
-   * Build the Yoga tree. Returns OUR record of it — { n, d, moved, kids } — because
-   * yoga-layout hands back a fresh wrapper from getChild(), so a node cannot be
-   * found again by identity; the tree we built is walked instead.
-   */
-  // No rounding to a pixel grid. The phone snaps every edge to its grid (a
-  // third of a point on an iPhone), which a browser cannot copy, so a centred
-  // child came out up to half a point apart for no reason of layout. Unsnapped,
-  // both engines give exact coordinates and the tolerance can be a fraction of
-  // a point — tight enough to catch a 0.36pt error at every width, which at a
-  // whole point hid until three of them stacked up on an iPad.
+  // No pixel grid: the phone snaps to a third of a point, which a browser cannot
+  // copy, so both are compared unsnapped and the tolerance can be a fraction.
   const config = Yoga.Config.create();
   config.setPointScaleFactor(0);
-  // React Native lays out with ALL of Yoga's errata on — its old bugs, kept for
-  // compatibility (YogaLayoutableShadowNode::layoutTree passes YGErrataAll unless
-  // a view asks for strict conformance, and none here does). Without this the
-  // engine measured is not the one on the phone: a `flex: 1` column inside a row
-  // that is only as wide as its content collapsed to zero here, where the phone
-  // stretches it (errata StretchFlexBasis).
+  // ALL errata on: RN's layoutTree passes YGErrataAll unless a view asks otherwise.
   config.setErrata(Y.Errata.All);
+  /**
+   * Build the Yoga tree, returning OUR record of it ({ n, d, moved, kids }):
+   * yoga-layout's getChild() hands back a fresh wrapper each time.
+   */
   const build = (d, transformed) => {
     const n = Yoga.Node.create(config);
     const moved = transformed || d.transformed;
