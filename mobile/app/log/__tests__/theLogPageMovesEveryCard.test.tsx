@@ -130,3 +130,12 @@ it('and takes it back when the house refuses it', async () => {
   expect(mockLogService.addLogComment).toHaveBeenCalled();
   expect(shown('critique')).toBe(3);
 });
+
+it('while the record loads, the page shows a spinner that says what it is waiting for', async () => {
+  // It used to return an empty View: a black screen, and silence to a screen
+  // reader, for as long as the fetch took.
+  mockQuery = { data: undefined, isLoading: true };
+  let r!: ReturnType<typeof render>;
+  await act(async () => { r = render(<LogDetailScreen />); });
+  expect(r.getByLabelText('Loading record')).toBeTruthy();
+});

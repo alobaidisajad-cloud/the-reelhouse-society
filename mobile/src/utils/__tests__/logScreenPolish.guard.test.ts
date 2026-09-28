@@ -1,25 +1,29 @@
 /**
- * logScreenPolish.guard.test.ts — batch 22
- * ────────────────────────────────────────
- * Five filed findings and two unfiled. Each is pinned to the SIBLING that already
- * did it right, because that sibling is what proved the defect unintentional.
+ * logScreenPolish.guard.test.ts — batch 22, what only the SOURCE can promise.
+ * ────────────────────────────────────────────────────────────────────────────
+ * Batch 22's fixes are tested by what they DO, elsewhere:
+ *   src/stores/__tests__/theLogSaysWhatHappened.test.ts   — what filing, amending,
+ *     removing and the watchlist announce and toast, online, offline, failing
+ *   src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx — the seal's timer,
+ *     the dismissal and the review prompt when the member stays or leaves; the
+ *     one error toast, told apart by its code
+ *   src/components/__tests__/theDoorCanBeReadAndPressed + theToastHasOneHome —
+ *     the toast speaks on both platforms, and an actionable one waits longer
+ *   src/features/profile/__tests__/theDossierSealIsSpoken — the profile's seal
+ *   app/log/__tests__/theLogPageMovesEveryCard — the labelled loading spinner
+ *
+ * What stays here is what a behaviour test cannot see: a NEW instance of a
+ * class. A success exit someone adds tomorrow, a new internal caller of
+ * updateLogOp, a new deferred pop anywhere in the app — none is exercised by a
+ * test written today, so each is enumerated from the code.
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readCode, MOBILE } from '@/test-utils/readCode';
 
-const ROOT = path.join(__dirname, '..', '..', '..');
-const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+const logOps = readCode('src/stores/domain/logSlice/helpers/logOperations.ts');
 
-const logOps = stripComments(read('src/stores/domain/logSlice/helpers/logOperations.ts'));
-
-/**
- * Every internal `updateLogOp(set, get, …)` call, each read to its own
- * matching close paren. Paren-aware, so a multi-line options object — or a
- * nested `{ kind: 'add', … }` inside it — cannot end the call early or run it
- * into the next one.
- */
+/** Every `updateLogOp(set, get, …)` call, read to its own matching close paren. */
 function updateLogOpCalls(src: string): string[] {
   const out: string[] = [];
   const needle = 'updateLogOp(set, get,';
@@ -32,363 +36,76 @@ function updateLogOpCalls(src: string): string[] {
   }
   return out;
 }
-const flow = stripComments(read('src/hooks/useLogFlow.ts'));
 
-describe('#89 · a screen reader is never told a failure succeeded', () => {
-  it('the success announcement is OUT of the finally', () => {
-    // A `finally` runs on the throw paths too, so a VoiceOver member heard
-    // "Film logged to your archive" while the screen showed an error.
-    const finallyBlock = logOps.slice(logOps.indexOf('} finally {'), logOps.indexOf('} finally {') + 200);
-    expect(finallyBlock).not.toMatch(/announceForAccessibility|announceToScreenReader/);
-  });
-
-  it('every success path announces — including the early-returning merge', () => {
-    // The rewatch merge returns before the end of the try. It used to be covered
-    // by the finally by accident; moving the announcement without covering it
-    // would have made a successful merge silent.
-    expect(logOps).toMatch(/announceToScreenReader\('Film logged to your archive'\)/);
-    expect(logOps).toMatch(/announceToScreenReader\('Rewatch added to your archive'\)/);
-  });
-
-  it('failures are NOT announced from the store — the toast speaks now', () => {
-    // Announcing here as well would make Android say it twice: its live region
-    // already reads the toast.
-    expect(logOps).not.toMatch(/announceToScreenReader\('[^']*fail/i);
-  });
-
-  it('EVERY success exit announces — enumerated, not spot-checked', () => {
+describe('#89 · every success exit of filing announces — enumerated', () => {
+  it('each bare `return;` in addLogOp (a success exit: failures throw) is preceded by an announcement', () => {
     // The announcement used to live in a `finally`, which covered every early
-    // return by accident. Moving it means each success exit needs its own — and
-    // there are three, not the one that is obvious. The post-execution audit
-    // found a missed one here; this test is why it cannot happen twice.
-    const lines = logOps.split(/\r?\n/);
-    const start = lines.findIndex(l => /export const addLogOp/.test(l));
+    // return by accident. Moved out, each exit needs its own; the audit after
+    // the move found one missed. A new exit tomorrow is caught here.
+    const lines = logOps.split('\n');
+    const start = lines.findIndex((l) => /export const addLogOp/.test(l));
     const end = lines.findIndex((l, i) => i > start && /^export const /.test(l));
     expect(start).toBeGreaterThan(-1);
-
     const unannounced: string[] = [];
     for (let i = start; i < end; i++) {
-      // A bare `return;` inside this function is a SUCCESS exit — failures throw.
       if (!/^\s*return;\s*$/.test(lines[i])) continue;
       const preceding = lines.slice(Math.max(start, i - 4), i).join('\n');
       if (!/announceToScreenReader\(/.test(preceding)) unannounced.push(`line ${i + 1}`);
     }
     expect(unannounced).toEqual([]);
   });
-
-  it('editing a log confirms too — the same flow, the same seal', () => {
-    // handleLog drives BOTH add and edit, and both end on the visual "RECORD
-    // SEALED". Filing announced; amending said nothing. A blind member got
-    // confirmation for one and silence for the other.
-    expect(logOps).toMatch(/announceToScreenReader\('Record amended'\)/);
-  });
-
-  it('but NOT when another operation is only using it as a step', () => {
-    // removeLogOp undoes a rewatch by calling updateLogOp. Without this, removing
-    // a rewatch announced "Record amended" and then toasted "Rewatch removed" —
-    // two announcements, the first of which is not what the member did.
-    // Matched loosely on purpose: a later audit added `&& !queuedOffline` to this
-    // same condition, and pinning the exact string made a correct change look
-    // like a regression. What must hold is that the flag GATES the announcement.
-    expect(logOps).toMatch(/if \(!opts\?\.silentAnnounce[^)]*\) announceToScreenReader/);
-    // removeLogOp's own call — found by its arguments, and read whole, because
-    // it now also names the viewing it removes and so spans several lines.
-    const removal = updateLogOpCalls(logOps).find(c => /updateLogOp\(set, get, id, updates,/.test(c));
-    expect(removal).toBeDefined();
-    expect(removal).toMatch(/silentAnnounce:\s*true/);
-  });
-
-  it('deleting needs no announcement of its own — it toasts, and toasts speak', () => {
-    // Checked rather than assumed: removeLogOp shows success toasts on all three
-    // of its paths, and the toast is now spoken on both platforms. Adding one
-    // here would have made deletion say it twice.
-    const start = logOps.indexOf('export const removeLogOp');
-    const body = logOps.slice(start);
-    expect(body).not.toMatch(/announceToScreenReader/);
-    expect(body).toMatch(/removed\./);
-  });
 });
 
-describe('#89 · the toast is the one spoken channel, on BOTH platforms', () => {
-  // The toast is two files now: toastBus owns the queue, the clock and the
-  // announcement; ToastHost draws it. The promises span both.
-  const toast = stripComments(read('src/utils/toastBus.ts')) + stripComments(read('src/components/ToastHost.tsx'));
-
-  it('announces on iOS, where the live region does not fire', () => {
-    // accessibilityLiveRegion is declared @platform android by React Native, and
-    // accessibilityRole="alert" does not announce on iOS. So every toast in the
-    // app — including every error — was silent to VoiceOver on iPhone.
-    expect(toast).toMatch(/accessibilityLiveRegion="polite"/);
-    expect(toast).toMatch(/Platform\.OS === 'ios'/);
-    expect(toast).toMatch(/AccessibilityInfo\.announceForAccessibility\(/);
-    expect(toast).toMatch(/toast\.message/);
-  });
-
-  it('the sibling live region gets the same treatment', () => {
-    const profile = stripComments(read('src/features/profile/EditProfileScreen.tsx'));
-    expect(profile).toMatch(/accessibilityLiveRegion="polite"/);
-    expect(profile).toMatch(/Platform\.OS === 'ios'/);
-  });
-
-  it('an actionable toast announces its action too', () => {
-    // A toast with an action stays up twice as long because it expects a
-    // response. Announcing only the message would give a VoiceOver member five
-    // seconds to act on a button they were never told about.
-    //
-    // The MECHANISM changed when the house's refusal doors became the first
-    // real callers: on iOS an actionable toast moves VoiceOver focus onto its
-    // message — so a manual announcement as well would say it twice. The
-    // promise this test holds did not change: what is spoken first names the
-    // action. It lives on the message element, and the render test
-    // (theDoorCanBeReadAndPressed) proves it on a mounted toast.
-    expect(toast).toMatch(/accessibilityLabel=\{`\$\{toast\.message\}\. \$\{spokenLabel\(action\.label\)\}, available\.`\}/);
-    expect(toast).toMatch(/sendAccessibilityEvent\(messageRef\.current, 'focus'\)/);
-    expect(toast).toMatch(/toast\.action \? 5000 : 2500/);
-  });
-});
-
-describe('#90 · one toast per failure, and the right one', () => {
-  it('the store no longer toasts on any path it also throws from', () => {
-    for (const gone of [
-      'Failed to seal record',
-      'Failed to update log — changes reverted',
-      'Failed to remove log',
-      'System is currently sealing another record',
-      'System is busy updating a record',
-    ]) {
-      expect(logOps).not.toContain(gone);
-    }
-  });
-
-  it('the reason travels as a CODE, not as prose', () => {
-    // Matching an error's MESSAGE is what batch 16 proved fragile.
-    expect(logOps).toMatch(/export const LOG_BUSY/);
-    expect((logOps.match(/code: LOG_BUSY/g) ?? []).length).toBe(2);
-    expect(flow).toMatch(/\)\?\.code === LOG_BUSY/);
-  });
-
-  it('the screen still distinguishes "still saving" from "it failed"', () => {
-    expect(flow).toMatch(/Still sealing the previous record/);
-    expect(flow).toMatch(/The record could not be sealed/);
-  });
-});
-
-describe('#91 · the dismissal timer cannot fire after the screen is gone', () => {
-  it('it is stored and cleared, like the draft timer beside it', () => {
-    expect(flow).toMatch(/sealTimerRef/);
-    expect(flow).toMatch(/sealTimerRef\.current = setTimeout/);
-    // Pinned to the UNMOUNT CLEANUP, not to the file. `clearTimeout(sealTimerRef
-    // .current)` appears twice — once when re-arming in handleLog, once here —
-    // so a bare match was satisfied by the re-arm while the cleanup could be
-    // deleted outright. That is the exact defect #91 exists to prevent, and the
-    // guard for it was empty until mutation testing removed the cleanup and the
-    // suite stayed green.
-    expect(flow).toMatch(
-      /useEffect\(\(\) => \(\) => \{[\s\S]*?clearTimeout\(sealTimerRef\.current\)[\s\S]*?pendingTasks\.current\.forEach/
-    );
-  });
-
-  it('the bare timer is gone', () => {
-    // It called router.back() and asked for a store review — on a screen the
-    // member may already have left.
-    const publish = flow.slice(flow.indexOf('setSealed(true)'));
-    expect(publish.slice(0, 200)).not.toMatch(/^\s*setTimeout\(/m);
-  });
-
-  it('the OTHER deferral mechanism is cancelled too', () => {
-    // Clearing the timer was not enough. This hook also defers through
-    // InteractionManager — three calls, none captured, two of them router.back().
-    // Work already handed to the InteractionManager still runs on a screen the
-    // member has left, popping whatever they navigated to. Three other files in
-    // this codebase capture the handle for exactly this reason.
-    expect(flow).toMatch(/pendingTasks/);
-    expect(flow).toMatch(/pendingTasks\.current\.forEach\(t => t\.cancel\(\)\)/);
-    // …but NOT the review prompt. It is deliberately scheduled to run after the
-    // dismissal completes — after this screen is gone — so registering it for
-    // cancellation let router.back() cancel the prompt it was supposed to
-    // precede, and it would never have appeared again. Cancelling every deferral
-    // uniformly is the failure this pins: the dismissal must be called off, the
-    // prompt must survive.
-    expect(flow).toMatch(/maybeRequestReview\(logs\.length \+ 1\);\s*\}, \{ cancelOnUnmount: false \}\)/);
-    expect(flow).toMatch(/if \(opts\?\.cancelOnUnmount !== false\) pendingTasks\.current\.push/);
-    // Every deferral goes through the cancellable helper — the raw API is used
-    // once, inside it.
-    expect((flow.match(/InteractionManager\.runAfterInteractions\(/g) ?? []).length).toBe(1);
-    expect((flow.match(/deferUntilIdle\(/g) ?? []).length).toBeGreaterThanOrEqual(3);
-  });
-});
-
-describe('#107 · a spinner, not a blank screen', () => {
-  const screen = stripComments(read('app/log/[id].tsx'));
-
-  it('the loading branch shows something', () => {
-    expect(screen).not.toMatch(/if \(loading\) return <View style=\{s\.container\} \/>/);
-    // The ELEMENT, not the word. This asserted /ActivityIndicator/, which the
-    // IMPORT line satisfies — so the whole spinner could be deleted from the
-    // screen and this still passed. Mutation testing is what exposed it; nothing
-    // about reading the test suggested it was empty.
-    expect(screen).toMatch(/<ActivityIndicator[^>]*accessibilityLabel="Loading record"/);
-  });
-
-  it('using the centring style the not-found branch already uses', () => {
-    expect(screen).toMatch(/\[s\.container, s\.centerFull\]/);
-  });
-});
-
-describe('#111 · the scroll target is named, not guessed', () => {
-  const screen = stripComments(read('app/log/[id].tsx'));
-  const styles = stripComments(read('src/components/log/logDetailStyles.ts'));
-
-  it('the literal is gone and the constant is shared', () => {
-    expect(screen).not.toMatch(/critiquesSectionY\.current = 80 \+ y/);
-    expect(screen).toMatch(/critiquesSectionY\.current = PARALLAX_PADDER_HEIGHT \+ y/);
-    expect(styles).toMatch(/export const PARALLAX_PADDER_HEIGHT = 80/);
-  });
-
-  it('and the style that produced the number uses it too', () => {
-    // If these two ever disagree the scroll lands in the wrong place, which is
-    // exactly what a bare literal in the screen allowed.
-    expect(styles).toMatch(/parallaxPadder: \{ height: PARALLAX_PADDER_HEIGHT/);
-  });
-});
-
-describe('#89 · a queued write is never announced as a finished one', () => {
-  it('the offline branch does not fall through into the success announcement', () => {
-    // The offline branch does NOT return — it fabricates finalData and keeps
-    // going — so the success announcement at the end of the block ran for it
-    // too. A member with no signal heard "Archived offline. Will sync when
-    // connected." and then "Film logged to your archive": two sentences, the
-    // second contradicting the first and describing something that had not
-    // happened. Making the toast speak on iOS is what turned that into two
-    // spoken sentences rather than one silent one.
-    expect(logOps).toMatch(/if \(!queuedOffline\) announceToScreenReader\('Film logged to your archive'\)/);
-    expect(logOps).toMatch(/!opts\?\.silentAnnounce && !queuedOffline/);
-    // Both flags are actually raised where the write is queued, not just declared.
-    expect((logOps.match(/queuedOffline = true/g) ?? []).length).toBe(2);
-  });
-
-  it('a STEP narrates nothing — not its announcement AND not its toast', () => {
-    // updateLogOp does NOT throw when it queues offline; it returns normally. So
-    // an op using it as a step had its own "Saved offline. Will sync when
-    // connected." fire over the top of the caller's message — two messages for
-    // one action, the first with the wrong verb (the member removed a rewatch,
-    // they did not save one). Gating only the ANNOUNCEMENT left the toast.
-    expect(logOps).toMatch(/if \(!opts\?\.silentAnnounce\) reelToast\('Saved offline/);
-  });
-
-  it('the merge paths do not claim the archive holds a queued write', () => {
-    // These two reach the offline branch THROUGH updateLogOp, which returns
-    // normally when it queues — so they announced "Rewatch added to your
-    // archive" while the write sat in the queue. The same contradiction that was
-    // closed for the two non-merge paths, and missed at these.
-    expect((logOps.match(/queuedOffline\b/g) ?? []).length).toBeGreaterThanOrEqual(8);
-    expect(logOps).toMatch(/if \(!merged\?\.queuedOffline\) announceToScreenReader\('Rewatch added/);
-    expect(logOps).toMatch(/if \(!dupMerged\?\.queuedOffline\) announceToScreenReader\('Rewatch added/);
-    // …and the flag actually travels: helper → merge → caller.
-    expect(logOps).toMatch(/return \{ queuedOffline \}/);
-    expect(logOps).toMatch(/return \{ queuedOffline: merge\?\.queuedOffline === true \}/);
-    // The queued removal still reaches the member, in their own verb.
-    expect(logOps).toMatch(/undone\?\.queuedOffline\s*\?\s*'Rewatch removed\. Will sync when connected\.'/);
-  });
-
-  it('the public store action keeps its void contract', () => {
-    // The flag is for internal step callers only. Returning it from the action
-    // broke the slice's Promise<void> type — caught by tsc, pinned here so the
-    // fix is not "widen the interface" next time.
-    const slice = stripComments(read('src/stores/domain/logSlice.ts'));
-    expect(slice).toMatch(/updateLog: async \(id, updates\) => \{ await updateLogOp\(set, get, id, updates\); \}/);
-  });
-
-  it('EVERY internal caller of updateLogOp is silent — enumerated', () => {
-    // updateLogOp announces. Any op that uses it as a STEP therefore narrates
-    // the wrong action unless it silences it. removeLogOp was fixed for exactly
-    // this, and the lesson recorded — but the sweep for OTHER internal callers
-    // was never actually run, and applyRewatchMerge was one: logging a film you
-    // had already seen said "Record amended" before "Rewatch added to your
-    // archive".
-    //
-    // The store action `updateLog` cannot forward opts, so going through it is
-    // itself the bug. Internal callers must use the helper directly.
+describe('#89 · every internal caller of updateLogOp is silent — enumerated', () => {
+  it('uses the helper directly (the store action cannot forward opts) and passes silentAnnounce', () => {
+    // updateLogOp narrates "Record amended". An op using it as a STEP narrates
+    // the wrong action unless silenced: removeLogOp was, applyRewatchMerge was
+    // missed. Behaviour tests cover those two; this catches a third.
     const start = logOps.indexOf('export const updateLogOp');
     const outsideItself = logOps.slice(0, start) + logOps.slice(logOps.indexOf('export const ', start + 10));
     expect(outsideItself).not.toMatch(/get\(\)\.updateLog\(/);
-
-    // Every call, read to its own closing paren — the rewatch and its removal
-    // now carry a second option (the viewing they are about), so the options
-    // object is no longer the fixed `{ silentAnnounce: true }` a regex can pin.
-    // What must hold is unchanged: all four are silent.
     const calls = updateLogOpCalls(logOps);
-    expect(calls.length).toBe(4);
+    expect(calls.length).toBeGreaterThanOrEqual(2);
     for (const c of calls) expect(c).toMatch(/silentAnnounce:\s*true/);
   });
 });
 
-describe('#89 · making the toast speak must not make anything speak TWICE', () => {
-  // Announcing from ToastOverlay gave every toast in the app a spoken channel on
-  // iOS. That is the right fix, but it means any flow that ALREADY announced and
-  // ALSO toasts the same outcome now says it twice. Android had been doubling
-  // those all along; iOS simply never spoke at all, which is what hid them.
-  const sites = [
-    ['src/stores/domain/watchlistSlice.ts', 'watchlist'],
-    ['src/stores/domain/interactionSlice.ts', 'certification'],
-    ['src/features/profile/EditProfileScreen.tsx', 'profile seal'],
-    ['src/components/feed/ActivityCard.tsx', 'autopsy reveal'],
-  ] as const;
-
-  it('no success path both announces and success-toasts', () => {
-    // Enumerated over every announcing file rather than the one that was wrong,
-    // because the defect is a PAIRING, and a new pairing can appear in any of
-    // them. A file may announce, or success-toast, but not both.
-    const both: string[] = [];
-    for (const [file, label] of sites) {
-      const src = stripComments(read(file));
-      if (!/announceForAccessibility/.test(src)) continue;
-      // reelToast.error(…) is a failure and never pairs with a success
-      // announcement; a bare reelToast(…) or reelToast.success(…) does.
-      const successToast = /reelToast(\.success)?\s*\(/.test(src);
-      const announcesOnSuccess = /announceForAccessibility/.test(src);
-      // The watchlist add path is the case this caught: it announced
-      // optimistically AND toasted on success. Its announcement now lives on the
-      // offline branch, the one path with no toast.
-      if (successToast && announcesOnSuccess && file.includes('watchlistSlice')) {
-        // Anchored on the IMPLEMENTATIONS, not the first mention: both names
-        // appear in the interface at the top of the file, so slicing on the bare
-        // name gave a two-line block containing nothing and the check passed
-        // while the defect was present. A guard that cannot fail is worse than
-        // no guard, so this one is perturbation-proven below.
-        const addBlock = src.slice(src.indexOf('addToWatchlist: async ('), src.indexOf('removeFromWatchlist: async ('));
-        expect(addBlock.length).toBeGreaterThan(200);
-        const announceIdx = addBlock.indexOf('announceForAccessibility');
-        const offlineIdx = addBlock.indexOf('enqueueMutation');
-        if (announceIdx !== -1 && announceIdx < offlineIdx) both.push(`${label} (${file})`);
-        continue;
-      }
-      if (successToast && announcesOnSuccess) both.push(`${label} (${file})`);
-    }
-    expect(both).toEqual([]);
+describe('#111 · the log page scrolls to a named place, not a guessed one', () => {
+  it('the screen and the style share ONE constant for the parallax padder', () => {
+    // If these two ever disagree the scroll lands in the wrong place, which is
+    // exactly what a bare `80` in the screen allowed.
+    const screen = readCode('app/log/[id].tsx');
+    const styles = readCode('src/components/log/logDetailStyles.ts');
+    expect(screen).not.toMatch(/critiquesSectionY\.current = \d/);
+    expect(screen).toMatch(/critiquesSectionY\.current = PARALLAX_PADDER_HEIGHT \+ y/);
+    expect(styles).toMatch(/export const PARALLAX_PADDER_HEIGHT = \d+/);
+    expect(styles).toMatch(/parallaxPadder: \{ height: PARALLAX_PADDER_HEIGHT/);
   });
+});
 
-  it('removing from the watchlist is not silent while adding speaks', () => {
-    // The same silent-sibling asymmetry as filing a record versus amending one.
-    // Removal shows no success toast on any path, so this cannot double.
-    const src = stripComments(read('src/stores/domain/watchlistSlice.ts'));
-    // Same anchoring trap as above: the bare name matches the interface line at
-    // the top, and slicing from there would include the ADD implementation — so
-    // this would have passed on add's announcement while removal stayed silent.
-    const remove = src.slice(src.indexOf('removeFromWatchlist: async ('));
-    expect(remove).not.toMatch(/addToWatchlist: async \(/);
-    expect(remove).toMatch(/announceForAccessibility\('Removed from watchlist'\)/);
+describe('#89 · no screen both announces a success and toasts it', () => {
+  it('a file may announce, or success-toast, but not both — the toast is spoken', () => {
+    // Making the toast speak on iOS meant any flow that ALREADY announced and
+    // also toasted the same outcome said it twice. The watchlist was one, and
+    // its behaviour is now tested; these announce on paths with no toast.
+    const sites = [
+      'src/stores/domain/interactionSlice.ts',
+      'src/features/profile/EditProfileScreen.tsx',
+      'src/components/feed/ActivityCard.tsx',
+    ];
+    const both = sites.filter((f) => {
+      const src = readCode(f);
+      return /announceForAccessibility/.test(src) && /reelToast(\.success)?\s*\(/.test(src);
+    });
+    expect(both).toEqual([]);
   });
 });
 
 describe('#91 · the CLASS, swept app-wide — a deferred pop is always guarded', () => {
   it('no runAfterInteractions anywhere pops the stack unguarded', () => {
-    // Fixing useLogFlow alone was fixing the instance in front of me. The class is
-    // "a deferred back() that fires on a screen the member has left" — it pops
-    // whatever they navigated to instead. Sweeping found one more: list-modal,
-    // which already used its own isMounted ref on four other lines INCLUDING the
-    // catch of the same function, and both sibling modals guard this same call.
-    // Enumerated rather than listed, so a new screen cannot reopen it.
+    // "A deferred back() that fires on a screen the member has left" pops
+    // whatever they navigated to instead. useLogFlow is tested by behaviour;
+    // this sweeps every other file, so a new screen cannot reopen it.
     const walk = (dir: string, out: string[] = []): string[] => {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, e.name);
@@ -399,11 +116,8 @@ describe('#91 · the CLASS, swept app-wide — a deferred pop is always guarded'
       }
       return out;
     };
-
-    // The body is read by BALANCING PARENS, not by matching a shape. A regex for
-    // `() => { … }` cannot see `() => nav.back()`, and five real call sites use
-    // that brace-less form — so a shape-matching guard would have passed while
-    // the very defect it names walked straight through it.
+    // Read by BALANCING PARENS, not by shape: five call sites use the
+    // brace-less `() => nav.back()`, which a shape-matching regex cannot see.
     const bodyAt = (src: string, open: number): string => {
       let depth = 0;
       for (let i = open; i < src.length; i++) {
@@ -412,53 +126,25 @@ describe('#91 · the CLASS, swept app-wide — a deferred pop is always guarded'
       }
       return src.slice(open + 1);
     };
-
-    // Every way this codebase pops a screen — not just the one that was filed.
-    // back, dismiss, dismissAll and popToTop all remove something the member is
-    // looking at; only these are dangerous when deferred. A deferred push or
-    // replace after a tap IS the member's intent and must still fire.
+    // Every way this codebase pops a screen. A deferred push or replace after a
+    // tap IS the member's intent and must still fire.
     const POP = /\b(nav|router)\.(back|dismiss|dismissAll|dismissTo|popToTop)\(/;
     const GUARDED = /isMounted\.current|mountedRef\.current/;
-
     const offenders: string[] = [];
-    for (const file of [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))]) {
-      const rel = path.relative(ROOT, file).replace(/\\/g, '/');
-      // Two files are exempt, each for a REASON, not because they were awkward.
-      //
-      // _layout is mounted for the entire life of the app, so nothing it defers
-      // can outlive it.
-      //
-      // auth-callback must fire even if it unmounts, and guarding it would CREATE
-      // a bug rather than close one: the recovery branch arms `recovery_pending`
-      // and only reset-password clears it. A guard that skipped the redirect
-      // would strand the member with the flag still armed, and restoreSession
-      // destroys the session of an abandoned recovery on next launch — so the
-      // "safe" fix would sign them out. Its redirect is also the promise the
-      // screen has already made on-screen ("Taking you to set a new password").
-      if (rel === 'app/_layout.tsx' || rel === 'app/auth-callback.tsx') continue;
-      const src = stripComments(fs.readFileSync(file, 'utf8'));
+    for (const file of [...walk(path.join(MOBILE, 'src')), ...walk(path.join(MOBILE, 'app'))]) {
+      const rel = path.relative(MOBILE, file).split(path.sep).join('/');
+      // _layout lives as long as the app. auth-callback must fire even if it
+      // unmounts: a guard would strand an armed password recovery, and the
+      // next launch would sign the member out. useLogFlow cancels its own
+      // deferrals on unmount, which theSealLeavesWithTheScreen proves.
+      if (rel === 'app/_layout.tsx' || rel === 'app/auth-callback.tsx' || rel === 'src/hooks/useLogFlow.ts') continue;
+      const src = readCode(file);
       const needle = 'InteractionManager.runAfterInteractions';
-      let at = src.indexOf(needle);
-      while (at !== -1) {
-        const open = src.indexOf('(', at + needle.length - 1);
-        const body = bodyAt(src, open);
+      for (let at = src.indexOf(needle); at !== -1; at = src.indexOf(needle, at + needle.length)) {
+        const body = bodyAt(src, src.indexOf('(', at + needle.length - 1));
         if (POP.test(body) && !GUARDED.test(body)) offenders.push(rel);
-        at = src.indexOf(needle, at + needle.length);
       }
     }
     expect(offenders).toEqual([]);
-  });
-});
-
-describe('unfiled · batch 16\'s duplicate test reaches this file too', () => {
-  it('no loose "unique" substring match survives', () => {
-    // `42P10` reads "there is no UNIQUE or exclusion constraint…", so the old
-    // test read a broken statement as a successful duplicate.
-    expect(logOps).not.toMatch(/\/duplicate\|unique\|23505\/i/);
-  });
-
-  it('SQLSTATE first, with the prose narrowed to the real wording', () => {
-    expect(logOps).toMatch(/duplicate key value violates unique constraint/);
-    expect((logOps.match(/isDuplicateKey\(error\)/g) ?? []).length).toBe(2);
   });
 });

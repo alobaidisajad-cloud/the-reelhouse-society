@@ -31,7 +31,7 @@ import { join } from 'path';
 // by babel-plugin-jest-hoist, so the component picks up the mocks below even
 // though they are written further down the file — which the metrics import
 // already demonstrated before this was merged into it.
-import { ProfileTriptych, triptychMetrics, TRIPTYCH_AISLE, TRIPTYCH_GAP } from '../ProfileTriptych';
+import { ProfileTriptych, triptychMetrics, TRIPTYCH_AISLE } from '../ProfileTriptych';
 import { readMounts, pickBackdropFilm, CENTRE_MOUNT, MOUNT_COUNT } from '../favourites';
 import { tally } from '../profileComputed';
 import { ProfileBackdrop, backdropIsOn } from '../ProfileBackdrop';
@@ -114,14 +114,9 @@ describe('the altarpiece fits the phone it is hung on', () => {
     expect(MOUNT_COUNT).toBe(3);
   });
 
-  it('the gap the layout uses is the gap the touch guard was told about', () => {
-    // stackedRowHitSlop.test.ts allows the panels half of TRIPTYCH_GAP. If the
-    // spacing is loosened here and that rule is not, the panels quietly regain
-    // the right to steal each other's taps.
-    expect(TRIPTYCH_GAP).toBe(5);
-    const guard = read('src/components/__tests__/stackedRowHitSlop.test.ts');
-    expect(guard).toMatch(/ProfileTriptych\.tsx'[^\n]*gap: \{ x: 5 \}/);
-  });
+  // (The panels' touch areas against TRIPTYCH_GAP are MEASURED on the drawn
+  // page now — layout.cjs STEAL, the CI captures job — at the gap the layout
+  // actually uses, so a typed-out copy of the gap has nothing left to agree with.)
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -233,19 +228,8 @@ describe('nothing on the member file is anonymous to a screen reader', () => {
     expect(uncapped).toEqual([]);
   });
 
-  it('no date or number on the page is formatted through Intl', () => {
-    // Where Hermes has no Intl the OPTIONS ARE IGNORED SILENTLY and the output
-    // looks like a design choice rather than a failure, which is how it
-    // survived on the hero until this pass.
-    const found: string[] = [];
-    for (const f of A11Y_FILES) {
-      const src = blank(read(f));
-      for (const m of src.matchAll(/toLocale(Date|Time)?String|Intl\./g)) {
-        found.push(`${f}:${src.slice(0, m.index).split('\n').length} ${m[0]}`);
-      }
-    }
-    expect(found).toEqual([]);
-  });
+  // (No date or number on the page goes through Intl — the app-wide lint rule
+  // holds that now, for every file, not only this page's.)
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -363,15 +347,7 @@ describe('a count nobody has filed reads as a dash, not a zero', () => {
     expect(tally(12.7)).toBe('12');
   });
 
-  it('the whole page stays off Intl for dates too', () => {
-    // `toLocaleDateString(…, { month, year })` routes through Intl. Where Intl
-    // is absent the OPTIONS ARE IGNORED SILENTLY and the line renders as
-    // `3/14/2026` — a failure that looks like a design choice, which is exactly
-    // how it survived on this page until now.
-    expect(CODE_SCREEN).not.toMatch(/toLocaleDateString/);
-    expect(CODE_SCREEN).not.toMatch(/toLocaleString/);
-    expect(CODE_SCREEN).toMatch(/formatDateMonthYear/);
-  });
+  // (And no date either: the app-wide lint rule forbids Intl in every file.)
 });
 
 describe('the Auteur backdrop is a choice, and absent means on', () => {

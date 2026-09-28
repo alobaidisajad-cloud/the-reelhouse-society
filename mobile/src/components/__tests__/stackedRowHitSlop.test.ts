@@ -23,6 +23,21 @@
  *   • the date grid in the log form — no hitSlop at all, cells flush;
  *   • the tribunal's DISMISS / BAN / PERMANENT EXILE row;
  *   • the Lounge sheet, where BLOCK sat under REPORT.
+ *
+ * ── MEASURED WHERE DRAWN, READ ONLY WHERE NOT ─────────────────────────────
+ * This file used to type forty gaps out of the stylesheets by hand. The rule is
+ * now MEASURED on every screen the tests and generators draw: each control is
+ * marked with the source line that made it, its touch area is its box plus its
+ * hitSlop as laid out, and an overlap with any neighbour is a STEAL
+ * (mockups/tools/layout.cjs; the CI capture job). That caught what this list
+ * never held — a billing switch, the critiques' foot, the Concierge's rows.
+ *
+ * What stays below is only what no render draws beside its neighbour — each
+ * control checked by its source line against the capture run's sites
+ * (2026-09-28): a sheet that opens behind an entrance fade, an owner-only
+ * button, an admin screen no test reaches. MEASURED_NOW lists the rules that
+ * moved, and holds each one's file to mockups/touch-measured.txt, which the
+ * capture job fails without.
  */
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
@@ -53,14 +68,19 @@ interface Rule {
  * container `gap`, the row's own margin, or a divider's width. The allowed
  * slop is derived from it, so correcting a layout's spacing automatically
  * corrects what this test demands.
+ *
+ * ONLY the controls no drawn screen measures beside a neighbour (see the
+ * header). Each says why it is still read here.
  */
 const RULES: Rule[] = [
-  { file: 'src/components/log/AuteurToolkit.tsx', style: 'axisNotch', gap: { x: 2 },
-    note: 'autopsy score: 11 notches in a row, axisTrack gap 2 (was sliderSeg)' },
+  // Not drawn beside a neighbour: the thumbnails appear once the TMDB images
+  // arrive, which the composer's drawings do not wait for.
   { file: 'src/components/log/LogForm.tsx', style: 'pThumb', gap: { x: 8 },
     note: 'poster thumbs, list gap 8 — Curatorial Control moved to the docket' },
+  // Not drawn: the calendar opens from CHANGE, which no drawing presses.
   { file: 'src/components/NitrateCalendar.tsx', style: 'dayCell', gap: { x: 0, y: 2 },
     note: 'date grid: columns flush, dayRow marginBottom 2' },
+  // Not drawn: the Lounge's owner panels.
   { file: 'src/components/lounge/AtTheDoorPanel.tsx', style: 'declineBtn', gap: { x: 10, y: 22 },
     note: 'DECLINE beside ADMIT, row gap 10; rows 11+11 apart' },
   { file: 'src/components/lounge/AtTheDoorPanel.tsx', style: 'admitBtn', gap: { x: 10, y: 22 },
@@ -69,134 +89,64 @@ const RULES: Rule[] = [
     note: 'mute/ban pair, actionRow gap 8' },
   { file: 'src/components/lounge/ActionSheet.tsx', style: 'actionBtn', gap: { y: 0 },
     note: 'REPLY / COPY / REPORT / BLOCK, hairline apart' },
-  { file: 'src/components/moderation/ContentActionSheet.tsx', style: 'optionRow', gap: { y: 0 },
-    note: 'moderation options, hairline apart' },
+  // Drawn, but behind the sheet's entrance fade — the audit skips what cannot
+  // yet be seen, and the rows are drawn at their first frame.
   { file: 'src/components/layout/ConciergeButton.tsx', style: 'actionRow', gap: { y: 0 },
     note: 'Log a Film / Curate a Stack, hairline apart' },
-  { file: 'src/components/feed/ActionDeck.tsx', style: 'actionBtn', gap: { x: 0 },
-    note: 'four flex:1 actions, flush' },
+  // Partly: SAVE is drawn (a visitor's deck); EDIT is the owner's, which no
+  // drawing of the record shows.
   { file: 'src/components/log/LogActionDeck.tsx', style: 'deckBtn', gap: { x: 0 },
     note: 'four flex:1 actions, flush' },
-  { file: 'app/stacks/[id].tsx', style: 'actionItem', gap: { x: 1 },
-    note: 'action bar split by a 1pt divider' },
-  // ── The Dispatch ──────────────────────────────────────────────────────────
-  // The dossier reader's action bar became the Dispatch's four marks, and they
-  // are drawn in TWO places — docked under the reader, and under every entry in
-  // the feed. Both are four flush actions with no divider, so the gap is 0 and
-  // the horizontal slop must be too.
-  //
-  // Both are listed, not one: the styles live in a shared file and the tags do
-  // not, so a rule pointed at the stylesheet finds no tags at all and passes
-  // while proving nothing. Each file that MOUNTS the control is checked.
-  { file: 'src/components/dispatch/paper/PaperCritiques.tsx', style: 'action', gap: { x: 0 },
-    note: 'the docked bar under the reader — four flush marks' },
-  { file: 'src/components/dispatch/paper/PaperPost.tsx', style: 'action', gap: { x: 0 },
-    note: 'the stamp bar under every entry — four flush marks' },
-  // ── The member file, rebuilt 2026-08-21 ────────────────────────────────────
-  // `accountRow` used to be listed here. That row is gone (the account section
-  // became THE DESK, and "at the door" moved to Notices), and the new layout
-  // put four more stacks of neighbours on the page. Every one of these was
-  // written wrong first and caught by this test:
-  //   • the two act buttons, 10pt apart, both claiming the full 15 — the right
-  //     edge of + FOLLOW opened the action sheet instead;
-  //   • the triptych's three panels, 5pt apart, each reaching 15 into the next;
-  //   • the plate sheet, where REMOVE sat under REPLACE;
-  //   • the search results, where the later row took the tap and you would have
-  //     pinned the wrong film to your own profile.
+  // Not drawn beside a neighbour: the member's own desk (it is theirs alone).
   { file: 'app/user/[username].tsx', style: 'deskRow', gap: { y: 0 },
     note: 'the desk, hairline apart' },
-  { file: 'app/user/[username].tsx', style: 'holdRow', gap: { x: 14, y: 0 },
-    note: 'six holdings in two columns — holdWrap gap 14, rows hairline apart' },
-  { file: 'app/user/[username].tsx', style: 'latelyRow', gap: { y: 0 },
-    note: 'the LATELY ledger, rows hairline apart' },
-  { file: 'app/user/[username].tsx', style: 's.act', gap: { x: 10 },
-    note: 'the two acts, actsRow gap 10 — the ghost button is the later sibling' },
-  { file: 'app/user/[username].tsx', style: 'socialLinkChip', gap: { x: 8, y: 8 },
-    note: 'links wrap, so a chip has neighbours on both axes' },
-  { file: 'src/components/profile/ProfileHelpers.tsx', style: 'statCell', gap: { x: 0 },
-    note: 'four figures flush, separated by a border not a gap' },
-  { file: 'src/components/profile/ProfileTriptych.tsx', style: 's.mount', gap: { x: 5 },
-    note: 'the altarpiece: wing / centre / wing, TRIPTYCH_GAP 5' },
-  { file: 'src/components/profile/ProfileTriptych.tsx', style: 'plateAction', gap: { y: 0 },
-    note: 'MOVE / REPLACE / REMOVE, hairline apart — one of them deletes' },
+  // Not drawn: the triptych's film search, inside its sheet.
   { file: 'src/components/profile/ProfileTriptych.tsx', style: 'resultItem', gap: { y: 8 },
     note: 'film search results, marginBottom 8 — a mis-tap pins the wrong film' },
-
-  // ── The seven rooms, 2026-08-21 ────────────────────────────────────────────
-  // Every filter and sort chip in every room claimed 10pt on every side while
-  // sitting 8, 6 or 4pt from its neighbour — reaching clean through the gap and
-  // past the far edge of the next chip, where the LATER sibling wins. The
-  // watchlist sort row was the worst on the page: three chips 4pt apart, each
-  // claiming 10, an overlap of 16. Tapping the right-hand end of RECENT sorted
-  // A-Z instead.
-  //
-  // These were missed by the last sweep for the same reason the accessibility
-  // sweep missed 27 controls: this list is hand-written, and the rooms were
-  // never added to it.
-  // Those four `filterChip` rules — one per room, at four different gaps — are
-  // gone, and so are the four chips. The rooms share ONE chip now (RoomChip),
-  // and its slop is DERIVED from the gap it is handed rather than typed out, so
-  // there is no literal here to scan for: `hitSlop={chipSlop(gap)}`.
-  //
-  // A derived halo cannot be checked by reading numbers out of source, and a
-  // scanner that reads `left: side` matches no digits and scores the control at
-  // the full 15pt default — a false failure that teaches the next person to
-  // delete the rule. The arithmetic is unit-tested at its source instead, and
-  // every call site is checked to pass its container's real gap:
-  // see `rooms.test.tsx › a chip may never reach past half its gap`.
-  // (vault-modal's format row is gone with the modal itself — no screen in the
-  //  app ever navigated to it, so a shelf is filled from the log's format tag.)
-  // (PaywallModal's tier cards are gone with the modal — nothing ever rendered
-  //  it; ranks are sold on the Society page.)
   { file: 'src/components/profile/AvatarCropSheet.tsx', style: 'actionCard', gap: { x: 16 },
     note: 'camera / library, gap 16' },
-  // (ArticleReaderModal's wrapping action row is gone with the modal itself —
-  //  the reader is a route now and its marks are the docked bar above.)
-  { file: 'src/components/profile/ProfileListsTab.tsx', style: 'stackCard', gap: { x: 16, y: 16 },
-    note: 'stack grid' },
-  { file: 'src/components/reels/ReelsHeader.tsx', style: 'tabButton', gap: { x: 0 },
-    note: 'two flex:1 tabs meeting at the divider' },
-  { file: 'app/dispatch/compose.tsx', style: 'toolBtn', gap: { x: 8 },
-    note: 'editor toolbar, gap 8' },
+  // Not drawn: the admin screen's case actions.
   { file: 'app/(admin)/tribunal.tsx', style: 'actionBtn', gap: { x: 8, y: 8 },
     note: 'DISMISS / BAN / PERMANENT EXILE' },
-  { file: 'src/components/profile/Achievements.tsx', style: 'badgeItem', gap: { x: 12, y: 12 },
-    note: 'badge grid, gap 12' },
-  { file: 'src/components/darkroom/DarkroomMoodBar.tsx', style: 'moodCard', gap: { x: 8 },
-    note: 'mood strip, gap 8' },
-  // The bar itself. Missed on the first sweep because the disc is a
-  // ConciergeButton, not a row in a list — the shape looked different, the
-  // defect was identical.
+  // Partly: the bar's disc is drawn beside the Lounge key; its twin, inside the
+  // open sheet, stands alone in its layer.
   { file: 'src/components/layout/ConciergeButton.tsx', style: 'discShadow', gap: { x: 6 }, only: ['right'],
     note: 'brass ＋ has the Lounge key 6pt to its RIGHT; open screen edge to its left' },
-
-  // ── The log composer and the record, 2026-08-16 ────────────────────────────
-  // All three were found by MOUNTING the surfaces rather than reading them.
-  // None was in the sweep above, because that sweep was a list of the places
-  // someone thought of and these three did not look like rows in a list.
-  //
-  // The Editorial Desk's stills used to be listed here, claiming half their 8pt
-  // gap. They reach 48 by their own geometry now and claim nothing at all, so
-  // there is no slop left for this file to measure — logTouchTargets.test.ts
-  // pins their height instead. The same is true of the alternate posters, the
-  // status row, DELETE, CLOSE and the seal: once a control's own box clears the
-  // floor, its halo is pure surplus, and surplus is how a control comes to take
-  // its neighbour's taps in the first place.
-  { file: 'src/components/log/LogSearchEngine.tsx', style: 'resultRow', gap: { y: 8 },
-    note: 'search results, searchResultsContent gap 8 — a mis-tap logs the wrong film' },
+  // Not drawn beside a neighbour: a record's critiques are drawn one at a time.
   { file: 'src/components/log/LogComments.tsx', match: 'HITSLOP_ROW', gap: { y: 0 }, style: '(the critique row)',
     note: 'critiques are flush (commentItem hairline) — a mis-press reports the wrong member' },
-
-  // ── The irreversible three, 2026-08-19 ─────────────────────────────────────
-  // Chosen first because a mis-tap on any of them does something you cannot
-  // take back: a film posted in a room you did not pick, a notice dismissed
-  // instead of opened, a member accused of the wrong thing.
+  // Not drawn: the share sheet is a stand-in wherever it would open.
   { file: 'src/components/ShareToLoungeModal.tsx', match: 'LOUNGE_SLOP', gap: { y: 6 }, style: '(lounge rows)',
     note: 'loungeItem marginBottom 6 — the later row wins, so the film went to the wrong room' },
-  { file: 'src/components/moderation/ReportSheet.tsx', match: 'REASON_SLOP', gap: { x: 8, y: 8 }, style: '(reason chips)',
-    note: 'reasonList gap spacing.sm = 8 — a mis-tap accuses a member of the wrong thing' },
+  // Not drawn: the notices sheet.
   { file: 'app/(modals)/notifications-modal.tsx', match: 'HITSLOP_DISMISS', gap: { x: 20, y: 20 }, style: '(dismiss, inside the row)',
     note: 'a CHILD of the notice row: 28pt control, 10 per side reaches the 48dp floor and no further' },
+];
+
+/**
+ * The rules that moved to measurement on 2026-09-28: every control each one
+ * governed was measured beside its neighbour in the capture run. Their files
+ * must stay in mockups/touch-measured.txt — the capture job fails when a listed
+ * file stops being measured, so deleting one from that list is the only way to
+ * drop the check, and this makes that a visible decision too.
+ */
+const MEASURED_NOW: [file: string, what: string][] = [
+  ['src/components/log/AuteurToolkit.tsx', 'the autopsy notches, 2pt apart'],
+  ['src/components/moderation/ContentActionSheet.tsx', 'moderation options, hairline apart'],
+  ['src/components/feed/ActionDeck.tsx', 'the card deck, four flush'],
+  ['app/stacks/[id].tsx', 'the stack action bar'],
+  ['src/components/dispatch/paper/PaperCritiques.tsx', 'the reader’s docked marks'],
+  ['src/components/dispatch/paper/PaperPost.tsx', 'the stamp bar under every entry'],
+  ['app/user/[username].tsx', 'holdings, LATELY, the two acts, the link chips'],
+  ['src/components/profile/ProfileHelpers.tsx', 'the four figures'],
+  ['src/components/profile/ProfileTriptych.tsx', 'the altarpiece panels and the plate sheet'],
+  ['src/components/profile/ProfileListsTab.tsx', 'the stack grid'],
+  ['src/components/reels/ReelsHeader.tsx', 'the two tabs'],
+  ['app/dispatch/compose.tsx', 'the writing room’s toolbar'],
+  ['src/components/profile/Achievements.tsx', 'the badge grid'],
+  ['src/components/darkroom/DarkroomMoodBar.tsx', 'the mood strip'],
+  ['src/components/log/LogSearchEngine.tsx', 'the composer’s search results'],
+  ['src/components/moderation/ReportSheet.tsx', 'the report reasons'],
 ];
 
 /**
@@ -278,6 +228,15 @@ function effectiveSlop(attrs: string, src = ''): Record<string, number> {
   }
   return sides;
 }
+
+describe('the rules that moved to measurement stay measured', () => {
+  const required = new Set(readFileSync(join(ROOT, 'mockups/touch-measured.txt'), 'utf8')
+    .split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#')));
+
+  it.each(MEASURED_NOW)('%s — %s', (file) => {
+    expect(required.has(file)).toBe(true);
+  });
+});
 
 describe('neighbouring controls do not overlap each other’s touch targets', () => {
   for (const rule of RULES) {

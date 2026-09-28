@@ -42,6 +42,8 @@ import { PersonHero, formatDossierDate, calcCareerSpan } from '@/src/components/
 import { PersonBio } from '@/src/components/person/PersonBio';
 import { PersonDefining } from '@/src/components/person/PersonDefining';
 import { FilmPosterCard, FilmographyHeader, GridColumn } from '@/src/components/person/PersonFilmography';
+import { sortCanon } from '@/src/components/person/canon';
+import { localCalendarDate } from '@/src/utils/timeAgo';
 
 const PLACEHOLDER_VEIL: VeilStops = [[0, 0.1], [0.7, 0.6], [1, 1]];
 
@@ -99,21 +101,11 @@ const CREDIT_LABELS: [string, string] = ['CREDIT', 'CREDITS'];
 // "Self" documentary appearances are part of the record, never performances.
 const SELF_RE = /^self\b/i;
 
-/**
- * Today, in the member's OWN timezone, as a TMDB-shaped date string.
- *
- * Not `toISOString().slice(0, 10)` — that converts to UTC first, so a member in
- * Los Angeles at 5pm is already "tomorrow" and would see tomorrow's releases
- * ranked as released. The Hunt has always built the date this way; the canon's
- * ordering asks the same question and must not answer it differently in the
- * same file.
- */
-function localToday(): string {
-  const d = new Date();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${m}-${day}`;
-}
+// "Today" is the member's OWN calendar day — timeAgo.localCalendarDate, the
+// app's one answer, and the one the time-zone suite checks. Not
+// `toISOString().slice(0, 10)`: that is UTC, so a member in Los Angeles at 5pm
+// would already be "tomorrow" and see tomorrow's releases ranked as released.
+// The canon's ordering and the Hunt ask the same question, so they ask it here.
 
 // ════════════════════════════════════════════════════════════
 //  MAIN PERSON DETAIL SCREEN
@@ -323,28 +315,8 @@ export default function PersonDetailScreen() {
 
   const heroBackdrop = definingFilm?.backdrop_path ? tmdb.backdrop(definingFilm.backdrop_path) : null;
 
-  /**
-   * THE CANON — the record, newest first, but the RECORD comes first.
-   *
-   * The old sort substituted '9999-99-99' for a missing date, which made
-   * undated entries the newest thing in the file. A 92-film career therefore
-   * opened on an untitled placeholder and two unreleased titles, most without
-   * posters. Work that exists now leads; announced and undated films keep their
-   * place in the file but sit at the end of it.
-   */
-  const canonSorted = useMemo(() => {
-    const today = localToday();
-    const rank = (c: PersonCredit) => (!c.release_date ? 2 : c.release_date > today ? 1 : 0);
-    return [...canon].sort((a, b) => {
-      const ra = rank(a), rb = rank(b);
-      if (ra !== rb) return ra - rb;
-      const dateA = a.release_date || '';
-      const dateB = b.release_date || '';
-      if (dateA > dateB) return -1;
-      if (dateA < dateB) return 1;
-      return (b.popularity || 0) - (a.popularity || 0);
-    });
-  }, [canon]);
+  // THE CANON — the record first, newest first (src/components/person/canon.ts).
+  const canonSorted = useMemo(() => sortCanon(canon, localCalendarDate()), [canon]);
 
   const careerSpan = useMemo(() => calcCareerSpan(person, canon), [person, canon]);
 
@@ -359,7 +331,7 @@ export default function PersonDetailScreen() {
 
   const huntFilms = useMemo(() => {
     if (!isDirectingFile) return [];
-    const today = localToday();
+    const today = localCalendarDate();
 
     return canon.filter((c) => {
       const isLogged = _loggedIndex[c.id] !== undefined;

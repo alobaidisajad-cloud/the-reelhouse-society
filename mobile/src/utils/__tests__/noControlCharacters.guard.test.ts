@@ -16,6 +16,7 @@ import { join, relative } from 'path';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const SCAN = ['app', 'src', 'scripts', 'supabase', 'mockups'];
+const OUT = join(ROOT, 'mockups', 'out');
 
 function files(dir: string): string[] {
   const out: string[] = [];
@@ -24,6 +25,9 @@ function files(dir: string): string[] {
   for (const name of names) {
     if (name === 'node_modules' || name.startsWith('.')) continue;
     const p = join(dir, name);
+    // mockups/out is drawn output (git-ignored), rewritten while a drawing run is live —
+    // not source, and a file listed here can be gone by the time it is read.
+    if (p === OUT) continue;
     if (statSync(p).isDirectory()) out.push(...files(p));
     else if (/\.(tsx?|jsx?|cjs|mjs|sql|json|md)$/.test(name)) out.push(p);
   }

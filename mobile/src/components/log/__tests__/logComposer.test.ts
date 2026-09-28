@@ -1,29 +1,32 @@
 /**
- * logComposer.test.ts — the page where a record is written.
+ * logComposer.test.ts — what only the composer's SOURCE, or its style values,
+ * can promise.
  *
- * The app's signature action, and it had no guards of its own. These pin the
- * repairs that fail SILENTLY: a date that reads a day early only west of UTC, a
- * tap that lands on the neighbouring chip, a list that renders nothing, a modal
- * stacked on a modal. None of them crash; none show up in a type check.
+ * Everything a member can do or see on this page is tested by MOUNTING it —
+ * theComposerKeepsItsWord.test.tsx: every control by name, what is chosen,
+ * the entries that open themselves, the Vault that never previews, the ropes
+ * and where they return to, the seal that says why, the verdict, the film
+ * behind the record, reduced motion, the type scale.
+ *
+ * Everything that is a matter of LAYOUT is measured on the drawn page —
+ * zz-composer.gen through mockups/tools/layout.cjs and yoga-parity.cjs at every
+ * width and text size: each chip against its neighbour, every line box at the
+ * largest type, every verdict word at 320pt, the seal over the last row.
+ *
+ * Dates: the no-Intl lint rule, app-wide (eslint.config.js).
+ *
+ * What is left here cannot be seen by either, and each says why.
  */
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { formatLongCalendarDate, formatDate } from '@/src/utils/timeAgo';
-import { stripHTML } from '@/src/utils/text';
-
-const ROOT = join(__dirname, '..', '..', '..', '..');
-const read = (f: string) =>
-  readFileSync(join(ROOT, f), 'utf8')
-    .replace(/\/\/[^\n]*/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '');
+import { StyleSheet, type ViewStyle } from 'react-native';
+import { readCode } from '@/test-utils/readCode';
+import { st } from '@/src/components/log/LogModalStyles';
+import { EDGE_LIT } from '@/src/theme/light';
 
 const FORM = 'src/components/log/LogForm.tsx';
 const STYLES = 'src/components/log/LogModalStyles.ts';
 const DESK = 'src/components/log/EditorialDesk.tsx';
-const TOOLKIT = 'src/components/log/AuteurToolkit.tsx';
 const SCREEN = 'app/(modals)/log-modal.tsx';
 const SEAL = 'src/components/log/LogSealBar.tsx';
-const SURFACES = [FORM, DESK, TOOLKIT, SCREEN];
 
 /** Brace-matched, so a one-line style cannot swallow the next block. */
 function style(src: string, name: string): string {
@@ -37,580 +40,22 @@ function style(src: string, name: string): string {
   }
   return '';
 }
-/** Imports stripped: matching a whole file proves only that a name was
- *  IMPORTED — a renamed call site slips straight through. */
-const stripImports = (src: string) => src.replace(/^\s*import[\s\S]*?;\s*$/gm, '');
 const num = (body: string, prop: string) => {
   const m = body.match(new RegExp(`(?<![\\w.])${prop}\\s*:\\s*(-?[\\d.]+)`));
   return m ? Number(m[1]) : undefined;
 };
 
-describe('the inventory — every control the composer owns', () => {
-  /**
-   * The restructure moves almost every block on this page, and the one way that
-   * goes badly is a control quietly disappearing. Each entry is the handler the
-   * control calls: drop the control and its call goes with it.
-   *
-   * This is the contract the redesign is held to. It is not about layout.
-   */
-  const CONTROLS: [string, string][] = [
-    ['delete a log',            'setShowDeleteConfirm(true)'],
-    ['confirm the deletion',    'handleDelete()'],
-    ['discard a draft',         'discardDraft()'],
-    ['set the status',          'setStatus(s)'],
-    ['give an abandon reason',  'setAbandonedReason(r)'],
-    ['rate the film',           'setRating('],
-    ['write the review',        'onChangeText={setReview}'],
-    ['flag a spoiler',          'setIsSpoiler('],
-    ['toggle the drop cap',     'setDropCap('],
-    ['write a pull quote',      'setPullQuote'],
-    ['choose an article still', 'setEditorialHeader'],
-    ['open the autopsy',        'setAutopsyOpen('],
-    ['score an axis',           'setAutopsy('],
-    ['choose an alt poster',    'setAltPoster'],
-    ['pick today',              'setDate(todayStr)'],
-    ['pick yesterday',          'setDate(yesterday)'],
-    ['open the calendar',       'setCalendarOpen('],
-    ['name a companion',        'onChangeText={setWatchedWith}'],
-    ['record the format',       'setPhysicalMedia(opt)'],
-    ['write a private note',    'onChangeText={setPrivateNotes}'],
-    ['add to a stack',          'toggleList(list.id)'],
-    ['seal the record',         'onSeal={flow.handleLog}'],
-    ['reach the Society',       'onPress={vault.open}'],
-  ];
-
-  it.each(CONTROLS)('a member can still %s', (_what, handler) => {
-    const src = read(FORM) + read(DESK) + read(TOOLKIT) + read(SEAL) + read(SCREEN);
-    expect(src.includes(handler)).toBe(true);
-  });
-});
-
-describe('the record reads as one document', () => {
-  it('the docket is marked, not boxed', () => {
-    // Registration brackets — you bracket a document, you do not box it in.
-    // Same four marks as the Concierge card that opens this screen.
-    expect(read(FORM)).toMatch(/<Brackets\s*\/>/);
-    const b = style(read(STYLES), 'bracketed');
-    expect(b).not.toMatch(/borderWidth/);
-  });
-
-  it('the manuscript is the only box left', () => {
-    // Nine bordered containers were the cramped feeling itself. The manuscript
-    // keeps its frame because it IS the sheet you write on; every other box was
-    // deleted rather than restyled, so it cannot quietly come back.
-    const styles = read(STYLES);
-    for (const gone of ['lockedBox', 'editorialTeaser', 'upgradeRow', 'moreToggle', 'dateDisplay', 'secLabelRow']) {
-      expect(styles).not.toMatch(new RegExp(`\\b${gone}\\s*:\\s*\\{`));
-    }
-    expect(styles).toMatch(/manuscriptFrame\s*:\s*\{/);
-    // The autopsy's crimson container is gone too — the entry carries the colour.
-    expect(read(TOOLKIT)).not.toMatch(/auteurBox/);
-  });
-
-  it('the index states what each entry holds', () => {
-    const src = read(FORM);
-    for (const name of ['THE AUTOPSY', 'THE PHYSICAL ARCHIVE', 'THE VAULT', 'FILED', 'STACKS']) {
-      expect(src).toContain(`name="${name}"`);
-    }
-  });
-
-  it('an entry opens itself when it already holds something', () => {
-    // Editing last year's record must never make a member hunt for their own
-    // words; a fresh log must still open calm. Computed once, from what arrived.
-    const src = read(FORM);
-    expect(src).toMatch(/useState\(\(\) => !!\(dropCap \|\| pullQuote \|\| editorialHeader\)\)/);
-    expect(src).toMatch(/useState\(\(\) => hasPhysicalFormat\(physicalMedia\)\)/);
-    expect(src).toMatch(/useState\(\(\) => !!privateNotes\)/);
-  });
-
-  it('the Vault never previews what it holds', () => {
-    // Every other entry shows its value. This is the one field a member might
-    // not want legible over someone's shoulder — it shows only that it is full.
-    // Only the ENTRY's own props — the panel below it holds the real input,
-    // which of course carries the text.
-    const src = read(FORM);
-    const at = src.indexOf('name="THE VAULT"');
-    const props = src.slice(at, src.indexOf('>', src.indexOf('onPress', at)));
-    expect(props).toMatch(/value=\{privateNotes \? ' ' : ''\}/);
-    expect(props).not.toMatch(/privateNotes\.slice|value=\{privateNotes\}/);
-  });
-});
-
-describe('the velvet rope is said once', () => {
-  it('the four refusals are gone', () => {
-    // Three identical "UNLOCK WITH ARCHIVIST" boxes and an "UPGRADE" link used
-    // to interrupt the core action. Visibility was never the problem.
-    for (const f of [FORM, TOOLKIT, DESK]) {
-      expect(read(f)).not.toMatch(/UNLOCK WITH ARCHIVIST|>UPGRADE</);
-    }
-  });
-
-  it('a rank you lack is a key and a name, never a no', () => {
-    // Counted, not merely present: there are TWO Archivist tools in the index
-    // (the Physical Archive and the Vault) and one Auteur tool. Asserting only
-    // that a lock exists let a mutation strip one of the two and still pass.
-    const src = read(FORM);
-    // Each lock now asks its OWN feature — the registry decides the rank, so a
-    // tool re-ranked there is re-locked here without anyone editing this form.
-    expect(src.match(/lockedTo=\{breakdown\.held \? undefined : 'THE AUTEUR'\}/g) ?? []).toHaveLength(1);
-    expect(src.match(/lockedTo=\{(shelf|vault)\.held \? undefined : 'THE ARCHIVIST'\}/g) ?? []).toHaveLength(2);
-    // The app's own mark for a thing you lack clearance for — not a padlock.
-    expect(read('src/components/log/LogIndexEntry.tsx')).toMatch(/KeyRound/);
-  });
-
-  it('the gate is the Lounge’s, word for word', () => {
-    const gate = read('src/components/log/LogClearanceGate.tsx');
-    expect(gate).toContain('[ CLEARANCE REQUIRED ]');
-    expect(gate).toContain('✦ ASCEND THE RANKS');
-    // Including the lapsed voice it lacked: a member whose dues ran out is not
-    // pitched as a stranger in the room where they have filed the longest.
-    expect(gate).toContain('[ YOUR DUES HAVE LAPSED ]');
-    expect(gate).toContain('✦ RESUME YOUR STANDING');
-    // And it names what it guards, first, because the instrument above it is
-    // silent to a screen reader.
-    expect(gate).toMatch(/`\$\{names\}\. Clearance required\./);
-  });
-
-  it('the locked instrument is shown, inert', () => {
-    // You are not sold a name; you are looking at the tool.
-    const src = read(FORM);
-    expect(src).toMatch(/st\.lockedPanel/);
-    // Inert to touch AND silent to a screen reader — the pair the shared
-    // `Locked` applies. Touch alone left VoiceOver announcing controls that do
-    // nothing.
-    const inert = src.slice(src.indexOf('const inert ='), src.indexOf('const inert =') + 260);
-    expect(inert).toMatch(/pointerEvents: 'none'/);
-    expect(inert).toMatch(/accessibilityElementsHidden: true/);
-    expect(inert).toMatch(/importantForAccessibility: 'no-hide-descendants'/);
-    // On all four instruments, each by its own feature.
-    for (const c of ['desk', 'breakdown', 'shelf', 'vault']) {
-      expect(`${c}: ${src.includes(`{...inert(${c}.held)}`)}`).toBe(`${c}: true`);
-    }
-  });
-});
-
-describe('the verdict is the largest thing on the page', () => {
-  const VERDICT = 'src/components/log/LogVerdict.tsx';
-
-  it('every possible word fits the narrowest phone at the cap', () => {
-    const word = style(read(VERDICT), 'word');
-    const size = num(word, 'fontSize')!;
-    const cap = 1.2; // displayTextProps
-    // Rye measures 0.723 em per character. 360dp less the form's 20pt rails.
-    const EM = 0.723, BOX = 360 - 40;
-    const words = ['Masterpiece', 'Unwatchable', 'Really Good', 'Not Great', 'Fine', 'Abandoned'];
-    for (const w of words) {
-      expect(w.length * size * cap * EM).toBeLessThanOrEqual(BOX);
-    }
-    expect(size).toBeGreaterThanOrEqual(24);
-  });
-
-  it('the slot never changes height', () => {
-    // Three states share one box, so nothing shifts under a finger at the exact
-    // moment it touches a reel.
-    expect(num(style(read(VERDICT), 'slot'), 'minHeight')).toBeGreaterThanOrEqual(90);
-  });
-
-  it('the score is printed once', () => {
-    // It used to appear in the rating header AND beside the reels.
-    const form = read(FORM);
-    expect(form).not.toMatch(/ratingValue|ratingMax|ratingLabel|ratingHint/);
-    expect(read(VERDICT)).toMatch(/\/ 5/);
-  });
-
-  it('the half-reel hint lives only while unrated', () => {
-    // A permanent instruction for a gesture you learn once; it now appears at
-    // the moment you are about to rate, and never again.
-    const v = read(VERDICT);
-    expect(v).toMatch(/TAP LEFT HALF FOR ½ REELS/);
-    expect(read(FORM)).not.toMatch(/TAP LEFT HALF/);
-  });
-});
-
-describe('the seal cannot disagree with the save path', () => {
-  const SEAL_F = 'src/components/log/LogSealBar.tsx';
-
-  it('sealability comes from the validator itself', () => {
-    // Not a copy of the rule — the same function handleLog calls, so the bar
-    // can never say "ready" about a record the save path will refuse.
-    const src = read(SEAL_F);
-    expect(src).toMatch(/import \{ validateLogSubmission \}/);
-    expect(src).toMatch(/validateLogSubmission\(status, rating, review, abandonedReason\)/);
-  });
-
-  it('the line is the record’s own filing mark', () => {
-    // buildFilingMark is what draws it on the finished record. Same code, so a
-    // member cannot see one thing here and get another there.
-    // Imports stripped: matching the whole file proved only that it was
-    // IMPORTED, and a renamed call site slipped straight through.
-    expect(stripImports(read(SEAL_F))).toMatch(/\bbuildFilingMark\s*\(/);
-  });
-
-  it('the reason travels in the label, not an announcement', () => {
-    // accessibilityLiveRegion is Android-only; a dim button that reads "Seal
-    // the record" and does nothing is a dead end without sight.
-    expect(read(SEAL_F)).toMatch(/accessibilityLabel=\{ready \? label : `\$\{label\}\. \$\{blockReason\}`\}/);
-  });
-
-  it('it rides the keyboard rather than listening for it', () => {
-    // keyboardDismissMode is "interactive": the keyboard height changes
-    // CONTINUOUSLY as you drag, so an event-driven bar would jump at the end.
-    const src = read(SEAL_F);
-    expect(stripImports(src)).toMatch(/\buseAnimatedKeyboard\s*\(/);
-    expect(src).not.toMatch(/keyboardDidShow|Keyboard\.addListener/);
-    expect(read(SCREEN)).toMatch(/keyboardDismissMode="interactive"/);
-  });
-
-  it('the scroll ends above the bar', () => {
-    // Or the last index entry hides behind the seal.
-    expect(read(SCREEN)).toMatch(/paddingBottom: insets\.bottom \+ SEAL_BAR_HEIGHT/);
-  });
-
-  it('the header no longer names the film', () => {
-    // It overflowed CLOSE by 88pt and repeated the docket four pixels below.
-    // Nor anything else. The Concierge card already says "Log a Film"; a title
-    // here repeated the same invitation twice in four seconds, and at step 1 it
-    // overflowed CLOSE by 88pt while duplicating the docket four pixels below.
-    // The header is chrome at BOTH steps.
-    const screen = read(SCREEN);
-    expect(screen).not.toMatch(/film\?\.title \|\| 'Log'/);
-    expect(screen).not.toMatch(/st\.headerTitle/);
-    expect(screen).not.toMatch(/Log a Film/);
-  });
-});
-
-
-describe('the film behind the record', () => {
-  const ATMOS = 'src/components/log/LogAtmosphere.tsx';
-
-  it('costs no second image', () => {
-    // The record uses w780 because its backdrop is a sharp hero. Ours is blurred
-    // to 20% under a gradient, so w780 buys a sharpness it throws away. Sharing
-    // the DOCKET's URI means one download, one cache entry, one base decode.
-    const size = (read(FORM).match(/tmdb\.poster\(altPoster \?\? film\.poster_path, '(w\d+)'\)/) || [])[1];
-    expect(size).toBe('w342');
-    expect(read(ATMOS)).toContain(`tmdb.poster(posterPath, '${size}')`);
-  });
-
-  it('needs no new data at all', () => {
-    // It takes the poster the composer already holds — the same fallback the
-    // record uses when a log carries no editorial header.
-    expect(read(SCREEN)).toMatch(/posterPath=\{film\?\.poster_path\}/);
-  });
-
-  it('arrives after the entrance, and cannot be starved', () => {
-    // A decode must never compete with the sheet sliding up. And the one element
-    // carrying the atmosphere must not hang on a promise that can be starved:
-    // whichever of the two fires first wins.
-    const a = read(ATMOS);
-    expect(a).toMatch(/InteractionManager\.runAfterInteractions/);
-    expect(a).toMatch(/setTimeout\(arrive, \d+\)/);
-    expect(a).toMatch(/task\.cancel\(\)/);
-    expect(a).toMatch(/clearTimeout/);
-  });
-
-  it('reaches solid ink before any writing begins', () => {
-    // Text is never set over an image on this page.
-    const a = read(ATMOS);
-    expect(a).toMatch(/colors\.ink\]/);
-    expect(a).toMatch(/locations=\{\[0, 0\.38, 0\.76, 1\]\}/);
-  });
-
-  it('gives the chrome a scrim of its own', () => {
-    // The record's gradient starts fully transparent because its header is
-    // opaque. Ours dissolves into the film, so CLOSE and the handle would sit on
-    // the LEAST covered part of a blurred poster.
-    expect(read(ATMOS)).toMatch(/chromeScrim/);
-    expect(read(SCREEN)).toMatch(/step === 1 && st\.headerOnFilm/);
-  });
-
-  it('the document rises off it — lit along its top edge, never a black shadow', () => {
-    // The lift is drawn by LIGHT now: the sheet catches the booth light on its
-    // top edge (EDGE_LIT). A wide surface casts no black shadow — black on the
-    // house's black is invisible, and on the lit room it reads as soot
-    // (theme/light.ts, EDGE). It still never clips: a view that clips cannot
-    // show anything outside itself, which is the bug fixed four times on the
-    // record.
-    const sheet = style(read(STYLES), 'sheet');
-    expect(sheet).toMatch(/\.\.\.EDGE_LIT/);
-    expect(sheet).toMatch(/\.\.\.effects\.flat/);
-    expect(sheet).not.toMatch(/shadowOffset|shadowRadius|shadowOpacity/);
-    expect(sheet).not.toMatch(/overflow:\s*'hidden'/);
-    // Android draws from the painted background's outline, so elevation belongs
-    // on the same view — which here has one.
-    expect(sheet).toMatch(/elevation:/);
-    expect(sheet).toMatch(/backgroundColor/);
-  });
-
-  it('honours a member who asked for less motion', () => {
-    expect(read(ATMOS)).toMatch(/ReduceMotion\.System/);
-  });
-});
-
-
-describe('the page speaks in one type scale', () => {
-  const SCALED = [
-    STYLES,
-    'src/components/log/LogVerdict.tsx',
-    'src/components/log/AuteurToolkit.tsx',
-    'src/components/log/LogSealBar.tsx',
-    'src/components/log/EditorialDesk.tsx',
-  ];
-  // BADGE · LABEL · ASIDE · PROSE · TITLE · HERO
-  // The type floor (theTypeFloor.test.ts) merged the old 7.5 FINE step into
-  // LABEL at 10; only the two corner badges (EDIT, ALT) keep a smaller 9.
-  const SCALE = [9, 10, 11, 14, 17, 28];
-
-  it('uses six sizes, and only those six', () => {
-    // It had FOURTEEN, all at one volume — the single largest reason the page
-    // read as cramped. Counting them was in the plan and was not done until an
-    // audit of the finished work went looking; by then it was sixteen.
-    const found = new Set<number>();
-    for (const f of SCALED) {
-      for (const m of read(f).matchAll(/fontSize:\s*([\d.]+)/g)) found.add(Number(m[1]));
-    }
-    expect([...found].sort((a, b) => a - b)).toEqual(SCALE);
-  });
-
-  it('no style is left behind by the restructure', () => {
-    // Twenty-seven styles were orphaned when the boxes went. A dead style is a
-    // box waiting to be reinstated by someone who finds it and assumes it means
-    // something.
-    const names = [...read(STYLES).matchAll(/^\s{4}([A-Za-z0-9_]+):\s*\{/gm)].map(m => m[1]);
-    const users = [FORM, DESK, TOOLKIT, SEAL, SCREEN,
-      'src/components/log/LogIndexEntry.tsx',
-      'src/components/log/LogClearanceGate.tsx',
-      'src/components/log/LogFormBody.tsx',
-      'src/components/log/LogSearchEngine.tsx',
-      'app/(modals)/search-modal.tsx',
-    ].map(read).join('');
-    const orphans = names.filter(n => !new RegExp('st\\.' + n + '\\b').test(users) && !new RegExp('modalSt\\.' + n + '\\b').test(users));
-    expect(orphans).toEqual([]);
-  });
-});
-
-describe('the first frame of the ritual', () => {
-  const SEARCH = 'src/components/log/LogSearchEngine.tsx';
-
-  it('says nothing — the Concierge already made the invitation', () => {
-    // "Log a Film — set down what you've seen" on the card, then "Log a Film"
-    // again in the header two seconds later. The room is simply ready.
-    expect(read(SEARCH)).not.toMatch(/Log a Film/);
-  });
-
-  it('the field is marked like the record it will become', () => {
-    expect(read(SEARCH)).toMatch(/<Brackets\s*\/>/);
-  });
-});
-
-describe('the docket is a hero, not a thumbnail', () => {
-  it('the poster is sized for the film behind it', () => {
-    const poster = style(read(STYLES), 'poster');
-    expect(num(poster, 'width')).toBeGreaterThanOrEqual(120);
-    expect(num(poster, 'height')).toBeGreaterThanOrEqual(180);
-  });
-
-  it('the sheet you write on has room to be written on', () => {
-    // 130 showed about six lines between an autopsy and a date picker, in a
-    // critique app.
-    expect(num(style(read(STYLES), 'reviewInput'), 'minHeight')).toBeGreaterThanOrEqual(170);
-  });
-
-  it('the manuscript header is legible', () => {
-    // 6.5pt was the smallest text in the app, shrinking to 6.3 to fit — and it
-    // stayed 6.5 through the redesign under a comment claiming otherwise.
-    expect(num(style(read(STYLES), 'manuscriptHeaderText'), 'fontSize')).toBeGreaterThanOrEqual(9);
-  });
-});
-
-describe('destructive things are reached for, not stumbled on', () => {
-  it('delete sits past the seal', () => {
-    const src = read(FORM);
-    // It used to be the FIRST thing on the page when editing a record.
-    expect(src.indexOf('handleLog()')).toBeLessThan(src.indexOf('setShowDeleteConfirm(true)'));
-    expect(src.indexOf('handleLog()')).toBeLessThan(src.indexOf('handleDelete()'));
-  });
-});
-
-describe('a date is never built the way this engine cannot honour', () => {
-  it('writes the long form from the app’s own tables', () => {
-    expect(formatLongCalendarDate('2026-08-16')).toBe('Sun, August 16, 2026');
-    expect(formatLongCalendarDate('2026-01-01')).toBe('Thu, January 1, 2026');
-    expect(formatLongCalendarDate('not a date')).toBe('');
-    expect(formatLongCalendarDate(null)).toBe('');
-  });
-
-  it('a calendar day keeps its own day, wherever it is read', () => {
-    // `new Date("2026-08-16")` is midnight UTC by definition, so anything built
-    // from it reads a day early across the Americas — and Hermes ships here with
-    // no Intl polyfill, so a timeZone option cannot be trusted to correct it.
-    expect(formatLongCalendarDate('2026-08-16').startsWith('Sun')).toBe(true);
-    expect(formatDate('2026-08-16')).toBe('AUG 16, 2026');
-  });
-
-  it('no composer surface formats its own date', () => {
-    for (const f of SURFACES) {
-      expect(read(f)).not.toMatch(/toLocaleDateString|toLocaleString|Intl\./);
-    }
-  });
-});
-
-describe('a member’s own words survive being quoted back', () => {
-  it('the previous take uses the one cleaner', () => {
-    const src = read(FORM);
-    expect(src).toMatch(/\bstripHTML\b/);
-    // The private copy here was `replace(/<[^>]+>/g, '')` — the same total strip
-    // that ate a member's angle brackets on the record.
-    expect(src).not.toMatch(/replace\(\/<\[\^>\]\+>\/g/);
-    expect(stripHTML('<p>Watched <The Batman> again</p>')).toBe('Watched <The Batman> again');
-  });
-});
-
-describe('no chip lands on its neighbour', () => {
-  // Both platforms hand an overlap to the LATER sibling, so each side may claim
-  // at most half the real gap. All four of these rows overlapped.
-  const ROWS: [string, string][] = [
-    ['statusRow', 'setStatus(s)'],
-    ['tagRow', 'setAbandonedReason(r)'],
-    ['quickDateRow', 'setDate(todayStr)'],
-    ['flatListGapPad', 'toggleList(list.id)'],
-  ];
-
-  it.each(ROWS)('%s claims at most half its gap', (rowName, marker) => {
-    const gap = num(style(read(STYLES), rowName), 'gap')!;
-    expect(gap).toBeGreaterThan(0);
-    const src = read(FORM);
-    const at = src.indexOf(marker);
-    expect(at).toBeGreaterThan(-1);
-    // The hitSlop belonging to this control: the first one after its handler.
-    // `hitSlop={null}` is a real answer and claims nothing — a control whose
-    // own box reaches the floor needs no halo, and matching only `{{...}}`
-    // would silently skip past it to the NEXT control's slop and judge this row
-    // by a number belonging to something else.
-    const m = src.slice(at).match(/hitSlop=\{(null|\{[^}]*\})\}/);
-    expect(m).not.toBeNull();
-    const [left, right] = m![1] === 'null'
-      ? [0, 0]
-      : [Number(m![1].match(/left:\s*(\d+)/)![1]), Number(m![1].match(/right:\s*(\d+)/)![1])];
-    expect(left).toBeLessThanOrEqual(gap / 2);
-    expect(right).toBeLessThanOrEqual(gap / 2);
-  });
-
-  it('the wrapping row halves its VERTICAL gap too', () => {
-    // tagRow wraps, so its rows are a gap apart as well — which is why
-    // "Film Print", stranded on its own line, was the hardest thing to tap.
-    const gap = num(style(read(STYLES), 'tagRow'), 'gap')!;
-    const src = read(FORM);
-    // The tag now sits inside a 48pt box and claims nothing — `null` is the
-    // strongest possible answer to "does it reach its neighbour", not a case to
-    // skip past. Matching only `{{...}}` would have walked on to the NEXT
-    // control's slop and judged this row by a number belonging to something else.
-    const m = src.slice(src.indexOf('setPhysicalMedia(opt)')).match(/hitSlop=\{(null|\{[^}]*\})\}/);
-    expect(m).not.toBeNull();
-    const [top, bottom] = m![1] === 'null'
-      ? [0, 0]
-      : [Number(m![1].match(/top:\s*(\d+)/)![1]), Number(m![1].match(/bottom:\s*(\d+)/)![1])];
-    expect(top).toBeLessThanOrEqual(gap / 2);
-    expect(bottom).toBeLessThanOrEqual(gap / 2);
-  });
-});
-
-describe('text can be enlarged without leaving its line box', () => {
-  // Every FIXED line box in the composer, and the cap declared where it renders.
-  const TIERS: Record<string, [cap: number, file: string, marker: string]> = {
-    filmTitle:           [1.2,  FORM, 'st.filmTitle'],
-    prevTakeReview:      [1.35, FORM, 'st.prevTakeReview'],
-    reviewInput:         [1.35, FORM, 'testID="review-input"'],
-    // Said under the Vault field on a rewatch: this note belongs to this
-    // viewing. It is prose a member reads, so it scales with the rest.
-    vaultHint:           [1.35, FORM, 'st.vaultHint'],
-  };
-  const PROP: Record<number, RegExp> = {
-    1.35: /\{\.\.\.scaledTextProps\}/,
-    1.2: /\{\.\.\.displayTextProps\}/,
-  };
-
-  it('every fixed line box is accounted for', () => {
-    const found = [...read(STYLES).matchAll(/(\w+)\s*:\s*\{[^{}]*lineHeight:\s*\d/g)].map(m => m[1]);
-    expect(found.sort()).toEqual(Object.keys(TIERS).sort());
-  });
-
-  it.each(Object.entries(TIERS))('%s survives its tier', (name, [cap]) => {
-    const body = style(read(STYLES), name);
-    expect(num(body, 'lineHeight')! / (num(body, 'fontSize')! * cap)).toBeGreaterThanOrEqual(1.05);
-  });
-
-  it.each(Object.entries(TIERS))('%s declares that tier where it renders', (_n, [cap, file, marker]) => {
-    const src = read(file);
-    const at = src.indexOf(marker);
-    expect(at).toBeGreaterThan(-1);
-    // The element's own opening tag, brace-aware so `() =>` cannot end it early.
-    const start = src.lastIndexOf('<', at);
-    let depth = 0, tag = '';
-    for (let i = start; i < src.length; i++) {
-      if (src[i] === '{') depth++;
-      else if (src[i] === '}') depth--;
-      else if (src[i] === '>' && depth === 0) { tag = src.slice(start, i + 1); break; }
-    }
-    expect(tag).toMatch(PROP[cap]);
-  });
-});
-
-describe('the composer never stacks a modal on a modal', () => {
-  it('reaching the Society parks, dismisses, then travels', () => {
-    const src = read(FORM);
-    /**
-     * Both screens are presentation:'modal', and a direct push is the trap the
-     * floating button hit. The dismissal used to be hand-written here, as a
-     * push to a bare '/membership' — so the Society could not say what was
-     * reached for and the funnel never saw a tap from the core act.
-     *
-     * The four ropes now go through useClearance, and park → dismiss → travel
-     * lives in openSociety, which knows this screen is presented because
-     * '/log-modal' is in MODAL_PATHS (both pinned in theSocietyOpensOverYou).
-     * What is pinned HERE is that nobody hand-writes the trip again.
-     */
-    expect(src).not.toMatch(/\/membership/);
-    // One dismissal remains in this form, and it is the member's own: DISCARD.
-    // Any second one would be a hand-written trip to the Society coming back.
-    const backs = src.match(/router\.back\(\)/g) ?? [];
-    expect(backs).toHaveLength(1);
-    expect(src).toMatch(/discardDraft\(\); router\.back\(\);/);
-    for (const id of ['editorial-desk', 'breakdown-engine', 'physical-archive', 'the-vault']) {
-      expect(src).toMatch(new RegExp(`useClearance\\('${id}', returnTo\\)`));
-    }
-    expect(read('src/constants/modalRoutes.ts')).toMatch(/'\/log-modal'/);
-  });
-
-  it('and comes back to somewhere that still holds the member’s words', () => {
-    // A new log keeps a draft, so the form is the way back. An EDIT keeps none,
-    // so returning to the form would hand them an empty one — its way back is
-    // the log itself.
-    expect(read(FORM)).toMatch(/const returnTo = flow\.editLogId \? `\/log\/\$\{flow\.editLogId\}` : '\/log-modal';/);
-  });
-});
-
-describe('a nested horizontal list cannot render nothing', () => {
-  it.each([DESK, FORM])('%s uses a plain scroller', (file) => {
-    const src = read(file);
-    // A horizontal FlashList inside a vertical ScrollView has no bounded height
-    // to measure against; the documented failure is that it draws nothing — the
-    // exact report on the Editorial Desk.
-    expect(src).not.toMatch(/<FlashList/);
-    expect(src).toMatch(/<ScrollView\s+horizontal/);
-  });
-});
-
-describe('assistive tech is told what is chosen', () => {
-  it.each([
-    ['status', 'setStatus(s)'],
-    ['abandoned reason', 'setAbandonedReason(r)'],
-    ['physical media', 'setPhysicalMedia(opt)'],
-    ['stacks', 'toggleList(list.id)'],
-  ])('the %s row reports its selection', (_label, marker) => {
-    const src = read(FORM);
-    const tag = src.slice(src.lastIndexOf('<', src.indexOf(marker)), src.indexOf(marker) + 400);
-    expect(tag).toMatch(/accessibilityState=\{\{\s*selected:/);
+describe('the seal rides the keyboard', () => {
+  // Why source: jest has no keyboard. Following the keyboard's frame and
+  // listening for its events render identically here, and differ on a phone —
+  // keyboardDismissMode is "interactive", so the keyboard's height changes
+  // CONTINUOUSLY under a dragging finger, and a bar that waits for an event
+  // jumps at the end of the drag.
+  it('follows the keyboard’s frame, and never listens for its events', () => {
+    const seal = readCode(SEAL);
+    expect(seal).toMatch(/\buseAnimatedKeyboard\s*\(/);
+    expect(seal).not.toMatch(/keyboardDidShow|keyboardWillShow|Keyboard\.addListener/);
+    expect(readCode(SCREEN)).toMatch(/keyboardDismissMode="interactive"/);
   });
 });
 
@@ -618,43 +63,92 @@ describe('assistive tech is told what is chosen', () => {
  * The docked seal reserves its own space twice over, from ONE hand-typed
  * number: the scroll ends at `insets.bottom + SEAL_BAR_HEIGHT + 16`, and the
  * bar slides away by `SEAL_BAR_HEIGHT + insets.bottom` when the keyboard opens.
- * Neither is derived from the bar's actual styles.
- *
- * So the constant and the bar can drift apart in silence, and the day the bar
- * grows past it the last index row hides behind the wax and the bar leaves a
- * sliver on screen while you write. The press was raised from 46 to 48 during
- * this page's work and nothing checked that it still fitted — it did, with 6pt
- * to spare, which is luck rather than design.
+ * The first is measured on the drawn page (the audit's UNDER: a last row the
+ * bar covers even scrolled to the end). The second happens only when a
+ * keyboard opens, which no drawing has — so the number is checked against the
+ * bar it stands for, here.
  */
 describe('the seal reserves enough room for itself', () => {
   const CAP = 1.35;   // scaledTextProps, the largest the line can be asked to grow
 
   it('SEAL_BAR_HEIGHT covers the bar it is standing in for', () => {
-    const seal = read(SEAL);
+    const seal = readCode(SEAL);
     const declared = Number(seal.match(/SEAL_BAR_HEIGHT\s*=\s*(\d+)/)![1]);
-
     const bar = style(seal, 'bar');
     const line = style(seal, 'line');
     const press = style(seal, 'press');
-
     // Everything above the safe-area inset, which the caller adds separately.
     const lineBox = Math.ceil(num(line, 'fontSize')! * CAP * 1.3);
-    const real =
-      num(bar, 'paddingTop')! +
-      lineBox +
-      num(line, 'marginBottom')! +
-      num(press, 'minHeight')! +
-      14;                                    // the bar's own paddingBottom, added in the component
-
+    const real = num(bar, 'paddingTop')! + lineBox + num(line, 'marginBottom')! + num(press, 'minHeight')!
+      + 14;                                  // the bar's own paddingBottom, added in the component
     expect(real).toBeGreaterThan(0);         // a failed parse must not pass vacuously
     expect(declared).toBeGreaterThanOrEqual(real);
   });
 
-  it('and the scroll ends above it, using that same number', () => {
-    // Two places reserve the room; both must read the constant rather than
-    // repeat a number that looks like it.
-    const modal = read('app/(modals)/log-modal.tsx');
-    expect(modal).toMatch(/paddingBottom:\s*insets\.bottom\s*\+\s*SEAL_BAR_HEIGHT/);
-    expect(read(SEAL)).toMatch(/translateY:[\s\S]{0,80}SEAL_BAR_HEIGHT \+ insets\.bottom/);
+  it('and both reservations read that same number', () => {
+    expect(readCode(SCREEN)).toMatch(/paddingBottom:\s*insets\.bottom\s*\+\s*SEAL_BAR_HEIGHT/);
+    expect(readCode(SEAL)).toMatch(/translateY:[\s\S]{0,80}SEAL_BAR_HEIGHT \+ insets\.bottom/);
+  });
+});
+
+describe('the verdict’s slot never changes height', () => {
+  // Why source: three states share one box so nothing moves under a finger at
+  // the moment it touches a reel. The drawn page shows each state; nothing
+  // compares their heights. The box is held by its minimum, which must be
+  // taller than the tallest state (a 34pt word + a 9pt gap + a 10pt line, in
+  // 18 + 4 of padding).
+  it('is held open by a minimum the tallest state fits inside', () => {
+    const slot = style(readCode('src/components/log/LogVerdict.tsx'), 'slot');
+    expect(num(slot, 'minHeight')).toBeGreaterThanOrEqual(18 + 34 + 9 + 14 + 4);
+  });
+});
+
+describe('the sheet is lit, not shadowed', () => {
+  // A style VALUE, asked directly — not read out of the file.
+  it('catches the booth light on its top edge, casts no black shadow, and never clips', () => {
+    const sheet: ViewStyle = StyleSheet.flatten(st.sheet);
+    expect(sheet).toEqual(expect.objectContaining(EDGE_LIT));
+    // Black on the house's black is invisible; on the lit room it reads as soot.
+    expect(sheet.shadowOpacity ?? 0).toBe(0);
+    expect(sheet.shadowRadius ?? 0).toBe(0);
+    // A view that clips cannot show anything outside itself — the bug fixed four
+    // times on the record.
+    expect(sheet.overflow).not.toBe('hidden');
+    // Android draws elevation from the painted background's outline, so both
+    // belong on the same view.
+    expect(sheet.elevation).toBeGreaterThan(0);
+    expect(sheet.backgroundColor).toBeTruthy();
+  });
+});
+
+describe('a nested horizontal list cannot render nothing', () => {
+  // Why source: jest's FlashList draws every row whatever its container. On a
+  // phone a horizontal FlashList inside a vertical ScrollView has no bounded
+  // height to measure against and draws NOTHING — the exact report on the
+  // Editorial Desk. So the rows here must be a plain scroller.
+  it.each([DESK, FORM])('%s uses a plain scroller', (file) => {
+    const src = readCode(file);
+    expect(src).not.toMatch(/<FlashList/);
+    expect(src).toMatch(/<ScrollView\s+horizontal/);
+  });
+});
+
+describe('no style is left behind by the restructure', () => {
+  // Why source: a style nobody uses renders nothing, so no render can find it.
+  // Twenty-seven were orphaned when the boxes went, and a dead style is a box
+  // waiting to be reinstated by someone who finds it and assumes it means
+  // something.
+  it('every style in the composer’s sheet is used', () => {
+    const names = [...readCode(STYLES).matchAll(/^\s{4}([A-Za-z0-9_]+):\s*\{/gm)].map((m) => m[1]);
+    const users = [FORM, DESK, 'src/components/log/AuteurToolkit.tsx', SEAL, SCREEN,
+      'src/components/log/LogIndexEntry.tsx',
+      'src/components/log/LogClearanceGate.tsx',
+      'src/components/log/LogFormBody.tsx',
+      'src/components/log/LogSearchEngine.tsx',
+      'app/(modals)/search-modal.tsx',
+    ].map(readCode).join('');
+    expect(names.length).toBeGreaterThan(20);
+    const orphans = names.filter((n) => !new RegExp('st\\.' + n + '\\b').test(users) && !new RegExp('modalSt\\.' + n + '\\b').test(users));
+    expect(orphans).toEqual([]);
   });
 });

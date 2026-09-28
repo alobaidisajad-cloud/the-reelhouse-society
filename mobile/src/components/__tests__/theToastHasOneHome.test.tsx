@@ -69,6 +69,21 @@ describe('a toast has one home', () => {
     expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledTimes(1);
   });
 
+  it('a toast with a button stays twice as long — it asks for an answer', async () => {
+    // Read aloud, the action takes time to hear and reach; a plain toast does
+    // not wait. Each is timed from when it is drawn.
+    const r = render(<><Screen id="feed" nav={makeNav(true)} /><ToastHost layer="root" /></>);
+    await act(async () => { reelToast.info('Plain'); });
+    await act(async () => { jest.advanceTimersByTime(2500 + TOAST_EXIT_MS + 50); });
+    expect(drawn(r, 'Plain')).toBe(0);
+
+    await act(async () => { reelToast.info('Asks', { label: 'Undo', onPress: () => {} }); });
+    await act(async () => { jest.advanceTimersByTime(2500 + TOAST_EXIT_MS + 50); });
+    expect(drawn(r, 'Asks')).toBe(1);
+    await act(async () => { jest.advanceTimersByTime(5000 - 2500); });
+    expect(drawn(r, 'Asks')).toBe(0);
+  });
+
   it('a sheet on top draws it — not the screen beneath', async () => {
     const r = render(<><Screen id="feed" nav={makeNav(true)} /><Sheet id="report" /><ToastHost layer="root" /></>);
     await act(async () => { reelToast.success('Report filed'); });

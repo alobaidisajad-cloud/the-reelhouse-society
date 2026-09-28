@@ -37,7 +37,8 @@ interface LoungeItem {
 // ── Determine modal mode from params ──────────────────────────────────────────
 type ModalMode = 'followers' | 'following' | 'share-film' | 'share-person';
 
-function resolveMode(params: Record<string, string | undefined>): { mode: ModalMode; valid: boolean } {
+// Exported for the callers' tests: what a screen sends must be what this reads.
+export function resolveMode(params: Record<string, string | undefined>): { mode: ModalMode; valid: boolean } {
     const type = params.type;
     if (type === 'followers' || type === 'following') {
         return { mode: type, valid: !!params.userId };
