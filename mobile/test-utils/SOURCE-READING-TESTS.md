@@ -96,6 +96,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/noControlCharacters.guard.test.ts` | No source file carries a raw control character. |
 | `src/utils/__tests__/noMachinePaths.guard.test.ts` | No code names a place on one computer. |
 | `src/utils/__tests__/prose-handlers.guard.test.ts` | Every handler that writes prose passes it through the sanitiser. |
+| `src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts` | Every search field turns autocorrect off (the keyboard's composing is not drawn in jest). |
 | `src/utils/__tests__/searchWiring.guard.test.ts` | Every search call site uses the escaper, unquoted. |
 
 ## Contract

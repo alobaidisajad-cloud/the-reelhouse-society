@@ -1,5 +1,5 @@
 // ============================================================
-// DarkroomHero — extracted from DarkroomHeader.tsx
+// DarkroomHero — the Darkroom's title and its search, with suggestions
 // ============================================================
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -42,9 +42,8 @@ export const DarkroomHero = React.memo(function DarkroomHero({
   return (
     <View style={s.heroContainer}>
       <DarkroomAtmo />
-      {/* A wash with no artwork behind it, thinned: at full strength it
-          darkened the lit page itself, and the room's lamp showed only where
-          content did not cover it — two dark columns down the screen. */}
+      {/* A thin wash: at full strength it darkened the room's lamp into two
+          dark columns down the screen. */}
       <LinearGradient
         colors={['rgba(13,11,9,0.8)', 'rgba(6,5,4,0.9)', 'transparent']}
         locations={[0, 0.6, 1]}
@@ -63,10 +62,6 @@ export const DarkroomHero = React.memo(function DarkroomHero({
           );
         })()}
 
-        {/* The "EST. 1924" rule lived here. It is lore that already appears in
-            eleven other files, it cost a full row plus two gradients, and it
-            measured 3.38:1. The title and the safelight carry this room. */}
-
         <View style={s.searchWrap}>
           <AnimatedSearchIcon size={16} animatedProps={animatedSearchProps} style={[animatedSearchStyle, s.searchIcon]} />
           <TextInput
@@ -75,22 +70,18 @@ export const DarkroomHero = React.memo(function DarkroomHero({
             onBlur={() => setIsFocused(false)}
             style={[s.searchInput, (isFocused || query.length > 0) && s.searchInputActive]}
             {...scaledTextProps}
-            /* "Film title, director, actor..." needed 249pt in a 259pt slot — it
-               fit at 1.00x with 10pt to spare and truncated at 1.04x, so ANY
-               Dynamic Type setting cut it (as it does in production). A
-               TextInput placeholder cannot use adjustsFontSizeToFit, so the
-               string itself had to give. "Film" is redundant inside a film app,
-               under a heading that reads THE NEGATIVES.
-               That second version claimed headroom to 1.36x; measured again
-               (mockups/tools/layout.cjs, with the field's 46/40 insets) it held
-               only to 1.29x and ended "actor…" at 1.35. "Cast" says what
-               "actor…" said in fewer letters: 231pt of a 238pt slot at 1.35. */
+            /* A placeholder cannot shrink to fit, so the words fit instead:
+               231pt of the 238pt slot at 1.35 (mockups/tools/layout.cjs). */
             placeholder="Title, director, cast"
             placeholderTextColor={colors.fog}
             selectionColor={colors.selection}
             value={inputVal}
             onChangeText={handleInputValChange}
             maxLength={120}
+            // Names, not words: autocorrect turns "Ozu" into "Out", and on
+            // Android its composing let the last letter miss the search.
+            autoCorrect={false}
+            spellCheck={false}
             onSubmitEditing={handleSearchSubmit}
             returnKeyType="search"
             keyboardAppearance="dark"
@@ -117,14 +108,10 @@ export const DarkroomHero = React.memo(function DarkroomHero({
 
 DarkroomHero.displayName = 'DarkroomHero';
 
-// ── Styles — copied PIXEL-PERFECT from DarkroomHeader.tsx ──
 const s = StyleSheet.create({
   heroContainer: {
-    // Was paddingVertical 48 + marginBottom 32 — 128pt of frame around one
-    // title and a search box, which pushed the first poster to 82% down the
-    // screen. Trimmed, but NOT flattened: the safelight behind this block is
-    // the signature of the page and needs room to fall off. It gives up 8pt at
-    // the top; the rest of the reclaimed space comes from dead gaps below.
+    // Room for the safelight to fall off, and no more: the first poster must
+    // not start low on the screen.
     paddingTop: 40,
     paddingBottom: 32,
     marginHorizontal: 0,
@@ -144,19 +131,15 @@ const s = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 34,
     color: colors.silverScreen,
-    // 8 -> 14: the Est. rule used to sit between this and the search field and
-    // carried its own 14pt margin. Without it the title needs that breath.
     marginBottom: 14,
     textAlign: 'center',
-    // No fixed lineHeight. It fought adjustsFontSizeToFit — the line box stayed
-    // 38 while the glyphs shrank, so "Late Night Projection" (which DOES shrink,
-    // at minimumFontScale 0.6) sat off-centre in its own row.
+    // No fixed lineHeight: a fixed box stays tall while adjustsFontSizeToFit
+    // shrinks "Late Night Projection", and the words sit off-centre.
     letterSpacing: 2,
     ...effects.textGlowSepia,
     textShadowRadius: 20,
     textShadowColor: 'rgba(180,45,45, 0.6)',
   },
-  // `estRow`, `estRule` and `heroEst` removed with the "EST. 1924" line.
   searchWrap: {
     width: '100%',
     position: 'relative',
@@ -209,9 +192,7 @@ const s = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
     zIndex: 20,
-    // Elevation stays: on Android it is what draws this dropdown ABOVE the
-    // grid it opens over. The shadow goes — the box is the card step, lit,
-    // and a 30pt black cloud round something this wide is a dark rim.
+    // Elevation draws it ABOVE the grid on Android; `flat` drops the shadow.
     elevation: 25,
     ...effects.flat,
   },

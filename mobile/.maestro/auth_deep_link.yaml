@@ -4,7 +4,11 @@ appId: com.reelhouse.society
 # getSession(), so it shows the "No Active Session" rescue, not a password form.
 - launchApp:
     clearState: true
-
+# The app must be up and listening before the link arrives, or the link is lost.
+- extendedWaitUntil:
+    visible:
+      id: "home-tab"
+    timeout: 20000
 - openLink: "reelhouse://reset-password"
 - extendedWaitUntil:
     visible: "No Active Session"

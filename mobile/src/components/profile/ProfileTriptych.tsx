@@ -542,6 +542,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                         keyboardAppearance="dark"
                                         accessibilityLabel={`Search films for ${MOUNT_NAME[sheet.index]}`}
                                         returnKeyType="search"
+                                        autoCorrect={false}
+                                        spellCheck={false}
                                     />
                                 </View>
                             </View>

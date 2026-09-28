@@ -5,8 +5,8 @@
  * A backslash sent through a shell can be eaten on the way. `\b` in a regex
  * then arrives as a real BACKSPACE (U+0008): the file still parses, the regex
  * still compiles — it now demands a backspace where it meant a word boundary —
- * and it matches nothing, in silence. It happened on 2026-09-24 inside a guard
- * test, which then reported every screen in the app as unlit.
+ * and it matches nothing, in silence: a guard test once reported every screen
+ * in the app as unlit that way.
  *
  * Source code has no business holding any C0 control character except tab,
  * newline and carriage return. Any other one is damage.
@@ -56,6 +56,19 @@ describe('no source file carries a raw control character', () => {
           break;
         }
       }
+    }
+    expect(hits).toEqual([]);
+  });
+
+  // The same shell can eat `\u` whole: after `0-9`, `؀-ۿ` arrives as
+  // `0600-06FF`, which parses, and matches digits and F instead of Arabic.
+  it('no \\uXXXX in a character class has lost its escape', () => {
+    const EATEN = /(?:0-9|a-z|A-Z|\[)u?[0-9A-Fa-f]{4}-u?[0-9A-Fa-f]{4}/;
+    const hits: string[] = [];
+    for (const f of all.filter((p) => /\.(tsx?|jsx?|cjs|mjs)$/.test(p))) {
+      readFileSync(f, 'utf8').split('\n').forEach((text, i) => {
+        if (EATEN.test(text)) hits.push(`${relative(ROOT, f)}:${i + 1}`);
+      });
     }
     expect(hits).toEqual([]);
   });

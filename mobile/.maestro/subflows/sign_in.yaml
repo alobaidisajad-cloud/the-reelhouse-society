@@ -47,9 +47,11 @@ appId: com.reelhouse.society
       id: "home-tab"
     timeout: 15000
 # Signed in = your own member file, with its holdings, under the Profile tab.
+# The holdings sit below the fold on a phone, so scrolled to, not waited for.
 - tapOn:
     id: "profile-tab"
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: "collection-card-watchlist"
+    direction: DOWN
     timeout: 20000

@@ -288,6 +288,8 @@ export default function LoungeScreen() {
               selectionColor={colors.sepia}
               keyboardAppearance="dark"
               accessibilityLabel="Search salons"
+              autoCorrect={false}
+              spellCheck={false}
             />
             {searchQuery.length > 0 && (
               <PressableScale onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection">

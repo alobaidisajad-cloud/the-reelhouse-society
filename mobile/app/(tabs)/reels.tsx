@@ -91,6 +91,8 @@ const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: str
         selectionColor={colors.sepia}
         keyboardAppearance="dark"
         accessibilityLabel="Search curated stacks"
+        autoCorrect={false}
+        spellCheck={false}
         onFocus={() => TactileEngine.navigate()}
       />
       {localText.length > 0 && (

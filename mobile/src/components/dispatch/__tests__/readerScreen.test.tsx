@@ -1,22 +1,17 @@
 /**
- * readerScreen.test.tsx — the one screen that reads all five kinds.
+ * readerScreen.test.tsx — the one screen that reads all five kinds: the page a
+ * notification opens, a share link lands on, and every feed card pushes to.
  * ─────────────────────────────────────────────────────────────────────────────
- * 145 statements, none of which had ever run. It is the page a notification
- * opens, a share link lands on, and every card in the feed pushes to — and the
- * only proof that any of its states worked was that the code looked right.
- *
- * The states it can be in are not variations on a theme; they are different
- * pages, and three of them are what a member sees when something has gone
- * wrong. Those are the ones nobody looks at:
+ * Its states are different pages, and these are what a member sees when
+ * something has gone wrong, the ones nobody looks at:
  *
  *   missing    a link to something the house removed entirely
  *   ended      withdrawn, but the critiques under it survive
  *   withheld   under review, readable by its AUTHOR and nobody else
  *   signed out public to read, and no act offered
  *
- * The store is real here; only the network and the session are mocked. Mocking
- * the store instead would test the screen against my idea of the store rather
- * than the store.
+ * The store is real; only the network and the session are mocked, so the
+ * screen is tested against the store, not against an idea of it.
  */
 import React, { act } from 'react';
 import { Alert, Share } from 'react-native';
@@ -47,9 +42,7 @@ jest.mock('@/src/utils/typedRouter', () => ({
 let mockUser: { id: string; username: string } | null = { id: 'u1', username: 'me' };
 
 jest.mock('@/src/stores/auth', () => ({
-  // Called both ways in this tree: with a selector, and bare for the whole
-  // state. A mock that only handles the selector form throws `sel is not a
-  // function` from somewhere three components down.
+  // Called both with a selector and bare, somewhere in this tree.
   useAuthStore: Object.assign(
     (sel?: (s: unknown) => unknown) =>
       (typeof sel === 'function' ? sel({ user: mockUser }) : { user: mockUser }),
@@ -67,46 +60,30 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.select = () => self();
       chain.eq = () => self();
       chain.is = () => self();
-      // `gt` — the next-part read uses it. Without it the chain threw, the
-      // screen's own catch swallowed it, and "there is no next part" and "the
-      // mock is missing a method" looked identical.
+      // The next-part read's; missing, the screen's catch hides the throw.
       chain.gt = () => self();
       chain.in = () => Promise.resolve({ data: [], error: null });
       chain.order = () => self();
-      // The critiques come through HERE, not through `setState` before the
-      // mount: the reader fetches them on open, and that fetch replaces
-      // whatever the test had put in the store.
+      // The critiques arrive HERE: the reader's own fetch replaces the store's.
       chain.range = () => {
         const r = Promise.resolve({ data: mockCritiqueRows, error: null });
         return Object.assign(r, { abortSignal: () => r });
       };
-      // Every read in the store goes through `withAbortSignal`, which calls
-      // `.abortSignal(signal)` on the BUILDER. A mock that returns a bare
-      // Promise throws there, the store swallows it, and the screen renders its
-      // "no longer here" page — which reads exactly like a correctly-handled
-      // missing filing. The mock has to be a builder, not a result.
+      // A BUILDER, not a bare result: every store read calls `.abortSignal()`
+      // on it, and a throw there renders "no longer here", like a real miss.
       const builder = (data: unknown) => {
         const r = Promise.resolve({ data, error: null });
         return Object.assign(r, { abortSignal: () => r });
       };
       chain.maybeSingle = () => builder(mockRow);
-      // `.limit()` is the NEXT-PART read; the critiques use `.range()`. Keeping
-      // them apart is what lets a test say "there is a part after this one".
-      chain.limit = () => builder(mockNextRows);
-      // The WRITES, which this mock did not have. Without them `.insert()` was
-      // undefined, every act threw, `writeThrough` treated it as a refusal and
-      // rolled back — so the marks looked as though they had never been made.
+      chain.limit = () => builder(mockNextRows); // the next part (critiques use range)
+      // Writes: missing, every act would roll back as if refused.
       chain.insert = () => (mockWriteFails
         ? Promise.resolve({ data: null, error: { message: 'refused', code: '42501' } })
         : Promise.resolve({ data: [], error: null }));
-      // An UPDATE now asks for its rows back — `.select('id')` — because a row
-      // RLS refuses matches NOTHING, and matching nothing is not an error. The
-      // mock has to answer with a row, or every amendment looks refused.
+      // An UPDATE or DELETE asks for its rows back (`.select('id')`): a row RLS
+      // refuses matches nothing, with a 200. So a landed one answers a row.
       chain.update = () => { updated = true; return self(); };
-      // A DELETE asks for its rows back for the same reason — `removeCritique`
-      // does `.select('id')`, since a refused row matches nothing and PostgREST
-      // reports that as 200. A landed delete must answer with the row it
-      // destroyed, or withdrawing a critique looks refused here.
       chain.delete = () => { updated = true; return self(); };
       chain.then = (res: (v: unknown) => unknown) =>
         Promise.resolve(updated ? { data: [{ id: 'row' }], error: null } : { data: [], error: null })
@@ -117,14 +94,7 @@ jest.mock('@/src/lib/supabase', () => ({
   },
 }));
 
-/**
- * The moderation sheet is the app's own, shared with logs and lounge messages,
- * and it mounts a gesture-handler root that has no native module here. It is
- * replaced by a stub that records the props it was given — which is the actual
- * claim being tested: not what the sheet offers, but that the READER hands it
- * this filing and this author, and mounts it at all only when there is somebody
- * to act on.
- */
+/** The action sheet (no native gesture root here), stubbed to record what it is handed. */
 const mockSheetProps: Record<string, unknown>[] = [];
 jest.mock('@/src/components/moderation/ContentActionSheet', () => ({
   ContentActionSheet: (props: Record<string, unknown>) => {
@@ -169,14 +139,8 @@ const at = (params: Record<string, string>) =>
 
 const mount = async () => {
   const r = render(<FilingReader />);
-  // Drained to a MACROtask, not three microtasks. The screen hydrates and then
-  // fetches its critiques, so a fixed number of `Promise.resolve()`s leaves the
-  // last of those settling after the act scope closes — which React reports as
-  // "an update was not wrapped in act", and which means the assertions run
-  // against a render that is still one step behind.
-  // TWICE. Hydrate resolves on the first drain and only then does the
-  // next-part effect fire, so a single drain leaves that second round trip
-  // settling after the assertions — which reads as "there is no next part".
+  // Two MACROtask drains: hydrate lands on the first, and only then does the
+  // next-part read start. Fewer, and the assertions run a step behind.
   await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
   await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
   return r;
@@ -213,15 +177,11 @@ describe('the reader', () => {
   it('says so plainly when the filing is gone', async () => {
     mockRow = null;
     const { getByText } = await mount();
-    // Not a spinner that never stops, which is how an app tells somebody their
-    // tap did nothing.
-    expect(getByText('This filing is no longer here.')).toBeTruthy();
+    expect(getByText('This filing is no longer here.')).toBeTruthy(); // not a spinner
   });
 
   it('keeps an ENDED filing’s room, and names who ended it', async () => {
-    // The row keeps its place so the critiques written underneath it survive —
-    // which is the entire reason ending is not deleting. The tombstone has to
-    // name the right party: the house is not the author.
+    // Its critiques survive; the tombstone names the house, not the author.
     mockRow = row({
       ended_at: '2026-08-29T10:00:00Z', ended_by: 'house',
       title: null, body: '', full_content: null, comment_count: 4,
@@ -232,9 +192,7 @@ describe('the reader', () => {
   });
 
   it('tells a WITHHELD filing’s author the truth about it', async () => {
-    // RLS lets the author read their own while it is under review. A page that
-    // said "no longer here" to the one person entitled to know would be the app
-    // lying to them.
+    // RLS lets its author read it; "no longer here" would be a lie to them.
     mockUser = { id: 'u2', username: 'tomasreyes' };
     mockRow = row({ withheld_at: '2026-08-29T10:00:00Z' });
     const { queryByText } = await mount();
@@ -245,9 +203,7 @@ describe('the reader', () => {
     mockUser = null;
     const { getByText, queryByLabelText } = await mount();
     expect(getByText('The Empty Room')).toBeTruthy();
-    // No dock, and no More: every act behind them needs an account, and a
-    // control that bounces you to a sign-in you did not ask for is worse than
-    // no control.
+    // No dock and no More: every act behind them needs an account.
     expect(queryByLabelText(/More, for this filing/)).toBeNull();
     expect(queryByLabelText(/^Critique$/)).toBeNull();
   });
@@ -265,8 +221,7 @@ describe('the reader', () => {
     expect(getByLabelText(/Option 1 of 2. Tokyo Story/)).toBeTruthy();
 
     await act(async () => { fireEvent.press(getByLabelText(/Option 2 of 2/)); });
-    // A vote is cast once and never changed, so it is recorded the moment it is
-    // marked rather than after a round trip.
+    // Cast once, never changed: recorded on the mark, not after a round trip.
     expect(useDispatch.getState().myVotes.f1).toBe(1);
   });
 
@@ -281,8 +236,6 @@ describe('the reader', () => {
   });
 
   it('replaces the bar with the composer, and never stacks the two', async () => {
-    // The action bar and the composer occupy the same place. Two docked rows
-    // would take a third of a small phone and leave the writing in a slot.
     const { getByLabelText, queryByLabelText } = await mount();
     await act(async () => { fireEvent.press(getByLabelText('Write a critique')); });
 
@@ -309,8 +262,7 @@ describe('the reader', () => {
     await act(async () => { fireEvent.press(getByLabelText('Order by newest')); });
     expect(useDispatch.getState().critiquesOrder.f1).toBe('NEWEST');
 
-    // Pressing the one already chosen must not re-read: the rows are already
-    // in that order, and the round trip would only make the list flash.
+    // The order already chosen does not re-read (the list would only flash).
     useDispatch.setState({ critiquesOrder: { f1: 'MARKER' } } as never);
     await act(async () => { fireEvent.press(getByLabelText('Order by newest')); });
     expect(useDispatch.getState().critiquesOrder.f1).toBe('MARKER');
@@ -324,8 +276,7 @@ describe('the reader', () => {
   });
 
   it('opens the app’s own action sheet on somebody else’s filing', async () => {
-    // The same sheet a log and a stack open, so what a member learns once works
-    // everywhere — rather than a third menu invented for this page.
+    // The same sheet a log and a stack open.
     const { getByLabelText } = await mount();
     await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
 
@@ -337,16 +288,8 @@ describe('the reader', () => {
   });
 
   it('offers the AUTHOR their own two acts, and never the sheet', async () => {
-    /**
-     * MORE is two different things. On somebody else's filing it is the app's
-     * standard sheet — report, block, mute. On your own it is what you may do
-     * to your own words, and offering yourself "report" would be the page not
-     * knowing who is reading it.
-     *
-     * There used to be ONE act here. There are two now: amend the words, or
-     * take it off the page. Withdrawing keeps its own confirmation underneath,
-     * because it is the irreversible one and a single tap must never reach it.
-     */
+    // On your own filing, More is amend or withdraw (never "report" yourself);
+    // withdrawing asks again, as one tap must never reach it.
     const alerts: [string, string, { text: string; onPress?: () => void }[]][] = [];
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
@@ -368,9 +311,7 @@ describe('the reader', () => {
     expect(alerts[1][1]).toMatch(/critiques underneath it stay/);
 
     await act(async () => { alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
-    // Asserted on `opened`, not `filings` — this reader was reached by the
-    // filing's own ADDRESS, so the feed does not hold it, and that is precisely
-    // the case in which withdrawing used to do nothing at all.
+    // On `opened`: reached by its address, the filing is not in the feed.
     expect(useDispatch.getState().opened.f1?.endedBy).toBe('author');
     expect(useDispatch.getState().filings).toHaveLength(0);
     spy.mockRestore();
@@ -388,20 +329,14 @@ describe('the reader', () => {
     await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
     await act(async () => { alerts[0][2].find((b) => b.text === 'Amend it')?.onPress?.(); });
 
-    // The row is a dossier, so it opens the essay desk — carrying the id, which
-    // is what turns FILE IT into AMEND IT at the other end.
+    // The essay desk, with the id that makes it AMEND IT.
     expect(mockPushed).toEqual(['/dispatch/compose?kind=dossier&edit=f1']);
     spy.mockRestore();
   });
 
   it('offers no amendment on a ballot, or on one the house is holding', async () => {
-    /**
-     * A ballot's options are what members voted on and its question is what
-     * they answered; changing either turns a result into an answer to something
-     * else. A withheld filing is being read by the Tribunal and an ended one is
-     * already struck — the database refuses both, and the app agrees rather
-     * than offering an act that would bounce.
-     */
+    // A ballot's votes answer its question as asked; the database refuses
+    // amending a withheld or ended filing, and the app offers nothing to bounce.
     const alerts: [string, string, { text: string }[]][] = [];
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
@@ -436,21 +371,16 @@ describe('the reader', () => {
     expect(getByText('The Empty Room')).toBeTruthy();
 
     await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
-    // Through both sheets: the first asks which act, the second confirms the
-    // irreversible one.
+    // Through both sheets: which act, then the confirmation.
     await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw it')?.onPress?.(); });
     await act(async () => { alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
 
-    // The words are gone from the page the member is standing on, not only from
-    // a feed they are not looking at.
+    // Gone from the page the member is on, not only from the feed.
     expect(queryByText('The Empty Room')).toBeNull();
     spy.mockRestore();
   });
 
   it('shares to the lounge, or to anywhere the phone can send', async () => {
-    // Two destinations, not one. The Lounge first because it is the house's own
-    // room, and elsewhere second because a link out of the app is a different
-    // act from quoting it to the members.
     const shared: unknown[] = [];
     const spy = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
       shared.push(c); return { action: 'sharedAction' } as never;
@@ -461,16 +391,13 @@ describe('the reader', () => {
 
     await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
     expect(shared).toHaveLength(1);
-    // The sheet closes behind it: a share sheet still standing over the page
-    // after the system sheet has been used is a second thing to dismiss.
+    // The house's sheet closes behind the system's.
     expect(queryByLabelText(/ELSEWHERE/)).toBeNull();
     spy.mockRestore();
   });
 
   it('sends a WEB link, never a scheme only this app understands', async () => {
-    // `reelhouse://dispatch/<id>` opens nothing for anybody who does not already
-    // have the app — which is everybody a share is being sent to. The film share
-    // card has always used the https link; this one did not.
+    // `reelhouse://` opens nothing for whoever lacks the app: everyone it is sent to.
     const shared: { message?: string }[] = [];
     const spy = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
       shared.push(c as { message?: string }); return { action: 'sharedAction' } as never;
@@ -483,17 +410,13 @@ describe('the reader', () => {
 
     expect(shared[0].message).toContain('https://reelhouse.app/dispatch');
     expect(shared[0].message).not.toContain('reelhouse://');
-    // And NOT a per-filing path: the web app has no page for one filing, so
-    // `/dispatch/<id>` is a 404 — a link that resolves is worth more than a
-    // link that is specific.
+    // Not `/dispatch/<id>`: the web has no page for one filing yet (a 404).
     expect(shared[0].message).not.toMatch(/dispatch\/[0-9a-f-]{8}/);
     spy.mockRestore();
   });
 
   it('mounts the clipping only while an ESSAY is being shared', async () => {
-    // Only a dossier earns an image: a take shared as a poster is a poster of
-    // somebody's opinion. And it is mounted only while the sheet is open, so a
-    // page somebody is merely reading never carries it.
+    // Mounted only while the sheet is open, never on a page merely being read.
     const { getByLabelText, getAllByText } = await mount();
     // One "The Empty Room" while merely reading: the essay's own head.
     expect(getAllByText('The Empty Room')).toHaveLength(1);
@@ -504,16 +427,13 @@ describe('the reader', () => {
   });
 
   it('does not mount a clipping for a kind that does not earn one', async () => {
-    // Counted on the off-screen offset the clipping is parked at, not on its
-    // text: a take's body appears three times in a card's nested Texts, so a
-    // text count cannot tell a second copy from the same copy.
+    // Found by its parking offset: a take's text repeats in nested Texts anyway.
     const parked = (tree: unknown) => JSON.stringify(tree).includes('-10000');
 
     mockRow = row({ kind: 'take', title: null, full_content: null, body: 'A take.' });
     const take = await mount();
     await act(async () => { fireEvent.press(take.getByLabelText('Share')); });
-    // A take shared as a poster is a poster of somebody's opinion.
-    expect(parked(take.toJSON())).toBe(false);
+    expect(parked(take.toJSON())).toBe(false); // only an essay leaves as a picture
     await act(async () => { take.unmount(); });
 
     mockRow = row();
@@ -579,10 +499,7 @@ describe('the reader', () => {
   });
 
   it('carries the same four marks on a ballot and on a short filing', async () => {
-    // Three kinds draw three different components — PaperBallot, PaperPost and
-    // the essay — and each mounts its own copy of the acts. A mark that works on
-    // one and not the others is the page behaving differently for no reason the
-    // member can see.
+    // Each kind's component mounts its own copy of the marks; all must work.
     for (const over of [
       { kind: 'ballot', options: [{ film_id: 1, title: 'Tokyo Story', poster_path: null }, { film_id: 2, title: 'Late Spring', poster_path: null }], closes_at: new Date(Date.now() + 86_400_000).toISOString() },
       { kind: 'take', title: null, full_content: null, body: 'A take.' },
@@ -597,10 +514,7 @@ describe('the reader', () => {
       await act(async () => { fireEvent.press(getByLabelText('Save this')); });
       expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
 
-      // Torn down before the next kind mounts. Two live trees in one test leave
-      // the first one's pending updates to land after the act scope closes,
-      // which React reports as an unwrapped update.
-      await act(async () => { unmount(); });
+      await act(async () => { unmount(); }); // before the next tree mounts
     }
   });
 
@@ -634,8 +548,7 @@ describe('the reader', () => {
     expect(getAllByLabelText('Report this critique')).toHaveLength(1);
 
     await act(async () => { fireEvent.press(getByLabelText('Report this critique')); });
-    // A critique is reported as a CRITIQUE, not as the filing it sits under —
-    // the Tribunal has to be shown the line that was reported.
+    // As a CRITIQUE, so the Tribunal sees the line that was reported.
     expect(mockReportProps[0].contentType).toBe('dispatch_comment');
     expect(mockReportProps[0].contentId).toBe('c1');
   });
@@ -651,15 +564,11 @@ describe('the reader', () => {
 
     await act(async () => { fireEvent.press(getByLabelText(/more critiques/)); });
     await act(async () => { await Promise.resolve(); });
-    // 30 came back a second time under different ids — the merge de-duplicates
-    // by id, so the count is what actually arrived.
+    // The same 30 again: the merge de-duplicates by id.
     expect(useDispatch.getState().critiques.f1.length).toBeGreaterThanOrEqual(30);
   });
 
   it('leaves the page when the reader blocks its author', async () => {
-    // Blocking removes their filings from every feed, including this one, so
-    // staying would leave the member looking at a filing they just said they
-    // did not want.
     const { getByLabelText } = await mount();
     await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
     await act(async () => { (mockSheetProps[0].onBlock as () => void)(); });
@@ -672,15 +581,10 @@ describe('the reader', () => {
     await act(async () => { (mockSheetProps[0].onReport as () => void)(); });
     expect(mockReportProps[0].contentType).toBe('dispatch_post');
     expect(mockReportProps[0].contentId).toBe('f1');
-    // And the action sheet closes behind it: two sheets over one page is one
-    // thing too many to dismiss.
-    expect(mockSheetProps).toHaveLength(1);
+    expect(mockSheetProps).toHaveLength(1); // the action sheet closed behind it
   });
 
   it('ends a part with the one after it, by name', async () => {
-    // "An essay in four parts that ends with nothing is an essay the reader has
-    // to go and hunt for." `EssayNext` was built for this and never mounted
-    // until now — so this is the first test of it.
     mockRow = row({ series_id: 's1', series_title: 'Ozu, in four parts', part_number: 2 });
     mockNextRows = [{
       ...row({ id: 'p3', part_number: 3, title: 'Nobody Comes Back' }),
@@ -696,8 +600,6 @@ describe('the reader', () => {
   });
 
   it('ends the LAST part with nothing at all', async () => {
-    // A control that says NEXT and opens nothing is worse than an essay that
-    // simply ends.
     mockRow = row({ series_id: 's1', series_title: 'Ozu, in four parts', part_number: 4 });
     mockNextRows = [];
     const { queryByLabelText } = await mount();
@@ -710,21 +612,8 @@ describe('the reader', () => {
   });
 
   it('shares an essay as a clipping AND the link, in one share', async () => {
-    /**
-     * ── THE LINK USED TO BE DROPPED, AND A TEST HELD IT THERE ────────────────
-     * This asserted that `Sharing.shareAsync` got the file and `Share.share`
-     * was never called — "one share, not two". That was true, and it was the
-     * bug: `shareAsync` sends a FILE and nothing else. Its only options are a
-     * mime type and an Android dialog title, neither of which travels.
-     *
-     * So a member shared an essay and the recipient got a picture with no way
-     * back to the house — defeating the reason the clipping exists, which the
-     * screen states in its own words: "a stranger reads the writing from the
-     * image and follows the link to the house."
-     *
-     * On iOS `Share.share({ url, message })` carries both. It really is one
-     * share; it was one share before, and it was missing half its payload.
-     */
+    // iOS: `Share.share` carries the picture AND the link. `shareAsync` would
+    // send the file alone, and a stranger would have no way to the house.
     const viewShot = require('react-native-view-shot');
     const sharing = require('expo-sharing');
     const capture = jest.spyOn(viewShot, 'captureRef').mockResolvedValue('file:///clipping.png');
@@ -750,12 +639,8 @@ describe('the reader', () => {
   });
 
   it('sends the clipping on Android, where a file and a message cannot travel together', async () => {
-    // `Share.share` on Android ignores `url` outright. Taking the iOS path
-    // there would send the text and silently lose the picture, so Android keeps
-    // the file — the best either API can do, and stated rather than assumed.
-    // `Platform.OS` is a plain property in this environment, not a getter, so
-    // `jest.spyOn(…, 'get')` throws "does not have access type get". Set and
-    // restore it directly.
+    // Android's `Share` ignores `url`, so the file goes alone. `Platform.OS` is
+    // a plain property here (no getter to spy on), so it is set and restored.
     const RN = require('react-native');
     const realOS = RN.Platform.OS;
     Object.defineProperty(RN.Platform, 'OS', { value: 'android', configurable: true });
@@ -782,9 +667,7 @@ describe('the reader', () => {
   });
 
   it('opens the lounge from the sheet, rather than the world', async () => {
-    // The design puts the house first: TO THE LOUNGE is the top row, and it
-    // must open the salon picker rather than falling through to the OS sheet
-    // like every other destination. This branch had never run.
+    // TO THE LOUNGE opens the salon picker, never the OS sheet.
     const plain = jest.spyOn(Share, 'share');
     const { getByLabelText, queryByLabelText } = await mount();
     await act(async () => { fireEvent.press(getByLabelText('Share')); });
@@ -797,10 +680,7 @@ describe('the reader', () => {
   });
 
   it('offers no SAVE THE CARD row, because nothing can save one', async () => {
-    // `ShareSheet` takes a `card` prop and the reader never sets it. Deliberate:
-    // a direct save needs expo-media-library, which is not a dependency, and
-    // without it the row would duplicate ELSEWHERE under a label promising the
-    // photo library. Pinned so it is a decision on the record, not a gap.
+    // Pinned, as a decision: see ShareSheet's `card`.
     const { getByLabelText, queryByLabelText } = await mount();
     await act(async () => { fireEvent.press(getByLabelText('Share')); });
     expect(queryByLabelText(/SAVE THE CARD/)).toBeNull();
@@ -834,31 +714,20 @@ describe('the reader', () => {
     await act(async () => { await Promise.resolve(); });
 
     expect(mockToastError).toHaveBeenCalledWith('That critique did not go.');
-    // The text survives, so the member can try again with what they wrote
-    // rather than retyping it.
+    // The words survive for another try.
     expect(getByLabelText('Your critique').props.value).toBe('That is the argument.');
   });
 
   it('asks for the critiques in the order its own header shows', async () => {
-    // These were written separately and disagreed: the header lit CERTIFIED and
-    // the fetch defaulted to NEWEST, so the first thing anyone saw was a
-    // date-ordered list under a CERTIFIED label — and pressing CERTIFIED did
-    // nothing, because it was already selected.
     await mount();
     expect(useDispatch.getState().critiquesOrder.f1).toBe('CERTIFIED');
   });
 });
 
 /**
- * ── THE SAME MATRIX, ON THE SECOND SURFACE ───────────────────────────────────
- * A ballot card in the FEED printed a byline, four marks and no question, and
- * three thousand seven hundred tests missed it, because each asserted something
- * specific about a state somebody had thought of. `everyCardSaysSomething`
- * closed that for the card. This closes it for the reader.
- *
- * The reader is a ternary chain — dossier, then ballot, then everything else to
- * `PaperPost` — so a kind can fall through it just as quietly. `wire` was the
- * one no test above ever opened.
+ * Every kind, opened: the reader is a chain (essay, ballot, then PaperPost),
+ * and a kind can fall through it quietly, as the feed's ballot card once
+ * printed no question (see everyCardSaysSomething, the feed's twin of this).
  */
 describe('every kind opens, and says its own words', () => {
   const OPENS: Record<string, Record<string, unknown>> = {
@@ -880,12 +749,7 @@ describe('every kind opens, and says its own words', () => {
   };
 
   it('covers every kind the app knows about', () => {
-    // Hand-listing the kinds is how `wire` came to have no reader test at all,
-    // so the list is checked against a runtime table keyed by kind rather than
-    // trusted. `KIND_RULE` is the one the app itself reads to colour a filing,
-    // so a sixth kind cannot be added without appearing here. A type union
-    // would be no use — it does not exist at run time, which is precisely why
-    // a missing branch is invisible.
+    // Checked against the app's own runtime table, so a sixth kind appears here.
     const { KIND_RULE } = require('@/src/components/dispatch/paper/paperMetrics');
     expect(Object.keys(OPENS).sort()).toEqual(Object.keys(KIND_RULE).sort());
   });
@@ -912,15 +776,8 @@ describe('every kind opens, and says its own words', () => {
 });
 
 /**
- * ── THE READER, READ ALOUD ──────────────────────────────────────────────────
- * The same sweep that found the index saying "ALL, middle dot, TAKES, middle
- * dot…" and every card opening "147. TOMASREYES · No. 147". Those were on the
- * feed. This is the other screen a member spends time on, and it carries things
- * the feed does not: the ballot's options, the critique composer, the essay.
- *
- * Judged on the rendered tree, because that is what reaches the ear. A source
- * sweep for the same thing returned fifteen findings of which thirteen were
- * artefacts of stripping interpolations out of JSX.
+ * The reader, read aloud, as the feed is: judged on the rendered tree, which is
+ * what reaches the ear, across the options, the composer and the essay.
  */
 describe('the reader, read aloud', () => {
   /** Hiding is INHERITED — the flag travels down, it is not read per node. */
@@ -943,7 +800,7 @@ describe('the reader, read aloud', () => {
   const echoes = (a: string, b: string): boolean => {
     const at = b.indexOf(a);
     if (at === -1) return false;
-    const wordish = /[A-Za-z0-90600-06FF]/;
+    const wordish = /[A-Za-z0-9؀-ۿ]/;
     const before = b[at - 1]; const after = b[at + a.length];
     return !(before && wordish.test(before)) && !(after && wordish.test(after));
   };
@@ -1017,24 +874,10 @@ describe('the reader, read aloud', () => {
   }
 });
 
-/**
- * ── THE LAST DARK CORNERS OF THIS SCREEN ────────────────────────────────────
- * The back controls, the byline's destination, the guard on re-ordering the
- * critiques, and both "it could not be withdrawn" paths. None had ever run.
- *
- * A back control that does nothing is a dead end with a label on it, and a
- * withdrawal that fails silently is worse than one that fails — the member
- * believes their words are gone and they are still on the page.
- */
+/** The ways out (every back control, the byline) and the ways a withdrawal fails. */
 describe('the ways out, and the ways it fails', () => {
   it('goes back from EVERY back control on the page, not just the first', async () => {
-    // There is more than one — the head's and the spine's — and pressing only
-    // the first would leave the other unproven. A back control that does
-    // nothing is a dead end with a label on it.
-    //
-    // Matched EXACTLY, not on /Back/i: the spine also carries "Back to the top
-    // of the dossier", which scrolls rather than navigating. A loose pattern
-    // swept it in and reported the screen broken when the test was.
+    // Matched EXACTLY: "Back to the top of the …" scrolls, it does not leave.
     for (const over of [{}, { kind: 'take', title: null, full_content: null, body: 'A take.' }]) {
       mockRow = row(over);
       const { getAllByLabelText } = await mount();
@@ -1058,16 +901,12 @@ describe('the ways out, and the ways it fails', () => {
   });
 
   it('offers no room to open for a member who has gone', async () => {
-    // A departed member has no page. Rendering a link to one would be a dead
-    // end wearing the costume of a control.
     mockRow = row({ profiles: null, author_username: null });
     const { queryAllByLabelText } = await mount();
     expect(queryAllByLabelText(/Open their room/i)).toEqual([]);
   });
 
   it('does not re-read the critiques when the order is already that', async () => {
-    // Pressing the lit control must be free. Without the guard it re-fetches
-    // the first page and the list flashes for nothing.
     const { getByLabelText } = await mount();
     const before = useDispatch.getState().critiquesOrder.f1;
     // By its own label: the certify controls say "certified" too now.
@@ -1076,11 +915,8 @@ describe('the ways out, and the ways it fails', () => {
   });
 
   it('says so when a filing will not withdraw', async () => {
-    // Silence here is the worst outcome: the member believes the words are
-    // gone and they are still on the page.
     mockUser = { id: 'u2', username: 'tomasreyes' };
-    // Two sheets now — the first chooses the act, the second confirms it — so
-    // this presses whichever withdrawal button the sheet it was handed carries.
+    // Presses the withdrawal on whichever of the two sheets it is handed.
     const alert = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
       const withdraw = (buttons ?? []).find((b) => b.text === 'Withdraw it' || b.text === 'Withdraw');
       void withdraw?.onPress?.();
