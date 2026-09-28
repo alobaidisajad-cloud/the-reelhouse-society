@@ -1,0 +1,13 @@
+# Controls the SMALL check (mockups/tools/layout.cjs --allow) does not report.
+#
+# SMALL: a control whose OWN box is under the 48pt floor. A halo (hitSlop) is
+# invisible to both platforms' accessibility layers, so the box is the answer.
+# Each line names the control's source file, optionally a pattern its label
+# must match, and why — at length. Two exceptions, on the log composer, where
+# the rule is enforced (the CI job runs SMALL on the composer's screens).
+#
+# <file> [/label pattern/] — <why>
+
+src/components/log/AuteurToolkit.tsx — the autopsy notches are an 18pt film-strip track lifted to 44 by a halo. Reaching 48 by geometry would nearly triple the gauge and destroy what it imitates: a design decision about the instrument, not a defect, and the one control on the page the rule is knowingly not applied to.
+src/components/NitrateCalendar.tsx /^[A-Z][a-z]+ \d+, \d{4}$/ — a month is seven columns: in the room the composer gives it, a day is 42 to 46pt WIDE on the narrowest phones (7 × 48 = 336 does not fit). Each is 48 tall, the row is flush, and no day claims a halo, so no neighbour reaches into another; a calendar with fewer columns is not a calendar.
+src/components/log/LogForm.tsx /^Watched with @/ — the @handle suggestions are inline text links inside a wrapping line. Both platforms carve inline links out of the minimum rather than excusing them, and a 48pt box per handle would break the line it belongs to.

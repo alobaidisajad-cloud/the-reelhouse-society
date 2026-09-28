@@ -12,7 +12,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 import { LOCAL_ART, POSTERS as REPO_POSTERS } from '../../../src/components/profile/__tests__/zz-art.gen';
-import { FIXTURES } from '../../paths';
+import { FIXTURES, HEIGHT_AT } from '../../paths';
 
 import { PaperPost as RawPaperPost, type PaperAuthor } from '@/src/components/dispatch/paper/PaperPost';
 import { PaperBallot as RawPaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
@@ -105,7 +105,7 @@ jest.mock('react-native-safe-area-context', () => {
   const R = require('react');
   const { View: V } = require('react-native');
   return {
-    SafeAreaProvider: ({ children }: any) => R.createElement(V, null, children),
+    SafeAreaProvider: ({ children, style }: any) => R.createElement(V, { style: [{ flex: 1 }, style] }, children),
     useSafeAreaInsets: () => ({ top: 59, bottom: 34, left: 0, right: 0 }),
     useSafeAreaFrame: () => ({ x: 0, y: 0, ...require('@/mockups/paths').PHONE }),
   };
@@ -1477,8 +1477,12 @@ add('t8-se-series', (
   </View>
 ));
 
+// The desk is a screen: `flex: 1` all the way down. In a frame with no height
+// the phone would give it none (Yoga lets a `flex: 1` box in a content-sized
+// frame collapse to its padding); the browser hid that by sizing to content.
+// It is drawn in an SE's own screen, 320 × 568 (yoga-parity found it).
 add('t9-se-desk', (
-  <View style={{ width: SE }}>
+  <View style={{ width: SE, height: HEIGHT_AT[SE] }}>
     <PaperComposer kind="wire" me={LONGNAME} hour="21:40" remaining={40}
       source="Sight & Sound, the 2032 poll" ready
       body="The poll has been redone and the top ten has changed for the first time in a decade." />

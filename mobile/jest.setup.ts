@@ -74,6 +74,13 @@ if (!RN.AccessibilityInfo?.announceForAccessibility) {
 // Every prop is spread onto the host view, because suites assert on what the
 // list RECEIVED (keyboardShouldPersistTaps, onScroll, estimatedItemSize). The
 // ref carries the scroll methods callers use, as no-ops.
+//
+// The host is a ScrollView, because FlashList is one: it grows to fill its
+// screen and lays its rows out with no height limit, and `contentContainerStyle`
+// wraps them. Drawn as a plain View, a captured list screen collapsed every
+// `flex: 1` row inside it under Yoga, the phone's layout — a page no phone draws
+// (mockups/tools/yoga-parity.cjs found it; mockups/tabs/flashListMock.tsx, the
+// design generators' own stand-in, is a ScrollView for the same reason).
 jest.mock('@shopify/flash-list', () => {
   const RNActual = jest.requireActual('react-native');
   const ReactActual = jest.requireActual('react');
@@ -94,17 +101,25 @@ jest.mock('@shopify/flash-list', () => {
       typeof C === 'function' ? ReactActual.createElement(C as never) : (C ?? null);
 
     const rows = Array.isArray(data) ? data : [];
+    // The separator goes BETWEEN rows, as FlashList draws it — a shelf spaced
+    // by one was drawn flush without it, and its cards measured as overlapping.
+    const Separator = (rest as { ItemSeparatorComponent?: unknown }).ItemSeparatorComponent;
     const body = rows.length === 0
       ? node(ListEmptyComponent)
-      : rows.map((item: unknown, index: number) =>
-          ReactActual.createElement(
+      : rows.flatMap((item: unknown, index: number) => {
+          const key = typeof keyExtractor === 'function' ? keyExtractor(item, index) : String(index);
+          const row = ReactActual.createElement(
             RNActual.View,
-            { key: typeof keyExtractor === 'function' ? keyExtractor(item, index) : String(index) },
+            { key },
             typeof renderItem === 'function' ? renderItem({ item, index, target: 'Cell' }) : null,
-          ));
+          );
+          return Separator && index < rows.length - 1
+            ? [row, ReactActual.createElement(Separator as never, { key: `${key}-separator` })]
+            : [row];
+        });
 
     return ReactActual.createElement(
-      RNActual.View,
+      RNActual.ScrollView,
       { ...rest, data, testID: (rest as { testID?: string }).testID },
       node(ListHeaderComponent),
       body,
@@ -677,11 +692,15 @@ jest.mock('expo-notifications', () => ({
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock react-native-safe-area-context
 // ─────────────────────────────────────────────────────────────────────────────
+// The provider is `flex: 1`, as the real one is (its `styles.fill`). A bare View
+// here collapsed every `flex: 1` screen inside it to nothing under Yoga — the
+// phone's layout — so a captured screen measured a page no phone draws
+// (mockups/tools/yoga-parity.cjs found it).
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const { View } = require('react-native');
   return {
-    SafeAreaProvider: ({ children }: any) => React.createElement(View, null, children),
+    SafeAreaProvider: ({ children, style }: any) => React.createElement(View, { style: [{ flex: 1 }, style] }, children),
     SafeAreaView: ({ children, ...props }: any) => React.createElement(View, props, children),
     useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
     useSafeAreaFrame: () => ({ x: 0, y: 0, width: 375, height: 812 }),
@@ -713,6 +732,37 @@ jest.spyOn(RNDimensions, 'get').mockImplementation((...args: unknown[]) => ({
   ...(process.env.MOCKUPS_CAPTURE ? require('./mockups/paths').PHONE : null),
   fontScale: 1,
 }));
+
+// A drawing run also records WHERE each control and each text was written
+// (mockups/srcMark.ts), so the checks in mockups/tools/layout.cjs can name the
+// source line of what they measured, and an exception can name the file it
+// excuses. Capture and generator runs only: an ordinary test run sees the real
+// components.
+if (process.env.MOCKUPS_CAPTURE || process.env.MOCKUPS) {
+  // React records those stacks for only the first 10,000 elements, and resets
+  // the count only when a second has passed since the last reset. Tests render
+  // faster than that, so past the first few states of a file every control
+  // lost its site — the composer's last three drawings carried none. Drawing
+  // runs pin the count at zero: every element keeps its stack, at a cost only
+  // they pay.
+  const internals = (require('react') as Record<string, Record<string, unknown>>)
+    .__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+  if (internals && 'recentlyCreatedOwnerStacks' in internals) {
+    Object.defineProperty(internals, 'recentlyCreatedOwnerStacks', { get: () => 0, set: () => {}, configurable: true });
+  }
+  jest.mock('@/src/components/PressableScale', () => ({
+    __esModule: true,
+    default: require('./mockups/srcMark').markSource(
+      jest.requireActual('@/src/components/PressableScale').default, /PressableScale\.tsx$/, 'PressableScale'),
+  }));
+  jest.mock('@/src/components/text', () => {
+    const actual = jest.requireActual('@/src/components/text');
+    return {
+      ...actual,
+      Text: require('./mockups/srcMark').markSource(actual.Text, /components[\\/]text[\\/]index\.tsx$/, 'Text'),
+    };
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Silence console.warn for tests (noisy reanimated/navigation warnings)

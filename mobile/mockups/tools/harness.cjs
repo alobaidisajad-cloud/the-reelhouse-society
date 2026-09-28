@@ -67,10 +67,16 @@ function fonts() {
  *     it whole). Not a box with a width of its own — Yoga lets that overflow,
  *     and so must this — nor one placed absolutely. The lib writes each box's
  *     style as `position:relative;…;width:Npx;…`, so `;width:` is its own width
- *     and never `min-width` or `border-width`.
+ *     and never `min-width` or `border-width`. "The column's width" is less the
+ *     box's own side margins, which the lib writes as `--mx`: a rule pulled
+ *     out to both edges by `marginHorizontal: -16` is 32pt WIDER than its
+ *     column on the phone, and a cap of 100% held it in (yoga-parity found it).
+ *     `--mx` does not inherit, so a box without margins never takes its
+ *     parent's.
  */
-const RN_RULES = '*,*::before,*::after{box-sizing:border-box}span[data-scale-cap]{max-width:100%}'
-  + 'div[style*="flex-direction:column"]>div:not([style*=";width:"]):not([style^="width:"]):not([style*="position:absolute"]){max-width:100%}';
+const RN_RULES = '@property --mx{syntax:"<length>";inherits:false;initial-value:0px}'
+  + '*,*::before,*::after{box-sizing:border-box}span[data-scale-cap]{max-width:100%}'
+  + 'div[style*="flex-direction:column"]>div:not([style*=";width:"]):not([style^="width:"]):not([style*="position:absolute"]){max-width:calc(100% - var(--mx))}';
 
 /**
  * Every render in a folder, by name. A `<name>@<size>.html` is not a screen of
@@ -91,9 +97,10 @@ function screens(dir, only) {
  *   android  size:              × min(f, cap)       TextAttributeProps.setFontSize
  *            line height:       × f, NO ceiling      TextAttributeProps.setLineHeight
  *            letter spacing:    × f, NO ceiling      TextAttributeProps.getLetterSpacing
- *                               — which the app undoes: AccessibilityProvider
- *                               hands Android spacing ÷ f (androidTracking.ts),
- *                               so it is drawn as iOS draws it, and is here.
+ *                               — which the app undoes: its Text wrapper
+ *                               (src/components/text) hands Android spacing ÷ f
+ *                               (androidTracking.ts), so it is drawn as iOS
+ *                               draws it, and is here.
  *
  * Android's ceiling-less line height is why it has its own pass: at its
  * largest setting (2×) a text is 1.35× its size on a line 2× as tall. Android
@@ -129,7 +136,12 @@ async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH
   const html = fs.readFileSync(sized || file, 'utf8');
   await page.setContent(
     `<!doctype html><html><head><meta charset="utf-8"><style>${fonts()}${RN_RULES}</style></head>` +
-    `<body style="margin:0;background:${HOUSE}"><div class="phone" style="width:${width}px;min-height:${height}px;position:relative;background:${HOUSE}">${html}</div></body></html>`,
+    // The phone is a window of exactly its height that lays its screen out as a
+    // flex column, as React Native's root view does — so a screen's `flex: 1`
+    // fills it (the tab bar floats over the screen; it takes no height). It was
+    // a MINIMUM height and not a flex box: a screen filled only as far as its
+    // content, and everything pinned to its edges pinned to the wrong place.
+    `<body style="margin:0;background:${HOUSE}"><div class="phone" style="width:${width}px;height:${height}px;position:relative;display:flex;flex-direction:column;background:${HOUSE}">${html}</div></body></html>`,
     { waitUntil: 'load' },
   );
   await page.evaluate(() => document.fonts.ready);

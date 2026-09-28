@@ -1,0 +1,71 @@
+# Every source file whose controls are MEASURED against a neighbour on a drawn
+# screen (mockups/tools/layout.cjs --require; the CI capture job).
+#
+# A file here has at least one PressableScale that stood within 30pt of another
+# control in some test's or generator's render, so a touch-area overlap there
+# (STEAL) would have been seen. If a file drops out, the run FAILS: a test
+# stopped drawing a control beside its neighbour, and the check stopped
+# happening without anyone deciding it should.
+#
+# stackedRowHitSlop.test.ts reads hitSlop out of source ONLY for the files that
+# no render measures; the ones that moved here are listed in that test and
+# held to this file.
+#
+# Regenerate: the capture run's --sites output, lines stripped (mockups/README.md §5).
+app/dispatch/compose.tsx
+app/log/[id].tsx
+app/stacks/[id].tsx
+app/user/[username].tsx
+src/components/darkroom/DarkroomCards.tsx
+src/components/darkroom/DarkroomMoodBar.tsx
+src/components/dispatch/paper/PaperBallot.tsx
+src/components/dispatch/paper/PaperComposer.tsx
+src/components/dispatch/paper/PaperCritiques.tsx
+src/components/dispatch/paper/PaperDesk.tsx
+src/components/dispatch/paper/PaperEssay.tsx
+src/components/dispatch/paper/PaperFrame.tsx
+src/components/dispatch/paper/PaperMore.tsx
+src/components/dispatch/paper/PaperPost.tsx
+src/components/feed/ActionDeck.tsx
+src/components/feed/ActivityCard.tsx
+src/components/feed/PosterFrame.tsx
+src/components/feed/ReviewContent.tsx
+src/components/feed/UserAttributionRow.tsx
+src/components/film/CastCarousel.tsx
+src/components/film/FilmActionTray.tsx
+src/components/film/FilmMediaCarousel.tsx
+src/components/film/FilmSimilar.tsx
+src/components/home/FeaturedCritique.tsx
+src/components/home/FilmStripRow.tsx
+src/components/home/PulseCardItem.tsx
+src/components/layout/ConciergeButton.tsx
+src/components/log/AuteurToolkit.tsx
+src/components/log/EditorialDesk.tsx
+src/components/log/LogActionDeck.tsx
+src/components/log/LogClearanceGate.tsx
+src/components/log/LogForm.tsx
+src/components/log/LogHero.tsx
+src/components/log/LogIndexEntry.tsx
+src/components/log/LogSearchEngine.tsx
+src/components/log/NoteSheet.tsx
+src/components/lounge/JoinedLoungeCard.tsx
+src/components/moderation/ContentActionSheet.tsx
+src/components/moderation/ReportSheet.tsx
+src/components/person/PersonDefining.tsx
+src/components/person/PersonFilmography.tsx
+src/components/profile/Achievements.tsx
+src/components/profile/ProfileHelpers.tsx
+src/components/profile/ProfileLedgerTab.tsx
+src/components/profile/ProfileListsTab.tsx
+src/components/profile/ProfilePhysicalTab.tsx
+src/components/profile/ProfilePosterCard.tsx
+src/components/profile/ProfileTriptych.tsx
+src/components/profile/ProfileWatchlistTab.tsx
+src/components/profile/RoomParts.tsx
+src/components/reels/ReelsCards.tsx
+src/components/reels/ReelsHeader.tsx
+src/components/society/BillingSwitch.tsx
+src/components/society/RankTicket.tsx
+src/components/society/SmallPrint.tsx
+src/features/settings/DataVault.tsx
+src/features/settings/SettingsSections.tsx

@@ -139,22 +139,190 @@ describe('6 — a border that actually draws, on the sides it was asked for', ()
   });
 });
 
+describe('6b — a border of a fraction of a point keeps its true width', () => {
+  // A browser snaps borders to whole pixels (0.5 → 1, 1.5 → 1). The phone does
+  // not: its layout has the exact width. So the side is laid out as padding
+  // and drawn as an inset shadow of the same width and colour.
+  it('lays a hairline out as padding of its exact width, added to the padding there', () => {
+    const o = css({ borderTopWidth: 0.5, borderTopColor: '#b8891a', paddingTop: 6 }, false);
+    expect(wins(o, 'padding-top')).toBe('padding-top:6.5px');
+    expect(wins(o, 'border-top-width')).toBe('border-top-width:0px');
+    expect(wins(o, 'box-shadow')).toBe('box-shadow:inset 0px 0.5px 0 0 #b8891a');
+  });
+
+  it('draws each side on its own edge, and keeps the box\'s own shadow under them', () => {
+    const o = css({ borderWidth: 1.5, borderColor: 'red', boxShadow: 'inset 0px 1px 0px 0px white' }, false);
+    expect(wins(o, 'box-shadow')).toBe('box-shadow:inset 0px 1.5px 0 0 red, inset -1.5px 0px 0 0 red, '
+      + 'inset 0px -1.5px 0 0 red, inset 1.5px 0px 0 0 red, inset 0px 1px 0px 0px white');
+  });
+
+  it('leaves a whole-point border, and a dashed one, as a real border', () => {
+    expect(wins(css({ borderBottomWidth: 1 }, false), 'border-bottom-width')).toBe('border-bottom-width:1px');
+    expect(wins(css({ borderTopWidth: 0.5, borderStyle: 'dashed' }, false), 'border-top-width')).toBe('border-top-width:0.5px');
+  });
+
+  it('moves an absolute child in by its parent\'s thin border, where the phone puts it', () => {
+    const html = toHtml({ type: 'View', props: { style: { height: 28, borderTopWidth: 0.5, borderBottomWidth: 0.5 } }, children: [
+      { type: 'View', props: { style: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 } }, children: [] },
+    ] });
+    const child = /<div[^>]*><div[^>]* style="([^"]*)"/.exec(html)![1];
+    expect([wins(child, 'top'), wins(child, 'bottom'), wins(child, 'left')]).toEqual(['top:0.5px', 'bottom:0.5px', 'left:0px']);
+  });
+});
+
+describe('6d — an absolute box lands where Yoga puts it', () => {
+  // The first child's own style, inside a parent with the given style.
+  const placed = (parent: Record<string, unknown>, child: Record<string, unknown>) =>
+    /<div[^>]*><div[^>]* style="([^"]*)"/.exec(toHtml({ type: 'View', props: { style: parent }, children: [
+      { type: 'View', props: { style: { position: 'absolute', ...child } }, children: [] },
+    ] }))![1];
+
+  it('takes a percentage of the parent LESS its padding (errata AbsolutePercentAgainstInnerSize)', () => {
+    // 48% of (49 − 22.5 padding) = 12.72, not 48% of 49 = 23.52 — the film page's shade.
+    const o = placed({ height: 49, paddingTop: 10, paddingBottom: 12.5 }, { top: 0, left: 0, height: '48%' });
+    expect(wins(o, 'height')).toBe('height:calc(48% - 10.8px)');
+  });
+
+  it('places an axis with no inset at the parent\'s BORDER, not its padding', () => {
+    const o = placed({ padding: 20 }, { width: 5, height: 10 });
+    expect([wins(o, 'left'), wins(o, 'top')]).toEqual(['left:0px', 'top:0px']);
+  });
+
+  it('by the parent\'s justifyContent on the main axis and alignItems on the cross', () => {
+    const o = placed({ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', padding: 20 }, { width: 10, height: 6 });
+    expect(wins(o, 'right')).toBe('right:0px');
+    expect(wins(o, 'top')).toBe('top:calc(50% - 3px)');
+  });
+
+  it('and leaves an axis that has an inset alone', () => {
+    const o = placed({ padding: 20 }, { right: 4, width: 5 });
+    expect(wins(o, 'right')).toBe('right:4px');
+    expect(wins(o, 'left')).toBeNull();
+  });
+});
+
+describe('6e — the keys that were dropped without a word', () => {
+  it('writes a box\'s side margins, which the harness takes off its column\'s width', () => {
+    // A rule pulled to both edges by marginHorizontal: -16 is 32pt WIDER than its column.
+    expect(wins(css({ marginHorizontal: -16 }, false), '--mx')).toBe('--mx:-32px');
+    expect(wins(css({ marginLeft: 10, marginRight: 6 }, false), '--mx')).toBe('--mx:16px');
+    expect(wins(css({}, false), '--mx')).toBeNull();
+  });
+
+  it('sets a wrapping box\'s lines at the top, as React Native does, unless told otherwise', () => {
+    expect(wins(css({ flexWrap: 'wrap' }, false), 'align-content')).toBe('align-content:flex-start');
+    expect(wins(css({ flexWrap: 'wrap', alignContent: 'center' }, false), 'align-content')).toBe('align-content:center');
+  });
+
+  it('underlines, turns from its origin, and fits an image as its style says', () => {
+    expect(wins(css({ textDecorationLine: 'underline' }, true), 'text-decoration-line')).toBe('text-decoration-line:underline');
+    expect(wins(css({ transformOrigin: 'top left' }, false), 'transform-origin')).toBe('transform-origin:top left');
+    expect(wins(css({ transformOrigin: [0, 10, 0] }, false), 'transform-origin')).toBe('transform-origin:0px 10px 0px');
+    expect(wins(css({ resizeMode: 'stretch' }, false), 'object-fit')).toBe('object-fit:fill');
+    expect(wins(css({ flexBasis: 40 }, false), 'flex-basis')).toBe('flex-basis:40px');
+  });
+
+  it('paints a tinted image in its tint, through the image as a mask', () => {
+    const html = toHtml({ type: 'Image', props: { source: { testUri: 'seal.png' }, style: { width: 20, height: 20, tintColor: '#b8891a' } } },
+      { local: { 'seal.png': 'data:image/png;base64,AAAA' } });
+    expect(html).toContain('background-color:#b8891a');
+    expect(html).toContain('mask:url(data:image/png;base64,AAAA) center/contain no-repeat');
+  });
+});
+
+describe('6f — a modal is a window of its own', () => {
+  const page = toHtml({ type: 'View', props: { style: { padding: 30 } }, children: [
+    { type: 'Text', props: {}, children: ['under'] },
+    { type: 'Modal', props: { transparent: true }, children: [{ type: 'View', props: { style: { flex: 1 } }, children: [] }] },
+  ] });
+
+  it('is lifted out of the page and drawn after it, over the whole phone', () => {
+    const [body, layer] = page.split('<div data-t="modal"');
+    expect(body).not.toContain('flex:1 0 0%'); // the sheet is no longer inline
+    expect(layer).toMatch(/^[^>]*style="[^"]*position:absolute;left:0px;right:0px;top:0px;bottom:0px/);
+  });
+
+  it('holds its content in a flex: 1 container, clear when transparent and white when not', () => {
+    expect(page).toContain('background-color:transparent');
+    const opaque = toHtml({ type: 'Modal', props: {}, children: [] });
+    expect(opaque).toContain('background-color:white');
+  });
+});
+
+describe('6g — a control is marked with the area it answers touches in', () => {
+  const press = (props: Record<string, unknown>) =>
+    /data-press="([^"]*)"/.exec(toHtml({ type: 'View', props: { onClick: () => {}, ...props }, children: [] }))?.[1] ?? null;
+
+  it('carries its hitSlop per side (top, right, bottom, left)', () => {
+    expect(press({ hitSlop: { top: 10, bottom: 4, left: 15, right: 15 } })).toBe('10,15,4,15');
+    expect(press({ hitSlop: 8 })).toBe('8,8,8,8');
+    expect(press({})).toBe('0,0,0,0');
+  });
+
+  it('marks nothing that cannot be pressed — or is disabled', () => {
+    expect(/data-press/.test(toHtml({ type: 'View', props: {}, children: [] }))).toBe(false);
+    expect(press({ accessibilityState: { disabled: true } })).toBeNull();
+  });
+});
+
+describe('6h — a control carries the line of source that made it', () => {
+  // jest.setup.ts wraps PressableScale in a SrcMark (capture and generator
+  // runs). It is not a box: the control is drawn exactly as without it.
+  const control = { type: 'View', props: { onClick: () => {}, style: { width: 40, height: 40 } }, children: [] };
+
+  it('writes the site onto the control and adds nothing else', () => {
+    const bare = toHtml(control);
+    const marked = toHtml({ type: 'SrcMark', props: { src: 'src/components/x/Y.tsx:12' }, children: [control] });
+    expect(marked).toBe(bare.replace(/^<div/, '<div data-src="src/components/x/Y.tsx:12"'));
+  });
+
+  it('draws the control untouched when no site was found', () => {
+    expect(toHtml({ type: 'SrcMark', props: {}, children: [control] })).toBe(toHtml(control));
+  });
+});
+
+describe('6c — a scroll view grows, and a horizontal one is a row', () => {
+  // ScrollView's own base style (flexGrow 1, flexShrink 1, a row when
+  // horizontal) is not on Jest's host element; the phone has it.
+  const scroll = (props: Record<string, unknown>) => /class="[hv]scroll"[^>]* style="([^"]*)"/.exec(
+    toHtml({ type: 'RCTScrollView', props, children: [{ type: 'View', props: {}, children: [] }] }))![1];
+
+  it('gives both kinds flexGrow 1 and flexShrink 1', () => {
+    for (const horizontal of [false, true]) {
+      const o = scroll({ horizontal, style: {} });
+      expect([wins(o, 'flex-grow'), wins(o, 'flex-shrink')]).toEqual(['flex-grow:1', 'flex-shrink:1']);
+    }
+  });
+
+  it('lays a horizontal one out as a row, a vertical one as a column', () => {
+    expect(wins(scroll({ horizontal: true, style: {} }), 'flex-direction')).toBe('flex-direction:row');
+    expect(wins(scroll({ style: {} }), 'flex-direction')).toBe('flex-direction:column');
+  });
+
+  it('lets the screen\'s own grow and shrink win, as the phone does', () => {
+    const o = scroll({ style: { flexGrow: 0, flexShrink: 0 } });
+    expect([wins(o, 'flex-grow'), wins(o, 'flex-shrink')]).toEqual(['flex-grow:0', 'flex-shrink:0']);
+  });
+});
+
 describe('7 — flex means opposite things in the two languages', () => {
   it('RN `flex: 0` sizes to content; CSS `flex: 0` collapses it', () => {
     // Lucide sets flex:0 on EVERY icon. Passing it through measured 16x0.
     expect(wins(css({ flex: 0 }, false), 'flex')).toBe('flex:0 0 auto');
   });
 
-  it('RN `flex: 1` fills, and needs the min-size unlocked to do it', () => {
+  it('RN `flex: 1` fills from a zero basis, never shrinks, and needs the min-size unlocked', () => {
+    // Yoga with RN's defaults: grow 1, shrink 0 (not the web's 1), basis 0.
     const o = css({ flex: 1 }, false);
-    expect(wins(o, 'flex')).toBe('flex:1 1 0%');
+    expect(wins(o, 'flex')).toBe('flex:1 0 0%');
     expect(has(o, 'min-width:0')).toBe(true);
     expect(has(o, 'min-height:0')).toBe(true);
   });
 
-  it('handles a weight above one, and RN\'s negative form', () => {
-    expect(wins(css({ flex: 2 }, false), 'flex')).toBe('flex:2 1 0%');
+  it('handles a weight above one, and RN\'s negative form (shrink by its size)', () => {
+    expect(wins(css({ flex: 2 }, false), 'flex')).toBe('flex:2 0 0%');
     expect(wins(css({ flex: -1 }, false), 'flex')).toBe('flex:0 1 auto');
+    expect(wins(css({ flex: -2 }, false), 'flex')).toBe('flex:0 2 auto');
   });
 });
 
@@ -169,6 +337,12 @@ describe('7b — a box that may shrink goes as far as Yoga lets it', () => {
     }
     // a shrinking TEXT too: the phone ellipsises it rather than letting it push
     expect(wins(css({ flexShrink: 1 }, true), 'min-width')).toBe('min-width:0');
+  });
+
+  it('a box with an aspect ratio holds it, whatever is inside', () => {
+    // CSS's automatic minimum let a poster's image stretch its 2:3 frame taller.
+    const o = css({ width: 322, aspectRatio: 2 / 3 }, false);
+    expect([wins(o, 'min-width'), wins(o, 'min-height')]).toEqual(['min-width:0', 'min-height:0']);
   });
 
   it('a box that does not shrink keeps CSS\'s floor', () => {

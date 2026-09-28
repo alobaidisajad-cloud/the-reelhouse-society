@@ -16,15 +16,18 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 
 // The Modal is stood in for so the Concierge sheet's contents are reachable —
 // React Native's Modal is a composite and RNTL v14 only walks host elements.
+// The stand-in is a host named `Modal`, so a captured drawing puts the sheet on
+// a layer of its own over the bar, as the phone does, not inline beside it.
 const mockModal: { props: Record<string, any> } = { props: {} };
 jest.mock('react-native/Libraries/Modal/Modal', () => {
   const ReactLocal = require('react');
-  const ViewLocal = require('react-native/Libraries/Components/View/View').default;
   return {
     __esModule: true,
     default: (props: Record<string, any>) => {
       mockModal.props = props;
-      return props.visible ? ReactLocal.createElement(ViewLocal, null, props.children) : null;
+      return props.visible
+        ? ReactLocal.createElement('Modal', { transparent: props.transparent }, props.children)
+        : null;
     },
   };
 });

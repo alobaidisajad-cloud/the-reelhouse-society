@@ -64,12 +64,18 @@ export function makeFlashListMock() {
       ),
       footer ? React.createElement(View, { key: 'f', style: full }, footer) : null,
     );
-    // A horizontal list is a SCROLLER on the phone: rendered as one, so the
-    // design renderer marks it a rail and a measurement knows its far cards are
-    // reached by swiping, not cut off at the screen's edge.
+    // FlashList IS a scroll view, either way round, and is drawn as one. A
+    // horizontal list, so the design renderer marks it a rail and a measurement
+    // knows its far cards are reached by swiping, not cut off at the screen's
+    // edge. A vertical one because a scroll view lays its content out with no
+    // height limit — drawn as a plain View inside a screen of fixed height,
+    // Yoga gave each `flex: 1` cell of the Darkroom's grid its padding alone
+    // (8pt, the poster spilling out), where the real list's cells are the
+    // poster's height (mockups/tools/yoga-parity.cjs found it). Its own grow
+    // and shrink come from the scroll view, as on the phone.
     return props.horizontal
       ? React.createElement(ScrollView, { ref, horizontal: true, style: props.style, showsHorizontalScrollIndicator: false }, content)
-      : React.createElement(View, { ref, style: props.style }, content);
+      : React.createElement(ScrollView, { ref, style: props.style, showsVerticalScrollIndicator: false }, content);
   });
   return { FlashList: Mocked, FlashListProps: {} };
 }

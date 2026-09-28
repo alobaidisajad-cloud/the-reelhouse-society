@@ -48,15 +48,15 @@ const PX = new Set([
   'borderTopWidth', 'borderBottomWidth', 'borderLeftWidth', 'borderRightWidth',
   'borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius',
   'borderBottomRightRadius', 'fontSize', 'lineHeight', 'letterSpacing',
-  'gap', 'rowGap', 'columnGap',
+  'gap', 'rowGap', 'columnGap', 'flexBasis',
 ]);
 const DIRECT = new Set([
   'color', 'backgroundColor', 'opacity', 'borderColor', 'borderTopColor',
   'borderBottomColor', 'borderLeftColor', 'borderRightColor', 'textAlign',
   'fontWeight', 'fontStyle', 'position', 'zIndex', 'overflow', 'flex',
-  'flexDirection', 'alignItems', 'justifyContent', 'flexWrap', 'alignSelf',
+  'flexDirection', 'alignItems', 'alignContent', 'justifyContent', 'flexWrap', 'alignSelf',
   'textTransform', 'flexGrow', 'flexShrink', 'aspectRatio', 'writingDirection',
-  'borderStyle',
+  'borderStyle', 'display', 'textDecorationLine', 'textDecorationColor', 'textDecorationStyle',
 ]);
 
 const FONT_MAP: Record<string, string> = {
@@ -123,6 +123,8 @@ const BOX: [string, string[]][] = [
   ['marginVertical', ['marginTop', 'marginBottom']],
   ['paddingStart', ['paddingLeft']], ['paddingEnd', ['paddingRight']],
   ['marginStart', ['marginLeft']], ['marginEnd', ['marginRight']],
+  // The app is laid out left to right, so `start`/`end` are left and right.
+  ['start', ['left']], ['end', ['right']],
   ['borderRadius', ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius', 'borderBottomRightRadius']],
   ['borderWidth', ['borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth']],
   ['borderColor', ['borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor']],
@@ -138,6 +140,24 @@ export function expandBox(style: Record<string, unknown>): Record<string, unknow
     for (const side of sides) if (!(side in style)) st[side] = v;
   }
   return st;
+}
+
+type Side = 'Top' | 'Right' | 'Bottom' | 'Left';
+
+/**
+ * The sides of a box whose border a browser cannot lay out at its true width
+ * (not a whole number of points), with those widths — see point 5 in `css`.
+ * A dashed or dotted border is left alone: it keeps a real, rounded border.
+ */
+export function thinSides(raw: Record<string, unknown>): Partial<Record<Side, number>> {
+  const st = expandBox(raw);
+  const out: Partial<Record<Side, number>> = {};
+  if (st.borderStyle === 'dashed' || st.borderStyle === 'dotted') return out;
+  for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) {
+    const w = st[`border${side}Width`];
+    if (typeof w === 'number' && w > 0 && !Number.isInteger(w) && typeof (st[`padding${side}`] ?? 0) === 'number') out[side] = w;
+  }
+  return out;
 }
 
 export function css(raw: Record<string, unknown>, isText: boolean): string {
@@ -207,7 +227,36 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
     if (Object.keys(st).some((k) => /^border(Top|Right|Bottom|Left)?Width$/.test(k))) {
       out.push('border-style:solid', 'border-width:0');
     }
-    out.push('display:flex', `flex-direction:${(st.flexDirection as string) || 'column'}`);
+    /**
+     * 5. a border that is not a whole number of points. A browser snaps every
+     *    border to whole pixels — a 0.5pt hairline UP to 1, a 1.5pt frame DOWN
+     *    to 1, at any pixel density — so a screen of ruled rows grew points
+     *    taller than the phone lays it (mockups/tools/yoga-parity.cjs found it:
+     *    the Lobby's ticker, its inside 26pt here and 27pt on the phone). So
+     *    such a side is laid out as padding of its exact width, and drawn as an
+     *    inset shadow of the same width and colour, where the border would be.
+     *    A dashed or dotted line keeps its real border; a shadow cannot dash.
+     */
+    const lines = Object.entries(thinSides(st)) as [Side, number][];
+    if (lines.length) {
+      const shadows: string[] = [];
+      for (const [side, w] of lines) {
+        st[`padding${side}`] = ((st[`padding${side}`] as number | undefined) ?? 0) + w;
+        st[`border${side}Width`] = 0;
+        const colour = (st[`border${side}Color`] as string | undefined) ?? 'black';
+        const [x, y] = side === 'Top' ? [0, w] : side === 'Bottom' ? [0, -w] : side === 'Left' ? [w, 0] : [-w, 0];
+        shadows.push(`inset ${x}px ${y}px 0 0 ${colour}`);
+      }
+      st.boxShadow = [shadows.join(', '), typeof st.boxShadow === 'string' ? st.boxShadow : ''].filter(Boolean).join(', ');
+    }
+    // RN's alignContent defaults to flex-start; CSS's (`normal`) stretches the
+    // lines of a wrapping box, centring a single line in a min-height row that
+    // the phone sets at the top (yoga-parity found it). The style's own wins.
+    out.push('display:flex', `flex-direction:${(st.flexDirection as string) || 'column'}`, 'align-content:flex-start');
+    // Its side margins, which the harness takes off the column's width when it
+    // holds a box to that width (see RN_RULES in mockups/tools/harness.cjs).
+    const mx = [st.marginLeft, st.marginRight].reduce<number>((a, m) => a + (typeof m === 'number' ? m : 0), 0);
+    if (mx) out.push(`--mx:${mx}px`);
   }
 
   // Shadows were dropped entirely by the first version, and this app leans on
@@ -248,16 +297,23 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
 
   /**
    * ── A BOX THAT MAY SHRINK, SHRINKS AS FAR AS YOGA LETS IT ─────────────────
-   * In Yoga a flex item that may shrink (flexShrink > 0, or any non-zero flex)
-   * has no automatic minimum: it goes down to its minWidth, which is 0 unless
-   * set. A browser stops it at its content (`min-width: auto`) — so a row of
-   * name, badge and time, where the phone shortens the name, was reported OFF
-   * at 320pt. Set here, BEFORE the style's own values, so a real minWidth or
-   * minHeight still wins (it used to be pushed later, and overrode them).
+   * In Yoga no flex item has an automatic minimum: one that may shrink
+   * (flexShrink > 0, or a negative flex) or is sized from a zero basis (a
+   * positive flex) goes down to its minWidth, which is 0 unless set. A browser
+   * stops it at its content (`min-width: auto`) — so a row of name, badge and
+   * time, where the phone shortens the name, was reported OFF at 320pt. Set
+   * here, BEFORE the style's own values, so a real minWidth or minHeight still
+   * wins (it used to be pushed later, and overrode them).
    */
   const shrinks = (typeof st.flexShrink === 'number' && st.flexShrink > 0)
     || (typeof st.flex === 'number' && st.flex !== 0);
-  if (shrinks) out.push('min-width:0', 'min-height:0');
+  /**
+   * Nor does a box with an aspect ratio grow to fit what is in it. CSS gives
+   * such a box an automatic minimum from its content, so a poster whose image
+   * is a hair taller than 2:3 pushed its 2:3 frame taller too — 0.36pt on an
+   * iPad, a row of three at a time (yoga-parity found it). Yoga holds the ratio.
+   */
+  if (shrinks || st.aspectRatio !== undefined) out.push('min-width:0', 'min-height:0');
 
   for (const [k, v] of Object.entries(st)) {
     if (v === undefined || v === null) continue;
@@ -276,13 +332,16 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
      * through verbatim gave every icon in the app a zero main size: present in
      * the document, correctly pathed, drawing nothing. Measured at 16x0.
      *
-     * RN's rules in full: positive n → grow n, shrink 1, basis 0%;
-     * 0 → grow 0, shrink 0, basis auto; negative → grow 0, shrink 1, basis auto.
+     * RN's rules in full, from its Yoga (Node::resolveFlexGrow/Shrink, with
+     * RN's non-web defaults): positive n → grow n, shrink 0, basis 0;
+     * 0 → grow 0, shrink 0, basis auto; negative → grow 0, shrink −n, basis
+     * auto. (This once wrote shrink 1 for a positive flex — the web's rule.
+     * With a basis of 0 the two lay out alike, but not beside a flexBasis.)
      */
     if (k === 'flex' && typeof v === 'number') {
-      if (v > 0) out.push(`flex:${v} 1 0%`);
+      if (v > 0) out.push(`flex:${v} 0 0%`);
       else if (v === 0) out.push('flex:0 0 auto');
-      else out.push('flex:0 1 auto');
+      else out.push(`flex:0 ${-v} auto`);
       continue;
     }
     if (k.startsWith('shadow') || k.startsWith('textShadow') || k === 'elevation') continue;
@@ -301,10 +360,48 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
       out.push(`transform:${t}`);
       continue;
     }
+    // Where a transform turns and scales from: a string passes as CSS writes
+    // it ('top left'); RN's array form is [x, y, z] in points.
+    if (k === 'transformOrigin') {
+      out.push(`transform-origin:${Array.isArray(v) ? v.map((x) => (typeof x === 'number' ? `${x}px` : x)).join(' ') : v}`);
+      continue;
+    }
+    // An image's fit, written in its style (Image's `resizeMode`).
+    if (k === 'resizeMode') {
+      out.push(`object-fit:${({ cover: 'cover', contain: 'contain', stretch: 'fill', center: 'none', repeat: 'none' } as Record<string, string>)[String(v)] ?? 'cover'}`);
+      continue;
+    }
     if (PX.has(k)) { out.push(`${kebab(k)}:${typeof v === 'number' ? v + 'px' : v}`); continue; }
     if (DIRECT.has(k)) { out.push(`${CSS_NAME[k] ?? kebab(k)}:${v}`); continue; }
+    if (!DRAWN_ELSEWHERE.has(k)) noteUnread(k);
   }
   return out.join(';');
+}
+
+/**
+ * Style keys the converter met and did not turn into CSS. `alignContent` and
+ * `flexBasis` were dropped this way without a word, and a dropped key is a
+ * drawing the phone does not make. With MOCKUPS_UNREAD=<file> set, each is
+ * written to that file as it is first met, so a run over every screen lists
+ * them all.
+ * DRAWN_ELSEWHERE: read by other code in this file, or with no effect on a
+ * still picture — and nothing else.
+ */
+const DRAWN_ELSEWHERE = new Set([
+  'boxShadow', 'experimental_backgroundImage', // above, in this function
+  'tintColor', // an image's: drawn by the image branch in toHtml
+  'includeFontPadding', // Android's extra line padding; every text here strips it
+  'pointerEvents', 'cursor', 'userSelect', // touch only
+  // NOT drawn, on purpose: where ANDROID sets a text inside a box taller than
+  // its lines (iOS ignores it and sets it at the top, as this does). No text in
+  // the app has a set height; one stretched by its row would differ on Android.
+  'textAlignVertical',
+]);
+const UNREAD = new Set<string>();
+function noteUnread(k: string): void {
+  if (UNREAD.has(k)) return;
+  UNREAD.add(k);
+  if (process.env.MOCKUPS_UNREAD) require('fs').appendFileSync(process.env.MOCKUPS_UNREAD, `${k}\n`);
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -440,11 +537,133 @@ export interface RenderOpts {
   posters?: Record<string, { title: string; data: string }>;
   /** file name -> data URI, for the app's own bundled images. */
   local?: Record<string, string>;
+  /** The parent's box, which its absolute children are placed in (see placeInside). */
+  within?: Frame;
+  /** Modals met on the way down, drawn after the render as layers over the phone. */
+  layers?: string[];
 }
 
 interface N { type?: string; props?: Record<string, unknown>; children?: unknown[] }
 
+/**
+ * What a box's absolute children are placed by: its thin border sides (see
+ * `thinSides`), its numeric padding per side, and how it lays out.
+ */
+interface Frame {
+  edge: Partial<Record<Side, number>>;
+  pad: Partial<Record<Side, number>>;
+  dir: string; justify: string; align: string; wrapReverse: boolean;
+}
+
+function frameOf(raw: Record<string, unknown>): Frame {
+  const st = expandBox(raw);
+  const pad: Frame['pad'] = {};
+  for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) {
+    const v = st[`padding${side}`];
+    if (typeof v === 'number' && v) pad[side] = v;
+  }
+  return {
+    edge: thinSides(raw), pad,
+    dir: String(st.flexDirection ?? 'column'),
+    justify: String(st.justifyContent ?? 'flex-start'),
+    align: String(st.alignItems ?? 'stretch'),
+    wrapReverse: st.flexWrap === 'wrap-reverse',
+  };
+}
+
+/**
+ * Where Yoga puts an absolute box along an axis on which it has NO inset —
+ * by the parent's justifyContent (main axis) or the child's alignment (cross
+ * axis), read from React Native 0.81's Yoga (AbsoluteLayout.cpp). Measured
+ * from the parent's BORDER, not its padding: RN keeps the errata
+ * AbsolutePositionWithoutInsetsExcludesPadding on. A browser puts such a box
+ * where it would sit in the flow, inside the padding — the Dispatch's scroll
+ * thumb was 23.8pt off.
+ */
+function unplacedAt(frame: Frame, st: Record<string, unknown>, main: boolean): 'start' | 'end' | 'center' {
+  if (main) {
+    const j = frame.justify;
+    return j === 'flex-end' ? 'end' : j === 'center' || j === 'space-around' || j === 'space-evenly' ? 'center' : 'start';
+  }
+  const own = typeof st.alignSelf === 'string' && st.alignSelf !== 'auto' ? st.alignSelf : frame.align;
+  let a: string = own === 'flex-end' ? 'end' : own === 'center' ? 'center' : 'start';
+  if (frame.wrapReverse) a = a === 'end' ? 'start' : a === 'center' ? 'center' : 'end';
+  return a as 'start' | 'end' | 'center';
+}
+
+/**
+ * Where the browser must be told to put an absolutely placed box, so that it
+ * lands where React Native's Yoga puts it. Two differences, both measured by
+ * mockups/tools/yoga-parity.cjs:
+ *
+ *   · Its insets are measured from the parent's border — and `css` draws a
+ *     thin border as padding (point 5 there), so the browser would measure
+ *     from the border's OUTER edge: a child pinned `top: 0` sat on the line.
+ *     Each inset is moved in by that side's thin border.
+ *   · A PERCENTAGE — of its size or of an inset — is of the parent's INNER
+ *     size in React Native (Yoga's errata AbsolutePercentAgainstInnerSize,
+ *     which RN keeps on): the parent less its padding and borders. A browser
+ *     takes it of the size less the borders alone. The film page's 48%-high
+ *     shade was 23.5pt here and 12.7pt on the phone. So the padding, and the
+ *     thin border drawn as padding, come off the base. (Strictly, Yoga takes
+ *     it of the space the parent was OFFERED, which is its size unless the
+ *     parent sizes to its content inside one that does not stretch it — a
+ *     case a browser cannot follow, and yoga-parity reports.)
+ */
+function placeInside(st: Record<string, unknown>, frame: Frame | undefined): Record<string, unknown> {
+  if (!frame || st.position !== 'absolute') return st;
+  const { edge, pad } = frame;
+  const across = (a: Side, b: Side) => (pad[a] ?? 0) + (pad[b] ?? 0) + (edge[a] ?? 0) + (edge[b] ?? 0);
+  const base = { v: across('Top', 'Bottom'), h: across('Left', 'Right') };
+  const out = { ...st };
+  const keys: [string, 'v' | 'h', Side | null][] = [
+    ['top', 'v', 'Top'], ['bottom', 'v', 'Bottom'], ['left', 'h', 'Left'], ['right', 'h', 'Right'],
+    ['start', 'h', 'Left'], ['end', 'h', 'Right'],
+    ['height', 'v', null], ['minHeight', 'v', null], ['maxHeight', 'v', null],
+    ['width', 'h', null], ['minWidth', 'h', null], ['maxWidth', 'h', null],
+  ];
+  for (const [k, axis, side] of keys) {
+    const v = out[k];
+    const shift = side ? edge[side] ?? 0 : 0;
+    if (typeof v === 'number') {
+      if (shift) out[k] = v + shift;
+    } else if (typeof v === 'string' && /^-?[\d.]+%$/.test(v)) {
+      const p = parseFloat(v);
+      const less = (p / 100) * base[axis] - shift;
+      if (less) out[k] = `calc(${v} - ${+less.toFixed(4)}px)`;
+    }
+  }
+  // An axis with no inset at all: placed as Yoga places it (see unplacedAt).
+  const ex = expandBox(st);
+  const axes = [
+    { horizontal: true, keys: ['left', 'right', 'start', 'end'], s: 'Left', e: 'Right', startK: 'left', endK: 'right', size: ex.width },
+    { horizontal: false, keys: ['top', 'bottom'], s: 'Top', e: 'Bottom', startK: 'top', endK: 'bottom', size: ex.height },
+  ] as const;
+  for (const a of axes) {
+    if (a.keys.some((k) => out[k] !== undefined && out[k] !== null)) continue;
+    const main = frame.dir.startsWith('row') === a.horizontal;
+    let at = unplacedAt(frame, st, main);
+    if (main && frame.dir.endsWith('reverse') && at !== 'center') at = at === 'start' ? 'end' : 'start';
+    const thinS = edge[a.s as Side] ?? 0, thinE = edge[a.e as Side] ?? 0;
+    if (at === 'start') out[a.startK] = thinS;
+    else if (at === 'end') out[a.endK] = thinE;
+    else if (typeof a.size === 'number') {
+      const m = (k: string) => (typeof ex[k] === 'number' ? (ex[k] as number) : 0);
+      const outer = a.size + m(`margin${a.s}`) + m(`margin${a.e}`);
+      out[a.startK] = `calc(50% - ${+((thinS + thinE + outer) / 2 - thinS).toFixed(4)}px)`;
+    }
+  }
+  return out;
+}
+
 export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): string {
+  // The top of a render: modals found anywhere inside are drawn after it, each
+  // as its own layer over the whole phone (see `Modal` below).
+  if (!opts.layers) {
+    const layers: string[] = [];
+    const html = toHtml(node, { ...opts, layers }, inSvg);
+    return html + layers.join('');
+  }
   if (node === null || node === undefined) return '';
   if (typeof node === 'string') return esc(node);
   if (typeof node === 'number') return String(node);
@@ -453,7 +672,44 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
   const n = node as N;
   const t = String(n.type || '');
   const p = n.props || {};
-  const st = flat(p.style);
+
+  /**
+   * ── A MODAL IS A WINDOW OF ITS OWN ───────────────────────────────────────
+   * On the phone a Modal's content is a separate root the size of the screen,
+   * in a `flex: 1` container — white unless `transparent` (RN's Modal.js).
+   * Jest's Modal draws it inline, wherever the component happens to sit, so a
+   * sheet whose layout is `flex: 1` was laid out inside a box sized by its
+   * content: a browser let it run to its content's height, and Yoga — the
+   * phone's engine — collapsed it to nothing (yoga-parity found it). It is
+   * lifted out here and drawn over the whole phone, as the phone draws it.
+   */
+  if (t === 'Modal') {
+    const fill = { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 };
+    const container = { flex: 1, backgroundColor: p.transparent === true ? 'transparent' : (p.backdropColor ?? 'white') };
+    const inner = (n.children || []).map((c) => toHtml(c, { ...opts, within: frameOf(container) }, inSvg)).join('');
+    opts.layers!.push(`<div data-t="modal"${rnAttr(fill)} style="${css(fill, false)};z-index:1000">` +
+      `<div${rnAttr(container)} style="${css(container, false)}">${inner}</div></div>`);
+    return '';
+  }
+  /**
+   * ── WHERE A CONTROL WAS WRITTEN ──────────────────────────────────────────
+   * A capture run wraps each PressableScale in a `SrcMark` carrying the file
+   * and line of the JSX that made it (jest.setup.ts). It is not a box: its
+   * child is drawn exactly as it would be without it, and the site is written
+   * onto that child as `data-src`, so the touch checks can say which line of
+   * source a finding — or a clean measurement — belongs to.
+   */
+  if (t === 'SrcMark') {
+    const inner = (n.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
+    return typeof p.src === 'string' ? inner.replace(/^<(\w+)/, `<$1 data-src="${esc(p.src)}"`) : inner;
+  }
+  // `rn` is the style as React Native has it — what the Yoga check reads.
+  // `st` is where the browser must draw it: the same, unless it is placed
+  // absolutely (see placeInside). This node's children are placed in ITS box.
+  const rn = flat(p.style);
+  const around = opts.within?.edge ?? {};
+  const st = placeInside(rn, opts.within);
+  opts = { ...opts, within: frameOf(rn) };
 
   // ── SVG: the icons and the dial ──
   const tag = SVG_TAG[t];
@@ -486,7 +742,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
         typeof p.height === 'number' ? `height:${p.height}px` : '',
         'flex:none',
       ].filter(Boolean).join(';');
-      return `<svg ${attrs} style="${box}${style ? ';' + style : ''}">${kids}</svg>`;
+      return `<svg ${attrs}${rnAttr(rn)} style="${box}${style ? ';' + style : ''}">${kids}</svg>`;
     }
     return `<${tag}${attrs ? ' ' + attrs : ''}>${kids}</${tag}>`;
   }
@@ -529,7 +785,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
       c: cols.map((c) => decodeColour(c) ?? 'transparent'),
       l: cols.map((_, i) => (typeof locs[i] === 'number' ? locs[i] : cols.length > 1 ? i / (cols.length - 1) : 0)),
     }));
-    return `<div data-grad="${grad}" style="${style};background-image:linear-gradient(${dir},${stops.join(',')})">${kids}</div>`;
+    return `<div data-grad="${grad}"${rnAttr(rn)} style="${style};background-image:linear-gradient(${dir},${stops.join(',')})">${kids}</div>`;
   }
 
   /**
@@ -585,9 +841,13 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
      * 119pt cell and the Darkroom's grid came out zoomed and overhanging. The
      * box has to be restated, exactly as it is for svg elsewhere in this file.
      */
-    const fills = st.position === 'absolute' &&
-      [st.top, st.left, st.right, st.bottom].every((v) => v === 0);
-    const style = css(st, false) + (fills ? ';width:100%;height:100%' : '');
+    const fills = rn.position === 'absolute' &&
+      [rn.top, rn.left, rn.right, rn.bottom].every((v) => v === 0);
+    // Inside a thin border, "the whole box" is the box less that border.
+    const less = (a?: number, b?: number) => ((a ?? 0) + (b ?? 0) ? ` - ${(a ?? 0) + (b ?? 0)}px` : '');
+    const style = css(st, false) + (fills
+      ? `;width:calc(100%${less(around.Left, around.Right)});height:calc(100%${less(around.Top, around.Bottom)})`
+      : '');
 
     // A remote poster, matched on its TMDB path — or a video still, matched on
     // its YouTube key. `img.youtube.com/vi/KEY/hqdefault.jpg` carries no TMDB
@@ -596,7 +856,24 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     const yt = /\/vi\/([\w-]+)\//.exec(uri);
     const m = yt || /\/w\d+(\/[^/?]+)$/.exec(uri) || /\/(\w+\.jpg)$/.exec(uri);
     const poster = m && opts.posters ? opts.posters[m[1]] || opts.posters['/' + m[1]] : undefined;
-    if (poster) return `<img src="${poster.data}" alt="${esc(poster.title)}" style="${style};object-fit:cover" />`;
+
+    // The image's own fit, where it names one (expo-image's `contentFit`, or
+    // Image's `resizeMode` as a prop or in its style) — else the default below.
+    const FIT: Record<string, string> = { cover: 'cover', contain: 'contain', fill: 'fill', stretch: 'fill', none: 'none', center: 'none', repeat: 'none', 'scale-down': 'scale-down' };
+    const named = FIT[String(p.contentFit ?? p.resizeMode ?? rn.resizeMode ?? '')];
+    /**
+     * `tintColor` paints every opaque pixel of the image in one colour (how
+     * the seal's mark and a premium frame are coloured). An <img> cannot be
+     * recoloured, so the image becomes the MASK of a box of that colour.
+     */
+    const tint = (rn.tintColor ?? p.tintColor) as string | undefined;
+    const draw = (data: string, alt: string, fit: string) => {
+      if (!tint) return `<img src="${data}" alt="${esc(alt)}"${a11yAttr(p)}${rnAttr(rn)} style="${style};object-fit:${fit}" />`;
+      const size = fit === 'fill' ? '100% 100%' : fit === 'none' ? 'auto' : fit === 'scale-down' ? 'contain' : fit;
+      const mask = `url(${data}) center/${size} no-repeat`;
+      return `<div${a11yAttr(p)}${rnAttr(rn)} style="${style};background-color:${tint};-webkit-mask:${mask};mask:${mask}"></div>`;
+    };
+    if (poster) return draw(poster.data, poster.title, named ?? 'cover');
 
     /**
      * A bundled asset. `require('…/rating-full.png')` arrives as
@@ -608,11 +885,11 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     if (local && opts.local) {
       const name = local.split('/').pop() || '';
       const hit = opts.local[name];
-      // `resizeMode: contain` is how these are drawn; object-fit is the same idea.
-      if (hit) return `<img src="${hit}" alt="" style="${style};object-fit:contain" />`;
+      // `resizeMode: contain` is how these are drawn, unless the image says otherwise.
+      if (hit) return draw(hit, '', named ?? 'contain');
     }
 
-    return `<div class="poster" style="${style}"></div>`;
+    return `<div class="poster"${a11yAttr(p)}${rnAttr(rn)} style="${style}"></div>`;
   }
 
   /**
@@ -662,7 +939,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     // as it does in Yoga: the ticket's rotated ADMIT ONE is 96pt inside a 42pt
     // stub, and capped it read as 36pt cut when it fits with 18 to spare.
     const ownWidth = st.width !== undefined && st.width !== null && st.width !== 'auto' ? ';max-width:none' : '';
-    return `<span${capAttr} style="${css(st, true)}${clamp}${ownWidth}">${(n.children || []).map((c) => toHtml(c, opts, inSvg)).join('')}</span>`;
+    return `<span${capAttr}${a11yAttr(p)}${rnAttr(rn)} style="${css(st, true)}${clamp}${ownWidth}">${(n.children || []).map((c) => toHtml(c, opts, inSvg)).join('')}</span>`;
   }
   if (t === 'ActivityIndicator') return '<div class="spinner"></div>';
 
@@ -689,7 +966,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
       ? 'display:block;white-space:break-spaces;overflow-wrap:anywhere'
       : 'display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:auto;margin-bottom:auto';
     const text = shown ? `<span data-scale-cap="${cap}" style="${colour}${layout}">${esc(shown)}</span>` : '';
-    return `<div style="${css(st, false)}">${text}</div>`;
+    return `<div${rnAttr(rn)} style="${css(st, false)}">${text}</div>`;
   }
 
   const kids = (n.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
@@ -705,6 +982,23 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
    */
   if (t === 'RCTScrollView') {
     const cls = p.horizontal ? 'hscroll' : 'vscroll';
+    /**
+     * ── AND IT GROWS, AS REACT NATIVE'S DOES ────────────────────────────────
+     * ScrollView puts its own style under the screen's: `baseVertical` /
+     * `baseHorizontal` — flexGrow 1, flexShrink 1, and a ROW when horizontal.
+     * Jest's host element carries only the screen's style, so a rail drawn from
+     * it neither filled its slot nor laid out as a row, and the Lobby's cards
+     * came out 3pt shorter than the phone draws them (mockups/tools/
+     * yoga-parity.cjs found it). An explicit grow or shrink wins over `flex`, in
+     * Yoga and — written after the shorthand — in the browser alike.
+     */
+    const base = (s: Record<string, unknown>): Record<string, unknown> => ({
+      ...s,
+      flexDirection: s.flexDirection ?? (p.horizontal ? 'row' : 'column'),
+      flexGrow: s.flexGrow ?? 1,
+      flexShrink: s.flexShrink ?? 1,
+    });
+    const sv = base(st);
     /**
      * ── AND ITS CONTENT HAS A STYLE OF ITS OWN ─────────────────────────────
      * `contentContainerStyle` is where a screen reserves the room under a
@@ -729,16 +1023,59 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     // style — wrapped again, the children would sit in a column inside the row.
     const raw = n.children || [];
     const last = raw[raw.length - 1] as { type?: string; props?: { style?: unknown }; children?: unknown[] } | undefined;
+    // What sits in the content container sits inside ITS border, not the scroll view's.
+    const within = { ...opts, within: frameOf(box) };
     if (inner && last && typeof last === 'object' && last.type === 'View' && !last.props?.style) {
       const before = raw.slice(0, -1).map((c) => toHtml(c, opts, inSvg)).join('');
-      const content = (last.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
-      return `<div class="${cls}" style="${css(st, false)}">${before}<div style="${inner}">${content}</div></div>`;
+      const content = (last.children || []).map((c) => toHtml(c, within, inSvg)).join('');
+      return `<div class="${cls}"${rnAttr(base(rn))} style="${css(sv, false)}">${before}<div${rnAttr(box)} style="${inner}">${content}</div></div>`;
     }
-    return `<div class="${cls}" style="${css(st, false)}">${inner ? `<div style="${inner}">${kids}</div>` : kids}</div>`;
+    const wrapped = inner ? (n.children || []).map((c) => toHtml(c, within, inSvg)).join('') : kids;
+    return `<div class="${cls}"${rnAttr(base(rn))} style="${css(sv, false)}">${inner ? `<div${rnAttr(box)} style="${inner}">${wrapped}</div>` : kids}</div>`;
   }
 
   // A testID travels through as a hook, so the frame can address one element
   // (the docked bar) without guessing at its inline style.
   const tid = typeof p.testID === 'string' ? ` data-t="${esc(p.testID)}"` : '';
-  return `<div${tid} style="${css(st, false)}">${kids}</div>`;
+  return `<div${tid}${pressAttr(p)}${a11yAttr(p)}${rnAttr(rn)} style="${css(st, false)}">${kids}</div>`;
+}
+
+/**
+ * A control, marked with the area it answers touches in: its box grown by its
+ * `hitSlop`, as the host view receives it (PressableScale has already filled
+ * the sides a partial slop left out). mockups/tools/layout.cjs measures these
+ * against each other — two areas that overlap hand the overlap to the LATER
+ * control, on both platforms.
+ */
+function pressAttr(p: Record<string, unknown>): string {
+  const presses = ['onClick', 'onPress', 'onResponderRelease'].some((k) => typeof p[k] === 'function');
+  if (!presses || p.disabled === true || p.accessibilityState && (p.accessibilityState as { disabled?: boolean }).disabled) return '';
+  const s = p.hitSlop;
+  const side = (k: string) => (typeof s === 'number' ? s : s && typeof s === 'object' ? Number((s as Record<string, number>)[k] ?? 0) : 0);
+  return ` data-press="${[side('top'), side('right'), side('bottom'), side('left')].join(',')}"`;
+}
+
+/**
+ * What a screen reader is told about an element: its label, and whether it
+ * and everything inside it are hidden from it. A control with no label of its
+ * own is named, on iOS, from the labels and words inside it — so labels are
+ * carried on every element, not only on controls, and the audit reads them.
+ */
+function a11yAttr(p: Record<string, unknown>): string {
+  const label = typeof p.accessibilityLabel === 'string' ? ` aria-label="${esc(p.accessibilityLabel)}"` : '';
+  const hidden = p.accessibilityElementsHidden === true || p.importantForAccessibility === 'no-hide-descendants' ? ' aria-hidden="true"' : '';
+  // An accessible element is ONE stop for a screen reader: what is inside it is
+  // read as part of it, not reached separately.
+  const whole = p.accessible === true ? ' data-accessible' : '';
+  return label + hidden + whole;
+}
+
+/**
+ * The React Native style itself, carried on the element when MOCKUPS_YOGA=1 —
+ * so mockups/tools/yoga-parity.cjs can lay the same tree out with Yoga, the
+ * phone's own engine, and report every box the browser placed differently.
+ * Off by default: an ordinary render carries only CSS.
+ */
+function rnAttr(st: Record<string, unknown>): string {
+  return process.env.MOCKUPS_YOGA === '1' ? ` data-rn="${esc(JSON.stringify(st))}"` : '';
 }

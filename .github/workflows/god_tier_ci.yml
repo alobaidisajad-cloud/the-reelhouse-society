@@ -180,6 +180,168 @@ jobs:
         working-directory: ./mobile
         run: node scripts/coverage-ratchet.js
 
+  # ── EVERY SCREEN, LAID OUT AS THE PHONE LAYS IT ─────────────────────────────
+  # The screens are drawn from the app's own code (the zz-*.gen suites) and
+  # measured in a browser. Two checks, at every width the app is drawn at and at
+  # every text size it allows, that used to run only when someone remembered:
+  #   · yoga-parity — every box is laid out AGAIN by Yoga, React Native's own
+  #     engine with RN's own settings, and must land where the browser put it.
+  #     It is what makes the second check true: it found a Pulse card whose name
+  #     column the phone stretched across the whole header, and eight places the
+  #     drawing differed from the phone.
+  #   · layout — every word fits where it is set (nothing cut, off the screen,
+  #     overlapping, or shrunk below the type floor).
+  mockups:
+    name: 🖼️ Every screen, as the phone lays it out
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    needs: strict-analysis
+    strategy:
+      fail-fast: false
+      matrix:
+        width: [320, 360, 375, 390, 430, 744, 820, 1024]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
+
+      # The measuring tools drive the web project's Playwright (root), and
+      # draw with the app's own fonts (mobile).
+      - name: Install Root (Web) Dependencies
+        run: npm ci
+      - name: Chromium for the measuring tools
+        run: npx playwright install --with-deps chromium
+      - name: Install Mobile Dependencies
+        working-directory: ./mobile
+        run: npm ci
+
+      - name: Draw every screen at ${{ matrix.width }}pt
+        working-directory: ./mobile
+        env:
+          MOCKUPS: '1'
+          MOCKUPS_YOGA: '1'
+          MOCKUPS_WIDTH: ${{ matrix.width }}
+          MOCKUPS_OUT: mockups/out/ci
+        run: npx jest "zz-.*\.gen" --ci --maxWorkers=2
+
+      - name: Every box where Yoga puts it, at every text size
+        working-directory: ./mobile
+        run: |
+          set +e
+          rc=0
+          for pass in ios@1 ios@1.35 ios@3.1 android@1.35 android@2; do
+            echo "── $pass"
+            node mockups/tools/yoga-parity.cjs --src mockups/out/ci --width ${{ matrix.width }} \
+              --platform "${pass%@*}" --factor "${pass#*@}" --why --show 6 2>&1 | grep -v " agrees " | tee -a parity.txt
+            [ "${PIPESTATUS[0]}" -eq 0 ] || rc=1
+          done
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen at ${{ matrix.width }}pt is drawn where the phone would not put it" parity.txt
+          exit $rc
+
+      - name: Every word fits, at every text size
+        working-directory: ./mobile
+        run: |
+          set +e
+          node mockups/tools/layout.cjs --src mockups/out/ci --width ${{ matrix.width }} \
+            --allow-short mockups/shortened-on-purpose.txt > layout.txt 2>&1
+          rc=$?
+          cat layout.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A word does not fit at ${{ matrix.width }}pt" layout.txt
+          exit $rc
+
+      # The composer's touch law (it was logTouchTargets.test.ts, read out of
+      # the stylesheets): every control on the page is DRAWN by some state of
+      # its generator, and every drawn control's own box is at least 48 — a halo
+      # is invisible to both platforms' accessibility layers. The page's
+      # exceptions are argued in mockups/touch-small-exceptions.txt.
+      - name: Every control on the composer is drawn, and 48 by its own box
+        working-directory: ./mobile
+        run: |
+          set +e
+          node mockups/tools/drawn.cjs --src mockups/out/ci --prefix composer \
+            src/components/log/LogForm.tsx src/components/log/LogSealBar.tsx src/components/log/LogIndexEntry.tsx \
+            src/components/log/LogClearanceGate.tsx src/components/log/EditorialDesk.tsx src/components/log/AuteurToolkit.tsx \
+            "app/(modals)/log-modal.tsx" src/components/log/LogSearchEngine.tsx src/components/NitrateCalendar.tsx > touch.txt 2>&1
+          rc=$?
+          screens=$(ls mockups/out/ci | grep -E '^composer.*\.html$' | grep -v '@' | sed 's/\.html$//' | paste -sd, -)
+          node mockups/tools/layout.cjs --src mockups/out/ci --width ${{ matrix.width }} --only "$screens" \
+            --kinds SMALL --allow mockups/touch-small-exceptions.txt >> touch.txt 2>&1 || rc=1
+          cat touch.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A composer control is undrawn, or under 48pt, at ${{ matrix.width }}pt" touch.txt
+          exit $rc
+
+      # The measuring rules themselves, against pages whose answer is known.
+      - name: The measuring rules, checked
+        if: matrix.width == 390
+        working-directory: ./mobile
+        run: node mockups/tools/selftest.cjs
+
+  captures:
+    # Every screen the unit tests and the generators BUILD — far more states
+    # than anyone drew on purpose: every sheet, error, empty and loading state —
+    # drawn and measured for what the tests' mocked content cannot distort:
+    # touch areas that overlap (STEAL), controls a screen reader cannot name
+    # (NAMELESS), lines stuck under a docked bar (UNDER), and shadows asked of a
+    # view that clips (SHADOW). Word fit is the generators' job (above): the
+    # tests carry deliberate stress content, like an unbreakable 48-letter title.
+    #
+    # --require: every file listed in mockups/touch-measured.txt must still have
+    # a control measured beside a neighbour. The hand-written touch rules that
+    # became this measurement are held to it (stackedRowHitSlop.test.ts), so a
+    # test that stops drawing one is a failure, not a check that quietly stopped.
+    name: 🧷 Every screen the tests build — touch, names, bars, shadows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    needs: strict-analysis
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
+      - name: Install Root (Web) Dependencies
+        run: npm ci
+      - name: Chromium for the measuring tools
+        run: npx playwright install --with-deps chromium
+      - name: Install Mobile Dependencies
+        working-directory: ./mobile
+        run: npm ci
+
+      # The suite's own pass/fail is the Jest job's; here it is the screens.
+      - name: Draw every screen the tests and generators build
+        working-directory: ./mobile
+        env:
+          MOCKUPS: '1'
+          MOCKUPS_OUT: mockups/out/cap-gens
+          MOCKUPS_CAPTURE: '1'
+          RNTL_SKIP_AUTO_CLEANUP: 'true'
+          MOCKUPS_YOGA: '1'
+          MOCKUPS_CAPTURED_OUT: mockups/out/captured
+        run: |
+          npx jest --ci --maxWorkers=2 > capture-run.txt 2>&1 || true
+          grep -E "^Tests:" capture-run.txt
+          cp mockups/out/cap-gens/*.html mockups/out/captured/
+          echo "$(ls mockups/out/captured | wc -l) screens"
+
+      - name: Touch, names, bars and shadows, on every screen
+        working-directory: ./mobile
+        run: |
+          set +e
+          node mockups/tools/layout.cjs --src mockups/out/captured --passes ios@1 \
+            --kinds STEAL,NAMELESS,UNDER,SHADOW --require mockups/touch-measured.txt > captures.txt 2>&1
+          rc=$?
+          grep -E "^\s+(STEAL|NAMELESS|UNDER|SHADOW)|^LOST|finding|CLEAN" captures.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, name, bar or shadow fault" captures.txt
+          exit $rc
+
   web-unit-tests:
     name: 🧪 Web Vitest Unit Tests
     runs-on: ubuntu-24.04

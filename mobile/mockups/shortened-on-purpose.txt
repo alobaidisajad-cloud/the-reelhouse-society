@@ -1,0 +1,11 @@
+# Texts that may end in "…" even at their floor (mockups/tools/layout.cjs --allow-short).
+#
+# A label that shrinks to fit (adjustsFontSizeToFit) is shrunk as the phone
+# shrinks it; if even its floor does not fit, the phone cuts it short. For the
+# house's own copy that is a defect, and it is fixed, not listed here. What is
+# listed is CONTENT of any length, where ending in "…" is the design.
+#
+# <file> [/words pattern/] [@/source-line pattern/] — <why>
+# The @/…/ pattern names the one JSX element, however the file moves around it.
+
+src/components/home/PulseCardItem.tsx @/act\.film\?\.title/ — a film's title is content of any length (The Shawshank Redemption, Dr. Strangelove or: How I Learned…). The Lobby's card gives it one line, shrinks it a little, and ends a title too long for the card with "…", as every film surface in the app does; the whole title is one tap away.
