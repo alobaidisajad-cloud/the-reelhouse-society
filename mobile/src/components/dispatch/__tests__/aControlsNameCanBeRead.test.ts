@@ -22,15 +22,18 @@
  *                  nothing when read aloud and nothing when enlarged
  *   ORDINAL MARKS  a numeral in the ordering margin, whose column is a measured
  *                  fixed width (21pt, sized so `III.` is not cut by two)
- *   THE SHARE CARD an image exported at fixed dimensions; PaperMore's own note
- *                  says every string on it is frozen on purpose
+ *   THE SHARE CARD an image exported at fixed dimensions, so every string on
+ *                  it is frozen on purpose (rendered and checked below)
  *
  * Anything else that is frozen inside a Pressable fails, and the fix is
  * `deckLabelProps` — scaling, one line, and shrink-to-fit, so a label in a row
  * that cannot reflow gets smaller rather than breaking the row.
  */
+import React from 'react';
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { render } from '@testing-library/react-native';
+import { DossierShareCard } from '../paper/PaperMore';
 
 // The project's own compiler, so the scan parses JSX rather than guessing at it
 // with a regex — an earlier regex version of this same idea had false negatives
@@ -146,13 +149,25 @@ describe("a control's name can be read", () => {
   });
 
   it('the share card stays frozen — it is an image at fixed dimensions', () => {
-    const more = readFileSync(join(DISPATCH, 'paper', 'PaperMore.tsx'), 'utf8');
-    // Its own note says so, and the card is exported rather than read on screen.
-    expect(more).toMatch(/every string on this card is `decorativeTextProps`/);
-    for (const mark of ['THE DISPATCH', 'REELHOUSE', 'THE ESSAY CONTINUES']) {
-      const at = more.indexOf(mark);
-      expect(`${mark} found: ${at !== -1}`).toBe(`${mark} found: true`);
-      expect(more.slice(Math.max(0, at - 220), at)).toMatch(/decorativeTextProps/);
+    // Rendered with every optional part showing (a clipped opening, a face), so
+    // each string the card can carry is asked. Only the outermost Text decides
+    // scaling; a nested one sets as part of it.
+    const { toJSON } = render(React.createElement(DossierShareCard, {
+      title: 'What the Projectionist Knew', opening: 'The reel ran long. '.repeat(40),
+      author: { name: 'Ana', memberNo: 17, tier: 'auteur', avatar: 'https://x/a.jpg' },
+      filed: 'FILED 12 MAR 2026', logo: 'https://x/logo.png',
+    }));
+    const texts: { words: string; frozen: boolean }[] = [];
+    const words = (n: any): string => (typeof n === 'string' ? n : (n?.children ?? []).map(words).join(''));
+    const walk = (n: any) => {
+      if (!n || typeof n === 'string') return;
+      if (n.type === 'Text') { texts.push({ words: words(n), frozen: n.props.allowFontScaling === false }); return; }
+      (n.children ?? []).forEach(walk);
+    };
+    walk(toJSON());
+    for (const mark of ['THE DISPATCH', 'REELHOUSE', 'THE ESSAY CONTINUES', 'ANA']) {
+      expect(texts.some((t) => t.words.includes(mark))).toBe(true);
     }
+    expect(texts.filter((t) => !t.frozen).map((t) => t.words)).toEqual([]);
   });
 });

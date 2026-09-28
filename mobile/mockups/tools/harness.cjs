@@ -3,15 +3,13 @@
  * ──────────────────────────────────────────────────────────────────────────
  * A render (`mockups/out/screens/<name>.html`, or `mockups/paper/out/*.html`)
  * is an HTML fragment of the app's resolved tree. This lays it on a device from
- * mockups/devices.json — 390pt unless `width` says otherwise, at that device's
- * own height. A screen that sizes boxes in code from the window is honest only
- * at the width it was DRAWN at: draw it there first (MOCKUPS_WIDTH=320 writes
- * out/screens-320) and measure that — the house colour
- * behind it — with the app's OWN font files
- * embedded (never a web font service: a measurement must not depend on a
- * network), and, when asked, at a larger text size exactly as the app allows
- * it: each text grows by the size it carries, capped by its own
- * `maxFontSizeMultiplier` (`data-scale-cap`), frozen text not at all.
+ * mockups/devices.json (390pt unless `width` says otherwise, at that device's
+ * height), on the house colour, in the app's OWN font files embedded (never a
+ * web font service: a measurement must not depend on a network), and, when
+ * asked, at a larger text size as the platform grows it (see GROWTH).
+ *
+ * A screen that sizes boxes in code from the window is honest only at the width
+ * it was DRAWN at: draw it there first (MOCKUPS_WIDTH=320 writes out/screens-320).
  *
  * Playwright comes from the repository root's node_modules.
  */
@@ -60,28 +58,9 @@ function fonts() {
   return fontCss;
 }
 
-/**
- * Three layout rules where the browser and React Native disagree, set the
- * phone's way for every render:
- *   · a box's width INCLUDES its padding and border (RN is border-box);
- *   · a text is never measured wider than the space its parent gives it — RN
- *     measures text against the available width, so a one-line label in a
- *     narrow cell ellipsises or shrinks to fit INSIDE the cell; a browser lets
- *     a centred text grow to its natural width and spill over its neighbour;
- *   · a box laid in a COLUMN is at most as wide as that column. Yoga measures
- *     it "at most" the parent's width, so a row inside shrinks whatever may
- *     shrink; a browser gives it its content's width and lets it hang out both
- *     sides (the film page's verdict row hung 9pt off a 320pt phone that draws
- *     it whole). Not a box with a width of its own — Yoga lets that overflow,
- *     and so must this — nor one placed absolutely. The lib writes each box's
- *     style as `position:relative;…;width:Npx;…`, so `;width:` is its own width
- *     and never `min-width` or `border-width`. "The column's width" is less the
- *     box's own side margins, which the lib writes as `--mx`: a rule pulled
- *     out to both edges by `marginHorizontal: -16` is 32pt WIDER than its
- *     column on the phone, and a cap of 100% held it in (yoga-parity found it).
- *     `--mx` does not inherit, so a box without margins never takes its
- *     parent's.
- */
+// The phone's way where the browser differs: border-box; text no wider than its parent;
+// a box in a COLUMN no wider than it less its own margins (`--mx`, not inherited), unless
+// it has its own `;width:` or is absolute (Yoga lets those overflow).
 const RN_RULES = '@property --mx{syntax:"<length>";inherits:false;initial-value:0px}'
   + '*,*::before,*::after{box-sizing:border-box}span[data-scale-cap]{max-width:100%}'
   + 'div[style*="flex-direction:column"]>div:not([style*=";width:"]):not([style^="width:"]):not([style*="position:absolute"]){max-width:calc(100% - var(--mx))}';
@@ -95,60 +74,33 @@ function screens(dir, only) {
   return only ? names.filter((n) => only.includes(n)) : names;
 }
 
-/**
- * How each platform grows a text at the member's setting `f`, given the
- * text's own ceiling `cap` (1 = frozen). Read from React Native 0.81's source,
- * new architecture, which is what this app runs:
- *
- *   ios      size, line height: × min(f, cap)       RCTAttributedTextUtils.mm
- *            letter spacing:    not grown at all     (NSKern, as written)
- *   android  size:              × min(f, cap)       TextAttributeProps.setFontSize
- *            line height:       × f, NO ceiling      TextAttributeProps.setLineHeight
- *            letter spacing:    × f, NO ceiling      TextAttributeProps.getLetterSpacing
- *                               — which the app undoes: its Text wrapper
- *                               (src/components/text) hands Android spacing ÷ f
- *                               (androidTracking.ts), so it is drawn as iOS
- *                               draws it, and is here.
- *
- * Android's ceiling-less line height is why it has its own pass: at its
- * largest setting (2×) a text is 1.35× its size on a line 2× as tall. Android
- * 14 grows large sizes a little less than linearly; this grows them linearly,
- * so what it measures is the most Android can draw, never less.
- */
+// How a platform grows a text at setting `f` under its cap (1 = frozen), from RN 0.81's
+// new-architecture source; linear (Android 14 grows large sizes a little less).
 const GROWTH = {
+  // RCTAttributedTextUtils.mm: size and line × min(f, cap); spacing (NSKern) never.
   ios: (f, cap) => ({ size: Math.min(f, cap), line: Math.min(f, cap), track: 1 }),
-  // Tracking: a text with a cap of its own was drawn by the app's Text (the one
-  // wrapper that also hands Android spacing ÷ f); a text with none escaped it,
-  // and Android spaces it × f.
-  android: (f, cap) => ({ size: Math.min(f, cap), line: cap === 1 ? 1 : f, track: Number.isFinite(cap) ? 1 : f }),
+  // TextAttributeProps: size × min(f, cap); line and spacing × f, NO ceiling (the
+  // app's Text hands a capped text's spacing ÷ f: androidTracking.ts).
+  android: (f, cap) => ({
+    size: Math.min(f, cap), line: cap === 1 ? 1 : f, track: Number.isFinite(cap) ? 1 : f }),
 };
 
 /**
- * Open one render. `factor` is the member's text size (1 = default; 1.35 is
- * the most this app lets a word grow; Android lets the setting reach 2), and
- * `platform` whose rules grow it (see GROWTH).
- *
- * If the generator also wrote `<name>@<factor>.html` — the screen laid out at
- * that text size, because something on it sizes a box from the text size —
- * that is the one opened. The text in it is still at its base size (the phone
- * grows text natively, not in the style), so it is grown here just the same.
+ * Open one render, at the member's text size `factor` (1 = default) grown by
+ * `platform`'s rules (see GROWTH). A `<name>@<size>.html` the generator laid out
+ * at that size (a box sized from the text size) is opened instead; its text is
+ * still at base size, as the phone grows text natively, so it is grown here too.
  */
 async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH, height = heightAt(width) } = {}) {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
-  // A generator that lays a screen out at large sizes writes `@1.35` (iOS) and
-  // `@android-1.35` / `@android-2`. iOS grows nothing past 1.35, so its larger
-  // settings reuse `@1.35`.
+  // Written as `@1.35` (iOS; larger iOS sizes reuse it) and `@android-<f>`.
   const variants = (platform === 'ios' ? [`@${Math.min(factor, 1.35)}`] : [`@${platform}-${factor}`])
     .map((v) => file.replace(/\.html$/, `${v}.html`));
   const sized = factor !== 1 ? variants.find((v) => fs.existsSync(v)) : null;
   const html = fs.readFileSync(sized || file, 'utf8');
   await page.setContent(
     `<!doctype html><html><head><meta charset="utf-8"><style>${fonts()}${RN_RULES}</style></head>` +
-    // The phone is a window of exactly its height that lays its screen out as a
-    // flex column, as React Native's root view does — so a screen's `flex: 1`
-    // fills it (the tab bar floats over the screen; it takes no height). It was
-    // a MINIMUM height and not a flex box: a screen filled only as far as its
-    // content, and everything pinned to its edges pinned to the wrong place.
+    // The phone: its exact height, a flex column like RN's root, so `flex: 1` fills it.
     `<body style="margin:0;background:${HOUSE}"><div class="phone" style="width:${width}px;height:${height}px;position:relative;display:flex;flex-direction:column;background:${HOUSE}">${html}</div></body></html>`,
     { waitUntil: 'load' },
   );
@@ -156,15 +108,11 @@ async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH
   if (factor !== 1) {
     await page.evaluate(([f, growth]) => {
       const grow = new Function('f', 'cap', `return (${growth})(f, cap)`);
-      // Scale every text box by its own allowance, once, from the size it was
-      // rendered at. Nested text inherits nothing: each span carries its size.
+      // Each text grown once by its own allowance (a nested span carries its own size).
       const all = [...document.querySelectorAll('[data-scale-cap]')];
       const plan = all.map((e) => {
         const cs = getComputedStyle(e);
-        // 0 means the Text carries no cap of its own — and on a phone that is
-        // NO cap: it grows to the system's largest size. (The app-wide 1.35 was
-        // once applied by patching Text's defaults, which React 19 never reads
-        // for a function component, so no phone ever had it.) 1 means frozen.
+        // 0: no cap of its own, which on a phone is NO cap (there is no app-wide one).
         const cap = Number(e.dataset.scaleCap);
         const g = grow(f, cap === 0 ? Infinity : cap);
         const ls = parseFloat(cs.letterSpacing);
@@ -210,12 +158,9 @@ async function shrinkToFit(page) {
         const b = a.getBoundingClientRect();
         if (q.right > b.right + 0.75 || q.left < b.left - 0.75 || q.bottom > b.bottom + 0.75 || q.top < b.top - 0.75) return false;
       }
-      // No tolerance: a label a fraction of a point too wide is still drawn with
-      // "…" — the phone shrinks it that last fraction, so this does too.
       if (getComputedStyle(e).display === 'inline') return true;
-      // scrollWidth and clientWidth are WHOLE pixels: 23.4pt of figures in a
-      // 23.3pt box reads 23 and 23, "fits", and is drawn "99…". The glyphs'
-      // own extent against the box is measured unrounded.
+      // No tolerance, and unrounded (scroll widths are whole pixels): a fraction too
+      // wide is drawn "99…", so the phone shrinks that last fraction too.
       const box = e.getBoundingClientRect();
       const r = document.createRange(); r.selectNodeContents(e);
       if (r.getBoundingClientRect().width > box.width + 0.05) return false;
@@ -232,9 +177,7 @@ async function shrinkToFit(page) {
         if (ls) e.style.letterSpacing = ls * k + 'px';
         if (fits(e)) { fitted = true; break; }
       }
-      // The phone shrinks smoothly, down to EXACTLY its floor; steps of 0.03
-      // stop short of it (from 12pt with a 10pt floor the last step is 10.2).
-      // So the floor itself is tried last, as the phone would reach it.
+      // The phone reaches EXACTLY its floor, which 0.03 steps can miss: set it last.
       if (!fitted) {
         e.style.fontSize = base * min + 'px';
         if (ls) e.style.letterSpacing = ls * min + 'px';

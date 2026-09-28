@@ -4,16 +4,12 @@
  * ──────────────────────────────────────────────────────────────────────
  * Companion to __tests__/backendContract.test.ts. The Jest test guards the
  * CODE side (what the app calls); this script guards the DEPLOY side (what
- * actually exists in production), catching the exact drift found on 2026-06-26:
- * an RPC/edge function the app needs that isn't deployed.
+ * actually exists in production): an RPC or edge function the app needs that
+ * is not deployed.
  *
- * It also verifies SECURITY POSTURE — live facts no test can derive from this
- * repo. Added 2026-08-10 after the schema snapshot misled three times in two
- * days: it showed a column-unrestricted profiles UPDATE policy (live is locked
- * to 7 columns), two conflicting role whitelists (live has one, permitting
- * 'admin' — acting on the snapshot would have locked out the moderators), and a
- * world-readable email column (live denies it). A lockdown written in a
- * migration is not a lockdown that is ON. Only the database can say.
+ * It also verifies SECURITY POSTURE, live facts no file can: a lockdown written
+ * in a migration is not a lockdown that is ON, and a schema snapshot can
+ * disagree with the database it was taken from. Only the database can say.
  *
  * Run this before/after a deploy:
  *   SUPABASE_PROJECT_REF=xxxx SUPABASE_DB_URL=postgres://... node scripts/check-backend-live.mjs
@@ -53,9 +49,7 @@ function fromEnvFile(file, key) {
   return '';
 }
 
-// A connection string that still carries its placeholder is not a connection
-// string. Left unhandled it reaches psql, fails on authentication, and prints
-// the failed command as a wall of text that reads like a bug in this script.
+// A connection string still carrying its placeholder, caught before psql fails on it.
 const PLACEHOLDERS = ['YOURPASSWORD', 'YOUR-PASSWORD', 'YOUR_PASSWORD', '[YOUR', 'PASTE', 'XXXX'];
 const looksUnfinished = (s) => PLACEHOLDERS.some((p) => s.toUpperCase().includes(p));
 
@@ -70,13 +64,8 @@ if (DB_URL && looksUnfinished(DB_URL)) {
   DB_URL = '';
 }
 
-// ASK, rather than making someone assemble shell variables by hand.
-//
-// This used to require exporting SUPABASE_DB_URL yourself before running. That
-// is a two-step dance in PowerShell, the variable then persists for the life of
-// the window, and a wrong value silently poisons every later run — which is
-// exactly what happened. A tool that needs a value should ask for it.
-// Only when attached to a terminal, so CI never hangs waiting on a human.
+// ASK for the connection string (a shell variable outlives its window and a wrong
+// one poisons every later run), but only at a terminal, so CI never waits on a human.
 if (!DB_URL && process.stdin.isTTY) {
   const { createInterface } = await import('readline/promises');
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -120,10 +109,6 @@ if (!DB_URL && process.stdin.isTTY) {
   rl.close();
 }
 
-// The project ref is public — it is the subdomain of the API URL the app ships,
-// so there is no reason to make anyone type it. Derived below, once the app's
-// own URL has been read from .env.
-
 // The anon key is public by design (it ships in the app bundle). Reading it from
 // .env means the security-posture half needs no secret and therefore actually runs.
 let SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -152,7 +137,7 @@ if (!PROJECT_REF && SUPABASE_URL) {
 }
 
 const missing = { rpcs: [], edgeFunctions: [] };
-/** Declared signature no longer matches production — the #24 failure mode. */
+/** A declared signature production no longer has: a name the app knows, a call that 404s. */
 const signatureDrift = [];
 /** Entries still checked by name alone, so still blind to that failure mode. */
 const unsignedRpcs = [];
@@ -209,7 +194,7 @@ function balanced(src, i, open, close) {
 
 /**
  * Top-level keys of an object literal, in all four forms a key is written:
- *   { p_id: x }  explicit    { p_id }   shorthand
+ *   { p_lounge_id: x }  explicit    { p_lounge_id }   shorthand
  *   { ...rest }  spread      { [k]: v } computed   -> both unknowable, reported
  */
 function topKeys(obj) {
@@ -284,26 +269,16 @@ function sh(cmd) {
 }
 
 /**
- * Strip credentials before anything is printed.
- *
- * execSync's `e.message` is "Command failed: psql <the whole command>", and the
- * command carries the connection string — user, host AND password. On a terminal
- * that is untidy; in a CI log it is a leaked database password. Every path that
- * can surface a raw message goes through here.
+ * Strip credentials before anything is printed: execSync's message echoes the
+ * whole psql command, connection string and password with it.
  */
 function redact(s) {
   return String(s ?? '').replace(/postgres(?:ql)?:\/\/[^\s"']+/gi, 'postgresql://<redacted>');
 }
 
 /**
- * The REASON psql failed, not the fact that it did.
- *
- * `e.message` is only "Command failed: psql <the entire query>" — it echoes back
- * a wall of SQL and says nothing about the cause, so "network unreachable" and
- * "password authentication failed" look identical and neither is actionable.
- * The cause is on stderr. This surfaces it, and recognises the one that is not
- * a mistake anyone can see: Supabase's direct host is IPv6-only, so on an IPv4
- * network the connection never reaches the point of checking a password.
+ * WHY psql failed, from stderr (the message is only the command). One cause is
+ * named outright: Supabase's direct host is IPv6-only, unreachable from IPv4.
  */
 function why(e) {
   const err =
@@ -338,12 +313,8 @@ if (PROJECT_REF) {
 // ── RPCs (via psql against the live DB) ──
 if (DB_URL) {
   try {
-    // SIGNATURES, not names.
-    //
-    // This selected `proname` alone, which is exactly how #24 stayed invisible:
-    // `get_priority_reports` existed under a name the app knew and a signature it
-    // could not call, so this reported it healthy while every call 404'd. A name
-    // says a function exists; only the signature says the app can reach it.
+    // SIGNATURES, not names: a name says a function exists; only the signature says
+    // the app can reach it.
     const out = sh(
       `psql "${DB_URL}" -tAc "SELECT proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public'"`,
     );
@@ -351,8 +322,7 @@ if (DB_URL) {
     const liveNames = new Set([...liveSignatures].map((s) => s.slice(0, s.indexOf('('))));
 
     for (const entry of contract.rpcs) {
-      // An entry is either a bare name (legacy — existence only) or
-      // { name, signature } which is checked exactly.
+      // A bare name (existence only) or { name, signature }, checked exactly.
       const name = typeof entry === 'string' ? entry : entry.name;
       const signature = typeof entry === 'string' ? null : entry.signature;
 
@@ -377,32 +347,17 @@ if (DB_URL) {
 }
 
 // ── THE APP'S OWN CALLS ───────────────────────────────────────────────────
-// A pinned signature proves the server did not move. It does NOT prove the app
-// can call it: both sides can be internally consistent and still disagree, which
-// is precisely #24 — `get_priority_reports` existed under a name the app knew
-// and a signature it could not call. Pinning would have pinned the broken one.
-//
-// So this reads every `supabase.rpc(...)` in the app and asks the database
-// whether that exact call is satisfiable: every key the app sends must be a
-// parameter, and every parameter without a default must be sent.
-//
-// Two parsing traps, both of which produced a WRONG answer before they were
-// handled, and both of which now fail loudly rather than quietly passing:
-//   · `{ dossier_uuid }` — ES6 shorthand has no colon. Counting only `key:`
-//     reported two healthy call sites as broken.
-//   · a comment inside an object literal, whose prose comma split the argument
-//     list. Comments are blanked in place first, preserving offsets.
-// Anything still unparseable (a spread, a computed key) is REPORTED, never
-// assumed fine.
+// A pinned signature proves the server did not move, not that the app can call
+// it. So every `supabase.rpc(...)` in the app is asked of the database: each key
+// sent must be a parameter, and each parameter without a default must be sent.
+// Shorthand keys and comments inside the object are read correctly; anything
+// unreadable (a spread, a computed key) is REPORTED, never assumed fine.
 if (DB_URL) {
   try {
     const liveArgs = new Map();          // name -> [{ params, required }]
-    // IN PARAMETERS ONLY. `proargnames` also carries the OUT columns of a
-    // function that RETURNS TABLE — `dispatch_door` reported its five result
-    // columns as acceptable arguments — so an app passing an output column name
-    // would have been waved through. `proargmodes` is NULL when every argument
-    // is IN, and an array of modes otherwise; 'i'/'b'/'v' are the input ones.
-    // `pronargs` already counts inputs only, so the required count is right.
+    // IN parameters only: `proargnames` also lists a RETURNS TABLE's output
+    // columns. 'i'/'b'/'v' are the input modes (NULL modes = all IN); `pronargs`
+    // counts inputs only.
     const argRows = sh(
       `psql "${DB_URL}" -tAc "SELECT p.proname || E'\\t' || coalesce(CASE WHEN p.proargmodes IS NULL THEN array_to_string(p.proargnames, ',') ELSE (SELECT string_agg(a.name, ',' ORDER BY a.ord) FROM unnest(p.proargnames, p.proargmodes) WITH ORDINALITY AS a(name, mode, ord) WHERE a.mode IN ('i','b','v')) END, '') || E'\\t' || (p.pronargs - p.pronargdefaults) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f'"`,
     );
@@ -424,10 +379,7 @@ if (DB_URL) {
         callMismatches.push(`${call.at}\n      ${call.name} — arguments could not be read (spread or computed key); check by hand`);
         continue;
       }
-      // `.rpc('name')` with no second argument is a call that sends NOTHING —
-      // which is only valid if some overload has no required parameter. Skipping
-      // it (the first version did) waves through exactly the call most likely to
-      // be wrong: one that forgot its arguments entirely.
+      // `.rpc('name')` alone sends NOTHING: valid only if an overload requires nothing.
       const sent = call.args ?? [];
       checkedCalls++;
       const ok = overloads.some((o) =>
@@ -448,22 +400,13 @@ if (DB_URL) {
   console.warn('⚠ app-call check skipped (set SUPABASE_DB_URL).');
 }
 
-// ── Security posture ──────────────────────────────────────────────────────
-// Facts about the live database that this repo cannot derive. The schema
-// snapshot misled three times in two days — it showed a column-unrestricted
-// profiles UPDATE policy, two conflicting role whitelists, and a world-readable
-// email column, and live was different (stricter) every time. Reading a
-// migration proves someone WROTE a lockdown; only the database says it is on.
+// ── Security posture: what only the live database can say ──────────────────
 const sec = contract.security || {};
 const posture = [];
 let checkedAnon = false;
 /** Whether anon's table grants were compared against the allowlist. */
 let checkedAnonGrants = false;
-/**
- * How many grants failed that comparison. Kept separately for the reason this
- * file already records about `checkedAnon`: "it ran" is not "it was clean", and
- * a run that FOUND drift must not also print a green tick for the same check.
- */
+/** How many failed it: a check that RAN and found drift must not also print a tick. */
 let anonGrantViolations = 0;
 /** Whether anon's SECURITY DEFINER reach was compared against the allowlist. */
 let checkedDefiners = false;
@@ -489,10 +432,8 @@ if (SUPABASE_URL && ANON_KEY) {
       return { status: r.status, body: r.status === 200 ? '' : await r.text() };
     };
 
-    // The CONTROL first. If the API is unreachable or the key is wrong, every
-    // "must not read" probe below fails-closed and the whole check passes while
-    // verifying nothing — the exact green-tick-for-looking-at-nothing this
-    // script was already fixed for once.
+    // The CONTROL first: with the API unreachable or the key wrong, every "must not
+    // read" probe below would fail closed and pass while verifying nothing.
     const postureBeforeAnon = posture.length;
     let controlOk = true;
     for (const { table, column } of sec.anonMustRead || []) {
@@ -524,21 +465,9 @@ if (SUPABASE_URL && ANON_KEY) {
   console.warn('⚠ anon posture check skipped (set EXPO_PUBLIC_SUPABASE_URL + _ANON_KEY).');
 }
 
-// ── ANON'S TABLE GRANTS, AGAINST AN EXPLICIT ALLOWLIST ─────────────────────
-// The check above asks whether anon can READ a column. This asks the wider
-// question it cannot: what is anon permitted to DO, table by table.
-//
-// anon held SELECT, INSERT, UPDATE and DELETE on dispatch_certifications,
-// dispatch_saves and dispatch_votes. None was exploitable — every policy on
-// those tables names `authenticated`, so RLS denied every row — but the ONLY
-// thing holding the line was that no policy had been left at `{public}`. One
-// such policy turns twelve dead grants live at once, and `notifications` was
-// found with exactly that mistake on this database the same day.
-//
-// So the grants are the thing asserted, not the exploit. A grant anon does not
-// need is surface, and surface is what a later mistake is built from. The list
-// is an ALLOWLIST: anything not named here is a violation, so a table added
-// later cannot quietly arrive with anon writes attached.
+// ── ANON'S TABLE GRANTS, AGAINST AN ALLOWLIST ──────────────────────────────
+// What anon may DO, table by table. A grant RLS happens to deny is still surface:
+// one policy left at `{public}` turns it live. Anything not allowed is a violation.
 if (DB_URL) {
   try {
     const rows = sh(
@@ -564,20 +493,10 @@ if (DB_URL) {
 }
 
 // ── DEFINERS THAT TAKE THE CALLER'S WORD FOR IT ────────────────────────────
-// A SECURITY DEFINER runs with the owner's rights. One that reads auth.uid()
-// decides for itself who is calling; one that takes the ACTOR AS A PARAMETER
-// believes whatever it is told. If `anon` may execute the second kind, an
-// anonymous caller simply names themselves.
-//
-// `get_taste_profile(<any uuid>)` handed back a member's taste profile to anon,
-// and `audience_allows(actor, owner, pref)` answered "may this member see that
-// one" for any pair — a privacy graph, one call at a time.
-//
-// The allowlist below is what anon is ALLOWED to execute of that kind, and each
-// entry states why. Three are RLS POLICY HELPERS: a policy expression evaluates
-// as the querying role, so revoking those would not tighten anything — it would
-// stop policies evaluating and break legitimate public reads. That is why this
-// is an allowlist with reasons rather than a blanket revoke.
+// A SECURITY DEFINER that takes the actor as a PARAMETER (never reading auth.uid())
+// believes whatever it is told; granted to anon, a stranger simply names someone.
+// Each exception below says why. RLS policy helpers must stay: a policy evaluates
+// as the querying role, so revoking one breaks public reads rather than tightening.
 if (DB_URL) {
   try {
     const ALLOWED_FOR_ANON = {
@@ -588,15 +507,7 @@ if (DB_URL) {
       increment_dossier_views: 'live web caller; moves a view counter and nothing else',
       rls_auto_enable: 'event trigger, not callable',
       like_escape: 'pure string helper, no data',
-      // The rule this check enforces is "a definer granted to anon must not
-      // trust an actor the caller names". This one names no actor: it takes a
-      // closed event vocabulary and increments an aggregate per-day counter,
-      // and there is no user, device or session column in the table for a
-      // caller to point at. Granting it to anon is the POINT — a stranger
-      // meeting a rope is the most informative event in the funnel, and The
-      // Reel is open to strangers now. Worst case a hostile caller makes the
-      // numbers wrong; the function caps the table at 500 rows a day and can
-      // write nothing else.
+      // Strangers meeting a rope ARE the count; at worst it lies (500 rows a day cap).
       record_gate_event: 'aggregate counter; names no actor and touches no member row',
     };
     const rows = sh(
@@ -619,19 +530,9 @@ if (DB_URL) {
 }
 
 // ── NO ROOM CARRIES A KEY ──────────────────────────────────────────────────
-// `lounges` is readable by every member — "Lounges are discoverable" USING
-// (true) — which is the design: you may see that a room exists and ask at the
-// door. `invite_code` was a way AROUND that door, sitting in the same readable
-// row, minted on every room `create_lounge` made.
-//
-// It was a dead credential: no function anywhere accepts a code to join, and
-// both clients retired codes. But the danger was never today — it was the first
-// person to add "join by code" to a private room and find every room already
-// open, with no reason to suspect it.
-//
-// So the secret was removed rather than guarded, and this keeps it removed. A
-// column that is always NULL cannot leak; a check that says so cannot be
-// quietly undone by a future `create_lounge` that starts minting again.
+// Every member can read `lounges` (you see a room and ask at the door), so an
+// invite_code in that row would be a key around the door. It stays NULL, and
+// create_lounge never mints one.
 if (DB_URL) {
   try {
     const before = posture.length;
@@ -662,8 +563,8 @@ if (DB_URL) {
     const postureBeforeGrants = posture.length;
     const q = (sql) => sh(`psql "${DB_URL}" -tAc "${sql.replace(/"/g, '\\"')}"`).trim();
 
-    // 1. Exactly which columns may an ordinary member write to their own row.
-    //    Too many is self-elevation; too few silently breaks profile editing.
+    // Exactly which columns an ordinary member may write on their own row: too many
+    // is self-elevation, too few silently breaks profile editing.
     const grants = q(
       `SELECT string_agg(column_name, ',' ORDER BY column_name) FROM information_schema.column_privileges ` +
         `WHERE table_schema='public' AND table_name='profiles' AND privilege_type='UPDATE' AND grantee='authenticated'`,
@@ -685,8 +586,7 @@ if (DB_URL) {
       );
     }
 
-    // 2. Triggers must exist AND be enabled. 'D' is disabled; it looks identical
-    //    to a working trigger in every migration file.
+    // Triggers must exist AND be enabled ('D', disabled, reads like any other in a migration).
     for (const { table, trigger, why } of sec.mustBeEnabledTriggers || []) {
       const state = q(
         `SELECT t.tgenabled FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid ` +
@@ -697,7 +597,7 @@ if (DB_URL) {
       else if (state !== 'O') posture.push(`trigger DISABLED (tgenabled=${state}): ${table}.${trigger} — ${why}`);
     }
 
-    // 3. RLS on every public table.
+    // RLS on every public table.
     if (sec.rlsRequiredOnEveryPublicTable) {
       const off = q(
         `SELECT string_agg(c.relname, ', ' ORDER BY c.relname) FROM pg_class c ` +
@@ -707,7 +607,7 @@ if (DB_URL) {
       if (off) posture.push(`RLS is OFF on: ${off}`);
     }
 
-    // 4. The length ceilings are still there. Dropping one is silent otherwise.
+    // The length ceilings are still there (dropping one is otherwise silent).
     if (sec.minLengthCeilings) {
       const n = Number(
         q(`SELECT count(*) FROM pg_constraint WHERE contype='c' AND conname LIKE '%\\_len'`),
@@ -716,17 +616,9 @@ if (DB_URL) {
         posture.push(`length ceilings dropped: ${n} live, expected at least ${sec.minLengthCeilings}`);
       }
     }
-    // 5. Every function in public demotes pg_temp.
-    //    `SET search_path = public` is a VACUOUS pin: PostgreSQL searches pg_temp
-    //    FIRST — before pg_catalog — for relation names unless pg_temp is named
-    //    explicitly, so a temp table shadows the real one. Both anon and
-    //    authenticated hold TEMP privilege here.
-    //    Proven on production 2026-08-10: with a decoy `logs` table planted,
-    //    get_profile_counts reported logs_count 0 / ledger_count 0 instead of
-    //    145 / 93. After pinning `public, pg_temp` the same attack returned the
-    //    true numbers. This check exists because the repo cannot see proconfig —
-    //    a function added straight through the SQL editor would never appear in
-    //    a migration file, and only the live DB knows.
+    // Every function in public demotes pg_temp. `search_path = public` alone is
+    // VACUOUS: pg_temp is searched first for relations unless named, so a member's
+    // temp table (both roles hold TEMP) shadows the real one. Proven on production.
     if (sec.everyFunctionDemotesPgTemp) {
       const bad = q(
         `SELECT string_agg(p.proname, ', ' ORDER BY p.proname) FROM pg_proc p ` +
@@ -737,19 +629,10 @@ if (DB_URL) {
       if (bad) posture.push(`search_path is not pg_temp-safe on: ${bad}`);
     }
 
-    // 9. No column is invisible to every client.
-    //    profiles is protected by COLUMN-level grants, and PostgreSQL does not
-    //    extend those to columns created later. So the next ALTER TABLE ADD
-    //    COLUMN produces a column no client can read — and the error names the
-    //    TABLE, not the column: "permission denied for table profiles". The
-    //    cause looks nothing like the symptom.
-    //    Reproduced live: adding a column left it unreadable by anon AND
-    //    authenticated, while existing named-column queries kept working, so
-    //    nothing fails until someone selects the new column.
-    //    Private-by-default is the RIGHT posture — it is the same whitelist
-    //    logic the email-harvest fix chose deliberately. What was missing is
-    //    noticing. Exactly two columns are meant to be invisible to both roles;
-    //    a third means someone added a column and forgot the grant.
+    // Only the declared columns are invisible to every client. Column-level grants do
+    // not reach a column added later, so a new one is unreadable, and the error names
+    // the TABLE ("permission denied for table profiles"). Private by default is right;
+    // an undeclared one means a forgotten grant.
     if (sec.columnsInvisibleToEveryClient) {
       const expected = [...sec.columnsInvisibleToEveryClient].sort().join(', ');
       const live = q(
@@ -770,15 +653,8 @@ if (DB_URL) {
       }
     }
 
-    // 10. THE VAULT — a note belongs to one viewing, and only its writer reads it.
-    //    Each rule below was broken at some point, and none of the breaks were
-    //    visible from the repo:
-    //      · notes read back empty in both apps, because the column they read is
-    //        kept blank on purpose;
-    //      · a rewatch copied the note into viewing_history, which anon reads;
-    //      · 16 histories were shredded into single characters by the web;
-    //      · the note policies were {public}, which includes anon, and were safe
-    //        only because auth.uid() happens to be null for a visitor.
+    // THE VAULT: a note belongs to one viewing, and only its writer reads it. Each
+    // rule below is one the repo cannot see kept.
     if (sec.theVault) {
       const v = sec.theVault;
       const postureBeforeVault = posture.length;
@@ -838,10 +714,8 @@ if (DB_URL) {
         if (shared !== '0') posture.push(`${shared} viewing identit(ies) are shared by more than one viewing — a note could land on the wrong one`);
       }
 
-      // A viewing's identity is public (it sits in every history), so it must
-      // belong to ONE log, or another member can take yours first. Proven on
-      // production 2026-09-18: a copied identity silently swallowed the owner's
-      // note, and blocked them removing their rewatch for ever.
+      // A viewing's identity is public (it sits in every history), so it must belong
+      // to ONE log, or another member can take yours first and swallow your note.
       if (v.everyViewingBelongsToOneLog) {
         const registry = q(
           `SELECT CASE WHEN to_regclass('public.viewings') IS NULL THEN 'missing' ` +
@@ -885,11 +759,9 @@ if (DB_URL) {
         if (state !== 'ok') posture.push(`${fn} is ${state}`);
       }
 
-      // pg_input_is_valid answers about the type of its FIRST call at each place
-      // in the code and keeps that answer for ever. Proven on production: a loop
-      // asking numeric, then text, then date, then boolean answered true, false,
-      // false, false. A member removing a rewatch got their writing back blank.
-      // So the type must always be written out, never held in a variable.
+      // pg_input_is_valid keeps the type of its FIRST call at each call site (proven:
+      // numeric, text, date, boolean answered true, false, false, false), so the type
+      // is always written out, never held in a variable.
       if (v.pgInputIsValidTypesAreWrittenOut) {
         const guessy = q(
           `SELECT COALESCE(string_agg(p.proname, ', ' ORDER BY p.proname), '') FROM pg_proc p ` +
@@ -910,21 +782,11 @@ if (DB_URL) {
       checkedVault = true;
     }
 
-    // 8. Index hygiene: no redundant indexes, and no unindexed foreign keys.
-    //    Both are invisible to the repo — an index added through the SQL editor,
-    //    or a new FK created without one, appears in no migration file.
-    //    Redundant means STRUCTURALLY covered by another index (identical, or a
-    //    wider index starting with the same column), never "looks unused":
-    //    proven on this database that a 32-row table ignores a good index while a
-    //    54-row table uses one, so scan counts say nothing about worth.
-    //    An unindexed FK makes every parent delete scan the whole child table —
-    //    measured at 143x on 200k rows, and account deletion crosses ~12 of them.
+    // Index hygiene. Redundant means STRUCTURALLY covered (identical, or a wider
+    // index with the same leading columns, at any width), never "looks unused": scan
+    // counts say nothing on small tables. An unindexed FK makes every parent delete
+    // scan the child (143x measured on 200k rows; deleting an account crosses ~12).
     if (sec.indexHygiene) {
-      // Coverage is compared at ANY width, not just single-column. The first
-      // version of this check only looked at indnkeyatts=1, and two multi-column
-      // duplicates survived the batch because of it — idx_logs_composite_user_film
-      // (user_id, film_id) sat beside both a UNIQUE index on exactly those columns
-      // and a wider one starting with them, on the hottest write table in the app.
       const dup = q(
         `SELECT string_agg(x, ', ') FROM (SELECT DISTINCT ic.relname AS x FROM pg_index i ` +
           `JOIN pg_class ic ON ic.oid=i.indexrelid JOIN pg_class c ON c.oid=i.indrelid ` +
@@ -954,23 +816,9 @@ if (DB_URL) {
       }
     }
 
-    // 6. Actually RUN the admin read RPCs, as an admin, inside a rolled-back
-    //    transaction.
-    //    Existence is not health. get_priority_reports existed, was granted, and
-    //    had the right signature — and raised on every single call for days,
-    //    because it declared `content_id uuid` while reports.content_id is text.
-    //    PostgreSQL validates a RETURNS TABLE descriptor at execution, so no
-    //    static check could see it; only calling it could. The Tribunal docket
-    //    was unopenable and every name-and-signature check reported healthy.
-    //    The jwt claim is built with json_build_object so this SQL carries no
-    //    double quotes to survive shell escaping.
-    // 7. anon/authenticated hold no TRUNCATE, REFERENCES or TRIGGER.
-    //    TRUNCATE is the one write RLS cannot defend: a DELETE with the anon key
-    //    returns 204 and removes nothing because the policies filter the rows,
-    //    but TRUNCATE has no rows to filter. Nothing needs it — PostgREST answers
-    //    the verb with 501 and no function contains it — so it is simply gone.
-    //    This also catches a NEW table arriving with Supabase's default GRANT ALL,
-    //    which is the way this drifts back.
+    // No TRUNCATE (nor REFERENCES, TRIGGER, MAINTAIN) for the client roles: TRUNCATE
+    // is the one write RLS cannot filter, nothing needs it, and a new table arrives
+    // with Supabase's default GRANT ALL.
     if (sec.noWipePrivileges) {
       const bad = q(
         `SELECT string_agg(DISTINCT c.relname, ', ') FROM pg_class c ` +
@@ -981,11 +829,7 @@ if (DB_URL) {
       );
       if (bad) posture.push(`anon/authenticated still hold TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on: ${bad}`);
 
-      // A materialized view cannot carry RLS — PostgreSQL has no policy to apply —
-      // so a SELECT grant on one is unconditional access to every row it holds.
-      // global_feed_materialized served 263 rows of usernames and review text to
-      // `anon` over HTTP 200, and sealing a member changed nothing. Any matview
-      // readable by these roles is that same leak.
+      // A materialized view cannot carry RLS, so SELECT on one is every row it holds.
       const mv = q(
         `SELECT string_agg(DISTINCT c.relname, ', ') FROM pg_class c ` +
           `JOIN pg_namespace n ON n.oid=c.relnamespace AND n.nspname='public' ` +
@@ -995,20 +839,17 @@ if (DB_URL) {
       if (mv) posture.push(`materialized view readable by anon/authenticated (RLS cannot protect it): ${mv}`);
     }
 
-    // 8. No test account lives in production. The sealed E2E world makes its
-    //    members at e2e.test (reserved by RFC 2606 — no real inbox can exist)
-    //    with fresh passwords on every run; the old device job signed in as
-    //    test@reelhouse.app. Either one here means a test run could write
-    //    among real members.
+    // No test account in production: the sealed E2E world's members (@e2e.test, an RFC
+    // 2606 domain) or the old test@reelhouse.app would let a test write among members.
     const testAccounts = q(
       `SELECT count(*) FROM auth.users WHERE lower(email) LIKE '%@e2e.test' OR lower(email) = 'test@reelhouse.app'`,
     );
     if (testAccounts !== '0') posture.push(`${testAccounts} test account(s) exist in production (…@e2e.test or test@reelhouse.app)`);
 
-    //    Guarded on an admin existing: with no admin row, set_config would write a
-    //    null subject and every one of these RPCs would raise "Not authenticated",
-    //    reporting the whole admin surface broken when nothing is. A guard that
-    //    cries wolf is a guard someone eventually deletes.
+    // RUN the admin read RPCs, as an admin, in a rolled-back transaction: a RETURNS
+    // TABLE descriptor is checked only when called, so existence is not health. Only
+    // when an admin exists (a null subject would raise on every call, crying wolf).
+    // The claim is built with json_build_object, so the SQL carries no double quotes.
     const adminId =
       (sec.smokeExecuteAsAdmin || []).length > 0
         ? q(`SELECT id FROM public.profiles WHERE role='admin' LIMIT 1`)
@@ -1053,12 +894,7 @@ const skipped = [
   !checkedVault && 'the Vault (notes per viewing)',
 ].filter(Boolean);
 
-// A check that verifies NOTHING must not report success.
-//
-// This printed "✓ Verified present in production: nothing." and exited 0 when
-// both halves were skipped — a green tick for having looked at nothing, which
-// reads identically to a pass in any log or CI summary. Whether it ran is now
-// part of the result.
+// A check that verified NOTHING is not a success: whether each ran is part of the result.
 const failed =
   missing.rpcs.length > 0 ||
   missing.edgeFunctions.length > 0 ||
@@ -1077,7 +913,7 @@ if (missing.rpcs.length || missing.edgeFunctions.length) {
 if (signatureDrift.length) {
   console.error('\n✗ Backend contract SIGNATURE DRIFT — the function exists but the app cannot call it:');
   for (const d of signatureDrift) console.error(`    ${d}`);
-  console.error('\nThis is the #24 failure mode: a name that resolves and a signature that does not.');
+  console.error('\nA name that resolves and a signature that does not: every call from the app fails.');
 }
 
 if (callMismatches.length) {
@@ -1093,9 +929,8 @@ if (posture.length) {
   console.error('\n✗ SECURITY POSTURE has drifted from the contract:');
   for (const p of posture) console.error(`    ${p}`);
   console.error(
-    '\nThese are live facts, not repo facts. The schema snapshot has been wrong about\n' +
-      'all three of these before — a lockdown written in a migration is not a lockdown\n' +
-      'that is on. Fix production, then update scripts/backend-contract.json.',
+    '\nThese are live facts, not repo facts: a lockdown written in a migration is not a\n' +
+      'lockdown that is on. Fix production, then update scripts/backend-contract.json.',
   );
 }
 
@@ -1104,17 +939,8 @@ if (skipped.length) {
   console.error('  Set SUPABASE_DB_URL / SUPABASE_PROJECT_REF. An unrun check is not a pass.');
 }
 
-// Say what DID pass, even when something else was skipped.
-//
-// Without this the run is all warnings and one error: a member reads it as
-// "everything is broken" when in fact the security posture was checked against
-// production and was clean. Reporting only failures is the same defect as
-// reporting only successes — the reader cannot tell verified-good from
-// not-looked-at, which is the distinction this whole script exists to make.
-// A section only counts as passed if it RAN and produced no violations.
-// `checkedAnon` alone is not enough: it means "the probes completed", not "they
-// were clean", so a run that FOUND drift would print the violation and a green
-// tick for the very same check directly underneath it.
+// What DID pass, even beside a skip, so verified-good reads apart from not-looked-at.
+// A section passes only if it RAN and found nothing ("checked" alone means it ran).
 const passed = [
   checkedEdges && !missing.edgeFunctions.length && 'edge functions',
   checkedRpcs && !missing.rpcs.length && !signatureDrift.length && 'RPC signatures',
@@ -1138,13 +964,8 @@ if (passed.length && failed) {
 if (!failed) {
   console.log(`✓ Verified against production: ${passed.join(', ')}.`);
   if (unsignedRpcs.length) {
-    // Named-only entries cannot catch signature drift on their own. Reported
-    // every run so the remaining blind spot is a number someone can watch
-    // shrink, rather than a silence.
-    //
-    // An OVERLOADED function belongs here permanently and is not a gap: pinning
-    // one of two signatures would invent drift on every run. The app-call check
-    // above covers these, because it tries every overload.
+    // Named-only entries, counted every run (an overload stays named: the app-call
+    // check covers it, trying every overload).
     console.log(`  ${unsignedRpcs.length} RPC(s) not pinned to one signature (overloaded, or newly added):`);
     console.log(`    ${unsignedRpcs.join(', ')}`);
     console.log('    — these are still covered by the app-call check above.');

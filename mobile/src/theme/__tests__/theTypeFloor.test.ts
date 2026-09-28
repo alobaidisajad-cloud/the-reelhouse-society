@@ -49,7 +49,6 @@ const KEEP: Record<string, 'mark' | 'stamp' | 'ordinal' | 'picture'> = {
   'src/components/RankBadge.tsx · word': 'stamp',
   'src/components/dispatch/paper/paperStyles.ts · optionNo': 'ordinal',
   'src/components/dispatch/paper/PaperDesk.tsx · slotNo': 'ordinal',
-  'src/components/dispatch/paper/PaperMore.tsx · cardFrom': 'picture',
 };
 /** A whole file that is an exported picture: the share card is an image. */
 const KEEP_FILES: Record<string, 'picture'> = { 'src/components/film/NitrateFileCard.tsx': 'picture' };

@@ -22,13 +22,7 @@ export interface LoungeRoom {
   name: string;
   description: string;
   is_private: boolean;
-  // `invite_code` removed. Mobile stopped issuing codes with the Editorial
-  // Salon overhaul — a private room is entered by requesting admission and
-  // being admitted — but the column was still being SELECTed here and carried
-  // through the type for no reader. It was readable by anyone holding the
-  // public anon key until the lounges SELECT policy was scoped to
-  // authenticated, and web was still minting and displaying codes until they
-  // were retired there too.
+  // No invite_code: a private room is entered by asking at the door and being admitted.
   creator_id: string;
   created_at: string;
   cover_image?: string | null;
@@ -41,16 +35,11 @@ export interface LoungeRoom {
   membership_status?: 'approved' | 'pending' | 'muted' | 'banned';
   /** For lounges you host: how many requests are at the door. */
   pending_count?: number;
-  /** Up to 3 member faces for the salon card avatar stack (your salons only;
-   *  fetched via get_salon_member_faces). Absent/empty → card shows the count. */
+  /** Up to 3 faces for the card (rooms you host or joined); without them it shows the count. */
   memberFaces?: { username: string; avatar_url: string | null }[];
 }
 
-/**
- * The curated, on-theme reaction set (the Editorial Salon overhaul). Praise in
- * sepia (bravo/adored/riveting/quoted) + a single clean critique (panned, blood).
- * Stored as these stable string keys in `lounge_message_reactions.reaction`.
- */
+/** The five reactions, in display order; the database refuses any other (…_reaction_curated). */
 export const LOUNGE_REACTIONS = ['bravo', 'adored', 'riveting', 'quoted', 'panned'] as const;
 export type LoungeReaction = (typeof LOUNGE_REACTIONS)[number];
 
@@ -140,14 +129,7 @@ export interface LoungeState {
   withdrawMessage: (messageId: string) => Promise<void>;
   retryMessage: (messageId: string) => Promise<void>;
   clearMessages: (loungeId?: string) => void;
-  /**
-   * Drops messages from anyone the viewer now hides, in place.
-   *
-   * The lounge already filters on load, on pagination, on realtime insert and on
-   * the typing indicator — but nothing re-examined what was ALREADY on screen. So
-   * blocking someone mid-conversation showed "User blocked. Their content is now
-   * hidden." while their messages sat there until you left the salon and came back.
-   */
+  /** Drops, from the transcript already on screen, messages by anyone the viewer now hides. */
   purgeHiddenMessages: () => void;
   canSendMessage: (loungeId?: string) => boolean;
   syncGlobalAvatar: (userId: string, avatarUrl: string | null) => void;
@@ -155,39 +137,15 @@ export interface LoungeState {
   _lastMarkReadMap: Record<string, number>;
 }
 
-// ── Throttle ── (800ms between sends, matching web)
-//
-// ── PER ROOM, NOT PER APP ───────────────────────────────────────────────────
-// This was a single module-level number, so it counted the last send ANYWHERE.
-// A double-tap in one room is what it exists to stop; sharing an essay into one
-// salon and then into another within 800ms is not a double-tap, it is the
-// member doing exactly what the share sheet is for — and the second share
-// returned false and vanished. Silently, because the throttle is the one
-// refusal path in sendMessage that raises no toast (correctly: a swallowed
-// double-tap should say nothing).
-//
-// Keyed by room, the guard still blocks the repeat it was written for and stops
-// eating the deliberate one.
+// 800ms between sends PER ROOM: stops a double-tap, silently, without eating a
+// share sent to two rooms in a row.
 const _lastSendAt = new Map<string, number>();
 const SEND_THROTTLE = 800;
 
-/**
- * Ceiling on messages held in memory for an open lounge — four pages of the
- * 100 loadOlderMessages fetches, so ordinary scroll-back never reaches it.
- *
- * Without a ceiling the array grows for the entire session: the initial page,
- * every page scrolled back, every realtime arrival, every message sent. Each
- * reaction event then maps over the whole array, so a long evening in a busy
- * lounge degrades steadily.
- *
- * Trimming the OLDEST is safe, and the earlier note claiming it would break
- * scroll-back was wrong: loadOlderMessages pages with
- * `.lt('created_at', currentMessages[0].created_at)` — a cursor taken from
- * whatever is oldest at that moment. Dropped history is simply re-fetched on
- * the next scroll up. Applied ONLY when appending; the prepend path must stay
- * free to grow or scrolling back would fight the cap.
- */
+/** Messages held for an open room: four of loadMoreMessages' pages of 100. */
 export const MESSAGE_WINDOW = 400;
+// Drops the OLDEST, which loadMoreMessages fetches again on scroll-up. Used only when
+// appending: a cap on the prepend would fight the scroll back.
 export const capMessages = (msgs: LoungeMessage[]): LoungeMessage[] =>
   msgs.length > MESSAGE_WINDOW ? msgs.slice(msgs.length - MESSAGE_WINDOW) : msgs;
 
@@ -209,26 +167,16 @@ function clearTypingState(set: (partial: Partial<LoungeState>) => void) {
   set({ presentCount: 0, typingUsers: [] });
 }
 
-// ── Username cache for Realtime messages — prevents N+1 profile queries ──
 /**
- * The author of a message, when the author may be gone.
- *
- * Deleting an account nulls user_id on shared content and keeps the words, so a
- * lounge message can outlive the person who wrote it. Two different situations
- * used to collapse into one word:
- *
- *   user_id null        -> they deleted their account. A settled fact.
- *   user_id set, no row -> the profile did not load. Transient.
- *
- * Both read as "unknown", which is a lie in the first case. The previous form
- * also left the ARRAY branch with no fallback at all — `?? 'unknown'` binds only
- * to the else, so an empty array yielded undefined.
+ * A deleted account nulls user_id and keeps the words: "[deleted]", a settled fact.
+ * A user_id whose profile did not load is "unknown", which may pass.
  */
 function authorHandle(userId: string | null | undefined, username?: string | null): string {
   if (!userId) return '[deleted]';
   return username || 'unknown';
 }
 
+// Authors of realtime messages, cached so a busy room costs one query per author.
 const _profileCache = new Map<string, { username: string; avatar_url?: string; ts: number }>();
 const _PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const _PROFILE_CACHE_MAX = 100;
@@ -238,11 +186,8 @@ async function resolveProfile(userId: string): Promise<{ username: string; avata
   if (cached) _profileCache.delete(userId);
   const { data: profile, error } = await supabase.from('profiles').select('username, avatar_url').eq('id', userId).single();
 
-  // A failure must NOT be cached. The fallback below is the string "unknown", and
-  // caching it pinned that name to a real member for the full 5-minute TTL — every
-  // live dispatch they sent rendered as from "unknown", and because the cache is
-  // consulted first, retrying could not clear it. An error path writing a bad value
-  // into a cache that is then trusted is the same shape as the notification-badge bug.
+  // A failure is never cached: "unknown" would stick to a real member for the whole
+  // TTL, and the cache is read first, so nothing could clear it.
   if (error || !profile) {
     if (error) logger.error('[LoungeStore.resolveProfile] lookup failed:', error);
     return { username: 'unknown', avatar_url: undefined };
@@ -261,18 +206,8 @@ async function resolveProfile(userId: string): Promise<{ username: string; avata
 interface ReactionRow { message_id: string; reaction: string; user_id: string }
 
 /**
- * Where a reaction sits in the curated row.
- *
- * `LOUNGE_REACTIONS.indexOf()` returns -1 for anything not in the list, and -1
- * sorts BEFORE 0 — so an unknown reaction led the row, while the comment below
- * claimed unknowns were appended. A member reading the room would have seen an
- * arbitrary string at the head of the reactions on that message.
- *
- * The database now refuses any reaction outside the five
- * (lounge_message_reactions_reaction_curated), so nothing unknown can be
- * written any more. This is the defence behind that: an unknown value arriving
- * from an older row, a future reaction this build does not know yet, or a
- * hand-made payload goes to the END, never the front.
+ * A reaction's place in the row. indexOf's -1 would put an unknown FIRST; the database
+ * refuses unknowns, but one from an old row or a newer build goes LAST.
  */
 const reactionRank = (reaction: string): number => {
   const i = LOUNGE_REACTIONS.indexOf(reaction as LoungeReaction);
@@ -374,12 +309,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     if (!user) return;
     set({ loading: true });
     try {
-      // Fetch lounges where user is a member
-      // #55 — this one is the worst of them. On failure `memberRows` was simply
-      // undefined, so `memberships` fell back to [] and the salon list rendered as
-      // though the member belonged to NOTHING: joined rooms missing, every unread
-      // count zero, no message of any kind. Thrown so the existing catch below
-      // surfaces it — a visible error beats a confidently wrong list.
+      // Thrown, not read as []: an empty list would say the member belongs to nothing.
       const { data: memberRows, error: memberError } = await supabase
         .from('lounge_members')
         .select('lounge_id, last_read_at, status')
@@ -391,11 +321,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const myLoungeIds = memberships.map(r => r.lounge_id);
       const statusMap = new Map(memberships.map(r => [r.lounge_id, (r as { status?: string }).status]));
 
-      // Fetch from three sources to guarantee visibility:
-      // 1) Public lounges (browsable by anyone)
-      // 2) Lounges user has explicitly joined (via lounge_members)
-      // 3) Lounges user created (fallback if lounge_members insert failed)
-      // Fetch ALL browsable lounges (public + private — both are visible, private just needs approval)
+      // Three sources, merged: the newest rooms (private ones too; they need admission),
+      // the rooms joined, and the rooms hosted, whose door requests are counted below.
       const browsablePromise = supabase.from('lounges')
         .select('id, name, description, is_private, creator_id, created_at, member_count')
         .order('created_at', { ascending: false })
@@ -425,32 +352,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const ownedOrJoinedIds = new Set(myLoungeIds);
       if (myCreatedRes.data) myCreatedRes.data.forEach(l => ownedOrJoinedIds.add(l.id));
 
-      // ── #54 · unread counts, computed once on the server ──────────────────────
-      // These two numbers used to be worked out here, with two UNBOUNDED queries:
-      //   1. every message in every lounge you belong to — no LIMIT and no filter at
-      //      all — downloaded solely to find the newest timestamp per room
-      //   2. every message newer than the OLDEST last_read_at across all your rooms —
-      //      no LIMIT and, worse, NO ORDER BY
-      //
-      // The second is the dangerous one: with no ordering, any row cap the server
-      // applies returns an arbitrary subset, so the count came out silently WRONG —
-      // not late, not slow, wrong, with no way for the client to notice.
-      //
-      // The register said to call the existing get_user_lounges. That one takes a
-      // caller-supplied user id instead of reading auth.uid(), returns invite_code,
-      // and had its access revoked in batch 7 after it was found returning every
-      // lounge regardless of the id passed. This is a new function: no parameter to
-      // forge, no invite_code, and SECURITY INVOKER so row security still decides
-      // what may be counted.
-      //
-      // Degrades rather than fails: if the call errors — including before the
-      // migration is applied — the salon list still renders, with counts at zero and
-      // the reason in the log. A list without badges beats no list.
       const unreadCounts: Record<string, number> = {};
       const lastMessageTimestamps: Record<string, string> = {};
 
       const loungeIds = memberships.map(m => m.lounge_id);
       if (loungeIds.length > 0) {
+        // Counted on the server, for auth.uid() and under row security (no id to forge,
+        // no unbounded download). A failure leaves the badges at zero, not the list empty.
         const { data: unreadRows, error: unreadError } = await supabase.rpc('get_lounge_unread_counts');
         if (unreadError) {
           logger.error('[LoungeStore.fetchLounges] unread counts failed:', unreadError);
@@ -547,13 +455,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .order('created_at', { ascending: false })
         .limit(100);
 
-      // #55 — supabase-js RESOLVES on a backend failure; it does not throw. So the
-      // guard below (`if (data && !error)`) simply skipped the block, the catch never
-      // fired, and the screen sat empty with no message, no log and no report. The
-      // finding blamed the catch — the catch was always fine. This is the line.
-      //
-      // Branch rather than return: `set({ loading: false })` runs after the try, so an
-      // early return would leave the spinner up forever.
+      // supabase-js resolves on a server failure rather than throwing, so the error is read
+      // here. Branch, don't return: the spinner comes down after the try.
       if (error) {
         logger.error('[LoungeStore.fetchMessages] load failed:', error);
         reelToast.error('Could not load messages — check your connection.');
@@ -622,14 +525,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             );
           }
         }
-        // ── THE ROOM MAY HAVE CHANGED WHILE THIS WAS IN FLIGHT ──────────────
-        // Tapping room A and then room B starts two fetches. If A's is slower
-        // it lands LAST and wrote A's conversation into the store while the
-        // screen showed B — the member read one room's words under another
-        // room's name, and anything they then sent went to B.
-        //
-        // sendMessage has guarded this since it was written
-        // (`if (s.currentLoungeId !== loungeId) return s`). The fetch never did.
+        // Only if this room is still the open one: a slower fetch for a room left
+        // behind would put its words under the new room's name.
         set(s => (s.currentLoungeId !== loungeId ? s : {
           currentMessages: finalMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id)),
         }));
@@ -637,11 +534,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     } catch {
       reelToast.error('Could not load messages — check your connection.');
     }
-    // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-    // the logout reset has already cleared.
     if (!memberUnchanged(startedAs)) return;
-    // Same reason: a stale fetch must not take down the spinner the room the
-    // member is actually looking at is still raising.
+    // A stale fetch must not lower the spinner of the room now open.
     set(s => (s.currentLoungeId !== loungeId ? s : { loading: false }));
   },
 
@@ -655,27 +549,18 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     if (oldestMessage.id.startsWith('optimistic')) return; // Safety
 
     try {
+      // A (created_at, id) cursor, with the same two keys in the order: created_at alone
+      // skips for good every message sharing the oldest one's timestamp, as a burst does.
+      // Both values come from a server row, so neither can carry filter syntax.
       const { data, error } = await supabase
         .from('lounge_messages')
         .select('id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, metadata, created_at, deleted_at, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
         .eq('lounge_id', loungeId)
-        // #57 — a COMPOUND cursor. A bare "created_at <" cursor silently skips every
-        // message sharing the boundary timestamp with the oldest one loaded — which is
-        // exactly what a burst of chat produces — and the skip is PERMANENT, because
-        // the next page starts below them. The id tiebreaker makes the ordering total.
-        //
-        // Matches the pattern already proven in notificationStore, logSlice,
-        // watchlistSlice and FeedService. The sort must carry the same second key, or
-        // the filter and the ordering disagree and the cursor means nothing.
-        //
-        // Both interpolated values come from a row the server produced — a timestamp
-        // and a uuid — so neither can carry a character this filter grammar reads.
         .or(`created_at.lt.${oldestMessage.created_at},and(created_at.eq.${oldestMessage.created_at},id.lt.${oldestMessage.id})`)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })
         .limit(100);
 
-      // #55, same shape: a backend failure resolved here and was skipped in silence.
       if (error) {
         logger.error('[LoungeStore.loadMoreMessages] load failed:', error);
         reelToast.error('Could not load older messages.');
@@ -701,18 +586,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         
         // Prepend older messages (filter blocked/muted)
         const filteredOlder = olderMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id));
-        // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-        // the logout reset has already cleared.
         if (!memberUnchanged(startedAs)) return;
-        // ── MERGE AGAINST THE LIVE LIST, NOT THE SNAPSHOT ───────────────────
-        // `current` was read BEFORE the await. Writing `[...older, ...current]`
-        // put the list back the way it was when the page started, so any
-        // dispatch that arrived over realtime while the member was scrolling up
-        // was silently erased — the one message-loss bug a reader would never
-        // think to report, because they never saw it arrive.
-        //
-        // The room guard is the same one fetchMessages needed: paging in room A
-        // must not prepend A's history onto B's transcript.
+        // Into the LIVE list, not `current` (read before the await), which would erase what
+        // arrived over realtime during the scroll; and only into this room.
         set(s => {
           if (s.currentLoungeId !== loungeId) return s;
           const have = new Set(s.currentMessages.map(m => m.id));
@@ -721,7 +597,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         });
       }
     } catch {
-      // FIX #10: Surface pagination failures instead of silently swallowing
       reelToast.error('Could not load older messages.');
     }
   },
@@ -757,13 +632,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const ALLOWED_TYPES = ['text', 'film_share', 'log_share', 'list_share', 'dossier_share', 'system'] as const;
     const safeType = (ALLOWED_TYPES as readonly string[]).includes(type) ? type : 'text';
     
-    // Parity with the offline mutationExecutor path: strip zero-width/control
-    // chars and length-cap via the shared sanitizer (was a bare trim+slice).
-    // No second, hardcoded cap here. `sanitizeInput` already enforces
-    // MAX_LENGTHS.loungeMessage; a `.slice(0, 500)` in front of it was a
-    // stricter duplicate that silently truncated at 500 no matter what the
-    // composer allowed — so widening the box alone would have changed nothing.
-    // One cap, one place.
+    // The sanitizer the offline path uses, and the one length cap (MAX_LENGTHS.loungeMessage):
+    // a second cap here would silently overrule the composer's.
     const cleanContent = sanitizeInput(content, 'loungeMessage');
     if (!user || (!cleanContent && type === 'text')) return false;
 
@@ -773,7 +643,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
     set({ sending: true });
 
-    // Smart schema boundary validation & metadata packaging
+    // Known columns go top-level; anything else rides in metadata.
     const explicitMetaKeys = ['film_id', 'film_title', 'film_poster', 'reply_to_id', 'reply_to_username', 'reply_to_content'];
     const explicitMeta: Record<string, unknown> = {};
     const nestedMeta: Record<string, unknown> = {};
@@ -837,8 +707,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       
       if (error) throw error;
       
-      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return false;
       set(s => {
         if (s.currentLoungeId !== loungeId) return s;
@@ -902,16 +770,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       reelToast.error('Lounge name must be at least 2 characters.');
       return null;
     }
-    // ── THIS BRANCH COULD NEVER FIRE ────────────────────────────────────────
-    // `sanitizeInput` has already trimmed to MAX_LENGTHS.loungeName, so by the
-    // time this ran the name was ALWAYS within the limit. It read as the guard
-    // against an over-long name and was dead code standing where that guard
-    // should have been — which is how a name cut from 60 to 50 got through
-    // without anyone being told.
-    //
-    // Kept, and made real, by asking the same question the sanitiser answers:
-    // a name longer than the cap now means the cap and the trim disagree, which
-    // is a fault worth surfacing rather than a limit worth enforcing twice.
+    // Cannot fire while sanitizeInput trims to this same cap; it stands so that the two
+    // can never come to disagree in silence.
     if (trimmedName.length > MAX_LENGTHS.loungeName) {
       reelToast.error(`Lounge name cannot exceed ${MAX_LENGTHS.loungeName} characters.`);
       return null;
@@ -925,8 +785,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     _lastCreateAt = now;
     
     try {
-      // No-code create (Editorial Salon overhaul) — private rooms are gated by
-      // the request/admit flow, not an invite code.
+      // No invite code: a private room is entered by asking at the door.
       const { data: loungeId, error } = await supabase.rpc('create_lounge', {
         p_name: trimmedName,
         p_description: trimmedDesc,
@@ -936,10 +795,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (error || !loungeId) {
         logger.error('[LoungeStore.createLounge] RPC failed:', error);
         reelToast.error('Failed to create lounge.');
-        // #58 — release the cooldown. It is set BEFORE the call on purpose (it is the
-        // anti-double-tap guard while the request is in flight), so the fix is to clear
-        // it on the failure paths rather than to move it after success — moving it
-        // would leave a window where two taps fire two create_lounge calls.
+        // Set before the call, so a second tap can't create twice; a failure releases it.
         _lastCreateAt = 0;
         return null;
       }
@@ -956,13 +812,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         is_member: true,
       };
 
-      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared.
-      //
-      // `null`, not bare: this op is declared Promise<string | null>, so a bare
-      // return hands back `undefined` and a caller testing `=== null` misses it.
-      // tsc did NOT catch this one — the store creator types these methods
-      // loosely — which is why the inserted guards were read rather than trusted.
+      // null, not a bare return: callers test === null, and tsc would let undefined pass.
       if (!memberUnchanged(startedAs)) return null;
       set(s => ({ lounges: [newLounge, ...s.lounges] }));
 
@@ -971,8 +821,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     } catch (e) {
       logger.error('[LoungeStore.createLounge] Unhandled error:', e);
       reelToast.error('Could not create lounge. Check your connection and try again.');
-      // The finding named only the branch above. A throw — the offline case — burns the
-      // cooldown just as completely, and is the likelier one in practice.
       _lastCreateAt = 0;
       return null;
     }
@@ -990,8 +838,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     } catch (e) {
       logger.warn('[LoungeStore.setLoungeCover] failed:', e);
       // Revert the optimistic patch on failure — the host sees the truth.
-      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return false;
       set(s => ({ lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: prev } : l) }));
       reelToast.error('Could not update the salon cover.');
@@ -1006,10 +852,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     try {
       const { error } = await supabase.rpc('join_public_lounge', { p_lounge_id: loungeId });
       if (error) throw error;
-      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared.
-      // `false`, not bare — this op's contract is Promise<boolean>. Nobody is
-      // reading the result once the member has gone, but the type is the type.
       if (!memberUnchanged(startedAs)) return false;
       set(s => ({
         lounges: s.lounges.map(l => l.id === loungeId
@@ -1146,17 +988,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     } catch (e) {
       logger.warn('[LoungeStore.toggleReaction] failed, reverting:', e);
       // Revert the optimistic delta.
-      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return;
       set(s => ({
         currentMessages: s.currentMessages.map(m =>
           m.id === messageId ? { ...m, reactions: applyReactionDelta(m.reactions, reaction, (wasMine ? 1 : -1) as 1 | -1, wasMine) } : m
         ),
       }));
-      // A reaction used to revert in total silence — the mark appeared, then
-      // quietly un-appeared, and nothing said why. For a rank refusal the house
-      // has an answer, so give it. Any other failure keeps its silent revert.
+      // A rank refusal is told why; any other failure reverts in silence.
       showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` });
     }
   },
@@ -1186,8 +1024,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }
       // A real refusal (not yours to withdraw, row gone) — restore it intact.
       logger.error('[LoungeStore.withdrawMessage] failed, reverting:', e);
-      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return;
       set(s => ({
         currentMessages: s.currentMessages.map(m => m.id === messageId ? target : m),
@@ -1224,8 +1060,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .select('id, created_at')
         .single();
       if (error) throw error;
-      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return;
       set(s => ({
         currentMessages: s.currentMessages.map(m =>
@@ -1288,23 +1122,14 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       };
     });
 
-    // ── A DELETE THAT MATCHES NOTHING IS NOT AN ERROR ────────────────────────
-    // PostgREST answers 200 with an empty body when the predicate or the RLS
-    // policy refuses every row, so `error` is null and this read as success.
-    // The member was told they had left a room they were still sitting in, and
-    // the optimistic removal made the lie look true until the next fetch.
-    //
-    // `.select('id')` makes the refusal legible: no rows back means no row
-    // changed. Proved against production — a member running this exact delete
-    // on a row that is not theirs gets 0 rows and no error.
+    // A delete that row security refuses answers 200 with no error, so the rows are asked
+    // for back: none means the member is still in the room (checked against production).
     const { data: removed, error } = await supabase.from('lounge_members').delete()
       .eq('lounge_id', loungeId)
       .eq('user_id', user.id)
       .select('id');
 
     if (error || !removed || removed.length === 0) {
-      // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return;
       set(s => {
         const newSet = new Set(s._pendingLeaveLoungeIds);
@@ -1321,24 +1146,15 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   },
 
   deleteLounge: async (loungeId) => {
-    // No session capture here, deliberately: this op's rollback is a REFETCH
-    // (`fetchLounges`), which carries its own guard. There is no direct write
-    // after the await to protect, so a capture would be dead weight.
+    // No session capture: after the await only fetchLounges writes, and it guards itself.
     const user = useAuthStore.getState().user;
     if (!user) return false;
     
     // Optimistic removal
     set(s => ({ lounges: s.lounges.filter(l => l.id !== loungeId) }));
     
-    // ── A DELETE THAT MATCHES NOTHING IS NOT AN ERROR ────────────────────────
-    // Same class as leaveLounge above. `.eq('creator_id', user.id)` plus the
-    // "Creators can delete own lounges" policy means a non-creator's delete
-    // touches no rows — and PostgREST reports that as 200, no error. This
-    // returned true, kept the optimistic removal, and the salon simply vanished
-    // from the member's list while it went on existing for everyone else.
-    //
-    // Proved against production: a member deleting a lounge they did not create
-    // gets ROWS_DELETED=0, no error, and the lounge is still there afterwards.
+    // As in leaveLounge: a non-creator's delete touches no rows and still answers 200,
+    // so no rows back is the refusal (checked against production).
     const { data: destroyed, error } = await supabase.from('lounges').delete()
       .eq('id', loungeId)
       .eq('creator_id', user.id)
@@ -1358,8 +1174,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const me = useAuthStore.getState().user;
     const channel = supabase
       .channel(`lounge-${loungeId}`, {
-        // THE HOUSE PULSE rides the same socket as the transcript —
-        // presence keyed by member id; our own typing echoes are muted.
+        // THE HOUSE PULSE shares the transcript's socket; own typing echoes are muted.
         config: { presence: { key: me?.id ?? 'anon' }, broadcast: { self: false } },
       })
       .on(
@@ -1401,23 +1216,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             created_at: msg.created_at,
           };
 
-          // Dedup incoming message and re-sort
-          //
-          // Deliberately NOT session-guarded like the async operations above.
-          // This is a long-lived realtime callback, not a call with a member
-          // captured at its start — there is nothing to compare against. Its
-          // equivalent protection is UNSUBSCRIBING on logout, which the reset at
-          // the bottom of this file now actually does; it used to null the
-          // channel reference and leave the subscription running.
+          // Dedup and re-sort. No session guard: a subscription has no caller to capture
+          // a member from; the logout reset unsubscribes it instead.
           set(s => {
-            // ── AND THE ROOM MUST STILL BE THIS ONE ───────────────────────────
-            // This callback AWAITS resolveProfile() — a real query on a cache
-            // miss — and the member can change rooms inside that window. This
-            // is the only one of these handlers that INTRODUCES a message; the
-            // others map over currentMessages by id, so after a room change no
-            // id matches and they do nothing. Without the check, a dispatch
-            // from the room just left appeared in the transcript of the room
-            // just opened.
+            // The member may change rooms while resolveProfile queries; this is the one
+            // handler that ADDS a message, so it alone must check the room.
             if (s.currentLoungeId !== newMsg.lounge_id) return s;
             const messagesWithoutOpt = s.currentMessages.filter(m => m.id !== newMsg.id);
 
@@ -1488,9 +1291,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           }));
         }
       )
-      // Membership changes (a host admits a pending guest, mutes/removes a member,
-      // etc.) — let the screen react: a pending member's gate flips to the chat,
-      // the host's roster + "at the door" badge refresh.
+      // Membership changes (admit, mute, remove) let the screen refresh its gate and roster.
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'lounge_members', filter: `lounge_id=eq.${loungeId}` },
@@ -1573,21 +1374,12 @@ registerStoreReset(() => {
     useLoungeStore.setState({ lounges: [], currentMessages: [], currentLoungeId: null, loading: false, sending: false, presentCount: 0, typingUsers: [], _pendingLeaveLoungeIds: new Set(), _lastMarkReadMap: {} });
     _lastCreateAt = 0;
     _lastTypingBroadcastAt = 0;
-    // The send throttle's memory, which this reset used to walk past. Left
-    // standing, the next member to sign in on this phone inherited the last
-    // one's timings: their opening message in a room that was just used came
-    // back false and said nothing, because the throttle is the one refusal
-    // that raises no toast. Every other module-level cache in this file is
-    // cleared here; this one was the exception.
+    // Every module-level memory, or the next member on this phone inherits it.
     _lastSendAt.clear();
     for (const t of _typingTimers.values()) clearTimeout(t);
     _typingTimers.clear();
-    // Actually UNSUBSCRIBE, not just forget the reference. Nulling the variable
-    // left the channel live, so a message arriving after logout still reached
-    // the realtime handler and wrote it into the store this reset had just
-    // cleared — the one path the per-operation session guards cannot cover,
-    // because a subscription has no caller to capture a member from.
-    // notificationStore tears its channel down properly; this one did not.
+    // Unsubscribe, not just forget: a live channel would write the next message into
+    // the store this reset just cleared.
     if (_activeChannel) {
         try { supabase.removeChannel(_activeChannel); } catch { /* already gone */ }
     }

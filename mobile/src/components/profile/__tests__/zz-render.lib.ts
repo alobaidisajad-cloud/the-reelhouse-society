@@ -3,19 +3,10 @@ import { BLOOM, lightGeometry, type Room } from '@/src/theme/light';
 /**
  * The React Native tree, converted to HTML that draws the same picture.
  *
- * ── WHY THE FIRST VERSION LOOKED WRONG ───────────────────────────────────────
- * It matched element types called `Svg` and `Circle`. React Native Svg does not
- * render those — it renders `RNSVGSvgView`, `RNSVGGroup`, `RNSVGCircle`,
- * `RNSVGPath`. Nothing matched, so every icon in the app vanished and so did the
- * Projector's dial, which is the centrepiece of that room. And every poster was
- * an empty rectangle, which in the Archive is 54 of them against 11 pieces of
- * text — most of the room.
- *
- * Everything needed was in the tree the whole time. Lucide draws through
- * react-native-svg, so each icon arrives with its real `d` path; the dial
- * arrives as two circles with their real dash arrays. Colours on the inner
- * nodes are packed ARGB integers rather than strings, so they are decoded
- * rather than dropped.
+ * Everything needed is in the rendered tree: react-native-svg renders host types
+ * (`RNSVGSvgView`, `RNSVGPath`, …, not `Svg`), so every Lucide icon arrives with
+ * its real path and the Projector's dial with its real dash arrays; inner colours
+ * arrive as packed ARGB integers and are decoded, not dropped.
  */
 
 // ── colour ──────────────────────────────────────────────────────────────────
@@ -72,29 +63,12 @@ const FONT_MAP: Record<string, string> = {
 
 const kebab = (k: string) => k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
 
-/**
- * ── THE TWO PROPS WHOSE CSS NAME IS NOT THEIR REACT NATIVE NAME ──────────────
- * Everything else in DIRECT kebab-cases into a real CSS property. `writing-
- * direction` is not one — CSS calls it `direction` — so for as long as this was
- * spelled the React Native way, every right-to-left plate in the gallery was
- * drawn with a LEFT-to-right paragraph and nobody could see it: the browser
- * drops an unknown property in silence, and the plates showed a real bug that
- * was not there while hiding the real one that was.
- *
- * A renamed property is checked below, in `styleToCss`, against the browser's
- * own list — the guard is that a name nobody recognises must not be emitted.
- */
+// The DIRECT keys whose CSS name is not their kebab-case (a browser drops an unknown one).
 const CSS_NAME: Record<string, string> = { writingDirection: 'direction' };
 
 /**
- * A style prop arrives as an object, an array of them, or — in older RN — a
- * registered id, which is an integer. `StyleSheet.flatten` resolves all three
- * to one flat object, which is what every caller here assumes it is getting.
- *
- * (The id case is defensive only. It was once blamed for the film page's
- * missing backdrop fade; that was wrong — `absoluteFill` is a plain object in
- * this version, and the fade was absent from the proposed SCAFFOLD, not from
- * the app. See zz-render.lib.test.ts.)
+ * A style is an object, an array of them, or (older RN) a registered id; each
+ * flattens to one object. The id case is defensive: this RN registers none.
  */
 export const flat = (s: unknown): Record<string, unknown> => {
   if (!s) return {};
@@ -104,15 +78,8 @@ export const flat = (s: unknown): Record<string, unknown> => {
 };
 
 /**
- * ── THE INSETS THAT NEVER ARRIVED ────────────────────────────────────────────
- * React Native writes `paddingHorizontal: 24`. CSS has no such property, and
- * the converter only knew `padding` and the four sides — so every inset written
- * the idiomatic RN way was DROPPED. Sections ran edge to edge, the docked
- * plate touched both rails, and rows lost the breathing room they were given.
- * This is the single most common style key in the codebase.
- *
- * Expanded here rather than in the loop so RN's precedence is preserved:
- * `padding` < `paddingHorizontal`/`Vertical` < `paddingLeft`/`Right`/…
+ * RN's shorthands CSS lacks (`paddingHorizontal`, the commonest style key here),
+ * expanded in RN's order of precedence: `padding` < `…Horizontal` < a side.
  */
 const BOX: [string, string[]][] = [
   ['padding', ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft']],
@@ -146,7 +113,7 @@ type Side = 'Top' | 'Right' | 'Bottom' | 'Left';
 
 /**
  * The sides of a box whose border a browser cannot lay out at its true width
- * (not a whole number of points), with those widths — see point 5 in `css`.
+ * (not a whole number of points), with those widths (drawn as padding by `css`).
  * A dashed or dotted border is left alone: it keeps a real, rounded border.
  */
 export function thinSides(raw: Record<string, unknown>): Partial<Record<Side, number>> {
@@ -164,79 +131,21 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
   const st = expandBox(raw);
   const out: string[] = [];
 
-  /**
-   * ── TEXT NEEDS TO BE POSITIONED TOO ──────────────────────────────────────
-   * RN paints in document order, full stop. In CSS a positioned sibling paints
-   * above non-positioned inline content no matter where it sits in the source —
-   * so a label written AFTER an absolutely-filled gradient still ended up
-   * UNDERNEATH it. The brass stub rendered as a blank gold plate: glyph and
-   * chevron present (they are boxes, already positioned), the words gone.
-   *
-   * Only position and stacking, though. `flex-shrink: 0` is deliberately NOT
-   * given to text — a one-line label in a flex row has to be allowed to shrink
-   * or it overflows instead of ellipsising.
-   */
+  // RN's defaults, first so the style's own win: relative, one stacking context each.
   out.push('position:relative', 'z-index:0');
 
   if (!isText) {
-    /**
-     * ── REACT NATIVE AND CSS DISAGREE ABOUT TWO DEFAULTS ────────────────────
-     * Both are silent until the page is given a real 844pt viewport, and then
-     * both are catastrophic. This is what turned the film page into a smear.
-     *
-     * 1. flex-shrink. RN defaults to 0; CSS defaults to 1. Inside a frame that
-     *    is shorter than the content, CSS therefore CRUSHES every box to fit —
-     *    the poster collapses to a sliver, captions climb into the section
-     *    above them, and a page that should scroll is compressed instead. On
-     *    an unrolled page nothing is constrained, so the bug could not be seen
-     *    until the frame became honest.
-     *
-     * 2. position. RN defaults to `relative`; CSS defaults to `static`. A
-     *    static parent is invisible to an absolutely-positioned child, so
-     *    every overlay ESCAPES its own box and anchors to some distant
-     *    ancestor — which is how a backdrop's sepia tint ended up washed over
-     *    the entire page instead of over the backdrop.
-     *
-     *    Making every box positioned also repairs paint order for free: RN
-     *    paints later siblings on top, and in CSS a positioned element paints
-     *    above static in-flow content regardless of order. With everything
-     *    relative, paint order is document order — exactly RN's rule.
-     *
-     * Both are pushed FIRST so any real value in the style overrides them.
-     */
-    /**
-     * 3. z-index scope. In RN a `zIndex` only orders an element against its
-     *    SIBLINGS. In CSS it competes across the whole stacking context, so a
-     *    `zIndex: 2` buried deep inside the scroll content climbed out and
-     *    painted OVER the docked stub — the SOCIETY CRITIQUES heading printed
-     *    across the bottom bar. Giving every box `z-index: 0` makes each one a
-     *    stacking context, which confines a child's zIndex to its own parent:
-     *    exactly RN's rule. A real zIndex in the style still overrides this.
-     */
+    // RN's shrink 0 (CSS's 1 crushes a scrolling page); not on text, which must ellipsise.
     out.push('flex-shrink:0');
 
-    /**
-     * 4. borders. RN needs only a width and a colour; CSS draws nothing until
-     *    `border-style` is set, because it defaults to `none` — so every
-     *    hairline in the app was silently absent. But setting a style alone is
-     *    worse than nothing: CSS's initial `border-width` is `medium`, so a
-     *    single `borderBottomWidth: 1` would suddenly draw a 3px box on all
-     *    four sides. Both halves are needed: style solid, width zero, and then
-     *    the real widths land later and override.
-     */
+    // A border: CSS draws none without a style, and a style alone draws `medium`
+    //    on all four sides, so solid at width 0, and the real widths override.
     if (Object.keys(st).some((k) => /^border(Top|Right|Bottom|Left)?Width$/.test(k))) {
       out.push('border-style:solid', 'border-width:0');
     }
-    /**
-     * 5. a border that is not a whole number of points. A browser snaps every
-     *    border to whole pixels — a 0.5pt hairline UP to 1, a 1.5pt frame DOWN
-     *    to 1, at any pixel density — so a screen of ruled rows grew points
-     *    taller than the phone lays it (mockups/tools/yoga-parity.cjs found it:
-     *    the Lobby's ticker, its inside 26pt here and 27pt on the phone). So
-     *    such a side is laid out as padding of its exact width, and drawn as an
-     *    inset shadow of the same width and colour, where the border would be.
-     *    A dashed or dotted line keeps its real border; a shadow cannot dash.
-     */
+    // A border that is not whole points: a browser snaps borders to whole pixels
+    //    (0.5 up, 1.5 down; yoga-parity measured the drift), so it is laid out as padding
+    //    of its exact width and drawn as an inset shadow. Dashes keep a real border.
     const lines = Object.entries(thinSides(st)) as [Side, number][];
     if (lines.length) {
       const shadows: string[] = [];
@@ -249,9 +158,7 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
       }
       st.boxShadow = [shadows.join(', '), typeof st.boxShadow === 'string' ? st.boxShadow : ''].filter(Boolean).join(', ');
     }
-    // RN's alignContent defaults to flex-start; CSS's (`normal`) stretches the
-    // lines of a wrapping box, centring a single line in a min-height row that
-    // the phone sets at the top (yoga-parity found it). The style's own wins.
+    // RN's alignContent is flex-start; CSS's `normal` stretches a wrapping box's lines.
     out.push('display:flex', `flex-direction:${(st.flexDirection as string) || 'column'}`, 'align-content:flex-start');
     // Its side margins, which the harness takes off the column's width when it
     // holds a box to that width (see RN_RULES in mockups/tools/harness.cjs).
@@ -259,8 +166,7 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
     if (mx) out.push(`--mx:${mx}px`);
   }
 
-  // Shadows were dropped entirely by the first version, and this app leans on
-  // them — the brass glow under a count, the lift under the altarpiece.
+  // The legacy shadow (the brass glow under a count, the altarpiece's lift).
   const sc = st.shadowColor as string | undefined;
   const so = st.shadowOffset as { width: number; height: number } | undefined;
   const sr = st.shadowRadius as number | undefined;
@@ -295,24 +201,10 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
     out.push(`text-shadow:${o?.width ?? 0}px ${o?.height ?? 0}px ${(st.textShadowRadius as number) ?? 0}px ${ts}`);
   }
 
-  /**
-   * ── A BOX THAT MAY SHRINK, SHRINKS AS FAR AS YOGA LETS IT ─────────────────
-   * In Yoga no flex item has an automatic minimum: one that may shrink
-   * (flexShrink > 0, or a negative flex) or is sized from a zero basis (a
-   * positive flex) goes down to its minWidth, which is 0 unless set. A browser
-   * stops it at its content (`min-width: auto`) — so a row of name, badge and
-   * time, where the phone shortens the name, was reported OFF at 320pt. Set
-   * here, BEFORE the style's own values, so a real minWidth or minHeight still
-   * wins (it used to be pushed later, and overrode them).
-   */
+  // Yoga gives no flex item an automatic minimum, and holds an aspect ratio against
+  // its content; CSS's `min-*: auto` does neither. Before the style, so its own win.
   const shrinks = (typeof st.flexShrink === 'number' && st.flexShrink > 0)
     || (typeof st.flex === 'number' && st.flex !== 0);
-  /**
-   * Nor does a box with an aspect ratio grow to fit what is in it. CSS gives
-   * such a box an automatic minimum from its content, so a poster whose image
-   * is a hair taller than 2:3 pushed its 2:3 frame taller too — 0.36pt on an
-   * iPad, a row of three at a time (yoga-parity found it). Yoga holds the ratio.
-   */
   if (shrinks || st.aspectRatio !== undefined) out.push('min-width:0', 'min-height:0');
 
   for (const [k, v] of Object.entries(st)) {
@@ -324,20 +216,9 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
       continue;
     }
     if (k === 'flexDirection') continue;
-    /**
-     * ── `flex: 0` MEANS THE OPPOSITE IN THE TWO LANGUAGES ──────────────────
-     * RN's `flex: 0` is grow 0, shrink 0, basis AUTO — "size to your content".
-     * CSS's `flex: 0` is grow 0, shrink 1, basis 0% — "collapse to nothing".
-     * Lucide sets `flex: 0` on every icon it draws, so passing the value
-     * through verbatim gave every icon in the app a zero main size: present in
-     * the document, correctly pathed, drawing nothing. Measured at 16x0.
-     *
-     * RN's rules in full, from its Yoga (Node::resolveFlexGrow/Shrink, with
-     * RN's non-web defaults): positive n → grow n, shrink 0, basis 0;
-     * 0 → grow 0, shrink 0, basis auto; negative → grow 0, shrink −n, basis
-     * auto. (This once wrote shrink 1 for a positive flex — the web's rule.
-     * With a basis of 0 the two lay out alike, but not beside a flexBasis.)
-     */
+    // RN's `flex` (Yoga resolveFlexGrow/Shrink): n>0 grow n shrink 0 basis 0; 0 is grow 0
+    // shrink 0 basis auto (CSS's `flex: 0` collapses, and Lucide sets it on every icon);
+    // n<0 shrink -n basis auto.
     if (k === 'flex' && typeof v === 'number') {
       if (v > 0) out.push(`flex:${v} 0 0%`);
       else if (v === 0) out.push('flex:0 0 auto');
@@ -346,12 +227,7 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
     }
     if (k.startsWith('shadow') || k.startsWith('textShadow') || k === 'elevation') continue;
     if (k === 'transform') {
-      /**
-       * The unit depends on the function, and getting it wrong is not a near
-       * miss — `scale(1px)` is invalid, so the browser discards the WHOLE
-       * transform list, taking any translate alongside it. Scale is unitless,
-       * rotate and skew are degrees, translate is pixels.
-       */
+      // The unit per function: one invalid (`scale(1px)`) discards the whole list.
       const unit = (fn: string) =>
         /^scale/.test(fn) ? '' : /^(rotate|skew)/.test(fn) ? 'deg' : 'px';
       const t = (v as Record<string, string | number>[]).map((o) =>
@@ -379,23 +255,16 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
 }
 
 /**
- * Style keys the converter met and did not turn into CSS. `alignContent` and
- * `flexBasis` were dropped this way without a word, and a dropped key is a
- * drawing the phone does not make. With MOCKUPS_UNREAD=<file> set, each is
- * written to that file as it is first met, so a run over every screen lists
- * them all.
- * DRAWN_ELSEWHERE: read by other code in this file, or with no effect on a
- * still picture — and nothing else.
+ * A style key the converter drops is a drawing the phone makes and this does not,
+ * so each is noted (to MOCKUPS_UNREAD=<file>, when set). DRAWN_ELSEWHERE: keys
+ * read by other code here, or with no effect on a still picture.
  */
 const DRAWN_ELSEWHERE = new Set([
   'boxShadow', 'experimental_backgroundImage', // above, in this function
   'tintColor', // an image's: drawn by the image branch in toHtml
   'includeFontPadding', // Android's extra line padding; every text here strips it
   'pointerEvents', 'cursor', 'userSelect', // touch only
-  // NOT drawn, on purpose: where ANDROID sets a text inside a box taller than
-  // its lines (iOS ignores it and sets it at the top, as this does). No text in
-  // the app has a set height; one stretched by its row would differ on Android.
-  'textAlignVertical',
+  'textAlignVertical', // Android-only; no text here is taller than its lines
 ]);
 const UNREAD = new Set<string>();
 function noteUnread(k: string): void {
@@ -428,19 +297,8 @@ function svgAttrs(type: string, p: Record<string, unknown>): string {
   if (type === 'RNSVGSvgView') {
     put('xmlns', 'http://www.w3.org/2000/svg');
     put('width', p.width); put('height', p.height);
-    /**
-     * ── EVERY ICON WAS CLIPPED TO ITS TOP-LEFT CORNER ──────────────────────
-     * This line used to be `p.viewBox ?? (cond ? undefined : undefined)` —
-     * undefined either way, so NO svg ever got a viewBox. Lucide draws in a
-     * 24-unit box and renders at `size`, so a 16pt icon showed the top-left
-     * 16 units of a 24-unit drawing: a bookmark became a bracket, a play
-     * triangle became a corner. Twenty icons a page, in every mockup ever
-     * shown, and it read as "the icons look wrong" rather than as one bug.
-     *
-     * react-native-svg does not keep `viewBox` as a string — it splits it into
-     * minX / minY / vbWidth / vbHeight, which is why looking for `viewBox`
-     * found nothing and the expression was quietly written to give up.
-     */
+    // react-native-svg splits viewBox into minX/minY/vbWidth/vbHeight; without it, a
+    // 16pt Lucide icon shows only the top-left 16 units of its 24-unit drawing.
     const vbW = p.vbWidth ?? p.bbWidth;
     const vbH = p.vbHeight ?? p.bbHeight;
     const viewBox = typeof p.viewBox === 'string'
@@ -457,17 +315,9 @@ function svgAttrs(type: string, p: Record<string, unknown>): string {
     return a.join(' ');
   }
 
-  /**
-   * ── A GRADIENT IS ONE NATIVE NODE, NOT A TREE OF STOPS ───────────────────
-   * react-native-svg folds a gradient's <Stop> children into the node itself:
-   * `name` is its id, `gradient` is [offset, argb, offset, argb, …], and
-   * `gradientUnits` is 0/1. Without this the room's light rendered as three
-   * rectangles filled with a reference to nothing — i.e. not at all.
-   *
-   * And an ELLIPTICAL radial gradient (rx ≠ ry) has no SVG 1.1 attribute: a
-   * browser knows only `r`. It is a circle of radius rx, squashed vertically
-   * about its own centre by a transform — which is exactly the same shape.
-   */
+  // react-native-svg folds a gradient's stops into its node: `name` is the id,
+  // `gradient` is [offset, argb, …], units are 0/1. SVG 1.1 has no elliptical
+  // radial, so rx ≠ ry is a circle of rx squashed about its centre (the same shape).
   if (type === 'RNSVGRadialGradient' || type === 'RNSVGLinearGradient') {
     put('id', p.name);
     if (p.gradientUnits === 1) put('gradientUnits', 'userSpaceOnUse');
@@ -592,23 +442,13 @@ function unplacedAt(frame: Frame, st: Record<string, unknown>, main: boolean): '
 }
 
 /**
- * Where the browser must be told to put an absolutely placed box, so that it
- * lands where React Native's Yoga puts it. Two differences, both measured by
- * mockups/tools/yoga-parity.cjs:
- *
- *   · Its insets are measured from the parent's border — and `css` draws a
- *     thin border as padding (point 5 there), so the browser would measure
- *     from the border's OUTER edge: a child pinned `top: 0` sat on the line.
- *     Each inset is moved in by that side's thin border.
- *   · A PERCENTAGE — of its size or of an inset — is of the parent's INNER
- *     size in React Native (Yoga's errata AbsolutePercentAgainstInnerSize,
- *     which RN keeps on): the parent less its padding and borders. A browser
- *     takes it of the size less the borders alone. The film page's 48%-high
- *     shade was 23.5pt here and 12.7pt on the phone. So the padding, and the
- *     thin border drawn as padding, come off the base. (Strictly, Yoga takes
- *     it of the space the parent was OFFERED, which is its size unless the
- *     parent sizes to its content inside one that does not stretch it — a
- *     case a browser cannot follow, and yoga-parity reports.)
+ * Where to tell the browser to put an absolute box so it lands where Yoga does
+ * (both measured by yoga-parity.cjs):
+ *   · insets move in by a thin border, which `css` draws as padding;
+ *   · a percentage is of the parent's INNER size (Yoga's errata
+ *     AbsolutePercentAgainstInnerSize, on in RN), so padding comes off its base.
+ * (Yoga strictly takes the space the parent was offered; yoga-parity reports
+ * the one case a browser cannot follow.)
  */
 function placeInside(st: Record<string, unknown>, frame: Frame | undefined): Record<string, unknown> {
   if (!frame || st.position !== 'absolute') return st;
@@ -673,16 +513,8 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
   const t = String(n.type || '');
   const p = n.props || {};
 
-  /**
-   * ── A MODAL IS A WINDOW OF ITS OWN ───────────────────────────────────────
-   * On the phone a Modal's content is a separate root the size of the screen,
-   * in a `flex: 1` container — white unless `transparent` (RN's Modal.js).
-   * Jest's Modal draws it inline, wherever the component happens to sit, so a
-   * sheet whose layout is `flex: 1` was laid out inside a box sized by its
-   * content: a browser let it run to its content's height, and Yoga — the
-   * phone's engine — collapsed it to nothing (yoga-parity found it). It is
-   * lifted out here and drawn over the whole phone, as the phone draws it.
-   */
+  // A Modal is its own screen-sized root in a flex 1 container, white unless
+  // transparent (RN's Modal). Jest draws it inline, so it is lifted out and drawn over all.
   if (t === 'Modal') {
     const fill = { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 };
     const container = { flex: 1, backgroundColor: p.transparent === true ? 'transparent' : (p.backdropColor ?? 'white') };
@@ -691,14 +523,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
       `<div${rnAttr(container)} style="${css(container, false)}">${inner}</div></div>`);
     return '';
   }
-  /**
-   * ── WHERE A CONTROL WAS WRITTEN ──────────────────────────────────────────
-   * A capture run wraps each PressableScale in a `SrcMark` carrying the file
-   * and line of the JSX that made it (jest.setup.ts). It is not a box: its
-   * child is drawn exactly as it would be without it, and the site is written
-   * onto that child as `data-src`, so the touch checks can say which line of
-   * source a finding — or a clean measurement — belongs to.
-   */
+  // A capture run's SrcMark (jest.setup.ts) is not a box: its source line goes onto its child.
   if (t === 'SrcMark') {
     const inner = (n.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
     return typeof p.src === 'string' ? inner.replace(/^<(\w+)/, `<$1 data-src="${esc(p.src)}"`) : inner;
@@ -729,14 +554,8 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     if (t === 'RNSVGSvgView') {
       // Style carries position/size for absolutely-placed art like the dial ring.
       const style = css(st, false).replace(/display:flex;flex-direction:\w+;?/, '');
-      /**
-       * ── AN SVG'S width/height ATTRIBUTES DO NOT SURVIVE FLEXBOX ───────────
-       * Every icon in this app sits inside a flex row or column, and as a flex
-       * item the svg's attribute-based intrinsic size collapses to ZERO on the
-       * main axis — measured: a 16pt back arrow computing to 16x0, a 14pt
-       * chevron to 0x14. The icon is in the document, correctly pathed, and
-       * draws nothing. Restating the box in CSS is what actually holds it.
-       */
+      // As a flex item an svg's attribute size collapses on the main axis (a 16pt icon
+      // measured 16x0), so the box is restated in CSS.
       const box = [
         typeof p.width === 'number' ? `width:${p.width}px` : '',
         typeof p.height === 'number' ? `height:${p.height}px` : '',
@@ -747,14 +566,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     return `<${tag}${attrs ? ' ' + attrs : ''}>${kids}</${tag}>`;
   }
 
-  /**
-   * ── THE TIER WASH ──────────────────────────────────────────────────────────
-   * expo-linear-gradient renders as `ViewManagerAdapter_ExpoLinearGradient`
-   * with colours as packed ints and `locations` 0..1. It draws the warm
-   * atmosphere behind the membership plate that shifts with a member's rank —
-   * a large part of how that page feels, and entirely absent from the first
-   * mockup because nothing matched this element name.
-   */
+  // expo-linear-gradient's host (colours as packed ints, `locations` 0..1).
   if (/ExpoLinearGradient/.test(t)) {
     const cols = (p.colors as unknown[] | undefined) || [];
     const locs = (p.locations as number[] | undefined) || [];
@@ -773,13 +585,8 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     }
     const kids = (n.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
     const style = css(st, false);
-    // THE PHONE'S RAMP, KEPT FOR WHOEVER MEASURES IT. A CSS angle is not the
-    // same gradient: it drops the start and end OFFSETS (a brass ramp runs 0.15
-    // to 0.85, not corner to corner) and a native gradient interpolates in the
-    // box's UNIT space, not in pixels. Drawn this way it looks close enough to
-    // design with; measured this way it put every word on a brass plate against
-    // the darkest stop, which the words never touch. So the real parameters ride
-    // along, and a contrast check reads the colour under each word from them.
+    // The phone's real ramp rides along for the contrast check: the CSS angle drops the
+    // start/end offsets and interpolates in pixels, not the box's unit space.
     const grad = encodeURIComponent(JSON.stringify({
       s: s0 ?? { x: 0.5, y: 0 }, e: e0 ?? { x: 0.5, y: 1 },
       c: cols.map((c) => decodeColour(c) ?? 'transparent'),
@@ -788,23 +595,12 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     return `<div data-grad="${grad}"${rnAttr(rn)} style="${style};background-image:linear-gradient(${dir},${stops.join(',')})">${kids}</div>`;
   }
 
-  /**
-   * ── THE BLOOM ──────────────────────────────────────────────────────────────
-   * Drawn on the GPU through Skia, which does not run here. Its wrapper carries
-   * the artwork (`nativeID`), and the recipe is `BLOOM` itself — so this draws
-   * the same blur, colour, opacity and fade the component does, from the same
-   * numbers, rather than a second copy of them.
-   */
+  // The bloom is Skia, which does not run here: drawn from the same `BLOOM` numbers.
   if (p.testID === 'room-bloom') {
     return bloomHtml(String(p.nativeID ?? ''), css(st, false), opts);
   }
-  /**
-   * ── THE LIGHT A VEIL CARRIES ──────────────────────────────────────────────
-   * Skia again. Its wrapper carries the room, the hem, the veil's stops and
-   * the art; this draws, from `lightGeometry` — the one the component draws
-   * from — the room's light, masked by the veil's stops, ending at the hem.
-   * At rest, which is what a proof shows, the light has not moved.
-   */
+  // A veil's light, Skia too: drawn at rest from the component's own `lightGeometry`,
+  // masked by the veil's stops, ending at the hem.
   if (p.testID === 'room-veil-light') {
     const r = JSON.parse(String(p.nativeID)) as { room: Room; hem: number; art: string | null; stops: [number, number][]; W: number; H: number };
     const g = lightGeometry(r.room, r.W, r.H, r.hem);
@@ -832,15 +628,8 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
   // ── artwork ──
   if (/^(Image|ExpoImage)$/i.test(t)) {
     const src = p.source as { uri?: string; testUri?: string } | undefined;
-    /**
-     * ── AN IMAGE PINNED TO ALL FOUR EDGES DOES NOT STRETCH ────────────────────
-     * The app fills a frame with `StyleSheet.absoluteFillObject`, which React
-     * Native reads as "cover this box". CSS does that for ordinary boxes, but an
-     * IMG is a replaced element: with all four insets at 0 and no width, the
-     * browser keeps its INTRINSIC size — so a 342pt-wide poster sat inside a
-     * 119pt cell and the Darkroom's grid came out zoomed and overhanging. The
-     * box has to be restated, exactly as it is for svg elsewhere in this file.
-     */
+    // An <img> pinned to four edges keeps its intrinsic size (a replaced element), so
+    // an absolute fill restates the box.
     const fills = rn.position === 'absolute' &&
       [rn.top, rn.left, rn.right, rn.bottom].every((v) => v === 0);
     // Inside a thin border, "the whole box" is the box less that border.
@@ -849,9 +638,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
       ? `;width:calc(100%${less(around.Left, around.Right)});height:calc(100%${less(around.Top, around.Bottom)})`
       : '');
 
-    // A remote poster, matched on its TMDB path — or a video still, matched on
-    // its YouTube key. `img.youtube.com/vi/KEY/hqdefault.jpg` carries no TMDB
-    // path, so the first pass left every video thumbnail as an empty frame.
+    // A remote poster by its TMDB path, or a video still by its YouTube key (/vi/KEY/).
     const uri = String(src?.uri ?? '');
     const yt = /\/vi\/([\w-]+)\//.exec(uri);
     const m = yt || /\/w\d+(\/[^/?]+)$/.exec(uri) || /\/(\w+\.jpg)$/.exec(uri);
@@ -861,11 +648,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     // Image's `resizeMode` as a prop or in its style) — else the default below.
     const FIT: Record<string, string> = { cover: 'cover', contain: 'contain', fill: 'fill', stretch: 'fill', none: 'none', center: 'none', repeat: 'none', 'scale-down': 'scale-down' };
     const named = FIT[String(p.contentFit ?? p.resizeMode ?? rn.resizeMode ?? '')];
-    /**
-     * `tintColor` paints every opaque pixel of the image in one colour (how
-     * the seal's mark and a premium frame are coloured). An <img> cannot be
-     * recoloured, so the image becomes the MASK of a box of that colour.
-     */
+    // `tintColor` paints every opaque pixel one colour: drawn as a coloured box the image masks.
     const tint = (rn.tintColor ?? p.tintColor) as string | undefined;
     const draw = (data: string, alt: string, fit: string) => {
       if (!tint) return `<img src="${data}" alt="${esc(alt)}"${a11yAttr(p)}${rnAttr(rn)} style="${style};object-fit:${fit}" />`;
@@ -875,12 +658,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     };
     if (poster) return draw(poster.data, poster.title, named ?? 'cover');
 
-    /**
-     * A bundled asset. `require('…/rating-full.png')` arrives as
-     * `source.testUri`, and there are FIVE of these per ledger row — 45 of the
-     * 54 images in the Archive were rating reels, not posters, which is why
-     * that room still read as empty after the artwork landed.
-     */
+    // A bundled asset (`require('…/rating-full.png')`) arrives as `source.testUri`.
     const local = String(src?.testUri ?? '');
     if (local && opts.local) {
       const name = local.split('/').pop() || '';
@@ -892,15 +670,8 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     return `<div class="poster"${a11yAttr(p)}${rnAttr(rn)} style="${style}"></div>`;
   }
 
-  /**
-   * ── `numberOfLines` IS HOW THIS APP STOPS TEXT OVERFLOWING ─────────────────
-   * Ignoring it does not merely lose a nicety — it makes the mockup show
-   * overflow the real app CLIPS. A one-line video caption wrapped to three and
-   * ran into the next section, and "WHERE TO WATCH collides with the captions"
-   * read as a layout fault to go and fix. There was nothing to fix.
-   *
-   * One line ellipsises; more than one clamps. Both are what RN does.
-   */
+  // numberOfLines, as RN does it: one line ellipsises, more clamp. Ignored, the
+  // picture shows overflow the phone clips.
   if (t === 'Text') {
     const lines = typeof p.numberOfLines === 'number' ? p.numberOfLines : 0;
     const clamp = lines === 1
@@ -908,50 +679,25 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
       : lines > 1
         ? `;display:-webkit-box;-webkit-line-clamp:${lines};-webkit-box-orient:vertical;overflow:hidden`
         : '';
-    /**
-     * ── AND HOW FAR IT IS ALLOWED TO GROW ──────────────────────────────────
-     * `allowFontScaling` and `maxFontSizeMultiplier` are the only record of
-     * whether a given Text answers the member's type-size setting, and the HTML
-     * carried neither — so an audit that scaled the page had to scale
-     * EVERYTHING, and reported a decorative stamp overflowing as though it were
-     * a real fault. Emitted as a data attribute so a measurement at
-     * accessibility sizes can apply each element's own cap.
-     *
-     * Absent `allowFontScaling` means RN scales it: the default is true.
-     */
+    // Each Text's own growth cap (1 = frozen, 0 = none; RN scales by default), for
+    // measuring at accessibility sizes.
     const cap = p.allowFontScaling === false
       ? 1
       : (typeof p.maxFontSizeMultiplier === 'number' ? p.maxFontSizeMultiplier : 0);
-    /**
-     * And whether it SHRINKS rather than overflows.
-     *
-     * `adjustsFontSizeToFit` has no CSS equivalent, so a measurement of this
-     * HTML sees a label escaping its column where the real app quietly reduces
-     * it. Emitting the floor lets an audit model the shrink and report only the
-     * case where even the floor is not enough — which is the case that matters.
-     */
+    // And its shrink floor, as CSS has no adjustsFontSizeToFit: the audit models it.
     const fit = p.adjustsFontSizeToFit === true
       ? (typeof p.minimumFontScale === 'number' ? p.minimumFontScale : 0.5)
       : 0;
     const capAttr = ` data-scale-cap="${cap}"${fit ? ` data-fit-min="${fit}"` : ''}`;
-    // The harness holds every text to its parent's width (RN measures text
-    // against the space it is given) — but a Text with its OWN width keeps it,
-    // as it does in Yoga: the ticket's rotated ADMIT ONE is 96pt inside a 42pt
-    // stub, and capped it read as 36pt cut when it fits with 18 to spare.
+    // The harness holds text to its parent's width, but a Text with its OWN width keeps
+    // it, as in Yoga (the ticket's rotated ADMIT ONE is 96pt in a 42pt stub).
     const ownWidth = st.width !== undefined && st.width !== null && st.width !== 'auto' ? ';max-width:none' : '';
     return `<span${capAttr}${a11yAttr(p)}${rnAttr(rn)} style="${css(st, true)}${clamp}${ownWidth}">${(n.children || []).map((c) => toHtml(c, opts, inSvg)).join('')}</span>`;
   }
   if (t === 'ActivityIndicator') return '<div class="spinner"></div>';
 
-  /**
-   * ── A FIELD SHOWS WHAT IS IN IT, OR WHAT IT ASKS FOR ──────────────────────
-   * A TextInput has no children — its text lives in `value` / `placeholder` —
-   * so every field in every render was an empty box, and no placeholder in
-   * the app had ever been measured for fit or colour ("Search salons…" drew
-   * as a blank black slot). It is drawn now with the same text-size cap a Text
-   * carries: one line vertically centred (a long placeholder ends in "…", as
-   * iOS draws it); a multiline field wraps; a secret field shows its dots.
-   */
+  // A field's text is its value or placeholder (it has no children), with a Text's cap:
+  // one line centred and ellipsised as iOS draws it, multiline wraps, secrets are dots.
   if (t === 'TextInput') {
     const raw = typeof p.value === 'string' && p.value ? p.value
       : typeof p.defaultValue === 'string' && p.defaultValue ? p.defaultValue : '';
@@ -971,27 +717,12 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
 
   const kids = (n.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
 
-  /**
-   * ── A SCROLL VIEW IS NOT A TALL DIV ──────────────────────────────────────
-   * Rendered as a plain div, the page unrolls to its full height and anything
-   * docked to the bottom of the screen docks to the bottom of THREE THOUSAND
-   * pixels instead — which is how a bar that is present in the markup can be
-   * impossible to find. Tagging it lets the frame give the page a real 844pt
-   * viewport with the content scrolling inside it, as the device does.
-   * Horizontal rails are tagged apart: they must not claim the vertical space.
-   */
+  // A scroll view is tagged, so the frame gives it a real viewport (a docked bar then
+  // docks to the screen, not the page's foot); horizontal rails are tagged apart.
   if (t === 'RCTScrollView') {
     const cls = p.horizontal ? 'hscroll' : 'vscroll';
-    /**
-     * ── AND IT GROWS, AS REACT NATIVE'S DOES ────────────────────────────────
-     * ScrollView puts its own style under the screen's: `baseVertical` /
-     * `baseHorizontal` — flexGrow 1, flexShrink 1, and a ROW when horizontal.
-     * Jest's host element carries only the screen's style, so a rail drawn from
-     * it neither filled its slot nor laid out as a row, and the Lobby's cards
-     * came out 3pt shorter than the phone draws them (mockups/tools/
-     * yoga-parity.cjs found it). An explicit grow or shrink wins over `flex`, in
-     * Yoga and — written after the shorthand — in the browser alike.
-     */
+    // RN's own base style under the screen's (baseVertical/Horizontal): grow 1,
+    // shrink 1, a row when horizontal. Jest's host carries only the screen's.
     const base = (s: Record<string, unknown>): Record<string, unknown> => ({
       ...s,
       flexDirection: s.flexDirection ?? (p.horizontal ? 'row' : 'column'),
@@ -999,28 +730,13 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
       flexShrink: s.flexShrink ?? 1,
     });
     const sv = base(st);
-    /**
-     * ── AND ITS CONTENT HAS A STYLE OF ITS OWN ─────────────────────────────
-     * `contentContainerStyle` is where a screen reserves the room under a
-     * docked bar. It arrives as a prop on the scroll view, not on any child, so
-     * dropping it drew every such page with its last lines trapped under the
-     * bar — a fault the device does not have. It wraps the content, as RN does.
-     */
-    /**
-     * ── AND A HORIZONTAL ONE LAYS ITS CONTENT IN A ROW ──────────────────────
-     * React Native gives a horizontal scroll view's content container
-     * `flexDirection: 'row'` (ScrollView's `contentContainerHorizontal`), sized
-     * to its content, under whatever `contentContainerStyle` says. Without it
-     * every rail drawn straight from a ScrollView was drawn as a COLUMN — the
-     * writing room's six tools each 358pt wide, stacked — and a measurement of
-     * the rail measured something the phone never draws.
-     */
+    // The content container: `contentContainerStyle` (where a page reserves room under
+    // a docked bar) over RN's row for a horizontal one (contentContainerHorizontal).
     const ccs = p.contentContainerStyle ? flat(p.contentContainerStyle) : null;
     const box = { ...(p.horizontal ? { flexDirection: 'row' } : {}), ...(ccs ?? {}) };
     const inner = Object.keys(box).length ? css(box, false) + (p.horizontal ? ';width:max-content' : '') : '';
-    // Jest's ScrollView renders `<RCTScrollView>{refreshControl}<View>{children}</View>`:
-    // that bare View IS the content container, so it takes the container's
-    // style — wrapped again, the children would sit in a column inside the row.
+    // Jest's ScrollView ends in a bare View that IS the content container, so it takes
+    // the container's style (wrapped again, the children would stack inside the row).
     const raw = n.children || [];
     const last = raw[raw.length - 1] as { type?: string; props?: { style?: unknown }; children?: unknown[] } | undefined;
     // What sits in the content container sits inside ITS border, not the scroll view's.
@@ -1041,11 +757,8 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
 }
 
 /**
- * A control, marked with the area it answers touches in: its box grown by its
- * `hitSlop`, as the host view receives it (PressableScale has already filled
- * the sides a partial slop left out). mockups/tools/layout.cjs measures these
- * against each other — two areas that overlap hand the overlap to the LATER
- * control, on both platforms.
+ * A control's touch area: its box grown by the host's `hitSlop`. layout.cjs
+ * measures these against each other (an overlap goes to the LATER control).
  */
 function pressAttr(p: Record<string, unknown>): string {
   const presses = ['onClick', 'onPress', 'onResponderRelease'].some((k) => typeof p[k] === 'function');
@@ -1056,10 +769,8 @@ function pressAttr(p: Record<string, unknown>): string {
 }
 
 /**
- * What a screen reader is told about an element: its label, and whether it
- * and everything inside it are hidden from it. A control with no label of its
- * own is named, on iOS, from the labels and words inside it — so labels are
- * carried on every element, not only on controls, and the audit reads them.
+ * What a screen reader is told: a label (on every element, as iOS names an
+ * unlabelled control from inside it), hidden, or read as one stop.
  */
 function a11yAttr(p: Record<string, unknown>): string {
   const label = typeof p.accessibilityLabel === 'string' ? ` aria-label="${esc(p.accessibilityLabel)}"` : '';
@@ -1070,12 +781,7 @@ function a11yAttr(p: Record<string, unknown>): string {
   return label + hidden + whole;
 }
 
-/**
- * The React Native style itself, carried on the element when MOCKUPS_YOGA=1 —
- * so mockups/tools/yoga-parity.cjs can lay the same tree out with Yoga, the
- * phone's own engine, and report every box the browser placed differently.
- * Off by default: an ordinary render carries only CSS.
- */
+/** The RN style, carried when MOCKUPS_YOGA=1 so yoga-parity.cjs can lay it out with Yoga. */
 function rnAttr(st: Record<string, unknown>): string {
   return process.env.MOCKUPS_YOGA === '1' ? ` data-rn="${esc(JSON.stringify(st))}"` : '';
 }

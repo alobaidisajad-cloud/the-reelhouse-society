@@ -30,44 +30,22 @@ import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { EDGE_LIT } from '@/src/theme/light';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
- * The brass ＋ opens this. Five forms, each named in its own ink with one line
- * saying what it is for — which is the first place a member meets the colour
- * code, so the code is taught before it is ever used as a filter.
- *
- * The two an Auteur can file are NOT hidden. A form you cannot see is a feature
- * you never learn exists; a form you can see and cannot use is an invitation.
- * They are dimmed, locked, and say who may file them.
- *
- * ── AN INVITATION HAS TO LEAD SOMEWHERE ─────────────────────────────────────
- * They were also `disabled`. BALLOT and ESSAY sat under "AUTEURS" and did
- * nothing when touched — an invitation with no address on it, and the one place
- * a member learns ballots exist at all. Given `onLocked`, a locked row takes the
- * tap and hands it to the caller, which opens the Society told what was reached
- * for. Without it (a preview, a test) the row stays inert, as it was.
+ * The brass ＋ opens this: five forms, each in its own ink, so the colour code is
+ * taught before it is used as a filter. The Auteur's two are shown, dimmed and
+ * locked, never hidden: an unseen form is never learned. Given `onLocked`, a
+ * locked row takes the tap to the caller (the Society); without it, it is inert.
  */
 export interface Form {
   kind: keyof typeof KIND_RULE;
   name: string;
   line: string;
   locked?: boolean;
-  /**
-   * There is a draft of this form waiting.
-   *
-   * The writing room keeps ONE unfinished dossier, and until this line existed
-   * that limit was a surprise: a member began a second essay and the first was
-   * overwritten without a word. Saying so turns the limit into information —
-   * and it is the only place outside the room where an unfinished piece is
-   * visible at all.
-   */
+  /** A draft of this form is waiting (the writing room keeps ONE, so a second would replace it). */
   inProgress?: boolean;
 }
 
 export const FORMS: Form[] = [
-  /* No character count. It said "280 characters", which was a rule we decided
-     not to make — a take is 2,000 like every other post — and a line that
-     names a limit is a line that has to be corrected every time the limit
-     moves. The composer counts down as you write; the menu says what the form
-     is FOR. */
+  // No limits named: the composer counts down, and a named limit goes stale when it moves.
   { kind: 'take', name: 'TAKE', line: 'Say the thing nobody else will.' },
   { kind: 'seeking', name: 'SEEKING', line: 'Ask the house what to watch tonight.' },
   { kind: 'wire', name: 'WIRE', line: 'News from elsewhere, carrying its source.' },
@@ -84,14 +62,7 @@ export const PaperPicker = memo(function PaperPicker({
   onLocked?: (kind: Form['kind']) => void;
   /** Never held the rank, or held it and stopped — the spoken label differs. */
   lockedStanding?: 'stranger' | 'lapsed';
-  /**
-   * The house rules, at the foot of the door every filing goes through.
-   *
-   * They were written, drawn and never reachable — nine clauses about what a
-   * member may file, on a page nothing in the app opened. This is the one place
-   * where they are about to matter, and it costs a line rather than a piece of
-   * chrome on the paper itself.
-   */
+  /** The house rules, at the foot of the door every filing goes through. */
   onRules?: () => void;
 }) {
   return (
@@ -176,14 +147,7 @@ export const PaperDoor = memo(function PaperDoor({
   films, filmsNeeded, days, daysNeeded, held, onLog,
 }: {
   films: number; filmsNeeded: number; days: number; daysNeeded: number;
-  /**
-   * They are holding an unfinished piece the door will not let them file yet.
-   *
-   * Possible because an Auteur can pay on the first day and still be two days
-   * and five films short — so a member can arrive here with an essay already
-   * written. Told nothing, they would reasonably assume it had been thrown
-   * away for being unfilable.
-   */
+  /** An unfinished piece is waiting (an Auteur can write before the door opens). */
   held?: boolean;
   onLog?: () => void;
 }) {
@@ -256,34 +220,16 @@ export const PaperDoor = memo(function PaperDoor({
  * instead of filings, which is why it needs no explaining.
  */
 /**
- * ── EVERY CLAUSE IS A CLAIM, AND EVERY CLAIM WAS CHECKED ─────────────────────
- * A rules page is not decoration: each line tells a member what the house will
- * do, and a line the code does not honour is a lie printed in the one place
- * that must not contain any. So each was audited against the schema and the
- * policies, and one did not survive.
- *
- *   III  TRUE — `CONSTRAINT wire_source` on `dispatch_posts`: a wire without a
- *        source cannot be written at all, not merely refused by a screen.
- *   IV   TRUE — `profiles_username_unique` and `profiles_username_lower_unique`.
- *   VI   TRUE — private notes are owner-only at the row level.
- *   VII  TRUE — `POLICY votes_read … USING (user_id = auth.uid())`. You can
- *        read your own vote and nobody else's, the house included.
- *   VIII TRUE — `TRIGGER no_hard_delete` on `dispatch_posts`.
- *   IX   TRUE — `POLICY posts_tier … WITH CHECK (kind NOT IN ('ballot',
- *        'dossier') OR has_tier_at_least(2))`. Server-side, not a locked button.
- *
- * And the one that failed:
- *
- *   V    WAS FALSE. It read "Five members report a filing and the house reads
- *        it." There is no five anywhere — no threshold, no trigger, no counter
- *        that acts. Reports raise a filing up a docket ordered by how many it
- *        has, and a person reads it. The clause now says that, because a number
- *        a member could count on and the house does not keep is worse than no
- *        number at all.
- *
- * I and II are the two that are not machine-enforced, and they are the two that
- * cannot be: one is conduct, and the other asks for an intention the veil
- * cannot read. Both stay, and both are honest about it.
+ * Every clause is a promise, so each names what keeps it:
+ *   III  CONSTRAINT wire_source on dispatch_posts: no live wire without a source.
+ *   IV   profiles_username_unique and profiles_username_lower_unique.
+ *   V    a report raises a filing up a docket a person reads; no count acts on it.
+ *   VI   private notes and member_drafts are owner-only at the row level.
+ *   VII  POLICY votes_read: USING (user_id = auth.uid()).
+ *   VIII TRIGGER no_hard_delete on dispatch_posts.
+ *   IX   POLICY posts_tier: a ballot or dossier needs has_tier_at_least(2).
+ * I and II are conduct and intention, which no machine can check.
+ * A schema change that makes a clause false is a broken promise.
  */
 export const CLAUSES: [string, string][] = [
   ['I', 'Argue with the film. Never with the member.'],
@@ -291,15 +237,6 @@ export const CLAUSES: [string, string][] = [
   ['III', 'A wire carries its source. No source, no wire.'],
   ['IV', 'One member, one name. A second voice is not a second person.'],
   ['V', 'Report a filing and the house reads it. A report is not a verdict, and neither is the number of them.'],
-  /**
-   * "finished or not" was added the day an unfinished essay stopped living only
-   * on the member's phone. `member_drafts` keeps it so a lost handset does not
-   * take four thousand words with it — owner-only at the row level, readable by
-   * nobody, the house's own screens included.
-   *
-   * A schema change that makes a clause false is not a schema change. It is a
-   * broken promise with a migration attached.
-   */
   ['VI', 'What you keep is yours and is never shown, finished or not. What you file is the house’s and is.'],
   ['VII', 'A ballot is secret until it closes. Not even the house counts it early.'],
   ['VIII', 'Nothing filed is destroyed. A filing may be withdrawn, and the critiques written under it stand.'],
@@ -312,10 +249,7 @@ export const PaperRules = memo(function PaperRules() {
       <Text style={m.rulesHead} accessibilityRole="header" {...displayTextProps}>
         The house rules
       </Text>
-      {/* No count in the standfirst. It said "Six" while there were six, which
-          is a number that has to be maintained by whoever adds a clause — and
-          the one thing a rules page cannot afford is a line that quietly stops
-          being true. The sentence keeps the age and drops the arithmetic. */}
+      {/* No count: it would go stale the day a clause is added. */}
       <Text style={m.rulesStand} {...scaledTextProps}>
         The house has kept them since the room still had a projector in it.
       </Text>
@@ -350,22 +284,11 @@ export const PaperArchive = memo(function PaperArchive({
   query, film, count, span, onQuery, children,
 }: {
   query: string;
-  /**
-   * NULL before a film has been chosen. The search row stands on its own then
-   * and `children` are the films the house has actually written about — not a
-   * blank plate with a dash where a title goes, which reads as a page that
-   * failed to load rather than a page waiting for you.
-   */
+  /** Null until a film is chosen; `children` then list the films the house has written on. */
   film: PaperFilm | null;
   /** Only meaningful once there is a film. Both, or the line is not printed. */
   count?: number; span?: string;
-  /**
-   * Makes the query line a real input.
-   *
-   * Absent in the harness, where the query is a drawn line — the same split
-   * `FilmFinder` already uses, so a plate can show a typed query without the
-   * generator having to run a keyboard.
-   */
+  /** Makes the query a real input; absent in the harness, which draws it (as FilmFinder does). */
   onQuery?: (text: string) => void;
   children?: React.ReactNode;
 }) {
@@ -418,10 +341,8 @@ export const PaperArchive = memo(function PaperArchive({
 });
 
 /**
- * One film the house has written about, in the archive's list of candidates.
- *
- * It is a `Credit`-shaped row rather than a poster grid, because the archive is
- * a page of a paper and the film is a REFERENCE here, not a thing being sold.
+ * One film the house has written about, as a row: here a film is a reference,
+ * not a poster for sale.
  */
 export const ArchiveFilm = memo(function ArchiveFilm({
   film, filings, onPress,
@@ -459,60 +380,18 @@ export const PaperRoom = memo(function PaperRoom({
   author, filed, certified, onFile,
 }: {
   author: PaperAuthor;
-  /**
-   * NULL when the house's totals did not arrive — a network failure, or a
-   * build running ahead of the function that computes them.
-   *
-   * The line is then not drawn at all. Zero is a FACT about a member who has
-   * filed nothing, and printing it over somebody's twelve filings because a
-   * read failed is the page inventing a number rather than admitting it has
-   * none. Both or neither, because `12 FILED · 0 CERTIFIED` is worse than
-   * silence in exactly the same way.
-   */
+  /** Null when the totals did not arrive; the line is then not drawn (both or neither). */
   filed: number | null; certified: number | null;
-  /**
-   * The way out to the rest of the member — their FILE, which is the profile
-   * and its six rooms of films.
-   *
-   * It is a named line rather than a tappable name, for one reason: a `Byline`
-   * that takes an `onPress` announces itself as "Open their room", and this IS
-   * their room. A control that says it will do the thing you already did is
-   * worse than no control. So the destination says what it is.
-   */
+  /** To the member file. A named line, not a tappable byline, which would say "open their room". */
   onFile?: () => void;
 }) {
-  /**
-   * ── TWO LINES, ALWAYS ──────────────────────────────────────────────────────
-   * The byline on its own line, then the particulars beneath it.
-   *
-   * This head used to be one row: the byline in a flexible column with the
-   * counts pinned to the right. It could not hold. A byline has a floor it
-   * cannot shrink past — a fixed disc, nine characters of name, and a rank mark
-   * that never gives way — and this is the narrowest container in the app, so
-   * at the largest text size it was handed 163pt for 169pt of content and
-   * painted outside itself.
-   *
-   * Three fixes were tried against that and each was worse than the last:
-   * wrapping the BYLINE turned off shrink-to-fit and sent a third of the feed
-   * to two lines; wrapping the HEAD did nothing because a `flex: 1` column
-   * reports no minimum; and removing that minimum does not help either, because
-   * Yoga lets a flex item shrink below its content anyway.
-   *
-   * The honest answer was to stop fitting two variable-width things onto one
-   * line in the tightest place in the app. Nothing here competes for width now,
-   * so nothing can be crushed — and the head reads better: who this is, then
-   * what they have done.
-   */
+  // The byline on its own line, the facts beneath: at the largest text size this, the
+  // narrowest head in the app, cannot fit a byline and counts side by side.
   return (
     <View style={m.roomHead}>
       <Byline author={author} />
       <View style={m.roomFacts}>
-        {/* ── WHERE THE HOUSE NUMBER LIVES ──────────────────────────────────
-            It used to ride every byline, so a serial number was the loudest
-            thing about a stranger's opinion of a film. It comes off the page
-            and stays HERE, because a member's number is a fact about their
-            MEMBERSHIP, and this head is the one place in the Dispatch that is
-            about the member rather than about a filing. */}
+        {/* The house number lives here, on the one head about a member, not on every byline. */}
         <Text style={m.roomNo} numberOfLines={1} {...decorativeTextProps}>
           {`No. ${author.memberNo}`}
         </Text>
@@ -525,8 +404,7 @@ export const PaperRoom = memo(function PaperRoom({
       {onFile ? (
         <PressableScale
           style={m.roomFile} haptic="selection" onPress={onFile}
-          /* All four sides given. A partial hitSlop does not leave the missing
-             sides at the component's 15pt default — it sets them to nothing. */
+          /* All four sides: a partial hitSlop sets the missing ones to 0, not 15pt. */
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="link"
           accessibilityLabel={`Open the member file of ${author.name}`}
@@ -540,21 +418,9 @@ export const PaperRoom = memo(function PaperRoom({
 });
 
 /* ═══ THE REPORTED DOCKET ═══════════════════════════════════════════════════════
- * Reports send a filing here — and NOT a fixed number of them. This said "Five
- * reports send a filing here", which is the same sentence the rules page was
- * carrying and the same sentence a dead report sheet was carrying, and there is
- * no five anywhere in this app: no threshold, no trigger, no counter that acts.
- * Reports RAISE a filing up a queue ordered by how many it has, and a person
- * reads it. Three copies of one false claim, in three files, is what a number
- * nobody owns does while nobody is looking.
- *
- * The Tribunal's docket already exists in this app; this is the Dispatch's case
- * laid out in its language — the report count in the margin, because that is
- * what ordered the queue, and the filing quoted beneath the reasons it was
- * reported for.
- *
- * Two acts, and they are opposite and equal in weight. A docket that makes one
- * verdict easier than the other is not a docket.
+ * A reported filing, in the Dispatch's language: the report count in the margin
+ * (it orders the queue; no number of reports acts by itself), the filing under
+ * its reasons, and two verdicts of equal weight.
  */
 export const PaperCase = memo(function PaperCase({
   reports, reasons, kind, body, author, age, onStand, onStrike, onAuthor,
@@ -600,90 +466,19 @@ export const PaperCase = memo(function PaperCase({
 });
 
 /* ═══ THE TWO CARDS A FILING TRAVELS AS ═══════════════════════════════════════
- * SHARE  the image that leaves the app entirely — a printed clipping, so it
- *        carries the masthead, the writing, and where it came from, and nothing
- *        else. Someone who has never heard of the house has to be able to read
- *        it cold.
- * LOUNGE the same filing dropped into a chat: compact, in the chat's own
- *        bubble, and it still names its kind in its ink so the code holds even
- *        outside the page.
- */
-/* ── THERE IS ONE SHARE CARD, AND IT IS THE DOSSIER'S ─────────────────────
- * A generic card stood here, taking any kind. It went when we settled that
- * only an essay earns an image of its own: a take shared as a poster is a
- * poster of somebody's opinion, and a seeking is a poster of somebody's
- * question. Nobody makes those. See `DossierShareCard` below.
+ * SHARE  the image that leaves the app: a printed clipping a stranger can read cold.
+ *        Only an essay gets one; a take as a poster is a poster of an opinion.
+ * LOUNGE the filing dropped into a chat, still naming its kind in its ink.
  */
 
 /* ═══ THE DOSSIER'S CARD ══════════════════════════════════════════════════════
- * The one filing that earns an image of its own.
- *
- * A take shared as a poster is a poster of somebody's opinion; a seeking shared
- * as a poster is a poster of somebody's question. Nobody makes those. An essay
- * is different — it is a finished piece of writing, and a clipping of a finished
- * piece of writing is a thing people have been cutting out of newspapers for a
- * hundred years. So the share card is a DOSSIER card and there are no others.
- *
- * ── IT IS AN IMAGE, NOT A SCREEN ─────────────────────────────────────────────
- * Everything below follows from that one fact, and it is why this card is not
- * simply the page in a box:
- *
- *  1. FIXED SHAPE, TEXT FITS IT. 4:5 — the most-shared portrait ratio, and the
- *     proportion of a cutting. The card never grows to the writing; the writing
- *     is cut to the card by `clipToSentence`, which ends it on a full sentence.
- *
- *  2. NO FONT SCALING, ANYWHERE. Every other surface in this design honours the
- *     member's text size, because reading is the point. Here it would be a bug:
- *     a member at 130% would export an image with its own masthead pushed off
- *     the top. An exported image must be identical on every device that makes
- *     it, so every string on this card is `decorativeTextProps`.
- *
- *  3. BUILT FOR SOMEBODY ELSE'S COMPRESSION. This is the only asset that leaves
- *     the app and gets re-encoded by Instagram's and WhatsApp's servers. The
- *     page's 0.34-opacity hairlines and 8.5pt letterspaced labels turn to grey
- *     mush in a JPEG round-trip, so the card keeps the look and changes the
- *     build: rules at 2pt and full strength, no type under 11pt, no italic
- *     below the passage, and nothing that depends on fine detail.
- *
- *  4. READABLE AT A THUMBNAIL. In a WhatsApp chat list this is about 200px
- *     wide. If the title cannot be read there the share does nothing at all —
- *     hence a display title given the room to be large, and a short passage
- *     under it rather than a full column of text.
+ * An IMAGE, not a screen: a fixed 4:5 shape the writing is cut to (on a sentence);
+ * no font scaling, so every device exports the same; built to survive other apps'
+ * re-encoding (2pt rules, no type under 11pt); readable as a ~200px thumbnail.
  */
-/**
- * Title size, off the character count. Five steps, tuned against the card's
- * measure so the longest title at each step still sets in four lines or fewer.
- * The ceiling on a title is 200 characters; past the bottom step it is set at
- * the smallest size and allowed to end in an ellipsis, which is the one case
- * this card cannot draw whole and should not pretend to.
- */
-/**
- * How wide a string actually SETS, not how many characters it has.
- *
- * The ladder counted characters, which is the same thing only in Latin. A CJK
- * ideograph is a full em — twice the width of an average Latin letter — so an
- * eighteen-character Japanese title measured as "short" and was set at the
- * largest step, filling two lines at 32pt where the same measurement in English
- * would have filled half a line. It held, but only because it was short; forty
- * ideographs would have gone straight through the card.
- *
- * Counting the wide ranges as two makes one ladder correct for every script the
- * house's members write in.
- *
- * ── AND EMOJI ARE EM-WIDTH TOO ───────────────────────────────────────────────
- * The first version of this covered scripts and stopped there, which left the
- * commonest wide character of all counting as narrow. A title of twenty emoji
- * measured "short", took the ladder's largest step, and would have set at forty
- * characters' width in a box built for twenty.
- *
- * A flag is the sharpest case: two regional indicators, two code points, two
- * ems — and the old rule called it two narrow characters, so it was wrong by a
- * factor of two on the one glyph most likely to open a title.
- *
- * The ranges cover pictographs and transport, the enclosed alphanumerics that
- * pair into flags, cards and tiles, the dingbats, and U+FE0F — the variation
- * selector that turns an otherwise-narrow glyph emoji-wide.
- */
+
+// How wide a string SETS: CJK and emoji are em-wide (a flag is two), so they count as
+// two, and one size ladder works for every script.
 const WIDE = /[\u1100-\u115F\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6\u2600-\u27BF\uFE0F\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F1FF}\u{1F300}-\u{1FAFF}]/u;
 const visualLen = (t: string) => {
   let n = 0;
@@ -691,35 +486,18 @@ const visualLen = (t: string) => {
   return n;
 };
 
+// Title size off the set width: each step's longest title still fits four lines.
 const titleType = (t: string) => {
   const n = visualLen(t);
   return n <= 26 ? { fontSize: 32, lineHeight: 38 }
     : n <= 44 ? { fontSize: 28, lineHeight: 34 }
     : n <= 68 ? { fontSize: 24, lineHeight: 30 }
     : n <= 104 ? { fontSize: 20, lineHeight: 26 }
-    /* 16.5, not 17. The page sets its own display headlines at 16.5 and the
-       card's floor was invented at 17 — half a point away, on the other side of
-       the design, where no single-page audit could ever see it. Measuring the
-       page and the cards TOGETHER is the only thing that finds this class. */
+    // 16.5: the page's own display headline size, so page and card agree.
     : { fontSize: 16.5, lineHeight: 23 };
 };
 
-/**
- * ── THE CARD IS A FIXED BUDGET, AND THE TITLE SPENDS FIRST ───────────────────
- * Drawn against a title at its 200-character ceiling, the card broke: four lines
- * of display type ran past the room the middle had, and the opening was drawn
- * straight through the last line of the title. Two separate faults.
- *
- * The first is that "the title never truncates" was a promise nothing could
- * keep. Two hundred characters cannot be set legibly on a card at any size — at
- * the ladder's floor it needs seven lines. So the honest rule is the one the
- * body already follows: cut at a WORD, never mid-word, and mark the cut.
- *
- * 112 is where the floor step fills four lines exactly, so a title is set whole
- * whenever it possibly can be and trimmed only when it truly cannot.
- */
-/** Size, face and leading resolved together — one call, one answer, no way for
- *  a caller to take the face and forget the leading that belongs with it. */
+/** Size, face and leading in one answer, so no caller takes a face without its leading. */
 const titleSet = (t: string) => {
   const face = titleFace(t);
   const type = titleType(t);
@@ -730,6 +508,8 @@ const titleSet = (t: string) => {
   };
 };
 
+// The title spends the card first. Past 112 (four lines at the smallest step) it is
+// cut at a word and marked, as the opening is.
 const TITLE_MAX = 112;
 const fitTitle = (t: string) => {
   const s = (t ?? '').trim();
@@ -740,67 +520,21 @@ const fitTitle = (t: string) => {
 };
 
 /**
- * The second fault: the opening had a FIXED budget while the title's height
- * varied, so a tall title and a long opening both claimed the same room and the
- * card lost. The opening is paid last, out of what the title left — which is
- * also what makes the card genuinely responsive to what a member writes rather
- * than to what the fixture happened to contain.
- *
- * `lines` is the hard backstop underneath the sentence cut. The cut should
- * always land first; this exists so that no title, at no width, on no device,
- * can push the member's own signature off the bottom of the card.
- *
- * ── THE NUMBERS ARE MEASURED, NOT ESTIMATED ──────────────────────────────────
- * They were guessed twice and were wrong twice. Reckoning the card's measure at
- * roughly 47 characters a line gave budgets the layout could not hold, so the
- * backstop fired on top of the cut and the opening came out as `…and..` once
- * and `…to watch i…` the next time — the line-clamp truncating text the
- * sentence cut had already finished with, mid-word, on the house's one public
- * asset. Counted off the render, the measure is ~38 characters, and every
- * budget below is that figure times the lines the title left standing.
+ * The opening is paid last, out of the room the title left. The budgets are
+ * counted off the rendered 4:5 card (about 42 characters a line at its padding),
+ * never estimated; `lines` is the backstop that keeps the signature on the card.
  */
-/* A wider measure holds more per line, so the budgets rise with it: at 20pt of
-   padding the card sets ~44 characters a line rather than ~38, and an opening
-   cut to the old numbers would leave the card half empty — which is the same
-   fault as before wearing the opposite face. */
 const openingRoom = (titleLen: number, lead = 1, ratio = 4 / 5) => {
   const base = titleLen <= 26 ? { max: 210, lines: 5 }
     : titleLen <= 44 ? { max: 165, lines: 4 }
     : { max: 125, lines: 3 };
-  /**
-   * ── THE TITLE'S HEIGHT, NOT ITS LENGTH ─────────────────────────────────────
-   * The budget was reckoned from how many characters the title has. That is the
-   * same thing as how much room it takes only when every title has the same
-   * leading — and CJK titles are set at 1.5, because an ideograph fills its em
-   * box and Latin leading cuts the bottom off it.
-   *
-   * So a Japanese title of the same measured length is half again as TALL, and
-   * the opening underneath it was being handed room the card did not have. It
-   * cost four points of clipping on the title and five on the passage, and only
-   * appeared once the measure was widened and the budgets rose with it.
-   *
-   * One line of the title's own leading, taken out of the opening's.
-   */
+  // A taller leading (CJK) makes the title half again as tall: one line less below.
   const forLead = lead <= 1
     ? base
     : { max: Math.round(base.max * 0.7), lines: Math.max(2, base.lines - 1) };
 
-  /**
-   * ── AND THE CARD'S SHAPE, WHICH THESE NUMBERS NEVER KNEW ───────────────────
-   * Every number above was measured on the 4:5 portrait card. The same budget
-   * was then handed to the square and to the 5:4 landscape, which at the same
-   * width are 80% and 64% as TALL — and the middle of the card is `flex: 1`, so
-   * when the writing needed more room than the card had, it did not overflow.
-   * It SHRANK, to nothing. Measured on the rendered card: the title and the
-   * opening of the 5:4 export both came out zero points high. An export whose
-   * whole job is to carry an essay out into the world was carrying a masthead,
-   * a signature, and no essay.
-   *
-   * So the budget scales with the height the ratio actually leaves, and the
-   * title's line count comes down with it — a landscape card is a wide, short
-   * thing and cannot hold four lines of 32pt display type whatever the title
-   * says.
-   */
+  // Scaled to the height the ratio leaves: the middle is flex 1, and writing that
+  // over-asks does not overflow, it SHRINKS to nothing (measured: 0pt on a 5:4 card).
   const h = (4 / 5) / ratio;
   return {
     max: Math.round(forLead.max * h),
@@ -809,34 +543,11 @@ const openingRoom = (titleLen: number, lead = 1, ratio = 4 / 5) => {
   };
 };
 
-/**
- * ── THE FACE THE TITLE CAN ACTUALLY BE SET IN ────────────────────────────────
- * Rye is a display face with a Latin character set and nothing else. A member
- * writing in Japanese, Arabic, Russian, Greek or Hebrew — and this house has
- * members who will — would export a card whose title is a row of empty boxes.
- *
- * React Native does not cascade font families, so there is no fallback list to
- * lean on: the face has to be CHOSEN. Anything outside Latin, its accents and
- * ordinary punctuation is set in the serif instead, which carries far more of
- * Unicode and, failing that, hands off to the system face rather than tofu.
- *
- * The card loses its display face in those cases. It keeps the member's title,
- * which is the trade worth making every time.
- */
-// Basic Latin, Latin-1 and Latin Extended A/B (U+0020-U+024F), plus general
-// punctuation (U+2000-U+206F) for the quotes, dashes and ellipsis a title uses.
+// Latin, its accents (U+0020-U+024F) and general punctuation (U+2000-U+206F).
 const LATIN = /^[\u0020-\u024F\u2000-\u206F]*$/;
 /**
- * Face AND leading, together, because they are one decision.
- *
- * They were two, and the pixel audit caught what that costs: the Japanese title
- * was clipped four points at the bottom. A CJK glyph fills its em box — no
- * x-height, no descender to borrow room from — so the 1.21 leading that suits
- * Rye cuts the bottom off 語 and 屋. Latin leading applied to a script that
- * does not have Latin's proportions is a fault the eye reads as a broken font.
- *
- * 1.5 is the leading CJK type is normally set at, and asking for it here also
- * means the fallback face never has to guess.
+ * Rye has only Latin, and React Native does not fall back between families, so
+ * other scripts are set in the serif, at CJK's usual 1.5 leading (1.21 clips it).
  */
 const titleFace = (t: string) =>
   LATIN.test(t)
@@ -844,101 +555,50 @@ const titleFace = (t: string) =>
     : { fontFamily: fonts.serifMedium, lead: 1.5 / 1.21 };
 
 export const DossierShareCard = memo(function DossierShareCard({
-  // `max` takes NO default. It had one, and a default is not an absence: the
-  // computed room was never once consulted, `max ?? room.max` resolved to the
-  // default every time, and the line-clamp did all the cutting — which is how
-  // an opening trimmed cleanly by the sentence cut still reached the card as
-  // `…have gone, and…`. Two renders were spent blaming a stale cache for it.
+  // `max` has NO default: one would shadow the computed room in `max ?? room.max`.
   title, opening, author, filed, logo, width, max, ratio = 4 / 5,
 }: {
   title: string; opening: string;
-  /**
-   * NULL when the member has closed their account. The card must still draw:
-   * the essay survives, the name does not, and `request_account_deletion`
-   * nulls the author on rows exactly like this one. Reaching into `author.name`
-   * without this would crash the export for every essay by a departed member —
-   * on the asset that is supposed to be the house's introduction to strangers.
-   */
+  /** Null once the member closed their account: the essay survives, the name does not. */
   author: PaperAuthor | null;
-  /**
-   * The dateline, and the ONLY time on this card.
-   *
-   * The read time was here too, and it went through three versions before going
-   * away: `12 MIN` was read as "twelve minutes ago" — fair, on an asset that
-   * will still be sitting in a WhatsApp thread a year from now — and `12 MIN
-   * READ` was read as nothing at all by the next person who saw it. It is a
-   * blog's device, invented for feeds that had to promise readers an exit. A
-   * clipping never told you how long it would take; it told you WHEN, which is
-   * the fact that stops it going stale.
-   */
+  /** The dateline, and the only time on the card (a read time reads as "minutes ago"). */
   filed: string;
   logo?: string;
-  /**
-   * Left undefined the card fills whatever it is placed in, and `aspectRatio`
-   * takes the height from there. A number is for the story ground, which sets
-   * the card's size deliberately rather than inheriting a screen's.
-   */
+  /** Undefined fills the parent; a number is for the story ground, which sizes it. */
   width?: number;
   /** Overrides the room the title left. Only the story export needs this. */
   max?: number;
-  /**
-   * The card's proportion, so the three candidates can be looked at side by
-   * side rather than argued about. 4:5 is the most-shared portrait ratio and
-   * the one a cutting usually has; 1:1 reads wider and sets longer lines; 4:3
-   * is a plate rather than a clipping.
-   */
+  /** The card's proportion: 4:5 (a cutting, the most shared), 1:1 or wider. */
   ratio?: number;
 }) {
   const head = fitTitle(title);
-  // visualLen, not .length — the same measure the ladder uses, so the room the
-  // title leaves is reckoned in the width it actually took, in any script.
+  // The set width, as the ladder measures it, in any script.
   const room = openingRoom(visualLen(head), titleFace(head).lead, ratio);
   const cut = clipToSentence(opening, max ?? room.max);
   return (
     <View style={[m.share, { aspectRatio: ratio }, width !== undefined && { width }]}>
-      {/* THE INNER RULE. A printed card has two borders — the plate edge and a
-          hairline set in from it — and the gap between them is most of what makes
-          a rectangle read as PRINTED rather than as drawn. It sits behind
-          everything and takes no part in the layout. */}
+      {/* The inner rule: a second border set in, which makes it read as printed. */}
       <View style={m.shareInner} pointerEvents="none" />
 
       {logo ? <Image source={{ uri: logo }} style={m.shareLogo} contentFit="contain" /> : null}
 
-      {/* The nameplate rule is BRASS, not flat sepia. The house's four-stop ramp
-          is on every rule that matters everywhere else in the app; this card was
-          the one place still setting it as a single colour, which is exactly the
-          detail that separates a real nameplate from a line. */}
+      {/* The nameplate rule is the house's brass ramp, as on every rule that matters. */}
       <LinearGradient colors={BRASS} locations={BRASS_STOPS}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={m.shareRuleTop} />
-      {/* The dateline sits in the nameplate, between the rules, because that is
-          where a paper puts it and where anyone holding a cutting looks for it. */}
+      {/* The dateline sits in the nameplate, where a paper puts it. */}
       <Text style={m.shareMast} {...decorativeTextProps}>THE DISPATCH</Text>
       <Text style={m.shareDateline} {...decorativeTextProps}>{filed}</Text>
       <View style={m.shareRuleBottom} />
 
-      {/* Centred in whatever room the masthead and the signature leave, so a
-          four-minute essay sits in the middle of its card instead of stranding
-          the writing at the top over a third of empty ground. */}
+      {/* Centred in the room the masthead and signature leave, so a short essay sits mid-card. */}
       <View style={m.shareMiddle}>
-        {/* DOSSIER, and nothing beside it.
-            It carried the read time — `12 MIN`, then `12 MIN READ` once the bare
-            version was read as "twelve minutes ago". The second reader did not
-            know what it meant either, which settles it: a length of reading is a
-            blog's idea, invented for a feed that needed to promise you an exit.
-            A clipping cut out of a newspaper never told you how long it would
-            take. The nameplate carries the date; this line carries the kind. */}
+        {/* The kind, alone: the nameplate carries the date. */}
         <Text style={m.shareKind} {...decorativeTextProps}>
           <Text style={LEAD_STYLE.dossier}>{KIND_NAME.dossier}</Text>
         </Text>
 
-        {/* The size is COMPUTED, not negotiated. `adjustsFontSizeToFit` is the
-            obvious tool and it is the wrong one here twice over: it is unreliable
-            on Android with more than one line, and it makes the type size depend
-            on the renderer — on the single asset whose whole job is to look
-            identical everywhere it is exported. Drawn with it, a 72-character
-            title came out cut to `…Refuses to Do, an…` rather than set smaller.
-            A ladder off the character count is deterministic, is the same on both
-            platforms, and cannot truncate what it can simply set smaller. */}
+        {/* Sized by the ladder, not adjustsFontSizeToFit: that is unreliable on Android past
+            one line and varies by renderer, on the one asset that must look identical. */}
         <Text style={[m.shareTitle, titleSet(head)]} numberOfLines={room.titleLines} {...decorativeTextProps}>
           {head}
         </Text>
@@ -947,15 +607,10 @@ export const DossierShareCard = memo(function DossierShareCard({
           {cut.text}
         </Text>
 
-        {/* A newspaper prints "continued on page 4". The card cannot name a page,
-            so it says the only true thing it knows — and only when it is true.
-            An essay short enough to fit whole must not claim to run on. */}
+        {/* "Continues" only when it does: an essay that fits whole must not claim to run on. */}
         {cut.clipped ? (
           <View style={m.shareMore}>
-            {/* A printer's ornament, not a line. Rule, star, rule is the mark a
-                compositor set where a piece broke off — and ✦ is already this
-                house's ornament, so the card is speaking the app's own hand
-                rather than borrowing a divider from somewhere else. */}
+            {/* Rule, ✦, rule: the compositor's break mark, in the house's own ornament. */}
             <View style={m.shareOrn}>
               <View style={m.shareOrnRule} />
               <Text style={m.shareOrnMark} {...decorativeTextProps} {...UNSPOKEN}>✦</Text>
@@ -966,11 +621,7 @@ export const DossierShareCard = memo(function DossierShareCard({
         ) : null}
       </View>
 
-      {/* The page's `Byline` sets a name at 8.5pt, which is right on a page you
-          hold and wrong here twice: it is under this card's 11pt floor, so the
-          compression closes its letterspacing into a smear — and the thing it
-          smears is the member's own name, the one line on the card they care
-          most about surviving the trip. So the foot is set at card scale. */}
+      {/* Not the page's Byline: its 8.5pt name would smear under recompression. */}
       <View style={m.shareFoot}>
         <View style={m.shareByWrap}>
           {author?.avatar ? (
@@ -988,31 +639,14 @@ export const DossierShareCard = memo(function DossierShareCard({
 });
 
 /* ═══ THE STORY EXPORT ════════════════════════════════════════════════════════
- * The same card, centred on a 9:16 ground — NOT a second layout.
- *
- * Two layouts drift. One gets a fix the other does not, and six months later the
- * house has two different faces depending on where a member pressed share. So
- * there is one card, and a story is that card sitting on a surface, which is
- * also exactly what people do by hand when an app fails to offer it.
- *
- * The band top and bottom is not margin for looks. Instagram and TikTok both
- * paint their own chrome over those zones — a username, a caption, a row of
- * buttons — and a full-bleed card would have its masthead under somebody's
- * handle. The card sits inside what the platforms leave alone.
+ * The same card on a 9:16 ground, never a second layout (two layouts drift). The
+ * bands top and bottom are where Instagram and TikTok paint their own chrome.
  */
 export const StoryFrame = memo(function StoryFrame({
   width = 320, cardWidth = 358, children,
 }: { width?: number; cardWidth?: number; children: React.ReactNode }) {
   const height = Math.round((width * 16) / 9);
-  /**
-   * SCALED, not re-laid-out. The first version drew the card at the narrower
-   * story width, which is a different layout wearing the same name: the type
-   * stayed the size it was, the measure shrank, and the title vanished entirely
-   * while the signature was clipped off the bottom.
-   *
-   * A transform is the honest reading of "the same card on a ground" — every
-   * proportion held, nothing reflowed, one layout to keep correct.
-   */
+  // SCALED, not re-laid-out: at the narrower width the card reflows and loses its title.
   const scale = (width * 0.86) / cardWidth;
   return (
     <View style={[m.story, { width, height }]}>
@@ -1024,23 +658,10 @@ export const StoryFrame = memo(function StoryFrame({
 });
 
 /* ═══ THE CARD A FILING TRAVELS AS, INTO A ROOM ═══════════════════════════════
- * Every kind can be dropped into a lounge, because that is POINTING at something
- * rather than making a poster of yourself — "look at this ballot", "someone is
- * asking, go and help them".
- *
- * ── ONE SHAPE WAS THE BUG ────────────────────────────────────────────────────
- * The first version gave all five the same body-and-meta bubble, which is right
- * for a take and drops the defining fact of three others:
- *
- *   WIRE     had no source. A wire without its source is an unattributed claim,
- *            which is the one thing that kind exists not to be.
- *   BALLOT   showed the question and never the result — so a closed ballot
- *            arrived in a room carrying everything except its answer.
- *   DOSSIER  had its TITLE set as running body text, reading as a sentence
- *            somebody had begun rather than as the name of an essay.
- *
- * So the bubble keeps one skeleton — the kind's rule, the kind's name in its
- * ink, the meta line — and the middle carries whatever that kind is FOR.
+ * Every kind can be dropped into a lounge: that is pointing at something, not a
+ * poster of yourself. One skeleton (the kind's rule and name in its ink), and a
+ * middle that carries what the kind is FOR: a wire's source, a ballot's result,
+ * an essay's title set as a name.
  */
 export const LoungeCard = memo(function LoungeCard({
   kind, body, author, certifyCount, commentCount,
@@ -1064,15 +685,8 @@ export const LoungeCard = memo(function LoungeCard({
 }) {
   const ink = KIND_RULE[kind];
 
-  /* A card outlives the filing it points at. When the filing ends, the copy
-     sitting in this room has to end with it — otherwise a withdrawn take keeps
-     being readable in every lounge it ever reached, which makes the withdrawal
-     a fiction. The bubble stays so the conversation around it still makes
-     sense; what it was quoting does not. */
-  /* EVERY CLIPPING IS A DOOR. The lounge's own comment above its shared-content
-     card says exactly that, and this one was a plain View — a filing quoted in a
-     room with no way to reach it. A tombstone is a door too: the filing is gone,
-     the page and its critiques are not. */
+  // An ended filing ends here too, or a withdrawal would be a fiction; the bubble
+  // stays for the conversation, and still opens the page and its critiques.
   if (ended) {
     return (
       <PressableScale style={[m.bubble, m.bubbleEnded]} haptic="selection" pressedScale={0.98} onPress={onOpen}
@@ -1113,12 +727,7 @@ export const LoungeCard = memo(function LoungeCard({
           </Text>
         )}
 
-        {/* The kind's own fact, under the writing, in the kind's own ink. */}
-        {/* The wire's source is the ONE outbound link in the whole Dispatch, and
-            it leaves the app. So it names its host before it goes — a reader
-            agreeing to open bfi.org.uk has agreed to something; a reader tapping
-            an unlabelled arrow has agreed to nothing. The arrow says "this
-            leaves", the host says where to. */}
+        {/* The kind's own fact, in its ink. A wire names its host before the arrow that leaves. */}
         {kind === 'wire' && source ? (
           <View style={m.loungeSource}>
             <Text style={[m.loungeFact, { color: ink, marginTop: 0 }]}
@@ -1139,62 +748,35 @@ export const LoungeCard = memo(function LoungeCard({
           </Text>
         ) : null}
 
-        {/* WHO WROTE IT, WITH A FACE.
-            The card names two different members and only one of them belongs
-            here: the person who SHARED it is the one sending the message, and
-            the lounge already prints them above the bubble. The person who
-            WROTE the filing was reduced to five letters of 7.5pt type on a
-            counts line — the only name on the card that a reader is deciding
-            whether to trust. It gets a photograph and its own line. */}
+        {/* The WRITER, with a face (the lounge already names who shared it). */}
         <View style={m.loungeByRow}>
           {author?.avatar ? (
             <Image source={{ uri: author.avatar }} style={m.loungeAvatar} contentFit="cover" />
           ) : (
             <View style={[m.loungeAvatar, m.loungeAvatarNone]} />
           )}
-          {/* No house number. A card in a lounge is a filing somebody shared,
-              not a membership record — the number belongs on the SHARE card,
-              which travels out of the app and has to say whose house it is. */}
+          {/* No house number: that belongs on the share card, which leaves the app. */}
           <Text style={m.loungeBy} {...deckLabelProps}>
             {author ? author.name.toUpperCase() : 'A MEMBER, DEPARTED'}
           </Text>
         </View>
 
-        {/* No counts. A card shared into a room is a message pointing at a
-            post, and a count printed on it is frozen at the moment of sharing.
-            The live counts are one tap away, on the post itself. */}
+        {/* No counts: on a shared card they would freeze at the moment of sharing. */}
       </View>
     </PressableScale>
   );
 });
 
-/* ═══ FILINGS ARRIVED WHILE YOU WERE READING ══════════════════════════════════
- * A live page cannot insert entries above the one somebody is halfway through —
- * the writing moves under their thumb and they lose their place, which is the
- * single most common way a feed betrays a reader.
- *
- * So new filings are HELD, and offered. The count is exact and the act is one
- * tap. It is the only floating thing on the page, it is small, it sits under
- * the index rather than over the writing, and it leaves the moment it is used.
- */
-/** The gutter the held-filings pill sits in — reserved by the list while any
- *  are held, so the pill never covers an entry. 31pt of pill plus 10pt clear. */
+/* ═══ FILINGS ARRIVED WHILE YOU WERE READING: held and offered, never inserted ═══ */
+
+/** The gutter the list reserves while filings are held: 31pt of pill plus 10pt clear. */
 export const NEW_FILINGS_ROOM = 41;
 
 export const NewFilings = memo(function NewFilings({
   count, onPress,
 }: { count: number; onPress?: () => void }) {
-  /**
-   * ── IN WITH MOVEMENT, OUT WITHOUT ─────────────────────────────────────────
-   * `paperMotion` again, and the asymmetry is the point:
-   *
-   *     In: opacity and translateY -8 → 0 over `base`. Out: opacity over
-   *     `quick`, no movement, because it leaves at the same moment the list
-   *     jumps to the top and two motions at once is one too many to follow.
-   *
-   * Reduced motion collapses both to their end state; the pill still appears
-   * and still goes, it simply does not travel.
-   */
+  // In with movement, out without: it leaves as the list jumps, and two motions are one
+  // too many. Reduced motion keeps the appearing and going, without the travel.
   const reduced = useReducedMotion();
   return (
     <View style={m.newWrap} pointerEvents="box-none">
@@ -1217,32 +799,6 @@ export const NewFilings = memo(function NewFilings({
   );
 });
 
-/* ── THERE IS NO PAPER EVENT ROW ──────────────────────────────────────────
- * One stood here — the hour in the margin, the actor in the column, a brass
- * dot for unread — and no screen ever mounted it.
- *
- * It was not waiting on plumbing. The notices are FINISHED and they work:
- * four triggers on the database write them (`dispatch_notify_certify`,
- * `_critique`, `_answer`, `_ballot_closed`), the block check is inside
- * `dispatch_notify` so a blocked member is silenced in both directions, and
- * `notifications-modal.tsx` renders them and routes a tap through the group
- * key straight to `/dispatch/<id>`. A member IS told, and lands on the right
- * page.
- *
- * So the choice was never "wire this or leave the notices broken". It was
- * whether the app should have TWO notice lists, or one list with two visual
- * languages in it — a paper row for a certification on a filing sitting
- * above an app row for a follow. Both are worse than what exists.
- *
- * The plate went with it. `g4-events` also drew a fourth row, `shared a
- * dossier`, for an event this database has no trigger for at all — a feature
- * the record was inventing.
- *
- * Deleted rather than frozen. The frozen list is for design waiting on
- * plumbing; this was waiting on a decision, and the decision is no.
- */
-
-
 /** A plain screen head for the pages reached from somewhere else. */
 export const PaperBack = memo(function PaperBack({
   label, onBack, onMore,
@@ -1255,10 +811,7 @@ export const PaperBack = memo(function PaperBack({
         <ArrowLeft size={15} strokeWidth={2} color={colors.sepia} />
       </PressableScale>
       <Text style={m.backLabel} {...deckLabelProps}>{label}</Text>
-      {/* The spacer on the right existed to keep the label optically centred
-          against the arrow. It is the same width as a control, so when there is
-          more to do with this filing the control simply takes its place and the
-          centring is unchanged. */}
+      {/* A control, or a spacer of its width: either way the label stays centred. */}
       {onMore ? (
         <PressableScale hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} haptic="selection"
           onPress={onMore}
@@ -1293,11 +846,7 @@ const m = StyleSheet.create({
     fontFamily: fonts.bodyItalic, fontSize: 12.5, lineHeight: 19,
     color: colors.bone, opacity: QUIET, marginTop: 4,
   },
-  /**
-   * The rules line under the five forms. `space-between` rather than a gap, so
-   * the chevron sits at the sheet's right edge where every other row in this
-   * list puts its trailing mark — the five forms above all end there.
-   */
+  /** space-between, so its chevron ends at the right edge like the five forms' marks. */
   rulesRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: 12,
@@ -1390,26 +939,19 @@ const m = StyleSheet.create({
   },
 
   // ── a member's room ───────────────────────────────────────────────────────
-  /** A column. Nothing in this head competes for width — see the note above it. */
   roomHead: {
     paddingTop: 16, paddingBottom: 12,
     borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.25)',
   },
   /**
-   * The particulars, under the name. Indented past the disc so they hang from
-   * the NAME rather than from the disc — derived from the disc's own width and
-   * the byline's gap, so the alignment survives either being retuned.
-   *
-   * `flexWrap` here is the safety valve, and it is safe HERE because nothing in
-   * this row has a floor: both are plain text, so at the largest size the
-   * counts drop below the serial rather than either being crushed.
+   * Hung from the NAME: indented by the disc and the byline's gap. Wrapping is
+   * safe here, as both are plain text: the counts drop below the number, not crushed.
    */
   roomFacts: {
     flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap',
     columnGap: 10, rowGap: 3,
     marginLeft: AVATAR + 6,
-    // The byline carries 8pt of its own bottom margin, sized for a name sitting
-    // above a post. These belong tight under the name they describe.
+    // Tight under the name, against the byline's own 8pt bottom margin.
     marginTop: -4,
   },
   roomNo: {
@@ -1420,14 +962,7 @@ const m = StyleSheet.create({
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia,
     includeFontPadding: false,
   },
-  /**
-   * The way out, on its own line under the particulars.
-   *
-   * `alignSelf: 'flex-start'` so the control is exactly as wide as its words:
-   * stretched across the head it would be a 300pt tap target reaching the edge
-   * of the page, and every miss aimed at the first filing would open a profile
-   * instead.
-   */
+  /** As wide as its words: stretched, it would catch taps meant for the first filing. */
   roomFile: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     alignSelf: 'flex-start', marginLeft: AVATAR + 6, marginTop: 10,
@@ -1450,8 +985,7 @@ const m = StyleSheet.create({
     flexDirection: 'row', gap: 8, marginTop: 12,
     marginStart: MARGIN_W + RULE_W + RULE_GAP,
   },
-  /** Equal in size, equal in weight. One outlined in brass, one in crimson —
-   *  the difference is which, never how loud. */
+  /** Equal in size and weight: brass or crimson, never louder. */
   verdict: {
     flex: 1, borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2,
     paddingVertical: 8, alignItems: 'center',
@@ -1462,90 +996,27 @@ const m = StyleSheet.create({
     includeFontPadding: false,
   },
 
-  // ── the share card ────────────────────────────────────────────────────────
-  card: { ...EDGE_LIT,
-    backgroundColor: colors.soot,
-    borderWidth: 1.5, borderColor: colors.sepiaBorder, borderRadius: 3,
-    paddingHorizontal: 24, paddingVertical: 24,
-  },
-  cardRuleTop: { height: 2, backgroundColor: colors.sepia, opacity: 0.55 },
-  cardMast: {
-    fontFamily: fonts.display, fontSize: 20, color: colors.parchment,
-    textAlign: 'center', marginVertical: 8,
-  },
-  cardRuleBottom: { height: 1, backgroundColor: colors.sepia, opacity: 0.4, marginBottom: 24 },
-  cardBody: {
-    fontFamily: fonts.serifItalic, fontSize: 20, lineHeight: 29,
-    color: colors.parchmentBright,
-  },
-  cardFilm: { marginTop: 16 },
-  cardFoot: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginTop: 24, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)',
-  },
-  /** Square: the mark is 445x444, so the box matches its own proportion and no
-   *  crop is possible whatever the renderer does with object-fit. */
-  cardLogo: { width: 34, height: 34, alignSelf: 'center', marginBottom: 12 },
-  cardFrom: {
-    fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 2.2, color: colors.sepia,
-    includeFontPadding: false,
-  },
-
   // ── the dossier's share card ──────────────────────────────────────────────
-  /**
-   * 4:5, and the ratio is on the CARD rather than implied by its contents, so
-   * the frame is the fixed thing and the writing is what gives way. `space-
-   * between` then puts the masthead at the head and the byline at the foot at
-   * every length of title, instead of leaving a short essay's card with its
-   * signature floating in the middle.
-   */
+  /** The ratio is on the CARD, so the frame is fixed and the writing gives way. */
   share: { ...EDGE_LIT,
     aspectRatio: 4 / 5,
     backgroundColor: colors.soot,
     borderWidth: 2, borderColor: colors.sepiaBorder, borderRadius: 3,
-    /* 16, down from 22. The ornament and the mark at full size cost about
-       twenty points between them, and the last line of the opening went under
-       the plate edge again. The room came out of the padding rather than out of
-       the member's writing — the card can afford to breathe less; the essay
-       cannot afford to say less. */
-    /**
-     * ── 20, NOT 28 ─────────────────────────────────────────────────────────
-     * The card read narrow, and the ratio was not the reason: at 4:5 the frame
-     * is a perfectly ordinary portrait. What made it feel squeezed was the
-     * MEASURE inside it — 28pt of padding plus the inner rule's 7pt inset put
-     * 35pt of dead margin on each side of a 358pt card. A fifth of the width
-     * was empty, so the text column sat thin inside a frame that was not.
-     *
-     * Tested the other way first: 1:1 and 5:4 both shredded the type, because
-     * the whole ladder is tuned for this proportion. Widening the shape was
-     * never the fix; widening the LINE was.
-     */
+    // Room for the writing comes out of the padding: 20 gives the line the width,
+    // 16 gives the opening its last line above the plate edge.
     paddingHorizontal: 20, paddingVertical: 16,
     justifyContent: 'flex-start',
-    /**
-     * The frame wins. Drawn the first time, the stack came out 28pt taller than
-     * 4:5 and the byline was cut in half by the card's own edge — on the one
-     * asset that carries the member's name out of the app. Every margin below
-     * was then cut until the content clears the frame with room left over,
-     * because a signature half-printed is worse than no card at all.
-     */
+    // The frame wins; every margin inside is cut so the content clears it.
     overflow: 'hidden',
   },
-  /** Inset 7 from the plate edge: close enough to read as one border, far enough
-   *  that the gap survives being re-encoded by somebody else's server. */
+  /** 7 in: reads as one border, and the gap survives re-encoding. */
   shareInner: {
     position: 'absolute', left: 7, right: 7, top: 7, bottom: 7,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.28)', borderRadius: 1,
   },
-  /** 40, not 34. It was set at favicon size — the most distinctive mark the
-   *  house owns, drawn small enough to be mistaken for a bullet. */
+  /** Square, like the mark itself (445x444), so no renderer can crop it. */
   shareLogo: { width: 40, height: 40, alignSelf: 'center', marginBottom: 9 },
-  /** 2pt at full strength. The page's hairline is 1pt at 0.34 and would not
-   *  survive the re-encode; a rule that half-vanishes reads as a printing
-   *  fault, and a printing fault is the one thing a clipping must not have. */
-  /** No backgroundColor — this is the brass ramp now, and a colour under a
-   *  gradient is a colour nobody will ever see. */
+  /** Thick enough to survive re-encoding; no colour, as the brass ramp paints it. */
   shareRuleTop: { height: 2.5, borderRadius: 1 },
   shareMast: {
     fontFamily: fonts.display, fontSize: 18, color: colors.parchment,
@@ -1556,43 +1027,21 @@ const m = StyleSheet.create({
     textAlign: 'center', marginBottom: 7, includeFontPadding: false,
   },
   shareRuleBottom: { height: 1.5, backgroundColor: colors.sepia, opacity: 0.75 },
-  /** 11pt is the floor for anything letterspaced here — below it, compression
-   *  closes the gaps and the word becomes a smear. */
+  /** 11pt: the floor for letterspaced type that must survive compression. */
   shareKind: {
     fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1.6, color: colors.fog,
     textAlign: 'center', marginTop: 14, includeFontPadding: false,
   },
-  /** Size and leading come from `titleType`; everything else is fixed here. */
   shareMiddle: { flex: 1, justifyContent: 'center' },
+  /** Size, face and leading come from `titleSet`. */
   shareTitle: {
     fontFamily: fonts.display,
     color: colors.parchmentBright, textAlign: 'center',
     marginTop: 8, includeFontPadding: false,
-    // ── FAIL LOUDLY, NEVER SILENTLY ──────────────────────────────────────────
-    // The middle of the card is `flex: 1`, and a flex child shrinks before it
-    // overflows — so when the budget above was wrong, this text did not spill
-    // past the card where anyone would notice. It measured zero and disappeared.
-    //
-    // The budget is now right for every ratio the card ships. This is the
-    // backstop: if it is ever wrong again, the card overflows, the layout audit
-    // catches it, and nobody exports an empty nameplate.
+    // Fail loudly: a shrinking title vanishes unseen; an overflowing one the audit catches.
     flexShrink: 0,
   },
-  /**
-   * ── THE PASSAGE IS SET LEFT, NOT CENTRED ───────────────────────────────────
-   * It was centred, and centred body copy is ragged on BOTH sides: every line
-   * ends somewhere different at both ends, so the block has no edge for the eye
-   * to hold and the whole card reads as distorted — stretched, in the client's
-   * word — however correct its proportions are. Measured, the composition has
-   * plenty of variation in measure, 23% to 86%; sameness was never the fault.
-   *
-   * No newspaper has ever centred a paragraph. A masthead is centred, a
-   * headline is centred, and the text under them is set to a left edge, because
-   * that edge is what makes a column a column. The clipping this card is
-   * imitating had one.
-   *
-   * The head keeps its axis. The writing gets a spine.
-   */
+  /** Set left, as a column is: centred body copy is ragged on both edges. */
   shareBody: {
     fontFamily: fonts.serifItalic, fontSize: 15.5, lineHeight: 25,
     color: colors.parchment, textAlign: 'left', marginTop: 14,
@@ -1609,11 +1058,7 @@ const m = StyleSheet.create({
     fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia,
     marginTop: 9, includeFontPadding: false,
   },
-  /** `marginTop: auto` drops the foot to the bottom of a FIXED box — the one
-   *  place in this design where that is right, because the box is not growing
-   *  to fit and the leftover room belongs at the signature. */
-  /** No `marginTop: auto` any more — `shareMiddle` takes the slack with flex:1,
-   *  so the foot sits under it whatever length the writing is. */
+  /** At the bottom because `shareMiddle` takes the slack. */
   shareFoot: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingTop: 12,
@@ -1624,23 +1069,11 @@ const m = StyleSheet.create({
     width: 22, height: 22, borderRadius: 11,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)',
   },
-  /**
-   * 12.5, and it took two goes to get right.
-   *
-   * It was 11.5 — half a point over the card's 11pt floor, an emphasis no reader
-   * can see and a second number in the system forever. Correcting it to 12 only
-   * moved the collision: 12.5 is the house's body size, in twenty-three places
-   * across the design, so 12 was the invention and 12.5 was the step that
-   * already existed. The rule is not "pick a round number", it is "join the
-   * scale you already have" — and the way to know which is which is to count.
-   */
+  /** 12.5: the house's body size, joined rather than a near-miss invented. */
   shareBy: {
     fontFamily: fonts.sub, fontSize: 12.5, letterSpacing: 1.4,
     color: colors.parchmentBright, includeFontPadding: false, flexShrink: 1,
   },
-  /** 1.2, the house's step. `1` was invented here and nowhere else, sitting a
-   *  tenth of a point from 0.9 and two tenths from 1.2 — three values doing one
-   *  job, none of them distinguishable from the next. */
   shareByNo: { color: colors.fog, letterSpacing: 1.2 },
   shareFrom: {
     fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2.4, color: colors.sepia,
@@ -1652,12 +1085,6 @@ const m = StyleSheet.create({
     backgroundColor: colors.storyGround,
     alignItems: 'center', justifyContent: 'center',
   },
-  /**
-   * 14% top and bottom. Instagram's story chrome (the handle and the ring at
-   * the head, the reply field at the foot) and TikTok's caption stack both eat
-   * roughly that, and a card whose masthead sits under somebody's username is
-   * a card that failed at the only job it had.
-   */
   storySafe: { justifyContent: 'center' },
 
   // ── the lounge card ───────────────────────────────────────────────────────
@@ -1670,19 +1097,13 @@ const m = StyleSheet.create({
   bubbleEnded: { borderColor: 'rgba(184,137,26,0.14)' },
   loungeRule: { width: 2.5, borderRadius: 2, alignSelf: 'stretch' },
   loungeBody: { fontFamily: fonts.serifItalic, fontSize: 13.5, lineHeight: 21, color: colors.parchment },
-  /** A dossier's name gets the display face and its own line, the way it does
-   *  on the page and on the card. Set as running body it read as a sentence
-   *  somebody had started, not as the title of an essay. */
   loungeKind: { fontSize: 10, marginBottom: 3 },
-  /** 15.5, matching the card's reading size rather than sitting half a point
-   *  under it. Two sizes that close are one size and a loose end. */
+  /** 15.5: the share card's reading size, not a near-miss of it. */
   loungeTitle: {
     fontFamily: fonts.display, fontSize: 15.5, lineHeight: 20,
     color: colors.parchmentBright, marginBottom: 4, includeFontPadding: false,
   },
-  /** The kind's defining fact — a wire's source, a ballot's result, a seeking
-   *  that has been answered — in that kind's ink, so the colour code that runs
-   *  the whole page still holds inside somebody else's conversation. */
+  /** Coloured by the kind's ink at the call site. */
   loungeFact: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
     marginTop: 6, includeFontPadding: false,
@@ -1697,38 +1118,17 @@ const m = StyleSheet.create({
     width: 17, height: 17, borderRadius: 9,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)',
   },
-  /** A member with no photograph still gets the ring, so the byline keeps its
-   *  shape and the line does not shift left on some cards and not others. */
+  /** No photograph still gets the ring, so every byline keeps its shape. */
   loungeAvatarNone: { backgroundColor: 'rgba(184,137,26,0.10)' },
-  /**
-   * 8.5 and 1.2, not 9 and 1.1.
-   *
-   * The type audit reads sizes off the rendered page and reported 8.5 and 9 as
-   * "too close to tell apart" — which is the worst outcome available: no reader
-   * will ever see a difference, and the system carries two numbers for one size
-   * forever. 8.5/1.2 is the house's label setting everywhere else, so the
-   * lounge byline joins it rather than sitting half a point away from it.
-   */
   loungeBy: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9,
     color: colors.parchmentBright, includeFontPadding: false, flexShrink: 1,
   },
-  /** 0.8, the house's tightest tracking. 0.9 existed only here, one tenth of a
-   *  point from a value used on four other styles — a distinction with no
-   *  reader and a third number in a scale that needs two. */
-  loungeByNo: { color: colors.fog, letterSpacing: 0.8 },
 
   // ── held filings ──────────────────────────────────────────────────────────
-  /**
-   * Pinned, but never ON the writing. Floated at 8pt it landed squarely across
-   * the first byline — which is the thing this control exists to prevent, done
-   * by the control itself. The page reserves `NEW_FILINGS_ROOM` at the top of
-   * its scroll while filings are held, so the pill occupies a gutter of its own
-   * and covers nothing at rest.
-   */
+  /** In the gutter the page reserves (`NEW_FILINGS_ROOM`), so it covers no writing. */
   newWrap: { position: 'absolute', left: 0, right: 0, top: 5, alignItems: 'center' },
-  /** Brass, filled — the one place on this page a control is a solid shape,
-   *  because it is the one control that must be found without being looked for. */
+  /** Filled brass: the one control that must be found without being looked for. */
   newPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: colors.sepia, borderRadius: 20,
@@ -1739,20 +1139,6 @@ const m = StyleSheet.create({
   newText: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.ink,
     includeFontPadding: false,
-  },
-
-  // ── an event ──────────────────────────────────────────────────────────────
-  unread: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.sepia },
-  eventLine: {
-    flex: 1, minWidth: 0, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9,
-    color: colors.fog, includeFontPadding: false,
-  },
-  eventActor: { color: colors.parchment },
-  /** An Auteur, in the ink the Ledger keeps for crimson WORDS. */
-  eventActorAuteur: { color: colors.crimsonInk },
-  eventQuote: {
-    fontFamily: fonts.serifItalic, fontSize: 12.5, lineHeight: 21,
-    color: colors.bone, marginTop: 8,
   },
 
   // ── a screen reached from somewhere else ──────────────────────────────────

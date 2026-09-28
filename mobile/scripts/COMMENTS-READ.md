@@ -163,14 +163,14 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tabs/flashListMock.tsx | — |  |
 | mockups/tools/advances.cjs | — |  |
 | mockups/tools/drawn.cjs | — |  |
-| mockups/tools/harness.cjs | — |  |
-| mockups/tools/layout.cjs | — |  |
-| mockups/tools/selftest.cjs | — |  |
+| mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
+| mockups/tools/layout.cjs | 2026-09-28 | 12 findings; the header said it measured 'x1 and x1.35' (it runs five passes, iOS to 3.1 and Android to 2) and left SMALL, SHORT and LOST unlisted; two stacked JSDocs merged |
+| mockups/tools/selftest.cjs | 2026-09-28 | 19 findings; the bordered-pair note sat over scaledbeside, moved to its case |
 | mockups/tools/shoot.cjs | — |  |
 | mockups/tools/yoga-parity.cjs | — |  |
 | README.md | — |  |
 | scripts/check-app-routes.js | — |  |
-| scripts/check-backend-live.mjs | — |  |
+| scripts/check-backend-live.mjs | 2026-09-28 | 13 findings; section numbers ran 1-5,9,10,8,6,7,8 and the admin-RPC note sat above the TRUNCATE block — renumbering dropped, each note moved over its own code; '#24' output replaced with what it means |
 | scripts/comment-truth.js | — |  |
 | scripts/coverage-ratchet.js | — |  |
 | scripts/edge-functions.cjs | — |  |
@@ -293,7 +293,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperFrame.tsx | — |  |
 | src/components/dispatch/paper/PaperKeyWell.tsx | — |  |
 | src/components/dispatch/paper/paperMetrics.ts | — |  |
-| src/components/dispatch/paper/PaperMore.tsx | — |  |
+| src/components/dispatch/paper/PaperMore.tsx | 2026-09-28 | 61 findings fixed; 3 style notes contradicted their own values (loungeBy '8.5 and 1.2', the 14% story band, shareTitle 'from titleType'); 15 dead styles removed (card*, event*, unread, loungeByNo); the share-card test read this file's comment, now renders the card |
 | src/components/dispatch/paper/paperMotion.ts | — |  |
 | src/components/dispatch/paper/paperPerf.ts | — |  |
 | src/components/dispatch/paper/PaperPost.tsx | — |  |
@@ -469,7 +469,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-memberfile.gen.test.tsx | — |  |
 | src/components/profile/__tests__/zz-mockup.gen.test.tsx | — |  |
 | src/components/profile/__tests__/zz-render.lib.test.ts | — |  |
-| src/components/profile/__tests__/zz-render.lib.ts | — |  |
+| src/components/profile/__tests__/zz-render.lib.ts | 2026-09-28 | 35 findings; the RN-vs-CSS differences kept as short present-tense rules, the story of each bug left to history |
 | src/components/profile/Achievements.tsx | — |  |
 | src/components/profile/ArchiveLock.tsx | — |  |
 | src/components/profile/AvatarCropSheet.tsx | — |  |
@@ -739,7 +739,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/watchlistSlice.ts | — |  |
 | src/stores/films.ts | — |  |
 | src/stores/followStore.ts | — |  |
-| src/stores/lounge.ts | — |  |
+| src/stores/lounge.ts | 2026-09-28 | 38 findings fixed; stale 'created rooms' reason corrected (create_lounge adds the member row); loadOlderMessages→loadMoreMessages; 12 repeated sessionGuard notes dropped |
 | src/stores/markCounts.ts | — |  |
 | src/stores/mmkv-storage.ts | — |  |
 | src/stores/notificationStore.ts | — |  |
@@ -765,7 +765,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/ryeAdvances.ts | — |  |
 | src/theme/shaders.ts | — |  |
 | src/theme/stamp.ts | — |  |
-| src/theme/theme.ts | — |  |
+| src/theme/theme.ts | 2026-09-28 | 31 findings; header claimed an 'exact port of the web CSS' (false); the ladder, the see-through rule and every measured ratio kept; a stray comment about tarnishDeep sat under onBrassQuiet — moved to its token |
 | src/types/film.types.ts | — |  |
 | src/types/index.ts | — |  |
 | src/types/moderation.ts | — |  |

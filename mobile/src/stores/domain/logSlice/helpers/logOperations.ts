@@ -2,8 +2,6 @@ import * as Crypto from 'expo-crypto';
 import { Image } from 'expo-image';
 import { queryClient } from '../../../../lib/queryClient';
 import { supabase } from '../../../../lib/supabase';
-// The rank colours moved into the ladder with the rank names — this file no
-// longer decides what an Oracle looks like.
 import { standingFor } from '@/src/constants/standing';
 import type { DomainLog } from '../../../../types';
 import { LOG_SELECT_COLUMNS, mapLogRow, mapLogToDbPayload } from '../../../../utils/mappers';
@@ -23,61 +21,30 @@ import type { FilmState } from '../../../films';
 import { StoreApi } from 'zustand';
 
 /**
- * Is this error a genuine duplicate-key violation?
- *
- * SQLSTATE first, and the prose fallback narrowed to PostgreSQL's actual
- * duplicate wording — because the test here used to be
- * `/duplicate|unique|23505/i` against the message, and `42P10` reads
- * "there is no UNIQUE or exclusion constraint matching…". That substring made a
- * broken statement look like a duplicate.
- *
- * Batch 16 found and fixed exactly this in the offline queue. The same loose test
- * survived here, in a different file, which is the whole reason that batch's
- * lesson was "fix the CLASS, not the instance in front of you".
- */
-/**
- * What a viewing is made of, as the server names it.
- *
- * `viewing_history` and `view_count` are stripped deliberately: the server keeps
- * both itself, from the history it holds, and a client that sends them is a
- * client guessing. Everything else is a field of the viewing, and a field left
- * out is left as it was.
+ * A viewing's fields as the server names them, less the two it keeps itself
+ * (history and count); a field left out is left as it was.
  */
 const viewingFieldsOf = (dbUpdates: Record<string, unknown>): Record<string, unknown> => {
     const { viewing_history: _h, view_count: _c, ...fields } = dbUpdates;
     return fields;
 };
 
+// A duplicate key: SQLSTATE, or PostgreSQL's exact wording (`42P10` also says "UNIQUE").
 const DUPLICATE_KEY_MESSAGE = /duplicate key value violates unique constraint/i;
 const isDuplicateKey = (error: unknown): boolean => {
     const e = error as { code?: string; message?: string } | null;
     return e?.code === '23505' || DUPLICATE_KEY_MESSAGE.test(String(e?.message ?? ''));
 };
 
-/**
- * "A write of this kind is already in flight."
- *
- * Carried as a CODE on the error, not as prose. The screen needs to tell "still
- * working" apart from "it failed" so it can say the right thing, and matching on
- * an error's MESSAGE is exactly what batch 16 proved fragile — a substring test
- * read `42P10` as a duplicate and filed a broken statement as a success.
- */
+/** "A write of this kind is already in flight", as a CODE the screen can match, not prose. */
 export const LOG_BUSY = 'LOG_BUSY' as const;
 
-/**
- * Speak a SUCCESS to a screen reader.
- *
- * Successes here are announced explicitly because they have no toast — the log
- * flow confirms visually with "RECORD SEALED", which VoiceOver cannot read.
- * FAILURES are deliberately NOT announced from this file: they carry an error
- * toast, and the toast is now spoken on both platforms. Announcing here as well
- * would make Android say it twice.
- *
- * `require` rather than a top-level import, and wrapped, to match the existing
- * call sites — it keeps this file loadable in the test environment.
- */
+// A SUCCESS, spoken: it has no toast ("RECORD SEALED" is visual). A failure's toast is
+// already spoken, so a failure is not announced here too.
 const announceToScreenReader = (message: string): void => {
-    try { require('react-native').AccessibilityInfo.announceForAccessibility(message); } catch { /* test env */ }
+    try {
+        require('react-native').AccessibilityInfo.announceForAccessibility(message);
+    } catch { /* the test environment has no screen reader */ }
 };
 
 export const FORMAT_MAP: Record<string, string> = { 'DVD': 'dvd', 'Blu-Ray': 'bluray', '4K UHD': '4k', 'VHS': 'vhs', 'Film Print': 'filmprint' };
@@ -118,7 +85,7 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
                 const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(parsed.lastId));
                 if (parsed.lastId) {
                     if (parsed.wasDateNull) {
-                        // .lt('id', …) is parameterized (not string-interpolated), so it's safe as-is.
+                        // .lt('id', …) is a parameter, not interpolated: safe as it is.
                         query = query.is('watched_date', null).lt('id', parsed.lastId);
                     } else if (parsed.lastDate) {
                         const safeDate = String(parsed.lastDate).replace(/"/g, '""');
@@ -136,11 +103,7 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
 
         const { data, error } = await query;
 
-        // The member can leave while this is in the air. Writing below would put
-        // their collection back into a store that logout has already cleared —
-        // and persist would then copy it to disk, undoing the deletion that
-        // closes #64's leak. Nothing to clean up here: the reset already
-        // restored every flag this op set.
+        // Left mid-fetch: the reset restored this op's flags, and persisting would copy them.
         if (!stillSignedIn(user.id)) return;
 
         if (error || !data) { set({ _fetchingLogs: false }); return; }
@@ -251,16 +214,11 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
         return newVal as T | null;
     };
 
-    // Direct, not through get().updateLog — the store action does not forward
-    // opts, so it can never be silent. A merge is a STEP inside addLogOp, which
-    // says its own truer thing ("Rewatch added to your archive") right after;
-    // without this a member logging a film they had already seen heard "Record
-    // amended" first, which is not what they did. Same defect as removeLogOp's,
-    // at the caller I did not sweep for when I fixed that one.
-    // The identity of the viewing about to begin, chosen before the write so a
-    // retry of this exact rewatch is the same rewatch.
+    // The viewing about to begin, named before the write so a retry is the same rewatch.
     const newViewingId = Crypto.randomUUID();
 
+    // updateLogOp directly, silent: the store action cannot pass opts, and addLogOp
+    // announces the truer "Rewatch added" (not "Record amended") itself.
     const merge = await updateLogOp(set, get, existingLog.id, {
         rating: log.rating !== undefined ? log.rating : existingLog.rating,
         review: isAware ? (log.review !== undefined ? log.review : existingLog.review) : (log.review !== undefined && log.review !== '' ? log.review : existingLog.review),
@@ -290,9 +248,7 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
         try {
             await useVaultStore.getState().saveNote(existingLog.id, newViewingId, log.privateNotes);
         } catch (e) {
-            // The rewatch itself is filed. A refused note — the rank, most
-            // likely — is the note's own business and is reported where notes
-            // are written, not over the top of "Rewatch added".
+            // The rewatch is filed; a refused note is reported where notes are written.
             if (!isNetworkError(e)) captureError(e, { scope: 'applyRewatchMerge.saveNote', logId: existingLog.id });
         }
     }
@@ -300,8 +256,7 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
     if (existingLog.filmId) {
         queryClient.invalidateQueries({ queryKey: ['film', Number(existingLog.filmId)] });
     }
-    // Passed up so the caller does not claim the archive holds something that is
-    // still sitting in the offline queue.
+    // So the caller never claims the archive holds what is still queued.
     return { queuedOffline: merge?.queuedOffline === true };
 };
 
@@ -322,8 +277,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
         }
 
         if (get()._addLogMutex) {
-            // No toast here — the screen shows exactly one, and it needs to say
-            // "still saving", not "it failed". The code below tells it which.
+            // No toast: the screen shows one, and the code tells it "still saving".
             throw Object.assign(new Error('addLog mutex locked'), { code: LOG_BUSY });
         }
         set({ _addLogMutex: true });
@@ -342,17 +296,8 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
 
             if (existingLog) {
                 const merged = await applyRewatchMerge(set, get, existingLog, log);
-                // Another success that returns early — this is the "you have
-                // already logged this film" merge, distinct from the duplicate-key
-                // collision below. Both were covered by the old `finally`, which
-                // is exactly how moving that announcement can silence a path
-                // nobody was looking at.
-                //
-                // Offline this stays silent for the same reason the two paths
-                // below do: the write is queued, not archived. This merge reaches
-                // the offline branch through updateLogOp, which does NOT throw
-                // when it queues — so without the flag the member was told the
-                // rewatch was in their archive while it sat in the queue.
+                // A success that returns early, so it announces itself; not when
+                // queued (updateLogOp queues without throwing), which is not archived.
                 if (!merged?.queuedOffline) announceToScreenReader('Rewatch added to your archive');
                 return;
             }
@@ -411,34 +356,18 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                         if (serverRows && serverRows.length > 0) {
                             const existing = mapLogRow(serverRows[0] as any) as unknown as DomainLog;
                             const dupMerged = await applyRewatchMerge(set, get, existing, log);
-                            // A merge IS a success, and it returns early — so it
-                            // needs its own announcement. It used to get one from
-                            // the `finally`, which is precisely why that placement
-                            // looked harmless: it covered the success paths by
-                            // accident while also firing on the failures.
-                            //
-                            // Gated for the same reason as the merge above: the
-                            // network can drop between the duplicate-key response
-                            // and this write, and a queued write is not an
-                            // archived one.
+                            // As above: announced, unless the network dropped and it queued.
                             if (!dupMerged?.queuedOffline) announceToScreenReader('Rewatch added to your archive');
                             return;
                         }
                     }
-                    // The caller toasts. Doing it here as well produced two
-                    // stacked messages for one failure.
-                    throw error;
+                    throw error; // the caller toasts, once
                 } else {
-                    // The caller toasts. Doing it here as well produced two
-                    // stacked messages for one failure.
-                    throw error;
+                    throw error; // the caller toasts, once
                 }
             }
 
-            // Left mid-write: the row is theirs and already saved server-side,
-            // so nothing is lost by not showing it — but putting it into a store
-            // that logout has cleared would leave one of their films visible to
-            // whoever signs in next.
+            // Left mid-write: the row is saved; showing it would show the next member.
             if (!stillSignedIn(user.id)) return;
 
             // The note the member wrote belongs to the viewing this log just
@@ -503,34 +432,13 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 try {
                     await get().addToPhysicalArchive({ id: log.filmId, title: log.title ?? '', poster_path: log.poster, release_date: log.year?.toString() }, [fmt]);
                 } catch (e) {
-                    // CONTRACT GUARD, not a live path: addToPhysicalArchive handles
-                    // every error itself and never rethrows, so this cannot fire
-                    // today and is deliberately untested. It exists so that if that
-                    // contract is ever broken, the breakage is reported instead of
-                    // silently swallowed here. Do not count it as covered.
+                    // A contract guard: addToPhysicalArchive never rethrows (today).
                     if (__DEV__) console.error('Failed to auto-sync physical archive', e);
 
                     if (!isNetworkError(e)) captureError(e, { scope: 'addLogOp.autoSyncPhysicalArchive' });
                 }
             }
-            // Success, and only here. This announcement used to sit in the
-            // `finally` below, which runs on the throw paths too — so a VoiceOver
-            // member was told "Film logged to your archive" at the exact moment
-            // the log had FAILED, while the screen showed an error.
-            //
-            // Failure needs no announcement of its own: the error toast is now
-            // spoken on both platforms (toastBus announces on iOS, where the
-            // live region does not fire). Adding one here would make Android say
-            // it twice.
-            //
-            // The offline branch above does NOT return — it fabricates finalData
-            // and falls through to here — so without this guard a member with no
-            // signal heard "Archived offline. Will sync when connected." and then
-            // "Film logged to your archive", the second contradicting the first
-            // and describing something that had not happened. Making the toast
-            // speak on iOS is what turned that into two spoken sentences. The
-            // toast already tells the truth on both platforms, so this stays
-            // silent and lets it.
+            // Success only (never in `finally`); a queued log's own toast has spoken.
             if (!queuedOffline) announceToScreenReader('Film logged to your archive');
         } finally {
             set({ _addLogMutex: false });
@@ -553,17 +461,12 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
 
         if (existingLog) {
             if (existingLog.status === status) return;
-            // A step, not the member amending a record — "Record amended" would be
-            // the wrong sentence for marking a film watched. Currently unreachable
-            // (this op has no callers), fixed anyway so reviving it cannot revive
-            // the defect alongside its corrected twin.
+            // A step, silent: "Record amended" is the wrong sentence for marking watched.
             await updateLogOp(set, get, existingLog.id, { status } as Partial<DomainLog>, { silentAnnounce: true });
             return;
         }
         const newLogId = Crypto.randomUUID();
-        // This log's first viewing, named here like every other. A film marked
-        // watched can be opened and given a note straight away — with no signal
-        // too, because the name already exists on this device.
+        // Its first viewing, named here so a note can follow at once, even offline.
         const newViewingId = Crypto.randomUUID();
         const payload = {
             id: newLogId,
@@ -579,9 +482,7 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
             is_spoiler: false,
             watched_date: localCalendarDate(),
             watched_with: null,
-            // No `private_notes`. Marking a film watched writes no note, and
-            // this column is not the app's to write in any case — the blank it
-            // used to send was harmless only by luck.
+            // No `private_notes`: a note lives on its viewing, never this column.
             abandoned_reason: null,
             physical_media: null,
             is_autopsied: false,
@@ -597,26 +498,17 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
         };
         const { data, error } = await supabase.from('logs').insert([payload]).select().single();
 
-        // Guarded like every sibling op, though this one is currently
-        // unreachable — it has no callers. Fixed anyway so reviving it cannot
-        // revive the defect beside its corrected twins.
         if (!stillSignedIn(user.id)) return;
 
         let finalLogId = newLogId;
         let createdAt = new Date().toISOString();
 
         if (error) {
-            // Use shared network error detection
             if (isNetworkError(error)) {
                 enqueueMutation({ type: 'mark_watched', payload });
                 reelToast('Marked watched offline. Will sync when connected.');
-            // Same narrowed test as the add path. This operation currently has no
-            // callers, so the loose version could not fire — but a defect left
-            // beside its own corrected twin is how the fix gets undone later.
             } else if (isDuplicateKey(error)) {
-                // the row already exists (concurrent insert won the
-                // logs(user_id, film_id) unique race). Treat as existing — update the
-                // status if it differs — instead of throwing and dropping the action.
+                // Another insert won the logs(user_id, film_id) race: update its status.
                 const { data: serverRows } = await supabase.from('logs')
                     .select(LOG_SELECT_COLUMNS)
                     .eq('user_id', user.id).eq('film_id', film.id)
@@ -624,7 +516,6 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
                 if (serverRows && serverRows.length > 0) {
                     const existing = mapLogRow(serverRows[0] as any) as unknown as DomainLog;
                     if (existing.status !== status) {
-                        // Same as above: a step, and unreachable today.
                         await updateLogOp(set, get, existing.id, { status } as Partial<DomainLog>, { silentAnnounce: true });
                     }
                     return;
@@ -690,21 +581,12 @@ export const unmarkWatchedOp = async (set: SetState, get: GetState, filmId: numb
     const existingLog = get().logs.find(l => l.filmId === filmId);
         if (!existingLog) return;
 
-        // A note is content, and unmarking a film deletes the whole record — so
-        // the Vault is ASKED, not assumed. It used to read `existingLog.privateNotes`,
-        // which is now always empty because a note lives on its viewing: left
-        // alone, this guard would have quietly stopped protecting the one piece
-        // of writing nobody else can recover.
-        //
-        // If the Vault cannot be reached, the answer is "there may be a note" and
-        // the record stays. Refusing to delete costs a tap; guessing costs the
-        // member's own writing.
+        // Unmarking deletes the whole record, so the Vault is ASKED for notes; an
+        // unreachable Vault means "there may be one", and the record stays.
         const vault = useVaultStore.getState();
         if (!vault.isLoaded(existingLog.id)) await vault.loadForLog(existingLog.id);
         const after = useVaultStore.getState();
-        // ANY note on this log, not just the current viewing's: unmarking deletes
-        // the whole record, every viewing's note with it — and a log cached before
-        // viewings had names cannot even say which viewing is current.
+        // ANY viewing's note: every one goes with the record.
         const mayHoldANote = after.isUnreachable(existingLog.id)
             || Object.entries(after.notesLog).some(([v, logId]) => logId === existingLog.id && !!after.notes[v]?.trim());
 
@@ -735,12 +617,7 @@ export const unmarkWatchedOp = async (set: SetState, get: GetState, filmId: numb
 export const getCinephileStatsOp = (set: SetState, get: GetState, overrideCount?: number) => {
     const logs = get().logs;
         const count = overrideCount ?? logs.length;
-        // One ladder — see src/constants/standing.ts. The thresholds here were
-        // already the right ones (1 / 10 / 25 / 100, matching the badge grid),
-        // but two of the NAMES were this file's alone: THE INITIATE and THE
-        // DEVOTEE appeared nowhere else in the app, so the same member was
-        // called one thing here and another on their own profile.
-        const s = standingFor(count);
+        const s = standingFor(count); // the one ladder (src/constants/standing.ts)
         return { count, level: s.name, color: s.color, progress: s.progress };
 };
 
@@ -752,21 +629,7 @@ export const updateLogOp = async (
     opts?: {
         /** Set by callers using this as a STEP, so it does not narrate their work. */
         silentAnnounce?: boolean;
-        /**
-         * This edit is a member adding or removing a VIEWING, not amending one.
-         *
-         * Those two are the only ways a log moves from one viewing to another,
-         * and the server does the move itself: it archives the viewing being
-         * left — with its own identity, so the note written about it stays with
-         * it — or gives back the one before, note and all. The app cannot do
-         * that by writing `viewing_history`, and no longer tries: the database
-         * refuses a save that loses a past viewing, whoever sends it.
-         *
-         * `viewingId` is chosen HERE, before the write, which is what makes a
-         * retry safe. The same call arriving twice — a queue flushed again, a
-         * second press — names the same viewing, and the second one does
-         * nothing instead of adding a rewatch the member did not watch.
-         */
+        /** Add or remove a VIEWING (the server moves it); its id makes a repeat a no-op. */
         viewingOp?: { kind: 'add' | 'remove'; viewingId: string };
     },
 ) => {
@@ -881,18 +744,10 @@ export const updateLogOp = async (
         });
 
         try {
-            // The ownership filter, which every other write in this file
-            // carries. RLS is the real protection; without this the row is
-            // addressed by id alone, and a refusal matches no row — which
-            // PostgREST reports as 200 with no error. The optimistic
-            // setQueryData above has already shown the member their edit, so a
-            // silent refusal leaves it on screen until the next refetch takes
-            // it away again, with nothing said.
-            //
-            // A viewing operation takes the other door: the two RPCs, which are
-            // the only things allowed to move a log to another viewing. They
-            // carry their own ownership check (`user_id = auth.uid()` inside the
-            // function) and answer 'Log not found' to anyone else.
+            // An edit carries the ownership filter, as every write here does (RLS
+            // guards; a refused row would answer 200). A viewing operation goes
+            // through its RPC, the only way to move a log between viewings, which
+            // checks the owner itself.
             let error: unknown = null;
             if (opts?.viewingOp) {
                 try {
@@ -910,24 +765,17 @@ export const updateLogOp = async (
                     .eq('id', id)
                     .eq('user_id', user.id));
             }
-            // Same as addLogOp: a queued edit is not a saved one, and this branch
-            // falls through to the announcement below.
+            // A queued edit is not a saved one (it falls through to the announcement).
             let queuedOffline = false;
             if (error) {
-                // Use shared network error detection
                 if (isNetworkError(error)) {
                     enqueueMutation(opts?.viewingOp
                         ? (opts.viewingOp.kind === 'add'
                             ? { type: 'add_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, fields: viewingFieldsOf(dbUpdates) } }
                             : { type: 'remove_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId } })
                         : { type: 'update_log', payload: { id, updates: dbUpdates } });
-                    // A STEP does not narrate itself, and that includes this
-                    // toast — not just the announcement below. Removing a rewatch
-                    // offline showed "Saved offline. Will sync when connected."
-                    // and then "Rewatch removed…": two messages for one action,
-                    // the first using the wrong verb, since the member removed
-                    // something rather than saving it. The caller is told it was
-                    // queued (below) and says one true, offline-aware thing.
+                    // A STEP shows no toast either: its caller is told it queued, and
+                    // says one true thing in its own verb.
                     if (!opts?.silentAnnounce) reelToast('Saved offline. Will sync when connected.');
                     queuedOffline = true;
                 } else {
@@ -935,24 +783,15 @@ export const updateLogOp = async (
                 }
             }
             
-            // The note, if this edit carried one.
-            //
-            // `undefined` means the member did not touch it, and an untouched
-            // note is left exactly where it is — which is the whole reason the
-            // form sends it only when it changed. An empty string is not
-            // nothing: it is the member clearing their own note, and clearing is
-            // never gated. A viewing operation is excluded because it writes its
-            // note against the viewing it created, once that viewing exists.
+            // The note, if this edit carried one: undefined is untouched, '' is the
+            // member clearing it (never gated). A viewing operation writes its own note.
             if (!opts?.viewingOp && updates.privateNotes !== undefined) {
                 const viewingId = (get().logs.find(l => l.id === id)?.viewingId) ?? originalLog?.viewingId ?? null;
                 if (viewingId) {
                     try {
                         await useVaultStore.getState().saveNote(id, viewingId, updates.privateNotes ?? '');
                     } catch (e) {
-                        // The record itself is saved. A note refused for the rank
-                        // is reported by the screen that asked for it, which can
-                        // say the one true thing about the Vault; saying it here
-                        // as well would be two messages for one act.
+                        // The record is saved; the screen that asked reports the note.
                         if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp.saveNote', logId: id });
                     }
                 }
@@ -965,7 +804,7 @@ export const updateLogOp = async (
                     try {
                         await get().addToPhysicalArchive({ id: logToUpdate.filmId, title: logToUpdate.title ?? '', poster_path: logToUpdate.poster, release_date: logToUpdate.year?.toString() }, [fmt]);
                     } catch (e) {
-                        // CONTRACT GUARD — see the identical note in addLogOp above.
+                        // A contract guard, as in addLogOp.
                         if (__DEV__) console.error('Failed to auto-sync physical archive on update', e);
 
                         if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp.autoSyncPhysicalArchive' });
@@ -973,33 +812,14 @@ export const updateLogOp = async (
                 }
             }
 
-            // Editing had NO announcement at all, while filing a new log did —
-            // and both end in the same visual "RECORD SEALED" through the same
-            // handler. So a VoiceOver member was told when they filed a record and
-            // told nothing when they amended one. Same class as the announcement
-            // that used to fire on failure: the spoken account of what happened
-            // has to match what the screen says.
-            //
-            // Suppressed when another operation is using this as a step rather
-            // than as the member's own edit. removeLogOp undoes a rewatch by
-            // calling this, and it says its own, truer thing afterwards — without
-            // this flag a member removing a rewatch heard "Record amended" and
-            // then "Rewatch removed", the first of which is not what they did.
-            // Silent offline too: "Saved offline. Will sync when connected." is
-            // already spoken, and "Record amended" would contradict it.
+            // Spoken, as "RECORD SEALED" is shown; not for a step, whose caller says
+            // the truer thing, nor when queued, whose toast already spoke.
             if (!opts?.silentAnnounce && !queuedOffline) announceToScreenReader('Record amended');
-            // Reported so a caller using this as a step can say the true thing.
-            // Without it, addLogOp's merge announced "Rewatch added to your
-            // archive" while the write was only queued — the same contradiction
-            // that was closed for the two non-merge paths and missed here.
-            return { queuedOffline };
+            return { queuedOffline }; // so a caller using this as a step can say the truth
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp', logId: id });
-            // Roll back only if they are still here. The optimistic write this
-            // undoes was made before the await, so logout has already cleared
-            // it — restoring `originalLog` now would put one of the previous
-            // member's records into an empty store. Telemetry above still fires;
-            // the defect is worth knowing about either way.
+            // Roll back only while they are still here: after a logout it would hand
+            // the next member a record.
             if (originalLog && stillSignedIn(user.id)) {
                 set((state) => {
                     const revertedLogs = sortLogs(state.logs.map(l => l.id === id ? originalLog : l));
@@ -1031,10 +851,7 @@ export const updateLogOp = async (
     }
 
 export const removeLogOp = async (set: SetState, get: GetState, id: string, forceDeleteAll: boolean = false) => {
-        // Captured HERE, before any await, so the rollback below can tell "still
-        // the same member" from "somebody else is signed in now". Reading the
-        // current user at rollback time and comparing it to itself would always
-        // be true — a guard that cannot fail.
+        // Captured before any await, so the rollback can tell whether it is still them.
         const startedAs = useAuthStore.getState().user?.id ?? null;
         const logToRemove = get().logs.find((l) => l.id === id);
         if (!logToRemove) return;
@@ -1045,13 +862,8 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             const poppedEntry = history[0] as { viewingId?: string } & Record<string, any>;
             const remainingHistory = history.slice(1);
 
-            // The viewing being removed is the one the log is ON. Naming it is
-            // what makes the removal exact — and what makes a retry do nothing,
-            // because by then the log is on a different viewing.
-            //
-            // A log cached by a build from before viewings had identities has no
-            // name for it, so it is asked for rather than guessed. Only that one
-            // case reaches the server here, and only once per such log.
+            // The viewing removed is the one the log is ON; naming it makes a retry do
+            // nothing. A log cached without viewing ids asks the server for it.
             let leavingViewingId = logToRemove.viewingId ?? null;
             if (!leavingViewingId) {
                 try {
@@ -1060,10 +872,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
                 } catch { /* offline — handled immediately below */ }
             }
             if (!leavingViewingId) {
-                // Nothing to name, so nothing honest to queue: a removal that
-                // cannot say WHICH viewing it removes is the one shape the
-                // database refuses, and rightly. The member is told the truth
-                // instead of being handed a queued write that will fail later.
+                // Nothing to name, nothing honest to queue (the database refuses it).
                 reelToast('Removing a rewatch needs a connection.');
                 return;
             }
@@ -1091,30 +900,18 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             };
 
             try {
-                // Silent: this is a STEP in removing a rewatch, not the member
-                // amending a record. The toast below says the true thing, and it
-                // is now spoken on both platforms.
+                // A silent STEP: the toast below says what the member did.
                 const undone = await updateLogOp(set, get, id, updates, {
                     silentAnnounce: true,
                     viewingOp: { kind: 'remove', viewingId: leavingViewingId },
                 });
-                // The removed viewing's note went with it, at the server. The
-                // local Vault forgets it too, so the note does not linger on a
-                // screen that is about to redraw.
+                // The server removed its note; the local Vault forgets it too.
                 useVaultStore.getState().forgetNote(leavingViewingId);
-                // One message, with the member's own verb. The step no longer
-                // says "Saved offline…" over the top of this — they removed a
-                // rewatch, they did not save one — but the queued state still has
-                // to reach them, so it is said here instead.
                 reelToast(undone?.queuedOffline
                     ? 'Rewatch removed. Will sync when connected.'
                     : 'Rewatch removed. Reverted to previous viewing.');
             } catch (e) {
-                // Rethrown for the caller to report. updateLog USED to toast its
-                // own failures here — this batch removed that, because it and the
-                // caller both toasted and the member saw two messages for one
-                // failure. handleDelete shows the single one.
-                throw e;
+                throw e; // the caller toasts, once
             }
             return;
         }
@@ -1157,10 +954,8 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             if (__DEV__) console.warn(`[removeLog] Failed for log ${id}:`, e);
 
             if (!isNetworkError(e)) captureError(e, { scope: 'removeLogOp', logId: id });
-            // Restoring the log they tried to delete is right only while they are
-            // still signed in. After a logout the optimistic removal is already
-            // gone with the rest of the store, and putting the record back would
-            // hand the next member one of theirs.
+            // Restored only while they are still here: after a logout it would hand
+            // the next member one of theirs.
             if (stillSignedIn(startedAs)) {
                 set((state) => {
                     const newLogs = sortLogs([logToRemove, ...state.logs]);
