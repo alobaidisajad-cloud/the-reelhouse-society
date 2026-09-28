@@ -693,7 +693,11 @@ export function useLogFlow() {
 
     // Explicit draft discard — clears MMKV and resets form state
     const discardDraft = useCallback(() => {
-        clearDraft(user?.id, 'log');
+        // The draft is the member's ONE unsent new record (`draft_<id>_log`, not
+        // kept per film). An edit writes no draft, so an edit has none to throw
+        // away — and clearing here from an edit erased the new record they were
+        // writing about some other film.
+        if (!editLogId) clearDraft(user?.id, 'log');
         setRating(0);
         setReview('');
         setStatus('watched');
@@ -717,7 +721,7 @@ export function useLogFlow() {
         // draft holds private notes, which makes it the worst one to get wrong.
         // Every `setX` above is a state setter and stable by React's guarantee,
         // so this is the only dependency that was actually missing.
-    }, [user?.id]);
+    }, [user?.id, editLogId]);
 
     const toggleList = (listId: string) => {
         if (!film?.id) return;

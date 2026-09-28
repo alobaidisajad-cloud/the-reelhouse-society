@@ -212,7 +212,10 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     {availablePosters.length > 0 ? (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.flatListGapPad} keyboardShouldPersistTaps="handled">
                             <PressableScale hitSlop={null} onPress={() => { setAltPoster(null); }} style={[st.pThumb, altPoster === null && st.pThumbActive]} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityState={{ selected: altPoster === null }} accessibilityLabel="Use the default poster">
-                                <Text style={[st.pDefault, altPoster === null && st.pDefaultActive]}>DEFAULT</Text>
+                                {/* One word in a 46pt tile: at 1.35× it is 59pt, and the
+                                    phone would break it mid-letter. It shrinks on one
+                                    line instead — to 10pt at the most, the type floor. */}
+                                <Text style={[st.pDefault, altPoster === null && st.pDefaultActive]} {...scaledTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.74}>DEFAULT</Text>
                             </PressableScale>
                             {availablePosters.map(p => (
                                 <PressableScale key={p.file_path} hitSlop={null} onPress={() => { setAltPoster(p.file_path); }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityState={{ selected: altPoster === p.file_path }} accessibilityLabel="Select this alternate poster">
@@ -590,7 +593,10 @@ export default function LogForm({ flow, user }: LogFormProps) {
             {/* Past the end of the record: the things you should have to reach for.
                 Delete used to be the FIRST thing on this page when editing. */}
             <View style={st.tailRow}>
-                {hasUnsavedChanges && (
+                {/* Not on an edit: there is no draft there to discard (CLOSE
+                    already leaves without saving), and "DISCARD DRAFT" on a
+                    record you are amending named something that did not exist. */}
+                {hasUnsavedChanges && !isEditing && (
                     <PressableScale style={st.discardBtn} onPress={() => { TactileEngine.warn(); discardDraft(); router.back(); }} disabled={submitting} hitSlop={null} haptic="heavy" accessibilityRole="button" accessibilityLabel="Discard this draft">
                         <Text style={[st.cancelText, { color: colors.fog }]}>DISCARD DRAFT</Text>
                     </PressableScale>
