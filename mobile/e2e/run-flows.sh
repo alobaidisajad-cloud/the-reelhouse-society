@@ -37,9 +37,17 @@ cat "$OUT/maestro.log"
 
 if [ $rc -ne 0 ]; then
   node mobile/e2e/annotate.mjs "E2E flows failed" "$OUT/maestro.log"
+  # Each failed flow's OWN screen, at the moment it failed — not the one left
+  # on the emulator at the end, which is only ever the last flow's. (A step
+  # carries at most ten notices; the rest are on the run's summary.)
+  n=0
+  for f in $(node mobile/e2e/flow-screens.mjs "$OUT/maestro-debug" "$OUT/flow-screens"); do
+    n=$((n + 1))
+    [ $n -le 9 ] && node mobile/e2e/annotate.mjs "$(basename "$f" .txt) at the moment it failed" "$f" notice
+  done
   "$MAESTRO" hierarchy > "$OUT/screen.json" 2>/dev/null || true
   node mobile/e2e/screen.mjs "$OUT/screen.json" > "$OUT/screen.txt"
-  node mobile/e2e/annotate.mjs "What was on the screen when it failed" "$OUT/screen.txt" notice
+  node mobile/e2e/annotate.mjs "What was on the screen after the last flow" "$OUT/screen.txt" notice
   # What the APP said — not the whole emulator, whose own noise buried it:
   # Android's crash buffer (a native or Java crash of any process), the
   # JavaScript side's console, and every line from the app's process if it is

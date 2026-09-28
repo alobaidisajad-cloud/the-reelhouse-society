@@ -1,5 +1,11 @@
 {
+ "/discover/movie?page=1&sort_by=popularity.desc&vote_count.gte=20": "discover_movie_page_1_sort_by_popularity.desc_vote_count.gte_20.725c726c.json",
  "/discover/movie?page=1&sort_by=vote_average.desc&vote_count.gte=8000": "discover_movie_page_1_sort_by_vote_average.desc_vote_count.gte_8000.0fcd18b3.json",
  "/movie/238?append_to_response=credits%2Cvideos%2Crecommendations%2Csimilar%2Cwatch%2Fproviders%2Crelease_dates": "movie_238_append_to_response_credits_2Cvideos_2Crecommendations_2Csimilar_2Cwatc.5e032dda.json",
+ "/search/keyword?query=godfather": "search_keyword_query_godfather.65657870.json",
+ "/search/keyword?query=the": "search_keyword_query_the.7e2641b7.json",
+ "/search/multi?include_adult=false&page=1&query=godfather": "search_multi_include_adult_false_page_1_query_godfather.6de8f956.json",
+ "/search/multi?include_adult=false&page=1&query=the": "search_multi_include_adult_false_page_1_query_the.a4dcc3b5.json",
+ "/search/multi?include_adult=false&page=1&query=the+godfather": "search_multi_include_adult_false_page_1_query_the_godfather.b6ee043a.json",
  "/trending/movie/week": "trending_movie_week.ed08b0a9.json"
 }

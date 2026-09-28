@@ -1,0 +1,91 @@
+{
+ "path": "/search/keyword?query=the",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 349683,
+    "name": "the"
+   },
+   {
+    "id": 304922,
+    "name": "theo"
+   },
+   {
+    "id": 309584,
+    "name": "tre"
+   },
+   {
+    "id": 326165,
+    "name": "tte"
+   },
+   {
+    "id": 249418,
+    "name": "tie"
+   },
+   {
+    "id": 207312,
+    "name": "thc"
+   },
+   {
+    "id": 319350,
+    "name": "she"
+   },
+   {
+    "id": 365473,
+    "name": "che"
+   },
+   {
+    "id": 333097,
+    "name": "thw"
+   },
+   {
+    "id": 374811,
+    "name": "tee"
+   },
+   {
+    "id": 381805,
+    "name": "thr"
+   },
+   {
+    "id": 356031,
+    "name": "the 1%"
+   },
+   {
+    "id": 384456,
+    "name": "the man the myth the legend"
+   },
+   {
+    "id": 338833,
+    "name": "te"
+   },
+   {
+    "id": 353624,
+    "name": "he"
+   },
+   {
+    "id": 260313,
+    "name": "the pitch"
+   },
+   {
+    "id": 260398,
+    "name": "than the"
+   },
+   {
+    "id": 244409,
+    "name": "the ferryman"
+   },
+   {
+    "id": 283541,
+    "name": "the painter"
+   },
+   {
+    "id": 228038,
+    "name": "the grudge"
+   }
+  ],
+  "total_pages": 107,
+  "total_results": 2124
+ }
+}

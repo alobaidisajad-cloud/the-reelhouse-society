@@ -1,0 +1,465 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=the",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/jIArNHIekrCSVgdMbKPAXpPY03Y.jpg",
+    "id": 456,
+    "name": "The Simpsons",
+    "original_name": "The Simpsons",
+    "overview": "Set in Springfield, the average American town, the show focuses on the antics and everyday adventures of the Simpson family; Homer, Marge, Bart, Lisa and Maggie, as well as a virtual cast of thousands. Since the beginning, the series has been a pop culture icon, attracting hundreds of celebrities to guest star. The show has also made name for itself in its fearless satirical take on politics, media and American life in general.",
+    "poster_path": "/uWpG7GqfKGQqX4YMAo3nv5OrglV.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     35
+    ],
+    "popularity": 474.8165,
+    "first_air_date": "1989-12-17",
+    "softcore": false,
+    "vote_average": 8,
+    "vote_count": 11037,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/rJFqKcmMSttdNP58l0dVzY2NcTA.jpg",
+    "id": 5920,
+    "name": "The Mentalist",
+    "original_name": "The Mentalist",
+    "overview": "Patrick Jane, a former celebrity psychic medium, uses his razor sharp skills of observation and expertise at \"reading\" people to solve serious crimes with the California Bureau of Investigation.",
+    "poster_path": "/acYXu4KaDj1NIkMgObnhe4C4a0T.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     80,
+     18,
+     9648
+    ],
+    "popularity": 483.2997,
+    "first_air_date": "2008-09-23",
+    "softcore": false,
+    "vote_average": 8.408,
+    "vote_count": 4781,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/uc1p1PEbEMpdIHqnU9TESNC6Jhp.jpg",
+    "id": 275102,
+    "name": "The Scandal",
+    "original_name": "스캔들",
+    "overview": "In Joseon, a secret proposal ignites hidden desires in a gifted noblewoman, a famed lover and an unsuspecting lady caught in their dangerous game.",
+    "poster_path": "/4TU0PcHBIl0wPW5B6aVRGExOnHE.jpg",
+    "media_type": "tv",
+    "original_language": "ko",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 908.1274,
+    "first_air_date": "2026-09-18",
+    "softcore": false,
+    "vote_average": 7.222,
+    "vote_count": 18,
+    "origin_country": [
+     "KR"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/6iNWfGVCEfASDdlNb05TP5nG0ll.jpg",
+    "id": 79744,
+    "name": "The Rookie",
+    "original_name": "The Rookie",
+    "overview": "Starting over isn't easy, especially for small-town guy John Nolan who, after a life-altering incident, is pursuing his dream of being an LAPD officer. As the force's oldest rookie, he's met with skepticism from some higher-ups who see him as just a walking midlife crisis.",
+    "poster_path": "/70kTz0OmjjZe7zHvIDrq2iKW7PJ.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     80,
+     18,
+     35
+    ],
+    "popularity": 286.4462,
+    "first_air_date": "2018-10-16",
+    "softcore": false,
+    "vote_average": 8.5,
+    "vote_count": 3551,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mLyW3UTgi2lsMdtueYODcfAB9Ku.jpg",
+    "id": 2316,
+    "name": "The Office",
+    "original_name": "The Office",
+    "overview": "The everyday lives of office employees in the Scranton, Pennsylvania branch of the fictional Dunder Mifflin Paper Company.",
+    "poster_path": "/7DJKHzAi83BmQrWLrYYOqcoKfhR.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 517.8264,
+    "first_air_date": "2005-03-24",
+    "softcore": false,
+    "vote_average": 8.582,
+    "vote_count": 5517,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/qLMfcvdCcCGD2BNLH8b6ZCBuO7D.jpg",
+    "id": 2224,
+    "name": "The Daily Show",
+    "original_name": "The Daily Show",
+    "overview": "The World's Fakest News Team tackle the biggest stories in news, politics and pop culture.",
+    "poster_path": "/ixcfyK7it6FjRM36Te4OdblAq4X.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10763,
+     35
+    ],
+    "popularity": 327.2143,
+    "first_air_date": "1996-07-22",
+    "softcore": false,
+    "vote_average": 6.4,
+    "vote_count": 663,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/tHZsAFdtNsKNxE58jopl9Eh4f7a.jpg",
+    "id": 2221,
+    "name": "The View",
+    "original_name": "The View",
+    "overview": "ABC Daytime's morning chatfest, currently featuring Whoopi Goldberg, Joy Behar, Sunny Hostin, Sara Haines, Alyssa Farah Griffin, and Ana Navarro discussing the most exciting events of the day. Hot topics in the news, the best experts in their field, celebrity interviews and general entertainment are all part of The View.",
+    "poster_path": "/pEUNIxCMh2jFjUj7u09f4O5CcR4.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10767
+    ],
+    "popularity": 183.7179,
+    "first_air_date": "1997-08-11",
+    "softcore": false,
+    "vote_average": 4.3,
+    "vote_count": 114,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/gFkHcIh7iE5G0oVOgpmY8ONQjhl.jpg",
+    "id": 60735,
+    "name": "The Flash",
+    "original_name": "The Flash",
+    "overview": "After being struck by lightning, CSI investigator Barry Allen awakens from a nine-month coma to discover he has been  granted the gift of super speed.  Teaming up with S.T.A.R. Labs, Barry takes on the persona of The Flash, the Fastest  Man Alive, to protect his city.",
+    "poster_path": "/yZevl2vHQgmosfwUdVNzviIfaWS.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     10765
+    ],
+    "popularity": 192.2873,
+    "first_air_date": "2014-10-07",
+    "softcore": false,
+    "vote_average": 7.746,
+    "vote_count": 11787,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg",
+    "id": 1368337,
+    "title": "The Odyssey",
+    "original_title": "The Odyssey",
+    "overview": "Odysseus, the legendary King of Ithaca, embarks on a long and perilous journey home following the Trojan War. Throughout his voyage, he is forced to confront the whims of gods, mythological monsters, and trials that stretch both his cunning and his humanity to the breaking point.",
+    "poster_path": "/5rhTDKUhPYvpdQIijFIs5VoWsON.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     12,
+     28,
+     14
+    ],
+    "popularity": 366.2926,
+    "release_date": "2026-07-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.019,
+    "vote_count": 3953
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/qFfWFwfaEHzDLWLuttWiYq7Poy2.jpg",
+    "id": 2261,
+    "name": "The Tonight Show Starring Johnny Carson",
+    "original_name": "The Tonight Show Starring Johnny Carson",
+    "overview": "The Tonight Show Starring Johnny Carson is a talk show hosted by Johnny Carson under The Tonight Show franchise from 1962 to 1992. It originally aired during late-night. For its first ten years, Carson's Tonight Show was based in New York City with occasional trips to Burbank, California; in May 1972, the show moved permanently to Burbank, California. In 2002, The Tonight Show Starring Johnny Carson was ranked #12 on TV Guide's 50 Greatest TV Shows of All Time.",
+    "poster_path": "/uSvET5YUvHNDIeoCpErrbSmasFb.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10767
+    ],
+    "popularity": 468.4722,
+    "first_air_date": "1962-10-01",
+    "softcore": false,
+    "vote_average": 7.5,
+    "vote_count": 96,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/lNpkvX2s8LGB0mjGODMT4o6Up7j.jpg",
+    "id": 1398,
+    "name": "The Sopranos",
+    "original_name": "The Sopranos",
+    "overview": "The story of New Jersey-based Italian-American mobster Tony Soprano and the difficulties he faces as he tries to balance the conflicting requirements of his home life and the criminal organization he heads. Those difficulties are often highlighted through his ongoing professional relationship with psychiatrist Jennifer Melfi. The show features Tony's family members and Mafia associates in prominent roles and story arcs, most notably his wife Carmela and his cousin and protégé Christopher Moltisanti.",
+    "poster_path": "/rTc7ZXdroqjkKivFPvCPX0Ru7uw.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     80,
+     18
+    ],
+    "popularity": 151.2675,
+    "first_air_date": "1999-01-10",
+    "softcore": false,
+    "vote_average": 8.674,
+    "vote_count": 3699,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/iRIhPqqoUHiFBxn8oYf3gCQnaKk.jpg",
+    "id": 1294189,
+    "title": "The Mongoose",
+    "original_title": "The Mongoose",
+    "overview": "A falsely accused war hero with nothing to lose leads police on an epic televised cross-country car chase, helped by members of his former Special Forces Army battalion and closely monitored by a fascinated public rooting for his safe getaway.",
+    "poster_path": "/eSS5mvSG84UUuvtbHel5Yu3Wik4.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     53
+    ],
+    "popularity": 268.4613,
+    "release_date": "2026-10-29",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/yG1wltFmkX5c5ocACKfpX0tp3SY.jpg",
+    "id": 236235,
+    "name": "The Gentlemen",
+    "original_name": "The Gentlemen",
+    "overview": "When aristocratic Eddie inherits the family estate, he discovers that it's home to an enormous weed empire — and its proprietors aren't going anywhere.",
+    "poster_path": "/tw3tzfXaSpmUZIB8ZNqNEGzMBCy.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     35,
+     18,
+     80
+    ],
+    "popularity": 128.6749,
+    "first_air_date": "2024-03-07",
+    "softcore": false,
+    "vote_average": 7.883,
+    "vote_count": 969,
+    "origin_country": [
+     "GB"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/z3BkMbCy5ajZPMyKEUwsPHuz2cV.jpg",
+    "id": 250307,
+    "name": "The Pitt",
+    "original_name": "The Pitt",
+    "overview": "The staff of Pittsburgh's Trauma Medical Center work around the clock to save lives in an overcrowded and underfunded emergency department.",
+    "poster_path": "/kvFSpESyBZMjaeOJDx7RS3P1jey.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 132.6442,
+    "first_air_date": "2025-01-09",
+    "softcore": false,
+    "vote_average": 8.731,
+    "vote_count": 987,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/bq28ajZaoMyzEIm6REelqyqtEDZ.jpg",
+    "id": 76479,
+    "name": "The Boys",
+    "original_name": "The Boys",
+    "overview": "A group of vigilantes known informally as “The Boys” set out to take down corrupt superheroes with no more than blue-collar grit and a willingness to fight dirty.",
+    "poster_path": "/in1R2dDc421JxsoRWaIIAqVI2KE.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10765,
+     10759
+    ],
+    "popularity": 136.593,
+    "first_air_date": "2019-07-25",
+    "softcore": false,
+    "vote_average": 8.43,
+    "vote_count": 13472,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2eIlCirgcvEwmCSYh2wDfz5Sxvz.jpg",
+    "id": 46952,
+    "name": "The Blacklist",
+    "original_name": "The Blacklist",
+    "overview": "Raymond \"Red\" Reddington, one of the FBI's most wanted fugitives, surrenders in person at FBI Headquarters in Washington, D.C. He claims that he and the FBI have the same interests: bringing down dangerous criminals and terrorists. In the last two decades, he's made a list of criminals and terrorists that matter the most but the FBI cannot find because it does not know they exist. Reddington calls this \"The Blacklist\". Reddington will co-operate, but insists that he will speak only to Elizabeth Keen, a rookie FBI profiler.",
+    "poster_path": "/4HTfd1PhgFUenJxVuBDNdLmdr0c.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     80,
+     9648
+    ],
+    "popularity": 192.3477,
+    "first_air_date": "2013-09-23",
+    "softcore": false,
+    "vote_average": 7.632,
+    "vote_count": 3731,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/o7Oy9Gbx1CCyaweL8xUhtMW4Puq.jpg",
+    "id": 1032863,
+    "title": "The Love Hypothesis",
+    "original_title": "The Love Hypothesis",
+    "overview": "Olive Smith, a biology PhD candidate, and Dr. Adam Carlsen, a hotshot professor and well-known tyrant, enter into a fake relationship, seeing each of their carefully calculated theories on love get thrown into chaos.",
+    "poster_path": "/vfZxVHextAGC70zrNhS8lsROqP1.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     10749,
+     35
+    ],
+    "popularity": 329.2336,
+    "release_date": "2026-09-23",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.196,
+    "vote_count": 326
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/i4OYRb5V13BrOnTPJGdyXWg4r0J.jpg",
+    "id": 59941,
+    "name": "The Tonight Show Starring Jimmy Fallon",
+    "original_name": "The Tonight Show Starring Jimmy Fallon",
+    "overview": "After Jay Leno's second retirement from the program, Jimmy Fallon stepped in as his permanent replacement. After 42 years in Los Angeles the program was brought back to New York.",
+    "poster_path": "/1N4o5PmmqhlVDrcdJ2RlCFWbLGX.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     35,
+     10767
+    ],
+    "popularity": 495.4366,
+    "first_air_date": "2014-02-17",
+    "softcore": false,
+    "vote_average": 5.767,
+    "vote_count": 390,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/rAOjnEFTuNysY7bot8zonhImGMh.jpg",
+    "id": 1402,
+    "name": "The Walking Dead",
+    "original_name": "The Walking Dead",
+    "overview": "Sheriff's deputy Rick Grimes awakens from a coma to find a post-apocalyptic world dominated by flesh-eating zombies. He sets out to find his family and encounters many other survivors along the way.",
+    "poster_path": "/ng3cMtxYKt1OSQYqFlnKWnVsqNO.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10759,
+     18,
+     10765
+    ],
+    "popularity": 148.558,
+    "first_air_date": "2010-10-31",
+    "softcore": false,
+    "vote_average": 8.08,
+    "vote_count": 18222,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/x8pSFa3BXyVpkjHyn7YxmLyhjoh.jpg",
+    "id": 37678,
+    "name": "The Voice",
+    "original_name": "The Voice",
+    "overview": "The strongest vocalists from across the United states compete in a blockbusters vocal competition, the winner becomes “The Voice.” The show's innovative format features four stages of competition: the blind auditions, the battle rounds, the knockouts and, finally, the live performance shows.",
+    "poster_path": "/7ah1WExcMkzbq7sARCTmcC23tBr.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10764
+    ],
+    "popularity": 107.0871,
+    "first_air_date": "2011-04-26",
+    "softcore": false,
+    "vote_average": 5.9,
+    "vote_count": 228,
+    "origin_country": [
+     "US"
+    ]
+   }
+  ],
+  "total_pages": 500,
+  "total_results": 10000
+ }
+}

@@ -1,0 +1,39 @@
+{
+ "path": "/search/keyword?query=godfather",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 15405,
+    "name": "godfather"
+   },
+   {
+    "id": 326142,
+    "name": "fairy godfather"
+   },
+   {
+    "id": 329323,
+    "name": "the godfather"
+   },
+   {
+    "id": 346888,
+    "name": "godfather of harlem"
+   },
+   {
+    "id": 286962,
+    "name": "dogfather"
+   },
+   {
+    "id": 2022,
+    "name": "godmother"
+   },
+   {
+    "id": 314238,
+    "name": "the godfather's influence"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 7
+ }
+}
