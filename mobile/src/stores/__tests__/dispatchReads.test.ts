@@ -21,6 +21,8 @@ let mockAsks: Ask[] = [];
 let mockPages: unknown[][] = [];
 let mockCount: number | null = null;
 let mockThrow: unknown = null;
+/** When set, the next page read answers with this instead: an answer still on its way. */
+let mockNext: Promise<unknown> | null = null;
 
 jest.mock('../../lib/supabase', () => ({
   supabase: {
@@ -62,9 +64,11 @@ jest.mock('../../lib/supabase', () => ({
         // `.abortSignal`, nothing ever attached a handler to the rejected
         // promise, and Node killed the worker with an unhandled rejection that
         // looked like a bug in the store.
-        const r = mockThrow
+        const next = mockNext;
+        mockNext = null;
+        const r = next ?? (mockThrow
           ? Promise.reject(mockThrow)
-          : Promise.resolve({ data: mockPages.shift() ?? [], error: null, count: mockCount });
+          : Promise.resolve({ data: mockPages.shift() ?? [], error: null, count: mockCount }));
         const builder = Object.assign(r, { abortSignal: () => builder });
         return builder;
       };
@@ -113,7 +117,7 @@ const reset = (over: Record<string, unknown> = {}) => {
 };
 
 beforeEach(() => {
-  mockAsks = []; mockPages = []; mockCount = null; mockThrow = null;
+  mockAsks = []; mockPages = []; mockCount = null; mockThrow = null; mockNext = null;
   reset();
 });
 
@@ -149,17 +153,58 @@ describe('the first page', () => {
     expect(useDispatch.getState().droppedRows).toBe(1);
   });
 
-  it('clears loading even when the read fails', async () => {
+  it('a failed first read says so, clears loading, and never rejects', async () => {
     mockThrow = new Error('refused');
-    // try/catch rather than `.rejects`: the store assigns this promise to its
-    // in-flight slot before anything attaches a handler, so Node reports an
-    // unhandled rejection and kills the worker before the matcher runs.
-    let threw = false;
-    try { await useDispatch.getState().fetch(); } catch { threw = true; }
-    expect(threw).toBe(true);
+    // Its callers are `void fetch()`: a rejection would escape as unhandled.
+    await expect(useDispatch.getState().fetch()).resolves.toBeUndefined();
+    expect(useDispatch.getState().pageState).toBe('failed');
     // A spinner that never stops is how an app tells somebody their tap did
     // nothing, and this is the path where it would happen.
     expect(useDispatch.getState().loading).toBe(false);
+  });
+
+  it('a failed refresh keeps the page it had, and calls it read', async () => {
+    mockPages = [fullPage()];
+    await useDispatch.getState().fetch();
+    mockThrow = new Error('refused');
+    await useDispatch.getState().fetch();
+    expect(useDispatch.getState().filings).toHaveLength(PAGE_SIZE);
+    expect(useDispatch.getState().pageState).toBe('read');
+  });
+
+  it('a page is unread from the moment the department changes until it is answered', async () => {
+    mockPages = [fullPage()];
+    await useDispatch.getState().fetch();
+    expect(useDispatch.getState().pageState).toBe('read');
+    mockPages = [[row(1)]];
+    useDispatch.getState().setSection('TAKES');
+    expect(useDispatch.getState().pageState).toBe('unread');
+    await useDispatch.getState().fetch();
+    expect(useDispatch.getState().pageState).toBe('read');
+  });
+
+  it('a next page still on its way for the old page does not hold off the new one', async () => {
+    mockPages = [fullPage()];
+    await useDispatch.getState().fetch();
+
+    let answer!: (v: unknown) => void;
+    mockNext = new Promise((res) => { answer = res; });
+    const more = useDispatch.getState().loadMore();
+    expect(useDispatch.getState().loadingMore).toBe(true);
+
+    mockPages = [fullPage(100)];
+    useDispatch.getState().setSection('TAKES');
+    await useDispatch.getState().fetch();
+    answer({ data: fullPage(200), error: null });
+    await more;
+
+    // The old page's answer is dropped, and its spinner with it.
+    expect(useDispatch.getState().loadingMore).toBe(false);
+    expect(useDispatch.getState().filings.map((f) => f.id)).not.toContain('f200');
+    // So the new page's next page loads.
+    mockPages = [fullPage(300)];
+    await useDispatch.getState().loadMore();
+    expect(useDispatch.getState().filings).toHaveLength(PAGE_SIZE * 2);
   });
 
   it('shares one in-flight request rather than starting two', async () => {

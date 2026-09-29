@@ -33,7 +33,7 @@ import {
   CritiqueComposer, CritiqueFooter, CritiqueHead, CritiqueRow, CritiqueSpine, PostDock,
 } from '@/src/components/dispatch/paper/PaperCritiques';
 import { EssayHead, EssayNext } from '@/src/components/dispatch/paper/PaperEssay';
-import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
+import { PaperEmpty, PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { DossierShareCard, PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
@@ -54,6 +54,7 @@ import reelToast from '@/src/utils/reelToast';
 import { timeAgo, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
@@ -80,6 +81,10 @@ export default function FilingReader() {
 
   const [filing, setFiling] = useState<Filing | null>(() => filings.find((f) => f.id === id) ?? null);
   const [loading, setLoading] = useState(!filing);
+  /** The last read failed: a filing not held here may still exist. */
+  const [unreachable, setUnreachable] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const readyMark = useScreenReady('reader', !loading);
   const [order, setOrder] = useState<CritiqueOrder>(FIRST_ORDER);
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -122,12 +127,15 @@ export default function FilingReader() {
     (async () => {
       const got = await useDispatch.getState().hydrate(id);
       if (cancelled) return;
-      setFiling(got);
+      setUnreachable(got === 'unreachable');
+      if (got !== 'unreachable') {
+        setFiling(got);
+        void useDispatch.getState().fetchCritiques(id, FIRST_ORDER);
+      }
       setLoading(false);
-      void useDispatch.getState().fetchCritiques(id, FIRST_ORDER);
     })();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, attempt]);
 
   // The next part: the lowest part number above this one that a reader could
   // open, behind the series page's three gates, so a withheld part is never next.
@@ -294,7 +302,27 @@ export default function FilingReader() {
     return (
       <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>
         <RoomLight room="dispatch" />
+        {readyMark}
         <ActivityIndicator size="small" color={colors.sepia} />
+      </View>
+    );
+  }
+
+  // Not reached: the same page as the feed's, and a way to ask again.
+  if (!live && unreachable) {
+    return (
+      <View style={p.screen}>
+        <RoomLight room="dispatch" />
+        {readyMark}
+        <PaperBack label="THE DISPATCH" onBack={() => nav.back()} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <PaperEmpty
+            title="This filing could not be reached."
+            body="Check the connection, and try again."
+            action="TRY AGAIN"
+            onAction={() => { setLoading(true); setAttempt((n) => n + 1); }}
+          />
+        </View>
       </View>
     );
   }
@@ -304,6 +332,7 @@ export default function FilingReader() {
     return (
       <View style={p.screen}>
         <RoomLight room="dispatch" />
+        {readyMark}
         <PaperBack label="THE DISPATCH" onBack={() => nav.back()} />
         <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 32 }}>
           <Text style={p.emptyTitle} accessibilityRole="header" {...scaledTextProps}>
@@ -343,6 +372,7 @@ export default function FilingReader() {
   return (
     <View style={p.screen}>
       <RoomLight room="dispatch" />
+      {readyMark}
       {head}
 
       <ScrollView

@@ -15,7 +15,7 @@
  * would break the moment a row had a margin. So the list scrolls INSIDE the
  * document: one frame, virtualised content, and the rails run the whole height.
  */
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { ActivityIndicator, RefreshControl, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
@@ -38,13 +38,14 @@ import { dayKey, dayLabel, hourLabel } from '@/src/components/dispatch/dayLabel'
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useAuthStore } from '@/src/stores/auth';
-import { useDispatch, type Section } from '@/src/stores/dispatch';
+import { useDispatch, type Section, type Sort } from '@/src/stores/dispatch';
 import type { Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 
 /** A filing, or a day's divider: one flat list, as a section list re-measures on every certify. */
 type Row =
@@ -93,6 +94,10 @@ export default function DispatchScreen() {
   const sort = useDispatch((s) => s.sort);
   const savedOnly = useDispatch((s) => s.savedOnly);
   const loading = useDispatch((s) => s.loading);
+  const pageState = useDispatch((s) => s.pageState);
+  // Until the page's first answer an empty list says nothing yet: skeletons.
+  const reading = loading || pageState === 'unread';
+  const readyMark = useScreenReady('dispatch', !reading);
   const loadingMore = useDispatch((s) => s.loadingMore);
   const newCount = useDispatch((s) => s.newCount);
   const certifiedIds = useDispatch((s) => s.certifiedIds);
@@ -127,9 +132,11 @@ export default function DispatchScreen() {
     onMomentumEnd: () => { isScrolling.value = false; },
   });
 
+  // Whenever the page on screen is unread: on opening, and after the store is
+  // reset for another member while this tab stays mounted.
   useEffect(() => {
-    if (useDispatch.getState().filings.length === 0) void useDispatch.getState().fetch();
-  }, []);
+    if (pageState === 'unread' && !loading) void useDispatch.getState().fetch();
+  }, [pageState, loading]);
 
   // Is there new paper? Asked on focus and every 90s while focused, never on a
   // screen nobody is looking at: blurring the tab clears the interval at once.
@@ -192,42 +199,23 @@ export default function DispatchScreen() {
     [],
   );
 
+  // A row redraws only when its own filing, marks or the page's order change:
+  // its handlers are made inside it, so they are not new for every row per render.
+  const member = !!me;
   const renderItem = useCallback(({ item }: { item: Row }) => {
     if (item.type === 'day') return <DayDivider label={item.label} />;
-
     const f = item.filing;
     return (
-      <PaperPost
-        kind={f.kind}
-        author={f.author}
-        body={f.kind === 'dossier' ? (f.title ?? f.body) : f.body}
-        source={f.source ?? undefined}
-        film={f.film}
-        // The margin prints what the page is ordered by: the hour, or the count.
-        order={sort === 'LATEST' ? hourLabel(f.createdAt) : (formatCount(f.certifyCount) ?? '—')}
-        orderIs={sort === 'LATEST' ? 'hour' : 'count'}
-        measureWidth={width}
-        certifyCount={f.certifyCount}
-        commentCount={f.commentCount}
+      <FeedRow
+        f={f}
+        sort={sort}
+        width={width}
         certified={certifiedIds.has(f.id)}
         saved={savedIds.has(f.id)}
-        answered={!!f.answerId}
-        spoiler={f.spoilerLabel}
-        withheld={!!f.withheldAt}
-        ended={f.endedBy ?? undefined}
-        edited={!!f.editedAt}
-        series={f.seriesTitle ? `Part ${f.partNumber} of ${f.seriesTitle}` : undefined}
-        onOpen={() => nav.push(`/dispatch/${f.id}`)}
-        onCritique={() => nav.push(`/dispatch/${f.id}`)}
-        onCertify={me ? (next) => useDispatch.getState().certify(f.id, next) : undefined}
-        onSave={me ? (next) => useDispatch.getState().save(f.id, next) : undefined}
-        // Share opens the reader, where the sheet has room.
-        onShare={() => nav.push(`/dispatch/${f.id}`)}
-        onFilm={f.subjectId ? () => nav.push(`/film/${f.subjectId}`) : undefined}
-        onAuthor={f.author ? () => nav.push(roomOf(f.author!.name)) : undefined}
+        member={member}
       />
     );
-  }, [sort, width, certifiedIds, savedIds, me]);
+  }, [sort, width, certifiedIds, savedIds, member]);
 
   const empty = EMPTY[section];
   const today = new Date();
@@ -240,7 +228,7 @@ export default function DispatchScreen() {
   // An empty paper prints the whole masthead; any other, the running head.
   const header = (
     <>
-      {filings.length === 0 && !loading && section === 'ALL' && !savedOnly ? (
+      {filings.length === 0 && !reading && section === 'ALL' && !savedOnly ? (
         <>
           <PaperMasthead date={today} dateLabel={dayLabel(today.toISOString()).split(', ')[1] ?? ''} />
           <Ornament />
@@ -261,6 +249,7 @@ export default function DispatchScreen() {
 
   return (
     <FrozenTab>
+      {readyMark}
       <View style={p.screen}>
         <RoomLight room="dispatch" />
         {/* The index, pinned under the floating bar: it never scrolls away. */}
@@ -305,8 +294,15 @@ export default function DispatchScreen() {
                 />
               }
               ListEmptyComponent={
-                loading ? (
+                reading ? (
                   <PaperSkeletons section={section} />
+                ) : pageState === 'failed' ? (
+                  <PaperEmpty
+                    title="The paper could not be reached."
+                    body="Check the connection, and try again."
+                    action="TRY AGAIN"
+                    onAction={onRefresh}
+                  />
                 ) : savedOnly ? (
                   <PaperEmpty
                     title="You have kept nothing yet."
@@ -361,6 +357,43 @@ export default function DispatchScreen() {
     </FrozenTab>
   );
 }
+
+/** One filing on the page. */
+const FeedRow = memo(function FeedRow({ f, sort, width, certified, saved, member }: {
+  f: Filing; sort: Sort; width: number; certified: boolean; saved: boolean; member: boolean;
+}) {
+  return (
+    <PaperPost
+      kind={f.kind}
+      author={f.author}
+      body={f.kind === 'dossier' ? (f.title ?? f.body) : f.body}
+      source={f.source ?? undefined}
+      film={f.film}
+      // The margin prints what the page is ordered by: the hour, or the count.
+      order={sort === 'LATEST' ? hourLabel(f.createdAt) : (formatCount(f.certifyCount) ?? '—')}
+      orderIs={sort === 'LATEST' ? 'hour' : 'count'}
+      measureWidth={width}
+      certifyCount={f.certifyCount}
+      commentCount={f.commentCount}
+      certified={certified}
+      saved={saved}
+      answered={!!f.answerId}
+      spoiler={f.spoilerLabel}
+      withheld={!!f.withheldAt}
+      ended={f.endedBy ?? undefined}
+      edited={!!f.editedAt}
+      series={f.seriesTitle ? `Part ${f.partNumber} of ${f.seriesTitle}` : undefined}
+      onOpen={() => nav.push(`/dispatch/${f.id}`)}
+      onCritique={() => nav.push(`/dispatch/${f.id}`)}
+      onCertify={member ? (next) => useDispatch.getState().certify(f.id, next) : undefined}
+      onSave={member ? (next) => useDispatch.getState().save(f.id, next) : undefined}
+      // Share opens the reader, where the sheet has room.
+      onShare={() => nav.push(`/dispatch/${f.id}`)}
+      onFilm={f.subjectId ? () => nav.push(`/film/${f.subjectId}`) : undefined}
+      onAuthor={f.author ? () => nav.push(roomOf(f.author!.name)) : undefined}
+    />
+  );
+});
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
 export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

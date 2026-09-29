@@ -286,9 +286,10 @@ describe('a read that fails', () => {
     expect(useDispatch.getState().loadingMore).toBe(false);
   });
 
-  it('returns null from hydrate rather than throwing at the screen', async () => {
+  it('says a failed read was not reached, rather than throwing or calling it gone', async () => {
+    // null would tell the reader the filing was withdrawn; the read never answered.
     mockReadFails = true;
-    expect(await useDispatch.getState().hydrate('f1')).toBeNull();
+    expect(await useDispatch.getState().hydrate('f1')).toBe('unreachable');
     expect(mockCapture).toHaveBeenCalled();
   });
 

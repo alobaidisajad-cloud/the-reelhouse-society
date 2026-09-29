@@ -95,6 +95,12 @@ export interface DispatchState {
   savedOnly: boolean;
 
   loading: boolean;
+  /**
+   * Whether the page on screen has been read: 'unread' before its first answer
+   * (so an empty list is not yet an empty paper), 'failed' when that read
+   * failed and nothing is shown. A failed refresh keeps the page, and 'read'.
+   */
+  pageState: 'unread' | 'read' | 'failed';
   loadingMore: boolean;
   hasMore: boolean;
   /** Rows the boundary refused. Surfaced so a schema change is visible, not quiet. */
@@ -122,12 +128,17 @@ export interface DispatchState {
   /** How many filings have arrived above the page since it was drawn. */
   newCount: number;
 
+  /** Never rejects: the outcome is in `pageState`. */
   fetch: () => Promise<void>;
   loadMore: () => Promise<void>;
   /** Is there new paper above the page? A count, not a socket (see its implementation). */
   checkForNew: () => Promise<void>;
-  /** One filing, with its essay, for the reader. */
-  hydrate: (id: string) => Promise<Filing | null>;
+  /**
+   * One filing, with its essay, for the reader: null when it is not there (or
+   * not readable), 'unreachable' when the read itself failed, which says
+   * nothing about whether it exists.
+   */
+  hydrate: (id: string) => Promise<Filing | null | 'unreachable'>;
 
   /** This member's marks on filings the store did not fetch (a room's own page). */
   loadMarks: (filings: Filing[]) => Promise<void>;
@@ -175,6 +186,16 @@ export interface FilingDraft {
 }
 
 export type FilingUpdate = Partial<Omit<FilingDraft, 'kind' | 'options' | 'closesAt'>>;
+
+/**
+ * What every change of page resets. `loadingMore` too: a next page still on its
+ * way for the old page is dropped by the generation check, and without this its
+ * spinner would stay, and hold off every next page of the new one.
+ */
+const A_NEW_PAGE = {
+  filings: [] as Filing[], hasMore: true, newCount: 0,
+  loadingMore: false, pageState: 'unread' as DispatchState['pageState'],
+};
 
 // A fetch in flight, and the generation that says whether its answer is still wanted:
 // a slow TAKES response never paints over a fast WIRE one.
@@ -239,6 +260,7 @@ const emptyState = () => ({
   sort: 'LATEST' as Sort,
   savedOnly: false,
   loading: false,
+  pageState: 'unread' as DispatchState['pageState'],
   loadingMore: false,
   hasMore: true,
   droppedRows: 0,
@@ -263,19 +285,19 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   // call it the TAKES department.
   setSection: (s) => {
     if (get().section === s) return;
-    set({ section: s, filings: [], hasMore: true, newCount: 0 });
+    set({ section: s, ...A_NEW_PAGE });
     invalidateInflight();
     void get().fetch();
   },
   setSort: (s) => {
     if (get().sort === s) return;
-    set({ sort: s, filings: [], hasMore: true, newCount: 0 });
+    set({ sort: s, ...A_NEW_PAGE });
     invalidateInflight();
     void get().fetch();
   },
   setSavedOnly: (on) => {
     if (get().savedOnly === on) return;
-    set({ savedOnly: on, filings: [], hasMore: true, newCount: 0 });
+    set({ savedOnly: on, ...A_NEW_PAGE });
     invalidateInflight();
     void get().fetch();
   },
@@ -292,7 +314,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         const rows = await pageQuery(get(), null);
         if (gen !== generation || !memberUnchanged(startedAs)) return;
         const { filings, dropped } = parseFilingRows(rows);
-        set({ filings, hasMore: gotFullPage(rows.length), droppedRows: dropped, newCount: 0 });
+        set({ filings, hasMore: gotFullPage(rows.length), droppedRows: dropped, newCount: 0, pageState: 'read' });
         if (dropped > 0) {
           logger.warn(`[dispatch] dropped ${dropped} malformed filing row(s)`);
         }
@@ -300,7 +322,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       } catch (e) {
         if (gen !== generation) return;
         if (!isNetworkError(e)) captureError(e, { where: 'dispatch.fetch' });
-        throw e;
+        if (get().filings.length === 0) set({ pageState: 'failed' });
       } finally {
         // Both guarded: a superseded request must not clear the slot of the one that replaced it.
         if (gen === generation) {
@@ -401,7 +423,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       return one;
     } catch (e) {
       if (!isNetworkError(e)) captureError(e, { where: 'dispatch.hydrate' });
-      return null;
+      return 'unreachable';
     }
   },
 

@@ -22,6 +22,8 @@ import FilingReader from '@/app/dispatch/[id]';
 import { useDispatch } from '@/src/stores/dispatch';
 
 let mockRow: Record<string, unknown> | null = null;
+/** The filing's own read fails, as it does offline. */
+let mockRowFails = false;
 let mockCritiqueRows: unknown[] = [];
 let mockNextRows: unknown[] = [];
 let mockWriteFails = false;
@@ -70,12 +72,14 @@ jest.mock('@/src/lib/supabase', () => ({
         return Object.assign(r, { abortSignal: () => r });
       };
       // A BUILDER, not a bare result: every store read calls `.abortSignal()`
-      // on it, and a throw there renders "no longer here", like a real miss.
-      const builder = (data: unknown) => {
-        const r = Promise.resolve({ data, error: null });
+      // on it, and a throw there renders "could not be reached".
+      const builder = (data: unknown, error: unknown = null) => {
+        const r = Promise.resolve({ data, error });
         return Object.assign(r, { abortSignal: () => r });
       };
-      chain.maybeSingle = () => builder(mockRow);
+      chain.maybeSingle = () => (mockRowFails
+        ? builder(null, { message: 'TypeError: Network request failed' })
+        : builder(mockRow));
       chain.limit = () => builder(mockNextRows); // the next part (critiques use range)
       // Writes: missing, every act would roll back as if refused.
       chain.insert = () => (mockWriteFails
@@ -149,6 +153,7 @@ const mount = async () => {
 beforeEach(() => {
   mockUser = { id: 'u1', username: 'me' };
   mockRow = row();
+  mockRowFails = false;
   mockCritiqueRows = [];
   mockNextRows = [];
   mockWriteFails = false;
@@ -178,6 +183,21 @@ describe('the reader', () => {
     mockRow = null;
     const { getByText } = await mount();
     expect(getByText('This filing is no longer here.')).toBeTruthy(); // not a spinner
+  });
+
+  it('says a filing it could not reach was not reached, and TRY AGAIN reads it again', async () => {
+    // Opened from a notice with no signal: "withdrawn by its author" would be
+    // a claim about the filing that the failed read cannot make.
+    mockRowFails = true;
+    const { getByText, queryByText, getByLabelText } = await mount();
+    expect(queryByText('This filing is no longer here.')).toBeNull();
+    expect(getByText('This filing could not be reached.')).toBeTruthy();
+
+    mockRowFails = false;
+    await act(async () => { fireEvent.press(getByLabelText('TRY AGAIN')); });
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    expect(getByText('The Empty Room')).toBeTruthy();
   });
 
   it('keeps an ENDED filing’s room, and names who ended it', async () => {

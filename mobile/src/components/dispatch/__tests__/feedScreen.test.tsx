@@ -55,6 +55,23 @@ jest.mock('@/src/utils/openSociety', () => ({
   societyHref: jest.requireActual('@/src/utils/openSociety').societyHref,
 }));
 
+/** Every render of a filing's row, counted by its one "Share this filing" control. */
+const mockRowRenders: string[] = [];
+jest.mock('@/src/components/PressableScale', () => {
+  const Real = jest.requireActual('@/src/components/PressableScale').default;
+  const ReactActual = jest.requireActual('react');
+  return {
+    __esModule: true,
+    default: (props: { accessibilityLabel?: string }) => {
+      if (props.accessibilityLabel === 'Share this filing') mockRowRenders.push('row');
+      return ReactActual.createElement(Real, props);
+    },
+  };
+});
+
+/** The page read: how many times it was asked, and whether it fails. */
+let mockPageAsks = 0;
+let mockPageFails = false;
 jest.mock('@/src/lib/supabase', () => ({
   supabase: {
     from: () => {
@@ -63,7 +80,13 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.select = () => self();
       chain.eq = () => self(); chain.is = () => self(); chain.order = () => self();
       chain.in = () => Promise.resolve({ data: [], error: null });
-      chain.limit = () => { const r = Promise.resolve({ data: [], error: null }); return Object.assign(r, { abortSignal: () => r }); };
+      chain.limit = () => {
+        mockPageAsks++;
+        const r = Promise.resolve(mockPageFails
+          ? { data: null, error: { message: 'TypeError: Network request failed' } }
+          : { data: [], error: null });
+        return Object.assign(r, { abortSignal: () => r });
+      };
       // The writes. Without them `.insert()` was undefined, every mark threw,
       // and `writeThrough` rolled it back — so a certify looked as though it had
       // never happened.
@@ -100,7 +123,7 @@ const filing = (over: Partial<Filing> = {}): Filing => ({
 
 const put = (over: Record<string, unknown>) => {
   useDispatch.setState({
-    filings: [], loading: false, loadingMore: false, hasMore: false, droppedRows: 0,
+    filings: [], loading: false, pageState: 'read', loadingMore: false, hasMore: false, droppedRows: 0,
     section: 'ALL', sort: 'LATEST', savedOnly: false, newCount: 0,
     certifiedIds: new Set(), savedIds: new Set(), myVotes: {},
     critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
@@ -117,7 +140,11 @@ const mount = async () => {
   return r;
 };
 
-beforeEach(() => { mockUser = { id: 'u1', username: 'me' }; mockPushed.length = 0; put({}); });
+beforeEach(() => {
+  mockUser = { id: 'u1', username: 'me' }; mockPushed.length = 0;
+  mockPageAsks = 0; mockPageFails = false;
+  put({});
+});
 
 /** A filing's certify control — its label says how many have certified it, when any have. */
 const CERTIFY = /^Certify this($|\. \d)/;
@@ -423,8 +450,89 @@ describe('an empty page, in every shape it takes', () => {
     expect(queryByLabelText('Loading filings')).toBeTruthy();
 
     // Then, once it has landed with nothing, the empty page is correct.
-    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    await act(async () => { put({ loading: false }); });
     expect(queryByText('Nothing has been filed yet.')).toBeTruthy();
+  });
+});
+
+describe('a page not read yet, and a page that could not be read', () => {
+  const flush = () => act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+
+  it('draws a page not yet read as skeletons, never as an empty paper', async () => {
+    // Empty and not loading is also how the store starts, before its read has
+    // begun. The read is held here, so that state is what gets drawn.
+    // Swapped in the state, not spied on it: every setState copies the state
+    // object, so a spy's restore would miss the copy that holds it.
+    const fetch = useDispatch.getState().fetch;
+    const held = jest.fn(async () => {});
+    put({ pageState: 'unread', fetch: held });
+    const { queryByText, queryByLabelText } = render(<FeedScreen />);
+    await flush();
+    expect(held).toHaveBeenCalled();
+    expect(queryByText('Nothing has been filed yet.')).toBeNull();
+    expect(queryByLabelText('Loading filings')).toBeTruthy();
+
+    await act(async () => { put({ pageState: 'read', fetch }); });
+    expect(queryByText('Nothing has been filed yet.')).toBeTruthy();
+  });
+
+  it('says the paper could not be reached, and TRY AGAIN reads it again', async () => {
+    mockPageFails = true;
+    put({ pageState: 'unread' });
+    const { queryByText, getByLabelText } = render(<FeedScreen />);
+    await flush();
+    // A failed read is not an empty house.
+    expect(queryByText('Nothing has been filed yet.')).toBeNull();
+    expect(queryByText('The paper could not be reached.')).toBeTruthy();
+    expect(useDispatch.getState().pageState).toBe('failed');
+
+    mockPageFails = false;
+    await act(async () => { fireEvent.press(getByLabelText('TRY AGAIN')); });
+    await flush();
+    expect(mockPageAsks).toBe(2);
+    expect(queryByText('The paper could not be reached.')).toBeNull();
+    expect(queryByText('Nothing has been filed yet.')).toBeTruthy();
+  });
+
+  it('reads again when the store is reset under an open tab', async () => {
+    // Signing out and in resets the store while the tab stays mounted; a read
+    // only on mount left the new member an empty page.
+    put({ filings: [filing()] });
+    const { queryByText } = render(<FeedScreen />);
+    await flush();
+    expect(mockPageAsks).toBe(0);
+    await act(async () => { put({ filings: [], pageState: 'unread' }); });
+    await flush();
+    expect(mockPageAsks).toBe(1);
+    expect(queryByText('Nothing has been filed yet.')).toBeTruthy();
+  });
+});
+
+describe('what a change redraws (a render budget)', () => {
+  const TEN = Array.from({ length: 10 }, (_, i) => filing({ id: `f${i}`, body: `Take ${i}.` }));
+
+  it('certifying one filing redraws that filing alone', async () => {
+    put({ filings: TEN });
+    const { getAllByLabelText } = await mount();
+    mockRowRenders.length = 0;
+    await act(async () => { fireEvent.press(getAllByLabelText(CERTIFY)[3]); });
+    expect(mockRowRenders).toHaveLength(1);
+  });
+
+  it('saving one filing redraws that filing alone', async () => {
+    put({ filings: TEN });
+    const { getAllByLabelText } = await mount();
+    mockRowRenders.length = 0;
+    await act(async () => { fireEvent.press(getAllByLabelText('Save this')[5]); });
+    expect(mockRowRenders).toHaveLength(1);
+  });
+
+  it('new paper arriving above redraws no filing', async () => {
+    put({ filings: TEN });
+    await mount();
+    mockRowRenders.length = 0;
+    await act(async () => { useDispatch.setState({ newCount: 2 }); });
+    expect(mockRowRenders).toHaveLength(0);
   });
 });
 

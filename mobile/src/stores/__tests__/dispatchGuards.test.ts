@@ -134,7 +134,7 @@ describe('opening one filing', () => {
     reset({ filings: [filing({ fullContent: null })] });
     mockRow = row({ full_content: 'The whole essay.', kind: 'dossier', title: 'A Dossier' });
     const got = await useDispatch.getState().hydrate('f1');
-    expect(got?.fullContent).toBe('The whole essay.');
+    expect(got).toMatchObject({ fullContent: 'The whole essay.' });
     // On the row, where the reader reads it, not held in the screen.
     expect(useDispatch.getState().filings[0].fullContent).toBe('The whole essay.');
   });
