@@ -42,22 +42,44 @@ function run() {
 }
 
 /** One line as Android prints an AccessibilityNodeInfo that Maestro skipped. */
-const skipped = (pkg: string, cls: string, bounds: string, id = 'null', text = 'null') =>
-  `09-29 00:30:10.100  5000  5020 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@8001; ` +
+const skipped = (pkg: string, cls: string, bounds: string, id = 'null', text = 'null', at = '00:30:10.100') =>
+  `09-29 ${at}  5000  5020 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@8001; ` +
   `boundsInParent: Rect(0, 0 - 10, 10); boundsInScreen: ${bounds}; packageName: ${pkg}; className: ${cls}; ` +
   `text: ${text}; error: null; contentDescription: null; viewIdResName: ${id}; checkable: false\n`;
 
 describe('what Android drew but called invisible', () => {
-  it('names the app’s hidden elements, named ones first, then by place; other apps are left out', () => {
+  it('names the app’s hidden elements, named ones first, each largest first; other apps are left out', () => {
     flow('darkroom_search', failedAt('darkroom-suggestion-row'),
-      skipped('com.reelhouse.society', 'android.view.ViewGroup', 'Rect(40, 600 - 1040, 900)') +
       skipped('com.reelhouse.society', 'android.view.ViewGroup', 'Rect(40, 300 - 1040, 400)') +
+      skipped('com.reelhouse.society', 'android.view.ViewGroup', 'Rect(40, 600 - 1040, 900)') +
+      skipped('com.reelhouse.society', 'android.widget.TextView', 'Rect(0, 100 - 100, 110)', 'null', 'Small') +
       skipped('com.reelhouse.society', 'android.widget.FrameLayout', 'Rect(0, 2400 - 360, 2900)', 'film-card', 'Heat') +
       skipped('com.google.android.inputmethod.latin', 'android.view.View', 'Rect(0, 0 - 10, 10)', 'key_pos_0_0'));
     const report = run()['darkroom_search.txt'];
     expect(section(report, 'drawn but called invisible by Android')).toBe(
       '#film-card "Heat" Rect(0, 2400 - 360, 2900)\n' +
-      'ViewGroup Rect(40, 300 - 1040, 400)\n' +
+      '"Small" Rect(0, 100 - 100, 110)\n' +
+      'ViewGroup Rect(40, 600 - 1040, 900)\n' +
+      'ViewGroup Rect(40, 300 - 1040, 400)');
+  });
+
+  it('keeps only the last reading of the screen, not every screen the flow passed', () => {
+    // The last reading's two seconds, to the millisecond: 2.1s before it is out, 1.9s is in.
+    flow('film_log', failedAt('darkroom-suggestion-row'),
+      skipped('com.reelhouse.society', 'android.widget.Button', 'Rect(150, 1715 - 930, 1845)', 'sign-in-submit', 'null', '00:30:08.400') +
+      skipped('com.reelhouse.society', 'android.view.ViewGroup', 'Rect(40, 600 - 1040, 900)', 'null', 'null', '00:30:08.600') +
+      skipped('com.reelhouse.society', 'android.view.ViewGroup', 'Rect(40, 300 - 1040, 400)', 'null', 'null', '00:30:10.500'));
+    expect(section(run()['film_log.txt'], 'drawn but called invisible by Android')).toBe(
+      'ViewGroup Rect(40, 600 - 1040, 900)\n' +
+      'ViewGroup Rect(40, 300 - 1040, 400)');
+  });
+
+  it('leaves out empty boxes, and those scrolled off the screen', () => {
+    flow('darkroom_search', failedAt('x'),
+      skipped('com.reelhouse.society', 'android.view.ViewGroup', 'Rect(0, 0 - 1080, 0)') +
+      skipped('com.reelhouse.society', 'android.widget.TextView', 'Rect(1522, 332 - 1080, 355)', 'null', 'TOY STORY 5') +
+      skipped('com.reelhouse.society', 'android.view.ViewGroup', 'Rect(40, 600 - 1040, 900)'));
+    expect(section(run()['darkroom_search.txt'], 'drawn but called invisible by Android')).toBe(
       'ViewGroup Rect(40, 600 - 1040, 900)');
   });
 
@@ -78,7 +100,7 @@ describe('what Android drew but called invisible', () => {
 
   it('says so when only other apps were skipped', () => {
     flow('darkroom_search', failedAt('x'), skipped('com.google.android.inputmethod.latin', 'android.view.View', 'Rect(0, 0 - 10, 10)'));
-    expect(run()['darkroom_search.txt']).toContain('(none of the app: only other apps were skipped)');
+    expect(run()['darkroom_search.txt']).toContain('(none of the app: only other apps, or empty boxes)');
   });
 });
 
@@ -88,6 +110,7 @@ describe('what Android and the app said during the flow', () => {
   it('keeps hangs, crashes and the app’s warnings and errors, time first; drops the rest', () => {
     flow('auth_flow', failedAt('recovery-email-input', 'RUNNING'),
       line('00:31:00', 'I', 'ReactNativeJS', 'Running "main"') +
+      line('00:31:01', 'W', 'unknown:ReactNative', 'StatusBarModule: Ignored status bar change, current activity is edge-to-edge.') +
       line('00:31:02', 'W', 'ReactNativeJS', 'a warning from the app') +
       line('00:31:03', 'I', 'Maestro', 'Skipping invisible child: text: ANR in nothing') +
       line('00:31:04', 'W', 'InputDispatcher', 'Window 7f0 com.reelhouse.society is unresponsive') +

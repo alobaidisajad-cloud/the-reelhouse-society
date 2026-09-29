@@ -29,7 +29,12 @@ adb logcat -c   # this run's log only, so a crash below is this run's crash
 # read against what the machine had left when it did.
 ( while true; do echo "$(date +%T) $(free -m | awk '/^Mem:/ {print "used " $3 "M, free " $4 "M, available " $7 "M"}')"; sleep 30; done ) > "$OUT/memory.txt" 2>&1 &
 sampler=$!
-trap 'kill $sampler 2>/dev/null' EXIT
+# The device's log, copied to the runner as it is written: when the emulator
+# dies, what it said up to that moment is still here, and each flow's own log is
+# cut from this copy without asking the device.
+adb logcat -v threadtime > "$OUT/logcat-stream.txt" 2>/dev/null &
+streamer=$!
+trap 'kill $sampler $streamer 2>/dev/null' EXIT
 
 # One flow at a time: Maestro's records keep no screen for a failed step, so the
 # screen is read the moment a flow fails, before the next one relaunches the app.
@@ -40,8 +45,12 @@ DEADLINE=$(( $(date +%s) + MINUTES * 60 ))
 mkdir -p "$OUT/flow-reports" "$OUT/flow-hierarchy"
 : > "$OUT/maestro.log"
 rc=0
+gone=0
 for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
   name=$(basename "$flow" .yaml)
+  if [ $gone -eq 1 ]; then
+    echo "[Skipped] $name (the emulator was gone)" >> "$OUT/maestro.log"; continue
+  fi
   left=$(( DEADLINE - $(date +%s) ))
   if [ $left -le 60 ]; then
     echo "[Skipped] $name (the flows' ${MINUTES} minutes ran out)" >> "$OUT/maestro.log"; rc=1; continue
@@ -63,12 +72,15 @@ for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
     [ $frc -eq 124 ] && echo "[Failed] $name (ran out of its time)" >> "$OUT/maestro.log"
     timeout 60 "$MAESTRO" hierarchy > "$OUT/flow-hierarchy/$name.json" 2>/dev/null || true
     # The device's log for this flow alone: what the driver skipped as invisible,
-    # and what Android and the app said (flow-screens.mjs reads both).
-    [ -n "$since" ] && timeout 30 adb logcat -d -T "$since" > "$OUT/flow-hierarchy/$name.log" 2>/dev/null
+    # and what Android and the app said (flow-screens.mjs reads both). Its lines
+    # begin "MM-DD HH:MM:SS.mmm", which compare as text within the run.
+    sleep 2   # the copy is a moment behind the device
+    [ -n "$since" ] && awk -v s="$since" '($1 " " $2) >= s' "$OUT/logcat-stream.txt" > "$OUT/flow-hierarchy/$name.log"
+    timeout 20 adb get-state > /dev/null 2>&1 || { gone=1; echo "[Gone] the emulator went away during $name" >> "$OUT/maestro.log"; }
   fi
 done
 cat "$OUT/maestro.log"
-grep -E '^\[(Passed|Failed|Skipped)\]' "$OUT/maestro.log" > "$OUT/maestro-summary.txt" || true
+grep -E '^\[(Passed|Failed|Skipped|Gone)\]' "$OUT/maestro.log" > "$OUT/maestro-summary.txt" || true
 # Everything below that asks the device waits for it forever if it is gone, so
 # each such call has a limit, and a vanished device is reported as what it is.
 alive=1
@@ -80,6 +92,10 @@ if [ $alive -eq 0 ]; then
     sudo -n dmesg 2>/dev/null | grep -iE 'out of memory|killed process|oom-kill' | tail -n 8 || true
     echo "Emulator processes still running:"
     pgrep -af 'qemu-system|emulator' | cut -c1-160 | head -n 4 || true
+    echo "The device's last words (its log as copied to the runner; errors, then the final lines):"
+    grep -E ' [EF] |FATAL|ANR in|not responding|crash' "$OUT/logcat-stream.txt" | tail -n 12
+    echo "…"
+    tail -n 8 "$OUT/logcat-stream.txt"
   } > "$OUT/device-gone.txt" 2>&1
   node mobile/e2e/annotate.mjs "The emulator went away during the flows" "$OUT/device-gone.txt"
 fi

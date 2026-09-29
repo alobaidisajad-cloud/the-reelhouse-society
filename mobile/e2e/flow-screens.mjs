@@ -85,25 +85,35 @@ function flowLog(flow) {
   return file && existsSync(file) ? readFileSync(file, 'utf8').split(/\r?\n/) : null;
 }
 
-// A hang or a crash, whoever reports it, and the app's own warnings and errors.
+// A hang or a crash, whoever reports it, and the app's own warnings and errors,
+// less the one React Native repeats on every screen of an edge-to-edge app.
 const SAID = /ANR in|not responding|unresponsive|Input dispatching timed out|FATAL EXCEPTION|\s[EWF] (ReactNativeJS|ReactNative|unknown:ReactNative|AndroidRuntime)\s*:/;
+const NOISE = /StatusBarModule: Ignored status bar change/;
 
 /** What Android and the app said during the flow: its last hangs, crashes, errors and warnings. */
 function saidRead(flow) {
   const log = flowLog(flow);
   if (!log) return ['(the log was not kept)'];
-  const said = [...new Set(log.filter((l) => SAID.test(l) && !/\sMaestro\s*:/.test(l))
+  const said = [...new Set(log.filter((l) => SAID.test(l) && !NOISE.test(l) && !/\sMaestro\s*:/.test(l))
     .map((l) => l.replace(/^\d\d-\d\d (\d\d:\d\d:\d\d)\.\d+\s+\d+\s+\d+\s+/, '$1 ').slice(0, 160)))];
   if (!said.length) return ['(no hang, crash, error or warning)'];
   return said.length > 8 ? [`… ${said.length - 8} earlier`, ...said.slice(-8)] : said;
 }
 
+/** A line's time as milliseconds within its day, from "MM-DD HH:MM:SS.mmm". */
+const clock = (line) => {
+  const m = /^\d\d-\d\d (\d\d):(\d\d):(\d\d)\.(\d+)/.exec(line);
+  return m ? ((+m[1] * 60 + +m[2]) * 60 + +m[3]) * 1000 + +m[4].slice(0, 3).padEnd(3, '0') : NaN;
+};
+
 /**
  * The app's elements Android called not visible to the user (outside its
- * parent, transparent, covered). Maestro's driver logs each one it skips
- * ("Skipping invisible child", tag Maestro) and does not look inside it, so a
- * hidden box shows here with its rows unnamed. Named elements first, then the
- * rest by place.
+ * parent, transparent, covered) on the screen the flow failed on. Maestro's
+ * driver logs each one it skips ("Skipping invisible child", tag Maestro) every
+ * time it reads the screen, and does not look inside one, so a hidden box shows
+ * here with its rows unnamed. Only the last reading (its final two seconds) is
+ * kept; empty boxes (nothing to see, or scrolled off) are left out; named
+ * elements come first, then the rest, each largest first.
  */
 function hiddenRead(flow) {
   const log = flowLog(flow);
@@ -114,19 +124,24 @@ function hiddenRead(flow) {
   };
   const lines = log.filter((l) => l.includes('Skipping invisible child'));
   if (!lines.length) return ['(the driver skipped nothing as invisible)'];
-  const named = new Set();
-  const unnamed = new Set();
+  const last = Math.max(...lines.map(clock).filter((t) => !Number.isNaN(t)));
+  const named = new Map();
+  const unnamed = new Map();
   for (const line of lines) {
+    if (clock(line) < last - 2000) continue;
     if (field(line, 'packageName') !== 'com.reelhouse.society') continue;
+    const where = field(line, 'boundsInScreen');
+    const [l, t, r, b] = (/Rect\((-?\d+), (-?\d+) - (-?\d+), (-?\d+)\)/.exec(where) ?? []).slice(1).map(Number);
+    const area = Math.max(0, r - l) * Math.max(0, b - t);
+    if (!area) continue;
     const id = field(line, 'viewIdResName');
     const text = field(line, 'text');
-    const where = field(line, 'boundsInScreen');
     const what = [id && `#${id}`, text && `"${text.slice(0, 40)}"`].filter(Boolean).join(' ');
-    (what ? named : unnamed).add(`${what || field(line, 'className').replace(/^.*\./, '')} ${where}`);
+    (what ? named : unnamed).set(`${what || field(line, 'className').replace(/^.*\./, '')} ${where}`, area);
   }
-  const top = (s) => Number(/Rect\(-?\d+, (-?\d+)/.exec(s)?.[1] ?? 1e9);
-  const all = [...named, ...[...unnamed].sort((a, b) => top(a) - top(b))];
-  if (!all.length) return ['(none of the app: only other apps were skipped)'];
+  const bySize = (m) => [...m].sort((x, y) => y[1] - x[1]).map(([k]) => k);
+  const all = [...bySize(named), ...bySize(unnamed)];
+  if (!all.length) return ['(none of the app: only other apps, or empty boxes)'];
   return all.length > 8 ? [...all.slice(0, 8), `… and ${all.length - 8} more`] : all;
 }
 
