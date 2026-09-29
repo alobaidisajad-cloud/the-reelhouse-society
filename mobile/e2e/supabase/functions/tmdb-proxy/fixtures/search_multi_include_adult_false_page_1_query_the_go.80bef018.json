@@ -1,0 +1,467 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=the+go",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/a48kGnzWaQq0K7lmBKJhIJ4tMxR.jpg",
+    "id": 261171,
+    "name": "On the Go with Gabe",
+    "original_name": "On the Go with Gabe",
+    "overview": "\"On the Go with Gabe\" is an engaging video web series tailored for aspiring storytellers and creators. Join Gabe Lenners on his captivating journey through Los Angeles and beyond as he meets fascinating individuals and shares invaluable lessons learned along the way, providing a unique glimpse into the world of creativity and storytelling.",
+    "poster_path": "/boACfDGdp59H1pmmHkjuLKeBvqH.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10767
+    ],
+    "popularity": 4.6977,
+    "first_air_date": "2024-01-11",
+    "softcore": false,
+    "vote_average": 10,
+    "vote_count": 2,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 6139182,
+    "name": "The GO",
+    "original_name": "The GO",
+    "media_type": "person",
+    "popularity": 0.2607,
+    "gender": 0,
+    "known_for_department": "Sound",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1669631,
+      "title": "The GO SET",
+      "original_title": "The GO SET",
+      "overview": "Australian 1981 Mod revival documentary.\r By Benjamin Evison and  Winston \" Bill \" Posters, additional footage by Dave Robinson Added in 2010\r Produced by eyesoreland - Winston Posters  Shot on super 8 film in Sydney and Melbourne early 1981 (21mins)\r Re edited and released with extra lost footage in 2010.  Soundtrack and live music by Australian  80s Mod bands.  THE SETS , LITTLE MURDERS,  DIVISION 4,  THE INTROVERTS, THE GO  Original 1981 title -Sawdust Caesars.",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [],
+      "popularity": 0.5647,
+      "release_date": "",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/ocTXtEtF5T8OIiHJNI9QuN5DyZR.jpg",
+    "id": 99294,
+    "name": "When the Streetlights Go On",
+    "original_name": "When the Streetlights Go On",
+    "overview": "A double-homicide in a small midwestern suburb rattles the lives of a group of teenagers and sends investigators searching for answers in the fall of 1995. A meditation on growing up, the passing of time, and the insidious violence that lurks in the suburbs.",
+    "poster_path": "/1i7rVHmZaHfk0yBNyyS1rEDxNqb.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "popularity": 5.1636,
+    "first_air_date": "2020-04-06",
+    "softcore": false,
+    "vote_average": 6.8,
+    "vote_count": 26,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/9e9JL8pUps3LG4TdDw9eJv2n2PN.jpg",
+    "id": 6771,
+    "name": "All Dogs Go To Heaven: The Series",
+    "original_name": "All Dogs Go To Heaven: The Series",
+    "overview": "All Dogs Go to Heaven: The Series is an animated television series which aired from 1996 to 1998 in syndication and on the Fox Family Channel from 1998 to 1999, with 41 half-hour episodes produced in total. It aired on Cartoon Network in 1999 to 2000. It was produced by MGM Animation and was distributed by Claster Television. Don Bluth’s 1989 animated feature All Dogs Go to Heaven featured a roguish German Shepherd named Charlie who died, went to heaven, conned his way back to Earth for vengeance on his killer Carface and then found redemption through a little orphaned girl named Ann-Marie. The film was popular with audiences, spawning a sequel, All Dogs Go to Heaven 2 and this animated series.\n\nThe theme song for the series is \"A Little Heaven\", written by Lorraine Feather and Mark Watters. The singers were Gene Miller of Nashville, Clydene Jackson-Edwards and Carmen Twillie. Most of the voice actors from the feature films reprised their roles in the series, including Dom DeLuise, Ernest Borgnine, Charles Nelson Reilly, Bebe Neuwirth, Sheena Easton and Adam Wylie. Steven Weber provided the voice of Charlie B. Barkin, who was voiced in the films by Burt Reynolds and Charlie Sheen.",
+    "poster_path": "/qXsiNGhJbVLmfYaAibOMcYhGYJL.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     10762
+    ],
+    "popularity": 15.7034,
+    "first_air_date": "1996-09-21",
+    "softcore": false,
+    "vote_average": 6.1,
+    "vote_count": 14,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 22349,
+    "name": "Go for the Green",
+    "original_name": "Go for the Green",
+    "overview": "",
+    "poster_path": null,
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 1.613,
+    "first_air_date": "2008-11-08",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/5RWXtqull61JS1MM7qk3hp09Dx5.jpg",
+    "id": 214326,
+    "name": "Go with the Float",
+    "original_name": "輕·功",
+    "overview": "",
+    "poster_path": "/sc3DpVoxLiMrHx7N4Cs0fC4GTtt.jpg",
+    "media_type": "tv",
+    "original_language": "cn",
+    "genre_ids": [
+     10759,
+     18,
+     10751
+    ],
+    "popularity": 4.2296,
+    "first_air_date": "2022-12-05",
+    "softcore": false,
+    "vote_average": 10,
+    "vote_count": 1,
+    "origin_country": [
+     "HK"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/8upYZgW65u6Ba1m9kdeKyh20KFF.jpg",
+    "id": 75930,
+    "name": "Family on the Go",
+    "original_name": "溫州一家人",
+    "overview": "The drama begins during China’s Reform and Opening Up era in the 1980s in Wenzhou, south China, an area renown for the emergence of many successful businesses. It charts the progress of a certain family headed by Zhou Wanshun, that lived in Rui’an village. The family had the opportunity for one of their two children to go to Italy to study. Wanshun  (quite extraordinary at the time, and even today) chose to let his 13-year old daughter, Ayu, go to study rather than his 16-year-old son, son Maigou. Unbeknownst to his wife, Zhao Yinhua and son he sold their ancestral home cum cottage industry and spent all the proceeds in funding the Italy study trip. Although he had no business plan, he set out with his wife and son to Wenzhou City to “make money”, any which way. Together, they make it to Wenzhou City, while the daughter goes to Italy, each forging different paths, especially the children each persevering through challenges and hardship, achieving individual success.",
+    "poster_path": "/jjJkPcLJkXpQLWIkcQz7cH9guqR.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     18,
+     10751
+    ],
+    "popularity": 4.6771,
+    "first_air_date": "2012-01-01",
+    "softcore": false,
+    "vote_average": 6,
+    "vote_count": 3,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/9SZFHgNRmDuuV37W8ReGyKlvvwi.jpg",
+    "id": 84656,
+    "name": "The Temptation to Go Home",
+    "original_name": "回家的诱惑",
+    "overview": "Lin Pin Ru get married to Hong Shi Xian. Hong Shi Xian later betrays her and has an affair with Ai Li, Lin Pin Ru's best friend. At that time Lin Pin Ru is pregnant with Hong Shi Xian's child. Later Lin Pin Ru and Hong Shi Xian are trapped on a boat in the middle of a beach, They both fall in and Hong Shi Xian made it out alive whereas Lin Pin Ru is drowning and has lost her child. On the same day Lin Pin Ru drowns in the water, Gao Shan Shan is committing suicide, and she goes drowns herself in the same beach Lin Pin Ru dies. Goa Shan Shan's brother, Gao Wen Yan goes to save her sister, but instead, he saved Lin Pin Ru. Lin Pin Ru later takes the name Goa Shan Shan and learns to do the stuff that Gao Shan Shan does, but however this time she is out for revenge on Hong Shi Xian and Ai Li.",
+    "poster_path": "/bhw2xfw5LXvOKVu6zkdX280kpTW.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     18,
+     10751
+    ],
+    "popularity": 10.9935,
+    "first_air_date": "2011-02-21",
+    "softcore": false,
+    "vote_average": 8.5,
+    "vote_count": 2,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/6FTc6G8gwawItBqGQd7sYtf6s3f.jpg",
+    "id": 474395,
+    "title": "Teen Titans Go! To the Movies",
+    "original_title": "Teen Titans Go! To the Movies",
+    "overview": "All the major DC superheroes are starring in their own films, all but the Teen Titans, so Robin is determined to remedy this situation by getting over his role as a sidekick and becoming a movie star. Thus, with a few madcap ideas and an inspirational song in their hearts, the Teen Titans head to Hollywood to fulfill their dreams.",
+    "poster_path": "/mFHihhE9hlvJEk2f1AqdLRaYHd6.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     28,
+     35,
+     878
+    ],
+    "popularity": 10.146,
+    "release_date": "2018-07-27",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.2,
+    "vote_count": 1201
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/TPFxU3h7TXzXeX4wxIiIQTy9Cq.jpg",
+    "id": 9867,
+    "title": "The Go-Getter",
+    "original_title": "The Go-Getter",
+    "overview": "When his mother dies, a teenager takes a road-trip in a stolen car to find his long-lost brother. Along the way he discovers a profound connection with the car-owner and with himself as well.",
+    "poster_path": "/6WMZHz3Im5B41g63COwQsZcY7F5.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 2.6855,
+    "release_date": "2007-01-22",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.3,
+    "vote_count": 73
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/zj9ZX45waGojDsY1djKmbUkO0LU.jpg",
+    "id": 148654,
+    "title": "Go Toward the Light",
+    "original_title": "Go Toward the Light",
+    "overview": "A young couple faces the realities of life with their child who is diagnosed with AIDS.",
+    "poster_path": "/bamFhZ3cP4MSRxXi3S8mGiwHEsl.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     10770
+    ],
+    "popularity": 2.1652,
+    "release_date": "1988-11-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.7,
+    "vote_count": 14
+   },
+   {
+    "adult": false,
+    "id": 6292745,
+    "name": "The Go-Go's",
+    "original_name": "The Go-Go's",
+    "media_type": "person",
+    "popularity": 0.3047,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/sdq0aJZMDdTfBk1LluVDCHGSfrP.jpg",
+      "id": 1716406,
+      "title": "Twilight Theater II",
+      "original_title": "Twilight Theater II",
+      "overview": "Leslie Nielsen hosts this comedy special featuring satirical sketches and a debate between G. Gordon Liddy and Moon Unit Zappa.",
+      "poster_path": "/aF4QNbMdYfuCByA3CXQbzxm78RN.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       35
+      ],
+      "popularity": 1.3398,
+      "release_date": "1982-10-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/5ghv53ICOZClWyL7sKgOr4jfZYl.jpg",
+    "id": 1766609,
+    "title": "Go Deep: The DeSean Jackson Story",
+    "original_title": "Go Deep: The DeSean Jackson Story",
+    "overview": "Built from an extraordinary archive - thousands of hours of raw home video footage shot across 35 years by DeSean's older brother Byron - this is an intimate, unfiltered portrait of a father and his two sons - their bond, their sacrifices, their conflicts, and their shared pursuit of a better life.",
+    "poster_path": "/vijDQnbLhOOhHU1bNs5vE5qJOI0.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 2.6479,
+    "release_date": "2026-09-24",
+    "softcore": false,
+    "video": false,
+    "vote_average": 1,
+    "vote_count": 1
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 29127,
+    "name": "Doctor on the Go",
+    "original_name": "Doctor on the Go",
+    "overview": "The misadventures of a group of doctors.",
+    "poster_path": "/eESG75KMNRwzCJWIIh5p8yiiu2S.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.888,
+    "first_air_date": "1975-04-27",
+    "softcore": false,
+    "vote_average": 5,
+    "vote_count": 1,
+    "origin_country": [
+     "GB"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/1rZwk7AAsEf1Yuf437pIFszxE4W.jpg",
+    "id": 235558,
+    "title": "The Go-Getter",
+    "original_title": "The Go-Getter",
+    "overview": "A Navy veteran with one leg fights to make himself a success.",
+    "poster_path": "/1Y18rvBLFI8toaEXXqY9sC6XMa1.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     35,
+     10749
+    ],
+    "popularity": 2.3286,
+    "release_date": "1937-05-22",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.2,
+    "vote_count": 5
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1571887,
+    "title": "To Go to the Moon",
+    "original_title": "To Go to the Moon",
+    "overview": "Margaret is a young woman working at MIT. Amid a time of great innovation in space travel, she's hard at work in the mathematics department, working in the emerging field of software engineering.  She and her colleagues are working on the software for NASA, having worked her way up from her initial application for the once-in-a-lifetime opportunity. Building her team from the ground up, she earns the respect of those she works with, though she's still mistaken for a secretary. But when NASA's Apollo 8 mission goes awry, it's up to her and her team's programming abilities to save the astronauts stranded in space.",
+    "poster_path": null,
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 1.4661,
+    "release_date": "2022-06-28",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/bhXTEJ8Oed7Ye7ig09qcilaaQr3.jpg",
+    "id": 360695,
+    "title": "The Go-Between",
+    "original_title": "The Go-Between",
+    "overview": "An elderly man pieces together his childhood memories after finding his diary from 1900, which he wrote when he was 13 years old.",
+    "poster_path": "/p3A7B8HEVruKqffvKvJovb8mcVT.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     10770,
+     18
+    ],
+    "popularity": 2.0614,
+    "release_date": "2015-09-20",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.8,
+    "vote_count": 34
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/zrsT4gf83qjjdBdkh1leJTnECg5.jpg",
+    "id": 38181,
+    "title": "The Go Master",
+    "original_title": "吴清源",
+    "overview": "The life of Go master Wu Qingyuan from his meteoric rise as a child prodigy to fame and fortune as a revolutionary strategic thinker, as well as the tumultuous conflicts between his homeland of China and his adopted nation of Japan.",
+    "poster_path": "/2nStNI7Ke625kfBuD8QN5Tuh5Mj.jpg",
+    "media_type": "movie",
+    "original_language": "zh",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 1.5848,
+    "release_date": "2007-05-24",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.5,
+    "vote_count": 14
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/q7wulfheRc4KdO1ClDwMMPyIwJc.jpg",
+    "id": 1678102,
+    "title": "No Go: The Child",
+    "original_title": "死亡禁区实录",
+    "overview": "",
+    "poster_path": "/9azqzuWzexTDU9EuHGqgrn11Gmb.jpg",
+    "media_type": "movie",
+    "original_language": "zh",
+    "genre_ids": [
+     9648,
+     53,
+     27
+    ],
+    "popularity": 9.7897,
+    "release_date": "2026-09-11",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/duJ0j7HCUaB8hk8x0iFO5jMxRXA.jpg",
+    "id": 133622,
+    "name": "Sammy On The Go",
+    "original_name": "森美旅行團",
+    "overview": "",
+    "poster_path": "/mXd1oRKvgblLlMYa4j5vTTQUaWJ.jpg",
+    "media_type": "tv",
+    "original_language": "cn",
+    "genre_ids": [
+     10764,
+     35,
+     99
+    ],
+    "popularity": 2.5608,
+    "first_air_date": "2017-10-03",
+    "softcore": false,
+    "vote_average": 9,
+    "vote_count": 2,
+    "origin_country": [
+     "HK"
+    ]
+   }
+  ],
+  "total_pages": 500,
+  "total_results": 10000
+ }
+}

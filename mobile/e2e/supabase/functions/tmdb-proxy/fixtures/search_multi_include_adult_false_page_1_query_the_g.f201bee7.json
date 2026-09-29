@@ -1,0 +1,640 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=the+g",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/lUKLz31z3desr58inCZHY5zEcv9.jpg",
+    "id": 77485,
+    "name": "The Last O.G.",
+    "original_name": "The Last O.G.",
+    "overview": "An ex-felon is shocked to see just how much the world has changed when he is released from prison for good behavior after a 15-year stint and returns to his newly gentrified Brooklyn neighborhood.",
+    "poster_path": "/4jJ4TfnhA6ph3NWic50bsF9Rwer.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 18.0642,
+    "first_air_date": "2018-04-03",
+    "softcore": false,
+    "vote_average": 6.3,
+    "vote_count": 50,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4643445,
+    "name": "The Silvin G",
+    "original_name": "The Silvin G",
+    "media_type": "person",
+    "popularity": 0.2588,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/8byuuNQavI9E4lV7oKMlJVS25Sk.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/9l3oDzswSC5rlCWAfGWerIvPxMD.jpg",
+      "id": 968441,
+      "title": "Música",
+      "original_title": "Música",
+      "overview": "A young man, plagued by the music in his head, has to come to terms with an uncertain future while balancing love, family and Brazilian culture in Newark, New Jersey.",
+      "poster_path": "/kUX5ourGUJDG0yvEeS3uooZS0dS.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10749,
+       35,
+       10402
+      ],
+      "popularity": 2.5217,
+      "release_date": "2024-03-13",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.5,
+      "vote_count": 143
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/jE5wVBRCGQzjHjvFUcYwGS4x0ux.jpg",
+    "id": 14869,
+    "title": "G.I. Joe: The Rise of Cobra",
+    "original_title": "G.I. Joe: The Rise of Cobra",
+    "overview": "From the Egyptian desert to deep below the polar ice caps, the elite G.I. JOE team uses the latest in next-generation spy and military equipment to fight the corrupt arms dealer Destro and the growing threat of the mysterious Cobra organization to prevent them from plunging the world into chaos.",
+    "poster_path": "/mc9b25IAprHfsaOz0wTshOwGHcY.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     12,
+     28,
+     53,
+     878
+    ],
+    "popularity": 11.8431,
+    "release_date": "2009-08-03",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.782,
+    "vote_count": 5038
+   },
+   {
+    "adult": false,
+    "id": 107129,
+    "name": "The Notorious B.I.G.",
+    "original_name": "The Notorious B.I.G.",
+    "media_type": "person",
+    "popularity": 1.3001,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/3hmz48Vevx6Q3FwxBmNkNKPeLkx.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/sidmL6DT8j0TewIh4fzyrp1pa8G.jpg",
+      "id": 797309,
+      "title": "Biggie: I Got a Story to Tell",
+      "original_title": "Biggie: I Got a Story to Tell",
+      "overview": "Christopher Wallace, AKA The Notorious B.I.G., remains one of Hip-Hop’s icons, renowned for his distinctive flow and autobiographical lyrics. This documentary celebrates his life via rare behind-the-scenes footage and the testimonies of his closest friends and family.",
+      "poster_path": "/wwMZiuoucmdVxZmj4HjYSLwAFJh.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       99,
+       10402
+      ],
+      "popularity": 2.9327,
+      "release_date": "2021-03-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.1,
+      "vote_count": 141
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/9tcG1PoQ9MIHMXzkwN0mehg0dMy.jpg",
+      "id": 30586,
+      "title": "Biggie & Tupac",
+      "original_title": "Biggie & Tupac",
+      "overview": "In 1997, rap superstars Tupac Shakur and Christopher Wallace (aka Biggie Smalls, The Notorious B.I.G.) were gunned down in separate incidents, the apparent victims of hip hop's infamous east-west rivalry. Nick Broomfield's film introduces Russell Poole, an ex-cop with damning evidence that suggests the LAPD deliberately fumbled the case to conceal connections between the police, LA gangs and Death Row Records, the label run by feared rap mogul Marion \"Suge\" Knight.",
+      "poster_path": "/hh64yVsYNWjPGcIEKITp0f6Uqsu.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10402,
+       99
+      ],
+      "popularity": 1.6831,
+      "release_date": "2002-01-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.4,
+      "vote_count": 82
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/lmPrj8PgzBB1yZRiLOlARsPH3uU.jpg",
+      "id": 46907,
+      "title": "Notorious B.I.G.: Bigger Than Life",
+      "original_title": "Notorious B.I.G.: Bigger Than Life",
+      "overview": "The greatest rapper to ever pick up a mic - with his velvety flow and unparalleled rhyme style he captivated everyone from Jay Z to Tupac. Now Notorious B.I.G. is revealed.",
+      "poster_path": "/1m39a9Yd1DZite9VjxKkiS4GuH9.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       99,
+       10402
+      ],
+      "popularity": 2.1009,
+      "release_date": "2007-05-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.2,
+      "vote_count": 16
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/x69MiTVoOF3maoek5yclPYbFgjr.jpg",
+    "id": 1190836,
+    "title": "The G",
+    "original_title": "The G",
+    "overview": "After a corrupt legal guardian puts her in a care home in order to take her property, a mysterious older woman seeks vengeance with the help of her granddaughter, who calls her 'The G'.",
+    "poster_path": "/us0HiZ89TisAAu08iiysTpgkMFf.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     53,
+     80
+    ],
+    "popularity": 2.1532,
+    "release_date": "2024-06-07",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.8,
+    "vote_count": 23
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/3NMZmMZqtAAf814XDUOYxxg36f9.jpg",
+    "id": 17421,
+    "title": "G.I. Joe: The Movie",
+    "original_title": "G.I. Joe: The Movie",
+    "overview": "G.I. Joe faces a new enemy as an ancient society of snake people known as Cobra-La try to forcefully take back the earth from those who drove them underground eons ago.",
+    "poster_path": "/gADRX5uks0nIsgEzwNpkCIHukBN.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     28,
+     878,
+     10751,
+     12,
+     14
+    ],
+    "popularity": 4.3777,
+    "release_date": "1987-06-19",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.6,
+    "vote_count": 123
+   },
+   {
+    "adult": false,
+    "id": 6499877,
+    "name": "K.G. the Dog",
+    "original_name": "K.G. the Dog",
+    "media_type": "person",
+    "popularity": 0.1454,
+    "gender": 0,
+    "known_for_department": "Crew",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/5YFSmzxcqWWQ8ARSP6Y1yKgLXCT.jpg",
+      "id": 662288,
+      "title": "The Once and Future Smash",
+      "original_title": "The Once and Future Smash",
+      "overview": "In 1970, Mikey and William both portrayed football cannibal Smash-Mouth in the influential cult hit, End Zone 2. Now, 50 years later, only one can wear the mask.",
+      "poster_path": "/nMgCXWT8G4sldtVe9e7s1j8HOf0.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       35,
+       27
+      ],
+      "popularity": 2.1398,
+      "release_date": "2022-12-04",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.7,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1503811,
+    "title": "G the Film",
+    "original_title": "G the Film",
+    "overview": "G tells the story about a man who is determined to destroy the mafia in Gujarat, but in doing so incites them to take revenge on him. Blended with a love story, this film has everything from comedy to action to romance.",
+    "poster_path": "/usaL7Mbuf6e13LKvO9CNVX7ubGD.jpg",
+    "media_type": "movie",
+    "original_language": "gu",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 0.4672,
+    "release_date": "2020-01-03",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/aagURsS0wz2TqXRTZyTAXNGSHMs.jpg",
+    "id": 457234,
+    "title": "G-Men in the Pacific",
+    "original_title": "太平洋のGメン",
+    "overview": "G-men challenge a jewelry smuggling ring. The chase starts in Kyushu and continues to Kobe to Yokohama.",
+    "poster_path": "/2uGHSl5zMXbJieHoCaesNaRGLOM.jpg",
+    "media_type": "movie",
+    "original_language": "ja",
+    "genre_ids": [
+     80
+    ],
+    "popularity": 1.7793,
+    "release_date": "1962-04-22",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.3,
+    "vote_count": 3
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/5MvesdOxz9hzu0jQBmHPLt1JCQO.jpg",
+    "id": 366633,
+    "title": "John G. Avildsen: King of the Underdogs",
+    "original_title": "John G. Avildsen: King of the Underdogs",
+    "overview": "An examination of the Oscar-winning director who brought to life some of cinema's most beloved motion pictures.",
+    "poster_path": "/m6htYWJvZuk8odRjTxhV0zBcxpp.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 2.9098,
+    "release_date": "2017-08-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.8,
+    "vote_count": 8
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/gboPGwAIEq3FgOfusfzXCOqnmxQ.jpg",
+    "id": 114066,
+    "name": "The G Word with Adam Conover",
+    "original_name": "The G Word with Adam Conover",
+    "overview": "Love it or hate it, the government plays a huge role in our lives. Adam Conover explores its triumphs, failures and how we might be able to change it.",
+    "poster_path": "/mtS2gpkWjgvd7851xAeFVINq2LX.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     99,
+     35
+    ],
+    "popularity": 3.5845,
+    "first_air_date": "2022-05-19",
+    "softcore": false,
+    "vote_average": 6.4,
+    "vote_count": 14,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/npxiPFvsRRDbbCv5IQkcBl3lFI3.jpg",
+    "id": 76582,
+    "name": "Unsolved: The Murders of Tupac and The Notorious B.I.G.",
+    "original_name": "Unsolved: The Murders of Tupac and The Notorious B.I.G.",
+    "overview": "A chronicle of the two major police investigations by LAPD Detective Greg Kading into the deaths of Tupac and The Notorious B.I.G.",
+    "poster_path": "/qWV5jwbQcPsQpLJnzB71gVIp9na.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     80,
+     18
+    ],
+    "popularity": 9.9564,
+    "first_air_date": "2018-02-27",
+    "softcore": false,
+    "vote_average": 6.7,
+    "vote_count": 76,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/3N3JaJy9nSIf85EVrbuEKUhWhxJ.jpg",
+    "id": 65445,
+    "name": "The Nightmare Worlds of H.G. Wells",
+    "original_name": "The Nightmare Worlds of H.G. Wells",
+    "overview": "The Nightmare Worlds of H. G. Wells is a 2016 horror-fantasy television miniseries, based on short stories by H. G. Wells. The four-part series of 30-minute episodes was commissioned for broadcast by Sky Arts. The series is hosted by Ray Winstone as Wells.",
+    "poster_path": "/cSl0VSRHfqZsyjc0j4MyKThQ2nu.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     10765,
+     9648
+    ],
+    "popularity": 4.0218,
+    "first_air_date": "2016-01-28",
+    "softcore": false,
+    "vote_average": 6.2,
+    "vote_count": 12,
+    "origin_country": [
+     "GB"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/oTcyR5cxewgRFT2K0vKqBmi89z6.jpg",
+    "id": 24632,
+    "name": "The Mind of Mr. J.G. Reeder",
+    "original_name": "The Mind of Mr. J.G. Reeder",
+    "overview": "The Mind of Mr. J.G. Reeder is based on a character created by Edgar Wallace in a series of 1925 short stories of the same name, Hugh Burden played the titular character – A mild-mannered investigator with the Department of Public Prosecutions.",
+    "poster_path": "/vwFmX3L7fZDEZLdJkyEA1dksJ31.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 3.9801,
+    "first_air_date": "1969-04-23",
+    "softcore": false,
+    "vote_average": 5,
+    "vote_count": 1,
+    "origin_country": [
+     "GB"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 5708978,
+    "name": "The Guardsmen",
+    "original_name": "The Guardsmen",
+    "media_type": "person",
+    "popularity": 0.35,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/gopdc5ssG3rvUbiFh90LkZhcefw.jpg",
+      "id": 161956,
+      "title": "Buddy's Beer Garden",
+      "original_title": "Buddy's Beer Garden",
+      "overview": "Buddy's musical antics as a waiter at a German beer garden are truly delightful! Cookie appears as a cigarette girl and scarf-dancer, and a drag-decked lounge-singing Buddy brings down the house.",
+      "poster_path": "/bS79HzDeSyGBVdhUefOQO0eL2Ol.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16
+      ],
+      "popularity": 1.1125,
+      "release_date": "1933-11-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.7,
+      "vote_count": 12
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 161954,
+      "title": "Buddy's Show Boat",
+      "original_title": "Buddy's Show Boat",
+      "overview": "Buddy's boat floats merrily down the river as there are various musical and dance shows performed.",
+      "poster_path": "/c5tiedbXEhbgWf3kST0QxXeKmcA.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16
+      ],
+      "popularity": 0.9638,
+      "release_date": "1933-12-09",
+      "softcore": false,
+      "video": false,
+      "vote_average": 4.3,
+      "vote_count": 7
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/8XiXuUn9pGaWRy23U57FZvEDQdg.jpg",
+      "id": 110832,
+      "title": "Wagon Wheels",
+      "original_title": "Wagon Wheels",
+      "overview": "A wagon train heads west from Independence, Mo., along the Oregon Trail, led by proud cowboy Clint Belmet. On board are feisty young widow Nancy Wellington and her toddler, Sonny, as well as the older Abby Masters, who begins a romance with scout Jim Burch. Along the way, the wagon train battles Indians led by Kenneth Murdock, a trapper who doesn't welcome competition for Oregon's lucrative fur trade.  Wagon Wheels is a 1934 remake of 1931's Fighting Caravans, using stock footage from the original.",
+      "poster_path": "/uC9bpBlzgJ0jxWfVDsqrYvKpCV5.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       28,
+       12,
+       35,
+       18,
+       10749,
+       37,
+       10402
+      ],
+      "popularity": 1.2567,
+      "release_date": "1934-09-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.1,
+      "vote_count": 10
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/seVKvRFgBN6FADYQ5Bb6POo8DJh.jpg",
+    "id": 239745,
+    "name": "The G-List",
+    "original_name": "The G-List",
+    "overview": "We follow three uber Queer Presenters/Influencers as they Navigate the country’s most exclusive and popular events, “Always on the List” of course.",
+    "poster_path": "/5m4Mni1a7P1AMYBjYjgGHF0XhnA.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 0.683,
+    "first_air_date": "2023-10-26",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 662219,
+    "title": "The G Word",
+    "original_title": "The G Word",
+    "overview": "Daniel's attempts to come out to his parents don't exactly go to plan. With his mother due home any minute its a race to the finish line to break the news to her. But what will she make of this?",
+    "poster_path": "/rwxQY9LiYjvAgVsOhrptiYgZR73.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 0.6423,
+    "release_date": "2016-08-06",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/i82OjWATjOAooA2LPGX9YB2G5XA.jpg",
+    "id": 1740873,
+    "title": "The G Series",
+    "original_title": "The G Series",
+    "overview": "E.C. Lewin presents The G Series, an anthology of short films created from 2024 to 2026.",
+    "poster_path": "/iaqYMuTCuyIdbe91eKLTcNniw0r.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     99
+    ],
+    "popularity": 0.6979,
+    "release_date": "2026-08-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "id": 15897,
+    "name": "Larry the Cable Guy",
+    "original_name": "Larry the Cable Guy",
+    "media_type": "person",
+    "popularity": 2.4511,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/34pX2sQj9DddaQWRBGukSWYdXxS.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/robYRZk9LxJTwD7GlZCginji5k.jpg",
+      "id": 49013,
+      "title": "Cars 2",
+      "original_title": "Cars 2",
+      "overview": "Star race car Lightning McQueen and his pal Mater head overseas to compete in the World Grand Prix race. But the road to the championship becomes rocky as Mater gets caught up in an intriguing adventure of his own: international espionage.",
+      "poster_path": "/okIz1HyxeVOMzYwwHUjH2pHi74I.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16,
+       10751,
+       12,
+       35
+      ],
+      "popularity": 35.8157,
+      "release_date": "2011-06-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.192,
+      "vote_count": 8724
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/sOLgkBKf1gjMRc4yXxM5aciXdfr.jpg",
+      "id": 920,
+      "title": "Cars",
+      "original_title": "Cars",
+      "overview": "Lightning McQueen, a hotshot rookie race car driven to succeed, discovers that life is about the journey, not the finish line, when he finds himself unexpectedly detoured in the sleepy Route 66 town of Radiator Springs. On route across the country to the big Piston Cup Championship in California to compete against two seasoned pros, McQueen gets to know the town's offbeat characters.",
+      "poster_path": "/2Touk3m5gzsqr1VsvxypdyHY5ci.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16,
+       12,
+       35,
+       10751
+      ],
+      "popularity": 31.8145,
+      "release_date": "2006-06-08",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.056,
+      "vote_count": 15572
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/4mlS1MitcOqdPLhxEFyk9Qwf5rr.jpg",
+      "id": 260514,
+      "title": "Cars 3",
+      "original_title": "Cars 3",
+      "overview": "Blindsided by a new generation of blazing-fast racers, the legendary Lightning McQueen finds himself pushed to the brink—and suddenly, the champion who once ruled the track is fighting just to stay in the race. With his career hanging in the balance, McQueen must turn to an ambitious young race technician with a plan of her own, draw strength from the legacy of the late Fabulous Hudson Hornet, and risk everything on one last shot at glory.",
+      "poster_path": "/zg5RDxvIIAKsucjuU2EZJIHEIvz.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16,
+       18,
+       10751,
+       12
+      ],
+      "popularity": 30.8264,
+      "release_date": "2017-06-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.867,
+      "vote_count": 6604
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 554486,
+    "title": "Edward G: Like the Filmstar",
+    "original_title": "Edward G: Like the Filmstar",
+    "overview": "Edward G is nothing like a film star; his life has been ordinary - until now. But he's just had a shattering experience.",
+    "poster_path": "/dIDI7ISjjtjvPUQByUO0bZzvlW1.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     10770
+    ],
+    "popularity": 1.3946,
+    "release_date": "1973-06-11",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   }
+  ],
+  "total_pages": 500,
+  "total_results": 10000
+ }
+}

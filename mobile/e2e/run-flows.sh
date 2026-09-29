@@ -47,6 +47,9 @@ for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
     echo "[Skipped] $name (the flows' ${MINUTES} minutes ran out)" >> "$OUT/maestro.log"; rc=1; continue
   fi
   echo "── $name" >> "$OUT/maestro.log"
+  # The device's clock as the flow starts, so its log can be read on its own.
+  # (Quoted twice: adb hands the device's shell one line, which splits it again.)
+  since=$(timeout 20 adb shell "date +'%m-%d %H:%M:%S.000'" 2>/dev/null | tr -d '\r')
   timeout --signal=INT --kill-after=30 "$(( left < 600 ? left : 600 ))s" "$MAESTRO" test "$flow" \
     -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" \
     -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
@@ -59,6 +62,9 @@ for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
     rc=1
     [ $frc -eq 124 ] && echo "[Failed] $name (ran out of its time)" >> "$OUT/maestro.log"
     timeout 60 "$MAESTRO" hierarchy > "$OUT/flow-hierarchy/$name.json" 2>/dev/null || true
+    # The device's log for this flow alone: what the driver skipped as invisible,
+    # and what Android and the app said (flow-screens.mjs reads both).
+    [ -n "$since" ] && timeout 30 adb logcat -d -T "$since" > "$OUT/flow-hierarchy/$name.log" 2>/dev/null
   fi
 done
 cat "$OUT/maestro.log"

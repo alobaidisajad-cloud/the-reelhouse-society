@@ -1,0 +1,91 @@
+{
+ "path": "/search/keyword?query=runner",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 204967,
+    "name": "runner"
+   },
+   {
+    "id": 330280,
+    "name": "road runner"
+   },
+   {
+    "id": 233512,
+    "name": "blade runner"
+   },
+   {
+    "id": 184951,
+    "name": "gun runner"
+   },
+   {
+    "id": 208042,
+    "name": "drug runner"
+   },
+   {
+    "id": 372016,
+    "name": "homestar runner"
+   },
+   {
+    "id": 188764,
+    "name": "gunner"
+   },
+   {
+    "id": 2321,
+    "name": "bunker"
+   },
+   {
+    "id": 12997,
+    "name": "dinner"
+   },
+   {
+    "id": 204086,
+    "name": "rentner"
+   },
+   {
+    "id": 212415,
+    "name": "funnel"
+   },
+   {
+    "id": 224337,
+    "name": "rubber"
+   },
+   {
+    "id": 224819,
+    "name": "munnar"
+   },
+   {
+    "id": 189102,
+    "name": "tunnel"
+   },
+   {
+    "id": 414,
+    "name": "hunter"
+   },
+   {
+    "id": 1899,
+    "name": "hunger"
+   },
+   {
+    "id": 4752,
+    "name": "punter"
+   },
+   {
+    "id": 6174,
+    "name": "ranger"
+   },
+   {
+    "id": 6184,
+    "name": "renter"
+   },
+   {
+    "id": 8945,
+    "name": "ringer"
+   }
+  ],
+  "total_pages": 2,
+  "total_results": 32
+ }
+}

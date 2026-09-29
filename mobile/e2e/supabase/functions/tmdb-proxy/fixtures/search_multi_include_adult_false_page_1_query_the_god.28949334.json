@@ -1,0 +1,503 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=the+god",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/7hQ4jjfuH04stb1d4H2u4CLoQvu.jpg",
+    "id": 99778,
+    "name": "The God of High School",
+    "original_name": "THE GOD OF HIGH SCHOOL ゴッド・オブ・ハイスクール",
+    "overview": "Jin Mori has proclaimed himself the strongest high schooler. His life changes when he's invited to participate in \"God of High School,\" a tournament to determine the strongest high schooler of all. He's told that if he wins, any wish he makes will be granted... All the participants are powerful contenders who fight their hardest for their own wishes. What awaits them at the end of the tournament? A chaotic battle between unbelievably strong high school students is about to begin!",
+    "poster_path": "/lfa79lR34s6eyNkKjqC76uQEihh.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     16,
+     35,
+     10759,
+     10765
+    ],
+    "popularity": 22.596,
+    "first_air_date": "2020-07-06",
+    "softcore": false,
+    "vote_average": 8.1,
+    "vote_count": 756,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/dWhXUMlQuSoASikDLbUfKyPtGeB.jpg",
+    "id": 306121,
+    "name": "The Drops of God",
+    "original_name": "神の雫",
+    "overview": "When world-renowned wine critic Toyotaka Kanzaki passes away, he leaves behind an enviable collection. The will promises his estate to whoever correctly guesses the brand and year of the 12 greatest wines he selected, and the legendary wine that stands atop them all, \"Drops of God.\" The challengers are Toyotaka's son, Shizuku Kanzaki, and a young critic, Issei Tomine, who was adopted by Toyotaka.",
+    "poster_path": "/e0HIphKTbM0YjWCASdCsjYtESHG.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     16,
+     18,
+     9648
+    ],
+    "popularity": 14.7893,
+    "first_air_date": "2026-04-10",
+    "softcore": false,
+    "vote_average": 6.7,
+    "vote_count": 6,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mjIuTXM4FhLAT1apxHULetAZAfj.jpg",
+    "id": 836225,
+    "title": "The Exorcism of God",
+    "original_title": "The Exorcism of God",
+    "overview": "An American priest working in Mexico is considered a saint by many local parishioners. However, due to a botched exorcism, he carries a secret that’s eating him alive until he gets an opportunity to face his demon one final time.",
+    "poster_path": "/hangTmbxpSV4gpHG7MgSlCWSSFa.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     27,
+     80,
+     18,
+     14
+    ],
+    "popularity": 6.375,
+    "release_date": "2022-03-11",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.1,
+    "vote_count": 1181
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/smSbK5cd8T9XHcxEUcems23BDEF.jpg",
+    "id": 67915,
+    "name": "Guardian: The Lonely and Great God",
+    "original_name": "쓸쓸하고 찬란하神-도깨비",
+    "overview": "In his quest for a bride to break his immortal curse, a 939-year-old guardian of souls meets a grim reaper and a sprightly student with a tragic past.",
+    "poster_path": "/sPkxHNw5BFvuCFGWw825TS7n6X3.jpg",
+    "media_type": "tv",
+    "original_language": "ko",
+    "genre_ids": [
+     18,
+     10765,
+     35
+    ],
+    "popularity": 26.0019,
+    "first_air_date": "2016-12-02",
+    "softcore": false,
+    "vote_average": 8.6,
+    "vote_count": 3133,
+    "origin_country": [
+     "KR"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/iWS5Z9wsQT8hC0HYAUN6WXLmFNP.jpg",
+    "id": 110181,
+    "name": "The God of War Dominates",
+    "original_name": "武神主宰",
+    "overview": "The protagonist Qin Chen, who was originally the top genius in the military domain, was conspired by the people to fall into the death canyon in the forbidden land of the mainland. Qin Chen, who was inevitably dead, unexpectedly triggered the power of the mysterious ancient sword.\n\nThree hundred years later, in a remote part of the Tianwu mainland, a boy of the same name accidentally inherited Qin Chen’s will. As the beloved grandson of King Dingwu of the Daqi National Army, due to the birth father’s birth, the mother and son were treated coldly in Dingwu’s palace and lived together. In order to rewrite the myth of the strong man in hope of the sun, and to protect everything he loves, Qin Chen resolutely took up the responsibility of maintaining the five kingdoms of the world and set foot on the road of martial arts again.",
+    "poster_path": "/ihVkKv0QBPK8kf8SUajc4cK1Km6.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     10759,
+     10765,
+     16
+    ],
+    "popularity": 32.5077,
+    "first_air_date": "2020-03-07",
+    "softcore": false,
+    "vote_average": 7.4,
+    "vote_count": 9,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2614956,
+    "name": "Ski Mask the Slump God",
+    "original_name": "Ski Mask the Slump God",
+    "media_type": "person",
+    "popularity": 0.6969,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/vRvcdJJQqjeNRO3PfTcgoJySMId.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/7tGLqxYjjdE7JaYKhgfHiUpZS3S.jpg",
+      "id": 538604,
+      "title": "The After Party",
+      "original_title": "The After Party",
+      "overview": "When an aspiring rapper goes viral for the wrong reasons, he thinks his career is sunk. But a wild party gives him one more chance to make it right.",
+      "poster_path": "/wFPGheX6X4bt1ZqP1870MPlUvGu.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       35,
+       10402
+      ],
+      "popularity": 2.7321,
+      "release_date": "2018-08-24",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.1,
+      "vote_count": 217
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/dt3PYimWfMvl7iSmH1uQCaHr7Qg.jpg",
+      "id": 934042,
+      "title": "Look at Me: XXXTENTACION",
+      "original_title": "Look at Me: XXXTENTACION",
+      "overview": "Explore how Florida teenager Jahseh Onfroy became SoundCloud rapper XXXTENTACION, one of the most streamed artists on the planet. Through frank commentary from family, friends and romantic partners, and unseen archival footage, this documentary offers a sensitive portrayal of an artist whose acts of violence, raw musical talent and open struggles with mental health left an indelible mark on his generation before his death at the age of 20.",
+      "poster_path": "/3BUCbEMFdizaBrNbH6lEfDdNtku.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       99,
+       10402
+      ],
+      "popularity": 1.7007,
+      "release_date": "2022-03-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.5,
+      "vote_count": 19
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/jsbaTgqc5mnYcZzDGpO5MwClTMT.jpg",
+      "id": 888491,
+      "title": "Juice WRLD: Into the Abyss",
+      "original_title": "Juice WRLD: Into the Abyss",
+      "overview": "An intimate and often eye-opening exploration of the life and all-too-short career of wunderkind rapper Juice WRLD.",
+      "poster_path": "/fmNsktc0Xbx69hgI71C0KrQpw53.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       99,
+       10402
+      ],
+      "popularity": 2.2113,
+      "release_date": "2021-11-12",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.9,
+      "vote_count": 21
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/q78bZF6LIOIUonmIFOgUTX2JqEA.jpg",
+    "id": 242392,
+    "name": "Alexander: The Making of a God",
+    "original_name": "Alexander: The Making of a God",
+    "overview": "Expert interviews and gripping reenactments combine to reveal the extraordinary life of Alexander the Great and his burning desire to conquer the world.",
+    "poster_path": "/tKUTpdyg0wGfIYplIAfkN6hDbRw.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     99,
+     18
+    ],
+    "popularity": 5.052,
+    "first_air_date": "2024-01-31",
+    "softcore": false,
+    "vote_average": 6.3,
+    "vote_count": 53,
+    "origin_country": [
+     "GB"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/lfgjDGLdVgyCSx4XUiclckeQf5R.jpg",
+    "id": 3511,
+    "name": "God, the Devil and Bob",
+    "original_name": "God, the Devil and Bob",
+    "overview": "God strikes a wager with the Devil: if just one person can convince him that the world is worth saving, he'll spare humanity from destruction, if not, God will scrap all of creation and start over. The Devil is allowed to choose the candidate, and true to form, he picks the least likely person to determine the fate of the world--self-centered, slow-witted Detroit autoworker Bob Alman, an icon of mediocrity. Reluctantly, Bob accepts God's challenge, and has to live a decent life with no hints from God and constant temptation from the Devil. Caught between the forces of divinity and deviance, with the weight of the world on his shoulders, there's nothing left to do but laugh.",
+    "poster_path": "/mnNdMiPTs4Ggty52pTtGBKQCVic.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     35,
+     16
+    ],
+    "popularity": 9.0288,
+    "first_air_date": "2000-03-09",
+    "softcore": false,
+    "vote_average": 7.4,
+    "vote_count": 23,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/9Y1jjaZGGs6QImCGaItt6qCEvGH.jpg",
+    "id": 653024,
+    "title": "The God Committee",
+    "original_title": "The God Committee",
+    "overview": "Medicine, money and morality clash when a hospital's Heart Transplant Selection Committee has only minutes to decide which of three patients on the transplant list will receive a heart that has suddenly become available.",
+    "poster_path": "/p1dXPdz5C1tPpPIy3kth3rTCOQe.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     53
+    ],
+    "popularity": 3.7752,
+    "release_date": "2021-07-02",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.6,
+    "vote_count": 90
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mTgUJFnwI7vGkKKif7DAj1YxQQJ.jpg",
+    "id": 1137759,
+    "title": "God Save the Tuches",
+    "original_title": "God Save the Tuche",
+    "overview": "When Jeff and Cathy’s grandson Jiji is selected for a training camp with Arsenal, it’s a dream opportunity for the whole family to head over to England and meet the royal family.",
+    "poster_path": "/ntBV03zpD63GHXlU5YM5inmzsRu.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 2.8376,
+    "release_date": "2025-02-05",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.1,
+    "vote_count": 159
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/rO2ESk0mruU9T58SDE8DQUDgaEl.jpg",
+    "id": 103319,
+    "name": "The Day I Became a God",
+    "original_name": "神様になった日",
+    "overview": "At the end of the last summer vacation of high school, Youta Narukami spends his days preparing for the university entrance exams, when a young girl named Hina suddenly appears, proclaiming herself as the \"god of omniscience.\" Youta is confused and does not believe Hina when she tells him \"The world will end in 30 days.\" After witnessing Hina’s God-like predictive ability, Youta begins to believe her powers are real. Hina, who is innocent and childlike despite her supernatural powers, decides for some reason to stay at Youta’s home. Thus begins the start of their lively summer before the end of the world.",
+    "poster_path": "/lCW0xNfYBDUV4PGNw2caTgu44iB.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     16,
+     35,
+     18,
+     10765
+    ],
+    "popularity": 11.6861,
+    "first_air_date": "2020-10-11",
+    "softcore": false,
+    "vote_average": 7.7,
+    "vote_count": 159,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/7pnGtMK5JYlXUQ2gwKORnX6sap1.jpg",
+    "id": 66185,
+    "name": "The Story of God with Morgan Freeman",
+    "original_name": "The Story of God with Morgan Freeman",
+    "overview": "Morgan Freeman presents his quest in order to find how most religions perceive life after death, what different civilizations thought about the act of creation and other big questions that mankind has continuously asked.",
+    "poster_path": "/qPVGvTWLsPAPsN4e7U3Qd28HipY.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 7.2882,
+    "first_air_date": "2016-04-03",
+    "softcore": false,
+    "vote_average": 7.4,
+    "vote_count": 386,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1182649,
+    "title": "The Pagan God",
+    "original_title": "The Pagan God",
+    "overview": "Bruce Winthrop, disguised as a clerk in the American consulate near the Mongolian border, is actually a secret United States government operative sent to quell a Chinese rebellion led by Tai Chen.",
+    "poster_path": "/t9atm3pvERwzLY5fr4KFixY9h1F.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 0.9609,
+    "release_date": "1919-08-04",
+    "softcore": false,
+    "video": false,
+    "vote_average": 9,
+    "vote_count": 1
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/fXNYEwAme6Mkh6f8P2QufeEqor4.jpg",
+    "id": 72989,
+    "name": "The God Father",
+    "original_name": "الأب الروحي",
+    "overview": "The series revolves around a large family dominated by Father Zain Al Attar, who embodies the course of the artist Mahmoud Hamida, and has a large number of children who live with him in the house except two, one of them lives in a shelter and the other an aggressive person, and recounts the relationship of this father with gangs of arms and smugglers.",
+    "poster_path": "/wcK775sWenUrXzBpkUWvzoMZgGQ.jpg",
+    "media_type": "tv",
+    "original_language": "ar",
+    "genre_ids": [
+     10759,
+     18
+    ],
+    "popularity": 4.04,
+    "first_air_date": "2017-01-15",
+    "softcore": false,
+    "vote_average": 9.5,
+    "vote_count": 2,
+    "origin_country": [
+     "EG"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/9mppyNFLXfFp3A8QQuaExhmGH2w.jpg",
+    "id": 113763,
+    "name": "The God Tongue",
+    "original_name": "ゴッドタン",
+    "overview": "This wacky adult variety show mixes celebrity interviews, comedy and popular contests such as the Kiss Pressure Game and Serious Singing Contest.",
+    "poster_path": "/tf8v4g6skfdGHr5jsZ9iU5hzj4V.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [],
+    "popularity": 2.0569,
+    "first_air_date": "2005-10-08",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/jLUEt6r0pT2QBMWO2z7PzknVv1D.jpg",
+    "id": 15351,
+    "name": "The God & Devil Show",
+    "original_name": "The God & Devil Show",
+    "overview": "The God & Devil Show is a Flash internet cartoon that had a successful run from 1999 to 2001. The show was produced and developed by Mondo Media and was created by Aubrey Ankrum, who went on to create Happy Tree Friends.",
+    "poster_path": null,
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 2.4977,
+    "first_air_date": "",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": []
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/bxCBI1YTUsxXWzNyEd1VjIu5JQY.jpg",
+    "id": 109778,
+    "name": "The God of Sabre",
+    "original_name": "刀神",
+    "overview": "",
+    "poster_path": "/vc39GNnXXjttohqDej8t53DD0uT.jpg",
+    "media_type": "tv",
+    "original_language": "cn",
+    "genre_ids": [],
+    "popularity": 2.5176,
+    "first_air_date": "1979-01-01",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "HK"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/f1k5jMK6QQ46E4jlwENmEBPf3Hk.jpg",
+    "id": 509364,
+    "title": "By the Grace of God",
+    "original_title": "Grâce à Dieu",
+    "overview": "Alexandre, a man in his 40s living in Lyon with his wife and children, discovers that the priest who abused him decades ago continues to work with children. He joins forces with others victims of the priest, to bring justice and “lift the burden of silence” about what they endured.",
+    "poster_path": "/qbwcnAdBkfGBIbQ1xdQZtiUg2lf.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 4.2855,
+    "release_date": "2019-02-20",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.2,
+    "vote_count": 600
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/jKVJA0EDQMMYJsHlsa0ZL0sgWeJ.jpg",
+    "id": 107928,
+    "name": "The God of Aqua",
+    "original_name": "洛神",
+    "overview": "",
+    "poster_path": "/nqA15Kyq0Me7FFhxr4HwIWK7FvF.jpg",
+    "media_type": "tv",
+    "original_language": "cn",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 1.9484,
+    "first_air_date": "1974-12-30",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "HK"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/7oVufFS6hDRfq5dh25zz0oVvf9u.jpg",
+    "id": 40721,
+    "title": "The Love God?",
+    "original_title": "The Love God?",
+    "overview": "Ornithologist Abner Peacock sells off his modest-selling birdwatching periodical to a charlatan who turns it into a girlie mag, making it a massive financial success. After Peacock and the magazine are taken to court on obscenity charges, he unwillingly becomes a reluctant hero and ends up a swinging libertine.",
+    "poster_path": "/o7W7amRSCelwAvpxh7XJj75FO6.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 2.2711,
+    "release_date": "1969-08-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6,
+    "vote_count": 21
+   }
+  ],
+  "total_pages": 98,
+  "total_results": 1949
+ }
+}

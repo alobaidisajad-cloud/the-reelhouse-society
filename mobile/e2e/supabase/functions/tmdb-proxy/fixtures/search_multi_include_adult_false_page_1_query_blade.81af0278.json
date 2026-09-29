@@ -1,0 +1,456 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=blade",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
+    "id": 335984,
+    "title": "Blade Runner 2049",
+    "original_title": "Blade Runner 2049",
+    "overview": "Thirty years after the events of the first film, a new blade runner, LAPD Officer K, unearths a long-buried secret that has the potential to plunge what's left of society into chaos. K's discovery leads him on a quest to find Rick Deckard, a former LAPD blade runner who has been missing for 30 years.",
+    "poster_path": "/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18
+    ],
+    "popularity": 87.1587,
+    "release_date": "2017-10-04",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.608,
+    "vote_count": 15749
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/7NKfxJrQn053UJeLftlx4m4NTzo.jpg",
+    "id": 36647,
+    "title": "Blade",
+    "original_title": "Blade",
+    "overview": "The Daywalker known as \"Blade\" - a half-vampire, half-mortal man - becomes the protector of humanity against an underground army of vampires.",
+    "poster_path": "/oWT70TvbsmQaqyphCZpsnQR7R32.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     27,
+     28
+    ],
+    "popularity": 16.2511,
+    "release_date": "1998-08-21",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.856,
+    "vote_count": 6997
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2spEHYDcyE9r9mS7AFEscfKVDzO.jpg",
+    "id": 78,
+    "title": "Blade Runner",
+    "original_title": "Blade Runner",
+    "overview": "In the smog-choked dystopian Los Angeles of 2019, blade runner Rick Deckard is called out of retirement to terminate a quartet of replicants who have escaped to Earth seeking their creator for a way to extend their short life spans.",
+    "poster_path": "/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18,
+     53
+    ],
+    "popularity": 25.0628,
+    "release_date": "1982-06-25",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.936,
+    "vote_count": 15451
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/63eAFgJtN6ZTyFFzlAOoZLhlYqc.jpg",
+    "id": 36648,
+    "title": "Blade: Trinity",
+    "original_title": "Blade: Trinity",
+    "overview": "For years, Blade has fought against the vampires in the cover of the night. But now, after falling into the crosshairs of the FBI, he is forced out into the daylight, where he is driven to join forces with a clan of human vampire hunters he never knew existed—The Nightstalkers. Together with Abigail and Hannibal, two deftly trained Nightstalkers, Blade follows a trail of blood to the ancient creature that is also hunting him—the original vampire, Dracula.",
+    "poster_path": "/6f7iXvPOnf83MaLB1JmPzUor1rr.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     27,
+     878
+    ],
+    "popularity": 15.5806,
+    "release_date": "2004-12-08",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.861,
+    "vote_count": 4476
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/86b0NGY1i0bt3ckhkcHxiCSMxk1.jpg",
+    "id": 36586,
+    "title": "Blade II",
+    "original_title": "Blade II",
+    "overview": "Blade forms an uneasy alliance with the vampire council in order to combat the Reapers, who are feeding on vampires.",
+    "poster_path": "/wAn6VYamKbnOtfyTZ6arVtkMzDv.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     14,
+     27,
+     28,
+     53
+    ],
+    "popularity": 13.1865,
+    "release_date": "2002-03-22",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.573,
+    "vote_count": 5425
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/qOZ50hOHEyY7WgxIrCfQWXIykKH.jpg",
+    "id": 1553949,
+    "title": "Drunken Blade",
+    "original_title": "醉刀客",
+    "overview": "HAN YUEREN, known as DRUNKEN BLADE in Jianghu, traveled to a desolate desert town to repay the kindness of a meal back then. At the time, the town was being ravaged by swords bandits. The killing intent of Lady Boss also emerges.",
+    "poster_path": "/7ax3zvnrlqAFxNVSjQsKIrVEPBg.jpg",
+    "media_type": "movie",
+    "original_language": "zh",
+    "genre_ids": [
+     28
+    ],
+    "popularity": 4.2152,
+    "release_date": "2025-10-18",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/eF7DaPaNJyIs1cQQJ0ECIc7I11z.jpg",
+    "id": 4619,
+    "name": "Blade: The Series",
+    "original_name": "Blade: The Series",
+    "overview": "Blade is a half-man, half-vampire who employs his extraordinary powers in a crusade to save mankind from the demonic creatures who walk the night. Set in Detroit, Blade investigates the vampire house of Chthon. Along the way he forms an uneasy alliance with Krista Starr, a former military veteran who becomes entrenched in the world of vampires while investigating the murder of her twin brother.",
+    "poster_path": "/e3pnvrKkwgX3GKI0vzgQ0igFt0l.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10759,
+     10765,
+     18,
+     9648
+    ],
+    "popularity": 12.1237,
+    "first_air_date": "2006-06-28",
+    "softcore": false,
+    "vote_average": 6.5,
+    "vote_count": 90,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/5Ak0J09cZ3RXel0SeASEgusNfTy.jpg",
+    "id": 9155,
+    "name": "Tekkaman Blade",
+    "original_name": "宇宙の騎士テッカマンブレード",
+    "overview": "Tekkaman Blade takes place in the year 2300 AD. On a certain moment, the Radam attack Earth. A few months after the beginning of the invasion, a Tekkaman appears, he calls himself Blade and with the help of the Space Knights, Blade starts to fight the Radam. But there are a few things that Blade isn't telling about his past.",
+    "poster_path": "/9rgjq9um07rzEQDS1oTvyya6i1.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     16,
+     10759,
+     10765
+    ],
+    "popularity": 19.6033,
+    "first_air_date": "1992-02-25",
+    "softcore": false,
+    "vote_average": 7.9,
+    "vote_count": 168,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/uqOcBHNHsmYPePmrvYhjraRxLdJ.jpg",
+    "id": 61415,
+    "name": "Fate/stay night [Unlimited Blade Works]",
+    "original_name": "Fate/stay night [Unlimited Blade Works]",
+    "overview": "This story focuses primarily on the heroine Rin Tohsaka. After her father’s death, Rin enters the Holy Grail War as the sole heir to the prestigious Tohsaka Household, with her servant Archer. But, she soon finds out that Shirou Emiya, a boy from her high school has gotten himself involved in the battles and unexpectedly saves him when he is fatally injured. Before long, Rin sets out to strike down the conspiracies surrounding the Holy Grail War along with Shirou and his summoned servant Saber. And so, the story begins to explore the truth behind Shirou’s powers and the nature behind his unyielding will to become a “hero.”\n\n© TYPE-MOON, ufotable, FSNPC",
+    "poster_path": "/jyqi5BkDoKKIA2WAoz3HBtRHld3.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     10759,
+     16,
+     18,
+     10765
+    ],
+    "popularity": 26.4185,
+    "first_air_date": "2014-10-12",
+    "softcore": false,
+    "vote_average": 8,
+    "vote_count": 387,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/crj92SZi5iOs0TJC6LScJw2iFMI.jpg",
+    "id": 12498,
+    "title": "Sling Blade",
+    "original_title": "Sling Blade",
+    "overview": "Karl Childers, a mentally disabled man, has been in the custody of the state mental hospital since the age of 12 for killing his mother and her lover. Although thoroughly institutionalized, he is deemed fit to be released into the outside world.",
+    "poster_path": "/rioWUWXPFNSjwm9NO2aau9x0wlP.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 6.2452,
+    "release_date": "1996-08-30",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.5,
+    "vote_count": 900
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/uOlIq21Rx0Sl7y39b1znTfQYGb7.jpg",
+    "id": 171802,
+    "name": "Blade Runner 2099",
+    "original_name": "Blade Runner 2099",
+    "overview": "Fifty years after the events of Blade Runner 2049, Los Angeles has been reborn, just not by humanity. Cora, a fugitive in a final bid to stop running, takes on one last identity: a Blade Runner. Forced to partner with Olwen, a Replicant days from dying, she hunts down a runaway hiding a truth that could collapse their fragile city.",
+    "poster_path": "/hr5aLuCdLC5X423c9G1pPkWR6Ud.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10765
+    ],
+    "popularity": 6.9415,
+    "first_air_date": "2026-11-25",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/vRyC5WT7ytRflfEFFyRmGeZc0Cf.jpg",
+    "id": 84553,
+    "name": "Blade Runner: Black Lotus",
+    "original_name": "Blade Runner: Black Lotus",
+    "overview": "Los Angeles 2032. A young woman wakes up with no memories, and possessing deadly skills. The only clues to her mystery are a locked data device and a tattoo of a black lotus. Putting together the pieces, she must hunt down the people responsible for her brutal and bloody past to find the truth of her lost identity.",
+    "poster_path": "/aR06SJRDGqRmGQYXAXqeOkRZq7T.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     10765,
+     10759
+    ],
+    "popularity": 16.1116,
+    "first_air_date": "2021-11-14",
+    "softcore": false,
+    "vote_average": 7.1,
+    "vote_count": 243,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/qLZQnTiQxkBOid9tVLWC1CmoOcu.jpg",
+    "id": 294990,
+    "name": "Spring of the Blade",
+    "original_name": "一瓯春",
+    "overview": "After losing her mother as a child, Xie Qingyuan returns years later to uncover the truth and seek justice. Reuniting with Shen Run, once a fallen youth and now a righteous court official, they join forces to expose corruption and right past wrongs. Through shared dangers and unwavering support, they grow closer, devoting their lives to protecting each other and their people.",
+    "poster_path": "/uRWqHI4R4nOSPpRnbr8JjnpCmgx.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     18,
+     10751
+    ],
+    "popularity": 25.4305,
+    "first_air_date": "2026-09-17",
+    "softcore": false,
+    "vote_average": 9.5,
+    "vote_count": 2,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/vknOLvvET1s9BaC2kmrulMCeE7Y.jpg",
+    "id": 62798,
+    "name": "Blade",
+    "original_name": "ブレイド",
+    "overview": "Legendary half-vampire, half-human vampire hunter Blade is tracking Deacon Frost, a very powerful and influential vampire who killed his mother and who heads Existence, a secretive vampire organization that operates in Southeast Asia.",
+    "poster_path": "/ql9YpFD8J1zeWzLMHHjp4nKKD4n.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     16,
+     10759,
+     10765
+    ],
+    "popularity": 10.7351,
+    "first_air_date": "2011-07-01",
+    "softcore": false,
+    "vote_average": 7.2,
+    "vote_count": 102,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/fhgOGKHzyRAdF661hLsUJyP7SMw.jpg",
+    "id": 24458,
+    "name": "Bamboo Blade",
+    "original_name": "バンブーブレード",
+    "overview": "Tamaki’s reflexes catch the eye of Toraji, an awful Kendo instructor. His only hope for redemption: sign Tamaki as his star pupil. If Toraji can make her feel like part of the team, he might turn his girls into a fearsome sisterhood of the bamboo blade!",
+    "poster_path": "/cvFiHofIahwA9h5d27wwsniEwlO.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     16,
+     35
+    ],
+    "popularity": 13.6645,
+    "first_air_date": "2007-10-02",
+    "softcore": false,
+    "vote_average": 5.9,
+    "vote_count": 19,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/rnNkUJlo03a8D0utxiOrADstaMT.jpg",
+    "id": 300168,
+    "title": "Dragon Blade",
+    "original_title": "天將雄師",
+    "overview": "Huo An, the commander of the Protection Squad of the Western Regions, was framed by evil forces and becomes enslaved. On the other hand, a Roman general escapes to China after rescuing the Prince. The heroic duo meet in the Western Desert and a thrilling story unfolds.",
+    "poster_path": "/hrEbZNZQ385i4snYWyCDpYrEofO.jpg",
+    "media_type": "movie",
+    "original_language": "zh",
+    "genre_ids": [
+     12,
+     36,
+     28,
+     14
+    ],
+    "popularity": 4.4454,
+    "release_date": "2015-02-19",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.4,
+    "vote_count": 653
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mrmjRPR7Iy0g90rpRLtIUNqPDAo.jpg",
+    "id": 42845,
+    "title": "The Blade",
+    "original_title": "刀",
+    "overview": "Adopted by a renowned swordsmith, a young man discovers that his biological father was killed by a powerful bandit called Lung. Leaving to seek revenge, he runs afoul of vicious desert scum, losing his right arm in the process. After being nursed back to health, he learns to compensate for his loss and returns to confront Lung.",
+    "poster_path": "/jLH5MxiYXtGiS96rl13Rz8TIPaG.jpg",
+    "media_type": "movie",
+    "original_language": "cn",
+    "genre_ids": [
+     28,
+     12
+    ],
+    "popularity": 3.2757,
+    "release_date": "1995-12-21",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.1,
+    "vote_count": 127
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/jXFuYhZlJb55nwZa3fcGXPVTWGD.jpg",
+    "id": 107331,
+    "title": "Blade",
+    "original_title": "Blade",
+    "overview": "A homicide detective goes after a woman-hating serial killer, who uses knives to murder his victims.",
+    "poster_path": "/odycG85vK9CMU77eDxMkzxPyEYn.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     53,
+     9648,
+     27
+    ],
+    "popularity": 1.3988,
+    "release_date": "1973-12-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.5,
+    "vote_count": 14
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/xD3ZoDDeUcDZAfY4KSthXw3xFgC.jpg",
+    "id": 84800,
+    "title": "Angel Blade",
+    "original_title": "Angel Blade",
+    "overview": "An emotionally damaged cop investigating a spree of prostitute killings discovers that the dark side of Las Vegas is decidedly more grim than he ever suspected in director David Heavener's gruesome thriller. When a series of teenaged prostitutes fall to the blade of a murderous madman and authorities are left scratching their heads, Detective Bradley Cooper (Heavener) hits the streets in hopes of taking the killer down. Detective Cooper has problems of his own, though, and upon uncovering what he believes to be the truth behind the ruthless killings, he soon realizes just how deadly knowledge can be.",
+    "poster_path": "/zi1KC2qMZJKfTKuZDJEAU23vnMG.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     53
+    ],
+    "popularity": 2.9134,
+    "release_date": "2002-02-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 3.7,
+    "vote_count": 10
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/ipF1JQphbqmKoRIN5LaXFuj9hHC.jpg",
+    "id": 109215,
+    "name": "Blade Heart",
+    "original_name": "血薦軒轅",
+    "overview": "The Szema family murdered the Tong family in order to monopolize the weapons industry. Twenty years later, the chief of Brocade Guards, YUEMAN FUNG (CHENG SIU CHOW, ADAM), fights against MRS. WONG (WANG MING CHUN, LIZA) of the biggest escort carrier in town. During the fight, they realize they might know each other… FUNG has changed his name, put on an eye patch and become a Brocade Guard. His wife, TONG PIK, has married WONG. They live with humiliation while they wait for the day of revenge. However, they both are in situations where they can’t reveal their identities. PIK hires MANG LUI (LAM RAYMOND) as a fighter. He falls in love with PIK’s daughter YEE (YEUNG SZE KI, SHIRLEY). Ironically, LUI is PIK’s son, whom she lost many years ago, and so love between the two is impossible. How can love and hatred end between two generations?",
+    "poster_path": "/uHpA9L6PHxr27hf5ItoJ84FGoP6.jpg",
+    "media_type": "tv",
+    "original_language": "cn",
+    "genre_ids": [],
+    "popularity": 5.1776,
+    "first_air_date": "2004-04-05",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "HK"
+    ]
+   }
+  ],
+  "total_pages": 32,
+  "total_results": 623
+ }
+}

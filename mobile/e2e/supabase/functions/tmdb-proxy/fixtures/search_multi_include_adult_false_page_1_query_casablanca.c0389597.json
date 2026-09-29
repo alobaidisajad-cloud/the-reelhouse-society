@@ -1,0 +1,529 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=casablanca",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/87wqeMeUeMRLjsE1IWNKJcPlpuC.jpg",
+    "id": 289,
+    "title": "Casablanca",
+    "original_title": "Casablanca",
+    "overview": "In Casablanca, Morocco in December 1941, a cynical American expatriate meets a former lover, with unforeseen complications.",
+    "poster_path": "/lGCEKlJo2CnWydQj7aamY7s1S7Q.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     10749
+    ],
+    "popularity": 13.8792,
+    "release_date": "1943-01-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.14,
+    "vote_count": 6248
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/8Zkn88XkqkPAwSivKfU4gZkqTUd.jpg",
+    "id": 278716,
+    "name": "Los Casablanca",
+    "original_name": "Los Casablanca",
+    "overview": "",
+    "poster_path": "/bvjoHeb1g7Tux7tiychqO9ACBJY.jpg",
+    "media_type": "tv",
+    "original_language": "es",
+    "genre_ids": [
+     18,
+     9648,
+     10751
+    ],
+    "popularity": 3.3834,
+    "first_air_date": "2024-12-03",
+    "softcore": false,
+    "vote_average": 7.8,
+    "vote_count": 9,
+    "origin_country": [
+     "CL"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/edwEHOvEhKIElkCf03kpTImrDjO.jpg",
+    "id": 32876,
+    "name": "Casablanca",
+    "original_name": "Casablanca",
+    "overview": "In this prequel to the movie, set from June 1940 to November 1941, American Rick Blaine runs the Cafe Americain in Casablanca and deals with Nazis, French, and locals in this center of World War II intrigue.",
+    "poster_path": "/eLnpdfKz9XYxmFbMT3Q0xWkXJLF.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 2.2756,
+    "first_air_date": "1983-04-10",
+    "softcore": false,
+    "vote_average": 6,
+    "vote_count": 7,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/j27k766ehrXwcrDTTSiB9utmf6n.jpg",
+    "id": 24115,
+    "name": "Casablanca",
+    "original_name": "Casablanca",
+    "overview": "This was the first attempt by Warner Brothers to make the movie classic into a series. It was part of a revolving group of shows that included Kings Row on a show called Warner Brothers Presents.",
+    "poster_path": "/aENcDqc33yiFnIMwX2fUgoddLZp.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 2.9447,
+    "first_air_date": "1955-09-27",
+    "softcore": false,
+    "vote_average": 8.5,
+    "vote_count": 2,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/cNm4UUv9Bzc2CDOvvfzGhZCNHWb.jpg",
+    "id": 114141,
+    "name": "Oriental Casablanca",
+    "original_name": "澳门往事",
+    "overview": "The story takes place in Macau. In a city full of money and speculation, the protagonist Zhou Yue Bin, with ten years of hard work, started from Junket Operator, and was eventually promoted to the first-class VIP room owner. After reading all the intrigues in the casino, Zhou Yue Bin made a vow not to be gambling, but fell in love with the gambler Yi Yan, which made him fall into the biggest gambling game in his life. Besides Yi Yan's huge sums of debt there is also the heartache of finding his missing fiancé.",
+    "poster_path": "/jCBWuawVFzTD7ib4XOOALTX8hdZ.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 1.8987,
+    "first_air_date": "2020-11-23",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/ripsaXE9rbwpeJSMZH6JlBrEVsh.jpg",
+    "id": 603404,
+    "title": "Casablanca",
+    "original_title": "كازابلانكا",
+    "overview": "Three friends form a gang of pirates, “Sea Burglars”, get assigned to a mission against the Mob, after a large cargo of diamonds was heisted. Things turn into a web of rivalries and paybacks, when one one of them decides to do the mission on his own and escape to Morocco.",
+    "poster_path": "/yOHJYF9chII7UOsf5Lk7GKiXUsn.jpg",
+    "media_type": "movie",
+    "original_language": "ar",
+    "genre_ids": [
+     28,
+     18
+    ],
+    "popularity": 1.8294,
+    "release_date": "2019-06-04",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6,
+    "vote_count": 24
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/rdZ90H8EvnjBroQqUBTb0mgTgR6.jpg",
+    "id": 62702,
+    "title": "Casablanca, Casablanca",
+    "original_title": "Casablanca, Casablanca",
+    "overview": "Francesco forgot billiards because now he lives with Chiara. She is a musician and she would like to become famous. Francesco is different: he found in her the reason of his life. But when she accepts a job far from home, Francesco comes back to billiards.",
+    "poster_path": "/yff8SKKIlVoeRBHSbksWWQSK82a.jpg",
+    "media_type": "movie",
+    "original_language": "it",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.269,
+    "release_date": "1985-02-16",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.4,
+    "vote_count": 30
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 794504,
+    "title": "Casablanca",
+    "original_title": "Casablanca",
+    "overview": "A surreal look at the dream of violinist Nadine.",
+    "poster_path": "/pW4Vjq9X8YYF2oh5JVkECXjTwFn.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 0.7592,
+    "release_date": "2002-01-13",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "id": 2377154,
+    "name": "Casablanca",
+    "original_name": "Casablanca",
+    "media_type": "person",
+    "popularity": 0.2744,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/dv7ptSyfzyr64PU064Hj4cfdfPq.jpg",
+      "id": 620120,
+      "title": "Become the King",
+      "original_title": "王様になれ",
+      "overview": "The new film, entitled Ousama ni Nare (\"Become the King\"), features music and an original story by Sawao Yamanaka (guitar and vocals for The Pillows) as well as a script and direction by Shûji Okui. The film stars actor Amane Okayama as Yuusuke, a young man who works in a ramen shop frequented by numerous Japanese rock bands. Yuusuke dreams of being a photographer, and he decides to follow his dreams by becoming a cameraman for live concert events.  (Source: Crunchyroll News)",
+      "poster_path": "/fuYULgbdmw3aMvob74pY1JuIhnt.jpg",
+      "media_type": "movie",
+      "original_language": "ja",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.0907,
+      "release_date": "2019-09-13",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4812484,
+    "name": "Casablanca",
+    "original_name": "Casablanca",
+    "media_type": "person",
+    "popularity": 0.2736,
+    "gender": 0,
+    "known_for_department": "Editing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 220783,
+      "title": "Soul's Ark",
+      "original_title": "Soul's Ark",
+      "overview": "After disappearances during an archelogical dig, Stella Grant (Carole Ann Ford) sends in her two top agents, played by Colin Baker and Wendy Padbury, to investigate.",
+      "poster_path": "/oWUCa8vkG9Enu6AWg5GTrtoAVgu.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.8961,
+      "release_date": "1999-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 10,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2292159,
+    "name": "Casablanca",
+    "original_name": "Casablanca",
+    "media_type": "person",
+    "popularity": 0.2563,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/z1Eggkp91iClr6npiiZKtixTqjV.jpg",
+      "id": 567049,
+      "title": "Heavy Metal Portugal - O Documentário",
+      "original_title": "Heavy Metal Portugal - O Documentário",
+      "overview": "The untold history of Portuguese Heavy Metal with: Moonspell, Tarantula, Thormenthor, Ramp, Sacred Sin, Arte & Ofício, NZZN, Braindead, Bizarra Locomotiva, Heavenwood, Procyon, and many more.",
+      "poster_path": "/bPosQJDbwWzqML54UqtbigrYl4k.jpg",
+      "media_type": "movie",
+      "original_language": "pt",
+      "genre_ids": [
+       99
+      ],
+      "popularity": 0.7273,
+      "release_date": "2018-11-08",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 57909,
+    "title": "The Circus Casablanca",
+    "original_title": "Cirkus Casablanca",
+    "overview": "Film about a pair of traveling entertainers and con-men and their problems with jobs, money and women. We follow them in a period there it goes downhill with engagements. It's hard for them to realize that entertainers of their kind are about to become extinct.",
+    "poster_path": "/vdKVIqETTFaaXpSa2pRlYkAj1Rf.jpg",
+    "media_type": "movie",
+    "original_language": "da",
+    "genre_ids": [
+     18,
+     35
+    ],
+    "popularity": 1.3234,
+    "release_date": "1981-02-27",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.4,
+    "vote_count": 7
+   },
+   {
+    "adult": false,
+    "id": 2576931,
+    "name": "Daniel Casablanca",
+    "original_name": "Daniel Casablanca",
+    "media_type": "person",
+    "popularity": 0.3274,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": "/eX6AWVuZ1DiRbbPuhv4zlqLwRNw.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/qockJIX0NNDiny7q5BoLywOVZxW.jpg",
+      "id": 16916,
+      "title": "A Boyfriend for My Wife",
+      "original_title": "Un novio para mi mujer",
+      "overview": "El Tenso does not know how to face his ill-tempered wife, Tana, to tell her that he wants to separate. Carlos, a friend of Tenso, suggests him to invert the situation and cause Tana to leave him by hiring Cuervo Flores, an irresistible seducer, to try and charm his wife until she falls in love with him.",
+      "poster_path": "/ybMKaNMoBie2ebXf4TIz1Sh70Iq.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       10749,
+       35,
+       18
+      ],
+      "popularity": 1.9698,
+      "release_date": "2008-08-14",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.3,
+      "vote_count": 69
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/oE7aakVOcEnDClBYydzILrThOFU.jpg",
+      "id": 685978,
+      "title": "100% lucha, el amo de los clones",
+      "original_title": "100% lucha, el amo de los clones",
+      "overview": "Damián is the neighbor of Viloni, the most popular wrestler of 100 % Lucha. He has always hated Viloni for his popularity. That's why, taking advantage of his bio-technical knowledge, he creates lots of clones who look exactly like the wrestlers of 100 % Lucha (including Viloni). Viloni will be forced to ally with his enemies on 100 % Lucha to stop the evil doctor.",
+      "poster_path": "/3MfDFtrmqdRGUdW2Kg6zdFyBzkh.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       28,
+       12,
+       35
+      ],
+      "popularity": 1.1194,
+      "release_date": "2009-07-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5,
+      "vote_count": 2
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/vvNRQYa407YNV3gMKPqCJHbl4S0.jpg",
+      "id": 146722,
+      "title": "City in Heat",
+      "original_title": "Ciudad en celo",
+      "overview": "A group of friends in their 30's meet at a bar in Buenos Aires everyday. They used to hang here as students, laughing at the world, and now they still dream of changing the world from the cafe's table. Unable discuss politics or football, the only thing they can talk about is women. When one of their friends commits suicide, a female from his past shows up to confront old feelings.",
+      "poster_path": "/2SVfZg3ykGXD7cu6PQsD3kS8shx.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       35,
+       10749
+      ],
+      "popularity": 1.142,
+      "release_date": "2007-03-22",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.2,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/eBexFNPpbKQV8cKti4TGBO9PaDT.jpg",
+    "id": 1022678,
+    "title": "Casablanca revisitada",
+    "original_title": "Casablanca revisitada",
+    "overview": "A lyrical and nostalgic analysis of how Casablanca, the mythical film directed by Michael Curtiz in 1942, has influenced both film history and pop culture.",
+    "poster_path": "/h6rZu8eGBD7B2xzebgiNaZ9UQSN.jpg",
+    "media_type": "movie",
+    "original_language": "es",
+    "genre_ids": [
+     99,
+     36
+    ],
+    "popularity": 1.2332,
+    "release_date": "1992-01-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 9,
+    "vote_count": 1
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/7S0EaMEXJgCdNAcdOl2RI0XZxjr.jpg",
+    "id": 92913,
+    "title": "Casablanca, Nest of Spies",
+    "original_title": "Noches de Casablanca",
+    "overview": "Casablanca 1942. While French Police Chief Maurice Desjardins is busy having careless fun with some loose girls, members of the French Resistance kill a man at the harbor and steal his briefcase full of important documents from the Third Reich. At an apartment building in the distance, Andre Kuhn watches the whole operation through his powerful binoculars. He is posing as a businessman but actually working as a spy for the Germans a fact totally ignored by his live-in girlfriend Teresa Villar, a beautiful Spanish singer who works at El Dorado Night Club. Andre telephones Max von Stauffen, the head of German Intelligence in Casablanca, to inform him of what he has just witnessed. Max tells him to stay put until he arrives in order to get the information personally but, by the time he reaches Andres apartment, he finds him dead with a gun shot on his temple.",
+    "poster_path": "/zv4MnDFWsweuPRf9v2Evs2EuJcg.jpg",
+    "media_type": "movie",
+    "original_language": "es",
+    "genre_ids": [
+     18,
+     10402,
+     80
+    ],
+    "popularity": 1.288,
+    "release_date": "1963-10-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 4.7,
+    "vote_count": 6
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/xhQMnrnU2CsVbQDSNNWztooUScF.jpg",
+    "id": 1157724,
+    "title": "Casablanca",
+    "original_title": "Casablanca",
+    "overview": "Fouad, a Moroccan clandestine living in Italy for years awaiting medical treatment, and Daniela, a former drug-addict from Apulia’s upper middle-class, find each other by chance in Umbria. The meeting is the beginning of a special bond that helps them heal, both claiming without any hesitation, they saved each other’s life. But Fouad’s feeling of not belonging and the interminable waiting for a visa are pushing him to the brink: will he stay in Umbria or go back to Casablanca, even if it means never to return?",
+    "poster_path": "/hJhnEf2mFOLp3UQRmZdolLgbe81.jpg",
+    "media_type": "movie",
+    "original_language": "ar",
+    "genre_ids": [
+     99,
+     10749
+    ],
+    "popularity": 1.6527,
+    "release_date": "2023-09-07",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 76529,
+    "title": "Operation Casablanca",
+    "original_title": "Opération Casablanca",
+    "overview": "Mistaken for a dangerous Islamist, Saadi - a regular guy who happens to be an illegal Arab immigrant - sets out on the most dangerous day of his life. A satirical and thrilling comedy where a wrongly accused suspect gets mixed up in a worldwide terrorist plot.",
+    "poster_path": "/tOocP3pLcr1Nz9wo9KIH8iLtq0.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     28,
+     35
+    ],
+    "popularity": 1.022,
+    "release_date": "2011-11-09",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.5,
+    "vote_count": 6
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mPXvpKuTIqeRDzKT4wi8ePooyjb.jpg",
+    "id": 1139604,
+    "title": "Casablanca",
+    "original_title": "Casablanca",
+    "overview": "Casablanca emerged from a sensitive look (and listening) from a characteristic place on 3rd street in the center of Goiânia. With a territorial approach through a biographical perspective, the documentary tells the storys of the lives of Zardos and Iara that today allow places like Casablanca to continue to exist in a big city. On Thursdays, at 8 pm, what during the week was just a pizzeria, becomes an environment where bolero goes beyond the corners.",
+    "poster_path": "/l2rEa7d1WI6qhutScTRaijXV2KS.jpg",
+    "media_type": "movie",
+    "original_language": "pt",
+    "genre_ids": [
+     99,
+     10402
+    ],
+    "popularity": 1.6007,
+    "release_date": "2023-06-26",
+    "softcore": false,
+    "video": false,
+    "vote_average": 9,
+    "vote_count": 3
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/5DCwh97raUfUMw4yEnXrNzRwaSO.jpg",
+    "id": 84729,
+    "title": "Casablanca Express",
+    "original_title": "Casablanca Express",
+    "overview": "It is 1942 and the conflict between the U.S. and Germany is getting heated, U.S. Intelligence soon discovers that the Natzis are planning to capture Winston Churchill.  In order to protect him they send commando Al Cooper to guard Churchill who is going by train to Casablanca where he will meet with Roosevelt and Stalin.",
+    "poster_path": "/kEICc3IosfJ4Jat7FT0bakrm51r.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     28,
+     10752
+    ],
+    "popularity": 1.5256,
+    "release_date": "1989-12-22",
+    "softcore": false,
+    "video": false,
+    "vote_average": 3.8,
+    "vote_count": 8
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/yC7HL0VB8J77ehZhW2bqhNgbwSI.jpg",
+    "id": 48394,
+    "title": "Casablanca Driver",
+    "original_title": "Casablanca Driver",
+    "overview": "This mockumentary follows the world's worst boxer and the events that led to his meteoric rise in the year 1969.",
+    "poster_path": "/veWo3S34BCCkqqHbVZYLt4rbtrO.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.4395,
+    "release_date": "2004-06-30",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.8,
+    "vote_count": 30
+   }
+  ],
+  "total_pages": 5,
+  "total_results": 97
+ }
+}

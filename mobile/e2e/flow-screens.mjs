@@ -8,8 +8,10 @@
  * keeps, per flow, each command, its status, its error and (on failure) the
  * screen's hierarchy then; this writes one `<out>/<flow>.txt` per failed flow:
  * the command that failed, why, and the app's own elements on screen at that
- * moment (the status bar left out, so it fits an annotation). Where Maestro kept
- * no screen, `<hierarchy dir>/<flow>.json` (read by the runner as the flow failed).
+ * moment (the status bar and keyboard left out, so it fits an annotation). Where
+ * Maestro kept no screen, `<hierarchy dir>/<flow>.json` (read by the runner as the
+ * flow failed). From `<hierarchy dir>/<flow>.log`, the device's log for that flow
+ * alone: what Android and the app said, and what Android drew but called invisible.
  *
  * Flows that failed at the same step for the same reason share ONE file, which
  * names them all: a job step carries at most ten notices, and seven flows
@@ -51,7 +53,8 @@ function describe(tree) {
     const text = (a.text || '').trim();
     const label = (a.accessibilityText || a['content-desc'] || '').trim();
     const top = Number(/\[\d+,(\d+)\]/.exec(a.bounds || '')?.[1] ?? 0);
-    if ((id || text || label) && !id.startsWith('com.android.systemui')) {
+    const system = id.startsWith('com.android.systemui') || id.includes('inputmethod');
+    if ((id || text || label) && !system) {
       const parts = [];
       if (id) parts.push(`#${id}`);
       if (text) parts.push(`"${text.slice(0, 60)}"`);
@@ -74,6 +77,57 @@ function screenRead(flow) {
   } catch {
     return ['(no screen was kept for this step, nor read as the flow failed)'];
   }
+}
+
+/** The device's log for `flow` alone, as the runner kept it; null when it did not. */
+function flowLog(flow) {
+  const file = hierarchyDir && join(hierarchyDir, `${flow}.log`);
+  return file && existsSync(file) ? readFileSync(file, 'utf8').split(/\r?\n/) : null;
+}
+
+// A hang or a crash, whoever reports it, and the app's own warnings and errors.
+const SAID = /ANR in|not responding|unresponsive|Input dispatching timed out|FATAL EXCEPTION|\s[EWF] (ReactNativeJS|ReactNative|unknown:ReactNative|AndroidRuntime)\s*:/;
+
+/** What Android and the app said during the flow: its last hangs, crashes, errors and warnings. */
+function saidRead(flow) {
+  const log = flowLog(flow);
+  if (!log) return ['(the log was not kept)'];
+  const said = [...new Set(log.filter((l) => SAID.test(l) && !/\sMaestro\s*:/.test(l))
+    .map((l) => l.replace(/^\d\d-\d\d (\d\d:\d\d:\d\d)\.\d+\s+\d+\s+\d+\s+/, '$1 ').slice(0, 160)))];
+  if (!said.length) return ['(no hang, crash, error or warning)'];
+  return said.length > 8 ? [`… ${said.length - 8} earlier`, ...said.slice(-8)] : said;
+}
+
+/**
+ * The app's elements Android called not visible to the user (outside its
+ * parent, transparent, covered). Maestro's driver logs each one it skips
+ * ("Skipping invisible child", tag Maestro) and does not look inside it, so a
+ * hidden box shows here with its rows unnamed. Named elements first, then the
+ * rest by place.
+ */
+function hiddenRead(flow) {
+  const log = flowLog(flow);
+  if (!log) return ['(the log was not kept)'];
+  const field = (line, name) => {
+    const v = new RegExp(`\\b${name}: ([^;]*)`).exec(line)?.[1]?.trim();
+    return v && v !== 'null' ? v : '';
+  };
+  const lines = log.filter((l) => l.includes('Skipping invisible child'));
+  if (!lines.length) return ['(the driver skipped nothing as invisible)'];
+  const named = new Set();
+  const unnamed = new Set();
+  for (const line of lines) {
+    if (field(line, 'packageName') !== 'com.reelhouse.society') continue;
+    const id = field(line, 'viewIdResName');
+    const text = field(line, 'text');
+    const where = field(line, 'boundsInScreen');
+    const what = [id && `#${id}`, text && `"${text.slice(0, 40)}"`].filter(Boolean).join(' ');
+    (what ? named : unnamed).add(`${what || field(line, 'className').replace(/^.*\./, '')} ${where}`);
+  }
+  const top = (s) => Number(/Rect\(-?\d+, (-?\d+)/.exec(s)?.[1] ?? 1e9);
+  const all = [...named, ...[...unnamed].sort((a, b) => top(a) - top(b))];
+  if (!all.length) return ['(none of the app: only other apps were skipped)'];
+  return all.length > 8 ? [...all.slice(0, 8), `… and ${all.length - 8} more`] : all;
 }
 
 /** A command, as a person would read it: its kind and what it pointed at. */
@@ -105,6 +159,8 @@ for (const f of files) {
     groups.set(key, {
       flows: [], where, why,
       screen: failed.metadata?.hierarchy ? describe(failed.metadata.hierarchy) : screenRead(flow),
+      said: saidRead(flow),
+      hidden: hiddenRead(flow),
     });
   }
   groups.get(key).flows.push(flow);
@@ -115,6 +171,11 @@ for (const g of groups.values()) {
   const lines = [
     `${g.flows.join(', ')}: failed at ${g.where}`,
     `why: ${g.why}`,
+    // Before the screen, whose long list the annotation cuts short.
+    `said during the flow${rest.length ? ` (${first}'s)` : ''}:`,
+    ...g.said,
+    `drawn but called invisible by Android${rest.length ? ` (${first}'s)` : ''}:`,
+    ...g.hidden,
     `on the screen then${rest.length ? ` (${first}'s)` : ''}:`,
     ...g.screen,
   ];

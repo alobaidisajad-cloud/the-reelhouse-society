@@ -1,0 +1,485 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=god",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/vcw31JewR0wuX3RZ8x3Khdptsih.jpg",
+    "id": 81114,
+    "name": "God Friended Me",
+    "original_name": "God Friended Me",
+    "overview": "A self-proclaimed \"pesky atheist\" is encouraged to help strangers by someone claiming to be God who friends him on Facebook.",
+    "poster_path": "/u2LsYYVniqK95fKHid85x2kngRT.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     10751,
+     9648,
+     35
+    ],
+    "popularity": 23.9367,
+    "first_air_date": "2018-09-30",
+    "softcore": false,
+    "vote_average": 7.7,
+    "vote_count": 210,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/gcvJgJScIt0a5sRt8uLIkGM9IhI.jpg",
+    "id": 97860,
+    "name": "Tower of God",
+    "original_name": "神之塔 -Tower of God-",
+    "overview": "Reach the top, and everything will be yours. At the top of the tower exists everything in this world, and all of it can be yours. You can become a god. This is the story of the beginning and the end of Rachel, the girl who climbed the tower so she could see the stars, and Bam, the boy who needed nothing but her.",
+    "poster_path": "/9QXO4C0AwAuBa15nuDLZU2MyktB.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     16,
+     10759,
+     9648,
+     10765
+    ],
+    "popularity": 38.9712,
+    "first_air_date": "2020-04-02",
+    "softcore": false,
+    "vote_average": 8.1,
+    "vote_count": 532,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/tPXHTm4Z48AMwLN43E7DYNxeQpT.jpg",
+    "id": 107116,
+    "name": "Supreme God Emperor",
+    "original_name": "无上神帝",
+    "overview": "Ten thousand years after his betrayal, Immortal King Mu Yun awakens in the body of a \"useless\" young man. With hidden alchemy skills and the Slaughter Immortal Diagram, he cures Qin Mengyao, uncovering her Ice Phoenix spirit. As their bond grows, jealous rival Dongfang Yu seeks revenge. Mu Yun embarks on a training journey—unaware assassins await their chance to strike.",
+    "poster_path": "/8vmZErkbw5d5iwXHO23zVmvixOB.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     16,
+     10765,
+     18,
+     10759
+    ],
+    "popularity": 48.8283,
+    "first_air_date": "2020-05-18",
+    "softcore": false,
+    "vote_average": 7.2,
+    "vote_count": 8,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/uvitbjFU4JqvMwIkMWHp69bmUzG.jpg",
+    "id": 598,
+    "title": "City of God",
+    "original_title": "Cidade de Deus",
+    "overview": "In the poverty-stricken favelas of Rio de Janeiro in the 1970s, two young men choose different paths. Rocket is a budding photographer who documents the increasing drug-related violence of his neighborhood, while José “Zé” Pequeno is an ambitious drug dealer diving into a dangerous life of crime.",
+    "poster_path": "/k7eYdWvhYQyRQoU2TB2A2Xu2TfD.jpg",
+    "media_type": "movie",
+    "original_language": "pt",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "popularity": 20.4369,
+    "release_date": "2002-08-30",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.4,
+    "vote_count": 8477
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/6AS9zVu3rUs7dj4N2ZNnKjI8YZ1.jpg",
+    "id": 1380316,
+    "title": "Is God Is",
+    "original_title": "Is God Is",
+    "overview": "Two sisters embark on an epic quest for revenge, confronting a charged family history that pushes them to extraordinary lengths.",
+    "poster_path": "/rCYQGHdoz7qwYsb6wXETJfUfDLX.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     53
+    ],
+    "popularity": 9.2433,
+    "release_date": "2026-05-14",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.9,
+    "vote_count": 138
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/pYUwk30i62GN8gcKeQTuzdZGxHk.jpg",
+    "id": 527660,
+    "title": "Yes, God, Yes",
+    "original_title": "Yes, God, Yes",
+    "overview": "Alice, a young innocent Catholic girl, is tempted into masturbating after an AOL chat suddenly turns sexual, however is conflicted as the act would be considered a sin.",
+    "poster_path": "/69SYznq2mSbgKyQF3QHYwblmqAk.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     35
+    ],
+    "popularity": 6.2419,
+    "release_date": "2020-07-24",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.3,
+    "vote_count": 618
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/4zYmoNyu9IE1XKHFUpeFj3aiYdw.jpg",
+    "id": 48897,
+    "name": "Godforsaken True Killers",
+    "original_name": "Van God Los",
+    "overview": "",
+    "poster_path": "/bAULkt66B14qMd3QCg5dVUhxnxY.jpg",
+    "media_type": "tv",
+    "original_language": "nl",
+    "genre_ids": [
+     80,
+     18
+    ],
+    "popularity": 6.3676,
+    "first_air_date": "2011-05-22",
+    "softcore": false,
+    "vote_average": 4.7,
+    "vote_count": 6,
+    "origin_country": [
+     "NL"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/gQUA5I6dOC17soO3BLagbztB6v2.jpg",
+    "id": 311731,
+    "name": "Monsters of God",
+    "original_name": "Monsters of God",
+    "overview": "Filmmaker Eric Goode follows his first love — reptiles — into the dark underworld of exotic animal smuggling. In this billion-dollar global network, everyone is chasing the ultimate prize, whether it be owning the rarest of species, claiming the biggest fortunes, or taking down the most elusive criminals. As he digs deeper, Goode uncovers a labyrinth of outlaw traffickers, bombastic collectors, and the dogged law enforcement agents on their tails.",
+    "poster_path": "/jmwdx7qsfiXUZP2C22DkGpcjd1o.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 4.6676,
+    "first_air_date": "2026-08-06",
+    "softcore": false,
+    "vote_average": 7.2,
+    "vote_count": 4,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4596042,
+    "name": "God",
+    "original_name": "God",
+    "media_type": "person",
+    "popularity": 0.3935,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1259973,
+      "title": "Tommy Can't Sleep",
+      "original_title": "Tommy Can't Sleep",
+      "overview": "Little Tommy unable to sleep and not comforted by his parents over that matter is invited by mysterious Rat Girl to go down the rat hole.",
+      "poster_path": "/mZDEf043NSb3HhVn9YgmpEVHdre.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       27,
+       10402
+      ],
+      "popularity": 1.7688,
+      "release_date": "2017-06-20",
+      "softcore": false,
+      "video": false,
+      "vote_average": 1,
+      "vote_count": 2
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 5679410,
+    "name": "God",
+    "original_name": "God",
+    "media_type": "person",
+    "popularity": 0.2691,
+    "gender": 0,
+    "known_for_department": "Writing",
+    "profile_path": null,
+    "known_for": []
+   },
+   {
+    "adult": false,
+    "id": 3703610,
+    "name": "God",
+    "original_name": "God",
+    "media_type": "person",
+    "popularity": 0.2699,
+    "gender": 0,
+    "known_for_department": "Production",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/yRJs2vAsm4g8ZFkNY90EpV2O9qB.jpg",
+      "id": 207883,
+      "title": "I'm in Love with a Church Girl",
+      "original_title": "I'm in Love with a Church Girl",
+      "overview": "Miles Montego has it all - cars, boats, good looks, mansion, money, women, but more importantly, he has a past.",
+      "poster_path": "/jgXsK9s2Nmy7T2A7Y4l7D0IMkz3.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       10749
+      ],
+      "popularity": 3.1679,
+      "release_date": "2013-10-18",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.9,
+      "vote_count": 85
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/lF0JRUvbi5AFaXcA5O4ZpHdosAC.jpg",
+    "id": 10974,
+    "title": "Armour of God",
+    "original_title": "龍兄虎弟",
+    "overview": "After an adventurer known as the Asian Hawk steals a mysterious sword known to be a piece of the Armour of God, a magical suit of armour that dates back to the Crusades, a cult of Satanic monks kidnap his ex-girlfriend and demand he turn over the sword and recover the rest of the armour.",
+    "poster_path": "/phCpGqCSBWJqutKxj73COACrlPt.jpg",
+    "media_type": "movie",
+    "original_language": "cn",
+    "genre_ids": [
+     12,
+     28,
+     35
+    ],
+    "popularity": 9.2461,
+    "release_date": "1986-08-16",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.049,
+    "vote_count": 682
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/3wUbOJWNyBwboPlcfvy7OO4dB7P.jpg",
+    "id": 1320467,
+    "title": "Playing God",
+    "original_title": "Playing God",
+    "overview": "Fragile clay Sculptures come to life in a bare workshop, craving more than just existence. When their Sculptor abandons them, they must discover the power of belonging.",
+    "poster_path": "/jzhMGv1UfEbh7YgqBu8s2ryPBaw.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     27,
+     18
+    ],
+    "popularity": 1.63,
+    "release_date": "2024-08-28",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.4,
+    "vote_count": 35
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/pRrQMx00P8LaXGwJXYJ2tRGoVOs.jpg",
+    "id": 77987,
+    "title": "Only God Forgives",
+    "original_title": "Only God Forgives",
+    "overview": "Julian, who runs a Thai boxing club as a front organization for his family's drug smuggling operation, is forced by his mother Crystal to find and kill the individual responsible for his brother's recent death.",
+    "poster_path": "/kWjjFSng1JttmDRwDROoGcIArEh.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     53,
+     80
+    ],
+    "popularity": 5.253,
+    "release_date": "2013-05-30",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.8,
+    "vote_count": 2644
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/k6Z95eeH3jKaQ8LhFWId9by1aAE.jpg",
+    "id": 61263,
+    "name": "Hand of God",
+    "original_name": "Hand of God",
+    "overview": "A morally corrupt judge suffers a breakdown and believes that God is speaking directly to him, compelling him onto a path of vigilante justice.",
+    "poster_path": "/y1tdjWh6OR8y5ziEiZA4YDFiEaw.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 10.8112,
+    "first_air_date": "2014-08-28",
+    "softcore": false,
+    "vote_average": 6.8,
+    "vote_count": 143,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 5158707,
+    "name": "GOD",
+    "original_name": "GOD",
+    "media_type": "person",
+    "popularity": 0.2563,
+    "gender": 0,
+    "known_for_department": "Lighting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 748948,
+      "title": "A Compton Story",
+      "original_title": "A Compton Story",
+      "overview": "A comedic journey follows Problem as he risks life and limb in hopes that at least one good deed goes unpunished.  Based on events that could be from his real life, Problem squeezes in the everyday occurrences that a black man can go through whether famous or infamous.",
+      "poster_path": "/hD3in29pZO1a0f91ff4IYMPPwBt.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       35
+      ],
+      "popularity": 1.3214,
+      "release_date": "2020-04-02",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/ptiSlEK0UhqUGQxeOlS3rn5FBSn.jpg",
+    "id": 62773,
+    "name": "God Eater",
+    "original_name": "ゴッドイーター",
+    "overview": "In the early 2050s, unknown life forms called “Oracle cells” begin their uncontrolled consumption of all life on Earth. Their ravenous appetite and remarkable adaptability earn them first dread, then awe, and finally the name “aragami”. In the face of an enemy completely immune to conventional weapons, urban civilization collapses, and each day humanity is driven further and further toward extinction. One single ray of hope remains for humanity. Following the development of “God Arcs”—living weapons which incorporate Oracle cells—their wielders are organized into an elite force.",
+    "poster_path": "/5H2XJUqkuLdhoYAxUOpa3NYLo8T.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     16,
+     10765
+    ],
+    "popularity": 15.9335,
+    "first_air_date": "2015-07-12",
+    "softcore": false,
+    "vote_average": 7.2,
+    "vote_count": 154,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/x169m6H76zAik0UD7jOHelogAYn.jpg",
+    "id": 259911,
+    "name": "Dear God",
+    "original_name": "Dear God",
+    "overview": "Dear God is a spiritual drama anthology that tells universal stories of lives encountered, transformed, and blessed by God- the real protagonist of the show.",
+    "poster_path": "/wbTZjZDZXVz3ly4PIQ6u1W362Tl.jpg",
+    "media_type": "tv",
+    "original_language": "tl",
+    "genre_ids": [
+     18,
+     10751
+    ],
+    "popularity": 2.8028,
+    "first_air_date": "2022-01-15",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "PH"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/rDciQEWeSucLctikV8RzynLpM0J.jpg",
+    "id": 43971,
+    "name": "Good God",
+    "original_name": "Good God",
+    "overview": "Good God is a Canadian television comedy-drama series which premiered in April 2012 on HBO Canada. The show follows the life of character George Findlay, a role that Ken Finkleman reprised from The Newsroom and subsequent television projects. The series was originally slated to be the second season of Finkleman's previous HBO Canada project Good Dog, but was retitled in accordance with a change in the show's setting.\n\nThe show was described in early media coverage as having been inspired in part by the launch of Sun News Network. In the show's first episode, for example, Findlay is forced to respond to allegations that his new venture is aspiring to be \"Fox News North\", an epithet which the real Sun News Network also faced both before and after its launch.\n\nThe series was nominated for several awards at the 2013 Canadian Screen Awards, including Best Comedy Series, Best Supporting Actor in a Comedy Series for Jason Weinberg and Best Supporting Actress in a Comedy Series nods for both Samantha Bee and Jud Tylor.",
+    "poster_path": "/yxNUzbKtuYYARCR5D6TVfYdIYZp.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 3.2337,
+    "first_air_date": "2012-04-09",
+    "softcore": false,
+    "vote_average": 6.5,
+    "vote_count": 2,
+    "origin_country": [
+     "CA"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/cxSV7UQcQI5JJ2P01yt3pWaz8m9.jpg",
+    "id": 285,
+    "name": "Waiting for God",
+    "original_name": "Waiting for God",
+    "overview": "Refusing to succumb to old age, Tom Ballard and Diana Trent are a pair of seasoned delinquents that cause many headaches. Their uneasy alliance is destined to make life difficult at the Bayview Retirement Village.",
+    "poster_path": "/fosK3tpIMiHgg0BQOmUmuEMFzi9.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 9.1194,
+    "first_air_date": "1990-06-28",
+    "softcore": false,
+    "vote_average": 7.4,
+    "vote_count": 19,
+    "origin_country": [
+     "GB"
+    ]
+   }
+  ],
+  "total_pages": 434,
+  "total_results": 8668
+ }
+}

@@ -30,14 +30,14 @@ interface DarkroomHeroProps {
   animatedSearchProps: any;
    
   animatedSearchStyle: any;
-  setIsFocused: (v: boolean) => void;
+  setFieldFocused: (focused: boolean) => void;
 }
 
 export const DarkroomHero = React.memo(function DarkroomHero({
   isFocused, inputVal, query,
   handleInputValChange, handleSearchSubmit, handleClearSearch,
   suggestions, handleSuggestionPress,
-  animatedSearchProps, animatedSearchStyle, setIsFocused,
+  animatedSearchProps, animatedSearchStyle, setFieldFocused,
 }: DarkroomHeroProps) {
   return (
     <View style={s.heroContainer}>
@@ -66,8 +66,8 @@ export const DarkroomHero = React.memo(function DarkroomHero({
           <AnimatedSearchIcon size={16} animatedProps={animatedSearchProps} style={[animatedSearchStyle, s.searchIcon]} />
           <TextInput
             testID="darkroom-search-input"
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            onFocus={() => setFieldFocused(true)}
+            onBlur={() => setFieldFocused(false)}
             style={[s.searchInput, (isFocused || query.length > 0) && s.searchInputActive]}
             {...scaledTextProps}
             /* A placeholder cannot shrink to fit, so the words fit instead:

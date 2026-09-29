@@ -1,0 +1,440 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=runner",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg",
+    "id": 1377237,
+    "title": "Runner",
+    "original_title": "Runner",
+    "overview": "A former soldier is thrown into a brutal race against time when a critical medical delivery makes him and his unlikely partner the targets of a ruthless cartel. As the mission spirals into a deadly manhunt, every detour, delay, and bullet pushes them closer to failure. With betrayal closing in from every side, they must survive the chase and deliver their cargo to save the life of a little girl.",
+    "poster_path": "/yBKMAIj7clP42UkFejhGDBBoTpb.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     35
+    ],
+    "popularity": 172.2429,
+    "release_date": "2026-09-07",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.011,
+    "vote_count": 89
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/jzBWExXacS33rMQ2zLBrqIVweyG.jpg",
+    "id": 1386315,
+    "title": "The Runner",
+    "original_title": "The Runner",
+    "overview": "Maia Marten, a brilliant London lawyer, has her life shattered by a single call on her morning run: her son has been taken. To get him back, she must keep running, obey every ruthless command, and trust no one-each second a test of how far a mother will go to save her child.",
+    "poster_path": "/uxCaBoYXsDC4A0SqTm3SISj0OwK.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     53,
+     28
+    ],
+    "popularity": 80.9158,
+    "release_date": "2026-09-03",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.817,
+    "vote_count": 597
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
+    "id": 335984,
+    "title": "Blade Runner 2049",
+    "original_title": "Blade Runner 2049",
+    "overview": "Thirty years after the events of the first film, a new blade runner, LAPD Officer K, unearths a long-buried secret that has the potential to plunge what's left of society into chaos. K's discovery leads him on a quest to find Rick Deckard, a former LAPD blade runner who has been missing for 30 years.",
+    "poster_path": "/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18
+    ],
+    "popularity": 94.8919,
+    "release_date": "2017-10-04",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.608,
+    "vote_count": 15749
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/eTlcNXGv32zkVI7ZDHhfeaKHXKQ.jpg",
+    "id": 198663,
+    "title": "The Maze Runner",
+    "original_title": "The Maze Runner",
+    "overview": "A teenager with no memory of his past finds himself among a group of boys living in a walled enclosure surrounded by a massive, ever-changing maze. As he struggles to adapt to their rules and society, he begins to uncover clues that may lead to escape and the truth behind their confinement.",
+    "poster_path": "/ode14q7WtDugFDp78fo9lCsmay9.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     9648,
+     878,
+     53
+    ],
+    "popularity": 32.9729,
+    "release_date": "2014-09-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.2,
+    "vote_count": 18503
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2spEHYDcyE9r9mS7AFEscfKVDzO.jpg",
+    "id": 78,
+    "title": "Blade Runner",
+    "original_title": "Blade Runner",
+    "overview": "In the smog-choked dystopian Los Angeles of 2019, blade runner Rick Deckard is called out of retirement to terminate a quartet of replicants who have escaped to Earth seeking their creator for a way to extend their short life spans.",
+    "poster_path": "/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18,
+     53
+    ],
+    "popularity": 24.8464,
+    "release_date": "1982-06-25",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.936,
+    "vote_count": 15451
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg",
+    "id": 230923,
+    "name": "Lovely Runner",
+    "original_name": "선재 업고 튀어",
+    "overview": "Right after Ryu Sun-jae, a top star, ends his life, Im Sol, his top fan, somehow ends up at a time when they were in high school and tries to protect him. A fantasy romance unfolds where people who missed each other in time finally meet.",
+    "poster_path": "/adcdNzLJ8LOjWJjNFrapXGzFco3.jpg",
+    "media_type": "tv",
+    "original_language": "ko",
+    "genre_ids": [
+     18,
+     10765,
+     35,
+     9648
+    ],
+    "popularity": 13.3677,
+    "first_air_date": "2024-04-08",
+    "softcore": false,
+    "vote_average": 8.6,
+    "vote_count": 302,
+    "origin_country": [
+     "KR"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/uOlIq21Rx0Sl7y39b1znTfQYGb7.jpg",
+    "id": 171802,
+    "name": "Blade Runner 2099",
+    "original_name": "Blade Runner 2099",
+    "overview": "Fifty years after the events of Blade Runner 2049, Los Angeles has been reborn, just not by humanity. Cora, a fugitive in a final bid to stop running, takes on one last identity: a Blade Runner. Forced to partner with Olwen, a Replicant days from dying, she hunts down a runaway hiding a truth that could collapse their fragile city.",
+    "poster_path": "/hr5aLuCdLC5X423c9G1pPkWR6Ud.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10765
+    ],
+    "popularity": 6.9415,
+    "first_air_date": "2026-11-25",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/vRyC5WT7ytRflfEFFyRmGeZc0Cf.jpg",
+    "id": 84553,
+    "name": "Blade Runner: Black Lotus",
+    "original_name": "Blade Runner: Black Lotus",
+    "overview": "Los Angeles 2032. A young woman wakes up with no memories, and possessing deadly skills. The only clues to her mystery are a locked data device and a tattoo of a black lotus. Putting together the pieces, she must hunt down the people responsible for her brutal and bloody past to find the truth of her lost identity.",
+    "poster_path": "/aR06SJRDGqRmGQYXAXqeOkRZq7T.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     10765,
+     10759
+    ],
+    "popularity": 16.1116,
+    "first_air_date": "2021-11-14",
+    "softcore": false,
+    "vote_average": 7.1,
+    "vote_count": 243,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mRB2tyEDoUYyIivQLMvmm54U2E3.jpg",
+    "id": 1760216,
+    "title": "Runner",
+    "original_title": "Ο Πακετάς",
+    "overview": "A young runner’s life quickly slips out of control after an accident in which he loses a large quantity of drugs. As he struggles to replace the missing package under intense time pressure, his decisions become increasingly dangerous.",
+    "poster_path": "/73JezU9Y9Dr5MXOhzT21v6LD2XL.jpg",
+    "media_type": "movie",
+    "original_language": "el",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "popularity": 1.8531,
+    "release_date": "2026-09-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/hcXnnwH8DuP5jTOCLDxX3py7uwl.jpg",
+    "id": 146238,
+    "title": "Runner Runner",
+    "original_title": "Runner Runner",
+    "overview": "When a poor college student who cracks an online poker game goes bust, he arranges a face-to-face with the man he thinks cheated him, a sly offshore entrepreneur.",
+    "poster_path": "/ck5jZjv7WVoCBBgTH1gJlhyCLPy.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     80,
+     53,
+     18
+    ],
+    "popularity": 9.1923,
+    "release_date": "2013-09-24",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.6,
+    "vote_count": 1344
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/zGCfnZ3bCowMY9So9ZGpsyuOYl3.jpg",
+    "id": 336843,
+    "title": "Maze Runner: The Death Cure",
+    "original_title": "Maze Runner: The Death Cure",
+    "overview": "Thomas leads his group of escaped Gladers on their final and most dangerous mission yet. To save their friends, they must break into the legendary Last City, a WCKD-controlled labyrinth that may turn out to be the deadliest maze of all. Anyone who makes it out alive will get answers to the questions the Gladers have been asking since they first arrived in the maze.",
+    "poster_path": "/s8K0US4tUEoOrQ1LDh0eppuwGDx.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     28,
+     12,
+     53
+    ],
+    "popularity": 15.7448,
+    "release_date": "2018-01-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.076,
+    "vote_count": 8592
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/CAC2F6C6R8hZ3AoByDX6Jj2VOw.jpg",
+    "id": 7979,
+    "title": "The Kite Runner",
+    "original_title": "The Kite Runner",
+    "overview": "After spending years in California, Amir returns to his homeland in Afghanistan to help his old friend Hassan, whose son is in trouble.",
+    "poster_path": "/dom2esWWW8C9jS2v7dOhW48LwHh.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 5.9698,
+    "release_date": "2007-12-14",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.3,
+    "vote_count": 1287
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/4mcOCiR06dqQ5eoEJcG3zvonjOa.jpg",
+    "id": 294254,
+    "title": "Maze Runner: The Scorch Trials",
+    "original_title": "Maze Runner: The Scorch Trials",
+    "overview": "Thomas and his fellow Gladers face their greatest challenge yet: searching for clues about the mysterious and powerful organization known as WCKD. Their journey takes them to the Scorch, a desolate landscape filled with unimaginable obstacles. Teaming up with resistance fighters, the Gladers take on WCKD’s vastly superior forces and uncover its shocking plans for them all.",
+    "poster_path": "/mYw7ZyejqSCPFlrT2jHZOESZDU3.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     28,
+     53,
+     12
+    ],
+    "popularity": 14.6793,
+    "release_date": "2015-09-09",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.7,
+    "vote_count": 11266
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/fmyhitmPLoOeUuhcc9j0yUqgC9m.jpg",
+    "id": 1477049,
+    "title": "Runner",
+    "original_title": "Corredora",
+    "overview": "Cris dedicates herself body and soul to athletics. While preparing for the 800-meter race at the Spanish National Championships, she suffers a severe psychotic break brought on by mounting pressure. As recovery unfolds, Cris keeps her eyes fixed on the track, holding on to the dream that has always defined.",
+    "poster_path": "/frWpPw6eI8Rxw2KTISAVgO40xsN.jpg",
+    "media_type": "movie",
+    "original_language": "ca",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 2.1768,
+    "release_date": "2026-05-29",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1728665,
+    "title": "Adnan Runner",
+    "original_title": "Adnan Runner",
+    "overview": "# Translation  The story follows Adnan (Imran Aqil), who works as a dispatch rider and is forced to change his career after his company closes due to financial problems. Adnan begins to feel frustrated and bored staying at home. Adnan, who lives with his best friend Bobby (Wanns Ahmad), tries to find and start a new job. However, the jobs he takes do not feel suited to his nature, as he has always worked riding a motorcycle on the roads. Adnan and Bobby eventually take the opportunity to work as part-time runners, considering that Adnan is someone who is active riding around on the roads with his motorcycle. Adnan is very committed to his new career. He perseveres through various situations when dealing with merchants and customers who have all sorts of peculiarities. Adnan's sincerity in carrying out his duties successfully overcomes all the situations he faces, including a planned drug distribution syndicate that wants to trap Adnan as a drug mule.",
+    "poster_path": "/upE5CoPRsiuvFMWothmSEJgyVhG.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 2.0443,
+    "release_date": "2023-01-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 717276,
+    "title": "Runner",
+    "original_title": "Runner",
+    "overview": "A refugee marathoner strives to raise his new country's flag at the Olympics.",
+    "poster_path": "/4VPJSi5LmSjuXZa1AmsA5XkEmcU.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 0.9001,
+    "release_date": "2019-05-02",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.2,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/zGsciawKowFGBgjmdJb5qJfU4Em.jpg",
+    "id": 277546,
+    "title": "The Runner",
+    "original_title": "The Runner",
+    "overview": "In the aftermath of the BP oil spill, an idealistic but imperfect New Orleans politician (Nicolas Cage) finds his plans of restoration unraveling as his own life becomes contaminated with corruption, scandal and deceit.",
+    "poster_path": "/2fPnVkWueayfbqk2g66fSTLoyWu.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 4.2679,
+    "release_date": "2015-08-07",
+    "softcore": false,
+    "video": false,
+    "vote_average": 4.9,
+    "vote_count": 197
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/AlbL8FmeRNWvJw1OyhQ3CFvRRl0.jpg",
+    "id": 113232,
+    "name": "The Runner",
+    "original_name": "大步走",
+    "overview": "Online media editor Ho Ka Yan is ordered to approach the athletics club to find some dirt on them. It's there that she becomes acquainted with running coach Yuen Lik. Due to past regrets, Yuen Lik avoids forming personal relationships with others but gradually grows closer to Ho Ka Yan because of their interactions. Kwok Wong Po's daughter Kwok Pui Yee has taken the initiative to join the club for her own reasons while her dad comes to sponsor the club. Yuen Lik's good friend Lai Shun Fan has entrusted his son to Yuen Lik. It is also revealed that Shun Fan and Ka Yan have a past. At a time when Shun Fan is on the verge of giving up due to his illness, Yuen Lik becomes determined to help his friend get back on his feet. At the same time, Yuen Lik reexamines his life as he decides to step onto the running track once more.",
+    "poster_path": "/bHbPSyGFntOFbbJVNc6szmrpPir.jpg",
+    "media_type": "tv",
+    "original_language": "cn",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 3.5591,
+    "first_air_date": "2020-11-16",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "HK"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/kQVo5ECXrTcoMtj8hWbdiqpfPms.jpg",
+    "id": 476764,
+    "title": "The Front Runner",
+    "original_title": "The Front Runner",
+    "overview": "Gary Hart, former Senator of Colorado, becomes the front-runner for the Democratic presidential nomination in 1987. Hart's intelligence, charisma and idealism makes him popular with young voters, leaving him with a seemingly clear path to the White House. All that comes crashing down when allegations of an extramarital affair surface in the media, forcing the candidate to address a scandal that threatens to derail his campaign and personal life.",
+    "poster_path": "/9QKzd31H1bCjMAJ8HoaASWqbHfY.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     36
+    ],
+    "popularity": 6.2731,
+    "release_date": "2018-11-06",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.9,
+    "vote_count": 391
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/pJ5hsNlil3iJez2DP9DIxCytELR.jpg",
+    "id": 48315,
+    "title": "Time Runner",
+    "original_title": "Time Runner",
+    "overview": "During the alien invasion of 2022, one man flees through a wormhole to 1992, where attempt after attempt is made to catch and kill him.",
+    "poster_path": "/mWUmoHHJ5CJF8xI6UJQa5ZxTNOl.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878
+    ],
+    "popularity": 2.0798,
+    "release_date": "1993-03-17",
+    "softcore": false,
+    "video": false,
+    "vote_average": 4.3,
+    "vote_count": 30
+   }
+  ],
+  "total_pages": 16,
+  "total_results": 317
+ }
+}

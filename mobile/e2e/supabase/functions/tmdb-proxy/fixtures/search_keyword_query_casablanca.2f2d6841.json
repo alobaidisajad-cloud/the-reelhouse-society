@@ -1,0 +1,27 @@
+{
+ "path": "/search/keyword?query=casablanca",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 348864,
+    "name": "casablanca"
+   },
+   {
+    "id": 1623,
+    "name": "casablanca, morocco"
+   },
+   {
+    "id": 314409,
+    "name": "casablanca records"
+   },
+   {
+    "id": 364382,
+    "name": "casa branca"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 4
+ }
+}

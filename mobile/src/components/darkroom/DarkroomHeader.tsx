@@ -1,12 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, Keyboard } from 'react-native';
 import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SlidersHorizontal } from 'lucide-react-native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
+import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
 import { useIsFocused } from '@react-navigation/native';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -20,7 +19,7 @@ import { DarkroomHero } from './DarkroomHero';
 import { DarkroomMoodBar } from './DarkroomMoodBar';
 import { DarkroomFilterPanel } from './DarkroomFilterPanel';
 
-// We must export Chip for DarkroomFilterPanel to use
+// Shared with DarkroomFilterPanel.
 export const Chip = React.memo(function Chip({ active, onPress, children, color }: { active: boolean; onPress: () => void; children: React.ReactNode; color?: string }) {
   return (
     <PressableScale
@@ -50,8 +49,7 @@ export const DarkroomHeader = React.memo(() => {
   const matchCount = useDiscoverStore(s => s.accumulatedFilms.length);
   const {
     mood, query, inputVal, filters,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    setPage, setMood, setQuery, setInputVal,
+    setPage, setQuery, setInputVal,
     clearFilters, updateFilter, clearSearch, applyMood
   } = useDiscoverStore(
     useShallow((s) => ({
@@ -60,7 +58,6 @@ export const DarkroomHeader = React.memo(() => {
       inputVal: s.inputVal,
       filters: s.filters,
       setPage: s.setPage,
-      setMood: s.setMood,
       setQuery: s.setQuery,
       setInputVal: s.setInputVal,
       clearFilters: s.clearFilters,
@@ -75,13 +72,11 @@ export const DarkroomHeader = React.memo(() => {
   const [localYearFrom, setLocalYearFrom] = useState(filters.yearFrom ? String(filters.yearFrom) : '');
   const [localYearTo, setLocalYearTo] = useState(filters.yearTo ? String(filters.yearTo) : '');
   
-  // ── Breathing Ember (Scanning) ──
+  // The search icon breathes while suggestions are on their way, on this tab
+  // only: not on a tab left mid-search.
   const navFocused = useIsFocused();
   const searchEmberOpacity = useSharedValue(0.5);
   useEffect(() => {
-    // `isFocused` here is the TEXT INPUT's focus, not the screen's — so this was
-    // tightly gated on typing but would still breathe on a tab you had left
-    // mid-search. navFocused closes that.
     if (navFocused && isFocused && inputVal.length > 0 && suggestions.length === 0 && inputVal !== query) {
       searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true);
     } else {
@@ -91,14 +86,22 @@ export const DarkroomHeader = React.memo(() => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navFocused, isFocused, inputVal, query, suggestions.length]);
 
-  // ── Search ghosting ──
+  // Suggestions show while the member is in the search, and the keyboard going
+  // away closes them. On Android the back key hides the keyboard but leaves the
+  // field focused, so tapping it again never fires onFocus: the keyboard coming
+  // back, or a keystroke, is what reopens them.
+  const fieldFocused = useRef(false);
+  const setFieldFocused = useCallback((focused: boolean) => {
+    fieldFocused.current = focused;
+    setIsFocused(focused);
+  }, []);
   useEffect(() => {
-    const sub = Keyboard.addListener('keyboardDidHide', () => {
-      // Do not wipe suggestions from memory, just rely on isFocused to visually hide them.
-      setIsFocused(false);
+    const hid = Keyboard.addListener('keyboardDidHide', () => setIsFocused(false));
+    const shown = Keyboard.addListener('keyboardDidShow', () => {
+      if (fieldFocused.current) setIsFocused(true);
     });
-    return () => sub.remove();
-  }, [setIsFocused]);
+    return () => { hid.remove(); shown.remove(); };
+  }, []);
 
   const animatedSearchProps = useAnimatedProps(() => ({
     color: (isFocused && inputVal.length > 0) ? colors.bloodReel : colors.sepia,
@@ -109,9 +112,10 @@ export const DarkroomHeader = React.memo(() => {
 
   const handleInputValChange = useCallback((text: string) => {
     setInputVal(text);
+    if (fieldFocused.current) setIsFocused(true);
   }, [setInputVal]);
 
-  // Sync year inputs from store
+  // The year fields follow the store (a filter cleared elsewhere empties them).
   useEffect(() => {
     if (filters.yearFrom && String(filters.yearFrom) !== localYearFrom) setLocalYearFrom(String(filters.yearFrom));
     else if (!filters.yearFrom && localYearFrom !== '') setLocalYearFrom('');
@@ -135,7 +139,7 @@ export const DarkroomHeader = React.memo(() => {
     let active = true;
     const val = inputVal.trim().toLowerCase();
     
-    // Prevent race condition if user hits submit early
+    // Too short, or already submitted as the search: no suggestions.
     if (!val || val.length < 2 || val === query.trim().toLowerCase()) {
       setSuggestions([]);
       return;
@@ -151,7 +155,7 @@ export const DarkroomHeader = React.memo(() => {
 
         let semanticMatchId: number | null = null;
         for (const [key, id] of Object.entries(semanticMap)) {
-          // Strict Easter Egg Match
+          // The whole phrase, or at least 18 characters of its start.
           if (key === val || (val.length >= 18 && key.startsWith(val))) {
              semanticMatchId = id; 
              break;
@@ -173,7 +177,7 @@ export const DarkroomHeader = React.memo(() => {
         }
        
       } catch (e: unknown) {
-        if (__DEV__) console.error('[DarkroomHeader] Stats fetch error:', e);
+        if (__DEV__) console.error('[DarkroomHeader] suggestions fetch error:', e);
       }
     }, 450);
     return () => {
@@ -230,10 +234,11 @@ export const DarkroomHeader = React.memo(() => {
         handleSuggestionPress={handleSuggestionPress}
         animatedSearchProps={animatedSearchProps}
         animatedSearchStyle={animatedSearchStyle}
-        setIsFocused={setIsFocused}
+        setFieldFocused={setFieldFocused}
       />
 
-      {/* Hide filters block natively during search to prevent state desync UX */}
+      {/* A search ignores moods and filters (the screen searches by the words
+          alone), so they are put away while one shows. */}
       {!isSearching && (
         <>
           <DarkroomMoodBar 
@@ -286,14 +291,7 @@ export const DarkroomHeader = React.memo(() => {
           {isSearching ? `DEVELOPING: "${query.toUpperCase()}"` : (mood ? `MOOD: ${mood.label.toUpperCase()}` : 'THE NEGATIVES')}
         </Text>
         <Text style={s.sectionTitle} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.7}>
-          {/* "Matches Found" claimed a TOTAL, and `matchCount` is
-              accumulatedFilms.length — what has been LOADED. It read 20, then
-              40, then 60 as you scrolled. No honest total exists here either:
-              the fetch drops results the grid will not show and dedupes the
-              rest, so TMDB's total_results would over-count instead.
-              "Prints Developed" describes what is in front of you, so the
-              number climbing as you scroll is the darkroom working rather
-              than a counter glitching. */}
+          {/* Loaded so far, not a total (the fetch drops and dedupes): it climbs. */}
           {isSearching ? `${matchCount} ${matchCount === 1 ? 'Print' : 'Prints'} Developed` : (mood ? mood.sub : 'Awaiting Development')}
         </Text>
       </View>
@@ -305,9 +303,7 @@ DarkroomHeader.displayName = 'DarkroomHeader';
 
 const s = StyleSheet.create({
   headerContainer: {
-    // The gaps between every block on this page totalled ~224pt, which pushed
-    // the first poster row to 82% down the screen. This one and the four below
-    // are the dead space; the hero above keeps its room deliberately.
+    // Kept tight, like the gaps below it, so the first posters sit high.
     marginBottom: 20,
     zIndex: 100,
   },
