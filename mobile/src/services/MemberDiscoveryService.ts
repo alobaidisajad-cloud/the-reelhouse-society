@@ -1,14 +1,11 @@
 /**
- * MemberDiscoveryService — "The Member Registry".
- * ─────────────────────────────────────────────────────────────
- * Surfaces notable public members for a newcomer whose following
- * feed is empty. Mirrors the proven direct-profiles query the
- * People search already runs (RLS filters private rows server-side;
- * we also gate is_social_private explicitly). Ranked by follower
- * count — the House's most-followed patrons.
+ * MemberDiscoveryService — "The Member Registry": the most-followed public members,
+ * for a newcomer whose following feed is empty.
  *
- * Over-fetches (24) so the client can exclude self / already-followed /
- * blocked and still fill the 6 shown rows.
+ * The is_social_private filter here is the ONLY thing keeping private members out:
+ * every profile row is readable by everyone ("Public profiles are viewable by
+ * everyone.", USING (true)). Asks for 24 so the 6 shown survive the client dropping
+ * self, the already-followed and the blocked.
  */
 import { supabase } from '@/src/lib/supabase';
 import { logger } from '@/src/utils/logger';
@@ -24,28 +21,23 @@ export interface NotableMember {
 }
 
 export const MemberDiscoveryService = {
+  /** A failed read throws, so it is retried: an [] would be cached as the answer for 10 minutes. */
   async getNotableMembers(signal?: AbortSignal): Promise<NotableMember[]> {
-    try {
-      let query = supabase
-        .from('profiles')
-        .select('id, username, avatar_url, role, member_no, is_founding, is_social_private')
-        .eq('is_social_private', false)
-        .eq('is_banned', false)
-        .not('username', 'is', null)
-        .order('followers_count', { ascending: false, nullsFirst: false })
-        .limit(24);
-      if (signal) query = query.abortSignal(signal);
+    let query = supabase
+      .from('profiles')
+      .select('id, username, avatar_url, role, member_no, is_founding, is_social_private')
+      .eq('is_social_private', false)
+      .eq('is_banned', false)
+      .not('username', 'is', null)
+      .order('followers_count', { ascending: false, nullsFirst: false })
+      .limit(24);
+    if (signal) query = query.abortSignal(signal);
 
-      const { data, error } = await query;
-      if (error) {
-        logger.warn('[MemberDiscoveryService] getNotableMembers error:', error.message);
-        return [];
-      }
-      return (data ?? []) as NotableMember[];
-    } catch (err: unknown) {
-      // Any failure degrades to "no registry" — the empty state stays as-is.
-      logger.warn('[MemberDiscoveryService] getNotableMembers crash:', err instanceof Error ? err.message : String(err));
-      return [];
+    const { data, error } = await query;
+    if (error) {
+      logger.warn('[MemberDiscoveryService] getNotableMembers error:', error.message);
+      throw error;
     }
+    return (data ?? []) as NotableMember[];
   },
 };

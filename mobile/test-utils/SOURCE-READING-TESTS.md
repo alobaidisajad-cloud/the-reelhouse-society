@@ -171,7 +171,7 @@ Decisions, as of 2026-09-28:
 | `src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts` | The Reel shows itself to a visitor rather than a wall. |
 | `src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts` | The archive pages on the server's count. |
 | `src/services/__tests__/profileRoomFilters.test.ts` | Each room filter reaches the query it sends. |
-| `src/stores/__tests__/followGraph.wiring.guard.test.ts` | Both follow hydrators, and the layout that calls them. |
+| `src/stores/__tests__/followGraph.wiring.guard.test.ts` | The follow loader's one way into the store, and the layout that reads the saved list. |
 | `src/stores/__tests__/loungeErrors.guard.test.ts` | Every Lounge call reads the error supabase-js resolves with. |
 | `src/stores/__tests__/socialSlice.unfollow.test.ts` | Cancelling a request clears it, online and offline. |
 | `src/stores/__tests__/theHouseSaysWhy.test.ts` | The server's refusal sentence reaches the member. |

@@ -1,19 +1,13 @@
 /**
- * followGraph.wiring.guard.test.ts — the two gaps my own review found
- * ──────────────────────────────────────────────────────────────────
- * Neither of these is in the audit register. Both were found by asking what else was
- * wrong in the same area, and both would have survived every other fix in this batch.
+ * followGraph.wiring.guard.test.ts — the follow list reaches the store one way.
  *
- * GAP D — there are TWO hydrators. The joined query, and a fallback that runs whenever
- * that join fails. Both replaced the follow lists outright. Fixing only the one being
- * read would have left the fallback erasing pending follows on exactly the runs where
- * something is already going wrong. So reconciliation lives at ONE funnel and this
- * fails if a third caller ever sets those lists directly.
+ * GAP D: a list read from the server replaces the store's only through
+ * commitHydratedGraph, which folds in the acts still queued; this fails if
+ * anything else sets the lists. (What a failed read does is driven in
+ * aFailedLoadKeepsWhoYouFollow.test.ts.)
  *
- * GAP E — the follow graph is written to device storage on every follow and was never
- * read back. `followStore.hydrateFromCache` existed with zero callers, so the graph
- * started empty on every cold start: offline it stayed empty, every profile read
- * FOLLOW instead of FOLLOWING, and the following feed switched itself off.
+ * GAP E: the list saved on the phone is read back at boot, or a cold start
+ * shows every member as unfollowed until the server answers.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -32,15 +26,9 @@ describe('GAP D · every hydrator goes through one reconciler', () => {
     expect(slice).toMatch(/getOfflineQueue\(\)/);
   });
 
-  it('BOTH hydrators commit through it', () => {
+  it('the loader commits through it', () => {
     const calls = code(slice).match(/commitHydratedGraph\(userId, allUsernames, allRequested\);/g) ?? [];
-    expect(calls).toHaveLength(2);
-  });
-
-  it('the FALLBACK hydrator is one of them — it is the easy one to miss', () => {
-    const fallback = slice.slice(slice.indexOf('async function _hydrateFollowingFallback'));
-    expect(fallback).toMatch(/commitHydratedGraph\(/);
-    expect(code(fallback)).not.toMatch(/getState\(\)\.setFollowing\(/);
+    expect(calls).toHaveLength(1);
   });
 
   it('nothing else sets the lists behind the funnel\'s back', () => {

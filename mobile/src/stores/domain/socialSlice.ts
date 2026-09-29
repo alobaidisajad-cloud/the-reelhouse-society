@@ -1,14 +1,10 @@
 /**
- * socialSlice.ts — Social Graph Domain Slice
- * ───────────────────────────────────────────
- * Extracted from auth.ts (WS-1) to decompose the God Store.
- * Owns: followUser, unfollowUser, hydrateFollowing, username→ID resolution.
+ * socialSlice.ts — who a member follows: follow, unfollow, and reading the list.
  *
- * Architecture:
- *   • Optimistic updates with full rollback on failure
- *   • Per-action throttle (2s cooldown per target)
- *   • Username→ID cache with 10min TTL + LRU pruning
- *   • MMKV cache persistence for instant cold-start hydration
+ *   • the screen changes at once, and changes back if the server refuses
+ *   • no signal: the act is queued and sent later, and the screen keeps it
+ *   • one act per member every 2 seconds; a handle's id is remembered 10 minutes
+ *   • the list is saved on the phone, so a cold start shows it before the server answers
  */
 import { z } from 'zod';
 import { captureError } from '../../lib/sentry';
@@ -24,8 +20,7 @@ import { enqueueMutation, getOfflineQueue } from '../../utils/offlineQueue';
 import { isLookupSafeHandle } from '../../utils/handleGuard';
 import { queryClient } from '../../lib/queryClient';
 
-// Track in-flight social operations to prevent concurrent
-// follow/unfollow on the same target (e.g., from rapid UI transitions)
+// One act at a time per member: a second tap while the first is in flight is dropped.
 const _inflightOps = new Set<string>();
 
 // ── Per-action throttle ──
@@ -61,15 +56,12 @@ const _usernameProfileCache = new Map<string, { id: string; isPrivate: boolean; 
 const _USERNAME_CACHE_TTL = 10 * 60 * 1000;
 
 async function resolveUsernameToProfile(username: string): Promise<{ id: string; isPrivate: boolean } | null> {
-  // Defense-in-depth format guard — fail fast on malformed input.
-  // The mechanism is deliberate and kept. The CHARSET was not: it encoded the intended
-  // signup policy rather than what profiles.username can hold, and blocked 5 of 32 live
-  // members from being followed at all (#67). See utils/handleGuard.ts.
+  // A handle no profile could hold is never looked up (utils/handleGuard.ts).
   if (!isLookupSafeHandle(username)) return null;
 
   const cached = _usernameProfileCache.get(username);
   if (cached && Date.now() - cached.ts < _USERNAME_CACHE_TTL) {
-    // LRU touch
+    // Moved to the end: the oldest are pruned first.
     _usernameProfileCache.delete(username);
     _usernameProfileCache.set(username, { ...cached, ts: Date.now() });
     return { id: cached.id, isPrivate: cached.isPrivate };
@@ -95,31 +87,10 @@ function persistFollowingToCache(userId: string) {
 }
 
 /**
- * The follow graph changed — tell the feeds that read it.
- *
- * ── #82 · WHY THIS LIVES HERE AND NOT AT A CALL SITE ────────────────────────────────
- * `socialSlice` had no connection to the query cache at all: no import, no
- * invalidation, nothing. The intended behaviour existed in exactly ONE call site —
- * `MemberRegistry.tsx` invalidated after a successful follow — so following from the
- * Registry refreshed the feed while following from the PROFILE screen, the primary
- * follow surface, did not. Up to 60 seconds on the following feed, 5 minutes on stacks,
- * and the same in reverse on unfollow, where their content simply stays on screen.
- *
- * `blockStore` already does this correctly for block/mute, 60 lines away. This is that
- * house pattern, applied to the store instead of to one button.
- *
- * ── WHY THESE TWO KEYS AND NOT THE `['feed']` PREFIX ────────────────────────────────
- * The audit recommended invalidating all of `['feed']`. That is broader than the truth:
- *   • `getCommunityFeed` takes no follow list — verified, it cannot change when you
- *     follow someone, so refetching it on every follow is pure waste
- *   • `getStacksFeed` consults the list ONLY when its filter is 'following'
- *     (`FeedService.ts` returns early on `filter === 'following'` and passes
- *     `p_filter_following`), so the 'all' view is equally unaffected
- * The stacks key is ['feed','stacks', filter, …], so this prefix matches exactly the
- * following-filtered queries and leaves the rest of the cache alone.
- *
- * Invalidation cannot fail destructively: worst case it triggers a refetch that was
- * going to happen anyway on the next focus.
+ * The follow list changed: refetch the feeds made from it, here in the store so
+ * every follow button gets it. Only these two: the community feed never reads
+ * the list, and the stacks feed reads it only under its 'following' filter
+ * (key ['feed', 'stacks', filter, …]).
  */
 function refreshFollowGraphFeeds() {
   try {
@@ -132,25 +103,10 @@ function refreshFollowGraphFeeds() {
 }
 
 /**
- * The server's follow graph, corrected for writes that have not reached it yet.
- *
- * ── WHY HYDRATION CANNOT JUST TRUST THE SERVER ──────────────────────────────────────
- * Follow someone offline and the mutation is queued while the UI updates optimistically.
- * Relaunch before it flushes and `hydrateFollowing` replaces the whole list with the
- * server's copy — which does not have it yet. The follow disappears from the screen
- * even though it is queued and will sync. The offline handler never touches the store
- * either, so it does not come back until the NEXT launch re-hydrates.
- *
- * The same happens in reverse: an offline unfollow is undone on screen because the
- * server row is still there.
- *
- * Neither is fixed by the missing unique constraint — they survive it — so hydration
- * has to be aware of what is still in flight.
- *
- * Applied in queue order, because order is meaning: follow → unfollow → follow ends as
- * followed, and the queue is FIFO.
- *
- * Pure and exported so it can be tested without a store, a network, or a device.
+ * The server's follow list, corrected by the acts still queued: a follow made
+ * offline is not on the server yet, and would vanish from the screen at the next
+ * launch; an unfollow likewise. Applied in queue order (follow, unfollow, follow
+ * ends followed). Pure, so it is tested without a store or a network.
  */
 export function reconcileGraphWithPendingMutations(
   ownerId: string,
@@ -165,24 +121,15 @@ export function reconcileGraphWithPendingMutations(
   for (const u of serverRequested) if (u) requested.set(u.toLowerCase(), u);
 
   for (const m of queue) {
-    // ── OWNER SCOPING · not optional ────────────────────────────────────────────
-    // The queue can legitimately hold another member's mutations: an unclean logout
-    // (crash, force-kill) leaves them behind, which is exactly why flushOfflineQueue
-    // partitions by `payload.user_id` and dead-letters the orphans rather than
-    // executing them. Reading the queue WITHOUT that filter would merge a previous
-    // member's pending follows into whoever signs in next — and then persist it to
-    // their cache. The id is required as an argument rather than filtered by the
-    // caller so this cannot be bypassed by forgetting.
+    // Only this member's: after a crash the queue can hold the last member's acts.
     if (!ownerId || m?.payload?.user_id !== ownerId) continue;
 
     const raw = m?.payload?.target_username;
     if (typeof raw !== 'string' || raw.length === 0) continue;
     const key = raw.toLowerCase();
     switch (m.type) {
-      // `set` only when the handle is NEW to the list. The server's spelling is the
-      // real one; a queued payload carries whatever the caller passed, and the profile
-      // screen lowercases before calling followUser. Letting the queue overwrite would
-      // render a member whose handle is `Morpho` as `morpho` until the next hydrate.
+      // Added only when new: the server's spelling (`Morpho`) is the real one, and a
+      // queued act carries the caller's (the profile screen lowercases).
       case 'follow_user':
         requested.delete(key);
         if (!following.has(key)) following.set(key, raw);
@@ -204,13 +151,8 @@ export function reconcileGraphWithPendingMutations(
 }
 
 /**
- * The ONE place a hydrated graph reaches the store.
- *
- * There are two hydrators — the joined query and the fallback that runs whenever that
- * join fails — and both replaced the lists directly. Fixing only the one being read
- * would have left the fallback erasing pending follows on exactly the runs where things
- * are already going wrong. A guard test fails if a third caller ever sets these lists
- * without coming through here.
+ * The one place a list read from the server reaches the store, corrected by the
+ * queue. followGraph.wiring.guard.test.ts fails if anything else sets the lists.
  */
 function commitHydratedGraph(userId: string, serverFollowing: string[], serverRequested: string[]): void {
   const { following, requested } = reconcileGraphWithPendingMutations(
@@ -239,12 +181,10 @@ export async function followUser(targetUsername: string): Promise<boolean> {
     return false;
   }
 
-  // Instantly apply optimistic UI update by checking cache *before* awaiting network.
-  // This guarantees a true 0ms visual update, even if completely offline.
+  // Shown at once, before any network: as a request if the member is known to be private.
   const cachedProfile = _usernameProfileCache.get(targetUsername);
   const isOptimisticallyPrivate = cachedProfile?.isPrivate ?? false;
   
-  // Atomic update via dedicated store — no race condition
   if (isOptimisticallyPrivate) {
     store.addRequested(targetUsername);
   } else {
@@ -259,7 +199,7 @@ export async function followUser(targetUsername: string): Promise<boolean> {
     const { id: targetId, isPrivate } = targetProfile;
     const interactionType = isPrivate ? 'follow_request' : 'follow';
 
-    // If the backend contradicts our offline assumption, correct it silently.
+    // The profile says otherwise: the screen follows the profile.
     if (isPrivate !== isOptimisticallyPrivate) {
       if (isPrivate) {
         store.removeFollowing(targetUsername);
@@ -303,8 +243,8 @@ export async function followUser(targetUsername: string): Promise<boolean> {
       const cached = _usernameProfileCache.get(targetUsername);
       const interactionType = cached?.isPrivate ? 'follow_request' : 'follow';
       
-      // If we don't have cache, offline queue will default to 'follow' which is a known limitation,
-      // but it's acceptable because the backend validation should catch it later if it's private.
+      // Privacy unknown, it is queued as a follow; the database turns a follow of a
+      // private member into a request (enforce_privacy_on_follow).
       enqueueMutation({
         type: interactionType === 'follow_request' ? 'follow_request_user' : 'follow_user',
         payload: { user_id: userId, target_username: targetUsername, target_user_id: cached?.id ?? null },
@@ -314,7 +254,6 @@ export async function followUser(targetUsername: string): Promise<boolean> {
     }
     logger.warn(`[socialSlice.followUser] FAILED for @${targetUsername}: ${msg}`);
     
-    // Rollback via dedicated store
     useSocialStore.getState().removeFollowing(targetUsername);
     useSocialStore.getState().removeRequested(targetUsername);
     persistFollowingToCache(userId);
@@ -328,15 +267,11 @@ export async function followUser(targetUsername: string): Promise<boolean> {
 export async function unfollowUser(targetUsername: string): Promise<boolean> {
   if (isSocialThrottled(`unfollow:${targetUsername}`)) return false;
 
-  // Prevent concurrent operations on the same target
   const opKey = `unfollow:${targetUsername}`;
   if (_inflightOps.has(opKey)) return false;
   _inflightOps.add(opKey);
 
-  // BOTH lists are snapshotted. This function is the CANCEL-REQUEST path too — the
-  // profile screen routes there whenever isFollowing OR isRequested is true — so a
-  // rollback that restored only `following` would leave a cancelled request looking
-  // cancelled while the row still stood (#78).
+  // This is also how a request is withdrawn, so BOTH lists are kept to roll back to.
   const prevFollowing = useSocialStore.getState().following;
   const prevRequested = useSocialStore.getState().requested;
   const userId = useAuthStore.getState().user?.id;
@@ -346,10 +281,7 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
     return false;
   }
 
-  // Atomic optimistic update via dedicated store.
-  // removeRequested is NOT optional: cancelling a pending request came through here and
-  // cleared nothing, so the button read REQUESTED for the rest of the session — online
-  // as well as offline — and only corrected on the next launch's hydrate.
+  // Both, for the same reason: a withdrawn request must stop reading REQUESTED.
   useSocialStore.getState().removeFollowing(targetUsername);
   useSocialStore.getState().removeRequested(targetUsername);
   persistFollowingToCache(userId);
@@ -361,9 +293,7 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
         .eq('user_id', userId).eq('target_user_id', targetProfile.id).in('type', ['follow', 'follow_request']);
       if (error) throw error;
     } else {
-      // Queue unfollow for offline retry instead of silently dropping it.
-      // The optimistic local state removal (line 177) is correct — the user sees
-      // the unfollow immediately. The queue ensures server state catches up.
+      // The handle did not resolve: queued, so the unfollow the member saw still happens.
       logger.warn(`[socialSlice.unfollowUser] Could not resolve ID for @${targetUsername} — queuing for retry`);
       enqueueMutation({
         type: 'unfollow_user',
@@ -379,10 +309,8 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
     if (!isNetworkError(msg) && !isNetworkError(err)) {
       captureError(err, { scope: 'socialSlice', targetUsername });
     }
-    // Route network failures to the offline queue — keep optimistic state
-    // (user sees the unfollow immediately), queue for background sync.
+    // No signal: the screen keeps the unfollow and the queue sends it, with the id if known.
     if (isNetworkError(msg) || isNetworkError(err)) {
-      // Include resolved target_user_id so flush doesn't re-resolve usernames.
       const cachedId = _usernameProfileCache.get(targetUsername)?.id ?? null;
       enqueueMutation({
         type: 'unfollow_user',
@@ -392,7 +320,6 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
       return true;
     }
     logger.warn(`[socialSlice.unfollowUser] FAILED for @${targetUsername}: ${msg}`);
-    // Rollback via dedicated store — both lists, mirroring the optimistic update above.
     useSocialStore.getState().setFollowing(prevFollowing);
     useSocialStore.getState().setRequested(prevRequested);
     persistFollowingToCache(userId);
@@ -403,22 +330,11 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
   }
 }
 
-/**
- * UNLIMITED FOLLOWING — Cursor-based keyset pagination.
- * ───────────────────────────────────────────────────────
- * Loads the ENTIRE following list in 1000-row chunks using
- * created_at as the cursor key. O(N) total cost regardless
- * of offset position — each page is an indexed range scan.
- *
- * No artificial cap — users can follow as many people as they want.
- */
+// Pages follow the last row seen: an index range each, never an offset's rescan.
 const HYDRATE_PAGE_SIZE = 1000;
-// Safety cap prevents runaway fetch loops on extreme accounts.
-// 10 pages × 1000 rows = 10K following — covers 99.99% of users.
+// A stop for a loop that never ends: past 10,000 follows the list is kept as it was.
 const MAX_HYDRATE_PAGES = 10;
 
-// Hoisted to module scope to avoid re-compiling Zod schemas
-// on every pagination loop iteration (was inside the while loop).
 const HydrateRowSchema = z.object({
   id: z.string(),
   target_user_id: z.string(),
@@ -444,33 +360,15 @@ export async function hydrateFollowing(): Promise<void> {
     let pageCount = 0;
 
     while (hasMore) {
-      // Safety cap prevents runaway fetch loops on extreme accounts.
+      // Past the cap the list is only part-read, and a part is not the list.
       if (pageCount >= MAX_HYDRATE_PAGES) {
-        logger.warn(`[socialSlice.hydrateFollowing] Capped at ${allUsernames.length} following — extreme account`);
-        break;
+        logger.warn(`[socialSlice.hydrateFollowing] more than ${MAX_HYDRATE_PAGES * HYDRATE_PAGE_SIZE} follows; kept the list as it was`);
+        captureError(new Error('follow list past the hydrate cap'), { scope: 'socialSlice.hydrateFollowing', pages: pageCount });
+        return;
       }
-      // Cursor-based keyset pagination replaces offset pagination.
-      // .range(offset, offset + N) is O(N²) aggregate on Postgres because
-      // later pages must scan and discard all prior rows. Keyset pagination
-      // is O(N) because it uses an index scan.
-      //
-      // ── THE CURSOR CARRIES A TIEBREAKER ─────────────────────────────────
-      // It used to be `gt('created_at', cursor)` alone. A bare timestamp
-      // cursor skips every row sharing the boundary row's timestamp, and the
-      // skip is PERMANENT, because the next page starts strictly above them.
-      //
-      // Latent rather than live today: every write here is a single-row
-      // insert, so two follows would have to land in the same microsecond, and
-      // the tie would then have to straddle a 1000-row page boundary. Checked
-      // against production — zero ties exist. But Postgres freezes now() for a
-      // whole transaction, so the day anything writes follows in a batch (an
-      // import, a migration, a "follow everyone you followed elsewhere"), every
-      // one of them shares a timestamp and this silently loses all but the
-      // boundary row.
-      //
-      // Every other paginated read in the app already carries the second key —
-      // FeedService, lounge, notifications, logs, watchlist. This was the only
-      // one that did not.
+      // The cursor is (created_at, id), never the time alone: rows sharing the
+      // boundary's time (a batch write, where Postgres freezes now()) would be
+      // skipped for good.
       let query = supabase
         .from('interactions')
         .select('id, target_user_id, created_at, type, profiles!interactions_target_user_id_fkey(username)')
@@ -489,9 +387,10 @@ export async function hydrateFollowing(): Promise<void> {
       const { data, error } = await query;
 
       if (error) {
-        // Fallback: if the join fails (FK might not exist), use paginated two-query approach
-        logger.warn('[socialSlice.hydrateFollowing] Joined query failed, falling back:', error.message);
-        await _hydrateFollowingFallback(userId);
+        // Unread is not empty: supabase-js hands back any failure, offline too, as
+        // `error`, and saving what was read so far would unfollow the rest.
+        logger.warn('[socialSlice.hydrateFollowing] could not read the follow list:', error.message);
+        if (!isNetworkError(error)) captureError(error, { scope: 'socialSlice.hydrateFollowing' });
         return;
       }
 
@@ -516,9 +415,7 @@ export async function hydrateFollowing(): Promise<void> {
           }
       });
 
-      // Both halves of the cursor come from the last row of the page, so the
-      // filter above and the ordering agree. Taking only the timestamp is what
-      // made the tie invisible.
+      // Both halves from the page's last row, as the order above sorts them.
       const last = data[data.length - 1] as { created_at: string; id: string };
       cursor = { at: last.created_at, id: last.id };
       hasMore = data.length === HYDRATE_PAGE_SIZE;
@@ -529,78 +426,8 @@ export async function hydrateFollowing(): Promise<void> {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.warn('[socialSlice.hydrateFollowing] Unexpected error:', msg);
-    // Labelled "Unexpected" by its own author — exactly what belongs in Sentry.
     if (!isNetworkError(err)) captureError(err, { scope: 'socialSlice.hydrateFollowing' });
   }
-}
-
-/** Fallback paginated hydration when the FK join is unavailable */
-async function _hydrateFollowingFallback(userId: string): Promise<void> {
-  const allUsernames: string[] = [];
-  const allRequested: string[] = [];
-  let cursor: { at: string; id: string } | null = null;
-  let hasMore = true;
-  let pageCount = 0;
-
-  while (hasMore) {
-    // Safety cap for fallback path too
-    if (pageCount >= MAX_HYDRATE_PAGES) {
-      logger.warn(`[socialSlice._hydrateFollowingFallback] Capped at ${allUsernames.length} following`);
-      break;
-    }
-    // Cursor-based keyset pagination for the fallback path too — with the same
-    // tiebreaker as the joined path above, for the same reason. A fix applied
-    // to one of two identical loops is the shape of the next silent bug.
-    let query = supabase
-      .from('interactions')
-      .select('id, target_user_id, created_at, type, profiles!interactions_target_user_id_fkey(username)')
-      .eq('user_id', userId)
-      .in('type', ['follow', 'follow_request'])
-      .order('created_at', { ascending: true })
-      .order('id', { ascending: true })
-      .limit(HYDRATE_PAGE_SIZE);
-
-    if (cursor) {
-      query = query.or(
-        `created_at.gt.${cursor.at},and(created_at.eq.${cursor.at},id.gt.${cursor.id})`,
-      );
-    }
-
-    const { data: followRows, error: followErr } = await query;
-
-    if (followErr || !followRows?.length) {
-      hasMore = false;
-      break;
-    }
-
-    // The usernames arrive with the rows. This used to collect up to
-    // HYDRATE_PAGE_SIZE (1000) ids and send them to a second query with .in(),
-    // which put them in the request URL — and that request FAILS past roughly
-    // 350 ids (measured against production: 300 succeed, 400 do not). Anyone
-    // following that many people would have had this page fail, and because the
-    // error was unchecked the graph would simply come back short: follows
-    // silently missing. Capping the list would have hidden the same data loss
-    // more quietly, so the id list is gone instead.
-    followRows.forEach(row => {
-      const embedded = (row as { profiles?: { username?: string } | { username?: string }[] | null }).profiles;
-      const profile = Array.isArray(embedded) ? embedded[0] : embedded;
-      const username = profile?.username;
-      if (username) {
-        if (row.type === 'follow_request') {
-          allRequested.push(username);
-        } else {
-          allUsernames.push(username);
-        }
-      }
-    });
-
-    const lastRow = followRows[followRows.length - 1] as { created_at: string; id: string };
-    cursor = { at: lastRow.created_at, id: lastRow.id };
-    hasMore = followRows.length === HYDRATE_PAGE_SIZE;
-    pageCount++;
-  }
-
-  commitHydratedGraph(userId, allUsernames, allRequested);
 }
 
 /**

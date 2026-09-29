@@ -338,6 +338,8 @@ export default function LoungeRoomScreen() {
     // and `members` drives the host's "At the Door" count, so a stale answer
     // here shows one room's membership while standing in another.
     if (shownRoomRef.current !== id) return;
+    // Unread is not empty: a member of a private room would be shown the request door.
+    if (!roster) return;
     setMembers(roster);
     if (user) {
       const mine = roster.find(m => m.user_id === user.id);

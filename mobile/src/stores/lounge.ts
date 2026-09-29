@@ -113,8 +113,8 @@ export interface LoungeState {
   markRead: (loungeId: string) => Promise<void>;
 
   // ── Membership roster + host controls (Editorial Salon overhaul) ──
-  /** All membership rows visible to the caller (approved roster + pending for the host). */
-  fetchMembers: (loungeId: string) => Promise<LoungeMember[]>;
+  /** The membership rows the caller may see; null when unread, which is not an empty room. */
+  fetchMembers: (loungeId: string) => Promise<LoungeMember[] | null>;
   approveMember: (loungeId: string, userId: string) => Promise<boolean>;
   declineMember: (loungeId: string, userId: string) => Promise<boolean>;
   setMemberStatus: (loungeId: string, userId: string, status: 'approved' | 'muted' | 'banned') => Promise<boolean>;
@@ -889,7 +889,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .from('lounge_members')
         .select('user_id, status, created_at, profiles!lounge_members_user_id_fkey(username, avatar_url)')
         .eq('lounge_id', loungeId);
-      if (error || !data) return [];
+      if (error || !data) {
+        logger.warn('[LoungeStore.fetchMembers] could not read the roster:', error?.message);
+        return null;
+      }
       return data.map((m: Record<string, unknown>) => {
         const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
         const p = profile as { username?: string; avatar_url?: string } | undefined;
@@ -903,7 +906,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       });
     } catch (e) {
       logger.warn('[LoungeStore.fetchMembers] failed:', e);
-      return [];
+      return null;
     }
   },
 

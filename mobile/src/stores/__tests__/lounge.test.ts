@@ -92,6 +92,36 @@ describe('LoungeStore', () => {
     });
   });
 
+  // The roster decides the room's gate. A roster that could not be read must not
+  // read as an empty room: that shows a member of a private room the request door.
+  describe('fetchMembers', () => {
+    const answering = (answer: unknown) => {
+      const q = { select: () => q, eq: () => Promise.resolve(answer) };
+      mockFrom.mockReturnValueOnce(q);
+    };
+
+    it('returns the roster it read', async () => {
+      answering({ data: [{ user_id: 'u1', status: 'approved', profiles: { username: 'ada' } }], error: null });
+      const roster = await useLoungeStore.getState().fetchMembers('room');
+      expect(roster).toEqual([expect.objectContaining({ user_id: 'u1', username: 'ada', status: 'approved' })]);
+    });
+
+    it('an empty room is an empty roster', async () => {
+      answering({ data: [], error: null });
+      expect(await useLoungeStore.getState().fetchMembers('room')).toEqual([]);
+    });
+
+    it('a refused or failed read is null, not an empty room', async () => {
+      answering({ data: null, error: { message: 'TypeError: Network request failed' } });
+      expect(await useLoungeStore.getState().fetchMembers('room')).toBeNull();
+    });
+
+    it('and so is a read that throws', async () => {
+      mockFrom.mockImplementationOnce(() => { throw new Error('boom'); });
+      expect(await useLoungeStore.getState().fetchMembers('room')).toBeNull();
+    });
+  });
+
   // Withdrawing your own dispatch is the LIVE delete path (the hard-delete
   // deleteMessage was removed in 441f3b5). It tombstones rather than destroying
   // so a conversation doesn't grow holes where a reply's parent used to be.

@@ -73,7 +73,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/__tests__/list-modal.curate.test.tsx | — |  |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/cover-picker.tsx | — |  |
-| app/(modals)/list-modal.tsx | — |  |
+| app/(modals)/list-modal.tsx | 2026-09-29 | histories -> rules; orphan style comments removed; header named the web port and wrong labels |
 | app/(modals)/log-modal.tsx | — |  |
 | app/(modals)/login.tsx | — |  |
 | app/(modals)/membership.tsx | — |  |
@@ -658,6 +658,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/servicesBatch2.test.ts | — |  |
 | src/services/__tests__/servicesBatch3.test.ts | — |  |
 | src/services/__tests__/theDoorCursorCarriesATiebreaker.test.ts | — |  |
+| src/services/__tests__/theRegistryRetriesAFailedRead.test.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
 | src/services/__tests__/theStackKnowsYourMark.test.ts | — |  |
 | src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts | — |  |
 | src/services/__tests__/VaultService.test.ts | — |  |
@@ -670,13 +671,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/logCounts.ts | — |  |
 | src/services/LogService.ts | — |  |
 | src/services/LoungeService.ts | — |  |
-| src/services/MemberDiscoveryService.ts | — |  |
+| src/services/MemberDiscoveryService.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
 | src/services/ModerationService.ts | — |  |
 | src/services/ProfileDataService.ts | 2026-09-29 | 24 fixed; 'Sentry breadcrumb' was dev-only logger.info (logged for step 6); a dead file ref; ticket tags |
 | src/services/ProfileWriteService.ts | — |  |
 | src/services/StackService.ts | — |  |
 | src/services/VaultService.ts | — |  |
 | src/services/YearInCinemaService.ts | — |  |
+| src/stores/__tests__/aFailedLoadKeepsWhoYouFollow.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/__tests__/aFailedSettingStaysUndone.test.ts | 2026-09-29 | new |
 | src/stores/__tests__/aNoticeIsNarrowedToItsOwner.test.ts | — |  |
 | src/stores/__tests__/aReactionIsOneOfFive.test.ts | — |  |
@@ -692,7 +694,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/dispatchWrites.test.ts | — |  |
 | src/stores/__tests__/encryptionAtRest.guard.test.ts | — |  |
 | src/stores/__tests__/films.test.ts | — |  |
-| src/stores/__tests__/followGraph.wiring.guard.test.ts | — |  |
+| src/stores/__tests__/followGraph.wiring.guard.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/__tests__/interactionSlice.test.ts | — |  |
 | src/stores/__tests__/logoutBeatsTheRollback.test.ts | — |  |
 | src/stores/__tests__/logoutClearsEveryModuleCache.test.ts | — |  |
@@ -734,7 +736,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/listSlice.ts | — |  |
 | src/stores/domain/logSlice.ts | — |  |
 | src/stores/domain/logSlice/helpers/logOperations.ts | — |  |
-| src/stores/domain/socialSlice.ts | — |  |
+| src/stores/domain/socialSlice.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/domain/watchlistSlice.ts | — |  |
 | src/stores/films.ts | — |  |
 | src/stores/followStore.ts | — |  |
