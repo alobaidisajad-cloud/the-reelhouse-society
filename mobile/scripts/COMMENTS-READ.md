@@ -625,7 +625,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/gateMetricsSink.ts | — |  |
 | src/lib/pushNotifications.ts | — |  |
 | src/lib/queryClient.ts | — |  |
-| src/lib/revenueCat.ts | — |  |
+| src/lib/revenueCat.ts | 2026-09-29 | 17 fixed; FALSE: 'syncs the tier to profiles.role' (the server re-reads RevenueCat and ignores the tier); setup notes with prices; ticket tags |
 | src/lib/schemas.ts | — |  |
 | src/lib/scrollBridge.ts | — |  |
 | src/lib/sentry.ts | — |  |
@@ -675,6 +675,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/StackService.ts | — |  |
 | src/services/VaultService.ts | — |  |
 | src/services/YearInCinemaService.ts | — |  |
+| src/stores/__tests__/aFailedSettingStaysUndone.test.ts | 2026-09-29 | new |
 | src/stores/__tests__/aNoticeIsNarrowedToItsOwner.test.ts | — |  |
 | src/stores/__tests__/aReactionIsOneOfFive.test.ts | — |  |
 | src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts | — |  |
@@ -714,7 +715,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/theThrottleIsPerRoom.test.ts | — |  |
 | src/stores/__tests__/vaultStore.test.ts | — |  |
 | src/stores/__tests__/watchlistSlice.test.ts | — |  |
-| src/stores/auth.ts | — |  |
+| src/stores/auth.ts | 2026-09-29 | 31 fixed; FOUND: a refused setting stayed pending on disk and the next launch re-applied what the member saw undone; fixed + 4 tests, both halves mutation-killed; literal \u2500 text in a comment removed |
 | src/stores/blockStore.ts | — |  |
 | src/stores/createSelectors.ts | — |  |
 | src/stores/discover.ts | — |  |
@@ -738,7 +739,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/lounge.ts | 2026-09-28 | 38 findings fixed; stale 'created rooms' reason corrected (create_lounge adds the member row); loadOlderMessages→loadMoreMessages; 12 repeated sessionGuard notes dropped |
 | src/stores/markCounts.ts | — |  |
 | src/stores/mmkv-storage.ts | — |  |
-| src/stores/notificationStore.ts | — |  |
+| src/stores/notificationStore.ts | 2026-09-29 | 28 fixed; ticket tags (#51,#73,NOTIF-1,FLAW-08,LIB-5,WS-9,L234) and bug histories cut; checked the reset's MMKV delete hits the same store (it does) |
 | src/stores/reportStore.ts | — |  |
 | src/stores/resetAllStores.ts | — |  |
 | src/stores/settings.ts | — |  |

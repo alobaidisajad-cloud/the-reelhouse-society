@@ -39,8 +39,8 @@ export interface AuthState {
 // ── Action throttle: prevents spam-clicking social buttons ──
 const _actionThrottles = new Map<string, number>();
 const _prefTimers = new Map<string, ReturnType<typeof setTimeout>>();
-// F-3: per-user snapshot of preferences taken at the START of a debounce window, so a
-// failed sync rolls back EVERY key changed during the window (multiple keys share one timer).
+// Each member's preferences at the START of a debounce window: a refusal rolls
+// back every key changed in it (the keys share one timer).
 const _prefBaselines = new Map<string, Record<string, unknown>>();
 const _THROTTLE_MAX = 200;
 const _THROTTLE_TTL = 30000;
@@ -57,18 +57,10 @@ function _withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 /**
- * The member's unsynced preference change, or null if there is none.
- *
- * `dirty_prefs_<id>` now HOLDS the preferences. It used to be the string
- * 'true', with the actual values living inside the profile cache — which is fine
- * until that cache becomes conditional (it is: it carries the member's email and
- * is only written when storage is encrypted). Then the flag outlives its payload
- * and the change is lost silently.
- *
- * BACKWARD COMPATIBLE on purpose: a device that upgraded mid-flight still has
- * the legacy 'true' there, and its values still in the cache. That case is read
- * exactly as before rather than discarded — losing a member's pending change to
- * fix a bug about losing a member's pending change would be its own joke.
+ * The member's unsynced preferences, or null. `dirty_prefs_<id>` HOLDS them
+ * (the profile cache is written only when storage is encrypted, so it cannot
+ * carry them). An older install may hold the bare 'true' of an earlier
+ * version, its values in the cache: read as it was, never discarded.
  */
 function readPendingPrefs(userId: string): Record<string, unknown> | null {
   const raw = storage.getString(`dirty_prefs_${userId}`);
@@ -104,17 +96,9 @@ function pruneThrottles() {
 }
 
 /**
- * "Is this still the member who asked for this work?"
- *
- * ── WHY THIS IS DECLARED HERE AND NOT IMPORTED ─────────────────────────────
- * It is `memberUnchanged` from domain/helpers/sessionGuard, restated. That
- * helper imports THIS file to read the store, so auth.ts cannot import it back
- * without a cycle — and a cycle here resolves to `undefined` at module init on
- * Hermes, which would silently disable the guard rather than fail loudly.
- * Same name on purpose: the enumeration in staleWriteGuard.test.ts recognises
- * it, so the auth store is policed by the same rule as every other store.
- *
- * A function declaration, so it is hoisted above the store it reads.
+ * "Is this still the member who asked for this work?" sessionGuard's, restated:
+ * it imports this file, and importing it back would be a cycle (undefined at
+ * init on Hermes). Same name, so staleWriteGuard.test.ts polices this store too.
  */
 function memberUnchanged(capturedUserId: string | null): boolean {
   return (useAuthStore.getState().user?.id ?? null) === capturedUserId;
@@ -164,7 +148,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         return;
       }
 
-      // Restore the locally cached user first for instant startup, before the network session check.
+      // The cached member first, for an instant start; the network checks after.
       let cachedFollowing: string[] = [];
       const lastUserId = storage.getString('last_user_id');
       if (lastUserId) {
@@ -180,38 +164,33 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        // Dirty-prefs reconciliation: push local prefs to server if not yet synced
+        // Unsynced preferences first, MERGED server-side (another device may
+        // have set other keys meanwhile).
         const pendingPrefs = readPendingPrefs(session.user.id);
         if (pendingPrefs) {
           try {
-            // Merge, don't overwrite: another device may have set keys while
-            // this one was offline with dirty prefs (COMP-7 cross-device).
             await supabase.rpc('update_my_preferences', { p_preferences: pendingPrefs });
             storage.delete(`dirty_prefs_${session.user.id}`);
           } catch {
-            // Push failed — the pending prefs stay on disk and are re-tried on
-            // the next launch, and are preserved in `finalPrefs` below so the
-            // server's older copy does not overwrite them in the meantime.
+            // Kept on disk for the next launch, and preferred below over the
+            // server's older copy.
           }
         }
 
         const { data: profile } = await supabase
           .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', session.user.id).single();
         if (profile) {
-          // CRITICAL: Preserve the cached following list — don't overwrite with []
-          // Read from the pending-prefs key, which survives regardless of
-          // encryption — see setPreference. The server's copy must not overwrite
-          // a change the member made that has not synced yet.
+          // Unsynced preferences win over the server's copy (see setPreference).
           const stillPending = readPendingPrefs(session.user.id);
           const finalPrefs = stillPending ?? profile.preferences;
-          // Merge any profile fields (bio, display_name, persona, avatar_url, ...) that updateUser()
-          // has optimistically written but not yet confirmed server-side — otherwise a concurrent
-          // restoreSession (e.g. post-purchase polling) would silently revert the in-flight edit.
+          // Profile edits updateUser has not yet had confirmed, so this restore
+          // (post-purchase polling runs it) never reverts one in flight.
           let pendingProfileEdits: Partial<User> = {};
           const dirtyProfile = storage.getString(`dirty_profile_${session.user.id}`);
           if (dirtyProfile) {
             try { pendingProfileEdits = JSON.parse(dirtyProfile); } catch {}
           }
+          // The cached following list is kept, never replaced by an empty one.
           const completeUser = { ...session.user, ...profile, ...pendingProfileEdits, preferences: finalPrefs, following: cachedFollowing } as unknown as User;
           storage.set('last_user_id', session.user.id);
           setSensitive(`ironvault_user_cache_${session.user.id}`, JSON.stringify(completeUser));
@@ -223,27 +202,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         // session valid but profile fetch returned nothing — keep the cached
         // optimistic user (a transient profile read shouldn't force a logout).
       } else {
-        // STORE-2: getSession succeeded with NO session → the optimistic auth
-        // restored from cache at startup is stale; clear it here instead of
-        // relying solely on the global onAuthStateChange listener to correct it.
-        //
-        // This is the SECOND way a session ends, and it used to erase nothing
-        // but the auth flag. The previous member's logs, watchlist and archive
-        // stayed in the store and on disk, and `last_user_id` still pointed at
-        // them — so the next launch restored that member optimistically all over
-        // again.
-        //
-        // Worse, it DISABLED the cleanup that would otherwise have caught it:
-        // the SIGNED_OUT listener only calls logout() `if (isAuthenticated)`,
-        // and the line below had just made that false. Clearing the flag removed
-        // the safety net for the data.
+        // NO session: the member restored from cache is stale. This is the
+        // SECOND way a session ends, so it erases their data here as logout does
+        // (the SIGNED_OUT listener, which would, only runs while authenticated).
         const staleUserId = get().user?.id ?? null;
         const hadStaleSession = staleUserId !== null || get().isAuthenticated;
         set({ user: null, isAuthenticated: false, loading: false });
-        // Only when there was actually somebody to erase. This branch also runs
-        // on an ordinary cold start for a signed-out visitor — the app allows
-        // anonymous browsing — and wiping the query cache every launch for them
-        // would throw away a warm feed to clean up nothing.
+        // Only if someone was here: a signed-out visitor keeps their warm feed.
         if (hadStaleSession) {
           try {
             const { resetAllStores } = await import('./resetAllStores');
@@ -255,16 +220,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             queryClient.clear();
           } catch { /* best effort — the auth flag is already cleared */ }
         }
-        // The offline queue is deliberately NOT cleared here, unlike logout.
-        // A dead session is not a decision to discard work: these are the
-        // member's own unsynced writes, they carry their user_id, and RLS
-        // refuses them under anyone else's session. Dropping them would lose
-        // real data to fix a cache problem.
+        // The offline queue stays: each write carries its user_id (unlike logout).
         return;
       }
     } catch (err: unknown) {
-      // Network/transient failure — keep the cached optimistic session; the
-      // listener / next restore will reconcile. (Do NOT log out on error.)
+      // A network failure keeps the cached member: never a logout on an error.
       if (__DEV__) console.warn('[restoreSession] Failed:', err instanceof Error ? err.message : String(err));
     }
     set({ loading: false });
@@ -275,9 +235,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     let authedUser: AuthUser;
 
     if (!identifier.includes('@')) {
-      // EMAIL-ENUM-1: authenticate by username entirely server-side. The edge
-      // function resolves the email + verifies the password without exposing the
-      // email or confirming account existence (generic error on any failure).
+      // By username, entirely server-side: the function never reveals the email or
+      // whether the account exists (one generic error for every failure).
       const { data: fnData, error: fnError } = await supabase.functions.invoke('sign-in-with-username', {
         body: { username: identifier, password },
       });
@@ -302,22 +261,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     setSensitive(`ironvault_user_cache_${authedUser.id}`, JSON.stringify(completeUser));
     set({ user: completeUser, isAuthenticated: true });
 
-    // ── Link this device's store identity to the account that just signed in ──
-    // Belt AND braces, not a bug fix: AppBootstrapper subscribes to this store and
-    // re-runs boot() on login (AppBootstrapper.tsx:149-155, its hasBooted guard is
-    // cleared on logout), so initRevenueCat DOES re-configure with the new account.
-    // But switching users by calling configure() a second time is not the documented
-    // path — Purchases.logIn() is — and an identity that silently fails to move means
-    // this member's purchase is linked to the wrong account, breaking restore on any
-    // other device and leaving expiry webhooks pointing at a stranger.
-    //
-    // Fire-and-forget: identifyUser swallows its own errors, and signing in must never
-    // block on the store being reachable. Safe here because this is an action, not the
-    // onAuthStateChange listener, and it touches no supabase.auth call.
+    // The store's identity, by the documented `logIn()`; never awaited by sign-in.
     void identifyUser(authedUser.id);
 
-    // Enrich with the full profile in the background. Transient failures are retried;
-    // if enrichment ultimately fails, the user operates with an incomplete profile for the session.
+    // The full profile, in the background with retries; if it never comes, the
+    // session runs on the auth user alone.
     withRetry(
       async () => {
         const { data: profileData, error: profileError } = await supabase
@@ -346,7 +294,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   signup: async (email, password, username, persona = 'The Cinephile') => {
-    // Build the redirect URL so confirmation emails deep-link back to the app
+    // The confirmation email's link back into the app.
     const redirectTo = Linking.createURL('auth-callback');
     const { data, error } = await supabase.auth.signUp({
       email, password,
@@ -358,17 +306,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (error) throw error;
 
     if (data?.session) {
-      // Email confirmation disabled — immediate login
-      //
-      // ⚠️ #50 — this used to be `await supabase.from('profiles').update(...)` with the
-      // result THROWN AWAY. The signup trigger appends a suffix when a handle collides
-      // (deliberately: an account must always be created), so this corrective write is
-      // rejected by the unique index — and the rejection vanished. The next line then
-      // read back the SUFFIXED name, cached it, and signed the member in as someone
-      // they did not choose to be.
-      //
-      // The error is captured now, but it is not thrown: failing signup over a handle
-      // is exactly what the trigger was changed to avoid. It is a signal, not a fault.
+      // No confirmation needed: signed in at once. On a taken handle the trigger
+      // has added a suffix (an account is always made), so this claim may be
+      // refused: noted, never thrown, as signup must not fail over a handle.
       const { error: renameError } = await supabase
         .from('profiles').update({ username, persona }).eq('id', data.user!.id);
       if (renameError) {
@@ -377,26 +317,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       const { data: profile } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', data.user!.id).single();
 
-      // Close the loop. Whatever happened above — collision, reserved word, a path
-      // added later — if the handle the member holds is not the one they typed, say so.
-      // Recorded rather than toasted: signup is immediately followed by navigation and a
-      // first render, and a notice that can be missed is the same as no notice. The
-      // comparison itself happens once the identity resolves, in AppBootstrapper.
+      // Recorded: AppBootstrapper says so if the handle held is not the one typed.
       rememberRequestedHandle(data.user!.id, username);
 
       const completeUser = { ...data.user, ...profile, following: [] } as User;
       storage.set('last_user_id', data.user!.id);
       setSensitive(`ironvault_user_cache_${data.user!.id}`, JSON.stringify(completeUser));
       set({ user: completeUser, isAuthenticated: true });
-      // Same reason as login(): logIn() is the documented way to move the store
-      // identity to this account, rather than relying on a repeat configure().
+      // The store's identity moves to this account, as in login().
       void identifyUser(data.user!.id);
       return { needsConfirmation: false };
     }
-    // Email confirmation required — no session, so the profile is unreadable and the
-    // requested handle cannot be claimed or even checked from here. The trigger has
-    // ALREADY created the profile, suffix and all. Record what they asked for; the
-    // comparison happens when they confirm, log in, and a real handle finally resolves.
+    // Confirmation needed: no session, so the handle is checked once they sign in.
     rememberRequestedHandle(data?.user?.id, username);
     return { needsConfirmation: true };
   },
@@ -410,8 +342,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const previousUserId = get().user?.id ?? null;
     const cleanupErrors: string[] = [];
 
-    // 1. Clear zustand auth state FIRST — sign-out must be visually instant and
-    //    can never be blocked by network or SDK behavior.
+    // 1. Signed out on screen FIRST: never held up by the network or an SDK.
     set({ user: null, isAuthenticated: false });
 
     // 2. Clean up Realtime WebSocket immediately to stop background heartbeat
@@ -420,12 +351,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       teardownNotificationRealtime();
     } catch { cleanupErrors.push('realtime'); }
 
-    // 3. Clear all dependent stores to prevent cross-user data leakage.
-    //    Uses the centralized resetAllStores(); each store self-registers its reset handler.
+    // 3. Every store's own reset, so nothing crosses to the next member.
     try {
       const { resetAllStores } = await import('./resetAllStores');
-      // Passed so each store can erase its own per-member disk caches. The auth
-      // store was cleared in step 1, so handlers cannot look this up themselves.
+      // Their id, for per-member caches: step 1 already cleared it from the store.
       await resetAllStores(previousUserId);
     } catch { cleanupErrors.push('stores'); }
 
@@ -444,16 +373,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       queryClient.clear();
     } catch { cleanupErrors.push('query-cache'); }
 
-    // 7. Remove push token BEFORE revoking the session — the delete on
-    //    push_tokens is RLS-protected, so it must run while still authenticated
-    //    (running it after signOut silently left stale tokens and kept
-    //    delivering the old user's notifications to this device).
+    // 7. The push token, BEFORE the session goes (RLS needs it to delete).
     try {
       if (previousUserId) {
-        // It now ANSWERS. A token that survives logout keeps delivering the
-        // previous member's notifications to this device, so a failure here is
-        // recorded with the rest and reaches Sentry in production — it used to
-        // return void, so there was nothing to record even when it failed.
+        // A surviving token keeps sending their notifications here: a failure is reported.
         const removed = await _withTimeout(removePushToken(previousUserId), 4000);
         if (!removed) cleanupErrors.push('push-token');
       }
@@ -466,24 +389,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       await _withTimeout(supabase.auth.signOut({ scope: 'local' }), 5000);
     } catch { cleanupErrors.push('auth'); }
 
-    // 9. Clear user cache + persisted query cache + feed cache from storage.
-    // STORE-1: run on ALL platforms. The previous `Platform.OS !== 'web'` guard
-    // left stale auth / cross-user data in a shared browser after logout. Mobile
-    // behavior is unchanged (the block already ran there); this also clears on web.
+    // 9. The member's caches on disk, on every platform.
     if (previousUserId) storage.delete(`ironvault_user_cache_${previousUserId}`);
     storage.delete('last_user_id');
     storage.delete('ironvault_user_cache'); // clean up legacy
     storage.delete('recovery_pending');
-    // The unfinished essay in the writing room. It was written under a key with
-    // no member in it and survived logout, so the next person to sign in on this
-    // phone opened the room and found somebody else's work — readable, and
-    // filable under their own name.
-    clearAllDrafts(previousUserId);
-    // Their old handles and any handle they had asked for. Both guard themselves
-    // by holding the member id in the payload, so a second member could never
-    // READ them — but they were still one person's names left on somebody
-    // else's phone. Both modules have exported the eraser all along and nothing
-    // called either.
+    clearAllDrafts(previousUserId); // their unfinished writing
+    // Their old handles and the one they asked for: never left on another's phone.
     clearHandleHistory();
     clearRequestedHandle();
     clearOfflineQueue();
@@ -535,31 +447,19 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     });
 
     if (Object.keys(safeUpdates).length > 0) {
-      // Mirrors the dirty_prefs_ pattern below: marks these fields as locally-ahead-of-server
-      // so a concurrent restoreSession() (e.g. the post-purchase polling loop in
-      // useEntitlement.ts) merges them instead of overwriting with the stale fetched profile.
+      // Ahead of the server until confirmed, so a restoreSession meanwhile (the
+      // post-purchase polling) merges these rather than reverting them.
       storage.set(`dirty_profile_${user.id}`, JSON.stringify(safeUpdates));
       try {
-        // The previous handle travels explicitly. The store was optimistically
-        // updated above, so memory already holds the NEW name, and the profile
-        // cache — the only other place the old one survived — is written only
-        // when storage can be encrypted. `prevUser` is the one reliable source.
+        // The old handle from `prevUser`: memory already holds the new one.
         await ProfileService.updateProfile(user.id, safeUpdates as Partial<User>, prevUser?.username);
         storage.delete(`dirty_profile_${user.id}`);
       } catch (e: unknown) {
         // Rollback optimistic update
         if (__DEV__) console.warn('[updateUser] DB sync failed, rolling back:', e);
         storage.delete(`dirty_profile_${user.id}`);
-        // \u2500\u2500 ONLY IF THEY ARE STILL HERE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-        // This rollback restores the member's WHOLE user object and writes it
-        // back to encrypted storage under their id. A logout landing inside
-        // the await above meant it did both AFTER the reset had cleared them:
-        // the member who had just left was put back into the store, and their
-        // profile \u2014 email included \u2014 was rewritten to the very cache key the
-        // logout wipe had deleted.
-        //
-        // The auth store was the one store this enumeration never covered,
-        // because it owns the logout and so read as immune. It is not.
+        // Only if they are still here: after a logout it would restore the
+        // departed member, and rewrite their cache (email included).
         if (!memberUnchanged(prevUser.id)) return;
         set({ user: prevUser });
         setSensitive(`ironvault_user_cache_${prevUser.id}`, JSON.stringify(prevUser));
@@ -568,14 +468,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 
-  // Local-only tier/is_founding update for the post-purchase optimistic UI.
-  // `tier` and `is_founding` are server-derived (set by the RevenueCat
-  // webhook, not the client) and aren't in ProfileService's update
-  // whitelist, so routing this through updateUser()/ProfileService would
-  // silently no-op the DB write while still paying for the network round
-  // trip. The canonical value is reconciled by the polling loop in
-  // useEntitlement.purchase()/membership.tsx, which calls restoreSession()
-  // once the webhook lands.
+  // The rank shown just after a purchase, on this phone only: the server sets
+  // the real one, and the purchase's polling restores it once it lands.
   setLocalTierHint: (updates) => {
     set((state) => {
       if (!state.user) return state;
@@ -591,10 +485,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     const timerKey = `pref:${user.id}`;
 
-    // F-3: snapshot the pre-window preferences ONCE, at the start of a debounce window.
-    // Because rapid changes to different keys share this single timer, a failed sync must
-    // revert EVERY key changed during the window — not just the last one. Capturing per-call
-    // (the old `prevValue`) rolled back only the final key and left earlier keys diverged.
+    // The window's opening snapshot, taken ONCE, so a refusal reverts every key in it.
     if (!_prefTimers.has(timerKey)) {
       _prefBaselines.set(user.id, { ...(user.preferences ?? {}) });
     }
@@ -604,26 +495,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // 1. Optimistic update (Memory)
     set((state) => ({ user: state.user ? { ...state.user, preferences: prefs } : null }));
 
-    // 2. Optimistic update (Cache) - guarantees state persists even if app closes during debounce
+    // 2. Optimistic update (Cache)
     setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify({ ...get().user, preferences: prefs }));
 
-    // The PENDING preferences get their own durable home, and it is NOT gated on
-    // encryption — this is unsynced work, not a cache.
-    //
-    // They used to live only inside the profile cache above, with this key as a
-    // bare 'true' flag. Once that cache became conditional on encryption, the
-    // flag survived and its payload did not: the reconciler on the next launch
-    // found "unsynced" with nothing to sync, skipped silently, and left the flag
-    // set forever. The member's preference change was simply gone.
-    //
-    // A pending write must never depend on a cache to survive.
+    // 3. The PENDING change, never gated on encryption: it must survive a kill.
     storage.set(`dirty_prefs_${user.id}`, JSON.stringify(prefs));
 
     if (_prefTimers.has(timerKey)) {
       clearTimeout(_prefTimers.get(timerKey)!);
     }
 
-    // 3. Debounced network sync - batches rapid changes and guarantees trailing edge execution
+    // 4. The send, debounced: one call for a burst of changes, always after the last.
     _prefTimers.set(timerKey, setTimeout(async () => {
       _prefTimers.delete(timerKey);
       try {
@@ -636,20 +518,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         storage.delete(`dirty_prefs_${user.id}`);
         _prefBaselines.delete(user.id);
       } catch {
-        // DB write failed — restore the FULL pre-window snapshot so every key changed during
-        // this debounce window reverts together, preventing cache/server divergence. dirty_prefs
-        // stays set so restoreSession re-pushes the (now-consistent) baseline on next launch.
+        // Refused: the WHOLE window reverts together, to its opening snapshot.
         const baseline = _prefBaselines.get(user.id) ?? {};
         _prefBaselines.delete(user.id);
-        // Same reason as updateUser's rollback, with an extra wrinkle: this one
-        // runs on a 1000ms debounce, so logging out just after changing a
-        // setting lands it squarely in the window. The `set` was already safe
-        // (it returns null when there is no user), but the cache write was not:
-        // it rewrote the departed member's cache key — recreating a file the
-        // logout wipe removes — with whatever `get().user` held by then.
+        // Not after a logout (likely, inside a one-second window): it would
+        // rewrite the departed member's cache, which the logout deleted.
         if (!memberUnchanged(user.id)) return;
         set((state) => ({ user: state.user ? { ...state.user, preferences: { ...baseline } } : null }));
         setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify(get().user));
+        // The disk follows the screen, or the next launch re-applies the undone
+        // change; unless a newer window has begun, whose change is still pending.
+        if (!_prefTimers.has(timerKey)) storage.delete(`dirty_prefs_${user.id}`);
         if (__DEV__) console.warn('[setPreference] DB sync failed, rolled back window locally');
       }
     }, 1000));

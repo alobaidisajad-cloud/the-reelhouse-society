@@ -1,21 +1,12 @@
 /**
- * RevenueCat — In-App Purchase & Subscription Management
+ * RevenueCat — in-app purchases and subscriptions, through the App Store and
+ * Google Play: buying, restoring, reading entitlements, and asking the server
+ * to grant what the store says.
  *
- * Apple/Google-compliant monetization layer for ReelHouse Society.
- * Handles subscription lifecycle, entitlement checks, restore purchases,
- * and syncs tier status back to Supabase.
- *
- * Setup instructions:
- * 1. Create a RevenueCat account at https://app.revenuecat.com
- * 2. Create iOS + Android app, configure products matching:
- *    - "archivist_monthly" ($1.99/mo)
- *    - "archivist_annual" ($19.99/yr)
- *    - "auteur_monthly" ($4.99/mo)
- *    - "auteur_annual" ($49.99/yr)
- *    - "founding_lifetime" ($49 one-time)
- * 3. Set EXPO_PUBLIC_REVENUECAT_IOS_KEY and EXPO_PUBLIC_REVENUECAT_ANDROID_KEY
- *    in your .env file
- * 4. Install: npx expo install react-native-purchases
+ * The store products are `archivist_monthly`, `archivist_annual`,
+ * `auteur_monthly`, `auteur_annual` and `founding_lifetime`; their prices live
+ * in the stores (constants/membership.ts holds only the fallback copy). Each
+ * platform's key is EXPO_PUBLIC_REVENUECAT_IOS_KEY / _ANDROID_KEY.
  */
 
 import { Platform } from 'react-native';
@@ -26,9 +17,7 @@ import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
 import { resolveTier } from '../utils/tier';
 import { recordGateEvent } from '../utils/gateTelemetry';
 
-// ── Type Definitions (no runtime dependency until package is installed) ──
-// These mirror RevenueCat's actual types for type-safety before the package exists
-
+// ── The app's own view of an entitlement ──
 export type ReelHouseTier = 'cinephile' | 'archivist' | 'auteur' | 'founding';
 
 export interface EntitlementInfo {
@@ -43,28 +32,22 @@ export interface EntitlementInfo {
 const RC_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
 const RC_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '';
 
-// TYPES-4: the package is installed, so type against the real SDK (the stale
-// `react-native-purchases.d.ts` stub that shadowed these as `unknown` is deleted).
+// The real SDK's types; the SDK itself is loaded on first configure.
 let Purchases: typeof import('react-native-purchases').default | null = null;
 let isConfigured = false;
 
-/**
- * Initialize RevenueCat — call once in _layout.tsx after auth restore.
- * Safe to call even if the package isn't installed (graceful no-op).
- */
+/** Configure RevenueCat once, after the session is restored; any failure leaves it off. */
 export async function initRevenueCat(userId?: string): Promise<void> {
   const apiKey = Platform.OS === 'ios' ? RC_IOS_KEY : RC_ANDROID_KEY;
 
   if (!apiKey) {
-    // No key ⇒ monetization is entirely disabled. Surface it (forwarded to
-    // Sentry in prod, deduped by fingerprint) so a missing-config build is
-    // visible rather than silently selling nothing.
+    // No key: nothing can be sold. Said to Sentry, so the build is not silent.
     logger.warn('[revenueCat] No API key configured — monetization disabled', { platform: Platform.OS });
     return;
   }
 
   try {
-    // Dynamic import so the app doesn't crash if package isn't installed yet
+    // Loaded here, so a missing native module is a caught failure, not a crash.
     const RNPurchases = await import('react-native-purchases');
     Purchases = (RNPurchases.default ?? RNPurchases) as typeof import('react-native-purchases').default;
 
@@ -73,9 +56,7 @@ export async function initRevenueCat(userId?: string): Promise<void> {
 
     logger.info('[revenueCat] Initialized successfully');
   } catch (err) {
-    // A failed dynamic import / configure leaves isConfigured=false, so every
-    // entitlement & purchase call silently no-ops. This is the single failure
-    // that disables ALL monetization — report it (stack preserved via logger.error).
+    // The one failure that turns off every purchase: reported with its stack.
     logger.error('[revenueCat] Failed to initialize — monetization disabled', err);
   }
 }
@@ -144,42 +125,25 @@ export async function checkEntitlements(): Promise<EntitlementInfo> {
   }
 }
 
-/**
- * ── A RANK THAT ENDS ────────────────────────────────────────────────────────
- * Nothing in this app had ever lowered a rank. No expiry column, no webhook,
- * and `grant_entitlement` — the only sanctioned writer of a rank — had never
- * been called once in either direction. So a subscription could end and
- * `profiles.tier` would say `archivist` for ever, while every server gate reads
- * exactly that column.
- *
- * ── WHY THIS IS NOT `checkEntitlements().isActive` ──────────────────────────
- * Because that would revoke the rank of almost everybody who pays.
- *
- * `checkEntitlements` returns `parseEntitlements(null)` — inactive — in three
- * situations that are not remotely alike:
- *
- *   the SDK is not configured   which on Android is ALWAYS, today: there is no
- *                               EXPO_PUBLIC_REVENUECAT_ANDROID_KEY at all
- *   getCustomerInfo threw       offline, or a transient store failure
- *   the customer genuinely has no active entitlement
- *
- * Only the third is a lapse. Acting on the first would strip every Android
- * member; acting on the second would strip anyone who opened the app on a
- * plane. "Not entitled" and "I could not find out" must never be the same
- * answer, so this lives here, beside `isConfigured` and the try/catch, rather
- * than downstream of a boolean that has already thrown that distinction away.
- *
- * The server is the backstop: `relinquish_rank` can only ever lower the
- * CALLER'S OWN rank, and it delegates to `grant_entitlement`, which refuses to
- * lower a rank granted by any other source. So a hand-granted rank and a
- * founding seat survive this call even if it is made in error.
- */
+/** What `reconcileRank` found, and whether it changed anything. */
 export type RankReconciliation =
   | 'unknown'          // could not find out — nothing was changed
   | 'active'           // the store says they are entitled
   | 'relinquished'     // the store says no, and the server lowered them
   | 'already-current'; // the store says no, and the server had nothing to lower
 
+/**
+ * ── A RANK THAT ENDS ────────────────────────────────────────────────────────
+ * When the store positively says a subscription is over, the member's rank is
+ * lowered (every server gate reads that rank). Not `checkEntitlements()`, whose
+ * "inactive" also means "no SDK here" (no Android key is in eas.json) and "the
+ * store could not be reached": acting on those would strip paying members.
+ * "Not entitled" and "could not find out" are never the same answer here.
+ *
+ * The server is the backstop: `relinquish_rank` lowers only the CALLER's rank,
+ * through `grant_entitlement`, which refuses to lower a rank another source
+ * granted, so a hand-granted rank or a founding seat survives a wrong call.
+ */
 export async function reconcileRank(): Promise<RankReconciliation> {
   // Not configured is NOT "not entitled".
   if (!isConfigured || !Purchases) return 'unknown';
@@ -211,9 +175,7 @@ export async function reconcileRank(): Promise<RankReconciliation> {
       recordGateEvent('rank_relinquished');
       return 'relinquished';
     }
-    // Refused for a good reason — a hand-granted rank, or a founding seat, or
-    // they were already a Cinephile. `out_reason` says which.
-    return 'already-current';
+    return 'already-current'; // refused for a reason, which `out_reason` names
   } catch (e) {
     logger.warn(`[revenueCat] reconcileRank: ${String(e)}`);
     return 'unknown';
@@ -245,14 +207,11 @@ export async function purchasePackage(pkg: any): Promise<EntitlementInfo | null>
   if (!isConfigured || !Purchases) return null;
 
   try {
-    // Atomic Parsing: extract entitlement directly from the purchase payload
-    // This completely eliminates the post-purchase network race condition!
+    // The entitlement from the purchase's own answer, not a second fetch.
     const { customerInfo } = await Purchases.purchasePackage(pkg);
     const entitlement = parseEntitlements(customerInfo);
 
-    // Sync tier to Supabase backend
-    // ALWAYS sync, even if inactive, to ensure downgrades are properly recorded
-    await syncEntitlementToSupabase(entitlement.tier);
+    await syncEntitlementToSupabase(entitlement.tier); // always, even if inactive
 
     return entitlement;
   } catch (err: any) {
@@ -263,14 +222,8 @@ export async function purchasePackage(pkg: any): Promise<EntitlementInfo | null>
 }
 
 /**
- * Gather every purchasable package across ALL configured offerings.
- *
- * `getOfferings()` only returns `offerings.current`, which is a single
- * offering. RevenueCat dashboards are commonly set up with one offering per
- * tier (so `current` holds just one tier's packages) OR a single offering
- * holding every tier. Collecting from `current` first and then every entry in
- * `offerings.all` makes tier resolution work under either topology. Deduped by
- * package + product identifier so the same package isn't considered twice.
+ * Every package in EVERY offering (`current` first, then `all`), deduped: a
+ * dashboard may hold one offering per tier or one for all of them.
  */
 async function collectPurchasablePackages(): Promise<any[]> {
   if (!isConfigured || !Purchases) return [];
@@ -301,30 +254,16 @@ export interface TierPricing {
   annual?: string;
   /** One-time price (the Founding seat). Same shape as the recurring ones. */
   lifetime?: string;
-  /** Numeric store prices + currency — power the honest "≈ $X.XX / MO" line
-   *  under annual billing. Optional: absent when the SDK doesn't expose them,
-   *  and the UI simply omits the equivalence line (never shows a wrong number). */
+  /** The store's numbers; absent, the page omits what it would compute from them. */
   monthlyPrice?: number;
   annualPrice?: number;
   lifetimePrice?: number;
   currencyCode?: string;
-  /**
-   * The annual price as a month, formatted BY THE STORE in the member's own
-   * currency ("£1.67"). The page used to divide by twelve and format the result
-   * with Intl, which Hermes cannot be relied on to have — and when it failed,
-   * the fallback printed a US-dollar figure beside a local price.
-   */
+  /** The annual price per month, formatted BY THE STORE in local currency ("£1.67"). */
   annualPerMonth?: string;
 }
 
-/**
- * CONST-3: resolve localized store prices per tier so the membership UI can
- * show the REAL StoreKit/Play price (and currency) instead of hardcoded USD
- * that drifts from the stores. Keyed by tier id (`archivist` / `auteur`) with
- * each tier's monthly + annual `priceString`. Returns `{}` when RC isn't
- * configured/available — callers fall back to the static copy in
- * `constants/membership.ts`.
- */
+/** Each rank's real store prices, localized; `{}` without a store (the page's copy stands in). */
 export async function getTierPricing(): Promise<Record<string, TierPricing>> {
   return pricingFromPackages(await collectPurchasablePackages());
 }
@@ -340,11 +279,7 @@ export function pricingFromPackages(packages: any[]): Record<string, TierPricing
     const productId = String(p?.product?.identifier ?? '').toLowerCase();
     const priceString = typeof p?.product?.priceString === 'string' ? p.product.priceString : undefined;
     if (!priceString) continue;
-    // ⚠️ #98 — 'founding' was missing here and LIFETIME was dropped by the period
-    // check below, so the Founding card had no store price to show and fell back to a
-    // "$49" typed into the screen. Archivist and Auteur showed real localized prices
-    // beside it, so a member in the UK or Japan saw two real prices and one US dollar
-    // figure — wrong, and an App Store metadata risk.
+    // Founding too, as a lifetime price: every card shows the store's own figure.
     const tierId = ['archivist', 'auteur', 'founding'].find((t) => productId.startsWith(t));
     if (!tierId) continue;
     const pType = String(p?.packageType ?? '').toUpperCase();
@@ -369,37 +304,17 @@ export function pricingFromPackages(packages: any[]): Record<string, TierPricing
   return out;
 }
 
-/**
- * Resolve the RevenueCat package to purchase for a given tier.
- *
- * Critically, this matches on the **store product identifier**
- * (`pkg.product.identifier` — e.g. `auteur_annual`, `founding_lifetime`, per
- * the products documented at the top of this file) and the **packageType**,
- * NOT the package identifier. RevenueCat's predefined packages carry
- * identifiers like `$rc_annual` / `$rc_lifetime`, which never contain the tier
- * name — so the previous `pkg.identifier.includes(tier)` match silently failed
- * for every standard-configured dashboard, making all purchases impossible.
- *
- * Match order (most precise → most lenient); the final step preserves the
- * original package-identifier behavior so custom-named packages still resolve:
- *   1. Exact documented product id (`<tier>_<period>` / `founding_lifetime`).
- *   2. Product for this tier with the desired billing period.
- *   3. Custom package whose identifier encodes the tier + period.
- *   4. Any product for this tier (prefer selling a monthly over failing).
- *   5. Legacy: package identifier contains the tier name.
- *
- * BILLING CHOICE: when `period` is passed EXPLICITLY (the membership toggle),
- * resolution is STRICT — steps 4–5 are skipped, so a member who chose MONTHLY
- * can never be silently sold the annual product (or vice-versa) on a store
- * missing that period. No match → null → the caller shows an honest error.
- * When `period` is omitted (legacy callers, e.g. useEntitlement), behavior is
- * byte-identical to before: annual preferred, lenient fallback chain intact.
- * Founding is always the lifetime product regardless of `period`.
- *
- * Exported for unit testing — it is a pure function of its inputs.
- */
 export type BillingPeriod = 'monthly' | 'annual';
 
+/**
+ * The package to buy for a rank, matched on the STORE PRODUCT id and the
+ * package type, never only the package id (RevenueCat's are `$rc_annual`,
+ * with no rank in them). Most precise first: the exact `<rank>_<period>`; the
+ * rank's product of that period; a custom package naming both; then, only
+ * when no period was chosen, any product of the rank, and a package naming it.
+ * A period chosen EXPLICITLY is strict: a member who chose monthly is never
+ * sold annual; no match is null, and the caller says so. Founding is lifetime.
+ */
 export function selectPackageForTier(packages: any[], tier: ReelHouseTier, period?: BillingPeriod): any | null {
   if (!packages?.length) return null;
   const t = tier.toLowerCase();
@@ -429,11 +344,7 @@ export function selectPackageForTier(packages: any[], tier: ReelHouseTier, perio
   );
 }
 
-/**
- * Helper to purchase by tier name without needing the full package object.
- * Pass `period` to honor an explicit monthly/annual choice (strict — see
- * selectPackageForTier); omit it for the legacy annual-preferred behavior.
- */
+/** Buy a rank by name; a `period` is honored strictly (see selectPackageForTier). */
 export async function purchaseTier(tier: ReelHouseTier, period?: BillingPeriod): Promise<EntitlementInfo | null> {
   if (!isConfigured || !Purchases) return null;
   try {
@@ -448,29 +359,15 @@ export async function purchaseTier(tier: ReelHouseTier, period?: BillingPeriod):
 }
 
 /**
- * Restore previous purchases — required by Apple for App Store compliance.
- * Use when a user reinstalls the app or switches devices.
- */
-/**
- * The result of a restore, including whether the store could be consulted AT ALL.
- *
- * ⚠️ #99 — this distinction is the whole point. Three completely different outcomes
- * used to collapse into one identical `isActive: false`:
- *
- *   1. the store could not be reached (no signal, App Store down)
- *   2. purchases are not configured on this build/device
- *   3. the store answered, and this account genuinely has no subscription
- *
- * Only (3) means "you have no subscription". The screen could not tell them apart, so
- * it treated all three the same — told a paying member "No active subscriptions found"
- * and stripped their tier locally, on the exact tap a confused member makes when
- * something looks wrong. And "Restore Purchases" is a button Apple REQUIRES.
+ * A restore's answer, and whether the store answered AT ALL: "no subscription"
+ * is only true when it did (not when it is unreachable or not configured).
  */
 export interface RestoreResult extends EntitlementInfo {
   /** True only when the store actually answered. False means "we don't know". */
   storeReachable: boolean;
 }
 
+/** Restore Purchases, which Apple requires, for a reinstall or a new device. */
 export async function restorePurchases(): Promise<RestoreResult> {
   if (!isConfigured || !Purchases) {
     // Not "you own nothing" — "we could not ask".
@@ -479,35 +376,21 @@ export async function restorePurchases(): Promise<RestoreResult> {
   }
 
   try {
-    // Atomic Parsing: extract entitlement directly from restore payload
     const customerInfo = await Purchases.restorePurchases();
     const entitlement = parseEntitlements(customerInfo);
 
-    // Sync restored tier to Supabase.
-    // Still ALWAYS sync, including an inactive result, so a genuinely lapsed
-    // subscription is retired — the store ANSWERED here, so the answer is authoritative
-    // for purchases the store made. Whether the downgrade is actually allowed is decided
-    // server-side by grant_entitlement, which refuses to lower a tier bought on the
-    // website or granted by hand (20260803_01_entitlement_source.sql).
+    // Always, inactive too: the store ANSWERED (the server still guards other ranks).
     await syncEntitlementToSupabase(entitlement.tier);
 
     return { ...entitlement, storeReachable: true };
   } catch (e) {
-    // The store threw — we learned nothing. Deliberately does NOT sync: sending a
-    // downgrade off a failed lookup is exactly how a paying member gets demoted.
+    // The store threw: we learned nothing, so nothing is sent.
     logger.warn('[revenueCat] restorePurchases failed', e);
     return { ...parseEntitlements(null), storeReachable: false };
   }
 }
 
-/**
- * Whether there is a store to buy from on this device right now.
- *
- * `purchaseTier` answers null both when the member cancelled and when there is
- * no store at all — and the first must be silent while the second must not.
- * Without this, a build with no key (every Android build today) had a buy
- * button that did nothing whatsoever when tapped.
- */
+/** A store here? (`purchaseTier`'s null is a cancel OR no store; one must speak.) */
 export function isStoreReady(): boolean {
   return isConfigured && !!Purchases;
 }
@@ -533,16 +416,15 @@ export async function showManageSubscriptions(): Promise<boolean> {
 }
 
 /**
- * Sync the entitlement tier to Supabase `profiles.role`.
- * This ensures the backend always has the current subscription status.
+ * Ask the server to grant what the store says: `sync-entitlement` reads
+ * RevenueCat itself, server to server, and ignores the tier sent here.
  */
 async function syncEntitlementToSupabase(tier: ReelHouseTier): Promise<void> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // VIP Database Corruption Shield
-    // Prevent client-side downward syncs from destroying manually granted founding VIPs.
+    // A founding seat is never asked to step down (the server refuses it too).
     const { useAuthStore } = await import('../stores/auth');
     const currentRole = resolveTier(useAuthStore.getState().user);
 
@@ -551,16 +433,8 @@ async function syncEntitlementToSupabase(tier: ReelHouseTier): Promise<void> {
        return;
     }
 
-    // Securely queue the sync through the MMKV offline queue.
-    // This guarantees delivery if the network drops and ensures the transaction
-    // is securely validated by the Edge Function instead of trusting the client.
-    //
-    // ⚠️ user_id is what stops this being applied to the WRONG ACCOUNT. The queue
-    // discards pending work belonging to a previous user, but only when the payload
-    // says who it belongs to — without it the mutation is treated as session-scoped
-    // and runs against whoever is signed in when the network returns. Hand the phone
-    // over, or just log out and let someone else log in, and your tier landed on their
-    // account. See the note on sync_entitlement in types/mutations.ts.
+    // Queued (a dropped network only delays it); `user_id` keeps it off the
+    // WRONG account (see sync_entitlement in types/mutations.ts).
     enqueueMutation({ type: 'sync_entitlement', payload: { tier, user_id: user.id } });
     flushOfflineQueue();
   } catch (e) {
