@@ -90,11 +90,23 @@ function flowLog(flow) {
 const SAID = /ANR in|not responding|unresponsive|Input dispatching timed out|FATAL EXCEPTION|\s[EWF] (ReactNativeJS|ReactNative|unknown:ReactNative|AndroidRuntime)\s*:/;
 const NOISE = /StatusBarModule: Ignored status bar change/;
 
+const TRACE = /\[e2e\] /;
+
+/** What the app traced (src/utils/e2eTrace.ts): its decisions, the last twelve, in order. */
+function tracedRead(flow) {
+  const log = flowLog(flow);
+  if (!log) return ['(the log was not kept)'];
+  const lines = log.filter((l) => TRACE.test(l))
+    .map((l) => `${l.replace(/^\d\d-\d\d (\d\d:\d\d:\d\d)\.\d+.*$/, '$1')} ${l.slice(l.indexOf('[e2e] ') + 6)}`.slice(0, 180));
+  if (!lines.length) return ['(no trace)'];
+  return lines.length > 12 ? [`… ${lines.length - 12} earlier`, ...lines.slice(-12)] : lines;
+}
+
 /** What Android and the app said during the flow: its last hangs, crashes, errors and warnings. */
 function saidRead(flow) {
   const log = flowLog(flow);
   if (!log) return ['(the log was not kept)'];
-  const said = [...new Set(log.filter((l) => SAID.test(l) && !NOISE.test(l) && !/\sMaestro\s*:/.test(l))
+  const said = [...new Set(log.filter((l) => SAID.test(l) && !NOISE.test(l) && !TRACE.test(l) && !/\sMaestro\s*:/.test(l))
     .map((l) => l.replace(/^\d\d-\d\d (\d\d:\d\d:\d\d)\.\d+\s+\d+\s+\d+\s+/, '$1 ').slice(0, 160)))];
   if (!said.length) return ['(no hang, crash, error or warning)'];
   return said.length > 8 ? [`… ${said.length - 8} earlier`, ...said.slice(-8)] : said;
@@ -174,6 +186,7 @@ for (const f of files) {
     groups.set(key, {
       flows: [], where, why,
       screen: failed.metadata?.hierarchy ? describe(failed.metadata.hierarchy) : screenRead(flow),
+      traced: tracedRead(flow),
       said: saidRead(flow),
       hidden: hiddenRead(flow),
     });
@@ -187,6 +200,8 @@ for (const g of groups.values()) {
     `${g.flows.join(', ')}: failed at ${g.where}`,
     `why: ${g.why}`,
     // Before the screen, whose long list the annotation cuts short.
+    `traced by the app${rest.length ? ` (${first}'s)` : ''}:`,
+    ...g.traced,
     `said during the flow${rest.length ? ` (${first}'s)` : ''}:`,
     ...g.said,
     `drawn but called invisible by Android${rest.length ? ` (${first}'s)` : ''}:`,

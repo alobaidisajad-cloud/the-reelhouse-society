@@ -25,7 +25,6 @@ appId: com.reelhouse.society
 - tapOn:
     id: "recovery-email-input"
 - inputText: ${E2E_MEMBER_EMAIL}
-- hideKeyboard
 - tapOn:
     id: "recovery-submit-button"
 - extendedWaitUntil:

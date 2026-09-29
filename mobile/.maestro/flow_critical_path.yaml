@@ -21,7 +21,6 @@ appId: com.reelhouse.society
 - tapOn:
     id: "review-input"
 - inputText: "E2E critical path: an offer the archive could not refuse."
-- hideKeyboard
 - tapOn:
     id: "submit-log-button"
 # The form closes back onto the film.

@@ -23,6 +23,14 @@ adb install -r "$APK" || { echo "::error title=E2E::the app would not install"; 
 # below), and any already showing is closed.
 adb shell settings put global hide_error_dialogs 1
 adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1 || true
+# No on-screen keyboard. Maestro types by injecting key events, and they pass
+# through the keyboard app first: on an email field Gboard stalled them mid-
+# address ("e2e_member@e", then nothing for minutes, runs 36500199970 and
+# 36566533738) and opened its own menus. A member taps keys; a test injects
+# them. With no input method the injected keys reach the field itself. (So the
+# flows never call hideKeyboard: in Maestro it presses Back.)
+for ime in $(adb shell ime list -s | tr -d '\r'); do adb shell ime disable "$ime" > /dev/null; done
+echo "input methods left enabled: [$(adb shell ime list -s | tr -d '\r' | tr '\n' ' ')]"
 adb logcat -c   # this run's log only, so a crash below is this run's crash
 
 # The runner's memory every 30 seconds, so a device that vanishes mid-run can be

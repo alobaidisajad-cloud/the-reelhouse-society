@@ -14,17 +14,11 @@ appId: com.reelhouse.society
 - tapOn:
     id: "email-input"
 - inputText: ${E2E_MEMBER_EMAIL}
-# The keyboard goes down BEFORE the next field is tapped. On the runner's
-# emulator the keyboard's animation stalls (logcat: IME_INSETS_ANIMATION timed
-# out), the form is still moving under it, and a tap aimed at the password
-# field landed back in the address — the password was typed on the END of the
-# email (the failed run's screen showed the address followed by the masked
-# password) and sign-in never began.
-- hideKeyboard
+# No hideKeyboard: the test device has no on-screen keyboard (run-flows.sh), and
+# Maestro's hideKeyboard presses Back, which would leave the form.
 - tapOn:
     id: "password-input"
 - inputText: ${E2E_MEMBER_PASSWORD}
-- hideKeyboard
 # The address holds the address and nothing else — so a password typed into
 # the wrong field fails HERE, saying so, not twenty seconds later as "still
 # on the sign-in form".

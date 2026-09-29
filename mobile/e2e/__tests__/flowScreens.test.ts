@@ -33,7 +33,7 @@ function flow(name: string, entries: unknown[], log?: string) {
 
 /** The lines of one section of a report, between its heading and the next. */
 const section = (report: string, heading: string) =>
-  report.split(`${heading}:\n`)[1].split(/\n(?=said during|drawn but called|on the screen then)/)[0];
+  report.split(`${heading}:\n`)[1].split(/\n(?=traced by|said during|drawn but called|on the screen then)/)[0];
 
 function run() {
   const r = spawnSync(process.execPath, [SCRIPT, join(dir, 'debug'), join(dir, 'out'), join(dir, 'h')], { encoding: 'utf8' });
@@ -101,6 +101,39 @@ describe('what Android drew but called invisible', () => {
   it('says so when only other apps were skipped', () => {
     flow('darkroom_search', failedAt('x'), skipped('com.google.android.inputmethod.latin', 'android.view.View', 'Rect(0, 0 - 10, 10)'));
     expect(run()['darkroom_search.txt']).toContain('(none of the app: only other apps, or empty boxes)');
+  });
+});
+
+describe('what the app traced', () => {
+  const trace = (time: string, msg: string) => `09-29 ${time}.100  5000  5020 W ReactNativeJS: [e2e] ${msg}\n`;
+
+  it('comes first, in order, time and event, and is not repeated among what was said', () => {
+    flow('darkroom_search', failedAt('darkroom-suggestion-row'),
+      trace('00:30:01', 'darkroom.field {"focused":true}') +
+      trace('00:30:03', 'darkroom.search.ask {"val":"the godfather"}') +
+      trace('00:30:04', 'darkroom.search.answer {"val":"the godfather","count":5}'));
+    const report = run()['darkroom_search.txt'];
+    expect(section(report, 'traced by the app')).toBe(
+      '00:30:01 darkroom.field {"focused":true}\n' +
+      '00:30:03 darkroom.search.ask {"val":"the godfather"}\n' +
+      '00:30:04 darkroom.search.answer {"val":"the godfather","count":5}');
+    expect(section(report, 'said during the flow')).toBe('(no hang, crash, error or warning)');
+    expect(report.indexOf('traced by the app')).toBeLessThan(report.indexOf('said during the flow'));
+  });
+
+  it('keeps the last twelve', () => {
+    let log = '';
+    for (let i = 10; i < 25; i++) log += trace(`00:30:${i}`, `step ${i}`);
+    flow('f', failedAt('x'), log);
+    const lines = section(run()['f.txt'], 'traced by the app').split('\n');
+    expect(lines[0]).toBe('… 3 earlier');
+    expect(lines).toHaveLength(13);
+    expect(lines[12]).toBe('00:30:24 step 24');
+  });
+
+  it('says when there was none', () => {
+    flow('f', failedAt('x'), '');
+    expect(section(run()['f.txt'], 'traced by the app')).toBe('(no trace)');
   });
 });
 

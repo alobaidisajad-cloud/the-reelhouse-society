@@ -33,7 +33,6 @@ appId: com.reelhouse.society
 - tapOn:
     id: "review-input"
 - inputText: "E2E results path: more human than human."
-- hideKeyboard
 - tapOn:
     id: "submit-log-button"
 - extendedWaitUntil:

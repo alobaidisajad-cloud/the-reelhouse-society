@@ -105,7 +105,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | — |  |
 | app/lounge.tsx | — |  |
-| app/lounge/[id].tsx | — |  |
+| app/lounge/[id].tsx | 2026-09-29 | standing unknown until the roster is read; messages spoken + actions; unnamed controls; histories to rules |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | — |  |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | — |  |
@@ -216,15 +216,18 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/clearance/Clearance.tsx | — |  |
 | src/components/ContentSkeleton.tsx | — |  |
 | src/components/ControlledInput.tsx | — |  |
+| src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-09-29 | new |
 | src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/constants.ts | — |  |
 | src/components/darkroom/DarkroomCards.tsx | — |  |
-| src/components/darkroom/DarkroomFilterPanel.tsx | — |  |
+| src/components/darkroom/DarkroomFilterPanel.tsx | 2026-09-29 | year applied on end of editing (iPhone number pad has no return); named fields |
 | src/components/darkroom/DarkroomHeader.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/DarkroomHero.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/DarkroomMoodBar.tsx | — |  |
 | src/components/Decorative.tsx | — |  |
+| src/components/dispatch/__tests__/aBallotsClosingTimes.test.ts | 2026-09-29 | new |
 | src/components/dispatch/__tests__/aControlsNameCanBeRead.test.ts | — |  |
+| src/components/dispatch/__tests__/aDeskControlNeverAnswersWithNothing.test.tsx | 2026-09-29 | new |
 | src/components/dispatch/__tests__/aDossierHasACover.test.tsx | — |  |
 | src/components/dispatch/__tests__/aDraftSurvivesThePhone.test.tsx | — |  |
 | src/components/dispatch/__tests__/aFilingReachesTheRoom.test.tsx | — |  |
@@ -284,7 +287,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperBallot.tsx | — |  |
 | src/components/dispatch/paper/PaperComposer.tsx | — |  |
 | src/components/dispatch/paper/PaperCritiques.tsx | — |  |
-| src/components/dispatch/paper/PaperDesk.tsx | — |  |
+| src/components/dispatch/paper/PaperDesk.tsx | 2026-09-29 | CLOSES made a working control; handler-less controls disabled; 7 dead styles; histories to rules |
 | src/components/dispatch/paper/PaperDeskDoc.tsx | — |  |
 | src/components/dispatch/paper/PaperEssay.tsx | — |  |
 | src/components/dispatch/paper/PaperFill.tsx | — |  |
@@ -359,10 +362,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/home/VelvetRopeCTA.tsx | — |  |
 | src/components/InitiationModal.tsx | — |  |
 | src/components/layout/__tests__/ConciergeButton.test.tsx | — |  |
-| src/components/layout/__tests__/flashListKeyboard.test.tsx | — |  |
+| src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts | 2026-09-29 | new |
+| src/components/layout/__tests__/flashListKeyboard.test.tsx | 2026-09-29 | anchor tests |
 | src/components/layout/__tests__/theThumbStaysInItsTrack.test.ts | — |  |
 | src/components/layout/__tests__/TopNavBar.test.tsx | — |  |
-| src/components/layout/CinematicFlashList.tsx | — |  |
+| src/components/layout/CinematicFlashList.tsx | 2026-09-29 | NOT_ANCHORED default (header race) |
 | src/components/layout/CinematicScrollbar.tsx | — |  |
 | src/components/layout/CinematicScrollView.tsx | — |  |
 | src/components/layout/ConciergeButton.tsx | — |  |
@@ -407,9 +411,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogVerdict.tsx | — |  |
 | src/components/log/NoteSheet.tsx | — |  |
 | src/components/log/VaultNote.tsx | — |  |
+| src/components/lounge/__tests__/aMessageCanBeHeardAndActedOn.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/MemberFaceStack.model.test.ts | — |  |
+| src/components/lounge/__tests__/roomGate.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/theCorridorIsOpen.test.ts | — |  |
 | src/components/lounge/__tests__/theDoorIsAName.test.tsx | — |  |
+| src/components/lounge/__tests__/theDoorWaitsForTheGuestList.test.tsx | 2026-09-29 | new |
 | src/components/lounge/__tests__/thePollRunsWhileWatched.test.ts | — |  |
 | src/components/lounge/__tests__/theRopeWaitsForTheSheet.test.tsx | — |  |
 | src/components/lounge/ActionSheet.tsx | — |  |
@@ -424,6 +431,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/MemberFaceStack.tsx | — |  |
 | src/components/lounge/PublicLoungeCard.tsx | — |  |
 | src/components/lounge/reactions.tsx | — |  |
+| src/components/lounge/roomGate.ts | 2026-09-29 | new |
 | src/components/MarkFigure.tsx | — |  |
 | src/components/MasterLogo.tsx | — |  |
 | src/components/moderation/__tests__/ContentActionSheet.mute.test.tsx | — |  |
@@ -441,7 +449,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/person/PersonOrnaments.tsx | — |  |
 | src/components/person/personStyles.ts | — |  |
 | src/components/Preloader.tsx | — |  |
-| src/components/PressableScale.tsx | — |  |
+| src/components/PressableScale.tsx | 2026-09-29 | accessible / actions pass through; hitSlop comment condensed |
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
 | src/components/profile/__tests__/computeDailyStreak.test.ts | — |  |
 | src/components/profile/__tests__/decadeCounts.test.ts | — |  |
@@ -788,8 +796,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/dispatchMutationRegistry.test.ts | — |  |
 | src/utils/__tests__/dispatchOfflineParity.test.ts | — |  |
 | src/utils/__tests__/dossierPublishing.guard.test.ts | — |  |
+| src/utils/__tests__/e2eTrace.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/edgeFunctions.guard.test.ts | — |  |
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
+| src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | — |  |
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | — |  |
 | src/utils/__tests__/feedInvalidation.guard.test.ts | — |  |
@@ -853,6 +863,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/critiquePayload.ts | — |  |
 | src/utils/csv.ts | — |  |
 | src/utils/draftSync.ts | — |  |
+| src/utils/e2eTrace.ts | 2026-09-29 | new |
 | src/utils/endorsementGroupKey.ts | — |  |
 | src/utils/enter.ts | — |  |
 | src/utils/filterContentByBlocks.ts | — |  |

@@ -91,6 +91,8 @@ Decisions, as of 2026-09-28:
 | `src/theme/__tests__/theVeilMeetsTheLight.test.ts` | Every hero veil ends solid, on the room's own tone. |
 | `src/theme/__tests__/wordsAreNotMarks.test.ts` | Words are set in inks, not pigments. |
 | `src/theme/__tests__/wordsAreSolid.test.ts` | No word is drawn at partial opacity. |
+| `src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts` | Every vertical FlashList chooses whether it anchors (the header race shows only on a device). |
+| `src/utils/__tests__/everyControlHasAName.guard.test.ts` | Every control a screen reader can name, and every sheet it can leave (a render sees one screen). |
 | `src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts` | No file is double-encoded by a shell round-trip. |
 | `src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts` | Every per-member storage key has an eraser. |
 | `src/utils/__tests__/noControlCharacters.guard.test.ts` | No source file carries a raw control character. |

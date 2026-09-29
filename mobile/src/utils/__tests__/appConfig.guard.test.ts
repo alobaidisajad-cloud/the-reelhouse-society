@@ -30,13 +30,18 @@ it('without E2E, the config IS app.json — nothing added, nothing changed', () 
   }
 });
 
-it('with E2E=1, only updates and the cleartext plugin change', () => {
+it('with E2E=1, only updates, the cleartext plugin and the trace switch change', () => {
   const config = withE2E('1', () => appConfig({ config: structuredClone(appJson) }));
-  const { updates, plugins, ...rest } = config as { updates: { enabled: boolean }; plugins: unknown[] };
-  const { updates: u0, plugins: p0, ...rest0 } = appJson;
+  const { updates, plugins, extra, ...rest } = config as { updates: { enabled: boolean }; plugins: unknown[]; extra: Record<string, unknown> };
+  const { updates: u0, plugins: p0, extra: x0, ...rest0 } = appJson;
   expect(rest).toEqual(rest0);
   expect(updates).toEqual({ ...u0, enabled: false });
   expect(plugins).toEqual([...p0, './e2e/plugins/withCleartextTraffic']);
+  expect(extra).toEqual({ ...x0, e2e: true });
+});
+
+it('no real build carries the trace switch', () => {
+  expect(appJson.extra?.e2e).toBeUndefined();
 });
 
 it('no real build profile sets E2E, or points at a local backend', () => {

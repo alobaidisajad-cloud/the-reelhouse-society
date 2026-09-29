@@ -28,7 +28,6 @@ appId: com.reelhouse.society
 - tapOn:
     id: "review-input"
 - inputText: "E2E offline: we'll always have the queue."
-- hideKeyboard
 - tapOn:
     id: "submit-log-button"
 - extendedWaitUntil:

@@ -13,6 +13,7 @@ import { colors, fonts, spacing, effects } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { useDiscoverStore, type DiscoverFilm } from '@/src/stores/discover';
 import PressableScale from '@/src/components/PressableScale';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 
 import { MOODS } from './constants';
 import { DarkroomHero } from './DarkroomHero';
@@ -92,16 +93,24 @@ export const DarkroomHeader = React.memo(() => {
   // back, or a keystroke, is what reopens them.
   const fieldFocused = useRef(false);
   const setFieldFocused = useCallback((focused: boolean) => {
+    e2eTrace('darkroom.field', { focused });
     fieldFocused.current = focused;
     setIsFocused(focused);
   }, []);
   useEffect(() => {
-    const hid = Keyboard.addListener('keyboardDidHide', () => setIsFocused(false));
+    const hid = Keyboard.addListener('keyboardDidHide', () => {
+      e2eTrace('darkroom.keyboard', { shown: false });
+      setIsFocused(false);
+    });
     const shown = Keyboard.addListener('keyboardDidShow', () => {
+      e2eTrace('darkroom.keyboard', { shown: true, field: fieldFocused.current });
       if (fieldFocused.current) setIsFocused(true);
     });
     return () => { hid.remove(); shown.remove(); };
   }, []);
+  useEffect(() => {
+    e2eTrace('darkroom.suggestions', { open: isFocused, count: suggestions.length });
+  }, [isFocused, suggestions.length]);
 
   const animatedSearchProps = useAnimatedProps(() => ({
     color: (isFocused && inputVal.length > 0) ? colors.bloodReel : colors.sepia,
@@ -171,12 +180,14 @@ export const DarkroomHeader = React.memo(() => {
             return;
         }
 
-        const raw = await tmdb.search(val, 1); 
+        e2eTrace('darkroom.search.ask', { val });
+        const raw = await tmdb.search(val, 1);
+        e2eTrace('darkroom.search.answer', { val, active, count: raw.results?.length ?? null, type: raw.searchType ?? null });
         if (active) {
             setSuggestions(raw.results?.slice(0, 5) ?? []);
         }
-       
       } catch (e: unknown) {
+        e2eTrace('darkroom.search.error', { val, message: e instanceof Error ? e.message : String(e) });
         if (__DEV__) console.error('[DarkroomHeader] suggestions fetch error:', e);
       }
     }, 450);
