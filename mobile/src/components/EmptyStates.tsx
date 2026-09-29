@@ -5,7 +5,7 @@
  * Each empty state tells a story — not just "no data" but an invitation.
  * Uses the official Buster mascot with mood-aware personality + lore fragments.
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, {
@@ -14,8 +14,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import Buster, { BusterMood } from '@/src/components/Buster';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { pickRandom, EMPTY, BUSTER } from '@/src/lore/fragments';
+import TryAgain, { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/TryAgain';
+import { pickRandom } from '@/src/lore/fragments';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 interface EmptyStateProps {
     icon?: React.ReactNode;
@@ -76,7 +77,7 @@ export function EmptyState({ icon, glyph = '◈', title, subtitle, compact, bust
             {subtitle && <Text style={s.subtitle}>{subtitle}</Text>}
             <View style={s.divider}>
                 <View style={s.dividerLine} />
-                <Text style={s.dividerGlyph}>✦</Text>
+                <Text style={s.dividerGlyph} {...UNSPOKEN}>✦</Text>
                 <View style={s.dividerLine} />
             </View>
         </Animated.View>
@@ -88,23 +89,49 @@ export function EmptyState({ icon, glyph = '◈', title, subtitle, compact, bust
 // deleted once their last consumer, the dead ledger route, was removed. Their
 // lore copy lives in git history if a future surface wants it.)
 
-export function EmptyOffline() {
-    const lore = pickRandom([
+/**
+ * What a pull-to-refresh says when it could not reach the house, and the page
+ * it had stays: one sentence, the same on every page that pulls.
+ */
+export const REFRESH_FAILED = 'Could not refresh — check your connection.';
+
+/**
+ * What a screen draws when what it shows could not be reached: every screen
+ * the same, so a failure never reads as an empty room. With `onRetry`, the
+ * house's one TRY AGAIN.
+ */
+export function EmptyOffline({ onRetry, wayOut }: {
+    onRetry?: () => void;
+    /** The way out beside TRY AGAIN, spaced so neither touch area takes the other's. */
+    wayOut?: { label: string; onPress: () => void };
+} = {}) {
+    // Chosen once: picked per render, the line changed while it was read.
+    const [lore] = useState(() => pickRandom([
         'The transmission has been severed. We are operating in the dark.',
         'No signal from the Society. Hold your ground.',
         'The projector requires a connection. We wait.'
-    ]);
+    ]));
     return (
-        <EmptyState
-            useBuster
-            busterMood="crying"
-            title="Transmission Interrupted"
-            subtitle={lore}
-        />
+        <View style={s.offline}>
+            <EmptyState
+                useBuster
+                busterMood="crying"
+                title="Transmission Interrupted"
+                subtitle={lore}
+            />
+            {(onRetry || wayOut) && (
+                <View style={s.acts}>
+                    {onRetry && <TryAgain onPress={onRetry} hitSlop={wayOut ? TRY_AGAIN_ABOVE_A_WAY_OUT : undefined} />}
+                    {wayOut && <WayOut label={wayOut.label} onPress={wayOut.onPress} belowTryAgain={!!onRetry} />}
+                </View>
+            )}
+        </View>
     );
 }
 
 const s = StyleSheet.create({
+    offline: { alignItems: 'center' },
+    acts: { alignItems: 'center', gap: ACTS_GAP },
     container: { padding: 48, alignItems: 'center', justifyContent: 'center' },
     compact: { padding: 24 },
     iconWrap: { marginBottom: 16, opacity: 0.7 },

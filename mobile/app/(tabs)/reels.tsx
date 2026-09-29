@@ -41,6 +41,8 @@ import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import reelToast from '@/src/utils/reelToast';
 
 // Removed LayoutAnimation — conflicts with Reanimated layout transitions.
 // Reanimated's entering/exiting animations handle all transitions in this screen.
@@ -179,9 +181,9 @@ export default function ReelScreen() {
 
   // isRefetching is deliberately not taken: the pull gesture drives
   // isManualRefreshing above, so the screen owns its own spinner.
-  const { data: communityData, isLoading: communityLoading, refetch: refetchCommunity, fetchNextPage: fetchNextCommunity, hasNextPage: hasNextCommunity, isFetchingNextPage: isFetchingNextCommunity } = useCommunityFeed();
-  const { data: followingData, isLoading: followingLoading, refetch: refetchFollowing, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing } = useFollowingFeed();
-  const { data: stacksData, isLoading: stacksLoading, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks } = useStacksFeed(stackFilter, stackSearch);
+  const { data: communityData, isLoading: communityLoading, isError: communityFailed, refetch: refetchCommunity, fetchNextPage: fetchNextCommunity, hasNextPage: hasNextCommunity, isFetchingNextPage: isFetchingNextCommunity } = useCommunityFeed();
+  const { data: followingData, isLoading: followingLoading, isError: followingFailed, refetch: refetchFollowing, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing } = useFollowingFeed();
+  const { data: stacksData, isLoading: stacksLoading, isError: stacksFailed, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks } = useStacksFeed(stackFilter, stackSearch);
 
   const followingCount = useSocialStore((s) => s.following.length);
 
@@ -199,17 +201,21 @@ export default function ReelScreen() {
     const isFollowingAnyone = useSocialStore.getState().following.length > 0;
     
     try {
+      let pulled: { isError: boolean; data?: unknown } | null = null;
       if (section === 'logs') {
         if (feedFilter === 'following') {
           if (isAuthenticated && isFollowingAnyone) {
-            await refetchFollowing();
+            pulled = await refetchFollowing();
           }
         } else {
-          await refetchCommunity();
+          pulled = await refetchCommunity();
         }
       } else {
-        await refetchStacks();
+        pulled = await refetchStacks();
       }
+      // The reel on screen stays; the member is told the pull reached nothing.
+      // (With nothing on screen, the empty state already says it.)
+      if (pulled?.isError && pulled.data !== undefined) reelToast.error(REFRESH_FAILED);
     } finally {
       setIsManualRefreshing(false);
     }
@@ -335,8 +341,18 @@ export default function ReelScreen() {
   // not change when a page loads, so it stops being rebuilt on every scroll-in.
   ), [section, feedFilter, resolvedRole, switchSection, switchFeedFilter]);
 
+  // A feed that could not be read is not an empty one: it said "The projection
+  // booth is dark. Be the first to log a film." to a member with no signal.
+  const feedFailed = feedFilter === 'following'
+    ? followingFailed && followingData === undefined
+    : communityFailed && communityData === undefined;
+  const rereadFeed = useCallback(() => {
+    void (feedFilter === 'following' ? refetchFollowing() : refetchCommunity());
+  }, [feedFilter, refetchFollowing, refetchCommunity]);
+
   const logsEmpty = useMemo(() => {
     if (feedLoading) return <TungstenSpooling />;
+    if (feedFailed) return <EmptyOffline onRetry={rereadFeed} />;
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={st.emptyWrap}>
         <Buster size={48} mood="peeking" />
@@ -365,7 +381,7 @@ export default function ReelScreen() {
         <MemberRegistry visible={feedFilter === 'following'} />
       </Animated.View>
     );
-  }, [feedLoading, feedFilter, router, switchFeedFilter, isAuthenticated, askForAName]);
+  }, [feedLoading, feedFailed, rereadFeed, feedFilter, router, switchFeedFilter, isAuthenticated, askForAName]);
 
   const stackHeader = useMemo(() => (
     <>
@@ -410,8 +426,12 @@ export default function ReelScreen() {
   const stacksExtraData = useMemo(() => [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading], [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading]);
 
 
+  const stacksLost = stacksFailed && stacksData === undefined;
+  const rereadStacks = useCallback(() => { void refetchStacks(); }, [refetchStacks]);
+
   const stackEmpty = useMemo(() => {
     if (stacksLoading) return <TungstenSpooling />;
+    if (stacksLost) return <EmptyOffline onRetry={rereadStacks} />;
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={st.emptyWrap}>
         <Buster size={48} mood="thinking" />
@@ -441,7 +461,7 @@ export default function ReelScreen() {
         )}
       </Animated.View>
     );
-  }, [stacksLoading, stackSearch, stackFilter, router, handleClearSearch, switchStackFilter, isAuthenticated, askForAName]);
+  }, [stacksLoading, stacksLost, rereadStacks, stackSearch, stackFilter, router, handleClearSearch, switchStackFilter, isAuthenticated, askForAName]);
 
 
 

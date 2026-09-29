@@ -49,7 +49,7 @@ export default function MemberRoomScreen() {
 
   const {
     author, filings, filed, certified, totalsKnown, certifiedAtFetch,
-    loading, loadingMore, missing, more, loadMore,
+    loading, loadingMore, missing, failed, reload, more, loadMore,
   } = useMemberRoom(username);
 
   // The reader's marks, from the store: one made in the feed is already lit here.
@@ -132,7 +132,8 @@ export default function MemberRoomScreen() {
     );
   }, [width, certifiedIds, savedIds, certifiedAtFetch, me]);
 
-  // A stale link, a closed account or a failed read: one fact to a reader, one page.
+  // A stale link or a closed account: one fact to a reader, one page. (A read
+  // that failed is not this: it is said in the room, with TRY AGAIN.)
   if (missing && !loading) {
     return (
       <View style={p.screen}>
@@ -183,6 +184,13 @@ export default function MemberRoomScreen() {
             ListEmptyComponent={
               loading ? (
                 <PaperSkeletons section="ALL" />
+              ) : failed ? (
+                <PaperEmpty
+                  title="This room could not be reached."
+                  body="Check the connection, and try again."
+                  action="TRY AGAIN"
+                  onAction={reload}
+                />
               ) : mine ? (
                 <PaperEmpty
                   title="You have filed nothing yet."

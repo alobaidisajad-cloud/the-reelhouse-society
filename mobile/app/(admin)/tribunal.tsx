@@ -35,6 +35,8 @@ import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatDate } from '@/src/utils/timeAgo';
+import { TryAgainLine } from '@/src/components/TryAgain';
+import { nav } from '@/src/utils/typedRouter';
 
 interface TribunalTarget {
   id: string;
@@ -100,9 +102,7 @@ export function EnforcementHistory({ history, isLoading, failed, onRetry }: {
         <Text style={s.historyLabel}>ENFORCEMENT RECORD</Text>
         <Text style={s.historyEmpty}>The record could not be read.</Text>
         {onRetry && (
-          <PressableScale onPress={onRetry} haptic="selection" accessibilityRole="button" accessibilityLabel="Read the enforcement record again">
-            <Text style={s.historyRetry}>TRY AGAIN</Text>
-          </PressableScale>
+          <TryAgainLine onPress={onRetry} accessibilityLabel="Read the enforcement record again" style={s.historyRetry} />
         )}
       </View>
     );
@@ -698,7 +698,7 @@ export default function TribunalScreen() {
 
       <Animated.View entering={FadeInDown.duration(600)} style={[s.header, { paddingTop: insets.top + 12 }]}>
         <PressableScale
-          onPress={() => router.back()}
+          onPress={() => nav.back()}
           style={s.backBtn}
           haptic="selection"
           pressedScale={0.92}
@@ -1313,7 +1313,7 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   historyEmpty: { fontFamily: fonts.body, fontSize: 12, color: colors.fog },
-  historyRetry: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginTop: 6 },
+  historyRetry: { marginTop: 6, alignSelf: 'flex-start' },
   historyRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8, gap: 8 },
   historyDot: {
     width: 6,

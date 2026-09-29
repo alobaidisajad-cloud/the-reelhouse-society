@@ -204,6 +204,7 @@ export const r = StyleSheet.create({
   stateIcon: { opacity: 0.85 },
   stateTitle: { fontFamily: fonts.display, fontSize: 17, color: colors.parchment, marginTop: 12, textAlign: 'center' as const },
   stateBody: { fontFamily: fonts.bodyItalic, fontSize: 11, lineHeight: 17, color: colors.fogQuiet, marginTop: 8, textAlign: 'center' as const },
+  stateRetry: { marginTop: 10, alignSelf: 'center' as const },
   stateAct: { marginTop: 16, minHeight: 44, justifyContent: 'center' as const, paddingHorizontal: 22, borderWidth: 1, borderColor: colors.sepia, borderRadius: 2, backgroundColor: 'rgba(184,137,26,0.06)' },
   stateActText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.4, color: colors.sepia },
   stateSeal: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.6, color: colors.sepia },

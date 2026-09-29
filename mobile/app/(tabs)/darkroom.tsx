@@ -40,6 +40,11 @@ export default function DarkRoomScreen() {
   const totalPagesRef = useRef(1000);
   const network = useNetInfo();
   const [lastFetchedKey, setLastFetchedKey] = useState<string>('');
+  // The catalogue could not be asked for the first page. Said as that — the
+  // tray used to call it "nothing surfaced" and offer to reset the filters.
+  const [unreachable, setUnreachable] = useState(false);
+  const [asked, setAsked] = useState(0);
+  const askAgain = useCallback(() => setAsked((n) => n + 1), []);
   
   const {
     page, mood, query, accumulatedFilms, filters,
@@ -142,6 +147,7 @@ export default function DarkRoomScreen() {
     const fetchContent = async () => {
       loadingRef.current = true;
       setLoading(true);
+      if (page === 1) setUnreachable(false);
 
       // Optimistic UI & Skeleton Activation
       if (page === 1) {
@@ -267,6 +273,7 @@ export default function DarkRoomScreen() {
         if (active && reqId === fetchRequestId.current && page > 1) {
           useDiscoverStore.getState().setPage(page - 1);
         }
+        if (active && reqId === fetchRequestId.current && page === 1) setUnreachable(true);
         // Optimistic cache was already injected at the start of fetchContent.
         // No redundant MMKV read or array allocation needed here.
       } finally {
@@ -279,7 +286,7 @@ export default function DarkRoomScreen() {
     };
     fetchContent();
     return () => { active = false; };
-  }, [query, page, filters, mood, isSearching, setAccumulatedFilms, cacheKey, network.isConnected]);
+  }, [query, page, filters, mood, isSearching, setAccumulatedFilms, cacheKey, network.isConnected, asked]);
 
   const renderFooter = useCallback(() => {
     if (loading && page > 1) {
@@ -309,10 +316,12 @@ export default function DarkRoomScreen() {
       );
     }
     
-    if (network.isConnected === false) {
+    // Offline, it asks again by itself when the connection returns (the fetch
+    // hears it); reached but refused, the member asks.
+    if (network.isConnected === false || unreachable) {
       return (
         <Animated.View entering={FadeInDown.duration(600)} style={[s.emptyWrap, s.offlineWrap]}>
-           <EmptyOffline />
+           <EmptyOffline onRetry={network.isConnected === false ? undefined : askAgain} />
         </Animated.View>
       );
     }
@@ -349,7 +358,7 @@ export default function DarkRoomScreen() {
         </PressableScale>
       </Animated.View>
     );
-  }, [showSkeleton, network.isConnected, isSearching, clearAllFilters, clearAllSearch, setPage, skeletonOpacity]);
+  }, [showSkeleton, network.isConnected, unreachable, askAgain, isSearching, clearAllFilters, clearAllSearch, setPage, skeletonOpacity]);
 
   const renderFilmItem = useCallback(({ item }: { item: DiscoverFilm }) => (
     <View style={s.filmItemWrap}>

@@ -123,8 +123,44 @@ describe('every door into a session', () => {
     auth.exchangeCodeForSession = jest.fn().mockResolvedValue({ data: { session }, error: null });
     const { useLocalSearchParams } = jest.requireMock('expo-router') as { useLocalSearchParams: jest.Mock };
     useLocalSearchParams.mockReturnValue({ code: 'abc', type: 'signup' });
-    render(<AuthCallbackScreen />);
-    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    const r = render(<AuthCallbackScreen />);
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     expect(adopt).toHaveBeenCalledWith(session.user);
+    r.unmount();   // and never leaves a walk onward running behind it (see below)
+  });
+
+  it('leaving before the walk onward cancels it — the member is not pulled back', async () => {
+    // The screen waits a moment on "confirmed", then goes on to the Lobby. That
+    // timer outlived the screen: a member who went back first was pulled
+    // forward anyway (and the tests' timer fired inside the next test file).
+    jest.useFakeTimers();
+    const replace = jest.fn();
+    const { useRouter, useLocalSearchParams } = jest.requireMock('expo-router') as Record<string, jest.Mock>;
+    useRouter.mockReturnValue({ push: jest.fn(), replace, back: jest.fn(), dismissAll: jest.fn() });
+    useLocalSearchParams.mockReturnValue({ code: 'abc', type: 'signup' });
+    useAuthStore.setState({ adoptSession: jest.fn() } as never);
+    auth.exchangeCodeForSession = jest.fn().mockResolvedValue({ data: { session: { user: { id: 'm3' } } }, error: null });
+    const r = render(<AuthCallbackScreen />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    r.unmount();
+    await act(async () => { jest.advanceTimersByTime(5000); });
+    expect(replace).not.toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
+  it('and staying, it walks on to the Lobby', async () => {
+    jest.useFakeTimers();
+    const replace = jest.fn();
+    const { useRouter, useLocalSearchParams } = jest.requireMock('expo-router') as Record<string, jest.Mock>;
+    useRouter.mockReturnValue({ push: jest.fn(), replace, back: jest.fn(), dismissAll: jest.fn() });
+    useLocalSearchParams.mockReturnValue({ code: 'abc', type: 'signup' });
+    useAuthStore.setState({ adoptSession: jest.fn() } as never);
+    auth.exchangeCodeForSession = jest.fn().mockResolvedValue({ data: { session: { user: { id: 'm3' } } }, error: null });
+    const r = render(<AuthCallbackScreen />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => { jest.advanceTimersByTime(5000); });
+    expect(replace).toHaveBeenCalledWith('/(tabs)');
+    r.unmount();
+    jest.useRealTimers();
   });
 });

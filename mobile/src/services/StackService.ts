@@ -116,7 +116,10 @@ export const StackService = {
     if (endorseRes.error) {
       captureError(endorseRes.error, { scope: 'StackService.getStackFullPayload.certifyCount', stackId });
     }
-    if (!listRes.data) throw new Error('Stack not found');
+    // No row is an ANSWER: the stack is not there, or is sealed from this viewer
+    // (row security returns nothing). Thrown, it was indistinguishable from a
+    // stack that could not be reached, and the page said one for the other.
+    if (!listRes.data) return null;
 
     // Activate Schema Validation Boundaries
     if (!StackDetailSchema.safeParse(listRes.data).success) {

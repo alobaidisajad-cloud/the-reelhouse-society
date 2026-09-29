@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 // ArrowUpRight went with the director card's chevron — a credit does not
 // carry one, and `↗` now means "this leaves the page" and nothing else.
-import { ArrowLeft, AlertTriangle, Film as FilmIcon, RotateCcw, Check, XCircle } from 'lucide-react-native';
+import { ArrowLeft, Film as FilmIcon, RotateCcw, Check, XCircle } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH, metrics } from '@/src/theme/theme';
 import { tmdb, getYear, formatRuntime } from '@/src/lib/tmdb';
@@ -39,6 +39,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
 import { useFilmDetailContext } from '@/src/providers/FilmDetailProvider';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
+import { EmptyOffline } from '@/src/components/EmptyStates';
 
 /** The backdrop's fade into the room: how much house it lays down, top to hem. */
 const BACKDROP_VEIL: VeilStops = [[0, 0.05], [0.5, 0.4], [0.75, 0.85], [1, 1]];
@@ -80,7 +81,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   const {
     film, reviews, reviewsError, similarFilms, directors, cast, videos, trailer, score, providers, studios, verdict,
     existingLog, isAuthenticated, isArchivist, user,
-    validFilmId, loading, isError, isFocused,
+    validFilmId, loading, isError, retry, isFocused,
     goBack, handleLog, handleRewatch, handleOpenTrailer,
     handleOpenShare, handleOpenLounge, handleReadFullLog, setTrailerModalVisible, setActiveTrailerKey
   } = useFilmDetailContext();
@@ -347,19 +348,12 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     );
   }
 
+  // Unreachable, not missing: the house's one failed state, and a way to ask again.
   if (isError && !film) {
     return (
       <View style={[s.container, s.notFoundContainer]}>
         <RoomLight room="film" />
-        <AlertTriangle size={48} color={colors.bloodReel} strokeWidth={1} />
-        <Text style={s.notFoundTitle}>Transmission Failed</Text>
-        <Text style={s.notFoundBody}>The archive is currently unreachable. Please check your connection.</Text>
-        <PressableScale style={s.backBtn} onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityLabel="Go back">
-          <View style={s.ctaIconRow}>
-            <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
-            <Text style={s.backBtnText}>GO BACK</Text>
-          </View>
-        </PressableScale>
+        <EmptyOffline onRetry={retry} wayOut={{ label: nav.canGoBack() ? 'Go back' : 'Return to the Lobby', onPress: goBack }} />
       </View>
     );
   }

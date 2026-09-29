@@ -1,7 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { tmdb } from '@/src/lib/tmdb';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { supabase } from '@/src/lib/supabase';
 import { FilmService } from '@/src/services/FilmService';
 import { buildRecommendationPool } from '@/src/utils/recommendations';
 
@@ -31,8 +29,10 @@ export function useFilmDetail(filmId: number, validFilmId: boolean) {
       const verdictP = FilmService.getFilmVerdict(filmId)
         .catch(() => ({ avg_rating: null, rating_count: 0, log_count: 0 }));
 
+      // An unreachable catalogue throws (the page offers TRY AGAIN); a film the
+      // catalogue does not have is an answer, null, and the page says so.
       const [detail, communityReviews, verdict] = await Promise.all([detailP, reviewsP, verdictP]);
-      if (!detail) throw new Error('Film not found');
+      if (!detail) return null;
       if (communityReviews.error && __DEV__) {
         console.warn('[useFilmDetail] Failed to fetch community reviews:', communityReviews.error);
       }

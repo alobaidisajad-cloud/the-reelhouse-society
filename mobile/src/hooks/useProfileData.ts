@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useEffect, useRef } from 'react';
+import { useReducer, useCallback, useEffect, useRef, useState } from 'react';
 import { logger } from '@/src/utils/logger';
 import { useLogStore, useWatchlistStore, useArchiveStore, useListStore } from '@/src/stores/films';
 import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
@@ -268,6 +268,8 @@ export function useProfileData({
   activeTab: ProfileTab | null;
 }) {
   const [state, dispatch] = useReducer(profileReducer, initialState);
+  /** A room whose read failed, until it is asked again. */
+  const [tabFailed, setTabFailed] = useState<Partial<Record<ProfileTab, boolean>>>({});
 
   const fetchLogs = useLogStore(s => s.fetchLogs);
   const fetchWatchlist = useWatchlistStore(s => s.fetchWatchlist);
@@ -425,6 +427,7 @@ export function useProfileData({
     if (!canAccessTierTab(tab)) return;
     
     const uid = state.targetUser.id;
+    setTabFailed((f) => (f[tab] ? { ...f, [tab]: false } : f));
     try {
       // All non-self queries now route through ProfileDataService
       // for Zod validation, consistent error logging, and AbortSignal support.
@@ -489,8 +492,10 @@ export function useProfileData({
         if (err instanceof Error && err.name === 'AbortError') return;
         // Log in both dev and prod — routes to Sentry breadcrumbs in production
         logger.warn('[ProfileFetch] loadTabData error:', err);
-        // Revert the loaded state so the user can try again
+        // Revert the loaded state so the user can try again — and say so: the
+        // room stood at "RETRIEVING" for as long as the member stayed.
         if (isMounted.current) {
+          setTabFailed((f) => ({ ...f, [tab]: true }));
           if (tab === 'projector' || tab === 'passport') {
             dispatch({ type: 'SET_TAB_LOADED', tabs: { analytics: false } });
           } else {
@@ -655,7 +660,7 @@ export function useProfileData({
       const next = typeof v === 'function' ? v(state.tabDataLoaded) : v;
       dispatch({ type: 'SET_TAB_LOADED', tabs: next });
     },
-    fetchUserData, loadTabData,
+    fetchUserData, loadTabData, tabFailed,
     loadMoreLogs, loadMoreWatchlist, loadMoreVault, loadMoreLists,
     refreshTabWithFilters: async (tab: 'archive' | 'ledger' | 'watchlist' | 'physical' | 'lists', filters: any, forceRefresh = false) => {
       if (!state.targetUser) return;

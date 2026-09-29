@@ -103,15 +103,7 @@ jobs:
       - name: Surface Jest's failure on the summary
         if: failure()
         working-directory: ./mobile
-        run: |
-          [ -f jest-output.txt ] || exit 0
-          # The failing files, then Jest's summary of each ("● Console" lines left out).
-          {
-            grep -E "^FAIL " jest-output.txt | sort -u | head -20
-            sed -n '/Summary of all failing tests/,/^Test Suites:/p' jest-output.txt | grep -v "● Console" | head -60
-            grep -E "^Tests:|^Test Suites:|threshold" jest-output.txt | tail -5
-          } > jest-failure.txt
-          echo "::error title=Jest failed::$(sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g' jest-failure.txt)"
+        run: bash scripts/surface-jest-failure.sh jest-output.txt "Jest failed"
 
       # ── The same suite, from the Americas: a whole class of date bug is invisible
       # from the runner's UTC (a `date` column read as midnight UTC is the day before
@@ -123,7 +115,16 @@ jobs:
           TZ: America/Los_Angeles
           CONTRACT_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           CONTRACT_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-        run: npx jest --ci --silent --maxWorkers=2
+        # Kept, and surfaced below, as the first run is: run 36602916975 failed
+        # here and said only "exit code 1".
+        run: |
+          set -o pipefail
+          npx jest --ci --silent --maxWorkers=2 2>&1 | tee jest-tz-output.txt
+
+      - name: Surface the Americas run's failure on the summary
+        if: failure()
+        working-directory: ./mobile
+        run: bash scripts/surface-jest-failure.sh jest-tz-output.txt "Jest failed in America/Los_Angeles"
 
       # The slow slide between jest.config.js's floors: any drop over 0.5% against
       # .coverage-baseline.json fails. It reads the coverage the step above writes, so

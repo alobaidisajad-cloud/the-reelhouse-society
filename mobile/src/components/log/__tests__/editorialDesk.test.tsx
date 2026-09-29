@@ -60,6 +60,9 @@ const desk = (over: Partial<React.ComponentProps<typeof EditorialDesk>> = {}) =>
       editorialHeader={null}
       setEditorialHeader={jest.fn()}
       availableBackdrops={BACKDROPS}
+      imagesLoaded
+      imagesFailed={false}
+      onRetryImages={jest.fn()}
       {...over}
     />,
   );
@@ -86,6 +89,21 @@ describe('the stills actually draw', () => {
     expect(stills(r)).toHaveLength(0);
     // And does not offer a NONE chip with nothing to choose between.
     expect(r.queryByText('NONE')).toBeNull();
+  });
+
+  it('says nothing of a film\'s stills while they are still being asked for', () => {
+    // It said "No stills found." from the moment it opened — of films that have them.
+    const r = desk({ availableBackdrops: [], imagesLoaded: false });
+    expect(r.queryByText('No stills found.')).toBeNull();
+  });
+
+  it('says the stills could not be reached, and asks again when told', async () => {
+    const onRetryImages = jest.fn();
+    const r = desk({ availableBackdrops: [], imagesLoaded: false, imagesFailed: true, onRetryImages });
+    expect(r.getByText('The stills could not be reached.')).toBeTruthy();
+    expect(r.queryByText('No stills found.')).toBeNull();
+    await act(async () => { fireEvent.press(r.getByLabelText('Ask for the stills again')); });
+    expect(onRetryImages).toHaveBeenCalledTimes(1);
   });
 
   it('marks the chosen still, and quiets the rest', () => {

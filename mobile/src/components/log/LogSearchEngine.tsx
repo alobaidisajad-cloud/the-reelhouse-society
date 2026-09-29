@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
@@ -11,8 +11,8 @@ import { colors, fonts } from '@/src/theme/theme';
 import { Brackets } from '@/src/components/log/LogFormBody';
 import { st as modalSt } from '@/src/components/log/LogModalStyles';
 import PressableScale from '@/src/components/PressableScale';
-
-
+import SearchUnreachable from '@/src/components/search/SearchUnreachable';
+import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 
 export interface LogSearchResult {
     id: number;
@@ -60,12 +60,13 @@ const LogSearchResultRow = React.memo(({ r, onSelectFilm }: { r: LogSearchResult
 
 export default function LogSearchEngine({ onSelectFilm }: Props) {
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<LogSearchResult[]>([]);
-    const [searching, setSearching] = useState(false);
-    const [searchType, setSearchType] = useState('');
-    const [searchContext, setSearchContext] = useState('');
-    const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const searchGenRef = useRef(0);
+    const search = useCatalogueSearch(query);
+    const { searching, searchType, matchedContext: searchContext, unreachable } = search;
+    // A person has no record to log: films only, and eight at most.
+    const results = useMemo(
+        (): LogSearchResult[] => search.results.filter((r) => r.media_type !== 'person').slice(0, 8),
+        [search.results],
+    );
 
     // Nitrate Noir Breathing Ember Protocol
     const emberOpacity = useSharedValue(0.5);
@@ -81,41 +82,6 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
     const animatedIconStyle = useAnimatedStyle(() => ({
         opacity: emberOpacity.value,
     }));
-
-    const handleSearch = useCallback((q: string) => {
-        setQuery(q);
-        if (!q.trim()) { 
-            if (searchTimeout.current) clearTimeout(searchTimeout.current);
-            ++searchGenRef.current;
-            setResults([]); 
-            setSearching(false); 
-            return; 
-        }
-        setSearching(true);
-        if (searchTimeout.current) clearTimeout(searchTimeout.current);
-        const gen = ++searchGenRef.current;
-        searchTimeout.current = setTimeout(async () => {
-            try {
-                const res = await tmdb.search(q, 1);
-                if (gen !== searchGenRef.current || !isMounted.current) return; // Stale or unmounted — discard
-                const filtered = (res.results || []).filter((r: Record<string, any>) => r.media_type !== 'person').slice(0, 8);
-                setResults(filtered);
-                setSearchType(res.searchType || 'exact');
-                setSearchContext(res.matchedContext || '');
-             
-            } catch (err: unknown) { if (gen === searchGenRef.current && isMounted.current) setResults([]); }
-            finally { if (gen === searchGenRef.current && isMounted.current) setSearching(false); }
-        }, 400);
-    }, []);
-
-    const isMounted = useRef(true);
-    useEffect(() => {
-        isMounted.current = true;
-        return () => {
-            isMounted.current = false;
-            if (searchTimeout.current) clearTimeout(searchTimeout.current);
-        };
-    }, []);
 
     const renderItem = useCallback(({ item: r }: { item: LogSearchResult }) => (
         <LogSearchResultRow r={r} onSelectFilm={onSelectFilm} />
@@ -136,7 +102,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                     placeholder="Search for a film..."
                     placeholderTextColor={colors.fog}
                     value={query}
-                    onChangeText={handleSearch}
+                    onChangeText={setQuery}
                     autoFocus
                     returnKeyType="search"
                     maxLength={120}
@@ -181,7 +147,8 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                 was being answered with "No films found for ' '": a failure
                 reported for a query nobody made. It also keeps the message
                 honest about what was actually looked for. */}
-            {!searching && query.trim().length > 0 && results.length === 0 && (
+            {unreachable && <SearchUnreachable onRetry={search.retry} />}
+            {!searching && !unreachable && query.trim().length > 0 && results.length === 0 && (
                 <View style={st.noResultsWrap}>
                     {/* eslint-disable-next-line react/no-unescaped-entities */}
                     <Text style={st.noResultsText}>No films found for "{query.trim()}"</Text>

@@ -12,7 +12,7 @@ import type { ProfileList, ProfileListFilm, ShelfSort } from '../../types';
 import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, roomTier, ROOM_INSET } from './roomStyles';
-import { RoomChip, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
+import { RoomChip, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
 /**
@@ -43,6 +43,8 @@ interface ProfileListsTabProps {
   totalLists?: number;
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
+  /** A visitor's room whose read failed: the way to ask again (the room then says so). */
+  unreachable?: () => void;
   tier?: string | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
@@ -125,7 +127,7 @@ const ProfileListCard = React.memo(({ list, router, edge }: { list: ProfileList,
   );
 });
 
-export default React.memo(function ProfileListsTab({ lists, listsSort = 'default', setListsSort, listsSearch, setListsSearch, totalLists, ready = true, tier, onLoadMore, isLoadingMore, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
+export default React.memo(function ProfileListsTab({ lists, listsSort = 'default', setListsSort, listsSearch, setListsSearch, totalLists, ready = true, unreachable, tier, onLoadMore, isLoadingMore, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
   const router = useRouter();
   const edge = useMemo(() => roomTier(tier).edge, [tier]);
 
@@ -173,7 +175,7 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
   const ListEmptyComponent = useMemo(() => {
     if (lists.length > 0) return null;
 
-    if (!ready) return <View style={s.footWrap}><RoomRetrieving room="the stacks" /></View>;
+    if (!ready) return <View style={s.footWrap}>{unreachable ? <RoomUnreachable room="the stacks" onRetry={unreachable} /> : <RoomRetrieving room="the stacks" />}</View>;
 
     if (isSelf) {
       return (
@@ -203,7 +205,7 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
         />
       </View>
     );
-  }, [lists.length, ready, isSelf, pulseStyle, router]);
+  }, [lists.length, ready, unreachable, isSelf, pulseStyle, router]);
 
   /**
    * The order the volumes stand in.

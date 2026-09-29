@@ -22,10 +22,9 @@ import { router, type ErrorBoundaryProps } from 'expo-router';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 import { colors, fonts, spacing } from '@/src/theme/theme';
-import PressableScale from '@/src/components/PressableScale';
 import { captureError } from '@/src/lib/sentry';
-import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import TryAgain, { TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/TryAgain';
 
 export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const insets = useSafeAreaInsets();
@@ -58,29 +57,16 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         </Text>
       )}
 
-      <PressableScale
+      <TryAgain
         onPress={retry}
-        style={s.retryBtn}
-        haptic="medium"
+        style={s.retrySpace}
         // Half the 14pt gap to the way out below, each side of it.
-        hitSlop={{ bottom: 7 }}
-        accessibilityRole="button"
+        hitSlop={TRY_AGAIN_ABOVE_A_WAY_OUT}
         accessibilityLabel="Try loading this screen again"
-      >
-        <Text style={s.retryText}>TRY AGAIN</Text>
-      </PressableScale>
+      />
 
       {/* The way out the words promise: back, or to the Lobby when there is no back. */}
-      <PressableScale
-        onPress={leave}
-        style={s.leaveBtn}
-        haptic="selection"
-        hitSlop={{ top: 7 }}
-        accessibilityRole="button"
-        accessibilityLabel={canGoBack ? 'Go back' : 'Return to the Lobby'}
-      >
-        <Text style={s.leaveText}>{canGoBack ? 'GO BACK' : 'RETURN TO THE LOBBY'}</Text>
-      </PressableScale>
+      <WayOut onPress={leave} label={canGoBack ? 'Go back' : 'Return to the Lobby'} />
     </View>
   );
 }
@@ -121,30 +107,5 @@ const s = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
   },
-  retryBtn: { ...EDGE_LIT,
-    marginTop: 12,
-    backgroundColor: colors.soot,
-    borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.35)',
-    borderRadius: 3,
-    paddingVertical: 13,
-    paddingHorizontal: 30,
-  },
-  retryText: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 3,
-    color: colors.sepia,
-  },
-  // One weight down from TRY AGAIN: the quiet way out beside the act.
-  leaveBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  leaveText: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 3,
-    color: colors.fogQuiet,
-  },
+  retrySpace: { marginTop: 12 },
 });

@@ -291,3 +291,33 @@ describe('the ballot desk', () => {
     expect(queryByLabelText(/Remove Tokyo Story/i)).toBeNull();
   });
 });
+
+describe('the film sheet says what the catalogue said', () => {
+  it('a catalogue it could not reach is said, with TRY AGAIN — not a blank sheet', async () => {
+    const tmdb = require('@/src/lib/tmdb').tmdb;
+    const ask = jest.spyOn(tmdb, 'search')
+      .mockImplementationOnce(async () => { throw Object.assign(new Error('offline'), { name: 'TmdbUnreachable' }); })
+      .mockImplementationOnce(async () => ({ results: [tmdbFilm(9, 'Stalker', '1979')] }));
+    const { getByLabelText, getByText, queryByText } = render(
+      <FilmPicker visible onClose={() => {}} bottomInset={0} onPick={() => {}} />,
+    );
+    await search(getByLabelText as never, 'stalker');
+    expect(getByText('The catalogue could not be reached.')).toBeTruthy();
+    expect(queryByText('No film by that name.')).toBeNull();
+
+    await act(async () => { fireEvent.press(getByLabelText('TRY AGAIN')); });
+    await act(async () => { jest.advanceTimersByTime(400); await Promise.resolve(); });
+    expect(getByLabelText('Stalker, 1979')).toBeTruthy();
+    expect(queryByText('The catalogue could not be reached.')).toBeNull();
+    ask.mockRestore();
+  });
+
+  it('a search that matched nothing says so', async () => {
+    mockResults = [];
+    const { getByLabelText, getByText } = render(
+      <FilmPicker visible onClose={() => {}} bottomInset={0} onPick={() => {}} />,
+    );
+    await search(getByLabelText as never, 'zzqxv');
+    expect(getByText('No film by that name.')).toBeTruthy();
+  });
+});

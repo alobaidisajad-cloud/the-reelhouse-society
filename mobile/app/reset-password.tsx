@@ -17,6 +17,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { getPasswordChecks, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { nav } from '@/src/utils/typedRouter';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -183,7 +184,7 @@ export default function ResetPasswordScreen() {
               try { await supabase.auth.signOut({ scope: 'local' }); } catch {}
             }
             if (router.canGoBack()) {
-              router.back();
+              nav.back();
             } else {
               (router.replace as any)('/(tabs)');
             }

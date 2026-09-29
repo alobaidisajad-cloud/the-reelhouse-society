@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Modal, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { Image } from 'expo-image';
@@ -22,6 +22,8 @@ import { readMounts, MOUNT_COUNT, CENTRE_MOUNT, type FavouriteFilm } from './fav
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT } from '@/src/theme/light';
+import SearchUnreachable from '@/src/components/search/SearchUnreachable';
+import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 // Module-scoped: prevents remount on every render cycle
@@ -199,9 +201,15 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
     // race with anything.
     const [sheet, setSheet] = useState<Sheet | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<TriptychSearchResult[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
-    const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const searching = sheet?.mode === 'search';
+    const search = useCatalogueSearch(searchQuery, { enabled: searching });
+    const isSearching = search.searching;
+    // Films with a poster: a mount is a poster, and a person is not a film.
+    const searchResults = useMemo(
+        (): TriptychSearchResult[] => (search.results as TriptychSearchResult[])
+            .filter((r) => r.media_type === 'movie' && r.poster_path).slice(0, 10),
+        [search.results],
+    );
 
     // Nitrate Noir Breathing Ember Protocol for Search Modal
     const searchEmberOpacity = useSharedValue(0.5);
@@ -225,35 +233,6 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         setSearchQuery(text);
     }, []);
 
-    const searching = sheet?.mode === 'search';
-    useEffect(() => {
-        if (!searching || !searchQuery.trim()) {
-            setSearchResults([]);
-            return;
-        }
-        setIsSearching(true);
-        if (searchRef.current) clearTimeout(searchRef.current);
-
-        let cancelled = false;
-
-        searchRef.current = setTimeout(async () => {
-            try {
-                const data = await tmdb.search(searchQuery);
-                if (cancelled) return;
-                const movies = ((data as any)?.results ?? []).filter((r: TriptychSearchResult) => r.media_type === 'movie' && r.poster_path);
-                setSearchResults(movies.slice(0, 10));
-            } catch (err: unknown) {
-                if (__DEV__) console.error('[ProfileTriptych] Search timeout/error:', err);
-            } finally {
-                if (!cancelled) setIsSearching(false);
-            }
-        }, 400);
-
-        return () => {
-            cancelled = true;
-            if (searchRef.current) clearTimeout(searchRef.current);
-        };
-    }, [searchQuery, searching]);
 
     /**
      * Every write goes through here: optimistic locally, merged onto the
@@ -321,7 +300,6 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         }
         TactileEngine.navigate();
         setSearchQuery('');
-        setSearchResults([]);
         // An empty mount has nothing to manage — go straight to the search.
         setSheet({ index, mode: film ? 'plate' : 'search' });
     }, [isOwnProfile, router]);
@@ -517,7 +495,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                             <PlateAction
                                 Icon={Replace}
                                 label="Replace this film"
-                                onPress={() => { TactileEngine.selection(); setSearchQuery(''); setSearchResults([]); setSheet({ index: sheet.index, mode: 'search' }); }}
+                                onPress={() => { TactileEngine.selection(); setSearchQuery(''); setSheet({ index: sheet.index, mode: 'search' }); }}
                             />
                             <PlateAction
                                 Icon={Trash2}
@@ -553,11 +531,13 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                             <ScrollView style={s.modalScroll} keyboardShouldPersistTaps="handled">
                                 {isSearching ? (
                                     <ActivityIndicator size="large" color={colors.sepia} style={s.spinner} />
+                                ) : search.unreachable ? (
+                                    <SearchUnreachable onRetry={search.retry} />
                                 ) : searchResults.length > 0 ? (
                                     searchResults.map(film => (
                                         <TriptychResultRow key={film.id} film={film} handleSetFilm={handleSetFilm} />
                                     ))
-                                ) : searchQuery ? (
+                                ) : searchQuery.trim() ? (
                                     <Text {...scaledTextProps} style={s.noResults}>NO MATCHES FOUND</Text>
                                 ) : null}
                             </ScrollView>

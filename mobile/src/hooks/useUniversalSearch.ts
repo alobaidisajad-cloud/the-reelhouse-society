@@ -53,10 +53,16 @@ interface ListRow {
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w92';
 
+/** Which sources could not be asked: an empty tab is then unknown, not empty. */
+export interface SourcesDown { films: boolean; users: boolean; logs: boolean; lists: boolean }
+
+const NONE_DOWN: SourcesDown = { films: false, users: false, logs: false, lists: false };
+
 const EMPTY_RESULTS = {
   films: [] as SR[], actors: [] as SR[], directors: [] as SR[],
   users: [] as SR[], logs: [] as SR[], lists: [] as SR[],
   _partial: false,
+  _down: NONE_DOWN,
 };
 
 /** Columns the LOGS tab needs, plus the author it could never fetch before. */
@@ -278,9 +284,17 @@ export function useUniversalSearch(query: string) {
         }));
       }
 
+      // The catalogue counts too: left out, a search made while it was down was
+      // kept five minutes as "no films", and the Films tab said so throughout.
       return {
         films: f, actors: a, directors: d, users: u, logs: l, lists: lst,
-        _partial: usersFailed || logsTextFailed || logsAuthorFailed || listsFailed,
+        _partial: tmdbFailed || usersFailed || logsTextFailed || logsAuthorFailed || listsFailed,
+        _down: {
+          films: tmdbFailed,
+          users: usersFailed,
+          logs: logsTextFailed || logsAuthorFailed,
+          lists: listsFailed,
+        },
       };
     },
     enabled: query.trim().length > 0,

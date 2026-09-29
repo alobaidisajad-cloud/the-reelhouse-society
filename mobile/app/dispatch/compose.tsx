@@ -47,6 +47,7 @@ import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { nav } from '@/src/utils/typedRouter';
 
 // A long essay survives a background-kill. Whose each draft is: src/utils/memberDrafts.ts.
 
@@ -105,7 +106,7 @@ export default function ComposeScreen() {
         // The wait matters: this fires while the modal is still animating in,
         // and unguarded both pops land, costing two screens instead of one.
         InteractionManager.runAfterInteractions(() => {
-            if (isMounted.current) router.back();
+            if (isMounted.current) nav.back();
         });
     }, [user]);
 
@@ -189,7 +190,7 @@ function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
         <View style={p.screen}>
             <RoomLight room="dispatch" />
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
-            <PaperBack label="THE DISPATCH" onBack={() => router.back()} />
+            <PaperBack label="THE DISPATCH" onBack={() => nav.back()} />
             <ScrollView
                 contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: insets.bottom + 24 }}
                 showsVerticalScrollIndicator={false}
@@ -313,7 +314,7 @@ function ComposeDossierScreen() {
                 : 'The essay is an Auteur’s to file.');
             InteractionManager.runAfterInteractions(() => {
                 // Waits out the entry animation; unguarded, two pops would land.
-                if (isMounted.current) router.back();
+                if (isMounted.current) nav.back();
             });
         }
     }, [canWrite, user?.id]);
@@ -635,12 +636,12 @@ function ComposeDossierScreen() {
                                     // or it reappears on the next phone.
                                     if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
                                     else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
-                                    router.back();
+                                    nav.back();
                                 } },
                             ],
                         );
                     } else {
-                        router.back();
+                        nav.back();
                     }
                 }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic
                     accessibilityRole="button"

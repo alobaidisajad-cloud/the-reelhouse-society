@@ -42,6 +42,8 @@ import { s } from '@/src/components/lounge/loungeTabStyles';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import reelToast from '@/src/utils/reelToast';
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -52,7 +54,9 @@ const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 export default function LoungeScreen() {
   const user = useAuthStore(s => s.user);
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
-  const { lounges, fetchLounges, loading } = useLoungeStore();
+  const { lounges, fetchLounges, loading, loungesFailed } = useLoungeStore();
+  // Nothing to show because nothing could be read: said, not "found no salon".
+  const salonsLost = loungesFailed && lounges.length === 0;
   const readyMark = useScreenReady('lounges', !(loading && lounges.length === 0));
   const insets = useSafeAreaInsets();
 
@@ -165,7 +169,11 @@ export default function LoungeScreen() {
     setRefreshing(true);
     await fetchLounges();
     setRefreshing(false);
+    // The salons on screen stay; the member is told the pull reached nothing.
+    const after = useLoungeStore.getState();
+    if (after.loungesFailed && after.lounges.length > 0) reelToast.error(REFRESH_FAILED);
   }, [fetchLounges]);
+  const rereadSalons = useCallback(() => { void fetchLounges(); }, [fetchLounges]);
 
   // Memoized filtering — prevents O(n) recomputation on unrelated re-renders
   const { myLounges, browsableLounges } = useMemo(() => {
@@ -348,8 +356,10 @@ export default function LoungeScreen() {
               </View>
             )}
 
+            {salonsLost && <EmptyOffline onRetry={rereadSalons} />}
+
             {/* Your salons */}
-            {myLounges.length > 0 ? (
+            {salonsLost ? null : myLounges.length > 0 ? (
               <View style={s.section}>
                 <View style={s.sectionTitleRow}>
                   <View style={s.sectionTitleLine} />
@@ -386,17 +396,17 @@ export default function LoungeScreen() {
             )}
 
             {/* Directory header */}
-            <View style={[s.section, { paddingBottom: 0, marginBottom: 0 }]}>
+            {!salonsLost && <View style={[s.section, { paddingBottom: 0, marginBottom: 0 }]}>
               <View style={s.sectionTitleRow}>
                 <View style={s.sectionTitleLine} />
                 <Text style={s.sectionLabel}>ALL SALONS</Text>
                 <View style={s.sectionTitleLine} />
               </View>
               <Text style={s.sectionSubtext}>Public discourse and private gatherings. Take a seat.</Text>
-            </View>
+            </View>}
           </>
         }
-        ListEmptyComponent={
+        ListEmptyComponent={salonsLost ? null :
           <View style={s.emptyPublic}>
             <Globe size={22} color={colors.fog} strokeWidth={1} />
             <Text style={s.emptyPublicText}>No open salons at this time.</Text>

@@ -98,6 +98,8 @@ export function applyIncomingNotification<T extends { notifications: AppNotifica
 export interface NotificationState {
     notifications: AppNotification[];
     loading: boolean;
+    /** The last read of the board could not be answered (never persisted). */
+    fetchFailed: boolean;
     _fetching: boolean;
     _fetchingMore: boolean;
     fetchNotifications: () => Promise<void>;
@@ -124,6 +126,7 @@ export const useNotificationStore = create<NotificationState>()(
         (set, get) => ({
     notifications: [],
     loading: false,
+    fetchFailed: false,
     _fetching: false,
     _fetchingMore: false,
     _unreadCount: 0,
@@ -178,6 +181,7 @@ export const useNotificationStore = create<NotificationState>()(
             const lastRaw = data[data.length - 1] as { created_at?: string; id?: string } | undefined;
             const cursor = lastRaw?.created_at && lastRaw?.id ? `${lastRaw.created_at}|${lastRaw.id}` : null;
             set({
+                fetchFailed: false,
                 notifications: validated,
                 // The server's count; the page's only as a fallback.
                 _unreadCount: unreadRes.error ? validated.filter(n => !n.read).length : (unreadRes.count ?? 0),
@@ -186,8 +190,9 @@ export const useNotificationStore = create<NotificationState>()(
                 _cursor: cursor,
             });
         } else if (error) {
-            // To Sentry; no toast, as the saved list is still on screen.
+            // To Sentry. The screen says so: a board it could not read is not a clear one.
             logger.warn('[notificationStore.fetch] Supabase error:', error.message);
+            set({ fetchFailed: true });
         }
         } finally {
             set({ loading: false, _fetching: false });

@@ -2,6 +2,7 @@
 // REELHOUSE MOBILE — TMDB API Client
 // Resilient, cached, deduplicated — ported from web
 // ============================================================
+import { isTmdbUnreachable, TmdbUnreachable } from './tmdbErrors';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -159,6 +160,15 @@ const _inflight = new Map<string, Promise<unknown>>();
 const detailPath = (id: number) =>
   `/movie/${id}?append_to_response=credits,videos,recommendations,similar,watch/providers,release_dates`;
 
+/**
+ * One catalogue read, through the tmdb-proxy (the only path: it holds the key).
+ *
+ * `fallback` is the answer for "not there" (a 404, or a request TMDB rejects).
+ * A catalogue that cannot be REACHED (no connection, or 5xx/429 through three
+ * tries, or the proxy refusing us) throws TmdbUnreachable instead: answered
+ * with the fallback, React Query cached an empty success for minutes and a
+ * screen said "nothing found" to a member who had no signal.
+ */
 async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): Promise<T | null> {
   const cached = cacheGet(path);
   if (cached !== undefined) return cached as T;
@@ -167,6 +177,7 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
   if (existing) return existing as Promise<T | null>;
 
   const promise = (async () => {
+    let why = 'no answer';
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const controller = new AbortController();
@@ -187,29 +198,30 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
           clearTimeout(timer);
         }
 
-        if (res.status === 429 || res.status === 503) {
-          await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
+        // A server failing for a moment: tried again, then unreachable.
+        if (res.status === 429 || res.status >= 500) {
+          why = `status ${res.status}`;
+          if (attempt < 2) await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
           continue;
         }
-        if (!res.ok) {
-          // F-1: no direct-to-TMDB fallback — that path required shipping the API key
-          // in the bundle. The tmdb-proxy (own server-side key + internal retry/backoff
-          // above) is the sole path; on proxy failure we degrade gracefully to `fallback`.
-          return fallback;
-        }
+        // The proxy refusing the app is not a missing film.
+        if (res.status === 401 || res.status === 403) throw new TmdbUnreachable(path, `status ${res.status}`);
+        if (!res.ok) return fallback; // 404 and the like: not there.
         const data = await res.json();
         if (!path.includes('/search/')) cacheSet(path, data);
         return data as T;
-       
       } catch (e: unknown) {
+        if (isTmdbUnreachable(e)) throw e;
+        why = e instanceof Error ? e.message : String(e);
         if (attempt < 2) await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
       }
     }
-    return fallback;
+    throw new TmdbUnreachable(path, why);
   })();
 
   _inflight.set(path, promise);
-  promise.finally(() => _inflight.delete(path));
+  // Cleared either way; the rejection is the caller's, not this bookkeeping's.
+  promise.then(() => _inflight.delete(path), () => _inflight.delete(path));
   return promise;
 }
 
@@ -219,10 +231,12 @@ export const tmdb = {
     const searchStart = Date.now();
     const SEARCH_BUDGET_MS = 6000;
 
-    // TIER 1: Omni-Search — routed through hardened fetchTMDB (timeout + retry + dedup)
-    let data = await fetchTMDB<TMDBSearchResponse>(
-        `/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false`,
-        { results: [], total_results: 0, total_pages: 0, page: 1 }
+    // TIER 1: Omni-Search — routed through hardened fetchTMDB (timeout + retry + dedup).
+    // A catalogue that cannot be reached THROWS (TmdbUnreachable), as every
+    // catalogue read does: it is not "no match", and the searcher says so.
+    const data = await fetchTMDB<TMDBSearchResponse>(
+      `/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false`,
+      { results: [], total_results: 0, total_pages: 0, page: 1 }
     );
     if (!data) return { searchType: 'failed', results: [] } as TMDBSearchResponse;
 
@@ -378,7 +392,7 @@ export const tmdb = {
             const discoverData = await fetchTMDB<TMDBMovieListResponse>(
                 `/discover/movie?with_keywords=${keywordIds.join('|')}&sort_by=popularity.desc&page=1`,
                 null
-            );
+            ).catch(() => null); // a fallback tier: its failure leaves tier 1's answer
             if (discoverData?.results?.length) {
                 return {
                     ...discoverData,
@@ -391,17 +405,6 @@ export const tmdb = {
 
     data.searchType = 'failed';
     return data;
-  },
-
-  searchMulti: async (query: string) => {
-    const data = await fetchTMDB<TMDBSearchResponse>(
-      `/search/multi?query=${encodeURIComponent(query)}&page=1&include_adult=false`,
-      { results: [] }
-    );
-    return (data?.results || [])
-      .filter((r) => r.media_type === 'movie' || (r.media_type === 'person' && r.profile_path))
-      .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
-      .slice(0, 8);
   },
 
   // ── Film Details ──
@@ -455,8 +458,6 @@ export const tmdb = {
     { results: [] }
   ),
 
-  // ── Now Playing ──
-  nowPlaying: async () => fetchTMDB<TMDBMovieListResponse>(`/movie/now_playing`, { results: [] }),
 
   // ── Similar ──
   similar: async (id: number) => {
@@ -468,19 +469,7 @@ export const tmdb = {
   person: async (id: number) => fetchTMDB<TMDBPersonDetail>(`/person/${id}`, null),
   personCredits: async (id: number) => fetchTMDB<TMDBPersonCredits>(`/person/${id}/movie_credits`, null),
 
-  // ── Extended Missing Query Methods ──
-  watchProviders: async (id: number) => {
-      const data = await fetchTMDB<{ results: Record<string, TMDBWatchProviderResult> }>(`/movie/${id}/watch/providers`, { results: {} });
-      return data?.results || {};
-  },
-  releaseDates: async (id: number) => {
-      const data = await fetchTMDB<{ results: unknown[] }>(`/movie/${id}/release_dates`, { results: [] });
-      return data?.results || [];
-  },
-  companySearch: async (query: string) => {
-      const data = await fetchTMDB<{ results: unknown[] }>(`/search/company?query=${encodeURIComponent(query)}`, { results: [] });
-      return data?.results || [];
-  },
+  // ── Images (the log composer's alternate posters and stills) ──
   movieImages: async (id: number) => fetchTMDB<{ posters: { file_path: string }[]; backdrops: { file_path: string }[]; logos: { file_path: string }[] }>(`/movie/${id}/images`, { posters: [], backdrops: [], logos: [] }),
 
   // ── Discover ──
@@ -501,9 +490,6 @@ export const tmdb = {
 
   logo: (path: string | null | undefined, size = 'w45') =>
     path ? `${TMDB_IMG}/${size}${path}` : undefined,
-
-  posterThumb: (path: string | null | undefined) =>
-    path ? `${TMDB_IMG}/w92${path}` : undefined,
 
   youtubeThumbnail: (key: string) => `https://img.youtube.com/vi/${key}/hqdefault.jpg`,
 };

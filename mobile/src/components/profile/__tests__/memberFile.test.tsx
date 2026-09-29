@@ -658,6 +658,27 @@ describe('the altarpiece, driven', () => {
     expect(r.queryByLabelText('Remove from the altarpiece')).toBeNull();
   });
 
+  it('the search says when the catalogue could not be reached — never the last results, never "no matches"', async () => {
+    const { tmdb } = jest.requireMock('@/src/lib/tmdb');
+    tmdb.search
+      .mockResolvedValueOnce({ results: [{ id: 5, title: 'Solaris', media_type: 'movie', poster_path: '/so.jpg' }] })
+      .mockRejectedValueOnce(Object.assign(new Error('offline'), { name: 'TmdbUnreachable' }))
+      .mockResolvedValueOnce({ results: [{ id: 7, title: 'Mirror', media_type: 'movie', poster_path: '/m.jpg' }] });
+    const r = mount([null, null, null], true);
+    await act(async () => { fireEvent.press(r.getByLabelText(/Add a film to the centre/)); });
+    const field = r.getByLabelText(/Search films for the centre/);
+    await act(async () => { fireEvent.changeText(field, 'solaris'); });
+    await waitFor(() => expect(r.getByText('Solaris')).toBeTruthy(), { timeout: 2000 });
+
+    await act(async () => { fireEvent.changeText(field, 'mirror'); });
+    await waitFor(() => expect(r.getByText('THE TELEGRAPH IS DOWN')).toBeTruthy(), { timeout: 2000 });
+    expect(r.queryByText('Solaris')).toBeNull();
+    expect(r.queryByText('NO MATCHES FOUND')).toBeNull();
+
+    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await waitFor(() => expect(r.getByText('Mirror')).toBeTruthy(), { timeout: 2000 });
+  });
+
   it('managing and searching share ONE modal, so they cannot race on iOS', () => {
     // Dismissing one RN Modal to present another in the same tick is the
     // modal-over-modal race that has bitten this app before: the second sheet

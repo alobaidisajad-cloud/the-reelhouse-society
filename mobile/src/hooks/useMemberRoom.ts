@@ -85,8 +85,15 @@ export interface MemberRoom {
    */
   certifiedAtFetch: Set<string>;
   loading: boolean;
-  /** Nothing came back for this handle — no such member, or none readable. */
+  /** The house answered: no member by this handle. */
   missing: boolean;
+  /**
+   * The house could not be asked (the member, or their first page). Not
+   * "missing", not "filed nothing": both were said of a room with no signal.
+   */
+  failed: boolean;
+  /** Ask for the room again. */
+  reload: () => void;
   more: boolean;
   loadingMore: boolean;
   loadMore: () => void;
@@ -105,6 +112,8 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [missing, setMissing] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [more, setMore] = useState(false);
 
   /**
@@ -145,7 +154,13 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     ]);
     if (mine !== gen.current) return;
 
-    if (rows.error) { logger.warn(`[room] filings: ${rows.error.message}`); return; }
+    if (rows.error) {
+      logger.warn(`[room] filings: ${rows.error.message}`);
+      // The first page: the room says it could not be read. A later one: the
+      // pages already drawn stay, and scrolling on asks again.
+      if (from === 0) setFailed(true);
+      return;
+    }
 
     const { filings: got, dropped } = parseFilingRows(rows.data ?? []);
     // A row the parser refuses is a row the screen cannot draw. Saying so is the
@@ -198,7 +213,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     userId.current = null;
     setAuthor(null); setFilings([]); setFiled(0); setCertified(0); setTotalsKnown(false);
     setCertifiedAtFetch(new Set());
-    setMissing(false); setMore(false); setLoading(true);
+    setMissing(false); setFailed(false); setMore(false); setLoading(true);
 
     if (!username) { setLoading(false); setMissing(true); return; }
 
@@ -210,7 +225,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
           .eq('username', username)
           .maybeSingle();
         if (mine !== gen.current) return;
-        if (error) { logger.warn(`[room] member: ${error.message}`); setMissing(true); return; }
+        if (error) { logger.warn(`[room] member: ${error.message}`); setFailed(true); return; }
         if (!who?.id) { setMissing(true); return; }
 
         userId.current = who.id as string;
@@ -226,13 +241,16 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
 
         await page(0, mine);
       } catch (e) {
-        if (mine === gen.current) { logger.warn(`[room] ${String(e)}`); setMissing(true); }
+        if (mine === gen.current) { logger.warn(`[room] ${String(e)}`); setFailed(true); }
       } finally {
         if (mine === gen.current) setLoading(false);
       }
     })();
-    // `page` is stable and `username` is the whole identity of this room.
-  }, [username, page]);
+    // `page` is stable and `username` is the whole identity of this room;
+    // `attempt` is the member asking again.
+  }, [username, page, attempt]);
+
+  const reload = useCallback(() => setAttempt((n) => n + 1), []);
 
   const loadMore = useCallback(() => {
     if (loading || loadingMore || !more || !userId.current) return;
@@ -249,6 +267,6 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
 
   return {
     author, filings, filed, certified, totalsKnown, certifiedAtFetch,
-    loading, loadingMore, missing, more, loadMore,
+    loading, loadingMore, missing, failed, reload, more, loadMore,
   };
 }

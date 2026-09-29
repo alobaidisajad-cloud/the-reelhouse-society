@@ -9,6 +9,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { TryAgainLine } from '@/src/components/TryAgain';
 
 interface Props {
     dropCap: boolean;
@@ -18,6 +19,11 @@ interface Props {
     editorialHeader: string | null;
     setEditorialHeader: (v: string | null) => void;
     availableBackdrops: { file_path: string }[];
+    /** TMDB has answered (so "none found" may be said). */
+    imagesLoaded: boolean;
+    /** The stills could not be asked for. */
+    imagesFailed: boolean;
+    onRetryImages: () => void;
 }
 
 const backdropKeyExtractor = (p: { file_path: string }) => p.file_path;
@@ -38,7 +44,8 @@ const backdropKeyExtractor = (p: { file_path: string }) => p.file_path;
  */
 
 export default React.memo(function EditorialDesk({
-    dropCap, setDropCap, pullQuote, setPullQuote, editorialHeader, setEditorialHeader, availableBackdrops
+    dropCap, setDropCap, pullQuote, setPullQuote, editorialHeader, setEditorialHeader, availableBackdrops,
+    imagesLoaded, imagesFailed, onRetryImages,
 }: Props) {
     // Each still is a picture, so it is NAMED — a bare image button read as
     // "button" and nothing else, and said nothing about which one was chosen.
@@ -91,7 +98,16 @@ export default React.memo(function EditorialDesk({
                             <React.Fragment key={backdropKeyExtractor(p)}>{renderBackdropItem({ item: p, index: i })}</React.Fragment>
                         ))}
                     </ScrollView>
-                ) : <Text style={st.noData}>No stills found.</Text>}
+                ) : imagesFailed ? (
+                    <View>
+                        <Text style={st.noData}>The stills could not be reached.</Text>
+                        <TryAgainLine onPress={onRetryImages} accessibilityLabel="Ask for the stills again" style={st.retrySpace} />
+                    </View>
+                ) : imagesLoaded ? (
+                    // Said once TMDB has answered: while the request was out, and
+                    // after it failed, this said "no stills" of a film that has them.
+                    <Text style={st.noData}>No stills found.</Text>
+                ) : null}
             </View>
         </View>
     );
@@ -119,5 +135,6 @@ const st = StyleSheet.create({
     stillImgFaded: { opacity: 0.4 },
     stillNoneActive: { color: colors.ink },
     noData: { fontFamily: fonts.body, fontSize: 11, color: colors.fog },
+    retrySpace: { marginTop: 8, alignSelf: 'flex-start' },
     flatListGap: { gap: 8 },
 });

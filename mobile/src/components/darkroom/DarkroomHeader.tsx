@@ -199,6 +199,10 @@ export const DarkroomHeader = React.memo(() => {
       } catch (e: unknown) {
         e2eTrace('darkroom.search.error', { val, message: e instanceof Error ? e.message : String(e) });
         if (__DEV__) console.error('[DarkroomHeader] suggestions fetch error:', e);
+        // Never the last words' suggestions under these: pressing one would open
+        // a film the member is no longer asking for. The search itself, when
+        // sent, says the catalogue could not be reached.
+        if (active) setSuggestions([]);
       }
     }, 450);
     return () => {

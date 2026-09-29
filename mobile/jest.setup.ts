@@ -252,7 +252,12 @@ jest.mock('expo-router', () => {
   const React = require('react');
   const { Text } = require('react-native');
   return {
-    router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() },
+    // canGoBack/canDismiss as the real router has them: nav.back() and
+    // nav.dismiss() ask before they go (a raw back with no history does nothing).
+    router: {
+      push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(),
+      canGoBack: jest.fn(() => true), canDismiss: jest.fn(() => true), dismiss: jest.fn(), dismissAll: jest.fn(),
+    },
     useRouter: jest.fn(() => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() })),
     useLocalSearchParams: jest.fn(() => ({})),
     useGlobalSearchParams: jest.fn(() => ({})),
@@ -497,10 +502,11 @@ jest.mock('./src/lib/tmdb', () => {
   const IMG = 'https://image.tmdb.org/t/p';
   return {
     tmdb: {
-      // Each resolves to the real module's own failure fallback: TMDB unreachable.
+      // Each resolves to the catalogue answering with NOTHING. Unreachable is not
+      // a value any more: the real module throws TmdbUnreachable, so a test of
+      // that state rejects the call it needs.
       trending: jest.fn().mockResolvedValue({ results: [] }),
       search: jest.fn().mockResolvedValue({ results: [] }),
-      movie: jest.fn().mockResolvedValue({}),
       canon: jest.fn().mockResolvedValue({ results: [] }),
       discover: jest.fn().mockResolvedValue({ results: [] }),
       detail: jest.fn().mockResolvedValue(null),
@@ -515,7 +521,6 @@ jest.mock('./src/lib/tmdb', () => {
       backdrop: jest.fn((path: string, size?: string) => path ? `${IMG}/${size || 'original'}${path}` : null),
       profile: jest.fn((path?: string | null, size = 'w185') => path ? `${IMG}/${size}${path}` : undefined),
       logo: jest.fn((path?: string | null, size = 'w45') => path ? `${IMG}/${size}${path}` : undefined),
-      posterThumb: jest.fn((path?: string | null) => path ? `${IMG}/w92${path}` : undefined),
       youtubeThumbnail: jest.fn((key: string) => `https://img.youtube.com/vi/${key}/hqdefault.jpg`),
     },
 
@@ -538,6 +543,23 @@ jest.mock('./src/lib/tmdb', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// A screen's focus, for a test that mounts a screen with no navigator around
+// it. Buster (in the house's failed state, EmptyOffline) pauses when his screen
+// is not focused, so every such test had to stand this in by hand. Inside a
+// navigator the real answer is given; outside one, "focused", which is what a
+// mounted screen is. A test's own mock of the module still replaces this.
+// ─────────────────────────────────────────────────────────────────────────────
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native');
+  return {
+    ...actual,
+    useIsFocused: () => {
+      try { return actual.useIsFocused(); } catch { return true; }
+    },
+  };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Mock expo-notifications
 // ─────────────────────────────────────────────────────────────────────────────
 jest.mock('expo-notifications', () => ({
@@ -548,6 +570,13 @@ jest.mock('expo-notifications', () => ({
   addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   scheduleNotificationAsync: jest.fn(),
+  // Four the app calls that this list had left out — so the Notices screen
+  // could never be mounted by a test (notificationsMockCoverage.test.ts now
+  // fails if the app reaches for one the list lacks).
+  setBadgeCountAsync: jest.fn().mockResolvedValue(true),
+  setNotificationChannelAsync: jest.fn().mockResolvedValue(null),
+  getLastNotificationResponseAsync: jest.fn().mockResolvedValue(null),
+  clearLastNotificationResponseAsync: jest.fn().mockResolvedValue(undefined),
   AndroidImportance: { MAX: 5, HIGH: 4, DEFAULT: 3, LOW: 2, MIN: 1 },
 }));
 

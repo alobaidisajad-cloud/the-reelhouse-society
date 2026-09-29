@@ -1,62 +1,62 @@
 {
   "total": {
-    "lines": 61.72,
-    "branches": 53.24,
-    "functions": 58.14,
-    "statements": 59.62
+    "lines": 66.21,
+    "branches": 56.52,
+    "functions": 62.84,
+    "statements": 63.92
   },
   "./src/components/dispatch/": {
-    "lines": 94.53,
-    "branches": 86.05,
-    "functions": 93.59,
-    "statements": 92.83
+    "lines": 94.59,
+    "branches": 86.38,
+    "functions": 93.53,
+    "statements": 92.93
   },
   "./src/components/": {
-    "lines": 64.32,
-    "branches": 56.62,
-    "functions": 58.67,
-    "statements": 62.45
+    "lines": 69.39,
+    "branches": 60.62,
+    "functions": 63.87,
+    "statements": 67.44
   },
   "./src/utils/": {
-    "lines": 84.38,
-    "branches": 78.56,
-    "functions": 85.67,
-    "statements": 82.98
+    "lines": 84.56,
+    "branches": 78.75,
+    "functions": 85.96,
+    "statements": 83.18
   },
   "./src/stores/": {
-    "lines": 75.36,
-    "branches": 59.5,
-    "functions": 72.73,
-    "statements": 71.24
+    "lines": 75.64,
+    "branches": 59.82,
+    "functions": 73.13,
+    "statements": 71.57
   },
   "./src/services/": {
     "lines": 60.76,
-    "branches": 44.11,
+    "branches": 44.21,
     "functions": 66.92,
-    "statements": 57.29
+    "statements": 57.39
   },
   "./src/features/": {
-    "lines": 36.46,
-    "branches": 32.66,
-    "functions": 45.98,
-    "statements": 35.45
+    "lines": 39.81,
+    "branches": 34.47,
+    "functions": 47.89,
+    "statements": 38.39
   },
   "./src/hooks/": {
-    "lines": 46.39,
-    "branches": 35.47,
-    "functions": 48.36,
-    "statements": 44.81
+    "lines": 51.07,
+    "branches": 40.41,
+    "functions": 52.7,
+    "statements": 49.1
   },
   "./src/lib/": {
-    "lines": 55.56,
-    "branches": 51.77,
-    "functions": 57.63,
-    "statements": 55.01
+    "lines": 58.56,
+    "branches": 55.14,
+    "functions": 66.96,
+    "statements": 58.22
   },
   "./app/": {
-    "lines": 52.71,
-    "branches": 49.97,
-    "functions": 44.46,
-    "statements": 50.99
+    "lines": 65.08,
+    "branches": 56.89,
+    "functions": 54.36,
+    "statements": 62.9
   }
 }

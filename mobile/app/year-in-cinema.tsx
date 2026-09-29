@@ -19,6 +19,8 @@ import { colors, fonts } from '@/src/theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import TryAgain from '@/src/components/TryAgain';
+import { nav } from '@/src/utils/typedRouter';
 
 type SlideType = 'intro' | 'total' | 'verdict' | 'rhythm' | 'top' | 'outro';
 
@@ -30,7 +32,7 @@ function StateShell({ topInset, children }: { topInset: number; children: React.
       <RoomLight room="member" />
       <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFillObject, WASH]} />
       {children}
-      <PressableScale style={[s.closeBtn, { top: topInset + 10 }]} onPress={() => router.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
+      <PressableScale style={[s.closeBtn, { top: topInset + 10 }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
       </PressableScale>
     </View>
@@ -217,9 +219,7 @@ export default function YearInCinemaScreen() {
         <View style={s.stateBox}>
           <Text style={s.stateTitle}>{isOffline ? 'Your year awaits a\nconnection' : 'The projector jammed'}</Text>
           <Text style={s.stateSub}>{isOffline ? 'Reconnect to develop this year’s reel.' : 'The reel slipped the gate. Try once more.'}</Text>
-          <PressableScale style={s.retryBtn} onPress={load} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" accessibilityRole="button" accessibilityLabel="Try again">
-            <Text style={s.retryText}>TRY AGAIN</Text>
-          </PressableScale>
+          <TryAgain onPress={load} style={s.retrySpace} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} />
         </View>
       </StateShell>
     );
@@ -234,8 +234,8 @@ export default function YearInCinemaScreen() {
           <Text style={s.blankGlyph}>▦</Text>
           <Text style={s.stateTitle}>A Blank Reel</Text>
           <Text style={s.stateSub}>You haven&apos;t logged a film in {currentYear} yet. Every reel starts with a single frame.</Text>
-          <PressableScale style={s.retryBtn} onPress={() => (router.push as any)('/log-modal')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" accessibilityRole="button" accessibilityLabel="Log your first film">
-            <Text style={s.retryText}>LOG YOUR FIRST FILM</Text>
+          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/log-modal')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" accessibilityRole="button" accessibilityLabel="Log your first film">
+            <Text style={s.ctaText}>LOG YOUR FIRST FILM</Text>
           </PressableScale>
         </View>
       </StateShell>
@@ -262,7 +262,7 @@ export default function YearInCinemaScreen() {
         }}
         renderItem={renderSlide}
       />
-      <PressableScale style={[s.closeBtn, { top: insets.top + 10 }]} onPress={() => router.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
+      <PressableScale style={[s.closeBtn, { top: insets.top + 10 }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
       </PressableScale>
     </View>
@@ -323,8 +323,9 @@ const s = StyleSheet.create({
   stateTitle: { fontFamily: fonts.display, fontSize: 30, color: colors.parchment, textAlign: 'center', lineHeight: 36 },
   stateSub: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 22 },
   blankGlyph: { fontFamily: fonts.display, fontSize: 30, color: colors.sepiaSubtle, marginBottom: 4 },
-  retryBtn: { marginTop: 12, backgroundColor: colors.sepia, borderRadius: 3, paddingVertical: 13, paddingHorizontal: 28 },
-  retryText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.ink },
+  retrySpace: { marginTop: 12 },
+  ctaBtn: { marginTop: 12, backgroundColor: colors.sepia, borderRadius: 3, paddingVertical: 13, paddingHorizontal: 28 },
+  ctaText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.ink },
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx

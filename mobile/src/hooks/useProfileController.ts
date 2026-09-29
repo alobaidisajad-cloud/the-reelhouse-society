@@ -10,6 +10,7 @@ import { useFilmStore } from '@/src/stores/films';
 import { useSocialStore } from '@/src/stores/socialStore';
 import { followUser, unfollowUser } from '@/src/stores/domain/socialSlice';
 import { shouldRepairHandleRoute, wasMyHandle } from '@/src/utils/handleHistory';
+import { nav } from '@/src/utils/typedRouter';
 
 export const normalizeSocialHash = (links?: any[] | Record<string, string> | null): string => {
   if (!links) return '';
@@ -453,7 +454,7 @@ export function useProfileController(usernameOverride?: string) {
       handleBack: useCallback(() => {
         TactileEngine.selection();
         if (router.canGoBack()) {
-          router.back();
+          nav.back();
         } else {
           (router.replace as any)('/(tabs)' as never);
         }

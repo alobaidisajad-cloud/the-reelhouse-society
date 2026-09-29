@@ -58,6 +58,10 @@ jest.mock('@/src/stores/auth', () => {
   (useAuthStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useAuthStore };
 });
+jest.mock('@/src/utils/reelToast', () => {
+  const t = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn(), info: jest.fn() });
+  return { __esModule: true, default: t };
+});
 jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ held: true, standing: 'held', open: jest.fn() }) }));
 jest.mock('@/src/lib/tmdb', () => {
   const actual = jest.requireActual('@/src/lib/tmdb');
@@ -72,9 +76,19 @@ jest.mock('@/src/lib/tmdb', () => {
     },
   };
 });
-jest.mock('@/src/components/layout/CinematicFlashList', () => ({
-  CinematicFlashList: require('@/mockups/tabs/flashListMock').makeFlashListMock().FlashList,
-}));
+/** The list's own props, as the screen last drew them (its pull-to-refresh lives there). */
+let mockListProps: Record<string, any> = {};
+jest.mock('@/src/components/layout/CinematicFlashList', () => {
+  const mockReact = require('react');
+  const List = require('@/mockups/tabs/flashListMock').makeFlashListMock().FlashList;
+  return {
+    CinematicFlashList: mockReact.forwardRef((props: Record<string, any>, ref: unknown) => {
+      mockListProps = props;
+      return mockReact.createElement(List, { ...props, ref });
+    }),
+  };
+});
+jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
 
 const PERSON = {
   name: 'Wong Kar-wai', profile_path: null, birthday: '1958-07-17', deathday: null,
@@ -243,5 +257,32 @@ describe('Android paints in elevation order, so each pairing is declared', () =>
   it('the veil covers the list but never the way out', () => {
     expect(elevation(personStyles.topVeil)).toBeGreaterThan(elevation(personStyles.portraitCard));
     expect(elevation(personStyles.floatingBack)).toBeGreaterThan(elevation(personStyles.topVeil));
+  });
+});
+
+describe('a file that could not be reached', () => {
+  const FILE = { person: PERSON, allCredits: [credit(3, 'In the Mood for Love', '2000-09-29')] };
+
+  it('with nothing to show, says so in the house\'s words, and asks again', async () => {
+    const r = await screen({ data: undefined, error: new Error('offline') });
+    expect(r.getByText('Transmission Interrupted')).toBeTruthy();
+    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    expect(mockQuery.refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed refresh keeps the file on the page — it never replaces it', async () => {
+    // A pull with no signal set `error` over a file already drawn, and the page
+    // swapped the member's reading for "Signal Disrupted".
+    const r = await screen({ data: FILE, error: new Error('offline') });
+    expect(words(r)).toContain('Wong Kar-wai');
+    expect(r.queryByText('Transmission Interrupted')).toBeNull();
+  });
+
+  it('and the pull that reached nothing says so', async () => {
+    const r = await screen({ data: FILE, refetch: jest.fn(async () => ({ isError: true })) });
+    expect(words(r)).toContain('Wong Kar-wai');
+    await act(async () => { await mockListProps.refreshControl.props.onRefresh(); });
+    expect(jest.requireMock('@/src/utils/reelToast').default.error)
+      .toHaveBeenCalledWith('Could not refresh — check your connection.');
   });
 });

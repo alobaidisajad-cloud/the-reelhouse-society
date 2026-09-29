@@ -7,7 +7,6 @@ import reelToast from '@/src/utils/reelToast';
 import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useRouter } from 'expo-router';
 import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
@@ -31,6 +30,8 @@ import type { useLogFlow } from '@/src/hooks/useLogFlow';
 import { useSocialStore } from '@/src/stores/followStore';
 
 import type { User } from '@/src/types';
+import { TryAgainLine } from '@/src/components/TryAgain';
+import { nav } from '@/src/utils/typedRouter';
 
 interface LogFormProps {
     flow: ReturnType<typeof useLogFlow>;
@@ -59,7 +60,6 @@ interface LogFormProps {
  * No state, logic, validation or save path changed — this is presentation.
  */
 export default function LogForm({ flow, user }: LogFormProps) {
-    const router = useRouter();
     const following = useSocialStore(s => s.following);
     const {
         film,
@@ -227,6 +227,12 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         // Said only once TMDB has actually answered — never while
                         // the request is still out, and never after it failed.
                         <Text style={st.noData}>No alternative posters found on TMDB.</Text>
+                    ) : flow.imagesFailed ? (
+                        <View>
+                            <Text style={st.noData}>The posters could not be reached.</Text>
+                            {/* Only with the tool held: under the rope the panel is a preview, and opening the tool again asks again. */}
+                            {curation.held && <TryAgainLine onPress={flow.loadImages} accessibilityLabel="Ask for the posters again" style={st.retrySpace} />}
+                        </View>
                     ) : null}
                     </View>
                     {!curation.held && <LogClearanceGate rank={curation.rank} standing={curation.standing} names="Curatorial Control" onPress={curation.open} />}
@@ -349,6 +355,9 @@ export default function LogForm({ flow, user }: LogFormProps) {
                             editorialHeader={editorialHeader}
                             setEditorialHeader={setEditorialHeader}
                             availableBackdrops={availableBackdrops}
+                            imagesLoaded={flow.imagesLoaded}
+                            imagesFailed={flow.imagesFailed}
+                            onRetryImages={flow.loadImages}
                         />
                     </View>
                     {!desk.held && <LogClearanceGate rank={desk.rank} standing={desk.standing} names="The Editorial Desk" onPress={desk.open} />}
@@ -601,7 +610,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     already leaves without saving), and "DISCARD DRAFT" on a
                     record you are amending named something that did not exist. */}
                 {hasUnsavedChanges && !isEditing && (
-                    <PressableScale style={st.discardBtn} onPress={() => { TactileEngine.warn(); discardDraft(); router.back(); }} disabled={submitting} hitSlop={null} haptic="heavy" accessibilityRole="button" accessibilityLabel="Discard this draft">
+                    <PressableScale style={st.discardBtn} onPress={() => { TactileEngine.warn(); discardDraft(); nav.back(); }} disabled={submitting} hitSlop={null} haptic="heavy" accessibilityRole="button" accessibilityLabel="Discard this draft">
                         <Text style={[st.cancelText, { color: colors.fog }]}>DISCARD DRAFT</Text>
                     </PressableScale>
                 )}

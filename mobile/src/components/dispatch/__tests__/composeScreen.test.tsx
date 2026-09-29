@@ -34,7 +34,7 @@ jest.mock('expo-router', () => {
   const React = require('react');
   return {
     router: {
-      push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(),
+      push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(), canGoBack: () => true,
       setParams: (p: Record<string, string>) => { mockParams.push(p); },
     },
     useLocalSearchParams: jest.fn(() => ({})),

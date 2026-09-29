@@ -40,10 +40,20 @@ answers=""
 for pkg in $(adb shell ime list -a -s | tr -d '\r' | sed 's#/.*##' | sort -u); do
   answers="${answers} ${pkg}: $(adb shell pm disable "${pkg}" 2>&1 | tr -d '\r' | tr '\n' ' ');"
 done
-left="$(adb shell ime list -s | tr -d '\r' | tr '\n' ' ')"
+# Which input methods are ENABLED is a setting of its own, and it outlived the
+# apps (run 36602917035: both "new state: disabled", both still listed). It is
+# cleared, and Android is given a moment to redraw its list from what is left.
+adb shell settings delete secure enabled_input_methods > /dev/null 2>&1
+adb shell settings delete secure default_input_method > /dev/null 2>&1
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  left="$(adb shell ime list -s | tr -d '\r' | tr '\n' ' ')"
+  [ -z "${left// /}" ] && break
+  sleep 2
+done
 echo "root: ${rooted} | ${answers} | input methods left: [${left}]"
 if [ -n "${left// /}" ]; then
-  echo "::error title=A keyboard app is still on the device::left: ${left} | root: ${rooted} | Android said:${answers} — every flow that types would fail behind it."
+  enabled="$(adb shell settings get secure enabled_input_methods | tr -d '\r')"
+  echo "::error title=A keyboard app is still on the device::left: ${left} | enabled setting: ${enabled} | root: ${rooted} | Android said:${answers} — every flow that types would fail behind it."
   exit 1
 fi
 adb logcat -c   # this run's log only, so a crash below is this run's crash

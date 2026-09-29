@@ -15,6 +15,8 @@ import { FilmDetailProvider } from '@/src/providers/FilmDetailProvider';
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
+  // The module's router, as the real one has it (the failed page names its way out).
+  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true },
   useLocalSearchParams: () => ({ id: '1' }),
   useFocusEffect: () => {},
 }));

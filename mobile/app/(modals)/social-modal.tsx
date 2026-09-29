@@ -22,6 +22,7 @@ import { BlurView } from 'expo-blur';
 import { Check, Film as FilmIcon, Send, User, UserCircle2, Users, X } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import TryAgain from '@/src/components/TryAgain';
 
 interface SocialProfile {
     id: string;
@@ -356,15 +357,7 @@ export default function SocialModal() {
                         <>
                             <Text style={[styles.username, styles.timeoutTitle]}>CONNECTION TIMED OUT</Text>
                             <Text style={styles.timeoutSubtext}>The telegraph to the archive is disrupted.</Text>
-                            <PressableScale
-                                onPress={retryFetch}
-                                style={styles.retryBtn}
-                                haptic="light"
-                                accessibilityRole="button"
-                                accessibilityLabel="Retry loading"
-                            >
-                                <Text style={styles.retryBtnText}>RETRY</Text>
-                            </PressableScale>
+                            <TryAgain onPress={retryFetch} style={styles.retrySpace} />
                         </>
                     ) : (
                         <ActivityIndicator size="large" color={colors.sepia} />
@@ -481,13 +474,7 @@ const styles = StyleSheet.create({
         fontFamily: fonts.sub, fontSize: 12, color: colors.fog,
         textAlign: 'center', marginTop: 4,
     },
-    retryBtn: {
-        marginTop: 16, paddingVertical: 10, paddingHorizontal: 24,
-        borderWidth: 1, borderColor: colors.sepia, borderRadius: 3,
-    },
-    retryBtnText: {
-        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia,
-    },
+    retrySpace: { marginTop: 16 },
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx

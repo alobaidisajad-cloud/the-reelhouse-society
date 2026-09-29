@@ -11,7 +11,7 @@
  * this member, in this state, what is on the page.
  */
 import React, { act } from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 // The screen itself. `jest.mock` factories are hoisted above every import by
@@ -46,6 +46,7 @@ const makeCtl = (over: Record<string, unknown> = {}, dataOver: Record<string, un
     setTargetUser: jest.fn(),
     hasMoreLogs: false, hasMoreWatchlist: false, hasMoreVault: false, hasMoreLists: false,
     isLoadingMore: false, loadMoreLogs: jest.fn(),
+    tabFailed: {}, loadTabData: jest.fn(),
     ...dataOver,
   },
   username: 'tomasreyes', isSelf: false, repairingHandle: false,
@@ -106,6 +107,18 @@ describe('the four states the page can be in', () => {
     const r = await mount({}, { targetUser: null });
     expect(r.getByText('Member Not Found')).toBeTruthy();
     expect(r.getByLabelText('Go back')).toBeTruthy();
+  });
+
+  it('a member it could not ask for is NOT "not found" — said, asked again, and a way back', async () => {
+    // Opened with no signal it said "This member doesn't exist yet, or has
+    // been removed" of a member who is right there.
+    const fetchUserData = jest.fn(async () => {});
+    const r = await mount({}, { targetUser: null, error: new Error('Network request failed'), fetchUserData });
+    expect(r.queryByText('Member Not Found')).toBeNull();
+    expect(r.getByText('Transmission Interrupted')).toBeTruthy();
+    expect(r.getByLabelText('Go back')).toBeTruthy();
+    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    expect(fetchUserData).toHaveBeenCalledTimes(1);
   });
 
   it('a sealed dossier shows the seal and none of the rooms', async () => {
@@ -447,5 +460,35 @@ describe('the page survives the edges', () => {
     expect(r.getByText('TOMAS')).toBeTruthy();
     expect(r.queryByText(/ADMITTED/)).toBeNull();
     expect(r.queryByText(/Nº/)).toBeNull();
+  });
+});
+
+describe('a visitor\'s room whose read failed', () => {
+  // It stood at RETRIEVING THE QUEUE for as long as the member stayed.
+  it('says the room could not be reached, and asks for it again', async () => {
+    const loadTabData = jest.fn();
+    const r = await mount({ activeTab: 'watchlist' }, { tabFailed: { watchlist: true }, loadTabData });
+    expect(r.queryByLabelText('Retrieving the queue')).toBeNull();
+    expect(r.getByText('The queue could not be reached.')).toBeTruthy();
+    await act(async () => { fireEvent.press(r.getByLabelText('Ask for the queue again')); });
+    expect(loadTabData).toHaveBeenCalledWith('watchlist', true);
+  });
+
+  it('a room still on its way says it is retrieving, not that it failed', async () => {
+    const r = await mount({ activeTab: 'watchlist' }, { tabFailed: {} });
+    expect(r.getByLabelText('Retrieving the queue')).toBeTruthy();
+    expect(r.queryByText('The queue could not be reached.')).toBeNull();
+  });
+
+  it('the stacks and the shelves say it too', async () => {
+    let r = await mount({ activeTab: 'lists' }, { tabFailed: { lists: true } });
+    expect(r.getByText('The stacks could not be reached.')).toBeTruthy();
+    r.unmount();
+    // The shelves are an Archivist's room.
+    r = await mount({ activeTab: 'physical' }, {
+      targetUser: baseUser({ role: 'archivist', tier: 'archivist' }),
+      tabFailed: { physical: true }, counts: { logs: 34, ledger: 12, watchlist: 22, vault: 5, lists: 1 },
+    });
+    expect(r.getByText('The shelves could not be reached.')).toBeTruthy();
   });
 });

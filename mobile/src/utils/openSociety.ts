@@ -35,6 +35,7 @@ import { router } from 'expo-router';
 
 import { isModalPath } from '@/src/constants/modalRoutes';
 import type { Rank } from '@/src/constants/gatedFeatures';
+import { nav } from '@/src/utils/typedRouter';
 
 let currentPath: string | null = null;
 
@@ -57,7 +58,7 @@ export function openSociety(href: string): void {
     // Park, dismiss, then travel. The next frame is enough for a ROUTE modal:
     // the navigator reconciles the pop and the push in its own transition. It
     // is NOT enough for a React Native <Modal> — those wait for onDismiss.
-    router.back();
+    nav.back();
     requestAnimationFrame(() => push(href));
     return;
   }

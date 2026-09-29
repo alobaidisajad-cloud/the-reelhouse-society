@@ -13,7 +13,7 @@ import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { FORMAT_META, shelfRank } from '@/src/constants/formats';
 import { r, posterColumns, countLabel } from './roomStyles';
-import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
+import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
 
 /**
  * THE PHYSICAL ARCHIVE — a collection of OBJECTS, arranged the way objects are.
@@ -53,6 +53,8 @@ interface ProfilePhysicalTabProps {
   // Tuesday each copy happened to be typed in.
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
+  /** A visitor's room whose read failed: the way to ask again (the room then says so). */
+  unreachable?: () => void;
   tier?: string | null;
   /** The server reconciled total — the same figure the plate shows. */
   totalVault?: number;
@@ -147,6 +149,7 @@ export default React.memo(function ProfilePhysicalTab({
   physicalFormatCounts,
   physicalFiltered,
   ready = true,
+  unreachable,
   tier,
   totalVault,
   vaultFormats,
@@ -378,7 +381,7 @@ export default React.memo(function ProfilePhysicalTab({
   const ListEmptyComponent = useMemo(() => {
     if (physicalFiltered.length > 0) return null;
 
-    if (!ready) return <RoomRetrieving room="the shelves" />;
+    if (!ready) return unreachable ? <RoomUnreachable room="the shelves" onRetry={unreachable} /> : <RoomRetrieving room="the shelves" />;
 
     // A FORMAT filter matched nothing — not an empty archive.
     if (vault.length > 0) {
@@ -415,7 +418,7 @@ export default React.memo(function ProfilePhysicalTab({
         body="This member hasn’t catalogued a physical copy yet."
       />
     );
-  }, [physicalFiltered.length, vault.length, physicalFilter, setPhysicalFilter, ready, isSelf, pulseStyle, router]);
+  }, [physicalFiltered.length, vault.length, physicalFilter, setPhysicalFilter, ready, unreachable, isSelf, pulseStyle, router]);
 
   const ListFooterComponent = useMemo(() => {
     if (flashData.length === 0) return null;

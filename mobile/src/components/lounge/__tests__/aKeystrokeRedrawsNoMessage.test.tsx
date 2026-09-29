@@ -62,6 +62,7 @@ jest.mock('@/src/lib/supabase', () => ({
       const self = () => chain;
       chain.select = self; chain.eq = self;
       chain.single = () => Promise.resolve({ data: ROOM, error: null });
+      chain.maybeSingle = chain.single;
       return chain;
     },
   },

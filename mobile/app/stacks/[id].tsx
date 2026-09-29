@@ -38,6 +38,8 @@ import { z } from 'zod';
 import { EDGE_LIT } from '@/src/theme/light';
 import { useLineScale } from '@/src/hooks/useTextScale';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
+import { EmptyOffline } from '@/src/components/EmptyStates';
+import { nav } from '@/src/utils/typedRouter';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
@@ -271,13 +273,16 @@ export default function StackDetailScreen() {
 
 
   // ── React Query: MMKV-cached stack detail (instant revisits & offline fallback) ──
-  const { data: stackQueryData, isLoading: stackQueryLoading, isError } = useQuery({
+  const { data: stackQueryData, isLoading: stackQueryLoading, isError, refetch: rereadStack } = useQuery({
     queryKey: ['stack', id],
     queryFn: async () => {
       // Taken BEFORE the request: see tellMarkCounts.
       const askedAt = Date.now();
       try {
-        const { endorseCount, certified, ...stack } = await StackService.getStackFullPayload(id);
+        const payload = await StackService.getStackFullPayload(id);
+        // Not there, or sealed from this viewer: an answer, drawn as CLASSIFIED.
+        if (!payload) return null;
+        const { endorseCount, certified, ...stack } = payload;
         // The shared store, which the Reel's card reads too.
         tellMarks('list', [{ id, certify: endorseCount, certified }], askedAt);
 
@@ -638,7 +643,7 @@ export default function StackDetailScreen() {
               queryClient.removeQueries({ queryKey: ['stack', id] });
               queryClient.invalidateQueries({ queryKey: ['stacks'] });
               TactileEngine.warn();
-              router.back();
+              nav.back();
              
             } catch (err: unknown) {
               logger.debug('[Stack] Delete failed:', err);
@@ -650,7 +655,7 @@ export default function StackDetailScreen() {
         },
       ]
     );
-  }, [id, deleteList, router, queryClient]);
+  }, [id, deleteList, queryClient]);
 
   const handlePressFilm = useCallback((filmId: number) => {
     TactileEngine.selection();
@@ -683,7 +688,7 @@ export default function StackDetailScreen() {
     return (
       <View style={s.container}>
         <RoomLight room="default" />
-        <StackNav topInset={insets.top} onBack={() => router.back()} />
+        <StackNav topInset={insets.top} onBack={() => nav.back()} />
         <View style={s.loadingCenter}>
           <ActivityIndicator size="large" color={colors.sepia} />
         </View>
@@ -691,13 +696,28 @@ export default function StackDetailScreen() {
     );
   }
 
-  // CLASSIFIED covers both failure to retrieve AND a private stack reached by
-  // direct link by anyone but its curator (defense-in-depth beside the RLS gate).
-  if (isError || !list || (list.isPrivate && !isOwner)) {
+  // Could not be reached, and nothing of it held here: said as that, with TRY
+  // AGAIN. It used to be CLASSIFIED — "sealed or incinerated" — of a stack
+  // that was simply out of reach.
+  if (isError && !list) {
     return (
       <View style={s.container}>
         <RoomLight room="default" />
-        <StackNav topInset={insets.top} onBack={() => router.back()} />
+        <StackNav topInset={insets.top} onBack={() => nav.back()} />
+        <View style={s.loadingCenter}>
+          <EmptyOffline onRetry={() => { void rereadStack(); }} />
+        </View>
+      </View>
+    );
+  }
+
+  // CLASSIFIED: no such stack, or a private one reached by direct link by
+  // anyone but its curator (defense-in-depth beside the RLS gate).
+  if (!list || (list.isPrivate && !isOwner)) {
+    return (
+      <View style={s.container}>
+        <RoomLight room="default" />
+        <StackNav topInset={insets.top} onBack={() => nav.back()} />
         <View style={s.loadingCenter}>
           <Text style={s.title}>CLASSIFIED</Text>
           <Text style={[s.desc, { textAlign: 'center', marginTop: 12 }]}>This stack could not be retrieved.{'\n'}It may be sealed or incinerated.</Text>
@@ -723,7 +743,7 @@ export default function StackDetailScreen() {
       {/* The room's light hangs from where the hero ends, and blooms from it. */}
       <RoomLight room="default" hem={heroPoster ? HEADER_HEIGHT : undefined} art={heroPoster} />
       {/* Absolute Dynamic Nav Bar */}
-      <StackNav topInset={insets.top} onBack={() => router.back()} blurStyle={navBlurStyle}>
+      <StackNav topInset={insets.top} onBack={() => nav.back()} blurStyle={navBlurStyle}>
         {isOwner ? (
           <View style={s.headerActions}>
             <PressableScale style={s.actionBtn} onPress={() => { (router.push as any)({ pathname: '/list-modal', params: { editId: id } } as import('expo-router').Href); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Edit stack">

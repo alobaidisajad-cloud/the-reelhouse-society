@@ -7,7 +7,8 @@
  * code that actually runs at launch.
  */
 import { onlineManager, QueryObserver } from '@tanstack/react-query';
-import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
+import { mmkvPersister, queryClient, shouldRetry } from '@/src/lib/queryClient';
+import { TmdbUnreachable } from '@/src/lib/tmdbErrors';
 import { storage, setSensitive } from '@/src/stores/mmkv-storage';
 
 type Connection = (state: { isConnected: boolean | null }) => void;
@@ -139,6 +140,33 @@ describe('the connection, as React Query hears it', () => {
     stop();
     queryClient.unmount();
   });
+
+  it('a read made with no connection FAILS (said), never pauses (read as "nothing there")', async () => {
+    queryClient.mount();
+    connection({ isConnected: false });
+    const read = jest.fn().mockRejectedValue(new TypeError('Network request failed'));
+    const observer = new QueryObserver(queryClient, { queryKey: ['offline-test'], queryFn: read });
+    const stop = observer.subscribe(() => {});
+    await settle();
+    await settle();
+    const r = observer.getCurrentResult();
+    expect(read).toHaveBeenCalledTimes(1);   // asked, and not tried again: no connection to try with
+    expect(r.fetchStatus).toBe('idle');
+    expect(r.isError).toBe(true);
+
+    // And the failed page mends itself when the connection returns.
+    read.mockResolvedValue('the page');
+    connection({ isConnected: true });
+    await settle();
+    await settle();
+    expect(observer.getCurrentResult().data).toBe('the page');
+    stop();
+    queryClient.unmount();
+  });
+
+  it('an action taken with no connection fails, rather than waiting unseen', () => {
+    expect(queryClient.getDefaultOptions().mutations?.networkMode).toBe('always');
+  });
 });
 
 describe('queryClient — launch defaults', () => {
@@ -148,8 +176,16 @@ describe('queryClient — launch defaults', () => {
     expect(d?.refetchOnWindowFocus).toBe(false);
   });
 
-  it('retries sparingly — withRetry owns the critical paths', () => {
-    expect(queryClient.getDefaultOptions().queries?.retry).toBe(1);
+  it('retries once, and never what another try cannot mend', () => {
+    mockNetInfoListener({ isConnected: true });
+    const boom = new Error('server hiccup');
+    expect(shouldRetry(0, boom)).toBe(true);
+    expect(shouldRetry(1, boom)).toBe(false);
+    // Already tried three times inside fetchTMDB.
+    expect(shouldRetry(0, new TmdbUnreachable('/trending/movie/week', 'status 503'))).toBe(false);
+    mockNetInfoListener({ isConnected: false });
+    expect(shouldRetry(0, boom)).toBe(false);
+    mockNetInfoListener({ isConnected: true });
   });
 
   it('keeps data fresh for a usable window without hammering the API', () => {

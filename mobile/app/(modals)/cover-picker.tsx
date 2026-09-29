@@ -10,7 +10,7 @@
 import React, { useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import LogSearchEngine, { LogSearchResult } from '@/src/components/log/LogSearchEngine';
@@ -19,23 +19,23 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { nav } from '@/src/utils/typedRouter';
 
 export default function CoverPicker() {
   const { loungeId } = useLocalSearchParams<{ loungeId: string }>();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const setLoungeCover = useLoungeStore(s => s.setLoungeCover);
 
   const handlePick = useCallback((film: LogSearchResult) => {
-    if (!loungeId) { router.back(); return; }
+    if (!loungeId) { nav.back(); return; }
     if (!film.backdrop_path) {
       reelToast.error('That title has no cover art — try another.');
       return;
     }
     // Optimistic patch fires synchronously inside setLoungeCover; dismiss immediately.
     setLoungeCover(loungeId, film.backdrop_path);
-    router.back();
-  }, [loungeId, router, setLoungeCover]);
+    nav.back();
+  }, [loungeId, setLoungeCover]);
 
   return (
     <View style={[s.container, { paddingTop: Math.max(insets.top + 8, 16) }]}>
@@ -46,7 +46,7 @@ export default function CoverPicker() {
           <Text style={s.title}>Choose a Cover</Text>
         </View>
         <PressableScale
-          onPress={() => router.back()}
+          onPress={() => nav.back()}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           haptic="selection"
           accessibilityRole="button"

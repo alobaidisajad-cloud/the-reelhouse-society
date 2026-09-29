@@ -7,6 +7,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { r, roomTier, chipSlop } from './roomStyles';
+import { TryAgainLine } from '@/src/components/TryAgain';
 
 /**
  * RoomParts — the furniture every room is built from.
@@ -272,6 +273,19 @@ export function RoomRetrieving({ room }: { room: string }) {
       <Text {...decorativeTextProps} style={r.retrieveMark}>✦</Text>
       <Text {...scaledTextProps} style={r.retrieveText}>RETRIEVING {room.toUpperCase()}</Text>
       <Text {...decorativeTextProps} style={r.retrieveMark}>✦</Text>
+    </View>
+  );
+}
+
+/**
+ * A room whose read could not be answered: said, with the way to ask again. It
+ * stood at RETRIEVING for as long as the member stayed.
+ */
+export function RoomUnreachable({ room, onRetry }: { room: string; onRetry: () => void }) {
+  return (
+    <View style={r.state}>
+      <Text {...scaledTextProps} style={r.stateBody}>{`${room[0].toUpperCase()}${room.slice(1)} could not be reached.`}</Text>
+      <TryAgainLine onPress={onRetry} accessibilityLabel={`Ask for ${room} again`} style={r.stateRetry} />
     </View>
   );
 }

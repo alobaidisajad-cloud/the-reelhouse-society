@@ -7,7 +7,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
@@ -25,6 +25,8 @@ import { colors, fonts, effects } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import { Globe, GripVertical, List, ListOrdered, Lock, Plus, Search, X } from 'lucide-react-native';
 import { EDGE_LIT } from '@/src/theme/light';
+import SearchUnreachable from '@/src/components/search/SearchUnreachable';
+import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 
 // At module scope: made inside the component, it would be a new type, and remount, each render.
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -206,8 +208,14 @@ export default function ListModal() {
           ].join('  ·  ');
 
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<SearchResult[]>([]);
-    const [searching, setSearching] = useState(false);
+    const search = useCatalogueSearch(query);
+    const { searching, unreachable } = search;
+    // Films only (a person cannot be stacked), and none the stack already holds.
+    const { results, allAlreadyIn } = useMemo(() => {
+        const matched = search.results.filter((r) => r.media_type !== 'person');
+        const fresh: SearchResult[] = matched.filter((r) => !films.some((f) => f.id === r.id)).slice(0, 6);
+        return { results: fresh, allAlreadyIn: matched.length > 0 && fresh.length === 0 };
+    }, [search.results, films]);
 
     // The search icon breathes while a search is out.
     const emberOpacity = useSharedValue(0.5);
@@ -231,27 +239,6 @@ export default function ListModal() {
         opacity: emberOpacity.value,
     }));
 
-    const handleSearch = useCallback((q: string) => setQuery(q), []);
-
-    useEffect(() => {
-        if (!query.trim()) { setResults([]); setSearching(false); return; }
-        let active = true;
-        setSearching(true);
-        const timeoutId = setTimeout(async () => {
-            try {
-                const res = await tmdb.search(query, 1);
-                if (!active) return;
-                const filtered = (res.results || [])
-                    .filter((r: SearchResult) => r.media_type !== 'person')
-                    .filter((r: SearchResult) => !films.some(f => f.id === r.id))
-                    .slice(0, 6) as SearchResult[];
-                if (isMounted.current) setResults(filtered);
-             
-            } catch (err: unknown) { if (active && isMounted.current) setResults([]); }
-            finally { if (active && isMounted.current) setSearching(false); }
-        }, 400);
-        return () => { active = false; clearTimeout(timeoutId); };
-    }, [query, films]);
 
     // Adds and removals are SPOKEN (far below the fold; the live region is Android-only),
     // from a ref: an updater may run twice, and would say it twice.
@@ -265,7 +252,6 @@ export default function ListModal() {
             ? prev
             : [...prev, { id: f.id, title: name, poster_path: f.poster_path }]));
         setQuery('');
-        setResults([]);
         if (!already) {
             AccessibilityInfo.announceForAccessibility(`${name} added. ${filmsRef.current.length + 1} in the stack.`);
         }
@@ -412,7 +398,7 @@ export default function ListModal() {
                                 placeholder="Search films to add..."
                                 placeholderTextColor={colors.fog}
                                 value={query}
-                                onChangeText={handleSearch}
+                                onChangeText={setQuery}
                                 returnKeyType="search"
                                 selectionColor={'rgba(218,165,32,0.3)'}
                                 cursorColor={colors.sepia}
@@ -431,6 +417,14 @@ export default function ListModal() {
                                     <DropdownResultRow key={r.id} r={r} onAdd={addFilm} />
                                 ))}
                             </Animated.View>
+                        )}
+                        {unreachable && <SearchUnreachable onRetry={search.retry} />}
+                        {/* Said, not left blank: a search that found nothing, or found only
+                            films already in the stack, looked exactly like one still out. */}
+                        {!searching && !unreachable && query.trim().length > 0 && results.length === 0 && (
+                            <Text style={s.dropNone}>
+                                {allAlreadyIn ? 'Already in this stack.' : `No films found for "${query.trim()}"`}
+                            </Text>
                         )}
                     </>
                 )}
@@ -619,6 +613,8 @@ const s = StyleSheet.create({
         backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash,
         borderRadius: 4, marginTop: 4, overflow: 'hidden',
     },
+    // As the log search says it (LogSearchEngine's noResultsText), under the field.
+    dropNone: { fontFamily: fonts.sub, fontSize: 13, color: colors.fog, textAlign: 'center', paddingVertical: 16 },
     dropRow: {
         flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10,
         borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,

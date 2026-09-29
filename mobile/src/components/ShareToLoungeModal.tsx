@@ -18,6 +18,7 @@ import reelToast from '@/src/utils/reelToast';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { clipToSentence } from '@/src/components/dispatch/paper/paperText';
 import { ToastHost } from '@/src/components/ToastHost';
+import { TryAgainLine } from '@/src/components/TryAgain';
 
 interface ShareToLoungeProps {
     visible: boolean;
@@ -113,6 +114,7 @@ export default function ShareToLoungeModal({
     const { user } = useAuthStore();
     const allLounges = useLoungeStore(s => s.lounges);
     const isFetching = useLoungeStore(s => s.loading);
+    const loungesFailed = useLoungeStore(s => s.loungesFailed);
     const lounges = allLounges.filter(l => l.is_member || l.unread_count !== undefined);
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
@@ -264,6 +266,12 @@ export default function ShareToLoungeModal({
 
                     {(isFetching && lounges.length === 0) ? (
                         <ActivityIndicator color={colors.sepia} style={s.loadingIndicator} />
+                    ) : lounges.length === 0 && loungesFailed ? (
+                        // Not "you have joined none": the salons could not be asked.
+                        <View style={s.unreachable}>
+                            <Text style={s.emptyText}>The salons could not be reached.</Text>
+                            <TryAgainLine onPress={() => { void useLoungeStore.getState().fetchLounges(); }} accessibilityLabel="Ask for the salons again" />
+                        </View>
                     ) : lounges.length === 0 ? (
                         <Text style={s.emptyText}>You haven&apos;t joined any lounges yet.</Text>
                     ) : (
@@ -330,6 +338,7 @@ const s = StyleSheet.create({
     loungeList: { maxHeight: 160 },
     loadingIndicator: { marginVertical: 24 },
     emptyText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, textAlign: 'center', paddingVertical: 24 },
+    unreachable: { alignItems: 'center', paddingBottom: 16 },
     messageInput: {
         backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash,
         color: colors.bone, fontFamily: fonts.body, fontSize: 13,

@@ -27,7 +27,8 @@ export default function FilmDetailScreen() {
   const filmId = parseInt(idString || '0', 10);
   const validFilmId = !isNaN(filmId) && filmId > 0;
 
-  const { data, isLoading: loading, isError } = useFilmDetail(filmId, validFilmId);
+  const { data, isLoading: loading, isError, refetch } = useFilmDetail(filmId, validFilmId);
+  const retry = useCallback(() => { void refetch(); }, [refetch]);
   const readyMark = useScreenReady('film', !loading);
   const { user } = useAuthStore();
   const isAuthenticated = !!user;
@@ -186,6 +187,7 @@ export default function FilmDetailScreen() {
       validFilmId,
       loading,
       isError,
+      retry,
       isFocused,
       goBack,
       handleLog,
@@ -198,7 +200,7 @@ export default function FilmDetailScreen() {
       setActiveTrailerKey,
     };
   }, [
-    derivedData, existingLog, isAuthenticated, isArchivist, currentUsername, user, validFilmId, loading, isError,
+    derivedData, existingLog, isAuthenticated, isArchivist, currentUsername, user, validFilmId, loading, isError, retry,
     isFocused, goBack, handleLog, handleRewatch, handleOpenTrailer, handleOpenShare, handleOpenLounge, handleReadFullLog, trailer
   ]);
 

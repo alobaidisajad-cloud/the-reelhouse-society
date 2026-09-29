@@ -44,6 +44,7 @@ export interface TMDBSearchResult {
     total_pages: number
     total_results: number
     page: number
+    /** 'failed': nothing matched, every tier tried. (A catalogue that could not be asked throws.) */
     searchType?: 'exact' | 'typo' | 'semantic' | 'person' | 'failed'
     matchedContext?: string
 }

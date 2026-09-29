@@ -48,6 +48,7 @@ import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatClockTime, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { EmptyOffline } from '@/src/components/EmptyStates';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -360,6 +361,11 @@ export default function LoungeRoomScreen() {
   const [rosterFailed, setRosterFailed] = useState(false);
   const [pending, setPending] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  // The room could not be asked for — not "incinerated", which it said of any
+  // room opened with no signal.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const askForRoomAgain = useCallback(() => setLoadAttempt((n) => n + 1), []);
 
   const blockStore = useBlockStore();
 
@@ -403,10 +409,14 @@ export default function LoungeRoomScreen() {
     setRosterFailed(false);
     setPending(false);
     setMembers([]);
+    // A new room starts found: the last room's verdict is not this one's.
+    setNotFound(false);
+    setLoadFailed(false);
     const loadLounge = async () => {
-      const { data: loungeData, error } = await supabase.from('lounges').select('*').eq('id', id).single();
+      const { data: loungeData, error } = await supabase.from('lounges').select('*').eq('id', id).maybeSingle();
       if (cancelled) return;
-      if (!loungeData || error) { setNotFound(true); return; }
+      if (error) { setLoadFailed(true); return; }
+      if (!loungeData) { setNotFound(true); return; }
       setLocalLounge(loungeData);
       const store = useLoungeStore.getState();
       if (!store.lounges.some(l => l.id === id)) store.fetchLounges();
@@ -414,11 +424,11 @@ export default function LoungeRoomScreen() {
     loadLounge();
     refreshMembership();
     return () => { cancelled = true; };
-  }, [id, refreshMembership]);
+  }, [id, refreshMembership, loadAttempt]);
 
   const activeLounge = localLounge || lounges.find(l => l.id === id);
   const messagesLoading = useLoungeStore(s => s.loading);
-  const readyMark = useScreenReady('room', notFound || (!!activeLounge && (currentMessages.length > 0 || !messagesLoading)));
+  const readyMark = useScreenReady('room', notFound || loadFailed || (!!activeLounge && (currentMessages.length > 0 || !messagesLoading)));
   const isCreator = activeLounge?.creator_id === user?.id;
   const isApproved = myStatus === 'approved' || isCreator;
   const isMuted = myStatus === 'muted';
@@ -518,7 +528,10 @@ export default function LoungeRoomScreen() {
   }, [id, joinPublicLounge, refreshMembership]);
 
   // ── Edge: not found ──
+  // The way out says where it goes: back where there is a back, else the Lobby
+  // (opened from a notice, there is no back, and the router's own back did nothing).
   if (notFound) {
+    const wayOut = nav.canGoBack() ? 'GO BACK' : 'RETURN TO THE LOBBY';
     return (
       <View style={s.centered}>
         <RoomLight room="default" />
@@ -526,9 +539,23 @@ export default function LoungeRoomScreen() {
         <View style={s.crestSmall}><X size={18} color={colors.sepia} strokeWidth={1.5} /></View>
         <Text style={s.edgeTitle}>Signal Lost</Text>
         <Text style={s.edgeDesc}>This screening room has been incinerated or never existed.</Text>
-        <PressableScale style={s.edgeBtn} onPress={() => router.back()} haptic="medium">
-          <Text style={s.edgeBtnText}>RETURN TO THE LOBBY</Text>
+        <PressableScale style={s.edgeBtn} onPress={() => nav.back()} haptic="medium" accessibilityRole="button" accessibilityLabel={wayOut}>
+          <Text style={s.edgeBtnText}>{wayOut}</Text>
         </PressableScale>
+      </View>
+    );
+  }
+
+  // ── Edge: could not be reached (and nothing of it held) ──
+  if (loadFailed && !lounges.some((l) => l.id === id)) {
+    return (
+      <View style={s.centered}>
+        <RoomLight room="default" />
+        {readyMark}
+        <EmptyOffline
+          onRetry={askForRoomAgain}
+          wayOut={{ label: nav.canGoBack() ? 'Go back' : 'Return to the Lobby', onPress: () => nav.back() }}
+        />
       </View>
     );
   }
@@ -551,7 +578,7 @@ export default function LoungeRoomScreen() {
       {readyMark}
       {/* ── Marquee header ── */}
       <View style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
-        <PressableScale style={s.headerBtn} onPress={() => router.back()} haptic="selection" accessibilityRole="button" accessibilityLabel="Back">
+        <PressableScale style={s.headerBtn} onPress={() => nav.back()} haptic="selection" accessibilityRole="button" accessibilityLabel="Back">
           <ArrowLeft size={20} color={colors.parchment} strokeWidth={1.5} />
         </PressableScale>
 

@@ -15,6 +15,7 @@ import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
+import { isTmdbUnreachable } from '@/src/lib/tmdbErrors';
 import { useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
 // Imported text comes from any exporter, so it passes the same sanitiser as in-app writes.
@@ -497,6 +498,10 @@ export function importableTimestamp(raw: unknown): string | null {
 
 const resolutionCache = new Map<string, TMDBMatch | null>();
 
+/** Said when the catalogue could not be asked mid-import: nothing has been written yet. */
+export const CATALOGUE_AWAY =
+  'The film catalogue could not be reached, so nothing was imported. Check your connection, then import the file again.';
+
 function cacheKey(title: string, year: string): string {
   return `${title.toLowerCase().trim()}|${year.trim()}`;
 }
@@ -574,16 +579,21 @@ async function resolveFilm(title: string, year: string): Promise<TMDBMatch | nul
     resolutionCache.set(key, match);
     return match;
   } catch (err: unknown) {
+    // The catalogue could not be asked: that is no answer about a film. Carried
+    // on, every film after it was counted "unmatched" and left out of the import
+    // for good. So the import stops here, before a single row is written.
+    if (isTmdbUnreachable(err)) throw new Error(CATALOGUE_AWAY);
     logger.warn('[archiveImport] TMDB resolve failed for', title, err);
-    // Not cached: a failure to ask (a dropped connection, a rate limit) is no answer about a film.
+    // Not cached: an answer that went wrong is no answer about a film.
     return null;
   }
 }
 
 /**
  * Resolves a batch of films with rate limiting and progress reporting.
+ * (Exported for its test.)
  */
-async function resolveFilmsBatch(
+export async function resolveFilmsBatch(
   entries: { title: string; year: string }[],
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<Map<string, TMDBMatch>> {

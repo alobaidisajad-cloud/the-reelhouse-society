@@ -31,6 +31,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { SearchResultRow } from '@/src/components/search/SearchResultRow';
 import { SR, useUniversalSearch } from '@/src/hooks/useUniversalSearch';
 import { colors, fonts } from '@/src/theme/theme';
+import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
@@ -64,7 +65,7 @@ export default function SearchModal() {
   }, [query]);
 
   // Execute TanStack Query
-  const { data, isFetching, isError } = useUniversalSearch(debouncedQuery);
+  const { data, isFetching, isError, refetch } = useUniversalSearch(debouncedQuery);
 
   const searched = query.trim().length > 0;
   const searching = isFetching || debouncedQuery !== query;
@@ -75,6 +76,19 @@ export default function SearchModal() {
   const users = useMemo(() => data?.users || [], [data?.users]);
   const logs = useMemo(() => data?.logs || [], [data?.logs]);
   const lists = useMemo(() => data?.lists || [], [data?.lists]);
+
+  const tabSourceDown = useMemo(() => {
+    const down = data?._down;
+    if (!down) return false;
+    switch (tab) {
+      case 'films': case 'actors': case 'directors': return down.films;
+      case 'people': return down.users;
+      case 'logs': return down.logs;
+      case 'lists': return down.lists;
+      default: return down.films || down.users || down.logs || down.lists;
+    }
+  }, [data?._down, tab]);
+  const retrySearch = useCallback(() => { void refetch(); }, [refetch]);
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
@@ -258,16 +272,16 @@ export default function SearchModal() {
           </Animated.View>
         )}
 
-        {/* Network/API error state */}
-        {searched && !searching && isError && (
+        {/* Could not be asked: every source, or the one this tab reads from.
+            An empty tab whose source was down is unknown, not empty. */}
+        {searched && !searching && (isError || (filtered.length === 0 && tabSourceDown)) && (
           <Animated.View entering={FadeIn} style={st.center}>
-            <Text style={st.centerLabel}>THE TELEGRAPH IS DOWN</Text>
-            <Text style={st.emptySub}>Unable to reach the archives. Check your connection and try again.</Text>
+            <SearchUnreachable onRetry={retrySearch} />
           </Animated.View>
         )}
 
         {/* No results */}
-        {searched && !searching && !isError && filtered.length === 0 && (
+        {searched && !searching && !isError && !tabSourceDown && filtered.length === 0 && (
           <Animated.View entering={FadeIn} style={st.center}>
             <Text style={st.centerLabel}>THE ARCHIVE RETURNS SILENCE</Text>
             <Text style={st.emptySub}>Adjust your query or consult a different catalogue.</Text>

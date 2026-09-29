@@ -46,6 +46,8 @@ export interface FilmDetailContextValue {
   validFilmId: boolean;
   loading: boolean;
   isError: boolean;
+  /** Ask for the film again, after a read that could not reach the catalogue. */
+  retry: () => void;
   isFocused: boolean;
   goBack: () => void;
   handleLog: () => void;

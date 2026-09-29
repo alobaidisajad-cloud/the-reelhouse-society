@@ -73,6 +73,7 @@ let mockAsked: Asked[] = [];
 let mockMember: Record<string, unknown> | null = null;
 let mockMemberError: unknown = null;
 let mockRows: unknown[] = [];
+let mockRowsError: unknown = null;
 let mockTotals: { filed: number; certified: number } | null = null;
 let mockRpcCalls: { name: string; args: unknown }[] = [];
 
@@ -91,7 +92,7 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.maybeSingle = () => Promise.resolve({ data: mockMember, error: mockMemberError });
       chain.range = (a: number, b: number) => {
         asked.range = [a, b];
-        return Promise.resolve({ data: mockRows, error: null });
+        return Promise.resolve(mockRowsError ? { data: null, error: mockRowsError } : { data: mockRows, error: null });
       };
       // The store's own three reads for the member's marks.
       chain.in = () => Promise.resolve({ data: [], error: null });
@@ -165,6 +166,7 @@ beforeEach(() => {
   mockMember = member();
   mockMemberError = null;
   mockRows = [];
+  mockRowsError = null;
   mockTotals = { filed: 12, certified: 340 };
   mockRpcCalls = [];
   mockPushed.length = 0;
@@ -359,12 +361,24 @@ describe('a member’s room', () => {
     expect(posts()).toBeUndefined();
   });
 
-  it('says the same when the read itself fails', async () => {
+  it('a read that failed is NOT "no such member" — it says so, and asks again', async () => {
+    // It used to say "No such member … belongs to nobody" of a room it simply
+    // could not reach: a stranger's verdict on a member who is right there.
     mockMemberError = { message: 'network' };
-    const { getByText } = await mount();
-    // Not a spinner that never stops. There is no cache to fall back on and
-    // nothing partial to draw, so the honest page is the one that says so.
-    expect(getByText('No such member.')).toBeTruthy();
+    const { getByText, queryByText, getByLabelText } = await mount();
+    expect(queryByText('No such member.')).toBeNull();
+    expect(getByText('This room could not be reached.')).toBeTruthy();
+    mockMemberError = null;
+    await act(async () => { fireEvent.press(getByLabelText('TRY AGAIN')); await new Promise((res) => setTimeout(res, 0)); });
+    await act(async () => { await Promise.resolve(); });
+    expect(queryByText('This room could not be reached.')).toBeNull();
+  });
+
+  it('filings it could not read are not "nothing filed yet"', async () => {
+    mockRowsError = { message: 'network' };
+    const { getByText, queryByText } = await mount();
+    expect(queryByText('Nothing filed yet.')).toBeNull();
+    expect(getByText('This room could not be reached.')).toBeTruthy();
   });
 
   it('asks nothing at all without a name', async () => {

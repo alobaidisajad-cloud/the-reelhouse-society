@@ -13,7 +13,7 @@ import { decadeLabel } from '../../types';
 import { tmdb } from '../../lib/tmdb';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, posterColumns, EMBER_REST, EMBER_BEATS } from './roomStyles';
-import { RoomChip, RoomChipDivider, RoomRetrieving, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
+import { RoomChip, RoomChipDivider, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
 /**
@@ -60,6 +60,8 @@ interface ProfileWatchlistTabProps {
   renderPosterCard: (item: ProfileWatchlistItem, width: number) => React.ReactNode;
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
+  /** A visitor's room whose read failed: the way to ask again (the room then says so). */
+  unreachable?: () => void;
   tier?: string | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
@@ -84,6 +86,7 @@ export default function ProfileWatchlistTab({
   setRouletteOpen,
   renderPosterCard,
   ready = true,
+  unreachable,
   tier,
   onLoadMore,
   isLoadingMore,
@@ -267,7 +270,7 @@ export default function ProfileWatchlistTab({
   const ListEmptyComponent = useMemo(() => {
     if (watchlist.length > 0 && watchlistFiltered.length > 0) return null;
 
-    if (!ready) return <RoomRetrieving room="the queue" />;
+    if (!ready) return unreachable ? <RoomUnreachable room="the queue" onRetry={unreachable} /> : <RoomRetrieving room="the queue" />;
 
     // A FILTER found nothing. This used to be one grey line of italic text
     // floating in the middle of the page with no way out of it — the only
@@ -317,7 +320,7 @@ export default function ProfileWatchlistTab({
         body="This member hasn’t saved a film for later yet."
       />
     );
-  }, [watchlist.length, watchlistFiltered.length, isSelf, ready, watchlistSearch, setWatchlistSearch, watchlistDecade, setWatchlistDecade, pulseStyle, router]);
+  }, [watchlist.length, watchlistFiltered.length, isSelf, ready, unreachable, watchlistSearch, setWatchlistSearch, watchlistDecade, setWatchlistDecade, pulseStyle, router]);
 
   return (
     <View style={r.container}>

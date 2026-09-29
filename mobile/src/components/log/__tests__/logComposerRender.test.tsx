@@ -253,6 +253,24 @@ describe('the log’s ropes are the house’s ropes', () => {
       expect(r.queryByText('No alternative posters found on TMDB.', { includeHiddenElements: true })).toBeNull();
     });
 
+    it('says the posters could not be reached, and asks again when told', async () => {
+      // A blank panel was all a failure left: no word, and no way to ask again
+      // short of closing the tool.
+      // (An Auteur's: below the rank the panel is a preview behind the rope, and
+      // opening the tool again is what asks again.)
+      const images = tmdb.movieImages as jest.Mock;
+      images.mockRejectedValueOnce(new Error('offline'));
+      const r = mount('auteur');
+      await fireEvent.press(r.getByLabelText('Choose an alternate poster'));
+      await waitFor(() =>
+        expect(r.getByText('The posters could not be reached.', { includeHiddenElements: true })).toBeTruthy());
+      images.mockResolvedValueOnce({ posters: [], backdrops: [] });
+      await fireEvent.press(r.getByLabelText('Ask for the posters again', { includeHiddenElements: true }));
+      await waitFor(() =>
+        expect(r.getByText('No alternative posters found on TMDB.', { includeHiddenElements: true })).toBeTruthy());
+      expect(r.queryByText('The posters could not be reached.', { includeHiddenElements: true })).toBeNull();
+    });
+
     it('and says it once TMDB has actually answered with nothing', async () => {
       (tmdb.movieImages as jest.Mock).mockResolvedValueOnce({ posters: [], backdrops: [] });
       const r = mount('cinephile');

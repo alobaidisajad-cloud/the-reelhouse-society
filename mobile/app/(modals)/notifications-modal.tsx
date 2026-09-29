@@ -14,7 +14,8 @@ import { groupRoute, parseGroupKey } from '@/src/utils/endorsementGroupKey';
 import { noticeRoute } from '@/src/utils/noticeRoute';
 import * as Notifications from 'expo-notifications';
 
-import { EmptyState } from '@/src/components/EmptyStates';
+import { EmptyOffline, EmptyState, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 import FollowRequestsPanel from '@/src/components/profile/FollowRequestsPanel';
 import { refreshFollowRequestCount } from '@/src/hooks/useFollowRequests';
@@ -193,7 +194,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
 export default function NotificationsModal() {
 
   // loading is now used for the list loading state
-  const { notifications, loading, markAllRead, fetchNotifications, loadMoreNotifications } = useNotificationStore();
+  const { notifications, loading, fetchFailed, markAllRead, fetchNotifications, loadMoreNotifications } = useNotificationStore();
   // FIX #4: Single-source derived value instead of double .every() computation
   const allRead = useNotificationStore(s => s._unreadCount) === 0;
 
@@ -229,7 +230,11 @@ export default function NotificationsModal() {
     setRefreshing(true);
     await fetchNotifications();
     setRefreshing(false);
+    // The notices on screen stay; the member is told the pull reached nothing.
+    const after = useNotificationStore.getState();
+    if (after.fetchFailed && after.notifications.length > 0) reelToast.error(REFRESH_FAILED);
   }, [fetchNotifications]);
+  const rereadBoard = useCallback(() => { void fetchNotifications(); }, [fetchNotifications]);
 
   // Infinite scroll handler — wires to existing cursor pagination in store
   const handleLoadMore = useCallback(() => {
@@ -329,7 +334,10 @@ export default function NotificationsModal() {
           ) : null
         }
         ListEmptyComponent={
-          loading ? null : (
+          loading ? null : fetchFailed ? (
+            // A board it could not read is not a clear one.
+            <EmptyOffline onRetry={rereadBoard} />
+          ) : (
             <EmptyState
               icon={<Bell size={28} color={colors.sepia} strokeWidth={1} />}
               title="The board is clear."

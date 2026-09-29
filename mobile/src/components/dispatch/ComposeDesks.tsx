@@ -33,7 +33,6 @@ import {
   BALLOT_MIN, BALLOT_MAX, DEFAULT_CLOSING, closingDays, isClosingTime, type ClosingTime,
 } from '@/src/components/dispatch/paper/paperMetrics';
 import { hourLabel } from '@/src/components/dispatch/dayLabel';
-import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { useDispatch } from '@/src/stores/dispatch';
@@ -42,6 +41,8 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
 import { showTierDoor } from '@/src/utils/tierDoor';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
+import { nav } from '@/src/utils/typedRouter';
 
 /** Set when the desk OPENS; a ticking clock would re-render the desk mid-typing. */
 function useOpeningHour(): string {
@@ -73,7 +74,7 @@ function useSendBackIfNotAMember(me: unknown) {
     if (me) return;
     reelToast.error('Filing is for members.');
     InteractionManager.runAfterInteractions(() => {
-      if (isMounted.current) router.back();
+      if (isMounted.current) nav.back();
     });
   }, [me]);
 }
@@ -133,7 +134,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
           source: kind === 'wire' ? (source.trim() || null) : null,
         });
         reelToast.success('Amended');
-        router.back();
+        nav.back();
       } catch {
         reelToast.error('It could not be amended.'); // the new words are still in the field
       } finally {
@@ -349,51 +350,35 @@ export function FilmPicker({
   bottomInset: number;
 }) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<{ film: PaperFilm; id: number }[]>([]);
-  const seq = useRef(0);
-
-  // Debounced, and the LAST request wins: a late early reply must not paint
-  // results for a query the member has already changed.
-  useEffect(() => {
-    if (!visible) return;
-    const q = query.trim();
-    if (q.length < 2) { setResults([]); return; }
-    const mine = ++seq.current;
-    const t = setTimeout(async () => {
-      try {
-        const res = await tmdb.search(q);
-        if (mine !== seq.current) return;
-        setResults(
-          ((res?.results ?? []) as unknown as Record<string, unknown>[])
-            .filter((r) => r.media_type !== 'person' && (r.title || r.name))
-            .slice(0, 8)
-            .map((r) => ({
-              id: r.id as number,
-              film: {
-                title: (r.title ?? r.name) as string,
-                year: r.release_date ? Number(String(r.release_date).slice(0, 4)) : null,
-                posterPath: r.poster_path
-                  ? `https://image.tmdb.org/t/p/w185${r.poster_path as string}`
-                  : null,
-                // The wide still for an essay's 176pt cover band (a 2:3 poster
-                // would crop to a chin). w780, under a gradient, is plenty; many
-                // films have none, and the essay then draws no cover.
-                backdropPath: r.backdrop_path
-                  ? `https://image.tmdb.org/t/p/w780${r.backdrop_path as string}`
-                  : null,
-              },
-            })),
-        );
-      } catch {
-        if (mine === seq.current) setResults([]);
-      }
-    }, 280);
-    return () => clearTimeout(t);
-  }, [query, visible]);
+  // Debounced, and the LAST request wins (useCatalogueSearch): a late early
+  // reply must not paint results for a query the member has already changed.
+  const search = useCatalogueSearch(query, { delay: 280, minLength: 2, enabled: visible });
+  const results = useMemo(() => (search.results as unknown as Record<string, unknown>[])
+    .filter((r) => r.media_type !== 'person' && (r.title || r.name))
+    .slice(0, 8)
+    .map((r) => ({
+      id: r.id as number,
+      film: {
+        title: (r.title ?? r.name) as string,
+        year: r.release_date ? Number(String(r.release_date).slice(0, 4)) : null,
+        posterPath: r.poster_path
+          ? `https://image.tmdb.org/t/p/w185${r.poster_path as string}`
+          : null,
+        // The wide still for an essay's 176pt cover band (a 2:3 poster
+        // would crop to a chin). w780, under a gradient, is plenty; many
+        // films have none, and the essay then draws no cover.
+        backdropPath: r.backdrop_path
+          ? `https://image.tmdb.org/t/p/w780${r.backdrop_path as string}`
+          : null,
+      } as PaperFilm,
+    })), [search.results]);
+  const answer = search.unreachable ? 'unreachable' as const
+    : !search.searching && query.trim().length >= 2 && results.length === 0 ? 'none' as const
+    : undefined;
 
   // Emptied on close: the next search starts from a clean field.
   useEffect(() => {
-    if (!visible) { setQuery(''); setResults([]); }
+    if (!visible) setQuery('');
   }, [visible]);
 
   if (!visible) return null;
@@ -419,6 +404,8 @@ export function FilmPicker({
             const hit = results[i];
             if (hit) onPick(hit.film, hit.id);
           }}
+          answer={answer}
+          onRetry={search.retry}
         />
       </View>
     </View>

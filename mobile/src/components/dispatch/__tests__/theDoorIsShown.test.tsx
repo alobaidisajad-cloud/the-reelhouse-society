@@ -47,6 +47,7 @@ let mockParams: Record<string, string | undefined> = {};
 jest.mock('expo-router', () => ({
   router: {
     back: () => mockBack(),
+    canGoBack: () => true,
     replace: (h: string) => { mockReplaced.push(h); },
     push: (h: string) => { mockPushed.push(h); },
     setParams: jest.fn(),

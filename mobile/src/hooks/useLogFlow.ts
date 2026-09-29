@@ -14,10 +14,11 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import {
   adoptLegacyDrafts, clearDraft, readDraft, writeDraft,
 } from '@/src/utils/memberDrafts';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
 import { localCalendarDate } from '@/src/utils/timeAgo';
+import { nav } from '@/src/utils/typedRouter';
 export interface LogSearchResult {
     id: number;
     title?: string;
@@ -154,7 +155,6 @@ export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
 }
 
 export function useLogFlow() {
-    const router = useRouter();
     const params = useLocalSearchParams<{
         filmId?: string; editLogId?: string; filmTitle?: string; filmPoster?: string; filmYear?: string;
     }>();
@@ -215,8 +215,10 @@ export function useLogFlow() {
     const isEditing = !!editLogId;
 
     // The ranked tools' pictures: up front with the rank, on opening a tool without.
-    // `imagesLoaded` lets "none found" speak only once it is true.
+    // `imagesLoaded` lets "none found" speak only once it is true; `imagesFailed`
+    // says the pictures could not be asked for, and the tools offer to ask again.
     const [imagesLoaded, setImagesLoaded] = useState(false);
+    const [imagesFailed, setImagesFailed] = useState(false);
     const imagesFor = useRef<number | string | null>(null);
 
     const loadImages = useCallback(() => {
@@ -224,6 +226,7 @@ export function useLogFlow() {
         if (!id || imagesFor.current === id) return;
         imagesFor.current = id;
         setImagesLoaded(false);
+        setImagesFailed(false);
         // Clear the last film's pictures first: the flow outlives the form.
         setAvailablePosters([]);
         setAvailableBackdrops([]);
@@ -236,7 +239,10 @@ export function useLogFlow() {
         }).catch((err: unknown) => {
             if (__DEV__) console.warn('[LogModal] image prefetch failed:', err);
             // Allow a later open to try again, rather than a failure being final.
-            if (imagesFor.current === id) imagesFor.current = null;
+            if (imagesFor.current === id) {
+                imagesFor.current = null;
+                setImagesFailed(true);
+            }
         });
     }, [film?.id]);
 
@@ -489,7 +495,7 @@ export function useLogFlow() {
             if (sealTimerRef.current) clearTimeout(sealTimerRef.current);
             sealTimerRef.current = setTimeout(() => {
                 deferUntilIdle(() => {
-                    router.back();
+                    nav.back();
                     // A NEW entry only (an edit adds no film). Nested, so the
                     // dismissal ends before an OS modal can rise; `logs` is the
                     // snapshot before the save, hence +1. It gates itself.
@@ -523,7 +529,7 @@ export function useLogFlow() {
             await removeLog(editLogId);
             TactileEngine.warn();
             deferUntilIdle(() => {
-                router.back();
+                nav.back();
             });
         } catch {
             reelToast.error('Failed to delete log.');
@@ -605,7 +611,7 @@ export function useLogFlow() {
         submitting,
         sealed,
         availablePosters, availableBackdrops,
-        imagesLoaded, loadImages,
+        imagesLoaded, imagesFailed, loadImages,
         isEditing,
         editLogId, // a rope's way back from an edit: the log, not an empty form
         selectFilm,

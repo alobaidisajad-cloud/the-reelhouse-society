@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, InteractionManager } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { FadeIn, FadeInDown, ReduceMotion } from 'react-native-reanimated';
@@ -27,9 +27,20 @@ export default function AuthCallbackScreen() {
   // The flow type actually confirmed by verification (params.type may be absent
   // when the type only arrives inside the deep-link url's query string).
   const [resolvedType, setResolvedType] = useState<string | undefined>(undefined);
-  
+  // The walk onward after a confirmation, held so that leaving first cancels
+  // it: it fired regardless, and pulled a member who had already gone back
+  // to the page they left (and, in the tests, into the next test file).
+  const onward = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const goOnward = (to: string, afterMs: number) => {
+    onward.current = setTimeout(() => InteractionManager.runAfterInteractions(() => {
+      try { router.dismissAll(); } catch {}
+      (router.replace as any)(to);
+    }), afterMs);
+  };
+
   useEffect(() => {
     handleCallback();
+    return () => { if (onward.current) clearTimeout(onward.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -42,7 +53,7 @@ export default function AuthCallbackScreen() {
       // destroys the session if the flow is abandoned).
       try { storage.set('recovery_pending', 'true'); } catch {}
       setStatus('success');
-      setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} (router.replace as any)('/reset-password'); }), 800);
+      goOnward('/reset-password', 800);
       return;
     }
 
@@ -50,7 +61,7 @@ export default function AuthCallbackScreen() {
     // slow profiles row never holds up a session that is already valid.
     useAuthStore.getState().adoptSession(session.user);
     setStatus('success');
-    setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} (router.replace as any)('/(tabs)'); }), 1200);
+    goOnward('/(tabs)', 1200);
   }
 
   async function handleCallback() {

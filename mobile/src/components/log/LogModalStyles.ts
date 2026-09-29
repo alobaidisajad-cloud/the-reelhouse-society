@@ -166,6 +166,7 @@ export const st = StyleSheet.create({
     stillImgFaded: { opacity: 0.4 },
     stillNoneActive: { color: colors.ink },
     noData: { fontFamily: fonts.body, fontSize: 11, color: colors.fog },
+    retrySpace: { marginTop: 8, alignSelf: 'flex-start' },
 
     // Auteur (dead-dup keys kept swept — leaf owns live styles; autopsy blood is deliberate)
     pThumb: { width: 48, height: 72, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },

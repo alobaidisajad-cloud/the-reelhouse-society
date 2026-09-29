@@ -6,12 +6,14 @@ import * as z from 'zod';
 import { useAuthStore } from '@/src/stores/auth';
 import { setSensitive } from '@/src/stores/mmkv-storage';
 import { ProfileService } from '@/src/services/ProfileWriteService';
-import { useRouter } from 'expo-router';
 import { validateUsername } from '@/src/utils/validateUsername';
 import { queryClient } from '@/src/lib/queryClient';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { captureError } from '@/src/lib/sentry';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { FEATURED_KEY, PULSE_KEY } from '@/src/components/home/lobbyReads';
+import type { PulseActivity } from '@/src/components/home/types';
+import { nav } from '@/src/utils/typedRouter';
 
 // Zod schema for the form
 const editProfileSchema = z.object({
@@ -101,7 +103,6 @@ export function buildProfileUpdates(input: ProfileUpdateInput): Record<string, a
 
 export function useEditProfile() {
   const { user } = useAuthStore();
-  const router = useRouter();
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(editProfileSchema) as any,
@@ -124,7 +125,7 @@ export function useEditProfile() {
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | Error | null>(null);
   // The one-beat "DOSSIER AMENDED" seal shown on a successful save before we
-  // return to the profile — the confirmation the silent router.back() lacked.
+  // return to the profile — the confirmation the silent back lacked.
   const [sealed, setSealed] = useState(false);
   const sealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (sealTimerRef.current) clearTimeout(sealTimerRef.current); }, []);
@@ -246,18 +247,20 @@ export function useEditProfile() {
             }
           });
 
-          // 4. Sync Featured Critique Query
-          queryClient.getQueriesData({ queryKey: ['featuredCritique'] }).forEach(([queryKey, data]: any) => {
-            if (data && data.user_id === user.id) {
-              const newData = {
-                ...data,
-                profiles: Array.isArray(data.profiles)
-                  ? [{ ...data.profiles[0], avatar_url: finalAvatarUrl }]
-                  : { ...data.profiles, avatar_url: finalAvatarUrl }
-              };
-              queryClient.setQueryData(queryKey, newData);
-            }
-          });
+          // 4. Sync the Lobby's Lead Story and its wire
+          const lead = queryClient.getQueryData<any>(FEATURED_KEY);
+          if (lead && lead.user_id === user.id) {
+            queryClient.setQueryData(FEATURED_KEY, {
+              ...lead,
+              profiles: Array.isArray(lead.profiles)
+                ? [{ ...lead.profiles[0], avatar_url: finalAvatarUrl }]
+                : { ...lead.profiles, avatar_url: finalAvatarUrl },
+            });
+          }
+          const wire = queryClient.getQueryData<PulseActivity[]>(PULSE_KEY);
+          if (wire?.some((a) => a.user_id === user.id)) {
+            queryClient.setQueryData(PULSE_KEY, wire.map((a) => (a.user_id === user.id ? { ...a, userAvatar: finalAvatarUrl } : a)));
+          }
 
         } catch (syncErr) {
           if (__DEV__) console.warn('[useEditProfile] Avatar sync failed non-fatally:', syncErr);
@@ -291,13 +294,13 @@ export function useEditProfile() {
       });
 
       // Seal the dossier: a one-beat "AMENDED" stamp + success haptic, then
-      // return. This is the confirmation the old silent router.back() lacked —
+      // return. This is the confirmation the old silent back lacked —
       // and, paired with the profile's focus-refetch, the edit is guaranteed
       // to be reflected the moment the member lands back on their dossier.
       TactileEngine.success();
       setSaving(false);
       setSealed(true);
-      sealTimerRef.current = setTimeout(() => { router.back(); }, 750);
+      sealTimerRef.current = setTimeout(() => { nav.back(); }, 750);
       return;
     } catch (err: unknown) {
       console.error('Failed to update profile:', err);
@@ -315,11 +318,11 @@ export function useEditProfile() {
         'You have unsaved changes. Are you sure you want to discard them?',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Discard', style: 'destructive', onPress: () => router.back() }
+          { text: 'Discard', style: 'destructive', onPress: () => nav.back() }
         ]
       );
     } else {
-      router.back();
+      nav.back();
     }
   };
 

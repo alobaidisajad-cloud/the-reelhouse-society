@@ -37,24 +37,24 @@ beforeEach(() => { mockAsked.length = 0; mockMine = { count: 1, error: null }; m
 
 it('asks about this member, this stack, and certifications only', async () => {
   const payload = await StackService.getStackFullPayload('s1');
-  expect(payload.certified).toBe(true);
+  expect(payload!.certified).toBe(true);
   const q = mockAsked.find((a) => a.table === 'interactions');
   expect(q?.filters).toEqual([['user_id', 'member-1'], ['target_list_id', 's1'], ['type', 'endorse_list']]);
 });
 
 it('says false when the member has not certified it', async () => {
   mockMine = { count: 0, error: null };
-  expect((await StackService.getStackFullPayload('s1')).certified).toBe(false);
+  expect((await StackService.getStackFullPayload('s1'))!.certified).toBe(false);
 });
 
 it('says nothing — never false — when the question failed', async () => {
   mockMine = { count: null, error: { message: 'timeout' } };
-  expect((await StackService.getStackFullPayload('s1')).certified).toBeNull();
+  expect((await StackService.getStackFullPayload('s1'))!.certified).toBeNull();
 });
 
 it('does not ask at all for a visitor', async () => {
   mockUser = null;
   const payload = await StackService.getStackFullPayload('s1');
-  expect(payload.certified).toBeNull();
+  expect(payload!.certified).toBeNull();
   expect(mockAsked.some((a) => a.table === 'interactions')).toBe(false);
 });

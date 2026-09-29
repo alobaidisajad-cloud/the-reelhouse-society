@@ -11,7 +11,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
 
@@ -42,6 +42,9 @@ import { VelvetRopeCTA, BrassSheen } from '@/src/components/home/VelvetRopeCTA';
 import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import { LOBBY, LIVE_LOBBY_READS, useFeaturedCritique, usePulse } from '@/src/components/home/lobbyReads';
+import reelToast from '@/src/utils/reelToast';
 
 /** The marquee backdrop's fade into the room: how much house it lays down, top to hem. */
 const HERO_VEIL: VeilStops = [[0, 0.28], [0.65, 0.7], [1, 1]];
@@ -98,11 +101,11 @@ export default function LobbyScreen() {
   const router = useRouter();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // ── React Query: MMKV-cached lobby data (instant cold start) ──
-  const { data: trendingData, isPending: trendingPending } = useQuery({
-    queryKey: ['lobby', 'trending'],
+  const queryClient = useQueryClient();
+  const { data: trendingData, isPending: trendingPending, isError: trendingFailed } = useQuery({
+    queryKey: [...LOBBY, 'trending'],
     queryFn: async () => {
       const res = await tmdb.trending('week');
       const films = (res?.results ?? []).slice(0, 10) as TMDBFilm[];
@@ -117,8 +120,8 @@ export default function LobbyScreen() {
   // The Canon. `tmdb.canon()` rather than `topRated()` — see the note on the
   // helper: top_rated ranks by raw average, so it was serving 2026 releases
   // under a heading that promises "the films that built the medium".
-  const { data: canonData } = useQuery({
-    queryKey: ['lobby', 'canon'],
+  const { data: canonData, isError: canonFailed } = useQuery({
+    queryKey: [...LOBBY, 'canon'],
     queryFn: async () => {
       const res = await tmdb.canon();
       return (res?.results ?? []).slice(0, 10) as TMDBFilm[];
@@ -128,8 +131,28 @@ export default function LobbyScreen() {
 
   const readyMark = useScreenReady(isAuthenticated ? 'lobby' : 'welcome', !isAuthenticated || !trendingPending);
 
+  // The Lead Story and the wire, read here and handed down (lobbyReads.ts).
+  const pulse = usePulse(isAuthenticated);
+  const featured = useFeaturedCritique(isAuthenticated);
+
   const trending = trendingData ?? [];
   const canon = canonData ?? [];
+
+  // A read that could not be answered is said to be missing, with a way to ask
+  // again. The marquee used to warm its bulbs forever, the rails were simply
+  // not there, and the wire said no member had logged a film. ONE notice, in
+  // the place of the first section missing, asking again for every one that is.
+  const lost = {
+    programme: trendingFailed && !trendingData,
+    featured: featured.isError && featured.data === undefined,
+    pulse: pulse.isError && !pulse.data,
+    canon: canonFailed && !canonData,
+  };
+  const firstLost = (['programme', 'featured', 'pulse', 'canon'] as const).find((k) => lost[k]);
+  const rereadLost = useCallback(() => {
+    void queryClient.refetchQueries({ queryKey: LOBBY, type: 'active', predicate: (q) => q.state.data === undefined });
+  }, [queryClient]);
+  const lostNotice = <EmptyOffline onRetry={rereadLost} />;
 
   // Parallax Scroll Tracking & Breathing Atmospherics
   const scrollY = useSharedValue(0);
@@ -203,18 +226,27 @@ export default function LobbyScreen() {
     try {
       setRefreshing(true);
       TactileEngine.destroy();
-      // Removed redundant queryClient.invalidateQueries({ queryKey: ['lobby'] })
-      // SocialPulse and FeaturedCritique use raw Supabase calls, not React Query —
-      // they only respond to refreshTrigger. The invalidation was hitting no observers.
-      setRefreshTrigger(t => t + 1);
-      if (isAuthenticated) await fetchLogs();
-      TactileEngine.mutate();
+      // The wire and the Lead Story, always: they are the house's live pages.
+      // The programme and the Canon only if out of date, or missing — which a
+      // failed read is.
+      await Promise.all([
+        queryClient.refetchQueries({
+          queryKey: LOBBY, type: 'active',
+          predicate: (q) => LIVE_LOBBY_READS.includes(String(q.queryKey[1])) || q.isStale(),
+        }),
+        isAuthenticated ? fetchLogs() : undefined,
+      ]);
+      // A pull that reached nothing leaves the page as it was, and says so.
+      const unanswered = queryClient.getQueryCache().findAll({ queryKey: LOBBY, type: 'active' })
+        .some((q) => q.state.status === 'error' && q.state.data !== undefined);
+      if (unanswered) reelToast.error(REFRESH_FAILED);
+      else TactileEngine.mutate();
     } catch (error) {
       if (__DEV__) console.warn('[Lobby] Refresh failed:', error);
     } finally {
       setRefreshing(false);
     }
-  }, [isAuthenticated, fetchLogs]);
+  }, [isAuthenticated, fetchLogs, queryClient]);
 
   const heroFilm = trending[0] ?? null;
 
@@ -411,21 +443,27 @@ export default function LobbyScreen() {
           <Text style={s.heroWhisper} numberOfLines={1}>{getProgrammeWhisper()}</Text>
         </Animated.View>
 
-        <View style={s.marqueeWrap}>
-          <MarqueeBoard film={heroFilm} />
-        </View>
+        {firstLost === 'programme' ? lostNotice : lost.programme ? null : (
+          <>
+            <View style={s.marqueeWrap}>
+              <MarqueeBoard film={heroFilm} />
+            </View>
 
-        {/* The marquee presents film #1 — the strip carries the rest of the
-            programme (2–10) so the feature never appears twice in a row. */}
-        <FilmStripRow title="Now Showing" label="THE PROGRAMME" films={trending.slice(1)} lore="What the world is screening this week" />
+            {/* The marquee presents film #1 — the strip carries the rest of the
+                programme (2–10) so the feature never appears twice in a row. */}
+            <FilmStripRow title="Now Showing" label="THE PROGRAMME" films={trending.slice(1)} lore="What the world is screening this week" />
+          </>
+        )}
 
         {/* Newspaper order: the Lead Story before the wire — and horizontal
             rails now alternate with static content down the whole page. */}
-        <FeaturedCritique refreshTrigger={refreshTrigger} />
+        {firstLost === 'featured' ? lostNotice : <FeaturedCritique featured={featured.data} />}
 
-        <SocialPulseSection refreshTrigger={refreshTrigger} />
+        {firstLost === 'pulse' ? lostNotice : <SocialPulseSection activities={pulse.data} featuredId={featured.data?.id} />}
 
-        <FilmStripRow title="The Canon" label="ESSENTIAL ARCHIVES" films={canon} lore="The films that built the medium" />
+        {firstLost === 'canon' ? lostNotice : lost.canon ? null : (
+          <FilmStripRow title="The Canon" label="ESSENTIAL ARCHIVES" films={canon} lore="The films that built the medium" />
+        )}
 
         {/* The sign-off. One whisper, not two — "Est. 1924" is lore that already
             appears in eleven other files, and repeating it here made the closing

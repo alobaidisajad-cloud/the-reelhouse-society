@@ -44,6 +44,8 @@ import { PersonDefining } from '@/src/components/person/PersonDefining';
 import { FilmPosterCard, FilmographyHeader, GridColumn } from '@/src/components/person/PersonFilmography';
 import { sortCanon } from '@/src/components/person/canon';
 import { localCalendarDate } from '@/src/utils/timeAgo';
+import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import reelToast from '@/src/utils/reelToast';
 
 const PLACEHOLDER_VEIL: VeilStops = [[0, 0.1], [0.7, 0.6], [1, 1]];
 
@@ -221,7 +223,9 @@ export default function PersonDetailScreen() {
   const onPullToRefresh = useCallback(async () => {
     setIsManualRefresh(true);
     try {
-      await handleRefresh();
+      // The file on the page stays; the member is told the pull reached nothing.
+      const pulled = await handleRefresh();
+      if (pulled.isError) reelToast.error(REFRESH_FAILED);
     } finally {
       setIsManualRefresh(false);
     }
@@ -365,21 +369,16 @@ export default function PersonDetailScreen() {
     );
   }, [_loggedIndex]);
 
-  // ── Error (Offline) ──
-  if (error) return (
+  // ── Could not be reached ──
+  // Only with nothing to show: a pull that failed over a file already on the
+  // page used to replace the whole file with this. The house's one failed state.
+  if (error && !person) return (
     <View style={[s.container, s.notFoundContainer]}>
       <RoomLight room="film" />
       <PressableScale style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
-      <Text style={s.notFoundLabel} {...displayTextProps}>CONNECTION TIMED OUT</Text>
-      <Text style={s.notFoundTitle} {...displayTextProps}>Signal Disrupted</Text>
-      <Text style={s.notFoundBody} {...scaledTextProps}>The telegraph to the TMDB archive failed. Please check your connection.</Text>
-      <PressableScale style={s.backBtnBottom} onPress={() => handleRefresh()} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection">
-        <View style={s.backBtnRow}>
-          <Text style={s.backBtnBottomText} {...displayTextProps}>RETRY TRANSMISSION</Text>
-        </View>
-      </PressableScale>
+      <EmptyOffline onRetry={() => { void handleRefresh(); }} />
     </View>
   );
 

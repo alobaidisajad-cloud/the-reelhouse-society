@@ -1,5 +1,6 @@
 /**
  * FeaturedCritique — The lead story/featured log section on the Lobby.
+ * The Lobby reads it (lobbyReads.ts) and hands it here: this only draws.
  */
 import { memo, useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -8,12 +9,9 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { SectionDivider } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
-import { supabase } from '@/src/lib/supabase';
-import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
 import type { FeaturedLog, PulseActivity } from './types';
 import { timeAgo } from './types';
 import { PulseCardItem } from './PulseCardItem';
@@ -21,32 +19,11 @@ import { ShimmerRule } from './VelvetRopeCTA';
 import { EDGE_LIT } from '@/src/theme/light';
 
 // ── FEATURED CRITIQUE ──
-function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
+function FeaturedCritiqueInner({ featured }: { featured: FeaturedLog | null | undefined }) {
   const router = useRouter();
   // Report-and-mute folds the Lead Story away immediately.
   const [mutedId, setMutedId] = useState<string | null>(null);
   const handleMute = useCallback((id: string) => setMutedId(id), []);
-  const { data: featured } = useQuery({
-    queryKey: ['featuredCritique', refreshTrigger],
-    queryFn: async () => {
-        const { data: featuredLog, error } = await supabase
-          .rpc('get_featured_critique')
-          .select('id, film_id, film_title, poster_path, rating, review, status, abandoned_reason, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, is_spoiler, created_at, user_id, profiles!logs_user_id_fkey(username, role, avatar_url)')
-          .single();
-
-        if (error) {
-          if (__DEV__) console.error('[FeaturedCritique] Sync error:', error);
-          return null;
-        }
-        const log = featuredLog as FeaturedLog;
-        // Don't surface a featured critique authored by a blocked/muted user (HOOK-8).
-        if (log?.user_id && filterContentByBlocks([log], (l) => l.user_id ?? '').length === 0) {
-          return null;
-        }
-        return log;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
 
   if (!featured || featured.id === mutedId) return null;
 

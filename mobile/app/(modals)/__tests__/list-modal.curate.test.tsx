@@ -569,3 +569,40 @@ describe('the plate, and the reach', () => {
     expect(names.filter(n => !new RegExp(`s\\.${n}\\b`).test(body))).toEqual([]);
   });
 });
+
+describe('the search says what happened', () => {
+  const { tmdb: mockTmdb } = jest.requireMock('@/src/lib/tmdb');
+  const typeIn = async (r: ReturnType<typeof mount>, words: string) => {
+    await act(async () => { fireEvent.changeText(r.getByLabelText('Search films to add to stack'), words); });
+  };
+  afterEach(() => { mockTmdb.search.mockReset().mockResolvedValue({ results: [] }); });
+
+  it('a catalogue it could not reach is said, and asked again — not "no films found"', async () => {
+    mockTmdb.search.mockRejectedValueOnce(Object.assign(new Error('offline'), { name: 'TmdbUnreachable' }));
+    const r = mount();
+    await typeIn(r, 'sunrise');
+    await waitFor(() => expect(r.getByText('THE TELEGRAPH IS DOWN')).toBeTruthy(), { timeout: 2000 });
+    expect(r.queryByText(/No films found/)).toBeNull();
+
+    mockTmdb.search.mockResolvedValueOnce({ results: [{ id: 631, title: 'Sunrise', media_type: 'movie', poster_path: null }] });
+    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await waitFor(() => expect(r.getByText('Sunrise')).toBeTruthy(), { timeout: 2000 });
+    expect(mockTmdb.search).toHaveBeenLastCalledWith('sunrise', 1);
+  });
+
+  it('a search that found nothing says so, rather than looking like one still out', async () => {
+    const r = mount();
+    await typeIn(r, 'zzqxv');
+    await waitFor(() => expect(r.getByText('No films found for "zzqxv"')).toBeTruthy(), { timeout: 2000 });
+  });
+
+  it('and one that found only films already in the stack says that', async () => {
+    mockParams = { editId: STACK_ID };
+    mockLists = [STACK];
+    mockTmdb.search.mockResolvedValue({ results: [{ id: 2, title: 'Chinatown', media_type: 'movie' }] });
+    const r = mount();
+    await waitFor(() => expect(r.getByDisplayValue('Neon Noir Masterpieces')).toBeTruthy());
+    await typeIn(r, 'chinatown');
+    await waitFor(() => expect(r.getByText('Already in this stack.')).toBeTruthy(), { timeout: 2000 });
+  });
+});

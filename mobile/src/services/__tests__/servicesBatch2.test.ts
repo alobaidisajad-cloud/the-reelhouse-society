@@ -71,8 +71,8 @@ describe('StackService', () => {
 
             const result = await StackService.getStackFullPayload('s1');
             expect(supabase.from).toHaveBeenCalledWith('lists');
-            expect(result.title).toBe('Best of 2024');
-            expect(result.films).toHaveLength(1);
+            expect(result!.title).toBe('Best of 2024');
+            expect(result!.films).toHaveLength(1);
         });
 
         /**
@@ -102,6 +102,21 @@ describe('StackService', () => {
                 .mockReturnValueOnce(chain({ data: null, error: { message: 'denied' } }));
             const result = await StackService.getStackFullPayload('s1');
             expect((result as { critiqueCount?: number | null }).critiqueCount).toBeNull();
+        });
+
+        it('a stack that is not there is an answer, null — never a thrown "failure"', async () => {
+            // Row security returns no row for a sealed stack too. Thrown, it read
+            // exactly as an unreachable one, and the page said one for the other.
+            const listChain = chain({ data: null, error: null });
+            const itemsChain = chain({ data: [], error: null });
+            const critiqueChain = chain({ data: [], error: null, count: 0 });
+            const filmCountChain = chain({ data: null, error: null, count: 0 });
+            (supabase.from as jest.Mock)
+                .mockReturnValueOnce(listChain)
+                .mockReturnValueOnce(itemsChain)
+                .mockReturnValueOnce(filmCountChain)
+                .mockReturnValueOnce(critiqueChain);
+            await expect(StackService.getStackFullPayload('gone')).resolves.toBeNull();
         });
 
         it('throws on Supabase error', async () => {

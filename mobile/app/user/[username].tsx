@@ -76,11 +76,11 @@ import { useTextScale } from '@/src/hooks/useTextScale';
 import { heroNameSize } from '@/src/components/profile/heroNameSize';
 import { softBreak } from '@/src/utils/softBreak';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { EmptyOffline } from '@/src/components/EmptyStates';
  
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
 
 
@@ -450,6 +450,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     else (router.replace as any)(`/user/${username}` as never);
   }, [router, username]);
 
+  // A visitor's room whose read failed: the way to ask again, and the room says
+  // so (it stood at RETRIEVING for as long as the member stayed).
+  const loadTabData = data.loadTabData;
+  const retryRoom = useCallback(() => {
+    if (activeTab) void loadTabData(activeTab as ProfileTab, true);
+  }, [loadTabData, activeTab]);
+  const roomUnreachable = !isSelf && activeTab && data.tabFailed[activeTab as ProfileTab] ? retryRoom : undefined;
+
   // Whether a room's data has ARRIVED, before it may call itself empty. Your own
   // rooms hydrate before first paint; a visitor's, once the count proves it.
   const roomReady = useMemo(() => {
@@ -540,6 +548,16 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         <Text {...scaledTextProps} style={s.loadingText}>RETRIEVING DOSSIER</Text>
         <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
       </View>
+    </View>
+  );
+
+  // Could not be asked — not "Member Not Found", which it said of any member
+  // opened with no signal (the not-found answer is `targetUser` null, no error).
+  if (!targetUser && data.error) return (
+    <View style={[s.container, s.centeredPadded]}>
+      <RoomLight room="member" />
+      {readyMark}
+      <EmptyOffline onRetry={() => { void data.fetchUserData(); }} wayOut={{ label: 'Go back', onPress: handleBack }} />
     </View>
   );
 
@@ -688,6 +706,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 watchlistFiltered={watchlistFiltered}
                 renderPosterCard={renderPosterCard}
                 ready={roomReady}
+                unreachable={roomUnreachable}
                 tier={tier}
                 /* With any filter live the room reads the SERVER's pages, so it
                    pages by the server's cursor, not the unfiltered local store. */
@@ -711,6 +730,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 setListsSearch={setListsSearch}
                 totalLists={totalLists}
                 ready={roomReady}
+                unreachable={roomUnreachable}
                 tier={tier}
                 onLoadMore={hasMoreLists ? loadMoreLists : undefined}
                 isLoadingMore={isSelf ? filmStore._fetchingLists : isLoadingMore.lists}
@@ -735,6 +755,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   physicalFormatCounts={physicalFormatCounts}
                   physicalFiltered={physicalFiltered}
                   ready={roomReady}
+                  unreachable={roomUnreachable}
                   tier={tier}
                   totalVault={totalVault}
                   vaultFormats={analyticsShape?.vault_formats}

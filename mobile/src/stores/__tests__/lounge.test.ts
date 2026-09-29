@@ -90,6 +90,19 @@ describe('LoungeStore', () => {
       await useLoungeStore.getState().fetchLounges();
       expect(mockFrom).not.toHaveBeenCalled();
     });
+
+    // The Lounge polls every thirty seconds while open. A toast from here was a
+    // toast every thirty seconds for as long as the signal was gone; the store
+    // now records the failure and the screen that asked says it.
+    it('a read that fails is recorded — and said by the screen, not toasted by the store', async () => {
+      const down = { select: () => down, eq: () => down, limit: () => Promise.resolve({ data: null, error: { message: 'Network request failed' } }) };
+      mockFrom.mockReturnValueOnce(down);
+      useLoungeStore.setState({ loungesFailed: false });
+      await useLoungeStore.getState().fetchLounges();
+      expect(useLoungeStore.getState().loungesFailed).toBe(true);
+      expect(useLoungeStore.getState().loading).toBe(false);
+      expect(jest.requireMock('../../utils/reelToast').default.error).not.toHaveBeenCalled();
+    });
   });
 
   // The roster decides the room's gate. A roster that could not be read must not

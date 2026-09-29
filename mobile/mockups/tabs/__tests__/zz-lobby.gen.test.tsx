@@ -93,8 +93,8 @@ whenRendering('lobby generator', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity, gcTime: Infinity } } });
     client.setQueryData(['lobby', 'trending'], LISTS.trending);
     client.setQueryData(['lobby', 'canon'], LISTS.canon);
-    client.setQueryData(['socialPulse', 0], pulse);
-    client.setQueryData(['featuredCritique', 0], featured);
+    client.setQueryData(['lobby', 'pulse'], pulse);
+    client.setQueryData(['lobby', 'featured'], featured);
     let r!: ReturnType<typeof render>;
     await act(async () => {
       r = render(<QueryClientProvider client={client}><LobbyScreen /></QueryClientProvider>);

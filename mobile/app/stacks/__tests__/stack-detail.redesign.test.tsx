@@ -15,7 +15,10 @@ const STACK_ID = '11111111-1111-4111-8111-111111111111';
 const SOURCE = readFileSync(join(__dirname, '..', '[id].tsx'), 'utf8');
 
 /** Swapped per test, then read by the mocked useQuery below. */
-let mockStackData: Record<string, unknown>;
+let mockStackData: Record<string, unknown> | null | undefined;
+/** The stack's read failed (React Query's isError). */
+let mockStackFailed = false;
+const mockRereadStack = jest.fn();
 const baseStack = {
   id: STACK_ID, title: 'Noir', description: '', userId: 'u1', user: 'morpho',
   createdAt: '2026-06-01T00:00:00Z', films: [], filmCount: 0,
@@ -27,6 +30,8 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ id: STACK_ID }),
   useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
 }));
+// Buster (in the failed state) pauses when its screen is not focused.
+jest.mock('@react-navigation/native', () => ({ ...jest.requireActual('@react-navigation/native'), useIsFocused: () => true }));
 const mockSetQueryData = jest.fn();
 /** The stack query's options, so a test can run its real queryFn. */
 let mockStackOpts: { queryFn: () => Promise<{ list: Record<string, unknown> }> } | null = null;
@@ -41,7 +46,7 @@ jest.mock('@tanstack/react-query', () => ({
     if (key === 'stackComments') return { data: [] };
     if (key === 'stack') {
       mockStackOpts = opts as never;
-      return { data: mockStackData, isLoading: false, isError: false };
+      return { data: mockStackData, isLoading: false, isError: mockStackFailed, refetch: mockRereadStack };
     }
     return { data: undefined, isLoading: false, isError: false };
   },
@@ -102,6 +107,7 @@ jest.mock('expo-linear-gradient', () => {
 });
 
 const mount = (over: Record<string, unknown> = {}) => {
+  mockStackFailed = false;
   mockStackData = { list: { ...baseStack, ...over }, endorseCount: 0 };
   return render(<StackDetailScreen />);
 };
@@ -151,7 +157,8 @@ describe('the chrome has a ground', () => {
 
   it('one nav component, not three copies', () => {
     // Loading, unreachable and the stack: three call sites, one component.
-    expect(SOURCE.match(/<StackNav /g) ?? []).toHaveLength(3);
+    // Four states wear it: loading, could not be reached, classified, the stack.
+    expect(SOURCE.match(/<StackNav /g) ?? []).toHaveLength(4);
     expect(SOURCE.match(/s\.navBar/g) ?? []).toHaveLength(1);
   });
 });
@@ -776,5 +783,26 @@ describe('the overlay’s back button, driven', () => {
   it('registers nothing while the critiques are shut', async () => {
     mount({ critiqueCount: 2 });
     await waitFor(() => expect(mockBackHandlers).toHaveLength(0));
+  });
+});
+
+describe('a stack it could not reach is not a sealed one', () => {
+  // It was CLASSIFIED — "sealed or incinerated" — of a stack simply out of reach.
+  it('says it could not be reached, and asks again', async () => {
+    mockStackFailed = true;
+    mockStackData = undefined;
+    const r = render(<StackDetailScreen />);
+    expect(r.queryByText('CLASSIFIED')).toBeNull();
+    expect(r.getByText('Transmission Interrupted')).toBeTruthy();
+    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    expect(mockRereadStack).toHaveBeenCalledTimes(1);
+  });
+
+  it('a stack that is not there (the service answered null) is CLASSIFIED', () => {
+    mockStackFailed = false;
+    mockStackData = null;
+    const r = render(<StackDetailScreen />);
+    expect(r.getByText('CLASSIFIED')).toBeTruthy();
+    expect(r.queryByText('Transmission Interrupted')).toBeNull();
   });
 });

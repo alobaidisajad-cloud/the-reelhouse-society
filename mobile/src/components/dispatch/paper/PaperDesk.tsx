@@ -34,6 +34,7 @@ import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { PaperKeyWell } from './PaperKeyWell';
 import { DeskDoc } from './PaperDeskDoc';
 import { EDGE_LIT } from '@/src/theme/light';
+import { PaperEmpty } from './PaperFrame';
 
 /**
  * The head every desk wears, one component so the desks cannot drift. BACK and
@@ -353,13 +354,19 @@ export const DossierDesk = memo(function DossierDesk({
  * read rather than a list you pick from.
  */
 export const FilmFinder = memo(function FilmFinder({
-  query, results, onPick, onQuery,
+  query, results, onPick, onQuery, answer, onRetry,
 }: {
   query: string; results: PaperFilm[];
   /** With its INDEX, to map by: a title and year can repeat (a re-release). */
   onPick?: (film: PaperFilm, index: number) => void;
   /** Absent in the harness, where the query is a drawn line with a caret. */
   onQuery?: (text: string) => void;
+  /**
+   * What the catalogue said, when it said nothing to pick: it matched nothing,
+   * or it could not be asked. Left blank, both looked like a search still out.
+   */
+  answer?: 'none' | 'unreachable';
+  onRetry?: () => void;
 }) {
   return (
     <View style={d.sheet}>
@@ -412,6 +419,16 @@ export const FilmFinder = memo(function FilmFinder({
           </PressableScale>
         </View>
       ))}
+      {answer === 'unreachable' && onRetry ? (
+        <PaperEmpty
+          title="The catalogue could not be reached."
+          body="Check the connection, and try again."
+          action="TRY AGAIN"
+          onAction={onRetry}
+        />
+      ) : answer === 'none' ? (
+        <PaperEmpty title="No film by that name." body="Try the title as it was released." />
+      ) : null}
     </View>
   );
 });

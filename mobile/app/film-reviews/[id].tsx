@@ -27,6 +27,8 @@ import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
 import { logCountsSelect, withLogCountFilters } from '@/src/services/logCounts';
 import { tellMarks } from '@/src/stores/tellMarks';
 import { useAuthStore } from '@/src/stores/auth';
+import { EmptyOffline } from '@/src/components/EmptyStates';
+import { nav } from '@/src/utils/typedRouter';
 
 const PAGE_SIZE = 20;
 
@@ -52,6 +54,8 @@ export default function FilmReviewsScreen() {
   const [fetchingMore, setFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
+  // The first page could not be read: said, not "the projection box awaits".
+  const [failed, setFailed] = useState(false);
 
   const fetchLogs = useCallback(async (isLoadMore = false) => {
     if (!filmId) return;
@@ -65,7 +69,7 @@ export default function FilmReviewsScreen() {
 
     const askedAt = Date.now();
     const viewer = useAuthStore.getState().user?.id ?? null;
-    const { data } = await withLogCountFilters(supabase
+    const { data, error } = await withLogCountFilters(supabase
       .from('logs')
       .select(LOG_COLUMNS(viewer)), viewer)
       .eq('film_id', filmId)
@@ -73,6 +77,9 @@ export default function FilmReviewsScreen() {
       .neq('review', '')
       .order('created_at', { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+    // A later page that fails leaves the reviews drawn; scrolling on asks again.
+    if (!isLoadMore) setFailed(!!error);
 
     if (data) {
       // Map the profiles join into the flat FeedItem shape the card expects;
@@ -128,7 +135,7 @@ export default function FilmReviewsScreen() {
 
       {/* Header */}
       <View style={[s.header, { paddingTop: Math.max(insets.top + 10, 60) }]}>
-        <PressableScale onPress={() => router.back()} style={s.backBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityLabel="Go back">
+        <PressableScale onPress={() => nav.back()} style={s.backBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
         </PressableScale>
         <View style={s.headerTextWrap}>
@@ -156,11 +163,13 @@ export default function FilmReviewsScreen() {
           ListFooterComponent={
             fetchingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null
           }
-          ListEmptyComponent={
+          ListEmptyComponent={failed ? (
+            <EmptyOffline onRetry={() => { void fetchLogs(); }} />
+          ) : (
             <View style={s.emptyBox}>
               <Text style={s.emptyTitle}>The projection box awaits.</Text>
             </View>
-          }
+          )}
         />
       )}
     </View>

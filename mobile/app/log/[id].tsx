@@ -47,6 +47,7 @@ import { captureRef } from 'react-native-view-shot';
 import { z } from 'zod';
 import { WASH } from '@/src/theme/light';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
+import { nav } from '@/src/utils/typedRouter';
 
 // TMDB_IMG hardcoded string removed in favor of tmdb.poster / tmdb.backdrop
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -606,7 +607,7 @@ export default function LogDetailScreen() {
         <RoomLight room="film" />
         <FilmIcon size={40} color={colors.sepia} strokeWidth={1} />
         <Text style={s.notFoundText}>Log not found.</Text>
-        <PressableScale style={s.backBtnRow} onPress={() => { router.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection" pressedScale={0.92}>
+        <PressableScale style={s.backBtnRow} onPress={() => { nav.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection" pressedScale={0.92}>
             <ChevronLeft size={12} color={colors.bone} strokeWidth={1.5} />
             <Text style={s.backBtnText}>GO BACK</Text>
         </PressableScale>
@@ -654,7 +655,7 @@ export default function LogDetailScreen() {
 
       <View style={[s.header, { paddingTop: Math.max(insets.top + 8, 56) }]}>
         <View style={s.headerRow}>
-          <PressableScale style={s.backBtn} onPress={() => { router.back(); }} hitSlop={{top:20,bottom:20,left:20,right:20}} haptic="selection" pressedScale={0.92} accessibilityLabel="Go back">
+          <PressableScale style={s.backBtn} onPress={() => { nav.back(); }} hitSlop={{top:20,bottom:20,left:20,right:20}} haptic="selection" pressedScale={0.92} accessibilityLabel="Go back">
             <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
 

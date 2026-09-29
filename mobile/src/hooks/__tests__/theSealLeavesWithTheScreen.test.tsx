@@ -30,7 +30,8 @@ let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
   useRouter: () => ({ back: mockBack, push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() }),
-  router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() },
+  // The app leaves through nav.back(), which asks the router whether there is a back.
+  router: { back: () => mockBack(), canGoBack: () => true, push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() },
 }));
 // Read as a hook by the screen and with getState() by the note vault an edit opens.
 jest.mock('@/src/stores/auth', () => {

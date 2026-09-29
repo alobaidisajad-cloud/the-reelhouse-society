@@ -83,9 +83,6 @@ describe('tmdb image URL builders', () => {
     expect(tmdb.logo('/abc.jpg')).toBe('https://image.tmdb.org/t/p/w45/abc.jpg');
   });
 
-  it('posterThumb is fixed at w92', () => {
-    expect(tmdb.posterThumb('/abc.jpg')).toBe('https://image.tmdb.org/t/p/w92/abc.jpg');
-  });
 
   it('youtubeThumbnail builds the hqdefault thumbnail URL from a video key', () => {
     expect(tmdb.youtubeThumbnail('dQw4w9WgXcQ')).toBe('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg');
@@ -108,12 +105,20 @@ describe('tmdb.search', () => {
     jest.restoreAllMocks();
   });
 
-  it('returns a failed searchType when the proxy request errors out', async () => {
+  it('a catalogue that cannot be reached is not "no match": the search throws', async () => {
+    // It answered { searchType: 'failed', results: [] }, and every search box
+    // in the app told a member with no signal that the film does not exist.
     (global.fetch as jest.Mock).mockRejectedValue(new Error('network down'));
-    const result = await tmdb.search('Inception');
+    await expect(tmdb.search('Inception')).rejects.toMatchObject({ name: 'TmdbUnreachable' });
+    expect(global.fetch).toHaveBeenCalledTimes(3);   // tried, then said
+  }, 10000);
+
+  it('a search the catalogue answered with nothing is "failed", after every tier', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({ ok: true, status: 200, json: async () => ({ results: [] }) });
+    const result = await tmdb.search('zzqxv');
     expect(result.searchType).toBe('failed');
     expect(result.results).toEqual([]);
-  }, 10000);
+  });
 
   it('marks movie results as exact matches and tags media_type: movie', async () => {
     mockFetchOnce({
@@ -177,5 +182,43 @@ describe('tmdb.search', () => {
     const result = await tmdb.search('teh matrix');
     expect(result.searchType).toBe('typo');
     expect(result.matchedContext).toContain('IGNORED');
+  }, 10000);
+});
+
+describe('a catalogue read tells "not there" from "could not ask"', () => {
+  const answer = (status: number, body: unknown = {}) => ({ ok: status < 400, status, json: async () => body });
+  beforeEach(() => { global.fetch = jest.fn(); });
+
+  it('a film the catalogue does not have is an answer: null', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(answer(404));
+    await expect(tmdb.detail(910001)).resolves.toBeNull();
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('a catalogue failing for a moment is asked again, and its answer kept', async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(answer(503))
+      .mockResolvedValueOnce(answer(200, { id: 910002, title: 'Sunrise' }));
+    await expect(tmdb.detail(910002)).resolves.toMatchObject({ title: 'Sunrise' });
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  }, 10000);
+
+  it('one that keeps failing is unreachable, after three tries — never an empty answer', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(answer(502));
+    await expect(tmdb.trending('day')).rejects.toMatchObject({ name: 'TmdbUnreachable' });
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+  }, 10000);
+
+  it('the proxy refusing the app is unreachable at once, not a missing film', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(answer(401));
+    await expect(tmdb.detail(910003)).rejects.toMatchObject({ name: 'TmdbUnreachable' });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failure is not remembered: the next read asks again', async () => {
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('offline'));
+    await expect(tmdb.detail(910004)).rejects.toMatchObject({ name: 'TmdbUnreachable' });
+    (global.fetch as jest.Mock).mockReset().mockResolvedValue(answer(200, { id: 910004, title: 'Greed' }));
+    await expect(tmdb.detail(910004)).resolves.toMatchObject({ title: 'Greed' });
   }, 10000);
 });

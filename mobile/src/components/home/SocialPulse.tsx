@@ -1,6 +1,7 @@
 /**
  * SocialPulseSection — Horizontal scrolling feed of recent society reviews.
  * Uses FlashList with cover-flow physics (3D rotation + scale on scroll).
+ * The Lobby reads the wire (lobbyReads.ts) and hands it here: this only draws.
  */
 import { memo, useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
@@ -13,16 +14,12 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { FlashList } from '@shopify/flash-list';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useQuery } from '@tanstack/react-query';
 import { colors, fonts } from '@/src/theme/theme';
 import { SectionDivider } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import Buster from '@/src/components/Buster';
 import { useAuthStore } from '@/src/stores/auth';
-import { supabase } from '@/src/lib/supabase';
-import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
-import type { FeaturedLog, PulseActivity } from './types';
-import { timeAgo } from './types';
+import type { PulseActivity } from './types';
 import { isAuteurPlusTier } from '@/src/utils/tier';
 
 // ── PULSE CARD ITEM (consolidated from standalone PulseCardItem.tsx) ──
@@ -104,7 +101,12 @@ GhostEmptyState.displayName = 'GhostEmptyState';
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 const pulseKeyExtractor = (item: PulseActivity) => item.id;
 
-function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
+function SocialPulseSectionInner({ activities, featuredId }: {
+  /** The wire. Undefined while it has not arrived (or could not): nothing is drawn then. */
+  activities: PulseActivity[] | undefined;
+  /** The Lead Story's log, which is not also the wire. */
+  featuredId?: string;
+}) {
   const { width } = useWindowDimensions();
   const PULSE_ITEM_SIZE = width * 0.82 + 16;
 
@@ -130,54 +132,6 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
     });
   }, []);
 
-  const { data: activities = [] } = useQuery({
-    queryKey: ['socialPulse', refreshTrigger],
-    queryFn: async () => {
-        const { data, error } = await supabase
-          .from('logs')
-          .select('id, film_id, film_title, poster_path, rating, review, status, abandoned_reason, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, is_spoiler, created_at, user_id, profiles!logs_user_id_fkey(username, role, avatar_url)')
-          .neq('review', '')
-          .not('review', 'is', null)
-          .order('created_at', { ascending: false })
-          // Seven, not six: the featured critique is filtered out below and the
-          // list trimmed back to six, so removing it never leaves the wire short.
-          .limit(7);
-
-        if (error) {
-          if (__DEV__) console.warn('[SocialPulse] Fetch failed:', error);
-          return [];
-        }
-
-        if (!data) return [];
-
-        const mapped = data.map((log: FeaturedLog) => ({
-          id: log.id,
-          user_id: log.user_id,
-          user: (Array.isArray(log.profiles) ? log.profiles[0]?.username : log.profiles?.username) ?? 'cinephile',
-          userRole: (Array.isArray(log.profiles) ? log.profiles[0]?.role : log.profiles?.role) ?? 'cinephile',
-          userAvatar: (Array.isArray(log.profiles) ? log.profiles[0]?.avatar_url : log.profiles?.avatar_url) ?? null,
-          film: { id: log.film_id, title: log.film_title, poster_path: log.poster_path },
-          rating: log.rating,
-          text: log.review,
-          dropCap: log.drop_cap,
-          pullQuote: log.pull_quote ?? '',
-          status: log.status,
-          abandoned_reason: log.abandoned_reason,
-          watchedWith: log.watched_with,
-          is_autopsied: log.is_autopsied,
-          autopsy: log.autopsy,
-          is_spoiler: log.is_spoiler ?? false,
-          editorialHeader: log.editorial_header ?? null,
-          time: timeAgo(log.created_at),
-        }));
-
-        // Hide logs from blocked/muted users (HOOK-8).
-        // The featured critique is removed at render time, not here — see below.
-        return filterContentByBlocks(mapped, (a) => a.user_id ?? '');
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
   const renderItem = useCallback(({ item, index }: { item: PulseActivity, index: number }) => (
     <AnimatedPulseWrapper item={item} index={index} scrollX={scrollX} itemSize={PULSE_ITEM_SIZE} cardWidth={width * 0.82} onMute={handleMute} />
   ), [scrollX, PULSE_ITEM_SIZE, width, handleMute]);
@@ -189,32 +143,17 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
   // one film filling both sections on a single screen. Confirmed against the
   // database, not inferred from the screen.
   //
-  // Filtered HERE rather than inside the queryFn. Both sections mount together
-  // and fetch in parallel, so reading the featured id at fetch time was a race:
-  // if that request had not resolved yet the id was undefined and the duplicate
-  // went through anyway. Subscribing to the cache re-renders this list the
-  // moment the featured critique lands, whichever finishes first.
-  //
-  // `enabled: false` means this never issues a request of its own — it only
-  // observes the entry FeaturedCritique already owns.
-  //
-  // Sharing a query key between two observers is subtler than it looks: this
-  // one has no queryFn, and query-core lets every observer overwrite the shared
-  // Query's options, so it really does wipe the queryFn off it. Query.fetch
-  // recovers it from the observer that has one, which is why this is safe — but
-  // that is internal library behaviour, so it is pinned in
-  // __tests__/featuredCritiqueCacheShare.test.ts. Read that before touching this.
-  const { data: featured } = useQuery<{ id?: string } | undefined>({
-    queryKey: ['featuredCritique', refreshTrigger],
-    enabled: false,
-  });
-  const featuredId = featured?.id;
-
+  // Filtered HERE, at render, rather than when the wire is read: the two reads
+  // run in parallel, and whichever lands second re-draws this with both known.
+  // (The Lobby hands both in, so there is no shared cache entry to watch.)
+  if (!activities) return null;
   const visibleActivities = (mutedIds.size === 0
     ? activities
     : activities.filter(a => !mutedIds.has(a.id))
   ).filter(a => a.id !== featuredId).slice(0, 6);
 
+  // Only a wire that ARRIVED empty is said to be empty; one still on its way,
+  // or one that could not be read, draws nothing here (the Lobby says why).
   if (visibleActivities.length === 0) {
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={s.pulseSection}>

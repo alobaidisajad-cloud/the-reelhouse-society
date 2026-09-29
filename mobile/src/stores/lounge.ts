@@ -87,6 +87,8 @@ export interface LoungeMessageMeta {
 
 export interface LoungeState {
   lounges: LoungeRoom[];
+  /** The last read of the salons could not be answered. The screens say so. */
+  loungesFailed: boolean;
   currentMessages: LoungeMessage[];
   currentLoungeId: string | null;
   loading: boolean;
@@ -294,6 +296,7 @@ interface LoungeMessageRow {
 
 export const useLoungeStore = create<LoungeState>()((set, get) => ({
   lounges: [],
+  loungesFailed: false,
   currentMessages: [],
   currentLoungeId: null,
   loading: false,
@@ -436,11 +439,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Left mid-flight — see sessionGuard. Writing here would repopulate a store
       // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return;
-      set({ lounges: enriched, loading: false });
+      set({ lounges: enriched, loungesFailed: false, loading: false });
     } catch (err) {
       if (__DEV__) console.warn('[Lounge] fetchLounges failed:', err);
-      reelToast.error('Could not retrieve salons — check your connection.');
-      set({ loading: false });
+      // Said by the screen that asked, not here: the Lounge polls every thirty
+      // seconds while open, and a toast here was a toast every thirty seconds
+      // for as long as the signal was gone.
+      set({ loungesFailed: true, loading: false });
     }
   },
 
@@ -1374,7 +1379,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
-    useLoungeStore.setState({ lounges: [], currentMessages: [], currentLoungeId: null, loading: false, sending: false, presentCount: 0, typingUsers: [], _pendingLeaveLoungeIds: new Set(), _lastMarkReadMap: {} });
+    useLoungeStore.setState({ lounges: [], loungesFailed: false, currentMessages: [], currentLoungeId: null, loading: false, sending: false, presentCount: 0, typingUsers: [], _pendingLeaveLoungeIds: new Set(), _lastMarkReadMap: {} });
     _lastCreateAt = 0;
     _lastTypingBroadcastAt = 0;
     // Every module-level memory, or the next member on this phone inherits it.

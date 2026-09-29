@@ -92,7 +92,7 @@ describe('every TMDB method the app calls exists on the test mock', () => {
   it('the URL builders return a falsy value for a missing path, never a broken URL', () => {
     // `${IMG}/w185${null}` is a 200-shaped string ending in "null" — an <Image>
     // pointed at it fails silently rather than falling back to the ✦ placeholder.
-    for (const b of ['poster', 'backdrop', 'profile', 'logo', 'posterThumb'] as const) {
+    for (const b of ['poster', 'backdrop', 'profile', 'logo'] as const) {
       expect(tmdb[b](null)).toBeFalsy();
       expect(tmdb[b](undefined)).toBeFalsy();
     }
