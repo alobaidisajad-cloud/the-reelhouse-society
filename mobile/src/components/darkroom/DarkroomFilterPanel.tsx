@@ -32,6 +32,29 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
   filters, updateFilter,
   localYearFrom, setLocalYearFrom, localYearTo, setLocalYearTo,
 }: DarkroomFilterPanelProps) {
+  /**
+   * A typed year, as the filter holds it: two digits are 19xx or 20xx, the year is
+   * held to the catalogue's range, and a year past the other end moves both to it.
+   */
+  const commitYear = (end: 'from' | 'to') => {
+    const raw = parseInt(end === 'from' ? localYearFrom : localYearTo, 10);
+    let year: number | null = null;
+    if (!isNaN(raw)) {
+      year = raw < 100 ? raw + (raw < 30 ? 2000 : 1900) : raw;
+      year = Math.max(YEAR_MIN, Math.min(YEAR_MAX, year));
+    }
+    const other = end === 'from' ? filters.yearTo : filters.yearFrom;
+    if (year && other && (end === 'from' ? year > other : year < other)) {
+      updateFilter({ yearFrom: year, yearTo: year, decade: null });
+      setLocalYearFrom(String(year));
+      setLocalYearTo(String(year));
+      return;
+    }
+    if (year !== (end === 'from' ? filters.yearFrom : filters.yearTo)) {
+      updateFilter(end === 'from' ? { yearFrom: year, decade: null } : { yearTo: year, decade: null });
+    }
+    (end === 'from' ? setLocalYearFrom : setLocalYearTo)(year ? String(year) : '');
+  };
   return (
     <Animated.View entering={FadeInDown.duration(300)} exiting={SlideOutDown.duration(200)} style={s.filterPanel}>
       <Text style={s.filterSectionTitle}>GENRE</Text>
@@ -54,6 +77,8 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
 
       <Text style={[s.filterSectionTitle, s.filterSectionTitleSpaced]}>CUSTOM YEAR RANGE</Text>
       <View style={s.yearRangeRow}>
+        {/* onEndEditing, not onSubmitEditing: the iPhone's number pad has no return key,
+            so a year typed there was never applied. Editing ends on a tap away too. */}
         <TextInput
           style={s.yearInput}
           placeholder="FROM"
@@ -64,27 +89,11 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
           maxLength={4}
           value={localYearFrom}
           onChangeText={setLocalYearFrom}
-          onSubmitEditing={() => {
-            const raw = parseInt(localYearFrom, 10);
-            let clamped: number | null = null;
-            if (!isNaN(raw)) {
-              clamped = raw < 100 ? raw + (raw < 30 ? 2000 : 1900) : raw;
-              clamped = Math.max(YEAR_MIN, Math.min(YEAR_MAX, clamped));
-            }
-            if (clamped && filters.yearTo && clamped > filters.yearTo) {
-              updateFilter({ yearFrom: clamped, yearTo: clamped, decade: null });
-              setLocalYearFrom(String(clamped));
-              setLocalYearTo(String(clamped));
-            } else {
-              if (clamped !== filters.yearFrom) {
-                updateFilter({ yearFrom: clamped, decade: null });
-              }
-              setLocalYearFrom(clamped ? String(clamped) : '');
-            }
-          }}
+          onEndEditing={() => commitYear('from')}
           returnKeyType="done"
+          accessibilityLabel="From the year"
         />
-        <Text style={s.yearRangeDash}>—</Text>
+        <Text style={s.yearRangeDash} accessibilityElementsHidden importantForAccessibility="no">—</Text>
         <TextInput
           style={s.yearInput}
           placeholder="TO"
@@ -95,25 +104,9 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
           maxLength={4}
           value={localYearTo}
           onChangeText={setLocalYearTo}
-          onSubmitEditing={() => {
-            const raw = parseInt(localYearTo, 10);
-            let clamped: number | null = null;
-            if (!isNaN(raw)) {
-              clamped = raw < 100 ? raw + (raw < 30 ? 2000 : 1900) : raw;
-              clamped = Math.max(YEAR_MIN, Math.min(YEAR_MAX, clamped));
-            }
-            if (clamped && filters.yearFrom && clamped < filters.yearFrom) {
-              updateFilter({ yearTo: clamped, yearFrom: clamped, decade: null });
-              setLocalYearFrom(String(clamped));
-              setLocalYearTo(String(clamped));
-            } else {
-              if (clamped !== filters.yearTo) {
-                updateFilter({ yearTo: clamped, decade: null });
-              }
-              setLocalYearTo(clamped ? String(clamped) : '');
-            }
-          }}
+          onEndEditing={() => commitYear('to')}
           returnKeyType="done"
+          accessibilityLabel="To the year"
         />
         {(filters.yearFrom || filters.yearTo) && (
           <PressableScale 
@@ -208,9 +201,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 16,
     color: colors.fog,
-    // 0.4 measured 1.96:1 — the one mark that tells you FROM and TO are a
-    // range, and it was all but invisible. 0.75 = 4.16:1.
-    opacity: 0.75,
+    opacity: 0.75, // 4.16:1: the one mark that makes FROM and TO a range must be seen
   },
   yearClearBtn: {
     width: 28,
