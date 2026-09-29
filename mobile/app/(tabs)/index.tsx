@@ -41,6 +41,7 @@ import { SocialPulseSection } from '@/src/components/home/SocialPulse';
 import { VelvetRopeCTA, BrassSheen } from '@/src/components/home/VelvetRopeCTA';
 import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 
 /** The marquee backdrop's fade into the room: how much house it lays down, top to hem. */
 const HERO_VEIL: VeilStops = [[0, 0.28], [0.65, 0.7], [1, 1]];
@@ -100,7 +101,7 @@ export default function LobbyScreen() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // ── React Query: MMKV-cached lobby data (instant cold start) ──
-  const { data: trendingData } = useQuery({
+  const { data: trendingData, isPending: trendingPending } = useQuery({
     queryKey: ['lobby', 'trending'],
     queryFn: async () => {
       const res = await tmdb.trending('week');
@@ -124,6 +125,8 @@ export default function LobbyScreen() {
     },
     staleTime: 10 * 60 * 1000,
   });
+
+  const readyMark = useScreenReady(isAuthenticated ? 'lobby' : 'welcome', !isAuthenticated || !trendingPending);
 
   const trending = trendingData ?? [];
   const canon = canonData ?? [];
@@ -219,6 +222,7 @@ export default function LobbyScreen() {
   if (!isAuthenticated) {
     return (
       <FrozenTab>
+      {readyMark}
       <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <RoomLight room="lobby" />
         <LinearGradient
@@ -345,6 +349,7 @@ export default function LobbyScreen() {
 
   return (
     <FrozenTab>
+    {readyMark}
     <View style={s.container}>
       <RoomLight room="lobby" hem={heroUri ? heroH : undefined} art={heroUri} />
       {/* The page's own fade, house to card. At full strength it covered the

@@ -1,0 +1,10 @@
+{
+  "ios": {
+    "bytes": 11624877,
+    "why": "the phone bundle trimmed (15.0 MB before): only the icons the app imports, no RevenueCat web mode, no Sentry web replay or feedback, one copy of zod and react-hook-form"
+  },
+  "android": {
+    "bytes": 11626517,
+    "why": "the phone bundle trimmed (15.0 MB before): only the icons the app imports, no RevenueCat web mode, no Sentry web replay or feedback, one copy of zod and react-hook-form"
+  }
+}

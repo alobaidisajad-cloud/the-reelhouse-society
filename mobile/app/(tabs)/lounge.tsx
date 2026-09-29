@@ -41,6 +41,7 @@ import { EmptyMyLounges } from '@/src/components/lounge/EmptyMyLounges';
 import { s } from '@/src/components/lounge/loungeTabStyles';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -52,6 +53,7 @@ export default function LoungeScreen() {
   const user = useAuthStore(s => s.user);
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const { lounges, fetchLounges, loading } = useLoungeStore();
+  const readyMark = useScreenReady('lounges', !(loading && lounges.length === 0));
   const insets = useSafeAreaInsets();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -238,11 +240,12 @@ export default function LoungeScreen() {
    * Signing in is still required, because a salon roster is not for the street.
    */
   if (!isAuthenticated) {
-    return <LoungeGate />;
+    return <>{readyMark}<LoungeGate /></>;
   }
 
   return (
     <FrozenTab>
+    {readyMark}
     <View style={s.container}>
       <RoomLight room="default" />
       {/* ── Compact ceremonial header ── */}

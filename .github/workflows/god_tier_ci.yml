@@ -280,6 +280,34 @@ jobs:
           [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, name, bar or shadow fault" captures.txt error --drop 'clean +\('
           exit $rc
 
+  bundle-size:
+    name: 📦 The app's code only gets smaller
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs: strict-analysis
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Mobile Dependencies
+        working-directory: ./mobile
+        run: npm ci
+
+      # The production bundles, iOS and Android, as the phones get them (Hermes
+      # bytecode), against .bundle-size.json. Growth needs --accept and a reason.
+      - name: Weigh the phone bundles
+        working-directory: ./mobile
+        run: |
+          set -o pipefail
+          npm run --silent bundle:size 2>&1 | tee bundle-size.txt
+          rc=${PIPESTATUS[0]}
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "The app's code grew" bundle-size.txt error
+          exit $rc
+
   web-unit-tests:
     name: 🧪 Web Vitest Unit Tests
     runs-on: ubuntu-24.04

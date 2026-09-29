@@ -5,7 +5,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-// View removed — was unused
 import GlobalErrorBoundary from '@/src/components/ErrorBoundary';
 import Preloader from '@/src/components/Preloader';
 import { ToastHost, toastScreenLayout } from '@/src/components/ToastHost';
@@ -23,18 +22,20 @@ import { CourierPrime_400Regular, CourierPrime_400Regular_Italic, CourierPrime_7
 import { Rye_400Regular, useFonts } from '@expo-google-fonts/rye';
 import { Spectral_400Regular, Spectral_400Regular_Italic, Spectral_500Medium } from '@expo-google-fonts/spectral';
 import { SpecialElite_400Regular } from '@expo-google-fonts/special-elite';
-import * as Linking from 'expo-linking';
 import * as SplashScreen from 'expo-splash-screen';
-import { InteractionManager, StyleSheet } from 'react-native';
-// Global Dynamic Type / font scaling — runs side-effect at import time
+import { StyleSheet } from 'react-native';
 import OfflineBanner from '@/src/components/OfflineBanner';
-import { initSentry } from '@/src/lib/sentry';
+import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import { noteCurrentPath } from '@/src/utils/openSociety';
 export { RouterErrorBoundary as ErrorBoundary };
 
-// Font scaling lock removed temporarily to prevent React Native Hermes segfault.
-// Prevent splash from hiding until fonts + auth are ready
+// Before the first render: the app's start and any error in it are measured,
+// and a rope met while the app is still waking is counted (gateMetricsSink.ts).
+initSentry();
+installGateMetricsSink();
+
+// The splash stays until the fonts and the cached session are ready.
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
@@ -46,7 +47,7 @@ export default function RootLayout() {
   const [appReady, setAppReady] = useState(false);
   const [showPreloader, setShowPreloader] = useState(true);
 
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Rye_400Regular,
     SpecialElite_400Regular,
     CourierPrime_400Regular,
@@ -56,16 +57,12 @@ export default function RootLayout() {
     Spectral_400Regular_Italic,
     Spectral_500Medium,
   });
-
-  // Initialize Sentry before any rendering — must run before AppBootstrapper mounts
+  // A font that fails to load leaves `fontsLoaded` false for good: the app
+  // opens in the system faces rather than stay on the splash.
+  const fontsSettled = fontsLoaded || fontError !== null;
   useEffect(() => {
-    initSentry();
-    // The funnel's destination, installed in exactly one place. It counts and
-    // names nobody — see the reasoning in gateMetricsSink.ts. It sits beside
-    // initSentry because a rope can be met before the app has finished waking,
-    // and an uninstalled sink loses that tap silently.
-    installGateMetricsSink();
-  }, []);
+    if (fontError) captureError(fontError, { where: 'root fonts' });
+  }, [fontError]);
 
   useEffect(() => {
     async function prepare() {
@@ -85,29 +82,17 @@ export default function RootLayout() {
         // The network reconcile (restoreSession) runs in the background and
         // corrects anything stale — the splash never waits for a round trip.
         hydrateFromCache();
-        // Hydrate BlockStore from MMKV cache (synchronous, before first render)
+        // Blocks and follows from the phone's cache, before the first render:
+        // offline, or before the network answers, the member sees what they
+        // follow and never sees whom they blocked.
         const userId = useAuthStore.getState().user?.id;
         if (userId) {
           useBlockStore.getState().hydrateFromCache(userId);
-          // ── The follow graph, from the same cache, for the same reason ──────────
-          // socialSlice writes `reelhouse_following_*` on every follow and unfollow,
-          // and followStore has always had a hydrateFromCache to read it back — with
-          // ZERO callers. The write half shipped; the read half never did.
-          //
-          // So the follow graph started EMPTY on every cold start: offline, it stayed
-          // empty, every profile read FOLLOW instead of FOLLOWING, and the following
-          // feed switched itself off and showed its empty state. Online, that was
-          // still true for the window before hydrateFollowing answered.
-          //
-          // BlockStore, on the line above, has done this correctly all along. Same
-          // cache, same timing, same reason: render the truth we already hold, then
-          // let the network correct it.
           useSocialStore.getState().hydrateFromCache(userId);
         }
         restoreSession()
           .then(() => {
-            // Same ordering as the old blocking path, just off the launch path:
-            // block protection re-hydrates and syncs once the session settles.
+            // Once the session is confirmed, blocks are read again and synced.
             const uid = useAuthStore.getState().user?.id;
             if (uid) {
               useBlockStore.getState().hydrateFromCache(uid);
@@ -130,86 +115,18 @@ export default function RootLayout() {
     prepare();
   }, [restoreSession, hydrateFromCache]);
 
-  // ── Deep link handler for auth callbacks ──
-  // Intercepts reelhouse://auth/callback and reelhouse://reset-password deep links
-  const handleAuthDeepLink = useCallback(async (url: string) => {
-    if (!url) return;
-
+  // The root view lays out only once the app is ready, so its first layout is
+  // the first screen: the splash goes, and the app's start ends there.
+  const onLayoutReady = useCallback(async () => {
     try {
-      const parsed = Linking.parse(url);
-      const path = parsed.path || '';
-      const queryParams = parsed.queryParams || {};
-
-      // Handle: reelhouse://auth/callback?token_hash=…  (legacy OTP links)
-      //         reelhouse://auth-callback?code=…        (PKCE — current flow)
-      //         reelhouse://auth-callback?error=…       (expired/denied links)
-      // Route on ANY meaningful auth payload; a payload-less hit is ignored.
-      if (path.includes('auth/callback') || path.includes('auth-callback')) {
-        const tokenHash = queryParams.token_hash as string;
-        const code = queryParams.code as string;
-        const errorParam = (queryParams.error_description || queryParams.error || queryParams.error_code) as string;
-        const type = queryParams.type as string;
-
-        if (tokenHash || code || errorParam) {
-          // Route EVERYTHING to auth-callback so it can handle success, error, and recovery flows
-          InteractionManager.runAfterInteractions(() => {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const router = require('expo-router').router;
-            // Dismiss all screens to prevent ghost listeners
-            router.dismissAll();
-            router.replace({
-              pathname: '/auth-callback',
-              params: {
-                ...(tokenHash ? { token_hash: tokenHash } : {}),
-                ...(code ? { code } : {}),
-                ...(type ? { type } : {}),
-              },
-            });
-          });
-        }
-        return;
-      }
-
-      // Handle: reelhouse://reset-password (direct deep link)
-      if (path.includes('reset-password')) {
-        InteractionManager.runAfterInteractions(() => {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const router = require('expo-router').router;
-          router.push('/reset-password');
-        });
-        return;
-      }
+      await SplashScreen.hideAsync();
     } catch {
-      // Deep link parsing failed — silently ignore
+      // already hidden
     }
+    markAppLoaded();
   }, []);
 
-  useEffect(() => {
-    function handleDeepLink(event: { url: string }) {
-      handleAuthDeepLink(event.url);
-    }
-
-    // Handle the URL that launched the app (cold start)
-    Linking.getInitialURL().then(url => {
-      if (url) handleAuthDeepLink(url);
-    });
-
-    // Handle URLs while the app is already open (warm start)
-    const subscription = Linking.addEventListener('url', handleDeepLink);
-    return () => subscription.remove();
-  }, [appReady, handleAuthDeepLink]);
-
-  const onLayoutReady = useCallback(async () => {
-    if (appReady && fontsLoaded) {
-      try {
-        await SplashScreen.hideAsync();
-      } catch (e) {
-        // Silently ignore if already hidden
-      }
-    }
-  }, [appReady, fontsLoaded]);
-
-  if (!appReady || !fontsLoaded) return null;
+  if (!appReady || !fontsSettled) return null;
 
   return (
     <GlobalErrorBoundary>

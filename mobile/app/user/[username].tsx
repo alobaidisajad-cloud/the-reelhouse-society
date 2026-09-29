@@ -75,6 +75,7 @@ import { decorativeTextProps, displayTextProps, scaledTextProps } from '@/src/co
 import { useTextScale } from '@/src/hooks/useTextScale';
 import { heroNameSize } from '@/src/components/profile/heroNameSize';
 import { softBreak } from '@/src/utils/softBreak';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
  
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
@@ -198,6 +199,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, taste, setTargetUser } = data;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists, setActiveTab } = ctrl;
+  const readyMark = useScreenReady('member', !loading && !repairingHandle);
   const { archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setArchiveSearch, setListsSearch, setPhysicalSearch, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
 
   
@@ -532,6 +534,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   if (loading || repairingHandle) return (
     <View style={[s.container, s.centeredFull]}>
       <RoomLight room="member" />
+      {readyMark}
       <View style={s.loadingRow}>
         <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
         <Text {...scaledTextProps} style={s.loadingText}>RETRIEVING DOSSIER</Text>
@@ -543,6 +546,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   if (!targetUser) return (
     <View style={[s.container, s.centeredPadded]}>
       <RoomLight room="member" />
+      {readyMark}
       <FilmIcon size={48} color={colors.sepia} strokeWidth={1} style={s.notFoundIcon} />
       <Text {...scaledTextProps} style={s.notFoundTitle}>Member Not Found</Text>
       {/* eslint-disable-next-line react/no-unescaped-entities */}
@@ -890,6 +894,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   return (
     <View style={s.container}>
       <RoomLight room="member" {...lit} />
+      {readyMark}
       {/* Back button (only when navigated to, not on own tab) */}
       {!usernameOverride && (
         <View style={[s.topNav, { paddingTop: Math.max(insets.top + 10, 40) }]}>

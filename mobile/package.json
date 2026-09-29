@@ -19,7 +19,9 @@
     "schema:check": "node scripts/schema-snapshot.mjs --check",
     "functions:check": "node scripts/functions-check.mjs",
     "gates:check": "node scripts/gates-check.js",
-    "comments:check": "node scripts/comment-truth.js"
+    "comments:check": "node scripts/comment-truth.js",
+    "icons": "node scripts/lucide-icons.js",
+    "bundle:size": "node scripts/bundle-size.js"
   },
   "dependencies": {
     "@expo-google-fonts/courier-prime": "^0.4.1",

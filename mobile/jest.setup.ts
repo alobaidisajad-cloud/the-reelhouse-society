@@ -160,6 +160,13 @@ jest.mock('expo-crypto', () => {
 // Mock Sentry (native module)
 jest.mock('@sentry/react-native', () => ({
   init: jest.fn(),
+  appLoaded: jest.fn(),
+  // Runs the measured work, as the SDK does, with a span that records nothing.
+  startSpan: jest.fn((_options: unknown, work: (span: { setAttribute: () => void }) => unknown) => work({ setAttribute: () => {} })),
+  expoRouterIntegration: jest.fn(() => ({ name: 'ExpoRouter' })),
+  // Drawn as a host element, so a test can read the `ready` a screen hands it.
+  createTimeToFullDisplay: () => (props: object) =>
+    require('react').createElement('SentryFullDisplay', props),
   captureException: jest.fn(),
   captureMessage: jest.fn(),
   setUser: jest.fn(),

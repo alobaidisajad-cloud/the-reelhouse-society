@@ -25,6 +25,7 @@ import { FilmGridCard, AnimatedPosterSkeleton } from '@/src/components/darkroom/
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 
 // === MAIN SCREEN ===
 export default function DarkRoomScreen() {
@@ -105,6 +106,7 @@ export default function DarkRoomScreen() {
   // this on focus alone would not have been enough — it would still have run
   // the entire time you sat on the Darkroom, skeleton or no skeleton.
   const showSkeleton = loading || (cacheKey !== lastFetchedKey && network.isConnected !== false);
+  const readyMark = useScreenReady('darkroom', !showSkeleton);
 
   useEffect(() => {
     if (!isFocused || !showSkeleton) {
@@ -359,6 +361,7 @@ export default function DarkRoomScreen() {
 
   return (
     <FrozenTab>
+      {readyMark}
       <View style={s.container}>
         <RoomLight room="default" />
         <CinematicFlashList

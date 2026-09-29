@@ -8,6 +8,7 @@
 
 import { z } from 'zod';
 import { supabase } from '../lib/supabase';
+import * as Sentry from '@sentry/react-native';
 import { logger } from '../utils/logger';
 import { withAbortSignal } from '../utils/withAbortSignal';
 import { mapLogRow, PUBLIC_LOG_COLUMNS } from '../utils/mappers';
@@ -528,50 +529,46 @@ export const ProfileDataService = {
   },
 
   /** The whole history for analytics, in batches of 1,000, validated, capped at 10,000. */
-    async fetchAnalyticsLogs(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, isSelf: boolean, signal?: AbortSignal): Promise<ProfileLog[]> {
-      
-      if (!isSelf && !isAuteurPlusTier(targetUser)) return [];
+  async fetchAnalyticsLogs(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, isSelf: boolean, signal?: AbortSignal): Promise<ProfileLog[]> {
+    if (!isSelf && !isAuteurPlusTier(targetUser)) return [];
 
-      const BATCH_SIZE = 1000;
-      const MAX_ROWS = 10_000;
-      const allRows: z.infer<typeof AnalyticsRowSchema>[] = [];
+    const BATCH_SIZE = 1000;
+    const MAX_ROWS = 10_000;
+    const allRows: z.infer<typeof AnalyticsRowSchema>[] = [];
+
+    // Timed on members' phones (Sentry): a long history is the slowest read a profile makes.
+    const read = await Sentry.startSpan({ name: 'profile.analytics', op: 'db.query' }, async (span) => {
       let cursor: { lastDate: string | null; lastId: string | null; wasDateNull?: boolean } = { lastDate: null, lastId: null, wasDateNull: false };
       let hasMore = true;
-    const fetchStart = Date.now(); // Performance timing
+      while (hasMore) {
+        if (signal?.aborted) return false;
 
-    while (hasMore) {
-      if (signal?.aborted) return [];
+        const batch = await this.fetchAnalyticsBatch(targetUser, BATCH_SIZE, cursor, signal);
+        const validBatch = parseRowsSafely(AnalyticsRowSchema, batch);
 
-      const batch = await this.fetchAnalyticsBatch(targetUser, BATCH_SIZE, cursor, signal);
+        // A breath for the JS thread after parsing 1,000 rows, so frames keep coming.
+        await new Promise(r => setTimeout(r, 0));
 
-      const validBatch = parseRowsSafely(AnalyticsRowSchema, batch);
-      
-      // A breath for the JS thread after parsing 1,000 rows, so frames keep coming.
-      await new Promise(r => setTimeout(r, 0));
-
-      if (validBatch.length < batch.length) {
-         logger.warn(`[ProfileDataService] Dropped ${batch.length - validBatch.length} invalid analytics logs`);
-      }
-      
-      allRows.push(...validBatch);
+        if (validBatch.length < batch.length) {
+          logger.warn(`[ProfileDataService] Dropped ${batch.length - validBatch.length} invalid analytics logs`);
+        }
+        allRows.push(...validBatch);
 
         if (batch.length < BATCH_SIZE || allRows.length >= MAX_ROWS) {
           hasMore = false;
         } else {
           const lastRaw = batch[batch.length - 1];
-          cursor = { 
-            lastDate: lastRaw.watched_date ?? null, 
-            lastId: String(lastRaw.id), 
-            wasDateNull: lastRaw.watched_date == null 
+          cursor = {
+            lastDate: lastRaw.watched_date ?? null,
+            lastId: String(lastRaw.id),
+            wasDateNull: lastRaw.watched_date == null,
           };
         }
-    }
-
-    // A slow or large fetch, printed in development only (logger.info).
-    const durationMs = Date.now() - fetchStart;
-    if (durationMs > 2000 || allRows.length > 1000) {
-      logger.info(`[ProfileDataService] analytics_fetch: ${allRows.length} rows in ${durationMs}ms`);
-    }
+      }
+      span.setAttribute('rows', allRows.length);
+      return true;
+    });
+    if (!read) return [];
 
     return allRows.slice(0, MAX_ROWS).map(l => ({
       id: String(l.id),

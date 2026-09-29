@@ -40,6 +40,7 @@ import { MemberRegistry } from '@/src/components/reels/MemberRegistry';
 import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 
 // Removed LayoutAnimation — conflicts with Reanimated layout transitions.
 // Reanimated's entering/exiting animations handle all transitions in this screen.
@@ -186,6 +187,7 @@ export default function ReelScreen() {
 
   const communityFeed = useMemo(() => communityData?.pages.flat() || [], [communityData]);
   const followingFeed = useMemo(() => followingData?.pages.flat() || [], [followingData]);
+  const readyMark = useScreenReady('reel', !communityLoading);
   const filteredStacks = useMemo(() => {
     if (stackFilter === 'following' && followingCount === 0) return [];
     return stacksData?.pages.flat() || [];
@@ -473,6 +475,7 @@ export default function ReelScreen() {
   return (
     <SectionErrorBoundary section="The Reel">
       <FrozenTab>
+      {readyMark}
       <View style={st.container}>
       <RoomLight room="reel" />
       {/* The page's own fade, thinned so the projector's light shows through. */}

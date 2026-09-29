@@ -4,7 +4,7 @@ import { Text } from '@/src/components/text';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { ActivityCard, FeedItem } from '@/src/components/feed/ActivityCard';
-import Animated, { useAnimatedScrollHandler, runOnJS, type SharedValue, useSharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedScrollHandler, type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
@@ -20,7 +20,6 @@ interface ReelsFeedListProps {
   bottomInset?: number;
   overallLogsScrollY: SharedValue<number>;
   activeTabSV: SharedValue<import('@/src/components/reels/types').ReelSection>;
-  handleScroll?: (e: { nativeEvent: { contentOffset: { y: number }; velocity?: { y?: number } } }, isLogs: boolean) => void;
   ListHeaderComponent: React.ReactElement;
   ListEmptyComponent: React.ReactElement;
   contentContainerStyle: import('react-native').StyleProp<import('react-native').ViewStyle>;
@@ -38,7 +37,6 @@ export function ReelsFeedList({
   bottomInset,
   overallLogsScrollY,
   activeTabSV,
-  handleScroll,
   ListHeaderComponent,
   ListEmptyComponent,
   contentContainerStyle,
@@ -96,15 +94,8 @@ export function ReelsFeedList({
     },
     onBeginDrag: () => { isScrolling.value = true; },
     onMomentumBegin: () => { isScrolling.value = true; },
-    onMomentumEnd: (e) => {
-      isScrolling.value = false;
-      // Sync the final scroll position back to JS thread for focus restoration logic
-      if (handleScroll) runOnJS(handleScroll)({ nativeEvent: { contentOffset: { y: e.contentOffset.y }, velocity: { y: 0 } } }, true);
-    },
-    onEndDrag: (e) => {
-      isScrolling.value = false;
-      if (handleScroll) runOnJS(handleScroll)({ nativeEvent: { contentOffset: { y: e.contentOffset.y }, velocity: { y: 0 } } }, true);
-    }
+    onMomentumEnd: () => { isScrolling.value = false; },
+    onEndDrag: () => { isScrolling.value = false; },
   });
 
   return (

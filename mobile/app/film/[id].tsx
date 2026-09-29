@@ -15,6 +15,7 @@ import { FilmDetailLayout } from '@/src/components/film/FilmDetailLayout';
 import { ShareCardModal } from '@/src/components/film/ShareCardModal';
 import { TrailerModal } from '@/src/components/film/TrailerModal';
 import { FilmDetailContextValue, FilmDetailProvider } from '@/src/providers/FilmDetailProvider';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 
 const EMPTY_ARRAY = [] as never[];
 const EMPTY_OBJECT = {} as Record<string, never>;
@@ -27,6 +28,7 @@ export default function FilmDetailScreen() {
   const validFilmId = !isNaN(filmId) && filmId > 0;
 
   const { data, isLoading: loading, isError } = useFilmDetail(filmId, validFilmId);
+  const readyMark = useScreenReady('film', !loading);
   const { user } = useAuthStore();
   const isAuthenticated = !!user;
   const isArchivist = isArchivistPlusTier(user);
@@ -202,6 +204,7 @@ export default function FilmDetailScreen() {
 
   return (
     <View style={StyleSheet.absoluteFill}>
+      {readyMark}
       <FilmDetailProvider value={providerValue}>
         <FilmDetailLayout />
       </FilmDetailProvider>

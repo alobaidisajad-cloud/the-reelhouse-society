@@ -47,6 +47,7 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatClockTime, formatDateMonthDay } from '@/src/utils/timeAgo';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -413,6 +414,8 @@ export default function LoungeRoomScreen() {
   }, [id, refreshMembership]);
 
   const activeLounge = localLounge || lounges.find(l => l.id === id);
+  const messagesLoading = useLoungeStore(s => s.loading);
+  const readyMark = useScreenReady('room', notFound || (!!activeLounge && (currentMessages.length > 0 || !messagesLoading)));
   const isCreator = activeLounge?.creator_id === user?.id;
   const isApproved = myStatus === 'approved' || isCreator;
   const isMuted = myStatus === 'muted';
@@ -516,6 +519,7 @@ export default function LoungeRoomScreen() {
     return (
       <View style={s.centered}>
         <RoomLight room="default" />
+        {readyMark}
         <View style={s.crestSmall}><X size={18} color={colors.sepia} strokeWidth={1.5} /></View>
         <Text style={s.edgeTitle}>Signal Lost</Text>
         <Text style={s.edgeDesc}>This screening room has been incinerated or never existed.</Text>
@@ -531,6 +535,7 @@ export default function LoungeRoomScreen() {
     return (
       <View style={s.centered}>
         <RoomLight room="default" />
+        {readyMark}
         <ActivityIndicator size="small" color={colors.sepia} />
         <Text style={s.edgeLoad}>ESTABLISHING CONNECTION</Text>
       </View>
@@ -540,6 +545,7 @@ export default function LoungeRoomScreen() {
   return (
     <Animated.View style={[s.container, animatedContainerStyle]}>
       <RoomLight room="default" />
+      {readyMark}
       {/* ── Marquee header ── */}
       <View style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
         <PressableScale style={s.headerBtn} onPress={() => router.back()} haptic="selection" accessibilityRole="button" accessibilityLabel="Back">

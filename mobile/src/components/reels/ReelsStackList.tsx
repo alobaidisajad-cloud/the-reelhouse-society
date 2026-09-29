@@ -6,7 +6,7 @@ import { StackData } from '@/src/components/reels/types';
 import { StackCard } from '@/src/components/reels/ReelsCards';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
-import Animated, { useAnimatedScrollHandler, runOnJS, type SharedValue, useSharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedScrollHandler, type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { colors } from '@/src/theme/theme';
 import { CinematicScrollbar } from '@/src/components/layout/CinematicScrollbar';
@@ -21,7 +21,6 @@ interface ReelsStackListProps {
   bottomInset?: number;
   stacksScrollY: SharedValue<number>;
   activeTabSV: SharedValue<import('@/src/components/reels/types').ReelSection>;
-  handleScroll?: (e: { nativeEvent: { contentOffset: { y: number }; velocity?: { y?: number } } }, isLogs: boolean) => void;
   ListHeaderComponent: React.ReactElement;
   ListEmptyComponent: React.ReactElement;
   contentContainerStyle: import('react-native').StyleProp<import('react-native').ViewStyle>;
@@ -39,7 +38,6 @@ export function ReelsStackList({
   bottomInset,
   stacksScrollY,
   activeTabSV,
-  handleScroll,
   ListHeaderComponent,
   ListEmptyComponent,
   contentContainerStyle,
@@ -70,14 +68,8 @@ export function ReelsStackList({
     },
     onBeginDrag: () => { isScrolling.value = true; },
     onMomentumBegin: () => { isScrolling.value = true; },
-    onMomentumEnd: (e) => {
-      isScrolling.value = false;
-      if (handleScroll) runOnJS(handleScroll)({ nativeEvent: { contentOffset: { y: e.contentOffset.y }, velocity: { y: 0 } } }, false);
-    },
-    onEndDrag: (e) => {
-      isScrolling.value = false;
-      if (handleScroll) runOnJS(handleScroll)({ nativeEvent: { contentOffset: { y: e.contentOffset.y }, velocity: { y: 0 } } }, false);
-    }
+    onMomentumEnd: () => { isScrolling.value = false; },
+    onEndDrag: () => { isScrolling.value = false; },
   });
 
   return (

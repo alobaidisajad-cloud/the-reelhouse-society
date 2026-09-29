@@ -1,14 +1,8 @@
 /**
- * Sentry — Crash Reporting & Performance Monitoring
- * 
- * Production-grade error tracking for ReelHouse Society.
- * Captures unhandled exceptions, JS errors, and navigation performance.
- * 
- * Setup instructions:
- * 1. Create a free account at https://sentry.io
- * 2. Create a React Native project
- * 3. Replace the DSN below with your project DSN
- * 4. Run: npx expo install @sentry/react-native
+ * Sentry: crash reports and performance, measured on members' phones.
+ *
+ * The DSN comes from EXPO_PUBLIC_SENTRY_DSN; without one, every function here
+ * does nothing. A member is sent only as a pseudonymous id (setSentryUser).
  */
 
 import * as Sentry from '@sentry/react-native';
@@ -19,8 +13,9 @@ const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
 const IS_DEV = __DEV__;
 
 /**
- * Initialize Sentry — call once in _layout.tsx before any rendering.
- * In dev mode, Sentry captures but does NOT send to server (saves quota).
+ * Called once, when the root layout's module loads: before the first render,
+ * so the app's start and any error in it are seen. Nothing is sent in
+ * development.
  */
 export function initSentry() {
   if (!SENTRY_DSN) {
@@ -32,9 +27,22 @@ export function initSentry() {
     dsn: SENTRY_DSN,
     // Performance monitoring — sample 20% of transactions in production
     tracesSampleRate: IS_DEV ? 1.0 : 0.2,
-    // Only send errors in production builds
+    // What a member waits for, measured on their phone: the app's start, cold
+    // and warm (ended by markAppLoaded, when the first screen shows); each
+    // screen until its first frame and until its content is in (ScreenReady);
+    // slow frames (over 16 ms), frozen frames (over 700 ms) and JS stalls.
+    integrations: [
+      Sentry.expoRouterIntegration({
+        enableTimeToInitialDisplay: true,
+        ignoreEmptyBackNavigationTransactions: true,
+      }),
+    ],
+    enableAppStartTracking: true,
+    enableNativeFramesTracking: true,
+    enableStallTracking: true,
+    // Nothing is sent from a development build.
     enabled: !IS_DEV,
-    // Attach user context automatically
+    // No IP address, cookies or request headers: a member is only their id.
     sendDefaultPii: false,
     // Drop known-benign breadcrumbs so crash trails stay signal-dense.
     beforeBreadcrumb(breadcrumb) {
@@ -60,6 +68,20 @@ export function initSentry() {
     // Environment tagging
     environment: IS_DEV ? 'development' : 'production',
   });
+}
+
+let appLoaded = false;
+
+/**
+ * Ends the app-start measurement: call when the splash has gone and the first
+ * screen is drawn. Only the first call counts.
+ */
+export function markAppLoaded() {
+  if (!SENTRY_DSN || appLoaded) return;
+  appLoaded = true;
+  try {
+    Sentry.appLoaded();
+  } catch { /* telemetry must never break the caller — see captureError */ }
 }
 
 /**
