@@ -81,12 +81,29 @@ interface ActionModalState {
  * draw five rows each. They are fetched once for the whole docket instead, ranked
  * per member so a single prolific offender cannot crowd the others out.
  */
-function EnforcementHistory({ history, isLoading }: { history: ModActionRecord[]; isLoading: boolean }) {
+export function EnforcementHistory({ history, isLoading, failed, onRetry }: {
+  history: ModActionRecord[]; isLoading: boolean; failed?: boolean; onRetry?: () => void;
+}) {
   if (isLoading) {
     return (
       <View style={s.historyContainer}>
         <Text style={s.historyLabel}>ENFORCEMENT RECORD</Text>
         <Text style={s.historyEmpty}>Retrieving the record…</Text>
+      </View>
+    );
+  }
+
+  // Unread is not clean: no strip would read as a first offence.
+  if (failed) {
+    return (
+      <View style={s.historyContainer}>
+        <Text style={s.historyLabel}>ENFORCEMENT RECORD</Text>
+        <Text style={s.historyEmpty}>The record could not be read.</Text>
+        {onRetry && (
+          <PressableScale onPress={onRetry} haptic="selection" accessibilityRole="button" accessibilityLabel="Read the enforcement record again">
+            <Text style={s.historyRetry}>TRY AGAIN</Text>
+          </PressableScale>
+        )}
       </View>
     );
   }
@@ -421,7 +438,7 @@ export default function TribunalScreen() {
     () => [...new Set(priorityItems.map(r => r.target_user_id).filter(Boolean))] as string[],
     [priorityItems],
   );
-  const { data: historyByUser = {}, isLoading: historyLoading } = useQuery({
+  const { data: historyByUser = {}, isLoading: historyLoading, isError: historyFailed, refetch: rereadHistory } = useQuery({
     queryKey: ['admin', 'moderation-history', docketUserIds],
     queryFn: () => ModerationService.getModerationHistoryForUsers(docketUserIds),
     enabled: user?.role === 'admin' && docketUserIds.length > 0,
@@ -950,7 +967,7 @@ export default function TribunalScreen() {
                     </View>
 
                     {/* Enforcement History — only a real member has a record */}
-                    {!!item.target_user_id && <EnforcementHistory history={historyByUser[item.target_user_id] ?? []} isLoading={historyLoading} />}
+                    {!!item.target_user_id && <EnforcementHistory history={historyByUser[item.target_user_id] ?? []} isLoading={historyLoading} failed={historyFailed} onRetry={() => { void rereadHistory(); }} />}
 
                     {/* Action Row — hidden in multi-select mode */}
                     {!multiSelectMode && (
@@ -1296,6 +1313,7 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   historyEmpty: { fontFamily: fonts.body, fontSize: 12, color: colors.fog },
+  historyRetry: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginTop: 6 },
   historyRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8, gap: 8 },
   historyDot: {
     width: 6,
@@ -1520,3 +1538,6 @@ const s = StyleSheet.create({
     color: colors.sepia,
   },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

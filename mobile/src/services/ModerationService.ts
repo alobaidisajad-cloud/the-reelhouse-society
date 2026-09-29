@@ -1,5 +1,4 @@
 import { supabase } from '@/src/lib/supabase';
-import { logger } from '@/src/utils/logger';
 import type { ModActionRecord } from '@/src/types/moderation';
 
 export const REPORTS_PAGE_SIZE = 30;
@@ -168,11 +167,9 @@ export const ModerationService = {
       p_user_ids: ids,
       p_per_user: perUser,
     });
-    if (error) {
-      // The docket still renders; only the record strip is missing. Never silent.
-      logger.warn('[ModerationService.getModerationHistoryForUsers] failed:', error.message);
-      return {};
-    }
+    // Thrown, not answered with {}: an empty record reads as a clean one, and a
+    // moderator must never judge a repeat offender by a read that failed.
+    if (error) throw error;
 
     const byUser: Record<string, ModActionRecord[]> = {};
     for (const row of (data ?? []) as ModActionRecord[]) {
