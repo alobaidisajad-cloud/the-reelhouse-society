@@ -18,7 +18,8 @@ import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { ErrorBoundaryProps } from 'expo-router';
+import { router, type ErrorBoundaryProps } from 'expo-router';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 import { colors, fonts, spacing } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -28,6 +29,11 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const insets = useSafeAreaInsets();
+  const canGoBack = router.canGoBack();
+  const leave = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
+  };
 
   // Report once when the fallback mounts. Expo Router already forwards render
   // errors to Sentry, but capturing here guarantees the event carries the
@@ -39,8 +45,8 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
     <View style={[s.container, { paddingTop: insets.top + spacing.xl }]}>
       <RoomLight room="default" />
-      <Text style={s.glyph}>✦</Text>
-      <Text style={s.title}>This reel jammed.</Text>
+      <Text style={s.glyph} {...UNSPOKEN}>✦</Text>
+      <Text style={s.title} accessibilityRole="header">This reel jammed.</Text>
       <Text style={s.body}>
         Something in this room failed to develop. The rest of the house is fine —
         try again, or step back and return.
@@ -56,10 +62,24 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         onPress={retry}
         style={s.retryBtn}
         haptic="medium"
+        // Half the 14pt gap to the way out below, each side of it.
+        hitSlop={{ bottom: 7 }}
         accessibilityRole="button"
         accessibilityLabel="Try loading this screen again"
       >
         <Text style={s.retryText}>TRY AGAIN</Text>
+      </PressableScale>
+
+      {/* The way out the words promise: back, or to the Lobby when there is no back. */}
+      <PressableScale
+        onPress={leave}
+        style={s.leaveBtn}
+        haptic="selection"
+        hitSlop={{ top: 7 }}
+        accessibilityRole="button"
+        accessibilityLabel={canGoBack ? 'Go back' : 'Return to the Lobby'}
+      >
+        <Text style={s.leaveText}>{canGoBack ? 'GO BACK' : 'RETURN TO THE LOBBY'}</Text>
       </PressableScale>
     </View>
   );
@@ -115,5 +135,16 @@ const s = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 3,
     color: colors.sepia,
+  },
+  // One weight down from TRY AGAIN: the quiet way out beside the act.
+  leaveBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  leaveText: {
+    fontFamily: fonts.sub,
+    fontSize: 10,
+    letterSpacing: 3,
+    color: colors.fogQuiet,
   },
 });

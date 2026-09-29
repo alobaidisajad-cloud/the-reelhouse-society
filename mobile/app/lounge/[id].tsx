@@ -200,6 +200,9 @@ const ReactionChips = React.memo(({ reactions, onToggle }: {
             style={[s.reactionChip, r.mine && s.reactionChipMine]}
             onPress={() => onToggle(r.reaction)}
             haptic="selection"
+            // Half of the 8pt above and the 6pt between: the default reached 15
+            // up into the message, so a long press on its last line took a reaction.
+            hitSlop={{ top: 4, bottom: 8, left: 3, right: 3 }}
             accessibilityRole="button"
             accessibilityLabel={`${meta?.label ?? r.reaction}, ${r.count}`}
           >
@@ -1031,3 +1034,6 @@ const s = StyleSheet.create({
   gatePending: { alignItems: 'center', gap: 8, marginTop: 14 },
   gatePendingText: { fontFamily: fonts.sub, fontSize: 15, color: colors.parchment, letterSpacing: 0.3 },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

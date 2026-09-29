@@ -15,6 +15,7 @@ import { DarkroomAtmo, DarkroomSuggestionRow } from './DarkroomCards';
 import type { DiscoverFilm } from '@/src/stores/discover';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { e2eTrace } from '@/src/utils/e2eTrace';
+import { arrive, MS } from '@/src/theme/motion';
 
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
@@ -50,7 +51,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
         locations={[0, 0.6, 1]}
         style={[StyleSheet.absoluteFillObject, WASH]}
       />
-      <Animated.View entering={FadeInDown.springify().mass(0.8).damping(18)} style={s.heroContent}>
+      <Animated.View entering={FadeInDown.duration(MS.considered).easing(arrive())} style={s.heroContent}>
         {(() => {
           const h = new Date().getHours();
           const isLateNight = h >= 2 && h < 6;

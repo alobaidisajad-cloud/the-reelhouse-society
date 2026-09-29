@@ -326,3 +326,6 @@ const s = StyleSheet.create({
   retryBtn: { marginTop: 12, backgroundColor: colors.sepia, borderRadius: 3, paddingVertical: 13, paddingHorizontal: 28 },
   retryText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.ink },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

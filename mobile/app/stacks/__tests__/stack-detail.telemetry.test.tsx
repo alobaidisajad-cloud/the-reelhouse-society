@@ -39,6 +39,8 @@ jest.mock('@tanstack/react-query', () => ({
     // offline queue (#82's post-flush feed refresh). Without this the whole suite
     // fails to LOAD rather than failing an assertion, which is far harder to read.
     QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); },
+    // queryClient.ts hands it the phone's connection at module scope, too.
+    onlineManager: { setEventListener: () => {} },
     useQueryClient: () => ({
         setQueryData: jest.fn(), getQueryData: jest.fn(), removeQueries: jest.fn(),
         invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),

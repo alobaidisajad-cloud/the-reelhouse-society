@@ -475,9 +475,9 @@ export default function ReelScreen() {
   return (
     <SectionErrorBoundary section="The Reel">
       <FrozenTab>
-      {readyMark}
       <View style={st.container}>
       <RoomLight room="reel" />
+      {readyMark}
       {/* The page's own fade, thinned so the projector's light shows through. */}
       <LinearGradient
         colors={[colors.ink, 'rgba(13,11,9,1)', colors.soot]}

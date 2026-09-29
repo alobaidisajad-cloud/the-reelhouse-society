@@ -1172,3 +1172,5 @@ const styles = StyleSheet.create({
     slotValueSet: { color: colors.parchment },
 });
 
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

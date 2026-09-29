@@ -25,7 +25,12 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}), useFocusEffect: () => {},
 }));
 jest.mock('@react-navigation/native', () => ({ useScrollToTop: jest.fn(), useIsFocused: () => true }));
-jest.mock('@react-native-community/netinfo', () => ({ useNetInfo: () => ({ isConnected: true }) }));
+// queryClient.ts listens for the connection when it loads.
+jest.mock('@react-native-community/netinfo', () => ({
+  __esModule: true,
+  useNetInfo: () => ({ isConnected: true }),
+  default: { addEventListener: () => () => {} },
+}));
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
 jest.mock('react-native-safe-area-context', () => {
   const mockReact = require('react');

@@ -428,3 +428,6 @@ const s = StyleSheet.create({
   footerLoadingWrap: { alignItems: 'center', paddingVertical: 16 },
 
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

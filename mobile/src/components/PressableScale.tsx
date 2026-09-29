@@ -11,9 +11,10 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import TactileEngine from '../utils/TactileEngine';
+import { arrive, MS } from '../theme/motion';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -113,8 +114,8 @@ function PressableScale({
       onPressIn={() => {
         // Feel on every touch, even inside the debounce: only onPress is debounced.
 
-        // High stiffness, heavy mass = Celluloid Tension (Mechanical snap)
-        scale.value = withSpring(pressedScale, { damping: 18, stiffness: 400, mass: 0.6 });
+        // Down at once, and stopped: the house's press has no spring in it.
+        scale.value = withTiming(pressedScale, { duration: MS.strike, easing: arrive() });
         
         // Haptics triggered on finger-down (mechanical click emulation)
         if (haptic === 'selection') TactileEngine.selection();
@@ -125,8 +126,7 @@ function PressableScale({
         onPressIn?.();
       }}
       onPressOut={() => {
-        // Returns to identity with a solid, dampened thud
-        scale.value = withSpring(1, { damping: 16, stiffness: 350, mass: 0.7 });
+        scale.value = withTiming(1, { duration: MS.quick, easing: arrive() });
       }}
       onPress={() => {
         if (debounceMs > 0) {

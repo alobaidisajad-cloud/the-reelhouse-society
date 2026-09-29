@@ -27,6 +27,7 @@ import { SocietySeal } from '@/src/components/auth/SocietySeal';
 import { PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
 import { EmailConfirmationScreen } from '@/src/components/auth/EmailConfirmationScreen';
 import { PasswordRecoveryModal } from '@/src/components/auth/PasswordRecoveryModal';
+import { arrive, MS } from '@/src/theme/motion';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
@@ -252,7 +253,7 @@ export default function LoginScreen() {
         </AnimatedView>
 
         {/* ── Form ── */}
-        <AnimatedView layout={LinearTransition.springify().mass(0.5).damping(14)} entering={FadeInDown.duration(700).delay(250).reduceMotion(ReduceMotion.Never)} style={s.formCard}>
+        <AnimatedView layout={LinearTransition.duration(MS.base).easing(arrive())} entering={FadeInDown.duration(700).delay(250).reduceMotion(ReduceMotion.Never)} style={s.formCard}>
           {/* Subtle top border glow */}
           <View style={s.formCardGlow} />
           {/* Archival registration marks in the card corners */}
@@ -477,3 +478,6 @@ export default function LoginScreen() {
 
 // ── Styles imported from extracted module ──
 // See src/theme/authStyles.ts for the full style definitions
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

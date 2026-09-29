@@ -26,7 +26,11 @@ export const Chip = React.memo(function Chip({ active, onPress, children, color 
     <PressableScale
       onPress={onPress}
       haptic="light"
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      // Half the rows' 8pt gap: at 10 each chip reached into its neighbour, and
+      // the edge of Action chose Comedy.
+      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
       style={[
         s.chip,
         {

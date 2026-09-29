@@ -9,3 +9,6 @@ import { Redirect } from 'expo-router';
 export default function LoungeRedirectAlias() {
   return <Redirect href="/(tabs)/lounge" />;
 }
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

@@ -489,3 +489,6 @@ const styles = StyleSheet.create({
         fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia,
     },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

@@ -4,8 +4,9 @@ import { View, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import Animated, {
-  useAnimatedStyle, withSpring, useSharedValue, withTiming,
+  useAnimatedStyle, useSharedValue, withTiming,
 } from 'react-native-reanimated';
+import { arrive, MS } from '@/src/theme/motion';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Newspaper, Film, Clapperboard, User,
@@ -20,13 +21,33 @@ import { nav } from '@/src/utils/typedRouter';
 import { EDGE_LIT } from '@/src/theme/light';
 
 // ════════════════════════════════════════════════════════════════
-//  TAB ICON — Icons only. No labels. Pure cinema.
-//
-//  - Clean Lucide icons sized for clarity
-//  - Spring-animated scale + opacity
-//  - Gradient dot indicator below active icon
-//  - Center tab (Lobby) elevated with warm flicker glow
+//  TAB ICON: icons only, no labels. The chosen one grows a little, lights, and
+//  wears a dot beneath it; the Lobby's is the flicker-lit reel eye.
 // ════════════════════════════════════════════════════════════════
+
+/** The choosing, on the house's curve (src/theme/motion.ts): no bounce. */
+function useTabIconMotion(focused: boolean) {
+  const scale = useSharedValue(focused ? 1.15 : 1);
+  const iconOpacity = useSharedValue(focused ? 1 : 0.35);
+  const dotScale = useSharedValue(focused ? 1 : 0);
+
+  React.useEffect(() => {
+    const curve = { duration: MS.quick, easing: arrive() };
+    scale.value = withTiming(focused ? 1.15 : 1, curve);
+    iconOpacity.value = withTiming(focused ? 1 : 0.35, { duration: MS.base });
+    dotScale.value = withTiming(focused ? 1 : 0, curve);
+  }, [focused, scale, iconOpacity, dotScale]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: iconOpacity.value,
+  }));
+  const dotStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: dotScale.value }],
+    opacity: dotScale.value,
+  }));
+  return { iconStyle, dotStyle };
+}
 
 function TabIcon({
   IconComponent,
@@ -35,95 +56,29 @@ function TabIcon({
   IconComponent: typeof Newspaper;
   focused: boolean;
 }) {
-  const scale = useSharedValue(focused ? 1.15 : 1);
-  const iconOpacity = useSharedValue(focused ? 1 : 0.35);
-  const dotScale = useSharedValue(focused ? 1 : 0);
-
-  React.useEffect(() => {
-    scale.value = withSpring(focused ? 1.15 : 1, {
-      damping: 15,
-      stiffness: 220,
-      mass: 0.5,
-    });
-    iconOpacity.value = withTiming(focused ? 1 : 0.35, { duration: 200 });
-    dotScale.value = withSpring(focused ? 1 : 0, {
-      damping: 15,
-      stiffness: 220,
-      mass: 0.5,
-    });
-  }, [focused, scale, iconOpacity, dotScale]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: iconOpacity.value,
-  }));
-
-  const dotStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: dotScale.value }],
-    opacity: dotScale.value,
-  }));
-
-  const iconColor = focused
-    ? colors.sepia
-    : colors.bone;
-  const iconSize = 22;
-  const strokeW = focused ? 2 : 1.5;
-
+  const { iconStyle, dotStyle } = useTabIconMotion(focused);
   return (
     <View style={s.tabIconRoot}>
-      <Animated.View style={[s.tabIconInner, animatedStyle]}>
+      <Animated.View style={[s.tabIconInner, iconStyle]}>
         <IconComponent
-          size={iconSize}
-          color={iconColor}
-          strokeWidth={strokeW}
+          size={22}
+          color={focused ? colors.sepia : colors.bone}
+          strokeWidth={focused ? 2 : 1.5}
         />
       </Animated.View>
-
-      {/* Active indicator — tiny gradient dot */}
       <View style={s.indicatorSlot}>
-        <Animated.View style={[
-          s.indicatorDot,
-          { backgroundColor: colors.sepia },
-          dotStyle
-        ]} />
+        <Animated.View style={[s.indicatorDot, { backgroundColor: colors.sepia }, dotStyle]} />
       </View>
     </View>
   );
 }
 
 function LobbyTabIcon({ focused }: { focused: boolean }) {
-  const scale = useSharedValue(focused ? 1.15 : 1);
-  const iconOpacity = useSharedValue(focused ? 1 : 0.35);
-  const dotScale = useSharedValue(focused ? 1 : 0);
-
-  React.useEffect(() => {
-    scale.value = withSpring(focused ? 1.15 : 1, {
-      damping: 15,
-      stiffness: 220,
-      mass: 0.5,
-    });
-    iconOpacity.value = withTiming(focused ? 1 : 0.35, { duration: 200 });
-    dotScale.value = withSpring(focused ? 1 : 0, {
-      damping: 15,
-      stiffness: 220,
-      mass: 0.5,
-    });
-  }, [focused, scale, iconOpacity, dotScale]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: iconOpacity.value,
-  }));
-
-  const dotStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: dotScale.value }],
-    opacity: dotScale.value,
-  }));
-
+  const { iconStyle, dotStyle } = useTabIconMotion(focused);
   const iconColor = focused ? colors.flicker : colors.bone;
   return (
     <View style={s.tabIconRoot}>
-      <Animated.View style={[s.tabIconInner, animatedStyle]}>
+      <Animated.View style={[s.tabIconInner, iconStyle]}>
         <ReelEyeIcon
           size={26}
           color={iconColor}
@@ -348,3 +303,6 @@ const s = StyleSheet.create({
     elevation: 4,
   },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

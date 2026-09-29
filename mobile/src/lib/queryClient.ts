@@ -1,25 +1,14 @@
 /**
- * queryClient.ts — MMKV-Backed React Query Persistence Engine
- * ─────────────────────────────────────────────────────────────
- * Wires @tanstack/react-query v5 into the existing MMKV C++ storage
- * instance from auth.ts. Every successful query result is automatically
- * persisted to MMKV and restored on cold start, making the app feel
- * instant — zero network wait on launch.
+ * queryClient.ts — React Query, with its cache kept on the phone (MMKV).
  *
- * Architecture: Twitter/X + Instagram pattern
- *   1. App launches → MMKV restores cached query data (~1ms, C++ mmap)
- *   2. UI renders immediately from cache
- *   3. Background refetch silently replaces stale data
- *   4. User never sees a loading spinner on warm start
- *
- * This replaces the scattered ad-hoc AsyncStorage caches
- * (lobby_cache, nitrate_memory_feed) with a unified, TTL-managed,
- * stale-while-revalidate system backed by MMKV instead of SQLite.
+ * The cache is written to disk (only when storage is encrypted: it holds
+ * member data) and read back at launch, so a screen draws what it last showed
+ * at once and refreshes behind it. Kept 24 hours at most, 2 MB at most.
  */
 
-import { QueryClient } from '@tanstack/react-query';
-// Import from lightweight mmkv-storage instead of heavyweight auth.ts
-// to avoid circular dependency risk (auth -> queryClient -> auth)
+import NetInfo from '@react-native-community/netinfo';
+import { onlineManager, QueryClient } from '@tanstack/react-query';
+// Not from auth.ts, which imports this file: that would be a cycle.
 import { storage, setSensitive } from '../stores/mmkv-storage';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 
@@ -31,15 +20,22 @@ export const queryClient = new QueryClient({
       gcTime: 30 * 60 * 1000,           // 30 min — garbage collect unused queries
       retry: 1,                          // Single retry (withRetry handles critical ops)
       retryDelay: (attempt: number) => Math.min(1000 * 2 ** attempt, 8000),
-      refetchOnWindowFocus: false,       // Not applicable on mobile
-      refetchOnReconnect: 'always',      // Always refetch when network returns
+      // Coming back to the app never reorders a feed under the member's thumb;
+      // a screen that wants word of what is new asks for it (the Dispatch's pill).
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: 'always',
     },
   },
 });
 
+// React Query hears of the connection from a browser's online/offline events,
+// which a phone never fires: without this it thinks it is always online, so a
+// query neither waits out a lost connection nor refetches when it returns.
+onlineManager.setEventListener((setOnline) =>
+  NetInfo.addEventListener((state) => setOnline(state.isConnected !== false)),
+);
+
 // ── MMKV Persister ──────────────────────────────────────────
-// Direct integration with the C++ MMKV instance — no middleware,
-// no AsyncStorage SQLite bridge. ~100x faster than the old approach.
 const CACHE_KEY = 'REELHOUSE_QUERY_CACHE';
 // Cap persisted cache to prevent cold-start lag for power users
 const MAX_CACHE_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours — stale cache is worse than no cache

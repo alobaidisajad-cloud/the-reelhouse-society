@@ -192,6 +192,8 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/theSocietyOpensOverYou.test.ts` | Every rope opens the Society over the room. |
 | `src/utils/__tests__/lucideIconsAreBundled.guard.test.ts` | The phone bundle lists every icon the source imports (Metro, not jest, reads the list). |
 | `src/lib/__tests__/sentryMeasures.test.ts` | No file mounts Sentry's touch recorder, which reads accessibility labels. |
+| `src/theme/__tests__/nothingOvershoots.guard.test.ts` | Nothing in the app springs or bounces (the law of motion is a property of all source). |
+| `src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts` | Every route file exports the house crash net (Expo Router reads the export, not a render). |
 
 ## Fixtures
 

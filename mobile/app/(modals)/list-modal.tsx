@@ -699,3 +699,6 @@ const s = StyleSheet.create({
 DropdownResultRow.displayName = 'DropdownResultRow';
 
 ListFilmItem.displayName = 'ListFilmItem';
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

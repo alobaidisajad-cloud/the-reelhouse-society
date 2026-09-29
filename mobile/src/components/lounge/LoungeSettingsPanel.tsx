@@ -16,6 +16,7 @@ import { Text } from '@/src/components/text';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastHost } from '@/src/components/ToastHost';
+import { arrive, leave, MS } from '@/src/theme/motion';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const BLOOD = colors.crimson;
@@ -162,7 +163,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no"><View /></PressableScale>
       </BlurView>
-      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 28) }]}
+      <AnimatedView entering={SlideInDown.duration(MS.considered).easing(arrive())} exiting={SlideOutDown.duration(MS.quick).easing(leave())} style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 28) }]}
         onAccessibilityEscape={onClose}>
         <View style={s.handle} />
         <View style={s.headerRow}>

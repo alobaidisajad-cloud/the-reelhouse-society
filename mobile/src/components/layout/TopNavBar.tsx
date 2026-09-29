@@ -2,7 +2,8 @@ import React, { useCallback, memo } from 'react';
 import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Search, Bell, MessageSquareText } from 'lucide-react-native';
-import Animated, { useAnimatedStyle, withSpring, useSharedValue, useAnimatedProps } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, withTiming, useSharedValue, useAnimatedProps } from 'react-native-reanimated';
+import { arrive, MS } from '@/src/theme/motion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Href } from 'expo-router';
 import { MasterLogo } from '@/src/components/MasterLogo';
@@ -23,8 +24,7 @@ import {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
-// ── Premium Nav Icon Button ──────────────────────────────────────
-// Micro-interaction: press-in scale-down + release bounce-back
+// The press as PressableScale presses: down at once, back without a bounce.
 const NavIconButton = memo(function NavIconButton({
   icon: Icon,
   onPress,
@@ -51,10 +51,10 @@ const NavIconButton = memo(function NavIconButton({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPressIn={() => {
-        scale.value = withSpring(0.82, { damping: 15, stiffness: 300 });
+        scale.value = withTiming(0.82, { duration: MS.strike, easing: arrive() });
       }}
       onPressOut={() => {
-        scale.value = withSpring(1, { damping: 12, stiffness: 200 });
+        scale.value = withTiming(1, { duration: MS.quick, easing: arrive() });
       }}
       onPress={() => {
         TactileEngine.navigate();

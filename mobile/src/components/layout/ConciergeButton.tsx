@@ -38,7 +38,6 @@ import { Text } from '@/src/components/text';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   Easing,
   runOnJS,
@@ -59,6 +58,7 @@ import { NAV_BTN_SIZE, NAV_H_PADDING, navButtonTop, navButtonBottom } from './na
 import { BRASS, BRASS_STOPS, BRASS_START, BRASS_END, CROWN, RIM } from '@/src/theme/brass';
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT } from '@/src/theme/light';
+import { arrive, MS } from '@/src/theme/motion';
 
 const OPEN_MS = 200;
 const CLOSE_MS = 160;
@@ -266,7 +266,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
     // The haptic is NOT fired here. PressableScale fires it on finger-down,
     // which is what every other button in this bar does; firing it on release
     // made the one brass button feel a beat slower than its neighbours.
-    rotation.value = reducedMotion ? 45 : withSpring(45, { damping: 14, stiffness: 200 });
+    rotation.value = reducedMotion ? 45 : withTiming(45, { duration: MS.quick, easing: arrive() });
     setOpen(true);
     setVisible(true);
     // progress animates in onShow so frame 1 is animation frame 1
@@ -274,7 +274,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
 
   const closeSheet = useCallback(() => {
     setOpen(false);
-    rotation.value = reducedMotion ? 0 : withSpring(0, { damping: 14, stiffness: 200 });
+    rotation.value = reducedMotion ? 0 : withTiming(0, { duration: MS.quick, easing: arrive() });
     progress.value = withTiming(0, { duration: CLOSE_MS, easing: Easing.in(Easing.quad) }, (finished) => {
       if (finished) runOnJS(finishClose)();
     });

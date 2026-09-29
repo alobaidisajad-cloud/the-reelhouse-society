@@ -1,7 +1,8 @@
 import React, { memo, useEffect } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, withSpring, interpolate, cancelAnimation } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, interpolate, cancelAnimation } from 'react-native-reanimated';
+import { arrive, MS } from '@/src/theme/motion';
 import { useIsFocused } from '@react-navigation/native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -29,7 +30,7 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteu
   const position = useSharedValue(activeTab === 'logs' ? 0 : 1);
 
   useEffect(() => {
-    position.value = withSpring(activeTab === 'logs' ? 0 : 1, { mass: 1, damping: 14, stiffness: 120 });
+    position.value = withTiming(activeTab === 'logs' ? 0 : 1, { duration: MS.base, easing: arrive() });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 

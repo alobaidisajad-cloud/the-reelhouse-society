@@ -22,6 +22,7 @@ import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { EDGE_LIT } from '@/src/theme/light';
+import { arrive, leave, MS } from '@/src/theme/motion';
 
 interface Props {
   onClose: () => void;
@@ -84,7 +85,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   return (
     <View style={StyleSheet.absoluteFill}>
       <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-      <Animated.View entering={FadeInUp.springify().damping(15)} exiting={FadeOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
+      <Animated.View entering={FadeInUp.duration(MS.considered).easing(arrive())} exiting={FadeOutDown.duration(MS.quick).easing(leave())} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
         <View style={s.header}>
           <Text {...scaledTextProps} style={s.title}>UPDATE IDENTITY</Text>
           <PressableScale onPress={() => { onClose(); }} style={s.closeBtn} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic="selection" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Close">

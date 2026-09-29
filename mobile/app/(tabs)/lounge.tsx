@@ -240,14 +240,14 @@ export default function LoungeScreen() {
    * Signing in is still required, because a salon roster is not for the street.
    */
   if (!isAuthenticated) {
-    return <>{readyMark}<LoungeGate /></>;
+    return <LoungeGate mark={readyMark} />;
   }
 
   return (
     <FrozenTab>
-    {readyMark}
     <View style={s.container}>
       <RoomLight room="default" />
+      {readyMark}
       {/* ── Compact ceremonial header ── */}
       <Animated.View entering={FadeIn.duration(700)} style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
         <View style={s.headerCrestRow}>

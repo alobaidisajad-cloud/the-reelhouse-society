@@ -361,9 +361,9 @@ export default function DarkRoomScreen() {
 
   return (
     <FrozenTab>
-      {readyMark}
       <View style={s.container}>
         <RoomLight room="default" />
+        {readyMark}
         <CinematicFlashList
           ref={listRef}
           data={displayData}

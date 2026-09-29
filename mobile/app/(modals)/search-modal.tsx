@@ -357,3 +357,6 @@ const st = StyleSheet.create({
     textAlign: 'center', lineHeight: 18, maxWidth: 280,
   },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

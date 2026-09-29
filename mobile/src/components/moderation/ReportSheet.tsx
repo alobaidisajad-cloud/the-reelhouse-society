@@ -21,7 +21,7 @@ import Animated, {
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
-    withSpring,
+    withSequence,
     withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -39,6 +39,7 @@ import {
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
+import { arrive, MS } from '@/src/theme/motion';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -110,10 +111,10 @@ function ReasonChip({ reason, selected, onSelect }: ReasonChipProps) {
   }));
 
   const handlePress = useCallback(() => {
-    scale.value = withSpring(1.02, { damping: 18, stiffness: 400, mass: 0.6 });
-    setTimeout(() => {
-      scale.value = withSpring(1, { damping: 18, stiffness: 400, mass: 0.6 });
-    }, 150);
+    scale.value = withSequence(
+      withTiming(1.02, { duration: MS.strike, easing: arrive() }),
+      withTiming(1, { duration: MS.quick, easing: arrive() }),
+    );
     TactileEngine.selection();
     onSelect(reason);
   }, [reason, onSelect, scale]);

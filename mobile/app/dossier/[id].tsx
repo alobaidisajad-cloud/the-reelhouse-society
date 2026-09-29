@@ -40,3 +40,6 @@ export default function DossierRedirect() {
   // flash here would be the only white frame anywhere in the app.
   return <View style={p.screen}><RoomLight room="dispatch" /></View>;
 }
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

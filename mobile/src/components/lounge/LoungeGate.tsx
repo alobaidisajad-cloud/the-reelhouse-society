@@ -11,12 +11,14 @@ import { OrnamentalRule } from '@/src/components/theme/OrnamentalRule';
 import { CrestGlow } from '@/src/components/theme/CrestGlow';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
-export function LoungeGate() {
+/** `mark`: the screen's ready mark (useScreenReady), drawn inside the gate's own root. */
+export function LoungeGate({ mark }: { mark?: React.ReactNode } = {}) {
 
   return (
     <>
       <View style={s.gateContainer}>
         <RoomLight room="default" />
+        {mark}
         <Animated.View entering={FadeInDown.duration(900).delay(200)} style={s.gateCard}>
           <View style={s.gateCrestWrap}>
             <CrestGlow />

@@ -25,6 +25,7 @@ import { useFollowRequests } from '@/src/hooks/useFollowRequests';
 import type { FollowRequest } from '@/src/services/FollowRequestService';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { ToastHost } from '@/src/components/ToastHost';
+import { arrive, leave, MS } from '@/src/theme/motion';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const HITSLOP = { top: 10, bottom: 10, left: 10, right: 10 } as const;
@@ -88,7 +89,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
       <View style={s.host} onAccessibilityEscape={onClose}>
         <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
         <Pressable style={s.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
-        <AnimatedView entering={SlideInDown.springify().damping(18)} exiting={SlideOutDown} style={[s.sheet, kbPad]}>
+        <AnimatedView entering={SlideInDown.duration(MS.considered).easing(arrive())} exiting={SlideOutDown.duration(MS.quick).easing(leave())} style={[s.sheet, kbPad]}>
           <View style={s.handle} />
 
           <View style={s.headerRow}>

@@ -6,8 +6,25 @@
  * cold start stalling on a huge or stale cache, so they need to bind to the
  * code that actually runs at launch.
  */
+import { onlineManager, QueryObserver } from '@tanstack/react-query';
 import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
 import { storage, setSensitive } from '@/src/stores/mmkv-storage';
+
+type Connection = (state: { isConnected: boolean | null }) => void;
+/** Kept on the mock itself: the import that registers it runs before this file's own lines. */
+jest.mock('@react-native-community/netinfo', () => {
+  const heard: { listener: Connection | null } = { listener: null };
+  return {
+    __esModule: true,
+    default: {
+      heard,
+      addEventListener: (listener: Connection) => { heard.listener = listener; return () => {}; },
+    },
+  };
+});
+/** What queryClient.ts hands NetInfo: the phone's own word on the connection. */
+const mockNetInfoListener: Connection = (state) =>
+  jest.requireMock('@react-native-community/netinfo').default.heard.listener?.(state);
 
 jest.mock('@/src/stores/mmkv-storage', () => {
   const store = new Map<string, string>();
@@ -87,10 +104,45 @@ describe('mmkvPersister — restore', () => {
   });
 });
 
+describe('the connection, as React Query hears it', () => {
+  // The listener queryClient.ts gave NetInfo, taken before any mock is cleared.
+  const connection = mockNetInfoListener;
+  const settle = () => new Promise((res) => setTimeout(res, 0));
+
+  it('hears the phone go offline and come back (a browser event never comes)', () => {
+    expect(typeof jest.requireMock('@react-native-community/netinfo').default.heard.listener).toBe('function');
+    connection({ isConnected: false });
+    expect(onlineManager.isOnline()).toBe(false);
+    connection({ isConnected: true });
+    expect(onlineManager.isOnline()).toBe(true);
+  });
+
+  it('takes an unknown connection (the first reading) as online', () => {
+    connection({ isConnected: false });
+    connection({ isConnected: null });
+    expect(onlineManager.isOnline()).toBe(true);
+  });
+
+  it('refetches what a screen shows when the connection returns', async () => {
+    // As the app's PersistQueryClientProvider does: a mounted client listens.
+    queryClient.mount();
+    const read = jest.fn().mockResolvedValue('the page');
+    const observer = new QueryObserver(queryClient, { queryKey: ['reconnect-test'], queryFn: read });
+    const stop = observer.subscribe(() => {});
+    await settle();
+    expect(read).toHaveBeenCalledTimes(1);
+
+    connection({ isConnected: false });
+    connection({ isConnected: true });
+    await settle();
+    expect(read).toHaveBeenCalledTimes(2);
+    stop();
+    queryClient.unmount();
+  });
+});
+
 describe('queryClient — launch defaults', () => {
-  it('refetches when the network returns', () => {
-    // Mobile has no window focus, so reconnect is the only automatic refresh
-    // a member gets after a tunnel or a flight.
+  it('refetches on reconnect, and never reorders a feed on return to the app', () => {
     const d = queryClient.getDefaultOptions().queries;
     expect(d?.refetchOnReconnect).toBe('always');
     expect(d?.refetchOnWindowFocus).toBe(false);

@@ -556,3 +556,6 @@ const st = StyleSheet.create({
   restore: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.bone, includeFontPadding: false },
   tickets: { gap: 20, marginTop: 16 },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

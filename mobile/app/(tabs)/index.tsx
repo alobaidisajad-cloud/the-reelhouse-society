@@ -222,9 +222,9 @@ export default function LobbyScreen() {
   if (!isAuthenticated) {
     return (
       <FrozenTab>
-      {readyMark}
       <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <RoomLight room="lobby" />
+        {readyMark}
         <LinearGradient
           colors={[colors.ink, 'rgba(13,11,9,0.98)', colors.soot]}
           locations={[0, 0.4, 1]}
@@ -349,9 +349,9 @@ export default function LobbyScreen() {
 
   return (
     <FrozenTab>
-    {readyMark}
     <View style={s.container}>
       <RoomLight room="lobby" hem={heroUri ? heroH : undefined} art={heroUri} />
+      {readyMark}
       {/* The page's own fade, house to card. At full strength it covered the
           room's light entirely; as a wash with no artwork behind it, it is
           thinned so the lamp shows through — the same rule every such wash in

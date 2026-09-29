@@ -129,7 +129,7 @@ describe('the reel is the advertisement', () => {
       // lounges and zero messages at the database. The fiction and the schema
       // agree, and opening this door would show a stranger an empty room.
       // The gate is what a visitor gets (beside the screen's timing mark, which draws nothing).
-      expect(corridor).toMatch(/if\s*\(\s*!isAuthenticated\s*\)\s*\{\s*return [^;]*<LoungeGate \/>[^;]*;/);
+      expect(corridor).toMatch(/if\s*\(\s*!isAuthenticated\s*\)\s*\{\s*return [^;]*<LoungeGate[^>]*\/>[^;]*;/);
     });
 
     it('and says why, where the next reader will look', () => {

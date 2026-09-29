@@ -2,7 +2,8 @@ import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, useWindowDimensions, InteractionManager } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withSpring } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withTiming } from 'react-native-reanimated';
+import { arrive, MARK_PULSE, MS } from '@/src/theme/motion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 // ArrowUpRight went with the director card's chevron — a credit does not
@@ -122,9 +123,10 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   });
 
   const handleWatchlistToggled = useCallback(() => {
+    // The house's mark taking, as a certify takes in the Dispatch.
     bookmarkScale.value = withSequence(
-      withSpring(1.3, { damping: 8, stiffness: 300 }),
-      withSpring(1, { damping: 12, stiffness: 200 })
+      withTiming(MARK_PULSE, { duration: MS.strike / 2, easing: arrive() }),
+      withTiming(1, { duration: MS.strike / 2, easing: arrive() }),
     );
   }, [bookmarkScale]);
 

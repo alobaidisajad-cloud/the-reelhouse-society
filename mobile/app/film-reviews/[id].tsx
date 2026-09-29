@@ -184,3 +184,6 @@ const s = StyleSheet.create({
   emptyBox: { padding: 40, alignItems: 'center' },
   emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.sepia },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

@@ -72,3 +72,6 @@ const s = StyleSheet.create({
   hint: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, marginBottom: 16, lineHeight: 18 },
   searchWrap: { flex: 1 },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

@@ -6,10 +6,8 @@
  * navigator and the platform do, and an app assembled that way feels assembled.
  *
  * ── THE ONE LAW ──────────────────────────────────────────────────────────────
- * NOTHING OVERSHOOTS. This app has no springs, no bounce, no rubber. A printed
- * page does not wobble, and a members' club does not bounce; every easing here
- * is a decelerating cubic that arrives and stops. That is already this app's
- * law elsewhere and it is not relaxed for this page.
+ * NOTHING OVERSHOOTS: the house's law (src/theme/motion.ts, whose durations and
+ * curves these are), and not relaxed for this page.
  *
  * ── THE SECOND LAW ───────────────────────────────────────────────────────────
  * MOTION IS INFORMATION OR IT IS ABSENT. Every entry below exists because
@@ -42,38 +40,10 @@
  * changes, it simply arrives.
  */
 
-/**
- * Five durations, and nothing between them. A palette of five is a house style;
- * fourteen ad-hoc numbers is a codebase where each screen was tuned alone.
- */
-export const MS = {
-  /** A mark taking under the thumb. Below ~100ms a change reads as instant, and
-   *  instant is exactly right for something you did yourself. */
-  strike: 90,
-  /** A control changing state — an index label lighting, a sort flipping. */
-  quick: 140,
-  /** The default. An entry arriving, a notice replacing another. */
-  base: 200,
-  /** Something with weight: the picker rising, the composer taking the screen. */
-  considered: 280,
-  /** A whole page changing. Matches the navigator so a push does not read as
-   *  two animations of different lengths fighting. */
-  page: 320,
-} as const;
+import { EASE, MARK_PULSE, MS } from '@/src/theme/motion';
 
-/**
- * Two curves. Entrances decelerate into place; exits accelerate away. Anything
- * that must read as mechanical rather than organic — a rule filling, a counter
- * — runs linear, because a tally that eases is a tally that looks estimated.
- */
-export const EASE = {
-  /** `Easing.out(Easing.cubic)` — arrives and stops. The default. */
-  in: [0.22, 1, 0.36, 1] as const,
-  /** `Easing.in(Easing.cubic)` — leaves without lingering. */
-  out: [0.64, 0, 0.78, 0] as const,
-  /** `Easing.linear` — progress, tallies, fills. */
-  flat: [0, 0, 1, 1] as const,
-};
+/** The house's five durations and two curves (src/theme/motion.ts). */
+export { MS, EASE };
 
 /**
  * ── WHAT MOVES, AND WHY ──────────────────────────────────────────────────────
@@ -154,9 +124,8 @@ export const EASE = {
  */
 export const STAGGER_MS = 40;
 
-/** The mark's scale, and the only overshoot-shaped number in the file — it is a
- *  scale pulse, not a spring, and it returns to exactly 1. */
-export const STRIKE_SCALE = 1.18;
+/** The mark's scale: the house's pulse, which returns to exactly 1. */
+export const STRIKE_SCALE = MARK_PULSE;
 
 /**
  * How far the pill travels. Points, not a fraction of the screen.
