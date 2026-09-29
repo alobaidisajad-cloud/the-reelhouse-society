@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
+import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { StackData } from '@/src/components/reels/types';
 import { StackCard } from '@/src/components/reels/ReelsCards';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -85,6 +86,7 @@ export function ReelsStackList({
         ref={listRef}
         key="stacks-grid"
         data={stacks}
+        maintainVisibleContentPosition={NOT_ANCHORED}
         keyExtractor={(item: any) => String(item.id)}
         extraData={extraData}
         estimatedItemSize={234}

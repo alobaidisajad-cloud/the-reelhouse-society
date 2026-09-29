@@ -1,5 +1,6 @@
 import { nav } from '@/src/utils/typedRouter';
 import { FlashList } from '@shopify/flash-list';
+import { ANCHORED_BELOW_THE_TOP } from '@/src/components/layout/CinematicFlashList';
 import { Image } from 'expo-image';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, InteractionManager, Platform, RefreshControl, StyleSheet, View } from 'react-native';
@@ -290,6 +291,8 @@ export default function NotificationsModal() {
 
       <FlashList
         data={displayItems}
+        // New notices arrive at the top, live (see CinematicFlashList).
+        maintainVisibleContentPosition={ANCHORED_BELOW_THE_TOP}
         estimatedItemSize={80}
         keyExtractor={(item: DisplayItem) => item.kind === 'group' ? item.groupKey : item.notification.id}
         contentContainerStyle={s.listContent}

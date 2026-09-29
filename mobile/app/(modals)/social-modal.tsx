@@ -1,5 +1,6 @@
 import { nav } from '@/src/utils/typedRouter';
 import { FlashList } from '@shopify/flash-list';
+import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -387,6 +388,7 @@ export default function SocialModal() {
                 </View>
             ) : isShareMode ? (
                 <FlashList 
+                    maintainVisibleContentPosition={NOT_ANCHORED}
                     data={lounges}
                     estimatedItemSize={68}
                     keyExtractor={item => item.id}
@@ -395,6 +397,7 @@ export default function SocialModal() {
                 />
             ) : (
                 <FlashList 
+                    maintainVisibleContentPosition={NOT_ANCHORED}
                     data={profiles}
                     estimatedItemSize={68}
                     keyExtractor={item => item.id}

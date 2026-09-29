@@ -16,7 +16,7 @@ import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
-import { CinematicFlashList } from '../CinematicFlashList';
+import { CinematicFlashList, ANCHORED_BELOW_THE_TOP } from '../CinematicFlashList';
 
 /**
  * Both components below set state one tick after render — the guard when its
@@ -68,6 +68,26 @@ describe('a list never eats the first tap after a search', () => {
     );
     await act(async () => { await Promise.resolve(); });
     expect(listProps(t)).toContain('always');
+  });
+
+  // FlashList anchors its first item unless told not to: a header measured after
+  // the items then scrolled a page down past its own top (the Darkroom opened
+  // below its search, run 36566533738). What the list is handed is read here.
+  it('does not anchor the first item, so a page opens at its top', async () => {
+    const t = render(
+      <CinematicFlashList data={rows} renderItem={renderItem} keyExtractor={(i: { id: string }) => i.id} />,
+    );
+    await act(async () => { await Promise.resolve(); });
+    expect(listProps(t)).toContain('"maintainVisibleContentPosition":{"disabled":true}');
+  });
+
+  it('but a list that adds items above may still ask for the anchor', async () => {
+    const t = render(
+      <CinematicFlashList data={rows} renderItem={renderItem} keyExtractor={(i: { id: string }) => i.id}
+        maintainVisibleContentPosition={ANCHORED_BELOW_THE_TOP} />,
+    );
+    await act(async () => { await Promise.resolve(); });
+    expect(listProps(t)).toContain('"maintainVisibleContentPosition":{"autoscrollToTopThreshold":48}');
   });
 
   it('applies to horizontal lists too, where the chips live', async () => {

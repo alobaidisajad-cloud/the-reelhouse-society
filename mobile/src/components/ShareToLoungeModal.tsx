@@ -2,6 +2,7 @@
  * ShareToLoungeModal — Share films/logs to lounge rooms.
  */
 import { FlashList } from '@shopify/flash-list';
+import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -243,11 +244,12 @@ export default function ShareToLoungeModal({
 
     return (
         <Modal statusBarTranslucent visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <Animated.View style={[s.overlay, animatedSheetStyle]} accessibilityViewIsModal={true}>
+            <Animated.View style={[s.overlay, animatedSheetStyle]} accessibilityViewIsModal={true} onAccessibilityEscape={onClose}>
                 <View style={s.card}>
                     <View style={s.header}>
                         <Text style={s.title}>Share to Lounge</Text>
-                        <PressableScale onPress={() => { onClose(); }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic="selection" pressedScale={0.92}>
+                        <PressableScale onPress={() => { onClose(); }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic="selection" pressedScale={0.92}
+                            accessibilityRole="button" accessibilityLabel="Close">
                             <Text style={s.closeText}>✕</Text>
                         </PressableScale>
                     </View>
@@ -268,6 +270,7 @@ export default function ShareToLoungeModal({
                         <>
                             <Text style={s.selectLabel}>SELECT LOUNGE</Text>
                             <FlashList
+                                maintainVisibleContentPosition={NOT_ANCHORED}
                                 data={lounges}
                                 estimatedItemSize={52}
                                 keyExtractor={(item) => item.id}

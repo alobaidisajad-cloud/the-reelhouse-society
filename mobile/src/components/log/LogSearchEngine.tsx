@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
+import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { Image } from 'expo-image';
 import Animated, { FadeIn, Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, cancelAnimation } from 'react-native-reanimated';
 import { Search, Sparkles, Star } from 'lucide-react-native';
@@ -166,6 +167,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                 </View>
             )}
             <FlashList
+                maintainVisibleContentPosition={NOT_ANCHORED}
                 data={results}
                 keyExtractor={r => String(r.id)}
                 style={st.searchResults}

@@ -4,6 +4,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { LoungeMember } from '@/src/types/social.types';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { FlashList } from '@shopify/flash-list';
+import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -158,9 +159,11 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
   return (
     <Modal statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
-        <PressableScale style={s.backdrop} onPress={onClose} accessibilityRole="button"><View /></PressableScale>
+        {/* The ground closes it for a finger; a screen reader has the named Close. */}
+        <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no"><View /></PressableScale>
       </BlurView>
-      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 28) }]}>
+      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 28) }]}
+        onAccessibilityEscape={onClose}>
         <View style={s.handle} />
         <View style={s.headerRow}>
           <View style={{ flex: 1, marginRight: 12 }}>
@@ -174,6 +177,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
 
         <FlashList
           data={roster}
+          maintainVisibleContentPosition={NOT_ANCHORED}
           keyExtractor={item => item.user_id}
           showsVerticalScrollIndicator={false}
           estimatedItemSize={56}

@@ -11,6 +11,7 @@ import React from 'react';
 import { Modal, View, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
+import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
@@ -84,7 +85,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
 
   return (
     <Modal statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
-      <View style={s.host}>
+      <View style={s.host} onAccessibilityEscape={onClose}>
         <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
         <Pressable style={s.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
         <AnimatedView entering={SlideInDown.springify().damping(18)} exiting={SlideOutDown} style={[s.sheet, kbPad]}>
@@ -135,6 +136,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
               </View>
             ) : (
               <FlashList
+                maintainVisibleContentPosition={NOT_ANCHORED}
                 data={items}
                 estimatedItemSize={58}
                 keyExtractor={(it: FollowRequest) => it.requesterId}

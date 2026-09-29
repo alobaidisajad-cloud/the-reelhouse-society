@@ -20,6 +20,14 @@ interface CinematicFlashListProps<T> extends Omit<FlashListProps<T>, 'onScroll'>
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as any;
 
+/** For a vertical list that never adds items above the ones on screen. */
+export const NOT_ANCHORED = { disabled: true } as const;
+/**
+ * For a list that does (a new notice arrives at the top): a member reading lower
+ * down keeps their place, and one at the top stays at the top.
+ */
+export const ANCHORED_BELOW_THE_TOP = { autoscrollToTopThreshold: 48 } as const;
+
 export const CinematicFlashList = React.forwardRef<any, CinematicFlashListProps<any>>(({
   externalScrollY,
   scrollMetrics,
@@ -126,6 +134,11 @@ export const CinematicFlashList = React.forwardRef<any, CinematicFlashListProps<
          */
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        // FlashList anchors the first item by default: a header measured after
+        // the items arrive (fonts, images) then scrolled the page down past its
+        // own top, the Darkroom opening below its search. These pages never add
+        // above what is shown, so they are not anchored; a caller may opt in.
+        maintainVisibleContentPosition={NOT_ANCHORED}
         {...rest}
       />
       <CinematicScrollbar

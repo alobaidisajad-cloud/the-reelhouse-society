@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useEffect } from 'react';
 import { RefreshControl, InteractionManager, ActivityIndicator, View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
+import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { ActivityCard, FeedItem } from '@/src/components/feed/ActivityCard';
 import Animated, { useAnimatedScrollHandler, runOnJS, type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { globalScrollY } from '@/src/lib/scrollBridge';
@@ -112,6 +113,7 @@ export function ReelsFeedList({
         ref={listRef}
         key="logs-feed"
         data={feed}
+        maintainVisibleContentPosition={NOT_ANCHORED}
         // Maximum JS-thread throughput by directly referencing guaranteed id
         keyExtractor={(item: any) => String(item.id)}
         extraData={extraData}

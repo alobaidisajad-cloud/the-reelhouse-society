@@ -6,6 +6,7 @@
  */
 import { nav } from '@/src/utils/typedRouter';
 import { FlashList } from '@shopify/flash-list';
+import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -276,6 +277,7 @@ export default function SearchModal() {
         {/* Results */}
         {filtered.length > 0 && (
           <FlashList
+            maintainVisibleContentPosition={NOT_ANCHORED}
             data={filtered}
             keyExtractor={keyExtractorResult}
             renderItem={renderSearchResult}

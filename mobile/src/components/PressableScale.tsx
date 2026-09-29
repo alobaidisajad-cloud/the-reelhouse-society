@@ -4,7 +4,10 @@
  * Runs entirely on the UI thread via Reanimated.
  */
 import React, { memo, useRef } from 'react';
-import { Pressable, StyleSheet, ViewStyle, StyleProp, AccessibilityRole, AccessibilityState } from 'react-native';
+import {
+  Pressable, StyleSheet, ViewStyle, StyleProp, AccessibilityRole, AccessibilityState,
+  AccessibilityActionInfo, AccessibilityActionEvent,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -38,6 +41,12 @@ interface PressableScaleProps {
   accessibilityHint?: string;
   /** Accessibility state (selected, disabled, etc.) */
   accessibilityState?: AccessibilityState;
+  /** False, with importantForAccessibility "no", for a ground a screen reader skips. */
+  accessible?: boolean;
+  importantForAccessibility?: 'auto' | 'yes' | 'no' | 'no-hide-descendants';
+  /** Named actions a screen reader offers, e.g. what a long press opens. */
+  accessibilityActions?: readonly AccessibilityActionInfo[];
+  onAccessibilityAction?: (event: AccessibilityActionEvent) => void;
   /** Testing identifier for Maestro/E2E */
   testID?: string;
 }
@@ -58,27 +67,20 @@ function PressableScale({
   accessibilityLabel,
   accessibilityHint,
   accessibilityState,
+  accessible,
+  importantForAccessibility,
+  accessibilityActions,
+  onAccessibilityAction,
   testID,
 }: PressableScaleProps) {
   const scale = useSharedValue(1);
   const lastPressRef = useRef<number>(0);
 
-  // Normalize hitSlop so a partial object does not silently zero the sides it
-  // omits. This buys REACH, not compliance: hitSlop lives inside React Native's
-  // own touch dispatch and never reaches either platform's accessibility layer
-  // (iOS reads accessibilityFrame from the view's frame; RN installs no Android
-  // TouchDelegate). A control under the 48dp floor is fixed with minHeight /
-  // minWidth on the control itself — never by widening this halo.
-  //
-  // The default halo is 15pt — but only on an axis that NEEDS it. It exists so
-  // a small icon is easy for a finger; a control whose own size on an axis is
-  // already the floor (48, Android's, the higher of the two platforms') or more
-  // gets no default halo there, because all a halo does on a big
-  // control is reach into its neighbour. Both platforms give a touch in two
-  // overlapping areas to the LATER control, so a rail of 110pt posters 12pt
-  // apart handed the edge of every poster to the next one. (The layout audit's
-  // STEAL check measured it on every screen.) A side written out is kept as
-  // written; a size the style does not state keeps the 15.
+  // A halo of 15 on each side the caller leaves out, but only on an axis under
+  // the 48pt floor: on a big control a halo only reaches into its neighbour, and
+  // both platforms give an overlap to the LATER control. A halo buys a finger
+  // reach, never accessibility size (it is not in either platform's
+  // accessibility frame): a small control is fixed with minHeight / minWidth.
   const own: ViewStyle = StyleSheet.flatten(style) ?? {};
   const big = (...v: unknown[]) => v.some((n) => typeof n === 'number' && n >= 48);
   const across = big(own.width, own.minWidth) ? 0 : 15;
@@ -104,11 +106,12 @@ function PressableScale({
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
       accessibilityState={accessibilityState ?? (disabled ? { disabled: true } : undefined)}
+      accessible={accessible}
+      importantForAccessibility={importantForAccessibility}
+      accessibilityActions={accessibilityActions}
+      onAccessibilityAction={onAccessibilityAction}
       onPressIn={() => {
-        // Scale animation + haptics ALWAYS fire on finger-down,
-        // even during debounce cooldown. This prevents "dead button" perception
-        // where the button appears completely unresponsive. Only the onPress
-        // callback is debounced (see onPress handler below).
+        // Feel on every touch, even inside the debounce: only onPress is debounced.
 
         // High stiffness, heavy mass = Celluloid Tension (Mechanical snap)
         scale.value = withSpring(pressedScale, { damping: 18, stiffness: 400, mass: 0.6 });
