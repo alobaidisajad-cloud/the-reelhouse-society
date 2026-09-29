@@ -32,6 +32,13 @@ export interface AuthState {
   getPreference: (key: string, fallback?: unknown) => unknown;
   restoreSession: () => Promise<void>;
   hydrateFromCache: () => void;
+  /**
+   * A session has begun (a password, a username, an email link, a confirmed
+   * sign-up). The one way in, so every door does the same: signed in on screen,
+   * remembered for the next launch, known to the store, profile and following
+   * fetched behind.
+   */
+  adoptSession: (authedUser: AuthUser) => void;
 }
 
 
@@ -239,11 +246,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       authedUser = data.user;
     }
 
-    // Set auth immediately
+    get().adoptSession(authedUser);
+  },
+
+  adoptSession: (authedUser) => {
+    // Signed in on screen at once, and remembered for the next launch.
     const completeUser = { ...authedUser, following: [] } as unknown as User;
     storage.set('last_user_id', authedUser.id);
     setSensitive(`ironvault_user_cache_${authedUser.id}`, JSON.stringify(completeUser));
-    set({ user: completeUser, isAuthenticated: true });
+    set({ user: completeUser, isAuthenticated: true, loading: false });
 
     // The store's identity, by the documented `logIn()`; never awaited by sign-in.
     void identifyUser(authedUser.id);
@@ -259,7 +270,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       },
       { maxRetries: 2, baseDelay: 1500, label: 'login_enrich', shouldRetry: isRetryable }
     ).then((profileData) => {
-        if (profileData) {
+        // Only onto the member it was read for: not after they left, nor onto the next.
+        if (profileData && memberUnchanged(authedUser.id)) {
            set((s) => {
              const updatedUser = s.user ? { ...s.user, ...profileData } : null;
              if (updatedUser) {

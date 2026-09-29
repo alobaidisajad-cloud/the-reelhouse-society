@@ -56,7 +56,8 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
       </View>
       <View style={s.checksGrid}>
         {PW_CHECK_LABELS.map(([key, label]) => (
-          <View key={key} style={s.checkRow}>
+          // One element to a screen reader, said as a state: not "check mark, 8+ characters".
+          <View key={key} style={s.checkRow} accessible accessibilityLabel={`${label}, ${pwChecks[key] ? 'met' : 'not yet'}`}>
             <Text style={[s.checkIcon, { color: pwChecks[key] ? colors.validation : colors.fog }]}>
               {pwChecks[key] ? '✓' : '○'}
             </Text>

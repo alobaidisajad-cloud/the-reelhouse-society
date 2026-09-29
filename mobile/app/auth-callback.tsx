@@ -5,12 +5,12 @@ import Animated, { FadeIn, FadeInDown, ReduceMotion } from 'react-native-reanima
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
-import { hydrateFollowing } from '@/src/stores/domain/socialSlice';
-import { storage, setSensitive } from '@/src/stores/mmkv-storage';
+import { storage } from '@/src/stores/mmkv-storage';
+import { mapAuthError } from '@/src/hooks/useAuthFlow';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import type { EmailOtpType, Session } from '@supabase/supabase-js';
-import { AuthService } from '@/src/services/AuthService';
 import * as Linking from 'expo-linking';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
@@ -28,10 +28,6 @@ export default function AuthCallbackScreen() {
   // when the type only arrives inside the deep-link url's query string).
   const [resolvedType, setResolvedType] = useState<string | undefined>(undefined);
   
-  // Extract type from params to use in rescue UI
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const flowType = params.type || (params.url ? Linking.parse(params.url).queryParams?.type as string : undefined);
-
   useEffect(() => {
     handleCallback();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,34 +46,11 @@ export default function AuthCallbackScreen() {
       return;
     }
 
-    // The auth session itself is already valid at this point (verifyOtp/
-    // exchangeCodeForSession succeeded). Don't let a slow `profiles` row
-    // (e.g. a delayed DB trigger) discard it — sign the user in immediately
-    // with session-only data, matching the pattern in stores/auth.ts's
-    // login(), and enrich with the profile in the background.
-    const sessionOnlyUser = { ...session.user, following: [] } as unknown as import('@/src/types').User;
-    useAuthStore.setState({ user: sessionOnlyUser, isAuthenticated: true });
-    try {
-      setSensitive(`ironvault_user_cache_${sessionOnlyUser.id}`, JSON.stringify(sessionOnlyUser));
-      storage.set('last_user_id', sessionOnlyUser.id);
-    } catch { /* non-critical */ }
-
-    hydrateFollowing();
+    // Signed in as every other door signs in (the profile arrives behind): a
+    // slow profiles row never holds up a session that is already valid.
+    useAuthStore.getState().adoptSession(session.user);
     setStatus('success');
     setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} (router.replace as any)('/(tabs)'); }), 1200);
-
-    AuthService.getSessionProfile(session.user.id).then((profile) => {
-      if (!profile) return;
-      useAuthStore.setState((s) => {
-        const updatedUser = s.user ? { ...s.user, ...profile } : null;
-        if (updatedUser) {
-          try {
-            setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
-          } catch { /* non-critical */ }
-        }
-        return { user: updatedUser };
-      });
-    }).catch(() => { /* profile enrichment is best-effort here; restoreSession will retry on next launch */ });
   }
 
   async function handleCallback() {
@@ -129,7 +102,7 @@ export default function AuthCallbackScreen() {
       // A failed link must not leave the recovery flag armed — it would sign
       // the user out of a legitimate session on next launch.
       try { storage.delete('recovery_pending'); } catch {}
-      const msg = err instanceof Error ? err.message : 'Verification failed. The link may have expired.';
+      const msg = err instanceof Error ? mapAuthError(err.message).message : 'Verification failed. The link may have expired.';
       setErrorMsg(msg);
       setStatus('error');
     }
@@ -153,7 +126,7 @@ export default function AuthCallbackScreen() {
         {status === 'success' && (
           <AnimatedView entering={FadeInDown.duration(600).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
             <View style={s.successIconWrap}>
-              <Text style={s.successIcon}>✓</Text>
+              <Text style={s.successIcon} {...UNSPOKEN}>✓</Text>
             </View>
             <Text style={[s.eyebrow, { color: colors.sepia }]}>
               {resolvedType === 'recovery' ? 'LINK VERIFIED' : 'CLEARANCE GRANTED'}
@@ -173,7 +146,7 @@ export default function AuthCallbackScreen() {
         {status === 'error' && (
           <AnimatedView entering={FadeInDown.duration(600).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
             <View style={s.errorIconWrap}>
-              <Text style={s.errorIcon}>✕</Text>
+              <Text style={s.errorIcon} {...UNSPOKEN}>✕</Text>
             </View>
             <Text style={[s.eyebrow, { color: colors.crimsonInk }]}>VERIFICATION FAILED</Text>
             <Text style={s.title}>Link Expired{'\n'}or Invalid</Text>
@@ -199,23 +172,17 @@ export default function AuthCallbackScreen() {
                 >
                   <Text style={s.retryText}>REQUEST NEW VERIFICATION</Text>
                 </PressableScale>
-              ) : params.type === 'email_change' ? (
-                <PressableScale
-                  style={s.retryBtn}
-                  onPress={() => (router.replace as any)({ pathname: '/login', params: { action: 'resend_verification' } })}
-                  pressedScale={0.97}
-                  haptic="medium"
-                >
-                  <Text style={s.retryText}>RESEND VERIFICATION EMAIL</Text>
-                </PressableScale>
               ) : (
+                // What this opens is the sign-in form, and it says so.
                 <PressableScale
                   style={s.retryBtn}
                   onPress={() => (router.replace as any)('/login')}
                   pressedScale={0.97}
                   haptic="medium"
+                  accessibilityRole="button"
+                  accessibilityLabel="Go to sign in"
                 >
-                  <Text style={s.retryText}>TRY AGAIN</Text>
+                  <Text style={s.retryText}>SIGN IN</Text>
                 </PressableScale>
               )}
 
@@ -308,3 +275,6 @@ const s = StyleSheet.create({
     color: colors.fog + '99', fontWeight: '700', textAlign: 'center',
   },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

@@ -1,5 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, {
@@ -15,36 +14,11 @@ import PressableScale from '@/src/components/PressableScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Lock } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { getPasswordChecks, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
+import { mapAuthError } from '@/src/hooks/useAuthFlow';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
-
-// ── Password strength checks — identical to web ──
-function getChecks(pw: string) {
-  return {
-    length:    pw.length >= 8,
-    uppercase: /[A-Z]/.test(pw),
-    lowercase: /[a-z]/.test(pw),
-    number:    /[0-9]/.test(pw),
-    special:   /[^A-Za-z0-9]/.test(pw),
-  };
-}
-
-const CHECK_LABELS: [keyof ReturnType<typeof getChecks>, string][] = [
-  ['length', '8+ characters'],
-  ['uppercase', 'Uppercase letter'],
-  ['lowercase', 'Lowercase letter'],
-  ['number', 'Number'],
-  ['special', 'Special character'],
-];
-
-function getStrength(passed: number) {
-  const labels = ['', 'WEAK', 'FAIR', 'FAIR', 'STRONG', 'VERY STRONG'];
-  const clrs   = ['', colors.crimson, '#c4a000', '#c4a000', colors.sepia, colors.flicker];
-  // The WORD's ink. Only WEAK needed a different one: crimson is a pigment,
-  // 2.78:1 as a word on the card; the other steps already clear.
-  const inks   = clrs.map((c, i) => (i === 1 ? colors.crimsonInk : c));
-  return { label: labels[passed], color: clrs[passed], ink: inks[passed] };
-}
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
@@ -54,20 +28,16 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const insets = useSafeAreaInsets();
-  // BUG FIX #4: Session guard
-  const [hasSession, setHasSession] = useState<boolean | null>(null); // null = checking
+  // Whether the recovery link left a session to set the password on (null: still asking).
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
 
   const confirmRef = useRef<TextInput>(null);
-  // FIX #1: Redirect timer ref for cleanup on unmount
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => { return () => { if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current); }; }, []);
 
-  const checks = getChecks(password);
-  const passed = Object.values(checks).filter(Boolean).length;
-  const strong = passed === 5;
-  const { label: strengthLabel, color: strengthColor, ink: strengthInk } = getStrength(passed);
+  // The sign-up form's rules and meter: one password rule, drawn one way.
+  const strong = Object.values(getPasswordChecks(password)).every(Boolean);
 
-  // BUG FIX #4: Check for active session on mount
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
@@ -100,22 +70,19 @@ export default function ResetPasswordScreen() {
       // treat this as an abandoned recovery and destroy the session.
       storage.delete('recovery_pending');
 
-      // IMP #3: Re-trigger auth + fully hydrate the auth store
+      // Signed in fully now, on the session the link made.
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         await supabase.auth.refreshSession();
-        // Hydrate the Zustand auth store so the user is fully logged in
         await useAuthStore.getState().restoreSession();
       }
 
-      // Timer now matches the "3 SECONDS" copy
-      // FIX #1: Store timer ref so cleanup on unmount prevents stale navigation
+      // The "3 SECONDS" the screen promises; cleared if the screen goes first.
       redirectTimerRef.current = setTimeout(() => {
         (router.replace as any)('/(tabs)');
       }, 3000);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to reset password.';
-      reelToast.error(msg);
+      reelToast.error(err instanceof Error ? mapAuthError(err.message).message : 'Failed to reset password.');
     } finally {
       setLoading(false);
     }
@@ -129,7 +96,7 @@ export default function ResetPasswordScreen() {
         <View style={s.successWrap}>
           <AnimatedView entering={FadeIn.duration(600).reduceMotion(ReduceMotion.Never)} style={s.successContent}>
             <View style={s.successIconWrap}>
-              <Text style={s.successIcon}>✓</Text>
+              <Text style={s.successIcon} {...UNSPOKEN}>✓</Text>
             </View>
             <Text style={s.successEyebrow}>CREDENTIALS SECURED</Text>
             <Text style={s.successTitle}>Password Reset{'\n'}Complete.</Text>
@@ -143,7 +110,6 @@ export default function ResetPasswordScreen() {
     );
   }
 
-  // BUG FIX #4: Session guard — checking state
   if (hasSession === null) {
     return (
       <View style={s.container}>
@@ -155,7 +121,7 @@ export default function ResetPasswordScreen() {
     );
   }
 
-  // BUG FIX #4: No session — show recovery options instead of dead-end form
+  // No session: the link expired or was used. A way to ask again, not a dead form.
   if (hasSession === false) {
     return (
       <View style={s.container}>
@@ -163,7 +129,7 @@ export default function ResetPasswordScreen() {
         <View style={s.successWrap}>
           <Animated.View entering={FadeIn.duration(600).reduceMotion(ReduceMotion.Never)} style={s.successContent}>
             <View style={[s.successIconWrap, { backgroundColor: 'rgba(107, 26, 10, 0.15)', borderColor: colors.bloodReel }]}>
-              <Text style={[s.successIcon, { color: colors.bloodReel }]}>✕</Text>
+              <Text style={[s.successIcon, { color: colors.bloodReel }]} {...UNSPOKEN}>✕</Text>
             </View>
             <Text style={[s.successEyebrow, { color: colors.crimsonInk }]}>SESSION EXPIRED</Text>
             <Text style={s.successTitle}>No Active Session</Text>
@@ -281,38 +247,7 @@ export default function ResetPasswordScreen() {
             </View>
           </View>
 
-          {/* Strength Meter */}
-          {password.length > 0 && (
-            <AnimatedView entering={FadeInDown.duration(300)} style={s.strengthWrap}>
-              {/* Bar */}
-              <View style={s.strengthBarRow}>
-                {[1, 2, 3, 4, 5].map(i => (
-                  <View
-                    key={i}
-                    style={[
-                      s.strengthSegment,
-                      { backgroundColor: i <= passed ? strengthColor : colors.ash },
-                    ]}
-                  />
-                ))}
-                <Text style={[s.strengthLabel, { color: strengthInk }]}>{strengthLabel}</Text>
-              </View>
-
-              {/* Individual checks */}
-              <View style={s.checksGrid}>
-                {CHECK_LABELS.map(([key, label]) => (
-                  <View key={key} style={s.checkRow}>
-                    <Text style={[s.checkIcon, { color: checks[key] ? colors.sepia : colors.fog }]}>
-                      {checks[key] ? '✓' : '○'}
-                    </Text>
-                    <Text style={[s.checkLabel, { color: checks[key] ? colors.sepia : colors.fog }]}>
-                      {label}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </AnimatedView>
-          )}
+          <PasswordStrengthMeter password={password} />
 
           {/* Confirm Password */}
           <View style={s.fieldGroup}>
@@ -421,14 +356,6 @@ const s = StyleSheet.create({
   showText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia },
 
   // Strength
-  strengthWrap: { gap: 10 },
-  strengthBarRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  strengthSegment: { flex: 1, height: 3, borderRadius: 2 },
-  strengthLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, marginLeft: 8, minWidth: 80 },
-  checksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '48%' as import('react-native').DimensionValue },
-  checkIcon: { fontFamily: fonts.sub, fontSize: 11 },
-  checkLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.4 },
 
   // Mismatch
   mismatchText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.crimsonInk, marginTop: 2 },
@@ -461,3 +388,6 @@ const s = StyleSheet.create({
   successBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 22, marginBottom: 20 },
   successRedirect: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

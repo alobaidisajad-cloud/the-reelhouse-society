@@ -1,16 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
-import { setSensitive } from '@/src/stores/mmkv-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import TactileEngine from '@/src/utils/TactileEngine';
 import reelToast from '@/src/utils/reelToast';
 import { getPasswordChecks } from '@/src/components/auth/PasswordStrengthMeter';
 import { useAuthThrottle } from './useAuthThrottle';
-import { AuthService } from '@/src/services/AuthService';
 import { validateUsername } from '@/src/utils/validateUsername';
 
 export interface LoginSubmissionInput {
@@ -69,7 +65,11 @@ export function mapAuthError(rawMsg: string): { message: string; isInvalidCreden
                                       ? 'Username is already taken.'
   : rawMsg.includes('User already registered')
                                       ? 'That address is already on the register. Try signing in.'
-  : /rate limit|too many requests/i.test(rawMsg)
+  : rawMsg.includes('Email not confirmed')
+                                      ? 'Your address is not confirmed yet. Open the link we sent, then try again.'
+  : /link is invalid or has expired|otp_expired|token has expired/i.test(rawMsg)
+                                      ? 'This link has expired or was already used. Ask for a new one.'
+  : /rate limit|too many requests|for security purposes|only request this after/i.test(rawMsg)
                                       ? 'Too many attempts. The door needs a moment — try again shortly.'
   : /Refresh Token|session|JWT/i.test(rawMsg)
                                       ? 'Your session lapsed. Please identify yourself again.'
@@ -80,6 +80,12 @@ export function mapAuthError(rawMsg: string): { message: string; isInvalidCreden
   : rawMsg;
 
   return { message, isInvalidCredentials };
+}
+
+/** A thrown or answered refusal's words, whatever shape it came in ('' if none). */
+function messageOf(err: unknown): string {
+  const m = (err as { message?: unknown } | null)?.message;
+  return typeof m === 'string' ? m : '';
 }
 
 /**
@@ -96,8 +102,7 @@ export function initialIsLogin(action?: string): boolean {
 export function useAuthFlow() {
   const router = useRouter();
   const params = useLocalSearchParams<{ action?: string }>();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { login, signup, isAuthenticated } = useAuthStore();
+  const { login, signup } = useAuthStore();
 
   // Seeded from the route, not defaulted to true. The effect below cannot do
   // this job alone: it fires AFTER mount, so a member tapping SEEK ADMISSION
@@ -168,12 +173,12 @@ export function useAuthFlow() {
     }
   }, [params.action]);
 
-  // Timer cleanup removed here because it's now handled centrally above
-
   const checkUsernameAvailability = (value: string) => {
     const requestId = ++usernameCheckRequestId.current;
     if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current);
-    const trimmed = value.trim().toLowerCase().replace(/\s+/g, '_');
+    // The handle that would be claimed (validateUsername's), not the one as typed:
+    // "John.Doe" is claimed as "johndoe", and that is the one to look up.
+    const trimmed = validateUsername(value).sanitized;
     if (trimmed.length < 3) { setUsernameStatus('idle'); return; }
     setUsernameStatus('checking');
     usernameCheckTimer.current = setTimeout(async () => {
@@ -200,31 +205,14 @@ export function useAuthFlow() {
     setSubmitting(true);
     try {
       const creds = credentialsRef.current;
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: creds.email, password: creds.password,
-      });
-      if (error) {
-        if (error.message.includes('Email not confirmed')) {
-          reelToast.error('Your email has not been verified yet.');
-        } else {
-          reelToast.error(error.message);
-        }
-        return;
-      }
-      if (data?.session) {
-        // Clear password from memory immediately after successful use
-        credentialsRef.current.password = '';
-        const profile = await AuthService.getSessionProfile(data.session.user.id);
-        if (!profile) throw new Error('Profile synchronization timeout');
-        const completeUser = { ...data.session.user, ...profile, following: [] } as import('@/src/types').User;
-        useAuthStore.setState({ user: completeUser, isAuthenticated: true });
-        try { setSensitive(`ironvault_user_cache_${completeUser.id}`, JSON.stringify(completeUser)); } catch {}
-        setAwaitingConfirmation(false);
-        (router.replace as any)('/(tabs)');
-      }
+      // The same sign-in as the form's, so this door sets up everything it does.
+      await login(creds.email, creds.password);
+      credentialsRef.current.password = '';
+      setAwaitingConfirmation(false);
+      (router.replace as any)('/(tabs)');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Verification check failed.';
-      reelToast.error(msg);
+      const raw = messageOf(err);
+      reelToast.error(raw ? mapAuthError(raw).message : 'Verification check failed.');
     } finally {
       if (isMounted.current) setSubmitting(false);
     }
@@ -244,13 +232,16 @@ export function useAuthFlow() {
     setResending(true);
     TactileEngine.success();
     try {
-      await supabase.auth.resend({ 
-        type: 'signup', 
+      // A refusal is ANSWERED (supabase-js resolves it): read it, or the
+      // member is told of an email that never went.
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
         email: confirmedEmail,
         options: {
           emailRedirectTo: Linking.createURL('auth-callback') + '?type=signup',
-        }
+        },
       });
+      if (error) throw error;
       reelToast.success('A new cipher has been wired to your inbox.');
       setResendCooldown(60);
       cooldownRef.current = setInterval(() => {
@@ -262,8 +253,9 @@ export function useAuthFlow() {
           return prev - 1;
         });
       }, 1000);
-    } catch {
-      reelToast.error('The telegraph line is disrupted. Try again.');
+    } catch (err: unknown) {
+      const raw = messageOf(err);
+      reelToast.error(raw ? mapAuthError(raw).message : 'The telegraph line is disrupted. Try again.');
     } finally {
       if (isMounted.current) setResending(false);
     }
@@ -297,7 +289,7 @@ export function useAuthFlow() {
         }
       }
     } catch (error: unknown) {
-      const rawMsg = error instanceof Error ? error.message : 'Authentication failed.';
+      const rawMsg = messageOf(error) || 'Authentication failed.';
       const { message, isInvalidCredentials } = mapAuthError(rawMsg);
       if (isInvalidCredentials) recordAttempt();
       reelToast.error(message);
@@ -321,8 +313,8 @@ export function useAuthFlow() {
       if (error) throw error;
       setForgotSent(true);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'The telegraph line is down. Try again.';
-      reelToast.error(msg);
+      const raw = messageOf(err);
+      reelToast.error(raw ? mapAuthError(raw).message : 'The telegraph line is down. Try again.');
     } finally {
       if (isMounted.current) setForgotLoading(false);
     }
