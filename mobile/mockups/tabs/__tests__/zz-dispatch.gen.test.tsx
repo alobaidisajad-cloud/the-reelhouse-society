@@ -79,7 +79,7 @@ const FILINGS = [
 whenRendering('dispatch generator', () => {
   it('writes the Dispatch', async () => {
     useDispatch.setState({
-      filings: FILINGS, loading: false, loadingMore: false, hasMore: false, droppedRows: 0,
+      filings: FILINGS, loading: false, pageState: 'read', loadingMore: false, hasMore: false, droppedRows: 0,
       section: 'ALL', sort: 'LATEST', savedOnly: false, newCount: 0,
       certifiedIds: new Set(['f1']), savedIds: new Set(), myVotes: {},
       critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {}, critiquesHasMore: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(),

@@ -494,6 +494,16 @@ describe('a page not read yet, and a page that could not be read', () => {
     expect(queryByText('Nothing has been filed yet.')).toBeTruthy();
   });
 
+  it('does not read again a page that already holds filings', async () => {
+    // Held filings are a page that was read, whatever the flag says (the
+    // design record sets filings alone, and redrawing it empty was a bug).
+    put({ filings: [filing()], pageState: 'unread' });
+    const { getByText } = render(<FeedScreen />);
+    await flush();
+    expect(mockPageAsks).toBe(0);
+    expect(getByText(/A take about a film/)).toBeTruthy();
+  });
+
   it('reads again when the store is reset under an open tab', async () => {
     // Signing out and in resets the store while the tab stays mounted; a read
     // only on mount left the new member an empty page.

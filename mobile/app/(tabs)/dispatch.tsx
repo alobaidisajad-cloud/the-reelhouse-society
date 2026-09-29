@@ -96,7 +96,9 @@ export default function DispatchScreen() {
   const loading = useDispatch((s) => s.loading);
   const pageState = useDispatch((s) => s.pageState);
   // Until the page's first answer an empty list says nothing yet: skeletons.
-  const reading = loading || pageState === 'unread';
+  // (A page holding filings has been read, whatever the flag says.)
+  const unread = pageState === 'unread' && filings.length === 0;
+  const reading = loading || unread;
   const readyMark = useScreenReady('dispatch', !reading);
   const loadingMore = useDispatch((s) => s.loadingMore);
   const newCount = useDispatch((s) => s.newCount);
@@ -135,8 +137,8 @@ export default function DispatchScreen() {
   // Whenever the page on screen is unread: on opening, and after the store is
   // reset for another member while this tab stays mounted.
   useEffect(() => {
-    if (pageState === 'unread' && !loading) void useDispatch.getState().fetch();
-  }, [pageState, loading]);
+    if (unread && !loading) void useDispatch.getState().fetch();
+  }, [unread, loading]);
 
   // Is there new paper? Asked on focus and every 90s while focused, never on a
   // screen nobody is looking at: blurring the tab clears the interval at once.
@@ -249,9 +251,9 @@ export default function DispatchScreen() {
 
   return (
     <FrozenTab>
-      {readyMark}
       <View style={p.screen}>
         <RoomLight room="dispatch" />
+        {readyMark}
         {/* The index, pinned under the floating bar: it never scrolls away. */}
         <View style={{ paddingTop: topPad }}>
           <PaperChrome

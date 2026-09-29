@@ -32,13 +32,18 @@ adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null
 # The APPS are disabled, not the input methods: Android keeps one input method
 # enabled whatever is disabled (run 36579267804: Gboard stayed, its clipboard
 # covered the password field, and the password went into the email field).
-for ime in $(adb shell ime list -a -s | tr -d '\r'); do
-  adb shell pm disable-user --user 0 "${ime%%/*}" > /dev/null 2>&1 || true
+# As root (a google_apis image allows it): the shell user may not disable a
+# system app (run 36590647413: both stayed). Android's own answer is printed.
+rooted="$(adb root 2>&1 | tr -d '\r')"
+adb wait-for-device
+answers=""
+for pkg in $(adb shell ime list -a -s | tr -d '\r' | sed 's#/.*##' | sort -u); do
+  answers="${answers} ${pkg}: $(adb shell pm disable "${pkg}" 2>&1 | tr -d '\r' | tr '\n' ' ');"
 done
 left="$(adb shell ime list -s | tr -d '\r' | tr '\n' ' ')"
-echo "input methods left: [${left}]"
+echo "root: ${rooted} | ${answers} | input methods left: [${left}]"
 if [ -n "${left// /}" ]; then
-  echo "::error title=A keyboard app is still on the device::${left} — every flow that types would fail behind it."
+  echo "::error title=A keyboard app is still on the device::left: ${left} | root: ${rooted} | Android said:${answers} — every flow that types would fail behind it."
   exit 1
 fi
 adb logcat -c   # this run's log only, so a crash below is this run's crash
