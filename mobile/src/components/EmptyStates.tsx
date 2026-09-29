@@ -132,7 +132,9 @@ export function EmptyOffline({ onRetry, wayOut }: {
 const s = StyleSheet.create({
     offline: { alignItems: 'center' },
     acts: { alignItems: 'center', gap: ACTS_GAP },
-    container: { padding: 48, alignItems: 'center', justifyContent: 'center' },
+    // 24 at the sides, not 48: inside a page's own margin on a 320pt phone, 48
+    // left the title 160pt, and "Transmission" at its largest (23pt) is 166.
+    container: { paddingVertical: 48, paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center' },
     compact: { padding: 24 },
     iconWrap: { marginBottom: 16, opacity: 0.7 },
     glyph: { fontSize: 32, marginBottom: 16, opacity: 0.4, color: colors.sepia },

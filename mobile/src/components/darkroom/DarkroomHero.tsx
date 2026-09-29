@@ -191,20 +191,20 @@ const s = StyleSheet.create({
     top: 16,
     zIndex: 1,
   },
+  // In the flow, under the field — NOT absolute. Hung absolutely below the
+  // field it lay outside its parent's bounds, and Android neither delivers a
+  // touch to, nor exposes to accessibility, a view outside its parent: on
+  // Android no suggestion could be tapped. (The sealed E2E said so for weeks:
+  // "drawn", five rows, and "darkroom-suggestion-row is not visible".) The
+  // moods below make room while the member types, and give it back after.
   suggestionsBox: { ...EDGE_LIT,
-    position: 'absolute',
-    top: 55,
-    left: 0,
-    right: 0,
+    marginTop: 4,
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.5)',
     borderStyle: 'solid',
     borderRadius: 6,
     overflow: 'hidden',
-    zIndex: 20,
-    // Elevation draws it ABOVE the grid on Android; `flat` drops the shadow.
-    elevation: 25,
     ...effects.flat,
   },
 });

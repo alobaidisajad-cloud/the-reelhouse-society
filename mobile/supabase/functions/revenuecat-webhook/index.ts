@@ -9,7 +9,7 @@
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { decide } from "./decide.ts"
+import { authorized, decide } from "./decide.ts"
 
 const WEBHOOK_SECRET = Deno.env.get('REVENUECAT_WEBHOOK_SECRET') ?? ''
 
@@ -21,9 +21,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 })
   }
 
-  // ── Authentication: fail closed (a plain comparison, not a constant-time one) ──
-  const auth = req.headers.get('Authorization') ?? ''
-  if (!WEBHOOK_SECRET || auth.length !== WEBHOOK_SECRET.length || auth !== WEBHOOK_SECRET) {
+  // ── Authentication: fail closed, compared in constant time (decide.ts) ──
+  if (!authorized(req.headers.get('Authorization') ?? '', WEBHOOK_SECRET)) {
     console.error('[revenuecat-webhook] rejected: missing or invalid Authorization header')
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
   }

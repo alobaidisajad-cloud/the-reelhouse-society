@@ -3561,15 +3561,21 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  -- Detach this device token from any other account.
-  DELETE FROM public.push_tokens
-   WHERE token = p_token AND user_id <> auth.uid();
-
-  -- Claim it for the current user (refresh token on the existing platform row).
+  -- The device is the token: claimed by the member signed in on it now, from
+  -- whoever held it before (never two owners, never a stale one).
   INSERT INTO public.push_tokens (user_id, token, platform, updated_at)
   VALUES (auth.uid(), p_token, p_platform, now())
-  ON CONFLICT (user_id, platform)
-  DO UPDATE SET token = EXCLUDED.token, updated_at = now();
+  ON CONFLICT (token)
+  DO UPDATE SET user_id = EXCLUDED.user_id, platform = EXCLUDED.platform, updated_at = now();
+
+  -- A member's ten most recently seen devices; older ones go.
+  DELETE FROM public.push_tokens
+   WHERE user_id = auth.uid()
+     AND id NOT IN (
+       SELECT id FROM public.push_tokens
+        WHERE user_id = auth.uid()
+        ORDER BY updated_at DESC, id DESC
+        LIMIT 10);
 END;
 $$;
 
@@ -5543,14 +5549,6 @@ ALTER TABLE ONLY public.push_tokens
 
 ALTER TABLE ONLY public.push_tokens
     ADD CONSTRAINT push_tokens_token_key UNIQUE (token);
-
-
---
--- Name: push_tokens push_tokens_user_id_platform_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.push_tokens
-    ADD CONSTRAINT push_tokens_user_id_platform_key UNIQUE (user_id, platform);
 
 
 --

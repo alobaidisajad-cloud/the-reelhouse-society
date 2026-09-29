@@ -20,6 +20,7 @@ import {
   NAV_BOTTOM_PADDING,
   navTopPadding,
 } from '@/src/components/layout/navMetrics';
+import { useNotificationStore } from '@/src/stores/notificationStore';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -87,6 +88,10 @@ const NavIconButton = memo(function NavIconButton({
 const TOP_NAV_BORDER_COLORS = ['rgba(184, 137, 26, 0)', 'rgba(184, 137, 26, 0.18)', 'rgba(184, 137, 26, 0)'] as const;
 
 export const TopNavBar = memo(function TopNavBar() {
+  // The dot says there is something new; a screen reader was told only
+  // "Notices". It hears the count the dot stands for.
+  const unread = useNotificationStore((s) => s._unreadCount);
+  const noticesLabel = unread > 0 ? `Notices, ${unread} unread` : 'Notices';
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -172,7 +177,7 @@ export const TopNavBar = memo(function TopNavBar() {
               onPress={onNotifPress}
               size={19}
               badge={true}
-              accessibilityLabel="Notices"
+              accessibilityLabel={noticesLabel}
             />
           </View>
         </View>

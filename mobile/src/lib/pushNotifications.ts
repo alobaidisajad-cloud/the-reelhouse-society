@@ -4,10 +4,10 @@
  * Manages push notification registration, permissions, and token
  * storage in Supabase for server-side notification delivery.
  *
- * Setup:
- * 1. npx expo install expo-notifications expo-device expo-constants
- * 2. Add notification handler in _layout.tsx
- * 3. Store push tokens in Supabase `push_tokens` table
+ * The three modules are imported like any other: they are installed, and the
+ * Notices screen already imports expo-notifications directly. They were loaded
+ * with a dynamic import "to avoid crashes if not installed" — a case that no
+ * longer exists, and one that kept registration from ever running in a test.
  *
  * Notification types:
  * - Social: endorsements, follows, comments
@@ -19,6 +19,16 @@ import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { logger } from '../utils/logger';
 import { colors } from '../theme/theme';
+import { storage } from '../stores/mmkv-storage';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
+
+/**
+ * This device's own token, as last registered. Sign-out removes exactly this
+ * row: a member signed in on two phones keeps the other one.
+ */
+export const PUSH_TOKEN_KEY = 'push_token_this_device';
 
 // ── Type Definitions ──
 
@@ -26,26 +36,6 @@ export interface PushNotificationPayload {
   title: string;
   body: string;
   data?: Record<string, string>;
-}
-
-let Notifications: any = null;
-let Device: any = null;
-let Constants: any = null;
-
-/**
- * Initialize the push notification system.
- * Dynamically imports expo-notifications to avoid crashes if not installed.
- */
-async function loadModules() {
-  try {
-    Notifications = (await import('expo-notifications')).default ?? await import('expo-notifications');
-    Device = (await import('expo-device')).default ?? await import('expo-device');
-    Constants = (await import('expo-constants')).default ?? await import('expo-constants');
-    return true;
-  } catch {
-    logger.debug('[Push] expo-notifications not installed — skipping');
-    return false;
-  }
 }
 
 /** What the operating system currently allows, from its own point of view. */
@@ -62,14 +52,10 @@ export type PushPermissionState = 'granted' | 'denied' | 'undetermined' | 'unava
  * per install — spending it on a screen someone is merely inspecting spends it
  * forever.
  *
- * Routed through the same lazy `loadModules()` as everything else here, so the
- * "expo-notifications isn't installed" case stays known in one place — and a
- * simulator, where push cannot work at all, reports `unavailable` rather than
+ * A simulator, where push cannot work at all, reports `unavailable` rather than
  * an alarming `denied`.
  */
 export async function getPushPermissionState(): Promise<PushPermissionState> {
-  const loaded = await loadModules();
-  if (!loaded || !Notifications || !Device) return 'unavailable';
   if (!Device.isDevice) return 'unavailable';
   try {
     const { status } = await Notifications.getPermissionsAsync();
@@ -89,8 +75,6 @@ export async function getPushPermissionState(): Promise<PushPermissionState> {
  * redraw without a second round trip.
  */
 export async function requestPushPermission(): Promise<PushPermissionState> {
-  const loaded = await loadModules();
-  if (!loaded || !Notifications || !Device) return 'unavailable';
   if (!Device.isDevice) return 'unavailable';
   try {
     const { status } = await Notifications.requestPermissionsAsync();
@@ -107,9 +91,6 @@ export async function requestPushPermission(): Promise<PushPermissionState> {
  * Must be called after the user has authenticated.
  */
 export async function registerForPushNotifications(userId: string): Promise<string | null> {
-  const loaded = await loadModules();
-  if (!loaded || !Notifications || !Device) return null;
-
   // Push only works on physical devices
   if (!Device.isDevice) {
     logger.debug('[Push] Must use physical device for push notifications');
@@ -152,9 +133,12 @@ export async function registerForPushNotifications(userId: string): Promise<stri
     }
 
     // Configure notification behavior
+    // shouldShowBanner + shouldShowList: shouldShowAlert is deprecated, and the
+    // two it stood for are asked for by name.
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
       }),
@@ -183,7 +167,11 @@ async function storePushToken(_userId: string, token: string): Promise<void> {
       p_token: token,
       p_platform: Platform.OS,
     });
-    if (error && __DEV__) console.warn('[Push] register_push_token failed:', error.message);
+    if (error) {
+      if (__DEV__) console.warn('[Push] register_push_token failed:', error.message);
+      return;
+    }
+    try { storage.set(PUSH_TOKEN_KEY, token); } catch { /* sign-out then removes by platform */ }
   } catch {
     // Non-critical — token will be re-registered on next app open
   }
@@ -228,17 +216,24 @@ export async function removePushToken(userId: string): Promise<boolean> {
       return false;
     }
 
+    // This device's own row. A member is heard on every device they sign in on
+    // (20260929_01), so removing by platform would silence their other phone.
+    // An install that registered before the token was remembered falls back to
+    // the platform: the previous member's notices must not reach this device.
+    let mine: string | undefined;
+    try { mine = storage.getString(PUSH_TOKEN_KEY); } catch { mine = undefined; }
     const { error } = await supabase
       .from('push_tokens')
       .delete()
       .eq('user_id', userId)
-      .eq('platform', Platform.OS)
+      .eq(mine ? 'token' : 'platform', mine ?? Platform.OS)
       .select('id');
 
     if (error) {
       logger.warn('[Push] token removal refused:', error.message);
       return false;
     }
+    try { storage.delete(PUSH_TOKEN_KEY); } catch { /* nothing left to forget */ }
     // An empty result here is fine: with a live session the policy matches this
     // member's rows, so nothing coming back means nothing was registered.
     return true;
@@ -287,9 +282,6 @@ export function deliverEachTapOnce(onTap: (data: Record<string, string>) => void
 export async function setupNotificationResponseHandler(
   onNotificationTapped: (data: Record<string, string>) => void
 ): Promise<(() => void) | null> {
-  const loaded = await loadModules();
-  if (!loaded || !Notifications) return null;
-
   const deliver = deliverEachTapOnce(onNotificationTapped);
   const subscription = Notifications.addNotificationResponseReceivedListener(deliver);
 

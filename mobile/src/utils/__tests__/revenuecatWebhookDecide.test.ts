@@ -9,7 +9,7 @@
  * stripping a member who has paid through the period, or leaving a refunded member
  * on a paid rank for a year.
  */
-import { decide, tierFromEvent, isAccountId } from '../../../supabase/functions/revenuecat-webhook/decide';
+import { authorized, decide, tierFromEvent, isAccountId } from '../../../supabase/functions/revenuecat-webhook/decide';
 
 const UID = '11111111-1111-4111-8111-111111111111';
 const NOW = 1_800_000_000_000;
@@ -161,5 +161,20 @@ describe('tier resolution', () => {
   it('returns null rather than guessing', () => {
     expect(tierFromEvent({})).toBeNull();
     expect(tierFromEvent({ entitlement_ids: [], product_id: 'gift_card' })).toBeNull();
+  });
+});
+
+describe('the webhook\'s secret', () => {
+  const SECRET = 'Bearer rc-webhook-7f3a';
+  it('admits the secret itself', () => expect(authorized(SECRET, SECRET)).toBe(true));
+  it('refuses a guess that differs anywhere — first byte, last byte, or length', () => {
+    expect(authorized('Xearer rc-webhook-7f3a', SECRET)).toBe(false);
+    expect(authorized('Bearer rc-webhook-7f3b', SECRET)).toBe(false);
+    expect(authorized('Bearer rc-webhook-7f3', SECRET)).toBe(false);
+    expect(authorized('', SECRET)).toBe(false);
+  });
+  it('refuses everything when no secret is configured (fail closed)', () => {
+    expect(authorized('', '')).toBe(false);
+    expect(authorized('anything', '')).toBe(false);
   });
 });

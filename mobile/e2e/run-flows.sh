@@ -51,6 +51,12 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do
   sleep 2
 done
 echo "root: ${rooted} | ${answers} | input methods left: [${left}]"
+# Nor an autofill service: the email fields ask for autofill (autoComplete
+# "email"), and with the keyboards gone typing still stalled at the same place,
+# "e2e_member@e" (run 36628647938), while Android's AutofillManager inspected the
+# field. A member's phone offers their saved address; a test types its own.
+autofill="$(adb shell settings put secure autofill_service null 2>&1; adb shell settings get secure autofill_service | tr -d '\r')"
+echo "autofill service: ${autofill}"
 if [ -n "${left// /}" ]; then
   enabled="$(adb shell settings get secure enabled_input_methods | tr -d '\r')"
   echo "::error title=A keyboard app is still on the device::left: ${left} | enabled setting: ${enabled} | root: ${rooted} | Android said:${answers} — every flow that types would fail behind it."

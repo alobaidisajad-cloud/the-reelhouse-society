@@ -104,11 +104,12 @@ describe('#64 · a logout leaves no trace of the previous member', () => {
     const clean = pristine();
     const keys = Object.keys(clean) as (keyof ReturnType<typeof pristine>)[];
 
-    // 27 fields, and the old reset named 10. (It was 28 before #62 moved
-    // `_watchlistPromises` out of store state into the shared mutex helper.)
+    // 26 fields, and the old reset named 10. (It was 28 before #62 moved
+    // `_watchlistPromises` out of store state into the shared mutex helper, and
+    // 27 before `_markWatchedMutexes` went with markAsWatched, which nothing called.)
     // Enumerated rather than listed, so a field added to any slice is covered
     // here the day it is added.
-    expect(keys.length).toBe(27);
+    expect(keys.length).toBe(26);
 
     const soiled: Record<string, unknown> = {};
     for (const k of keys) soiled[k] = dirty(clean[k]);

@@ -103,6 +103,23 @@ jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
+jest.mock('@/src/utils/reelToast', () => {
+  const t = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn(), info: jest.fn() });
+  return { __esModule: true, default: t };
+});
+/** The list's own props, as the screen last drew them (its pull lives there); it draws the real list. */
+let mockListProps: Record<string, any> = {};
+jest.mock('@/src/components/layout/CinematicFlashList', () => {
+  const mockReact = require('react');
+  const actual = jest.requireActual('@/src/components/layout/CinematicFlashList');
+  return {
+    ...actual,
+    CinematicFlashList: mockReact.forwardRef((props: Record<string, any>, ref: unknown) => {
+      mockListProps = props;
+      return mockReact.createElement(actual.CinematicFlashList, { ...props, ref });
+    }),
+  };
+});
 
 /** A local date, so the day boundary means the same in every timezone. */
 const at = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h).toISOString();
@@ -649,5 +666,27 @@ describe('the page, in the rest of its states', () => {
     put({ filings: [filing()], loadingMore: false });
     const { toJSON } = await mount();
     expect(typesIn(toJSON()).has('ActivityIndicator')).toBe(false);
+  });
+});
+
+describe('a pull that reached nothing', () => {
+  // The paper on the page stayed, and nothing said the pull had failed.
+  const toast = () => jest.requireMock('@/src/utils/reelToast').default;
+  beforeEach(() => toast().error.mockClear());
+
+  it('keeps the page and says so', async () => {
+    put({ filings: [filing()] });
+    const { getByText } = await mount();
+    mockPageFails = true;
+    await act(async () => { await mockListProps.refreshControl.props.onRefresh(); });
+    expect(toast().error).toHaveBeenCalledWith('Could not refresh — check your connection.');
+    expect(getByText(/A take about a film/)).toBeTruthy();
+  });
+
+  it('a pull that was answered says nothing', async () => {
+    put({ filings: [filing()] });
+    await mount();
+    await act(async () => { await mockListProps.refreshControl.props.onRefresh(); });
+    expect(toast().error).not.toHaveBeenCalled();
   });
 });

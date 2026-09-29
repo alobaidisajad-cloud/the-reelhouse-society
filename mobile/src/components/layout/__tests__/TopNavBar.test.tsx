@@ -56,11 +56,21 @@ jest.mock('@/src/components/ui/NotificationBadge', () => {
 import { TopNavBar } from '../TopNavBar';
 // eslint-disable-next-line import/first
 import { useAuthStore } from '@/src/stores/auth';
+// eslint-disable-next-line import/first
+import { useNotificationStore } from '@/src/stores/notificationStore';
 
 describe('TopNavBar', () => {
   beforeEach(() => {
     mockModal.props = {};
     useAuthStore.setState({ user: null, isAuthenticated: false, loading: false } as never);
+    useNotificationStore.setState({ _unreadCount: 0 });
+  });
+
+  it('the bell says how many notices are unread — the dot is not spoken', () => {
+    // VoiceOver heard only "Notices" while the dot said there was something new.
+    useNotificationStore.setState({ _unreadCount: 3 });
+    const api = render(<TopNavBar />);
+    expect(api.getByLabelText('Notices, 3 unread')).toBeTruthy();
   });
 
   it('carries the Concierge ＋ — the app has no other permanent create button', () => {

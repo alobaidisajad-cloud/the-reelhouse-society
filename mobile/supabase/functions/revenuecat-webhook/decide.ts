@@ -110,3 +110,19 @@ export function decide(event: any, now: number = Date.now()): WebhookAction {
   if (!tier) return { kind: 'ignore', reason: `${type} carried no recognisable tier` };
   return { kind: 'grant', tier, reason: `${type} -> ${tier}` };
 }
+
+/**
+ * Is this the webhook's secret? In constant time: a comparison that stops at the
+ * first wrong character answers sooner for a guess that starts right, and so
+ * tells whoever is guessing how much of it is. Every byte is compared, whatever
+ * they hold. No secret configured refuses everything (fail closed).
+ */
+export function authorized(presented: string, secret: string): boolean {
+  if (!secret) return false;
+  const a = new TextEncoder().encode(presented);
+  const b = new TextEncoder().encode(secret);
+  if (a.length !== b.length) return false;   // the length is not the secret
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}

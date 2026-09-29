@@ -5,7 +5,6 @@ import {
     addLogOp,
     fetchLogsOp,
     getCinephileStatsOp,
-    markAsWatchedOp,
     removeLogOp,
     unmarkWatchedOp,
     updateLogOp
@@ -29,7 +28,6 @@ export interface LogSliceData {
     _fetchingLogs: boolean;
     _addLogMutex: boolean;
     _updateLogMutex: boolean;
-    _markWatchedMutexes: Record<number, boolean>;
 }
 
 /**
@@ -46,7 +44,6 @@ export const logSliceInitialState = (): LogSliceData => ({
     _fetchingLogs: false,
     _addLogMutex: false,
     _updateLogMutex: false,
-    _markWatchedMutexes: {},
 });
 
 export interface LogSlice extends LogSliceData {
@@ -54,7 +51,6 @@ export interface LogSlice extends LogSliceData {
     addLog: (log: Partial<DomainLog>) => Promise<void>;
     updateLog: (id: string, updates: Partial<DomainLog>) => Promise<void>;
     removeLog: (id: string, forceDeleteAll?: boolean) => Promise<void>;
-    markAsWatched: (film: { id: number; title?: string; name?: string; poster_path?: string | null; release_date?: string }, status?: 'watched' | 'rewatched' | 'abandoned') => Promise<void>;
     unmarkWatched: (filmId: number) => Promise<void>;
     getCinephileStats: (overrideCount?: number) => { count: number, level: string, color: string, progress: number };
 }
@@ -69,7 +65,6 @@ export const createLogSlice: StateCreator<FilmState, [], [], LogSlice> = (set, g
     // helper directly. The public action stays Promise<void>.
     updateLog: async (id, updates) => { await updateLogOp(set, get, id, updates); },
     removeLog: async (id, forceDeleteAll = false) => removeLogOp(set, get, id, forceDeleteAll),
-    markAsWatched: async (film, status = 'watched') => markAsWatchedOp(set, get, film, status as any),
     unmarkWatched: async (filmId) => unmarkWatchedOp(set, get, filmId),
     getCinephileStats: (overrideCount) => getCinephileStatsOp(set, get, overrideCount),
 });

@@ -128,8 +128,12 @@ export interface DispatchState {
   /** How many filings have arrived above the page since it was drawn. */
   newCount: number;
 
-  /** Never rejects: the outcome is in `pageState`. */
-  fetch: () => Promise<void>;
+  /**
+   * Never rejects: the outcome is in `pageState`, and in the answer — true when
+   * the page was read. A refresh that failed over a page keeps the page and
+   * 'read', so a caller that pulled learns it only from here.
+   */
+  fetch: () => Promise<boolean>;
   loadMore: () => Promise<void>;
   /** Is there new paper above the page? A count, not a socket (see its implementation). */
   checkForNew: () => Promise<void>;
@@ -199,7 +203,7 @@ const A_NEW_PAGE = {
 
 // A fetch in flight, and the generation that says whether its answer is still wanted:
 // a slow TAKES response never paints over a fast WIRE one.
-let inflight: Promise<void> | null = null;
+let inflight: Promise<boolean> | null = null;
 let generation = 0;
 
 /**
@@ -312,17 +316,19 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const run = (async () => {
       try {
         const rows = await pageQuery(get(), null);
-        if (gen !== generation || !memberUnchanged(startedAs)) return;
+        if (gen !== generation || !memberUnchanged(startedAs)) return false;
         const { filings, dropped } = parseFilingRows(rows);
         set({ filings, hasMore: gotFullPage(rows.length), droppedRows: dropped, newCount: 0, pageState: 'read' });
         if (dropped > 0) {
           logger.warn(`[dispatch] dropped ${dropped} malformed filing row(s)`);
         }
         await loadViewerState(filings, set, startedAs);
+        return true;
       } catch (e) {
-        if (gen !== generation) return;
+        if (gen !== generation) return false;
         if (!isNetworkError(e)) captureError(e, { where: 'dispatch.fetch' });
         if (get().filings.length === 0) set({ pageState: 'failed' });
+        return false;
       } finally {
         // Both guarded: a superseded request must not clear the slot of the one that replaced it.
         if (gen === generation) {

@@ -156,7 +156,8 @@ describe('the first page', () => {
   it('a failed first read says so, clears loading, and never rejects', async () => {
     mockThrow = new Error('refused');
     // Its callers are `void fetch()`: a rejection would escape as unhandled.
-    await expect(useDispatch.getState().fetch()).resolves.toBeUndefined();
+    // It answers false — the page was not read — which a pull-to-refresh tells.
+    await expect(useDispatch.getState().fetch()).resolves.toBe(false);
     expect(useDispatch.getState().pageState).toBe('failed');
     // A spinner that never stops is how an app tells somebody their tap did
     // nothing, and this is the path where it would happen.

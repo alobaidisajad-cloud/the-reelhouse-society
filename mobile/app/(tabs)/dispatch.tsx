@@ -46,6 +46,8 @@ import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { REFRESH_FAILED } from '@/src/components/EmptyStates';
+import reelToast from '@/src/utils/reelToast';
 
 /** A filing, or a day's divider: one flat list, as a section list re-measures on every certify. */
 type Row =
@@ -179,7 +181,10 @@ export default function DispatchScreen() {
 
   const onRefresh = useCallback(async () => {
     TactileEngine.navigate();
-    await useDispatch.getState().fetch();
+    const read = await useDispatch.getState().fetch();
+    // The paper on the page stays; the member is told the pull reached nothing.
+    // (With nothing on the page, the paper's own "could not be reached" says it.)
+    if (!read && useDispatch.getState().filings.length > 0) reelToast.error(REFRESH_FAILED);
   }, []);
 
   const openCompose = useCallback(() => {
