@@ -1,16 +1,7 @@
 /**
- * CreateListModal — Full list creation flow.
- *
- * Pixel-perfect native port of web CreateListModal.tsx (199 lines).
- * Features:
- *  - Drag handle bar (touch)
- *  - Title + Description inputs
- *  - TMDB film search → add films inline
- *  - Privacy toggle (Globe/Lock)
- *  - Film list with remove
- *  - CREATE LIST / SAVE CHANGES submit
- *
- * Route: /list-modal?editId=xxx
+ * list-modal.tsx — curate a stack, or amend one (/list-modal?editId=…): its name,
+ * its films (searched, added, dragged into order, removed), its note, and its terms
+ * (public or private, ranked or not), filed from a bar docked at the foot.
  */
 import { nav } from '@/src/utils/typedRouter';
 import { useQueryClient } from '@tanstack/react-query';
@@ -35,25 +26,14 @@ import reelToast from '@/src/utils/reelToast';
 import { Globe, GripVertical, List, ListOrdered, Lock, Plus, Search, X } from 'lucide-react-native';
 import { EDGE_LIT } from '@/src/theme/light';
 
-// Module-scoped: prevents remount on every render cycle
+// At module scope: made inside the component, it would be a new type, and remount, each render.
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
-/**
- * Height of the docked act, so the scroll can end above it.
- *
- * The bar was reserving 80pt against a real ~145 — it stood on top of the last
- * 65pt of the form, which is the whole RANKED / UNRANKED row. Declared here,
- * checked against the bar's own styles by a test, exactly as SEAL_BAR_HEIGHT is
- * on the composer: two places reserve this room and neither may guess it.
- *
- * Everything above the safe-area inset, which the callers add separately.
- */
+/** The docked bar's height above the inset; list-modal.curate.test.tsx checks it. */
 export const CURATE_BAR_HEIGHT = 104;
 
-// No hitSlop constants: every control on this page reaches 48 by its own
-// geometry now. A halo lives inside React Native's touch dispatch and is
-// invisible to both platforms' accessibility layers, so it buys reach and never
-// compliance — and past the floor it only takes area from a neighbour.
+// Every control here is 48pt by its own box. A hitSlop halo is invisible to both
+// platforms' accessibility, and past the floor only takes area from a neighbour.
 
 interface ListFilm {
     id: number;
@@ -89,11 +69,7 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove
                     s.filmRowMargin,
                     isActive ? s.filmRowActive : undefined
                 ]}
-                // The row is ~58pt tall — already well over the floor — and these
-                // rows are STACKED. PressableScale's default halo is 15pt on every
-                // side, so each row's halo reached 15pt up into the row above it,
-                // and a later sibling wins an overlap on both platforms. The
-                // bottom of every film row was firing the row BELOW it.
+                // Stacked rows: a halo would reach into the next, and the later wins.
                 hitSlop={null}
                 haptic="light"
                 accessibilityRole={sealed ? 'text' : 'button'}
@@ -128,9 +104,7 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove
 
  
 const DropdownResultRow = React.memo(({ r, onAdd }: { r: SearchResult, onAdd: (r: SearchResult) => void }) => {
-    // Same stacking trap as the film rows: a 62pt result, six of them in a
-    // column, each claiming 15pt into its neighbour. Adding the wrong film is a
-    // worse outcome than most misses on this page — it is silent.
+    // Stacked too, and a mis-tap here adds the wrong film without a word.
     return (
         <PressableScale style={s.dropRow} onPress={() => onAdd(r)} hitSlop={null} accessibilityRole="button" accessibilityLabel={`Add ${r.title ?? r.name}`}>
             {r.poster_path ? (
@@ -180,19 +154,9 @@ export default function ListModal() {
     );
     const [saving, setSaving] = useState(false);
 
-    /**
-     * ── THE FORM FOLLOWS THE STACK, IT DOES NOT SNAPSHOT IT ──────────────────
-     *
-     * Every field above was seeded by a useState INITIALIZER, which runs once.
-     * If the stack had not resolved by the time this sheet mounted — the store
-     * still hydrating, the query cache cold — the form opened EMPTY and never
-     * recovered. Combined with a header that says NEW STACK and a save path
-     * that prunes, that is how a curator renames their own stack and loses
-     * every film in it.
-     *
-     * Hydrated on first AVAILABILITY instead, once per stack, so a later
-     * refetch can never overwrite what the member has since typed.
-     */
+    // The form fills when the stack first ARRIVES, not only at mount: a stack
+    // not yet loaded would open an empty form whose save deletes every film.
+    // Once per stack, so a later refetch never overwrites what was typed.
     const hydratedFor = useRef<string | null>(null);
     useEffect(() => {
         if (!params.editId || !editList) return;
@@ -206,20 +170,10 @@ export default function ListModal() {
             ({ id: f.id, title: f.title ?? '', poster_path: f.poster_path ?? f.poster ?? null })));
     }, [params.editId, editList]);
 
-    /**
-     * ── "I DON'T KNOW" MUST NEVER LOOK LIKE "I EMPTIED IT" ───────────────────
-     *
-     * `films: []` is a real instruction. Both the direct write and the offline
-     * replay read it as the curator having emptied the stack and delete every
-     * list_item; `undefined` is skipped entirely. So the form may only send a
-     * set it is CERTAIN of.
-     *
-     * The cached stack payload is capped at 500 items and carries the true
-     * count beside it, so a stack larger than the cap can be recognised. Where
-     * the count is unknown the store's own copy is used, which is fetched
-     * unbounded — but the rule is the same either way: if what we hold does not
-     * match what exists, the holdings are not ours to submit.
-     */
+    // The films are sent only when this sheet holds ALL of them: `films: []`
+    // deletes every item (the write and its offline replay alike), `undefined`
+    // leaves them. The cached stack holds at most 500, with the true count
+    // beside it; with no count, the store's copy (read whole) is taken as whole.
     const trueFilmCount: number | undefined =
         params.editId ? queryClient.getQueryData<any>(['stack', params.editId])?.list?.filmCount : undefined;
     const holdingsAreComplete =
@@ -231,35 +185,16 @@ export default function ListModal() {
     /** An editId that resolves to nothing must never quietly become a create. */
     const editTargetMissing = !!params.editId && !editList;
 
-    /**
-     * ── AND THE CONTROLS MUST AGREE WITH THE SAVE ────────────────────────────
-     *
-     * Omitting the holdings keeps them safe, but it left the ✕, the grip and the
-     * search field all working on a set that would then be thrown away: every
-     * removal appeared to take, and came back on the next open. A sheet that
-     * cannot write the index must not offer to edit it.
-     */
+    /** A sheet that cannot write the films does not offer to edit them (✕, grip, search). */
     const holdingsAreSealed = !!params.editId && !editTargetMissing && !holdingsAreComplete;
 
-    /**
-     * ── WHAT THE ACT SAYS ────────────────────────────────────────────────────
-     *
-     * The button dimmed itself and explained nothing, so a member with no title
-     * saw a dead control and no reason. It states the want instead, and once the
-     * want is met it carries the stack's own mark — which is also the only
-     * confirmation that a film just added actually landed, since the list may be
-     * far below the fold by then.
-     */
+    // The bar names what it waits for, then the stack's mark (its count confirms an add).
     const canFile = !!title.trim() && !saving && !editTargetMissing;
-    // The MODE is what the member asked for, not what happened to load. Reading
-    // it off `editList` meant that in the window before the stack resolved — and
-    // in the rare case it never does — the sheet called itself a create again,
-    // which is the very contradiction this page was opened to remove.
+    // The mode the member asked for, not what has loaded: before the stack arrives
+    // (or if it never does) this is still an amendment.
     const isAmending = !!params.editId;
     const fileLabel = saving ? 'FILING…' : (isAmending ? 'SAVE THE AMENDMENTS' : 'FILE THE STACK');
-    // The stack's TRUE size, not the part of it this sheet is holding. A sealed
-    // index said "620 REELS" in the notice and "2 REELS" on the bar directly
-    // below it — one screen, one stack, two numbers.
+    // The stack's true size, as the notice above states it, not the part held here.
     const markCount = holdingsAreSealed && typeof trueFilmCount === 'number' ? trueFilmCount : films.length;
     const reelWord = markCount === 1 ? 'REEL' : 'REELS';
     const barLine = editTargetMissing ? 'THIS STACK COULD NOT BE OPENED'
@@ -270,13 +205,11 @@ export default function ListModal() {
             isPrivate ? 'SEALED' : 'PUBLIC',
           ].join('  ·  ');
 
-    // Search state
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [searching, setSearching] = useState(false);
-    // Derived values for UI state
 
-    // Nitrate Noir Breathing Ember Protocol
+    // The search icon breathes while a search is out.
     const emberOpacity = useSharedValue(0.5);
     useEffect(() => {
         if (searching) {
@@ -298,7 +231,6 @@ export default function ListModal() {
         opacity: emberOpacity.value,
     }));
 
-    // ── Search handler ──
     const handleSearch = useCallback((q: string) => setQuery(q), []);
 
     useEffect(() => {
@@ -321,20 +253,8 @@ export default function ListModal() {
         return () => { active = false; clearTimeout(timeoutId); };
     }, [query, films]);
 
-    /**
-     * ── THE HOLDINGS ARE SPOKEN, NOT ONLY SHOWN ──────────────────────────────
-     *
-     * A film joins at the BOTTOM of an index that may be hundreds of rows long,
-     * so the only sighted confirmation is the count on the docked bar. Someone
-     * who cannot see that has none at all, and `accessibilityLiveRegion` is
-     * Android-only — so it is announced outright or it is not announced on iOS.
-     *
-     * The announcement reads the CURRENT set from a ref rather than from inside
-     * the updater. A state updater must be pure: React may run it more than
-     * once, which would say the same sentence twice. The ref also keeps both
-     * callbacks identity-stable, so adding a film cannot re-render five hundred
-     * memoised rows.
-     */
+    // Adds and removals are SPOKEN (far below the fold; the live region is Android-only),
+    // from a ref: an updater may run twice, and would say it twice.
     const filmsRef = useRef(films);
     useEffect(() => { filmsRef.current = films; }, [films]);
 
@@ -352,7 +272,6 @@ export default function ListModal() {
         TactileEngine.selection();
     }, []);
 
-    // ── Remove film from list ──
     const removeFilm = useCallback((filmId: number) => {
         const gone = filmsRef.current.find(f => f.id === filmId);
         setFilms(prev => prev.filter(f => f.id !== filmId));
@@ -362,20 +281,16 @@ export default function ListModal() {
         TactileEngine.mutate();
     }, []);
 
-    // ── Save handler ──
     const handleSave = async () => {
         Keyboard.dismiss();
-        // Before setSaving: an early return after it would strand the button
-        // spinning, since setSaving(false) only runs in the catch. Covers BOTH
-        // branches below — a silenced member may not create OR edit a stack.
+        // Before setSaving, which only the catch undoes: a return after it would
+        // leave the button spinning. A silenced member may neither create nor amend.
         if (checkBan()) return;
         if (!title.trim()) {
             reelToast.error('Every stack requires a title. Name your thesis.');
             return;
         }
-        // An editId that never resolved must not fall through to the create
-        // branch below — that produces a SECOND stack while the member believes
-        // they amended the first.
+        // Never a create in its place: that files a second stack.
         if (editTargetMissing) {
             reelToast.error('That stack could not be opened for amendment. Go back and try again.');
             return;
@@ -383,24 +298,18 @@ export default function ListModal() {
         setSaving(true);
         try {
             if (editList) {
-                // Update existing list through store so list_items sync natively
                 await updateList(editList.id, {
                     title: title.trim(),
                     description: description.trim(),
                     isPrivate,
                     isRanked,
-                    // OMITTED, never empty. `films: []` instructs both the write
-                    // and the offline replay to delete every item; `undefined`
-                    // leaves the holdings untouched. When the set we hold is not
-                    // the whole set, the note and terms are still worth saving —
-                    // the holdings are simply not ours to rewrite.
+                    // Omitted, never empty, when this sheet does not hold them all.
                     ...(holdingsAreComplete
                         ? { films: films.map(f => ({ id: f.id, title: f.title, poster: f.poster_path ?? null })) }
                         : {}),
                 });
                 queryClient.removeQueries({ queryKey: ['stack', editList.id] });
             } else {
-                // Create new list
                 await createList({
                     title: title.trim(),
                     description: description.trim(),
@@ -412,10 +321,7 @@ export default function ListModal() {
             queryClient.invalidateQueries({ queryKey: ['stacks'] });
             TactileEngine.success();
             InteractionManager.runAfterInteractions(() => {
-                // Guarded like the catch below and like both sibling modals. Work
-                // handed to the InteractionManager still runs after this sheet is
-                // gone, and an unguarded back() there pops whatever the member
-                // navigated to instead.
+                // May run after the sheet is gone, when back() would pop another screen.
                 if (isMounted.current) nav.back();
             });
         } catch (err: unknown) {
@@ -441,27 +347,13 @@ export default function ListModal() {
 
     const ListHeader = (
         <>
-            {/* Drag Handle */}
             <View style={[s.handleWrap, { paddingTop: Math.max(insets.top + 10, 20) }]}>
                 <View style={s.handle} />
             </View>
 
-            {/* Header */}
             <View style={s.header}>
-                {/* It said NEW STACK while you were amending one — beside a
-                    button reading SAVE CHANGES, so the sheet contradicted itself
-                    in two places at once. A member who believes they are
-                    starting something new will fill in a form that is actually
-                    about to rewrite something old.
-
-                    It names the MODE, not the stack. Naming the stack here put
-                    the same words twice within sixty points, since the plate
-                    directly below holds that title in a larger face — and the
-                    plate is the copy you can actually edit.
-
-                    No shrink-to-fit: it is unreliable on Android, so the two
-                    platforms disagreed about the same title. Two lines and an
-                    ellipsis are honest at any width. */}
+                {/* The MODE, not the stack's name, which the plate below already
+                    shows. Two lines, never shrink-to-fit (unreliable on Android). */}
                 <View style={s.headerTitleWrap}>
                     <Text style={s.headerTitle} numberOfLines={2} {...displayTextProps}>
                         {isAmending ? 'Amend a Stack' : 'Curate a Stack'}
@@ -478,10 +370,7 @@ export default function ListModal() {
                 <Text style={s.label}>TITLE</Text>
                 <TextInput
                     style={s.plate}
-                    // Wraps rather than shrinks: a hundred characters of Rye is
-                    // five lines here, and a squeezed title is worse than a
-                    // second one. adjustsFontSizeToFit would disagree across
-                    // platforms anyway.
+                    // Wraps, never shrinks (see the plate's style).
                     multiline
                     value={title}
                     onChangeText={setTitle}
@@ -494,24 +383,16 @@ export default function ListModal() {
                     disableFullscreenUI={true}
                     keyboardAppearance="dark"
                     accessibilityLabel="Stack title"
-                    // 26pt is already display size; uncapped, an accessibility
-                    // setting could take it past 70 and leave four words filling
-                    // the sheet.
+                    // Capped: 26pt uncapped passes 70 at iOS's largest text setting.
                     {...displayTextProps}
                 />
             </View>
 
-            {/* Film Search & Add */}
             <View style={[s.sec, { marginBottom: films.length > 0 ? 12 : 0 }]}>
                 <Text style={s.label}>HOLDINGS</Text>
 
-                {/* Held back only while the index cannot be written. Live
-                    controls over holdings that will be discarded are worse than
-                    no controls: every removal would appear to take and then
-                    quietly return. */}
                 {holdingsAreSealed ? (
-                    // In the search field's own place, so the section reads the
-                    // same either way: label, then the thing you may do here.
+                    // In the search field's place: the label, then what may be done here.
                     <View style={s.lockNote}>
                         <Text style={s.lockNoteText} {...scaledTextProps}>
                             THIS INDEX IS LARGER THAN THIS SHEET CAN HOLD{typeof trueFilmCount === 'number' ? ` — ${trueFilmCount} REELS` : ''}.{'\n'}
@@ -544,7 +425,6 @@ export default function ListModal() {
                             />
                         </View>
 
-                        {/* Search results dropdown */}
                         {results.length > 0 && (
                             <Animated.View entering={FadeIn.duration(150)} style={s.dropdown}>
                                 {results.map(r => (
@@ -556,15 +436,7 @@ export default function ListModal() {
                 )}
             </View>
 
-            {/* ── A caption about the index belongs ABOVE the index ───────────
-                It was beneath it, so on a stack of any size you met the caption
-                after scrolling past the thing it was describing.
-
-                Said once there is an ORDER to speak of — a single reel has none
-                — and never before. The order is written to rank_position for
-                every stack, ranked or not: "unranked" means unnumbered, not
-                unordered, and nothing here ever said so while the grip sat in
-                the row in both modes. */}
+            {/* Above the films it describes, once there are two to order. */}
             {!holdingsAreSealed && films.length > 1 && (
                 <Text style={s.dragLine} {...scaledTextProps}>DRAG TO ORDER  ·  THE ORDER IS KEPT EITHER WAY</Text>
             )}
@@ -573,10 +445,8 @@ export default function ListModal() {
 
     const ListFooter = (
         <>
-            {/* Description */}
             <View style={s.sec}>
-                {/* (OPTIONAL) spent three words on a signal the docked bar
-                    already gives by never asking for it. */}
+                {/* No "(OPTIONAL)": the bar never asks for a note, which says so. */}
                 <Text style={s.label}>NOTE</Text>
                 <TextInput
                     style={[s.input, s.descInput]}
@@ -598,8 +468,7 @@ export default function ListModal() {
                 )}
             </View>
 
-            {/* THE TERMS — visibility and format are one decision about how
-                this stack is published, and they were two labelled blocks. */}
+            {/* THE TERMS: who may see it and whether it is numbered, one decision. */}
             <View style={s.sec}>
                 <Text style={s.label}>TERMS</Text>
                 <View style={s.toggleRow}>
@@ -659,10 +528,6 @@ export default function ListModal() {
                 </View>
             </View>
 
-            {/* The act is not here any more. It sat at the foot of the scroll,
-                so a stack of fifty films put fifty rows between the member and
-                the button that finishes the job — and it dimmed itself without
-                ever saying what it was waiting for. It is docked below. */}
         </>
     );
 
@@ -675,10 +540,7 @@ export default function ListModal() {
                 keyExtractor={(item) => String(item.id)}
                 renderItem={renderFilmItem}
                 ListHeaderComponent={ListHeader}
-                // No empty state. It spent about 120pt of the first screen
-                // restating the placeholder directly above it — "Search films to
-                // add..." followed by "Search for films above to add them to
-                // your stack." The search field is its own instruction.
+                // No empty state: the search field above is its own instruction.
                 ListEmptyComponent={null}
                 ListFooterComponent={ListFooter}
                 contentContainerStyle={{ paddingBottom: insets.bottom + CURATE_BAR_HEIGHT + 16 }}
@@ -691,10 +553,8 @@ export default function ListModal() {
                 updateCellsBatchingPeriod={50}
             />
 
-            {/* ══ THE ACT ══ docked, and honest about what it wants. The same
-                law as the composer's seal: a control that refuses must say why,
-                and the act a page exists for should never be somewhere you have
-                to go and find. */}
+            {/* THE ACT, docked (the composer's seal is the same): never scrolled to,
+                and a refusal says why. */}
             <View style={[s.bar, { paddingBottom: insets.bottom + 14 }]}>
                 <Text style={s.barLine} numberOfLines={1} {...scaledTextProps}>{barLine}</Text>
                 <PressableScale
@@ -706,17 +566,12 @@ export default function ListModal() {
                     haptic="medium"
                     accessibilityRole="button"
                     accessibilityState={{ disabled: saving }}
-                    // The reason travels in the LABEL: accessibilityLiveRegion is
-                    // Android-only, so a button that reads "File the stack" while
-                    // doing nothing is a dead end for anyone who cannot see it dim.
+                    // The reason is in the label: a dimmed button cannot be heard.
                     accessibilityLabel={canFile ? fileLabel : `${fileLabel}. ${barLine}`}
                 >
                     <Text style={s.barPressText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{fileLabel}</Text>
                 </PressableScale>
-                {/* No CANCEL. The way out is CLOSE, top-right, where a sheet's
-                    dismissal lives — and the sheet still pulls down. A second
-                    one here cost 48pt of a bar that was already standing on the
-                    form, and gave the page two names for one act. */}
+                {/* No CANCEL: the way out is CLOSE, top right, or pulling the sheet down. */}
             </View>
         </Animated.View>
     );
@@ -733,8 +588,6 @@ const s = StyleSheet.create({
     },
     headerTitleWrap: { flex: 1, paddingRight: 12 },
     headerTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, color: colors.parchment },
-    // 48 by geometry. A halo is invisible to both platforms' accessibility
-    // layers, so only the box itself answers "is this big enough".
     closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, minHeight: 48, marginRight: -8 },
     closeBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog, includeFontPadding: false },
 
@@ -746,18 +599,9 @@ const s = StyleSheet.create({
         padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment,
     },
     /**
-     * THE PLATE — the stack's name, set in the face the catalogue will use.
-     *
-     * A title is the only piece of type on this page that carries any weight,
-     * and it was being typed into a 14pt monospace box to be discovered later,
-     * on another screen, in another font. Here it takes its shape under the
-     * member's hands.
-     *
-     * A rule beneath rather than a box around it, so it reads as a plate and
-     * not as another field — with the caret in brass so it still plainly says
-     * "type here". It WRAPS and never shrinks: adjustsFontSizeToFit is
-     * unreliable multiline on Android, and a squeezed title is worse than a
-     * second line.
+     * THE PLATE: the name typed in the face the catalogue sets it in, over a rule
+     * rather than in a box, the caret in brass. It wraps and never shrinks:
+     * adjustsFontSizeToFit is unreliable multiline on Android.
      */
     plate: {
         borderBottomWidth: 1, borderBottomColor: colors.sepiaBorder,
@@ -765,7 +609,6 @@ const s = StyleSheet.create({
         fontFamily: fonts.display, fontSize: 26, lineHeight: 34, color: colors.parchment,
     },
 
-    // Search
     searchWrap: { position: 'relative' },
     searchInput: {
         backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
@@ -784,7 +627,6 @@ const s = StyleSheet.create({
     dropTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.parchment },
     dropMeta: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 0.6, marginTop: 2, includeFontPadding: false },
 
-    // Film list
     containerFlex: { flex: 1 },
     filmRow: {
         flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -793,9 +635,8 @@ const s = StyleSheet.create({
     },
     filmPoster: { width: 28, height: 42, borderRadius: 2 },
     filmTitle: { flex: 1, fontFamily: fonts.sub, fontSize: 13, color: colors.parchment },
-    // Out of the drag row's own pressable and up to 48. At 26pt inside its
-    // parent it both missed the floor and stole the area you grab to reorder —
-    // a child always wins the touch, on both platforms.
+    // 48pt, reaching past the row's padding: a child wins the touch over its row,
+    // so a small ✕ inside would take the area grabbed to reorder.
     removeBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginVertical: -8, marginRight: -8 },
     filmRowMargin: { marginHorizontal: 20, marginBottom: 6 },
     filmRowActive: {
@@ -809,29 +650,20 @@ const s = StyleSheet.create({
     filmPosterEmpty: { backgroundColor: colors.ash },
     gripOpacity: { opacity: 0.5 },
     
-    // Rank Styling
     rankWrap: { width: 36, alignItems: 'center', justifyContent: 'center', marginRight: 4, marginLeft: 2 },
     rankWrapActive: { transform: [{ scale: 1.1 }] },
     rankText: { fontFamily: fonts.body, fontSize: 13, color: colors.fogQuiet, fontVariant: ['tabular-nums'], letterSpacing: 1 },
     rankTextActive: { color: colors.sepia, opacity: 1, textShadowColor: 'rgba(218,165,32,0.4)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 },
 
-    // Empty list state
-
-    // The order is stored for EVERY stack: rank_position is written from the
-    // array order whether or not the stack is ranked. "Unranked" means
-    // unnumbered, not unordered — and nothing on this page ever said so while
-    // the grip sat there in both modes.
+    // Every stack keeps its order (rank_position): "unranked" is unnumbered, not unordered.
     dragLine: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fogQuiet, paddingHorizontal: 20, marginTop: 14, marginBottom: 8, includeFontPadding: false },
-    // Brass, not blood. Nothing has gone wrong here — a very large index simply
-    // cannot be rewritten from a sheet, which is a house rule, not an error. Red
-    // would have the member hunting for the mistake they had made.
+    // Brass, not red: a house rule, not an error the member made.
     lockNote: {
         padding: 12, borderRadius: 4,
         backgroundColor: 'rgba(184,137,26,0.07)', borderWidth: 1, borderColor: colors.sepiaBorder,
     },
     lockNoteText: { fontFamily: fonts.sub, fontSize: 10, lineHeight: 16.5, letterSpacing: 0.5, color: colors.bone, includeFontPadding: false },
 
-    // Privacy toggle
     toggleRow: { flexDirection: 'row', gap: 8 },
     toggleBtn: {
         flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -841,17 +673,7 @@ const s = StyleSheet.create({
     toggleText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.fog, includeFontPadding: false },
     toggleTextActive: { color: colors.ink },
 
-    // Submit
-
-    /**
-     * THE ACT, DOCKED — the same law as the composer's seal.
-     *
-     * CREATE STACK sat at the foot of the scroll, so with fifty films you
-     * scrolled past all fifty to finish; and it dimmed itself without ever
-     * saying what it wanted. Fixed to the sheet now, stating the want, and
-     * carrying the stack's own mark once there is one — which is also the only
-     * confirmation a member gets that a film they added actually landed.
-     */
+    // THE ACT, docked (see CURATE_BAR_HEIGHT).
     bar: { ...EDGE_LIT,
         position: 'absolute', left: 0, right: 0, bottom: 0,
         backgroundColor: colors.soot,
@@ -865,14 +687,11 @@ const s = StyleSheet.create({
     },
     barPressText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.ink, includeFontPadding: false },
     barDim: { opacity: 0.42 },
-    // A way out should not carry the weight of the act it sits beside.
 
-    // Extracted
     searchIcon: { position: 'absolute', left: 12, top: 13, zIndex: 1 },
     dropFlex: { flex: 1 },
     descInput: { minHeight: 72 },
-    // Appears only near the ceiling — a counter present from the first
-    // character is a warning about a limit nobody was approaching.
+    // Shown only past 800 of 1000: a counter from the first letter warns of nothing.
     counter: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, textAlign: 'right', marginTop: 6, includeFontPadding: false },
 });
 
