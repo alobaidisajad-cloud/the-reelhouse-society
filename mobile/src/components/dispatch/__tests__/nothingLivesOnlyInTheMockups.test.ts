@@ -101,11 +101,11 @@ const DESIGNED_NOT_WIRED = new Set([
   // `FilmPicker` came off this list when the writing room began using it to
   // name the film a dossier is about — the ratchet doing precisely its job.
 
-  // DECIDED AGAINST × 4. The app has a writing room — `ComposeDesks`, and
-  // `app/dispatch/compose.tsx` around it — and it is the one that ships, with
-  // the toolbar, the preview that is the reader, the film and the series. These
-  // four are the alternative that lost. They stay drawn while the design record
-  // still refers to them; nothing will mount them.
+  // DECIDED AGAINST. The writing room that ships is `ComposeDesks` (with
+  // `app/dispatch/compose.tsx`); WireDesk and DossierDesk are the alternative
+  // that lost, kept drawn for the design record. DeskHead and DeskRail are named
+  // here because no other file imports them, but they are not dead: the ballot
+  // desk, which ships, wears both.
   'src/components/dispatch/paper/PaperDesk.tsx  ::  DeskHead',
   'src/components/dispatch/paper/PaperDesk.tsx  ::  DeskRail',
   'src/components/dispatch/paper/PaperDesk.tsx  ::  WireDesk',

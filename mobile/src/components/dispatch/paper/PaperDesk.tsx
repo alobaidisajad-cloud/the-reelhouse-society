@@ -1,15 +1,14 @@
 /**
- * ── THE THREE FORMS THAT HAD NO DESK ─────────────────────────────────────────
- * The picker offers five forms. Two of them had a composer drawn (take,
- * seeking) and three did not — including the ballot, which was added on your
- * suggestion, and the dossier, which is the entire Auteur tier.
+ * PaperDesk.tsx — the desks a filing is written at, and the sheets they open.
  *
- * Every desk here is the SAME desk: back / kind / file it across the top, the
- * document filling the room, one tool rail at the foot. What changes is the
- * form printed on the paper, because what changes between kinds is the form.
+ * Every desk is the SAME desk: back / kind / file it across the top, the
+ * document filling the room, one tool rail at the foot; what changes is the form
+ * printed on the paper. The app mounts the ballot desk, the film finder and the
+ * share sheet; the wire and dossier desks are the design record of a writing
+ * room that lost to ComposeDesks, drawn only by the mockups.
  *
- * Also here: the two sheets a desk opens (find a film, share it) and the sheet
- * the page opens on somebody else's filing (report it).
+ * A control whose handler is absent (the harness) is disabled and says so:
+ * aDeskControlNeverAnswersWithNothing.test.tsx.
  */
 import { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -24,7 +23,10 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
-import { KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, groupDigits, nameOf } from './paperMetrics';
+import {
+  KIND_RULE, COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, CLOSING_TIMES, groupDigits, nameOf, nextClosing,
+  type ClosingTime,
+} from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
@@ -33,15 +35,9 @@ import { PaperKeyWell } from './PaperKeyWell';
 import { DeskDoc } from './PaperDeskDoc';
 import { EDGE_LIT } from '@/src/theme/light';
 
-/** The head every desk wears. One component so three desks cannot drift. */
 /**
- * BACK and FILE IT are REQUIRED, for the reason BrassButton's onPress is.
- *
- * `BallotDesk` mounted this with neither, so the ballot desk had a back arrow
- * that did not go back and a FILE IT that did not file — on the one screen where
- * a member has just spent a minute choosing six films. Optional handlers on a
- * header whose entire content is two controls is a dead end waiting to be
- * written; required ones are a compile error the moment it is.
+ * The head every desk wears, one component so the desks cannot drift. BACK and
+ * FILE IT are REQUIRED: a header of two controls must not compile without them.
  */
 export const DeskHead = memo(function DeskHead({
   kind, ready, onBack, onFile,
@@ -55,8 +51,7 @@ export const DeskHead = memo(function DeskHead({
         {...decorativeTextProps}>
         {nameOf(kind)}
       </Text>
-      {/* FILE IT is lit only when the form is complete. A permanently bright
-          confirm on an unfinished form is a button that lies about being ready. */}
+      {/* Lit only when the form is complete: a bright FILE IT on an unfinished form lies. */}
       <PressableScale onPress={ready ? onFile : undefined} hitSlop={{ top: 12, bottom: 12, left: 8, right: 0 }} haptic="medium" disabled={!ready}
         accessibilityRole="button"
         accessibilityLabel={ready ? 'File it' : 'File it. Not ready yet'}
@@ -69,13 +64,22 @@ export const DeskHead = memo(function DeskHead({
   );
 });
 
+/** A tool on the rail. With no `onPress` (the design record) it is disabled, and says so. */
+export type RailTool = {
+  icon: 'film' | 'still' | 'spoiler' | 'date';
+  label: string;
+  on?: boolean;
+  onPress?: () => void;
+  /** Spoken in place of the label, where the label alone does not say what a press does. */
+  spoken?: string;
+};
+
 /** The rail every desk stands on. `count` appears only when it could matter. */
 export const DeskRail = memo(function DeskRail({
-  tools, remaining, onTool,
+  tools, remaining,
 }: {
-  tools: { icon: 'film' | 'still' | 'spoiler' | 'date'; label: string; on?: boolean }[];
+  tools: RailTool[];
   remaining?: number;
-  onTool?: (icon: 'film' | 'still' | 'spoiler' | 'date') => void;
 }) {
   const I = { film: FilmIcon, still: ImageIcon, spoiler: AlertTriangle, date: Calendar };
   return (
@@ -83,9 +87,11 @@ export const DeskRail = memo(function DeskRail({
       {tools.map((t) => {
         const Icon = I[t.icon];
         return (
-          <PressableScale key={t.label} style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
-            onPress={() => onTool?.(t.icon)}
-            accessibilityRole="button" accessibilityState={{ selected: !!t.on }} accessibilityLabel={t.label.toLowerCase()}>
+          <PressableScale key={t.icon} style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
+            onPress={t.onPress} disabled={!t.onPress}
+            accessibilityRole="button"
+            accessibilityState={{ selected: !!t.on, disabled: !t.onPress }}
+            accessibilityLabel={t.spoken ?? t.label.toLowerCase()}>
             <Icon size={13} strokeWidth={2} color={t.on ? colors.sepia : colors.bone} />
             <Text style={[p.rl, t.on && { color: colors.sepia }]} {...scaledTextProps}>{t.label}</Text>
           </PressableScale>
@@ -165,12 +171,12 @@ export const BallotDesk = memo(function BallotDesk({
   onQuestion, onRemove, onChoose, onCloses, onBack, onFile, ready,
 }: {
   me: PaperAuthor; hour: string; question: string;
-  options: (PaperFilm | null)[]; closes: string;
+  options: (PaperFilm | null)[]; closes: ClosingTime;
   /** Absent in the harness, where the question is a drawn line. */
   onQuestion?: (text: string) => void;
   onRemove?: (index: number) => void;
   onChoose?: (index: number) => void;
-  onCloses?: (choice: string) => void;
+  onCloses?: (choice: ClosingTime) => void;
   onBack: () => void;
   onFile: () => void;
   ready?: boolean;
@@ -187,14 +193,8 @@ export const BallotDesk = memo(function BallotDesk({
           </View>
           <View style={p.column}>
             <Byline author={me} />
-            {/* The lead-in is the HOUSE and cannot live inside the field: it is
-                not the member's text, and putting it there would let them
-                delete it or type before it. Printed, with the field set
-                immediately after — which is also what makes the desk print the
-                shape the page will.
-
-                No `onQuestion` means the harness, where this stays a drawn line
-                with a drawn caret and every screenshot is unchanged. */}
+            {/* The lead-in is the house's, printed beside the field, never in it
+                (where it could be deleted); the harness draws the question. */}
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
               <Text style={[p.leadIn, LEAD_STYLE.ballot]} {...decorativeTextProps}>BALLOT — </Text>
               {onQuestion ? (
@@ -236,15 +236,17 @@ export const BallotDesk = memo(function BallotDesk({
                         <Text style={d.slotMeta} numberOfLines={1} {...scaledTextProps}>{o.year}</Text>
                       </View>
                       <PressableScale hitSlop={{ top: 4, bottom: 4, left: 8, right: 0 }} haptic
-                        onPress={() => onRemove?.(i)}
-                        accessibilityRole="button" accessibilityLabel={`Remove ${o.title}`}>
+                        onPress={onRemove && (() => onRemove(i))} disabled={!onRemove}
+                        accessibilityRole="button" accessibilityState={{ disabled: !onRemove }}
+                        accessibilityLabel={`Remove ${o.title}`}>
                         <X size={13} strokeWidth={2} color={colors.fog} />
                       </PressableScale>
                     </>
                   ) : (
                     <PressableScale style={d.slotEmpty} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
-                      onPress={() => onChoose?.(i)}
-                      accessibilityRole="button" accessibilityLabel={`Choose film ${i + 1}`}>
+                      onPress={onChoose && (() => onChoose(i))} disabled={!onChoose}
+                      accessibilityRole="button" accessibilityState={{ disabled: !onChoose }}
+                      accessibilityLabel={`Choose film ${i + 1}`}>
                       <Plus size={12} strokeWidth={2} color={colors.sepia} />
                       <Text style={d.slotAdd} {...scaledTextProps}>
                         {i < 2 ? 'CHOOSE A FILM' : 'ANOTHER, IF YOU LIKE'}
@@ -258,10 +260,10 @@ export const BallotDesk = memo(function BallotDesk({
             <View style={d.closesRow}>
               <Text style={d.fieldLabel} {...decorativeTextProps}>CLOSES</Text>
               <View style={d.closesChoices}>
-                {['1 DAY', '2 DAYS', '1 WEEK'].map((c) => (
+                {CLOSING_TIMES.map(({ label: c }) => (
                   <PressableScale key={c} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} haptic="selection"
-                    onPress={() => onCloses?.(c)}
-                    accessibilityRole="button" accessibilityState={{ selected: c === closes }}
+                    onPress={onCloses && (() => onCloses(c))} disabled={!onCloses}
+                    accessibilityRole="button" accessibilityState={{ selected: c === closes, disabled: !onCloses }}
                     accessibilityLabel={`Closes in ${c.toLowerCase()}`}>
                     <Text style={[d.choice, c === closes && d.choiceOn]} {...scaledTextProps}>{c}</Text>
                   </PressableScale>
@@ -271,12 +273,15 @@ export const BallotDesk = memo(function BallotDesk({
           </View>
         </View>
       </DeskDoc>
-      <DeskRail tools={[{ icon: 'date', label: 'CLOSES', on: true }]}
+      {/* CLOSES on the rail is the same choice as on the paper: each press moves it on. */}
+      <DeskRail
+        tools={[{
+          icon: 'date', label: `CLOSES · ${closes}`, on: true,
+          onPress: onCloses && (() => onCloses(nextClosing(closes))),
+          spoken: `Closes in ${closes.toLowerCase()}. Change it`,
+        }]}
         remaining={MAX_LENGTHS.filingTitle - question.length} />
-      {/* Drawn in the harness, where `onQuestion` is absent; the keyboard's real
-          height in the app, where it is not. A fixed 210pt block was neither —
-          it left the tool rail under the keyboard AND put the word KEYBOARD on
-          a member's screen. */}
+      {/* The keyboard's real height in the app; a drawn keyboard in the harness. */}
       <PaperKeyWell drawn={!onQuestion} />
     </View>
   );
@@ -309,8 +314,9 @@ export const DossierDesk = memo(function DossierDesk({
         {series ? (
           <Text style={d.dossierSeries} numberOfLines={1} {...scaledTextProps}>{series.toUpperCase()}</Text>
         ) : (
-          <PressableScale style={{ paddingVertical: 6 }} haptic="selection" onPress={onSeries}
-            accessibilityRole="button" accessibilityLabel="Make this part of a series">
+          <PressableScale style={{ paddingVertical: 6 }} haptic="selection" onPress={onSeries} disabled={!onSeries}
+            accessibilityRole="button" accessibilityState={{ disabled: !onSeries }}
+            accessibilityLabel="Make this part of a series">
             <Text style={d.dossierAdd} {...scaledTextProps}>+ PART OF A SERIES</Text>
           </PressableScale>
         )}
@@ -318,13 +324,13 @@ export const DossierDesk = memo(function DossierDesk({
         <Text style={d.dossierBody} {...scaledTextProps}>{body}<Text style={p.caret} {...UNSPOKEN}>|</Text></Text>
       </DeskDoc>
       <View style={p.rail}>
-        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onFilm}
-          accessibilityRole="button" accessibilityLabel="Name a film">
+        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onFilm} disabled={!onFilm}
+          accessibilityRole="button" accessibilityState={{ disabled: !onFilm }} accessibilityLabel="Name a film">
           <FilmIcon size={13} strokeWidth={2} color={colors.bone} />
           <Text style={p.rl} {...scaledTextProps}>FILM</Text>
         </PressableScale>
-        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onCover}
-          accessibilityRole="button" accessibilityLabel="Choose a cover">
+        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onCover} disabled={!onCover}
+          accessibilityRole="button" accessibilityState={{ disabled: !onCover }} accessibilityLabel="Choose a cover">
           <ImageIcon size={13} strokeWidth={2} color={colors.bone} />
           <Text style={p.rl} {...scaledTextProps}>COVER</Text>
         </PressableScale>
@@ -350,17 +356,7 @@ export const FilmFinder = memo(function FilmFinder({
   query, results, onPick, onQuery,
 }: {
   query: string; results: PaperFilm[];
-  /**
-   * The INDEX comes too, and the caller must use it.
-   *
-   * The film alone is not an identity: the caller has to map it back to the
-   * TMDB id it carries, and doing that by title and year picks the FIRST result
-   * that matches — so two entries sharing both (a re-release, a duplicate TMDB
-   * record) resolve to the wrong id, and the wrong film is persisted as the
-   * filing's subject. The row is then correct-looking and wrong.
-   *
-   * This is the same defect as keying the rows by title, one layer up.
-   */
+  /** With its INDEX, to map by: a title and year can repeat (a re-release). */
   onPick?: (film: PaperFilm, index: number) => void;
   /** Absent in the harness, where the query is a drawn line with a caret. */
   onQuery?: (text: string) => void;
@@ -397,8 +393,9 @@ export const FilmFinder = memo(function FilmFinder({
         <View key={i}>
           {i > 0 && <View style={p.hair} />}
           <PressableScale style={d.result} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
-            onPress={() => onPick?.(f, i)}
-            accessibilityRole="button" accessibilityLabel={`${f.title}, ${f.year}`}>
+            onPress={onPick && (() => onPick(f, i))} disabled={!onPick}
+            accessibilityRole="button" accessibilityState={{ disabled: !onPick }}
+            accessibilityLabel={`${f.title}, ${f.year}`}>
             <View style={d.resultArt}>
               {f.posterPath ? (
                 <Image source={{ uri: f.posterPath }} style={p.plateArt} contentFit="cover" />
@@ -419,30 +416,6 @@ export const FilmFinder = memo(function FilmFinder({
   );
 });
 
-/* ── THERE IS NO PAPER REPORT SHEET ───────────────────────────────────────
- * One stood here, 60 lines, and no screen ever mounted it. The app reports
- * a filing through `src/components/moderation/ReportSheet` — the same sheet
- * the lounge and the logs use — which carries the plumbing this one never
- * had: the content type, the target, the block toggle, the submission, and
- * a reason enum a CHECK constraint actually enforces.
- *
- * It survived a dead-export sweep because a DIFFERENT component is also
- * called `ReportSheet`, and the guard asked only whether the NAME appeared
- * anywhere in the app. It did — in three files, all importing the other one.
- * The guard now asks whether a file imports from THIS module.
- *
- * And it was not merely dead. Its foot read "Five members report a filing
- * and the house reads it", which is the clause already removed from the
- * rules page for being false — there is no five anywhere: no threshold, no
- * trigger, no counter that acts. A dead component is a place a corrected
- * sentence goes back to being wrong.
- *
- * Its reasons were good and are not lost: unmarked spoilers, arguing with
- * the member, nothing to do with cinema. `REPORT_REASON_LABELS` in
- * src/types/moderation.ts already says all three in the house's voice, and
- * says them everywhere rather than on one screen.
- */
-
 /* ═══ SHARING ═════════════════════════════════════════════════════════════════
  * Four destinations, in the order they are actually used, and the card is shown
  * ABOVE them — you are choosing where to send a thing you can see, not agreeing
@@ -457,51 +430,11 @@ export const ShareSheet = memo(function ShareSheet({
   /** Which destination was chosen, by its label — the row's own words. */
   onDest?: (label: string) => void;
   preview: React.ReactNode;
-  /**
-   * Whether this filing HAS a card to save.
-   *
-   * Only a dossier does. A take shared as a poster is a poster of somebody's
-   * opinion and a seeking is a poster of somebody's question; nobody makes
-   * those, so nothing is drawn for them. The row is therefore absent, not
-   * dimmed: a disabled control asks a question the app has no answer to, and
-   * offering to save a picture that will never exist is worse than not offering.
-   *
-   * Every kind keeps the other three — a lounge, a link and the system sheet —
-   * because pointing at a filing is useful whatever kind it is.
-   *
-   * ⚠️ NOTHING PASSES THIS, AND THAT IS DELIBERATE — 2026-09-04.
-   * The reader is the only screen that mounts this sheet and it never sets
-   * `card`, so the row has never appeared. Two reasons, and the second is the
-   * one that decides it:
-   *
-   *   · A DIRECT SAVE IS NOT AVAILABLE. "To your photos" means writing to the
-   *     photo library, which needs `expo-media-library`. It is not a dependency
-   *     of this app, and adding one needs a native build — which the release is
-   *     frozen against.
-   *   · WITHOUT IT THE ROW IS A DUPLICATE. ELSEWHERE already captures a
-   *     dossier's clipping and hands it to the system sheet, where "Save Image"
-   *     is one tap. Offering a second row that does exactly the same thing is
-   *     worse than offering one, and a row promising the photo library while
-   *     opening a share sheet is worse still.
-   *
-   * So the prop stays, unset, with the reason written down — and the work is in
-   * DEFERRED-ACTIONS.md rather than half-built behind a label that overpromises.
-   */
+  /** A dossier's card to save; unset in the app (supabase/DEFERRED-ACTIONS.md, SAVE THE CARD). */
   card?: boolean;
 }) {
-  /**
-   * ── ONLY WHAT THE PHONE CANNOT DO ITSELF ─────────────────────────────────
-   * This sheet had four rows and two of them were already in the operating
-   * system's own share sheet: COPY THE LINK, and a second way to reach the
-   * apps that ELSEWHERE reaches. A custom sheet that reimplements the OS sheet
-   * is a longer road to the same place, and one the member has to read first.
-   *
-   * What survives is what iOS and Android have no idea about — the house's own
-   * rooms, and the clipping that only a dossier has. Then ELSEWHERE hands over
-   * to the system sheet, which already carries copy-link, Messages, WhatsApp
-   * and Instagram, ordered by what this member actually uses. We are not going
-   * to guess that order better than their phone already knows it.
-   */
+  // Only what the phone's own sheet cannot do (the house's rooms, a dossier's
+  // card); ELSEWHERE hands the rest to it, ordered as this member uses them.
   const rows: [typeof Send, string, string][] = [
     [Send, 'TO THE LOUNGE', 'Drop it into a room'],
     ...(card
@@ -517,8 +450,9 @@ export const ShareSheet = memo(function ShareSheet({
         <View key={label}>
           {i > 0 && <View style={p.hair} />}
           <PressableScale style={d.dest} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
-            onPress={() => onDest?.(String(label))}
-            accessibilityRole="button" accessibilityLabel={`${label}. ${sub}.`}>
+            onPress={onDest && (() => onDest(String(label)))} disabled={!onDest}
+            accessibilityRole="button" accessibilityState={{ disabled: !onDest }}
+            accessibilityLabel={`${label}. ${sub}.`}>
             <Icon size={15} strokeWidth={2} color={colors.sepia} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={d.destLabel} {...deckLabelProps}>{label}</Text>
@@ -543,15 +477,6 @@ const d = StyleSheet.create({
     width: 34, height: 3, borderRadius: 2, alignSelf: 'center',
     backgroundColor: colors.sepia, opacity: 0.32, marginBottom: 16,
   },
-  sheetHead: {
-    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia,
-    marginBottom: 4, includeFontPadding: false,
-  },
-  sheetFoot: {
-    fontFamily: fonts.bodyItalic, fontSize: 12.5, lineHeight: 18,
-    color: colors.bone, opacity: QUIET, marginTop: 16,
-  },
-
   // ── fields ────────────────────────────────────────────────────────────────
   field: {
     marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', paddingTop: 12,
@@ -570,11 +495,7 @@ const d = StyleSheet.create({
   // ── the ballot desk ───────────────────────────────────────────────────────
   ballotQ: { fontFamily: fonts.display, fontSize: 16.5, lineHeight: 28, color: colors.parchment },
   slot: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
-  // 21, matching `optionNo` on the ballot itself and for the same measured
-  // reason: `III.` needs 19pt at 8.5pt in the sub face and was being cut by two.
-  // The desk numbers the same six options the ballot prints, so a member choosing
-  // the third film saw `III` here and `III` there — the same fault twice, because
-  // the two rows were styled separately.
+  // 21, as the ballot's own `optionNo`: `III.` needs 19pt at 8.5pt in the sub face.
   slotNo: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, width: 21, includeFontPadding: false },
   slotArt: {
     width: 26, height: 39, borderRadius: 1, overflow: 'hidden',
@@ -630,16 +551,6 @@ const d = StyleSheet.create({
   },
   resultTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.parchment, includeFontPadding: false },
   resultMeta: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, marginTop: 4, includeFontPadding: false },
-
-  // ── reporting ───────────────────────────────────────────────────────────────
-  reason: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  box: {
-    width: 13, height: 13, borderRadius: 1, borderWidth: 1.4,
-    borderColor: 'rgba(184,137,26,0.5)', alignItems: 'center', justifyContent: 'center',
-  },
-  boxMark: { fontFamily: fonts.sub, fontSize: 12.5, color: CRIMSON_INK, marginTop: -2, includeFontPadding: false },
-  reasonText: { flex: 1, minWidth: 0, fontFamily: fonts.body, fontSize: 12.5, color: colors.parchment },
-  reportBtn: { marginTop: 16, borderColor: 'rgba(180,45,45,0.42)', alignItems: 'center' },
 
   // ── sharing ───────────────────────────────────────────────────────────────
   preview: { marginBottom: 16 },

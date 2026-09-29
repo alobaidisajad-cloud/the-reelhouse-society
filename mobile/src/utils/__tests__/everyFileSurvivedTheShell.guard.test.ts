@@ -199,7 +199,12 @@ describe('the detector, before it is trusted', () => {
     const found = firstBadLine(mangled);
     expect(found).not.toBeNull();
     expect(found!.was).toContain('â');            // what a reader would see
-    expect(found!.shouldBe).toContain('─');       // what it should have been
+    // What it should have been: the file's own first line that is not plain
+    // ASCII, exactly (not a character chosen here, which an edit can remove).
+    const lines = real.split('\n');
+    const firstWide = lines.findIndex((l) => /[^\x00-\x7f]/.test(l));
+    expect(found!.line).toBe(firstWide + 1);
+    expect(found!.shouldBe).toBe(lines[firstWide].trim().slice(0, 70));
   });
 
   it('and does NOT cry wolf on text this app will really hold', () => {

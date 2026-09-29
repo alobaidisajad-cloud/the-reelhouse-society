@@ -101,6 +101,22 @@ export const BALLOT_MAX = 6;
 /** Percentages are hidden until a ballot has enough votes to mean anything. */
 export const BALLOT_PERCENT_FLOOR = 10;
 
+/** A ballot's closing times: the label is what the desk, its rail and a draft hold. */
+export const CLOSING_TIMES = [
+  { label: '1 DAY', days: 1 },
+  { label: '2 DAYS', days: 2 },
+  { label: '1 WEEK', days: 7 },
+] as const;
+export type ClosingTime = (typeof CLOSING_TIMES)[number]['label'];
+export const DEFAULT_CLOSING: ClosingTime = '2 DAYS';
+export const isClosingTime = (label: unknown): label is ClosingTime =>
+  CLOSING_TIMES.some((c) => c.label === label);
+/** The days a closing time stands for. */
+export const closingDays = (label: ClosingTime) => CLOSING_TIMES.find((c) => c.label === label)!.days;
+/** The closing time after `label`, and round again from the first. */
+export const nextClosing = (label: ClosingTime): ClosingTime =>
+  CLOSING_TIMES[(CLOSING_TIMES.findIndex((c) => c.label === label) + 1) % CLOSING_TIMES.length].label;
+
 /** Paging belongs to the store that runs the query: re-exported, never redeclared. */
 export { PAGE_SIZE, COMMENT_PAGE_SIZE } from '@/src/stores/dispatchTypes';
 

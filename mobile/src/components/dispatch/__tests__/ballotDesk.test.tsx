@@ -251,6 +251,38 @@ describe('the ballot desk', () => {
     expect(Math.round(days)).toBe(7);
   });
 
+  it('CLOSES on the rail is a working control: each press moves the closing time on', async () => {
+    const { getByLabelText, getByText } = render(<ComposeBallotScreen />);
+    const selected = (label: string) => getByLabelText(label).props.accessibilityState.selected;
+
+    expect(getByText('CLOSES · 2 DAYS')).toBeTruthy();
+    expect(selected('Closes in 2 days')).toBe(true);
+
+    await press(getByLabelText('Closes in 2 days. Change it'));
+    expect(getByText('CLOSES · 1 WEEK')).toBeTruthy();
+    expect(selected('Closes in 1 week')).toBe(true);   // the paper follows the rail
+
+    // Past PressableScale's double-tap guard, which reads the (fake) clock.
+    await act(async () => { jest.advanceTimersByTime(1000); });
+    await press(getByLabelText('Closes in 1 week. Change it'));
+    expect(getByText('CLOSES · 1 DAY')).toBeTruthy();  // and round again
+    expect(selected('Closes in 1 day')).toBe(true);
+  });
+
+  it('files the closing time the rail chose', async () => {
+    const { getByLabelText } = render(<ComposeBallotScreen />);
+    await type(getByLabelText('Your question'), 'What tonight?');
+    await fill(getByLabelText as never, 1, tmdbFilm(1, 'Tokyo Story', '1953'));
+    await fill(getByLabelText as never, 2, tmdbFilm(2, 'Late Spring', '1949'));
+
+    await press(getByLabelText('Closes in 2 days. Change it'));
+    await press(getByLabelText('File it'));
+    await act(async () => { await Promise.resolve(); });
+
+    const days = (new Date(mockFiled[0].closesAt as string).getTime() - Date.now()) / 86_400_000;
+    expect(Math.round(days)).toBe(7);
+  });
+
   it('takes a film back off a slot', async () => {
     const { getByLabelText, queryByLabelText } = render(<ComposeBallotScreen />);
     await fill(getByLabelText as never, 1, tmdbFilm(1, 'Tokyo Story', '1953'));

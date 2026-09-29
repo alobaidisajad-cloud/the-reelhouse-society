@@ -29,7 +29,9 @@ import { PaperComposer } from '@/src/components/dispatch/paper/PaperComposer';
 import { BallotDesk, FilmFinder } from '@/src/components/dispatch/paper/PaperDesk';
 import type { PaperFilm } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { BALLOT_MIN, BALLOT_MAX } from '@/src/components/dispatch/paper/paperMetrics';
+import {
+  BALLOT_MIN, BALLOT_MAX, DEFAULT_CLOSING, closingDays, isClosingTime, type ClosingTime,
+} from '@/src/components/dispatch/paper/paperMetrics';
 import { hourLabel } from '@/src/components/dispatch/dayLabel';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
@@ -222,7 +224,7 @@ export function ComposeBallotScreen() {
   const [slots, setSlots] = useState<({ film: PaperFilm; id: number } | null)[]>(
     Array.from({ length: BALLOT_MAX }, () => null),
   );
-  const [closes, setCloses] = useState('2 DAYS');
+  const [closes, setCloses] = useState<ClosingTime>(DEFAULT_CLOSING);
   const [finding, setFinding] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
 
@@ -237,7 +239,8 @@ export function ComposeBallotScreen() {
     }>(userId, 'ballot');
     if (!held) return;
     if (held.data.question) setQuestion(held.data.question);
-    if (held.data.closes) setCloses(held.data.closes);
+    // Only a closing time the desk still offers: an unknown one would highlight nothing.
+    if (isClosingTime(held.data.closes)) setCloses(held.data.closes);
     if (Array.isArray(held.data.slots)) {
       // Padded to the full row, whatever BALLOT_MAX was when it was saved.
       const restored = Array.from({ length: BALLOT_MAX }, (_, i) => held.data.slots![i] ?? null);
@@ -265,8 +268,7 @@ export function ComposeBallotScreen() {
     setSending(true);
     try {
       // `closes_at` is compared at RENDER time: no job has to run to close it.
-      const days = closes === '1 DAY' ? 1 : closes === '1 WEEK' ? 7 : 2;
-      const closesAt = new Date(Date.now() + days * 86_400_000).toISOString();
+      const closesAt = new Date(Date.now() + closingDays(closes) * 86_400_000).toISOString();
 
       const options: BallotOption[] = slots
         .filter((s): s is { film: PaperFilm; id: number } => !!s)
