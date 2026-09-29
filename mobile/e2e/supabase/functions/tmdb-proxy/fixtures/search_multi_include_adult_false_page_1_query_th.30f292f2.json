@@ -1,0 +1,738 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=th",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/k1EZdHo4OmHymK69vmN1SVNIKcA.jpg",
+    "id": 318445,
+    "name": "Kamen Rider MY-TH",
+    "original_name": "仮面ライダーマイス",
+    "overview": "The cynical butler, Sora Otosumi lives alone in a mansion with the innocent and carefree young lady, Yuna Mizuki. The two lead elegant lives, but they harbor a secret. Otosumi transforms into Kamen Rider MY-TH to fight mysterious monsters known as Fukashigi, and effortlessly defeats these creatures like a mouse.  Around the same time, the Zyunishi Doumei (The Twelve Animal Signs Alliance), who also fight the Fukashigi, awaken from their 100-year slumber. Their leader is none other than a cat?! The alliance has begun to realize that their prey is being stolen. The battle between mouse and cat begins now!",
+    "poster_path": "/rP5msGG1CTXsbqDhKt9pxF0V7qV.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     10759,
+     10765
+    ],
+    "popularity": 6.621,
+    "first_air_date": "2026-09-06",
+    "softcore": false,
+    "vote_average": 9,
+    "vote_count": 2,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/uBK94meT1EyEKVzAoIBSPPJMSB8.jpg",
+    "id": 234301,
+    "title": "Carl Th. Dreyer",
+    "original_title": "Carl Th. Dreyer",
+    "overview": "A documentary portrait of Carl Th. Dreyer, filmed shortly after the Paris premiere of \"Gertrud.\" Through Dreyer’s own reflections on his films, the documentary explores his ideas about script, casting, acting, set design, and the pursuit of simplicity as the foundation of cinematic style.",
+    "poster_path": "/8GznEpCDpI58vg4TlwDW6AwjgNr.jpg",
+    "media_type": "movie",
+    "original_language": "da",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.4606,
+    "release_date": "1966-11-14",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.8,
+    "vote_count": 13
+   },
+   {
+    "adult": false,
+    "id": 2027530,
+    "name": "Ganes TH",
+    "original_name": "Ganes TH",
+    "media_type": "person",
+    "popularity": 0.521,
+    "gender": 0,
+    "known_for_department": "Writing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/iemFBDHsqaao4fn0nGQlfSW5V2D.jpg",
+      "id": 570023,
+      "title": "Pandawa Lima",
+      "original_title": "Pandawa Lima",
+      "overview": "Pandu Dewanata returns to the country of Astina, with three princesses he won from a competition - the Goddess of Kunti, the Goddess of Madrin, and the Goddess of Gandari. Pandu is not so greedy to marry the three goddesses, so he offers one to be paired with his brother, Destarata, and another to his younger brother, Abiyasa",
+      "poster_path": "/b683P9X1NlHoNUzCxhC6cPcjEsq.jpg",
+      "media_type": "movie",
+      "original_language": "id",
+      "genre_ids": [
+       28,
+       12
+      ],
+      "popularity": 2.1575,
+      "release_date": "1983-10-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8,
+      "vote_count": 1
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 390678,
+      "title": "Cobra",
+      "original_title": "Cobra",
+      "overview": "A fellow member in a martial arts school murders Indra’s teacher and Yanti’s father. But Indra and Yanti are told not to take revenge as their skills are still inferior. Indra and Yanti then move to the city. Here, Indra accidentally becomes a member of a syndicate and he earns a good living from it but his heart is not at peace. He intends to quit but then Yanti and her child are murdered by a member of the cobra syndicate. So he destroys the syndicate’s headquarters and faces the man who killed his teacher, the syndicate’s leader. Even though his skill is inferior, he manages to win in the end.",
+      "poster_path": "/pVzJ5d5bmVtKL5aOjdImaEdeLVO.jpg",
+      "media_type": "movie",
+      "original_language": "id",
+      "genre_ids": [
+       28,
+       18
+      ],
+      "popularity": 2.0739,
+      "release_date": "1977-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5,
+      "vote_count": 1
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 106521,
+      "title": "Karma Punishment",
+      "original_title": "Hukum Karma",
+      "overview": "Some rich gangster creep rapes a gal. He's imbued with black magic powers by some other guy. Stuff happens leading up to the greatest endgame of all time.",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "id",
+      "genre_ids": [
+       27,
+       14,
+       28,
+       9648
+      ],
+      "popularity": 2.0351,
+      "release_date": "1982-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4746000,
+    "name": "TH",
+    "original_name": "TH",
+    "media_type": "person",
+    "popularity": 0.25,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1298016,
+      "title": "Crisis of Confidence",
+      "original_title": "风涌雷鸣",
+      "overview": "Ziheng who has severe HIV-phobia pleads with his boyfriend Chendong to take an HIV test, and they argue furiously about trust issue in the dormitory, with Ziheng trying to force a blood drawing. Meanwhile, another roommate is on his way there ……",
+      "poster_path": "/nN2In1CrIYa6ZDL9AAWVgZjX8RZ.jpg",
+      "media_type": "movie",
+      "original_language": "zh",
+      "genre_ids": [],
+      "popularity": 0.4388,
+      "release_date": "2024-04-10",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 6367431,
+    "name": "Th",
+    "original_name": "Th",
+    "media_type": "person",
+    "popularity": 0.25,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": []
+   },
+   {
+    "adult": false,
+    "id": 4587011,
+    "name": "Th. Anthimos",
+    "original_name": "Th. Anthimos",
+    "media_type": "person",
+    "popularity": 0.4129,
+    "gender": 0,
+    "known_for_department": "Writing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/1jfluVGeTPN2S09NLWiXeVfkgGW.jpg",
+      "id": 517395,
+      "title": "Η Ζωή Μου Αρχίζει Με Σένα",
+      "original_title": "Η Ζωή Μου Αρχίζει Με Σένα",
+      "overview": "An arrogant lieutenant of the Royal Hellenic Navy who finds out that his ex-lover has deeper feelings for one of his colleagues, wants to take his revenge on him after a nearly fatal accident. Can he swallow his pride and accept the truth?",
+      "poster_path": "/yVS7r73ivFsSswAFZf8aB7aZgvy.jpg",
+      "media_type": "movie",
+      "original_language": "el",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.1813,
+      "release_date": "1961-03-03",
+      "softcore": false,
+      "video": false,
+      "vote_average": 3.7,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 305380,
+    "name": "Deltanu TH",
+    "original_name": "Deltanu TH",
+    "overview": "",
+    "poster_path": "/rpsLP093kbahqxtqPts90lEqrL2.jpg",
+    "media_type": "tv",
+    "original_language": "th",
+    "genre_ids": [],
+    "popularity": 0.424,
+    "first_air_date": "2020-12-03",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "TH"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 606305,
+    "name": "Cinzia TH Torrini",
+    "original_name": "Cinzia TH Torrini",
+    "media_type": "person",
+    "popularity": 0.7725,
+    "gender": 1,
+    "known_for_department": "Directing",
+    "profile_path": "/wYlqNm6ItJZnyqy1m4YyQic81dp.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/2GBiTa071pLSfPND1Iu7Pfk3fhy.jpg",
+      "id": 1156966,
+      "title": "Beautiful Rebel",
+      "original_title": "Sei nell'anima",
+      "overview": "The origin story of one of Italy's greatest rock stars, Gianna Nannini, who chased her dream despite obstacles from her family and the music industry.",
+      "poster_path": "/jqXeDH6dnwG9tqUMWHKkat2YpGk.jpg",
+      "media_type": "movie",
+      "original_language": "it",
+      "genre_ids": [
+       10402,
+       18,
+       36
+      ],
+      "popularity": 2.8338,
+      "release_date": "2024-05-02",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.8,
+      "vote_count": 94
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/nfmqhIjL0wGDh9NTE1QxdWRoLWn.jpg",
+      "id": 47465,
+      "title": "Iqbal",
+      "original_title": "Iqbal",
+      "overview": "Iqbal is about an Asian boy who gets sold by his father to a small carpentry production company in which child labour is supported. His \"master\" is a cruel man, imposing a ridiculous behaviour catalogue with strict charges. The children, about 5-10 years of age, have to work all day and they´re not allowed to go to toilet while at work, let alone visit their parents. Iqbal soon realizes that this is a massive injustice, especially when a member of the (unindentified) country´s Communist and Anti-child labour party takes photographs of the children.",
+      "poster_path": "/5UazUE2KSXUeVL7TEjbyMhiMN5N.jpg",
+      "media_type": "movie",
+      "original_language": "it",
+      "genre_ids": [
+       18,
+       10770
+      ],
+      "popularity": 0.9436,
+      "release_date": "1998-12-22",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6,
+      "vote_count": 19
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/cLHMaG0eVRWBsre4XOvD8iP8nkz.jpg",
+      "id": 63056,
+      "title": "Hotel Colonial",
+      "original_title": "Hotel Colonial",
+      "overview": "Marco Veniera goes to Bogotá, Colombia to find his brother, Luca who supposedly committed suicide. In his search, he meets fiery and exotic Irene Costa, who leads him into the depths of the Amazon jungle. But it's every man for himself. And brotherly love turns to hate.",
+      "poster_path": "/9mX4WFt5ukYkjYipaWUAuQyDzG2.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       12,
+       53,
+       18
+      ],
+      "popularity": 1.8721,
+      "release_date": "1987-01-08",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.4,
+      "vote_count": 18
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2409495,
+    "name": "Th. Vasdekis",
+    "original_name": "Th. Vasdekis",
+    "media_type": "person",
+    "popularity": 0.2582,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/dNODFGhiUphEPvhlyBzJHTbm4ze.jpg",
+      "id": 85769,
+      "title": "Reconstruction",
+      "original_title": "Αναπαράσταση",
+      "overview": "An immigrant returns to his village after many years, only to find that no one is waiting for him. When his wife and her lover murder him, an investigator attempts to reconstruct the crime, while a film crew documents the event.",
+      "poster_path": "/jM3Gnf75zTrZGA9aIGoKWxdEmEi.jpg",
+      "media_type": "movie",
+      "original_language": "el",
+      "genre_ids": [
+       80,
+       18
+      ],
+      "popularity": 1.4936,
+      "release_date": "1970-09-24",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7,
+      "vote_count": 31
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2663653,
+    "name": "Philip Th. Pedersen",
+    "original_name": "Philip Th. Pedersen",
+    "media_type": "person",
+    "popularity": 0.5497,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/qlqVkP5KCubdjXeR6pq487QYXm5.jpg",
+      "id": 863070,
+      "title": "The Seekers: Thrill Night",
+      "original_title": "Forsvundet til Halloween",
+      "overview": "On Halloween, estranged friends Asger and Esther, must work together to rescue Asgers kidnapped sister Petra, while Petra battles the thieves that took her.",
+      "poster_path": "/1wLnN5tvBqMdjYZf6U9V9N6wfVt.jpg",
+      "media_type": "movie",
+      "original_language": "da",
+      "genre_ids": [
+       12,
+       10751,
+       9648,
+       35
+      ],
+      "popularity": 1.2825,
+      "release_date": "2021-10-07",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.6,
+      "vote_count": 10
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 543754,
+      "title": "Supernatural Tales",
+      "original_title": "Supernatural Tales",
+      "overview": "'Supernatural Tales' is an anthology collection of the best Danish produced supernatural horror short films.",
+      "poster_path": "/pxD7qmEoY2pUImAUIDGxNS9xcmM.jpg",
+      "media_type": "movie",
+      "original_language": "da",
+      "genre_ids": [
+       27,
+       18
+      ],
+      "popularity": 1.5092,
+      "release_date": "2012-05-08",
+      "softcore": false,
+      "video": true,
+      "vote_average": 0,
+      "vote_count": 0
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 582847,
+      "title": "Eastern Army",
+      "original_title": "Eastern Army",
+      "overview": "After the destruction of Earth, the myth of the Eastern Army is the only hope.",
+      "poster_path": "/bdaDZ3wcf94h9ABJ6YewMkKogBC.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       878,
+       28,
+       18
+      ],
+      "popularity": 1.3527,
+      "release_date": "2010-04-09",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 859512,
+    "title": "Con th",
+    "original_title": "Con th",
+    "overview": "",
+    "poster_path": "/5uVx5kLy58AQcG5z5jg6caOxlaL.jpg",
+    "media_type": "movie",
+    "original_language": "es",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 0.4177,
+    "release_date": "2021-07-30",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5,
+    "vote_count": 3
+   },
+   {
+    "adult": false,
+    "id": 5429234,
+    "name": "TH Fernandes",
+    "original_name": "TH Fernandes",
+    "media_type": "person",
+    "popularity": 0.4748,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/7xNpNgr1x6AWhqYh6SLKJ1qxQcC.jpg",
+      "id": 1478732,
+      "title": "Fabulosas – Operação Aranha",
+      "original_title": "Fabulosas – Operação Aranha",
+      "overview": "In a frozen city, trans journalist Leôncia seeks justice for the murder of a friend, uncovering a web of secrets and an enigmatic figure with supernatural powers. Fabulosas: Operação Aranha explores the strength of a community united to survive and pursue justice on its own terms—even if that means confronting the supernatural, or becoming part of it.",
+      "poster_path": "/293gYkc3AzFTIcJKGKZfskpXuzs.jpg",
+      "media_type": "movie",
+      "original_language": "pt",
+      "genre_ids": [
+       53
+      ],
+      "popularity": 0.9934,
+      "release_date": "2025-05-08",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1482844,
+      "title": "No Silêncio do Teu Olhar",
+      "original_title": "No Silêncio do Teu Olhar",
+      "overview": "",
+      "poster_path": "/bqv58I4XEs0MS4wAUsgFjc761kH.jpg",
+      "media_type": "movie",
+      "original_language": "pt",
+      "genre_ids": [],
+      "popularity": 0.8014,
+      "release_date": "2025-05-14",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1484653,
+      "title": "Saruê da Operária",
+      "original_title": "Saruê da Operária",
+      "overview": "",
+      "poster_path": "/ziq9flIxBKg4wRCPvVzPsGC4fKL.jpg",
+      "media_type": "movie",
+      "original_language": "pt",
+      "genre_ids": [],
+      "popularity": 0.6805,
+      "release_date": "2025-05-23",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/y4cIkFdCv22oznhvnLj2diuIxBQ.jpg",
+    "id": 190138,
+    "title": "The Fighting 69½th",
+    "original_title": "The Fighting 69½th",
+    "overview": "Battalions of red and black ants go to war over an unattended picnic blanket full of food.",
+    "poster_path": "/mTTCYd3iauQpHNzZ061t3GmZuLg.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     35
+    ],
+    "popularity": 1.6163,
+    "release_date": "1941-01-18",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.5,
+    "vote_count": 12
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/8kzyCKFApFOMJPci2Kuu7yjhpaA.jpg",
+    "id": 66133,
+    "title": "Carl Th. Dreyer: My Metier",
+    "original_title": "Carl Th. Dreyer: Min metier",
+    "overview": "Torben Skjødt Jensen’s elegant documentary is a collage of memories and reflections on one of cinema’s greatest directors. Visually rich and densely layered, Carl Th. Dreyer—My Metier illuminates an artist too little understood and too important to overlook. Through interviews, historical writings, and rare archival footage, a portrait of Dreyer emerges: an austere perfectionist, yes, but also a passionate man possessing a genuine sense of humor.",
+    "poster_path": "/aTrrGTlWqGXOMec6FaieAvnaVY4.jpg",
+    "media_type": "movie",
+    "original_language": "da",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.5637,
+    "release_date": "1995-12-28",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.1,
+    "vote_count": 27
+   },
+   {
+    "adult": false,
+    "id": 1617832,
+    "name": "Th. Pesos",
+    "original_name": "Th. Pesos",
+    "media_type": "person",
+    "popularity": 0.5547,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 396891,
+      "title": "Golfo",
+      "original_title": "Γκόλφω",
+      "overview": "Tasos is a young shepherd in love with Golfo and intends to marry her. However, the rich shepherdess Stavroula with the help of her father manages to lure him with the promise of a dowry. Eventually he realises his mistake and returns to Golfo, but she has poisoned herself. Driven by guilt, Tasos commits suicide.",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "el",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.877,
+      "release_date": "1915-01-22",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 5550877,
+    "name": "Max TH",
+    "original_name": "Max TH",
+    "media_type": "person",
+    "popularity": 0.2865,
+    "gender": 0,
+    "known_for_department": "Writing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/lAG6IwAh6YrwdsRsZ7z1qukijkw.jpg",
+      "id": 295580,
+      "name": "Metrecalia",
+      "original_name": "Metrecalia",
+      "overview": "Two silly friends seeking for adventure in the cruel and fantastic medieval lands of Metrecalia.",
+      "poster_path": "/sG8lFW0dIFueDBnVO47rFctf1Zd.jpg",
+      "media_type": "tv",
+      "original_language": "es",
+      "genre_ids": [
+       35,
+       10759,
+       10765,
+       16
+      ],
+      "popularity": 1.509,
+      "first_air_date": "2025-02-15",
+      "softcore": false,
+      "vote_average": 8,
+      "vote_count": 1,
+      "origin_country": [
+       "US"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1616935,
+    "name": "Th' Mole",
+    "original_name": "Th' Mole",
+    "media_type": "person",
+    "popularity": 0.335,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 396571,
+      "title": "Left Fields",
+      "original_title": "Left Fields",
+      "overview": "A documentary dealing with the struggle of independent hip hop artists to gain ground in the music business in 2011.  Featuring interviews with MCs, label operators, producers and bookers, the film focuses on a range of genre-defying international artists such as Ceschi, Noah23, Babel Fishh, Th’ Mole, Gonjasufi, Robot Koch, Comfort Fit, Fulgeance, Oskar Ohlson, and more, many of whom collaborate within networks across the US, Canada, the UK, Germany, Switzerland and Austria.  Working with a very limited budget, the film attempts to provide an insight into the alternative hip hop scene, exploring the creative spirit and DIY punk attitude of the movement.",
+      "poster_path": "/lFwVQrWv4wibsDrmnxFIkhoEWMY.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       99,
+       10402
+      ],
+      "popularity": 0.7522,
+      "release_date": "2011-12-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3416232,
+    "name": "TH The",
+    "original_name": "TH The",
+    "media_type": "person",
+    "popularity": 0.2694,
+    "gender": 0,
+    "known_for_department": "Camera",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/q5k0CRCU5eUQ4gGpvDhWIhwFdDC.jpg",
+      "id": 884096,
+      "title": "Aceh's Knife",
+      "original_title": "Rentjong Atjeh",
+      "overview": "Bintara is a pirate captain who sails the Malaka strait. He robs ships and murders their crews. Two children survive one of the attacks. They are Rusna and Daud. 15 years later the two become teenagers and live in the woods. There they meet the courageous Panglima Ali. At that time, Bintara is still conducting his evil deeds. But his life is ended by Panglima Ali’s blade.",
+      "poster_path": "/8YWWkhmYqn0B2V1LF637B2deVLk.jpg",
+      "media_type": "movie",
+      "original_language": "id",
+      "genre_ids": [
+       28
+      ],
+      "popularity": 1.3703,
+      "release_date": "1940-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 6144901,
+    "name": "Th. Andreas",
+    "original_name": "Th. Andreas",
+    "media_type": "person",
+    "popularity": 0.3713,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1673173,
+      "title": "Vor dem Wiedersehen",
+      "original_title": "Vor dem Wiedersehen",
+      "overview": "",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "de",
+      "genre_ids": [],
+      "popularity": 0.8243,
+      "release_date": "1964-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 323260,
+    "name": "\"Th\" Thorium Documentary",
+    "original_name": "\"Th\" Thorium Documentary",
+    "overview": "The amount of waste generated, the amount of energy generated, and the expanded versatility of this new \"Molten Salt Reactor\" call into question our perception of nuclear power.\n\nHow safe can a nuclear reactor be, if we free ourselves from the \"technological lock-in\" of uranium oxide solid fuel?",
+    "poster_path": null,
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 0.8604,
+    "first_air_date": "2013-07-30",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "US"
+    ]
+   }
+  ],
+  "total_pages": 500,
+  "total_results": 10000
+ }
+}

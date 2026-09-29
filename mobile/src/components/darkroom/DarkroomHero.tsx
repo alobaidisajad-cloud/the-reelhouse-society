@@ -14,6 +14,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { DarkroomAtmo, DarkroomSuggestionRow } from './DarkroomCards';
 import type { DiscoverFilm } from '@/src/stores/discover';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
@@ -94,7 +95,16 @@ export const DarkroomHero = React.memo(function DarkroomHero({
           )}
 
           {isFocused && suggestions.length > 0 && (
-            <View style={s.suggestionsBox}>
+            <View
+              style={s.suggestionsBox}
+              // E2E only: where the list lands in the window.
+              onLayout={(e) => {
+                const box = e.currentTarget;
+                box.measureInWindow((x, y, w, h) => e2eTrace('darkroom.suggestions.drawn', {
+                  x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), rows: suggestions.length,
+                }));
+              }}
+            >
               {suggestions.map((item) => (
                 <DarkroomSuggestionRow key={`${item.media_type || 'movie'}-${item.id}`} item={item} onPress={handleSuggestionPress} />
               ))}

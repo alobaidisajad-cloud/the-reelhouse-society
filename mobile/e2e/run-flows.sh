@@ -29,8 +29,18 @@ adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null
 # 36566533738) and opened its own menus. A member taps keys; a test injects
 # them. With no input method the injected keys reach the field itself. (So the
 # flows never call hideKeyboard: in Maestro it presses Back.)
-for ime in $(adb shell ime list -s | tr -d '\r'); do adb shell ime disable "$ime" > /dev/null; done
-echo "input methods left enabled: [$(adb shell ime list -s | tr -d '\r' | tr '\n' ' ')]"
+# The APPS are disabled, not the input methods: Android keeps one input method
+# enabled whatever is disabled (run 36579267804: Gboard stayed, its clipboard
+# covered the password field, and the password went into the email field).
+for ime in $(adb shell ime list -a -s | tr -d '\r'); do
+  adb shell pm disable-user --user 0 "${ime%%/*}" > /dev/null 2>&1 || true
+done
+left="$(adb shell ime list -s | tr -d '\r' | tr '\n' ' ')"
+echo "input methods left: [${left}]"
+if [ -n "${left// /}" ]; then
+  echo "::error title=A keyboard app is still on the device::${left} — every flow that types would fail behind it."
+  exit 1
+fi
 adb logcat -c   # this run's log only, so a crash below is this run's crash
 
 # The runner's memory every 30 seconds, so a device that vanishes mid-run can be

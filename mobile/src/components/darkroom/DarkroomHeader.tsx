@@ -108,9 +108,15 @@ export const DarkroomHeader = React.memo(() => {
     });
     return () => { hid.remove(); shown.remove(); };
   }, []);
+  // E2E only: which header this is, so a second one mounted is seen.
+  const instance = useRef(Math.random().toString(36).slice(2, 6)).current;
   useEffect(() => {
-    e2eTrace('darkroom.suggestions', { open: isFocused, count: suggestions.length });
-  }, [isFocused, suggestions.length]);
+    e2eTrace('darkroom.header', { instance, mounted: true });
+    return () => e2eTrace('darkroom.header', { instance, mounted: false });
+  }, [instance]);
+  useEffect(() => {
+    e2eTrace('darkroom.suggestions', { instance, open: isFocused, count: suggestions.length });
+  }, [instance, isFocused, suggestions.length]);
 
   const animatedSearchProps = useAnimatedProps(() => ({
     color: (isFocused && inputVal.length > 0) ? colors.bloodReel : colors.sepia,
