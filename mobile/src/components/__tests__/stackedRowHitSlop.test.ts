@@ -1,43 +1,16 @@
 /**
  * stackedRowHitSlop.test.ts — neighbours must not steal each other's taps.
- * ─────────────────────────────────────────────────────────────
- * PressableScale defaults to 15pt of hitSlop on EVERY side, and every side you
- * omit from a partial object also defaults to 15. That default exists so a
- * small icon clears 44pt. Between NEIGHBOURS it is destructive: two adjacent
- * controls each grow 15pt into the other, their targets overlap, and both
- * platforms hand the touch to whichever sibling comes LATER.
  *
- * That last part is not a guess — it is in the platform source:
- *   iOS      RCTView.m           `[sortedSubviews reverseObjectEnumerator]`
- *   Android  TouchTargetHelper.kt `for (i in childrenCount - 1 downTo 0)`
- * and both expand the test rect by hitSlop before checking containment.
+ * Where two touch areas (box + hitSlop) overlap, both platforms give the touch
+ * to the LATER sibling: iOS walks subviews in reverse (RCTViewComponentView.mm,
+ * `reverseObjectEnumerator`), Android from the last child down
+ * (TouchTargetHelper.kt). So on the axis where two controls are neighbours,
+ * each may claim at most HALF the real gap between them.
  *
- * THE RULE: on whichever axis two controls are neighbours, each may claim at
- * most HALF the real gap between them. Then the two expanded boxes meet
- * without overlapping, and no point belongs to two controls.
- *
- * Found live on 2026-08-14. The worst were not the ones filed:
- *   • the autopsy rating slider — 11 segments 2pt apart, written as
- *     `hitSlop={{top:10,bottom:10}}` whose omitted left/right stayed 15, so
- *     ~65% of every segment set the score one notch too high;
- *   • the date grid in the log form — no hitSlop at all, cells flush;
- *   • the tribunal's DISMISS / BAN / PERMANENT EXILE row;
- *   • the Lounge sheet, where BLOCK sat under REPORT.
- *
- * ── MEASURED WHERE DRAWN, READ ONLY WHERE NOT ─────────────────────────────
- * This file used to type forty gaps out of the stylesheets by hand. The rule is
- * now MEASURED on every screen the tests and generators draw: each control is
- * marked with the source line that made it, its touch area is its box plus its
- * hitSlop as laid out, and an overlap with any neighbour is a STEAL
- * (mockups/tools/layout.cjs; the CI capture job). That caught what this list
- * never held — a billing switch, the critiques' foot, the Concierge's rows.
- *
- * What stays below is only what no render draws beside its neighbour — each
- * control checked by its source line against the capture run's sites
- * (2026-09-28): a sheet that opens behind an entrance fade, an owner-only
- * button, an admin screen no test reaches. MEASURED_NOW lists the rules that
- * moved, and holds each one's file to mockups/touch-measured.txt, which the
- * capture job fails without.
+ * Most controls are MEASURED where the tests draw them: mockups/tools/layout.cjs
+ * and the CI capture job call an overlap a STEAL. RULES holds only what no
+ * render draws beside its neighbour, each saying why; MEASURED_NOW keeps the
+ * moved rules' files in mockups/touch-measured.txt.
  */
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
@@ -51,27 +24,14 @@ interface Rule {
   style: string;
   /** The measured gap between neighbours, per axis. Absent = no neighbour there. */
   gap: Partial<Record<Axis, number>>;
-  /**
-   * Restricts the check to specific sides. Needed where a control has a
-   * neighbour on ONE side and open space on the other — the brass ＋ has the
-   * Lounge key to its right and the screen edge to its left, and it should keep
-   * a generous target on the edge side.
-   */
+  /** The sides that have a neighbour, when the others face open space. */
   only?: Side[];
   /** Keys the rule when the control has no style prop to match on. */
   match?: string;
   note: string;
 }
 
-/**
- * Every entry's `gap` is the REAL separation measured from the stylesheet —
- * container `gap`, the row's own margin, or a divider's width. The allowed
- * slop is derived from it, so correcting a layout's spacing automatically
- * corrects what this test demands.
- *
- * ONLY the controls no drawn screen measures beside a neighbour (see the
- * header). Each says why it is still read here.
- */
+/** Each `gap` is read from the stylesheet: a container gap, a margin, a divider. */
 const RULES: Rule[] = [
   // Not drawn beside a neighbour: the thumbnails appear once the TMDB images
   // arrive, which the composer's drawings do not wait for.
@@ -124,11 +84,9 @@ const RULES: Rule[] = [
 ];
 
 /**
- * The rules that moved to measurement on 2026-09-28: every control each one
- * governed was measured beside its neighbour in the capture run. Their files
- * must stay in mockups/touch-measured.txt — the capture job fails when a listed
- * file stops being measured, so deleting one from that list is the only way to
- * drop the check, and this makes that a visible decision too.
+ * Rules now measured by the capture job, which fails when a file in
+ * mockups/touch-measured.txt stops being measured. Dropping one takes a
+ * deletion there, and one here.
  */
 const MEASURED_NOW: [file: string, what: string][] = [
   ['src/components/log/AuteurToolkit.tsx', 'the autopsy notches, 2pt apart'],
@@ -149,11 +107,7 @@ const MEASURED_NOW: [file: string, what: string][] = [
   ['src/components/moderation/ReportSheet.tsx', 'the report reasons'],
 ];
 
-/**
- * TopNavBar's icon buttons are a plain Animated.Pressable, not a
- * PressableScale, so the scanner above cannot see them — and they sit in the
- * same 6pt cluster as the brass disc. Checked directly.
- */
+/** TopNavBar's icons are an Animated Pressable, which the scanner cannot see: checked apart. */
 const NAV_CLUSTER_GAP = 6;
 
 const AXIS_SIDES: Record<Axis, [string, string]> = { x: ['left', 'right'], y: ['top', 'bottom'] };
@@ -196,15 +150,9 @@ function styleValue(attrs: string) {
 }
 
 /**
- * Resolves the EFFECTIVE slop, honouring the 15pt default for omitted sides.
- *
- * `src` is the whole file, because a slop is often written as a named constant
- * — `hitSlop={ROW_SLOP}` — with the reasoning attached to its declaration.
- * Without that lookup this scanner read the NAME, matched no sides, and scored
- * a correctly-narrowed control as the full default: it would have failed three
- * fixes that were right, and, worse, the same blindness in reverse means a rule
- * could only ever be written against an inline object. The constant is followed
- * to its declaration in the same file.
+ * The slop as written, 15 for a side left out. PressableScale drops that
+ * default on an axis 48pt or more, so this can read high, never low. A named
+ * constant (`hitSlop={ROW_SLOP}`) is followed to its declaration in `src`.
  */
 function effectiveSlop(attrs: string, src = ''): Record<string, number> {
   const m = attrs.match(/hitSlop=\{([\s\S]*?)\}\s*(?:[\w[]|\/?>|$)/);
@@ -276,34 +224,16 @@ describe('neighbouring controls do not overlap each other’s touch targets', ()
   }
 });
 
-/**
- * ─────────────────────────────────────────────────────────────────────────────
- * THE SWEEP — because the list above is the wrong SHAPE
- * ─────────────────────────────────────────────────────────────────────────────
- * `RULES` is default-ALLOW: it checks the places somebody remembered to add and
- * says nothing about anywhere else. That has now missed real findings twice on
- * the same page — 27 unnamed controls, then every filter chip in every room —
- * and both times the fix was "add the rooms to the list", which leaves the
- * shape exactly as wrong as it was.
- *
- * This is default-DENY, and it asserts the one thing that is exactly checkable
- * without inferring layout from source: a control rendered inside a `.map(` is
- * adjacent to a COPY OF ITSELF, so it has a neighbour by construction — and it
- * may not silently inherit PressableScale's 15pt default on all four sides. It
- * has to DECLARE its slop. `null` is a perfectly good declaration; the point is
- * that somebody looked.
- *
- * An earlier version of this tried to resolve each control's container and
- * compare against its gap. That flagged a chip's vertical slop — free and
- * correct, since nothing sits above or below it in a horizontal scroller —
- * against its row's HORIZONTAL gap. Inferring layout statically is approximate,
- * and an approximate guard that cries wolf is one that gets weakened by the
- * next person who hits it. So the two halves split the job: this one guarantees
- * nobody forgets to think, RULES checks the arithmetic where somebody did.
- */
 const SWEEP_DIRS = ['src/components/profile', 'src/features/profile'];
 const SWEEP_EXTRA = ['app/user/[username].tsx'];
 
+/**
+ * THE SWEEP. RULES checks only what someone listed; this checks every control
+ * drawn inside a `.map(` on the member file. Such a control has a copy of itself
+ * for a neighbour, so it must DECLARE its hitSlop (null counts) instead of taking
+ * the default. It does not guess gaps from source: a guess at layout once judged
+ * a chip's vertical slop against its row's horizontal gap.
+ */
 describe('the sweep: no repeated control may inherit the default halo', () => {
   const read = (f: string) =>
     readFileSync(join(ROOT, f), 'utf8')
@@ -340,7 +270,7 @@ describe('the sweep: no repeated control may inherit the default halo', () => {
       for (let j = open; j < src.length; j++) {
         const c = src[j];
         if (inStr) { if (c === inStr && src.charCodeAt(j - 1) !== 92) inStr = null; continue; }
-        if (c === '"' || c === "'" || c === '\'') { inStr = c; continue; }
+        if (c === '"' || c === "'" || c === '`') { inStr = c; continue; }
         if (c === '(') depth++;
         else if (c === ')') { depth--; if (depth === 0) { close = j; break; } }
       }
@@ -368,51 +298,16 @@ describe('the sweep: no repeated control may inherit the default halo', () => {
       }
     }
 
-    // A sweep that finds nothing to look at would pass while proving nothing.
-    //
-    // This floor USED to be 8 and it did its job: consolidating the six rooms
-    // onto one shared `RoomChip` dropped the count to 5, because a chip written
-    // as `<RoomChip …>` is no longer a raw pressable inside a `.map(` and this
-    // scan stopped being able to see it. The chips did not become unchecked —
-    // their halo moved INTO the shared component, where the sweep below now
-    // checks it — but the reachable population genuinely shrank, and lowering
-    // the number without saying why is how a guard quietly dies.
+    // A sweep that finds nothing proves nothing. The floor is low because shared
+    // components (RoomChip) are out of this scan's reach; the next test checks them.
     expect(repeated).toBeGreaterThan(4);
     expect(bare).toEqual([]);
   });
 
   /**
-   * THE SECOND HALF — where a repeated control's halo actually lives.
-   *
-   * Consolidation moves the decision, it does not remove it. A chip rendered as
-   * `<RoomChip …>` is still adjacent to a copy of itself, but the only place
-   * its slop can be declared is inside `RoomChip` — so the sweep above, which
-   * looks for raw pressables inside a `.map(`, cannot see it any more. Same for
-   * every list cell: FlashList repeats a `renderItem` result, and there is no
-   * `.map(` anywhere near it.
-   *
-   * So: find the components that are ACTUALLY repeated — a custom tag inside a
-   * `.map(` span, or inside a `render…` callback — then require the pressables
-   * in THEIR definitions to declare a halo.
-   *
-   * The predicate has to be exact. A first attempt asked instead whether the
-   * file exported anything, which flagged twenty-one controls of which most
-   * were single buttons — an Import signpost, a Share button, a modal backdrop.
-   * An approximate guard that cries wolf is one the next person deletes. But it
-   * was not useless: among the noise sat ProfilePosterCard, the most-repeated
-   * control in the app, with no hitSlop at all — 15pt of inherited halo reaching
-   * 7pt onto the face of the next poster in every grid.
-   */
-  /**
-   * The balanced body of the first arrow function at or after `from`.
-   *
-   * The subtlety that cost two rounds here: `indexOf('=>')` finds the arrow
-   * inside a TYPE, not the one that opens the function. `TriptychResultRow` is
-   * declared as `React.memo(({ film, handleSetFilm }: { handleSetFilm: (f: T)
-   * => void }) => (`, and the first `=>` in it belongs to `handleSetFilm`'s
-   * signature. A type's arrow is followed by a type name; a function's is
-   * followed by the bracket that opens its body — so take the first arrow whose
-   * next non-space character is `{` or `(`.
+   * The balanced body of the first arrow function at or after `from`: the first
+   * `=>` followed by `{` or `(`. An arrow inside a TYPE (`(f: T) => void`) is
+   * followed by a type name, and is skipped.
    */
   function arrowBody(src: string, from: number): [number, number] | null {
     let at = from;
@@ -434,19 +329,15 @@ describe('the sweep: no repeated control may inherit the default halo', () => {
     }
   }
 
+  // THE SECOND HALF: a shared component that is repeated (a tag inside a `.map(`
+  // or a FlashList render… callback) declares its halo in its own definition.
   it('every REPEATED profile component declares its controls’ halos', () => {
     /** Component tags rendered in a repeated position, anywhere in the sweep. */
     const repeatedTags = new Set<string>();
     for (const f of files) {
       const src = read(f);
       const spans = mapSpans(src);
-      // A `render…` callback — FlashList repeats its result, and there is no
-      // `.map(` in sight. The span must be the function's BODY: balancing from
-      // the first paren after the name lands on the end of the PARAMETER LIST
-      // instead, which is why a first version of this found RoomChip and
-      // VaultCase but missed LedgerRow, ProfileListCard and ProfilePosterCard —
-      // three of the four most-repeated controls on the page. Find the `=>`
-      // first, then balance whatever bracket opens the body.
+      // A `render…` callback, whose result FlashList repeats: its BODY, not its parameters.
       for (const m of src.matchAll(/\brender[A-Z]\w*\s*[=:]/g)) {
         const body = arrowBody(src, m.index!);
         if (body) spans.push(body);
@@ -456,14 +347,7 @@ describe('the sweep: no repeated control may inherit the default halo', () => {
       }
     }
 
-    /**
-     * The component's OWN body — not its file.
-     *
-     * Scanning the whole file flagged six controls that are not repeated at
-     * all: the three empty-state CTAs (one per room, alone on the screen) and
-     * three modal backdrops, each of which merely shares a file with something
-     * that IS repeated. Same failure as the version before it, one level in.
-     */
+    /** The component's own body, not its file: a lone button beside it is not repeated. */
     function bodyOf(src: string, name: string): [number, number] | null {
       // `function Name(params) { … }` — including inside a React.memo wrapper.
       let m = new RegExp(`\\bfunction\\s+${name}\\s*\\(`).exec(src);
@@ -476,7 +360,7 @@ describe('the sweep: no repeated control may inherit the default halo', () => {
         }
         open = src.indexOf('{', j);
       } else {
-        // `const Name = … => { … }` / `= … => ( … )`
+        // Otherwise an arrow function assigned to a const of that name.
         m = new RegExp(`\\bconst\\s+${name}\\s*=`).exec(src);
         return m ? arrowBody(src, m.index) : null;
       }
@@ -515,12 +399,7 @@ describe('the sweep: no repeated control may inherit the default halo', () => {
     expect(unresolved).toEqual([]);
     const defining = checkedIn;
 
-    // The sweep must be finding real components, not an empty set. It resolves
-    // ~25 repeated tags down to the handful whose definitions live here: the
-    // Room chip and rail, the Ledger row, the stack card, the vault case, the
-    // poster card, the triptych's result row, the passport stamp, the
-    // follow-request row. If either number collapses, the scan has stopped
-    // reaching something rather than the app having got simpler.
+    // Floors: if either count collapses, the scan stopped reaching something.
     expect(repeatedTags.size).toBeGreaterThan(15);
     expect(defining.length).toBeGreaterThan(5);
     expect(bare).toEqual([]);

@@ -1,17 +1,13 @@
 /**
- * offlineQueue.ts — MMKV-Backed Offline Mutation Queue
- * ─────────────────────────────────────────────────────
- * Queues mutations (endorsements, marks) when offline and
- * flushes them when connectivity returns. Uses the same
- * MMKV C++ instance from auth.ts for synchronous I/O —
- * no async SQLite bridge overhead.
+ * offlineQueue.ts — writes made without a connection, kept on the phone (MMKV,
+ * synchronous) and sent in order when it returns.
  *
- * Architecture:
- *   • enqueueMutation is now synchronous (MMKV is C++ mmap)
- *   • 100-entry cap prevents unbounded growth (see MAX_QUEUE_SIZE below)
- *   • 24h stale threshold auto-prunes abandoned mutations
- *   • Network errors keep mutations for retry; constraint
- *     errors (duplicates) discard them permanently
+ *   • at most 100 kept: past that the oldest is dropped, and the member told
+ *   • older than 24 hours: dropped at the next send, and the member told
+ *   • a network failure stops the send and keeps the rest, in order
+ *   • a server that fails for a moment (5xx, 429, 408) is retried, five sends at most
+ *   • a duplicate counts as delivered; a broken statement or an unknown refusal
+ *     goes to the dead letter (7 days, 50 at most)
  */
 import * as Crypto from 'expo-crypto';
 import { supabase } from '../lib/supabase';
@@ -27,74 +23,43 @@ import { settleDelivered } from '../stores/markCounts';
 
 export interface QueuedMutation {
     id: string;
-    // Expanded type union to cover all domain slices
+    /**
+     * A type also needs a schema (types/mutations.ts, skipped in silence when
+     * missing) and a handler; dispatchMutationRegistry.test.ts checks both.
+     * delete_lounge_message comes only from a queue an older build saved, and
+     * replays as a withdrawal. The Vault's four name the viewing the app chose,
+     * so replaying one that already happened does nothing.
+     */
     type: 'endorse_log' | 'endorse_list' | 'endorse_film' | 'endorse_review' | 'mark_watched' | 'remove_log' | 'remove_watchlist' | 'remove_endorsement' | 'add_log' | 'update_log' | 'update_profile'
         | 'add_watchlist' | 'create_list' | 'update_list' | 'delete_list' | 'add_film_to_list' | 'remove_film_from_list' | 'add_list_items' | 'restore_list_items'
         | 'add_archive' | 'update_archive' | 'remove_archive' | 'save_stub'
         | 'follow_user' | 'follow_request_user' | 'unfollow_user' | 'send_lounge_message' | 'withdraw_lounge_message'
-        // Legacy: only ever produced by builds before the tombstone migration.
-        // Still reachable from a queue persisted by an older install — kept so
-        // those deletions complete as withdrawals instead of being lost.
         | 'delete_lounge_message'
         | 'sync_entitlement' | 'add_dossier' | 'update_dossier' | 'delete_dossier' | 'add_dossier_comment' | 'update_dossier_comment' | 'delete_dossier_comment' | 'toggle_dossier_certify' | 'increment_dossier_views' | 'add_log_comment' | 'remove_log_comment' | 'add_list_comment' | 'remove_list_comment'
         | 'submit_report'
         // ── The Dispatch ──
-        // Adding a type here is not one edit but FOUR: this union, the schema in
-        // types/mutations.ts, the handler in mutationExecutor.ts, and — if the
-        // payload carries an id that can be a temporary offline one — a line in
-        // applyIdMapToPayload. Only the handler is checked by the compiler; the
-        // schema is checked by `if (schema)` below, which SKIPS validation when
-        // there is none, so a forgotten schema fails silently. That is why
-        // dispatchMutationRegistry.test.ts enumerates all four.
         | 'add_filing' | 'update_filing' | 'end_filing'
         | 'add_critique' | 'update_critique' | 'remove_critique'
         | 'certify_filing' | 'certify_critique'
         | 'cast_vote' | 'take_answer'
         | 'save_filing' | 'unsave_filing'
         // ── The Vault ──
-        // A viewing and a note are separate acts, so they queue separately: a
-        // member can add a rewatch with no signal, write a note on it, and have
-        // both replay in order. All four name the viewing the app chose, so a
-        // replay of one that already happened does nothing rather than twice.
         | 'add_viewing' | 'remove_viewing' | 'set_viewing_note' | 'remove_viewing_note';
     payload: Record<string, unknown>;
     timestamp: number;
-    /**
-     * Bounded retry counter for transient server failures (5xx/429/408). Lives on
-     * the envelope, NOT the payload, so it never reaches the executor/Supabase and
-     * isn't subject to payload schema validation. Incremented on each transient
-     * failure; once it reaches MAX_TRANSIENT_RETRIES the mutation is dead-lettered.
-     */
+    /** Moments the server failed it so far; beside the payload, never sent or validated. */
     _retryCount?: number;
 }
 
-/**
- * Queue types that change who you follow. Kept as a set beside the queue rather than
- * a string check at the call site so a new social mutation type is a one-line change
- * in an obvious place (#82).
- */
+/** The types that change who a member follows: delivering one refreshes the following feeds. */
 const SOCIAL_MUTATION_TYPES = new Set(['follow_user', 'follow_request_user', 'unfollow_user']);
 
-/**
- * PostgreSQL's exact duplicate-key wording. Narrow on purpose.
- *
- * The old test was `message.includes('unique')` anywhere in the prose, which matched
- * 42P10 — "there is no UNIQUE or exclusion constraint…" — and filed a broken statement
- * as a successful duplicate. SQLSTATE is the real signal; this is only a fallback for
- * transports that lose the code.
- */
+/** For a transport that loses the SQLSTATE. Exact words: 42P10's text also says "unique". */
 const DUPLICATE_KEY_MESSAGE = /duplicate key value violates unique constraint/i;
 
 /**
- * Is this the database rejecting the STATEMENT rather than the data?
- *
- * SQLSTATE class 42 is "syntax error or access rule violation": undefined column,
- * undefined function, bad ON CONFLICT target. Retrying cannot help, and discarding
- * hides a real defect — so these are dead-lettered and reported.
- *
- * 42501 (insufficient_privilege) is deliberately EXCLUDED: an RLS refusal is a
- * legitimate runtime outcome — a banned member, a row that is not yours — not a broken
- * statement, and it already has its own handling downstream.
+ * Class 42: the STATEMENT is wrong (a missing column, a bad ON CONFLICT target).
+ * Not 42501: a refusal by the row rules is an answer, not a broken statement.
  */
 function isPermanentSchemaError(code: string): boolean {
   return /^42/.test(code) && code !== '42501';
@@ -103,17 +68,9 @@ function isPermanentSchemaError(code: string): boolean {
 export type QueueErrorClass = 'schema' | 'duplicate' | 'other';
 
 /**
- * The single classifier the flush uses. Exported so it is TESTED rather than mirrored
- * — a test against a second copy of this logic would have passed happily while the
- * real branch stayed broken, which is exactly how #77 survived.
- *
- * The schema test comes first as defence in depth, NOT because it is load-bearing —
- * that was measured. Swapping the two branches changes nothing today, because the
- * duplicate test now matches PostgreSQL's exact duplicate-key wording rather than the
- * word "unique" anywhere in the prose. Under the OLD word match the order would have
- * been decisive, which is precisely why the message test was narrowed as well: two
- * independent reasons 42P10 can no longer be read as a duplicate, so neither one being
- * changed alone can bring the bug back.
+ * The one classifier the send uses, exported so the tests run it and not a copy.
+ * Two things keep 42P10 from passing as a duplicate: the schema test comes first,
+ * and the duplicate test matches only PostgreSQL's exact words. Either alone holds.
  */
 export function classifyQueueError(code: string, message: string, status: number | undefined): QueueErrorClass {
   if (isPermanentSchemaError(code)) return 'schema';
@@ -123,21 +80,18 @@ export function classifyQueueError(code: string, message: string, status: number
 
 const QUEUE_KEY = 'reelhouse-offline-mutations';
 const MAX_QUEUE_SIZE = 100;
-// Transient server failures (5xx/429/408) are retried across flushes up to this
-// many times before being dead-lettered, so a brief outage never loses a write
-// while a permanently-failing mutation can't wedge the queue indefinitely.
+// Sends a write gets when the server fails it for a moment, before the dead letter.
 const MAX_TRANSIENT_RETRIES = 5;
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// OFFQ-2: queue user-scoping is enforced authoritatively inside flushOfflineQueue
-// — it reads the LIVE session and partitions mutations by `payload.user_id`,
-// dead-lettering any that belong to a different user (see "Partition queue by
-// ownership" below). A separate write-only `_queueUserId` module variable was
-// redundant with that (and strictly inferior, since a module var can go stale),
-// so it was removed. The queue is also cleared on logout, so a clean account
-// switch can't leave another user's mutations behind in the first place.
+// Whose writes these are is decided at send time, from the LIVE session: a write
+// carrying another member's user_id is dead-lettered, never sent (the ownership
+// split in flushOfflineQueue). Logout also empties the queue.
 
-/** Simple zustand-like store for reactive UI binding to queue state */
+/**
+ * The queue's length, kept in step with it. Not reactive (nothing is told when
+ * it changes), and no screen reads it yet.
+ */
 interface OfflineQueueStoreState {
     pending: number;
 }
@@ -159,23 +113,12 @@ export function getQueueLength(): number {
     return readQueue().length;
 }
 
-/** Clear entire offline queue (synchronous) */
+/** Empty the queue and its dead letter, at logout. */
 export function clearOfflineQueue(): void {
-    // ── A SWEEP OF THE PREFIX, NOT A LIST OF KEYS ───────────────────────────
-    // This emptied the main queue and nothing else. `QUEUE_KEY + '_dead_letter'`
-    // is written in FOUR places and was cleared in none of them — not at
-    // logout, not anywhere. It holds failed mutations WITH their payloads: the
-    // body of a critique, the text of a lounge message, a log's review. So one
-    // member's writing stayed on the phone after they signed out, and the next
-    // person to sign in was carrying it.
-    //
-    // Its only pruning is a 7-day age filter that runs when something NEW is
-    // dead-lettered, so with no further failures it sat there indefinitely.
-    //
-    // Erased by prefix for the reason memberDrafts.clearAllDrafts gives: four
-    // draft keys went unerased for as long as they existed precisely because
-    // erasing them was a list somebody had to remember. A fifth queue key added
-    // later is caught by this without anyone thinking of it.
+    // Every key under the queue's prefix, not a list of them. The dead letter
+    // keeps failed writes WITH their words (a critique, a lounge message), and
+    // must not stay on the phone for the next member; a queue key added later
+    // is erased without anyone remembering to add it here.
     try {
         for (const key of storage.getAllKeys()) {
             if (key.startsWith(QUEUE_KEY)) storage.delete(key);
@@ -211,10 +154,7 @@ function writeQueue(queue: QueuedMutation[]) {
     }
 }
 
-/**
- * Enqueue a mutation for background sync.
- * Synchronous — returns instantly thanks to MMKV.
- */
+/** Queue a write to be sent later. Synchronous: MMKV. */
 export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp'>) {
     let queue = readQueue();
 
@@ -224,8 +164,7 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
         timestamp: Date.now()
     };
 
-    // Cap queue size — drop oldest to prevent unbounded growth
-    // Notify user when mutations are dropped at capacity
+    // Full: the oldest goes, and the member is told.
     if (queue.length >= MAX_QUEUE_SIZE) {
         const droppedCount = queue.length - MAX_QUEUE_SIZE + 1;
         const dropped = queue.slice(0, droppedCount);
@@ -251,20 +190,16 @@ export async function flushOfflineQueue() {
     }
     isFlushing = true;
     try {
-    // ── Fast-path: empty queue → skip everything ──
-    // Avoids the expensive SecureStore round-trip (getSession) and Sentry noise
-    // for unauthenticated users who have nothing to flush.
+    // Nothing queued: no session read (SecureStore) at all.
     if (readQueue().length === 0) return;
 
-    // Verify active session before executing any mutations.
-    // Prevents cross-user mutation execution after unclean logout (crash, force-kill).
+    // No session, nothing is sent: after a crash or a force-quit the queue may
+    // belong to whoever was signed in before.
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user?.id) {
         logger.debug('[OfflineSync] No active session — aborting flush.');
-        // If queue has mutations but no session, the user logged out uncleanly
-        // (crash, force-kill). Dead-letter orphans so they don't fire warnings
-        // on every foreground indefinitely. The 24h stale threshold
-        // in the main loop can't help because execution never reaches it here.
+        // Dead-lettered now: the 24-hour pruning below is never reached without
+        // a session, so they would otherwise be retried on every return forever.
         const orphanQueue = readQueue();
         if (orphanQueue.length > 0) {
             logger.debug(`[OfflineSync] Dead-lettering ${orphanQueue.length} orphaned mutation(s) — no session to execute them.`);
@@ -286,11 +221,8 @@ export async function flushOfflineQueue() {
     }
     const authenticatedUserId = session.user.id;
 
-    // Ban enforcement at the queue level.
-    // A banned user's offline queue must NOT execute write mutations.
-    // The client-side useBanCheck() only gates UI — the offline queue can bypass it
-    // if the user was banned while offline or if MMKV cache has stale is_banned state.
-    // This server round-trip is the canonical check before executing any queued writes.
+    // A banned member's queue is not sent. useBanCheck reads the profile the phone
+    // holds, which is stale for a member banned while offline; this asks the server.
     try {
         const { data: banProfile } = await supabase
             .from('profiles')
@@ -315,8 +247,7 @@ export async function flushOfflineQueue() {
             return;
         }
     } catch (banCheckErr) {
-        // If the ban check itself fails (network), skip it and proceed normally.
-        // The queue will halt on the first network error in the mutation loop anyway.
+        // Unanswered (no network): carry on; the first write will stop on the same failure.
         if (!isNetworkError(banCheckErr)) {
             logger.warn('[OfflineSync] Ban check returned unexpected error:', banCheckErr);
         }
@@ -326,9 +257,7 @@ export async function flushOfflineQueue() {
 
     if (queue.length === 0) return;
 
-    // Seeded here (before the main loop below) so mutations filtered out by ownership
-    // or staleness checks are also removed from storage at the end, not just ones that
-    // pass through executeMutation.
+    // The writes this send is done with; only these leave the stored queue.
     const processedIds = new Set<string>();
     /**
      * A mutation the loop has finished with — delivered, already on the server,
@@ -341,9 +270,8 @@ export async function flushOfflineQueue() {
         settleDelivered(m);
     };
 
-    // Partition queue by ownership — only execute mutations
-    // belonging to the currently authenticated user. Orphaned mutations from
-    // a previous user (e.g., after crash during account switch) are dead-lettered.
+    // Only the signed-in member's writes are sent; another member's (a crash
+    // mid-switch) are dead-lettered.
     const ownedMutations: QueuedMutation[] = [];
     const orphanedMutations: QueuedMutation[] = [];
     for (const m of queue) {
@@ -391,26 +319,20 @@ export async function flushOfflineQueue() {
 
     logger.debug(`[OfflineSync] Flushing ${queue.length} queued mutations...`);
 
-    // Track which mutation IDs were actually disposed of (orphaned, stale,
-    // succeeded, dead-lettered, or discarded as duplicates) instead of building a replacement
-    // queue from this stale snapshot. Mutations enqueued by the UI while this loop is awaiting
-    // network calls are NOT part of `queue` and must survive the final write — diffing by
-    // ID against a fresh read does that; overwriting wholesale does not.
     const deadLetterQueue: QueuedMutation[] = [];
-    /** Did anything that changes the follow graph actually reach the server? (#82) */
+    /** Did a write that changes who someone follows reach the server? */
     let socialMutationSynced = false;
 
     let successCount = 0;
 
     const idMap: Record<string, string> = {};
-    // Pending increments to each mutation's transient-retry counter, applied to
-    // the persisted queue in the final write (mirrors how idMap is applied).
+    // Each write's new retry count, stored with the queue at the end (as idMap is).
     const retryBumps: Record<string, number> = {};
 
     for (let i = 0; i < queue.length; i++) {
         const mutation = queue[i];
         try {
-            // v4: Runtime schema validation — invalid payloads route to existing dead-letter
+            // A payload that fails its schema is dead-lettered unsent.
             const schema = MutationSchemaMap[mutation.type];
             if (schema) {
                 const parseResult = schema.safeParse(mutation.payload);
@@ -421,7 +343,7 @@ export async function flushOfflineQueue() {
                         payload: { ...mutation.payload, _failReason: `schema: ${parseResult.error.message}`, _failedAt: new Date().toISOString() }
                     });
                     finished(mutation);
-                    continue;  // Skip to next mutation
+                    continue;
                 }
             }
             const result = await executeMutation(mutation, idMap);
@@ -441,35 +363,15 @@ export async function flushOfflineQueue() {
 
             if (__DEV__) console.error(`[OfflineSync] Failed to execute ${mutation.type}:`, error);
 
-            // Correctly intercept network/gateway errors, timeouts, and connection errors.
-            // Breaking the loop preserves causal consistency for dependent child mutations.
+            // No network: stop here and keep the rest, in order. A later write may
+            // depend on this one (a critique on a filing not yet sent).
             if (isNetworkError(error)) {
-                // Network/Database failure — halt flush to preserve causal consistency.
-                // Remaining (unprocessed) mutations are left untouched in storage — they were
-                // never added to processedIds, so the final write below keeps them as-is.
                 logger.warn(`[OfflineSync] Network failure on ${mutation.type}. Halting queue to preserve causality.`);
                 break;
             } else if (errorClass === 'schema') {
-                // ── #77 · the trap that hid a silent data loss for the whole of this app ──
-                // This branch MUST come before the duplicate branch below, because the
-                // error it catches contains the word "unique" in its prose:
-                //
-                //   42P10  "there is no unique or exclusion constraint matching the
-                //           ON CONFLICT specification"
-                //
-                // `interactions` has no unique constraint on (user_id, target_user_id,
-                // type) — probed live and confirmed. So EVERY offline follow raised
-                // 42P10, matched `includes('unique')`, and was filed as "already
-                // synced": discarded with no dead-letter, no toast and no Sentry. The
-                // optimistic follow stayed on screen until the next hydrate erased it.
-                // The member followed someone, watched it work, and watched it undo
-                // itself later, with no trace anywhere.
-                //
-                // A 42xxx is the database saying the STATEMENT is wrong — a
-                // programming or schema fault, not a data condition. Retrying cannot
-                // help and discarding hides it, so it is dead-lettered loudly and
-                // reported. That is the difference between finding this in an hour and
-                // never finding it at all.
+                // The STATEMENT is wrong (a missing column, a bad ON CONFLICT
+                // target), not the data: retrying cannot help and dropping it would
+                // hide the fault, so it is dead-lettered and reported.
                 logger.warn(`[OfflineSync] Permanent schema error on ${mutation.type} (code=${code}). Dead-lettering.`);
                 captureError(error, {
                     scope: 'offlineQueue.schemaError',
@@ -482,37 +384,25 @@ export async function flushOfflineQueue() {
                 });
                 finished(mutation);
             } else if (errorClass === 'duplicate') {
-                // Genuine unique violation — the row is already there, so the write
-                // has effectively succeeded and the mutation can be dropped.
-                //
-                // Judged on SQLSTATE, with the prose fallback narrowed to PostgreSQL's
-                // actual duplicate message. The old test was `includes('unique')`
-                // anywhere in the text, which is how 42P10 got in — and would have let
-                // in any future error that merely mentions a unique constraint.
+                // The row is already on the server: delivered.
                 if (__DEV__) console.warn(`[OfflineSync] Discarding duplicate mutation: ${mutation.type}`);
                 finished(mutation);
             } else if (isTransientError(error)) {
-                // Transient server failure (5xx / 429 / 408 / retryable PG code): the
-                // write reached the server but failed temporarily. Preserve it and retry
-                // on a later flush instead of dead-lettering (which silently lost queued
-                // writes under ordinary backend load).
+                // The server failed for a moment (5xx, 429, 408, a retryable
+                // PostgreSQL code): kept and tried again on a later send.
                 const attempts = (mutation._retryCount ?? 0) + 1;
                 if (attempts >= MAX_TRANSIENT_RETRIES) {
-                    // Bounded retries exhausted — dead-letter so a permanently-failing
-                    // mutation can't wedge the queue forever; the rest still get a chance.
+                    // Given up on, so one write that always fails cannot hold back the rest.
                     logger.warn(`[OfflineSync] Transient failure on ${mutation.type} exhausted ${MAX_TRANSIENT_RETRIES} retries (status=${status}, code=${code}). Dead-lettering.`);
                     deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: `transient-exhausted: ${errMsg}`, _failedAt: new Date().toISOString() } });
                     finished(mutation);
                 } else {
-                    // Bump the retry counter (persisted via retryBumps in the final write)
-                    // and halt the flush to preserve causal ordering for dependent child
-                    // mutations — same philosophy as the network-error branch above.
+                    // Stop here, as for no network: what follows may depend on it.
                     retryBumps[mutation.id] = attempts;
                     logger.warn(`[OfflineSync] Transient failure on ${mutation.type} (status=${status}, code=${code}), attempt ${attempts}/${MAX_TRANSIENT_RETRIES}. Halting to retry on next flush.`);
                     break;
                 }
             } else {
-                // Unknown failure — log to dead-letter queue for diagnostics
                 deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: errMsg, _failedAt: new Date().toISOString() } });
                 finished(mutation);
             }
@@ -523,43 +413,35 @@ export async function flushOfflineQueue() {
         reelToast(`Archive updated with offline actions.`);
     }
 
-    // Persist dead-letter mutations for post-mortem inspection
+    // The dead letter: the last 50 failures of the past 7 days, for diagnosis.
     if (deadLetterQueue.length > 0) {
         try {
             const existing = storage.getString(QUEUE_KEY + '_dead_letter');
             let prev: QueuedMutation[] = existing ? JSON.parse(existing) : [];
-            // Prune dead-letter entries older than 7 days
             const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
             prev = prev.filter(m => m.timestamp > sevenDaysAgo);
-            const combined = [...prev, ...deadLetterQueue].slice(-50); // Cap at 50
+            const combined = [...prev, ...deadLetterQueue].slice(-50);
             storage.set(QUEUE_KEY + '_dead_letter', JSON.stringify(combined));
         } catch { /* storage write failure — nothing we can do */ }
         reelToast.error(`${deadLetterQueue.length} offline action(s) couldn't be synced.`);
     }
 
-    // Re-read the queue (not the stale `queue` snapshot) so mutations enqueued by the UI
-    // while this flush was awaiting network calls aren't clobbered. Remap any remaining
-    // fake IDs against this flush's idMap — a safe no-op for entries that don't reference them.
+    // Read again, not the snapshot above: a write queued while this send waited
+    // must survive it. What remains learns the real ids of rows made just now.
     const freshQueue = readQueue();
     const finalQueue = freshQueue
         .filter(m => !processedIds.has(m.id))
         .map(m => {
             const next = { ...m, payload: applyIdMapToPayload(m.payload, idMap) };
-            // Persist any transient-retry bump so the counter survives to the next flush.
             if (retryBumps[m.id] !== undefined) next._retryCount = retryBumps[m.id];
             return next;
         });
     writeQueue(finalQueue);
     useOfflineQueueStore.setState({ pending: finalQueue.length });
 
-    // ── #82 · a follow that syncs is still a follow ────────────────────────────────
-    // Nothing refreshed the feed after a flush. So a follow made offline synced
-    // successfully and STILL did not appear until a 60-second (or 5-minute) timer
-    // lapsed — the same symptom the online fix removes, arriving by a different door.
-    //
-    // Only when a social mutation actually ran: an unrelated flush (a log, a stub, an
-    // archive row) has no bearing on who you follow, and refetching two feeds for it
-    // would be waste.
+    // A follow sent from the queue shows in the following feeds now, not when
+    // their timers next run. Only after a follow: nothing else changes whose
+    // posts those feeds carry.
     if (socialMutationSynced) {
         try {
             queryClient.invalidateQueries({ queryKey: ['feed', 'following'] });

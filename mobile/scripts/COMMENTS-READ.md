@@ -120,12 +120,13 @@ without one). "Read" is the day its comments were last read against its code.
 | ARCHITECTURE.md | — |  |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | — |  |
+| e2e/__tests__/flowScreens.test.ts | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | e2e/annotate.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
 | e2e/db/seed.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
-| e2e/flow-screens.mjs | 2026-09-29 | history reduced to the rule |
+| e2e/flow-screens.mjs | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | e2e/run-flows.sh | 2026-09-29 | rewritten this session: one flow at a time, each failure's screen read at once |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
@@ -191,7 +192,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/PressableScale.hitSlop.test.tsx | — |  |
 | src/components/__tests__/SectionErrorBoundary.test.tsx | — |  |
 | src/components/__tests__/SpoilerVeil.test.tsx | — |  |
-| src/components/__tests__/stackedRowHitSlop.test.ts | — |  |
+| src/components/__tests__/stackedRowHitSlop.test.ts | 2026-09-29 | histories → rules; FALSE: '15pt on EVERY side' (PressableScale drops it on an axis ≥48pt); iOS source cited is Fabric's RCTViewComponentView; BUG: mapSpans treated a backtick string as code ('\'' twice) — fixed |
 | src/components/__tests__/textContrast.test.ts | — |  |
 | src/components/__tests__/theCountHangsBesideItsMark.test.tsx | — |  |
 | src/components/__tests__/theDoorCanBeReadAndPressed.test.tsx | — |  |
@@ -215,11 +216,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/clearance/Clearance.tsx | — |  |
 | src/components/ContentSkeleton.tsx | — |  |
 | src/components/ControlledInput.tsx | — |  |
+| src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/constants.ts | — |  |
 | src/components/darkroom/DarkroomCards.tsx | — |  |
 | src/components/darkroom/DarkroomFilterPanel.tsx | — |  |
-| src/components/darkroom/DarkroomHeader.tsx | — |  |
-| src/components/darkroom/DarkroomHero.tsx | 2026-09-29 | 6 fixed + autoCorrect off (E2E: last letter lost) |
+| src/components/darkroom/DarkroomHeader.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
+| src/components/darkroom/DarkroomHero.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/DarkroomMoodBar.tsx | — |  |
 | src/components/Decorative.tsx | — |  |
 | src/components/dispatch/__tests__/aControlsNameCanBeRead.test.ts | — |  |
@@ -871,7 +873,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/navigationSnapshot.ts | — |  |
 | src/utils/networkError.ts | — |  |
 | src/utils/noticeRoute.ts | — |  |
-| src/utils/offlineQueue.ts | — |  |
+| src/utils/offlineQueue.ts | 2026-09-29 | histories (#77, #82, OFFQ-2) → rules; FALSE: 'reactive UI binding' store (nothing subscribes, no screen reads it); FALSE: schema branch 'MUST come before' duplicate (errorClass is one value; the order lives in classifyQueueError) |
 | src/utils/openNoticeFromPush.ts | — |  |
 | src/utils/openSociety.ts | — |  |
 | src/utils/performanceMonitor.ts | — |  |

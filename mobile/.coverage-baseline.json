@@ -1,9 +1,9 @@
 {
   "total": {
-    "lines": 58.3,
-    "branches": 50.78,
-    "functions": 55.11,
-    "statements": 56.49
+    "lines": 58.97,
+    "branches": 51.31,
+    "functions": 55.9,
+    "statements": 57.11
   },
   "./src/components/dispatch/": {
     "lines": 94.04,
@@ -12,10 +12,10 @@
     "statements": 92.37
   },
   "./src/components/": {
-    "lines": 60.88,
-    "branches": 53.88,
-    "functions": 55.35,
-    "statements": 59.21
+    "lines": 62.56,
+    "branches": 55.31,
+    "functions": 57.17,
+    "statements": 60.77
   },
   "./src/utils/": {
     "lines": 84.36,
@@ -24,10 +24,10 @@
     "statements": 82.95
   },
   "./src/stores/": {
-    "lines": 72.43,
-    "branches": 57.76,
-    "functions": 71.07,
-    "statements": 68.73
+    "lines": 73.32,
+    "branches": 58.27,
+    "functions": 71.87,
+    "statements": 69.55
   },
   "./src/services/": {
     "lines": 55.42,
@@ -54,9 +54,9 @@
     "statements": 53.75
   },
   "./app/": {
-    "lines": 46.95,
+    "lines": 47.13,
     "branches": 45.53,
-    "functions": 40.19,
-    "statements": 45.68
+    "functions": 40.29,
+    "statements": 45.84
   }
 }
