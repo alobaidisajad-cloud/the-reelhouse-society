@@ -10,7 +10,7 @@ import { router } from 'expo-router';
 import { resolveHandleNotice } from '../utils/handleNotice';
 import { registerForPushNotifications, setupNotificationResponseHandler } from '../lib/pushNotifications';
 import { initRevenueCat, reconcileRank } from '../lib/revenueCat';
-import { addBreadcrumb, captureError, Sentry, setSentryUser } from '../lib/sentry';
+import { addBreadcrumb, Sentry, setSentryUser } from '../lib/sentry';
 import { supabase } from '../lib/supabase';
 import { storage, useAuthStore } from '../stores/auth';
 import { hydrateFollowing } from '../stores/domain/socialSlice';
@@ -266,23 +266,8 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
       }
     );
 
-    // ── Global unhandled promise rejection handler ──
-    // Without this, async errors outside try/catch silently vanish in production.
-    // Hermes engine supports the standard onunhandledrejection API.
-    // Uses typed global declarations from src/global.d.ts
-    const previousHandler = global.onunhandledrejection;
-    global.onunhandledrejection = (event: { reason: unknown }) => {
-      const err = event?.reason instanceof Error
-        ? event.reason
-        : new Error(`Unhandled rejection: ${String(event?.reason)}`);
-      if (__DEV__) {
-        logger.error('[UnhandledRejection]', err);
-      } else {
-        captureError(err);
-      }
-      // Chain to previous handler if one existed
-      if (typeof previousHandler === 'function') (previousHandler as Function).call(globalThis, event);
-    };
+    // Unhandled promise rejections reach Sentry through its own integration
+    // (Hermes' rejection tracker); Hermes never calls a global onunhandledrejection.
 
     // ── Memory resilience system ──
     MemoryManager.initialize();
@@ -365,7 +350,6 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
       appStateSub.remove();
       timeouts.current.forEach(clearTimeout);
       timeouts.current = [];
-      global.onunhandledrejection = previousHandler;
     };
   }, []);
 

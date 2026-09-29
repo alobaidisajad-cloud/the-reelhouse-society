@@ -36,14 +36,10 @@ export interface AuthState {
 
 
 
-// ── Action throttle: prevents spam-clicking social buttons ──
-const _actionThrottles = new Map<string, number>();
 const _prefTimers = new Map<string, ReturnType<typeof setTimeout>>();
 // Each member's preferences at the START of a debounce window: a refusal rolls
 // back every key changed in it (the keys share one timer).
 const _prefBaselines = new Map<string, Record<string, unknown>>();
-const _THROTTLE_MAX = 200;
-const _THROTTLE_TTL = 30000;
 
 // Single-flight guard for logout (see logout() re-entrancy note).
 let _logoutInFlight: Promise<void> | null = null;
@@ -80,19 +76,6 @@ function readPendingPrefs(userId: string): Record<string, unknown> | null {
     const prefs = JSON.parse(raw);
     return prefs && typeof prefs === 'object' ? prefs as Record<string, unknown> : null;
   } catch { return null; }
-}
-
-function pruneThrottles() {
-  if (_actionThrottles.size < _THROTTLE_MAX) return;
-  const now = Date.now();
-  for (const [key, ts] of _actionThrottles) {
-    if (now - ts > _THROTTLE_TTL) _actionThrottles.delete(key);
-  }
-  // Batch-prune the oldest 50 entries if still over the limit.
-  if (_actionThrottles.size >= _THROTTLE_MAX) {
-    const keys = [..._actionThrottles.keys()].slice(0, 50);
-    keys.forEach(k => _actionThrottles.delete(k));
-  }
 }
 
 /**
@@ -169,11 +152,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         const pendingPrefs = readPendingPrefs(session.user.id);
         if (pendingPrefs) {
           try {
-            await supabase.rpc('update_my_preferences', { p_preferences: pendingPrefs });
-            storage.delete(`dirty_prefs_${session.user.id}`);
+            // A failure is ANSWERED (supabase-js resolves it), not thrown.
+            const { error } = await supabase.rpc('update_my_preferences', { p_preferences: pendingPrefs });
+            if (!error) storage.delete(`dirty_prefs_${session.user.id}`);
           } catch {
-            // Kept on disk for the next launch, and preferred below over the
-            // server's older copy.
+            // Kept on disk for the next launch either way, and preferred below
+            // over the server's older copy.
           }
         }
 
@@ -403,7 +387,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     storage.delete('nitrate_memory_feed');
 
     // 10. Clear module-level caches
-    _actionThrottles.clear();
     _prefTimers.forEach(t => clearTimeout(t));
     _prefTimers.clear();
     _prefBaselines.clear();
@@ -424,16 +407,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const user = get().user;
     if (!user) return;
 
-    const throttleKey = `update:${user.id}`;
-    const lastCall = _actionThrottles.get(throttleKey) ?? 0;
-    if (Date.now() - lastCall < 1500) {
-      // Slow down
-      return;
-    }
-    pruneThrottles();
-    _actionThrottles.set(throttleKey, Date.now());
-
-    // Snapshot for rollback
+    // Every call applies: a second change made at once, or a caller's own undo
+    // after the server refused, is never dropped.
     const prevUser = user;
 
     // Prevent client-side role elevation
@@ -461,8 +436,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         // Only if they are still here: after a logout it would restore the
         // departed member, and rewrite their cache (email included).
         if (!memberUnchanged(prevUser.id)) return;
-        set({ user: prevUser });
-        setSensitive(`ironvault_user_cache_${prevUser.id}`, JSON.stringify(prevUser));
+        // This change alone is undone: a field changed again since keeps its
+        // newer value, and another field's change is not touched.
+        set((state) => {
+          if (!state.user) return state;
+          const now = state.user as unknown as Record<string, unknown>;
+          const was = prevUser as unknown as Record<string, unknown>;
+          const undone: Record<string, unknown> = {};
+          for (const [k, v] of Object.entries(safeUpdates)) {
+            if (now[k] === v) undone[k] = was[k];
+          }
+          const reverted = { ...state.user, ...undone } as User;
+          setSensitive(`ironvault_user_cache_${reverted.id}`, JSON.stringify(reverted));
+          return { user: reverted };
+        });
         reelToast.error('Profile update failed \u2014 changes reverted.');
       }
     }
