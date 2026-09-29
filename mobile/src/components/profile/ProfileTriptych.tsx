@@ -425,6 +425,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         return <View key={index} style={size}>{hung}</View>;
     };
 
+    const closeSheet = () => setSheet(null);
+
     return (
         <View style={s.container}>
             {/* The hook it hangs from — 5pt, and it turns with the rank. */}
@@ -489,9 +491,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                 visible={sheet !== null}
                 transparent
                 animationType="slide"
-                onRequestClose={() => setSheet(null)}
+                onRequestClose={closeSheet}
             >
-                <Animated.View style={[s.modalOverlay, kbPad]}>
+                <Animated.View style={[s.modalOverlay, kbPad]} onAccessibilityEscape={closeSheet}>
                     <Pressable
                         style={StyleSheet.absoluteFillObject}
                         onPress={() => { TactileEngine.selection(); setSheet(null); }}

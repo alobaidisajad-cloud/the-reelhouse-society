@@ -84,3 +84,30 @@ describe('the room on screen decides what the screen shows', () => {
     expect(load.indexOf('if (cancelled) return;')).toBeLessThan(load.indexOf('setNotFound('));
   });
 });
+
+// The member's standing is UNKNOWN until the roster is read (roomGate.ts): not
+// "none", which drew the request door for a member who had a seat.
+describe('the standing waits for the roster', () => {
+  it('starts unknown', () => {
+    expect(stripComments(SRC)).toMatch(/useState<RoomStanding>\('unknown'\)/);
+  });
+
+  it('starts unknown again in every room the screen is reused for, with nothing of the last', () => {
+    const code = stripComments(SRC);
+    const reset = code.slice(code.indexOf('let cancelled = false;'), code.indexOf('const loadLounge = async ()'));
+    for (const call of ["setMyStatus('unknown')", 'setRosterFailed(false)', 'setPending(false)', 'setMembers([])']) {
+      expect(reset).toContain(call);
+    }
+  });
+
+  it('a roster that could not be read changes no standing, and says so', () => {
+    const body = bodyOf('const refreshMembership = useCallback(async ()');
+    expect(body).toMatch(/if \(!roster\) \{ setRosterFailed\(true\); return; \}/);
+    expect(body.indexOf('if (!roster)')).toBeLessThan(body.indexOf('setMyStatus('));
+  });
+
+  it('the gate is decided by roomGate, and knows whether the roster failed', () => {
+    const code = stripComments(SRC);
+    expect(code).toMatch(/roomGate\(\{[\s\S]*standing: myStatus,[\s\S]*rosterFailed,[\s\S]*\}\)/);
+  });
+});

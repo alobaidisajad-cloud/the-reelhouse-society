@@ -224,6 +224,7 @@ function ActionModal({
   return (
     <Modal statusBarTranslucent visible={state.visible} transparent animationType="fade" onRequestClose={handleClose}>
       <KeyboardAvoidingView
+        onAccessibilityEscape={handleClose}
         style={s.modalOverlay}
         // 'padding' on BOTH platforms: RN Modal windows never resize for the
         // keyboard (Android's resize mode can't reach them).
@@ -234,7 +235,8 @@ function ActionModal({
 
           <View style={s.modalHeader}>
             <Text style={[s.modalTitle, { color: config.ink }]}>{config.title}</Text>
-            <PressableScale onPress={handleClose} haptic="selection" pressedScale={0.9}>
+            <PressableScale onPress={handleClose} haptic="selection" pressedScale={0.9}
+              accessibilityRole="button" accessibilityLabel="Close">
               <X size={20} color={colors.fog} />
             </PressableScale>
           </View>
@@ -253,6 +255,7 @@ function ActionModal({
                 placeholderTextColor={colors.fog}
                 selectionColor={colors.selection}
                 returnKeyType="next"
+                accessibilityLabel="Suspension, in hours"
               />
             </View>
           )}
@@ -270,6 +273,7 @@ function ActionModal({
               numberOfLines={3}
               textAlignVertical="top"
               maxLength={500}
+              accessibilityLabel="Reason for this action"
             />
           </View>
 

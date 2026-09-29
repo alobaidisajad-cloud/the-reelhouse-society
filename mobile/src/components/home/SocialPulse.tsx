@@ -90,7 +90,8 @@ const GhostEmptyState = memo(() => {
   };
 
   return (
-      <PressableScale onPress={handlePoke} style={{ alignItems: 'center', marginBottom: 16 } as any}>
+      <PressableScale onPress={handlePoke} style={{ alignItems: 'center', marginBottom: 16 } as any}
+        accessibilityRole="button" accessibilityLabel="Poke Buster">
           <Animated.View style={style}>
              <Buster mood={mood} size={54} />
           </Animated.View>

@@ -88,10 +88,13 @@ function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose
 
   return (
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
+      <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
       <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
         <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
-          <PressableScale style={s.actionBackdrop} onPress={onClose}><View style={StyleSheet.absoluteFill} /></PressableScale>
+          {/* The sheet's only close besides a drag, so a screen reader is given it by name. */}
+          <PressableScale style={s.actionBackdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+            <View style={StyleSheet.absoluteFill} />
+          </PressableScale>
         </BlurView>
       </Animated.View>
       

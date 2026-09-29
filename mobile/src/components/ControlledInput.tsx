@@ -6,6 +6,8 @@ import { colors, fonts } from '@/src/theme/theme';
 
 interface ControlledInputProps extends TextInputProps {
   name: string;
+  /** Required: a field is found and named by a screen reader through this alone. */
+  accessibilityLabel: string;
 }
 
 /**
@@ -64,7 +66,8 @@ export const ControlledUsernameInput = React.memo(function ControlledUsernameInp
 
   return (
     <View style={st.usernameWrap}>
-      <Text style={st.usernameAt}>@</Text>
+      {/* Drawn, not spoken: the field's own name says what it holds. */}
+      <Text style={st.usernameAt} accessibilityElementsHidden importantForAccessibility="no">@</Text>
       <TextInput
         style={st.usernameInput}
         value={field.value}

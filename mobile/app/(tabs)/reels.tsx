@@ -96,7 +96,8 @@ const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: str
         onFocus={() => TactileEngine.navigate()}
       />
       {localText.length > 0 && (
-        <PressableScale onPress={handleClear} style={st.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+        <PressableScale onPress={handleClear} style={st.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          accessibilityRole="button" accessibilityLabel="Clear the search">
           <Text style={st.searchClearText}>✕</Text>
         </PressableScale>
       )}

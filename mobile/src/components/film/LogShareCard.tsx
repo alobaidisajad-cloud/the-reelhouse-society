@@ -119,11 +119,12 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
 
     return (
         <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <View style={s.overlay}>
+            <View style={s.overlay} onAccessibilityEscape={onClose}>
                 <Animated.View entering={FadeIn.duration(300)} style={s.modalContent}>
                     <View style={s.header}>
                         <Text style={s.title}>✦ THE NITRATE FILE</Text>
-                        <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}>
+                        <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}
+                            accessibilityRole="button" accessibilityLabel="Close">
                             <Text style={s.closeText}>✕</Text>
                         </PressableScale>
                     </View>

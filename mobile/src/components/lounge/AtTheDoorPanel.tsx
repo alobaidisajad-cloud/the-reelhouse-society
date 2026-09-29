@@ -42,9 +42,11 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
   return (
     <Modal statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
-        <PressableScale style={s.backdrop} onPress={onClose} accessibilityRole="button"><View /></PressableScale>
+        {/* The ground closes it for a finger; a screen reader has the named Close. */}
+        <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no"><View /></PressableScale>
       </BlurView>
-      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 8, 28) }]}>
+      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 8, 28) }]}
+        onAccessibilityEscape={onClose}>
         <View style={s.handle} />
         <View style={s.headerRow}>
           <View style={s.titleRow}>

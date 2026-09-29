@@ -276,14 +276,16 @@ function ReportSheet({
 
   return (
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={handleDismiss}>
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
-        {/* Backdrop */}
+      <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={handleDismiss}>
+        {/* Backdrop: closes it for a finger; a screen reader has the named DISMISS. */}
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
           <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
             <PressableScale
               style={styles.backdrop}
               onPress={handleDismiss}
               pressedScale={1}
+              accessible={false}
+              importantForAccessibility="no"
             >
               <View style={StyleSheet.absoluteFill} />
             </PressableScale>

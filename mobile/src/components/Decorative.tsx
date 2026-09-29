@@ -127,15 +127,18 @@ export const ReelRating = memo(function ReelRating({ rating, size = 16, onChange
                 <View key={reel} style={[s.reelTouchWrap, { width: size, height: size }]}>
                     {reelImage}
                     <View style={s.reelSplitRow}>
+                        {/* For fingers only: the row above is the one control a screen reader moves. */}
                         <Pressable
                             onPress={() => { TactileEngine.selection(); onChange(rating === halfVal ? 0 : halfVal); }}
                             style={s.reelHalf}
                             hitSlop={{ top: 4, bottom: 4, left: 2, right: 0 }}
+                            accessible={false}
                         />
                         <Pressable
                             onPress={() => { TactileEngine.selection(); onChange(rating === fullVal ? 0 : fullVal); }}
                             style={s.reelHalf}
                             hitSlop={{ top: 4, bottom: 4, left: 0, right: 2 }}
+                            accessible={false}
                         />
                     </View>
                 </View>

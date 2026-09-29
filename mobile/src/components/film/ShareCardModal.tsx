@@ -116,13 +116,15 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
 
   return (
     <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={s.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      <View style={s.overlay} onAccessibilityEscape={onClose}>
+        {/* The ground closes it for a finger; a screen reader has the named ✕. */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} importantForAccessibility="no" />
 
         <View style={s.modalContent}>
           <View style={s.header}>
             <Text style={s.title}>✦ THE NITRATE FILE</Text>
-            <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}>
+            <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}
+              accessibilityRole="button" accessibilityLabel="Close">
               <Text style={s.closeText}>✕</Text>
             </PressableScale>
           </View>

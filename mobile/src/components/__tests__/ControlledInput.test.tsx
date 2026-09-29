@@ -27,7 +27,7 @@ describe('ControlledInput', () => {
   it('shows the current form value', () => {
     const { getByDisplayValue } = render(
       <Harness defaultValues={{ displayName: 'Sajad' }}>
-        <ControlledInput name="displayName" />
+        <ControlledInput name="displayName" accessibilityLabel="Display name" />
       </Harness>,
     );
     expect(getByDisplayValue('Sajad')).toBeTruthy();
@@ -36,7 +36,7 @@ describe('ControlledInput', () => {
   it('writes typing back into the form', async () => {
     const { getByTestId, getByDisplayValue } = render(
       <Harness defaultValues={{ displayName: '' }}>
-        <ControlledInput name="displayName" testID="f" />
+        <ControlledInput name="displayName" accessibilityLabel="Display name" testID="f" />
       </Harness>,
     );
     await fireEvent.changeText(getByTestId('f'), 'Kurosawa');
@@ -57,7 +57,7 @@ describe('ControlledBioInput', () => {
   it('counts the characters actually entered', () => {
     const { getByText } = render(
       <Harness defaultValues={{ bio: 'Noir' }}>
-        <ControlledBioInput name="bio" />
+        <ControlledBioInput name="bio" accessibilityLabel="Bio" />
       </Harness>,
     );
     expect(getByText('4/300')).toBeTruthy();
@@ -66,7 +66,7 @@ describe('ControlledBioInput', () => {
   it('shows 0 for an empty bio rather than crashing on undefined', () => {
     const { getByText } = render(
       <Harness defaultValues={{}}>
-        <ControlledBioInput name="bio" />
+        <ControlledBioInput name="bio" accessibilityLabel="Bio" />
       </Harness>,
     );
     expect(getByText('0/300')).toBeTruthy();
@@ -75,7 +75,7 @@ describe('ControlledBioInput', () => {
   it('the counter follows what is typed', async () => {
     const { getByTestId, getByText } = render(
       <Harness defaultValues={{ bio: '' }}>
-        <ControlledBioInput name="bio" testID="bio" />
+        <ControlledBioInput name="bio" accessibilityLabel="Bio" testID="bio" />
       </Harness>,
     );
     await fireEvent.changeText(getByTestId('bio'), 'Twelve chars');
@@ -88,7 +88,7 @@ describe('ControlledUsernameInput — sanitises as you type', () => {
   const typeUsername = async (raw: string) => {
     const r = render(
       <Harness defaultValues={{ username: '' }}>
-        <ControlledUsernameInput name="username" testID="u" />
+        <ControlledUsernameInput name="username" accessibilityLabel="Username" testID="u" />
       </Harness>,
     );
     await fireEvent.changeText(r.getByTestId('u'), raw);
@@ -119,9 +119,12 @@ describe('ControlledUsernameInput — sanitises as you type', () => {
   it('renders the @ prefix', () => {
     const { getByText } = render(
       <Harness defaultValues={{ username: 'x' }}>
-        <ControlledUsernameInput name="username" />
+        <ControlledUsernameInput name="username" accessibilityLabel="Username" />
       </Harness>,
     );
-    expect(getByText('@')).toBeTruthy();
+    // Drawn, and not spoken: the field's name says what it holds.
+    const at = getByText('@', { includeHiddenElements: true });
+    expect(at.props.accessibilityElementsHidden).toBe(true);
+    expect(at.props.importantForAccessibility).toBe('no');
   });
 });

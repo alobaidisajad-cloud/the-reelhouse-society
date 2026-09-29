@@ -196,10 +196,17 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
         return path ? tmdb.poster(path, 'w342') : null;
     };
 
+    const close = () => { TactileEngine.selection(); onClose?.(); };
+
     return (
-        <Modal statusBarTranslucent visible transparent animationType="fade" onRequestClose={() => { TactileEngine.selection(); onClose?.(); }}>
-            <Pressable style={s.overlay} onPress={() => { TactileEngine.selection(); onClose?.(); }} accessibilityRole="button" accessibilityLabel="Close the oracle">
-                <Pressable style={s.card} onPress={() => {}} accessible={false}>
+        <Modal statusBarTranslucent visible transparent animationType="fade" onRequestClose={close}>
+            <View style={s.overlay} onAccessibilityEscape={close}>
+                {/* The ground BEHIND the card, not around it: an accessible element
+                    hides what it holds from VoiceOver, so a card inside it could
+                    not be read. A finger closes on the ground; a screen reader has
+                    the named ✕ and the escape gesture. */}
+                <Pressable style={StyleSheet.absoluteFill} onPress={close} accessible={false} importantForAccessibility="no" />
+                <View style={s.card}>
 
                     {/* IDLE — Summon */}
                     {!picking && !result && (
@@ -273,8 +280,8 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                     <PressableScale style={s.closeBtn} onPress={() => { onClose?.(); }} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close the oracle">
                         <Text {...scaledTextProps} style={s.closeBtnText}>{'✕'}</Text>
                     </PressableScale>
-                </Pressable>
-            </Pressable>
+                </View>
+            </View>
             <ToastHost />
         </Modal>
     );

@@ -373,7 +373,8 @@ export const ConciergeButton = memo(function ConciergeButton() {
         {/* Both the card AND the disc's twin live inside this region. Marking
             only the card modal would have left the ✕ — the one control that
             closes this — invisible to VoiceOver. */}
-        <View style={StyleSheet.absoluteFill} pointerEvents="box-none" accessibilityViewIsModal>
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none" accessibilityViewIsModal
+          onAccessibilityEscape={closeSheet}>
           <Animated.View style={[s.cardWrap, { top: cardTop, width: cardWidth }, cardStyle]}>
             <ConciergeCard onLog={onLog} onStack={onStack} onFile={onFile} />
 

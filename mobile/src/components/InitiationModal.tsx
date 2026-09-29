@@ -125,7 +125,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
 
   return (
     <Modal statusBarTranslucent visible transparent animationType="fade" onRequestClose={handleQuiet}>
-      <View style={s.overlay} accessibilityViewIsModal={true}>
+      <View style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={handleQuiet}>
         {/* The house is real, behind the door — the living Lobby, blurred. */}
         <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
         <View style={s.dim} />

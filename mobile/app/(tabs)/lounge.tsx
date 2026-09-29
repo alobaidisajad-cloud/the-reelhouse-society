@@ -292,7 +292,8 @@ export default function LoungeScreen() {
               spellCheck={false}
             />
             {searchQuery.length > 0 && (
-              <PressableScale onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection">
+              <PressableScale onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
+                accessibilityRole="button" accessibilityLabel="Clear the search">
                 <X size={14} color={colors.fog} strokeWidth={1.5} />
               </PressableScale>
             )}

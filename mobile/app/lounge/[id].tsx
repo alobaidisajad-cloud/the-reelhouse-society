@@ -15,6 +15,7 @@ import { useBlockStore } from '@/src/stores/blockStore';
 import { LoungeMessage, LoungeRoom, ReactionSummary, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import { LoungeMember, LoungeMemberStatus } from '@/src/types/social.types';
+import { roomGate, type RoomGate, type RoomStanding } from '@/src/components/lounge/roomGate';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { safeOpenURL } from '@/src/utils/linking';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -84,24 +85,58 @@ const SHARE_LABELS: Record<string, string> = {
   dossier_share: KIND_NAME.dossier,
 };
 
+/**
+ * What a message shares, as its card names it; null for plain words. The
+ * Dispatch shares every kind of filing down the `dossier_share` path (the type
+ * and metadata key stay, for the messages already in rooms), so the kind comes
+ * from the metadata when it is there.
+ */
+export function shareOf(msg: LoungeMessage): { typeLabel: string; title: string | null } | null {
+  if (msg.type === 'text') return null;
+  const meta = (msg.metadata ?? {}) as Record<string, unknown>;
+  // Stack shares carry their title in metadata, not the film_title column.
+  const title = msg.film_title || (typeof meta.title === 'string' ? meta.title : null);
+  if (!title && !msg.film_id) return null;
+  const sharedKind = typeof meta.kind === 'string' ? nameOf(meta.kind) : null;
+  const typeLabel = sharedKind ?? SHARE_LABELS[msg.type] ?? msg.type.toUpperCase().replace('_SHARE', '');
+  return { typeLabel, title };
+}
+
+export const firstLink = (content: string | null | undefined) =>
+  content?.match(URL_RE)?.[0]?.replace(/[.,;:!?)\]]+$/, '') ?? null;
+
+/** A message, as a screen reader hears it: what it answers, its words, what it shares. */
+export function spokenDispatch(msg: LoungeMessage): string {
+  const parts: string[] = [];
+  if (msg.reply_to_content) parts.push(`In reply to ${msg.reply_to_username || 'a member'}: ${msg.reply_to_content}`);
+  if (msg.content) parts.push(msg.content);
+  const share = shareOf(msg);
+  if (share) parts.push(`Shared ${share.typeLabel.toLowerCase()}${share.title ? `: ${share.title}` : ''}`);
+  // Each part one sentence: a stop added only where the words did not end on one.
+  return parts.map((p) => p.trim()).filter(Boolean)
+    .map((p) => (/[.!?…]$/.test(p) ? p : `${p}.`)).join(' ');
+}
+
+/** The acts a screen reader is offered on a message. */
+export function dispatchActions(msg: LoungeMessage) {
+  const share = shareOf(msg);
+  return [
+    { name: 'activate' as const },
+    { name: 'longpress' as const, label: 'Show actions' },
+    ...(share ? [{ name: 'open', label: `Open the ${share.typeLabel.toLowerCase()}` }] : []),
+    ...(firstLink(msg.content) ? [{ name: 'link', label: 'Open the link' }] : []),
+  ];
+}
+
 const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
   msg: LoungeMessage;
   onOpen: (msg: LoungeMessage) => void;
   onLongPress: (msg: LoungeMessage) => void;
 }) => {
+  const share = shareOf(msg);
+  if (!share) return null;
+  const { typeLabel, title } = share;
   const meta = (msg.metadata ?? {}) as Record<string, unknown>;
-  // Stack shares carry their title in metadata, not the film_title column.
-  const title = msg.film_title || (typeof meta.title === 'string' ? meta.title : null);
-  if (!title && !msg.film_id) return null;
-
-  // The Dispatch shares five kinds of filing down the `dossier_share` path —
-  // the type and the metadata key stay put so the messages already in every room
-  // keep working — so the LABEL comes from the metadata when it is there. A take
-  // shared into a salon used to announce itself as the long form.
-  const sharedKind = typeof meta.kind === 'string' ? nameOf(meta.kind) : null;
-  const typeLabel = sharedKind
-    ?? SHARE_LABELS[msg.type]
-    ?? msg.type.toUpperCase().replace('_SHARE', '');
   const posterUrl = msg.film_poster ? tmdb.poster(msg.film_poster, 'w342') : null;
 
   // One quiet attribution line, when the payload carries one.
@@ -121,8 +156,9 @@ const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
       onLongPress={() => onLongPress(msg)}
       haptic="selection"
       pressedScale={0.98}
-      accessibilityRole="button"
-      accessibilityLabel={`Open shared ${typeLabel.toLowerCase()}${title ? `: ${title}` : ''}`}
+      // Inside the message, which speaks for it and offers "Open" as an action.
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
     >
       {posterUrl ? (
         <Image source={{ uri: posterUrl }} style={s.sharedPoster} contentFit="cover" cachePolicy="memory-disk" transition={150} />
@@ -228,7 +264,18 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
               <Text style={s.tombstoneText}>dispatch withdrawn</Text>
             </View>
           ) : (
-            <PressableScale onLongPress={() => onLongPress(msg)} haptic="medium" disabled={isSending || isFailed}>
+            <PressableScale onLongPress={() => onLongPress(msg)} haptic="medium" disabled={isSending || isFailed}
+              // One element to a screen reader, whose long press and whose card
+              // inside are out of its reach: they are offered as named actions.
+              accessibilityRole="text"
+              accessibilityLabel={spokenDispatch(msg)}
+              accessibilityActions={isSending || isFailed ? undefined : dispatchActions(msg)}
+              onAccessibilityAction={(e) => {
+                const act = e.nativeEvent.actionName;
+                if (act === 'open' || (act === 'activate' && shareOf(msg))) onOpenShare(msg);
+                else if (act === 'link') { const url = firstLink(msg.content); if (url) safeOpenURL(url); }
+                else if (act === 'activate' || act === 'longpress') onLongPress(msg);
+              }}>
               {Boolean(msg.reply_to_content) && (
                 <View style={s.replyQuote}>
                   <Text style={s.replyQuoteAuthor} numberOfLines={1}>{msg.reply_to_username || 'Unknown'}</Text>
@@ -304,7 +351,9 @@ export default function LoungeRoomScreen() {
   const [doorOpen, setDoorOpen] = useState(false);
   const [members, setMembers] = useState<LoungeMember[]>([]);
   const [localLounge, setLocalLounge] = useState<(LoungeRoom & { is_member?: boolean }) | null>(null);
-  const [myStatus, setMyStatus] = useState<LoungeMemberStatus | 'none'>('none');
+  // Unknown until the roster is read: never taken for "none" (roomGate.ts).
+  const [myStatus, setMyStatus] = useState<RoomStanding>('unknown');
+  const [rosterFailed, setRosterFailed] = useState(false);
   const [pending, setPending] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -316,16 +365,7 @@ export default function LoungeRoomScreen() {
     if (text.length > 0 && id) broadcastTyping(id);
   }, [id, broadcastTyping]);
 
-  /**
-   * The room this screen is showing RIGHT NOW.
-   *
-   * `refreshMembership` closes over the `id` it was built with, which is the
-   * right question to ask the server but the wrong one to answer to — by the
-   * time the roster comes back the member may be in another room. A ref is what
-   * lets the write compare the room it fetched FOR against the room on screen;
-   * a cleanup function cannot, because this is a callback and is also fired
-   * from the door, the settings sheet and after an approval.
-   */
+  // The room on screen NOW, for answers to compare against the room they were asked for.
   const shownRoomRef = useRef(id);
   shownRoomRef.current = id;
 
@@ -333,34 +373,32 @@ export default function LoungeRoomScreen() {
   const refreshMembership = useCallback(async () => {
     if (!id) return;
     const roster = await fetchMembers(id);
-    // Room A's roster must not become room B's. `myStatus` decides the GATE —
-    // whether the transcript, the request door or the banned notice is shown —
-    // and `members` drives the host's "At the Door" count, so a stale answer
-    // here shows one room's membership while standing in another.
+    // Room A's roster must not become room B's (the screen is reused across rooms).
     if (shownRoomRef.current !== id) return;
-    // Unread is not empty: a member of a private room would be shown the request door.
-    if (!roster) return;
+    // Unread is not empty: the standing already known stays, and if none is, the
+    // room says the list could not be reached (with a way to try again).
+    if (!roster) { setRosterFailed(true); return; }
+    setRosterFailed(false);
     setMembers(roster);
-    if (user) {
-      const mine = roster.find(m => m.user_id === user.id);
-      setMyStatus((mine?.status as LoungeMemberStatus) ?? 'none');
-    }
+    const mine = user ? roster.find(m => m.user_id === user.id) : undefined;
+    setMyStatus((mine?.status as LoungeMemberStatus) ?? 'none');
   }, [id, user, fetchMembers]);
+
+  const retryRoster = useCallback(() => {
+    setRosterFailed(false);
+    refreshMembership();
+  }, [refreshMembership]);
 
   // ── Hydrate lounge metadata + membership ──
   useEffect(() => {
     if (!id) return;
-    // ── THE ROOM MAY HAVE CHANGED BEFORE THIS ANSWERS ───────────────────────
-    // expo-router reuses this screen when only the `[id]` param changes, so
-    // opening room A and then room B leaves A's query in the air. It used to
-    // land unconditionally: `localLounge` became A's row while the member was
-    // in B, and `activeLounge` feeds isCreator, canPost and canRead — so the
-    // gate was decided by the wrong room's membership. A stale `setNotFound`
-    // was worse still: the transcript replaced by "not found" for a room that
-    // is perfectly there.
-    //
-    // Same defect the store's fetchMessages had, in the screen above it.
+    // The screen is reused across rooms: an answer for the room left behind is dropped.
     let cancelled = false;
+    // A new room starts unknown: the last room's standing is not this one's.
+    setMyStatus('unknown');
+    setRosterFailed(false);
+    setPending(false);
+    setMembers([]);
     const loadLounge = async () => {
       const { data: loungeData, error } = await supabase.from('lounges').select('*').eq('id', id).single();
       if (cancelled) return;
@@ -383,13 +421,13 @@ export default function LoungeRoomScreen() {
   const pendingMembers = useMemo(() => members.filter(m => m.status === 'pending'), [members]);
 
   // What gate (if any) replaces the transcript.
-  const gate: 'chat' | 'preview' | 'request' | 'pending' | 'banned' = !activeLounge
-    ? 'chat'
-    : isApproved || isMuted ? 'chat'
-    : !activeLounge.is_private ? 'preview'
-    : myStatus === 'pending' || pending ? 'pending'
-    : myStatus === 'banned' ? 'banned'
-    : 'request';
+  const gate: RoomGate = !activeLounge ? 'chat' : roomGate({
+    isPrivate: !!activeLounge.is_private,
+    isCreator,
+    standing: myStatus,
+    requesting: pending,
+    rosterFailed,
+  });
 
   const handleLongPress = useCallback((msg: LoungeMessage) => setActionSheetMsg(msg), []);
   // Clippings are doors — every shared card opens the thing it points to.
@@ -406,16 +444,8 @@ export default function LoungeRoomScreen() {
         if (typeof meta.listId === 'string') router.push(`/stacks/${meta.listId}`);
         break;
       case 'dossier_share':
-        // `dossier_id` is the key every share in every room already carries, so
-        // it stays — but the destination is the Dispatch's reader, which is
-        // where a filing of any kind now lives. Sent straight there rather than
-        // through /dossier/, which would redirect and cost a frame for no
-        // reason on the path members actually take.
-        // `nav`, not `router`, for this one: expo-router's route types are
-        // GENERATED by the dev server and do not yet know `/dispatch/[id]`, so a
-        // direct push is a type error against a route that exists. `nav` is the
-        // app's own wrapper — it also carries the circular-push protection every
-        // other cross-screen jump in this app goes through.
+        // Straight to the Dispatch's reader (not the redirecting /dossier/), by
+        // `nav`: the generated route types do not know /dispatch/[id] yet.
         if (typeof meta.dossier_id === 'string') nav.push(`/dispatch/${meta.dossier_id}`);
         break;
     }
@@ -423,10 +453,8 @@ export default function LoungeRoomScreen() {
   const handleReport = useCallback((msg: LoungeMessage) => {
     setSelectedMessage(msg); setActionSheetMsg(null); setReportSheetVisible(true);
   }, []);
-  // blockUser applies its optimistic update synchronously before it awaits the
-  // server, so by the time it returns the promise the block is already in the store
-  // and the purge below sees it. Without the purge the toast said "their content is
-  // now hidden" while their messages stayed on screen until you left the salon.
+  // blockUser updates the store before it awaits the server, so the purge sees the
+  // block at once and the member's messages leave the room as the toast says.
   const handleBlock = useCallback((userId: string) => {
     setActionSheetMsg(null);
     blockStore.blockUser(userId);
@@ -473,15 +501,7 @@ export default function LoungeRoomScreen() {
     else refreshMembership();
   }, [id, requestMembership, refreshMembership]);
 
-  /**
-   * The seat needs the rank, asked for ONCE, from the registry — so this button
-   * and the Society page can never disagree about which rank opens the room.
-   *
-   * `tr_tier_gate_lounge_members` is what actually refuses the join, and
-   * `tr_tier_gate_lounge_messages` refuses the speaking. This is the client
-   * saying the same thing in the same words, before the member finds out the
-   * hard way.
-   */
+  // From the registry the Society page sells from; enforced by tr_tier_gate_lounge_*.
   const seat = useClearance('the-lounge', id ? `/lounge/${id}` : '/lounge');
 
   const handleTakeSeat = useCallback(async () => {
@@ -608,6 +628,7 @@ export default function LoungeRoomScreen() {
           lounge={activeLounge}
           memberCount={members.filter(m => m.status !== 'pending').length || activeLounge.member_count || 0}
           onRequest={handleRequest}
+          onRetry={retryRoster}
           pending={pending}
         />
       )}
@@ -643,7 +664,8 @@ export default function LoungeRoomScreen() {
                 <Text style={s.replyBannerAuthor} numberOfLines={1}>Replying to {replyTo.username}</Text>
                 <Text style={s.replyBannerText} numberOfLines={1}>{replyTo.content || 'Shared content'}</Text>
               </View>
-              <PressableScale onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button">
+              <PressableScale onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button"
+                accessibilityLabel="Cancel the reply">
                 <X size={14} color={colors.fog} strokeWidth={1.5} />
               </PressableScale>
             </AnimatedView>
@@ -667,6 +689,7 @@ export default function LoungeRoomScreen() {
               disabled={!input.trim() || sending}
               haptic="medium"
               accessibilityRole="button"
+              accessibilityLabel="Send the dispatch"
             >
               <Send size={16} color={colors.ink} strokeWidth={2} />
             </PressableScale>
@@ -681,17 +704,8 @@ export default function LoungeRoomScreen() {
         </View>
       )}
 
-      {/* ── THE SEAT IS WHERE THE CLEARANCE LIVES ────────────────────────────
-          Previewing a public salon was always allowed here — the bar below
-          predates this work, and the database agrees: public messages are
-          readable by any signed-in member. What was wrong is that a Cinephile
-          could never REACH this screen, because the corridor showed them a
-          poster instead of the rooms.
-
-          Now they can read the room and the rope sits on the one act that
-          needs the rank. `seat.held` and not `isArchivist`: the answer comes
-          from the same registry the Society page sells from, so this button and
-          that page can never disagree about which rank opens it. */}
+      {/* A public salon reads for any member; the rope sits on the one act that
+          needs the rank, taking a seat. */}
       {gate === 'preview' && (
         <AnimatedView entering={SlideInDown.duration(300)} style={[s.previewBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
           <Text style={s.previewText}>
@@ -715,6 +729,18 @@ export default function LoungeRoomScreen() {
             </Text>
           </PressableScale>
         </AnimatedView>
+      )}
+
+      {/* A public room is readable while the roster is out; if it cannot be read,
+          the member is told why they cannot post, and may ask again. */}
+      {gate === 'unreachable' && canRead && (
+        <View style={[s.mutedBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+          <Text style={s.mutedText}>Your seat could not be confirmed.</Text>
+          <PressableScale style={s.retryBtn} onPress={retryRoster} haptic="selection" accessibilityRole="button"
+            accessibilityLabel="Try again to confirm your seat">
+            <Text style={s.retryText}>TRY AGAIN</Text>
+          </PressableScale>
+        </View>
       )}
 
       {/* ── Overlays ── */}
@@ -763,9 +789,9 @@ export default function LoungeRoomScreen() {
 // ════════════════════════════════════════════════════════════
 // GATE VIEW — velvet rope (request), pending, banned
 // ════════════════════════════════════════════════════════════
-function GateView({ gate, lounge, memberCount, onRequest, pending }: {
-  gate: 'request' | 'pending' | 'banned' | 'chat' | 'preview';
-  lounge: LoungeRoom; memberCount: number; onRequest: () => void; pending: boolean;
+export function GateView({ gate, lounge, memberCount, onRequest, onRetry, pending }: {
+  gate: RoomGate;
+  lounge: LoungeRoom; memberCount: number; onRequest: () => void; onRetry: () => void; pending: boolean;
 }) {
   return (
     <AnimatedView entering={FadeInDown.duration(400)} style={s.gate}>
@@ -795,6 +821,21 @@ function GateView({ gate, lounge, memberCount, onRequest, pending }: {
       )}
       {gate === 'banned' && (
         <Text style={s.gateCopy}>You no longer have access to this salon.</Text>
+      )}
+      {gate === 'knocking' && (
+        <View style={s.gatePending} accessibilityLiveRegion="polite">
+          <ActivityIndicator size="small" color={colors.sepia} />
+          <Text style={s.edgeLoad}>CHECKING THE GUEST LIST</Text>
+        </View>
+      )}
+      {gate === 'unreachable' && (
+        <>
+          <Text style={s.gateCopy}>The guest list could not be reached, so the door cannot say whether you are expected.</Text>
+          <PressableScale style={s.gateBtn} onPress={onRetry} haptic="medium" accessibilityRole="button"
+            accessibilityLabel="Try the guest list again">
+            <Text style={s.gateBtnText}>TRY AGAIN</Text>
+          </PressableScale>
+        </>
       )}
     </AnimatedView>
   );
@@ -865,8 +906,7 @@ const s = StyleSheet.create({
   authorAvatarLetter: { fontFamily: fonts.display, color: colors.fog, fontSize: 11 },
   authorName: { fontFamily: fonts.sub, fontSize: 12, color: colors.bone, letterSpacing: 0.3, flexShrink: 1 },
   authorNameSelf: { color: colors.sepia },
-  // 0.6 was 3.04:1 — every timestamp in every conversation. 0.8 made 4.59:1.
-  // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+  // Solid, not faded: a word must not borrow its contrast from the ground behind it.
   authorTime: { fontFamily: fonts.sub, fontSize: 10, color: colors.fogQuiet, includeFontPadding: false },
 
   contentCol: { paddingLeft: 32 },
@@ -959,6 +999,8 @@ const s = StyleSheet.create({
     backgroundColor: colors.ink, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash,
   },
   mutedText: { fontFamily: fonts.serifItalic, fontSize: 13, color: colors.fog },
+  retryBtn: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 8 },
+  retryText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
 
   // ── Preview bar ──
   previewBar: {

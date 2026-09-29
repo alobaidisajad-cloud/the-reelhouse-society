@@ -180,7 +180,7 @@ export function ContentActionSheet({
 
   return (
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
+      <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
         {/* Backdrop */}
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
           <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>

@@ -476,6 +476,8 @@ export function SettingsScreen() {
   if (!user) return null;
 
   const appVersion = Constants.expoConfig?.version ?? '';
+  // Not while a code is being checked: the answer would land on a closed sheet.
+  const closeOtp = () => { if (!otpVerifying) setOtpModalVisible(false); };
 
   return (
     <View style={st.container}>
@@ -646,12 +648,12 @@ export function SettingsScreen() {
         </AnimatedView>
       </Animated.ScrollView>
 
-      <Modal statusBarTranslucent visible={otpModalVisible} animationType="fade" transparent onRequestClose={() => { if (!otpVerifying) setOtpModalVisible(false); }}>
+      <Modal statusBarTranslucent visible={otpModalVisible} animationType="fade" transparent onRequestClose={closeOtp}>
         <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
         {/* 'padding' on BOTH platforms, and correctly so: RN Modal windows never
             resize for the keyboard, so automaticallyAdjustKeyboardInsets cannot
             reach inside one. This is the opposite case to the screen above. */}
-        <KeyboardAvoidingView behavior="padding" style={st.modalOverlay}>
+        <KeyboardAvoidingView behavior="padding" style={st.modalOverlay} onAccessibilityEscape={closeOtp}>
           <View style={st.modalContent}>
             <View style={st.modalHeader}>
               <KeyRound color={colors.bloodReel} size={16} />

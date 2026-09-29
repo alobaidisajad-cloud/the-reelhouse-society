@@ -35,10 +35,13 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Animated.View style={[s.modalOverlay, animatedOverlayStyle]}>
+      <Animated.View style={[s.modalOverlay, animatedOverlayStyle]} onAccessibilityEscape={onClose}>
+        {/* The ground closes it for a finger; a screen reader has "Close recovery". */}
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
+          accessible={false}
+          importantForAccessibility="no"
         />
         <View style={s.modalContent}>
           {/* Archival registration marks in the card corners */}
