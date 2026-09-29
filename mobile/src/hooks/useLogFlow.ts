@@ -36,21 +36,12 @@ export interface SelectedFilm {
     release_date?: string;
 }
 
-/**
- * The old key, kept ONLY so the one-time reckoning in `memberDrafts` can find
- * it. Nothing writes it any more: it carried no member, logout never cleared
- * it, and it holds private notes — so it was readable by whoever signed in next
- * on this phone. See `adoptLegacyDrafts`.
- */
+/** A key with no member in it, never written; read once by `adoptLegacyDrafts`. */
 export const DRAFT_KEY = 'reelhouse_log_draft';
-// AUTOPSY LAW: `null` means UNRATED; a number — including a deliberate 0 —
-// means the user filed that score. The saved JSONB carries only rated axes
-// plus a `_v: 2` marker so genuine zeros are forever distinguishable from
-// legacy phantom rows (the old editor wrote 0 for untouched axes).
+/** `null` is UNRATED; a number, 0 included, was filed. Saved with `_v: 2` (see below). */
 export const AUTOPSY_INIT: Record<string, number | null> = { story: null, script: null, acting: null, cinematography: null, editing: null, sound: null };
 
-/** Normalize a stored autopsy JSONB into editor state. Legacy rows (no _v)
- *  treat 0 as unrated — the old editor could not express a deliberate zero. */
+/** A stored autopsy, for the editor. Without `_v` a 0 is unrated: such rows could not file one. */
 export function loadAutopsyForEdit(raw: unknown): Record<string, number | null> {
     const out: Record<string, number | null> = { ...AUTOPSY_INIT };
     if (!raw || typeof raw !== 'object') return out;
@@ -74,13 +65,7 @@ export const RATING_LABELS: Record<number, string> = {
     4.5: 'Masterpiece', 5: 'Masterpiece',
 };
 
-/**
- * Today (or an offset day) on the MEMBER's calendar.
- *
- * Now a re-export of the shared implementation so the store layer, the importer and
- * this hook cannot drift apart — they were already answering "what day is it?"
- * three different ways. LogForm imports this name for the TODAY/YESTERDAY chips.
- */
+/** Today on the MEMBER's calendar: the shared one, under LogForm's name for it. */
 export { localCalendarDate as getLocalDateString };
 
 // Returns a user-facing block message, or null if the log can be submitted.
@@ -112,14 +97,7 @@ export interface LogPayloadInput {
     abandonedReason: string;
     isAuteur: boolean;
     isPremium: boolean;
-    /**
-     * Did the member actually touch the note?
-     *
-     * An untouched note is OMITTED, and omission is what protects it: the store
-     * writes a note only when the key is present, so an edit to the rating
-     * cannot carry away writing the member never looked at — including when the
-     * Vault could not be reached and the field was never filled in.
-     */
+    /** Untouched, the note is OMITTED, so a rating edit never carries it away. */
     noteTouched: boolean;
     autopsy: Record<string, number | null>;
     altPoster: string | null;
@@ -128,68 +106,36 @@ export interface LogPayloadInput {
     pullQuote: string;
 }
 
-// Pure transform from form state -> the log record sent to the store.
-// Extracted from handleLog so tier-gating and field-stripping rules are
-// directly testable without rendering the hook.
+/** The form, as the record the store is sent: pure, so its rank rules are tested directly. */
 export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
     const {
         film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
         physicalMedia, abandonedReason, isAuteur, isPremium, noteTouched, autopsy,
         altPoster, editorialHeader, dropCap, pullQuote,
     } = input;
-    // An autopsy exists if and only if the user filed at least one score.
-    // Derived purely from data — no UI open/close state can phantom-save an
-    // untouched autopsy or silently discard a filled one. A deliberate 0 is a
-    // rated axis; null (untouched) axes are simply absent from the payload.
+    // An autopsy exists iff one score was filed (a 0 counts), from the data
+    // alone, never from whether its section is open.
     const ratedAxes = Object.fromEntries(
         Object.entries(autopsy ?? {}).filter(([key, v]) => key !== '_v' && typeof v === 'number')
     ) as Record<string, number>;
     const hasAutopsy = isAuteur && Object.keys(ratedAxes).length > 0;
-    // ── Tier-gated fields: OMITTED on edit, never nulled ──────────────────────
-    //
-    // This payload feeds BOTH addLog and updateLog (:351-352), and updateLogOp
-    // strips only `undefined` (logOperations.ts:574-577) — so a `null` here was
-    // written straight through to the row. The edit form pre-loads the real
-    // values first (:248-258). The result: a member whose tier resolves below the
-    // gate — the admin, or anyone whose subscription lapsed — silently ERASED
-    // their own private notes, physical media, editorial header, drop cap, pull
-    // quote, alt poster and autopsy every time they edited an existing log.
-    // Not hidden. Destroyed.
-    //
-    // The rule is CAPABILITY, on every path:
-    //   • can edit    -> key present. A premium member clearing a field still
-    //                    writes the clear (null), exactly as before.
-    //   • cannot edit -> key OMITTED, so nothing can be overwritten.
-    //
-    // Omitting on CREATE is safe, and that is a live-schema fact rather than an
-    // assumption: drop_cap and is_autopsied are nullable with DEFAULT false, and
-    // private_notes / editorial_header / pull_quote / alt_poster / physical_media
-    // are all nullable. An omitted key therefore lands on exactly the value the old
-    // code wrote explicitly. (pull_quote becomes NULL instead of '', which mapLogRow
-    // already normalises back to '' on read.)
-    //
-    // Omitting is also what makes the REWATCH path safe, which an edit-only rule
-    // missed entirely. applyRewatchMerge guards every field with `!== undefined`
-    // (logOperations.ts:179-205) — but a non-premium payload sent null/false/''
-    // for physicalMedia, dropCap and pullQuote, and those three are NOT wrapped in
-    // safeOverride, so they overwrote the stored values. Sending nothing at all is
-    // the only signal that path reads as "leave it alone".
+    // ── Ranked fields: OMITTED when the member cannot edit them, never nulled ──
+    // This one payload feeds addLog, updateLog and the rewatch merge, which all
+    // write any key that is present, null included: a null would ERASE a lapsed
+    // member's own notes, header or autopsy on every edit. Omission is the one
+    // "leave it alone". On create it is safe too: every one of these columns is
+    // nullable or defaults to false.
     const keep = (canEdit: boolean) => canEdit;
-
     return {
         filmId: film.id, title: film.title ?? film.name ?? 'Untitled',
         poster: altPoster ?? film.poster_path ?? null,
         year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
         rating: status === 'abandoned' ? 0 : rating, review: review.trim(), status, isSpoiler,
-        watchedDate: date, watchedWith: watchedWith.trim() || null,  // intentional || — empty string should be null
+        // `||`, not `??`: an empty companion is no companion.
+        watchedDate: date, watchedWith: watchedWith.trim() || null,
         abandonedReason: status === 'abandoned' ? abandonedReason : null,
 
-        // ── The note ──
-        // Sent only when the member touched it, and then exactly as written.
-        // An empty string is not nothing: it is them clearing their own note,
-        // which is never gated — so this sits OUTSIDE the rank group. Writing
-        // one meets the rank at the database, which refuses it there rather
-        // than here, where a lapsed member would also lose the ability to clear.
+        // Touched only; outside the rank group, as clearing your own is never gated.
         ...(noteTouched ? { privateNotes: privateNotes.trim() } : {}),
 
         ...(keep(isPremium) ? {
@@ -235,7 +181,7 @@ export function useLogFlow() {
     }, [film?.id, params.editLogId, _loggedIndex]);
     const isRewatchMode = !!previousLog;
 
-    // ── Form state (matches web LogForm.tsx L37-60) ──
+    // ── Form state (the web's LogForm has the same fields) ──
     const [status, setStatus] = useState<'watched' | 'rewatched' | 'abandoned'>(isRewatchMode ? 'rewatched' : 'watched');
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState('');
@@ -268,21 +214,8 @@ export function useLogFlow() {
     const editLogId = params.editLogId || null;
     const isEditing = !!editLogId;
 
-    /**
-     * ── THE IMAGES AN INSTRUMENT IS MADE OF ────────────────────────────────────
-     * Posters (Curatorial Control) and backdrops (the Editorial Desk) were
-     * fetched only for a member holding a rank. That was a sensible saving
-     * while those tools were invisible to everyone else. They are not any more:
-     * every tool is shown to every rank, inert, so the member can see what the
-     * rank buys — and a picker with no pictures in it shows nothing, while the
-     * poster panel's empty state would have said "No alternative posters found
-     * on TMDB", which would have been false.
-     *
-     * So a member with the rank still gets them up front, and anyone else gets
-     * them the moment they OPEN one of those tools — one request, on intent,
-     * never on every log. `imagesLoaded` lets the empty state speak only once it
-     * is true.
-     */
+    // The ranked tools' pictures: up front with the rank, on opening a tool without.
+    // `imagesLoaded` lets "none found" speak only once it is true.
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const imagesFor = useRef<number | string | null>(null);
 
@@ -291,11 +224,7 @@ export function useLogFlow() {
         if (!id || imagesFor.current === id) return;
         imagesFor.current = id;
         setImagesLoaded(false);
-        // Clear the LAST film's pictures before asking for this one's. They live
-        // in the flow, which outlives the form, so a member who logged one film
-        // and opened the poster tool on the next saw the first film's posters
-        // until the second's arrived — and the same flash reached every member
-        // with a rank on every change of film.
+        // Clear the last film's pictures first: the flow outlives the form.
         setAvailablePosters([]);
         setAvailableBackdrops([]);
         tmdb.movieImages(id).then((imgs: any) => {
@@ -303,9 +232,7 @@ export function useLogFlow() {
             if (imagesFor.current !== id) return;
             if (imgs?.posters) setAvailablePosters(imgs.posters.slice(0, 20));
             if (imgs?.backdrops) setAvailableBackdrops(imgs.backdrops.slice(0, 10));
-            // Only an ANSWER may let the empty state speak. A failed request is
-            // not "no posters found", and saying so would be a false sentence.
-            setImagesLoaded(true);
+            setImagesLoaded(true); // an ANSWER, not a failure, lets "none found" speak
         }).catch((err: unknown) => {
             if (__DEV__) console.warn('[LogModal] image prefetch failed:', err);
             // Allow a later open to try again, rather than a failure being final.
@@ -373,31 +300,11 @@ export function useLogFlow() {
         setStep(1);
     }, [editLogId, logs]);
 
-    /**
-     * ── THE NOTE, FROM THE VAULT ────────────────────────────────────────────
-     *
-     * A note belongs to the VIEWING this log is on, so it is read from the
-     * Vault by that viewing's name, never from the log row — the column there
-     * is kept blank on purpose, and reading it showed a member an empty Vault
-     * they had written in.
-     *
-     * It is hydrated ONCE per log, and only after the Vault has answered:
-     *   · before that, `noteReady` is false and the form keeps the field shut,
-     *     so nobody types into an empty box that is about to be filled;
-     *   · and because an untouched note is never sent, a member who edits their
-     *     rating while the Vault is unreachable cannot overwrite their own
-     *     writing with the blank the screen happens to be showing.
-     */
+    // The note is the VIEWING's: read from the Vault by the viewing's id, not the log.
     const storeViewingId = editLogId ? (logs.find(l => l.id === editLogId)?.viewingId ?? null) : null;
 
-    /**
-     * A log cached on this phone before viewings had names does not know which
-     * viewing it is on. Without that name the Vault cannot say which note is
-     * this viewing's — so the form would open EMPTY over a note that exists, and
-     * whatever the member typed would have no viewing to be saved against. It is
-     * asked for once, and written back into the store so every later step (the
-     * save included) has it. Until it is known, the field stays shut.
-     */
+    // A log cached without its viewing's id asks for it once and stores it, or
+    // the form would open EMPTY over a note that exists.
     const [fetchedViewingId, setFetchedViewingId] = useState<string | null>(null);
     const [viewingLookupFailed, setViewingLookupFailed] = useState(false);
     useEffect(() => {
@@ -472,29 +379,11 @@ export function useLogFlow() {
         return res;
     }, [editLogId, editViewingId]);
 
-    /**
-     * The field is open when there is nothing left to wait for: a new log or a
-     * rewatch (the note starts empty and belongs to the viewing about to begin),
-     * or an edit whose note has arrived.
-     */
+    /** The note field opens for a new log or rewatch, or once an edit's note has arrived. */
     const noteReady = !editLogId || noteHydratedFor === editLogId;
 
-    /**
-     * ── DRAFT RESTORE ────────────────────────────────────────────────────────
-     * This draft carries a review, a rating and PRIVATE NOTES, and it lived
-     * under `reelhouse_log_draft` — one key, no member in it — which logout
-     * never cleared. So a member wrote, did not file, signed out, and the next
-     * person to sign in on this phone opened the log modal and read their
-     * private notes with the SAVE button live.
-     *
-     * `private_notes` is owner-only at the row level, has a trigger that diverts
-     * it, and is named in the guard as a column anon must never read. On the
-     * phone it was public to whoever held the phone.
-     *
-     * Whose a draft is now lives in `memberDrafts`, along with the one-time
-     * reckoning with the old key: adopted only if `last_user_id` proves nobody
-     * has signed out since, deleted unread otherwise.
-     */
+    // Restore this member's draft (it holds PRIVATE notes, so it is keyed by
+    // member in `memberDrafts`, never shared by whoever holds the phone).
     useEffect(() => {
         if (editLogId) return;
         adoptLegacyDrafts(user?.id);
@@ -527,47 +416,22 @@ export function useLogFlow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id]);
 
-    // ── Draft auto-save ──
-    // Depend on stable scalar fields, not the entire `film` object reference.
-    // The film object changes identity on every setFilm() call, which would reset the
-    // 1-second debounce timer. Extracting scalars ensures the timer only resets when
-    // actual content changes (review, rating, privateNotes, or the selected film).
+    // ── Draft auto-save ── on the film's fields, not the object (a new object
+    // on every setFilm would restart the debounce).
     const filmId = film?.id;
     const filmTitle = film?.title;
     const filmName = film?.name;
     const filmPoster = film?.poster_path;
     const filmYear = film?.release_date;
     const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    /**
-     * The dismissal beat after a successful seal.
-     *
-     * Same shape as the draft timer below, for the same reason: its callback
-     * navigates and asks for a store review, and neither should happen on a
-     * screen the member has already left.
-     */
+    /** The beat after a seal; cleared on unmount, as it navigates. */
     const sealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    /**
-     * Work deferred until the animations settle, so it can be called off.
-     *
-     * `InteractionManager.runAfterInteractions` is the other way this hook defers
-     * work, and it was the unguarded one: three calls, none captured, two of them
-     * `router.back()`. Clearing the seal timer alone was not enough — a
-     * dismissal already handed to the InteractionManager still fires on a screen
-     * the member has left, popping whatever they navigated to instead.
-     *
-     * The handle carries `.cancel()`, and three other files in this codebase
-     * already capture it for exactly this reason.
-     */
+    /** Work deferred until animations settle, kept so unmount can `.cancel()` it. */
     const pendingTasks = useRef<{ cancel: () => void }[]>([]);
     const deferUntilIdle = useCallback((fn: () => void, opts?: { cancelOnUnmount?: boolean }) => {
         const task = InteractionManager.runAfterInteractions(fn);
-        // Not everything deferred here is work that should be called off. The
-        // dismissal must not fire on a screen the member has left — but the
-        // review prompt is deliberately scheduled to run AFTER that dismissal
-        // completes, which is to say after this screen is gone. Registering it
-        // for cancellation would have let the very navigation it waits for
-        // cancel it, and the prompt would never appear again.
+        // The review prompt opts out: it is meant to run after this screen is gone.
         if (opts?.cancelOnUnmount !== false) pendingTasks.current.push(task);
         return task;
     }, []);
@@ -620,31 +484,17 @@ export function useLogFlow() {
             else { await addLog(logData); }
             clearDraft(user?.id, 'log');
             TactileEngine.success();
-            // Hold on a single brass beat — "RECORD SEALED" — then dismiss.
-            //
-            // Stored and cleared on unmount. It used to be a bare setTimeout: if
-            // the member left during those 650ms, it still fired `router.back()`
-            // on a screen that was already gone — popping whatever they had
-            // navigated to instead — and asked for a store review on top.
-            //
-            // The draft timer forty lines above is already ref'd and cleared;
-            // that asymmetry is what marks this an oversight rather than intent.
+            // One brass beat, "RECORD SEALED", then dismiss (never after unmount).
             setSealed(true);
             if (sealTimerRef.current) clearTimeout(sealTimerRef.current);
             sealTimerRef.current = setTimeout(() => {
                 deferUntilIdle(() => {
                     router.back();
-                    // Only a NEW entry counts — an edit adds no film. The nested wait
-                    // lets the dismissal finish before an OS modal can appear over it;
-                    // router.back() isn't awaitable, so the outer pass isn't enough.
-                    // `logs` is the pre-await snapshot, hence +1. maybeRequestReview
-                    // gates itself (>=5 logs, 90-day cooldown, 6 lifetime) and never throws.
+                    // A NEW entry only (an edit adds no film). Nested, so the
+                    // dismissal ends before an OS modal can rise; `logs` is the
+                    // snapshot before the save, hence +1. It gates itself.
                     if (isNewEntry) {
-                        // Explicitly NOT cancelled on unmount — see deferUntilIdle.
-                        // This is scheduled to run once the dismissal above has
-                        // finished, so by design it outlives this screen. Treating
-                        // it like the dismissal would mean router.back() cancelled
-                        // the prompt it was supposed to precede.
+                        // Not cancelled on unmount: it runs after this screen is gone.
                         deferUntilIdle(() => {
                             void maybeRequestReview(logs.length + 1);
                         }, { cancelOnUnmount: false });
@@ -653,22 +503,11 @@ export function useLogFlow() {
             }, 650);
             return;
         } catch (err: unknown) {
-            // #88 — filing a log is the app's core write and had zero telemetry.
-            // addLogOp/updateLogOp have no top-level catch, so this is where a
-            // failed write actually surfaces. Network failures are expected and
-            // already queued offline, so only genuine defects are reported.
+            // The core write's failures surface here; a network one is queued, not a defect.
             if (!isNetworkError(err)) {
                 captureError(err, { scope: 'useLogFlow.handleLog', isEditing, filmId: film?.id });
             }
-            // ONE toast, and the right one.
-            //
-            // The store used to toast on five of its own failure paths and then
-            // rethrow into this catch, which toasted again — two stacked messages
-            // for a single failure. On the "already saving" paths the two even
-            // CONTRADICTED each other: one said wait, the other said it failed.
-            //
-            // The reason travels as a CODE, not as prose. Matching on an error's
-            // message is what batch 16 proved fragile.
+            // ONE toast, chosen here; the reason travels as a CODE, never matched prose.
             reelToast.error(
                 (err as { code?: string })?.code === LOG_BUSY
                     ? 'Still sealing the previous record — one moment.'
@@ -693,10 +532,7 @@ export function useLogFlow() {
 
     // Explicit draft discard — clears MMKV and resets form state
     const discardDraft = useCallback(() => {
-        // The draft is the member's ONE unsent new record (`draft_<id>_log`, not
-        // kept per film). An edit writes no draft, so an edit has none to throw
-        // away — and clearing here from an edit erased the new record they were
-        // writing about some other film.
+        // The draft is the one unsent NEW record: an edit has none to discard.
         if (!editLogId) clearDraft(user?.id, 'log');
         setRating(0);
         setReview('');
@@ -715,12 +551,8 @@ export function useLogFlow() {
         setAutopsyOpen(false);
         setFilm(null);
         setStep(0);
-        // `user?.id` is the KEY this clears under, and an empty array captured
-        // it once at mount — so after a sign-out and a sign-in, DISCARD erased
-        // the previous member's log draft and left this one's in place. That
-        // draft holds private notes, which makes it the worst one to get wrong.
-        // Every `setX` above is a state setter and stable by React's guarantee,
-        // so this is the only dependency that was actually missing.
+        // `user?.id` is the draft's KEY: without it, after a change of member,
+        // the wrong member's draft would be discarded. (Setters are stable.)
     }, [user?.id, editLogId]);
 
     const toggleList = (listId: string) => {
@@ -748,9 +580,7 @@ export function useLogFlow() {
         date, setDate,
         watchedWith, setWatchedWith,
         privateNotes,
-        // Every change to the note is a touch, and a touch is what makes it
-        // travel. Wrapped here rather than trusted to each caller, so a new
-        // caller cannot forget and silently stop saving notes.
+        // Every change is a touch, which is what makes the note travel.
         setPrivateNotes: useCallback((next: string) => {
             setNoteTouched(true);
             setPrivateNotes(next);
@@ -759,10 +589,7 @@ export function useLogFlow() {
         noteReady,
         /** Take the note back — never gated. */
         removeVaultNote,
-        /** The Vault could not be reached, so the note cannot be shown or written. */
-        // Unreachable when either half cannot be had: the Vault itself, or the
-        // name of the viewing this log is on. Otherwise an offline member would
-        // watch "Opening the Vault…" for ever instead of being told why.
+        /** The Vault, or this log's viewing id, cannot be had: said, not waited on. */
         noteUnreachable: !!editLogId && noteHydratedFor !== editLogId
             && ((vaultUnreachable && !vaultLoaded) || (viewingLookupFailed && !editViewingId)),
         physicalMedia, setPhysicalMedia,
@@ -780,9 +607,7 @@ export function useLogFlow() {
         availablePosters, availableBackdrops,
         imagesLoaded, loadImages,
         isEditing,
-        // Exposed so a rope in the form can say where to come back to: an edit
-        // keeps no draft, so its way back is the log itself, not an empty form.
-        editLogId,
+        editLogId, // a rope's way back from an edit: the log, not an empty form
         selectFilm,
         handleLog,
         handleDelete,

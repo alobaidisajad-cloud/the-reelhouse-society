@@ -1,13 +1,9 @@
 /**
- * ProfileDataService — Service-layer boundary for profile data fetching.
+ * ProfileDataService — every read a member's file makes, typed and validated.
  * ────────────────────────────────────────────────────────────────────────
- * Extracts 12 raw Supabase queries from useProfileData.ts
- * into a typed, validated service layer with Sentry observability.
- *
- * Uses PUBLIC_PROFILE_COLUMNS when fetching other users'
- * profiles to avoid leaking preferences (oracle_persona, notify settings).
- *
- * All queries pass through logger on error for production observability.
+ * Another member's profile is read with PUBLIC_PROFILE_COLUMNS, so their own
+ * settings never leave the database. A failed read is logged (`logger.warn`
+ * reaches Sentry in production) and thrown, or answered as nothing.
  */
 
 import { z } from 'zod';
@@ -44,48 +40,13 @@ function parseRowsSafely<T extends z.ZodTypeAny>(schema: T, data: unknown[]): z.
 
 // ── Column Constants ───────────────────────────────────────────────────
 
-/**
- * Full profile columns — ONLY for self-profile queries.
- * @see {@link ../profileService.ts#PROFILE_SELECT_COLUMNS} for the auth-bootstrap column set.
- * When adding a new profile column, check if it also needs to be in PROFILE_SELECT_COLUMNS.
- */
+/** Your own profile only (a new column may belong in PROFILE_SELECT_COLUMNS too). */
 export const SELF_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio, role, tier, is_founding, persona, is_social_private, followers_count, following_count, favorite_films, preferences, created_at, social_links, member_no' as const;
 
-/** Public profile columns — excludes `preferences` to prevent
- *  leaking user settings (oracle_persona, notification prefs, etc.) to other users.
- *
- *  Reads `public_prefs`, a database-side WHITELIST projection of `preferences`
- *  (see supabase/migrations/20260731_08_public_prefs_projection.sql). This used to
- *  select `programmes:preferences->programmes` and friends, but a JSONB path read
- *  still requires column-level SELECT on `preferences` — so the old form kept the
- *  raw settings blob readable by anyone, including logged-out visitors. The
- *  projection is enforced by the database, not by this string.
- *
- *  @see {@link ../profileService.ts#PROFILE_SELECT_COLUMNS} for the auth-bootstrap column set.
- */
+/** Anyone else's: no `preferences`, only `public_prefs`, the database's whitelist of it. */
 export const PUBLIC_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio, role, tier, is_founding, persona, is_social_private, followers_count, following_count, favorite_films, created_at, social_links, member_no, public_prefs' as const;
 
-/**
- * The preference keys a VISITOR is allowed to see on someone else's dossier.
- *
- * ── THIS LIST IS HALF OF A PAIR ──────────────────────────────────────────────
- * The other half is the `public.public_prefs(jsonb)` function in the database,
- * which decides what ever reaches the wire. This one decides what we keep once
- * it arrives. They are deliberately redundant: the DB whitelist is the security
- * boundary, and this is a second filter so that a mistake in the SQL still
- * cannot put a private preference into app state.
- *
- * The cost of the redundancy is that a key added to ONE side does nothing. That
- * is exactly how `backdrop` was nearly shipped broken — the SQL exposed it, the
- * loop below dropped it on the floor, and the Auteur who switched their
- * backdrop off would still have had it showing to everyone but themselves.
- *
- * ADDING A KEY MEANS BOTH SIDES. Run `npm run schema:check` after the SQL to
- * confirm the live function and the repo agree.
- *
- * NOTE these are DISPLAY preferences only. Notification and privacy settings
- * are the owner's business and must never appear here.
- */
+/** A visitor's `preferences`: display keys, each ALSO in the database's `public_prefs()`. */
 export const VISITOR_PREFERENCE_KEYS = ['programmes', 'favorites', 'backdrop'] as const;
 
 // ── Zod Schemas ────────────────────────────────────────────────────────
@@ -119,14 +80,8 @@ const ListItemRowSchema = z.object({
 type ListItemRow = z.infer<typeof ListItemRowSchema>;
 
 /**
- * Embedded list items, validated WITHOUT ever risking the parent list.
- *
- * parseRowsSafely drops a whole row when its schema fails, so a plain
- * `z.array(ListItemRowSchema)` would erase an entire list from a member's
- * public profile because of one bad item. Instead each item is caught
- * individually and a bad one becomes null, then the nulls are filtered out.
- * A missing, null, or non-array value collapses to []. The list itself
- * always survives.
+ * A stack's items, each validated alone: one bad item is dropped, never the
+ * whole stack (parseRowsSafely drops a failing row); anything else is [].
  */
 const ListItemsField = z
   .array(ListItemRowSchema.nullable().catch(null))
@@ -203,11 +158,7 @@ export const ProfileDataService = {
     return parsed.data;
   },
 
-  /**
-   * Fetches all tab counts via server-side RPC (single round-trip).
-   * Falls back to 5 parallel HEAD requests if the RPC isn't deployed.
-   * BLOCK4-COUNTS: 5 requests → 1 request per profile view.
-   */
+  /** Every room's count in one call; five counting queries if that call fails. */
   async fetchCounts(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, isSelf: boolean = false, signal?: AbortSignal) {
     try {
       const { data, error } = await withAbortSignal(
@@ -225,24 +176,19 @@ export const ProfileDataService = {
           watchlist: counts.watchlist_count ?? counts.watch_count ?? 0,
           vault: isArchivistPlusTier(targetUser) ? (counts.vault_count ?? 0) : 0,
           lists: counts.lists_count ?? 0,
-          // Live follower/following counts (added to the RPC in the counts migration).
-          // Undefined until that migration lands — callers fall back to the profile row.
+          // Live counts; if absent, callers fall back to the profile row's.
           followers: typeof counts.followers_count === 'number' ? counts.followers_count : undefined,
           following: typeof counts.following_count === 'number' ? counts.following_count : undefined,
         };
       }
-      // RPC not deployed — fallback to parallel queries
       logger.info('[ProfileDataService] get_profile_counts RPC unavailable, using fallback');
     } catch {
-      // RPC not deployed — fallback
+      // Counted the long way below.
     }
     return this._fetchCountsFallback(targetUser, isSelf, signal);
   },
 
-  /**
-   * Fallback: 5 parallel HEAD requests for tab counts.
-   * Used when the get_profile_counts RPC hasn't been deployed yet.
-   */
+  /** The counts the long way: five HEAD requests, when get_profile_counts fails. */
   async _fetchCountsFallback(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, isSelf: boolean = false, signal?: AbortSignal) {
     
     try {
@@ -275,10 +221,7 @@ export const ProfileDataService = {
     }
   },
 
-  /**
-   * Phase 3: Fetches pre-computed Analytics directly from PostgreSQL RPC.
-   * Eliminates the need to download thousands of logs to the client.
-   */
+  /** An Auteur's analytics, computed by the database, not from logs sent here. */
   async fetchProfileAnalytics(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, signal?: AbortSignal) {
     
     if (!isAuteurPlusTier(targetUser)) return null;
@@ -301,9 +244,8 @@ export const ProfileDataService = {
   },
 
   /**
-   * Fetches cursor-paginated logs for another user's profile.
-   * Cursor-based keyset pagination replaces offset .range().
-   * Compound cursor format: "created_at|id" for deterministic deep-scroll ordering.
+   * Another member's logs, a page at a time, by keyset: the cursor is the last
+   * row's watched date and id, so a deep scroll never repeats or skips a row.
    */
   async fetchOtherUserLogs(userId: string, limit: number = 50, cursorString?: string, signal?: AbortSignal, options?: { search?: string, titleOnly?: boolean, rating?: LedgerRating, status?: string, hasRatingOrReview?: boolean }): Promise<{ items: ProfileLog[], nextCursor: string | null }> {
     const fetchLimit = limit + 1;
@@ -318,11 +260,8 @@ export const ProfileDataService = {
     if (options?.search) {
       const pattern = buildSearchPattern(options.search);
       if (pattern === null) return { items: [], nextCursor: null };
-      // The Archive and the Ledger share this query but ask different
-      // questions. The LEDGER is the room for writing, so searching it should
-      // reach into reviews. The ARCHIVE is the wall of everything watched, and
-      // there a search for "boring" returning films whose REVIEW says boring —
-      // with no indication why — is a bewildering result.
+      // The Ledger's search reaches reviews; the Archive's, titles only (a film
+      // found for a word in its review, with no sign why, bewilders).
       query = options.titleOnly
         ? query.ilike('film_title', `%${pattern}%`)
         : query.or(`film_title.ilike.*${pattern}*,review.ilike.*${pattern}*`);
@@ -393,28 +332,20 @@ export const ProfileDataService = {
       .select('id, film_id, film_title, poster_path, year, created_at')
       .eq('user_id', userId)
 
-    // Server-side search and multi-axis sorting.
-    // This is the builder form, which always escaped correctly — the quoted
-    // `.or()` sites were the broken ones. It goes through the same funnel so the
-    // refusal of a separators-only term is applied here too.
+    // Through the one escaper, which also refuses a term of only separators.
     if (options?.search) {
       const pattern = buildSearchPattern(options.search);
       if (pattern === null) return { items: [], nextCursor: null };
       query = query.ilike('film_title', `%${pattern}%`);
     }
 
-    // A DECADE is a half-open range, not an equality: 1990 means 1990–1999.
-    // Guarded on a finite number rather than truthiness — the year 0 is not a
-    // decade anyone filters by, but `if (options.decade)` would also drop a
-    // legitimate `0` silently, and the guard is free.
+    // A decade is a range, 1990 to 1999; tested as a number, so 0 is not falsy.
     if (typeof options?.decade === 'number' && Number.isFinite(options.decade)) {
       query = query.gte('year', options.decade).lt('year', options.decade + 10);
     }
 
-    // ONE axis decides the ORDER BY, the cursor filter and the cursor handed
-    // back. They used to be three separate ladders of if/else in this function,
-    // and naming three different columns between them is what silently
-    // duplicates rows on deep scroll.
+    // ONE axis for the order, the cursor filter and the cursor handed back:
+    // three that disagreed would repeat rows on a deep scroll.
     const axis = sortAxis(options?.sort, 'film_title');
     const asc = axis.direction === 'asc';
     query = query.order(axis.column, { ascending: asc }).order('id', { ascending: asc }).limit(fetchLimit);
@@ -457,27 +388,21 @@ export const ProfileDataService = {
       query = query.contains('formats', [options.filter]);
     }
 
-    // A shelf of three hundred discs cannot be browsed by scrolling. Titles AND
-    // the member's own notes — "the one Dad gave me" is exactly how somebody
-    // looks for a disc, and the notes column is already in the SELECT.
+    // Titles AND the member's notes: "the one Dad gave me" is how a disc is found.
     if (options?.search) {
       const pattern = buildSearchPattern(options.search);
       if (pattern === null) return { items: [], nextCursor: null };
       query = query.or(`film_title.ilike.*${pattern}*,notes.ilike.*${pattern}*`);
     }
 
-    // A shelf can be read in the order it was FILLED or alphabetically, which
-    // is how anyone actually arranges a shelf they own. Same one-axis rule as
-    // the Watchlist, through the same helper.
+    // In the order it was filled, or A–Z: the Watchlist's one-axis rule.
     const axis = sortAxis(options?.sort, 'film_title');
     const asc = axis.direction === 'asc';
     query = query.order(axis.column, { ascending: asc })
       .order('id', { ascending: asc })
       .limit(fetchLimit);
 
-    // The old cursor split on the FIRST `|` and quoted by hand. A film titled
-    // `Kill Bill: Vol. 1 "Extended"` ended the value early inside the `.or()`
-    // string and the rest was parsed as filter syntax.
+    // Through keysetFilter, which quotes a title like `Kill Bill: Vol. 1 "Extended"`.
     const keyset = keysetFilter(axis.column, parseCursor(cursor), axis.direction);
     if (keyset) query = query.or(keyset);
 
@@ -509,36 +434,21 @@ export const ProfileDataService = {
     const fetchLimit = limit + 1;
     const axis = sortAxis(options?.sort, 'title');
     const asc = axis.direction === 'asc';
+    // Four posters, and the TRUE size of the stack from an aggregate embed in
+    // the same round trip (never the capped array's length). Aggregates are on
+    // in this project (checked live); the answer is an ARRAY: `film_count[0].count`.
     let query = supabase.from('lists')
-      // `film_count:list_items(count)` is a PostgREST aggregate embed: the TRUE size of
-      // the stack, in the SAME round trip as the four posters.
-      //
-      // #46 — the array below is deliberately capped at 4 (only four posters render, and
-      // lifting the cap reintroduces the payload problem #45 exists for). The defect was
-      // taking the COUNT from that capped array, so a 96-film stack advertised itself as
-      // "4 FILMS" to everyone except its owner. Seven of nine live stacks were wrong.
-      //
-      // Verified against this project's live API before writing:
-      //   "Comfort movies" -> list_items:[4 items], film_count:[{count: 88}]  HTTP 200
-      // — so aggregates are enabled here, which is NOT a given (PostgREST can disable
-      // them, and then this silently 400s).
-      //
-      // ⚠️ PostgREST returns the aggregate as an ARRAY: read `film_count[0].count`.
       .select('id, title, description, is_ranked, is_private, created_at, list_items(list_id, film_id, film_title, poster_path), film_count:list_items(count)')
       .eq('user_id', userId)
       .eq('is_private', false)
       .order(axis.column, { ascending: asc })
       .order('id', { ascending: asc })
-      // The ITEMS inside each stack keep their own order regardless — that is
-      // `rank_position`, the member's chosen sequence, and it is not what the
-      // sort above reorders.
+      // The items keep the member's own sequence, whatever the stacks' order.
       .order('rank_position', { foreignTable: 'list_items', ascending: true })
       .limit(fetchLimit)
       .limit(4, { foreignTable: 'list_items' });
 
-    // Three hundred stacks sorted A–Z still means scrolling to "N" by hand.
-    // Title and description, because a member names a stack one way and
-    // describes it another, and either is a fair way to look for it.
+    // Title and description: a stack is named one way and described another.
     if (options?.search) {
       const pattern = buildSearchPattern(options.search);
       if (pattern === null) return { items: [], nextCursor: null };
@@ -568,9 +478,7 @@ export const ProfileDataService = {
       films: l.list_items.map((i) => ({
         id: i.film_id, title: i.film_title, poster: i.poster_path ?? null,
       })),
-      // Falls back to the capped array length only if the aggregate is absent — which
-      // would mean the embed stopped working, and an under-count is a better failure
-      // than `undefined FILMS` on a public profile.
+      // No aggregate: an under-count beats `undefined FILMS`.
       filmCount: (l as { film_count?: { count: number }[] }).film_count?.[0]?.count
         ?? l.list_items.length,
     }));
@@ -619,12 +527,7 @@ export const ProfileDataService = {
     return (data ?? []) as z.infer<typeof AnalyticsRowSchema>[];
   },
 
-  /**
-   * Orchestrates cursor-paginated analytics log retrieval.
-   * Composes fetchAnalyticsBatch() with Zod validation, 10K safety cap,
-   * and ProfileLog mapping. Replaces the broken inline code in useProfileData.ts
-   * that referenced unimported symbols (supabase, withAbortSignal).
-   */
+  /** The whole history for analytics, in batches of 1,000, validated, capped at 10,000. */
     async fetchAnalyticsLogs(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, isSelf: boolean, signal?: AbortSignal): Promise<ProfileLog[]> {
       
       if (!isSelf && !isAuteurPlusTier(targetUser)) return [];
@@ -643,8 +546,7 @@ export const ProfileDataService = {
 
       const validBatch = parseRowsSafely(AnalyticsRowSchema, batch);
       
-      // Yield to the React Native JS event loop after synchronous parsing 
-      // of 1,000 objects. This prevents frame drops and maintains 60fps scrolling.
+      // A breath for the JS thread after parsing 1,000 rows, so frames keep coming.
       await new Promise(r => setTimeout(r, 0));
 
       if (validBatch.length < batch.length) {
@@ -665,8 +567,7 @@ export const ProfileDataService = {
         }
     }
 
-    // Sentry breadcrumb for slow analytics fetches — enables diagnosis
-    // of constrained-network performance issues without active user reports.
+    // A slow or large fetch, printed in development only (logger.info).
     const durationMs = Date.now() - fetchStart;
     if (durationMs > 2000 || allRows.length > 1000) {
       logger.info(`[ProfileDataService] analytics_fetch: ${allRows.length} rows in ${durationMs}ms`);
@@ -693,11 +594,7 @@ export const ProfileDataService = {
     }));
   },
 
-  /**
-   * BLOCK4-ANALYTICS: Server-side pre-aggregated analytics via RPC.
-   * Returns ~2KB of JSON instead of downloading ALL log rows (~2.5MB).
-   * Falls back to full fetchAnalyticsLogs if RPC not deployed.
-   */
+  /** A member's analytics, summed by the database (~2KB, not every log); null if refused. */
   async fetchAnalyticsSummary(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, signal?: AbortSignal) {
     try {
       const { data, error } = await withAbortSignal(
@@ -706,44 +603,21 @@ export const ProfileDataService = {
       );
       if (!error && data) {
         const shape = data as AnalyticsShape;
-        // The function refuses a caller who may not see this member by
-        // returning `{ error: 'forbidden' }` rather than throwing. Handing that
-        // object back as if it were data would give every consumer an object
-        // full of `undefined` — and a room that reads `?? 0` would then print
-        // ZERO films for a private member instead of drawing nothing at all.
+        // A refusal is `{ error: 'forbidden' }`, not a throw: never data (0 films).
         if (shape?.error) return null;
         return shape;
       }
       logger.info('[ProfileDataService] get_user_analytics RPC unavailable');
     } catch {
-      // RPC not deployed — caller should fall back to fetchAnalyticsLogs
+      // Nothing: the caller falls back to fetchAnalyticsLogs.
     }
     return null;
   },
 
   /**
-   * A member's taste, computed over their WHOLE archive.
-   *
-   * ── WHAT THIS REPLACES ──────────────────────────────────────────────────────
-   * TasteDNA and CinematicInsights each fetched films from TMDB one at a time,
-   * from the phone, and gave up at sixty:
-   *
-   *     const idsToFetch = filmIds.slice(0, 60);   // limit for mobile perf
-   *
-   * Sixty is roughly what a handset can pull before the page feels broken. So a
-   * member with five thousand films got a section titled REAL ANALYTICS drawn
-   * from sixty of them, with nothing on screen saying so — and for a VISITOR to
-   * a non-Auteur profile those sixty came from the fifty logs that happened to
-   * have loaded.
-   *
-   * One call now. Roughly 2KB whether the member has fifty films or fifty
-   * thousand, and dozens of TMDB round trips disappear from the page.
-   *
-   * ── IT REPORTS ITS OWN COVERAGE ─────────────────────────────────────────────
-   * `films_total` and `films_known` come back with the answer, because the
-   * films table fills in over time and a fingerprint drawn from three known
-   * films would be exactly the confident falsehood this pass exists to remove.
-   * The screen shows what it is based on rather than implying everything.
+   * A member's taste over their WHOLE archive, in one ~2KB call however many
+   * films. It reports its own coverage (`films_total`, `films_known`), as the
+   * films table fills in over time and the screen says what it rests on.
    */
   async fetchTasteProfile(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<TasteProfile | null> {
     try {
@@ -756,10 +630,7 @@ export const ProfileDataService = {
         return null;
       }
       const shape = data as TasteProfile & { error?: string };
-      // Refused rather than empty — handing this back as data would give every
-      // consumer an object full of undefined, and a section reading `?? 0`
-      // would then draw a taste profile of nothing for a private member.
-      if (!shape || shape.error) return null;
+      if (!shape || shape.error) return null; // a refusal is not an empty taste
       return shape;
     } catch {
       return null;
@@ -767,12 +638,8 @@ export const ProfileDataService = {
   },
 
   /**
-   * "Something changed — read whatever is outstanding."
-   *
-   * Fire and forget, deliberately: nothing on screen waits for it, and it is
-   * not told WHICH film to read. The function drains the whole backlog, so a
-   * ping lost to a dropped connection costs nothing — the next one, from
-   * anybody, picks up what this one missed.
+   * "Read whatever films are outstanding", fire and forget: it drains the
+   * whole backlog, so a lost ping costs nothing; the next, from anyone, catches up.
    */
   pingFilmSync(): void {
     try {
@@ -783,36 +650,12 @@ export const ProfileDataService = {
   },
 
   /**
-   * BLOCK4-CALENDAR: Lightweight calendar heatmap data.
-   * Returns only 3 columns (date, rating, status) instead of 10.
+   * The calendar's three columns, for every member (their logs, under the
+   * same visibility as every room). Bounded by the 52 weeks the grid DRAWS
+   * (NitrateCalendarGrid's WEEKS), not a row count; past 5,000 logs in a year
+   * every cell is already full, so the limit is only a backstop.
    */
   async fetchCalendarData(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<{ date: string; rating: number; status: string }[]> {
-    /**
-     * EVERY MEMBER'S, since 2026-09-17. This returned nothing below the
-     * Archivist rank — but the Society page never sold a calendar, so the app
-     * was withholding something it had never offered. It is given to everyone
-     * now. Who may SEE another member's calendar is unchanged: these are that
-     * member's logs, read under the same rules as every other room (a private
-     * member's rows are refused by the database's own visibility check).
-     */
-
-    /**
-     * Bounded by the RANGE THE GRID DRAWS, not by a row count.
-     *
-     * It used to take the most recent 2,000 rows with a comment reading "Max
-     * 2000 rows for 5.5 years of daily viewing" — an assumption of roughly one
-     * film a day. The grid shows 52 weeks (NitrateCalendarGrid: `WEEKS = 52`),
-     * so a member averaging more than about five and a half films a day would
-     * quietly lose the far end of their own year, with nothing on screen to say
-     * so. Rare, but it is exactly the member this app is being built for.
-     *
-     * A range is the honest bound: it asks for what is drawn and nothing else,
-     * which is also LESS data than 2,000 rows for almost everyone.
-     *
-     * The remaining limit is a backstop, not the shape of the answer. Past
-     * roughly 5,000 logs in one year every cell in the grid is already
-     * saturated, so no further row could change a single pixel of it.
-     */
     const CALENDAR_WEEKS = 52;
     const from = new Date();
     from.setDate(from.getDate() - (CALENDAR_WEEKS * 7 + 7));   // a week of slack for timezone edges

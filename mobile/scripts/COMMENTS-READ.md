@@ -111,10 +111,10 @@ without one). "Read" is the day its comments were last read against its code.
 | app/person/[id].tsx | — |  |
 | app/reset-password.tsx | — |  |
 | app/settings.tsx | — |  |
-| app/stacks/__tests__/stack-detail.redesign.test.tsx | — |  |
+| app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-09-29 | 13 fixed + test that runs the real queryFn |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
-| app/stacks/[id].tsx | — |  |
+| app/stacks/[id].tsx | 2026-09-29 | 24 fixed; FOUND: critique count dropped by the screen's hand-copied mapping (never shown on a phone); now the payload whole, tested, mutation-killed; a FALSE 'length threshold' fold note |
 | app/user/[username].tsx | 2026-09-29 | 33 fixed + ~15 unflagged history notes; commented-out CinematicMap import removed; '72 seconds' was 36 |
 | app/year-in-cinema.tsx | — |  |
 | ARCHITECTURE.md | — |  |
@@ -598,7 +598,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useFilmDetail.ts | — |  |
 | src/hooks/useFollowRequests.ts | — |  |
 | src/hooks/useInitiation.ts | — |  |
-| src/hooks/useLogFlow.ts | — |  |
+| src/hooks/useLogFlow.ts | 2026-09-29 | 22 fixed; line refs (:351-352, logOperations.ts:574) and a 30-line history of the erase bug cut to the rule |
 | src/hooks/useMemberRoom.ts | — |  |
 | src/hooks/useMembershipPricing.ts | — |  |
 | src/hooks/useModalKeyboardPadding.ts | — |  |
@@ -670,7 +670,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/LoungeService.ts | — |  |
 | src/services/MemberDiscoveryService.ts | — |  |
 | src/services/ModerationService.ts | — |  |
-| src/services/ProfileDataService.ts | — |  |
+| src/services/ProfileDataService.ts | 2026-09-29 | 24 fixed; 'Sentry breadcrumb' was dev-only logger.info (logged for step 6); a dead file ref; ticket tags |
 | src/services/ProfileWriteService.ts | — |  |
 | src/services/StackService.ts | — |  |
 | src/services/VaultService.ts | — |  |

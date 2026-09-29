@@ -1,14 +1,8 @@
 /**
- * stack-detail.redesign.test.tsx — the catalogue, mounted.
- *
- * The defects this pass fixed were all invisible to a type check and most were
- * invisible to reading: chrome with no ground, two left margins on one page, a
- * hero that vanished when one poster was missing, a fold offered by character
- * count while the clamp counts lines, a timestamp in the border colour.
- *
- * These drive the screen. Where a fact is pure geometry — the three numbers
- * that make the single column — it is read from the source instead, because
- * layout arithmetic has no rendered symptom until it is wrong on a device.
+ * stack-detail.redesign.test.tsx — the catalogue, mounted: chrome with a
+ * ground, one left edge, a hero from the first poster that exists, a fold by
+ * measured lines, legible dates. Pure geometry (the column's three numbers) is
+ * read from the source, as layout arithmetic shows nothing until a device.
  */
 import React, { act } from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
@@ -34,6 +28,8 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
 }));
 const mockSetQueryData = jest.fn();
+/** The stack query's options, so a test can run its real queryFn. */
+let mockStackOpts: { queryFn: () => Promise<{ list: Record<string, unknown> }> } | null = null;
 jest.mock('@tanstack/react-query', () => ({
   QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); },
   useQueryClient: () => ({
@@ -43,7 +39,10 @@ jest.mock('@tanstack/react-query', () => ({
   useQuery: (opts: { queryKey: unknown[] }) => {
     const key = String(opts.queryKey[0]);
     if (key === 'stackComments') return { data: [] };
-    if (key === 'stack') return { data: mockStackData, isLoading: false, isError: false };
+    if (key === 'stack') {
+      mockStackOpts = opts as never;
+      return { data: mockStackData, isLoading: false, isError: false };
+    }
     return { data: undefined, isLoading: false, isError: false };
   },
 }));
@@ -60,6 +59,7 @@ jest.mock('@/src/stores/blockStore', () => {
   return { useBlockStore };
 });
 jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: 'u1', username: 'morpho' } }) }));
+jest.mock('@/src/stores/tellMarks', () => ({ tellMarks: jest.fn() }));
 const mockAddComment = jest.fn();
 jest.mock('@/src/services/StackService', () => ({
   StackService: {
@@ -84,9 +84,7 @@ jest.mock('@/src/components/layout/CinematicFlashList', () => {
     data?: unknown[]; renderItem?: (a: { item: unknown; index: number }) => React.ReactNode;
   }) => React.createElement(View, null,
     render(ListHeaderComponent),
-    // renderItem was never called, so every claim about the index was a
-    // source-read: the caption box, the rank leaving the artwork, the rows
-    // sharing a baseline. None of it had ever rendered.
+    // Every row rendered, so the index is tested as drawn.
     ...(data ?? []).map((item, index) =>
       React.createElement(React.Fragment, { key: index }, renderItem ? renderItem({ item, index }) : null)),
     (data ?? []).length === 0 ? render(ListEmptyComponent) : null) };
@@ -152,8 +150,7 @@ describe('the chrome has a ground', () => {
   });
 
   it('one nav component, not three copies', () => {
-    // The loading one carried no safe-area padding at all, so the way back sat
-    // under the notch while the stack fetched. Three call sites, one component.
+    // Loading, unreachable and the stack: three call sites, one component.
     expect(SOURCE.match(/<StackNav /g) ?? []).toHaveLength(3);
     expect(SOURCE.match(/s\.navBar/g) ?? []).toHaveLength(1);
   });
@@ -161,9 +158,8 @@ describe('the chrome has a ground', () => {
 
 describe('one column', () => {
   it('the three numbers that make the margin still agree', () => {
-    // 9 (page) + 7 (cell) = a 16pt margin, and 7 + 7 = a 14pt gutter. The hero
-    // wrap adds the same 7 so the title begins exactly where the posters do.
-    // It was 12 + 16 = 28 for the title against 12 + 4 = 16 for the grid.
+    // 9 (page) + 7 (cell) = 16, and 7 + 7 = a 14 gutter; the hero wrap's 7
+    // puts the title on the posters' edge.
     const num = (style: string, prop: string) => {
       const body = SOURCE.slice(SOURCE.indexOf(`${style}: {`));
       return Number(body.slice(0, body.indexOf('}')).match(new RegExp(`${prop}: (\\d+)`))![1]);
@@ -173,16 +169,13 @@ describe('one column', () => {
     const cell = num('filmItem', 'marginHorizontal');
     expect(page + cell).toBe(16);
     expect(page + wrap).toBe(page + cell);          // title and posters, one edge
-    // The cell width is the window less both page margins and both of each
-    // column's cell margins — the same 9 and 7 — however many columns there are.
+    // The cell: the window less the same 9s and 7s, for any number of columns.
     expect(SOURCE).toContain(`const ITEM_WIDTH = (windowWidth - ${page * 2} - ${cell * 2} * COLUMNS) / COLUMNS;`);
   });
 });
 
 describe('the hero', () => {
   it('survives a first film with no artwork', async () => {
-    // It read films[0].poster_path only, so a stack whose opening entry had no
-    // poster lost its hero entirely while ten others sat there with one.
     const r = mount({
       films: [
         { id: 1, title: 'No art', poster_path: null },
@@ -200,18 +193,13 @@ describe('the hero', () => {
   });
 
   it('is measured from the safe area, not from the phone', () => {
-    // windowHeight * 0.45 put the title 120pt lower on a tall phone than a
-    // short one — the page's first impression changed with the hardware.
-    // Rounded to whole points: the room's light hangs from this hem and the
-    // hero's veil meets it there, so it may not fall between two pixels.
+    // Whole points: the room's light hangs from this hem and the veil meets it.
     expect(SOURCE).toMatch(/HEADER_HEIGHT = Math\.round\(insets\.top \+ Math\.min\(320, Math\.max\(236/);
     expect(SOURCE).not.toMatch(/HEADER_HEIGHT = windowHeight \* 0\.45/);
   });
 
   it('sets a long title smaller rather than cutting it', () => {
-    // 100 characters are allowed (MAX_LENGTHS.listTitle) and Rye at 36pt held
-    // about 42. The steps are computed from the measured width, so a 360dp
-    // screen is not held to a number derived on a 393.
+    // Steps from the measured width, for the 100 characters a title may hold.
     expect(SOURCE).toMatch(/capacity\(36, 3\)/);
     expect(SOURCE).toMatch(/capacity\(30, 4\)/);
     expect(SOURCE).toMatch(/fontSize: 24, lineHeight: 28, numberOfLines: 6/);
@@ -228,8 +216,6 @@ describe('the hero', () => {
 
 describe('the colophon', () => {
   it('is one run of text, so a separator can never begin a line', async () => {
-    // Each fragment used to be its own <Text> in a wrapping row, so
-    // "· EST. MARCH 2026" could fall to the next line carrying its dot.
     const r = mount({ user: 'morpho', filmCount: 11 });
     await waitFor(() => expect(r.getByText(/11 REELS/)).toBeTruthy());
     const runs = walk(r).filter(n => flatText(n).includes('11 REELS'));
@@ -244,11 +230,7 @@ describe('the colophon', () => {
 
 describe('the index', () => {
   it('reserves a caption box so the rows share a baseline', () => {
-    // numberOfLines={2} with no reserved height let a one-line title make a
-    // short cell and a two-line title a tall one, and the grid rippled. The
-    // reserve is two lines at the size the phone draws them — a fixed 28 was
-    // two lines only at the default size — so it is set on the card, from
-    // the caption's own line and the set-line scale, on BOTH caption styles.
+    // Two lines at the size the phone draws them, on the card, for BOTH styles.
     const cap = SOURCE.slice(SOURCE.indexOf('filmTitle: {'));
     expect(cap.slice(0, cap.indexOf('}'))).toMatch(/lineHeight: FILM_TITLE_LINE/);
     expect(SOURCE).toMatch(/const FILM_TITLE_LINE = 14;/);
@@ -258,15 +240,12 @@ describe('the index', () => {
   });
 
   it('keeps the rank off the artwork', () => {
-    // A 28pt numeral under a gradient covered the bottom of every poster.
     expect(SOURCE).not.toMatch(/rankBadgeWrap/);
     expect(SOURCE).toMatch(/filmCaptionRow/);
   });
 
   it('states its own bound when a stack outgrows the fetch', async () => {
-    // The colophon prints the server's true count while the grid renders at
-    // most STACK_ITEMS_LIMIT, so a 620-reel stack would have said 620 and
-    // quietly shown 500.
+    // The true count beside a capped grid says how much of it is drawn.
     const films = Array.from({ length: 3 }, (_, i) => ({ id: i, title: `F${i}`, poster_path: `/p${i}.jpg` }));
     const r = mount({ films, filmCount: 620 });
     await waitFor(() => expect(r.getByText(/FIRST 3/)).toBeTruthy());
@@ -298,10 +277,20 @@ describe('the critiques action', () => {
     expect(r.getByLabelText('Critiques')).toBeTruthy();
   });
 
+  it('carries the server’s count from the service to the screen', async () => {
+    // useQuery is replaced above, so the screen's own queryFn is run by hand:
+    // its mapping of the service's answer is what reaches the bar on a phone.
+    const { StackService } = require('@/src/services/StackService');
+    StackService.getStackFullPayload.mockResolvedValueOnce({
+      ...baseStack, endorseCount: 2, certified: false, critiqueCount: 7,
+    });
+    mount();
+    const answer = await mockStackOpts!.queryFn();
+    expect(answer.list.critiqueCount).toBe(7);
+  });
+
   it('is one source of truth, so a refetch cannot double-count', () => {
-    // A separate "filed" tally added to the payload's number would double the
-    // moment the stack refetched, because the server's count already includes
-    // the critique just filed. The cached payload is nudged instead.
+    // A second tally would double on a refetch; the cached payload is nudged.
     expect(SOURCE).toMatch(/bumpCritiqueCount/);
     expect(SOURCE).not.toMatch(/critiquesFiled/);
     // and it never invents a count where the server gave none
@@ -311,9 +300,7 @@ describe('the critiques action', () => {
 
 describe('the epigraph folds only when there is more', () => {
   it('is measured, not guessed from a character count', () => {
-    // `description.length > 240` against a four-line clamp disagreed both ways:
-    // a short description with line breaks was cut with no way to open it, and
-    // a long one of short words offered a fold that did nothing.
+    // A character count disagrees with a line clamp both ways.
     expect(SOURCE).toMatch(/descNeedsFold = measuredFor === list\.description && descLineCount > DESC_CLAMP_LINES/);
     expect(SOURCE).toMatch(/onTextLayout/);
     expect(SOURCE).not.toMatch(/description\?\.length \?\? 0\) > 240/);
@@ -327,7 +314,7 @@ describe('the epigraph folds only when there is more', () => {
 
 describe('the page is legible and reachable', () => {
   it('a critique timestamp is not the border colour', () => {
-    // colors.ash read 1.27:1 against the panel — every critique was undated.
+    // ash would read 1.27:1 against the panel.
     const t = SOURCE.slice(SOURCE.indexOf('commentTime: {'));
     expect(t.slice(0, t.indexOf('}'))).toMatch(/color: colors\.fog/);
   });
@@ -343,8 +330,7 @@ describe('the page is legible and reachable', () => {
   });
 
   it('every entrance respects the reader’s motion setting', () => {
-    // Eight animations, none of which asked. The import line is the only place
-    // FadeIn may appear without it.
+    // Only the import line may name FadeIn without reduceMotion.
     const offenders = SOURCE.split('\n')
       .filter(l => /FadeIn(Down|Up)\./.test(l) && !/reduceMotion\(ReduceMotion\.System\)/.test(l));
     expect(offenders).toEqual([]);
@@ -361,9 +347,6 @@ describe('the critiques overlay', () => {
   };
 
   it('opens over the page instead of pushing the index down', async () => {
-    // It used to render BETWEEN the description and the index, so the films a
-    // reader came for were displaced by talk about them — and at 500 reels that
-    // panel sat on top of 167 rows of posters.
     const r = await openIt();
     await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
     // The index is still mounted and still above it in the page.
@@ -372,9 +355,7 @@ describe('the critiques overlay', () => {
   });
 
   it('is NOT a Modal, so the moderation sheet cannot stack on it', () => {
-    // A critique is long-pressed to report or block, and ContentActionSheet is
-    // a real RN Modal. Modal-over-Modal is the iOS trap behind this app's
-    // park-then-travel law, so the critiques surface must not be one.
+    // The moderation sheet a long-press opens IS a Modal; Modal over Modal is the iOS trap.
     const overlay = SOURCE.slice(SOURCE.indexOf('══ THE CRITIQUES'), SOURCE.indexOf('SHARE TO LOUNGE MODAL'));
     expect(overlay).toMatch(/StyleSheet\.absoluteFill/);
     expect(overlay).not.toMatch(/<Modal/);
@@ -389,9 +370,7 @@ describe('the critiques overlay', () => {
 
   it('the strip of page left showing is a way out', async () => {
     const r = await openIt();
-    // TWO of them, which is the point: the ✕ and the strip of page above the
-    // sheet. Reaching for the thing behind is how most people close a surface
-    // like this, and it did nothing before.
+    // TWO: the ✕, and the strip of page above the sheet.
     await waitFor(() => expect(r.getAllByLabelText('Close critiques').length).toBeGreaterThanOrEqual(2));
   });
 
@@ -419,8 +398,6 @@ describe('the critiques overlay', () => {
   });
 
   it('focuses the field on the way in and not on the way out', () => {
-    // It focused on close too, which summoned the keyboard for a surface that
-    // was going away.
     const t = SOURCE.slice(SOURCE.indexOf('const handleToggleComments'));
     expect(t.slice(0, 400)).toMatch(/if \(!prev\) setTimeout/);
   });
@@ -434,9 +411,7 @@ describe('the critiques overlay', () => {
   });
 
   it('leaves no style behind from the panel it replaced', () => {
-    // Matched as a DECLARATION, not a substring: `placeholderText` is also the
-    // opening of `placeholderTextColor`, a live prop on the critique input, so
-    // a bare contains() reported a style that had been removed as still there.
+    // As DECLARATIONS: `placeholderText` also begins the live `placeholderTextColor`.
     for (const gone of ['commentsPanel', 'commentInputRow', 'commentInput', 'commentSendBtn', 'placeholderText']) {
       expect(SOURCE).not.toContain(`\n  ${gone}: {`);
     }
@@ -472,10 +447,7 @@ describe('the states a real stack arrives in', () => {
   };
 
   it('a long title is set smaller, and given more room, rather than cut', async () => {
-    // Asserted as a RELATION, not as a number: the steps are computed from the
-    // measured width, so the exact size depends on the screen — which is the
-    // whole point of computing it. An earlier version of this test hard-coded
-    // 24pt and failed on a wider viewport while the code was behaving.
+    // A RELATION, not a number: the steps depend on the screen's width.
     const short = await titleSetting('Noir');
     const long = await titleSetting(LONG_TITLE);
     expect(long.fontSize).toBeLessThan(short.fontSize);
@@ -487,8 +459,6 @@ describe('the states a real stack arrives in', () => {
   });
 
   it('a very long curator handle cannot push the date onto a line of its own', async () => {
-    // The whole colophon is one run of text, so it wraps as prose no matter
-    // how long the handle is — there is no fragment left to strand.
     const r = mount({ user: 'a'.repeat(40), filmCount: 3 });
     await waitFor(() => expect(r.getByText(/3 REELS/)).toBeTruthy());
     const runs = walk(r).filter(n => flatText(n).includes('3 REELS'));
@@ -496,14 +466,10 @@ describe('the states a real stack arrives in', () => {
   });
 
   it('a ranked stack numbers its holdings and an unranked one does not', () => {
-    // Numbers read as rank whatever the label says, so only a ranked stack
-    // carries them — an index may number its holdings, but a reader will not
-    // believe it is merely an index.
+    // Numbers read as rank whatever the label says, so only a ranked stack has them.
     expect(SOURCE).toContain('{isRanked ? (');
     expect(SOURCE).toContain('<View style={s.filmCaptionRow}>');
-    // The unranked branch renders the plain caption and nothing else — located
-    // by its own caption rather than by slicing between loose delimiters, which
-    // is how the first version of this matched the whole component.
+    // The unranked branch, found by its own caption: the plain title alone.
     const ranked = SOURCE.indexOf('<View style={s.filmCaptionRow}>');
     const plain = SOURCE.indexOf('<Text style={[s.filmTitle, titleBox]} numberOfLines={2}>');
     expect(plain).toBeGreaterThan(ranked);
@@ -521,8 +487,7 @@ describe('the states a real stack arrives in', () => {
   });
 
   it('a queued critique keeps its place in the count', () => {
-    // The optimistic critique stays in cache when it is queued offline, so the
-    // number must stay with it. Only a real failure takes it back.
+    // Queued offline, the critique stays, so its count does; a real failure takes it back.
     const submit = SOURCE.slice(SOURCE.indexOf('const handleSubmitComment'), SOURCE.indexOf('const handleOpenShareLounge'));
     const offline = submit.slice(submit.indexOf('isNetworkError'), submit.indexOf('} else {'));
     expect(offline).not.toMatch(/bumpCritiqueCount/);
@@ -531,13 +496,8 @@ describe('the states a real stack arrives in', () => {
 });
 
 describe('the fold is driven, not merely described', () => {
-  /**
-   * The source-reading tests above passed while the feature was BROKEN.
-   * onTextLayout reports the lines it actually laid out, so measuring on the
-   * clamped Text returned four, and "4 > 4" meant READ MORE could never
-   * appear — worse than the character count it replaced. Only firing the
-   * layout event catches that.
-   */
+  // Fires the measurer's layout event: only driving it shows the fold appears
+  // (a clamped Text reports the clamp, and "4 > 4" never opens).
   const layout = async (r: ReturnType<typeof mount>, lines: number) => {
     const measurer = walk(r).find(n => {
       const st = Object.assign({}, ...[n.props?.style].flat(2).filter(Boolean));
@@ -563,9 +523,7 @@ describe('the fold is driven, not merely described', () => {
   });
 
   it('offers nothing at exactly the clamp', async () => {
-    // The off-by-one that decides whether a page invites you to open what is
-    // already fully visible.
-    const r = mount({ description: 'Exactly four lines of prose.' });
+    const r = mount({ description: 'Exactly four lines of prose.' }); // the off-by-one
     await layout(r, 4);
     expect(r.queryByText(/READ MORE/)).toBeNull();
   });
@@ -579,28 +537,20 @@ describe('the fold is driven, not merely described', () => {
 
   it('the measurer leaves once it has answered, and is invisible while it stays', async () => {
     const r = mount({ description: 'A collection of psychological horror films.' });
-    // onTextLayout is what makes it the measurer. Without that clause this
-    // matched the nav's BlurView, which is also absolute and also sits at
-    // opacity 0 while the page is at rest — a loose predicate finding a
-    // confidently wrong node.
+    // onTextLayout makes it the measurer (the nav's BlurView is also absolute at 0).
     const isMeasurer = (n: any) => {
       const st = Object.assign({}, ...[n.props?.style].flat(2).filter(Boolean));
       return st.opacity === 0 && st.position === 'absolute' && typeof n.props?.onTextLayout === 'function';
     };
     const before = walk(r).find(isMeasurer);
-    // Never read aloud twice: the epigraph is on screen once, and a screen
-    // reader must not find a second, invisible copy of it.
+    // Never read aloud twice: the invisible copy is hidden from screen readers.
     expect(before!.props.importantForAccessibility).toBe('no-hide-descendants');
     await layout(r, 9);
     await waitFor(() => expect(walk(r).find(isMeasurer)).toBeUndefined());
   });
 
   it('re-measures when the epigraph itself changes', async () => {
-    // Pull-to-refresh invalidates the stack on this SAME screen, so a curator
-    // can edit the description and have new text arrive without anything
-    // remounting. Measured once, the fold would stay decided by words that are
-    // gone: READ MORE offered on two lines, or a long description silently cut
-    // with no way to open it.
+    // A refresh brings new words without a remount; the old answer must go.
     const r = mount({ description: 'A long one.' });
     await layout(r, 9);
     await waitFor(() => expect(r.getByText(/READ MORE/)).toBeTruthy());
@@ -642,8 +592,7 @@ describe('the film card, actually rendered', () => {
   });
 
   it('reserves the same caption height whether the title takes one line or two', async () => {
-    // The whole reason the rows stopped sharing a baseline. A source read said
-    // minHeight: 28 was declared; only rendering says it is APPLIED, to both.
+    // Rendered: the reserve is APPLIED, to both, not only declared.
     const r = mount({ films: FILMS, filmCount: 3 });
     await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
     const short = captionOf(r, 'Perfect Blue');
@@ -654,10 +603,7 @@ describe('the film card, actually rendered', () => {
   });
 
   it('reserves that height in a RANKED stack too', async () => {
-    // The ranked branch uses a different caption style, and the mutation run
-    // proved nothing was watching it: stripping its minHeight escaped every
-    // test. A ranked stack's rows could ripple exactly as the unranked ones
-    // used to, and the index is the one place regularity is the whole point.
+    // Its own caption style, so its own test (a mutation escaped without it).
     const r = mount({ films: FILMS, filmCount: 3, isRanked: true });
     await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
     const short = captionOf(r, 'Perfect Blue');
@@ -667,9 +613,6 @@ describe('the film card, actually rendered', () => {
   });
 
   it('a film with no artwork is named ONCE, not twice', async () => {
-    // The placeholder printed the film's name inside the card while the
-    // caption printed it directly beneath — the same words stacked, which
-    // reads as a bug rather than a missing poster. Found only by rendering it.
     const r = mount({ films: FILMS, filmCount: 3 });
     await waitFor(() => expect(r.getByText('No Artwork Here')).toBeTruthy());
     expect(r.getAllByText('No Artwork Here')).toHaveLength(1);
@@ -689,8 +632,7 @@ describe('the film card, actually rendered', () => {
     await waitFor(() => expect(r.getByText('1')).toBeTruthy());
     expect(r.getByText('2')).toBeTruthy();
     expect(r.getByText('3')).toBeTruthy();
-    // The numeral is a sibling of the title, not a layer over the poster: the
-    // old badge sat absolutely positioned inside the card under a gradient.
+    // A sibling of the title, never a layer over the poster.
     const numeral = r.getByText('1');
     const style = Object.assign({}, ...[numeral.props.style].flat(2).filter(Boolean));
     expect(style.position).not.toBe('absolute');
@@ -776,8 +718,7 @@ describe('filing a critique — what the action actually does', () => {
   });
 
   it('but NOT when it was queued offline, because the critique is still there', async () => {
-    // The optimistic critique stays in cache when queued, so the count must
-    // stay with it. Decrementing here would show 3 beside four visible entries.
+    // Else it would show 3 beside four visible critiques.
     mockAddComment.mockRejectedValue(new TypeError('Network request failed'));
     const r = await open();
     await file(r, 'A critique.');
@@ -786,8 +727,7 @@ describe('filing a critique — what the action actually does', () => {
   });
 
   it('never invents a count the server never gave', async () => {
-    // critiqueCount null means "could not ask". Filing one must not turn that
-    // into a confident 1.
+    // null is "could not ask": filing one must not make it a confident 1.
     mockAddComment.mockResolvedValue({ id: 'real', user_id: 'u1', username: 'morpho', content: 'x', created_at: '2026-01-01' });
     const r = await open({ critiqueCount: null });
     await file(r, 'A critique.');
@@ -798,17 +738,12 @@ describe('filing a critique — what the action actually does', () => {
   });
 
   it('will not file nothing, and will not file whitespace', async () => {
-    // Named for what it actually proves. An earlier version claimed the
-    // HANDLER refuses, and a mutation stripping that guard escaped — because
-    // the press never reaches it: the button is disabled, so nothing fires.
-    // The handler's own check is unreachable belt-and-braces, which is worth
-    // keeping and not worth claiming.
+    // The BUTTON refuses (disabled), so a press never reaches the handler's own check.
     const r = await open();
     const send = r.getByLabelText('Submit critique');
     expect(send.props.accessibilityState?.disabled ?? send.props.disabled).toBe(true);
 
-    // Spaces are not a critique — the field is empty as far as anyone is
-    // concerned, and the button must stay shut.
+    // Spaces are not a critique.
     await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), '    '); });
     const stillShut = r.getByLabelText('Submit critique');
     expect(stillShut.props.accessibilityState?.disabled ?? stillShut.props.disabled).toBe(true);

@@ -41,8 +41,7 @@ import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
-/** The epigraph folds past this many lines — the clamp and the test for the
- *  fold must be the same number, or the page offers to open what is not shut. */
+/** The epigraph's fold: ONE number for the clamp and for the test of it. */
 const DESC_CLAMP_LINES = 4;
 /** A film caption's line. Its two-line box is this × 2 × the text size. */
 const FILM_TITLE_LINE = 14;
@@ -74,6 +73,8 @@ interface ListDetail {
   films: FilmItem[];
   /** The stack's TRUE size — films above is a bounded page. */
   filmCount?: number;
+  /** How many critiques; null when the server could not be asked. */
+  critiqueCount?: number | null;
   isPrivate: boolean;
   isRanked: boolean;
 }
@@ -145,15 +146,9 @@ const StackDetailFilmCard = React.memo(({
   itemWidth: number;
   itemHeight: number;
 }) => {
-  // The podium touch: in a ranked stack only #1 earns metal — a hairline brass
-  // frame on the card, and its numeral in candlelight rather than brass. The
-  // numeral itself sits in the caption now; it used to be stamped 28pt across
-  // the bottom of the artwork under a gradient, which covered the one thing a
-  // reader opened the page to look at.
+  // The podium: in a ranked stack only #1 earns metal (brass, and candlelight).
   const isFirst = isRanked && index === 0;
-  // Two lines of the caption, at the size the phone draws it. A fixed 28 was
-  // two lines only at the default size; at a larger setting a one-line title's
-  // cell came out shorter than a two-line one and the row lost its baseline.
+  // Two caption lines at the size the phone draws them, so rows share a baseline.
   const titleBox = { minHeight: FILM_TITLE_LINE * 2 * useLineScale() };
   return (
     <Animated.View entering={index < 15 ? FadeInUp.duration(400).delay(index * 30).reduceMotion(ReduceMotion.System) : undefined} style={[s.filmItem, { width: itemWidth }]}>
@@ -174,11 +169,7 @@ const StackDetailFilmCard = React.memo(({
             recyclingKey={item.poster_path}
           />
         ) : (
-          // A MARK, NOT THE TITLE AGAIN. This printed the film's name inside
-          // the card, and the caption prints it directly beneath — the same
-          // words twice, stacked, which reads as a mistake rather than a
-          // missing poster. The caption already names it, so the empty frame
-          // only has to look deliberate.
+          // A mark, not the title again: the caption beneath already names it.
           <View style={s.posterPlaceholder}>
             <Text style={s.placeholderMark}>✦</Text>
           </View>
@@ -202,29 +193,13 @@ const StackDetailFilmCard = React.memo(({
 });
 
 /**
- * THE CHROME, WITH A GROUND.
+ * THE CHROME, WITH A GROUND: one component for the loading, unreachable and
+ * real pages, so the way back never sits under the notch.
  *
- * There were three of these — loading, unreachable, and the stack itself — and
- * they had drifted apart. The loading one carried no safe-area padding and no
- * height at all, so the way back sat under the notch for as long as the fetch
- * took. One component now, so a fix cannot land on two screens out of three.
- *
- * ── A BLUR IS NOT A SCRIM ───────────────────────────────────────────────────
- * The only thing behind this chrome used to be a blur whose opacity ramped from
- * zero. Two things follow from that, and both were visible on a real phone:
- * near-black content blurred against near-black chrome separates almost
- * nothing, so the page read straight through beneath the clock; and at the top
- * of the page the ramp is still at 0, so the back arrow sat on bare artwork.
- *
- * The gradient is the mechanism now and the blur is a bonus, which is also the
- * law this page is held to: NO PLATFORM-SPECIFIC EFFECT MAY BE THE ONLY
- * MECHANISM. expo-blur is strong on iOS and weak on Android; a gradient renders
- * identically on both. So the page is correct everywhere and lovelier on iOS,
- * instead of resting on something one platform does badly.
- *
- * The scrim overhangs the bar by 44pt and fades to nothing, so the chrome
- * dissolves into the film rather than sitting on it behind a ruled edge — the
- * hairline border this used to carry is gone with it.
+ * A gradient is the ground and the blur a bonus: NO PLATFORM-SPECIFIC EFFECT
+ * MAY BE THE ONLY MECHANISM (expo-blur is weak on Android, and a blur of dark
+ * on dark separates nothing). The scrim overhangs the bar by 44pt and fades to
+ * nothing, so the chrome dissolves into the film with no ruled edge.
  */
 const StackNav = React.memo(function StackNav({
     topInset, onBack, blurStyle, children,
@@ -287,25 +262,11 @@ export default function StackDetailScreen() {
   const deleteList = useListStore(s => s.deleteList);
   const isCertified = useListStore(s => !!s._listEndorsedIndex[id]);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  /**
-   * Three across on every phone but the narrowest. On a 320pt phone (an iPhone
-   * SE) a third is ~87pt, and at large type a one-word title ("Chungking") is
-   * wider than that, so the phone broke it mid-letter. Below 360pt it is two.
-   */
+  // Two columns below 360pt: a third of 320 breaks "Chungking" mid-letter at large type.
   const COLUMNS = windowWidth < 360 ? 2 : 3;
   const ITEM_WIDTH = (windowWidth - 18 - 14 * COLUMNS) / COLUMNS;   // 9*2 page + 7*2 per cell
   const ITEM_HEIGHT = ITEM_WIDTH * 1.5;
-  /**
-   * The hero is measured from the safe area, not from the phone.
-   *
-   * It was windowHeight * 0.45, so the title landed 204pt below the notch on a
-   * 852pt phone and 120pt lower on a 932pt one — the page's first impression
-   * changed with the hardware. Anchored to the inset it is the same picture
-   * everywhere, with a floor and a ceiling so a small phone is not swallowed by
-   * its own header.
-   */
-  // Whole points: the room's light hangs from the hero's hem, and its veil
-  // meets the light exactly there.
+  // From the safe area, floored and capped, in whole points (the veil meets the hem).
   const HEADER_HEIGHT = Math.round(insets.top + Math.min(320, Math.max(236, windowHeight * 0.38)));
 
 
@@ -316,25 +277,13 @@ export default function StackDetailScreen() {
       // Taken BEFORE the request: see tellMarkCounts.
       const askedAt = Date.now();
       try {
-        const payload = await StackService.getStackFullPayload(id);
-        // The stack's card on the Reel reads this count from the shared store,
-        // and the heart here is the server's answer about this member's mark.
-        tellMarks('list', [{ id, certify: payload.endorseCount, certified: payload.certified }], askedAt);
+        const { endorseCount, certified, ...stack } = await StackService.getStackFullPayload(id);
+        // The shared store, which the Reel's card reads too.
+        tellMarks('list', [{ id, certify: endorseCount, certified }], askedAt);
 
-        const listDetail: ListDetail = {
-          id: payload.id,
-          title: payload.title,
-          description: payload.description,
-          userId: payload.userId,
-          user: payload.user,
-          createdAt: payload.createdAt,
-          films: payload.films,
-          filmCount: payload.filmCount,
-          isPrivate: payload.isPrivate,
-          isRanked: payload.isRanked,
-        };
-
-        return { list: listDetail, endorseCount: payload.endorseCount };
+        // Everything else, whole: a field copied by hand can be left behind.
+        const listDetail: ListDetail = stack;
+        return { list: listDetail, endorseCount };
       } catch (error) {
         // Offline fallback: intercept network failure and use local data
         const localList = useListStore.getState().lists.find(l => l.id === id);
@@ -403,19 +352,9 @@ export default function StackDetailScreen() {
   const loading = stackQueryLoading;
 
   /**
-   * THE TITLE IS SET, NOT SQUEEZED.
-   *
-   * A stack title may be 100 characters (MAX_LENGTHS.listTitle). Rye at 36pt
-   * fits about 14 per line here, so numberOfLines={3} held roughly 42 — and
-   * "WHEN THE MIND BECOMES THE MONSTER" is 33, which means the sample title was
-   * already at the edge and anything longer was cut with an ellipsis.
-   *
-   * adjustsFontSizeToFit is not the answer: it is unreliable multiline on
-   * Android, so the two platforms would disagree about the same title. This is
-   * the editorial answer instead — a longer title is SET SMALLER, the way a
-   * catalogue sets one, in three deterministic steps computed from the real
-   * measured width. Identical on both platforms, and it cannot truncate: the
-   * smallest step holds 100 characters on a 360dp screen with a line to spare.
+   * A long title is SET SMALLER, as a catalogue sets one: three fixed steps
+   * from the measured width (adjustsFontSizeToFit is unreliable multiline on
+   * Android). The smallest holds the 100-character maximum on a 360dp screen.
    */
   const titleType = React.useMemo(() => {
     const width = windowWidth - 32;                    // one column, 16 each side
@@ -436,32 +375,13 @@ export default function StackDetailScreen() {
   const [commentActionSheetVisible, setCommentActionSheetVisible] = useState(false);
   const [commentReportSheetVisible, setCommentReportSheetVisible] = useState(false);
   const [selectedComment, setSelectedComment] = useState<ListComment | null>(null);
-  // Long epigraphs (descriptions run up to 1,000 chars) clamp to 4 lines behind
-  // a READ MORE fold. The toggle shows on a deterministic length threshold —
-  // no platform-dependent line measurement, so it behaves identically everywhere.
   const [descExpanded, setDescExpanded] = useState(false);
-  /**
-   * The fold is measured PER DESCRIPTION, not once per mount.
-   *
-   * Pull-to-refresh invalidates the stack on this same screen, so a curator can
-   * edit the epigraph and have the new text arrive without anything
-   * remounting. Measuring once would leave the fold decided by words that are
-   * no longer there — READ MORE offered on two lines, or a long description
-   * silently cut with no way to open it. Which is the defect this measurement
-   * exists to prevent, arriving through a different door.
-   *
-   * Holding the text it measured, rather than a boolean, means the answer is
-   * only ever trusted for the text it was an answer about.
-   */
+  // The epigraph's line count, and WHICH text it was measured for: a refresh can
+  // bring new words without a remount, and an old answer must not decide the fold.
   const [descLineCount, setDescLineCount] = useState(0);
   const [measuredFor, setMeasuredFor] = useState<string | null>(null);
-  /**
-   * ONE source of truth. A separate "filed" counter added to the payload's
-   * number would double-count the moment the stack refetched, because the
-   * server's count already includes the critique just filed. The cached payload
-   * is nudged instead, exactly as the comment list itself already is.
-   */
-  const critiqueCount = (stackQueryData?.list as { critiqueCount?: number | null } | null)?.critiqueCount ?? null;
+  /** The cached payload's count, nudged in place: a second tally would double on a refetch. */
+  const critiqueCount = stackQueryData?.list?.critiqueCount ?? null;
   // The critique sheet's chip: nothing for none or for unknown, `1.2K` past a thousand.
   const sheetCount = formatCount(critiqueCount ?? 0);
 
@@ -478,9 +398,7 @@ export default function StackDetailScreen() {
   // Scroll animations
   const scrollY = useSharedValue(0);
 
-  // The hero's parallax: how far it drifts DOWN inside the page as the page
-  // scrolls up. Read by its style and by its veil, which must know how far
-  // the hero has really risen up the screen — the scroll, less the drift.
+  // The hero's parallax drift, and how far it has really risen (for its veil).
   const heroDrift = useDerivedValue(() => interpolate(scrollY.value, [-100, 0, HEADER_HEIGHT], [0, 0, HEADER_HEIGHT * 0.5]));
   const heroLifted = useDerivedValue(() => scrollY.value - heroDrift.value);
 
@@ -524,10 +442,8 @@ export default function StackDetailScreen() {
       await toggleListEndorse(id);
       if (!wasCertified) reelToast.success('Certified!');
     } catch (err: unknown) {
-      // Was a bare `catch {` with no binding — it could not log even in principle.
-      // debug, not warn: logger.warn forwards to Sentry ungated in production,
-      // which would raise a warning for an ordinary offline failure on top of
-      // the gated error below. One event for a real defect, none when offline.
+      // debug, not warn (which reaches Sentry): one event for a real defect,
+      // from captureError below, and none for going offline.
       logger.debug('[Stack] Certification toggle failed:', err);
       addBreadcrumb('stacks.toggleCertification failed', 'telemetry');
       if (!isNetworkError(err)) captureError(err, { scope: 'stacks.toggleCertification', stackId: id });
@@ -569,8 +485,7 @@ export default function StackDetailScreen() {
         }
         return finalComments;
       } catch (error) {
-        // Finding 116: this logged ONLY under __DEV__, so a real member's failure
-        // left no trace. Sentry now gets genuine defects — and only those.
+        // Sentry gets genuine defects, never an offline failure.
         logger.debug('[Stack] Comments fetch failed:', error);
         addBreadcrumb('stacks.fetchComments failed', 'telemetry');
         if (!isNetworkError(error)) captureError(error, { scope: 'stacks.fetchComments', stackId: id });
@@ -598,22 +513,15 @@ export default function StackDetailScreen() {
 
   const handleToggleComments = useCallback(() => {
     TactileEngine.selection();
-    // Focus only on the way IN. This focused the field on close too, which
-    // summoned the keyboard for a surface that was going away.
+    // Focus only on the way IN: never a keyboard for a sheet that is closing.
     setShowComments((prev) => {
       if (!prev) setTimeout(() => commentInputRef.current?.focus(), 120);
       return !prev;
     });
   }, []);
 
-  /**
-   * An overlay is not a Modal, so it gets no back button for free.
-   *
-   * It is deliberately not a Modal: long-pressing a critique opens
-   * ContentActionSheet, which IS one, and a Modal over a Modal is the iOS trap
-   * this app already has a law about. As an overlay the moderation sheet is the
-   * only Modal on screen and nothing nests — the cost is handling this by hand.
-   */
+  // Android's back closes the critiques: an overlay (not a Modal, so the
+  // moderation sheet over it never nests) gets no back button for free.
   React.useEffect(() => {
     if (!showComments) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -733,7 +641,6 @@ export default function StackDetailScreen() {
               router.back();
              
             } catch (err: unknown) {
-              // Finding 117: deleting a stack failed with a toast and no record of why.
               logger.debug('[Stack] Delete failed:', err);
               addBreadcrumb('stacks.deleteStack failed', 'telemetry');
               if (!isNetworkError(err)) captureError(err, { scope: 'stacks.deleteStack', stackId: id });
@@ -800,22 +707,12 @@ export default function StackDetailScreen() {
   }
 
   const estDate = list.createdAt && !isNaN(Date.parse(list.createdAt)) ? formatDateMonthYear(list.createdAt) : null;
-  // Measured, not guessed. This was `description.length > 240` while the clamp
-  // is four lines, and the two disagree in both directions: a short description
-  // carrying line breaks was clamped with NO way to open it, and a long one of
-  // short words offered a READ MORE that did nothing when pressed. Only the
-  // text itself knows how many lines it took.
+  // Measured lines, never a character count: only the text knows how it wraps.
   const descNeedsFold = measuredFor === list.description && descLineCount > DESC_CLAMP_LINES;
 
 
 
-  /**
-   * The first film that HAS artwork — not simply the first film.
-   *
-   * This read films[0].poster_path, so a stack whose opening entry happened to
-   * have no poster lost its entire hero even when the other ten did. One
-   * missing image should never flatten the page.
-   */
+  // The first film that HAS artwork: one missing poster never flattens the hero.
   const heroPoster = (() => {
     const withArt = list.films.find(f => !!f.poster_path);
     return withArt ? tmdb.poster(withArt.poster_path!, 'w780') : null;
@@ -878,11 +775,7 @@ export default function StackDetailScreen() {
 
             {/* Content Overlaid on Header */}
             <View style={[s.headerContentWrap, { marginTop: HEADER_HEIGHT - 120 }]}>
-              {/* No eyebrow. "FROM THE STACKS" labelled a page that is
-                  unmistakably a stack, and it was the first of eight rows
-                  before any content on the page most guilty of chrome. A
-                  catalogue does not print its own category above its title. */}
-
+              {/* No eyebrow: a catalogue does not print its category above its title. */}
               <AnimatedText
                 entering={FadeInDown.duration(600).delay(100).reduceMotion(ReduceMotion.System)}
                 style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]}
@@ -891,15 +784,9 @@ export default function StackDetailScreen() {
                 {list.title.toUpperCase()}
               </AnimatedText>
 
-              {/* Colophon — curator (tappable) · reel count · curation date · chips.
-                  flexWrap lets long names push the chips to a second line, never cramping. */}
-              {/* ONE LINE OF TYPE, not four flex items that wrap.
-                  Each fragment used to be its own <Text> inside a wrapping row,
-                  so "· EST. MARCH 2026" could fall to the next line carrying its
-                  separator — a line that begins with a middle dot. Nested Text
-                  wraps as prose instead, and the separators belong to the words
-                  before them. The chips stay their own elements: they are
-                  objects, not punctuation. */}
+              {/* The colophon: ONE line of type (curator, count, date), so it
+                  wraps as prose and no line begins with a separator; the chips
+                  are objects, so they wrap below as their own elements. */}
               <Animated.View entering={FadeInDown.duration(600).delay(200).reduceMotion(ReduceMotion.System)} style={s.metaRow}>
                 <View style={s.metaDiamond} />
                 <Text style={s.metaText} numberOfLines={2}>
@@ -921,18 +808,9 @@ export default function StackDetailScreen() {
 
               {list.description ? (
                 <Animated.View entering={FadeInDown.duration(600).delay(300).reduceMotion(ReduceMotion.System)} style={s.descWrap}>
-                  {/* THE MEASURER.
-                      onTextLayout reports the lines it ACTUALLY laid out, so a
-                      clamped Text reports the clamp — four — and "4 > 4" is
-                      false, which would mean the fold never appeared at all.
-                      That is worse than the character count it replaced, which
-                      at least appeared sometimes.
-
-                      So the measuring is done by a copy that is never clamped:
-                      out of flow, invisible, untouchable, hidden from screen
-                      readers, and unmounted the moment it has answered. It
-                      spans the same width as the real one, so its line count is
-                      the real one. */}
+                  {/* THE MEASURER: an unclamped copy (a clamped Text reports the
+                      clamp), invisible, out of flow, unspoken, at the same width,
+                      and unmounted once it has answered. */}
                   {measuredFor !== list.description && (
                     <Text
                       style={[s.desc, s.descMeasure]}
@@ -960,11 +838,8 @@ export default function StackDetailScreen() {
 
               {/* ── ACTION BAR: Certify · Critic · Share to Lounge ── */}
               <Animated.View entering={FadeInDown.duration(600).delay(350).reduceMotion(ReduceMotion.System)} style={s.actionBar}>
-                {/* The house's one bar anatomy (MarkFigure): the icon over its
-                    word, the count hanging beside the icon, and the same three
-                    icons the log's bar uses for the same three acts. This bar
-                    was a row of icon-then-words — `12 CRITIQUES` beside a
-                    speech bubble that everywhere else means LOUNGE. */}
+                {/* The house's one bar anatomy (MarkFigure): icon over word, the
+                    count beside the icon, the log bar's icons for the same acts. */}
                 <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isCertified }} accessibilityLabel={certifyLabel(certifyCount, isCertified, 'this stack')}>
                   <MarkFigure iconSize={15} count={certifyCount} style={[s.actionLabel, isCertified && s.actionLabelActive]}>
                     <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'} />
@@ -996,11 +871,7 @@ export default function StackDetailScreen() {
                 </PressableScale>
               </Animated.View>
 
-              {/* The critiques are not here any more. They opened BETWEEN the
-                  description and the index, so the films a reader came for were
-                  pushed below a panel of unknown length — and at 500 reels that
-                  panel sat on top of 167 rows. They live in an overlay now,
-                  which is one tap away at any size and displaces nothing. */}
+              {/* The critiques open in an overlay, never between here and the films. */}
               <View style={s.trackRow}>
                 <Text style={s.trackLabel}>
                   INDEXED REELS{(list.filmCount ?? 0) > list.films.length ? `  ·  FIRST ${list.films.length}` : ''}
@@ -1019,16 +890,9 @@ export default function StackDetailScreen() {
         }
       />
 
-      {/* ══ THE CRITIQUES ══════════════════════════════════════════════════
-          An overlay, NOT a Modal. Long-pressing a critique opens
-          ContentActionSheet, which is a real RN Modal — and a Modal over a
-          Modal is the iOS trap that produced this app's park-then-travel law.
-          Rendered in the page instead, the moderation sheet is the only Modal
-          on screen and nothing nests. It also keeps the docked input clear of
-          the keyboard problems a Modal brings with it.
-
-          It sits below the chrome so the way out stays visible, and the strip
-          of page above it is a dimmed backdrop you can tap to leave. */}
+      {/* ══ THE CRITIQUES ══ an overlay, NOT a Modal: the moderation sheet a
+          long-press opens IS one, and a Modal over a Modal is the iOS trap. It
+          sits below the chrome; the dimmed strip above it closes it. */}
       {showComments && (
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           <PressableScale
@@ -1107,10 +971,7 @@ export default function StackDetailScreen() {
         listTopPosters={list.films.map((f: FilmItem) => f.poster_path).filter(Boolean).slice(0, 4) as string[]}
       />
 
-      {/* ── MODERATION: ACTION SHEET & REPORT SHEET ──
-          onBlock/onMute below also close the sheet. They did not, and every other
-          sheet in the app does (log, dossier, lounge, profile, and all three comment
-          sheets) — this one was simply missed. */}
+      {/* ── MODERATION: every act closes the sheet, as every sheet in the app does ── */}
       <ContentActionSheet
         visible={actionSheetVisible}
         contentType="list"
@@ -1183,39 +1044,23 @@ export default function StackDetailScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
-  // No border: the scrim below fades out instead of ending on a ruled line, so
-  // the chrome dissolves into the film rather than sitting on top of it.
   navBar: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 },
   // Overhangs the bar so the gradient has room to reach zero past the chrome.
   navScrim: { position: 'absolute', top: 0, left: 0, right: 0 },
   navInner: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
-  // 48 by geometry, and the glyph stays hard left so it does not move: the box
-  // simply extends into empty chrome. A halo could not have done this — neither
-  // platform's accessibility layer can see one.
+  // 48 by geometry (a halo is invisible to accessibility), glyph hard left.
   backBtn: { width: 48, height: 48, marginLeft: -14, alignItems: 'flex-start', justifyContent: 'center' },
   headerActions: { flexDirection: 'row', gap: 12 },
   actionBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   moreBtn: { width: 48, height: 48, alignItems: 'flex-end', justifyContent: 'center', marginRight: -10 },
 
-  /**
-   * ONE COLUMN.
-   *
-   * The scroll held 12 and the hero wrap added 16, so the title began 28pt in
-   * while the posters began at 16 — two left edges on one page, which is most
-   * of why it read as assembled rather than designed.
-   *
-   * The arithmetic, stated once: 9 here + 7 on each cell = a 16pt page margin,
-   * and 7 + 7 = a 14pt gutter between cells. The hero wrap adds the same 7, so
-   * the title starts exactly where the posters do. Change any one of these
-   * three numbers and the column breaks.
-   */
+  // ONE left edge: 9 here + 7 on each cell = 16 (and a 14 gutter); the hero
+  // wrap's 7 puts the title on it too. These three numbers move together.
   scrollContent: { paddingBottom: 60, paddingHorizontal: 9 },
   parallaxHeader: { position: 'absolute', top: 0, left: 0, right: 0 },
   headerContentWrap: { paddingHorizontal: 7, paddingBottom: 24 },
   title: { fontFamily: fonts.display, fontSize: 36, color: colors.parchment, lineHeight: 40, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
-  // The colophon is ONE Text now, so the curator, the count and the date wrap
-  // as prose and a separator can never begin a line. The row still wraps, but
-  // only to let the chips fall below — they are objects, not punctuation.
+  // Wraps only to let the chips fall below the one line of type.
   metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 7, rowGap: 6, marginTop: 16, marginBottom: 16 },
   metaDiamond: { width: 5, height: 5, backgroundColor: colors.sepia, transform: [{ rotate: '45deg' }] },
   metaCurator: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.parchment, textDecorationLine: 'underline', textDecorationColor: colors.sepiaBorder },
@@ -1227,8 +1072,7 @@ const s = StyleSheet.create({
   descWrap: { marginBottom: 24 },
   desc: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.bone, lineHeight: 21 },
   descToggle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginTop: 8 },
-  // Out of flow and invisible: it exists only to be laid out once, so it must
-  // occupy the same width as the real epigraph and none of its height.
+  // The epigraph's width and none of its height, invisible.
   descMeasure: { position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 },
   
   // ── Action Bar ──
@@ -1238,10 +1082,7 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.25)',
     marginBottom: 16,
   },
-  // The row's padding moved into the items, so each one IS the target: 48 by
-  // its own geometry rather than a 36pt control wearing a halo neither
-  // platform's accessibility layer can see.
-  // Icon over word, as every bar in the house is laid out.
+  // Each item IS the 48pt target, icon over word, as every bar in the house.
   actionItem: { flex: 1, minHeight: 48, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 5 },
   actionLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
   actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
@@ -1259,9 +1100,7 @@ const s = StyleSheet.create({
   commentHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
   commentUserPress: { flexShrink: 1 },
   commentUser: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.4, color: colors.sepia },
-  // colors.ash is this app's BORDER colour, and it was being used as text:
-  // 1.27:1 against the panel, where 4.5 is the floor for small type. Every
-  // critique on the page was effectively undated. fog reads at 5.9:1.
+  // fog, 5.9:1 (ash is a BORDER colour: 1.27:1 as text).
   commentTime: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.3, color: colors.fog, includeFontPadding: false },
   commentBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, lineHeight: 18, marginTop: 2 },
 
@@ -1269,9 +1108,7 @@ const s = StyleSheet.create({
   trackLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
   trackLine: { flex: 1, height: 1 },
   
-  // The gutters disagreed — 8 across, 24 down — so the sheet read tight
-  // sideways and loose downward. They are one number now, and the row gap lives
-  // on the item so FlashList still measures a whole cell.
+  // One gutter both ways (14); the row gap on the item, so FlashList measures it.
   filmItem: { marginBottom: 14, marginHorizontal: 7 },
   filmCard: { ...EDGE_LIT, borderRadius: 2, overflow: 'hidden', backgroundColor: colors.soot, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.1)' },
   // The podium frame — only #1 of a ranked stack earns the brass hairline.
@@ -1279,32 +1116,19 @@ const s = StyleSheet.create({
   posterPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 },
   placeholderMark: { fontFamily: fonts.sub, fontSize: 15, color: colors.ash, includeFontPadding: false },
   loggedBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(13,11,9,0.75)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)' },
-  /**
-   * A CAPTION BOX, not a caption.
-   *
-   * numberOfLines={2} with no reserved height meant a one-line title made a
-   * short cell and a two-line title a tall one, so the rows stopped sharing a
-   * baseline and the index rippled. The reserve is two lines of its own
-   * lineHeight at the size the phone draws them — set on the card, as
-   * `titleBox`, because it changes with the member's text size. A minimum, so
-   * it still grows rather than clips.
-   */
+  /** Its two-line height is reserved on the card (`titleBox`), at the phone's text size. */
   filmTitle: {
     fontFamily: fonts.sub, fontSize: 11, lineHeight: FILM_TITLE_LINE,
     color: colors.fog, marginTop: 8, textAlign: 'center', paddingHorizontal: 2,
   },
-  // The rank, off the artwork and into the catalogue line. A 28pt numeral under
-  // a gradient covered the bottom of every poster to say what one line of type
-  // says better — and the poster is the thing a reader came to look at.
+  // The rank in the catalogue line, never over the poster.
   filmCaptionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 5, marginTop: 8 },
   filmRank: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
   filmRankFirst: { color: colors.flicker },
   filmTitleInline: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 11, lineHeight: FILM_TITLE_LINE, color: colors.fog, textAlign: 'center' },
   
   /* ── THE CRITIQUES ── an overlay, so the index behind it never moves ── */
-  // The strip of page left visible above the sheet. Dimmed so the sheet reads
-  // as sitting ON the page, and tappable, because reaching for the thing behind
-  // is the most natural way anyone closes a surface like this.
+  // The strip above the sheet: dimmed, and a tap on it closes the sheet.
   critiqueBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: 'rgba(6,5,4,0.72)' },
   critiqueSheet: { ...EDGE_LIT,
     position: 'absolute', left: 0, right: 0,
