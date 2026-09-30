@@ -214,7 +214,7 @@ export function useDispatchArchive(): DispatchArchive {
       if (from === 0) {
         setCount(rows.count ?? got.length);
         // The oldest, for the other end of the span. One row, same index.
-        const { data: first } = await supabase
+        const { data: first, error: firstError } = await supabase
           .from('dispatch_posts')
           .select('created_at')
           .eq('subject_kind', 'film')
@@ -225,7 +225,9 @@ export function useDispatchArchive(): DispatchArchive {
           .order('created_at', { ascending: true })
           .limit(1);
         if (mine !== seq.current) return;
-        const oldest = (first?.[0]?.created_at as string) ?? got[0]?.createdAt;
+        // Unread, the span is not printed: standing in the newest for the oldest
+        // drew a span that began the day the latest filing did.
+        const oldest = firstError ? undefined : ((first?.[0]?.created_at as string) ?? got[0]?.createdAt);
         const newest = got[0]?.createdAt;
         setSpan(oldest && newest ? spanOf(oldest, newest) : '');
       }

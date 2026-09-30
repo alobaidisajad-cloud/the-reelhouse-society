@@ -89,9 +89,24 @@ whenRendering('rooms generator', () => {
         id: f.id, title: f.title, poster_path: f.poster_path, release_date: f.release_date, vote_average: f.vote_average,
       })) as never,
     } as never);
+    // Drawn at 3am, always: between 2 and 6 the title is "Late Night Projection",
+    // its longest, and a check that read the real clock passed or failed by the
+    // hour it ran (it was cut at 320pt at night, and CI runs in the day). Only
+    // the date is fixed; the timers stay real.
+    jest.useFakeTimers({
+      now: new Date(2026, 8, 30, 3, 0),
+      doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
+        'queueMicrotask', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback',
+        'cancelIdleCallback', 'hrtime', 'performance'],
+    });
     let r!: ReturnType<typeof render>;
-    await act(async () => { r = render(<DarkroomScreen />); await new Promise(res => setTimeout(res, 0)); });
+    try {
+      await act(async () => { r = render(<DarkroomScreen />); await new Promise(res => setTimeout(res, 0)); });
+    } finally {
+      jest.useRealTimers();
+    }
     const html = toHtml(r.toJSON(), { posters, local: LOCAL_ART });
+    expect(html).toContain('Late Night Projection');
     writeScreen('darkroom', html);
     console.log('darkroom:', html.length, 'bytes |', (html.match(/<img /g) || []).length, 'images');
     expect(html.length).toBeGreaterThan(3000);

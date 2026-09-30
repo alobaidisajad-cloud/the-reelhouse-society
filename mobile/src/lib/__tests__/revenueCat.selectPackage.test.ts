@@ -109,7 +109,7 @@ describe('selectPackageForTier — explicit billing period (the membership toggl
     expect(selectPackageForTier(monthlyOnly, 'auteur', 'annual')).toBeNull();
   });
 
-  it('LEGACY: omitted period keeps the lenient fallback — a monthly-only store still sells (useEntitlement path unchanged)', () => {
+  it('LEGACY: omitted period keeps the lenient fallback — a monthly-only store still sells', () => {
     const monthlyOnly = [pkg('$rc_monthly', 'MONTHLY', 'auteur_monthly')];
     expect(selectPackageForTier(monthlyOnly, 'auteur')?.product.identifier).toBe('auteur_monthly');
   });

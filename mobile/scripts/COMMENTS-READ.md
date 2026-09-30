@@ -583,7 +583,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useAuthThrottle.pbt.test.ts | — |  |
 | src/hooks/__tests__/useBanCheck.test.ts | — |  |
 | src/hooks/__tests__/useEditProfile.logic.test.ts | — |  |
-| src/hooks/__tests__/useEntitlement.test.ts | — |  |
 | src/hooks/__tests__/useFeeds.test.ts | — |  |
 | src/hooks/__tests__/useInitiation.test.ts | — |  |
 | src/hooks/__tests__/useLogFlow.payload.test.ts | — |  |
@@ -602,7 +601,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useDispatchArchive.ts | — |  |
 | src/hooks/useDoor.ts | — |  |
 | src/hooks/useEditProfile.ts | — |  |
-| src/hooks/useEntitlement.ts | — |  |
 | src/hooks/useFeeds.ts | — |  |
 | src/hooks/useFilmAnimations.ts | — |  |
 | src/hooks/useFilmDetail.ts | — |  |

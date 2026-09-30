@@ -38,7 +38,7 @@ export interface AuthState {
    * remembered for the next launch, known to the store, profile and following
    * fetched behind.
    */
-  adoptSession: (authedUser: AuthUser) => void;
+  adoptSession: (authedUser: AuthUser, profile?: Record<string, unknown> | null) => void;
 }
 
 
@@ -249,9 +249,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     get().adoptSession(authedUser);
   },
 
-  adoptSession: (authedUser) => {
-    // Signed in on screen at once, and remembered for the next launch.
-    const completeUser = { ...authedUser, following: [] } as unknown as User;
+  adoptSession: (authedUser, profile) => {
+    // Signed in on screen at once, and remembered for the next launch — with the
+    // profile when the caller already holds it (signup reads it for the handle).
+    const completeUser = { ...authedUser, ...(profile ?? {}), following: [] } as unknown as User;
     storage.set('last_user_id', authedUser.id);
     setSensitive(`ironvault_user_cache_${authedUser.id}`, JSON.stringify(completeUser));
     set({ user: completeUser, isAuthenticated: true, loading: false });
@@ -259,9 +260,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // The store's identity, by the documented `logIn()`; never awaited by sign-in.
     void identifyUser(authedUser.id);
 
-    // The full profile, in the background with retries; if it never comes, the
-    // session runs on the auth user alone.
-    withRetry(
+    // Otherwise the full profile, in the background with retries; if it never
+    // comes, the session runs on the auth user alone, and the failure is reported.
+    if (!profile) withRetry(
       async () => {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', authedUser.id).single();
@@ -311,17 +312,16 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         logger.warn('[signup] could not claim the requested handle', { requested: username, code: renameError.code });
       }
 
-      const { data: profile } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', data.user!.id).single();
+      // Read for the handle it was given. Unread, the one door below reads it again
+      // with retries; it stored a member with no handle, and said nothing.
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', data.user!.id).single();
 
       // Recorded: AppBootstrapper says so if the handle held is not the one typed.
       rememberRequestedHandle(data.user!.id, username);
 
-      const completeUser = { ...data.user, ...profile, following: [] } as User;
-      storage.set('last_user_id', data.user!.id);
-      setSensitive(`ironvault_user_cache_${data.user!.id}`, JSON.stringify(completeUser));
-      set({ user: completeUser, isAuthenticated: true });
-      // The store's identity moves to this account, as in login().
-      void identifyUser(data.user!.id);
+      // In by the same door as sign-in and the email link.
+      get().adoptSession(data.user!, profileError ? null : (profile as Record<string, unknown> | null));
       return { needsConfirmation: false };
     }
     // Confirmation needed: no session, so the handle is checked once they sign in.

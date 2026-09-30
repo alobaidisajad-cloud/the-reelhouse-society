@@ -411,12 +411,13 @@ export const FeedService = {
     if (filter === 'following' && fallbackFollowing && fallbackFollowing.length > 0) {
       const safeFollowing = fallbackFollowing.slice(0, 150); // Maximize payload, prevent 8KB URI crash
       // Get user IDs for followed usernames
-      const { data: followedProfiles } = await supabase
+      const { data: followedProfiles, error: followedError } = await supabase
         .from('profiles')
         .select('id')
         .in('username', safeFollowing)
         .limit(150);
-      
+      // Unread is not "you follow no one": that drew an empty page.
+      if (followedError) throw new FeedServiceError(followedError, 'Failed to read who you follow');
       if (!followedProfiles || followedProfiles.length === 0) return [];
       listQuery = listQuery.in('user_id', followedProfiles.map(p => p.id));
     }

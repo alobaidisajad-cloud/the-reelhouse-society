@@ -113,11 +113,20 @@ describe('the priority queue', () => {
     expect(rows.map((r) => (r.target_user as { username: string }).username)).toEqual(['accused', 'accused']);
   });
 
-  it('still shows the cases when the names cannot be read', async () => {
+  it('fails whole when the accused cannot be read, rather than offer the case for dismissal', async () => {
+    // A case with no accused reads "No member named — this case can only be
+    // dismissed". Drawn from a read that failed, that put a real case against a
+    // real member up for dismissal. supabase-js RESOLVES the failure.
     rpc({ data: [{ id: 'r1', target_user_id: 'u1' }], error: null });
-    jest.spyOn(supabase, 'from').mockImplementation(() => { throw new Error('offline'); });
+    from({ data: null, error: { message: 'TypeError: Network request failed' } });
+    await expect(ModerationService.getPriorityQueue()).rejects.toBeTruthy();
+  });
+
+  it('a member who is truly gone is named by no one, and the case still shows', async () => {
+    rpc({ data: [{ id: 'r1', target_user_id: 'u-gone' }], error: null });
+    from({ data: [], error: null });
     const rows = await ModerationService.getPriorityQueue();
-    expect(rows).toEqual([{ id: 'r1', target_user_id: 'u1' }]);
+    expect(rows).toEqual([{ id: 'r1', target_user_id: 'u-gone' }]);
   });
 });
 

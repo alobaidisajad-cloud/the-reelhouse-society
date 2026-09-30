@@ -150,6 +150,16 @@ describe('LogService', () => {
             expect(result).toBeTruthy();
         });
 
+        it('names the comment by the member who wrote it, with no second read to fail', async () => {
+            // A second read of the writer's profile printed "unknown" under words they
+            // had just written whenever it failed. The writer is the signed-in member.
+            const c = chain({ data: { id: 'new-c', log_id: 'l1', user_id: 'u1', body: 'Nice', created_at: '2024-01-01' }, error: null });
+            (supabase.from as jest.Mock).mockClear().mockReturnValue(c);
+            const result = await LogService.addLogComment({ id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13', log_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', body: 'Nice film' });
+            expect((result as { profiles: { username: string } }).profiles.username).toBe('testuser');
+            expect(supabase.from).not.toHaveBeenCalledWith('profiles');
+        });
+
         it('rejects invalid payload (missing body)', async () => {
             await expect(LogService.addLogComment({ log_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12' }))
                 .rejects.toThrow();

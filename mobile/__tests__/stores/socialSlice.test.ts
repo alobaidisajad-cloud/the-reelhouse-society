@@ -75,7 +75,7 @@ describe('socialSlice', () => {
                 if (table === 'profiles') return {
                     select: jest.fn(() => ({
                         eq: jest.fn(() => ({
-                            single: jest.fn().mockResolvedValue({ data: { id: 'target-id' }, error: null }),
+                            maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'target-id' }, error: null }),
                         })),
                     })),
                 };
@@ -166,7 +166,7 @@ describe('socialSlice', () => {
                 if (table === 'profiles') return {
                     select: jest.fn(() => ({
                         eq: jest.fn(() => ({
-                            single: jest.fn().mockResolvedValue({ data: { id: 'target-id' }, error: null }),
+                            maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'target-id' }, error: null }),
                         })),
                     })),
                 };

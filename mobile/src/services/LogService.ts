@@ -297,16 +297,13 @@ export const LogService = {
     if (error) throw error;
     if (!commentData) throw new Error('Failed to add comment');
 
-    // DataLoader pattern: Fetch profile manually to bypass missing DB Foreign Key
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('username, avatar_url, display_name')
-      .eq('id', commentData.user_id)
-      .maybeSingle();
-
+    // The comment is the signed-in member's own (the row rules write it only as
+    // them), so its name comes from the session: a second read cost a round trip,
+    // and when it failed printed "unknown" under words they had just written.
+    const me = useAuthStore.getState().user as { avatar_url?: string | null; display_name?: string | null } | null;
     return {
       ...commentData,
-      profiles: profile || { username: 'unknown', avatar_url: null, display_name: null }
+      profiles: { username, avatar_url: me?.avatar_url ?? null, display_name: me?.display_name ?? null },
     };
   },
 

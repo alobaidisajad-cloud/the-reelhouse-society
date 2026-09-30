@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Search, X } from 'lucide-react-native';
 
 import { colors, fonts, spacing, effects } from '@/src/theme/theme';
-import { scaledTextProps } from '@/src/constants/textScaling';
+import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { DarkroomAtmo, DarkroomSuggestionRow } from './DarkroomCards';
 import type { DiscoverFilm } from '@/src/stores/discover';
@@ -57,7 +57,10 @@ export const DarkroomHero = React.memo(function DarkroomHero({
           const isLateNight = h >= 2 && h < 6;
           return (
             <>
-              <Text style={s.heroTitle} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+              {/* A display heading, so the house's display cap (1.2). At 320pt and the
+                  largest text, "Late Night Projection" was cut at a 0.6 floor; 0.5 of
+                  the capped size is 20.4pt, the floor it already had at normal size. */}
+              <Text style={s.heroTitle} accessibilityRole="header" {...displayTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
                 {isLateNight ? "Late Night Projection" : "The Darkroom"}
               </Text>
             </>

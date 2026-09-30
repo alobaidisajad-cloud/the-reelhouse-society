@@ -68,7 +68,11 @@ async function resolveUsernameToProfile(username: string): Promise<{ id: string;
   }
   if (cached) _usernameProfileCache.delete(username);
 
-  const { data } = await supabase.from('profiles').select('id, is_social_private').eq('username', username).single();
+  // `maybeSingle`: no such member is an answer (null). A failed read is not, and
+  // is thrown — it was read as "not found", so a follow made offline never reached
+  // followUser's offline branch: "Could not follow", and a false report.
+  const { data, error } = await supabase.from('profiles').select('id, is_social_private').eq('username', username).maybeSingle();
+  if (error) throw error;
   if (data?.id) {
     if (_usernameProfileCache.size >= 200) {
       const keys = [..._usernameProfileCache.keys()].slice(0, 20);

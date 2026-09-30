@@ -1029,6 +1029,28 @@ export function csvLooksLike(text: string, kind: 'diary' | 'reviews' | 'watchlis
   }
 }
 
+/**
+ * The member's own stack with this title, which an import merges into rather
+ * than copying. The oldest, if they hold two: `maybeSingle` REFUSED two (an
+ * error), and the error was not read, so each import of a file naming that
+ * stack made one more copy of it. A read that fails is an error to report,
+ * never "there is none" — that too made a copy.
+ */
+async function findOwnStack(userId: string, title: string): Promise<
+  { existing: { id: string; is_private: boolean | null; is_ranked: boolean | null; description: string | null } | null; error: null }
+  | { existing: null; error: { message: string } }
+> {
+  const { data, error } = await supabase
+    .from('lists')
+    .select('id, is_private, is_ranked, description')
+    .eq('user_id', userId)
+    .eq('title', title)
+    .order('created_at', { ascending: true })
+    .limit(1);
+  if (error) return { existing: null, error };
+  return { existing: data?.[0] ?? null, error: null };
+}
+
 const ITEM_PAGE = 1000;
 /**
  * Every existing item of one stack, paginated.
@@ -1240,12 +1262,11 @@ async function importLists(
       // Idempotency: reuse list ID if one with the same title exists for this
       // user. Read the member's OWN settings too — merging into a stack they
       // already have must never silently rewrite how it is configured.
-      const { data: existing } = await supabase
-        .from('lists')
-        .select('id, is_private, is_ranked, description')
-        .eq('user_id', userId)
-        .eq('title', safeTitle)
-        .maybeSingle();
+      const { existing, error: findErr } = await findOwnStack(userId, safeTitle);
+      if (findErr) {
+        errors.push(`List "${safeTitle}": ${findErr.message}`);
+        continue;
+      }
 
       const listId = existing?.id ?? Crypto.randomUUID();
       const { error: listErr } = await supabase.from('lists').upsert([{
@@ -1533,16 +1554,25 @@ async function runJSONImport(
         const originalCreated = importableTimestamp(list.createdAt ?? list.created_at);
 
         // Idempotency: reuse list ID if one with the same title exists for this user
-        const { data: existing } = await supabase
-          .from('lists')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('title', listTitle)
-          .maybeSingle();
+        const { existing, error: findErr } = await findOwnStack(userId, listTitle);
+        if (findErr) {
+          errors.push(`List "${listTitle}": ${findErr.message}`);
+          continue;
+        }
 
         const listId = existing?.id ?? Crypto.randomUUID();
 
-        const { error: listErr } = await supabase.from('lists').upsert([{
+        // Merged into a stack they already have, the member's own settings stand,
+        // as in the CSV path: an older export must not make a private stack public,
+        // nor move when it was made.
+        const { error: listErr } = await supabase.from('lists').upsert([existing ? {
+          id:          listId,
+          user_id:     userId,
+          title:       listTitle,
+          description: existing.description || listDescription,
+          is_private:  existing.is_private ?? false,
+          is_ranked:   existing.is_ranked ?? false,
+        } : {
           id:          listId,
           user_id:     userId,
           title:       listTitle,

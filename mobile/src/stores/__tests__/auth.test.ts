@@ -347,6 +347,55 @@ describe('AuthStore', () => {
     });
   });
 
+  /**
+   * Signup with a session is a door into one, like sign-in and the email link,
+   * and now goes through the same one (adoptSession). Its own profile read had
+   * no retry and no report: when it failed, a brand-new member was stored with
+   * no handle at all.
+   */
+  describe('signup — in by the same door as sign-in', () => {
+    function mockProfileReads(answers: { data: unknown; error: unknown }[]) {
+      let n = 0;
+      mockFrom.mockImplementation(() => {
+        const chain: Record<string, unknown> = {};
+        chain.update = () => chain;
+        chain.eq = () => chain;
+        chain.select = () => chain;
+        chain.single = async () => answers[Math.min(n++, answers.length - 1)];
+        chain.then = (resolve: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve);
+        return chain;
+      });
+      return () => n;
+    }
+
+    beforeEach(() => {
+      mockSignUp.mockResolvedValue({
+        data: { user: { id: 'u1', email: 'a@reel.app' }, session: { access_token: 't' } },
+        error: null,
+      });
+    });
+
+    it('a profile read that failed is read again, and the member gets their handle', async () => {
+      const reads = mockProfileReads([
+        { data: null, error: { message: 'TypeError: Network request failed' } },
+        { data: { id: 'u1', username: 'morpho' }, error: null },
+      ]);
+      await useAuthStore.getState().signup('a@reel.app', 'Pw!23456', 'morpho');
+      await new Promise((r) => setTimeout(r, 0));
+      expect(reads()).toBe(2);
+      expect((useAuthStore.getState().user as { username?: string }).username).toBe('morpho');
+      expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    });
+
+    it('a profile it holds is used at once, and not read twice', async () => {
+      const reads = mockProfileReads([{ data: { id: 'u1', username: 'morpho_4f8a21' }, error: null }]);
+      await useAuthStore.getState().signup('a@reel.app', 'Pw!23456', 'morpho');
+      expect((useAuthStore.getState().user as { username?: string }).username).toBe('morpho_4f8a21');
+      await new Promise((r) => setTimeout(r, 0));
+      expect(reads()).toBe(1);
+    });
+  });
+
   describe('logout', () => {
     it('clears user state on logout', async () => {
       useAuthStore.setState({

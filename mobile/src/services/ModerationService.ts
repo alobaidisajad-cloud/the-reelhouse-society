@@ -119,18 +119,19 @@ export const ModerationService = {
 
     const targetIds = [...new Set(rows.map(r => r.target_user_id).filter(Boolean))] as string[];
     if (targetIds.length > 0) {
-      try {
-        const { data: profs } = await supabase
-          .from('profiles')
-          .select('id, username, warning_count, avatar_url')
-          .in('id', targetIds);
-        const byId = new Map((profs ?? []).map(p => [p.id as string, p]));
-        for (const r of rows) {
-          const p = byId.get(r.target_user_id as string);
-          if (p) r.target_user = p;
-        }
-      } catch {
-        // Names are context, not verdicts — the docket still renders without them.
+      // The accused is who the case is AGAINST. Without them a card reads "No
+      // member named — this case can only be dismissed": a verdict drawn from a
+      // read that failed, offering a real case up for dismissal. So the docket
+      // fails whole, and the Tribunal says it could not be read.
+      const { data: profs, error: profError } = await supabase
+        .from('profiles')
+        .select('id, username, warning_count, avatar_url')
+        .in('id', targetIds);
+      if (profError) throw profError;
+      const byId = new Map((profs ?? []).map(p => [p.id as string, p]));
+      for (const r of rows) {
+        const p = byId.get(r.target_user_id as string);
+        if (p) r.target_user = p;
       }
     }
     return rows;

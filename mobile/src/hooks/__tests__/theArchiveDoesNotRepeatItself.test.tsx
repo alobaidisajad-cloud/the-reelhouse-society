@@ -20,6 +20,8 @@ const SUBJECT = 550;
 /** What `.range(from, to)` was asked for, in order. */
 const ranges: [number, number][] = [];
 let pages: Record<string, unknown>[][] = [];
+/** The answer to "which filing is the oldest" (the span's other end). */
+let mockOldest: { data: unknown; error: unknown } = { data: [], error: null };
 
 const chain = () => {
   const c: Record<string, unknown> = {};
@@ -30,7 +32,7 @@ const chain = () => {
     const page = pages.shift() ?? [];
     return Promise.resolve({ data: page, error: null, count: 99 });
   };
-  c.then = (res: (v: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(res);
+  c.then = (res: (v: unknown) => unknown) => Promise.resolve(mockOldest).then(res);
   return c;
 };
 
@@ -78,6 +80,36 @@ const fullPage = (prefix: string, withMalformed: boolean) => {
 beforeEach(() => {
   ranges.length = 0;
   pages = [];
+  mockOldest = { data: [], error: null };
+});
+
+describe('the span of a film archive', () => {
+  const open = async () => {
+    const { result } = await renderHook(() => useDispatchArchive());
+    await act(async () => {
+      result.current.choose({
+        subjectId: SUBJECT,
+        film: { id: SUBJECT, title: 'Tokyo Story', sub: null, image: null },
+        filings: 2,
+      } as never);
+    });
+    await waitFor(() => expect(result.current.filings.length).toBe(2));
+    return result;
+  };
+
+  it('runs from the oldest filing the house holds', async () => {
+    pages = [[good('a3'), good('a1')]];
+    mockOldest = { data: [{ created_at: '2024-02-01T10:00:00Z' }], error: null };
+    const result = await open();
+    expect(result.current.span).toMatch(/2024/);
+  });
+
+  it('is not printed when the oldest could not be read — never a span from the wrong end', async () => {
+    pages = [[good('a3'), good('a1')]];
+    mockOldest = { data: null, error: { message: 'TypeError: Network request failed' } };
+    const result = await open();
+    expect(result.current.span).toBe('');
+  });
 });
 
 describe('a film archive never shows the same filing twice', () => {
