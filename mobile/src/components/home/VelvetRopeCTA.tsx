@@ -60,6 +60,8 @@ export const VelvetRopeCTA = memo(() => {
     return (
        <PressableScale
           style={s.ctaSecondaryNoir}
+          // the first door stands 24 above (the front door's gap): half of it, no more
+          hitSlop={{ top: 12 }}
           onPress={() => { TactileEngine.destroy(); (router.push as any)({ pathname: '/login', params: { action: 'login' } }); }}
        >
           <Text style={s.ctaSecondaryNoirText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.7}>ALREADY A MEMBER?</Text>

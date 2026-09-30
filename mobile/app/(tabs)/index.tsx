@@ -33,6 +33,9 @@ import { LobbyWall } from '@/src/components/lobby/LobbyWall';
 import { LIVE_LOBBY_READS, useProgramme } from '@/src/components/lobby/wallRead';
 import reelToast from '@/src/utils/reelToast';
 
+/** Between the front door's two buttons; each one's reach toward the other is half of it. */
+const CTA_GAP = 24;
+
 /** Every Lobby read is under ['lobby', ...], so a pull can ask for all of them at once. */
 const LOBBY = ['lobby'] as const;
 
@@ -248,6 +251,8 @@ export default function LobbyScreen() {
                   or log in") papered over the ambiguity rather than fixing it. */}
               <PressableScale
                 style={s.ctaPrimaryNoir}
+                // the second door stands CTA_GAP below: each reaches half of it, no more
+                hitSlop={{ top: CTA_GAP / 2, bottom: CTA_GAP / 2 }}
                 onPress={() => { TactileEngine.destroy(); (router.push as any)({ pathname: '/login', params: { action: 'signup' } }); }}
                 accessibilityRole="button"
                 accessibilityLabel="Seek admission — request membership"
@@ -347,7 +352,7 @@ const s = StyleSheet.create({
   societyRuleLine: { flex: 1, height: 1 },
   societyRuleText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4, color: colors.sepia },
   
-  welcomeCtaContainer: { width: '100%', maxWidth: 360, alignItems: 'center', gap: 24 },
+  welcomeCtaContainer: { width: '100%', maxWidth: 360, alignItems: 'center', gap: CTA_GAP },
   
   ctaPrimaryNoir: { ...EDGE_LIT,
     backgroundColor: colors.soot, width: '100%', borderRadius: 6,
