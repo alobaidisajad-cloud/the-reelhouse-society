@@ -602,7 +602,7 @@ export default function StackDetailScreen() {
         });
         flushOfflineQueue();
         // Leave the optimistic comment in cache since it's queued
-        reelToast('Your critique was queued for offline dispatch.');
+        reelToast('Critique saved offline. Will sync when connected.');
       } else {
         // Atomic Rollback
         queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) => {

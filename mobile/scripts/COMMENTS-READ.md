@@ -861,6 +861,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-09-29 | extended: a \u eaten from a char class; red on the one damaged line, then green |
 | src/utils/__tests__/noMachinePaths.guard.test.ts | — |  |
 | src/utils/__tests__/notificationColumns.guard.test.ts | — |  |
+| src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts | — |  |
 | src/utils/__tests__/offlineQueue.integration.test.ts | — |  |
 | src/utils/__tests__/offlineQueue.test.ts | — |  |
 | src/utils/__tests__/profileCountsCache.test.ts | — |  |

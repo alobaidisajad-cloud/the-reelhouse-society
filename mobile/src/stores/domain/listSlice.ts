@@ -463,7 +463,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                             } });
                         }
                         queryClient.invalidateQueries({ queryKey: ['stack', listId] });
-                        reelToast('Positions will sync when connected.');
+                        reelToast('Positions saved offline. Will sync when connected.');
                         return;
                     }
                     throw upsertError;

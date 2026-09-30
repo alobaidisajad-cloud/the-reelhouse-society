@@ -738,7 +738,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           payload: { ...payload, _tempId: payload.id }
         });
         flushOfflineQueue();
-        reelToast('Message queued for offline network transmission.');
+        reelToast('Message saved offline. Will send when connected.');
         return true;
       }
       // Keep the dispatch and mark it failed so the transcript shows a discreet
@@ -1027,7 +1027,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (isNetworkError(e)) {
         enqueueMutation({ type: 'withdraw_lounge_message', payload: { message_id: messageId } });
         flushOfflineQueue();
-        reelToast('Withdrawal queued — it will complete when you reconnect.');
+        reelToast('Withdrawal saved offline. Will complete when connected.');
         return;
       }
       // A real refusal (not yours to withdraw, row gone) — restore it intact.

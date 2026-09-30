@@ -99,7 +99,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
             enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
             if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
             TactileEngine.success();
-            reelToast('Report queued. Will be filed when connected.');
+            reelToast('Report saved offline. Will be filed when connected.');
             return { status: 'queued' };
           }
           throw error;
@@ -121,7 +121,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
         enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
         if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
         TactileEngine.success();
-        reelToast('Report queued. Will be filed when connected.');
+        reelToast('Report saved offline. Will be filed when connected.');
 
         if (payload.block_target && payload.target_user_id) {
           await useBlockStore.getState().blockUser(payload.target_user_id);
