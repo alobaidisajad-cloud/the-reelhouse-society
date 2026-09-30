@@ -11,6 +11,7 @@
  * screen, its query function and its handlers.
  */
 import React, { act } from 'react';
+import { Alert, type AlertButton } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { resetMarkCounts } from '@/src/stores/markCounts';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
@@ -100,9 +101,15 @@ const file = async (r: ReturnType<typeof render>) => {
   await act(async () => { fireEvent.changeText(r.getByLabelText('Write a critique on this log'), 'A third look.'); });
   await act(async () => { fireEvent.press(r.getByText('FILE CRITIQUE')); });
 };
-const takeBack = async (r: ReturnType<typeof render>) => {
-  await act(async () => { fireEvent.press(r.getByLabelText('Delete your critique')); });
+/** WITHDRAW, and a yes to the house's question (a critique is never taken back on one tap). */
+const withdrawCritique = async (r: ReturnType<typeof render>) => {
+  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  await act(async () => { await fireEvent.press(r.getByLabelText('Withdraw your critique')); });
+  const buttons = (alert.mock.calls[alert.mock.calls.length - 1]?.[2] ?? []) as AlertButton[];
+  alert.mockRestore();
+  await act(async () => { buttons.find((b) => b.style === 'destructive')?.onPress?.(); });
 };
+const takeBack = withdrawCritique;
 
 describe('filing', () => {
   it('kept for later is said, as on a stack — it was silent', async () => {

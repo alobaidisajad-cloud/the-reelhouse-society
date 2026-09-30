@@ -117,8 +117,8 @@ describe('a control that erases something looks like one', () => {
   // Style VALUES, asked directly. These two rows are the same control — a
   // member taking back their own words — on the log and on the Dispatch, and
   // they drifted apart once: crimson on one, body text on the other.
-  it('DELETE on a log and WITHDRAW on a filing are one red, and not a neutral', () => {
-    const log = (StyleSheet.flatten(record.commDelete) as TextStyle).color;
+  it('WITHDRAW under a log and on a filing are one red, and not a neutral', () => {
+    const log = (StyleSheet.flatten(record.commWithdraw) as TextStyle).color;
     const dispatch = (StyleSheet.flatten(paper.critiqueWithdraw) as TextStyle).color;
     expect(log).toBeTruthy();
     expect(log).toBe(dispatch);

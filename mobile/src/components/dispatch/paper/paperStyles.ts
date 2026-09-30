@@ -258,7 +258,7 @@ export const p = StyleSheet.create({
     // No flexWrap: in a wrapping row an item moves down instead of shrinking,
     // so the trail would stop truncating and the byline would take two lines.
   },
-  /** WITHDRAW on your critique: a log's `commDelete` colour, one act (held so by logSurfaces). */
+  /** WITHDRAW on your critique: a log's `commWithdraw` colour, one act (held so by logSurfaces). */
   critiqueWithdraw: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8,
     color: colors.danger, includeFontPadding: false,

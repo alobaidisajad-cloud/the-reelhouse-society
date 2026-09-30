@@ -14,7 +14,7 @@ import { colors, fonts, effects } from '@/src/theme/theme';
 import { scaledTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
-import { getPushPermissionState, requestPushPermission, type PushPermissionState } from '@/src/lib/pushNotifications';
+import { getPushPermissionState, registerForPushNotifications, requestPushPermission, type PushPermissionState } from '@/src/lib/pushNotifications';
 
 import { Controller, Control } from 'react-hook-form';
 import type { SettingsFormData } from '@/src/schemas/settings';
@@ -565,7 +565,12 @@ function PushPermissionNotice() {
       if (isMountedRef.current) setState(next);
       // Denied at the system prompt is final on iOS; the only route left is the
       // system settings, which the `denied` notice below already offers.
-      if (next === 'granted') TactileEngine.success();
+      if (next === 'granted') {
+        TactileEngine.success();
+        // Registered now: a yes here is heard from the next notice on, not the next launch.
+        const member = useAuthStore.getState().user;
+        if (member) void registerForPushNotifications(member.id);
+      }
     } finally {
       if (isMountedRef.current) setAsking(false);
     }

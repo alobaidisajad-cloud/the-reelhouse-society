@@ -1,6 +1,7 @@
-import { Tabs } from 'expo-router';
+import { router, Tabs, usePathname, type Href } from 'expo-router';
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { AppState, View, StyleSheet, Platform } from 'react-native';
+import { rememberTab, stampTab, tabToReopen } from '@/src/utils/lastTab';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import Animated, {
@@ -157,9 +158,22 @@ export default function TabLayout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initiation.dismiss]);
 
+  // A member back within the half hour is back on their tab (lastTab.ts) — behind
+  // the launch curtain, so the Lobby is never glimpsed first. Only a launch that
+  // opened at the Lobby: one that opened a notice or a link is going there instead.
+  const pathname = usePathname();
+  const launchedAt = React.useRef(pathname);
+  React.useEffect(() => {
+    const tab = tabToReopen();
+    if (tab && launchedAt.current === '/') router.navigate(`/${tab}` as Href);
+    const sub = AppState.addEventListener('change', (next) => { if (next !== 'active') stampTab(); });
+    return () => sub.remove();
+  }, []);
+
   return (
     <>
     <Tabs
+      screenListeners={({ route }) => ({ focus: () => rememberTab(route.name) })}
       screenOptions={{
         header: renderHeader,
         headerTransparent: true,

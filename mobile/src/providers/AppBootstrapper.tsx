@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import { Alert, AppState } from 'react-native';
 import { router } from 'expo-router';
 import { resolveHandleNotice } from '../utils/handleNotice';
-import { registerForPushNotifications, setupNotificationResponseHandler } from '../lib/pushNotifications';
+import { PUSH_TOKEN_KEY, registerForPushNotifications, setupNotificationResponseHandler } from '../lib/pushNotifications';
 import { initRevenueCat, reconcileRank } from '../lib/revenueCat';
 import { addBreadcrumb, Sentry, setSentryUser } from '../lib/sentry';
 import { supabase } from '../lib/supabase';
@@ -305,6 +305,14 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         const wasBackgroundedLong = Date.now() - lastBackgroundedAt > 5000;
         if (wasBackgroundedLong && useAuthStore.getState().isAuthenticated) {
           useNotificationStore.getState().fetchNotifications();
+        }
+
+        // Notices allowed from the phone's own Settings while the app was away:
+        // this device is registered now, not at the next launch. (It asks
+        // nothing: registration only reads what the member already allowed.)
+        const member = useAuthStore.getState().user;
+        if (member && !storage.getString(PUSH_TOKEN_KEY)) {
+          void registerForPushNotifications(member.id);
         }
 
         // Silent OTA update check — downloads in background,

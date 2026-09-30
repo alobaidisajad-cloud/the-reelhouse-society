@@ -24,6 +24,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
+import { askToWithdrawCritique } from '@/src/components/critique/withdraw';
+import { offerWord } from '@/src/lib/pushPrimer';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import { ShareSheet } from '@/src/components/dispatch/paper/PaperDesk';
 import { EssayBody } from '@/src/components/dispatch/EssayBody';
@@ -237,6 +239,9 @@ export default function FilingReader() {
       // Queued without a connection: said, as a filing says it — it was drawn as
       // though it had gone.
       if (res?.offline) reelToast.success('Filed. It goes out when the wire is back.');
+      // Filed, where members may certify or answer it: the moment to ask to send word.
+      const memberId = me?.id;
+      if (memberId) void offerWord('critique', memberId);
     } catch {
       // The store rolls the row back and keeps the text for another try.
       reelToast.error('That critique did not go.');
@@ -566,21 +571,10 @@ export default function FilingReader() {
               onAuthor={() => openAuthor(c.author?.name)}
               onDelete={
                 me && c.authorId === me.id
-                  ? () => Alert.alert(
-                    'Withdraw this critique?',
-                    'It comes off the page. This cannot be undone.',
-                    [
-                      { text: 'Keep it', style: 'cancel' },
-                      {
-                        text: 'Withdraw',
-                        style: 'destructive',
-                        onPress: () => {
-                          useDispatch.getState().removeCritique(c.id, live.id)
-                            .catch(() => reelToast.error('It could not be withdrawn.'));
-                        },
-                      },
-                    ],
-                  )
+                  ? () => askToWithdrawCritique(() => {
+                    useDispatch.getState().removeCritique(c.id, live.id)
+                      .catch(() => reelToast.error('It could not be withdrawn.'));
+                  })
                   : undefined
               }
               onReport={

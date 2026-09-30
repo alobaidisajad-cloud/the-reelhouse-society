@@ -13,7 +13,7 @@
  * in every timezone it is run in — this repo already has a `test:tz` run that
  * exists because a date test that only passes in one zone is a trap.
  */
-import { dayKey, dayLabel, hourLabel } from '../dayLabel';
+import { byMonth, dayKey, dayLabel, hourLabel } from '../dayLabel';
 
 /** A local date, built the way the device would experience it. */
 const at = (y: number, m: number, d: number, h = 12, min = 0) =>
@@ -78,5 +78,30 @@ describe('hourLabel', () => {
     // The margin is a ledger column: a dash is what a ledger puts in an empty
     // cell, and `NaN:NaN` is what this returns without the guard.
     expect(hourLabel('not a date')).toBe('—');
+  });
+});
+
+describe('byMonth — a list that runs back through years', () => {
+  const entry = (id: string, y: number, m: number, d: number) => ({ id, createdAt: at(y, m, d) });
+  const shape = (rows: ReturnType<typeof byMonth>) =>
+    rows.map((r) => (r.type === 'month' ? `[${r.label}]` : r.entry.id));
+
+  it('puts each month above its first entry — the newest month too', () => {
+    const rows = byMonth([entry('a', 2026, 9, 28), entry('b', 2026, 9, 2), entry('c', 2025, 3, 28)]);
+    expect(shape(rows)).toEqual(['[SEPTEMBER 2026]', 'a', 'b', '[MARCH 2025]', 'c']);
+  });
+
+  it('the same month in two years is two months', () => {
+    const rows = byMonth([entry('a', 2026, 3, 3), entry('b', 2025, 3, 3)]);
+    expect(shape(rows)).toEqual(['[MARCH 2026]', 'a', '[MARCH 2025]', 'b']);
+  });
+
+  it('an unreadable date stands under the month before it, never under a blank divider', () => {
+    const rows = byMonth([entry('a', 2026, 9, 28), { id: 'x', createdAt: 'not a date' }]);
+    expect(shape(rows)).toEqual(['[SEPTEMBER 2026]', 'a', 'x']);
+  });
+
+  it('nothing to list is no rows', () => {
+    expect(byMonth([])).toEqual([]);
   });
 });

@@ -28,7 +28,7 @@ import { FilingRow } from '@/src/components/dispatch/FilingRow';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth, PAPER_MAX } from '@/src/components/dispatch/paper/paperMetrics';
 import { itemType } from '@/src/components/dispatch/paper/paperPerf';
-import { dayOfMonth, monthKey, monthLabel } from '@/src/components/dispatch/dayLabel';
+import { byMonth, dayOfMonth, type MonthRow } from '@/src/components/dispatch/dayLabel';
 import { useMemberRoom } from '@/src/hooks/useMemberRoom';
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
@@ -38,9 +38,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
-type Row =
-  | { type: 'month'; key: string; label: string }
-  | { type: 'filing'; key: string; filing: Filing };
+type Row = MonthRow<Filing>;
 
 export default function MemberRoomScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
@@ -56,20 +54,9 @@ export default function MemberRoomScreen() {
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const savedIds = useDispatch((s) => s.savedIds);
 
-  const rows = useMemo<Row[]>(() => {
-    const out: Row[] = [];
-    let month = '';
-    for (const f of filings) {
-      const k = monthKey(f.createdAt);
-      if (k && k !== month) {
-        month = k;
-        // Never above the first entry: the head already tops the page (as in the feed).
-        if (out.length > 0) out.push({ type: 'month', key: `m-${k}`, label: monthLabel(f.createdAt) });
-      }
-      out.push({ type: 'filing', key: f.id, filing: f });
-    }
-    return out;
-  }, [filings]);
+  // Every month under its own divider, the newest too: the head says whose room
+  // this is, not when, and a bare day in the margin needs its month (byMonth).
+  const rows = useMemo<Row[]>(() => byMonth(filings), [filings]);
 
   const width = columnWidth(390);
 
@@ -81,9 +68,9 @@ export default function MemberRoomScreen() {
 
   const getItemType = useCallback(
     (r: Row) => (r.type === 'month' ? 'day' : itemType({
-      kind: r.filing.kind,
-      still: !!r.filing.film,
-      removed: !!r.filing.endedAt || !!r.filing.withheldAt,
+      kind: r.entry.kind,
+      still: !!r.entry.film,
+      removed: !!r.entry.endedAt || !!r.entry.withheldAt,
     })),
     [],
   );
@@ -91,7 +78,7 @@ export default function MemberRoomScreen() {
   const renderItem = useCallback(({ item }: { item: Row }) => {
     if (item.type === 'month') return <DayDivider label={item.label} />;
 
-    const f = item.filing;
+    const f = item.entry;
     return (
       <FilingRow
         f={f}

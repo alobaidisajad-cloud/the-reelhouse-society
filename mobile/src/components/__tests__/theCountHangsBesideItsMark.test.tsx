@@ -280,7 +280,7 @@ describe('a zero is never printed — anywhere a mark is counted', () => {
   it('the log page’s critique header says CRITIQUES, not CRITIQUES (0)', () => {
     const props = {
       comments: [], newComment: '', posting: false, critiqueInputRef: { current: null } as never,
-      onNewCommentChange: noop, onPostComment: noop, onDeleteComment: noop, onPressUser: noop,
+      onNewCommentChange: noop, onPostComment: noop, onWithdrawComment: noop, onPressUser: noop,
     };
     const none = render(<LogComments {...props} commentTotal={0} />);
     noZero(none);

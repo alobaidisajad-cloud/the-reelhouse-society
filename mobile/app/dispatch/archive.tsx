@@ -19,12 +19,12 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
+import { DayDivider, PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { ArchiveFilm, PaperArchive, PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { FilingRow } from '@/src/components/dispatch/FilingRow';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth } from '@/src/components/dispatch/paper/paperMetrics';
-import { dayOfMonth } from '@/src/components/dispatch/dayLabel';
+import { byMonth, dayOfMonth } from '@/src/components/dispatch/dayLabel';
 import { useDispatchArchive } from '@/src/hooks/useDispatchArchive';
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
@@ -79,22 +79,26 @@ export default function ArchiveScreen() {
             span={film ? span : undefined}
           >
             {film ? (
-              filings.map((f) => (
+              // Under its month's divider (byMonth), as in a member's room: seven
+              // years of one film, and `28` alone could be any month of any year.
+              byMonth(filings).map((row) => row.type === 'month' ? (
+                <DayDivider key={row.key} label={row.label} />
+              ) : (
                 <FilingRow
-                  key={f.id}
-                  f={f}
+                  key={row.key}
+                  f={row.entry}
                   // No film art on the entries. The film is the PLATE at the
                   // head of this page; repeating its poster down twenty rows is
                   // the page answering a question it already answered.
                   withFilm={false}
-                  order={dayOfMonth(f.createdAt) || '—'}
+                  order={dayOfMonth(row.entry.createdAt) || '—'}
                   orderIs="day"
                   width={width}
                   // The house's number when read, moved by the member's own mark
                   // since — as the room does. It stood still when the heart moved.
-                  shift={(certifiedIds.has(f.id) ? 1 : 0) - (certifiedAtFetch.has(f.id) ? 1 : 0)}
-                  certified={certifiedIds.has(f.id)}
-                  saved={savedIds.has(f.id)}
+                  shift={(certifiedIds.has(row.entry.id) ? 1 : 0) - (certifiedAtFetch.has(row.entry.id) ? 1 : 0)}
+                  certified={certifiedIds.has(row.entry.id)}
+                  saved={savedIds.has(row.entry.id)}
                   member={!!me}
                 />
               ))

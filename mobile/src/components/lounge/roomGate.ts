@@ -19,6 +19,20 @@ export type RoomGate =
   | 'knocking'     // the roster is being read
   | 'unreachable'; // the roster could not be read
 
+/**
+ * Where a room's standing STARTS: what the Lounge list already knows of this
+ * member in this room (it reads every room they joined), else unknown. The
+ * house recognises its members at the door — a member opening their own
+ * private room goes straight in, and the roster, read behind them, confirms
+ * or corrects it. Only someone the list does not know waits at the door.
+ */
+export function knownStanding(
+  lounges: readonly { id: string; membership_status?: LoungeMemberStatus | null }[],
+  roomId: string | undefined,
+): RoomStanding {
+  return (roomId && lounges.find((l) => l.id === roomId)?.membership_status) || 'unknown';
+}
+
 export function roomGate(room: {
   isPrivate: boolean;
   isCreator: boolean;

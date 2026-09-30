@@ -67,7 +67,9 @@ jest.mock('@/src/services/ModerationService', () => ({ ModerationService: { getP
 jest.mock('@/src/lib/pushNotifications', () => ({
   getPushPermissionState: jest.fn(() => Promise.resolve(mockPerm)),
   requestPushPermission: () => mockRequestPermission(),
+  registerForPushNotifications: (id: string) => mockRegister(id),
 }));
+const mockRegister = jest.fn(async (_id: string) => null);
 jest.mock('@/src/features/settings/DataVault', () => {
   const React = require('react');
   const { Text } = require('react-native');
@@ -406,6 +408,8 @@ describe('notifications — four switches nobody read', () => {
     await waitFor(() => expect(r.getByText('THIS DEVICE HAS NOT BEEN ASKED')).toBeTruthy());
     await act(async () => { fireEvent.press(r.getByLabelText('Allow alerts on this device')); });
     expect(mockRequestPermission).toHaveBeenCalled();
+    // …and a yes is heard from the next notice on: this device is registered now, not at the next launch
+    expect(mockRegister).toHaveBeenCalledWith(BASE.id);
   });
 
   it('says nothing at all where push cannot work', async () => {

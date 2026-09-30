@@ -273,13 +273,14 @@ describe('a member’s room', () => {
       filing({ id: 'f2', created_at: at(2026, 8, 3) }),
       filing({ id: 'f3', created_at: at(2025, 3, 9) }),
     ];
-    const { getByText, queryByText, getByLabelText } = await mount();
+    const { getByText, getByLabelText } = await mount();
 
     // The year is the point: a room runs back far enough that `MONDAY, MARCH 3`
     // appears twice with nothing to tell the two apart.
     expect(getByText('MARCH 2025')).toBeTruthy();
-    // Not above the first — the head is already the top of the page.
-    expect(queryByText('AUGUST 2026')).toBeNull();
+    // Above the first too: the head says whose room this is, not when — without
+    // it the newest entries' `28` could be any month of any year.
+    expect(getByText('AUGUST 2026')).toBeTruthy();
 
     expect(getByText('28')).toBeTruthy();
     expect(getByText('3')).toBeTruthy();

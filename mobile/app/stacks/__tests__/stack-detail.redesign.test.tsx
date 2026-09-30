@@ -5,6 +5,7 @@
  * read from the source, as layout arithmetic shows nothing until a device.
  */
 import React, { act } from 'react';
+import { Alert, type AlertButton } from 'react-native';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -851,6 +852,15 @@ describe('a pull that reached nothing', () => {
   });
 });
 
+/** WITHDRAW, and a yes to the house's question (a critique is never taken back on one tap). */
+const withdrawCritique = async (r: ReturnType<typeof render>) => {
+  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  await act(async () => { await fireEvent.press(r.getByLabelText('Withdraw your critique')); });
+  const buttons = (alert.mock.calls[alert.mock.calls.length - 1]?.[2] ?? []) as AlertButton[];
+  alert.mockRestore();
+  await act(async () => { buttons.find((b) => b.style === 'destructive')?.onPress?.(); });
+};
+
 describe('taking back one’s own critique on a stack', () => {
   const MINE = { id: 'c-mine', list_id: STACK_ID, user_id: 'u1', username: 'morpho', avatar_url: null, content: 'Mine.', created_at: '2026-01-01T10:00:00Z' };
   const THEIRS = { id: 'c-theirs', list_id: STACK_ID, user_id: 'u9', username: 'vesper', avatar_url: null, content: 'Theirs.', created_at: '2026-01-02T10:00:00Z' };
@@ -871,13 +881,26 @@ describe('taking back one’s own critique on a stack', () => {
 
   it('is offered on the member’s own critique alone — it was offered on none', async () => {
     const r = await open();
-    expect(r.getAllByLabelText('Delete your critique')).toHaveLength(1);
+    expect(r.getAllByLabelText('Withdraw your critique')).toHaveLength(1);
+    // …and REPORT on the other member's, in its place — never both on one
+    expect(r.getAllByLabelText(/^Report this critique by @/)).toHaveLength(1);
+  });
+
+  it('asks first — "Keep it" leaves it on the page', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const r = await open();
+    await act(async () => { await fireEvent.press(r.getByLabelText('Withdraw your critique')); });
+    expect(alert).toHaveBeenCalledWith('Withdraw this critique?', 'It comes off the page. This cannot be undone.', expect.any(Array));
+    const keep = (alert.mock.calls[0][2] as AlertButton[]).find((b) => b.style === 'cancel');
+    alert.mockRestore();
+    await act(async () => { keep?.onPress?.(); });
+    expect(mockDeleteComment).not.toHaveBeenCalled();
   });
 
   it('takes it off the page and asks the house', async () => {
     mockDeleteComment.mockResolvedValue(undefined);
     const r = await open();
-    await act(async () => { fireEvent.press(r.getByLabelText('Delete your critique')); });
+    await withdrawCritique(r);
     expect(mockDeleteComment).toHaveBeenCalledWith('c-mine', 'u1');
     expect(lastCommentsWrite().map((c) => c.id)).toEqual(['c-theirs']);
   });
@@ -885,7 +908,7 @@ describe('taking back one’s own critique on a stack', () => {
   it('a refused removal puts it back, and says so', async () => {
     mockDeleteComment.mockRejectedValue({ code: '42501', message: 'refused' });
     const r = await open();
-    await act(async () => { fireEvent.press(r.getByLabelText('Delete your critique')); });
+    await withdrawCritique(r);
     expect(lastCommentsWrite().map((c) => c.id)).toEqual(['c-mine', 'c-theirs']);
     expect(mockToastError).toHaveBeenCalledWith('Your critique could not be removed.');
   });
@@ -942,7 +965,7 @@ describe('the critiques as they stand, sent or waiting', () => {
     // filing would arrive after it and stand.
     useOfflineQueueStore.setState({ queued: [WAITING] });
     const r = await open();
-    await act(async () => { fireEvent.press(r.getByLabelText('Delete your critique')); });
+    await withdrawCritique(r);
     expect(mockDeleteComment).not.toHaveBeenCalled();
     expect(mockEnqueue).toHaveBeenCalledWith({ type: 'remove_list_comment', payload: { comment_id: 'c-new', user_id: 'u1' } });
   });

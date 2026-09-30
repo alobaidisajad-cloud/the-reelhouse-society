@@ -51,6 +51,7 @@ import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere
 import { nav } from '@/src/utils/typedRouter';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
+import { offerWord } from '@/src/lib/pushPrimer';
 
 // TMDB_IMG hardcoded string removed in favor of tmdb.poster / tmdb.backdrop
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -350,7 +351,6 @@ export default function LogDetailScreen() {
   const [shareCardMounted, setShareCardMounted] = useState(false);
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
-  const [commentActionSheetVisible, setCommentActionSheetVisible] = useState(false);
   const [commentReportSheetVisible, setCommentReportSheetVisible] = useState(false);
   const [selectedComment, setSelectedComment] = useState<{ id: string; user_id: string; username: string } | null>(null);
   const viewShotRef = useRef<View>(null);
@@ -472,6 +472,8 @@ export default function LogDetailScreen() {
         // Ensure UI displays the saved data (profiles etc.)
         updateComments(list => list.map(c => (c.id === commentId ? mappedData : c)));
         settleTap('critique', id, tap);
+        // Filed, where members may certify or answer it: the moment to ask to send word.
+        if (user) void offerWord('critique', user.id);
       } else {
         throw new Error('Insert failed');
       }
@@ -834,13 +836,14 @@ export default function LogDetailScreen() {
           critiqueInputRef={critiqueInputRef as React.RefObject<TextInput>}
           onNewCommentChange={handleNewCommentChange}
           onPostComment={handlePostComment}
-          onDeleteComment={handleDeleteComment}
+          onWithdrawComment={handleDeleteComment}
           onPressUser={(username) => (router.push as any)(`/user/${username}` as any)}
           onSectionLayout={(y) => { critiquesSectionY.current = PARALLAX_PADDER_HEIGHT + y; }}
-          onLongPressComment={(comment) => {
+          // A member's report; a reader not signed in has no report to file.
+          onReportComment={user ? (comment) => {
             setSelectedComment({ id: comment.id, user_id: comment.user_id, username: comment.username });
-            setCommentActionSheetVisible(true);
-          }}
+            setCommentReportSheetVisible(true);
+          } : undefined}
           unread={!!logQueryData?.critiquesUnread}
           onReread={() => { void rereadLog(); }}
         />
@@ -891,42 +894,19 @@ export default function LogDetailScreen() {
         onDismiss={() => setReportSheetVisible(false)}
       />
 
-      {/* Comment Moderation: Action Sheet & Report Sheet */}
+      {/* A critique's REPORT: the report sheet, which can also block its author. */}
       {selectedComment && (
-        <>
-          <ContentActionSheet
-            visible={commentActionSheetVisible}
-            contentType="log_comment"
-            contentId={selectedComment.id}
-            targetUserId={selectedComment.user_id}
-            targetUsername={selectedComment.username}
-            hideMute
-            onClose={() => {
-              setCommentActionSheetVisible(false);
-              setSelectedComment(null);
-            }}
-            onReport={() => {
-              setCommentActionSheetVisible(false);
-              setCommentReportSheetVisible(true);
-            }}
-            onBlock={() => {
-              blockUser(selectedComment.user_id);
-              setCommentActionSheetVisible(false);
-              setSelectedComment(null);
-            }}
-          />
-          <ReportSheet
-            visible={commentReportSheetVisible}
-            contentType="log_comment"
-            contentId={selectedComment.id}
-            targetUserId={selectedComment.user_id}
-            targetUsername={selectedComment.username}
-            onDismiss={() => {
-              setCommentReportSheetVisible(false);
-              setSelectedComment(null);
-            }}
-          />
-        </>
+        <ReportSheet
+          visible={commentReportSheetVisible}
+          contentType="log_comment"
+          contentId={selectedComment.id}
+          targetUserId={selectedComment.user_id}
+          targetUsername={selectedComment.username}
+          onDismiss={() => {
+            setCommentReportSheetVisible(false);
+            setSelectedComment(null);
+          }}
+        />
       )}
 
       {/* THE VAULT — a note, opened. Rendered only for the owner, and only once

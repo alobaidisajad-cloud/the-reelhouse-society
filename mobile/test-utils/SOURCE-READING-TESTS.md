@@ -58,6 +58,7 @@ Decisions, as of 2026-09-28:
 |---|---|
 | `src/components/__tests__/animation-parking.test.ts` | Every endless animation parks when its screen is not focused. |
 | `src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts` | Every pull to refresh says the shared sentence when it reached nothing, or names who says it. |
+| `src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts` | The tab bar's three hooks into lastTab (remember on focus, stamp on leaving, reopen only a launch at the Lobby): the layout mounts the whole navigator, and the rule's own behaviour is tested on lastTab itself. |
 | `src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts` | Every toast that says a write was kept for later says it the house's one way. |
 | `src/components/critique/__tests__/oneCritiqueRow.guard.test.ts` | Every screen that draws a member's critique (its spoken name, its DELETE) draws it through the one `CritiqueRow`. |
 | `src/components/__tests__/authRouting.test.ts` | Every route to `/login` says which form it opens. |

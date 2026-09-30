@@ -72,10 +72,13 @@ const RULES: Rule[] = [
   // open sheet, stands alone in its layer.
   { file: 'src/components/layout/ConciergeButton.tsx', style: 'discShadow', gap: { x: 6 }, only: ['right'],
     note: 'brass ＋ has the Lounge key 6pt to its RIGHT; open screen edge to its left' },
-  // The one critique row, for logs and stacks. A stack's critiques are also
-  // MEASURED side by side (captures); a log's are drawn one at a time.
-  { file: 'src/components/critique/CritiqueRow.tsx', match: 'HITSLOP_ROW', gap: { y: 0 }, style: '(the critique row)',
-    note: 'critiques are flush (commentItem hairline) — a mis-press reports the wrong member' },
+  // The one critique row, for logs and stacks: its foot control (WITHDRAW or
+  // REPORT) and the NEXT critique's byline face each other across the hairline,
+  // 14pt of padding each side of it.
+  { file: 'src/components/critique/CritiqueRow.tsx', style: 'commActionBtn', gap: { y: 28 }, only: ['bottom'],
+    note: 'WITHDRAW / REPORT, 28pt above the next byline — a mis-press opens the wrong member' },
+  { file: 'src/components/critique/CritiqueRow.tsx', style: 'commentByline', gap: { y: 28 }, only: ['top'],
+    note: 'the byline, 28pt below the last critique’s WITHDRAW / REPORT' },
   // Not drawn: the share sheet is a stand-in wherever it would open.
   { file: 'src/components/ShareToLoungeModal.tsx', match: 'LOUNGE_SLOP', gap: { y: 6 }, style: '(lounge rows)',
     note: 'loungeItem marginBottom 6 — the later row wins, so the film went to the wrong room' },

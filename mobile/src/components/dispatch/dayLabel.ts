@@ -61,6 +61,32 @@ export function monthLabel(iso: string): string {
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+export type MonthRow<T> =
+  | { type: 'month'; key: string; label: string }
+  | { type: 'entry'; key: string; entry: T };
+
+/**
+ * The rows of a list that runs back through years — a member's room, a film's
+ * archive: each month's divider above its first entry, THE FIRST MONTH TOO.
+ * Under its month the margin's bare day (`dayOfMonth`) is a whole date; above
+ * the first month nothing else says when (neither head carries a month), and
+ * `28` alone could be any month of any year. An entry whose date cannot be
+ * read stands under the month before it.
+ */
+export function byMonth<T extends { id: string; createdAt: string }>(entries: readonly T[]): MonthRow<T>[] {
+  const out: MonthRow<T>[] = [];
+  let month = '';
+  for (const e of entries) {
+    const k = monthKey(e.createdAt);
+    if (k && k !== month) {
+      month = k;
+      out.push({ type: 'month', key: `m-${k}`, label: monthLabel(e.createdAt) });
+    }
+    out.push({ type: 'entry', key: e.id, entry: e });
+  }
+  return out;
+}
+
 /**
  * `28`, for the margin of a room: a full date cannot fit its 38pt, and under a
  * month divider a bare day is complete. Empty for an unreadable date (the

@@ -226,8 +226,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/clearance/Clearance.tsx | — |  |
 | src/components/ContentSkeleton.tsx | — |  |
 | src/components/ControlledInput.tsx | — |  |
+| src/components/critique/__tests__/aCritiqueIsWithdrawnOrReported.test.tsx | 2026-10-01 | new |
 | src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-09-30 | written with the shared critique row |
 | src/components/critique/CritiqueRow.tsx | 2026-09-30 | moved from LogComments, comments kept and made true of both pages |
+| src/components/critique/withdraw.ts | 2026-10-01 | new: the one question before a critique comes off the page |
 | src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-09-29 | new |
 | src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
@@ -666,6 +668,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/sentryMeasures.test.ts | — |  |
 | src/lib/__tests__/signingOutSilencesOnlyThisDevice.test.ts | — |  |
 | src/lib/__tests__/theCounterNamesNobody.test.ts | — |  |
+| src/lib/__tests__/theHouseAsksToSendWordWhenItMeansSomething.test.ts | 2026-10-01 | new |
 | src/lib/__tests__/thePriceIsTheStores.test.ts | — |  |
 | src/lib/__tests__/theTokenMustNotSurviveLogout.test.ts | — |  |
 | src/lib/__tests__/tmdb.test.ts | — |  |
@@ -673,6 +676,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/gateMetricsSink.ts | — |  |
 | src/lib/nativeOnly/revenuecatWebStub.js | — |  |
 | src/lib/pushNotifications.ts | — |  |
+| src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
 | src/lib/queryClient.ts | — |  |
 | src/lib/revenueCat.ts | 2026-09-29 | 17 fixed; FALSE: 'syncs the tier to profiles.role' (the server re-reads RevenueCat and ignores the tier); setup notes with prices; ticket tags |
 | src/lib/schemas.ts | — |  |
@@ -833,6 +837,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/social.types.ts | — |  |
 | src/types/tmdb.types.ts | — |  |
 | src/types/ui.types.ts | — |  |
+| src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/appConfig.guard.test.ts | — |  |
@@ -932,6 +937,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/html.ts | — |  |
 | src/utils/imagePrefetcher.ts | — |  |
 | src/utils/keysetCursor.ts | — |  |
+| src/utils/lastTab.ts | 2026-10-01 | new: back within the half hour, back on the tab |
 | src/utils/linking.ts | — |  |
 | src/utils/logger.ts | — |  |
 | src/utils/mappers.ts | — |  |

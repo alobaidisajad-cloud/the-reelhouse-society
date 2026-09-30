@@ -1,7 +1,7 @@
 /**
  * roomGate.test.ts — every standing, in a public room and a private one.
  */
-import { roomGate, type RoomStanding } from '../roomGate';
+import { knownStanding, roomGate, type RoomStanding } from '../roomGate';
 
 const gate = (standing: RoomStanding, over: Partial<Parameters<typeof roomGate>[0]> = {}) =>
   roomGate({ isPrivate: true, isCreator: false, standing, requesting: false, rosterFailed: false, ...over });
@@ -46,5 +46,26 @@ describe('the gate of a public room', () => {
 
   it('is the transcript for a member', () => {
     expect(gate('approved', { isPrivate: false })).toBe('chat');
+  });
+});
+
+describe('the house recognises its members at the door', () => {
+  const LIST = [
+    { id: 'mine', membership_status: 'approved' as const },
+    { id: 'asked', membership_status: 'pending' as const },
+    { id: 'public-visited' },
+  ];
+
+  it('a room the Lounge list shows you in starts from that standing — straight to the transcript', () => {
+    expect(knownStanding(LIST, 'mine')).toBe('approved');
+    expect(roomGate({ isPrivate: true, isCreator: false, standing: knownStanding(LIST, 'mine'), requesting: false, rosterFailed: false })).toBe('chat');
+    expect(knownStanding(LIST, 'asked')).toBe('pending');
+  });
+
+  it('a room the list does not know waits for the guest list — never the request door', () => {
+    for (const id of ['public-visited', 'never-seen', undefined]) {
+      expect(knownStanding(LIST, id)).toBe('unknown');
+      expect(roomGate({ isPrivate: true, isCreator: false, standing: knownStanding(LIST, id), requesting: false, rosterFailed: false })).toBe('knocking');
+    }
   });
 });

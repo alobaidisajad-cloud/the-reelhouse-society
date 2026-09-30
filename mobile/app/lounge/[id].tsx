@@ -15,7 +15,8 @@ import { useBlockStore } from '@/src/stores/blockStore';
 import { LoungeMessage, LoungeRoom, ReactionSummary, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import { LoungeMember, LoungeMemberStatus } from '@/src/types/social.types';
-import { roomGate, type RoomGate, type RoomStanding } from '@/src/components/lounge/roomGate';
+import { knownStanding, roomGate, type RoomGate, type RoomStanding } from '@/src/components/lounge/roomGate';
+import { offerWord } from '@/src/lib/pushPrimer';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { safeOpenURL } from '@/src/utils/linking';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -356,8 +357,9 @@ export default function LoungeRoomScreen() {
   const [doorOpen, setDoorOpen] = useState(false);
   const [members, setMembers] = useState<LoungeMember[]>([]);
   const [localLounge, setLocalLounge] = useState<(LoungeRoom & { is_member?: boolean }) | null>(null);
-  // Unknown until the roster is read: never taken for "none" (roomGate.ts).
-  const [myStatus, setMyStatus] = useState<RoomStanding>('unknown');
+  // What the Lounge list knows of this member here, else unknown until the roster
+  // is read — never taken for "none" (roomGate.ts, knownStanding).
+  const [myStatus, setMyStatus] = useState<RoomStanding>(() => knownStanding(useLoungeStore.getState().lounges, id));
   const [rosterFailed, setRosterFailed] = useState(false);
   const [pending, setPending] = useState(false);
   const [notFound, setNotFound] = useState(false);
@@ -404,8 +406,8 @@ export default function LoungeRoomScreen() {
     if (!id) return;
     // The screen is reused across rooms: an answer for the room left behind is dropped.
     let cancelled = false;
-    // A new room starts unknown: the last room's standing is not this one's.
-    setMyStatus('unknown');
+    // A new room starts from what the list knows of it: the last room's standing is not this one's.
+    setMyStatus(knownStanding(useLoungeStore.getState().lounges, id));
     setRosterFailed(false);
     setPending(false);
     setMembers([]);
@@ -515,7 +517,9 @@ export default function LoungeRoomScreen() {
     const result = await requestMembership(id);
     if (result === 'error') setPending(false);
     else refreshMembership();
-  }, [id, requestMembership, refreshMembership]);
+    // The door promises to let them in the moment they're admitted: the moment to ask to send word.
+    if (result === 'requested' && user) void offerWord('seat', user.id);
+  }, [id, requestMembership, refreshMembership, user]);
 
   // From the registry the Society page sells from; enforced by tr_tier_gate_lounge_*.
   const seat = useClearance('the-lounge', id ? `/lounge/${id}` : '/lounge');

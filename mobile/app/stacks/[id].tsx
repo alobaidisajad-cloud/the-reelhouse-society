@@ -15,6 +15,7 @@ import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedK
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
+import { offerWord } from '@/src/lib/pushPrimer';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
@@ -344,7 +345,6 @@ export default function StackDetailScreen() {
   const [showLoungeShare, setShowLoungeShare] = useState(false);
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
-  const [commentActionSheetVisible, setCommentActionSheetVisible] = useState(false);
   const [commentReportSheetVisible, setCommentReportSheetVisible] = useState(false);
   const [selectedComment, setSelectedComment] = useState<ListComment | null>(null);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -488,11 +488,12 @@ export default function StackDetailScreen() {
 
   const nothingRead = critiquesUnread && !queryComments;
 
-  const handleLongPressCritique = useCallback((c: Critique) => {
+  /** A critique's REPORT: the report sheet, which can also block its author. */
+  const handleReportCritique = useCallback((c: Critique) => {
     const comment = (queryComments ?? []).find((x) => x.id === c.id);
     if (!comment) return;
     setSelectedComment(comment);
-    setCommentActionSheetVisible(true);
+    setCommentReportSheetVisible(true);
   }, [queryComments]);
 
   const handleToggleComments = useCallback(() => {
@@ -576,6 +577,8 @@ export default function StackDetailScreen() {
         if (!old) return [newComment];
         return old.map(c => c.id === commentId ? newComment : c);
       });
+      // Filed, where members may certify or answer it: the moment to ask to send word.
+      void offerWord('critique', user.id);
 
     } catch (err: unknown) {
       if (isNetworkError(err)) {
@@ -603,9 +606,8 @@ export default function StackDetailScreen() {
   }, [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount]);
 
   /**
-   * Take back one's own critique — as on a log's page. A member could write a
-   * critique on a stack and never take it back: the long press offered report
-   * and block for other people's, and nothing for their own.
+   * Take back one's own critique, once the member has said yes (CritiqueRow
+   * asks) — as on a log's page.
    */
   const handleDeleteComment = useCallback(async (commentId: string) => {
     if (!user) return;
@@ -985,8 +987,9 @@ export default function StackDetailScreen() {
                     c={c}
                     currentUserId={user?.id}
                     onPressUser={handlePressProfile}
-                    onDelete={handleDeleteComment}
-                    onLongPress={handleLongPressCritique}
+                    onWithdraw={handleDeleteComment}
+                    // A member's report; a reader not signed in has no report to file.
+                    onReport={user ? handleReportCritique : undefined}
                   />
                 ))
               )}
@@ -1061,42 +1064,19 @@ export default function StackDetailScreen() {
         onDismiss={() => setReportSheetVisible(false)}
       />
 
-      {/* Comment Moderation: Action Sheet & Report Sheet */}
+      {/* A critique's REPORT: the report sheet, which can also block its author. */}
       {selectedComment && (
-        <>
-          <ContentActionSheet
-            visible={commentActionSheetVisible}
-            contentType="list_comment"
-            contentId={selectedComment.id}
-            targetUserId={selectedComment.user_id}
-            targetUsername={selectedComment.username}
-            hideMute
-            onClose={() => {
-              setCommentActionSheetVisible(false);
-              setSelectedComment(null);
-            }}
-            onReport={() => {
-              setCommentActionSheetVisible(false);
-              setCommentReportSheetVisible(true);
-            }}
-            onBlock={() => {
-              blockUser(selectedComment.user_id);
-              setCommentActionSheetVisible(false);
-              setSelectedComment(null);
-            }}
-          />
-          <ReportSheet
-            visible={commentReportSheetVisible}
-            contentType="list_comment"
-            contentId={selectedComment.id}
-            targetUserId={selectedComment.user_id}
-            targetUsername={selectedComment.username}
-            onDismiss={() => {
-              setCommentReportSheetVisible(false);
-              setSelectedComment(null);
-            }}
-          />
-        </>
+        <ReportSheet
+          visible={commentReportSheetVisible}
+          contentType="list_comment"
+          contentId={selectedComment.id}
+          targetUserId={selectedComment.user_id}
+          targetUsername={selectedComment.username}
+          onDismiss={() => {
+            setCommentReportSheetVisible(false);
+            setSelectedComment(null);
+          }}
+        />
       )}
     </Animated.View>
   );

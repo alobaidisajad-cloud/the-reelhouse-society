@@ -281,6 +281,26 @@ describe('the archive', () => {
     expect(filings?.eq.subject_id).toBe(42);
   });
 
+  it('files each entry under its month and year — a bare day alone could be any month of any year', async () => {
+    mockSearchRows = [hit()];
+    mockFilingRows = [
+      filing({ id: 'f1', created_at: at(2026, 8, 28) }),
+      filing({ id: 'f2', created_at: at(2026, 8, 3) }),
+      filing({ id: 'f3', created_at: at(2019, 8, 28) }),
+    ];
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, 'stalker');
+    await act(async () => {
+      fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
+      await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    });
+    // the newest month too, above its first entry; and August 2019 is not August 2026
+    expect(r.getByText('AUGUST 2026')).toBeTruthy();
+    expect(r.getByText('AUGUST 2019')).toBeTruthy();
+    expect(r.getAllByLabelText('Filed on the 28th')).toHaveLength(2);
+  });
+
   it('goes back to the search first, and out of the archive second', async () => {
     mockSearchRows = [hit()];
     mockFilingRows = [filing()];

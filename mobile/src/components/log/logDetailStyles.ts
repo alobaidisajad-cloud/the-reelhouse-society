@@ -196,20 +196,23 @@ export const s = StyleSheet.create({
   commUsername: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.sepia, includeFontPadding: false, flexShrink: 1 },
   commBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },
   commDate: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog, marginLeft: 'auto', includeFontPadding: false, flexShrink: 0 },
-  commDeleteBtn: { marginTop: 8, alignSelf: 'flex-end' },
+  /** The one control at a critique's foot: WITHDRAW on yours, REPORT on anyone else's. */
+  commActionBtn: { marginTop: 8, alignSelf: 'flex-end' },
   // Bone, not crimson. Crimson measures 3.18:1 on ink and cannot reach AA at
   // any opacity — exactly the finding already written up for the ABANDONED
   // stamp in ReviewContent, which changed its colour rather than its alpha.
-  // That lesson never crossed to here, and this control DELETES a critique.
+  // That lesson never crossed to here, and this control takes a critique off the page.
   // The word carries the warning; it only had to be readable.
   // A destructive control has to read as one AND be legible. Crimson at 9pt
   // measures 3.2:1 on ink — under the 4.5:1 small text needs — but bone made
-  // DELETE look exactly like the body text above it, which is worse: a control
+  // it look exactly like the body text above it, which is worse: a control
   // that erases something should never be the same colour as prose. `danger`
   // is the one red in the palette that clears the bar (5.2:1) while still
-  // unmistakably being a red. The dossier's identical row reads from the same
+  // unmistakably being a red. The Dispatch's identical row reads from the same
   // decision.
-  commDelete: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.danger, includeFontPadding: false },
+  commWithdraw: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.danger, includeFontPadding: false },
+  /** REPORT on another member's critique: said quietly, in the date's grey — it accuses no one until pressed. */
+  commReport: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog, includeFontPadding: false },
 
   // Show earlier/more critiques
   showMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'center', marginTop: 16, paddingVertical: 9, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2 },

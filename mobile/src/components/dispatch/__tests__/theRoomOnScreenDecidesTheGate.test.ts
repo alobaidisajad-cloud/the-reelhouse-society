@@ -85,17 +85,18 @@ describe('the room on screen decides what the screen shows', () => {
   });
 });
 
-// The member's standing is UNKNOWN until the roster is read (roomGate.ts): not
-// "none", which drew the request door for a member who had a seat.
+// The member's standing starts from what the Lounge list knows of THIS room, else
+// UNKNOWN until the roster is read (roomGate.ts, knownStanding): never "none",
+// which drew the request door for a member who had a seat.
 describe('the standing waits for the roster', () => {
-  it('starts unknown', () => {
-    expect(stripComments(SRC)).toMatch(/useState<RoomStanding>\('unknown'\)/);
+  it('starts from what the list knows of this room, by its id', () => {
+    expect(stripComments(SRC)).toMatch(/useState<RoomStanding>\(\(\) => knownStanding\(useLoungeStore\.getState\(\)\.lounges, id\)\)/);
   });
 
-  it('starts unknown again in every room the screen is reused for, with nothing of the last', () => {
+  it('starts again in every room the screen is reused for — from that room’s own entry, with nothing of the last', () => {
     const code = stripComments(SRC);
     const reset = code.slice(code.indexOf('let cancelled = false;'), code.indexOf('const loadLounge = async ()'));
-    for (const call of ["setMyStatus('unknown')", 'setRosterFailed(false)', 'setPending(false)', 'setMembers([])']) {
+    for (const call of ['setMyStatus(knownStanding(useLoungeStore.getState().lounges, id))', 'setRosterFailed(false)', 'setPending(false)', 'setMembers([])']) {
       expect(reset).toContain(call);
     }
   });

@@ -47,10 +47,9 @@ export type PushPermissionState = 'granted' | 'denied' | 'undetermined' | 'unava
  * Settings listed four notification switches and never said whether the device
  * would deliver anything, so all four could be on and the member hear nothing.
  *
- * This only READS. `registerForPushNotifications` and `requestPushPermission`
- * are the only places allowed to prompt, because iOS grants exactly one prompt
- * per install — spending it on a screen someone is merely inspecting spends it
- * forever.
+ * This only READS. `requestPushPermission` is the only place allowed to prompt,
+ * because iOS grants exactly one prompt per install — spending it on a screen
+ * someone is merely inspecting spends it forever.
  *
  * A simulator, where push cannot work at all, reports `unavailable` rather than
  * an alarming `denied`.
@@ -87,7 +86,7 @@ export async function requestPushPermission(): Promise<PushPermissionState> {
 }
 
 /**
- * Register for push notifications and store the token.
+ * Register this device's token, if the member has allowed notices; never asks.
  * Must be called after the user has authenticated.
  */
 export async function registerForPushNotifications(userId: string): Promise<string | null> {
@@ -98,17 +97,12 @@ export async function registerForPushNotifications(userId: string): Promise<stri
   }
 
   try {
-    // Request permission
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== 'granted') {
-      logger.debug('[Push] Permission not granted');
+    // Only what the member has already allowed. iOS grants ONE prompt per install,
+    // and a cold boot is the worst moment to spend it: it is asked where it means
+    // something (pushPrimer.offerWord), or from Settings.
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      logger.debug('[Push] Not allowed (yet): nothing to register');
       return null;
     }
 

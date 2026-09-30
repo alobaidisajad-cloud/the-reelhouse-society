@@ -33,9 +33,11 @@ interface LogCommentsProps {
   critiqueInputRef: RefObject<TextInput>;
   onNewCommentChange: (text: string) => void;
   onPostComment: () => void;
-  onDeleteComment: (id: string) => void;
+  /** After the member has said yes: CritiqueRow asks first. */
+  onWithdrawComment: (id: string) => void;
   onPressUser: (username: string) => void;
-  onLongPressComment?: (comment: LogComment & { user_id: string }) => void;
+  /** Another member's critique, to the report sheet; absent for a reader not signed in. */
+  onReportComment?: (comment: LogComment & { user_id: string }) => void;
   /** The critiques could not be read: say so, not "No critiques yet". */
   unread?: boolean;
   onReread?: () => void;
@@ -51,9 +53,9 @@ export default function LogComments({
   critiqueInputRef,
   onNewCommentChange,
   onPostComment,
-  onDeleteComment,
+  onWithdrawComment,
   onPressUser,
-  onLongPressComment,
+  onReportComment,
   onSectionLayout,
   unread = false,
   onReread,
@@ -123,9 +125,9 @@ export default function LogComments({
                 key={c.id}
                 c={c}
                 currentUserId={currentUserId}
-                onDelete={onDeleteComment}
+                onWithdraw={onWithdrawComment}
                 onPressUser={onPressUser}
-                onLongPress={onLongPressComment}
+                onReport={onReportComment}
               />
             ))}
             {remaining > 0 && (
