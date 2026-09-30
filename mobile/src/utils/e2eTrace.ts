@@ -7,6 +7,9 @@ import Constants from 'expo-constants';
 
 const ON = Constants.expoConfig?.extra?.e2e === true;
 
+/** The sealed E2E build, and no other: see app.config.js. */
+export const E2E_BUILD = ON;
+
 /** What the app decided (a search asked and answered, a state that hid something). */
 export function e2eTrace(event: string, detail?: Record<string, unknown>): void {
   if (!ON) return;

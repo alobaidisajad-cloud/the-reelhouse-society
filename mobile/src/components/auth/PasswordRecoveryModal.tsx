@@ -8,6 +8,7 @@ import Animated from 'react-native-reanimated';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { SocietyEyebrow, HaloIcon, RegistrationBrackets } from './AuthChrome';
 import { ToastHost } from '@/src/components/ToastHost';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 
 interface Props {
   visible: boolean;
@@ -103,7 +104,11 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
                   placeholder="your@email.com"
                   placeholderTextColor={colors.fog}
                   value={forgotEmail}
-                  onChangeText={onEmailChange}
+                  onChangeText={(val) => {
+                    // E2E only: how many characters reached the field, and when (never the text).
+                    e2eTrace('auth.recovery.typed', { length: val.length });
+                    onEmailChange(val);
+                  }}
                   onFocus={() => setEmailFocused(true)}
                   onBlur={() => setEmailFocused(false)}
                   autoCapitalize="none"

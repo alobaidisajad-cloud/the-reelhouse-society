@@ -22,6 +22,7 @@ import {
 
 import { BLOOM, bloomMatrix } from '@/src/theme/light';
 import { useSharedImage } from './useSharedImage';
+import { E2E_BUILD } from '@/src/utils/e2eTrace';
 
 const MATRIX = bloomMatrix();
 const FADE = {
@@ -53,6 +54,10 @@ export function BloomLayer({ image, width, height, opacity }: {
   height: number;
   opacity: SharedValue<number>;
 }) {
+  // Not in the sealed E2E build. Its emulator draws on a software GPU, where this
+  // blur took ~700ms a frame, and three runs lost the emulator on the film page.
+  // The E2E proves the flows; the bloom is drawn and measured by the screens job.
+  if (E2E_BUILD) return null;
   const iw = width * BLOOM.scale;
   const ih = height * BLOOM.scale;
   return (

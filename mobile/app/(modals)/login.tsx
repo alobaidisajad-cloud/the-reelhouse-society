@@ -28,6 +28,7 @@ import { PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMet
 import { EmailConfirmationScreen } from '@/src/components/auth/EmailConfirmationScreen';
 import { PasswordRecoveryModal } from '@/src/components/auth/PasswordRecoveryModal';
 import { arrive, MS } from '@/src/theme/motion';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
@@ -271,7 +272,11 @@ export default function LoginScreen() {
                 placeholder={isLogin ? 'patron@cinema.org' : 'your@email.com'}
                 placeholderTextColor={colors.fog}
                 value={emailOrUsername}
-                onChangeText={(val) => setEmailOrUsername(val.trim().replace(/\s/g, ''))}
+                onChangeText={(val) => {
+                  // E2E only: how many characters reached the field, and when (never the text).
+                  e2eTrace('auth.email.typed', { length: val.length });
+                  setEmailOrUsername(val.trim().replace(/\s/g, ''));
+                }}
                 onFocus={() => onInputFocus('email')}
                 onBlur={onInputBlur}
                 editable={!submitting}
