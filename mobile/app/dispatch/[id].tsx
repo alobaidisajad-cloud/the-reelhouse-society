@@ -228,10 +228,13 @@ export default function FilingReader() {
     if (!live || sending) return;
     setSending(true);
     try {
-      await useDispatch.getState().addCritique(live.id, draft);
+      const res = await useDispatch.getState().addCritique(live.id, draft);
       setDraft('');
-      clearDraft(me?.id, 'critique', live.id); // only once the house has it
+      clearDraft(me?.id, 'critique', live.id); // once the house or the queue has it
       setComposing(false);
+      // Queued without a connection: said, as a filing says it — it was drawn as
+      // though it had gone.
+      if (res?.offline) reelToast.success('Filed. It goes out when the wire is back.');
     } catch {
       // The store rolls the row back and keeps the text for another try.
       reelToast.error('That critique did not go.');

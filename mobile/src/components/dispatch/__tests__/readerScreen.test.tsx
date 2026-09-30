@@ -29,11 +29,14 @@ let mockRowFails = false;
 let mockCritiqueRows: unknown[] = [];
 let mockNextRows: unknown[] = [];
 let mockWriteFails = false;
+/** No connection: the write throws as fetch does, and the store queues it. */
+let mockWriteOffline = false;
 const mockToastError = jest.fn();
+const mockToastSuccess = jest.fn();
 jest.mock('@/src/utils/reelToast', () => {
   const fn = Object.assign(jest.fn(), {
     error: (...a: unknown[]) => mockToastError(...a),
-    success: jest.fn(),
+    success: (...a: unknown[]) => mockToastSuccess(...a),
   });
   return { __esModule: true, default: fn };
 });
@@ -84,7 +87,9 @@ jest.mock('@/src/lib/supabase', () => ({
         : builder(mockRow));
       chain.limit = () => builder(mockNextRows); // the next part (critiques use range)
       // Writes: missing, every act would roll back as if refused.
-      chain.insert = () => (mockWriteFails
+      chain.insert = () => (mockWriteOffline
+        ? Promise.reject(Object.assign(new TypeError('Network request failed'), { name: 'TypeError' }))
+        : mockWriteFails
         ? Promise.resolve({ data: null, error: { message: 'refused', code: '42501' } })
         : Promise.resolve({ data: [], error: null }));
       // An UPDATE or DELETE asks for its rows back (`.select('id')`): a row RLS
@@ -159,6 +164,8 @@ beforeEach(() => {
   mockCritiqueRows = [];
   mockNextRows = [];
   mockWriteFails = false;
+  mockWriteOffline = false;
+  mockToastSuccess.mockClear();
   mockToastError.mockClear();
   mockPushed.length = 0;
   mockSheetProps.length = 0;
@@ -792,6 +799,21 @@ describe('the reader', () => {
     expect(mockToastError).toHaveBeenCalledWith('That critique did not go.');
     // The words survive for another try.
     expect(getByLabelText('Your critique').props.value).toBe('That is the argument.');
+  });
+
+  it('a critique written without a connection says it goes out when the wire is back', async () => {
+    // It was queued and drawn as though it had gone, with nothing said.
+    mockWriteOffline = true;
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('Write a critique')); });
+    await act(async () => {
+      fireEvent.changeText(getByLabelText('Your critique'), 'That is the argument.');
+    });
+    await act(async () => { fireEvent.press(getByLabelText('File this critique')); });
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockToastSuccess).toHaveBeenCalledWith('Filed. It goes out when the wire is back.');
+    expect(mockToastError).not.toHaveBeenCalled();
   });
 
   it('asks for the critiques in the order its own header shows', async () => {
