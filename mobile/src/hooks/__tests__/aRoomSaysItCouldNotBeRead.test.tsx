@@ -43,3 +43,15 @@ it('a room whose read failed says so — and asking again clears it', async () =
   expect(result.current.tabFailed.watchlist).toBe(false);
   expect(result.current.tabDataLoaded.watchlist).toBe(true);
 });
+
+it('a member whose read failed answers false, so a pull over a file already shown can say so', async () => {
+  const { result } = await renderHook(() => useProfileData({ username: 'vesper', isSelf: false, isFollowing: false, activeTab: null as never }));
+  await waitFor(() => expect(result.current.targetUser?.id).toBe('u9'));
+
+  mockService.fetchProfile.mockRejectedValueOnce(new Error('Network request failed'));
+  let read: boolean | void = true;
+  await act(async () => { read = await result.current.fetchUserData(); });
+  expect(read).toBe(false);
+  // The file already drawn stays drawn.
+  expect(result.current.targetUser?.id).toBe('u9');
+});

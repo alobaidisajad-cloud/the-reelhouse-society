@@ -38,7 +38,7 @@ import { z } from 'zod';
 import { EDGE_LIT } from '@/src/theme/light';
 import { useLineScale } from '@/src/hooks/useTextScale';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
-import { EmptyOffline } from '@/src/components/EmptyStates';
+import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { nav } from '@/src/utils/typedRouter';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
@@ -248,6 +248,11 @@ export default function StackDetailScreen() {
     await queryClient.invalidateQueries({ queryKey: ['stack', id] });
     await queryClient.invalidateQueries({ queryKey: ['stackComments', id] });
     setRefreshing(false);
+    // The page stays as it was; a pull that reached nothing says so, as every list does.
+    if (queryClient.getQueryState(['stack', id])?.status === 'error'
+      || queryClient.getQueryState(['stackComments', id])?.status === 'error') {
+      reelToast.error(REFRESH_FAILED);
+    }
   }, [queryClient, id]);
   const keyboard = useAnimatedKeyboard();
   const animatedContainerStyle = useAnimatedStyle(() => ({

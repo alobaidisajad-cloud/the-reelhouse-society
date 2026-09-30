@@ -48,6 +48,7 @@ import { z } from 'zod';
 import { WASH } from '@/src/theme/light';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { nav } from '@/src/utils/typedRouter';
+import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 
 // TMDB_IMG hardcoded string removed in favor of tmdb.poster / tmdb.backdrop
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -406,6 +407,8 @@ export default function LogDetailScreen() {
     setRefreshing(true);
     await queryClient.invalidateQueries({ queryKey: ['log', id] });
     setRefreshing(false);
+    // The page stays as it was; a pull that reached nothing says so, as every list does.
+    if (queryClient.getQueryState(['log', id])?.status === 'error') reelToast.error(REFRESH_FAILED);
   }, [queryClient, id]);
 
   const handlePostComment = async () => {

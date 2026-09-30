@@ -11,6 +11,8 @@ import { useSocialStore } from '@/src/stores/socialStore';
 import { followUser, unfollowUser } from '@/src/stores/domain/socialSlice';
 import { shouldRepairHandleRoute, wasMyHandle } from '@/src/utils/handleHistory';
 import { nav } from '@/src/utils/typedRouter';
+import reelToast from '@/src/utils/reelToast';
+import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 
 export const normalizeSocialHash = (links?: any[] | Record<string, string> | null): string => {
   if (!links) return '';
@@ -278,7 +280,8 @@ export function useProfileController(usernameOverride?: string) {
   const onRefresh = useCallback(async () => {
     setRefreshingLocal(true);
     TactileEngine.navigate();
-    await data.fetchUserData();
+    // `false`: the member could not be read. The page stays as it was, and says so.
+    const read = await data.fetchUserData();
     
     if (activeTab) {
       if (activeTab === 'archive') {
@@ -323,6 +326,7 @@ export function useProfileController(usernameOverride?: string) {
     }
 
     setRefreshingLocal(false);
+    if (read === false) reelToast.error(REFRESH_FAILED);
   }, [data, activeTab, archiveSieve, archiveSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, physicalSearch, listsSort, listsSearch]);
 
   const toggleFollow = useCallback(async () => {

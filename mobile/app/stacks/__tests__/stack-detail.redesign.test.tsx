@@ -33,6 +33,15 @@ jest.mock('expo-router', () => ({
 // Buster (in the failed state) pauses when its screen is not focused.
 jest.mock('@react-navigation/native', () => ({ ...jest.requireActual('@react-navigation/native'), useIsFocused: () => true }));
 const mockSetQueryData = jest.fn();
+/** What each query says after a pull: `error` when it reached nothing. */
+let mockQueryState: Record<string, { status: string } | undefined> = {};
+/** The list's pull, as the screen hands it over. */
+let mockRefresh: { props: { onRefresh: () => Promise<void> } } | null = null;
+const mockToastError = jest.fn();
+jest.mock('@/src/utils/reelToast', () => {
+  const fn = Object.assign(jest.fn(), { error: (...a: unknown[]) => mockToastError(...a), success: jest.fn(), info: jest.fn() });
+  return { __esModule: true, default: fn };
+});
 /** The stack query's options, so a test can run its real queryFn. */
 let mockStackOpts: { queryFn: () => Promise<{ list: Record<string, unknown> }> } | null = null;
 jest.mock('@tanstack/react-query', () => ({
@@ -40,6 +49,7 @@ jest.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({
     setQueryData: mockSetQueryData, getQueryData: jest.fn(), removeQueries: jest.fn(),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),
+    getQueryState: (key: unknown[]) => mockQueryState[String(key[0])],
   }),
   useQuery: (opts: { queryKey: unknown[] }) => {
     const key = String(opts.queryKey[0]);
@@ -84,15 +94,16 @@ jest.mock('@/src/components/layout/CinematicFlashList', () => {
   const React = require('react');
   const { View } = require('react-native');
   const render = (c: React.ReactNode) => (typeof c === 'function' ? React.createElement(c as never) : c);
-  return { CinematicFlashList: ({ ListHeaderComponent, ListEmptyComponent, data, renderItem }: {
+  return { CinematicFlashList: ({ ListHeaderComponent, ListEmptyComponent, data, renderItem, refreshControl }: {
     ListHeaderComponent?: React.ReactNode; ListEmptyComponent?: React.ReactNode;
     data?: unknown[]; renderItem?: (a: { item: unknown; index: number }) => React.ReactNode;
-  }) => React.createElement(View, null,
+    refreshControl?: unknown;
+  }) => (mockRefresh = refreshControl as never, React.createElement(View, null,
     render(ListHeaderComponent),
     // Every row rendered, so the index is tested as drawn.
     ...(data ?? []).map((item, index) =>
       React.createElement(React.Fragment, { key: index }, renderItem ? renderItem({ item, index }) : null)),
-    (data ?? []).length === 0 ? render(ListEmptyComponent) : null) };
+    (data ?? []).length === 0 ? render(ListEmptyComponent) : null)) };
 });
 jest.mock('@/src/components/ShareToLoungeModal', () => () => null);
 jest.mock('@/src/components/moderation/ReportSheet', () => () => null);
@@ -806,5 +817,23 @@ describe('a stack it could not reach is not a sealed one', () => {
     const r = render(<StackDetailScreen />);
     expect(r.getByText('CLASSIFIED')).toBeTruthy();
     expect(r.queryByText('Transmission Interrupted')).toBeNull();
+  });
+});
+
+describe('a pull that reached nothing', () => {
+  beforeEach(() => { mockQueryState = {}; mockToastError.mockClear(); });
+
+  it('keeps the stack, and says so — it said nothing', async () => {
+    mount();
+    mockQueryState = { stack: { status: 'error' } };
+    await act(async () => { await mockRefresh!.props.onRefresh(); });
+    expect(mockToastError).toHaveBeenCalledWith('Could not refresh — check your connection.');
+  });
+
+  it('a pull that was answered says nothing', async () => {
+    mount();
+    mockQueryState = { stack: { status: 'success' }, stackComments: { status: 'success' } };
+    await act(async () => { await mockRefresh!.props.onRefresh(); });
+    expect(mockToastError).not.toHaveBeenCalled();
   });
 });

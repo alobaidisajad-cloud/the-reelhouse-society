@@ -39,12 +39,20 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 let mockQuery: Record<string, unknown>;
 let mockOptions: { queryFn: (ctx: { signal?: AbortSignal }) => Promise<Record<string, unknown>> };
 let mockCache: Record<string, unknown> | undefined;
+/** What the record's query says after a pull: `error` when it reached nothing. */
+let mockQueryState: { status: string } | undefined;
+const mockToastError = jest.fn();
+jest.mock('@/src/utils/reelToast', () => {
+  const fn = Object.assign(jest.fn(), { error: (...a: unknown[]) => mockToastError(...a), success: jest.fn(), info: jest.fn() });
+  return { __esModule: true, default: fn };
+});
 jest.mock('@tanstack/react-query', () => ({
   ...jest.requireActual('@tanstack/react-query'),
   useQuery: (opts: never) => { mockOptions = opts; return mockQuery; },
   useQueryClient: () => ({
     setQueryData: jest.fn((_k: unknown, fn: (old: unknown) => unknown) => { mockCache = fn(mockCache) as never; }),
     getQueryData: jest.fn(() => mockCache),
+    getQueryState: jest.fn(() => mockQueryState),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()), removeQueries: jest.fn(),
   }),
 }));
@@ -308,5 +316,27 @@ describe('the record offers what the card offers', () => {
       clock.mockRestore();
     }
     expect(r.getByLabelText('Save film to your watchlist')).toBeTruthy();
+  });
+});
+
+describe('a pull that reached nothing', () => {
+  const pull = async (r: R) => {
+    // The pull is the scroll view's own refreshControl, carried as a prop.
+    const scroller = nodes(r).find((n) => typeof n.props?.refreshControl?.props?.onRefresh === 'function');
+    await act(async () => { await scroller!.props.refreshControl.props.onRefresh(); });
+  };
+
+  it('keeps the record, and says so — it said nothing', async () => {
+    const r = await page();
+    mockQueryState = { status: 'error' };
+    await pull(r);
+    expect(mockToastError).toHaveBeenCalledWith('Could not refresh — check your connection.');
+  });
+
+  it('a pull that was answered says nothing', async () => {
+    const r = await page();
+    mockQueryState = { status: 'success' };
+    await pull(r);
+    expect(mockToastError).not.toHaveBeenCalled();
   });
 });

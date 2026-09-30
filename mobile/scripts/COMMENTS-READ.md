@@ -589,6 +589,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/SettingsScreen.tsx | — |  |
 | src/features/settings/SettingsSections.tsx | — |  |
 | src/generated/lucideIcons.js | — |  |
+| src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |

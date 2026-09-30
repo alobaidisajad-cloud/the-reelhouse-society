@@ -28,6 +28,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts, radii, spacing } from '@/src/theme/theme';
 import { REPORT_REASON_LABELS, type ModAction, type ModActionRecord, type ReportReason } from '@/src/types/moderation';
 import reelToast from '@/src/utils/reelToast';
+import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -579,10 +580,12 @@ export default function TribunalScreen() {
     }
   }, []);
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     TactileEngine.navigate();
     if (activeView === 'pending') {
-      refetch();
+      const r = await refetch();
+      // The docket stays as it was; a pull that reached nothing says so.
+      if (r.isError) reelToast.error(REFRESH_FAILED);
     } else {
       setPriorityItems([]);
       setHasMorePriority(true);

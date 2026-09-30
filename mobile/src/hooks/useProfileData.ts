@@ -313,7 +313,7 @@ export function useProfileData({
   const targetUserIdRef = useRef<string | undefined>(undefined);
   targetUserIdRef.current = state.targetUser?.id;
 
-  const fetchUserData = useCallback(async () => {
+  const fetchUserData = useCallback(async (): Promise<boolean | void> => {
     if (!username) return;
 
     // P0-A: Abort any in-flight fetch before starting a new one
@@ -411,6 +411,8 @@ export function useProfileData({
         if (isMounted.current) {
           dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err : new Error(String(err)) });
         }
+        // Said to the caller too: a pull over a page already shown says it reached nothing.
+        return false;
     }
   }, [username, isSelf, fetchLogs]);
 
