@@ -156,18 +156,34 @@ let REPO_FILES;
 function repoFiles() {
   if (!REPO_FILES) {
     const all = gitFiles(REPO, []);
-    REPO_FILES = { all, names: new Set(all.map((f) => path.posix.basename(f))) };
+    REPO_FILES = { all, paths: new Set(all), names: new Set(all.map((f) => path.posix.basename(f))) };
   }
   return REPO_FILES;
 }
 
+/**
+ * Whether a named file exists — as CI sees it. Against the files git tracks, by
+ * their exact case: on this machine the disk ignores case and holds files git
+ * ignores, so a name that passed here failed on the runner's Linux. Only an
+ * installed package is looked up on disk, and CI installs the same packages.
+ */
 function fileExists(ref, from) {
   // An opening bracket with no closing one is prose before the name, not part of it.
   const clean = ref.replace(/^@\//, '').replace(/^\((?![^)]*\))/, '').replace(/[.,;:)]+$/, '');
+  const { all, names, paths } = repoFiles();
   const dir = path.dirname(path.join(MOBILE, from));
-  const roots = [dir, MOBILE, REPO, path.join(MOBILE, 'node_modules'), path.join(MOBILE, 'src')];
-  for (const r of roots) if (fs.existsSync(path.join(r, clean))) return true;
-  const { all, names } = repoFiles();
+  for (const r of [dir, MOBILE, REPO, path.join(MOBILE, 'src')]) {
+    if (paths.has(path.relative(REPO, path.join(r, clean)).split(path.sep).join('/'))) return true;
+  }
+  if (fs.existsSync(path.join(MOBILE, 'node_modules', clean))) return true;
+  // A path git is told to ignore is something a run MAKES (coverage/, a build):
+  // named, it is true whether or not this checkout has made it yet.
+  for (const r of [dir, MOBILE]) {
+    try {
+      execFileSync('git', ['check-ignore', '-q', path.join(r, clean)], { cwd: REPO, stdio: 'ignore' });
+      return true;
+    } catch { /* not ignored */ }
+  }
   if (!clean.includes('/')) return names.has(clean);
   const tail = '/' + clean.replace(/^\.{1,2}\//, '');
   return all.some((f) => ('/' + f).endsWith(tail));
