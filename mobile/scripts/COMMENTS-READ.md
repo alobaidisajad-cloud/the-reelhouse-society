@@ -360,6 +360,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/HapticTab.tsx | — |  |
 | src/components/home/__tests__/theLobbySaysWhenTheCatalogueIsAway.test.tsx | — |  |
 | src/components/home/__tests__/theMarqueeSaysWhereItsFilmCameFrom.test.ts | — |  |
+| src/components/home/__tests__/thePulseIsDarkOnlyWhenItIs.test.tsx | 2026-09-30 | written with the Pulse's empty line |
 | src/components/home/FeaturedCritique.tsx | — |  |
 | src/components/home/FilmStripRow.tsx | — |  |
 | src/components/home/FilmTicker.tsx | — |  |

@@ -154,6 +154,10 @@ function SocialPulseSectionInner({ activities, featuredId }: {
 
   // Only a wire that ARRIVED empty is said to be empty; one still on its way,
   // or one that could not be read, draws nothing here (the Lobby says why).
+  // Nor does one emptied here: its only log is the Lead Story above, or the
+  // member muted what it held. "When a member logs their first film" said of
+  // a wire whose log is on the same screen is untrue.
+  if (visibleActivities.length === 0 && activities.length > 0) return null;
   if (visibleActivities.length === 0) {
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={s.pulseSection}>
