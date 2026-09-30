@@ -22,8 +22,7 @@ appId: com.reelhouse.society
     visible:
       id: "film-stub"
     timeout: 15000
-- tapOn:
-    id: "film-stub"
+- runFlow: subflows/open_the_stub.yaml
 - tapOn:
     id: "film-act-log"
 - extendedWaitUntil:

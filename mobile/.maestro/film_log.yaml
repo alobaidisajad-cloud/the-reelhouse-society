@@ -9,8 +9,7 @@ appId: com.reelhouse.society
     file: subflows/open_a_film.yaml
     env:
       FILM: "The Matrix"
-- tapOn:
-    id: "film-stub"
+- runFlow: subflows/open_the_stub.yaml
 - tapOn:
     id: "film-act-log"
 - extendedWaitUntil:

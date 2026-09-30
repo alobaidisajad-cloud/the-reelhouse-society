@@ -62,6 +62,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/README.md | 2026-09-29 | brought up to date with the one-flow-at-a-time runner and the Initiation |
 | .maestro/social_pulse_flow.yaml | 2026-09-29 | true as written |
 | .maestro/subflows/open_a_film.yaml | 2026-09-29 | true as written |
+| .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
 | .maestro/subflows/sign_in.yaml | 2026-09-29 | rewritten this session: passes through the Initiation |
 | ANDROID_LAUNCH.md | — |  |
 | app.config.js | — |  |

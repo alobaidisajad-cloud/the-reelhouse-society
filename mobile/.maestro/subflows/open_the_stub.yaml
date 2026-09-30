@@ -1,0 +1,14 @@
+appId: com.reelhouse.society
+---
+# Open the film's stub, and wait until its acts are drawn. The stub opens AND
+# closes the tray, so its tap is never repeated: Maestro taps again when a tap
+# seems to change nothing, and on a slow emulator (run 36723654650, where the
+# Darkroom took 13 s to be ready) the tray was not drawn yet when it looked.
+# The second tap closed it, and three flows found no LOG to tap.
+- tapOn:
+    id: "film-stub"
+    retryTapIfNoChange: false
+- extendedWaitUntil:
+    visible:
+      id: "film-tray-scrim"
+    timeout: 15000

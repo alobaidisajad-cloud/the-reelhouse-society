@@ -17,8 +17,7 @@ appId: com.reelhouse.society
     visible: ".*OPERATING IN ISOLATION.*"
     timeout: 15000
 
-- tapOn:
-    id: "film-stub"
+- runFlow: subflows/open_the_stub.yaml
 - tapOn:
     id: "film-act-log"
 - extendedWaitUntil:
