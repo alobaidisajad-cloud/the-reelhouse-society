@@ -38,7 +38,7 @@ const chain = () => {
 
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: () => chain() } }));
 jest.mock('@/src/stores/dispatch', () => ({
-  useDispatch: { getState: () => ({ loadMarks: jest.fn() }) },
+  useDispatch: { getState: () => ({ loadMarks: jest.fn(), certifiedIds: new Set<string>() }) },
 }));
 jest.mock('@/src/utils/logger', () => ({
   logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },

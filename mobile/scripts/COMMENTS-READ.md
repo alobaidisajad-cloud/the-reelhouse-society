@@ -290,6 +290,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/dayLabel.ts | 2026-09-29 | 24-hour reason moved here from paperMetrics; 'margin never scales' was false (displayTextProps 1.2) |
 | src/components/dispatch/EssayBody.tsx | — |  |
 | src/components/dispatch/excerpt.ts | — |  |
+| src/components/dispatch/FilingRow.tsx | — |  |
 | src/components/dispatch/paper/PaperBallot.tsx | — |  |
 | src/components/dispatch/paper/PaperComposer.tsx | — |  |
 | src/components/dispatch/paper/PaperCritiques.tsx | — |  |
@@ -816,6 +817,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/appConfig.guard.test.ts | — |  |
+| src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |
 | src/utils/__tests__/boundedCounts.guard.test.ts | — |  |
 | src/utils/__tests__/calendarDates.test.ts | — |  |

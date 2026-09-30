@@ -24,7 +24,7 @@ import {
   DayDivider, EndMark, PaperEmpty, PaperSkeletons,
 } from '@/src/components/dispatch/paper/PaperFrame';
 import { PaperBack, PaperRoom } from '@/src/components/dispatch/paper/PaperMore';
-import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
+import { FilingRow } from '@/src/components/dispatch/FilingRow';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth, PAPER_MAX } from '@/src/components/dispatch/paper/paperMetrics';
 import { itemType } from '@/src/components/dispatch/paper/paperPerf';
@@ -92,42 +92,23 @@ export default function MemberRoomScreen() {
     if (item.type === 'month') return <DayDivider label={item.label} />;
 
     const f = item.filing;
-    // The house's total when fetched, corrected by the reader's live mark: it
-    // moves on a tap and moves back on its own if the store rolls a refusal back.
-    const count = f.certifyCount
-      + (certifiedIds.has(f.id) ? 1 : 0)
-      - (certifiedAtFetch.has(f.id) ? 1 : 0);
-
     return (
-      <PaperPost
-        kind={f.kind}
-        author={f.author}
+      <FilingRow
+        f={f}
         // The head says whose room this is. See the note at the top of the file.
         noByline
-        body={f.kind === 'dossier' ? (f.title ?? f.body) : f.body}
-        source={f.source ?? undefined}
-        film={f.film}
+        // No byline link: it would open the room you are standing in.
+        toAuthor={false}
         // The day of the month, under the month's own divider.
         order={dayOfMonth(f.createdAt) || '—'}
         orderIs="day"
-        measureWidth={width}
-        certifyCount={count}
-        commentCount={f.commentCount}
+        width={width}
+        // The house's total when fetched, corrected by the reader's live mark: it
+        // moves on a tap and moves back on its own if the store rolls a refusal back.
+        shift={(certifiedIds.has(f.id) ? 1 : 0) - (certifiedAtFetch.has(f.id) ? 1 : 0)}
         certified={certifiedIds.has(f.id)}
         saved={savedIds.has(f.id)}
-        answered={!!f.answerId}
-        spoiler={f.spoilerLabel}
-        withheld={!!f.withheldAt}
-        ended={f.endedBy ?? undefined}
-        edited={!!f.editedAt}
-        series={f.seriesTitle ? `Part ${f.partNumber} of ${f.seriesTitle}` : undefined}
-        onOpen={() => nav.push(`/dispatch/${f.id}`)}
-        onCritique={() => nav.push(`/dispatch/${f.id}`)}
-        onCertify={me ? (next) => useDispatch.getState().certify(f.id, next) : undefined}
-        onSave={me ? (next) => useDispatch.getState().save(f.id, next) : undefined}
-        onShare={() => nav.push(`/dispatch/${f.id}`)}
-        onFilm={f.subjectId ? () => nav.push(`/film/${f.subjectId}`) : undefined}
-        // No `onAuthor`: it would open the room you are standing in.
+        member={!!me}
       />
     );
   }, [width, certifiedIds, savedIds, certifiedAtFetch, me]);

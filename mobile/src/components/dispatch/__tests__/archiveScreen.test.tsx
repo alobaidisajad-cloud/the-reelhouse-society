@@ -76,6 +76,8 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.ilike = (k: string, v: unknown) => { asked.ilike[k] = v; return self(); };
       chain.order = (k: string, o: unknown) => { asked.order = [k, o]; return self(); };
       chain.in = () => Promise.resolve({ data: [], error: null });
+      // A mark's write: accepted (without it the store undid every certify).
+      chain.insert = () => Promise.resolve({ data: null, error: null });
       chain.range = (a: number, b: number) => {
         asked.range = [a, b];
         return Promise.resolve({
@@ -101,6 +103,20 @@ jest.mock('@/src/lib/supabase', () => ({
   },
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
+
+/** Every render of a filing's row, counted by its one "Share this filing" control. */
+const mockRowRenders: string[] = [];
+jest.mock('@/src/components/PressableScale', () => {
+  const Real = jest.requireActual('@/src/components/PressableScale').default;
+  const ReactActual = jest.requireActual('react');
+  return {
+    __esModule: true,
+    default: (props: { accessibilityLabel?: string }) => {
+      if (props.accessibilityLabel === 'Share this filing') mockRowRenders.push('row');
+      return ReactActual.createElement(Real, props);
+    },
+  };
+});
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
@@ -373,5 +389,37 @@ describe('the archive', () => {
     mockSearchRows = [];
     await type(r, 'zzzz');
     expect(r.getByText(/Nobody has filed about that film/)).toBeTruthy();
+  });
+});
+
+describe('a mark made in the archive', () => {
+  const open = async () => {
+    mockSearchRows = [hit()];
+    mockFilingRows = [filing({ id: 'f1' }), filing({ id: 'f2', body: 'A second take.' }), filing({ id: 'f3', body: 'A third take.' })];
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, 'stalker');
+    await act(async () => {
+      fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
+      await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    });
+    // The clock moves before the next press: under fake timers Date.now stands
+    // still, and PressableScale swallows a second press in the same instant.
+    await act(async () => { jest.advanceTimersByTime(1000); });
+    return r;
+  };
+
+  it('moves the count with the heart — it stood still while the heart filled', async () => {
+    const r = await open();
+    // Awaited on its own: fireEvent runs an act of its own (see `type` above).
+    await fireEvent.press(r.getAllByLabelText('Certify this. 5 members have certified this')[0]);
+    expect(r.getByLabelText('Certified. 6 members have certified this')).toBeTruthy();
+  });
+
+  it('redraws that filing alone', async () => {
+    const r = await open();
+    mockRowRenders.length = 0;
+    await fireEvent.press(r.getAllByLabelText('Certify this. 5 members have certified this')[1]);
+    expect(mockRowRenders).toHaveLength(1);
   });
 });

@@ -55,6 +55,12 @@ export interface DispatchArchive {
   /** The chosen film, its filings, and the two numbers on its plate. */
   film: PaperFilm | null;
   filings: Filing[];
+  /**
+   * The filings the member had already certified when this page read them — as
+   * the room keeps it. A count on screen is the house's number at that moment,
+   * so it moves by the member's mark only when the mark has moved since.
+   */
+  certifiedAtFetch: Set<string>;
   count: number;
   span: string;
   loading: boolean;
@@ -94,6 +100,7 @@ export function useDispatchArchive(): DispatchArchive {
 
   const [film, setFilm] = useState<PaperFilm | null>(null);
   const [filings, setFilings] = useState<Filing[]>([]);
+  const [certifiedAtFetch, setCertifiedAtFetch] = useState<Set<string>>(() => new Set());
   const [count, setCount] = useState(0);
   const [span, setSpan] = useState('');
   const [loading, setLoading] = useState(false);
@@ -235,6 +242,13 @@ export function useDispatchArchive(): DispatchArchive {
       // The member's own marks, for the rows this page brought — the same call
       // a member's room makes, for the same reason.
       await useDispatch.getState().loadMarks(got);
+      if (mine !== seq.current) return;
+      const live = useDispatch.getState().certifiedIds;
+      setCertifiedAtFetch((prev) => {
+        const next = from === 0 ? new Set<string>() : new Set(prev);
+        for (const f of got) if (live.has(f.id)) next.add(f.id);
+        return next;
+      });
     } catch (e) {
       if (mine === seq.current) logger.warn(`[archive] ${String(e)}`);
     } finally {
@@ -251,7 +265,7 @@ export function useDispatchArchive(): DispatchArchive {
     // film's offset and skip this one's opening filings.
     fetched.current = 0;
     setFilm(m.film);
-    setFilings([]); setCount(0); setSpan(''); setMore(false);
+    setFilings([]); setCertifiedAtFetch(new Set()); setCount(0); setSpan(''); setMore(false);
     void page(0);
   }, [page]);
 
@@ -259,7 +273,7 @@ export function useDispatchArchive(): DispatchArchive {
     seq.current += 1;
     subjectId.current = null;
     fetched.current = 0;
-    setFilm(null); setFilings([]); setCount(0); setSpan(''); setMore(false);
+    setFilm(null); setFilings([]); setCertifiedAtFetch(new Set()); setCount(0); setSpan(''); setMore(false);
   }, []);
 
   const loadMore = useCallback(() => {
@@ -272,7 +286,7 @@ export function useDispatchArchive(): DispatchArchive {
 
   return {
     query, setQuery,
-    matches, searching, film, filings, count, span, loading, more,
+    matches, searching, film, filings, certifiedAtFetch, count, span, loading, more,
     choose, clear, loadMore,
   };
 }

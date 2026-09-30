@@ -15,7 +15,7 @@
  * would break the moment a row had a margin. So the list scrolls INSIDE the
  * document: one frame, virtualised content, and the rails run the whole height.
  */
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ActivityIndicator, RefreshControl, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
@@ -30,15 +30,14 @@ import {
   RunningHead, type PaperSection,
 } from '@/src/components/dispatch/paper/PaperFrame';
 import { NewFilings, NEW_FILINGS_ROOM } from '@/src/components/dispatch/paper/PaperMore';
-import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth, formatCount, PAPER_MAX } from '@/src/components/dispatch/paper/paperMetrics';
 import { itemType } from '@/src/components/dispatch/paper/paperPerf';
 import { dayKey, dayLabel, hourLabel } from '@/src/components/dispatch/dayLabel';
-import { roomOf } from '@/src/components/dispatch/roomLink';
+import { FilingRow } from '@/src/components/dispatch/FilingRow';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useAuthStore } from '@/src/stores/auth';
-import { useDispatch, type Section, type Sort } from '@/src/stores/dispatch';
+import { useDispatch, type Section } from '@/src/stores/dispatch';
 import type { Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -216,9 +215,11 @@ export default function DispatchScreen() {
     if (item.type === 'day') return <DayDivider label={item.label} />;
     const f = item.filing;
     return (
-      <FeedRow
+      <FilingRow
         f={f}
-        sort={sort}
+        // The margin prints what the page is ordered by: the hour, or the count.
+        order={sort === 'LATEST' ? hourLabel(f.createdAt) : (formatCount(f.certifyCount) ?? '—')}
+        orderIs={sort === 'LATEST' ? 'hour' : 'count'}
         width={width}
         certified={certifiedIds.has(f.id)}
         saved={savedIds.has(f.id)}
@@ -368,44 +369,6 @@ export default function DispatchScreen() {
     </FrozenTab>
   );
 }
-
-/** One filing on the page. */
-const FeedRow = memo(function FeedRow({ f, sort, width, certified, saved, pending, member }: {
-  f: Filing; sort: Sort; width: number; certified: boolean; saved: boolean; pending: boolean; member: boolean;
-}) {
-  return (
-    <PaperPost
-      kind={f.kind}
-      author={f.author}
-      body={f.kind === 'dossier' ? (f.title ?? f.body) : f.body}
-      source={f.source ?? undefined}
-      film={f.film}
-      // The margin prints what the page is ordered by: the hour, or the count.
-      order={sort === 'LATEST' ? hourLabel(f.createdAt) : (formatCount(f.certifyCount) ?? '—')}
-      orderIs={sort === 'LATEST' ? 'hour' : 'count'}
-      measureWidth={width}
-      certifyCount={f.certifyCount}
-      commentCount={f.commentCount}
-      certified={certified}
-      saved={saved}
-      answered={!!f.answerId}
-      spoiler={f.spoilerLabel}
-      withheld={!!f.withheldAt}
-      ended={f.endedBy ?? undefined}
-      edited={!!f.editedAt}
-      series={f.seriesTitle ? `Part ${f.partNumber} of ${f.seriesTitle}` : undefined}
-      pending={pending}
-      onOpen={() => nav.push(`/dispatch/${f.id}`)}
-      onCritique={() => nav.push(`/dispatch/${f.id}`)}
-      onCertify={member ? (next) => useDispatch.getState().certify(f.id, next) : undefined}
-      onSave={member ? (next) => useDispatch.getState().save(f.id, next) : undefined}
-      // Share opens the reader, where the sheet has room.
-      onShare={() => nav.push(`/dispatch/${f.id}`)}
-      onFilm={f.subjectId ? () => nav.push(`/film/${f.subjectId}`) : undefined}
-      onAuthor={f.author ? () => nav.push(roomOf(f.author!.name)) : undefined}
-    />
-  );
-});
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
 export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

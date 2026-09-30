@@ -44,7 +44,7 @@ function stackFilms(films: unknown): { film_id: number; film_title: string; post
     }));
 }
 
-const throwIfError = <T>(res: { error: unknown; data?: T }) => {
+const throwIfError = <R extends { error: unknown }>(res: R): R => {
     if (res.error) throw res.error;
     return res;
 };
@@ -65,8 +65,9 @@ const throwIfRefused = <T>(res: { error: unknown; data?: T[] | null }, where: st
 const handleDuplicateLogMerge = async (error: any, dbPayload: any, _fakeId?: string): Promise<MutationResult | null> => {
     const errLower = String(error.message || '').toLowerCase();
     if (error.code === '23505' || errLower.includes('duplicate') || errLower.includes('unique')) {
-        // Select the entire row to preserve viewing_history.
-        const existing = await supabase.from('logs').select('*').eq('user_id', dbPayload.user_id).eq('film_id', dbPayload.film_id).maybeSingle();
+        // Select the entire row to preserve viewing_history. A read that failed is
+        // raised: taken for "no row", the replay reported done and the log was lost.
+        const existing = throwIfError(await supabase.from('logs').select('*').eq('user_id', dbPayload.user_id).eq('film_id', dbPayload.film_id).maybeSingle());
         if (existing.data) {
             const existingData = existing.data;
 
@@ -299,7 +300,9 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         
         // Protect viewing_history array from Last-Write-Wins offline erasure
         if (upds.viewing_history && Array.isArray(upds.viewing_history)) {
-            const { data } = await supabase.from('logs').select('viewing_history').eq('id', id).maybeSingle();
+            // Raised when it fails: unread, the phone's history would overwrite the
+            // server's — the erasure this merge exists to prevent.
+            const { data } = throwIfError(await supabase.from('logs').select('viewing_history').eq('id', id).maybeSingle());
             if (data && Array.isArray(data.viewing_history)) {
                 const serverHistory = data.viewing_history;
                 const offlineHistory = upds.viewing_history;
@@ -553,7 +556,9 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const { user_id, target_username, target_user_id } = p;
         let resolvedId = target_user_id as string | null;
         if (!resolvedId && target_username) {
-            const { data: targetProfile } = await supabase.from('profiles').select('id').eq('username', target_username as string).maybeSingle();
+            // No such member is `null`, and skipped; a read that failed is raised, so
+            // the queue keeps the write instead of reporting it done.
+            const { data: targetProfile } = throwIfError(await supabase.from('profiles').select('id').eq('username', target_username as string).maybeSingle());
             resolvedId = targetProfile?.id ?? null;
         }
         if (resolvedId) {
@@ -570,7 +575,9 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const { user_id, target_username, target_user_id } = p;
         let resolvedId = target_user_id as string | null;
         if (!resolvedId && target_username) {
-            const { data: targetProfile } = await supabase.from('profiles').select('id').eq('username', target_username as string).maybeSingle();
+            // No such member is `null`, and skipped; a read that failed is raised, so
+            // the queue keeps the write instead of reporting it done.
+            const { data: targetProfile } = throwIfError(await supabase.from('profiles').select('id').eq('username', target_username as string).maybeSingle());
             resolvedId = targetProfile?.id ?? null;
         }
         if (resolvedId) {
@@ -589,7 +596,9 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const { user_id, target_username, target_user_id } = p;
         let resolvedId = target_user_id as string | null;
         if (!resolvedId && target_username) {
-            const { data: targetProfile } = await supabase.from('profiles').select('id').eq('username', target_username as string).maybeSingle();
+            // No such member is `null`, and skipped; a read that failed is raised, so
+            // the queue keeps the write instead of reporting it done.
+            const { data: targetProfile } = throwIfError(await supabase.from('profiles').select('id').eq('username', target_username as string).maybeSingle());
             resolvedId = targetProfile?.id ?? null;
         }
         if (resolvedId) {
@@ -749,12 +758,14 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user?.id) return {};
         // Idempotency check: ensures offline toggle matches desired server state exactly
-        const { data: current } = await supabase
+        // Raised when it fails: read as "not certified", an uncertify was reported
+        // done and never sent.
+        const { data: current } = throwIfError(await supabase
             .from('dossier_certifications')
             .select('id')
             .eq('dossier_id', dossier_uuid)
             .eq('user_id', session.user.id)
-            .maybeSingle();
+            .maybeSingle());
         
         const isCertified = !!current;
         if (isCertified !== desired_state) {
@@ -881,8 +892,10 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const { post_id, desired_state } = p;
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user?.id) return {};
-        const { data: current } = await supabase.from('dispatch_certifications')
-            .select('id').eq('post_id', post_id).eq('user_id', session.user.id).maybeSingle();
+        // Raised when it fails, as in toggle_dossier_certify: "not certified" is not
+        // what a failed read says.
+        const { data: current } = throwIfError(await supabase.from('dispatch_certifications')
+            .select('id').eq('post_id', post_id).eq('user_id', session.user.id).maybeSingle());
         if (!!current === desired_state) return {};
         if (desired_state) {
             throwIfError(await supabase.from('dispatch_certifications')
@@ -898,8 +911,8 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const { comment_id, desired_state } = p;
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user?.id) return {};
-        const { data: current } = await supabase.from('dispatch_certifications')
-            .select('id').eq('comment_id', comment_id).eq('user_id', session.user.id).maybeSingle();
+        const { data: current } = throwIfError(await supabase.from('dispatch_certifications')
+            .select('id').eq('comment_id', comment_id).eq('user_id', session.user.id).maybeSingle());
         if (!!current === desired_state) return {};
         if (desired_state) {
             throwIfError(await supabase.from('dispatch_certifications')

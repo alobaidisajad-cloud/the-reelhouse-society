@@ -109,6 +109,20 @@ jest.mock('@/src/lib/supabase', () => ({
   },
 }));
 
+/** Every render of a filing's row, counted by its one "Share this filing" control. */
+const mockRowRenders: string[] = [];
+jest.mock('@/src/components/PressableScale', () => {
+  const Real = jest.requireActual('@/src/components/PressableScale').default;
+  const ReactActual = jest.requireActual('react');
+  return {
+    __esModule: true,
+    default: (props: { accessibilityLabel?: string }) => {
+      if (props.accessibilityLabel === 'Share this filing') mockRowRenders.push('row');
+      return ReactActual.createElement(Real, props);
+    },
+  };
+});
+
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
@@ -385,5 +399,19 @@ describe('a member’s room', () => {
     at_route({ username: undefined });
     await mount();
     expect(mockAsked).toEqual([]);
+  });
+});
+
+describe('a mark made in a room', () => {
+  it('redraws that filing alone, and moves its count', async () => {
+    mockRows = [filing({ id: 'f1' }), filing({ id: 'f2', body: 'A second take.' }), filing({ id: 'f3', body: 'A third take.' })];
+    const r = await mount();
+    mockRowRenders.length = 0;
+    await act(async () => {
+      fireEvent.press(r.getAllByLabelText('Certify this. 5 members have certified this')[1]);
+      await Promise.resolve();
+    });
+    expect(mockRowRenders).toHaveLength(1);
+    expect(r.getByLabelText('Certified. 6 members have certified this')).toBeTruthy();
   });
 });

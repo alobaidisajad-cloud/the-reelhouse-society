@@ -21,11 +21,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { ArchiveFilm, PaperArchive, PaperBack } from '@/src/components/dispatch/paper/PaperMore';
-import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
+import { FilingRow } from '@/src/components/dispatch/FilingRow';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth } from '@/src/components/dispatch/paper/paperMetrics';
 import { dayOfMonth } from '@/src/components/dispatch/dayLabel';
-import { roomOf } from '@/src/components/dispatch/roomLink';
 import { useDispatchArchive } from '@/src/hooks/useDispatchArchive';
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatch } from '@/src/stores/dispatch';
@@ -44,7 +43,7 @@ export default function ArchiveScreen() {
 
   const {
     query, setQuery, matches, searching,
-    film, filings, count, span, loading, choose, clear, loadMore,
+    film, filings, certifiedAtFetch, count, span, loading, choose, clear, loadMore,
   } = useDispatchArchive();
 
   const certifiedIds = useDispatch((s) => s.certifiedIds);
@@ -81,35 +80,22 @@ export default function ArchiveScreen() {
           >
             {film ? (
               filings.map((f) => (
-                <PaperPost
+                <FilingRow
                   key={f.id}
-                  kind={f.kind}
-                  author={f.author}
-                  body={f.kind === 'dossier' ? (f.title ?? f.body) : f.body}
-                  source={f.source ?? undefined}
+                  f={f}
                   // No film art on the entries. The film is the PLATE at the
                   // head of this page; repeating its poster down twenty rows is
                   // the page answering a question it already answered.
-                  film={null}
+                  withFilm={false}
                   order={dayOfMonth(f.createdAt) || '—'}
                   orderIs="day"
-                  measureWidth={width}
-                  certifyCount={f.certifyCount}
-                  commentCount={f.commentCount}
+                  width={width}
+                  // The house's number when read, moved by the member's own mark
+                  // since — as the room does. It stood still when the heart moved.
+                  shift={(certifiedIds.has(f.id) ? 1 : 0) - (certifiedAtFetch.has(f.id) ? 1 : 0)}
                   certified={certifiedIds.has(f.id)}
                   saved={savedIds.has(f.id)}
-                  answered={!!f.answerId}
-                  spoiler={f.spoilerLabel}
-                  withheld={!!f.withheldAt}
-                  ended={f.endedBy ?? undefined}
-                  edited={!!f.editedAt}
-                  series={f.seriesTitle ? `Part ${f.partNumber} of ${f.seriesTitle}` : undefined}
-                  onOpen={() => nav.push(`/dispatch/${f.id}`)}
-                  onCritique={() => nav.push(`/dispatch/${f.id}`)}
-                  onCertify={me ? (next) => useDispatch.getState().certify(f.id, next) : undefined}
-                  onSave={me ? (next) => useDispatch.getState().save(f.id, next) : undefined}
-                  onShare={() => nav.push(`/dispatch/${f.id}`)}
-                  onAuthor={f.author ? () => nav.push(roomOf(f.author!.name)) : undefined}
+                  member={!!me}
                 />
               ))
             ) : (
