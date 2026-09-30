@@ -6,6 +6,8 @@ import { captureError } from '@/src/lib/sentry';
 import { useAuthStore } from '@/src/stores/auth';
 
 const CommentPayloadSchema = z.object({
+  /** Made on the phone, as a log critique's is, so the queue replays the same row. */
+  id: z.string().uuid(),
   list_id: z.string().uuid(),
   user_id: z.string().uuid(),
   content: z.string().min(1),

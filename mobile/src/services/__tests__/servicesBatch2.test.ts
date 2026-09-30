@@ -195,15 +195,19 @@ describe('StackService', () => {
             (supabase.from as jest.Mock).mockReturnValue(c);
 
             await StackService.addStackComment({
+                id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13',
                 list_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
                 user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12',
                 content: 'Great stack!',
             });
             expect(supabase.from).toHaveBeenCalledWith('list_comments');
+            // Filed under the id the phone made, so a queued replay is the same row.
+            expect(c.insert).toHaveBeenCalledWith([expect.objectContaining({ id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13' })]);
         });
 
         it('rejects empty content', async () => {
             await expect(StackService.addStackComment({
+                id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13',
                 list_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
                 user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12',
                 content: '',

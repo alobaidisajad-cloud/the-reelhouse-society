@@ -59,6 +59,7 @@ Decisions, as of 2026-09-28:
 | `src/components/__tests__/animation-parking.test.ts` | Every endless animation parks when its screen is not focused. |
 | `src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts` | Every pull to refresh says the shared sentence when it reached nothing, or names who says it. |
 | `src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts` | Every toast that says a write was kept for later says it the house's one way. |
+| `src/components/critique/__tests__/oneCritiqueRow.guard.test.ts` | Every screen that draws a member's critique (its spoken name, its DELETE) draws it through the one `CritiqueRow`. |
 | `src/components/__tests__/authRouting.test.ts` | Every route to `/login` says which form it opens. |
 | `src/components/__tests__/oneRankMark.test.ts` | The rank mark is drawn in one place; no surface draws its own. |
 | `src/components/__tests__/overlayElevation.test.ts` | Every overlay out-ranks what it covers in Android's elevation order (a browser paints in DOM order, so no drawing shows it). |

@@ -33,6 +33,16 @@ function unsentKey(queued: readonly QueuedMutation[], type: QueuedMutation['type
 }
 
 /**
+ * Whether the write that makes this row is still waiting to be sent. A row
+ * the house does not hold yet cannot be deleted there; its removal has to wait
+ * in the queue behind it.
+ */
+export function stillQueued(type: QueuedMutation['type'], id: string): boolean {
+  return useOfflineQueueStore.getState().queued
+    .some((m) => m.type === type && (m.payload.id === id || m.payload._tempId === id));
+}
+
+/**
  * The rows of one kind written on this phone and not yet sent — `add_filing`
  * gives the filings still in the queue, which say NOT SENT YET. Re-renders only
  * when that set changes, not on every write the queue makes.

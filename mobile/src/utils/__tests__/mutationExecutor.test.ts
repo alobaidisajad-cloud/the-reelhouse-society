@@ -388,6 +388,21 @@ describe('Lists', () => {
         });
     });
 
+    describe('add_list_comment', () => {
+        it('files the critique under the id the phone made, and a replay files nothing twice', async () => {
+            // An insert with no id made a NEW row on every replay: a send whose
+            // answer was lost filed the critique a second time.
+            makeChainResolveTo(mockChain, { error: null });
+            await runMutation('add_list_comment', { id: 'c-1', list_id: 'l1', user_id: 'u1', content: 'Noir, done right.' });
+            expect(supabase.from).toHaveBeenCalledWith('list_comments');
+            expect(mockChain.insert).not.toHaveBeenCalled();
+            expect(mockChain.upsert).toHaveBeenCalledWith(
+                [{ id: 'c-1', list_id: 'l1', user_id: 'u1', content: 'Noir, done right.' }],
+                { onConflict: 'id', ignoreDuplicates: true },
+            );
+        });
+    });
+
     describe('remove_film_from_list', () => {
         it('deletes by list_id + film_id', async () => {
             makeChainResolveTo(mockChain, { error: null });

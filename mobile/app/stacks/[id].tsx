@@ -1,4 +1,5 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as Crypto from 'expo-crypto';
  
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -6,7 +7,7 @@ import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, User, X } from 'lucide-react-native';
+import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, X } from 'lucide-react-native';
 import { ActivityIndicator, Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
@@ -29,11 +30,14 @@ import { tellMarks } from '@/src/stores/tellMarks';
 import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
 import { logger } from '@/src/utils/logger';
-import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
+import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
+import { stillQueued, useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
+import { CritiqueRow, type Critique } from '@/src/components/critique/CritiqueRow';
+import { TryAgainLine } from '@/src/components/TryAgain';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { formatDateMonthYear, timeAgo } from '@/src/utils/timeAgo';
+import { formatDateMonthYear } from '@/src/utils/timeAgo';
 import { z } from 'zod';
 import { EDGE_LIT } from '@/src/theme/light';
 import { useLineScale } from '@/src/hooks/useTextScale';
@@ -90,64 +94,6 @@ interface ListComment {
   created_at: string;
 }
 
-// ── Memoized Comment Row — real face, tappable name, timestamped ──
-// No dead ends: avatar + username navigate to the critic's profile;
-// the row keeps long-press for report/block so the two never fight.
-
-const StackCommentRow = React.memo(({ c, currentUserId, onLongPress, onPressProfile, onDelete }: { c: ListComment; currentUserId?: string; onLongPress?: (comment: ListComment) => void; onPressProfile?: (username: string) => void; onDelete?: (id: string) => void }) => (
-  <PressableScale
-    onLongPress={() => {
-      if (c.user_id !== currentUserId && onLongPress) {
-        TactileEngine.destroy();
-        onLongPress(c);
-      }
-    }}
-    delayLongPress={400}
-    pressedScale={0.98}
-    accessibilityLabel={`Critique by ${c.username}`}
-    accessibilityHint={c.user_id !== currentUserId ? "Long press to report or block" : undefined}
-  >
-    <View style={s.commentRow}>
-      <PressableScale onPress={() => onPressProfile?.(c.username)} haptic="light" accessibilityRole="link" accessibilityLabel={`View profile of @${c.username}`}>
-        <View style={s.commentAvatar}>
-          {c.avatar_url ? (
-            <Image source={{ uri: c.avatar_url }} style={s.commentAvatarImg} contentFit="cover" cachePolicy="memory-disk" recyclingKey={c.id} />
-          ) : (
-            <User size={11} color={colors.fog} strokeWidth={1.5} />
-          )}
-        </View>
-      </PressableScale>
-      <View style={s.commentBodyWrap}>
-        <View style={s.commentHead}>
-          <PressableScale onPress={() => onPressProfile?.(c.username)} haptic="light" style={s.commentUserPress} accessibilityRole="link" accessibilityLabel={`View profile of @${c.username}`}>
-            <Text style={s.commentUser} numberOfLines={1}>@{c.username.toUpperCase()}</Text>
-          </PressableScale>
-          <Text style={s.commentTime} numberOfLines={1}>{timeAgo(c.created_at)}</Text>
-        </View>
-        <Text style={s.commentBody}>{c.content}</Text>
-        {/* One's own critique, once the house holds it (a queued one has no row
-            yet), can be taken back — the log page's DELETE, the same size and ink. */}
-        {currentUserId === c.user_id && onDelete && !c.id.startsWith('temp_') ? (
-          <PressableScale
-            onPress={() => onDelete(c.id)}
-            style={s.commentDeleteBtn}
-            hitSlop={COMMENT_DELETE_SLOP}
-            haptic="heavy"
-            pressedScale={0.92}
-            accessibilityLabel="Delete your critique"
-          >
-            <Text style={s.commentDelete} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-              DELETE
-            </Text>
-          </PressableScale>
-        ) : null}
-      </View>
-    </View>
-  </PressableScale>
-));
-
-/** The log page's reach for its DELETE (LogComments), so the two feel one. */
-const COMMENT_DELETE_SLOP = { top: 15, bottom: 14, left: 15, right: 15 } as const;
 
  
 const StackDetailFilmCard = React.memo(({
@@ -489,56 +435,66 @@ export default function StackDetailScreen() {
   }, [user, id, isCertified, toggleListEndorse, isCertifying, queryClient]);
 
   // ── COMMENTS (CQRS) ──
-  const { data: queryComments } = useQuery({
+  // What the house holds. A failed read is a failed read: it drew the queued
+  // critiques alone (or none, "No critiques yet") as though they were all.
+  const { data: queryComments, isError: critiquesUnread, refetch: rereadCritiques } = useQuery({
     queryKey: ['stackComments', id],
     queryFn: async () => {
       try {
-        const commData = await StackService.getStackComments(id);
-        
-        // Offline Queue Stitching
-        const queue = getOfflineQueue();
-        const pendingAdds = queue.filter(q => q.type === 'add_list_comment' && q.payload.list_id === id);
-        
-        let finalComments = [...commData];
-        for (const pa of pendingAdds) {
-            const p = pa.payload as { user_id: string; content: string };
-            finalComments.push({
-                id: `offline-${Date.now()}-${Math.random()}`,
-                list_id: id,
-                user_id: p.user_id,
-                username: useAuthStore.getState().user?.username || 'anonymous',
-                avatar_url: useAuthStore.getState().user?.avatar_url ?? null,
-                content: p.content,
-                created_at: new Date().toISOString()
-            });
-        }
-        return finalComments;
+        return await StackService.getStackComments(id);
       } catch (error) {
         // Sentry gets genuine defects, never an offline failure.
         logger.debug('[Stack] Comments fetch failed:', error);
         addBreadcrumb('stacks.fetchComments failed', 'telemetry');
         if (!isNetworkError(error)) captureError(error, { scope: 'stacks.fetchComments', stackId: id });
-        
-        // Keep offline comments even if fetch fails
-        const queue = getOfflineQueue();
-        const pendingAdds = queue.filter(q => q.type === 'add_list_comment' && q.payload.list_id === id);
-        
-        return pendingAdds.map(pa => {
-            const p = pa.payload as { user_id: string; content: string };
-            return {
-                id: `offline-${Date.now()}-${Math.random()}`,
-                list_id: id,
-                user_id: p.user_id,
-                username: useAuthStore.getState().user?.username || 'anonymous',
-                avatar_url: useAuthStore.getState().user?.avatar_url ?? null,
-                content: p.content,
-                created_at: new Date().toISOString()
-            };
-        });
+        throw error;
       }
     },
     enabled: showComments && z.string().uuid().safeParse(id).success,
   });
+
+  // And what this phone wrote that has not gone yet, from the queue itself, so
+  // it shows whether or not the read worked. Each carries the id it will have
+  // (made here, as on a log), so it is never drawn twice and can be taken back
+  // while it waits.
+  const queued = useOfflineQueueStore((st) => st.queued);
+  const critiques = useMemo<Critique[]>(() => {
+    // Taken back and waiting to say so: gone from the page already.
+    const takenBack = new Set(queued.filter((m) => m.type === 'remove_list_comment').map((m) => m.payload.comment_id));
+    const held: Critique[] = (queryComments ?? [])
+      .filter((c) => !takenBack.has(c.id))
+      .map((c) => ({ ...c, body: c.content }));
+    const seen = new Set(held.map((c) => c.id));
+    const waiting: Critique[] = queued
+      .filter((m) => m.type === 'add_list_comment' && m.payload.list_id === id
+        && typeof m.payload.id === 'string' && !seen.has(m.payload.id) && !takenBack.has(m.payload.id))
+      .map((m) => ({
+        id: m.payload.id as string,
+        user_id: String(m.payload.user_id),
+        // The queue is only ever this member's (it is emptied at sign-out).
+        username: user?.username || 'anonymous',
+        avatar_url: user?.avatar_url ?? null,
+        body: String(m.payload.content),
+        created_at: new Date(m.timestamp).toISOString(),
+      }));
+    return [...held, ...waiting];
+  }, [queryComments, queued, id, user?.username, user?.avatar_url]);
+
+  // A critique the queue has just delivered leaves the queue before the next
+  // read brings it back: read again, or it would vanish in between.
+  const waitingHere = queued.filter((m) => m.type === 'add_list_comment' && m.payload.list_id === id).length;
+  const waitedBefore = useRef(waitingHere);
+  useEffect(() => {
+    if (waitingHere < waitedBefore.current) void queryClient.invalidateQueries({ queryKey: ['stackComments', id] });
+    waitedBefore.current = waitingHere;
+  }, [waitingHere, queryClient, id]);
+
+  const handleLongPressCritique = useCallback((c: Critique) => {
+    const comment = (queryComments ?? []).find((x) => x.id === c.id);
+    if (!comment) return;
+    setSelectedComment(comment);
+    setCommentActionSheetVisible(true);
+  }, [queryComments]);
 
   const handleToggleComments = useCallback(() => {
     TactileEngine.selection();
@@ -583,11 +539,14 @@ export default function StackDetailScreen() {
     }
     setSubmittingComment(true);
     const content = commentText.trim();
-    const tempId = `temp_${Date.now()}`;
-    
+    // The id it will have in the house, made here as a log's critique's is: the
+    // same row whether it is sent now or from the queue, and a replay after a
+    // lost answer cannot file it twice.
+    const commentId = Crypto.randomUUID();
+
     // Optimistic Update — with the member's own face, never a ghost.
     const optimisticComment: ListComment = {
-      id: tempId,
+      id: commentId,
       user_id: user.id,
       username: user.username || 'anon',
       avatar_url: user.avatar_url ?? null,
@@ -607,22 +566,23 @@ export default function StackDetailScreen() {
 
     try {
       const newComment = await StackService.addStackComment({
+        id: commentId,
         user_id: user.id,
         list_id: id,
         content: content
       });
-      
-      // Swap the temp ID for the real DB ID
+
+      // The house's copy, with its cleaned words and joined profile.
       queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) => {
         if (!old) return [newComment];
-        return old.map(c => c.id === tempId ? newComment : c);
+        return old.map(c => c.id === commentId ? newComment : c);
       });
-     
+
     } catch (err: unknown) {
       if (isNetworkError(err)) {
         enqueueMutation({
           type: 'add_list_comment',
-          payload: { list_id: id, user_id: user.id, content }
+          payload: { id: commentId, list_id: id, user_id: user.id, content }
         });
         flushOfflineQueue();
         // Leave the optimistic comment in cache since it's queued
@@ -631,7 +591,7 @@ export default function StackDetailScreen() {
         // Atomic Rollback
         queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) => {
           if (!old) return [];
-          return old.filter(c => c.id !== tempId);
+          return old.filter(c => c.id !== commentId);
         });
         bumpCritiqueCount(-1);
         setCommentText(content);
@@ -654,6 +614,14 @@ export default function StackDetailScreen() {
     queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) =>
       (old ?? []).filter((c) => c.id !== commentId));
     bumpCritiqueCount(-1);
+    // Not sent yet: the house has no row to delete, so the removal waits in the
+    // queue behind its filing, and the two go out in that order.
+    if (stillQueued('add_list_comment', commentId)) {
+      enqueueMutation({ type: 'remove_list_comment', payload: { comment_id: commentId, user_id: user.id } });
+      flushOfflineQueue();
+      reelToast('Removed offline. Will sync when connected.');
+      return;
+    }
     try {
       await StackService.deleteStackComment(commentId, user.id);
     } catch (err: unknown) {
@@ -996,14 +964,25 @@ export default function StackDetailScreen() {
             </View>
 
             <ScrollView style={s.critiqueBody} contentContainerStyle={s.critiqueBodyContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-              {(queryComments || []).length === 0 ? (
-                <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
+              {critiques.length === 0 ? (
+                critiquesUnread ? (
+                  <View style={s.critiquesUnread}>
+                    <Text style={s.commentEmpty}>The critiques could not be reached.</Text>
+                    <TryAgainLine onPress={() => { void rereadCritiques(); }} accessibilityLabel="Read the critiques again" />
+                  </View>
+                ) : (
+                  <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
+                )
               ) : (
-                (queryComments || []).map(c => (
-                  <StackCommentRow key={c.id} c={c} currentUserId={user?.id} onPressProfile={handlePressProfile} onDelete={handleDeleteComment} onLongPress={(comment) => {
-                    setSelectedComment(comment);
-                    setCommentActionSheetVisible(true);
-                  }} />
+                critiques.map(c => (
+                  <CritiqueRow
+                    key={c.id}
+                    c={c}
+                    currentUserId={user?.id}
+                    onPressUser={handlePressProfile}
+                    onDelete={handleDeleteComment}
+                    onLongPress={handleLongPressCritique}
+                  />
                 ))
               )}
             </ScrollView>
@@ -1165,23 +1144,7 @@ const s = StyleSheet.create({
 
   // ── Critiques Panel ──
   commentEmpty: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 12, color: colors.fogQuiet, textAlign: 'center', paddingVertical: 8 },
-  commentRow: { flexDirection: 'row', gap: 8, marginBottom: 10, alignItems: 'flex-start' },
-  commentAvatar: {
-    width: 24, height: 24, borderRadius: 12, backgroundColor: colors.soot,
-    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', overflow: 'hidden',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  commentAvatarImg: { width: '100%', height: '100%' },
-  commentBodyWrap: { flex: 1 },
-  commentHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
-  commentUserPress: { flexShrink: 1 },
-  commentUser: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.4, color: colors.sepia },
-  // fog, 5.9:1 (ash is a BORDER colour: 1.27:1 as text).
-  commentTime: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.3, color: colors.fog, includeFontPadding: false },
-  commentBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, lineHeight: 18, marginTop: 2 },
-  // As the log page's (logDetailStyles commDelete / commDeleteBtn).
-  commentDeleteBtn: { marginTop: 8, alignSelf: 'flex-end' },
-  commentDelete: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.danger, includeFontPadding: false },
+  critiquesUnread: { alignItems: 'center', gap: 4 },
 
   trackRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 20 },
   trackLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
@@ -1259,7 +1222,6 @@ const s = StyleSheet.create({
 
 StackDetailFilmCard.displayName = 'StackDetailFilmCard';
 
-StackCommentRow.displayName = 'StackCommentRow';
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
 export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

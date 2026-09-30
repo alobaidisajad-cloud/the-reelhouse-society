@@ -10,6 +10,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import StackDetailScreen from '../[id]';
+import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 
 const STACK_ID = '11111111-1111-4111-8111-111111111111';
 const SOURCE = readFileSync(join(__dirname, '..', '[id].tsx'), 'utf8');
@@ -37,6 +38,9 @@ const mockSetQueryData = jest.fn();
 let mockQueryState: Record<string, { status: string } | undefined> = {};
 /** The critiques the page holds. */
 let mockComments: Record<string, unknown>[] = [];
+/** The critiques could not be read. */
+let mockCommentsFailed = false;
+const mockRereadCritiques = jest.fn();
 const mockDeleteComment = jest.fn();
 /** The list's pull, as the screen hands it over. */
 let mockRefresh: { props: { onRefresh: () => Promise<void> } } | null = null;
@@ -57,7 +61,9 @@ jest.mock('@tanstack/react-query', () => ({
   }),
   useQuery: (opts: { queryKey: unknown[] }) => {
     const key = String(opts.queryKey[0]);
-    if (key === 'stackComments') return { data: mockComments };
+    if (key === 'stackComments') {
+      return { data: mockCommentsFailed ? undefined : mockComments, isError: mockCommentsFailed, refetch: mockRereadCritiques };
+    }
     if (key === 'stack') {
       mockStackOpts = opts as never;
       return { data: mockStackData, isLoading: false, isError: mockStackFailed, refetch: mockRereadStack };
@@ -336,10 +342,12 @@ describe('the epigraph folds only when there is more', () => {
 });
 
 describe('the page is legible and reachable', () => {
-  it('a critique timestamp is not the border colour', () => {
-    // ash would read 1.27:1 against the panel.
-    const t = SOURCE.slice(SOURCE.indexOf('commentTime: {'));
-    expect(t.slice(0, t.indexOf('}'))).toMatch(/color: colors\.fog/);
+  it('a critique date is not the border colour', () => {
+    // ash would read 1.27:1 against the panel. The stack draws the log's own
+    // critique row (CritiqueRow), so this is that row's date.
+    const { s: row } = jest.requireActual('@/src/components/log/logDetailStyles');
+    const { colors: ink } = jest.requireActual('@/src/theme/theme');
+    expect(row.commDate.color).toBe(ink.fog);
   });
 
   it('every nav and action control reaches 48 by its own geometry', () => {
@@ -880,5 +888,84 @@ describe('taking back one’s own critique on a stack', () => {
     await act(async () => { fireEvent.press(r.getByLabelText('Delete your critique')); });
     expect(lastCommentsWrite().map((c) => c.id)).toEqual(['c-mine', 'c-theirs']);
     expect(mockToastError).toHaveBeenCalledWith('Your critique could not be removed.');
+  });
+});
+
+describe('the critiques as they stand, sent or waiting', () => {
+  const WAITING = {
+    id: 'q1', type: 'add_list_comment' as const, timestamp: 0,
+    payload: { id: 'c-new', list_id: STACK_ID, user_id: 'u1', content: 'Written on a train.' },
+  };
+  const open = async () => {
+    const r = mount({ critiqueCount: 0 });
+    await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
+    await act(async () => { fireEvent.press(r.getByLabelText(/critiques?/i)); });
+    await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+    return r;
+  };
+
+  beforeEach(() => { mockComments = []; mockEnqueue.mockClear(); mockDeleteComment.mockReset(); mockRereadCritiques.mockClear(); });
+  afterEach(() => { mockCommentsFailed = false; useOfflineQueueStore.setState({ queued: [] }); });
+
+  it('a read that failed says so, and asks again — it said "No critiques yet"', async () => {
+    mockCommentsFailed = true;
+    const r = await open();
+    r.getByText('The critiques could not be reached.');
+    expect(r.queryByText('No critiques yet. Be the first to speak.')).toBeNull();
+    await act(async () => { fireEvent.press(r.getByLabelText('Read the critiques again')); });
+    expect(mockRereadCritiques).toHaveBeenCalled();
+  });
+
+  it('none, read, is still none', async () => {
+    const r = await open();
+    r.getByText('No critiques yet. Be the first to speak.');
+  });
+
+  it('one written without a connection shows while it waits, even when the read failed', async () => {
+    mockCommentsFailed = true;
+    useOfflineQueueStore.setState({ queued: [WAITING] });
+    const r = await open();
+    r.getByText('Written on a train.');
+    expect(r.queryByText('The critiques could not be reached.')).toBeNull();
+  });
+
+  it('is drawn once when the house already holds it too', async () => {
+    mockComments = [{ id: 'c-new', list_id: STACK_ID, user_id: 'u1', username: 'morpho', avatar_url: null, content: 'Written on a train.', created_at: '2026-01-01T10:00:00Z' }];
+    useOfflineQueueStore.setState({ queued: [WAITING] });
+    const r = await open();
+    expect(r.getAllByText('Written on a train.')).toHaveLength(1);
+  });
+
+  it('taking back one still waiting goes through the queue, behind its filing', async () => {
+    // The house has no row for it yet: a delete there finds nothing, and the
+    // filing would arrive after it and stand.
+    useOfflineQueueStore.setState({ queued: [WAITING] });
+    const r = await open();
+    await act(async () => { fireEvent.press(r.getByLabelText('Delete your critique')); });
+    expect(mockDeleteComment).not.toHaveBeenCalled();
+    expect(mockEnqueue).toHaveBeenCalledWith({ type: 'remove_list_comment', payload: { comment_id: 'c-new', user_id: 'u1' } });
+  });
+
+  it('one taken back while it waits is gone from the page', async () => {
+    useOfflineQueueStore.setState({ queued: [WAITING, { id: 'q2', type: 'remove_list_comment', timestamp: 1, payload: { comment_id: 'c-new', user_id: 'u1' } }] });
+    const r = await open();
+    expect(r.queryByText('Written on a train.')).toBeNull();
+  });
+
+  it('one the house holds, taken back without a connection, does not come back with the next read', async () => {
+    mockComments = [{ id: 'c-held', list_id: STACK_ID, user_id: 'u1', username: 'morpho', avatar_url: null, content: 'Said in haste.', created_at: '2026-01-01T10:00:00Z' }];
+    useOfflineQueueStore.setState({ queued: [{ id: 'q3', type: 'remove_list_comment', timestamp: 1, payload: { comment_id: 'c-held', user_id: 'u1' } }] });
+    const r = await open();
+    expect(r.queryByText('Said in haste.')).toBeNull();
+  });
+
+  it('is filed under an id made on the phone, the one it waits under', async () => {
+    mockAddComment.mockRejectedValue(new TypeError('Network request failed'));
+    const r = await open();
+    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), 'Filed from a tunnel.'); });
+    await act(async () => { fireEvent.press(r.getByLabelText('Submit critique')); });
+    const sent = mockAddComment.mock.calls[0][0] as { id: string };
+    expect(sent.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(mockEnqueue).toHaveBeenCalledWith({ type: 'add_list_comment', payload: expect.objectContaining({ id: sent.id, content: 'Filed from a tunnel.' }) });
   });
 });

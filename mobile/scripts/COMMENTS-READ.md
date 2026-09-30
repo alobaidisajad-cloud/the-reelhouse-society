@@ -221,6 +221,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/clearance/Clearance.tsx | — |  |
 | src/components/ContentSkeleton.tsx | — |  |
 | src/components/ControlledInput.tsx | — |  |
+| src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-09-30 | written with the shared critique row |
+| src/components/critique/CritiqueRow.tsx | 2026-09-30 | moved from LogComments, comments kept and made true of both pages |
 | src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-09-29 | new |
 | src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
@@ -540,6 +542,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/society/GeneralAdmission.tsx | — |  |
 | src/components/society/PrivilegeLedger.tsx | — |  |
 | src/components/society/PurchaseDock.tsx | — |  |
+| src/components/society/purchaseStop.ts | 2026-09-30 | written with the purchase-stop fix |
 | src/components/society/RankTicket.tsx | — |  |
 | src/components/society/SmallPrint.tsx | — |  |
 | src/components/society/SocietyPoster.tsx | — |  |

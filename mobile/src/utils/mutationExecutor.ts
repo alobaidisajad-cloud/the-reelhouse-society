@@ -438,13 +438,17 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     },
 
     add_list_comment: async (p: any) => {
-        const { list_id, user_id, content } = p;
+        const { id, list_id, user_id, content } = p;
         const dbPayload = {
+            id,
             list_id,
             user_id,
             content: sanitizeInput(content as string, 'listComment')
         };
-        throwIfError(await supabase.from('list_comments').insert([dbPayload]).select('id, list_id').maybeSingle());
+        // By its own id, and a row already there is left as it is: a send whose
+        // answer was lost is replayed, and must not file the critique twice.
+        throwIfError(await supabase.from('list_comments')
+            .upsert([dbPayload], { onConflict: 'id', ignoreDuplicates: true }));
 
         // The notice is the `tr_notify_list_comment` trigger's, on the INSERT above.
         return {};

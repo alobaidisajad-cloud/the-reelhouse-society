@@ -136,16 +136,18 @@ describe('certify toggle — the bare catch that could not log', () => {
 });
 
 describe('comments fetch — finding 116', () => {
-    const runCommentsFn = async () => {
+    const runCommentsFn = async (failure: unknown) => {
         render(<StackDetailScreen />);
         await waitFor(() => { expect(capturedCommentsFn).not.toBeNull(); });
-        await capturedCommentsFn!();
+        // Thrown on, not swallowed: the sheet says the critiques could not be
+        // reached rather than "No critiques yet".
+        await expect(capturedCommentsFn!()).rejects.toBe(failure);
     };
 
     it('reports a genuine defect', async () => {
         const { StackService } = jest.requireMock('@/src/services/StackService');
         StackService.getStackComments.mockRejectedValue(GENUINE);
-        await runCommentsFn();
+        await runCommentsFn(GENUINE);
         expect(captureError).toHaveBeenCalledWith(
             GENUINE, expect.objectContaining({ scope: 'stacks.fetchComments', stackId: STACK_ID }),
         );
@@ -154,7 +156,7 @@ describe('comments fetch — finding 116', () => {
     it('stays silent when the member is offline', async () => {
         const { StackService } = jest.requireMock('@/src/services/StackService');
         StackService.getStackComments.mockRejectedValue(OFFLINE);
-        await runCommentsFn();
+        await runCommentsFn(OFFLINE);
         expect(captureError).not.toHaveBeenCalled();
     });
 });
