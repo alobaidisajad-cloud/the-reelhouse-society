@@ -135,3 +135,37 @@ describe('a dispatch arriving over the wire', () => {
     expect(ids).toEqual(['a-live']);
   });
 });
+
+describe('a message the offline queue delivered', () => {
+  it('stops reading as sending when the house echoes it — it stayed dimmed, with no reply or reaction, until the room reopened', async () => {
+    useLoungeStore.setState({
+      currentLoungeId: A,
+      currentMessages: [{
+        id: 'queued-1', lounge_id: A, user_id: U2, username: 'me',
+        content: 'Written on the train.', type: 'text', created_at: '2026-09-11T11:59:00Z', status: 'sending',
+      }],
+    } as never);
+    useLoungeStore.getState().subscribeToLounge(A);
+
+    await insertHandler()(wireRow('queued-1', A));
+
+    const [m] = useLoungeStore.getState().currentMessages as unknown as { id: string; status?: string; created_at: string }[];
+    expect(m.status).toBe('sent');
+    // The house's time, now that the house has it.
+    expect(m.created_at).toBe('2026-09-11T12:00:00Z');
+  });
+
+  it('a message already sent is left as it is', async () => {
+    const sent = {
+      id: 'sent-1', lounge_id: A, user_id: U2, username: 'me',
+      content: 'Hello.', type: 'text', created_at: '2026-09-11T11:59:00Z', status: 'sent',
+    };
+    useLoungeStore.setState({ currentLoungeId: A, currentMessages: [sent] } as never);
+    useLoungeStore.getState().subscribeToLounge(A);
+    const before = useLoungeStore.getState().currentMessages;
+
+    await insertHandler()(wireRow('sent-1', A));
+
+    expect(useLoungeStore.getState().currentMessages).toBe(before);
+  });
+});

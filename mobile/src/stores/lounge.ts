@@ -1196,9 +1196,20 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         async (payload) => {
           if (!payload.new) return;
           const msg = payload.new as RawLoungePayload;
-          // Ignore our own optimistic messages (they're already rendered)
+          // Our own message is already drawn. If it was still waiting — sent from
+          // the offline queue once the connection returned — this echo is the house
+          // saying it arrived: it stops reading as sending (dimmed, no reply, no
+          // reaction), which it otherwise did until the room was opened again.
           const existing = get().currentMessages.find(m => m.id === msg.id);
-          if (existing) return;
+          if (existing) {
+            if (existing.status === 'sending' || existing.status === 'failed') {
+              set(s => ({
+                currentMessages: s.currentMessages.map(m =>
+                  m.id === msg.id ? { ...m, created_at: msg.created_at ?? m.created_at, status: 'sent' as const } : m),
+              }));
+            }
+            return;
+          }
 
           // Filter messages from blocked/muted users
           if (useBlockStore.getState().isHidden(msg.user_id)) return;
