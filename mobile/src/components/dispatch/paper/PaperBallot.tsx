@@ -8,7 +8,7 @@ import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
-import { counted } from './paperText';
+import { counted, NOT_SENT_LINE } from './paperText';
 import { BALLOT_PERCENT_FLOOR, UNSPOKEN } from './paperMetrics';
 import { PaperFill } from './PaperFill';
 import { Byline, PaperActions, type PaperAuthor, type PaperFilm } from './PaperPost';
@@ -313,7 +313,7 @@ export const PaperBallot = memo(function PaperBallot({
 
       <Text style={p.ballotFoot} {...scaledTextProps}>
         {pending
-          ? 'NOT SENT YET · THE HOUSE HAS NOT SEEN THIS'
+          ? NOT_SENT_LINE
           : closed
           ? ''
           : revealed

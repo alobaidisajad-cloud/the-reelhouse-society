@@ -37,6 +37,7 @@ import { PaperEmpty, PaperSheet } from '@/src/components/dispatch/paper/PaperFra
 import { DossierShareCard, PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
+import { NOT_SENT_LINE } from '@/src/components/dispatch/paper/paperText';
 import { measure, KIND_NAME } from '@/src/components/dispatch/paper/paperMetrics';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { hourLabel } from '@/src/components/dispatch/dayLabel';
@@ -423,6 +424,14 @@ export default function FilingReader() {
                   ? () => nav.push(`/dispatch/series/${live.seriesId}?from=${live.id}`)
                   : undefined}
               />
+              {/* An essay has no card to carry the line the other kinds carry,
+                  so it is said under the head, before the reading begins, on
+                  the body's own edge (the card's indent is for its byline). */}
+              {pending ? (
+                <Text style={[p.wireSource, { paddingLeft: 0, marginTop: 0, marginBottom: 16 }]} numberOfLines={2} {...scaledTextProps}>
+                  {NOT_SENT_LINE}
+                </Text>
+              ) : null}
               <EssayBody text={live.fullContent ?? live.body} />
               {/* The feed carries only an essay's opening. When the whole of it
                   could not be read, that is said, with a way to ask again —

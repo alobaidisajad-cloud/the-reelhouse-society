@@ -17,7 +17,7 @@ import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFi
 import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
-import { softBreak, counted } from './paperText';
+import { softBreak, counted, NOT_SENT_LINE } from './paperText';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
 
 export type PaperKind = 'take' | 'seeking' | 'wire' | 'ballot' | 'dossier';
@@ -558,7 +558,7 @@ export const PaperPost = memo(function PaperPost({
           {/* Two lines: at the 10pt floor it does not fit one, and must be read whole. */}
           {pending ? (
             <Text style={p.wireSource} numberOfLines={2} {...scaledTextProps}>
-              NOT SENT YET · THE HOUSE HAS NOT SEEN THIS
+              {NOT_SENT_LINE}
             </Text>
           ) : null}
         </View>

@@ -432,6 +432,20 @@ describe('the reader', () => {
     }
   });
 
+  it('an essay not sent yet says so too, under its head', async () => {
+    // The short kinds said it on their card and the ballot at its foot; the
+    // essay, drawn by its own head and body, read as though it were published.
+    mockUser = { id: 'u2', username: 'tomasreyes' };
+    useOfflineQueueStore.setState({ queued: [{ id: 'q1', type: 'add_filing', payload: { _tempId: 'f1' }, timestamp: 0 }] });
+    try {
+      const { getByText } = await mount();
+      getByText('The Empty Room');
+      getByText('NOT SENT YET · THE HOUSE HAS NOT SEEN THIS');
+    } finally {
+      useOfflineQueueStore.setState({ queued: [] });
+    }
+  });
+
   it('the critiques under a tombstone are reached from its mark, and no composer opens', async () => {
     mockUser = { id: 'u9', username: 'someone' };
     mockRow = row({ ended_at: new Date().toISOString(), ended_by: 'house', comment_count: 3 });

@@ -8,6 +8,13 @@
 export { softBreak, MAX_RUN } from '@/src/utils/softBreak';
 
 /**
+ * What a filing still in the offline queue says, wherever it is drawn: its
+ * card, a ballot's foot, an essay's head in the reader. One sentence, so no
+ * kind says it differently or forgets to.
+ */
+export const NOT_SENT_LINE = 'NOT SENT YET · THE HOUSE HAS NOT SEEN THIS';
+
+/**
  * ── THE CUT ON A SHARE CARD ──────────────────────────────────────────────────
  * An essay runs to 25,000 characters. A card is one image. So the card carries
  * the opening, and something has to decide where the opening stops.
