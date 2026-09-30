@@ -53,6 +53,7 @@ import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
 import { timeAgo, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { TryAgainLine } from '@/src/components/TryAgain';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useUnsent } from '@/src/stores/offlineQueueStore';
@@ -420,6 +421,20 @@ export default function FilingReader() {
                   : undefined}
               />
               <EssayBody text={live.fullContent ?? live.body} />
+              {/* The feed carries only an essay's opening. When the whole of it
+                  could not be read, that is said, with a way to ask again —
+                  never drawn as though the essay ended there. */}
+              {unreachable && !live.fullContent ? (
+                <View style={{ marginTop: 20, gap: 10, alignItems: 'flex-start' }}>
+                  <Text style={[p.removedText, { textAlign: 'left' }]} {...scaledTextProps}>
+                    The rest of this essay could not be reached.
+                  </Text>
+                  <TryAgainLine
+                    onPress={() => { setLoading(true); setAttempt((n) => n + 1); }}
+                    accessibilityLabel="Read the whole essay again"
+                  />
+                </View>
+              ) : null}
               {/* The foot of a part. Absent when there is no next one, because a
                   control that says NEXT and opens nothing is worse than an essay
                   that simply ends. */}

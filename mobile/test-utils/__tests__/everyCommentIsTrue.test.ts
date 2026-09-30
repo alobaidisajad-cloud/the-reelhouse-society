@@ -12,7 +12,6 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 const MOBILE = join(__dirname, '..', '..');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { checkedFiles } = require(join(MOBILE, 'scripts', 'comment-truth.js')) as {
   checkedFiles: () => { code: string[]; hash: string[]; docs: string[] };
 };

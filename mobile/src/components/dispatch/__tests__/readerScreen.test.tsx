@@ -21,6 +21,7 @@ import { useLocalSearchParams } from 'expo-router';
 import FilingReader from '@/app/dispatch/[id]';
 import { useDispatch } from '@/src/stores/dispatch';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
+import { toFiling } from '@/src/stores/dispatchTypes';
 
 let mockRow: Record<string, unknown> | null = null;
 /** The filing's own read fails, as it does offline. */
@@ -199,6 +200,23 @@ describe('the reader', () => {
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     expect(getByText('The Empty Room')).toBeTruthy();
+  });
+
+  it('an essay opened from the feed whose whole could not be read says so — never ends at its opening', async () => {
+    // The feed carries only the 500-character opening. With the full read
+    // failed, the reader drew that opening as though the essay ended there.
+    useDispatch.setState({ filings: [toFiling(row({ full_content: null, body: 'Ozu frames a room.' }) as never)] } as never);
+    mockRowFails = true;
+    const { getByText, queryByText, getByLabelText } = await mount();
+    expect(getByText(/Ozu frames a room\./)).toBeTruthy();
+    expect(getByText('The rest of this essay could not be reached.')).toBeTruthy();
+
+    mockRowFails = false;
+    await act(async () => { fireEvent.press(getByLabelText('Read the whole essay again')); });
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    expect(queryByText('The rest of this essay could not be reached.')).toBeNull();
+    expect(getByText(/That is the argument\./)).toBeTruthy();
   });
 
   it('keeps an ENDED filing’s room, and names who ended it', async () => {

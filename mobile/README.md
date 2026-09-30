@@ -15,7 +15,7 @@ A premium mobile film-tracking and social-cinema app built with Expo, React Nati
 | State (writes) | Zustand (CQRS pattern) |
 | State (reads) | TanStack Query v5 |
 | Offline persistence | MMKV |
-| Animations | Reanimated 3 |
+| Animations | Reanimated 4 |
 | Navigation | Expo Router (file-based routing) |
 
 ---
@@ -26,11 +26,13 @@ A premium mobile film-tracking and social-cinema app built with Expo, React Nati
 # Install dependencies
 npm install
 
-# Start the development server
-npx expo start
+# Build and open the development app (iOS / Android)
+npm run ios
+npm run android
 ```
 
-Scan the QR code with Expo Go, or press `i` / `a` to open in a simulator.
+A development build, not Expo Go: the app's native modules (MMKV, Skia,
+RevenueCat) do not run in Expo Go. After the first build, `npm start` serves it.
 
 ---
 

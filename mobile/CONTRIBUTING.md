@@ -14,11 +14,11 @@ npm install
 cp .env.example .env
 # Fill in real values (Supabase, RevenueCat, Sentry)
 
-# 3. Start the development server
-npx expo start
+# 3. Build and open the development app
+npm run ios        # or: npm run android
 ```
 
-Scan the QR code with Expo Go, or press `a` / `i` for emulator.
+A development build, not Expo Go: MMKV, Skia and RevenueCat are native modules.
 
 ---
 
@@ -26,9 +26,11 @@ Scan the QR code with Expo Go, or press `a` / `i` for emulator.
 
 ### Code Quality
 - TypeScript strict mode is enforced (`strict: true`)
-- ESLint with `@typescript-eslint/no-floating-promises` — all async calls must be awaited or explicitly voided
-- `@typescript-eslint/no-explicit-any` is a warning — prefer `unknown` with type narrowing
-- Complexity limit: 15 (stores: 20) — extract helpers if exceeded
+- ESLint (eslint.config.js), zero warnings in CI: Text and TextInput come from
+  `@/src/components/text`, never React Native; no `Intl` or `toLocale…String`
+  (the phone's Hermes has no polyfill: dates come from src/utils/timeAgo.ts); no
+  flash-list `AnimatedFlashList` (use CinematicFlashList)
+- A comment names only what exists (`npm run comments:check`, gated in CI)
 
 ### Testing
 - **Stores**: Property-based tests (fast-check) for invariants
@@ -40,7 +42,7 @@ Scan the QR code with Expo Go, or press `a` / `i` for emulator.
 ### Accessibility
 - All interactive elements (PressableScale, buttons) require `accessibilityLabel`
 - All modals must include `accessibilityViewIsModal={true}` on the content wrapper
-- Use `useReducedMotion()` to gate animations
+- Use Reanimated's `useReducedMotion()` to gate animations: it knows the setting on the first frame
 - After successful mutations, call `AccessibilityInfo.announceForAccessibility()`
 
 ### Date Formatting
@@ -53,7 +55,8 @@ Scan the QR code with Expo Go, or press `a` / `i` for emulator.
 
 - [ ] Tests pass: `npm test`
 - [ ] Type check passes: `npx tsc --noEmit`
-- [ ] ESLint clean: `npx eslint .`
+- [ ] ESLint clean: `npx eslint . --max-warnings=0`
+- [ ] Comments true: `npm run comments:check -- --kinds NAME,FILE,LINE`
 - [ ] Coverage doesn't regress (CI enforces this)
 - [ ] No new `as any` without a justifying comment
 - [ ] Accessibility labels on all new pressable elements

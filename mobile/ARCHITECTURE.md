@@ -1,6 +1,6 @@
 # ReelHouse Mobile — Architecture Guide
 
-> **Last updated:** 2026-05-22 | **Stack:** Expo 54, React 19.1, RN 0.81, TypeScript Strict
+> **Last read against the code:** 2026-09-30 | **Stack:** Expo 54, React 19.1, RN 0.81, TypeScript Strict
 
 ---
 
@@ -14,7 +14,7 @@ app/                          # Expo Router file-based routes
 
 src/
   components/                 # Shared UI components (pure, stateless)
-    auth/                     # Auth-related (AuthGuard, EmailConfirmation)
+    auth/                     # Sign-in, recovery, email confirmation
     darkroom/                 # Darkroom discovery engine
     lounge/                   # Lounge chat UI
     log/                      # Film logging flow
@@ -22,6 +22,7 @@ src/
     theme/                    # Design system elements (CrestGlow, etc.)
 
   features/                   # Feature-scoped modules (stateful, screen-aware)
+    archive/                  # Importing and exporting a member's archive
     profile/                  # Edit profile, links editor
     settings/                 # Settings screen, sections, data vault
 
@@ -33,7 +34,7 @@ src/
   lib/                        # SDK wrappers (Sentry, Supabase, RevenueCat)
   utils/                      # Pure utility functions
   schemas/                    # Zod validation schemas
-  types.ts                    # Shared type definitions
+  types/                      # Shared type definitions
   theme/                      # Design tokens (colors, fonts, effects)
   constants/                  # App constants, limits, deep links
   assets/                     # Static assets (logo SVG data)
@@ -54,16 +55,19 @@ src/
 
 - **Reads:** TanStack Query v5 with staleTime, background refetch, MMKV persistence
 - **Writes:** Zustand stores -> Supabase mutations -> query invalidation
-- **Offline:** Mutation queue in MMKV with circuit breaker + exponential backoff
+- **Offline:** a write made offline is queued in MMKV and sent, in order, when the
+  connection returns (offlineQueue.ts)
 
 ---
 
 ## Error Pipeline
 
-1. Service throws (Supabase / network / timeout)
-2. AppError (typed: timeout | network | validation | auth)
-3. useQuery/useMutation error handler
-4. reelToast.error() (user-visible) + captureError() (Sentry, production only)
+1. supabase-js RESOLVES a failure as `{ error }`, so every call reads it and throws;
+   a timeout throws `AppError` ('TIMEOUT', withTimeout.ts)
+2. A read that failed is drawn as failed — EmptyOffline / TryAgain — never as an
+   empty or "not found" page
+3. A write that failed is undone on screen and said (reelToast); offline, it is queued
+4. captureError() sends Sentry what is not a network failure
 
 ### Resilience Layers
 
@@ -71,11 +75,10 @@ src/
 |-------|------|---------|
 | Request timeout | withTimeout.ts | AbortSignal.timeout(15s) |
 | Request cancellation | withAbortSignal.ts | Screen-scoped AbortController |
-| Write circuit breaker | offlineQueue.ts | 5 failures OPEN 30s cooldown |
+| Offline writes | offlineQueue.ts | Kept on the phone, sent in order; a server blip retried up to five sends, then dead-lettered |
 | Memory pressure | memoryManager.ts | Hermes GC hooks + cache eviction |
-| Unhandled rejections | AppBootstrapper.tsx | Global handler to Sentry |
-| Crash recovery | ErrorBoundary.tsx | SafeMode: 3 retries then data wipe |
-| Nav state snapshot | navigationSnapshot.ts | MMKV save/restore on background |
+| Unhandled rejections | sentry.ts | Sentry's own integration (Hermes' rejection tracker) |
+| Crash recovery | RouteErrorBoundary.tsx, ErrorBoundary.tsx | A route's crash keeps the rest of the app; the app-wide net retries 3 times, then asks for a restart |
 
 ---
 
@@ -83,12 +86,11 @@ src/
 
 | Feature | Implementation |
 |---------|---------------|
-| React Compiler | Enabled (app.json: experiments.reactCompiler: true) |
 | Virtualized Lists | 100% FlashList (except DraggableFlatList) |
-| Image Caching | expo-image with memory-disk + blurhash placeholders |
+| Image Caching | expo-image with memory-disk caching |
 | Animation | Reanimated 4 worklets (native thread) |
 | Prefetching | onPressIn poster prefetch + staggered batch |
-| Skeleton Screens | FilmHeroSkeleton, SocialPulseSkeleton, SkeletonShimmer |
+| Skeleton Screens | FilmHeroSkeleton, SkeletonPulse, SkeletonShimmer |
 | New Architecture | Fabric + TurboModules (RN 0.81) |
 | Sentry Performance | Route-aware TTID/TTFD + app start + frame tracking |
 
