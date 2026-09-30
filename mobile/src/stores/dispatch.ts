@@ -636,7 +636,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
           ? supabase.from('dispatch_certifications').insert([{ user_id: user.id, post_id: id }])
           : supabase.from('dispatch_certifications').delete().eq('post_id', id).eq('user_id', user.id);
         const { error } = await q;
-        if (error) throw error;
+        if (refusedMark(error, next)) throw error;
       },
       { type: 'certify_filing', payload: { post_id: id, desired_state: next } },
       () => {
@@ -680,7 +680,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
           ? supabase.from('dispatch_saves').insert([{ user_id: user.id, post_id: id }])
           : supabase.from('dispatch_saves').delete().eq('post_id', id).eq('user_id', user.id);
         const { error } = await q;
-        if (error) throw error;
+        if (refusedMark(error, next)) throw error;
       },
       { type: next ? 'save_filing' : 'unsave_filing', payload: { post_id: id, user_id: user.id } },
       () => {
@@ -969,7 +969,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
           ? supabase.from('dispatch_certifications').insert([{ user_id: user.id, comment_id: id }])
           : supabase.from('dispatch_certifications').delete().eq('comment_id', id).eq('user_id', user.id);
         const { error } = await q;
-        if (error) throw error;
+        if (refusedMark(error, next)) throw error;
       },
       { type: 'certify_critique', payload: { comment_id: id, desired_state: next } },
       undo,
@@ -1000,6 +1000,15 @@ function timed<T>(build: (signal: AbortSignal) => PromiseLike<T>, label: string)
  * it is six chances for one of them to forget the rollback — which is how a
  * count ends up one higher than the row it counts, forever, on one device.
  */
+/**
+ * A mark added that the house already holds STANDS — made on another device, or
+ * missing from this phone's copy. Its unique key answers 23505, which is a yes:
+ * undoing the mark and saying "The house did not accept that" was false twice.
+ */
+function refusedMark(error: { code?: string } | null, adding: boolean): boolean {
+  return !!error && !(adding && error.code === '23505');
+}
+
 async function writeThrough(
   online: () => Promise<void>,
   queued: Parameters<typeof enqueueMutation>[0],

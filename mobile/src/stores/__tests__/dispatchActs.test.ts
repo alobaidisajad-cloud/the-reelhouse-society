@@ -19,17 +19,20 @@
 import { useDispatch } from '../dispatch';
 import type { Filing } from '../dispatchTypes';
 
-let mockOutcome: 'ok' | 'refused' | 'offline' = 'ok';
+let mockOutcome: 'ok' | 'refused' | 'offline' | 'already' = 'ok';
 const mockQueued: { type: string; payload: unknown }[] = [];
 
 /** Refused by the house: a real PostgREST error, resolved not thrown. */
 const REFUSED = { data: null, error: { message: 'new row violates row-level security policy', code: '42501' } };
+/** The mark is already there (another device made it): the unique key answers. */
+const ALREADY = { data: null, error: { message: 'duplicate key value violates unique constraint "dispatch_cert_post_once"', code: '23505' } };
 /** The wire is down: this one throws, and `isNetworkError` recognises it. */
 const networkError = () => Object.assign(new TypeError('Network request failed'), { name: 'TypeError' });
 
 const answer = () => {
   if (mockOutcome === 'offline') return Promise.reject(networkError());
   if (mockOutcome === 'refused') return Promise.resolve(REFUSED);
+  if (mockOutcome === 'already') return Promise.resolve(ALREADY);
   return Promise.resolve({ data: [], error: null });
 };
 
@@ -132,6 +135,17 @@ describe('certifying a filing', () => {
     expect(mockQueued.map((m) => m.type)).toEqual(['certify_filing']);
   });
 
+  it('a mark the house already holds STANDS — not undone, not called refused', async () => {
+    // Certified on the iPad, then on the iPhone whose page did not know yet.
+    const refusal = jest.requireMock('../../utils/reelToast').default.error as jest.Mock;
+    refusal.mockClear();
+    mockOutcome = 'already';
+    useDispatch.getState().certify('f1', true);
+    await settle();
+    expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
+    expect(refusal).not.toHaveBeenCalled();
+  });
+
   it('refuses to certify twice', () => {
     useDispatch.getState().certify('f1', true);
     useDispatch.getState().certify('f1', true);
@@ -147,6 +161,13 @@ describe('certifying a filing', () => {
 
 // ── SAVE ────────────────────────────────────────────────────────────────────
 describe('saving a filing', () => {
+  it('a save the house already holds stands', async () => {
+    mockOutcome = 'already';
+    useDispatch.getState().save('f1', true);
+    await settle();
+    expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
+  });
+
   it('marks it, and unmarks it when refused', async () => {
     mockOutcome = 'refused';
     useDispatch.getState().save('f1', true);

@@ -10,10 +10,17 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
 import type { QueuedMutation } from '../utils/offlineQueue';
+import { registerStoreReset } from './resetAllStores';
 
 export const useOfflineQueueStore = create<{ queued: readonly QueuedMutation[] }>(() => ({
   queued: [],
 }));
+
+// The next member finds nothing waiting: logout empties the queue itself
+// (clearOfflineQueue), and this empties the screens' copy with every other store.
+registerStoreReset(() => {
+  useOfflineQueueStore.setState({ queued: [] });
+});
 
 /** The ids a row of this type was made with, for the writes still waiting. */
 function unsentKey(queued: readonly QueuedMutation[], type: QueuedMutation['type']): string {
