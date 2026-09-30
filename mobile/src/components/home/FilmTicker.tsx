@@ -31,8 +31,8 @@ export const FilmTicker = memo(function FilmTicker({ films }: { films: TMDBFilm[
   useEffect(() => {
     if (contentWidth === 0 || films.length === 0) return;
     // Parks when the tab loses focus. This loop is `-1` — it ran forever, on
-    // every other tab, for the rest of the session. MarqueeBoard, PulseCardItem,
-    // ProjectorBeam and FilmGrainOverlay already do this; the ticker was missed.
+    // every other tab, for the rest of the session — as MarqueeBoard, PulseCardItem
+    // and ProjectorBeam park theirs.
     //
     // The reset to 0 is not cosmetic. withTiming animates from the CURRENT value,
     // so resuming from a frozen mid-lap position would make withRepeat loop that

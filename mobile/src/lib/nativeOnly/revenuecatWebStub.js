@@ -2,7 +2,7 @@
  * Stands in for @revenuecat/purchases-js-hybrid-mappings in the phone builds.
  *
  * react-native-purchases loads its web mode (740 KB) at import, but uses it
- * only in Expo Go, Rork or a web build (its utils/environment.js); a phone
+ * only in Expo Go, Rork or a web build (by its own environment check); a phone
  * build with the native module never calls it. metro.config.js swaps it for
  * this on iOS and Android. Should that ever change, the first call says so
  * rather than failing somewhere quieter.

@@ -73,10 +73,6 @@ const ObscurityBadge = memo(function ObscurityBadge({ score }: { score: number }
   );
 });
 
-// GenreTag is gone with the chip row it drew. Genres are now a plain
-// letterspaced line: three bordered boxes were three pieces of chrome around
-// three words, on a page whose whole revision was about removing exactly that.
-
 export const FilmHero = memo(function FilmHero({
   film,
   existingLog,

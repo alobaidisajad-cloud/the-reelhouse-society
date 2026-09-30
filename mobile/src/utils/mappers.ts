@@ -11,12 +11,6 @@
  *   • Every optional field has a safe fallback
  */
 
-// ── Dossier Types ──
-
-// ── Store→ProfileView Mappers ──
-// These replace `as unknown as ProfileX[]` double-casts in [username].tsx
-// with explicit, compile-time-checked conversions.
-
 import type { DomainLog, FilmList, PhysicalArchiveItem, WatchlistItem } from '../types';
 import { formatDate } from './timeAgo';
 import type { ProfileList, ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '../types/profile.types';
@@ -174,10 +168,9 @@ export interface LogRow {
 
 
 /**
- * Single source of truth for Supabase log row → domain mapping.
- * Replaces duplicated inline mapping in logSlice.ts (lines 81-106) and
- * useProfileData.ts (lines 101-106). Ensures consistent field handling
- * and null-safety across all consumers.
+ * Single source of truth for Supabase log row → domain mapping: the log store,
+ * the profile's reads and Year in Cinema all map a row here, so every consumer
+ * handles its fields and nulls the same way.
  */
 /**
  * Centralized select column string — single source of truth.
@@ -239,13 +232,13 @@ export function mapLogRow(dbLog: LogRow): DomainLog {
 }
 
 /**
- * Reverse mapper — domain MappedLog fields → Supabase column names.
+ * Reverse mapper — DomainLog fields → Supabase column names.
  * Eliminates the manual 20-line if-chain in logSlice.updateLog().
  * Only includes keys that are present in the updates object.
  */
 /**
  * T5-02 REFACTOR: Declarative field map replaces 18-line if-chain.
- * Adding a new log column = one entry in this table + updating LogRow/MappedLog interfaces.
+ * Adding a new log column = one entry in this table + updating LogRow and DomainLog.
  * The `defaultOnNull` is used when the domain field can be undefined but the DB column
  * must have a value (e.g., review defaults to '' instead of NULL).
  */
@@ -420,6 +413,8 @@ export function mapListRow(d: ListRow): MappedList {
     })),
   };
 }
+
+// ── Store → the profile screen's shapes: typed conversions, not `as unknown as` casts ──
 
 /** Maps a store DomainLog to a ProfileLog for the profile screen. */
 export function toProfileLog(log: DomainLog): ProfileLog {

@@ -303,8 +303,7 @@ export const st = StyleSheet.create({
     gate: { alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingTop: 16, paddingBottom: 6 },
     gateSub: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.fog, marginBottom: 8, textAlign: 'center', includeFontPadding: false },
     gateCta: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, textAlign: 'center', includeFontPadding: false },
-    // The instrument itself, shown but inert. `premiumLocked` above is the same
-    // 0.4 the app already uses for this.
+    // The instrument itself, shown but inert: the 0.4 every faded thing here uses.
     lockedPanel: { opacity: 0.4 },
 
     // The Editorial Desk continues the manuscript SHEET — attached to its foot,

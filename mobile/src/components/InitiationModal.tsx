@@ -17,12 +17,13 @@ import React, { useEffect, useState } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { BlurView } from 'expo-blur';
-import Animated, { FadeIn, FadeOut, Easing, useSharedValue, useAnimatedStyle, withDelay, withTiming } from 'react-native-reanimated';
+// Reanimated's: it knows the setting on the first frame, so a member who asked
+// for less motion never sees the entrance begin.
+import Animated, { FadeIn, FadeOut, Easing, useSharedValue, useAnimatedStyle, useReducedMotion, withDelay, withTiming } from 'react-native-reanimated';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useReducedMotion } from '@/src/hooks/useReducedMotion';
 import { ToastHost } from '@/src/components/ToastHost';
 
 const CURVE = Easing.bezier(0.33, 0, 0.15, 1);

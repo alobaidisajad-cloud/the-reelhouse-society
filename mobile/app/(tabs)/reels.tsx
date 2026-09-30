@@ -321,13 +321,6 @@ export default function ReelScreen() {
     setStackSearch('');
   }, [stacksScrollY]);
 
-
-
-
-
-  // `stackCount` removed with the header count it fed. The stacks list already
-  // tracks `filteredStacks.length` directly in its extraData below.
-
   const logsHeader = useMemo(() => (
     <>
       <SharedReelHeader section={section} variant="logs" userRole={resolvedRole} onTabSwitch={switchSection} />
@@ -557,9 +550,6 @@ const st = StyleSheet.create({
     flexDirection: 'row', paddingHorizontal: 16, gap: 12,
     marginBottom: 14, alignItems: 'center',
   },
-  // `resultCount` and `filterSpacer` removed together — the spacer existed only
-  // to push the count to the right edge, which is where it clipped.
-
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 12,
     backgroundColor: colors.well, borderWidth: 1, borderColor: 'rgba(184,137,26,0.12)',

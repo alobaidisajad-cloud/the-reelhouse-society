@@ -70,7 +70,7 @@ function usedNames() {
 function render() {
   const names = packageNames();
   const used = [...usedNames()].sort();
-  // Types the package exports as values in .d.ts only (LucideIcon, LucideProps) never reach here:
+  // Types the package declares only as types (LucideIcon, LucideProps) never reach here:
   // a type import is skipped above. Anything else unknown is an error, not a silent undefined.
   const unknown = used.filter((n) => !names.has(n));
   if (unknown.length) throw new Error(`not lucide icons: ${unknown.join(', ')}`);

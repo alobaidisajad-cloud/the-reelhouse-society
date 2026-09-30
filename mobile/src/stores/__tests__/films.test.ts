@@ -166,7 +166,7 @@ describe('log helpers — the real exported ones', () => {
 // and asserted an empty object has no key 999.
 //
 // The fixture was also fictional: it used `film_id`, which is not a field on
-// WatchlistItem (the real one is `id` — film.types.ts:69). `as never` on the setState
+// WatchlistItem (the real one is `id`, in film.types.ts). `as never` on the setState
 // is what let a shape the app never produces through, and the `as { film_id: number }`
 // cast inside the loop is what TypeScript finally rejected.
 //

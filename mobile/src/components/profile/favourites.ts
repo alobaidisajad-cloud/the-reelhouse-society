@@ -6,11 +6,11 @@
  * film is "the centre", so the rule lives here and not in either of them.
  *
  * ── WHY THE MOUNTS ARE POSITIONAL ────────────────────────────────────────────
- * `handleClearSlot` has always written a literal `null` into the array — so a
- * member who clears their first favourite has `[null, A, B]` stored. The old
- * reader did `.filter(Boolean)` and THEN indexed, which quietly slid A into
- * first place: you removed one film and a different one was promoted without
- * being asked. On the old equal-thirds row that was merely surprising. On the
+ * ProfileTriptych's `handleRemove` writes a literal `null` into the array — so a
+ * member who clears their first favourite has `[null, A, B]` stored. A reader
+ * that does `.filter(Boolean)` and THEN indexes quietly slides A into first
+ * place: you removed one film and a different one was promoted without being
+ * asked. On the old equal-thirds row that was merely surprising. On the
  * altarpiece the first slot is the centre panel — the largest thing on the
  * page, and the film the backdrop is cut from — so the same shrug would
  * re-dress somebody's entire profile behind their back.

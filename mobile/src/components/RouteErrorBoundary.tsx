@@ -3,8 +3,7 @@
  *
  * Expo Router renders a route's exported `ErrorBoundary` in place of the screen
  * when that screen throws during render/lifecycle, keeping the rest of the app
- * (and the tab bar) alive. A single screen can never white-screen the whole app
- * again — exactly the failure mode of the build-31 `_loungeStyles` crash.
+ * (and the tab bar) alive. A single screen can never white-screen the whole app.
  *
  * Usage — add ONE line to any route file:
  *   export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

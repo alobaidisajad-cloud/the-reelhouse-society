@@ -212,10 +212,7 @@ export const s = StyleSheet.create({
   stackEmptyBg: { ...EDGE_LIT, flex: 1, backgroundColor: colors.soot },
 
   // ── Projector Tab ──
-  // The Projector Room used to announce itself a second time under the header
-  // that already named it — a super, a display title and a line of prose, three
-  // rows of chrome before a single number. `projectorHeader`, `projectorSuper`,
-  // `projectorTitle` and `projectorSub` went with it.
+  // The header above already names the room; nothing here names it again.
   projectorGap: { gap: 32 },
   projectorSectionsWrap: { paddingHorizontal: ROOM_INSET, gap: 32 },
 
@@ -413,8 +410,6 @@ export const s = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.20)', borderRadius: 6,
     backgroundColor: 'rgba(13,11,9,0.85)',
   },
-  // (doorRowLocked / doorTextLocked went with the calendar's lock — the one
-  //  door that used them is every member's now.)
   doorText: { flex: 1, fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.2, color: colors.sepia },
 
   // ══ THE DESK — your own file only ══

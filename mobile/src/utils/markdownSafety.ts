@@ -2,11 +2,11 @@ import { safeOpenURL } from '@/src/utils/linking';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 /**
- * markdownLinkGuard — the handler every <Markdown> mount must pass as `onLinkPress`.
+ * onMarkdownLinkPress — the handler every <Markdown> mount must pass as `onLinkPress`.
  *
  * ── WHY THIS EXISTS ──────────────────────────────────────────────────────────
  * `react-native-markdown-display` opens links itself when no handler is supplied.
- * From its own source (v7.0.2, `src/lib/util/openUrl.js`):
+ * From its own source (v7.0.2, react-native-markdown-display/src/lib/util/openUrl.js):
  *
  *     export default function openUrl(url, customCallback) {
  *       if (customCallback) {

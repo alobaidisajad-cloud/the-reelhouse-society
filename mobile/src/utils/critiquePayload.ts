@@ -7,16 +7,15 @@ export type CritiqueRow = DossierComment & { avatar_url?: string | null };
  * Build the row a dossier critique becomes, cleaned.
  *
  * ── WHY THIS IS A UTIL AND NOT TEN LINES INSIDE THE SCREEN ───────────────────
- * finding 104: the OFFLINE path sanitised this field (mutationExecutor.ts:678) and the
- * online one did not, so the protection ran only when a critique was filed without a
- * network. That asymmetry survived because the online call sat inside a submit handler
- * where no test could reach it.
+ * The OFFLINE replay (mutationExecutor's add_dossier_comment) sanitises this field; the
+ * online path must too, and one builder for both is how they stay one. Inside a submit
+ * handler no test could reach it, and the online call went unsanitised there.
  *
  * Proven, not assumed: after wiring the sanitiser into this and three other call sites,
  * deleting every one of those calls left the whole suite green — 1322 passing. Logic
  * that cannot be reached by a test is logic that can be deleted by accident.
  *
- * Same reasoning as buildLogPayload (useLogFlow.ts:114), which the codebase already
+ * Same reasoning as useLogFlow's buildLogPayload, which the codebase already
  * extracted "so the rules are directly testable without rendering".
  *
  * Returns null when the critique is empty once cleaned — a body of nothing but

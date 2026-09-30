@@ -81,7 +81,7 @@ function TierGlow({ tier, style, children }: { tier: 'archivist' | 'auteur'; sty
     const borderOpacity = useSharedValue(0.30);
 
     useEffect(() => {
-        // Web: archivistCardBreathe / auteurCardBreathe — 4s ease-in-out.
+        // As the web's rank cards breathe: 4s ease-in-out.
         // Border-opacity only: animating shadowRadius forced expensive layer
         // re-blurs each frame; the breathing border alone carries the effect.
         borderOpacity.value = withRepeat(

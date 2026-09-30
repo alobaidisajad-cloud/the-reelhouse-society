@@ -15,7 +15,7 @@
  * To park a component, use whichever fits:
  *   • useIsFocused()   — a screen or a component owned by one
  *   • useFocusEffect() — same, effect-shaped (ProjectorBeam)
- *   • AppState         — a global overlay with no screen of its own (FilmGrainOverlay)
+ *   • AppState         — a global overlay with no screen of its own
  *   • an isActive / paused / isVisible prop — a child whose parent knows better
  *
  * ── KNOWN BLIND SPOT — read before trusting a pass ──

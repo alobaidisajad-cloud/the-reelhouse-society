@@ -126,9 +126,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 
   const editorialUri = item.editorial_header ? `${TMDB_IMG_EDITORIAL}${item.editorial_header}` : null;
 
-  // #75 — a fourth copy of timeAgo lived in this file as `getTimeAgo`, which is why the
-  // register only counted three. It had no date branch at all, so a two-year-old item
-  // read "104w AGO". The shared util falls through to a dated form with the year.
+  // The shared timeAgo: past a month it gives the date, never "104w AGO".
   const relativeTime = useMemo(() => timeAgo(item.created_at), [item.created_at]);
 
   // ── The confidential back ──
@@ -292,8 +290,6 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
     </View>
   );
 });
-
-// getTimeAgo removed — see the note at its former call site above (#75).
 
 const s = StyleSheet.create({
   // The shadow host: the rail margins and the lift, nothing that clips.

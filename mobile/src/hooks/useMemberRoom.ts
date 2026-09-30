@@ -38,7 +38,7 @@
  *
  * `eq`, not `ilike`. Nothing constrains a handle's characters, so `_` and `%`
  * are legal in one — and in a LIKE pattern they are wildcards. `ilike` on a
- * member called `a_b` matches `aab` too, and `maybeSingle` turns two matches
+ * member called "a_b" matches "aab" too, and `maybeSingle` turns two matches
  * into an error: the room of a member with an underscore in their name would
  * simply have failed to open. `eq` is also the app's own convention everywhere
  * else a handle is resolved, and it is the form the unique index can serve.

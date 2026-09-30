@@ -10,11 +10,13 @@ import Animated, {
   Easing,
   runOnJS,
   cancelAnimation,
+  // Reanimated's: it knows the setting on the first frame, so the bloom never
+  // begins for a member who asked for less motion.
+  useReducedMotion,
 } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts } from '@/src/theme/theme';
 import { storage } from '@/src/stores/mmkv-storage';
-import { useReducedMotion } from '@/src/hooks/useReducedMotion';
 import { useDeviceThrottling } from '@/src/hooks/useDeviceThrottling';
 import { EDGE_LIT } from '@/src/theme/light';
 import { AnimatedText } from '@/src/components/text/AnimatedText';

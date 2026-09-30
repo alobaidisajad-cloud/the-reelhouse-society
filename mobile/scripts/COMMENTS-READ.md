@@ -27,6 +27,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/InteractionService.test.ts | — |  |
 | __tests__/interpolateMock.test.ts | — |  |
 | __tests__/moderationActs.test.ts | — |  |
+| __tests__/notificationsMockCoverage.test.ts | — |  |
 | __tests__/schemaLengthCaps.test.ts | — |  |
 | __tests__/searchPathHardening.test.ts | — |  |
 | __tests__/store.test.ts | — |  |
@@ -97,7 +98,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/dispatch/series/[id].tsx | — |  |
 | app/dossier/[id].tsx | — |  |
 | app/edit-profile.tsx | — |  |
-| app/error.tsx | — |  |
+| app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx | — |  |
 | app/film-reviews/[id].tsx | — |  |
 | app/film/[id].tsx | — |  |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
@@ -166,6 +167,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
 | README.md | — |  |
+| scripts/bundle-size.js | — |  |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route) |
 | scripts/check-backend-live.mjs | 2026-09-28 | 13 findings; section numbers ran 1-5,9,10,8,6,7,8 and the admin-RPC note sat above the TRUNCATE block — renumbering dropped, each note moved over its own code; '#24' output replaced with what it means |
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added |
@@ -173,19 +175,21 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/edge-functions.cjs | 2026-09-29 | fetch-rss 'read by visitors' was stale (installed builds call it); history dropped |
 | scripts/functions-check.mjs | 2026-09-29 | now tells a comment-only difference (a note) from a code difference (a failure), by the compiler's tokens; a one-letter code change fails it |
 | scripts/gates-check.js | 2026-09-28 | 5 findings plus 4 unflagged incident stories; passes against production after |
+| scripts/lucide-icons.js | — |  |
 | scripts/schema-snapshot.mjs | 2026-09-28 | 5 findings; an orphan note trailed its code; the case for the snapshot kept, the incident counts dropped |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
+| scripts/surface-jest-failure.sh | — |  |
 | scripts/test-timezones.js | 2026-09-29 | the batch story reduced to the fact it guards |
 | src/assets/logo/reelhouse-logo-data.ts | — |  |
 | src/components/__tests__/ActionDeck.test.tsx | — |  |
 | src/components/__tests__/animation-parking.test.ts | — |  |
 | src/components/__tests__/aRatingCanBeGivenWithoutSight.test.tsx | — |  |
+| src/components/__tests__/aScreenThatFailsLetsYouLeave.test.tsx | — |  |
 | src/components/__tests__/AuthGuard.test.tsx | — |  |
 | src/components/__tests__/authRouting.test.ts | — |  |
 | src/components/__tests__/ControlledInput.test.tsx | — |  |
 | src/components/__tests__/EmptyStates.test.tsx | — |  |
 | src/components/__tests__/ErrorBoundary.test.tsx | — |  |
-| src/components/__tests__/LogSearchEngine.test.tsx | — |  |
 | src/components/__tests__/OfflineBanner.test.tsx | — |  |
 | src/components/__tests__/oneRankMark.test.ts | — |  |
 | src/components/__tests__/overlayElevation.test.ts | — |  |
@@ -197,6 +201,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/theCountHangsBesideItsMark.test.tsx | — |  |
 | src/components/__tests__/theDoorCanBeReadAndPressed.test.tsx | — |  |
 | src/components/__tests__/theRankBadgeIsReadable.test.ts | — |  |
+| src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx | — |  |
 | src/components/__tests__/theToastHasOneHome.test.tsx | — |  |
 | src/components/__tests__/theToastIsDrawnOnTop.test.ts | — |  |
 | src/components/atmosphere/__tests__/useSharedImage.test.tsx | — |  |
@@ -218,6 +223,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/ControlledInput.tsx | — |  |
 | src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-09-29 | new |
 | src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
+| src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
 | src/components/darkroom/constants.ts | — |  |
 | src/components/darkroom/DarkroomCards.tsx | — |  |
 | src/components/darkroom/DarkroomFilterPanel.tsx | 2026-09-29 | year applied on end of editing (iPhone number pad has no return); named fields |
@@ -347,13 +353,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/TrailerModal.tsx | — |  |
 | src/components/film/WatchProviders.tsx | — |  |
 | src/components/FilmGrain.tsx | — |  |
-| src/components/FilmGrainOverlay.tsx | — |  |
 | src/components/HapticTab.tsx | — |  |
-| src/components/home/__tests__/featuredCritiqueCacheShare.test.ts | — |  |
+| src/components/home/__tests__/theLobbySaysWhenTheCatalogueIsAway.test.tsx | — |  |
 | src/components/home/__tests__/theMarqueeSaysWhereItsFilmCameFrom.test.ts | — |  |
 | src/components/home/FeaturedCritique.tsx | — |  |
 | src/components/home/FilmStripRow.tsx | — |  |
 | src/components/home/FilmTicker.tsx | — |  |
+| src/components/home/lobbyReads.ts | — |  |
 | src/components/home/MarqueeBoard.tsx | — |  |
 | src/components/home/ProjectorBeam.tsx | — |  |
 | src/components/home/PulseCardItem.tsx | — |  |
@@ -374,7 +380,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/navMetrics.ts | — |  |
 | src/components/layout/SectionCards.tsx | — |  |
 | src/components/layout/TopNavBar.tsx | — |  |
-| src/components/ledger/types.ts | — |  |
 | src/components/log/__tests__/editorialDesk.test.tsx | — |  |
 | src/components/log/__tests__/logAtmosphere.test.tsx | — |  |
 | src/components/log/__tests__/logComposer.test.ts | — |  |
@@ -411,6 +416,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogVerdict.tsx | — |  |
 | src/components/log/NoteSheet.tsx | — |  |
 | src/components/log/VaultNote.tsx | — |  |
+| src/components/lounge/__tests__/aKeystrokeRedrawsNoMessage.test.tsx | — |  |
 | src/components/lounge/__tests__/aMessageCanBeHeardAndActedOn.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/MemberFaceStack.model.test.ts | — |  |
 | src/components/lounge/__tests__/roomGate.test.ts | 2026-09-29 | new |
@@ -418,7 +424,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/__tests__/theDoorIsAName.test.tsx | — |  |
 | src/components/lounge/__tests__/theDoorWaitsForTheGuestList.test.tsx | 2026-09-29 | new |
 | src/components/lounge/__tests__/thePollRunsWhileWatched.test.ts | — |  |
+| src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx | — |  |
 | src/components/lounge/__tests__/theRopeWaitsForTheSheet.test.tsx | — |  |
+| src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx | — |  |
 | src/components/lounge/ActionSheet.tsx | — |  |
 | src/components/lounge/AtTheDoorPanel.tsx | — |  |
 | src/components/lounge/CreateLoungeSheet.tsx | — |  |
@@ -511,6 +519,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/ReelEyeIcon.tsx | — |  |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | — |  |
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | — |  |
+| src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | — |  |
 | src/components/reels/MemberRegistry.tsx | — |  |
 | src/components/reels/ReelsCards.tsx | — |  |
 | src/components/reels/ReelsFeedList.tsx | — |  |
@@ -519,6 +528,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/types.ts | — |  |
 | src/components/RouteErrorBoundary.tsx | — |  |
 | src/components/search/SearchResultRow.tsx | — |  |
+| src/components/search/SearchUnreachable.tsx | — |  |
 | src/components/SectionErrorBoundary.tsx | — |  |
 | src/components/ShareToLoungeModal.tsx | — |  |
 | src/components/SkeletonPulse.tsx | — |  |
@@ -542,6 +552,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/theme/OrnamentalRule.tsx | — |  |
 | src/components/ToastHost.tsx | — |  |
 | src/components/Toggle.tsx | — |  |
+| src/components/TryAgain.tsx | — |  |
 | src/components/ui/NotificationBadge.tsx | — |  |
 | src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts | — |  |
 | src/constants/__tests__/deepLinks.test.ts | — |  |
@@ -559,6 +570,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/support.ts | — |  |
 | src/constants/taste.ts | — |  |
 | src/constants/textScaling.ts | — |  |
+| src/features/archive/__tests__/anImportMergesIntoTheStackItFinds.test.ts | — |  |
+| src/features/archive/__tests__/anImportNeverDropsWhatItCouldNotAsk.test.ts | — |  |
 | src/features/archive/__tests__/archiveImport.test.ts | — |  |
 | src/features/archive/__tests__/undoImport.test.ts | — |  |
 | src/features/archive/archiveImport.ts | 2026-09-28 | Three doc comments sat on a constant instead of the function they describe (upsertCounted, fetchAllListItems, isHeaderRow) and one on the wrong type; normalizeDate's doc sat on isRealDate. 'Zero competitor names' was false. Audit tags (FEAT-1/2) and history removed; every reason kept, shortened. |
@@ -574,11 +587,15 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/settings.styles.ts | — |  |
 | src/features/settings/SettingsScreen.tsx | — |  |
 | src/features/settings/SettingsSections.tsx | — |  |
+| src/generated/lucideIcons.js | — |  |
+| src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
+| src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |
 | src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts | — |  |
 | src/hooks/__tests__/theCalendarReadsItsOwnYear.test.ts | — |  |
 | src/hooks/__tests__/theNoteWaitsForItsViewing.test.tsx | — |  |
 | src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx | — |  |
+| src/hooks/__tests__/theSearchKnowsWhichSourceWasDown.test.tsx | — |  |
 | src/hooks/__tests__/useAuthFlow.validation.test.ts | — |  |
 | src/hooks/__tests__/useAuthThrottle.pbt.test.ts | — |  |
 | src/hooks/__tests__/useBanCheck.test.ts | — |  |
@@ -591,11 +608,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useOfflineAware.test.ts | — |  |
 | src/hooks/__tests__/useProfileController.logic.test.ts | — |  |
 | src/hooks/__tests__/useProfileData.reducer.test.ts | — |  |
+| src/hooks/__tests__/useScreenReady.test.tsx | — |  |
 | src/hooks/useAmbientGlow.ts | — |  |
 | src/hooks/useAnalytics.ts | — |  |
 | src/hooks/useAuthFlow.ts | — |  |
 | src/hooks/useAuthThrottle.ts | — |  |
 | src/hooks/useBanCheck.ts | — |  |
+| src/hooks/useCatalogueSearch.ts | — |  |
 | src/hooks/useClearance.ts | — |  |
 | src/hooks/useDeviceThrottling.ts | — |  |
 | src/hooks/useDispatchArchive.ts | — |  |
@@ -614,8 +633,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useOfflineAware.ts | — |  |
 | src/hooks/useProfileController.ts | — |  |
 | src/hooks/useProfileData.ts | — |  |
-| src/hooks/useReducedMotion.ts | — |  |
 | src/hooks/useReportUser.ts | — |  |
+| src/hooks/useScreenReady.tsx | — |  |
 | src/hooks/useTextScale.ts | — |  |
 | src/hooks/useUniversalSearch.ts | — |  |
 | src/hooks/useUpdateUser.ts | — |  |
@@ -625,12 +644,15 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/defensiveParse.test.ts | — |  |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
 | src/lib/__tests__/schemas.test.ts | — |  |
+| src/lib/__tests__/sentryMeasures.test.ts | — |  |
+| src/lib/__tests__/signingOutSilencesOnlyThisDevice.test.ts | — |  |
 | src/lib/__tests__/theCounterNamesNobody.test.ts | — |  |
 | src/lib/__tests__/thePriceIsTheStores.test.ts | — |  |
 | src/lib/__tests__/theTokenMustNotSurviveLogout.test.ts | — |  |
 | src/lib/__tests__/tmdb.test.ts | — |  |
 | src/lib/defensiveParse.ts | — |  |
 | src/lib/gateMetricsSink.ts | — |  |
+| src/lib/nativeOnly/revenuecatWebStub.js | — |  |
 | src/lib/pushNotifications.ts | — |  |
 | src/lib/queryClient.ts | — |  |
 | src/lib/revenueCat.ts | 2026-09-29 | 17 fixed; FALSE: 'syncs the tier to profiles.role' (the server re-reads RevenueCat and ignores the tier); setup notes with prices; ticket tags |
@@ -639,6 +661,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/sentry.ts | — |  |
 | src/lib/supabase.ts | — |  |
 | src/lib/tmdb.ts | — |  |
+| src/lib/tmdbErrors.ts | — |  |
 | src/lore/fragments.ts | — |  |
 | src/providers/__tests__/androidTracking.test.ts | — |  |
 | src/providers/androidTracking.ts | — |  |
@@ -664,8 +687,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/servicesBatch2.test.ts | — |  |
 | src/services/__tests__/servicesBatch3.test.ts | — |  |
 | src/services/__tests__/theDoorCursorCarriesATiebreaker.test.ts | — |  |
+| src/services/__tests__/theFollowedStacksSayWhenUnread.test.ts | — |  |
 | src/services/__tests__/theRegistryRetriesAFailedRead.test.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
 | src/services/__tests__/theStackKnowsYourMark.test.ts | — |  |
+| src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx | — |  |
 | src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts | — |  |
 | src/services/__tests__/VaultService.test.ts | — |  |
 | src/services/__tests__/yearInCinema.test.ts | — |  |
@@ -686,9 +711,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/YearInCinemaService.ts | — |  |
 | src/stores/__tests__/aFailedLoadKeepsWhoYouFollow.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/__tests__/aFailedSettingStaysUndone.test.ts | 2026-09-29 | new |
+| src/stores/__tests__/aFollowMadeOfflineIsKept.test.ts | — |  |
 | src/stores/__tests__/aNoticeIsNarrowedToItsOwner.test.ts | — |  |
+| src/stores/__tests__/aProfileChangeIsNeverDropped.test.ts | — |  |
 | src/stores/__tests__/aReactionIsOneOfFive.test.ts | — |  |
 | src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts | — |  |
+| src/stores/__tests__/aStackIsSavedWhole.test.ts | — |  |
 | src/stores/__tests__/auth.test.ts | — |  |
 | src/stores/__tests__/blockEnforcement.test.ts | — |  |
 | src/stores/__tests__/blockStore.pbt.test.ts | — |  |
@@ -716,6 +744,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/socialSlice.unfollow.test.ts | — |  |
 | src/stores/__tests__/staleWriteGuard.test.ts | — |  |
 | src/stores/__tests__/telemetryGating.test.ts | — |  |
+| src/stores/__tests__/theBoardSaysWhenItCouldNotBeRead.test.tsx | — |  |
 | src/stores/__tests__/theCursorCarriesATiebreaker.test.ts | — |  |
 | src/stores/__tests__/theHouseSaysWhy.test.ts | — |  |
 | src/stores/__tests__/theLiveWireKnowsTheRoom.test.ts | — |  |
@@ -750,6 +779,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/markCounts.ts | — |  |
 | src/stores/mmkv-storage.ts | — |  |
 | src/stores/notificationStore.ts | 2026-09-29 | 28 fixed; ticket tags (#51,#73,NOTIF-1,FLAW-08,LIB-5,WS-9,L234) and bug histories cut; checked the reset's MMKV delete hits the same store (it does) |
+| src/stores/offlineQueueStore.ts | — |  |
 | src/stores/reportStore.ts | — |  |
 | src/stores/resetAllStores.ts | — |  |
 | src/stores/settings.ts | — |  |
@@ -759,6 +789,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/test-support/swallowedTypeError.ts | — |  |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
 | src/theme/__tests__/lightFloor.test.ts | — |  |
+| src/theme/__tests__/nothingOvershoots.guard.test.ts | — |  |
 | src/theme/__tests__/theGroundLadder.test.ts | — |  |
 | src/theme/__tests__/theRoomIsLit.test.ts | — |  |
 | src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | — |  |
@@ -769,6 +800,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/authStyles.ts | — |  |
 | src/theme/brass.ts | — |  |
 | src/theme/light.ts | — |  |
+| src/theme/motion.ts | — |  |
 | src/theme/ryeAdvances.ts | — |  |
 | src/theme/shaders.ts | — |  |
 | src/theme/stamp.ts | — |  |
@@ -784,6 +816,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/appConfig.guard.test.ts | — |  |
+| src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |
 | src/utils/__tests__/boundedCounts.guard.test.ts | — |  |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |
@@ -797,9 +830,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/e2eTrace.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/edgeFunctions.guard.test.ts | — |  |
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
+| src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | — |  |
 | src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | — |  |
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | — |  |
+| src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts | — |  |
 | src/utils/__tests__/feedInvalidation.guard.test.ts | — |  |
 | src/utils/__tests__/filterContentByBlocks.pbt.test.ts | — |  |
 | src/utils/__tests__/handleGuard.test.ts | — |  |
@@ -813,6 +848,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/keysetCursor.test.ts | — |  |
 | src/utils/__tests__/logger.test.ts | — |  |
 | src/utils/__tests__/logScreenPolish.guard.test.ts | — |  |
+| src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
 | src/utils/__tests__/maestroFlows.guard.test.ts | — |  |
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
@@ -825,7 +861,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/notificationColumns.guard.test.ts | — |  |
 | src/utils/__tests__/offlineQueue.integration.test.ts | — |  |
 | src/utils/__tests__/offlineQueue.test.ts | — |  |
-| src/utils/__tests__/performanceMonitor.test.ts | — |  |
 | src/utils/__tests__/profileCountsCache.test.ts | — |  |
 | src/utils/__tests__/profileCountsCache.wiring.guard.test.ts | — |  |
 | src/utils/__tests__/profileMappers.test.ts | — |  |
@@ -881,13 +916,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/memberDrafts.ts | — |  |
 | src/utils/memoryManager.ts | — |  |
 | src/utils/mutationExecutor.ts | 2026-09-28 | The header said the queue pauses 100ms between mutations: it pauses 0ms. The subject_backdrop cap added (offline gate). Audit tags and history removed; each replay's reason kept, shortened. |
-| src/utils/navigationSnapshot.ts | — |  |
 | src/utils/networkError.ts | — |  |
 | src/utils/noticeRoute.ts | — |  |
 | src/utils/offlineQueue.ts | 2026-09-29 | histories (#77, #82, OFFQ-2) → rules; FALSE: 'reactive UI binding' store (nothing subscribes, no screen reads it); FALSE: schema branch 'MUST come before' duplicate (errorClass is one value; the order lives in classifyQueueError) |
 | src/utils/openNoticeFromPush.ts | — |  |
 | src/utils/openSociety.ts | — |  |
-| src/utils/performanceMonitor.ts | — |  |
 | src/utils/profileCountsCache.ts | — |  |
 | src/utils/recommendations.ts | — |  |
 | src/utils/reelToast.ts | — |  |
@@ -915,6 +948,7 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/functions/revenuecat-webhook/decide.ts | 2026-09-28 | 6 findings; the rules kept, shortened |
 | supabase/functions/revenuecat-webhook/index.ts | 2026-09-28 | the auth note claimed a length check stops timing leaks; the compare is a plain !== (reported); header moved above the imports |
 | supabase/functions/sync-entitlement/index.ts | 2026-09-28 | the header described a flow the code does not have (client sends a tier, which is validated); it trusts only RevenueCat's record. 'cryptographically verified' dropped (it is an HTTPS fetch) |
+| test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
 | test-utils/__tests__/everySourceReaderIsLedgered.test.ts | — |  |
 | test-utils/__tests__/readCode.test.ts | — |  |
 | test-utils/contractEnv.ts | — |  |

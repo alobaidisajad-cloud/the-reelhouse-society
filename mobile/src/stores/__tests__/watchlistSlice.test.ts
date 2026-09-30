@@ -59,7 +59,7 @@ describe('watchlistSlice', () => {
             _fetchingWatchlist: false,
             watchlistHasMore: true,
             // was `watchlistCursor` — no such field. The real one is
-            // _watchlistCursor (watchlistSlice.ts:18), so the pagination cursor was
+            // _watchlistCursor (in watchlistSlice), so the pagination cursor was
             // never actually reset between tests in this file either.
             _watchlistCursor: null,
         });

@@ -32,7 +32,7 @@ jest.mock('../../services/InteractionService', () => ({
 }));
 
 // _endorsedIndex / _listEndorsedIndex are Record<string, Interaction>, not
-// Record<string, true> (interactionSlice.ts:39-40). The fixtures below used `true`,
+// Record<string, true> (see interactionSlice). The fixtures below used `true`,
 // so these tests — which DO drive the real toggleEndorse/hasEndorsed — were doing it
 // against an index shape the store never builds. hasEndorsed only checks truthiness,
 // which is why it passed either way.

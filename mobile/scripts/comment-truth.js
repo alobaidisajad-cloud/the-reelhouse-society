@@ -78,6 +78,10 @@ const VOCABULARY = new Set([
   'NodeJS', 'LinkedIn', 'WhatsApp', 'TikTok', 'SoundCloud', 'MailChimp', 'SendGrid', 'CloudFlare',
   'DevTools', 'LaTeX', 'WordPress', 'SwiftKey', 'OnePlus', 'LineageOS', 'HarmonyOS', 'MyAnimeList',
   'IMDb', 'LetterBoxd', 'Letterboxd', 'MUBI', 'DoorDash', 'PlayStation', 'OpenType', 'TrueType',
+  'LibreOffice',
+  // Names from outside the app that its comments rightly cite: a pattern, and
+  // platform code the app reasons about but does not contain.
+  'DataLoader', 'setTextDirection',
 ]);
 
 function words(text, into) {
@@ -365,7 +369,8 @@ const LINE_REF = [
   /[\w\])-]\.(?:tsx?|jsx?|cjs|mjs|sql|sh|ya?ml):\d+/,
   /\b(?:line|lines|L)\s?\d+(?:\s*[-–]\s*\d+)?\b(?= of \S+\.(?:tsx?|jsx?|cjs|mjs|sql)| in \S+\.(?:tsx?|jsx?|cjs|mjs|sql)|\s*$|[.,;)])/i,
 ];
-const FILE_REF = /(?<![\w/.*$-])((?:@\/|\.{1,2}\/)?[\w.[\]()@-]+(?:\/[\w.[\]()@-]+)*\.(?:tsx?|jsx?|cjs|mjs|json|sql|md|ya?ml|sh))(?![\w/*])/g;
+// `+` is a file's first letter in Expo Router (`+not-found.tsx`).
+const FILE_REF = /(?<![\w/.*$+-])((?:@\/|\.{1,2}\/)?[\w.[\]()@+-]+(?:\/[\w.[\]()@+-]+)*\.(?:tsx?|jsx?|cjs|mjs|json|sql|md|ya?ml|sh))(?![\w/*])/g;
 const CAMEL = /(?<![\w$.\/@#\\-])[a-z][a-z0-9]*[A-Z][A-Za-z0-9]*(?![\w$])/g;
 const SNAKE = /(?<![\w$.\/@#\\-])[a-z][a-z0-9]*(?:_[a-z0-9]+)+(?![\w$])/g;
 const PASCAL = /(?<![\w$.\/@#\\-])[A-Z][a-z0-9]+(?:[A-Z][a-z0-9]*)+(?![\w$])/g;
@@ -384,7 +389,7 @@ function namesIn(text) {
   return out;
 }
 
-function textFindings(text, file, line, known, { skipNames = false } = {}) {
+function textFindings(text, file, line, known, { skipNames = false, skipFiles = false } = {}) {
   const found = [];
   const say = (kind, detail) => found.push({ kind, file, line, detail });
   const plain = text.replace(/https?:\/\/\S+/g, ' ');
@@ -394,7 +399,7 @@ function textFindings(text, file, line, known, { skipNames = false } = {}) {
   const todo = prose.match(TODO);
   if (todo) say('TODO', todo[0]);
   for (const re of LINE_REF) { const m = plain.match(re); if (m) { say('LINE', m[0]); break; } }
-  for (const m of plain.matchAll(FILE_REF)) if (!fileExists(m[1], file)) say('FILE', m[1]);
+  if (!skipFiles) for (const m of plain.matchAll(FILE_REF)) if (!fileExists(m[1], file)) say('FILE', m[1]);
   if (!skipNames) for (const n of namesIn(plain)) if (!known.has(n)) say('NAME', n);
   return found;
 }
@@ -436,9 +441,13 @@ function scanCode(file, text, known) {
       if (width > WIDTH) { found.push({ kind: 'WIDE', file, line: l + 1, detail: `${width} characters` }); break; }
     }
   }
+  // A test's comment is the record of the defect it guards, and names what was
+  // there — the component deleted, the file it lived in — on purpose. Its names
+  // and files are not held to what exists now; its line numbers still are.
+  const narrative = /(^|\/)__tests__\/|\.test\.[jt]sx?$/.test(file);
   for (const b of blocks(sf)) {
     const line = sf.getLineAndCharacterOfPosition(b.pos).line + 1;
-    found.push(...textFindings(b.body, file, line, known));
+    found.push(...textFindings(b.body, file, line, known, { skipNames: narrative, skipFiles: narrative }));
     if (isCode(b.body, file)) found.push({ kind: 'CODE', file, line, detail: b.body.trim().split('\n')[0].slice(0, 60) });
     const said = saidLines(b.body);
     if (said > 1) {
@@ -474,7 +483,9 @@ function scanDoc(file, text, known) {
   // Docs are prose about code: a named file must exist, a ticked identifier must exist
   // (prose capitalises freely), and nothing points at a line.
   const found = [];
-  const fenced = text.replace(/```[\s\S]*?```/g, (s) => s.replace(/[^\n]/g, ' '));
+  // A link is read by where it goes: `[text](path)` names `path`, not the text.
+  const fenced = text.replace(/```[\s\S]*?```/g, (s) => s.replace(/[^\n]/g, ' '))
+    .replace(/\[[^\]\n]*\]\(([^)\s]+)\)/g, ' $1 ');
   fenced.split('\n').forEach((l, i) => {
     const say = (kind, detail) => found.push({ kind, file, line: i + 1, detail });
     for (const m of l.matchAll(FILE_REF)) if (!fileExists(m[1], file)) say('FILE', m[1]);

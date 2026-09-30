@@ -5,17 +5,9 @@
  * Max 5 attempts per 60 seconds. Shows countdown timer on lockout.
  * Upgraded to use MMKV storage to persist lockout across app restarts.
  * 
- * Usage:
- *   const { canAttempt, recordAttempt, secondsRemaining } = useAuthThrottle();
- *   
- *   const handleLogin = () => {
- *     if (!canAttempt) {
- *       reelToast.error(`Too many attempts. Try again in ${secondsRemaining}s.`);
- *       return;
- *     }
- *     recordAttempt();
- *     // ... actual login
- *   };
+ * Used by useAuthFlow: it asks `canAttempt` before each sign-in, calls
+ * `recordAttempt` when the credentials are refused, and shows
+ * `secondsRemaining` while locked out.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { storage } from '@/src/stores/mmkv-storage';

@@ -127,7 +127,7 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
                 >
                     {stamp.glyph}
                 </SvgText>
-                {/* Label line 1 */}
+                {/* The label's first line */}
                 <SvgText
                     x={center} y={center * 0.63}
                     textAnchor="middle"
@@ -136,7 +136,7 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
                 >
                     {stamp.label.length > 14 ? stamp.label.slice(0, 14) : stamp.label}
                 </SvgText>
-                {/* Label line 2 (if needed) */}
+                {/* Its second, when it needs one */}
                 {stamp.label.length > 14 && (
                     <SvgText
                         x={center} y={center * 0.78}

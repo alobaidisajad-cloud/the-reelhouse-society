@@ -8,7 +8,7 @@
  *   • Zod validation before any submission attempt
  *   • Online: direct Supabase RPC call
  *   • Offline / network failure fallback: enqueue to offlineQueue
- *   • Duplicate prevention via in-memory Set of content_ids
+ *   • Duplicate prevention via an in-memory Set of reported content ids
  *   • Optional block toggle delegates to BlockStore
  *   • Haptic + toast feedback for all outcome states
  */

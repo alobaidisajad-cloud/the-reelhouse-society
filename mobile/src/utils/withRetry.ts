@@ -8,11 +8,7 @@
  * Non-critical operations (reactions, notifications) should NOT use this —
  * they should fail silently or with optimistic rollback.
  *
- * Usage:
- *   const result = await withRetry(
- *       () => supabase.from('logs').insert(logData),
- *       { maxRetries: 3, label: 'insert_log' }
- *   )
+ * Used by the auth store's adoptSession, to read a new member's profile.
  */
 
 import { addBreadcrumb } from '../lib/sentry';

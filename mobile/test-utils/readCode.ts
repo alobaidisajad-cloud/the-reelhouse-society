@@ -16,7 +16,7 @@
  * keeps complete.
  *
  *   readCode('src/stores/auth.ts')          // relative to mobile/
- *   stripComments(someSourceText, 'x.ts')   // the same, for text in hand
+ *   stripComments(text, fileName)           // the same, for text in hand
  */
 import { readFileSync } from 'fs';
 import { isAbsolute, join } from 'path';

@@ -64,6 +64,14 @@ jobs:
         working-directory: ./mobile
         run: npm run -s check:routes
 
+      # A comment is read as fact. In app code, scripts and the living docs, each
+      # name, file and line it points at must exist (a test's own story of the
+      # defect it guards may name what was deleted). The style kinds — LONG,
+      # HISTORY, WIDE — are reported by `npm run comments:check`, not gated.
+      - name: Every comment names what exists
+        working-directory: ./mobile
+        run: npm run -s comments:check -- --kinds NAME,FILE,LINE
+
       # ⚠️ WEAKER THAN IT LOOKS: the root eslint.config.js matches only JS and JSX,
       # none of the web's TypeScript (that needs typescript-eslint, not installed).
       - name: ESLint (Web — JS/JSX only, see comment above)

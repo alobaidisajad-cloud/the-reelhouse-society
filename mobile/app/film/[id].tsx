@@ -98,14 +98,10 @@ export default function FilmDetailScreen() {
 
   /**
    * ── A ROW THAT SAYS TRAILER MUST OPEN A TRAILER ────────────────────────────
-   * This used to fall through to `videos[0]` — ANY video of any kind. A film
-   * with nothing but press-junket featurettes still showed a control promising
-   * a trailer and delivered an interview clip. The old console could get away
-   * with it; a tray row that reads PLAY THE TRAILER cannot.
-   *
-   * So the fallback stops at a teaser, which is still a trailer in every sense
-   * a member cares about. Past that there is no trailer, `hasTrailer` is false,
-   * and the row is simply ABSENT — which is the honest answer.
+   * Never `videos[0]`, ANY video of any kind: a film with nothing but press
+   * featurettes would read PLAY THE TRAILER and play an interview. The fallback
+   * stops at a teaser, which is still a trailer to a member. Past that `trailer`
+   * is null, and the row is simply ABSENT — the honest answer.
    */
   const trailer = useMemo(() => {
     const rawVideos = data?.detail?.videos?.results ?? [];

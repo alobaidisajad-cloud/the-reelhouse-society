@@ -111,7 +111,6 @@ const s = StyleSheet.create({
     color: colors.parchment,
     marginBottom: 6,
   },
-  // `gateEst` removed with the "EST. 1924" line it drew.
   gateSub: {
     fontFamily: fonts.sub,
     fontSize: 10,

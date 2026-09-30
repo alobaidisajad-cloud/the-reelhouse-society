@@ -144,15 +144,8 @@ const BrassDisc = memo(function BrassDisc({ rotation }: { rotation: SharedValue<
 
 /**
  * ── THE CARD ITSELF, SEPARATE FROM THE BUTTON THAT OPENS IT ─────────────────
- * Exported so the design record can draw the REAL sheet.
- *
- * There used to be a second one. `PaperConcierge.tsx` held its own copy of this
- * card — same title, same lore, same three acts, same descriptions — and the
- * mockups drew that while the app mounted this. Two hundred and five lines that
- * no screen mounted, kept alive by a fixture importing them, and the plates
- * quietly promised to show "the real component" while showing the other one.
- * Identical on the day it was found, and nothing kept them so: a change here
- * would never have reached the drawing.
+ * Exported so the design record draws THIS card, the one the app mounts, and
+ * never a copy of it that a change here would not reach.
  *
  * The card is the whole visual unit — glow, brackets, title, rule, rows. The
  * geometry around it (where it sits, the notch pointing at the button, the

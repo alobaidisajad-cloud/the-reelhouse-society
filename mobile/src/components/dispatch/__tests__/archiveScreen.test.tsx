@@ -139,7 +139,7 @@ const store = () => useDispatch.setState({
 /**
  * Type into the archive's own search row and let the debounce fire.
  *
- * `fireEvent` awaits an `act` of its OWN (`fire-event.js:92`), so wrapping it in
+ * `fireEvent` awaits an `act` of its OWN (the testing library's fireEvent), so wrapping it in
  * another one nests them and React says "overlapping act() calls". Awaited on
  * its own here; the separate act is only for driving the debounce clock.
  */

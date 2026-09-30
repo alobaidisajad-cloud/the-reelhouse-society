@@ -64,7 +64,7 @@ describe('values that legitimately mean "no paid tier" stay silent', () => {
   it('the ADMIN role does not warn — scoring 0 is documented design', () => {
     // resolveTier feeds `role` through this function too, so 'admin' arrives here on
     // every resolve for the proprietor's account. Warning would fire constantly and
-    // it is not a defect: user.ts:54-57 — "a duty, not a rank".
+    // it is not a defect: the role's note in user.ts — "a duty, not a rank".
     normalizeTier('admin');
     resolveTier({ tier: 'cinephile', role: 'admin', is_founding: false });
     expect(warn).not.toHaveBeenCalled();

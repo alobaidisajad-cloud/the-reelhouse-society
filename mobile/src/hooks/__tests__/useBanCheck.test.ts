@@ -8,7 +8,7 @@
  *
  * No renderHook: useBanCheck holds no state and runs no effects — it reads the
  * store and returns two values — so with the store mocked it is a plain call.
- * (renderHook is async in this environment; see useAuthThrottle.pbt.test.ts:5.)
+ * (renderHook is async in this environment; see useAuthThrottle.pbt.test.ts.)
  */
 import { useBanCheck } from '../useBanCheck';
 import { useAuthStore } from '../../stores/auth';

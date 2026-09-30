@@ -14,9 +14,9 @@
 | # | Task | Where | Why |
 |---|------|-------|-----|
 | 1 | Google Play Console account + app listing (`com.reelhouse.society`) | play.google.com/console (~$25 once) | Prerequisite for everything below |
-| 2 | RevenueCat: add the Google Play app, configure the SAME products/entitlements (archivist/auteur/founding), copy the **public Google API key** | RC dashboard | Without it `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` is empty → `revenueCat.ts:55-57` skips configure → **purchases dead on Android** (graceful, no crash) |
+| 2 | RevenueCat: add the Google Play app, configure the SAME products/entitlements (archivist/auteur/founding), copy the **public Google API key** | RC dashboard | Without it `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` is empty → revenueCat.ts skips configure → **purchases dead on Android** (graceful, no crash) |
 | 3 | Add `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` to `eas.json` production env (next to the iOS key) | `eas.json` | The code already reads it — key only |
-| 4 | Firebase project → register the Android app → download `google-services.json` → reference via `android.googleServicesFile` in `app.json` → `eas credentials` for FCM | Firebase console | Without FCM, `getExpoPushTokenAsync` throws on Android → caught (`pushNotifications.ts:64→109`) → **push silently dead**. The Android notification channel is ALREADY coded (`pushNotifications.ts:91`) |
+| 4 | Firebase project → register the Android app → download its Google services config (JSON) → reference via `android.googleServicesFile` in `app.json` → `eas credentials` for FCM | Firebase console | Without FCM, `getExpoPushTokenAsync` throws on Android → caught in `registerForPushNotifications` → **push silently dead**. The Android notification channel is ALREADY coded (pushNotifications.ts) |
 | 5 | In-app products in Play Console matching RC product ids | Play Console | RC serves offerings from Play |
 
 ## 2 · Code items to verify ON A DEVICE (deliberately NOT fixed blind)
@@ -27,7 +27,7 @@ ones they fix. Verify each on the first Android build:
 
 - **View shadows with no `elevation`** → shadows render invisible on Android
   (flatness, not breakage). Files (view-shadow count):
-  `feed/AutopsyView.tsx` (2) · `film/FilmActionRow.tsx` (1) ·
+  `feed/AutopsyView.tsx` (2) ·
   `film/FilmSectionHeader.tsx` (1) · `home/MarqueeBoard.tsx` (1) ·
   `home/SocialPulse.tsx` (2) · `log/LogModalStyles.ts` (1) ·
   `moderation/ReportSheet.tsx` (1) · `Preloader.tsx` (5) ·

@@ -146,8 +146,8 @@ export const s = StyleSheet.create({
     // 62 is not arbitrary. The longest label the card can emit is RECORD, which
     // measures 54.1pt at the 1.2 tier this text declares — letterSpacing is a
     // fixed point value in RN and does NOT shrink back when the font grows, so
-    // it has to be counted per character at the cap, not at rest.
-    // personPage.test.ts recomputes this from the shipped labels.
+    // it has to be counted per character at the cap, not at rest. The screens
+    // job measures it at every width (mockups/tools/layout.cjs).
     width: 62, paddingTop: 1, includeFontPadding: false,
   },
   recordValue: {

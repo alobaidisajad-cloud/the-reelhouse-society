@@ -73,7 +73,7 @@ export const DomainLogSchema = z.object({
 
 // SCHEMA-4 drift guard: assert the schema's inferred output and the DomainLog
 // interface are mutually assignable. Either side diverging breaks compilation.
-// (Compile-time only — `AssertExact` resolves to `true` when both directions hold.)
+// (Compile-time only — `AssertExtends` resolves to `true` in each direction.)
 type AssertExtends<A, B> = A extends B ? true : false;
 type _SchemaInfersToDomainLog = AssertExtends<z.infer<typeof DomainLogSchema>, DomainLog>;
 type _DomainLogSatisfiesSchema = AssertExtends<DomainLog, z.infer<typeof DomainLogSchema>>;

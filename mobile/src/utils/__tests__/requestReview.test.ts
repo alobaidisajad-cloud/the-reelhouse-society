@@ -6,7 +6,7 @@
  * there), so this suite is the only pre-release verification that exists.
  *
  * Pattern copied from useInitiation.test.ts: extract the decision, test it
- * directly. renderHook is async in this environment (useAuthThrottle.pbt.test.ts:5).
+ * directly. renderHook is async in this environment (see useAuthThrottle.pbt.test.ts).
  */
 import {
   shouldRequestReview,

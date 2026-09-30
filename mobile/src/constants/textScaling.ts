@@ -1,7 +1,7 @@
 /**
  * textScaling.ts — iOS Dynamic Type Support
  * ─────────────────────────────────────────────
- * T3-15: Moved from hooks/useScaledFont.ts — not a hook, exports plain constants.
+ * Plain constants, not a hook.
  *
  * 10/10 D-02: Respects iOS/Android accessibility font scaling settings
  * while preventing layout breakage with a max scale multiplier.

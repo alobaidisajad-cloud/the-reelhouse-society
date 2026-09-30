@@ -62,18 +62,15 @@ export const ESSAY_BODY = {
  * capped factor as `fontSize`, on both platforms:
  *
  *   iOS      RCTAttributedTextUtils.mm   lineHeight * RCTEffectiveFontSizeMultiplier…
- *   Android  TextAttributes.kt           PixelUtil.toPixelFromSP(lineHeight, effectiveMax…)
+ *   Android  TextAttributes.kt           PixelUtil.toPixelFromSP(lineHeight, …)
  *
  * So 16.5/28 is a ratio of 1.70 at every setting with nothing done here.
  *
- * This file used to believe otherwise, and multiplied the leading by the text
- * scale itself (`useEssayLeading` / `withLeading`). The phone then scaled it
- * again: at the largest setting the essay was set at 1.35 × 1.35 ≈ 1.82 times
- * its leading, a ratio of 2.30, and the one screen built for long reading came
- * apart into loose lines for exactly the members who had asked for bigger
- * type. Nothing that renders a picture could see it, because a picture is laid
- * out at the default size and grown once. `theEssayAtLargeType.test.tsx` now
- * forbids a line height being scaled in JavaScript anywhere in the app.
+ * Scaling it again in JavaScript sets the essay at 1.35 × 1.35 ≈ 1.82 times its
+ * leading at the largest setting — a ratio of 2.30, the one screen built for long
+ * reading coming apart for exactly the members who asked for bigger type. A
+ * picture cannot show it (it is laid out at the default size and grown once), so
+ * `theEssayAtLargeType.test.tsx` forbids a line height scaled in JavaScript.
  */
 
 export const EssayHead = memo(function EssayHead({

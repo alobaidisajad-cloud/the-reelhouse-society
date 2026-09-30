@@ -1,10 +1,7 @@
 /**
- * LoungeStyles — the ActionSheet's paper, and nothing else.
- *
- * History note: this file once carried a full message-bubble chat skin.
- * The Editorial Salon (bubble-less transcript in app/lounge/[id].tsx)
- * replaced it; the dead styles and the orphaned MessageBubble component
- * were buried in the corridor overhaul. Only the long-press sheet lives here.
+ * LoungeStyles — the ActionSheet's paper, and nothing else. The Salon's
+ * transcript (app/lounge/[id].tsx) draws no bubbles; only the long-press sheet
+ * lives here.
  */
 import { StyleSheet } from 'react-native';
 import { colors, fonts } from '@/src/theme/theme';

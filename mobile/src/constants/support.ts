@@ -4,7 +4,7 @@
  * Every place in the app that tells a member where to write reads from here.
  * The old address (support@reelhouse.app) was printed in three places and
  * reached nobody: the domain had no mail records at all. One constant, and a
- * guard (`theFrontDeskHasOneAddress`) that fails if the address is typed
+ * guard (theFrontDeskAnswers.test.ts) that fails if the address is typed
  * anywhere else, so it cannot happen twice.
  *
  * Mail to this address is routed by Cloudflare Email Routing to the Society's

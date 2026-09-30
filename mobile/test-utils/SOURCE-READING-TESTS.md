@@ -46,7 +46,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/logScreenPolish.guard.test.ts` | Five contracts the log screen's render cannot show. Behaviour: `theLogSaysWhatHappened.test.ts`, `theSealLeavesWithTheScreen.test.tsx`, `theDossierSealIsSpoken.test.tsx`. |
 | `src/components/__tests__/stackedRowHitSlop.test.ts` | Touch rules only for the 16 controls no drawn screen measures beside a neighbour; the rest are MEASURED (`layout.cjs` STEAL, CI `captures`) and held to `mockups/touch-measured.txt`. Keeps the sweep that every repeated control declares its halo. |
 
-(Also converted this pass, and no longer reading source at all: `personPage` →
+(Also converted this pass, and no longer reading source at all: the personPage test →
 `app/person/__tests__/thePersonFileReadsTrue.test.tsx` + `zz-person.gen`;
 `logTouchTargets` → the composer's drawn-coverage and SMALL checks in CI;
 `noIntlInTheDispatch`, and the Intl checks in `FilmStub`, `FilmActionTray` and
@@ -116,6 +116,7 @@ Decisions, as of 2026-09-28:
 | `src/services/__tests__/everyNameAClientCallsExists.test.ts` | Every table and function a client calls exists in the schema snapshot. |
 | `src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts` | The edge function's allowed paths against every path the clients use. |
 | `src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts` | The salon name's four limits, the column's among them. |
+| `test-utils/__tests__/everyCommentIsTrue.test.ts` | The reading ledger (scripts/COMMENTS-READ.md) against the files comment-truth checks. |
 | `src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts` | Every column of a filing, emptied or kept when it ends, against the schema snapshot. |
 | `src/utils/__tests__/appConfig.guard.test.ts` | The build configs: only the E2E build differs. |
 | `src/utils/__tests__/ciAlert.behaviour.test.ts` | The CI alert's script, run out of its workflow. |

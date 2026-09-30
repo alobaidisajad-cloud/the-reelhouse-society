@@ -427,10 +427,7 @@ export const tmdb = {
   /**
    * The Canon — films that actually built the medium.
    *
-   * This replaced a `topRated()` helper that called `/movie/top_rated`; that
-   * helper had exactly one caller (the Lobby) and was removed with the switch.
-   *
-   * NOT `/movie/top_rated`. That endpoint sorts by raw vote average with a low
+   * NOT TMDB's top-rated list. That endpoint sorts by raw vote average with a low
    * vote-count floor, so a three-week-old release with a few hundred votes
    * outranks the canon. Measured against production on 2026-08-13 it returned:
    *
@@ -450,7 +447,7 @@ export const tmdb = {
    * Green Mile. Both thresholds were run against the live proxy, not reasoned
    * about.
    *
-   * Response shape is identical to top_rated (checked field by field), and the
+   * Response shape is identical to the top-rated list's (checked field by field), and the
    * rail reads only `id` and `poster_path`.
    */
   canon: async (page = 1) => fetchTMDB<TMDBMovieListResponse>(

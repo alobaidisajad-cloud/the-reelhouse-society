@@ -56,18 +56,10 @@ export const s = StyleSheet.create({
   },
   backBtn: { width: 60, zIndex: 2 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: HEADER_ACTION_GAP, zIndex: 2 },
-  // The eyebrow is absolutely centered so it never shifts owner↔visitor.
-  // Gutters sized past the measured worst case: the visitor's right cluster
-  // (SHARE + ⋯) measures 87.7pt, so 104 clears it with margin.
-  //
-  // The note that used to sit here claimed the text "fits deterministically at
-  // 360dp and up". It did not, by 40pt. Between the two 104pt gutters the box
-  // is 120pt at 360dp and 150pt at 390dp — and "FROM THE PERMANENT RECORD"
-  // needs 159.5pt in Special Elite at 7pt with 2pt of letterspacing. It was
-  // ellipsizing on the two commonest phone widths; only a Pro Max ever showed
-  // it whole. "PERMANENT RECORD" needs 102.1pt and fits both with room, and
-  // says the same thing. logPage.test.ts recomputes this rather than trusting
-  // another comment.
+  // The eyebrow is absolutely centred so it never shifts owner↔visitor, between
+  // gutters that clear the visitor's right cluster (SHARE + ⋯). Whether "PERMANENT
+  // RECORD" fits between them is MEASURED at every width by the screens job
+  // (mockups/tools/layout.cjs); "FROM THE PERMANENT RECORD" did not.
   eyebrowWrap: { position: 'absolute', top: 0, bottom: 0, left: 104, right: 104, alignItems: 'center', justifyContent: 'center' },
   eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
   shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },

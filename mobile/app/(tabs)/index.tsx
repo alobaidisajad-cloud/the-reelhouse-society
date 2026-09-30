@@ -117,9 +117,9 @@ export default function LobbyScreen() {
     staleTime: 10 * 60 * 1000,  // 10 min fresh window
   });
 
-  // The Canon. `tmdb.canon()` rather than `topRated()` — see the note on the
-  // helper: top_rated ranks by raw average, so it was serving 2026 releases
-  // under a heading that promises "the films that built the medium".
+  // The Canon: `tmdb.canon()`, not TMDB's top-rated list, which ranks by raw
+  // average and served new releases under a heading that promises "the films
+  // that built the medium" (see the note on the helper).
   const { data: canonData, isError: canonFailed } = useQuery({
     queryKey: [...LOBBY, 'canon'],
     queryFn: async () => {
@@ -511,8 +511,6 @@ const s = StyleSheet.create({
     fontFamily: fonts.display, fontSize: 38, color: colors.parchment,
     textAlign: 'center', lineHeight: 46, ...effects.textGlowSepia, textShadowRadius: 20,
   },
-  // `welcomeEstRow`, `welcomeEstLine` and `welcomeEstText` left with the
-  // "EST. 1924" rule they drew.
   welcomeTagline: {
     fontFamily: fonts.sub, fontSize: 12, color: colors.fog, textAlign: 'center',
     lineHeight: 22, fontStyle: 'italic', marginTop: 16, letterSpacing: 0.3,
@@ -585,14 +583,8 @@ const s = StyleSheet.create({
   lobbyFooterRule: { width: 60, height: StyleSheet.hairlineWidth, backgroundColor: colors.sepia, opacity: 0.3 },
   lobbyFooterBusterWrap: { marginTop: 10 },
   lobbyFooterLogo: { width: 32, height: 32, opacity: 0.4, marginVertical: 18 },
-  // `lobbyFooterText` removed — it was already orphaned before this pass, with
-  // no JSX referencing it.
-  // `lobbyFooterSub` removed with the "Est. 1924 · The Society is watching." line.
-  // 0.30 measured 1.58:1 against ink — effectively invisible outdoors — and 0.60
-  // made 3.02:1, deliberately short of 4.5 so the closing flourish would not
-  // flatten the footer's fade-to-black. The house has since stopped drawing
-  // words see-through, so it is `fogQuiet`: the quietest solid ink there is.
-  // Still the whisper, now one you can read.
+  // The closing whisper, in `fogQuiet`: the quietest SOLID ink there is. Drawn
+  // see-through it measured 1.58:1 against the ink, unreadable outdoors.
   lobbyFooterWhisper: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fogQuiet, fontStyle: 'italic', marginBottom: 18, letterSpacing: 1 },
 });
 

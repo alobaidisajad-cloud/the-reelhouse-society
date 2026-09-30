@@ -168,7 +168,7 @@ describe('buildLogPayload', () => {
   it('gates altPoster, editorialHeader, dropCap, pullQuote behind their respective tiers', () => {
     // Below the gate: the key is ABSENT. dropCap and pullQuote used to be sent as
     // `false` / `''`, which the rewatch merge writes through — those two are not
-    // wrapped in safeOverride (logOperations.ts:179-205).
+    // wrapped in safeOverride (logOperations' rewatch merge).
     expect('altPoster' in buildLogPayload(basePayloadInput({ isAuteur: false, altPoster: '/alt.jpg' }))).toBe(false);
     expect(buildLogPayload(basePayloadInput({ isAuteur: true, altPoster: '/alt.jpg' })).altPoster).toBe('/alt.jpg');
 
@@ -289,7 +289,7 @@ describe('premium fields are omitted on edit, never nulled', () => {
 // ── End-to-end: the columns must never reach the UPDATE statement ─────────────
 // Omitting a key only helps if every layer below preserves the omission.
 // buildLogPayload -> (updateLogOp deletes undefined) -> mapLogToDbPayload
-// (mappers.ts:258 `if (value !== undefined)`) -> the SQL column list.
+// (mapLogToDbPayload's `if (value !== undefined)`) -> the SQL column list.
 // This asserts the whole chain, so a future change to any link fails here.
 describe('a non-premium edit sends no premium COLUMNS to the database', () => {
   const { mapLogToDbPayload } = require('../../utils/mappers');
@@ -300,7 +300,7 @@ describe('a non-premium edit sends no premium COLUMNS to the database', () => {
 
   function toDbPayload(input: Partial<LogPayloadInput>) {
     const payload = buildLogPayload(basePayloadInput(input));
-    // Mirror updateLogOp's undefined-strip (logOperations.ts:574-577).
+    // Mirror updateLogOp's undefined-strip (in logOperations).
     const clean: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(payload)) if (v !== undefined) clean[k] = v;
     return mapLogToDbPayload(clean);

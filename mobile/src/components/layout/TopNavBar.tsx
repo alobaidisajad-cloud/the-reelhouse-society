@@ -120,8 +120,8 @@ export const TopNavBar = memo(function TopNavBar() {
   // nothing to decide — see the door below.
 
   // ── Zero-Cost Memoized Routing ──
-  // No onLogPress here any more — logging is one of the Concierge's two doors,
-  // and the button owns its own routing.
+  // Logging is not a door here: it is one of the Concierge's, and the button
+  // owns its own routing.
   const onLoungePress = useCallback(() => router.navigate('/lounge' as Href), [router]);
   const onSearchPress = useCallback(() => router.navigate('/search-modal' as Href), [router]);
   const onNotifPress = useCallback(() => router.navigate('/notifications-modal' as Href), [router]);

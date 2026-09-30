@@ -1,7 +1,7 @@
 /**
  * AutopsyGauge — "THE AUTOPSY" Celluloid Gauge Display
  *
- * Pixel-perfect native port of web RadarChart (UI.tsx L383-448).
+ * The native port of the web's RadarChart.
  * NOT a radar chart — it's horizontal segmented progress bars styled
  * like vintage film strip gauges with a deep vignette overlay.
  *

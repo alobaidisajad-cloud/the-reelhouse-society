@@ -12,10 +12,8 @@ import { scaledTextProps } from '@/src/constants/textScaling';
  * The biometric screen in front of a member's OWN Archive — the room of every
  * film they have seen — when they have turned the lock on in Settings.
  *
- * It was called VaultLock, and it asked the phone to "Unlock Vault". The Vault
- * is the private notes, and the profile's disc shelf carried the same name, so
- * Settings ended up promising this lock guarded the Physical Archive. It never
- * did: it has only ever stood in front of the Archive.
+ * Not the Vault (that is the private notes) and not the Physical Archive (the
+ * disc shelf): it stands in front of the Archive alone, and says so.
  */
 export default function ArchiveLock({ onUnlocked }: { onUnlocked: () => void }) {
     const [locked, setLocked] = useState(true);

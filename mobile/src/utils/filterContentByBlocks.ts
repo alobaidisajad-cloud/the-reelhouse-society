@@ -7,9 +7,7 @@
  *
  * Never mutates the input array — always returns a new filtered copy.
  *
- * Usage:
- *   const visible = filterContentByBlocks(logs, (log) => log.user_id);
- *   const visibleMessages = filterContentByBlocks(messages, (m) => m.author_id);
+ * Usage, as a film's reviews read it: `filterContentByBlocks(mapped, (r) => r.user_id ?? '')`.
  */
 import { useBlockStore } from '../stores/blockStore';
 

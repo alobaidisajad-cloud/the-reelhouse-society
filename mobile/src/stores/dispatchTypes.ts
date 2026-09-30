@@ -8,9 +8,9 @@
  * SHAPE, drops rows that do not match it, and converts what is left into the
  * props the paper components already expect.
  *
- * Rows are validated at the boundary for the same reason `DossierRowSchema`
- * exists: after a column rename, undefined values otherwise flow straight
- * through and render as blank cards rather than as an error anyone can see.
+ * Rows are validated at the boundary: after a column rename, undefined values
+ * otherwise flow straight through and render as blank cards rather than as an
+ * error anyone can see.
  */
 import { z } from 'zod';
 import { getTierWeight, resolveTier, TIER_WEIGHTS } from '@/src/utils/tier';
@@ -128,8 +128,7 @@ export interface Critique {
 /**
  * PostgREST returns an embedded relation as an object, or as an ARRAY of one
  * when it cannot prove the relationship is to-one. Both shapes are accepted
- * here because the app has already been bitten by that twice (lounge.ts:536,
- * useEditProfile.ts:238 both unwrap it by hand).
+ * here, as the Lounge store unwraps it by hand.
  */
 const ProfileSchema = z.object({
   username: z.string().nullable().optional(),

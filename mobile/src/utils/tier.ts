@@ -1,6 +1,6 @@
 import { ReelHouseTier } from '@/src/lib/revenueCat';
 // logger.warn console-logs in dev and forwards to Sentry in production
-// (logger.ts:42-53). Neither logger nor sentry imports this file, so no cycle.
+// (logger's `warn`). Neither logger nor sentry imports this file, so no cycle.
 import { logger } from '@/src/utils/logger';
 
 // Mathematical weight mapping for tiers
@@ -17,8 +17,8 @@ export const TIER_WEIGHTS: Record<ReelHouseTier | 'free', number> = {
  *
  * normalizeTier is fed BOTH `profiles.tier` and `profiles.role` — resolveTier
  * passes the role through getTierWeight — so the permission roles belong here too.
- * 'admin' scoring 0 is documented design, not a defect (src/schemas/user.ts:54-57:
- * "it is a duty, not a rank").
+ * 'admin' scoring 0 is documented design, not a defect (the role's note in
+ * src/schemas/user.ts: "it is a duty, not a rank").
  */
 const EXPECTED_NON_TIER_VALUES = new Set([
   'free',        // legacy spelling of "no subscription"
@@ -48,7 +48,7 @@ const reportedUnknownValues = new Set<string>();
  * them to free with no error, no log, and no way to notice except a complaint.
  *
  * The return value is unchanged — this only adds telemetry, so it cannot alter
- * behaviour. logger.warn forwards to Sentry in production (logger.ts:42-53).
+ * behaviour. logger.warn forwards to Sentry in production.
  */
 export function normalizeTier(tierStr?: string | null): ReelHouseTier {
   if (!tierStr || tierStr === 'free') return 'cinephile';

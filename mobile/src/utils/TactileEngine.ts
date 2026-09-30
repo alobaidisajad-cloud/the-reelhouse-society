@@ -2,17 +2,10 @@ import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { useSettingsStore } from '../stores/settings';
 
-// ── 10/10 DIMENSION 4: THE TACTILE ENGINE ──
-// Unified haptic system.
-//
-// Previously 3 competing systems existed:
-//   1. TactileEngine (semantic names, web guard, NO throttle) — 6 consumers
-//   2. lib/haptics.ts  (throttle wrapper, NO semantics) — 2 consumers
-//   3. Raw expo-haptics (no throttle, no semantics) — 37 consumers
-//
-// Now: Single system with BOTH semantic naming AND Android throttle guard.
-// The throttle prevents the Android haptic motor hardware queue from locking
-// up when users spam interactions (e.g., rapid endorse/unendorse).
+// ── THE TACTILE ENGINE ──
+// The app's one haptic system: nothing else imports expo-haptics. Semantic names,
+// and an Android throttle guard, which keeps the haptic motor's hardware queue
+// from locking up when a member spams a control (a rapid certify/uncertify).
 
 let lastHapticTime = 0;
 const HAPTIC_THROTTLE_MS = Platform.OS === 'android' ? 50 : 0;

@@ -12,15 +12,15 @@ import { dateParts, formatDate } from '@/src/utils/timeAgo';
  * `@/src/utils/timeAgo`, which already prints AUG 5, 2026 and is the only
  * implementation allowed to answer "which day is this?".
  *
- * A `formatFiledDate` briefly lived here and was wrong in two ways at once:
+ * A date formatter of its own here would be wrong in two ways at once:
  *
- *  1. It went through `new Date(...).toLocaleDateString('en-US', { timeZone:
+ *  1. It would go through `new Date(...).toLocaleDateString('en-US', { timeZone:
  *     'UTC', … })`. This app runs on Hermes with no Intl polyfill, so whether
  *     that `timeZone` option is honoured cannot be verified without a device —
  *     and `new Date("2026-08-05")` is midnight UTC by definition, so if it is
  *     ignored the whole of the Americas reads AUG 4. `timeAgo.ts` formats from
  *     a month table for exactly this reason.
- *  2. It forced UTC onto BOTH kinds of date. `watched_date` is a calendar day
+ *  2. It would force one zone onto BOTH kinds of date. `watched_date` is a calendar day
  *     and must render as the day it says; every `created_at` is an instant and
  *     must render on the READER's clock. Putting one shape on both is how a
  *     critique filed at 8pm in Los Angeles got dated tomorrow.

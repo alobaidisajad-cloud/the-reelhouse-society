@@ -10,7 +10,7 @@ import { rememberPreviousHandle } from '../utils/handleHistory';
 
 /**
  * Canonical column list for auth-bootstrap profile SELECT queries.
- * Used across auth.ts, useAuthFlow.ts, and profileService.ts.
+ * Used by the auth store (stores/auth.ts) and ProfileDataService.
  * This is the MINIMAL column set needed for session restore — keep it lean.
  *
  * @see {@link ./ProfileDataService.ts} for the full profile-page column sets

@@ -180,7 +180,7 @@ describe('FilmStore Integration Tests (T2-4)', () => {
             listsHasMore: true,
             // These were logsCursor / watchlistCursor / listsCursor — names the store
             // does not have. The real fields are underscore-prefixed
-            // (logSlice.ts:17, watchlistSlice.ts:18, listSlice.ts:18), so this
+            // (in logSlice, watchlistSlice and listSlice), so this
             // beforeEach believed it was resetting pagination between tests and was
             // resetting nothing, leaving real cursor state to leak from one test to
             // the next. Zustand accepts unknown keys at runtime, so it looked fine.
@@ -203,7 +203,7 @@ describe('FilmStore Integration Tests (T2-4)', () => {
     //
     // Type-checking the tests is what exposed them: the fixture typed _loggedIndex as
     // Record<number, true>, but the real field is Record<number, DomainLog>
-    // (src/stores/domain/logSlice.ts:18). The tests were green against a shape the
+    // (in src/stores/domain/logSlice.ts). The tests were green against a shape the
     // app cannot produce.
     //
     // No coverage is lost. The real invariant is genuinely tested, through the real

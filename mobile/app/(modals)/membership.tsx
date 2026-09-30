@@ -414,12 +414,10 @@ export default function MembershipScreen() {
       }
 
       if (result.isActive) {
-        // finding 101 — setLocalTierHint, NOT updateUser. `tier` is server-derived and
-        // absent from ProfileService's allow-list, so updateUser pays for a
-        // network round trip that cannot write it (stores/auth.ts:411-418), is
-        // silently dropped by its own 1.5s throttle if anything else touched the
-        // profile, and on failure shows "Profile update failed — changes
-        // reverted" immediately after a SUCCESSFUL restore.
+        // setLocalTierHint, NOT updateUser. `tier` is server-derived and not a field
+        // ProfileWriteService.updateProfile writes, so updateUser would pay for a round
+        // trip that cannot write it, and on failure say "Profile update failed —
+        // changes reverted" right after a SUCCESSFUL restore.
         authStore.setLocalTierHint({
           tier: result.tier,
           is_founding: result.tier === 'founding' || undefined,

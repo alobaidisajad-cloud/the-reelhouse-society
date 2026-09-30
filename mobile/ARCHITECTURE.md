@@ -94,11 +94,11 @@ src/
 
 ---
 
-## Feature Flags
+## Gating
 
-> Not yet implemented. The intended resolution order is: server override → role-based
-> default → static default. (There is no `src/lib/featureFlags.ts` today; tier gating
-> currently lives in `src/utils/tier.ts`.) Remove this section or add the module when built.
+There are no feature flags. What a rank may do is decided in one place:
+`useClearance` (src/hooks/useClearance.ts) is the only gate, and every refusal
+says why and how to get through.
 
 ---
 
@@ -110,6 +110,6 @@ src/
 | Hooks | camelCase with use | useLogFlow.ts |
 | Services | PascalCase + Service | LoungeService.ts |
 | Stores | camelCase + Store | followStore.ts |
-| Schemas | camelCase + .schema.ts | dossier.schema.ts |
+| Schemas | camelCase + `schema` | film.schema.ts |
 | Utils | camelCase | withTimeout.ts |
 | Constants | SCREAMING_SNAKE | CACHE_MAX_AGE in limits.ts |

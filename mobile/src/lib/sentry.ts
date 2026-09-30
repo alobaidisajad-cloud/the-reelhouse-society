@@ -29,7 +29,7 @@ export function initSentry() {
     tracesSampleRate: IS_DEV ? 1.0 : 0.2,
     // What a member waits for, measured on their phone: the app's start, cold
     // and warm (ended by markAppLoaded, when the first screen shows); each
-    // screen until its first frame and until its content is in (ScreenReady);
+    // screen until its first frame and until its content is in (useScreenReady);
     // slow frames (over 16 ms), frozen frames (over 700 ms) and JS stalls.
     integrations: [
       Sentry.expoRouterIntegration({
