@@ -60,7 +60,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
 | .maestro/offline_resilience.yaml | 2026-09-29 | true as written |
 | .maestro/README.md | 2026-09-29 | brought up to date with the one-flow-at-a-time runner and the Initiation |
-| .maestro/social_pulse_flow.yaml | 2026-09-29 | true as written |
+| .maestro/lobby_wall_flow.yaml | 2026-09-30 | new: the wall hangs whole, down to its sign-off |
 | .maestro/subflows/open_a_film.yaml | 2026-09-29 | true as written |
 | .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
 | .maestro/subflows/sign_in.yaml | 2026-09-29 | rewritten this session: passes through the Initiation |
@@ -165,6 +165,9 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/drawn.cjs | 2026-09-29 | 1 finding |
 | mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
 | mockups/tools/layout.cjs | 2026-09-28 | 12 findings; the header said it measured 'x1 and x1.35' (it runs five passes, iOS to 3.1 and Android to 2) and left SMALL, SHORT and LOST unlisted; two stacked JSDocs merged |
+| mockups/tools/contrast.cjs | 2026-09-30 | new: every word against the pixels under it |
+| mockups/tools/lobby-advances.cjs | 2026-09-30 | new: the faces' advance tables, measured in Chromium |
+| mockups/tools/quote-ink.cjs | 2026-09-30 | new: the quote marks' outline, read from the font file |
 | mockups/tools/selftest.cjs | 2026-09-28 | 19 findings; the bordered-pair note sat over scaledbeside, moved to its case |
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
@@ -359,17 +362,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/WatchProviders.tsx | — |  |
 | src/components/FilmGrain.tsx | — |  |
 | src/components/HapticTab.tsx | — |  |
-| src/components/home/__tests__/theLobbySaysWhenTheCatalogueIsAway.test.tsx | — |  |
-| src/components/home/__tests__/theMarqueeSaysWhereItsFilmCameFrom.test.ts | — |  |
-| src/components/home/__tests__/thePulseIsDarkOnlyWhenItIs.test.tsx | 2026-09-30 | written with the Pulse's empty line |
-| src/components/home/FeaturedCritique.tsx | — |  |
-| src/components/home/FilmStripRow.tsx | — |  |
-| src/components/home/FilmTicker.tsx | — |  |
-| src/components/home/lobbyReads.ts | — |  |
-| src/components/home/MarqueeBoard.tsx | — |  |
 | src/components/home/ProjectorBeam.tsx | — |  |
-| src/components/home/PulseCardItem.tsx | — |  |
-| src/components/home/SocialPulse.tsx | — |  |
 | src/components/home/types.ts | — |  |
 | src/components/home/VelvetRopeCTA.tsx | — |  |
 | src/components/InitiationModal.tsx | — |  |
@@ -386,6 +379,24 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/navMetrics.ts | — |  |
 | src/components/layout/SectionCards.tsx | — |  |
 | src/components/layout/TopNavBar.tsx | — |  |
+| src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-09-30 | new: doors, names, states, counts, every line's room |
+| src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-09-30 | new |
+| src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-09-30 | new |
+| src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-09-30 | new |
+| src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
+| src/components/lobby/faceAdvances.ts | 2026-09-30 | generated; header only |
+| src/components/lobby/FeatureRow.tsx | 2026-09-30 | new |
+| src/components/lobby/FilingsBill.tsx | 2026-09-30 | new; the byline moved out of the filing's door |
+| src/components/lobby/KeepOff.tsx | 2026-09-30 | new |
+| src/components/lobby/LobbyHonour.tsx | 2026-09-30 | new |
+| src/components/lobby/LobbyWall.tsx | 2026-09-30 | new |
+| src/components/lobby/Masthead.tsx | 2026-09-30 | new |
+| src/components/lobby/measure.ts | 2026-09-30 | new |
+| src/components/lobby/PairBills.tsx | 2026-09-30 | new; "of one height" held only side by side |
+| src/components/lobby/parts.tsx | 2026-09-30 | new |
+| src/components/lobby/RankBill.tsx | 2026-09-30 | new |
+| src/components/lobby/wallRead.ts | 2026-09-30 | new |
+| src/components/lobby/words.ts | 2026-09-30 | new; named a test that did not exist |
 | src/components/log/__tests__/editorialDesk.test.tsx | — |  |
 | src/components/log/__tests__/logAtmosphere.test.tsx | — |  |
 | src/components/log/__tests__/logComposer.test.ts | — |  |

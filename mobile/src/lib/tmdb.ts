@@ -100,6 +100,16 @@ interface TMDBMovieDetail {
 
 export type { TMDBMovieDetail };
 
+/** One image of a film, as TMDB files it. `iso_639_1` null: no words on it. */
+export interface TMDBArt {
+    file_path: string;
+    iso_639_1?: string | null;
+    vote_average?: number;
+    vote_count?: number;
+    width?: number;
+    height?: number;
+}
+
 interface TMDBMovieListResponse {
     results: TMDBSearchResult[];
     total_results?: number;
@@ -462,6 +472,14 @@ export const tmdb = {
 
   // ── Images (the log composer's alternate posters and stills) ──
   movieImages: async (id: number) => fetchTMDB<{ posters: { file_path: string }[]; backdrops: { file_path: string }[]; logos: { file_path: string }[] }>(`/movie/${id}/images`, { posters: [], backdrops: [], logos: [] }),
+
+  /**
+   * The film's art with NO words on it (TMDB files it under no language): the
+   * Lobby's one-sheet lays its own title over the art, and a poster that
+   * already prints its title would print it twice.
+   */
+  keyArt: async (id: number) => fetchTMDB<{ posters: TMDBArt[]; backdrops: TMDBArt[] }>(
+    `/movie/${id}/images?include_image_language=null`, { posters: [], backdrops: [] }),
 
   // ── Discover ──
   discover: async (params: Record<string, string> = {}) => {

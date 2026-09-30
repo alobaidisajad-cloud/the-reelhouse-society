@@ -88,6 +88,8 @@ export const s = StyleSheet.create({
   contentCard: { backgroundColor: colors.sheetOverArt, borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', elevation: 24, ...effects.flat },
   contentCardAuteur: { ...EDGE_LIT, backgroundColor: colors.sheetOverArtAuteur, borderColor: colors.crimsonBorder, shadowColor: colors.bloodReel },
   logCardInner: { paddingHorizontal: SPINE, paddingBottom: 16, marginTop: 0, paddingTop: 24 },
+  /** "✦ FEATURED IN THE LOBBY · 30 SEPTEMBER", between the log's head and its words. */
+  lobbyHonour: { textAlign: 'center', marginTop: 4, marginBottom: 12 },
   logCenter: { alignItems: 'center' },
   bylineFull: { width: '100%', marginBottom: 20 },
 

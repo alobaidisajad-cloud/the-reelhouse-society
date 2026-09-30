@@ -19,6 +19,7 @@ import InitiationModal from '@/src/components/InitiationModal';
 import { useInitiation } from '@/src/hooks/useInitiation';
 import { nav } from '@/src/utils/typedRouter';
 import { EDGE_LIT } from '@/src/theme/light';
+import { tabBarBottomPadding, tabBarHeight } from '@/src/components/layout/navMetrics';
 
 // ════════════════════════════════════════════════════════════════
 //  TAB ICON: icons only, no labels. The chosen one grows a little, lights, and
@@ -165,7 +166,7 @@ export default function TabLayout() {
         headerShown: true,
         tabBarHideOnKeyboard: true,
         tabBarButton: HapticTab,
-        tabBarStyle: [s.tabBar, { height: 56 + Math.max(insets.bottom, 10), paddingBottom: Math.max(insets.bottom, 10) }],
+        tabBarStyle: [s.tabBar, { height: tabBarHeight(insets.bottom), paddingBottom: tabBarBottomPadding(insets.bottom) }],
         tabBarBackground: renderTabBarBackground,
         tabBarShowLabel: false,
         tabBarActiveTintColor: colors.sepia,

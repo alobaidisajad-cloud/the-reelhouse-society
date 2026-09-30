@@ -147,6 +147,20 @@ function exprAfter(ln: string, from: number): string {
   return out;
 }
 
+/**
+ * WORDS ON PAPER. A pigment is a pigment because it fails on a CARD; a word
+ * printed on paper stands on paper, where a deep red reads as print does. Each
+ * is keyed as MARKS are, with the ground it stands on — and is held to it: the
+ * ground must be paper (lighter than a card), and the word clear 4.5:1 there.
+ */
+const WORDS_ON_PAPER: Record<string, keyof typeof colors> = {
+  // the Lobby's Featured Log is printed on parchment
+  'src/components/lobby/PairBills.tsx · readOnText': 'parchment',
+  'src/components/lobby/PairBills.tsx · filmLine': 'parchment',
+  'src/components/lobby/PairBills.tsx · sloganPaper': 'parchment',
+  'src/components/lobby/PairBills.tsx · doorPaperText': 'parchment',
+};
+
 /** The pigments an expression names, by token or by any spelling of the value. */
 function pigmentsIn(expr: string): string[] {
   const found: string[] = [];
@@ -204,8 +218,24 @@ describe('words are not marks', () => {
   });
 
   it('paints no word in a pigment — every pigment colour is a named mark', () => {
-    const words = colour.filter((h) => !(h.key in MARKS));
+    const words = colour.filter((h) => !(h.key in MARKS) && !(h.key in WORDS_ON_PAPER));
     expect(words.map((h) => `${h.at}  ${h.key}`)).toEqual([]);
+  });
+
+  it('a word on paper stands on paper, clears 4.5:1 there, and is still printed', () => {
+    const seen = new Set(colour.map((h) => h.key));
+    for (const [key, ground] of Object.entries(WORDS_ON_PAPER)) {
+      const g = rgb((colors as Record<string, string>)[ground]);
+      expect({ key, paper: lum(g) > lum(CARD) }).toEqual({ key, paper: true });
+      expect({ key, printed: seen.has(key) }).toEqual({ key, printed: true });
+      for (const hit of colour.filter((h) => h.key === key)) {
+        const inks = /\(([^)]*)\)$/.exec(hit.at)?.[1].split(', ') ?? [];
+        for (const ink of inks) {
+          const r = ratio(rgb((colors as Record<string, string>)[ink]), g);
+          expect({ key, ink, clears: r >= 4.5 }).toEqual({ key, ink, clears: true });
+        }
+      }
+    }
   });
 
   it('never writes a placeholder in a pigment — a hint is a word', () => {

@@ -58,6 +58,17 @@ describe('where a notice leads', () => {
     expect(noticeRoute(notice({}))).toBeNull();
   });
 
+  it('a piece that hangs in the Lobby opens the piece itself — never its film, never folded into certifications', () => {
+    const lobby = (kind: string) => notice({ type: 'featured', group_key: `lobby:${kind}:${ESSAY}`, film_id: 603 });
+    expect(noticeRoute(lobby('log'))).toBe(`/log/${ESSAY}`);
+    expect(noticeRoute(lobby('list'))).toBe(`/stacks/${ESSAY}`);
+    expect(noticeRoute(lobby('post'))).toBe(`/dispatch/${ESSAY}`);
+    // a key somebody made up leads nowhere it names: an unknown kind, an id that is not one, a stray part
+    expect(noticeRoute(notice({ group_key: `lobby:film:${ESSAY}` }))).toBeNull();
+    expect(noticeRoute(notice({ group_key: 'lobby:log:../../settings' }))).toBeNull();
+    expect(noticeRoute(notice({ group_key: `lobby:log:${ESSAY}:x` }))).toBeNull();
+  });
+
   it('the notices sheet asks the same function — the two cannot disagree', () => {
     const sheet = read('app/(modals)/notifications-modal.tsx');
     expect(sheet).toMatch(/const route = noticeRoute\(item\);/);

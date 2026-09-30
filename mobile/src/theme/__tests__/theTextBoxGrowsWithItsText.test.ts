@@ -129,6 +129,8 @@ describe('the scale multiplies boxes, never type', () => {
       // a WIDTH, not a height: the name's longest word against its column
       'app/user/[username].tsx',
       'src/components/film/CastCarousel.tsx',
+      // the case's height under a masthead of SET lines, and which bills stand side by side
+      'src/components/lobby/LobbyWall.tsx',
       'src/components/person/PersonFilmography.tsx',
     ]);
   });
@@ -143,6 +145,7 @@ describe('the scale multiplies boxes, never type', () => {
     const at = (f: string) => code(ALL.find(({ file }) => file === f)!.src);
     expect(at('src/components/person/PersonFilmography.tsx')).toMatch(/useLineScale\(/);
     expect(at('app/stacks/[id].tsx')).toMatch(/useLineScale\(/);
+    expect(at('src/components/lobby/LobbyWall.tsx')).toMatch(/useLineScale\(/);
     const cast = at('src/components/film/CastCarousel.tsx');
     expect(cast).toMatch(/useTextScale\(/);
     for (const style of ['castName', 'castRole']) {

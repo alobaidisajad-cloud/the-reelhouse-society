@@ -20,7 +20,8 @@ export const WEEKDAYS = [
   'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
 ] as const;
 
-const MONTHS = [
+/** Exported for the Lobby's honour, which names the day a piece hung ("30 SEPTEMBER"). */
+export const MONTHS = [
   'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
   'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
 ] as const;

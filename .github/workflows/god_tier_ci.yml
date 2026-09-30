@@ -210,6 +210,14 @@ jobs:
           [ $rc -eq 0 ] || node e2e/annotate.mjs "A word does not fit at ${{ matrix.width }}pt" layout.txt error --drop 'clean +\('
           exit $rc
 
+      # The Lobby prints words over art, sunbursts and halftone: each is scored
+      # against the pixels really under it, at every width and text size.
+      - name: Every Lobby word can be read against what is behind it
+        working-directory: ./mobile
+        run: |
+          node mockups/tools/contrast.cjs --src mockups/out/ci --width ${{ matrix.width }} \
+            --only lobby,lobby-titled,lobby-long,lobby-empty,lobby-archivist,lobby-auteur
+
       # The composer's touch law: every control is DRAWN by some generator state, and
       # its own box is at least 48 (a halo is invisible to accessibility); exceptions
       # are argued in mockups/touch-small-exceptions.txt.

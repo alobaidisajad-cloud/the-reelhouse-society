@@ -35,10 +35,14 @@ src/components/film/CastCarousel.tsx
 src/components/film/FilmActionTray.tsx
 src/components/film/FilmMediaCarousel.tsx
 src/components/film/FilmSimilar.tsx
-src/components/home/FeaturedCritique.tsx
-src/components/home/FilmStripRow.tsx
-src/components/home/PulseCardItem.tsx
 src/components/layout/ConciergeButton.tsx
+src/components/lobby/FeatureRow.tsx
+src/components/lobby/FilingsBill.tsx
+src/components/lobby/KeepOff.tsx
+src/components/lobby/LobbyWall.tsx
+src/components/lobby/PairBills.tsx
+src/components/lobby/RankBill.tsx
+src/components/lobby/parts.tsx
 src/components/log/AuteurToolkit.tsx
 src/components/log/EditorialDesk.tsx
 src/components/log/LogActionDeck.tsx

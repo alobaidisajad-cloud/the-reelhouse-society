@@ -50,6 +50,7 @@ import { WASH } from '@/src/theme/light';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { nav } from '@/src/utils/typedRouter';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
+import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 
 // TMDB_IMG hardcoded string removed in favor of tmdb.poster / tmdb.backdrop
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -761,6 +762,9 @@ export default function LogDetailScreen() {
             onPressUser={() => { if (profile?.username) (router.push as any)(`/user/${profile.username}` as any); }}
             onPressFilm={() => { (router.push as any)(`/film/${log.film_id}` as any); }}
           />
+
+          {/* The honour stays: the day this log hung in the Lobby, if it did. */}
+          <LobbyHonour kind="log" id={log.id} style={s.lobbyHonour} />
 
           {/* Full Width Review / Pull Quote — Web: padding 1.5rem 1.5rem, textAlign center */}
           <LogReviewBody

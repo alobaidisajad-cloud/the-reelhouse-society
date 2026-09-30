@@ -128,7 +128,7 @@ export default function MembershipScreen() {
    * `theSocietyOpensOverYou.test.ts` fails the day this line reads it, so the
    * person doing that work is sent here first.
    */
-  const { reason } = useLocalSearchParams<{ reason?: string; rank?: string; returnTo?: string }>();
+  const { reason, rank: rankAsked } = useLocalSearchParams<{ reason?: string; rank?: string; returnTo?: string }>();
   const cameFor = useMemo(
     () => (reason ? GATED_FEATURES.find((f) => f.id === reason) ?? null : null),
     [reason],
@@ -218,15 +218,19 @@ export default function MembershipScreen() {
 
   // ── Which ticket is chosen ────────────────────────────────────
   // The rank the locked door needs, if a door sent them and it is on offer;
-  // otherwise the house's recommendation; otherwise the one ticket left.
+  // else the rank they asked for by name (the Lobby's ticket for the Auteur
+  // must not open with the Archivist chosen); otherwise the house's
+  // recommendation; otherwise the one ticket left.
   const [chosen, setChosen] = useState<PaidRankId | null>(null);
   const selected: PaidRankId | null = useMemo(() => {
     const ids = offered.map((r) => r.id);
     if (chosen && ids.includes(chosen)) return chosen;
     if (cameFor && ids.includes(cameFor.rank)) return cameFor.rank;
+    const asked = ids.find((id) => id === rankAsked);
+    if (asked) return asked;
     const rec = offered.find((r) => r.recommended);
     return rec?.id ?? ids[0] ?? null;
-  }, [chosen, offered, cameFor]);
+  }, [chosen, offered, cameFor, rankAsked]);
 
   const save = savePercent(pricing);
   const pitch = foundingPitch(pricing);

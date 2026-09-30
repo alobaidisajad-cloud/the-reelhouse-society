@@ -257,6 +257,20 @@ describe('what each member is offered', () => {
     expect(r.getByText('BECOME AN AUTEUR')).toBeTruthy();
   });
 
+  it('a rank asked for by name is the one chosen (the Lobby’s Auteur ticket)', async () => {
+    mockParams = { rank: 'auteur' };
+    const r = await mount();
+    expect(radio(r, /^The Auteur/).props.accessibilityState).toMatchObject({ checked: true });
+    expect(radio(r, /^The Archivist/).props.accessibilityState).toMatchObject({ checked: false });
+    expect(r.getByText('BECOME AN AUTEUR')).toBeTruthy();
+  });
+
+  it('a rank asked for that is not on offer falls back to the house’s choice', async () => {
+    mockParams = { rank: 'emperor' };
+    const r = await mount();
+    expect(radio(r, /^The Archivist/).props.accessibilityState).toMatchObject({ checked: true });
+  });
+
   it('a door somebody typed cannot blank the poster', async () => {
     mockParams = { reason: 'no-such-feature' };
     const r = await mount();

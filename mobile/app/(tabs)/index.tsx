@@ -1,66 +1,40 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { View, StyleSheet, RefreshControl, ScrollView, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
-import Animated, {
-  FadeInDown, FadeIn,
-  useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence,
-  Easing, interpolate, Extrapolation, useAnimatedScrollHandler,
-  cancelAnimation
-} from 'react-native-reanimated';
+import Animated, { FadeInDown, useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import { useNotificationStore } from '@/src/stores/notificationStore';
-import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
-import Buster from '@/src/components/Buster';
 import PressableScale from '@/src/components/PressableScale';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { Vignette } from '@/src/components/CinematicOverlays';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { SocietySeal } from '@/src/components/auth/SocietySeal';
-import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 // Extracted Architectural Components
-import type { TMDBFilm } from '@/src/components/home/types';
 import { ProjectorBeam } from '@/src/components/home/ProjectorBeam';
-import { FilmTicker } from '@/src/components/home/FilmTicker';
-import { MarqueeBoard } from '@/src/components/home/MarqueeBoard';
-import { FilmStripRow } from '@/src/components/home/FilmStripRow';
-import { FeaturedCritique } from '@/src/components/home/FeaturedCritique';
-import { SocialPulseSection } from '@/src/components/home/SocialPulse';
 import { VelvetRopeCTA, BrassSheen } from '@/src/components/home/VelvetRopeCTA';
-import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
+import { NAV_ROW_MIN_H, navTopPadding, tabBarHeight } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
-import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
-import { LOBBY, LIVE_LOBBY_READS, useFeaturedCritique, usePulse } from '@/src/components/home/lobbyReads';
+import { REFRESH_FAILED } from '@/src/components/EmptyStates';
+import { LobbyWall } from '@/src/components/lobby/LobbyWall';
+import { LIVE_LOBBY_READS, useProgramme } from '@/src/components/lobby/wallRead';
 import reelToast from '@/src/utils/reelToast';
 
-/** The marquee backdrop's fade into the room: how much house it lays down, top to hem. */
-const HERO_VEIL: VeilStops = [[0, 0.28], [0.65, 0.7], [1, 1]];
-
-const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
-const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
-
-// ── The house knows the hour — the programme whisper under the hero rule ──
-// One Date read per render; a still string, never a shout.
-function getProgrammeWhisper(): string {
-  const h = new Date().getHours();
-  if (h >= 5 && h < 12) return 'the morning screening begins';
-  if (h >= 12 && h < 17) return 'the matinée is in session';
-  if (h >= 17 && h < 22) return "tonight's programme is underway";
-  return 'the midnight reel is spinning';
-}
+/** Every Lobby read is under ['lobby', ...], so a pull can ask for all of them at once. */
+const LOBBY = ['lobby'] as const;
 
 // ════════════════════════════════════════════════════════════════
 //  MAIN SCREEN: THE LOBBY
@@ -102,78 +76,19 @@ export default function LobbyScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  // ── React Query: MMKV-cached lobby data (instant cold start) ──
+  // ── The wall's reads: kept on the phone (the persisted query cache), so a
+  // cold start shows the last wall at once. The Lobby is ready to be seen when
+  // the programme has answered — the wall's own reads hang their still shapes
+  // until then, so nothing jumps.
   const queryClient = useQueryClient();
-  const { data: trendingData, isPending: trendingPending, isError: trendingFailed } = useQuery({
-    queryKey: [...LOBBY, 'trending'],
-    queryFn: async () => {
-      const res = await tmdb.trending('week');
-      const films = (res?.results ?? []).slice(0, 10) as TMDBFilm[];
-      // Prefetch poster images for instant visual rendering
-      films.filter(f => f.poster_path).slice(0, 8)
-        .forEach(f => Image.prefetch(`${TMDB_IMG_W185}${f.poster_path}`).catch(() => {}));
-      return films;
-    },
-    staleTime: 10 * 60 * 1000,  // 10 min fresh window
-  });
+  const programme = useProgramme(isAuthenticated);
+  const readyMark = useScreenReady(isAuthenticated ? 'lobby' : 'welcome', !isAuthenticated || !programme.isPending);
 
-  // The Canon: `tmdb.canon()`, not TMDB's top-rated list, which ranks by raw
-  // average and served new releases under a heading that promises "the films
-  // that built the medium" (see the note on the helper).
-  const { data: canonData, isError: canonFailed } = useQuery({
-    queryKey: [...LOBBY, 'canon'],
-    queryFn: async () => {
-      const res = await tmdb.canon();
-      return (res?.results ?? []).slice(0, 10) as TMDBFilm[];
-    },
-    staleTime: 10 * 60 * 1000,
-  });
-
-  const readyMark = useScreenReady(isAuthenticated ? 'lobby' : 'welcome', !isAuthenticated || !trendingPending);
-
-  // The Lead Story and the wire, read here and handed down (lobbyReads.ts).
-  const pulse = usePulse(isAuthenticated);
-  const featured = useFeaturedCritique(isAuthenticated);
-
-  const trending = trendingData ?? [];
-  const canon = canonData ?? [];
-
-  // A read that could not be answered is said to be missing, with a way to ask
-  // again. The marquee used to warm its bulbs forever, the rails were simply
-  // not there, and the wire said no member had logged a film. ONE notice, in
-  // the place of the first section missing, asking again for every one that is.
-  const lost = {
-    programme: trendingFailed && !trendingData,
-    featured: featured.isError && featured.data === undefined,
-    pulse: pulse.isError && !pulse.data,
-    canon: canonFailed && !canonData,
-  };
-  const firstLost = (['programme', 'featured', 'pulse', 'canon'] as const).find((k) => lost[k]);
-  const rereadLost = useCallback(() => {
-    void queryClient.refetchQueries({ queryKey: LOBBY, type: 'active', predicate: (q) => q.state.data === undefined });
-  }, [queryClient]);
-  const lostNotice = <EmptyOffline onRetry={rereadLost} />;
-
-  // Parallax Scroll Tracking & Breathing Atmospherics
+  // Scroll tracking: the top bar's blur and tint follow the page.
   const scrollY = useSharedValue(0);
   const scrollHeight = useSharedValue(0);
   const viewHeight = useSharedValue(0);
   const isScrolling = useSharedValue(false);
-  const breath = useSharedValue(1.0);
-
-  useEffect(() => {
-    // Finite breathing loop (5 cycles ≈ 90s) instead of one-shot withTiming
-    breath.value = withRepeat(
-      withSequence(
-        withTiming(1.08, { duration: 9000, easing: Easing.inOut(Easing.sin) }),
-        withTiming(1.0, { duration: 9000, easing: Easing.inOut(Easing.sin) }),
-      ),
-      5,   // 5 cycles = 90 seconds of breathing, then idles at 1.0
-      true
-    );
-    return () => cancelAnimation(breath);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -197,16 +112,6 @@ export default function LobbyScreen() {
     }
   });
   
-  // Parallax styles for the backdrop
-  const backdropAnimatedStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(scrollY.value, [0, 400], [0, -150], Extrapolation.CLAMP);
-    const opacity = interpolate(scrollY.value, [0, 200], [0.35, 0], Extrapolation.CLAMP);
-    return {
-      transform: [{ translateY }, { scale: breath.value }],
-      opacity
-    };
-  });
-
   const NAV_HEIGHT = NAV_ROW_MIN_H + 12;
   // The zero-inset floor comes FROM the bar now rather than being copied — see
   // navMetrics.ts and the longer note in reels.tsx.
@@ -226,9 +131,8 @@ export default function LobbyScreen() {
     try {
       setRefreshing(true);
       TactileEngine.destroy();
-      // The wire and the Lead Story, always: they are the house's live pages.
-      // The programme and the Canon only if out of date, or missing — which a
-      // failed read is.
+      // The wall, always: it is the house's own page. The programme only if
+      // out of date, or missing — which a failed read is.
       await Promise.all([
         queryClient.refetchQueries({
           queryKey: LOBBY, type: 'active',
@@ -247,8 +151,6 @@ export default function LobbyScreen() {
       setRefreshing(false);
     }
   }, [isAuthenticated, fetchLogs, queryClient]);
-
-  const heroFilm = trending[0] ?? null;
 
   // ── Unauthenticated: The Velvet Room Welcome ──
   if (!isAuthenticated) {
@@ -371,57 +273,30 @@ export default function LobbyScreen() {
     );
   }
 
-  // ── Authenticated: The Nitrate Lobby ──
-  // The marquee's backdrop hangs over the top 65% of the screen: the lamp hangs
-  // from its hem, and the film's own colour blooms onto the page beneath.
-  const heroUri = heroFilm?.backdrop_path ? `${TMDB_IMG_W780}${heroFilm.backdrop_path}` : null;
-  // Whole points: the backdrop's veil and the room's light meet at this line,
-  // and a fractional hem leaves the last row of pixels to only one of them.
-  const heroH = Math.round(windowHeight * 0.65);
-
+  // ── Authenticated: the Lobby wall ──
+  // A wall of bills under the Lobby's own lamp. Nothing on it moves: the old
+  // marquee's breathing backdrop and its parallax are gone with it.
   return (
     <FrozenTab>
     <View style={s.container}>
-      <RoomLight room="lobby" hem={heroUri ? heroH : undefined} art={heroUri} />
+      <RoomLight room="lobby" />
       {readyMark}
-      {/* The page's own fade, house to card. At full strength it covered the
-          room's light entirely; as a wash with no artwork behind it, it is
-          thinned so the lamp shows through — the same rule every such wash in
-          the house follows now. */}
+      {/* The page's own fade, house to card, as a wash so the lamp shows through. */}
       <LinearGradient colors={[colors.ink, 'rgba(13,11,9,0.98)', colors.soot]} locations={[0, 0.4, 1]} style={[StyleSheet.absoluteFillObject, WASH]} />
-
-      {/* Parallax Hero Backdrop */}
-      {heroFilm?.backdrop_path && (
-        <Animated.View style={[s.heroBackdropWrap, { height: heroH }, backdropAnimatedStyle]}>
-          <Image
-            source={{ uri: `${TMDB_IMG_W780}${heroFilm.backdrop_path}` }}
-            style={s.heroBackdrop}
-            contentFit="cover"
-            cachePolicy="memory-disk" transition={150}
-          />
-          <RoomVeil room="lobby" hem={heroH} art={heroUri} stops={HERO_VEIL} />
-          <LinearGradient
-            colors={['rgba(184,137,26,0.05)', 'transparent', 'transparent']}
-            locations={[0, 0.4, 1]}
-            style={StyleSheet.absoluteFillObject}
-          />
-        </Animated.View>
-      )}
 
       <CinematicScrollView
         ref={scrollRef}
         scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
         topInset={topPad}
-        bottomInset={insets.bottom + 49}
-        contentContainerStyle={[s.scrollContent, { paddingTop: topPad }]}
+        bottomInset={tabBarHeight(insets.bottom)}
+        contentContainerStyle={[s.scrollContent, { paddingTop: topPad, paddingBottom: tabBarHeight(insets.bottom) + 24 }]}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
-
         scrollEventThrottle={16}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={handleRefresh} 
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
             tintColor={colors.sepia}
             colors={[colors.sepia]}
             progressBackgroundColor={colors.ink}
@@ -429,54 +304,7 @@ export default function LobbyScreen() {
           />
         }
       >
-        <FilmTicker films={trending} />
-
-        <Animated.View entering={FadeIn.duration(800)} style={s.heroSection}>
-          <Text style={s.heroEyebrow}>NOW ENTERING</Text>
-          <Text style={s.heroWelcome} accessibilityRole="header" adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.5}>The Lobby</Text>
-          <View style={s.heroRuleRow}>
-            <LinearGradient colors={['transparent', colors.sepia]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.heroRuleGradient} />
-            <Text style={s.heroRuleDot}>✦</Text>
-            <LinearGradient colors={[colors.sepia, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.heroRuleGradient} />
-          </View>
-          {/* The programme whisper — single reserved line, cannot wrap or shift */}
-          <Text style={s.heroWhisper} numberOfLines={1}>{getProgrammeWhisper()}</Text>
-        </Animated.View>
-
-        {firstLost === 'programme' ? lostNotice : lost.programme ? null : (
-          <>
-            <View style={s.marqueeWrap}>
-              <MarqueeBoard film={heroFilm} />
-            </View>
-
-            {/* The marquee presents film #1 — the strip carries the rest of the
-                programme (2–10) so the feature never appears twice in a row. */}
-            <FilmStripRow title="Now Showing" label="THE PROGRAMME" films={trending.slice(1)} lore="What the world is screening this week" />
-          </>
-        )}
-
-        {/* Newspaper order: the Lead Story before the wire — and horizontal
-            rails now alternate with static content down the whole page. */}
-        {firstLost === 'featured' ? lostNotice : <FeaturedCritique featured={featured.data} />}
-
-        {firstLost === 'pulse' ? lostNotice : <SocialPulseSection activities={pulse.data} featuredId={featured.data?.id} />}
-
-        {firstLost === 'canon' ? lostNotice : lost.canon ? null : (
-          <FilmStripRow title="The Canon" label="ESSENTIAL ARCHIVES" films={canon} lore="The films that built the medium" />
-        )}
-
-        {/* The sign-off. One whisper, not two — "Est. 1924" is lore that already
-            appears in eleven other files, and repeating it here made the closing
-            line share its moment. Buster sits at 40 rather than 26: the house
-            convention uses 14–24 for inline glyphs and 40–80 for Buster as a
-            presence, and standing alone under the mark he is a presence. */}
-        <View style={s.lobbyFooter}>
-          <View style={s.lobbyFooterRule} />
-          <Image source={require('../../assets/images/reelhouse-logo.png')} style={s.lobbyFooterLogo} contentFit="contain" />
-          <View style={s.lobbyFooterBusterWrap}><Buster size={40} mood="sleeping" /></View>
-          <Text style={s.lobbyFooterWhisper}>The projection booth never closes.</Text>
-          <View style={s.lobbyFooterRule} />
-        </View>
+        <LobbyWall />
       </CinematicScrollView>
     </View>
     </FrozenTab>
@@ -535,57 +363,7 @@ const s = StyleSheet.create({
   ctaPrimaryNoirText: { fontFamily: fonts.sub, fontSize: 13, letterSpacing: 4, color: colors.flicker },
   ctaGlowLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, opacity: 0.8 },
   
-  // ── Hero Section (Engraved Cinematic) ──
-  // Rhythm: every section-to-section gap on the page resolves to 36px.
-  heroSection: { alignItems: 'center', paddingHorizontal: 16, marginBottom: 36, marginTop: 10 },
-  heroEyebrow: {
-    // 0.6 measured 2.90:1. 0.85 gave 4.78:1. The shadow below helps over a
-    // bright still, but it cannot rescue a base contrast under the large-text floor.
-    // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
-    fontFamily: fonts.sub, fontSize: 11, letterSpacing: 12, color: colors.sepia, marginBottom: 6,
-    // Sits over the feature backdrop — soft dark shadow keeps it legible on a bright still.
-    textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6,
-  },
-  heroWelcome: {
-    fontFamily: fonts.display, fontSize: 34, color: colors.silverScreen, letterSpacing: 2,
-    // Dark shadow (not a sepia glow) so "The Lobby" reads over any feature backdrop.
-    textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 12,
-  },
-  heroRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 18, opacity: 0.8 },
-  heroRuleGradient: { width: 80, height: StyleSheet.hairlineWidth },
-  heroRuleDot: { fontSize: 12, color: colors.sepia, opacity: 0.7 },
-  heroWhisper: {
-    fontFamily: fonts.bodyItalic,
-    fontSize: 10,
-    lineHeight: 15,
-    color: colors.fogQuiet,
-    // 0.65 measured 3.36:1 against ink; 0.80 gave 4.58:1 and cleared AA. This is
-    // the line that changes with the hour — a signature detail, and one that
-    // should be readable rather than merely atmospheric. It also sits over the
-    // feature backdrop, so the figure is the floor rather than a guarantee; the
-    // shadow below carries it over a bright still.
-    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
-    letterSpacing: 0.5,
-    marginTop: 10,
-    textAlign: 'center',
-    // Sits over the feature backdrop — same legibility shadow as the hero.
-    textShadowColor: 'rgba(0,0,0,0.6)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  heroBackdropWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 0 },
-  heroBackdrop: { width: '100%', height: '100%', opacity: 1 },
-
-  marqueeWrap: { paddingHorizontal: 18, marginBottom: 16, zIndex: 1 },
-
-  // Lobby Footer
-  lobbyFooter: { alignItems: 'center', paddingTop: 40, paddingBottom: 40, paddingHorizontal: 40 },
-  lobbyFooterRule: { width: 60, height: StyleSheet.hairlineWidth, backgroundColor: colors.sepia, opacity: 0.3 },
-  lobbyFooterBusterWrap: { marginTop: 10 },
-  lobbyFooterLogo: { width: 32, height: 32, opacity: 0.4, marginVertical: 18 },
-  // The closing whisper, in `fogQuiet`: the quietest SOLID ink there is. Drawn
-  // see-through it measured 1.58:1 against the ink, unreadable outdoors.
-  lobbyFooterWhisper: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fogQuiet, fontStyle: 'italic', marginBottom: 18, letterSpacing: 1 },
+  // ── (the member Lobby's styles live with the wall: src/components/lobby) ──
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx

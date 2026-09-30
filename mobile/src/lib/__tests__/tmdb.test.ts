@@ -248,3 +248,26 @@ describe('a catalogue read tells "not there" from "could not ask"', () => {
     await expect(tmdb.detail(910004)).resolves.toMatchObject({ title: 'Greed' });
   }, 10000);
 });
+
+describe('tmdb.keyArt — the Lobby one-sheet’s art', () => {
+  const answer = (status: number, body: unknown = {}) => ({ ok: status < 400, status, json: async () => body });
+  beforeEach(() => { global.fetch = jest.fn(); });
+
+  it('asks the proxy for the art filed under NO language — the art with no words on it', async () => {
+    const art = { posters: [{ file_path: '/plain.jpg', iso_639_1: null }], backdrops: [] };
+    (global.fetch as jest.Mock).mockResolvedValue(answer(200, art));
+    await expect(tmdb.keyArt(910005)).resolves.toEqual(art);
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.path).toBe('/movie/910005/images?include_image_language=null');
+  });
+
+  it('a film with no art is an answer (none), not a failure', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(answer(404));
+    await expect(tmdb.keyArt(910006)).resolves.toEqual({ posters: [], backdrops: [] });
+  });
+
+  it('the proxy allows the path it asks for', () => {
+    const { resolveTmdbUrl } = jest.requireActual('../../../../supabase/functions/tmdb-proxy/paths.js');
+    expect(resolveTmdbUrl('/movie/910005/images?include_image_language=null')?.searchParams.get('include_image_language')).toBe('null');
+  });
+});

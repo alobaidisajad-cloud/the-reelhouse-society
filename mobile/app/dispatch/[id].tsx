@@ -39,6 +39,7 @@ import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { NOT_SENT_LINE } from '@/src/components/dispatch/paper/paperText';
 import { measure, KIND_NAME } from '@/src/components/dispatch/paper/paperMetrics';
+import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { hourLabel } from '@/src/components/dispatch/dayLabel';
 import { useAuthStore } from '@/src/stores/auth';
@@ -402,6 +403,8 @@ export default function FilingReader() {
         contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
       >
         <PaperSheet>
+          {/* The honour stays: the day this filing hung in the Lobby, if it did. */}
+          <LobbyHonour kind="post" id={id} style={{ marginBottom: 12 }} />
           {/* ── THE FILING ─────────────────────────────────────────────────
               Each kind is drawn by the component the design drew for it, and
               nothing here re-implements one. An ended filing keeps its room:

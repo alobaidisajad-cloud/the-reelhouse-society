@@ -11,8 +11,7 @@ import { queryClient } from '@/src/lib/queryClient';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { captureError } from '@/src/lib/sentry';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { FEATURED_KEY, PULSE_KEY } from '@/src/components/home/lobbyReads';
-import type { PulseActivity } from '@/src/components/home/types';
+import { WALL_KEY } from '@/src/components/lobby/wallRead';
 import { nav } from '@/src/utils/typedRouter';
 
 // Zod schema for the form
@@ -247,20 +246,7 @@ export function useEditProfile() {
             }
           });
 
-          // 4. Sync the Lobby's Lead Story and its wire
-          const lead = queryClient.getQueryData<any>(FEATURED_KEY);
-          if (lead && lead.user_id === user.id) {
-            queryClient.setQueryData(FEATURED_KEY, {
-              ...lead,
-              profiles: Array.isArray(lead.profiles)
-                ? [{ ...lead.profiles[0], avatar_url: finalAvatarUrl }]
-                : { ...lead.profiles, avatar_url: finalAvatarUrl },
-            });
-          }
-          const wire = queryClient.getQueryData<PulseActivity[]>(PULSE_KEY);
-          if (wire?.some((a) => a.user_id === user.id)) {
-            queryClient.setQueryData(PULSE_KEY, wire.map((a) => (a.user_id === user.id ? { ...a, userAvatar: finalAvatarUrl } : a)));
-          }
+          // 4. The Lobby wall is read again below, on every save.
 
         } catch (syncErr) {
           if (__DEV__) console.warn('[useEditProfile] Avatar sync failed non-fatally:', syncErr);
@@ -272,6 +258,10 @@ export function useEditProfile() {
       // consumers reflect renamed handles, new display names, and edited bios.
       queryClient.removeQueries({ queryKey: ['universalSearch'] });
       queryClient.removeQueries({ queryKey: ['user', user.id] });
+      // The Lobby wall carries each honoured member's name and portrait: a member
+      // who renames or re-photographs themselves must not hang there as they were
+      // (an old name is a door to nobody). Read again, on every save.
+      void queryClient.invalidateQueries({ queryKey: WALL_KEY });
 
       // Fire-and-forget: asynchronous garbage collection
       if (finalAvatarUrl !== undefined) {

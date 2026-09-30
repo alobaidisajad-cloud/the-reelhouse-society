@@ -166,12 +166,6 @@ describe('muted text stays readable', () => {
         expect(offenders).toEqual([]);
     });
 
-    it('the Lobby section lore clears AA for small text', () => {
-        for (const f of ['SocialPulse.tsx', 'FeaturedCritique.tsx', 'FilmStripRow.tsx']) {
-            expect(ratioOf(f, 'sectionLoreSub')).toBeGreaterThanOrEqual(4.5);
-        }
-    });
-
     // ── A fixed lineHeight is a ceiling the font can grow through ──
     // React Native does NOT scale `lineHeight` with Dynamic Type. So a style
     // with lineHeight/fontSize below the scaling cap will, at large accessibility

@@ -41,3 +41,22 @@ export const navButtonTop = (insetTop: number) =>
 
 /** Bottom edge of the icon buttons, in screen coordinates. */
 export const navButtonBottom = (insetTop: number) => navButtonTop(insetTop) + NAV_BTN_SIZE;
+
+/** The whole top bar's height: its floor, the icon row, the padding under it. */
+export const navBarHeight = (insetTop: number) => navTopPadding(insetTop) + NAV_ROW_MIN_H + NAV_BOTTOM_PADDING;
+
+/** The tab bar's icon row, above the home indicator's room. */
+export const TAB_ROW_H = 56;
+
+/**
+ * The room under the tab bar's icons: the home indicator's inset, never less
+ * than 10 — the same zero-inset floor the top bar keeps, for the same reason.
+ */
+export const tabBarBottomPadding = (insetBottom: number) => Math.max(insetBottom, 10);
+
+/**
+ * The whole tab bar's height. The tab bar is BUILT from this ((tabs)/_layout),
+ * and the Lobby sizes its first screen by it: a copy of the sum in either place
+ * would let the wall's first poster slip under the bar.
+ */
+export const tabBarHeight = (insetBottom: number) => TAB_ROW_H + tabBarBottomPadding(insetBottom);

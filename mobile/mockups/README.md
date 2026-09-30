@@ -189,6 +189,13 @@ lost its site.
   that skipped it showed "Max von May…" where the phone draws the whole name a little smaller.
 - `advances.cjs` — measures Rye's letter widths from the font file into
   `src/theme/ryeAdvances.ts` (the profile uses it to fit a name as words).
+- `lobby-advances.cjs` — the same for the four faces the Lobby wall is set in, into
+  `src/components/lobby/faceAdvances.ts`.
+- `quote-ink.cjs` — the outline of Spectral Italic's quote marks, read from the font file
+  (the Lobby draws its great “ from it, in a box the size of its ink).
+- `contrast.cjs --only <names> [--width W] [--passes ios@1,android@2]` — every word scored
+  against the pixels really under it (art, sunbursts, halftone), not a colour pair; 4.5:1,
+  or 3:1 at display size. CI holds the Lobby's states to it at every width.
 
 ## What the phone does that a browser does not (and the harness corrects)
 

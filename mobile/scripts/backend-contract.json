@@ -50,16 +50,16 @@
       "signature": "get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid)"
     },
     {
-      "name": "get_featured_critique",
-      "signature": "get_featured_critique()"
-    },
-    {
       "name": "get_filtered_stacks_auth_cursor_v2",
       "signature": "get_filtered_stacks_auth_cursor_v2(p_search text, p_filter_following boolean, p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid, p_poster_count integer)"
     },
     {
       "name": "get_following_feed_auth_cursor",
       "signature": "get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid)"
+    },
+    {
+      "name": "get_lobby",
+      "signature": "get_lobby()"
     },
     {
       "name": "get_lounge_unread_counts",
@@ -158,6 +158,10 @@
       "signature": "save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean)"
     },
     {
+      "name": "set_lobby_withheld",
+      "signature": "set_lobby_withheld(p_kind text, p_target uuid, p_keep_off boolean)"
+    },
+    {
       "name": "set_lounge_cover",
       "signature": "set_lounge_cover(p_lounge_id uuid, p_cover_image text)"
     },
@@ -190,7 +194,7 @@
       "signature": "withdraw_lounge_message(p_message_id uuid)"
     }
   ],
-  "_removedNote": "TWO entries left this contract on 2026-09-03, and NEITHER is a signal to undeploy anything. This file describes what the CURRENT mobile source calls; it is not an inventory of what production must keep. (1) fetch-rss — the Global Wire left the Dispatch and NewsService with it. (2) get_dispatch_feed — the Dispatch store now reads dispatch_posts directly. That RPC MUST STAY DEPLOYED: the build in members' hands on TestFlight calls it, and so does the web app, which is a separate tree on the same project. Step one's compatibility layer exists precisely so those keep working.",
+  "_removedNote": "get_featured_critique left this contract on 2026-09-30, when the Lobby wall (get_lobby) replaced the old Lobby's lead story; it MUST STAY DEPLOYED — the web app still calls it. TWO entries left this contract on 2026-09-03, and NEITHER is a signal to undeploy anything. This file describes what the CURRENT mobile source calls; it is not an inventory of what production must keep. (1) fetch-rss — the Global Wire left the Dispatch and NewsService with it. (2) get_dispatch_feed — the Dispatch store now reads dispatch_posts directly. That RPC MUST STAY DEPLOYED: the build in members' hands on TestFlight calls it, and so does the web app, which is a separate tree on the same project. Step one's compatibility layer exists precisely so those keep working.",
   "edgeFunctions": [
     "sign-in-with-username",
     "sync-entitlement",
@@ -339,6 +343,13 @@
       "gate_metrics.feature_id",
       "gate_metrics.rank",
       "gate_metrics.standing",
+      "lobby_editions.author_id",
+      "lobby_editions.chosen_at",
+      "lobby_editions.score",
+      "lobby_withheld.kind",
+      "lobby_withheld.target_id",
+      "lobby_withheld.withheld_at",
+      "lobby_withheld.withheld_by",
       "profiles.email",
       "profiles.entitlement_source",
       "viewings.log_id",
@@ -351,6 +362,6 @@
       "public.get_user_lounges((SELECT id FROM public.profiles WHERE role='admin' LIMIT 1))",
       "public.get_lounge_unread_counts()"
     ],
-    "_columnsInvisibleNote": "gate_metrics is invisible to BOTH client roles on purpose, not by omission: the funnel is write-only from the app (anon and authenticated hold EXECUTE on record_gate_event and nothing else), and the counts are read from the dashboard as service_role."
+    "_columnsInvisibleNote": "gate_metrics is invisible to BOTH client roles on purpose, not by omission: the funnel is write-only from the app (anon and authenticated hold EXECUTE on record_gate_event and nothing else), and the counts are read from the dashboard as service_role. The Lobby's record (20260930_03) is the same by design: a member reads an edition's day, slot, place and piece — never its score (the Lobby shows no counts), its author or when it was chosen; and what the house keeps off the Lobby is written and read only through set_lobby_withheld, by an admin."
   }
 }

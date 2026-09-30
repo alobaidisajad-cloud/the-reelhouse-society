@@ -513,6 +513,7 @@ jest.mock('./src/lib/tmdb', () => {
       person: jest.fn().mockResolvedValue(null),
       personCredits: jest.fn().mockResolvedValue(null),
       movieImages: jest.fn().mockResolvedValue({ posters: [], backdrops: [], logos: [] }),
+      keyArt: jest.fn().mockResolvedValue({ posters: [], backdrops: [] }),
       // Synchronous, as the real cache peek is (a promise would be a truthy object).
       peekDetail: jest.fn(() => undefined),
       // null where the real module gives undefined: tests assert it, and the app

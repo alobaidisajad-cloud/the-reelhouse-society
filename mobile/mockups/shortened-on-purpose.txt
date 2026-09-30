@@ -8,4 +8,3 @@
 # <file> [/words pattern/] [@/source-line pattern/] — <why>
 # The @/…/ pattern names the one JSX element, however the file moves around it.
 
-src/components/home/PulseCardItem.tsx @/act\.film\?\.title/ — a film's title is content of any length (The Shawshank Redemption, Dr. Strangelove or: How I Learned…). The Lobby's card gives it one line, shrinks it a little, and ends a title too long for the card with "…", as every film surface in the app does; the whole title is one tap away.

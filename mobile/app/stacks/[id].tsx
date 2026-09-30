@@ -45,6 +45,7 @@ import { useLineScale } from '@/src/hooks/useTextScale';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { nav } from '@/src/utils/typedRouter';
+import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
@@ -849,6 +850,9 @@ export default function StackDetailScreen() {
                 )}
               </Animated.View>
 
+              {/* The honour stays: the day this stack hung in the Lobby, if it did. */}
+              <LobbyHonour kind="list" id={id} style={s.lobbyHonour} />
+
               {list.description ? (
                 <Animated.View entering={FadeInDown.duration(600).delay(300).reduceMotion(ReduceMotion.System)} style={s.descWrap}>
                   {/* THE MEASURER: an unclamped copy (a clamped Text reports the
@@ -1118,6 +1122,8 @@ const s = StyleSheet.create({
   title: { fontFamily: fonts.display, fontSize: 36, color: colors.parchment, lineHeight: 40, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
   // Wraps only to let the chips fall below the one line of type.
   metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 7, rowGap: 6, marginTop: 16, marginBottom: 16 },
+  /** "✦ FEATURED IN THE LOBBY · 30 SEPTEMBER", under the colophon. */
+  lobbyHonour: { marginTop: -6, marginBottom: 16 },
   metaDiamond: { width: 5, height: 5, backgroundColor: colors.sepia, transform: [{ rotate: '45deg' }] },
   metaCurator: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.parchment, textDecorationLine: 'underline', textDecorationColor: colors.sepiaBorder },
   metaText: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 10, lineHeight: 16, letterSpacing: 1.5, color: colors.fog },

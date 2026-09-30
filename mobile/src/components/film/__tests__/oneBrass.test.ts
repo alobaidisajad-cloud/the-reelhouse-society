@@ -151,7 +151,7 @@ describe('the AUTEUR badge is no longer this page\u2019s brass problem', () => {
     // memory of having fixed them.
     for (const rel of [
       ['..', '..', 'feed', 'UserAttributionRow.tsx'],
-      ['..', '..', 'home', 'PulseCardItem.tsx'],
+      ['..', '..', 'lobby', 'parts.tsx'],
       ['..', '..', 'search', 'SearchResultRow.tsx'],
       ['..', '..', 'reels', 'MemberRegistry.tsx'],
       ['..', '..', 'RankBadge.tsx'],

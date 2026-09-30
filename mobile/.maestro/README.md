@@ -47,7 +47,7 @@ a time, each from a clean install, so no flow depends on another.
 | `log_film_flow.yaml` | logging from the full results, not the suggestion row |
 | `film_log.yaml` | abandoning a film with a reason |
 | `browse_vault.yaml` | a member opens a room from their holdings |
-| `social_pulse_flow.yaml` | the Lobby's Pulse renders for a member |
+| `lobby_wall_flow.yaml` | the Lobby's wall hangs for a member, whole, down to its sign-off |
 | `lounge_flow.yaml` | the Lounge's two doors: the visitor's gate, and the member's rope at ESTABLISH |
 | `offline_resilience.yaml` | a log made offline is queued, and sent on reconnect |
 | `error_recovery.yaml` | rapid tab switching never trips the error screen |

@@ -1781,6 +1781,96 @@ $$;
 
 
 --
+-- Name: get_lobby(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_lobby() RETURNS jsonb
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  WITH ed AS (
+    SELECT max(edition) AS edition FROM public.lobby_editions
+     WHERE edition <= (now() AT TIME ZONE 'UTC')::date
+  ),
+  the_log AS (
+    SELECT l.id, l.review, l.rating, l.film_id, l.film_title, l.poster_path,
+           p.id AS author_id, p.username, p.avatar_url, p.role, p.tier, p.is_founding
+      FROM ed
+      JOIN public.lobby_editions e ON e.edition = ed.edition AND e.slot = 'log'
+      JOIN public.logs l ON l.id = e.target_id
+      JOIN public.profiles p ON p.id = l.user_id
+     WHERE btrim(coalesce(l.review, '')) <> '' AND NOT coalesce(l.is_spoiler, false)
+       AND NOT coalesce(p.is_banned, false)
+       AND NOT public.is_hidden_by(auth.uid(), l.user_id)
+     ORDER BY e.place
+     LIMIT 1
+  ),
+  the_stack AS (
+    SELECT s.id, s.title, s.description,
+           p.id AS author_id, p.username, p.avatar_url, p.role, p.tier, p.is_founding
+      FROM ed
+      JOIN public.lobby_editions e ON e.edition = ed.edition AND e.slot = 'list'
+      JOIN public.lists s ON s.id = e.target_id
+      JOIN public.profiles p ON p.id = s.user_id
+     WHERE NOT coalesce(s.is_private, false)
+       AND (SELECT count(*) FROM public.list_items i WHERE i.list_id = s.id) >= 4
+       AND NOT coalesce(p.is_banned, false)
+       AND NOT public.is_hidden_by(auth.uid(), s.user_id)
+     ORDER BY e.place
+     LIMIT 1
+  ),
+  the_filings AS (
+    SELECT d.id, d.kind, d.title,
+           left(coalesce(nullif(d.full_content, ''), d.body, ''), 1500) AS text,
+           coalesce(array_length(regexp_split_to_array(btrim(coalesce(nullif(d.full_content, ''), d.body, '')), '\s+'), 1), 0) AS words,
+           p.id AS author_id, p.username, p.avatar_url, p.role, p.tier, p.is_founding,
+           e.place
+      FROM ed
+      JOIN public.lobby_editions e ON e.edition = ed.edition AND e.slot = 'post'
+      JOIN public.dispatch_posts d ON d.id = e.target_id
+      JOIN public.profiles p ON p.id = d.user_id
+     -- asked here, not left to the rules: an author reads their own withheld or drawn-back filing
+     WHERE coalesce(d.is_published, false) AND d.withheld_at IS NULL
+       AND d.ended_at IS NULL AND d.spoiler_label IS NULL
+       AND NOT coalesce(p.is_banned, false)
+     ORDER BY e.place
+     LIMIT 3
+  )
+  SELECT jsonb_build_object(
+    'edition', (SELECT edition FROM ed),
+    'log', (SELECT jsonb_build_object(
+              'id', l.id, 'words', l.review, 'rating', l.rating,
+              'film', jsonb_build_object('id', l.film_id, 'title', l.film_title, 'poster_path', l.poster_path),
+              'author', jsonb_build_object('id', l.author_id, 'username', l.username, 'avatar_url', l.avatar_url,
+                                           'role', l.role, 'tier', l.tier, 'is_founding', l.is_founding))
+              FROM the_log l),
+    'stack', (SELECT jsonb_build_object(
+              'id', s.id, 'title', s.title, 'description', s.description,
+              'films', (SELECT count(*) FROM public.list_items i WHERE i.list_id = s.id),
+              'posters', coalesce((SELECT jsonb_agg(jsonb_build_object('film_id', f.film_id, 'title', f.film_title, 'poster_path', f.poster_path)
+                                                    ORDER BY f.rank_position)
+                                     FROM (SELECT film_id, film_title, poster_path, rank_position FROM public.list_items
+                                            WHERE list_id = s.id ORDER BY rank_position LIMIT 3) f), '[]'::jsonb),
+              'author', jsonb_build_object('id', s.author_id, 'username', s.username, 'avatar_url', s.avatar_url,
+                                           'role', s.role, 'tier', s.tier, 'is_founding', s.is_founding))
+              FROM the_stack s),
+    'filings', coalesce((SELECT jsonb_agg(jsonb_build_object(
+              'id', f.id, 'kind', f.kind, 'title', f.title, 'text', f.text, 'words', f.words,
+              'author', jsonb_build_object('id', f.author_id, 'username', f.username, 'avatar_url', f.avatar_url,
+                                           'role', f.role, 'tier', f.tier, 'is_founding', f.is_founding))
+              ORDER BY f.place) FROM the_filings f), '[]'::jsonb)
+  );
+$$;
+
+
+--
+-- Name: FUNCTION get_lobby(); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.get_lobby() IS 'The Lobby wall for the member asking: today''s edition, read under their own rules and blocks. No counts.';
+
+
+--
 -- Name: get_lounge_unread_counts(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2755,6 +2845,144 @@ $$;
 --
 
 COMMENT ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) IS 'Batch form of list_certify_count, for a page of stacks. Same guarantees. Returns a row for every id given, including stacks the caller cannot see (as 0).';
+
+
+--
+-- Name: lobby_choose_edition(date); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.lobby_choose_edition(p_edition date DEFAULT ((now() AT TIME ZONE 'UTC'::text))::date) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  -- the edition's moment: 00:00 UTC of its day; nothing given after it counts
+  v_end timestamptz := p_edition::timestamp AT TIME ZONE 'UTC';
+  v_chosen integer;
+BEGIN
+  -- One chooser at a time; and an edition, once chosen, is never chosen again.
+  PERFORM pg_advisory_xact_lock(hashtext('public.lobby_choose_edition'));
+  IF EXISTS (SELECT 1 FROM public.lobby_editions WHERE edition = p_edition) THEN
+    RETURN 0;
+  END IF;
+
+  WITH regard AS (
+    -- who marked what, and how: 'c' certified, 'q' critiqued; never its author
+    SELECT 'log'::text AS slot, x.target_log_id AS target, x.user_id AS member, 'c' AS how, x.created_at AS at
+      FROM public.interactions x JOIN public.logs l ON l.id = x.target_log_id
+     WHERE x.type = 'endorse_log' AND x.user_id <> l.user_id AND x.created_at < v_end
+    UNION ALL
+    SELECT 'log', c.log_id, c.user_id, 'q', c.created_at
+      FROM public.log_comments c JOIN public.logs l ON l.id = c.log_id
+     WHERE c.user_id IS NOT NULL AND c.user_id <> l.user_id AND c.created_at < v_end
+    UNION ALL
+    SELECT 'list', x.target_list_id, x.user_id, 'c', x.created_at
+      FROM public.interactions x JOIN public.lists s ON s.id = x.target_list_id
+     WHERE x.type = 'endorse_list' AND x.user_id <> s.user_id AND x.created_at < v_end
+    UNION ALL
+    SELECT 'list', c.list_id, c.user_id, 'q', c.created_at
+      FROM public.list_comments c JOIN public.lists s ON s.id = c.list_id
+     WHERE c.user_id IS NOT NULL AND c.user_id <> s.user_id AND c.created_at < v_end
+    UNION ALL
+    SELECT 'post', c.post_id, c.user_id, 'c', c.created_at
+      FROM public.dispatch_certifications c JOIN public.dispatch_posts d ON d.id = c.post_id
+     WHERE c.post_id IS NOT NULL AND c.user_id <> d.user_id AND c.created_at < v_end
+    UNION ALL
+    SELECT 'post', c.post_id, c.user_id, 'q', c.created_at
+      FROM public.dispatch_comments c JOIN public.dispatch_posts d ON d.id = c.post_id
+     WHERE c.user_id IS NOT NULL AND c.user_id <> d.user_id AND c.created_at < v_end
+  ),
+  counted AS (
+    -- a banned member's regard counts for nothing
+    SELECT r.slot, r.target,
+           count(DISTINCT r.how || r.member::text) FILTER (WHERE r.at >= v_end - interval '1 day')   AS day,
+           count(DISTINCT r.how || r.member::text) FILTER (WHERE r.at >= v_end - interval '7 days')  AS week,
+           count(DISTINCT r.how || r.member::text) FILTER (WHERE r.at >= v_end - interval '30 days') AS month,
+           count(DISTINCT r.how || r.member::text)                                                    AS ever
+      FROM regard r
+      JOIN public.profiles m ON m.id = r.member
+     WHERE NOT coalesce(m.is_banned, false)
+     GROUP BY r.slot, r.target
+  ),
+  -- the pieces that may hang (the counted ones, and the newest, which the tie rule reaches)
+  able AS (
+    SELECT 'log'::text AS slot, l.id, l.user_id AS author, l.created_at
+      FROM public.logs l JOIN public.profiles p ON p.id = l.user_id
+     WHERE btrim(coalesce(l.review, '')) <> '' AND NOT coalesce(l.is_spoiler, false)
+       AND l.created_at < v_end
+       AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
+       AND NOT EXISTS (SELECT 1 FROM public.lobby_withheld w WHERE w.kind = 'log' AND w.target_id = l.id)
+       AND (l.id IN (SELECT target FROM counted WHERE slot = 'log')
+            OR l.id IN (SELECT n.id FROM public.logs n
+                          JOIN public.profiles np ON np.id = n.user_id
+                         WHERE btrim(coalesce(n.review, '')) <> '' AND NOT coalesce(n.is_spoiler, false)
+                           AND n.created_at < v_end
+                           AND NOT coalesce(np.is_banned, false) AND NOT coalesce(np.is_social_private, false)
+                         ORDER BY n.created_at DESC LIMIT 24))
+    UNION ALL
+    SELECT 'list', s.id, s.user_id, s.created_at
+      FROM public.lists s JOIN public.profiles p ON p.id = s.user_id
+     WHERE NOT coalesce(s.is_private, false)
+       AND (SELECT count(*) FROM public.list_items i WHERE i.list_id = s.id) >= 4
+       AND s.created_at < v_end
+       AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
+       AND NOT EXISTS (SELECT 1 FROM public.lobby_withheld w WHERE w.kind = 'list' AND w.target_id = s.id)
+       AND (s.id IN (SELECT target FROM counted WHERE slot = 'list')
+            OR s.id IN (SELECT n.id FROM public.lists n
+                          JOIN public.profiles np ON np.id = n.user_id
+                         WHERE NOT coalesce(n.is_private, false) AND n.created_at < v_end
+                           AND (SELECT count(*) FROM public.list_items i WHERE i.list_id = n.id) >= 4
+                           AND NOT coalesce(np.is_banned, false) AND NOT coalesce(np.is_social_private, false)
+                         ORDER BY n.created_at DESC LIMIT 24))
+    UNION ALL
+    SELECT 'post', d.id, d.user_id, d.created_at
+      FROM public.dispatch_posts d JOIN public.profiles p ON p.id = d.user_id
+     WHERE coalesce(d.is_published, false) AND d.withheld_at IS NULL AND d.ended_at IS NULL
+       AND d.spoiler_label IS NULL AND d.created_at < v_end
+       AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
+       AND NOT EXISTS (SELECT 1 FROM public.lobby_withheld w WHERE w.kind = 'post' AND w.target_id = d.id)
+       AND (d.id IN (SELECT target FROM counted WHERE slot = 'post')
+            OR d.id IN (SELECT n.id FROM public.dispatch_posts n
+                          JOIN public.profiles np ON np.id = n.user_id
+                         WHERE coalesce(n.is_published, false) AND n.withheld_at IS NULL AND n.ended_at IS NULL
+                           AND n.spoiler_label IS NULL AND n.created_at < v_end
+                           AND NOT coalesce(np.is_banned, false) AND NOT coalesce(np.is_social_private, false)
+                         ORDER BY n.created_at DESC LIMIT 24))
+  ),
+  ranked AS (
+    SELECT a.slot, a.id, a.author, coalesce(c.day, 0) AS day,
+           row_number() OVER (PARTITION BY a.slot
+                              ORDER BY coalesce(c.day, 0) DESC, coalesce(c.week, 0) DESC,
+                                       coalesce(c.month, 0) DESC, coalesce(c.ever, 0) DESC,
+                                       a.created_at DESC, a.id) AS place
+      FROM able a LEFT JOIN counted c ON c.slot = a.slot AND c.target = a.id
+  )
+  INSERT INTO public.lobby_editions (edition, slot, place, target_id, author_id, score)
+  SELECT p_edition, slot, place, id, author, day FROM ranked WHERE place <= 12;
+
+  GET DIAGNOSTICS v_chosen = ROW_COUNT;
+
+  -- The authors of what hangs are told, once, without a push.
+  INSERT INTO public.notifications (user_id, type, message, group_key)
+  SELECT e.author_id, 'featured',
+         CASE e.slot WHEN 'log'  THEN 'Your log hangs in the Lobby today.'
+                     WHEN 'list' THEN 'Your stack hangs in the Lobby today.'
+                     ELSE             'Your filing hangs in the Lobby today.' END,
+         'lobby:' || e.slot || ':' || e.target_id
+    FROM public.lobby_editions e
+   WHERE e.edition = p_edition
+     AND e.place <= CASE e.slot WHEN 'post' THEN 3 ELSE 1 END;
+
+  RETURN v_chosen;
+END;
+$$;
+
+
+--
+-- Name: FUNCTION lobby_choose_edition(p_edition date); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.lobby_choose_edition(p_edition date) IS 'Chooses the Lobby''s edition for a day, once. Run by the lobby-edition job; no role may call it.';
 
 
 --
@@ -4050,6 +4278,47 @@ $$;
 
 
 --
+-- Name: set_lobby_withheld(text, uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_lobby_withheld(p_kind text, p_target uuid, p_keep_off boolean) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
+  END IF;
+  IF p_kind NOT IN ('log', 'list', 'post') OR p_target IS NULL THEN
+    RAISE EXCEPTION 'Nothing to keep: a kind (log, list, post) and a piece' USING ERRCODE = '22023';
+  END IF;
+
+  IF p_keep_off THEN
+    INSERT INTO public.lobby_withheld (kind, target_id, withheld_by)
+    VALUES (p_kind, p_target, auth.uid())
+    ON CONFLICT (kind, target_id) DO NOTHING;
+    -- off every wall at once, the honour with it, and the notice that announced it
+    DELETE FROM public.lobby_editions WHERE slot = p_kind AND target_id = p_target;
+    DELETE FROM public.notifications WHERE type = 'featured' AND group_key = 'lobby:' || p_kind || ':' || p_target;
+  ELSE
+    -- it may be chosen again from the next edition; the days it lost are not restored
+    DELETE FROM public.lobby_withheld WHERE kind = p_kind AND target_id = p_target;
+  END IF;
+END;
+$$;
+
+
+--
+-- Name: FUNCTION set_lobby_withheld(p_kind text, p_target uuid, p_keep_off boolean); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.set_lobby_withheld(p_kind text, p_target uuid, p_keep_off boolean) IS 'An admin keeps a piece off the Lobby (true) or lets it be chosen again (false).';
+
+
+--
 -- Name: set_lounge_cover(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -4216,6 +4485,12 @@ DECLARE
   v_secret   text;
   v_pref_key text;
 BEGIN
+  -- The Lobby's edition turns at 00:00 UTC, while much of the house sleeps:
+  -- its notice waits under the bell and is never pushed.
+  IF NEW.type = 'featured' THEN
+    RETURN NEW;
+  END IF;
+
   IF NEW.from_user_id IS NOT NULL AND EXISTS (
     SELECT 1 FROM public.user_blocks
     WHERE (blocker_id = NEW.user_id      AND blocked_id = NEW.from_user_id)
@@ -4852,6 +5127,50 @@ CREATE TABLE public.list_items (
 
 
 --
+-- Name: lobby_editions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.lobby_editions (
+    edition date NOT NULL,
+    slot text NOT NULL,
+    place smallint NOT NULL,
+    target_id uuid NOT NULL,
+    author_id uuid NOT NULL,
+    score integer NOT NULL,
+    chosen_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT lobby_editions_place_check CHECK (((place >= 1) AND (place <= 12))),
+    CONSTRAINT lobby_editions_slot_check CHECK ((slot = ANY (ARRAY['log'::text, 'list'::text, 'post'::text])))
+);
+
+
+--
+-- Name: TABLE lobby_editions; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.lobby_editions IS 'The Lobby''s daily editions: up to twelve pieces a slot, in order of honour. Written only by lobby_choose_edition; members read the ids, never the score.';
+
+
+--
+-- Name: lobby_withheld; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.lobby_withheld (
+    kind text NOT NULL,
+    target_id uuid NOT NULL,
+    withheld_by uuid,
+    withheld_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT lobby_withheld_kind_check CHECK ((kind = ANY (ARRAY['log'::text, 'list'::text, 'post'::text])))
+);
+
+
+--
+-- Name: TABLE lobby_withheld; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.lobby_withheld IS 'Pieces the house keeps off the Lobby. Written only by set_lobby_withheld (admins); no member reads it.';
+
+
+--
 -- Name: log_comments; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5067,7 +5386,7 @@ CREATE TABLE public.notifications (
     CONSTRAINT notifications_metadata_len CHECK ((char_length((metadata)::text) <= 8000)),
     CONSTRAINT notifications_poster_path_len CHECK ((char_length(poster_path) <= 2048)),
     CONSTRAINT notifications_title_len CHECK ((char_length(title) <= 200)),
-    CONSTRAINT notifications_type_check CHECK ((type = ANY (ARRAY['follow'::text, 'endorse'::text, 'comment'::text, 'annotate'::text, 'retransmit'::text, 'system'::text, 'reaction'::text, 'follow_request'::text, 'follow_accept'::text, 'moderation'::text])))
+    CONSTRAINT notifications_type_check CHECK ((type = ANY (ARRAY['follow'::text, 'endorse'::text, 'comment'::text, 'annotate'::text, 'retransmit'::text, 'system'::text, 'reaction'::text, 'follow_request'::text, 'follow_accept'::text, 'moderation'::text, 'featured'::text])))
 );
 
 
@@ -5466,6 +5785,30 @@ ALTER TABLE ONLY public.lists
 
 
 --
+-- Name: lobby_editions lobby_editions_edition_slot_target_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.lobby_editions
+    ADD CONSTRAINT lobby_editions_edition_slot_target_id_key UNIQUE (edition, slot, target_id);
+
+
+--
+-- Name: lobby_editions lobby_editions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.lobby_editions
+    ADD CONSTRAINT lobby_editions_pkey PRIMARY KEY (edition, slot, place);
+
+
+--
+-- Name: lobby_withheld lobby_withheld_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.lobby_withheld
+    ADD CONSTRAINT lobby_withheld_pkey PRIMARY KEY (kind, target_id);
+
+
+--
 -- Name: log_comments log_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5743,6 +6086,20 @@ CREATE UNIQUE INDEX dispatch_cert_post_once ON public.dispatch_certifications US
 --
 
 CREATE INDEX dispatch_cert_user ON public.dispatch_certifications USING btree (user_id);
+
+
+--
+-- Name: dispatch_certifications_post_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_certifications_post_at ON public.dispatch_certifications USING btree (created_at) WHERE (post_id IS NOT NULL);
+
+
+--
+-- Name: dispatch_comments_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_comments_created_at ON public.dispatch_comments USING btree (created_at);
 
 
 --
@@ -6201,10 +6558,31 @@ CREATE INDEX interactions_endorse_log_idx ON public.interactions USING btree (ta
 
 
 --
+-- Name: interactions_regard_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX interactions_regard_at ON public.interactions USING btree (created_at) WHERE (type = ANY (ARRAY['endorse_log'::text, 'endorse_list'::text]));
+
+
+--
+-- Name: list_comments_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX list_comments_created_at ON public.list_comments USING btree (created_at);
+
+
+--
 -- Name: list_comments_list_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX list_comments_list_id_idx ON public.list_comments USING btree (list_id);
+
+
+--
+-- Name: lobby_editions_target; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX lobby_editions_target ON public.lobby_editions USING btree (target_id);
 
 
 --
@@ -8273,6 +8651,25 @@ CREATE POLICY lists_select_authorized ON public.lists FOR SELECT USING (((auth.u
 
 
 --
+-- Name: lobby_editions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.lobby_editions ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: lobby_editions lobby_editions_read; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY lobby_editions_read ON public.lobby_editions FOR SELECT TO authenticated USING (true);
+
+
+--
+-- Name: lobby_withheld; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.lobby_withheld ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: log_comments; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -9455,6 +9852,15 @@ GRANT ALL ON FUNCTION public.get_following_feed_cursor(p_usernames text[], p_lim
 
 
 --
+-- Name: FUNCTION get_lobby(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.get_lobby() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_lobby() TO authenticated;
+GRANT ALL ON FUNCTION public.get_lobby() TO service_role;
+
+
+--
 -- Name: FUNCTION get_lounge_unread_counts(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -9687,6 +10093,14 @@ REVOKE ALL ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) FROM PUBLIC
 GRANT ALL ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) TO anon;
 GRANT ALL ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) TO authenticated;
 GRANT ALL ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) TO service_role;
+
+
+--
+-- Name: FUNCTION lobby_choose_edition(p_edition date); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.lobby_choose_edition(p_edition date) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.lobby_choose_edition(p_edition date) TO service_role;
 
 
 --
@@ -9990,6 +10404,15 @@ GRANT ALL ON TABLE public.lists TO service_role;
 REVOKE ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION set_lobby_withheld(p_kind text, p_target uuid, p_keep_off boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_lobby_withheld(p_kind text, p_target uuid, p_keep_off boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_lobby_withheld(p_kind text, p_target uuid, p_keep_off boolean) TO authenticated;
+GRANT ALL ON FUNCTION public.set_lobby_withheld(p_kind text, p_target uuid, p_keep_off boolean) TO service_role;
 
 
 --
@@ -10307,6 +10730,48 @@ GRANT ALL ON TABLE public.list_comments TO service_role;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.list_items TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.list_items TO authenticated;
 GRANT ALL ON TABLE public.list_items TO service_role;
+
+
+--
+-- Name: TABLE lobby_editions; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.lobby_editions TO service_role;
+
+
+--
+-- Name: COLUMN lobby_editions.edition; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(edition) ON TABLE public.lobby_editions TO authenticated;
+
+
+--
+-- Name: COLUMN lobby_editions.slot; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(slot) ON TABLE public.lobby_editions TO authenticated;
+
+
+--
+-- Name: COLUMN lobby_editions.place; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(place) ON TABLE public.lobby_editions TO authenticated;
+
+
+--
+-- Name: COLUMN lobby_editions.target_id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(target_id) ON TABLE public.lobby_editions TO authenticated;
+
+
+--
+-- Name: TABLE lobby_withheld; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.lobby_withheld TO service_role;
 
 
 --

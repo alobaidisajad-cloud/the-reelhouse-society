@@ -28,6 +28,7 @@ CREATE POLICY avatars_upload_own ON storage.objects AS PERMISSIVE FOR INSERT TO 
 
 -- ── scheduled jobs
 SELECT cron.schedule_in_database('freeze-closed-ballots', '*/5 * * * *', 'SELECT public.freeze_closed_ballots();', 'postgres', 'postgres', 't');
+SELECT cron.schedule_in_database('lobby-edition', '5 * * * *', 'SELECT public.lobby_choose_edition();', 'postgres', 'postgres', 't');
 
 -- ── vault secrets — names only; a stand-in must be made wherever this is built
 -- notify_push_secret

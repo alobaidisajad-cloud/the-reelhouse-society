@@ -141,7 +141,7 @@ function universe(files) {
     if (fs.existsSync(path.join(MOBILE, f))) words(read(f), known);
   }
   dependencyWords(known);
-  // A test, a flow or a module is named by its file: `theToastHasOneHome`, `social_pulse_flow`.
+  // A test, a flow or a module is named by its file: `theToastHasOneHome`, `lobby_wall_flow`.
   for (const f of repoFiles().all) words(path.posix.basename(f).split('.')[0], known);
   return known;
 }

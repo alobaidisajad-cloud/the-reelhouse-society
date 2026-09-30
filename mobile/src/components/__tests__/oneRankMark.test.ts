@@ -109,7 +109,8 @@ describe('one rank mark, drawn in one place', () => {
     const MUST_IMPORT = [
       'src/components/dispatch/paper/PaperPost.tsx',
       'src/components/feed/UserAttributionRow.tsx',
-      'src/components/home/PulseCardItem.tsx',
+      // The Lobby wall: its bylines and credit strips draw the mark through one part.
+      'src/components/lobby/parts.tsx',
       'src/components/search/SearchResultRow.tsx',
       'src/components/reels/MemberRegistry.tsx',
       'app/user/[username].tsx',

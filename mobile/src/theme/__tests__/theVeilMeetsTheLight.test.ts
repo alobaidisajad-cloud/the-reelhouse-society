@@ -41,7 +41,7 @@ const VEILS = ALL.flatMap((f) => {
 
 describe('every veil ends solid at its hem', () => {
   it('finds the veils (a scan that finds none proves nothing)', () => {
-    expect(VEILS.length).toBeGreaterThanOrEqual(8);
+    expect(VEILS.length).toBeGreaterThanOrEqual(7);
   });
 
   it.each(VEILS.map((v) => [v.where, v.stops] as const))('%s runs from 0 to a solid 1', (_, stops) => {

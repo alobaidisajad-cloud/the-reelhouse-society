@@ -76,7 +76,6 @@ Decisions, as of 2026-09-28:
 | `src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts` | One word names one thing, across the app's copy. |
 | `src/components/dispatch/__tests__/theDispatchSaysEssay.test.ts` | The printed word is ESSAY wherever a member reads it; the wire word stays in the wire. |
 | `src/components/film/__tests__/oneBrass.test.ts` | Every brass fill is the ramp, never a flat sepia. |
-| `src/components/home/__tests__/theMarqueeSaysWhereItsFilmCameFrom.test.ts` | The marquee's copy and its source of truth. |
 | `src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts` | No module reads the window's size once at load. |
 | `src/components/profile/__tests__/roomInset.test.ts` | One page inset, actually shared, across the rooms. |
 | `src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts` | Every promise the Society sells is enforced by a gate and explained by a trigger. |

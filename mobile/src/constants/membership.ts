@@ -111,6 +111,11 @@ export interface Rank {
   name: string;
   /** One line of character under the name. */
   character: string;
+  /**
+   * The rank's two lines on its Lobby ticket (an order, then the house's
+   * answer), or null for the rank the Lobby does not offer.
+   */
+  lobbyLine: readonly [string, string] | null;
   /** The line above the list: what this rank adds to. */
   includes: string | null;
   /**
@@ -129,6 +134,7 @@ export const RANKS: Rank[] = [
     id: 'cinephile',
     name: 'The Cinephile',
     character: 'Free. For good. We checked.',
+    lobbyLine: null,
     includes: null,
     priceMonthly: null,
     priceAnnual: null,
@@ -138,6 +144,7 @@ export const RANKS: Rank[] = [
     id: 'archivist',
     name: 'The Archivist',
     character: 'For those who keep things.',
+    lobbyLine: ['Keep the record.', 'The house insists.'],
     includes: 'EVERYTHING FREE, AND —',
     priceMonthly: '1.99',
     priceAnnual: '19.99',
@@ -148,6 +155,7 @@ export const RANKS: Rank[] = [
     id: 'auteur',
     name: 'The Auteur',
     character: 'For opinions, at length.',
+    lobbyLine: ['Write at length.', 'The house reads.'],
     includes: 'EVERYTHING IN THE ARCHIVIST, AND —',
     priceMonthly: '4.99',
     priceAnnual: '49.99',

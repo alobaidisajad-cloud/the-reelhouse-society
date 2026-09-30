@@ -55,6 +55,8 @@ const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
   comment: { Icon: MessageCircle, color: colors.bone },
   follow:  { Icon: UserPlus, color: colors.flicker || colors.sepia },
   rate:    { Icon: Star, color: colors.sepia },
+  // a piece of theirs hangs in the Lobby today (20260930_03): the house's award, in brass
+  featured: { Icon: Award, color: colors.sepia },
   default: { Icon: Award, color: colors.fog },
 };
 
@@ -100,8 +102,11 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
 
         {/* Content */}
         <View style={s.itemContent}>
+          {/* The actor only when there is one: a notice from the house itself ("Your log
+              hangs in the Lobby today.") is a whole sentence, as the push banner prints it —
+              never "@system …". */}
           <Text style={s.itemMessage} numberOfLines={3} ellipsizeMode="tail">
-            <Text style={s.itemUser}>@{item.from_username || 'system'}</Text> {item.message}
+            {item.from_username ? <><Text style={s.itemUser}>@{item.from_username}</Text>{' '}</> : null}{item.message}
           </Text>
           <Text style={s.itemTime} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
             {timeAgo(item.created_at)}

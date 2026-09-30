@@ -1,0 +1,17 @@
+appId: com.reelhouse.society
+---
+# The Lobby's wall hangs for a member, whole, without crashing. The masthead
+# names the room, and the sign-off is the wall's last line: it is drawn in
+# EVERY state — a full edition, a house with nothing yet to feature, a wall
+# that could not be reached — so reaching it proves every bill above it drew.
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign_in.yaml
+- tapOn:
+    id: "home-tab"
+- assertVisible: "The Lobby"
+- scrollUntilVisible:
+    element: "The projection booth never closes."
+    direction: DOWN
+    timeout: 20000
+- assertNotVisible: "PROJECTION FAILURE"

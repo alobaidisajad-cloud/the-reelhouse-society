@@ -35,8 +35,6 @@ const ALLOWED: Record<string, string> = {
   'src/components/feed/PosterFrame.tsx · posterEmptyMark': 'a mark in an empty poster',
   'src/components/film/NitrateFileCard.tsx · posterFallbackMark': 'a mark on a missing poster',
   'src/components/film/NitrateFileCard.tsx · metaDot': '· between two facts',
-  'src/components/home/FilmStripRow.tsx · posterPlaceholder': '✦ in an empty poster',
-  'src/components/home/FilmTicker.tsx · tickerDot': '· between ticker items',
   'src/components/profile/ProfileArchiveTab.tsx · importDividerMark': 'the ornament on a divider',
   'src/components/profile/profileStyles.ts · searchIcon': 'an icon',
   'app/(tabs)/reels.tsx · searchIcon': 'an icon',
@@ -51,7 +49,6 @@ const ALLOWED: Record<string, string> = {
   'src/components/profile/roomStyles.ts · retrieveMark': 'the mark beside RETRIEVING',
   'src/components/profile/WatchlistRoulette.tsx · reelGlyph': 'a reel glyph',
   'src/components/RouteErrorBoundary.tsx · glyph': 'the error page’s emblem',
-  'app/(tabs)/index.tsx · heroRuleDot': '· on the hero’s rule',
   'app/year-in-cinema.tsx · blankGlyph': 'a glyph in an empty cell',
   // ── PICTURES — exported images, never seen on this ground ───────────────
   'src/components/film/LogShareCard.tsx · title': 'the share card',

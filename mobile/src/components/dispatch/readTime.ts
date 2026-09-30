@@ -11,6 +11,14 @@
  * `12 MIN` and the other `11 MIN` about the same words.
  */
 export function readTimeOf(text: string): string {
-  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  return readTimeForWords(text.trim().split(/\s+/).filter(Boolean).length);
+}
+
+/**
+ * The same figure from a count of words, for a page that is sent the count and
+ * not the essay (the Lobby: the house counts an essay's words as it chooses it,
+ * so a wall of three essays does not carry three essays).
+ */
+export function readTimeForWords(words: number): string {
   return `${Math.max(1, Math.round(words / 200))} MIN`;
 }

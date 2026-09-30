@@ -48,7 +48,12 @@ jest.mock('@/src/utils/reelToast', () => {
 });
 jest.mock('@tanstack/react-query', () => ({
   ...jest.requireActual('@tanstack/react-query'),
-  useQuery: (opts: never) => { mockOptions = opts; return mockQuery; },
+  // the log's own read; any other on the page (the Lobby's honour) answers nothing
+  useQuery: (opts: { queryKey: unknown[] }) => {
+    if (opts.queryKey[0] !== 'log') return { data: undefined };
+    mockOptions = opts as never;
+    return mockQuery;
+  },
   useQueryClient: () => ({
     setQueryData: jest.fn((_k: unknown, fn: (old: unknown) => unknown) => { mockCache = fn(mockCache) as never; }),
     getQueryData: jest.fn(() => mockCache),

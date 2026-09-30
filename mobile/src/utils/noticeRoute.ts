@@ -16,7 +16,28 @@
 import type { AppNotification } from '@/src/stores/notificationStore';
 import { groupRoute, parseGroupKey } from '@/src/utils/endorsementGroupKey';
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * `lobby:<kind>:<id>` — the notice that a piece hangs in the Lobby today
+ * (20260930_03). It opens the piece itself: the log, the stack, the filing.
+ * Its own key, never `endorse:…`, so it is never folded into "3 members
+ * certified your log".
+ */
+export function lobbyRoute(key: string | null | undefined): string | null {
+  if (typeof key !== 'string') return null;
+  const parts = key.split(':');
+  if (parts.length !== 3 || parts[0] !== 'lobby' || !UUID.test(parts[2])) return null;
+  const [, kind, id] = parts;
+  if (kind === 'log') return `/log/${id}`;
+  if (kind === 'list') return `/stacks/${id}`;
+  if (kind === 'post') return `/dispatch/${id}`;
+  return null;
+}
+
 export function noticeRoute(notice: Pick<AppNotification, 'group_key' | 'film_id' | 'from_username'>): string | null {
+  const honoured = lobbyRoute(notice.group_key);
+  if (honoured) return honoured;
   const about = groupRoute(parseGroupKey(notice.group_key), notice.film_id);
   if (about) return about;
   if (notice.film_id) return `/film/${notice.film_id}`;
