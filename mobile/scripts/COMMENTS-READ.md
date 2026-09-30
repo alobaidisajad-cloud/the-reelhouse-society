@@ -837,6 +837,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | — |  |
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | — |  |
+| src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts | — |  |
 | src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts | — |  |
 | src/utils/__tests__/feedInvalidation.guard.test.ts | — |  |
 | src/utils/__tests__/filterContentByBlocks.pbt.test.ts | — |  |
