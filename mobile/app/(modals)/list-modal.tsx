@@ -310,10 +310,12 @@ export default function ListModal() {
                 // May run after the sheet is gone, when back() would pop another screen.
                 if (isMounted.current) nav.back();
             });
-        } catch (err: unknown) {
+        } catch {
+            // One sentence, and a true one: a stack is saved whole or not at all
+            // (save_stack), so nothing was changed. It showed the database's own
+            // words, beside a second toast from the store.
             TactileEngine.error();
-            const msg = err instanceof Error ? err.message : 'The stack could not be saved.';
-            reelToast.error(msg);
+            reelToast.error('The stack could not be saved — nothing was changed.');
             if (isMounted.current) setSaving(false);
         }
     };

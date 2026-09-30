@@ -94,19 +94,20 @@ describe('createList / updateList', () => {
     const { useFilmStore } = require('../../stores/films');
     await useFilmStore.getState().createList({ title: HOSTILE_TITLE, description: HOSTILE_BIO });
 
-    expect(captured.insert.length).toBeGreaterThan(0);
-    const row = Array.isArray(captured.insert[0]) ? captured.insert[0][0] : captured.insert[0];
-    expect(row.title).toBe('Best of 1999');
-    expect(row.title).not.toMatch(/[‪-‮⁦-⁩]/);
-    expect(row.description).not.toMatch(/[​-‍‪-‮]/);
+    // One save (save_stack): what it sends is what the database keeps.
+    const call = captured.rpc.find((c: any) => c.name === 'save_stack');
+    expect(call).toBeTruthy();
+    expect(call.args.p_title).toBe('Best of 1999');
+    expect(call.args.p_title).not.toMatch(/[‪-‮⁦-⁩]/);
+    expect(call.args.p_description).not.toMatch(/[​-‍‪-‮]/);
   });
 
   it('cleans an edit too, not just a create', async () => {
     const { useFilmStore } = require('../../stores/films');
     await useFilmStore.getState().updateList('list-1', { title: HOSTILE_TITLE });
 
-    expect(captured.update.length).toBeGreaterThan(0);
-    expect(captured.update[0].title).toBe('Best of 1999');
+    const call = captured.rpc.find((c: any) => c.name === 'save_stack');
+    expect(call.args.p_title).toBe('Best of 1999');
   });
 });
 
@@ -186,9 +187,9 @@ describe('offline list handlers', () => {
     await executeMutation({ id: 'm1', type: 'create_list', timestamp: Date.now(),
       payload: { id: 'l1', user_id: 'u1', title: HOSTILE_TITLE, description: 'a\u200Bb' } } as any, {});
 
-    const row = Array.isArray(captured.upsert[0]) ? captured.upsert[0][0] : captured.upsert[0];
-    expect(row.title).toBe('Best of 1999');
-    expect(row.description).toBe('ab');
+    const call = captured.rpc.find((c: any) => c.name === 'save_stack');
+    expect(call.args.p_title).toBe('Best of 1999');
+    expect(call.args.p_description).toBe('ab');
   });
 
   it('cleans an edit queued before the fix existed', async () => {
@@ -196,7 +197,8 @@ describe('offline list handlers', () => {
     await executeMutation({ id: 'm2', type: 'update_list', timestamp: Date.now(),
       payload: { list_id: 'l1', user_id: 'u1', updates: { title: HOSTILE_TITLE } } } as any, {});
 
-    expect(captured.update[0].title).toBe('Best of 1999');
+    const call = captured.rpc.find((c: any) => c.name === 'save_stack');
+    expect(call.args.p_title).toBe('Best of 1999');
   });
 });
 

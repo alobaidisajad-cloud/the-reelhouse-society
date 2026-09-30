@@ -304,42 +304,36 @@ describe('Watchlist', () => {
 // ════════════════════════════════════════════════════════════════════
 
 describe('Lists', () => {
+    // A stack is saved whole, or not at all (save_stack, 20260930_01): one call,
+    // one transaction. These were upsert-then-insert and upsert-then-prune.
     describe('create_list', () => {
-        it('upserts list and inserts films', async () => {
-            // First call: lists.upsert → returns id
-            const listsChain = createMockChain();
-            listsChain.maybeSingle = jest.fn().mockResolvedValue({ data: { id: 'list-1' }, error: null });
-            // Second call: list_items.upsert
-            const itemsChain = createMockChain();
-            makeChainResolveTo(itemsChain, { error: null });
-
-            (supabase.from as jest.Mock)
-                .mockReturnValueOnce(listsChain)
-                .mockReturnValueOnce(itemsChain);
-
+        it('makes the stack and its films in one save, and a replay is a no-op on the house\'s side', async () => {
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: { id: 'list-1' }, error: null });
             const films = [
-                { film_id: 550, film_title: 'Fight Club', poster_path: '/fc.jpg', position: 0 },
-                { film_id: 680, film_title: 'Pulp Fiction', poster_path: '/pf.jpg', position: 1 },
+                { film_id: 550, film_title: 'Fight Club', poster_path: '/fc.jpg', rank_position: 0 },
+                { film_id: 680, film_title: 'Pulp Fiction', poster_path: '/pf.jpg', rank_position: 1 },
             ];
-            await runMutation('create_list', { title: 'Favorites', user_id: 'u1', films });
-
-            expect(supabase.from).toHaveBeenCalledWith('lists');
-            expect(supabase.from).toHaveBeenCalledWith('list_items');
-            expect(itemsChain.upsert).toHaveBeenCalledWith(
-                expect.arrayContaining([
-                    expect.objectContaining({ list_id: 'list-1', film_id: 550 }),
-                ]),
-                { onConflict: 'list_id,film_id' }
-            );
+            await runMutation('create_list', { id: 'list-1', title: 'Favorites', user_id: 'u1', is_private: false, is_ranked: true, films });
+            expect(supabase.rpc).toHaveBeenCalledTimes(1);
+            expect(supabase.rpc).toHaveBeenCalledWith('save_stack', expect.objectContaining({
+                p_id: 'list-1', p_title: 'Favorites', p_is_ranked: true, p_create: true,
+                p_films: [
+                    expect.objectContaining({ film_id: 550, film_title: 'Fight Club', rank_position: 0 }),
+                    expect.objectContaining({ film_id: 680, rank_position: 1 }),
+                ],
+            }));
+            expect(supabase.from).not.toHaveBeenCalled();
         });
 
-        it('skips film insert when films array is empty', async () => {
-            const listsChain = createMockChain();
-            listsChain.maybeSingle = jest.fn().mockResolvedValue({ data: { id: 'list-2' }, error: null });
-            (supabase.from as jest.Mock).mockReturnValue(listsChain);
+        it('a stack of no films is made with none', async () => {
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: { id: 'list-2' }, error: null });
+            await runMutation('create_list', { id: 'list-2', title: 'Empty', user_id: 'u1', films: [] });
+            expect(supabase.rpc).toHaveBeenCalledWith('save_stack', expect.objectContaining({ p_films: [], p_create: true }));
+        });
 
-            await runMutation('create_list', { title: 'Empty', user_id: 'u1', films: [] });
-            expect(supabase.from).toHaveBeenCalledTimes(1); // Only lists, not list_items
+        it('a refusal is thrown, so the queue keeps it', async () => {
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: null, error: { code: '23514', message: 'check' } });
+            await expect(runMutation('create_list', { id: 'list-3', title: 'X', user_id: 'u1', films: [] })).rejects.toBeTruthy();
         });
     });
 
@@ -424,88 +418,40 @@ describe('Lists', () => {
         });
     });
 
-    describe('update_list (FLAW-01 upsert-then-prune)', () => {
-        it('updates list metadata and upserts then prunes films', async () => {
-            // 3 calls: lists.update, list_items.upsert, list_items.delete (prune)
-            const listsChain = createMockChain();
-            makeChainResolveTo(listsChain, { error: null });
-            const upsertChain = createMockChain();
-            makeChainResolveTo(upsertChain, { error: null });
-            const pruneChain = createMockChain();
-            makeChainResolveTo(pruneChain, { error: null });
+    describe('update_list', () => {
+        beforeEach(() => { (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: { id: 'l1' }, error: null }); });
 
-            (supabase.from as jest.Mock)
-                .mockReturnValueOnce(listsChain)
-                .mockReturnValueOnce(upsertChain)
-                .mockReturnValueOnce(pruneChain);
-
-            const films = [{ film_id: 550, film_title: 'FC', poster_path: '/fc', position: 0 }];
+        it('saves the details and exactly the films it carries, in one save', async () => {
             await runMutation('update_list', {
-                list_id: 'l1', user_id: 'u1',
-                updates: { title: 'New Title' }, films
+                list_id: 'l1', user_id: 'u1', updates: { title: 'New', is_private: true },
+                films: [{ id: 7, title: 'Seven', poster: '/7.jpg' }, { film_id: 9, film_title: 'Nine' }],
+                removed_film_ids: [3],
             });
-
-            expect(supabase.from).toHaveBeenCalledWith('lists');
-            expect(listsChain.update).toHaveBeenCalledWith({ title: 'New Title' });
-            expect(upsertChain.upsert).toHaveBeenCalledWith(
-                expect.arrayContaining([expect.objectContaining({ film_id: 550 })]),
-                { onConflict: 'list_id,film_id' }
-            );
-            // Prune: delete items NOT in keepIds
-            expect(pruneChain.not).toHaveBeenCalledWith('film_id', 'in', '(550)');
+            expect(supabase.rpc).toHaveBeenCalledTimes(1);
+            expect(supabase.rpc).toHaveBeenCalledWith('save_stack', {
+                p_id: 'l1', p_title: 'New', p_description: null, p_is_private: true, p_is_ranked: null,
+                // Both shapes a phone's queue may hold, as one; removals are implied by the list.
+                p_films: [
+                    { film_id: 7, film_title: 'Seven', poster_path: '/7.jpg', rank_position: 0 },
+                    { film_id: 9, film_title: 'Nine', poster_path: null, rank_position: 1 },
+                ],
+            });
+            expect(supabase.from).not.toHaveBeenCalled();
         });
 
-        it('deletes all items when films is empty array', async () => {
-            // updates is empty → skips lists.update. Only list_items.delete is called.
-            const deleteChain = createMockChain();
-            makeChainResolveTo(deleteChain, { error: null });
-
-            (supabase.from as jest.Mock).mockReturnValue(deleteChain);
-
+        it('an emptied stack is saved empty', async () => {
             await runMutation('update_list', { list_id: 'l1', user_id: 'u1', updates: {}, films: [] });
-            expect(supabase.from).toHaveBeenCalledWith('list_items');
-            expect(deleteChain.delete).toHaveBeenCalled();
-            expect(deleteChain.eq).toHaveBeenCalledWith('list_id', 'l1');
+            expect(supabase.rpc).toHaveBeenCalledWith('save_stack', expect.objectContaining({ p_films: [] }));
         });
 
-        it('skips metadata update when updates is empty', async () => {
-            const upsertChain = createMockChain();
-            makeChainResolveTo(upsertChain, { error: null });
-            const pruneChain = createMockChain();
-            makeChainResolveTo(pruneChain, { error: null });
-
-            (supabase.from as jest.Mock)
-                .mockReturnValueOnce(upsertChain)
-                .mockReturnValueOnce(pruneChain);
-
-            await runMutation('update_list', {
-                list_id: 'l1', user_id: 'u1', updates: {},
-                films: [{ film_id: 1, film_title: 'X', poster_path: '/x', position: 0 }]
-            });
-
-            // Should NOT have called lists.update since updates is empty
-            expect(upsertChain.upsert).toHaveBeenCalled();
+        it('a rename leaves the films alone (no films in the payload)', async () => {
+            await runMutation('update_list', { list_id: 'l1', user_id: 'u1', updates: { title: 'Only the name' } });
+            expect(supabase.rpc).toHaveBeenCalledWith('save_stack', expect.objectContaining({ p_title: 'Only the name', p_films: null }));
         });
 
-        it('tolerates prune failure without throwing (non-critical)', async () => {
-            const listsChain = createMockChain();
-            makeChainResolveTo(listsChain, { error: null });
-            const upsertChain = createMockChain();
-            makeChainResolveTo(upsertChain, { error: null });
-            const pruneChain = createMockChain();
-            makeChainResolveTo(pruneChain, { error: { message: 'prune failed' } });
-
-            (supabase.from as jest.Mock)
-                .mockReturnValueOnce(listsChain)
-                .mockReturnValueOnce(upsertChain)
-                .mockReturnValueOnce(pruneChain);
-
-            // Should NOT throw even though prune failed
-            const result = await runMutation('update_list', {
-                list_id: 'l1', user_id: 'u1', updates: {},
-                films: [{ film_id: 1, film_title: 'X', poster_path: '/x', position: 0 }]
-            });
-            expect(result).toEqual({});
+        it('a refusal is thrown, so the queue keeps it', async () => {
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: null, error: { code: 'P0002', message: 'No such stack of yours' } });
+            await expect(runMutation('update_list', { list_id: 'l1', user_id: 'u1', updates: { title: 'X' } })).rejects.toBeTruthy();
         });
     });
 

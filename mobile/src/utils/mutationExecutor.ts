@@ -29,6 +29,21 @@ type MutationHandler = (
 
 // ── Helpers ────────────────────────────────────────────────────
 
+/**
+ * A queued stack's films as save_stack reads them — from either payload shape a
+ * phone's queue may hold ({ film_id, film_title } or the store's { id, title }).
+ * Not an array: the films are not being changed (null).
+ */
+function stackFilms(films: unknown): { film_id: number; film_title: string; poster_path: string | null; rank_position: number }[] | null {
+    if (!Array.isArray(films)) return null;
+    return (films as Record<string, unknown>[]).map((f, idx) => ({
+        film_id: Number(f.film_id ?? f.id),
+        film_title: String(f.film_title ?? f.title ?? 'Unknown'),
+        poster_path: (f.poster_path ?? f.poster ?? null) as string | null,
+        rank_position: typeof f.rank_position === 'number' ? f.rank_position : idx,
+    }));
+}
+
 const throwIfError = <T>(res: { error: unknown; data?: T }) => {
     if (res.error) throw res.error;
     return res;
@@ -379,22 +394,21 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
 
     // ── Lists ──
     create_list: async (p: any) => {
-        const { films, _tempId, ...listPayload } = p;
-        // The last gate, as cleanProse: a stack queued by an older build flushes raw otherwise.
-        if (typeof listPayload.title === 'string') listPayload.title = sanitizeInput(listPayload.title, 'listTitle');
-        if (typeof listPayload.description === 'string') listPayload.description = sanitizeInput(listPayload.description, 'listDescription');
-        const result = throwIfError(await supabase.from('lists').upsert([listPayload], { onConflict: 'id' }).select('id').maybeSingle());
-        if (result.data) {
-            const listId = (result.data as { id: string }).id;
-            if (Array.isArray(films) && films.length > 0) {
-                const items = (films as Record<string, unknown>[]).map((f) => ({ list_id: listId, film_id: f.film_id, film_title: f.film_title, poster_path: f.poster_path, rank_position: f.rank_position }));
-                // Upserted, never deleted and reinserted: a failed insert must not empty the stack.
-                throwIfError(await supabase.from('list_items').upsert(items, { onConflict: 'list_id,film_id' }));
-            }
-            if (_tempId) {
-                return { newId: listId, fakeId: _tempId as string };
-            }
-        }
+        const { films, _tempId, id, title, description, is_private, is_ranked } = p;
+        // Whole, or not at all (save_stack, 20260930_01) — and a replay of a create
+        // that already landed is a no-op, not a duplicate. The last gate, as
+        // cleanProse: a stack queued by an older build flushes raw otherwise.
+        const { data } = throwIfError(await supabase.rpc('save_stack', {
+            p_id: id,
+            p_title: typeof title === 'string' ? sanitizeInput(title, 'listTitle') : null,
+            p_description: typeof description === 'string' ? sanitizeInput(description, 'listDescription') : null,
+            p_is_private: is_private ?? false,
+            p_is_ranked: is_ranked ?? false,
+            p_films: stackFilms(films) ?? [],
+            p_create: true,
+        }));
+        const listId = (data as { id?: string } | null)?.id ?? id;
+        if (_tempId) return { newId: listId, fakeId: _tempId as string };
         return {};
     },
 
@@ -477,51 +491,20 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     },
 
     update_list: async (p: any) => {
-        // Upsert, THEN prune: a failure between the two leaves old and new items, never none.
-        const { list_id, user_id, updates, films } = p;
-        if (updates && Object.keys(updates as object).length > 0) {
+        // Whole, or not at all (save_stack, 20260930_01): the details, and — when
+        // the payload carries them — exactly its films. A payload's own
+        // removed_film_ids (an older build's) is implied by the films it lists.
+        const { list_id, updates, films } = p;
+        const u = (updates ?? {}) as Record<string, unknown>;
+        throwIfError(await supabase.rpc('save_stack', {
+            p_id: list_id,
             // Same last gate as create_list above — a queued EDIT from an older build.
-            const u = updates as Record<string, unknown>;
-            if (typeof u.title === 'string') u.title = sanitizeInput(u.title, 'listTitle');
-            if (typeof u.description === 'string') u.description = sanitizeInput(u.description, 'listDescription');
-            throwIfError(await supabase.from('lists').update(u).eq('id', list_id).eq('user_id', user_id));
-        }
-        if (Array.isArray(films)) {
-            if (films.length > 0) {
-                const rows = (films as Record<string, unknown>[]).map((f, idx) => ({
-                    list_id, 
-                    film_id: f.film_id ?? f.id, 
-                    film_title: f.film_title ?? f.title ?? 'Unknown',
-                    poster_path: f.poster_path ?? f.poster ?? null, 
-                    rank_position: f.rank_position ?? idx,
-                }));
-                throwIfError(await supabase.from('list_items').upsert(rows, { onConflict: 'list_id,film_id' }));
-                // Prune removed items
-                if (Array.isArray(p.removed_film_ids) && p.removed_film_ids.length > 0) {
-                    for (let i = 0; i < p.removed_film_ids.length; i += 100) {
-                        const chunk = p.removed_film_ids.slice(i, i + 100);
-                        const { error: pruneError } = await supabase.from('list_items').delete().eq('list_id', list_id).in('film_id', chunk);
-                        if (pruneError) {
-                            throw pruneError;
-                        }
-                    }
-                } else if (!p.removed_film_ids || p.removed_film_ids.length === 0) {
-                    // An older payload names no removals: keep what it lists.
-                    const keepIds = rows.map(f => f.film_id);
-                    const { error: pruneError } = await supabase
-                        .from('list_items')
-                        .delete()
-                        .eq('list_id', list_id as string)
-                        .not('film_id', 'in', `(${keepIds.join(',')})`);
-                    if (pruneError) {
-                        throw pruneError;
-                    }
-                }
-            } else {
-                // Empty list — safe to delete all items
-                throwIfError(await supabase.from('list_items').delete().eq('list_id', list_id as string));
-            }
-        }
+            p_title: typeof u.title === 'string' ? sanitizeInput(u.title, 'listTitle') : null,
+            p_description: typeof u.description === 'string' ? sanitizeInput(u.description, 'listDescription') : null,
+            p_is_private: typeof u.is_private === 'boolean' ? u.is_private : null,
+            p_is_ranked: typeof u.is_ranked === 'boolean' ? u.is_ranked : null,
+            p_films: stackFilms(films),
+        }));
         return {};
     },
 

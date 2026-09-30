@@ -245,6 +245,12 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
+          # Room to run the whole set: on the profile's default the emulator died
+          # partway through, twice, on graphics errors (runs 36628647938 and
+          # 36644059475: EGL_BAD_ATTRIBUTE, then "device not found"), with the
+          # runner itself holding 10GB spare.
+          ram-size: 4096M
+          heap-size: 576M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash mobile/e2e/run-flows.sh

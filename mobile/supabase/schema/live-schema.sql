@@ -3958,6 +3958,79 @@ $$;
 
 
 --
+-- Name: lists; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.lists (
+    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
+    user_id uuid NOT NULL,
+    title text NOT NULL,
+    description text,
+    is_ranked boolean DEFAULT false,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp with time zone DEFAULT now(),
+    is_private boolean DEFAULT false,
+    CONSTRAINT lists_description_len CHECK ((char_length(description) <= 1000)),
+    CONSTRAINT lists_title_len CHECK ((char_length(title) <= 100))
+);
+
+
+--
+-- Name: save_stack(uuid, text, text, boolean, boolean, jsonb, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.save_stack(p_id uuid, p_title text DEFAULT NULL::text, p_description text DEFAULT NULL::text, p_is_private boolean DEFAULT NULL::boolean, p_is_ranked boolean DEFAULT NULL::boolean, p_films jsonb DEFAULT NULL::jsonb, p_create boolean DEFAULT false) RETURNS public.lists
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_row public.lists;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '28000';
+  END IF;
+
+  IF p_create THEN
+    INSERT INTO public.lists (id, user_id, title, description, is_private, is_ranked)
+    VALUES (p_id, v_uid, COALESCE(p_title, ''), COALESCE(p_description, ''),
+            COALESCE(p_is_private, false), COALESCE(p_is_ranked, false))
+    ON CONFLICT (id) DO NOTHING;
+  ELSE
+    UPDATE public.lists
+       SET title       = COALESCE(p_title, title),
+           description = COALESCE(p_description, description),
+           is_private  = COALESCE(p_is_private, is_private),
+           is_ranked   = COALESCE(p_is_ranked, is_ranked)
+     WHERE id = p_id AND user_id = v_uid;
+  END IF;
+
+  SELECT * INTO v_row FROM public.lists WHERE id = p_id AND user_id = v_uid;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'No such stack of yours' USING ERRCODE = 'P0002';
+  END IF;
+
+  IF p_films IS NOT NULL THEN
+    -- Exactly these films, in this order.
+    INSERT INTO public.list_items (list_id, film_id, film_title, poster_path, rank_position)
+    SELECT p_id, (f->>'film_id')::int, COALESCE(f->>'film_title', 'Unknown'), f->>'poster_path', (f->>'rank_position')::int
+      FROM jsonb_array_elements(p_films) AS f
+    ON CONFLICT (list_id, film_id) DO UPDATE
+       SET film_title = EXCLUDED.film_title,
+           poster_path = EXCLUDED.poster_path,
+           rank_position = EXCLUDED.rank_position;
+
+    DELETE FROM public.list_items
+     WHERE list_id = p_id
+       AND film_id NOT IN (SELECT (f->>'film_id')::int FROM jsonb_array_elements(p_films) AS f);
+  END IF;
+
+  RETURN v_row;
+END;
+$$;
+
+
+--
 -- Name: set_lounge_cover(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -4756,24 +4829,6 @@ CREATE TABLE public.list_items (
     CONSTRAINT list_items_film_title_len CHECK ((char_length(film_title) <= 300)),
     CONSTRAINT list_items_notes_len CHECK ((char_length(notes) <= 2000)),
     CONSTRAINT list_items_poster_path_len CHECK ((char_length(poster_path) <= 2048))
-);
-
-
---
--- Name: lists; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.lists (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    user_id uuid NOT NULL,
-    title text NOT NULL,
-    description text,
-    is_ranked boolean DEFAULT false,
-    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at timestamp with time zone DEFAULT now(),
-    is_private boolean DEFAULT false,
-    CONSTRAINT lists_description_len CHECK ((char_length(description) <= 1000)),
-    CONSTRAINT lists_title_len CHECK ((char_length(title) <= 100))
 );
 
 
@@ -9884,6 +9939,24 @@ GRANT ALL ON FUNCTION public.rls_auto_enable() TO service_role;
 
 
 --
+-- Name: TABLE lists; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lists TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lists TO authenticated;
+GRANT ALL ON TABLE public.lists TO service_role;
+
+
+--
+-- Name: FUNCTION save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) TO authenticated;
+GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) TO service_role;
+
+
+--
 -- Name: FUNCTION set_lounge_cover(p_lounge_id uuid, p_cover_image text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -10198,15 +10271,6 @@ GRANT ALL ON TABLE public.list_comments TO service_role;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.list_items TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.list_items TO authenticated;
 GRANT ALL ON TABLE public.list_items TO service_role;
-
-
---
--- Name: TABLE lists; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lists TO anon;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lists TO authenticated;
-GRANT ALL ON TABLE public.lists TO service_role;
 
 
 --

@@ -108,7 +108,11 @@ jest.mock('@/src/lib/supabase', () => {
 
         return chain;
       }),
-      rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
+      // A stack is saved whole (save_stack): logged, and answering with the row.
+      rpc: jest.fn().mockImplementation(async (name: string, args: Record<string, unknown>) => {
+        _executionLog.push(`rpc:${name}`);
+        return { data: name === 'save_stack' ? { id: args.p_id } : null, error: null };
+      }),
     },
     __getExecutionLog: () => _executionLog,
     __resetExecutionLog: () => { _executionLog.length = 0; },
@@ -224,8 +228,9 @@ describe('Offline Queue Flush Integration', () => {
 
     const log = supabaseMock.__getExecutionLog();
 
-    // The create_list should have been called first (upsert into lists)
-    expect(log[0]).toBe('upsert:lists');
+    // The create_list first: the stack saved whole (save_stack), then the film
+    // added to it, under the id the save answered with.
+    expect(log[0]).toBe('rpc:save_stack');
     // The add_film_to_list should upsert into list_items
     expect(log[1]).toBe('upsert:list_items');
 

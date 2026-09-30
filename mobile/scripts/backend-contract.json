@@ -154,6 +154,10 @@
       "signature": "resolve_moderation_report_v2(p_report_id uuid, p_action text, p_admin_id uuid, p_reason text, p_duration_hours integer, p_notify_user boolean)"
     },
     {
+      "name": "save_stack",
+      "signature": "save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean)"
+    },
+    {
       "name": "set_lounge_cover",
       "signature": "set_lounge_cover(p_lounge_id uuid, p_cover_image text)"
     },

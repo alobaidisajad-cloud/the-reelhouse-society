@@ -201,9 +201,17 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         const title = sanitizeInput(list.title ?? '', 'listTitle');
         const description = sanitizeInput(list.description ?? '', 'listDescription');
 
-        const { data, error } = await supabase.from('lists').insert([{
-            id: listId, user_id: user.id, title, description, is_private: list.isPrivate ?? false, is_ranked: list.isRanked ?? false
-        }]).select().single();
+        const inputFilms = (list as { films?: { id: number; title?: string; poster_path?: string | null; poster?: string | null }[] }).films ?? [];
+        const films = inputFilms.map((f, idx) => ({ film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster_path ?? f.poster ?? null, rank_position: idx }));
+
+        // Whole, or not at all (save_stack, 20260930_01): the stack and its films in
+        // one transaction. It was two writes, and a failed rollback of the first
+        // left an empty stack the member could not see.
+        const { data, error } = await supabase.rpc('save_stack', {
+            p_id: listId, p_title: title, p_description: description,
+            p_is_private: list.isPrivate ?? false, p_is_ranked: list.isRanked ?? false,
+            p_films: films, p_create: true,
+        });
 
         // Left mid-create. The stack is theirs and already exists server-side —
         // every path below only decides how to show it, and showing it now would
@@ -212,12 +220,11 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
 
         if (error) {
             if (isNetworkError(error)) {
-                // Queue for offline sync
-                const inputFilms = (list as { films?: { id: number; title?: string; poster_path?: string | null; poster?: string | null }[] }).films ?? [];
+                // Queued whole: the replay is the same save, and a replay of one that
+                // did land is a no-op.
                 enqueueMutation({ type: 'create_list', payload: {
                     id: listId, user_id: user.id, title: title || 'Untitled', description,
-                    is_private: list.isPrivate ?? false, is_ranked: list.isRanked ?? false,
-                    films: inputFilms.map((f, idx) => ({ film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster_path ?? f.poster ?? null, rank_position: idx })),
+                    is_private: list.isPrivate ?? false, is_ranked: list.isRanked ?? false, films,
                 } });
                 const filmEntries = inputFilms.map(f => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? f.poster ?? null }));
                 set((state) => ({ lists: [{ id: listId, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: new Date().toISOString(), userId: user.id }, ...state.lists] }));
@@ -226,39 +233,9 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             }
             throw error;
         }
-        if (data) {
-            const inputFilms = (list as { films?: { id: number; title?: string; poster_path?: string | null; poster?: string | null }[] }).films ?? [];
-            const filmEntries = inputFilms.map((f) => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? f.poster ?? null }));
-            
-            set((state) => ({ lists: [{ id: data.id, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: data.created_at, userId: user.id }, ...state.lists] }));
-            
-            if (inputFilms.length > 0) {
-                const items = inputFilms.map((f, idx) => ({
-                    list_id: data.id,
-                    film_id: f.id,
-                    film_title: f.title ?? 'Unknown',
-                    poster_path: f.poster_path ?? f.poster ?? null,
-                    rank_position: idx,
-                }));
-                const { error: itemsError } = await supabase.from('list_items').insert(items);
-                if (itemsError) {
-                    if (isNetworkError(itemsError)) {
-                        // Push idempotent update payload to queue instead of failing offline rollback.
-                        // Since the parent list is already created, sending 'create_list' would trigger a Primary Key Violation.
-                        enqueueMutation({ type: 'update_list', payload: {
-                            list_id: data.id, user_id: user.id, updates: {}, films: inputFilms, removed_film_ids: []
-                        } });
-                        reelToast('List saved offline. Will sync when connected.');
-                        return;
-                    }
-                    if (__DEV__) console.warn('[createList] list_items insert failed, rolling back:', itemsError);
-                    set((state) => ({ lists: state.lists.filter(l => l.id !== data.id) }));
-                    await supabase.from('lists').delete().eq('id', data.id).eq('user_id', user.id);
-                    reelToast.error('Failed to save films to list — please try again.');
-                    throw itemsError;
-                }
-            }
-        }
+        const row = data as { created_at?: string } | null;
+        const filmEntries = inputFilms.map((f) => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? f.poster ?? null }));
+        set((state) => ({ lists: [{ id: listId, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: row?.created_at ?? new Date().toISOString(), userId: user.id }, ...state.lists] }));
     },
 
     updateList: async (listId, updates) => {
@@ -289,46 +266,22 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         }
 
         try {
-            if (Object.keys(dbUpdates).length > 0) {
-                const { error } = await supabase.from('lists').update(dbUpdates).eq('id', listId).eq('user_id', user.id);
-                if (!stillSignedIn(user.id)) return;
-                if (error) throw error;
-            }
-
-            if (inputFilms !== undefined) {
-                if (inputFilms.length > 0) {
-                    const items = inputFilms.map((f, idx) => ({
-                        list_id: listId,
-                        film_id: f.id,
-                        film_title: f.title ?? 'Unknown',
-                        poster_path: f.poster_path ?? f.poster ?? null,
-                        rank_position: idx,
-                    })).sort((a, b) => a.film_id - b.film_id);
-                    // UPSERT new/updated items first to prevent data loss if connection drops
-                    const { error: itemsError } = await supabase.from('list_items').upsert(items, { onConflict: 'list_id,film_id' });
-                    if (itemsError) throw itemsError;
-                    
-                    // Atomic Diffing pruning to prevent 414 URI Too Long & Last-Write-Wins collisions
-                    if (prevList && prevList.films) {
-                        const newFilmIds = new Set(inputFilms.map(f => f.id));
-                        const removedIds = prevList.films.filter(f => !newFilmIds.has(f.id)).map(f => f.id);
-                        for (let i = 0; i < removedIds.length; i += 100) {
-                            const chunk = removedIds.slice(i, i + 100);
-                            const { error: pruneError } = await supabase.from('list_items').delete().eq('list_id', listId).in('film_id', chunk);
-                            if (pruneError) {
-                                enqueueMutation({ type: 'update_list', payload: { list_id: listId, user_id: user.id, updates: {}, films: inputFilms, removed_film_ids: chunk } });
-                                break;
-                            }
-                        }
-                    } else {
-                        // Fallback if prevList was missing
-                        const keepIds = items.map(f => f.film_id);
-                        await supabase.from('list_items').delete().eq('list_id', listId).not('film_id', 'in', `(${keepIds.join(',')})`);
-                    }
-                } else {
-                    await supabase.from('list_items').delete().eq('list_id', listId);
-                }
-            }
+            // Whole, or not at all (save_stack, 20260930_01): the details and — when
+            // given — exactly these films, in this order, in one transaction. The
+            // removals were worked out from the PHONE's copy of the stack, and two of
+            // the three deletes discarded their errors.
+            const { error } = await supabase.rpc('save_stack', {
+                p_id: listId,
+                p_title: dbUpdates.title ?? null,
+                p_description: dbUpdates.description ?? null,
+                p_is_private: dbUpdates.is_private ?? null,
+                p_is_ranked: dbUpdates.is_ranked ?? null,
+                p_films: inputFilms === undefined ? null : inputFilms.map((f, idx) => ({
+                    film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster_path ?? f.poster ?? null, rank_position: idx,
+                })),
+            });
+            if (!stillSignedIn(user.id)) return;
+            if (error) throw error;
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.updateList' });
@@ -359,7 +312,6 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                     })
                 }));
             }
-            reelToast.error('Failed to update list — changes reverted.');
             throw e;
         }
     },
