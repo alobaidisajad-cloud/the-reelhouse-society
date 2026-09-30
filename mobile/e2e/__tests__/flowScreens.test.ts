@@ -33,7 +33,7 @@ function flow(name: string, entries: unknown[], log?: string) {
 
 /** The lines of one section of a report, between its heading and the next. */
 const section = (report: string, heading: string) =>
-  report.split(`${heading}:\n`)[1].split(/\n(?=traced by|said during|drawn but called|on the screen then)/)[0];
+  report.split(`${heading}:\n`)[1].split(/\n(?=traced by|said during|what the driver waited on|drawn but called|on the screen then)/)[0];
 
 function run() {
   const r = spawnSync(process.execPath, [SCRIPT, join(dir, 'debug'), join(dir, 'out'), join(dir, 'h')], { encoding: 'utf8' });
@@ -171,6 +171,57 @@ describe('what Android and the app said during the flow', () => {
     const out = run();
     expect(section(out['quiet.txt'], 'said during the flow')).toBe('(no hang, crash, error or warning)');
     expect(section(out['unkept.txt'], 'said during the flow')).toBe('(the log was not kept)');
+  });
+});
+
+describe('what the driver waited on', () => {
+  const line = (time: string, level: string, tag: string, msg: string) => `09-30 ${time}.100  900  1020 ${level} ${tag}: ${msg}\n`;
+
+  it('counts each wait that ran out, first to last, and names the window Android never drew', () => {
+    flow('auth_flow', failedAt('recovery-email-input', 'RUNNING'),
+      line('06:56:39', 'W', 'QueryController', 'Could not detect idle state.') +
+      line('06:56:40', 'W', 'WindowManager', 'Timed out waiting for animations') +
+      line('06:56:49', 'W', 'QueryController', 'Could not detect idle state.') +
+      line('06:56:50', 'W', 'WindowManager', 'Timeout waiting for drawn: undrawn=[Window{1 u0 PopupWindow:9f}]') +
+      line('06:58:31', 'W', 'QueryController', 'Could not detect idle state.') +
+      line('06:58:32', 'W', 'WindowManager', 'Timeout waiting for drawn: undrawn=[Window{2 u0 com.reelhouse.society/MainActivity}]'));
+    expect(section(run()['auth_flow.txt'], 'what the driver waited on')).toBe(
+      'the app never fell quiet (QueryController): 3 times, 06:56:39 to 06:58:31\n' +
+      'windows still animating (WindowManager): 1 time, 06:56:40 to 06:56:40\n' +
+      'windows never drawn (WindowManager): 2 times, 06:56:50 to 06:58:32\n' +
+      '  last: Timeout waiting for drawn: undrawn=[Window{2 u0 com.reelhouse.society/MainActivity}]');
+  });
+
+  it('lists the windows as the flow failed, with what each still called undrawn or animating', () => {
+    flow('darkroom_search', failedAt('x', 'RUNNING'), '');
+    writeFileSync(join(dir, 'h', 'darkroom_search.wm'),
+      '  Window #0 Window{a1 u0 com.reelhouse.society/com.reelhouse.society.MainActivity}:\n' +
+      '    mDrawState=HAS_DRAWN mLastHidden=false\n' +
+      '    mAnimatingExit=false mRemoveOnExit=false\n' +
+      '  Window #1 Window{b2 u0 PopupWindow:4c1}:\n' +
+      '    mDrawState=DRAW_PENDING mLastHidden=false\n' +
+      '    isAnimating=true\n');
+    expect(section(run()['darkroom_search.txt'], 'what the driver waited on')).toBe(
+      'windows then\n' +
+      'com.reelhouse.society/com.reelhouse.society.MainActivity\n' +
+      'PopupWindow:4c1\n' +
+      '  mDrawState=DRAW_PENDING\n' +
+      '  isAnimating=true');
+  });
+
+  it('tells "nothing ran out" from "the log was not kept"', () => {
+    flow('quiet', failedAt('a'), line('06:56:39', 'I', 'ReactNativeJS', 'Running "main"'));
+    flow('unkept', failedAt('b', 'FAILED', 'another reason'));
+    const out = run();
+    expect(section(out['quiet.txt'], 'what the driver waited on')).toBe('(no wait ran out)');
+    expect(section(out['unkept.txt'], 'what the driver waited on')).toBe('(the log was not kept)');
+  });
+
+  it('comes after what was said and before what was drawn but called invisible', () => {
+    flow('f', failedAt('x'), '');
+    const report = run()['f.txt'];
+    expect(report.indexOf('said during the flow')).toBeLessThan(report.indexOf('what the driver waited on'));
+    expect(report.indexOf('what the driver waited on')).toBeLessThan(report.indexOf('drawn but called invisible'));
   });
 });
 

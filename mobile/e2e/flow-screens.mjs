@@ -11,7 +11,9 @@
  * moment (the status bar and keyboard left out, so it fits an annotation). Where
  * Maestro kept no screen, `<hierarchy dir>/<flow>.json` (read by the runner as the
  * flow failed). From `<hierarchy dir>/<flow>.log`, the device's log for that flow
- * alone: what Android and the app said, and what Android drew but called invisible.
+ * alone: what Android and the app said, what the driver was kept waiting on, and
+ * what Android drew but called invisible; from `<hierarchy dir>/<flow>.wm`, the
+ * windows Android had as it failed.
  *
  * Flows that failed at the same step for the same reason share ONE file, which
  * names them all: a job step carries at most ten notices, and seven flows
@@ -112,6 +114,49 @@ function saidRead(flow) {
   return said.length > 8 ? [`… ${said.length - 8} earlier`, ...said.slice(-8)] : said;
 }
 
+/**
+ * What the device kept the driver waiting on. After every key it types and every
+ * tap, Maestro's driver waits for the app to fall quiet and for every window to
+ * finish drawing and animating, up to ten seconds each; a wait that runs out is
+ * logged and the driver goes on. A flow typing one key every ten seconds (run
+ * 36678849758: the recovery email, the Darkroom's search) is held by one of
+ * these, and which one, how often and from when is here. Then the windows
+ * Android had as the flow failed (`<flow>.wm`, read by run-flows.sh), each with
+ * anything it still called undrawn or animating: the window that holds them.
+ */
+const WAITS = [
+  [/QueryController\s*:\s*Could not detect idle state/, 'the app never fell quiet (QueryController)'],
+  [/Timed out waiting for animations/, 'windows still animating (WindowManager)'],
+  [/Timeout waiting for drawn/, 'windows never drawn (WindowManager)'],
+];
+
+function waitedRead(flow) {
+  const log = flowLog(flow);
+  if (!log) return ['(the log was not kept)'];
+  const at = (l) => l.replace(/^\d\d-\d\d (\d\d:\d\d:\d\d)\.\d+.*$/, '$1');
+  const out = [];
+  for (const [re, what] of WAITS) {
+    const hits = log.filter((l) => re.test(l));
+    if (hits.length) out.push(`${what}: ${hits.length} time${hits.length === 1 ? '' : 's'}, ${at(hits[0])} to ${at(hits[hits.length - 1])}`);
+  }
+  // Android names the undrawn windows on this line; the last one is the one that held.
+  const undrawn = log.filter((l) => WAITS[2][0].test(l));
+  if (undrawn.length) out.push(`  last: ${undrawn[undrawn.length - 1].replace(/^.*?(Timeout waiting for drawn)/, '$1').slice(0, 170)}`);
+  const file = hierarchyDir && join(hierarchyDir, `${flow}.wm`);
+  if (file && existsSync(file)) {
+    const windows = [];
+    for (const raw of readFileSync(file, 'utf8').split(/\r?\n/)) {
+      const line = raw.trim();
+      const w = /^Window #\d+ Window\{\S+ \S+ (.+?)\}:?$/.exec(line);
+      if (w) { windows.push(w[1].slice(0, 90)); continue; }
+      const odd = line.split(/\s+/).filter((kv) => /^mDrawState=(?!HAS_DRAWN)/.test(kv) || /nimat\w*=true$/i.test(kv));
+      if (odd.length && windows.length) windows.push(`  ${odd.join(' ')}`);
+    }
+    out.push(`windows then${windows.length ? '' : ': (none listed)'}`, ...windows.slice(0, 16));
+  }
+  return out.length ? out : ['(no wait ran out)'];
+}
+
 /** A line's time as milliseconds within its day, from "MM-DD HH:MM:SS.mmm". */
 const clock = (line) => {
   const m = /^\d\d-\d\d (\d\d):(\d\d):(\d\d)\.(\d+)/.exec(line);
@@ -188,6 +233,7 @@ for (const f of files) {
       screen: failed.metadata?.hierarchy ? describe(failed.metadata.hierarchy) : screenRead(flow),
       traced: tracedRead(flow),
       said: saidRead(flow),
+      waited: waitedRead(flow),
       hidden: hiddenRead(flow),
     });
   }
@@ -204,6 +250,8 @@ for (const g of groups.values()) {
     ...g.traced,
     `said during the flow${rest.length ? ` (${first}'s)` : ''}:`,
     ...g.said,
+    `what the driver waited on${rest.length ? ` (${first}'s)` : ''}:`,
+    ...g.waited,
     `drawn but called invisible by Android${rest.length ? ` (${first}'s)` : ''}:`,
     ...g.hidden,
     `on the screen then${rest.length ? ` (${first}'s)` : ''}:`,

@@ -73,7 +73,17 @@ sampler=$!
 # cut from this copy without asking the device.
 adb logcat -v threadtime > "$OUT/logcat-stream.txt" 2>/dev/null &
 streamer=$!
-trap 'kill $sampler $streamer 2>/dev/null' EXIT
+# The emulator's own words, which go to the job's log, readable only signed in.
+# It has vanished mid-flow with no memory kill, no kernel report and no crash
+# dump (run 36678849758, during film_log): what it said last is the one account
+# left. The pipe opened through /proc is the same pipe, so a line read here is
+# not in the job's log; the copy is printed there when the flows end.
+said=""
+qemu=$(pgrep -f 'qemu-system' | head -n 1)
+if [ -n "$qemu" ]; then
+  for fd in 1 2; do cat "/proc/$qemu/fd/$fd" >> "$OUT/emulator-said.txt" 2>/dev/null & said="$said $!"; done
+fi
+trap 'kill $sampler $streamer $said 2>/dev/null' EXIT
 
 # One flow at a time: Maestro's records keep no screen for a failed step, so the
 # screen is read the moment a flow fails, before the next one relaunches the app.
@@ -110,6 +120,10 @@ for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
     rc=1
     [ $frc -eq 124 ] && echo "[Failed] $name (ran out of its time)" >> "$OUT/maestro.log"
     timeout 60 "$MAESTRO" hierarchy > "$OUT/flow-hierarchy/$name.json" 2>/dev/null || true
+    # The windows Android had then, and what it still called drawing or
+    # animating: the driver waits on every one of them after each key it types.
+    timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' \
+      | grep -E 'Window #[0-9]+|mDrawState=|nimat' > "$OUT/flow-hierarchy/$name.wm" || true
     # The device's log for this flow alone: what the driver skipped as invisible,
     # and what Android and the app said (flow-screens.mjs reads both). Its lines
     # begin "MM-DD HH:MM:SS.mmm", which compare as text within the run.
@@ -119,6 +133,7 @@ for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
   fi
 done
 cat "$OUT/maestro.log"
+if [ -s "$OUT/emulator-said.txt" ]; then echo "── what the emulator said"; cat "$OUT/emulator-said.txt"; fi
 grep -E '^\[(Passed|Failed|Skipped|Gone)\]' "$OUT/maestro.log" > "$OUT/maestro-summary.txt" || true
 # Everything below that asks the device waits for it forever if it is gone, so
 # each such call has a limit, and a vanished device is reported as what it is.
@@ -137,6 +152,10 @@ if [ $alive -eq 0 ]; then
     find /tmp/android-* "$HOME/.android" -name '*.dmp' -mmin -60 2>/dev/null | head -n 4 || true
     echo "Emulator processes still running:"
     pgrep -af 'qemu-system|emulator' | cut -c1-160 | head -n 4 || true
+    echo "The emulator's own last words:"
+    if [ -s "$OUT/emulator-said.txt" ]; then tail -n 12 "$OUT/emulator-said.txt" | cut -c1-200
+    elif [ -z "$qemu" ]; then echo "(its process was not found when the flows began)"
+    else echo "(it said nothing)"; fi
     echo "The device's last words (its log as copied to the runner; errors, then the final lines):"
     grep -E ' [EF] |FATAL|ANR in|not responding|crash' "$OUT/logcat-stream.txt" | tail -n 12
     echo "…"
