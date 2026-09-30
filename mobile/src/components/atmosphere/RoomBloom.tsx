@@ -55,8 +55,9 @@ export function BloomLayer({ image, width, height, opacity }: {
   opacity: SharedValue<number>;
 }) {
   // Not in the sealed E2E build. Its emulator draws on a software GPU, where this
-  // blur took ~700ms a frame, and three runs lost the emulator on the film page.
-  // The E2E proves the flows; the bloom is drawn and measured by the screens job.
+  // blur took ~700ms a frame. (The emulator that died on the film page died with
+  // it skipped too: a crash in its own renderer, fixed in e2e.yml.) The E2E
+  // proves the flows; the bloom is drawn and measured by the screens job.
   if (E2E_BUILD) return null;
   const iw = width * BLOOM.scale;
   const ih = height * BLOOM.scale;

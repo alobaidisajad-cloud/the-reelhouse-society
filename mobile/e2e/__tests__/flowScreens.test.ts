@@ -193,7 +193,7 @@ describe('what the driver waited on', () => {
   });
 
   it('lists the windows as the flow failed, with what each still called undrawn or animating', () => {
-    flow('darkroom_search', failedAt('x', 'RUNNING'), '');
+    flow('darkroom_search', failedAt('x', 'RUNNING'), line('06:56:40', 'W', 'WindowManager', 'Timed out waiting for animations'));
     writeFileSync(join(dir, 'h', 'darkroom_search.wm'),
       '  Window #0 Window{a1 u0 com.reelhouse.society/com.reelhouse.society.MainActivity}:\n' +
       '    mDrawState=HAS_DRAWN mLastHidden=false\n' +
@@ -202,11 +202,19 @@ describe('what the driver waited on', () => {
       '    mDrawState=DRAW_PENDING mLastHidden=false\n' +
       '    isAnimating=true\n');
     expect(section(run()['darkroom_search.txt'], 'what the driver waited on')).toBe(
+      'windows still animating (WindowManager): 1 time, 06:56:40 to 06:56:40\n' +
       'windows then\n' +
       'com.reelhouse.society/com.reelhouse.society.MainActivity\n' +
       'PopupWindow:4c1\n' +
       '  mDrawState=DRAW_PENDING\n' +
       '  isAnimating=true');
+  });
+
+  it('leaves the windows out when only the app was slow to fall quiet — they crowd out the screen', () => {
+    flow('error_recovery', failedAt('darkroom-search-input'), line('12:47:54', 'W', 'QueryController', 'Could not detect idle state.'));
+    writeFileSync(join(dir, 'h', 'error_recovery.wm'), '  Window #0 Window{a1 u0 StatusBar}:\n    mDrawState=NO_SURFACE\n');
+    expect(section(run()['error_recovery.txt'], 'what the driver waited on')).toBe(
+      'the app never fell quiet (QueryController): 1 time, 12:47:54 to 12:47:54');
   });
 
   it('tells "nothing ran out" from "the log was not kept"', () => {

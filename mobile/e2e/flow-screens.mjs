@@ -142,8 +142,12 @@ function waitedRead(flow) {
   // Android names the undrawn windows on this line; the last one is the one that held.
   const undrawn = log.filter((l) => WAITS[2][0].test(l));
   if (undrawn.length) out.push(`  last: ${undrawn[undrawn.length - 1].replace(/^.*?(Timeout waiting for drawn)/, '$1').slice(0, 170)}`);
+  // The windows only when Android's own window waits ran out: otherwise they
+  // are a list of the phone's furniture that crowds the screen out of the
+  // annotation (run 36713792827).
+  const windowsHeld = log.some((l) => WAITS[1][0].test(l) || WAITS[2][0].test(l));
   const file = hierarchyDir && join(hierarchyDir, `${flow}.wm`);
-  if (file && existsSync(file)) {
+  if (windowsHeld && file && existsSync(file)) {
     const windows = [];
     for (const raw of readFileSync(file, 'utf8').split(/\r?\n/)) {
       const line = raw.trim();
