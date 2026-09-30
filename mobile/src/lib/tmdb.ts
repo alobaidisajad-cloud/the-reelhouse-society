@@ -244,21 +244,15 @@ export const tmdb = {
     let topPerson: string | null = null;
 
     if (data.results?.length > 0) {
-        const sortedResults = [...data.results].sort((a: TMDBSearchResult, b: TMDBSearchResult) => {
-            const aName = ((a.name || a.title) ?? '').toLowerCase();
-            const bName = ((b.name || b.title) ?? '').toLowerCase();
-            const queryLower = query.toLowerCase();
-
-            const aExact = aName === queryLower;
-            const bExact = bName === queryLower;
-            if (aExact && !bExact) return -1;
-            if (!aExact && bExact) return 1;
-
-            if (a.media_type === 'person' && b.media_type !== 'person') return -1;
-            if (a.media_type !== 'person' && b.media_type === 'person') return 1;
-
-            return ((b.popularity ?? 0) - (a.popularity ?? 0));
-        });
+        // The catalogue's own order is its relevance; an exact title or name is
+        // lifted to the front, and nothing else is reordered (the sort is
+        // stable). It used to put every PERSON before every film: "casablanca"
+        // put a person named Casablanca (popularity 0.27, no photograph) above
+        // the 1942 film the catalogue ranks first.
+        const queryLower = query.toLowerCase();
+        const exact = (r: TMDBSearchResult) => ((r.name || r.title) ?? '').toLowerCase() === queryLower;
+        const sortedResults = [...data.results].sort((a: TMDBSearchResult, b: TMDBSearchResult) =>
+            Number(exact(b)) - Number(exact(a)));
 
         for (const item of sortedResults) {
             if (item.media_type === 'movie') {

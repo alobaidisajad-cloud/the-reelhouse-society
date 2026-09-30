@@ -141,6 +141,32 @@ describe('tmdb.search', () => {
     expect(result.results[0].id).toBe(2);
   });
 
+  it('keeps the catalogue’s order among exact matches: Casablanca the film before a person named Casablanca', async () => {
+    // As the catalogue answered "casablanca" (e2e/supabase/functions/tmdb-proxy
+    // fixtures): the film first, the person eighth. The search put the person
+    // first, and a member tapping the top suggestion opened a stranger's page.
+    mockFetchOnce({
+      results: [
+        { id: 289, title: 'Casablanca', media_type: 'movie', popularity: 13.88 },
+        { id: 32876, name: 'Casablanca', media_type: 'tv', popularity: 2.28 },
+        { id: 2377154, name: 'Casablanca', media_type: 'person', popularity: 0.27, profile_path: null },
+      ],
+    });
+    const result = await tmdb.search('casablanca');
+    expect(result.results.map((r: any) => r.id)).toEqual([289, 2377154]);
+  });
+
+  it('a person does not outrank the films the catalogue ranks above them', async () => {
+    mockFetchOnce({
+      results: [
+        { id: 11, title: 'Star Wars', media_type: 'movie', popularity: 80 },
+        { id: 77, name: 'Star Starling', media_type: 'person', popularity: 6, profile_path: '/s.jpg', known_for: [] },
+      ],
+    });
+    const result = await tmdb.search('star');
+    expect(result.results[0].id).toBe(11);
+  });
+
   it('expands a high-popularity person result into their known-for movies, deduped, and labels person matches whose name is only part of the query', async () => {
     mockFetchOnce({
       results: [
