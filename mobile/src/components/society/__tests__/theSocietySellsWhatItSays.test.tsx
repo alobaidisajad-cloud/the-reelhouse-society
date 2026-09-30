@@ -35,9 +35,10 @@ jest.mock('@/src/lib/revenueCat', () => ({
   isStoreReady: () => mockStoreReady,
 }));
 const mockToastError = jest.fn();
+const mockToastInfo = jest.fn();
 jest.mock('@/src/utils/reelToast', () => ({
   __esModule: true,
-  default: { error: (...a: unknown[]) => mockToastError(...a), success: jest.fn(), info: jest.fn() },
+  default: { error: (...a: unknown[]) => mockToastError(...a), success: jest.fn(), info: (...a: unknown[]) => mockToastInfo(...a) },
 }));
 let mockPricing: Record<string, unknown> = {};
 jest.mock('@/src/hooks/useMembershipPricing', () => ({ useMembershipPricing: () => mockPricing }));
@@ -103,6 +104,7 @@ beforeEach(() => {
   mockFounders = 0;
   mockStoreReady = true;
   mockToastError.mockReset();
+  mockToastInfo.mockReset();
   [mockRestore, mockPurchase, mockShowManage, mockOpenBrowser, mockOpenURL, mockPush, mockRestoreSession, mockTierHint].forEach((m) => m.mockReset());
 });
 
@@ -261,6 +263,61 @@ describe('what each member is offered', () => {
     expect(r.getByText('The better seats are not.', PRINT)).toBeTruthy();
     expect(r.queryByText('YOU REACHED FOR', PRINT)).toBeNull();
     expect(r.getByLabelText(/The better seats are not\.$/)).toBeTruthy();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+describe('a purchase that does not go through says why', () => {
+  // The store answers with a code, and each asks something different of the
+  // member. Every one of them used to read "Checkout is unavailable".
+  const stopped = async (code: string, founding = false) => {
+    mockPurchase.mockRejectedValue(Object.assign(new Error('the store said no'), { code, userCancelled: false }));
+    const r = await mount();
+    // The founding seat shows once the seat count is read.
+    await fireEvent.press(founding ? await r.findByLabelText(/^Claim a founding seat/) : r.getByText('BECOME AN ARCHIVIST'));
+    await waitFor(() => expect(mockToastError.mock.calls.length + mockToastInfo.mock.calls.length).toBe(1));
+  };
+
+  it('a payment waiting for approval is not "unavailable": the rank still comes', async () => {
+    await stopped('20');
+    expect(mockToastError).not.toHaveBeenCalled();
+    expect(mockToastInfo).toHaveBeenCalledWith(expect.stringMatching(/^Your payment is waiting for approval\. Your rank arrives once .+ confirms it\.$/));
+  });
+
+  it('a membership the store account already holds is brought here by RESTORE', async () => {
+    await stopped('6');
+    expect(mockToastInfo).toHaveBeenCalledWith(expect.stringMatching(/already holds this membership\. Tap RESTORE to bring it here\.$/));
+  });
+
+  it('no connection says so', async () => {
+    await stopped('10');
+    expect(mockToastError).toHaveBeenCalledWith(expect.stringMatching(/^Couldn't reach .+\. Check your connection and try again\.$/));
+  });
+
+  it('a device that does not allow purchases says so', async () => {
+    await stopped('3');
+    expect(mockToastError).toHaveBeenCalledWith('Purchases are turned off on this device.');
+  });
+
+  it('anything else is still "unavailable"', async () => {
+    await stopped('2');
+    expect(mockToastError).toHaveBeenCalledWith(expect.stringMatching(/^Checkout is unavailable\./));
+  });
+
+  it('the founding seat says the same', async () => {
+    await stopped('20', true);
+    expect(mockToastInfo).toHaveBeenCalledWith(expect.stringMatching(/^Your payment is waiting for approval\./));
+  });
+
+  it('a purchase that completes without the rank says so — never nothing', async () => {
+    // The store took the payment and its answer holds no active rank (the
+    // store is slow, or its dashboard names the rank differently). The page
+    // said nothing.
+    mockPurchase.mockResolvedValue({ tier: 'cinephile', isActive: false, expiresAt: null, willRenew: false, productIdentifier: null });
+    const r = await mount();
+    await fireEvent.press(r.getByText('BECOME AN ARCHIVIST'));
+    await waitFor(() => expect(mockToastInfo).toHaveBeenCalledWith(expect.stringMatching(/^The payment went through, but the rank has not reached the house yet\. Tap RESTORE, or write to .+@.+\.$/)));
+    expect(mockTierHint).not.toHaveBeenCalled();
   });
 });
 

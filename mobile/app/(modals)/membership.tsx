@@ -52,9 +52,17 @@ import { GeneralAdmission } from '@/src/components/society/GeneralAdmission';
 import { PrivilegeLedger } from '@/src/components/society/PrivilegeLedger';
 import { FoundingCertificate } from '@/src/components/society/FoundingCertificate';
 import { SmallPrint, STORE } from '@/src/components/society/SmallPrint';
+import { purchaseStop } from '@/src/components/society/purchaseStop';
 import { PurchaseDock, DOCK, DOCK_HEIGHT } from '@/src/components/society/PurchaseDock';
 import { ticketPrice, savePercent, foundingPitch, type Billing } from '@/src/components/society/societyPricing';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+
+/**
+ * The store's answer held no active rank though the purchase went through:
+ * the store is slow to say so, or its dashboard names the rank differently.
+ * The page said nothing at all, to a member who had just paid.
+ */
+const NOT_ARRIVED = `The payment went through, but the rank has not reached the house yet. Tap RESTORE, or write to ${SUPPORT_EMAIL}.`;
 
 /** The house's own legal pages — the same two Settings opens (constants/support). */
 export { TERMS_URL, PRIVACY_URL };
@@ -279,14 +287,14 @@ export default function MembershipScreen() {
             // Background polling failed, ignore
           }
         })();
+      } else if (entitlement) {
+        reelToast.info(NOT_ARRIVED);
       }
     } catch (err) {
-      const msg = err instanceof Error && err.message.includes('No package found')
-        ? (billing === 'monthly'
-            ? 'Monthly plans are being set up. Please try the yearly plan.'
-            : 'Memberships are being set up. Please try again shortly.')
-        : `Checkout is unavailable. Please check your ${STORE.name === 'Google Play' ? 'Google Play' : 'App Store'} account.`;
-      reelToast.error(msg);
+      const stop = purchaseStop(err, billing === 'monthly'
+        ? 'Monthly plans are being set up. Please try the yearly plan.'
+        : 'Memberships are being set up. Please try again shortly.');
+      reelToast[stop.tone](stop.text);
     } finally {
       setIsRedirecting(false);
       purchaseMutex.current = false;
@@ -381,12 +389,12 @@ export default function MembershipScreen() {
             // Background polling failed, ignore
           }
         })();
+      } else if (entitlement) {
+        reelToast.info(NOT_ARRIVED);
       }
     } catch (err) {
-      const msg = err instanceof Error && err.message.includes('No package found')
-        ? 'Memberships are being set up. Please try again shortly.'
-        : `Checkout is unavailable. Please check your ${STORE.name === 'Google Play' ? 'Google Play' : 'App Store'} account.`;
-      reelToast.error(msg);
+      const stop = purchaseStop(err, 'Memberships are being set up. Please try again shortly.');
+      reelToast[stop.tone](stop.text);
     } finally {
       setIsRedirecting(false);
       purchaseMutex.current = false;
