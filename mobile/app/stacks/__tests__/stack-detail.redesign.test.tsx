@@ -623,8 +623,10 @@ describe('the film card, actually rendered', () => {
     const r = mount({ films: FILMS, filmCount: 3 });
     await waitFor(() => expect(r.getByText('No Artwork Here')).toBeTruthy());
     expect(r.getAllByText('No Artwork Here')).toHaveLength(1);
-    // and the empty frame still looks deliberate
-    expect(r.getByText('✦')).toBeTruthy();
+    // and the empty frame still looks deliberate — drawn, and not read aloud as
+    // "black four-pointed star" (the app's Text hides a Text of only ornament).
+    expect(r.getByText('✦', { includeHiddenElements: true })).toBeTruthy();
+    expect(r.queryByText('✦')).toBeNull();
   });
 
   it('an unranked stack carries no numerals at all', async () => {

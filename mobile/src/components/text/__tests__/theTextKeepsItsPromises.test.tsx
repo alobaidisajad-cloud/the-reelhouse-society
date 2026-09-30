@@ -101,3 +101,44 @@ it('reads the setting from ONE listener, shared by every text', async () => {
   expect(add).not.toHaveBeenCalled();
   add.mockRestore();
 });
+
+describe('an ornament is not read aloud', () => {
+  const HIDDEN = { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' };
+
+  it('a Text is named by its words alone — "✦ FOUNDING MEMBER" is not a star first', () => {
+    expect(hostProps(<Text>✦ FOUNDING MEMBER</Text>).accessibilityLabel).toBe('FOUNDING MEMBER');
+    expect(hostProps(<Text>✦ THIS DOSSIER IS SEALED ✦</Text>).accessibilityLabel).toBe('THIS DOSSIER IS SEALED');
+    expect(hostProps(<Text>★ AUTEUR</Text>).accessibilityLabel).toBe('AUTEUR');
+    expect(hostProps(<Text>◆ FIRST WATCH</Text>).accessibilityLabel).toBe('FIRST WATCH');
+  });
+
+  it('through nested Texts, as the phone reads them: one string', () => {
+    expect(hostProps(<Text>◈ FROM <Text>THE FRONT DESK</Text> ◈</Text>).accessibilityLabel).toBe('FROM THE FRONT DESK');
+  });
+
+  it('a Text of only ornament, or only a separator, is hidden', () => {
+    for (const only of ['✦', '◈', '⊗', '·', '—', ' · ']) {
+      expect(hostProps(<Text>{only}</Text>)).toEqual(expect.objectContaining(HIDDEN));
+    }
+  });
+
+  it('plain words are left exactly as they were', () => {
+    const p = hostProps(<Text>Tokyo Story · 1953 — Ozu</Text>);
+    expect(p.accessibilityLabel).toBeUndefined();
+    expect(p.accessibilityElementsHidden).toBeUndefined();
+  });
+
+  it('what is not ornament is not touched: a "+", a member\'s own "()," ', () => {
+    expect(hostProps(<Text>+</Text>).accessibilityElementsHidden).toBeUndefined();
+    expect(hostProps(<Text>(),</Text>).accessibilityElementsHidden).toBeUndefined();
+  });
+
+  it('a label or hiding the Text sets itself always wins', () => {
+    expect(hostProps(<Text accessibilityLabel="Founding member">✦ FOUNDING MEMBER</Text>).accessibilityLabel).toBe('Founding member');
+    expect(hostProps(<Text importantForAccessibility="yes">✦</Text>).accessibilityElementsHidden).toBeUndefined();
+  });
+
+  it('an animated Text keeps the promise too', () => {
+    expect(hostProps(<AnimatedText>✦ ARCHIVIST</AnimatedText>).accessibilityLabel).toBe('ARCHIVIST');
+  });
+});
