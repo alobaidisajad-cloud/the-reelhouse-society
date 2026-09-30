@@ -205,18 +205,18 @@ export const StackService = {
   },
 
   /**
-   * Take back one's own critique on a stack. The row rules delete only the
-   * member's own; `.select('id')` so a refusal is seen (it answers 200 with no
-   * rows). No row back means it is already gone — removed from another device —
-   * which is what was asked for, so it is not an error.
+   * Take back one's own critique on a stack, as LogService takes back one on a
+   * log. The request names its writer, so it can only ever reach the member's
+   * own; the house's rules let a member delete their own. A delete that finds
+   * no row found it already gone (removed from another device), which is what
+   * was asked for, so only a failure to reach the house is thrown.
    */
   async deleteStackComment(commentId: string, userId: string) {
     const { error } = await supabase
       .from('list_comments')
       .delete()
       .eq('id', commentId)
-      .eq('user_id', userId)
-      .select('id');
+      .eq('user_id', userId);
     if (error) throw error;
   },
 

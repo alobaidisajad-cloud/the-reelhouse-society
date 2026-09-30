@@ -675,6 +675,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/schemas/profile.schema.ts | — |  |
 | src/schemas/settings.ts | — |  |
 | src/schemas/user.ts | — |  |
+| src/services/__tests__/aMemberTakesBackOnlyTheirOwnStackCritique.test.ts | 2026-09-30 | written with the stack critique delete |
 | src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | — |  |
 | src/services/__tests__/certifyCountAuthority.test.ts | — |  |
 | src/services/__tests__/everyNameAClientCallsExists.test.ts | — |  |
@@ -708,7 +709,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/ModerationService.ts | — |  |
 | src/services/ProfileDataService.ts | 2026-09-29 | 24 fixed; 'Sentry breadcrumb' was dev-only logger.info (logged for step 6); a dead file ref; ticket tags |
 | src/services/ProfileWriteService.ts | — |  |
-| src/services/StackService.ts | — |  |
+| src/services/StackService.ts | 2026-09-30 | the delete's comment said a refusal "is seen" and never read it; made true |
 | src/services/VaultService.ts | — |  |
 | src/services/YearInCinemaService.ts | — |  |
 | src/stores/__tests__/aFailedLoadKeepsWhoYouFollow.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |

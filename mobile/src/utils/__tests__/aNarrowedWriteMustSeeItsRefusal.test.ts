@@ -97,6 +97,10 @@ const EXEMPT: Record<string, string> = {
   'src/services/LogService.ts':
     'Removing a comment the member owns; absent means already removed.',
 
+  'src/services/StackService.ts':
+    'Removing a critique the member owns on a stack, as LogService does on a ' +
+    'log: narrowed by its writer, and absent means already removed.',
+
   'src/stores/domain/logSlice/helpers/logOperations.ts':
     'Log edits and deletes, narrowed by user_id. The edit path enqueues on a ' +
     'network error and announces only on success; an absent row is a log ' +
