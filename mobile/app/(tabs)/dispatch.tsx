@@ -48,6 +48,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
+import { useUnsent } from '@/src/stores/offlineQueueStore';
 
 /** A filing, or a day's divider: one flat list, as a section list re-measures on every certify. */
 type Row =
@@ -106,6 +107,8 @@ export default function DispatchScreen() {
   const newCount = useDispatch((s) => s.newCount);
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const savedIds = useDispatch((s) => s.savedIds);
+  // Filed on this phone while the wire was down, and not gone yet.
+  const unsent = useUnsent('add_filing');
 
   // The floating bar's height, from its own constants (navMetrics), not a copy.
   const topPad = navTopPadding(insets.top) + NAV_ROW_MIN_H + 8;
@@ -219,10 +222,11 @@ export default function DispatchScreen() {
         width={width}
         certified={certifiedIds.has(f.id)}
         saved={savedIds.has(f.id)}
+        pending={unsent.has(f.id)}
         member={member}
       />
     );
-  }, [sort, width, certifiedIds, savedIds, member]);
+  }, [sort, width, certifiedIds, savedIds, unsent, member]);
 
   const empty = EMPTY[section];
   const today = new Date();
@@ -366,8 +370,8 @@ export default function DispatchScreen() {
 }
 
 /** One filing on the page. */
-const FeedRow = memo(function FeedRow({ f, sort, width, certified, saved, member }: {
-  f: Filing; sort: Sort; width: number; certified: boolean; saved: boolean; member: boolean;
+const FeedRow = memo(function FeedRow({ f, sort, width, certified, saved, pending, member }: {
+  f: Filing; sort: Sort; width: number; certified: boolean; saved: boolean; pending: boolean; member: boolean;
 }) {
   return (
     <PaperPost
@@ -390,6 +394,7 @@ const FeedRow = memo(function FeedRow({ f, sort, width, certified, saved, member
       ended={f.endedBy ?? undefined}
       edited={!!f.editedAt}
       series={f.seriesTitle ? `Part ${f.partNumber} of ${f.seriesTitle}` : undefined}
+      pending={pending}
       onOpen={() => nav.push(`/dispatch/${f.id}`)}
       onCritique={() => nav.push(`/dispatch/${f.id}`)}
       onCertify={member ? (next) => useDispatch.getState().certify(f.id, next) : undefined}

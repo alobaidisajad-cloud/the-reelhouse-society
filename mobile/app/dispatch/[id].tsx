@@ -55,6 +55,7 @@ import { timeAgo, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { useUnsent } from '@/src/stores/offlineQueueStore';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
@@ -107,6 +108,8 @@ export default function FilingReader() {
     return () => clearTimeout(t);
   }, [draft, id, me?.id]);
   const scroller = useRef<ScrollView>(null);
+  // Where the critiques begin, for the mark of a filing that is gone.
+  const critiquesAt = useRef(0);
   /** The off-screen clipping, captured when an essay is shared out of the app. */
   const cardRef = useRef<ViewShot>(null);
 
@@ -120,6 +123,8 @@ export default function FilingReader() {
 
   // The store's copies first (`opened`: reached from a notification), so a mark shows.
   const live = filings.find((f) => f.id === id) ?? opened[id] ?? filing;
+  // Filed on this phone while the wire was down, and not gone yet.
+  const pending = useUnsent('add_filing').has(id);
 
   useEffect(() => {
     if (!id) return;
@@ -353,8 +358,14 @@ export default function FilingReader() {
   const saved = savedIds.has(live.id);
   const width = measure(390);
 
-  // A signed-out reader gets no More: every act behind it needs an account.
-  const more = me ? openMore : undefined;
+  // A filing takes acts only while it stands and the house has it: not once
+  // withdrawn, not while withheld, not before it is sent. The house refuses
+  // each (critiques_open_post, certs_open_post); the page does not offer them.
+  const open = !ended && !live.withheldAt && !pending;
+
+  // A signed-out reader gets no More: every act behind it needs an account. A
+  // withdrawn filing has nothing left to amend, withdraw or report.
+  const more = me && !ended ? openMore : undefined;
 
   const head = live.kind === 'dossier'
     ? <PaperBack label={KIND_NAME.dossier} onBack={() => nav.back()} onMore={more} />
@@ -443,6 +454,7 @@ export default function FilingReader() {
               commentCount={live.commentCount}
               certified={certified}
               saved={saved}
+              pending={pending}
               // Acts need a member; without one each would do nothing on a press.
               // Share, the byline and the film need no account.
               onVote={me ? (i) => useDispatch.getState().vote(live.id, i) : undefined}
@@ -472,9 +484,14 @@ export default function FilingReader() {
               withheld={!!live.withheldAt}
               ended={live.endedBy ?? undefined}
               edited={!!live.editedAt}
+              pending={pending}
               // Gated on a member, for the reason given on the ballot above.
               onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
-              onCritique={me ? () => setComposing(true) : undefined}
+              // The tombstone's one mark leads to the critiques that survive it,
+              // just below; the house takes no new one under words that are gone.
+              onCritique={ended
+                ? () => scroller.current?.scrollTo({ y: critiquesAt.current, animated: true })
+                : me ? () => setComposing(true) : undefined}
               onShare={() => setSharing(true)}
               onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
               onAuthor={() => openAuthor(author?.name)}
@@ -485,15 +502,17 @@ export default function FilingReader() {
           {/* ── THE CRITIQUES ──────────────────────────────────────────────
               Drawn under an ended filing too: they survive it. A new order
               re-reads from the first page, as the order is the server's. */}
-          <CritiqueHead
-            count={live.commentCount}
-            order={order}
-            onOrder={(o) => {
-              if (o === order) return;
-              setOrder(o);
-              void useDispatch.getState().fetchCritiques(live.id, o);
-            }}
-          />
+          <View onLayout={(e) => { critiquesAt.current = e.nativeEvent.layout.y; }}>
+            <CritiqueHead
+              count={live.commentCount}
+              order={order}
+              onOrder={(o) => {
+                if (o === order) return;
+                setOrder(o);
+                void useDispatch.getState().fetchCritiques(live.id, o);
+              }}
+            />
+          </View>
 
           {rows.map((c, i) => (
             <CritiqueRow
@@ -559,8 +578,9 @@ export default function FilingReader() {
       </ScrollView>
 
       {/* ── ONE DOCKED THING ───────────────────────────────────────────────
-          The composer REPLACES the bar. A signed-out reader gets neither. */}
-      {me ? (
+          The composer REPLACES the bar. A signed-out reader gets neither, and
+          so does a filing that takes no acts (`open`). */}
+      {me && open ? (
         composing ? (
           <CritiqueComposer
             me={{

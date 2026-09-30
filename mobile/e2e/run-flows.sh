@@ -129,6 +129,12 @@ if [ $alive -eq 0 ]; then
     tail -n 12 "$OUT/memory.txt"
     echo "The kernel on memory it had to reclaim by killing:"
     sudo -n dmesg 2>/dev/null | grep -iE 'out of memory|killed process|oom-kill' | tail -n 8 || true
+    # How the emulator's own process ended, when it was not for memory: a
+    # segfault or a trap the kernel logged, and any crash dump it left.
+    echo "The kernel on the emulator's process (a segfault or trap):"
+    sudo -n dmesg 2>/dev/null | grep -iE 'qemu|emulator|segfault|general protection|traps:' | tail -n 8 || true
+    echo "Crash dumps the emulator left:"
+    find /tmp/android-* "$HOME/.android" -name '*.dmp' -mmin -60 2>/dev/null | head -n 4 || true
     echo "Emulator processes still running:"
     pgrep -af 'qemu-system|emulator' | cut -c1-160 | head -n 4 || true
     echo "The device's last words (its log as copied to the runner; errors, then the final lines):"

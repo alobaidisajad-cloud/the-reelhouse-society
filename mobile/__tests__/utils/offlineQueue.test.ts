@@ -21,9 +21,10 @@ import * as fc from 'fast-check';
 import {
     enqueueMutation,
     getQueueLength,
+    getOfflineQueue,
     clearOfflineQueue,
-    useOfflineQueueStore,
 } from '../../src/utils/offlineQueue';
+import { useOfflineQueueStore } from '../../src/stores/offlineQueueStore';
 
 jest.mock('react-native', () => ({
     AppState: { addEventListener: jest.fn(() => ({ remove: jest.fn() })) },
@@ -124,10 +125,10 @@ describe('offlineQueue', () => {
             expect(getQueueLength()).toBe(1);
         });
 
-        it('should sync pending count to useOfflineQueueStore', () => {
+        it('the store holds the queue as stored', () => {
             enqueueMutation(makeMutation());
             enqueueMutation(makeMutation('remove_log'));
-            expect(useOfflineQueueStore.getState().pending).toBe(2);
+            expect(useOfflineQueueStore.getState().queued.length).toBe(2);
         });
 
         it('should generate unique IDs with timestamp-uuid format', () => {
@@ -181,7 +182,7 @@ describe('offlineQueue', () => {
             }
             // After cap enforcement, queue should have the 100 NEWEST mutations
             expect(getQueueLength()).toBe(100);
-            expect(useOfflineQueueStore.getState().pending).toBe(100);
+            expect(useOfflineQueueStore.getState().queued.length).toBe(100);
         });
     });
 
@@ -197,7 +198,7 @@ describe('offlineQueue', () => {
             clearOfflineQueue();
 
             expect(getQueueLength()).toBe(0);
-            expect(useOfflineQueueStore.getState().pending).toBe(0);
+            expect(useOfflineQueueStore.getState().queued.length).toBe(0);
         });
 
         it('should allow new enqueues after clear', () => {
@@ -242,14 +243,14 @@ describe('offlineQueue', () => {
                             enqueueMutation(makeMutation('add_log', { film_id: i }));
                         }
                         clearOfflineQueue();
-                        return getQueueLength() === 0 && useOfflineQueueStore.getState().pending === 0;
+                        return getQueueLength() === 0 && useOfflineQueueStore.getState().queued.length === 0;
                     },
                 ),
                 { numRuns: 50 },
             );
         });
 
-        it('PROPERTY: store.pending always equals getQueueLength()', () => {
+        it('PROPERTY: the store holds exactly the stored queue', () => {
             fc.assert(
                 fc.property(
                     fc.array(
@@ -264,7 +265,7 @@ describe('offlineQueue', () => {
                         for (const m of mutations) {
                             enqueueMutation(makeMutation(m.type, { film_id: m.filmId }));
                         }
-                        return useOfflineQueueStore.getState().pending === getQueueLength();
+                        return JSON.stringify(useOfflineQueueStore.getState().queued) === JSON.stringify(getOfflineQueue());
                     },
                 ),
                 { numRuns: 50 },

@@ -590,6 +590,30 @@ $$;
 
 
 --
+-- Name: dispatch_empty_filing(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_empty_filing(p_post uuid, p_by text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  UPDATE public.dispatch_posts
+     SET body = '', full_content = NULL, title = NULL,
+         subject_image = NULL, subject_backdrop = NULL,
+         source = NULL, source_url = NULL, spoiler_label = NULL,
+         ended_at = now(), ended_by = p_by
+   WHERE id = p_post AND ended_at IS NULL;
+$$;
+
+
+--
+-- Name: FUNCTION dispatch_empty_filing(p_post uuid, p_by text); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.dispatch_empty_filing(p_post uuid, p_by text) IS 'The one erase of a filing that ends. Called by end_filing and the no_hard_delete trigger (both SECURITY DEFINER); no role may call it directly.';
+
+
+--
 -- Name: dispatch_names(text, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -624,12 +648,9 @@ BEGIN
   -- already ended: nothing to erase, and nothing to delete either
   IF OLD.ended_at IS NOT NULL THEN RETURN NULL; END IF;
 
-  UPDATE public.dispatch_posts
-     SET body = '', full_content = NULL, title = NULL, subject_image = NULL, source = NULL,
-         spoiler_label = NULL, ended_at = now(),
-         ended_by = CASE WHEN OLD.user_id IS NOT DISTINCT FROM auth.uid()
-                         THEN 'author' ELSE 'house' END
-   WHERE id = OLD.id;
+  PERFORM public.dispatch_empty_filing(
+    OLD.id,
+    CASE WHEN OLD.user_id IS NOT DISTINCT FROM auth.uid() THEN 'author' ELSE 'house' END);
 
   RETURN NULL;   -- the delete does not happen
 END $$;
@@ -998,10 +1019,7 @@ BEGIN
     END IF;
   END IF;
 
-  UPDATE public.dispatch_posts
-     SET body = '', full_content = NULL, title = NULL, subject_image = NULL, source = NULL,
-         spoiler_label = NULL, ended_at = now(), ended_by = p_by
-   WHERE id = p_post AND ended_at IS NULL;
+  PERFORM public.dispatch_empty_filing(p_post, p_by);
 END $$;
 
 
@@ -1381,6 +1399,7 @@ BEGIN
      WHERE p.kind = 'ballot'
        AND p.closes_at <= now()
        AND p.frozen_totals IS NULL
+       AND p.ended_at IS NULL
      GROUP BY p.id
   )
   UPDATE public.dispatch_posts p
@@ -8001,6 +8020,15 @@ CREATE POLICY certs_delete_own ON public.dispatch_certifications FOR DELETE TO a
 
 
 --
+-- Name: dispatch_certifications certs_open_post; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY certs_open_post ON public.dispatch_certifications AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (((post_id IS NULL) OR (EXISTS ( SELECT 1
+   FROM public.dispatch_posts p
+  WHERE ((p.id = dispatch_certifications.post_id) AND (p.ended_at IS NULL) AND (p.withheld_at IS NULL))))));
+
+
+--
 -- Name: dispatch_certifications certs_read; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -8685,7 +8713,7 @@ CREATE POLICY votes_read ON public.dispatch_votes FOR SELECT TO authenticated US
 
 CREATE POLICY votes_still_open ON public.dispatch_votes AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK ((EXISTS ( SELECT 1
    FROM public.dispatch_posts p
-  WHERE ((p.id = dispatch_votes.post_id) AND (p.closes_at > now())))));
+  WHERE ((p.id = dispatch_votes.post_id) AND (p.closes_at > now()) AND (p.ended_at IS NULL)))));
 
 
 --
@@ -8932,6 +8960,14 @@ GRANT ALL ON FUNCTION public.dispatch_count_comment() TO service_role;
 GRANT ALL ON FUNCTION public.dispatch_door() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_door() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_door() TO service_role;
+
+
+--
+-- Name: FUNCTION dispatch_empty_filing(p_post uuid, p_by text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.dispatch_empty_filing(p_post uuid, p_by text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.dispatch_empty_filing(p_post uuid, p_by text) TO service_role;
 
 
 --

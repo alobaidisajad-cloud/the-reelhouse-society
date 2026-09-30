@@ -182,15 +182,22 @@ export const PaperActions = memo(function PaperActions({
   onCertify, onCritique, onShare, onSave,
 }: {
   certifyCount?: number; commentCount?: number;
-  certified?: boolean; saved?: boolean; dimmed?: boolean;
+  certified?: boolean; saved?: boolean;
+  /** Not sent yet: nothing can be done to this filing until the house has it. */
+  dimmed?: boolean;
   onCertify?: (next: boolean) => void;
   onCritique?: () => void;
   onShare?: () => void;
   onSave?: (next: boolean) => void;
 }) {
   // No handler (signed out): dimmed, disabled and said so, never a silent tap.
-  const canMark = !!onCertify;
-  const canKeep = !!onSave;
+  // `dimmed` is a filing NOT SENT YET: the house has not seen it, so nothing is
+  // done to it until it has — the house would refuse a certify, a share would
+  // link to nothing, a critique would hang under a filing nobody else can open.
+  const waiting = !!dimmed;
+  const why = waiting ? 'Not sent yet' : 'Members only';
+  const canMark = !!onCertify && !waiting;
+  const canKeep = !!onSave && !waiting;
 
   return (
     <View style={p.actions}>
@@ -201,7 +208,7 @@ export const PaperActions = memo(function PaperActions({
         accessibilityState={{ selected: !!certified, disabled: !canMark }}
         accessibilityLabel={
           // Why it cannot be pressed comes before how many have pressed it.
-          !canMark ? `Certify this. Members only${certifyCount > 0 ? `. ${counted(certifyCount, 'member has', 'members have')} certified this` : ''}`
+          !canMark ? `Certify this. ${why}${certifyCount > 0 ? `. ${counted(certifyCount, 'member has', 'members have')} certified this` : ''}`
             : certifyLabel(certifyCount, !!certified)
         }>
         <MarkFigure iconSize={15} count={certifyCount} reach="open" style={[p.actionLabel, certified && p.actionLabelOn]}>
@@ -216,18 +223,24 @@ export const PaperActions = memo(function PaperActions({
         </Text>
       </PressableScale>
 
-      <PressableScale style={p.action} hitSlop={SLOP} haptic
-        onPress={onCritique}
-        accessibilityRole="button" accessibilityLabel={critiqueLabel(commentCount)}>
+      <PressableScale style={[p.action, waiting && p.actionOff]} hitSlop={SLOP} haptic
+        onPress={waiting ? undefined : onCritique}
+        disabled={waiting}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: waiting }}
+        accessibilityLabel={waiting ? `Critique. ${why}` : critiqueLabel(commentCount)}>
         <MarkFigure iconSize={16} count={commentCount} reach="open" style={p.actionLabel}>
           <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
         </MarkFigure>
         <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE</Text>
       </PressableScale>
 
-      <PressableScale style={p.action} hitSlop={SLOP} haptic
-        onPress={onShare}
-        accessibilityRole="button" accessibilityLabel="Share this filing">
+      <PressableScale style={[p.action, waiting && p.actionOff]} hitSlop={SLOP} haptic
+        onPress={waiting ? undefined : onShare}
+        disabled={waiting}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: waiting }}
+        accessibilityLabel={waiting ? `Share this filing. ${why}` : 'Share this filing'}>
         <Share2 size={15} strokeWidth={2} color={colors.fog} />
         <Text style={p.actionLabel} {...actionLabelProps}>SHARE</Text>
       </PressableScale>
@@ -237,7 +250,7 @@ export const PaperActions = memo(function PaperActions({
         disabled={!canKeep}
         accessibilityRole="button"
         accessibilityState={{ selected: !!saved, disabled: !canKeep }}
-        accessibilityLabel={!canKeep ? 'Save this. Members only' : saved ? 'Saved' : 'Save this'}>
+        accessibilityLabel={!canKeep ? `Save this. ${why}` : saved ? 'Saved' : 'Save this'}>
         <PaperStrike on={saved}>
           <Bookmark size={15} strokeWidth={2}
             color={saved ? colors.sepia : colors.fog}

@@ -308,6 +308,28 @@ describe('ending a filing', () => {
     expect(f.commentCount).toBe(2);
   });
 
+  it('empties on the page exactly what the house empties — the cover and the link too', async () => {
+    reset({ filings: [filing({
+      kind: 'wire', title: 'A title', source: 'Variety', sourceUrl: 'https://example.com/w',
+      spoilerLabel: 'Ending', fullContent: 'An essay.', subjectId: 11, subjectKind: 'film',
+      film: { title: 'Sunrise', director: '1927', posterPath: '/still.jpg', backdropPath: '/cover.jpg' },
+    })] });
+    await useDispatch.getState().end('f1');
+    const f = useDispatch.getState().filings[0];
+    // dispatch_empty_filing (20260930_02): body, full_content, title, subject_image,
+    // subject_backdrop, source, source_url, spoiler_label.
+    expect({
+      body: f.body, fullContent: f.fullContent, title: f.title, source: f.source,
+      sourceUrl: f.sourceUrl, spoilerLabel: f.spoilerLabel,
+      posterPath: f.film?.posterPath, backdropPath: f.film?.backdropPath,
+    }).toEqual({
+      body: '', fullContent: null, title: null, source: null,
+      sourceUrl: null, spoilerLabel: null, posterPath: null, backdropPath: null,
+    });
+    // What it was about stays, as the house keeps it.
+    expect(f.film?.title).toBe('Sunrise');
+  });
+
   it('brings the words back when refused', async () => {
     mockOutcome = 'refused';
     await expect(useDispatch.getState().end('f1')).rejects.toBeTruthy();

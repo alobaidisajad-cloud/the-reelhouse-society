@@ -18,6 +18,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 import FeedScreen from '@/app/(tabs)/dispatch';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { Filing } from '@/src/stores/dispatchTypes';
+import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 
 let mockUser: { id: string; username: string; tier?: string } | null = { id: 'u1', username: 'me' };
 
@@ -532,6 +533,35 @@ describe('a page not read yet, and a page that could not be read', () => {
     await flush();
     expect(mockPageAsks).toBe(1);
     expect(queryByText('Nothing has been filed yet.')).toBeTruthy();
+  });
+});
+
+describe('a filing written while the wire was down', () => {
+  const queued = (id: string) => ({ id: `q-${id}`, type: 'add_filing' as const, payload: { _tempId: id }, timestamp: 0 });
+  afterEach(() => { useOfflineQueueStore.setState({ queued: [] }); });
+
+  it('says NOT SENT YET, and takes no act until the house has it — then it does', async () => {
+    // It showed in the feed as if sent. A certify on it would be refused, and a
+    // share would link to a filing nobody else can open.
+    put({ filings: [filing({ id: 'mine', authorId: 'u1', certifyCount: 0, commentCount: 0 }), filing({ id: 'theirs' })] });
+    useOfflineQueueStore.setState({ queued: [queued('mine')] });
+    const { getAllByText, getByLabelText, queryByText, getAllByLabelText } = await mount();
+
+    expect(getAllByText('NOT SENT YET · THE HOUSE HAS NOT SEEN THIS')).toHaveLength(1);
+    await act(async () => { fireEvent.press(getByLabelText('Certify this. Not sent yet')); });
+    await act(async () => { fireEvent.press(getByLabelText('Share this filing. Not sent yet')); });
+    await act(async () => { fireEvent.press(getByLabelText('Critique. Not sent yet')); });
+    await act(async () => { fireEvent.press(getByLabelText('Save this. Not sent yet')); });
+    expect(useDispatch.getState().certifiedIds.has('mine')).toBe(false);
+    expect(useDispatch.getState().savedIds.has('mine')).toBe(false);
+    expect(mockPushed).toEqual([]);
+    // The filing beside it is untouched.
+    expect(getAllByLabelText(CERTIFY)).toHaveLength(1);
+
+    // Sent: the line goes, and the marks are the member's again.
+    await act(async () => { useOfflineQueueStore.setState({ queued: [] }); });
+    expect(queryByText('NOT SENT YET · THE HOUSE HAS NOT SEEN THIS')).toBeNull();
+    expect(getAllByLabelText(CERTIFY)).toHaveLength(2);
   });
 });
 

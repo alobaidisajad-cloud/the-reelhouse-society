@@ -584,9 +584,12 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     if (!user || !before) return;
     const startedAs = user.id;
 
+    // The page empties what the house empties (dispatch_empty_filing): the
+    // words, the stills and cover, the source and its link.
     const ended: Filing = {
       ...before,
-      body: '', fullContent: null, title: null, source: null, spoilerLabel: null,
+      body: '', fullContent: null, title: null, source: null, sourceUrl: null, spoilerLabel: null,
+      film: before.film ? { ...before.film, posterPath: null, backdropPath: null } : null,
       endedAt: new Date().toISOString(), endedBy: 'author',
     };
     set((st) => patchFiling(st, id, () => ended));

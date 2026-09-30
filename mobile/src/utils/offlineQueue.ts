@@ -20,6 +20,7 @@ import { isNetworkError, isTransientError } from './networkError';
 import reelToast from './reelToast';
 import { queryClient } from '../lib/queryClient';
 import { settleDelivered } from '../stores/markCounts';
+import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 
 export interface QueuedMutation {
     id: string;
@@ -88,25 +89,10 @@ const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 // carrying another member's user_id is dead-lettered, never sent (the ownership
 // split in flushOfflineQueue). Logout also empties the queue.
 
-/**
- * The queue's length, kept in step with it. Not reactive (nothing is told when
- * it changes), and no screen reads it yet.
- */
-interface OfflineQueueStoreState {
-    pending: number;
-}
-
-export const useOfflineQueueStore: {
-    _state: OfflineQueueStoreState;
-    getState: () => OfflineQueueStoreState;
-    setState: (partial: Partial<OfflineQueueStoreState>) => void;
-} = {
-    _state: { pending: 0 },
-    getState: () => useOfflineQueueStore._state,
-    setState: (partial) => {
-        Object.assign(useOfflineQueueStore._state, partial);
-    },
-};
+// The screens' copy of the queue (stores/offlineQueueStore): what it held at
+// launch, then every write writeQueue makes — set there and nowhere else, so it
+// cannot disagree with MMKV.
+useOfflineQueueStore.setState({ queued: readQueue() });
 
 /** Get current queue length (synchronous) */
 export function getQueueLength(): number {
@@ -127,7 +113,6 @@ export function clearOfflineQueue(): void {
         logger.warn(`[OfflineSync] could not clear the queue on logout: ${String(e)}`);
     }
     writeQueue([]);
-    useOfflineQueueStore.setState({ pending: 0 });
 }
 
 /** Read queue from MMKV (synchronous C++) */
@@ -149,6 +134,7 @@ function readQueue(): QueuedMutation[] {
 function writeQueue(queue: QueuedMutation[]) {
     try {
         storage.set(QUEUE_KEY, JSON.stringify(queue));
+        useOfflineQueueStore.setState({ queued: queue });
     } catch (e) {
         if (__DEV__) console.error('[OfflineSync] Failed to write queue:', e);
     }
@@ -177,7 +163,6 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
     queue.push(newMutation);
 
     writeQueue(queue);
-    useOfflineQueueStore.setState({ pending: queue.length });
     logger.debug(`[OfflineSync] Queued ${mutation.type} for background sync.`);
 }
 
@@ -215,7 +200,6 @@ export async function flushOfflineQueue() {
                 storage.set(QUEUE_KEY + '_dead_letter', JSON.stringify([...prev, ...tagged].slice(-50)));
             } catch { /* dead-letter write failure — non-critical */ }
             writeQueue([]);
-            useOfflineQueueStore.setState({ pending: 0 });
         }
         return;
     }
@@ -243,7 +227,6 @@ export async function flushOfflineQueue() {
                 storage.set(QUEUE_KEY + '_dead_letter', JSON.stringify([...prev, ...bannedMutations].slice(-50)));
             } catch { /* dead-letter write failure — non-critical */ }
             writeQueue([]);
-            useOfflineQueueStore.setState({ pending: 0 });
             return;
         }
     } catch (banCheckErr) {
@@ -437,7 +420,6 @@ export async function flushOfflineQueue() {
             return next;
         });
     writeQueue(finalQueue);
-    useOfflineQueueStore.setState({ pending: finalQueue.length });
 
     // A follow sent from the queue shows in the following feeds now, not when
     // their timers next run. Only after a follow: nothing else changes whose

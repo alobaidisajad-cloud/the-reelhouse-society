@@ -62,28 +62,24 @@ const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
  *
  * A ballot's numbers come from `frozen_totals` on the post. That column is
  * written by exactly one thing — `freeze_closed_ballots()` — which is REVOKEd
- * from anon and authenticated, so the app cannot call it, and its own comment
- * says a cron runs it. Checked against production: `cron.job` is EMPTY. So the
- * column was never filled for any ballot, ever.
+ * from anon and authenticated, so the app cannot call it. Until 20260905_01 no
+ * job called it either (`cron.job` was empty), so no ballot was ever counted.
+ * That migration schedules `freeze-closed-ballots` every five minutes; checked
+ * against production 2026-09-30, it runs and succeeds.
  *
- * Proved with real rows in a rolled-back transaction: a ballot closed an hour
- * earlier with a vote on it had `frozen_totals = NULL`, and calling the
- * function by hand immediately produced `{"total": 1, "counts": {"0": 1}}`. The
- * function is correct. Nothing was calling it.
- *
- * ── AND UNTIL IT IS CALLED, THIS COMPONENT LIED ─────────────────────────────
+ * ── AND BETWEEN A CLOSE AND THE COUNT, THIS COMPONENT LIED ──────────────────
  * With no totals every option reads 0, so `total` is 0, so a closed ballot
  * printed NO BALLOTS WERE CAST — under a question fifty members may have
  * marked. `sealed` is what separates "counted, and nobody voted" from "not
  * counted yet", which are different sentences and must not share one.
  *
- * That distinction matters even once the job exists: between a ballot closing
- * and the next run there is always a window, and the page must be honest inside
- * it rather than announcing a result that has not been worked out.
+ * It still matters with the job running: between a ballot closing and the next
+ * run there is a window of up to five minutes, and the page must be honest
+ * inside it rather than announcing a result that has not been worked out.
  */
 export const PaperBallot = memo(function PaperBallot({
   question, author, options, myVote, closed, closesLabel, sealed = true,
-  certifyCount, commentCount, certified, saved, showKind = true,
+  certifyCount, commentCount, certified, saved, showKind = true, pending,
   onVote, onCertify, onCritique, onShare, onSave, onAuthor,
 }: {
   /**
@@ -119,7 +115,13 @@ export const PaperBallot = memo(function PaperBallot({
   certified?: boolean;
   saved?: boolean;
   showKind?: boolean;
+  /**
+   * Written on this phone and not yet sent. The house has not seen it, so it
+   * takes no vote and no act until it has, and its foot says why.
+   */
+  pending?: boolean;
 }) {
+  const vote = pending ? undefined : onVote;
   const votes = options.map((o) => o.votes);
   const total = votes.reduce((a, b) => a + b, 0);
   const revealed = closed || myVote != null;
@@ -238,7 +240,7 @@ export const PaperBallot = memo(function PaperBallot({
               // next, and the later option took the mark meant for this one.
               hitSlop={null}
               haptic
-              onPress={onVote ? () => onVote(i) : undefined}
+              onPress={vote ? () => vote(i) : undefined}
               // Closed, already marked, or nobody signed in. The second is the
               // important one: a ballot you have voted in is a result to read,
               // not a form to fill again, and the row the server would refuse
@@ -247,7 +249,7 @@ export const PaperBallot = memo(function PaperBallot({
               // The third was missing. `onVote?.(i)` turned an absent handler
               // into a tap that did nothing, so a signed-out reader could mark a
               // ballot all day and watch the page ignore them.
-              disabled={closed || myVote != null || !onVote}
+              disabled={closed || myVote != null || !vote}
               accessibilityRole="radio"
               // The state a reader announces has to match the state the control
               // is actually in. It said `disabled: closed` while the row was ALSO
@@ -257,7 +259,7 @@ export const PaperBallot = memo(function PaperBallot({
               // this line already had to be corrected once for announcing an
               // available control that was not, so it is written from the same
               // expression rather than restated.
-              accessibilityState={{ checked: marked, disabled: !!closed || myVote != null || !onVote }}
+              accessibilityState={{ checked: marked, disabled: !!closed || myVote != null || !vote }}
               accessibilityLabel={
                 showPercent
                   ? `Option ${i + 1} of ${options.length}. ${o.title}. ${pct[i]} percent, ${counted(o.votes ?? 0, 'ballot', 'ballots')}.${marked ? ' Your mark.' : ''}`
@@ -310,7 +312,9 @@ export const PaperBallot = memo(function PaperBallot({
       })}
 
       <Text style={p.ballotFoot} {...scaledTextProps}>
-        {closed
+        {pending
+          ? 'NOT SENT YET · THE HOUSE HAS NOT SEEN THIS'
+          : closed
           ? ''
           : revealed
             ? counted(total, 'BALLOT CAST', 'BALLOTS CAST')
@@ -321,7 +325,7 @@ export const PaperBallot = memo(function PaperBallot({
 
       <PaperActions
         certifyCount={certifyCount} commentCount={commentCount}
-        certified={certified} saved={saved}
+        certified={certified} saved={saved} dimmed={pending}
         onCertify={onCertify} onCritique={onCritique}
         onShare={onShare} onSave={onSave}
       />

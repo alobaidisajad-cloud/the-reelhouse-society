@@ -20,6 +20,7 @@ import { useLocalSearchParams } from 'expo-router';
 
 import FilingReader from '@/app/dispatch/[id]';
 import { useDispatch } from '@/src/stores/dispatch';
+import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 
 let mockRow: Record<string, unknown> | null = null;
 /** The filing's own read fails, as it does offline. */
@@ -366,7 +367,6 @@ describe('the reader', () => {
     for (const over of [
       { kind: 'ballot', title: 'Which?', body: 'Which?', options: [{ film_id: 1, title: 'A' }, { film_id: 2, title: 'B' }], closes_at: new Date(Date.now() + 86_400_000).toISOString() },
       { withheld_at: new Date().toISOString() },
-      { ended_at: new Date().toISOString(), ended_by: 'author' },
     ]) {
       alerts.length = 0;
       mockRow = row(over);
@@ -376,6 +376,44 @@ describe('the reader', () => {
       expect(alerts[0][0]).toBe('Withdraw this filing?');
     }
     spy.mockRestore();
+  });
+
+  it('a withdrawn filing is over: nothing to amend, withdraw again, or act on', async () => {
+    // It offered its author "Withdraw this filing?" a second time, and every
+    // reader a docked CERTIFY and CRITIQUE the house refuses on words that are
+    // gone (certs_open_post, critiques_open_post).
+    mockUser = { id: 'u2', username: 'tomasreyes' };
+    mockRow = row({ ended_at: new Date().toISOString(), ended_by: 'author' });
+    const { queryByLabelText, queryAllByText, getByText } = await mount();
+    getByText('This filing was withdrawn by its author.');
+    expect(queryByLabelText('More, for this filing')).toBeNull();
+    expect(queryAllByText('CERTIFY')).toHaveLength(0);
+    expect(queryAllByText('SAVE')).toHaveLength(0);
+    expect(queryAllByText('SHARE')).toHaveLength(0);
+  });
+
+  it('a filing not sent yet says so, and offers no act until the house has it', async () => {
+    mockUser = { id: 'u2', username: 'tomasreyes' };
+    mockRow = row({ kind: 'take', title: null, body: 'Written on a train.' });
+    useOfflineQueueStore.setState({ queued: [{ id: 'q1', type: 'add_filing', payload: { _tempId: 'f1' }, timestamp: 0 }] });
+    try {
+      const { getByText, getAllByText, getByLabelText } = await mount();
+      getByText('NOT SENT YET · THE HOUSE HAS NOT SEEN THIS');
+      getByLabelText(/^Certify this\. Not sent yet/);
+      // The card's bar, waiting; the docked one is not drawn at all.
+      expect(getAllByText('CERTIFY')).toHaveLength(1);
+    } finally {
+      useOfflineQueueStore.setState({ queued: [] });
+    }
+  });
+
+  it('the critiques under a tombstone are reached from its mark, and no composer opens', async () => {
+    mockUser = { id: 'u9', username: 'someone' };
+    mockRow = row({ ended_at: new Date().toISOString(), ended_by: 'house', comment_count: 3 });
+    const { getByLabelText, queryByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText(/^Critique\. 3 critiques remain/)); });
+    expect(queryByLabelText('File this critique. Write something first.')).toBeNull();
+    expect(queryByLabelText('File this critique')).toBeNull();
   });
 
   it('withdraws a filing reached by its own address, and shows the tombstone', async () => {
