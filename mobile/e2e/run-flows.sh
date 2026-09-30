@@ -73,20 +73,7 @@ sampler=$!
 # cut from this copy without asking the device.
 adb logcat -v threadtime > "$OUT/logcat-stream.txt" 2>/dev/null &
 streamer=$!
-# The emulator's own words, which go to the job's log, readable only signed in.
-# It has vanished mid-flow with no memory kill, no kernel report and no crash
-# dump (run 36678849758, during film_log): what it said last is the one account
-# left. The pipe opened through /proc is the same pipe, so a line read here is
-# not in the job's log; the copy is printed there when the flows end.
-said=""
-qemu=$(pgrep -f 'qemu-system' | head -n 1)
-if [ -n "$qemu" ]; then
-  for fd in 1 2; do cat "/proc/$qemu/fd/$fd" >> "$OUT/emulator-said.txt" 2>/dev/null & said="$said $!"; done
-fi
-# What the copy is attached to, so "it said nothing" cannot be a copy that never ran.
-attached="pid ${qemu:-none}, stdout $(readlink "/proc/$qemu/fd/1" 2>/dev/null), stderr $(readlink "/proc/$qemu/fd/2" 2>/dev/null)"
-echo "emulator: $attached"
-trap 'kill $sampler $streamer $said 2>/dev/null' EXIT
+trap 'kill $sampler $streamer 2>/dev/null' EXIT
 
 # One flow at a time: Maestro's records keep no screen for a failed step, so the
 # screen is read the moment a flow fails, before the next one relaunches the app.
@@ -136,7 +123,6 @@ for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
   fi
 done
 cat "$OUT/maestro.log"
-if [ -s "$OUT/emulator-said.txt" ]; then echo "── what the emulator said"; cat "$OUT/emulator-said.txt"; fi
 grep -E '^\[(Passed|Failed|Skipped|Gone)\]' "$OUT/maestro.log" > "$OUT/maestro-summary.txt" || true
 # Everything below that asks the device waits for it forever if it is gone, so
 # each such call has a limit, and a vanished device is reported as what it is.
@@ -151,14 +137,12 @@ if [ $alive -eq 0 ]; then
     # segfault or a trap the kernel logged, and any crash dump it left.
     echo "The kernel on the emulator's process (a segfault or trap):"
     sudo -n dmesg 2>/dev/null | grep -iE 'qemu|emulator|segfault|general protection|traps:' | tail -n 8 || true
-    echo "Crash dumps the emulator left:"
-    find /tmp/android-* "$HOME/.android" -name '*.dmp' -mmin -60 2>/dev/null | head -n 4 || true
     echo "Emulator processes still running:"
     pgrep -af 'qemu-system|emulator' | cut -c1-160 | head -n 4 || true
-    # It ends silently (run 36704742293: no kernel line, no minidump, nothing on
-    # its own stdout), and the runner's page cache grows by ~1.5 GB as it does:
-    # the shape of a core being written by the system's own crash handler, which
-    # is where its cause (a signal, a stack) would be.
+    # It ends with no kernel line and nothing of its own: its crash goes to the
+    # system's handler. Run 36708544965 found it there — qemu-system-x86_64-headless,
+    # SIGSEGV, its core kept by systemd-coredump (the ~1.5 GB the runner's page
+    # cache grew by as it died). The renderer it died in is set in e2e.yml.
     echo "Where this runner sends a crashed process's core: $(cat /proc/sys/kernel/core_pattern 2>/dev/null)"
     echo "The system's crash reports (apport, systemd-coredump), newest first:"
     sudo -n ls -lt /var/crash /var/lib/systemd/coredump 2>/dev/null | head -n 8 || true
@@ -167,10 +151,6 @@ if [ $alive -eq 0 ]; then
     sudo -n coredumpctl --no-pager info 2>/dev/null | grep -E 'Signal|Command Line|Executable|#[0-9]+ ' | head -n 24 || true
     echo "The out-of-memory daemon (it kills by memory pressure, and says so only in its journal):"
     sudo -n journalctl --no-pager -u systemd-oomd -n 6 2>/dev/null || true
-    echo "The emulator's own last words (copied from $attached):"
-    if [ -s "$OUT/emulator-said.txt" ]; then tail -n 12 "$OUT/emulator-said.txt" | cut -c1-200
-    elif [ -z "$qemu" ]; then echo "(its process was not found when the flows began)"
-    else echo "(it said nothing)"; fi
     echo "The device's last words (its log as copied to the runner; errors, then the final lines):"
     grep -E ' [EF] |FATAL|ANR in|not responding|crash' "$OUT/logcat-stream.txt" | tail -n 12
     echo "…"

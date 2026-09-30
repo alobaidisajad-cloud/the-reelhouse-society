@@ -245,18 +245,21 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          # The emulator died partway through three runs (36628647938, 36644059475,
-          # 36649575811) on graphics errors — EGL_BAD_ATTRIBUTE, then "device not
-          # found" — with the runner holding 8GB spare and no process killed for
-          # memory, so more RAM (the third run had 4GB) was not the answer. The
-          # renderer was: `swiftshader_indirect` is deprecated as of emulator
-          # 36.4.9, which the runner installs; `swiftshader` is the supported
-          # software renderer for GLES and Vulkan (developer.android.com,
-          # "Configure hardware acceleration": the -gpu modes).
+          # The renderer. The emulator died a second after the film page opened, in
+          # every run that reached it, with `swiftshader_indirect` and then with
+          # `swiftshader`: run 36708544965 caught how — the emulator process
+          # itself (qemu-system-x86_64-headless) took a SIGSEGV, core kept by
+          # systemd-coredump. A crash in the host's renderer, not in the app: no
+          # app can fault the emulator. SwiftShader runs JIT-compiled shaders and
+          # a draw it mishandles faults rather than being dropped. The same image
+          # on the same runner (API 34, google_apis, pixel_6, this action) died
+          # the same way under swiftshader_indirect and guest, and has survived
+          # every run under `swangle_indirect`: ANGLE's GLES over SwiftShader's
+          # Vulkan (omnesis-dev/Omnesis#200).
           ram-size: 4096M
           heap-size: 576M
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader -noaudio -no-boot-anim -camera-back none -no-snapshot
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash mobile/e2e/run-flows.sh
 
       - name: What the flows did, found in the database
