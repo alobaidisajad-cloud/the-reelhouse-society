@@ -1,9 +1,9 @@
 {
   "total": {
-    "lines": 68.37,
-    "branches": 58.23,
-    "functions": 64.63,
-    "statements": 66.01
+    "lines": 68.5,
+    "branches": 58.3,
+    "functions": 64.74,
+    "statements": 66.15
   },
   "./src/components/dispatch/": {
     "lines": 94.7,
@@ -13,7 +13,7 @@
   },
   "./src/components/": {
     "lines": 70.03,
-    "branches": 61.26,
+    "branches": 61.29,
     "functions": 64.48,
     "statements": 68.02
   },
@@ -54,9 +54,9 @@
     "statements": 63.07
   },
   "./app/": {
-    "lines": 66.38,
-    "branches": 57.77,
-    "functions": 56.08,
-    "statements": 64.17
+    "lines": 67.1,
+    "branches": 58.08,
+    "functions": 56.6,
+    "statements": 64.96
   }
 }

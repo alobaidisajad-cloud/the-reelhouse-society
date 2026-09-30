@@ -921,12 +921,13 @@ describe('the critiques as they stand, sent or waiting', () => {
     r.getByText('No critiques yet. Be the first to speak.');
   });
 
-  it('one written without a connection shows while it waits, even when the read failed', async () => {
+  it('one written without a connection shows while it waits, even when the read failed — and the failure is still said', async () => {
     mockCommentsFailed = true;
     useOfflineQueueStore.setState({ queued: [WAITING] });
     const r = await open();
     r.getByText('Written on a train.');
-    expect(r.queryByText('The critiques could not be reached.')).toBeNull();
+    // It is not all there is: the rest could not be read.
+    r.getByText('The critiques could not be reached.');
   });
 
   it('is drawn once when the house already holds it too', async () => {
@@ -957,6 +958,24 @@ describe('the critiques as they stand, sent or waiting', () => {
     useOfflineQueueStore.setState({ queued: [{ id: 'q3', type: 'remove_list_comment', timestamp: 1, payload: { comment_id: 'c-held', user_id: 'u1' } }] });
     const r = await open();
     expect(r.queryByText('Said in haste.')).toBeNull();
+  });
+
+  it('refused by the maker’s setting, it says whose setting — as on a log', async () => {
+    mockToastError.mockClear();
+    mockAddComment.mockRejectedValue(Object.assign(new Error('new row violates row-level security policy'), { code: '42501' }));
+    const r = await open();
+    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), 'Not mine to say.'); });
+    await act(async () => { fireEvent.press(r.getByLabelText('Submit critique')); });
+    expect(mockToastError).toHaveBeenCalledWith('This member limits who may annotate their critiques.');
+  });
+
+  it('a send that timed out is kept for later, not thrown away as refused', async () => {
+    // The page's own copy of "is this the network?" knew only fetch/network/offline.
+    mockAddComment.mockRejectedValue({ code: '57014', message: 'canceling statement due to statement timeout' });
+    const r = await open();
+    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), 'Filed through a slow line.'); });
+    await act(async () => { fireEvent.press(r.getByLabelText('Submit critique')); });
+    expect(mockEnqueue).toHaveBeenCalledWith({ type: 'add_list_comment', payload: expect.objectContaining({ content: 'Filed through a slow line.' }) });
   });
 
   it('is filed under an id made on the phone, the one it waits under', async () => {

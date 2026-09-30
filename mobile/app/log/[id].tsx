@@ -39,6 +39,7 @@ import { LogService } from '@/src/services/LogService';
 import { colors } from '@/src/theme/theme';
 import { isNetworkError, isForbiddenError } from '@/src/utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
+import { stillQueued } from '@/src/stores/offlineQueueStore';
 import reelToast from '@/src/utils/reelToast';
 import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
 import { timeAgo } from '@/src/utils/timeAgo';
@@ -126,7 +127,7 @@ export default function LogDetailScreen() {
   const queryClient = useQueryClient();
 
   // ── React Query: MMKV-cached log detail (instant revisits) ──
-  const { data: logQueryData, isLoading: logQueryLoading } = useQuery({
+  const { data: logQueryData, isLoading: logQueryLoading, refetch: rereadLog } = useQuery({
     queryKey: ['log', id],
     queryFn: async ({ signal }) => {
       // Taken BEFORE the requests: see tellMarkCounts.
@@ -201,6 +202,7 @@ export default function LogDetailScreen() {
           comments: finalComments as LogComment[],
           commentTotal: total,
           certifyCount,
+          critiquesUnread: false,
         };
       } catch (err: unknown) {
         const cachedData = queryClient.getQueryData(['log', id]);
@@ -261,10 +263,12 @@ export default function LogDetailScreen() {
               role: resolveTier(useAuthStore.getState().user)
             },
             comments: finalComments,
-            // Offline: the queued comments ARE the whole truth we have.
+            // Only the queued ones: what anyone else wrote could not be read.
             commentTotal: finalComments.length,
             // And nobody has certified a log the server has not seen yet.
             certifyCount: null,
+            // Said as such, never "No critiques yet".
+            critiquesUnread: true,
           };
         }
         throw err;
@@ -486,10 +490,13 @@ export default function LogDetailScreen() {
         // queue delivers it (markCounts.settleDelivered).
         queueTap('critique', id, tap);
         TactileEngine.success();
+        // Said, as on a stack: it stayed on the page with nothing to tell it
+        // from a critique the house holds.
+        reelToast('Critique saved offline. Will sync when connected.');
       } else {
         updateComments(list => list.filter(c => c.id !== commentId));
         withdrawTap('critique', id, tap);
-        reelToast.error(isForbiddenError(error) ? 'This member limits who may annotate their critiques.' : 'Failed to file critique.');
+        reelToast.error(isForbiddenError(error) ? 'This member limits who may annotate their critiques.' : 'Your critique could not be filed.');
       }
     } finally {
       setPosting(false);
@@ -507,28 +514,37 @@ export default function LogDetailScreen() {
     // A critique that was on the page is counted in every card's number.
     const tap = targetComment ? beginTap('critique', id, -1) : null;
 
+    const keepForLater = () => {
+      enqueueMutation({
+          type: 'remove_log_comment',
+          // log_id rides along so the queue can say WHICH log's count its
+          // delivery settles (markCounts.settleDelivered).
+          payload: { comment_id: commentId, user_id: user?.id, log_id: id }
+      });
+      flushOfflineQueue();
+      if (tap) queueTap('critique', id, tap);
+      TactileEngine.success();
+      reelToast('Removed offline. Will sync when connected.');
+    };
+
+    // Not sent yet: the house has no row to delete (it would find none, and
+    // the filing would then arrive and stand), so the removal waits in the
+    // queue behind it, as on a stack.
+    if (stillQueued('add_log_comment', commentId)) {
+      keepForLater();
+      return;
+    }
+
     try {
       await LogService.deleteLogComment(commentId);
       if (tap) settleTap('critique', id, tap);
     } catch (error: unknown) {
-      if (error instanceof Error && error.message === 'Already deleted') {
-          if (tap) settleTap('critique', id, tap);
-          return;
-      }
       if (isNetworkError(error)) {
-        enqueueMutation({
-            type: 'remove_log_comment',
-            // log_id rides along so the queue can say WHICH log's count its
-            // delivery settles (markCounts.settleDelivered).
-            payload: { comment_id: commentId, user_id: user?.id, log_id: id }
-        });
-        flushOfflineQueue();
-        if (tap) queueTap('critique', id, tap);
-        TactileEngine.success();
+        keepForLater();
       } else {
         if (tap) withdrawTap('critique', id, tap);
         if (targetComment) updateComments(list => [...list, targetComment].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
-        reelToast.error('Failed to delete critique.');
+        reelToast.error('Your critique could not be removed.');
       }
     }
   }, [queryClient, id, user, updateComments]);
@@ -821,6 +837,8 @@ export default function LogDetailScreen() {
             setSelectedComment({ id: comment.id, user_id: comment.user_id, username: comment.username });
             setCommentActionSheetVisible(true);
           }}
+          unread={!!logQueryData?.critiquesUnread}
+          onReread={() => { void rereadLog(); }}
         />
         </View>
         </View>

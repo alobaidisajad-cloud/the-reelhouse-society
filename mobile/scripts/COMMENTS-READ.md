@@ -101,6 +101,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx | — |  |
 | app/film-reviews/[id].tsx | — |  |
 | app/film/[id].tsx | — |  |
+| app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
 | app/log/__tests__/theRecordReadsTrue.test.tsx | — |  |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |

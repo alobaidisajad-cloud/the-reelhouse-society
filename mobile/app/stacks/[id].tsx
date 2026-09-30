@@ -31,6 +31,7 @@ import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
 import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
+import { isForbiddenError, isNetworkError } from '@/src/utils/networkError';
 import { stillQueued, useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import { CritiqueRow, type Critique } from '@/src/components/critique/CritiqueRow';
 import { TryAgainLine } from '@/src/components/TryAgain';
@@ -54,11 +55,6 @@ const FILM_TITLE_LINE = 14;
 
 /** The hero's fade into the room: how much house it lays down, top to hem. */
 const HERO_VEIL: VeilStops = [[0, 0.4], [0.6, 0.9], [1, 1]];
-
-const isNetworkError = (e: unknown): boolean => {
-    const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
-    return msg.includes('fetch') || msg.includes('network') || msg.includes('offline');
-};
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
@@ -489,6 +485,8 @@ export default function StackDetailScreen() {
     waitedBefore.current = waitingHere;
   }, [waitingHere, queryClient, id]);
 
+  const nothingRead = critiquesUnread && !queryComments;
+
   const handleLongPressCritique = useCallback((c: Critique) => {
     const comment = (queryComments ?? []).find((x) => x.id === c.id);
     if (!comment) return;
@@ -595,7 +593,8 @@ export default function StackDetailScreen() {
         });
         bumpCritiqueCount(-1);
         setCommentText(content);
-        reelToast.error('Your critique could not be filed.');
+        // As on a log: a stack whose maker limits who may annotate it says so.
+        reelToast.error(isForbiddenError(err) ? 'This member limits who may annotate their critiques.' : 'Your critique could not be filed.');
       }
     } finally {
       setSubmittingComment(false);
@@ -964,15 +963,17 @@ export default function StackDetailScreen() {
             </View>
 
             <ScrollView style={s.critiqueBody} contentContainerStyle={s.critiqueBodyContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              {/* Nothing could be read: what is below is only what this phone
+                  wrote and has not sent, if anything. (A later read that fails
+                  keeps what was read, and says nothing.) */}
+              {nothingRead ? (
+                <View style={s.critiquesUnread}>
+                  <Text style={s.commentEmpty}>The critiques could not be reached.</Text>
+                  <TryAgainLine onPress={() => { void rereadCritiques(); }} accessibilityLabel="Read the critiques again" />
+                </View>
+              ) : null}
               {critiques.length === 0 ? (
-                critiquesUnread ? (
-                  <View style={s.critiquesUnread}>
-                    <Text style={s.commentEmpty}>The critiques could not be reached.</Text>
-                    <TryAgainLine onPress={() => { void rereadCritiques(); }} accessibilityLabel="Read the critiques again" />
-                  </View>
-                ) : (
-                  <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
-                )
+                nothingRead ? null : <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
               ) : (
                 critiques.map(c => (
                   <CritiqueRow

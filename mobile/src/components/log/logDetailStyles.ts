@@ -183,6 +183,7 @@ export const s = StyleSheet.create({
   // ── Critiques ──
   commentsSection: { paddingHorizontal: SPINE, marginTop: 16, paddingBottom: 40 },
   emptyComments: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog, textAlign: 'center', marginTop: 20 },
+  critiquesUnread: { alignItems: 'center', gap: 4 },
   listDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.sepiaBorder, marginTop: 20, marginBottom: 2 },
 
   commentItem: { paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },

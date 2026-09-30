@@ -12,6 +12,7 @@ import React, { RefObject, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { CritiqueRow, type Critique } from '@/src/components/critique/CritiqueRow';
+import { TryAgainLine } from '@/src/components/TryAgain';
 
 type LogComment = Critique;
 
@@ -35,6 +36,9 @@ interface LogCommentsProps {
   onDeleteComment: (id: string) => void;
   onPressUser: (username: string) => void;
   onLongPressComment?: (comment: LogComment & { user_id: string }) => void;
+  /** The critiques could not be read: say so, not "No critiques yet". */
+  unread?: boolean;
+  onReread?: () => void;
   onSectionLayout?: (y: number) => void;
 }
 
@@ -51,6 +55,8 @@ export default function LogComments({
   onPressUser,
   onLongPressComment,
   onSectionLayout,
+  unread = false,
+  onReread,
 }: LogCommentsProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE);
 
@@ -99,8 +105,16 @@ export default function LogComments({
           </PressableScale>
         </View>
 
+        {/* Whenever the read failed: what is below is only what this phone
+            wrote and has not sent, if anything. */}
+        {unread ? (
+          <View style={s.critiquesUnread}>
+            <Text style={s.emptyComments}>The critiques could not be reached.</Text>
+            {onReread ? <TryAgainLine onPress={onReread} accessibilityLabel="Read the critiques again" /> : null}
+          </View>
+        ) : null}
         {comments.length === 0 ? (
-          <Text style={s.emptyComments}>No critiques yet. Leave a mark on this record.</Text>
+          unread ? null : <Text style={s.emptyComments}>No critiques yet. Leave a mark on this record.</Text>
         ) : (
           <>
             <View style={s.listDivider} />
