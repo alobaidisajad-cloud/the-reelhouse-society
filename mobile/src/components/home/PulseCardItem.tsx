@@ -25,8 +25,6 @@ import { EDGE_LIT } from '@/src/theme/light';
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
 
-const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
-
 const EditorialBanner = memo(function EditorialBanner({ uri }: { uri: string }) {
   return (
     <View style={s.editorialBanner}>
@@ -172,7 +170,7 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
              {posterUri && (
               <PressableScale style={s.pulsePosterWrap} onPressIn={() => { if(posterUri) Image.prefetch(posterUri).catch(() => {}); }} onPress={() => { if(act.film?.id) nav.push(`/film/${act.film.id}`); }} accessibilityLabel={`${act.film?.title} poster`}>
                 <View style={s.pulsePosterFrame}>
-                 <AnimatedExpoImage {...({ sharedTransitionTag: `poster-${act.id}-${act.film?.id}` } as Record<string, string>)} source={{ uri: posterUri }} style={s.pulsePoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
+                 <Image source={{ uri: posterUri }} style={s.pulsePoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
                  <LinearGradient colors={['transparent', 'rgba(13,11,9,0.4)']} style={StyleSheet.absoluteFillObject} />
                 </View>
               </PressableScale>

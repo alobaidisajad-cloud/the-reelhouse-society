@@ -19,7 +19,6 @@ import { softBreak } from '@/src/utils/softBreak';
 
 const POSTER_W = 140;
 const POSTER_H = POSTER_W * 1.5;
-const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
 
 interface FilmHeroProps {
   film: TMDBMovieDetail;
@@ -88,8 +87,7 @@ export const FilmHero = memo(function FilmHero({
       <View style={styles.posterWrap}>
         <Animated.View style={[styles.posterGlow, posterGlowStyle]} />
         {film.poster_path ? (
-          <AnimatedExpoImage
-            sharedTransitionTag={`poster-${film.id}`}
+          <Image
             source={{ uri: tmdb.poster(film.poster_path, 'w342') }}
             style={styles.poster}
             cachePolicy="memory-disk"

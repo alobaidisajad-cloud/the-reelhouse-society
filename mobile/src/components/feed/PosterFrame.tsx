@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
-import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
@@ -10,10 +9,8 @@ import PressableScale from '@/src/components/PressableScale';
 import { EDGE_LIT } from '@/src/theme/light';
 
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
-const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
 
 interface Props {
-  itemId: string | number;
   filmId: number;
   posterPath: string | null | undefined;
   isPremium: boolean;
@@ -24,7 +21,7 @@ interface Props {
 /**
  * Film poster with physical embossing, premium shadow, and tactile lighting overlay.
  */
-export const PosterFrame = React.memo(function PosterFrame({ itemId, filmId, posterPath, isPremium, isAuteur, onPress }: Props) {
+export const PosterFrame = React.memo(function PosterFrame({ filmId, posterPath, isPremium, isAuteur, onPress }: Props) {
   const posterUri = posterPath ? `${TMDB_IMG_W185}${posterPath}` : null;
 
   return (
@@ -39,7 +36,7 @@ export const PosterFrame = React.memo(function PosterFrame({ itemId, filmId, pos
     <View style={s.wrap}>
       {/* Premium glow shadow layer */}
       {posterUri && (isPremium || isAuteur) && (
-        <AnimatedExpoImage
+        <Image
           {...{
             source: { uri: posterUri },
             style: [s.poster, s.premiumShadow, { tintColor: isAuteur ? colors.bloodReel : colors.tarnish }],
@@ -54,16 +51,13 @@ export const PosterFrame = React.memo(function PosterFrame({ itemId, filmId, pos
 
       {/* Main poster — or the Society's mark when the archive holds no still */}
       {posterUri ? (
-        <AnimatedExpoImage
-          {...{
-            sharedTransitionTag: `poster-${itemId}-${filmId}`,
-            source: { uri: posterUri },
-            style: s.poster,
-            cachePolicy: "memory-disk",
-            recyclingKey: `poster-${filmId}`,
-            placeholder: { blurhash: SEPIA_HASH },
-            transition: 100,
-          } as Record<string, unknown>}
+        <Image
+          source={{ uri: posterUri }}
+          style={s.poster}
+          cachePolicy="memory-disk"
+          recyclingKey={`poster-${filmId}`}
+          placeholder={{ blurhash: SEPIA_HASH }}
+          transition={100}
         />
       ) : (
         <View style={s.posterEmpty}>

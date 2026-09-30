@@ -54,6 +54,11 @@ module.exports = defineConfig([
       }, {
         selector: "CallExpression[callee.property.name=/^toLocale(Date|Time)?String$/]",
         message: "toLocale…String is Intl underneath, and the phone's Hermes has no polyfill. Use src/utils/timeAgo.ts (dates, times) or a house formatter (numbers).",
+      }, {
+        // Three posters carried it, two cast past the types, each wrapped in an
+        // animated Image for nothing.
+        selector: "JSXAttribute[name.name='sharedTransitionTag'], Property[key.name='sharedTransitionTag']",
+        message: 'Reanimated 4.1 has no shared element transitions: sharedTransitionTag reaches the native view and is ignored.',
       }],
     },
   },
