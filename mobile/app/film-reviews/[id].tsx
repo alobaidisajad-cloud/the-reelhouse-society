@@ -140,7 +140,9 @@ export default function FilmReviewsScreen() {
         </PressableScale>
         <View style={s.headerTextWrap}>
           <Text style={s.headerEyebrow}>THE LOG ARCHIVE</Text>
-          <Text style={s.headerTitle} numberOfLines={1}>{title ? decodeURIComponent(title) : 'Archive'}</Text>
+          {/* Already decoded by the router. Decoding it again threw on a title
+              with a percent sign ("100% Wolf") and took the page down. */}
+          <Text style={s.headerTitle} numberOfLines={1}>{title || 'Archive'}</Text>
         </View>
       </View>
 

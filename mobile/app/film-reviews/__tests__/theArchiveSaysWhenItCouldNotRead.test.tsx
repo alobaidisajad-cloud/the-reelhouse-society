@@ -16,8 +16,10 @@ jest.mock('@/src/lib/supabase', () => {
   chain.range = () => Promise.resolve(mockAnswer);
   return { supabase: { from: () => chain } };
 });
+// As the router hands it over: decoded (useLocalSearchParams decodes each param).
+let mockTitle = 'The Film';
 jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({ id: '631', title: 'The%20Film' }),
+  useLocalSearchParams: () => ({ id: '631', title: mockTitle }),
   useRouter: () => ({ back: jest.fn(), canGoBack: () => true, push: jest.fn(), replace: jest.fn() }),
   Stack: { Screen: () => null },
 }));
@@ -71,4 +73,15 @@ it('and draws the reviews it read', async () => {
   mockAnswer = { data: [ROW], error: null };
   const r = await mount();
   expect(r.getAllByText('Sunrise').length).toBeGreaterThan(0);
+});
+
+it('a title with a percent sign is its title — decoding it a second time threw', async () => {
+  mockTitle = '100% Wolf';
+  mockAnswer = { data: [], error: null };
+  try {
+    const r = await mount();
+    expect(r.getByText('100% Wolf')).toBeTruthy();
+  } finally {
+    mockTitle = 'The Film';
+  }
 });
