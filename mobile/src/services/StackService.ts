@@ -204,6 +204,22 @@ export const StackService = {
     return formatted.reverse();
   },
 
+  /**
+   * Take back one's own critique on a stack. The row rules delete only the
+   * member's own; `.select('id')` so a refusal is seen (it answers 200 with no
+   * rows). No row back means it is already gone — removed from another device —
+   * which is what was asked for, so it is not an error.
+   */
+  async deleteStackComment(commentId: string, userId: string) {
+    const { error } = await supabase
+      .from('list_comments')
+      .delete()
+      .eq('id', commentId)
+      .eq('user_id', userId)
+      .select('id');
+    if (error) throw error;
+  },
+
   async addStackComment(payload: unknown) {
     const safePayload = CommentPayloadSchema.parse(payload);
     

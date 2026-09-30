@@ -94,7 +94,7 @@ interface ListComment {
 // No dead ends: avatar + username navigate to the critic's profile;
 // the row keeps long-press for report/block so the two never fight.
 
-const StackCommentRow = React.memo(({ c, currentUserId, onLongPress, onPressProfile }: { c: ListComment; currentUserId?: string; onLongPress?: (comment: ListComment) => void; onPressProfile?: (username: string) => void }) => (
+const StackCommentRow = React.memo(({ c, currentUserId, onLongPress, onPressProfile, onDelete }: { c: ListComment; currentUserId?: string; onLongPress?: (comment: ListComment) => void; onPressProfile?: (username: string) => void; onDelete?: (id: string) => void }) => (
   <PressableScale
     onLongPress={() => {
       if (c.user_id !== currentUserId && onLongPress) {
@@ -125,10 +125,29 @@ const StackCommentRow = React.memo(({ c, currentUserId, onLongPress, onPressProf
           <Text style={s.commentTime} numberOfLines={1}>{timeAgo(c.created_at)}</Text>
         </View>
         <Text style={s.commentBody}>{c.content}</Text>
+        {/* One's own critique, once the house holds it (a queued one has no row
+            yet), can be taken back — the log page's DELETE, the same size and ink. */}
+        {currentUserId === c.user_id && onDelete && !c.id.startsWith('temp_') ? (
+          <PressableScale
+            onPress={() => onDelete(c.id)}
+            style={s.commentDeleteBtn}
+            hitSlop={COMMENT_DELETE_SLOP}
+            haptic="heavy"
+            pressedScale={0.92}
+            accessibilityLabel="Delete your critique"
+          >
+            <Text style={s.commentDelete} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              DELETE
+            </Text>
+          </PressableScale>
+        ) : null}
       </View>
     </View>
   </PressableScale>
 ));
+
+/** The log page's reach for its DELETE (LogComments), so the two feel one. */
+const COMMENT_DELETE_SLOP = { top: 15, bottom: 14, left: 15, right: 15 } as const;
 
  
 const StackDetailFilmCard = React.memo(({
@@ -623,6 +642,38 @@ export default function StackDetailScreen() {
     }
   }, [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount]);
 
+  /**
+   * Take back one's own critique — as on a log's page. A member could write a
+   * critique on a stack and never take it back: the long press offered report
+   * and block for other people's, and nothing for their own.
+   */
+  const handleDeleteComment = useCallback(async (commentId: string) => {
+    if (!user) return;
+    TactileEngine.destroy();
+    const target = queryClient.getQueryData<ListComment[]>(['stackComments', id])?.find((c) => c.id === commentId);
+    queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) =>
+      (old ?? []).filter((c) => c.id !== commentId));
+    bumpCritiqueCount(-1);
+    try {
+      await StackService.deleteStackComment(commentId, user.id);
+    } catch (err: unknown) {
+      if (isNetworkError(err)) {
+        enqueueMutation({ type: 'remove_list_comment', payload: { comment_id: commentId, user_id: user.id } });
+        flushOfflineQueue();
+        reelToast('Removed offline. Will sync when connected.');
+        return;
+      }
+      captureError(err, { scope: 'stacks.deleteComment', stackId: id });
+      // Refused: it is back where it was, and said so.
+      if (target) {
+        queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) =>
+          [...(old ?? []), target].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+      }
+      bumpCritiqueCount(+1);
+      reelToast.error('Your critique could not be removed.');
+    }
+  }, [user, id, queryClient, bumpCritiqueCount]);
+
   const handleOpenShareLounge = useCallback(async () => {
     TactileEngine.selection();
     if (!user) {
@@ -949,7 +1000,7 @@ export default function StackDetailScreen() {
                 <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
               ) : (
                 (queryComments || []).map(c => (
-                  <StackCommentRow key={c.id} c={c} currentUserId={user?.id} onPressProfile={handlePressProfile} onLongPress={(comment) => {
+                  <StackCommentRow key={c.id} c={c} currentUserId={user?.id} onPressProfile={handlePressProfile} onDelete={handleDeleteComment} onLongPress={(comment) => {
                     setSelectedComment(comment);
                     setCommentActionSheetVisible(true);
                   }} />
@@ -1128,6 +1179,9 @@ const s = StyleSheet.create({
   // fog, 5.9:1 (ash is a BORDER colour: 1.27:1 as text).
   commentTime: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.3, color: colors.fog, includeFontPadding: false },
   commentBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, lineHeight: 18, marginTop: 2 },
+  // As the log page's (logDetailStyles commDelete / commDeleteBtn).
+  commentDeleteBtn: { marginTop: 8, alignSelf: 'flex-end' },
+  commentDelete: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.danger, includeFontPadding: false },
 
   trackRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 20 },
   trackLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },

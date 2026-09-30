@@ -35,6 +35,9 @@ jest.mock('@react-navigation/native', () => ({ ...jest.requireActual('@react-nav
 const mockSetQueryData = jest.fn();
 /** What each query says after a pull: `error` when it reached nothing. */
 let mockQueryState: Record<string, { status: string } | undefined> = {};
+/** The critiques the page holds. */
+let mockComments: Record<string, unknown>[] = [];
+const mockDeleteComment = jest.fn();
 /** The list's pull, as the screen hands it over. */
 let mockRefresh: { props: { onRefresh: () => Promise<void> } } | null = null;
 const mockToastError = jest.fn();
@@ -47,13 +50,14 @@ let mockStackOpts: { queryFn: () => Promise<{ list: Record<string, unknown> }> }
 jest.mock('@tanstack/react-query', () => ({
   QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); },
   useQueryClient: () => ({
-    setQueryData: mockSetQueryData, getQueryData: jest.fn(), removeQueries: jest.fn(),
+    setQueryData: mockSetQueryData, removeQueries: jest.fn(),
+    getQueryData: jest.fn((key: unknown[]) => (key[0] === 'stackComments' ? mockComments : undefined)),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),
     getQueryState: (key: unknown[]) => mockQueryState[String(key[0])],
   }),
   useQuery: (opts: { queryKey: unknown[] }) => {
     const key = String(opts.queryKey[0]);
-    if (key === 'stackComments') return { data: [] };
+    if (key === 'stackComments') return { data: mockComments };
     if (key === 'stack') {
       mockStackOpts = opts as never;
       return { data: mockStackData, isLoading: false, isError: mockStackFailed, refetch: mockRereadStack };
@@ -80,6 +84,7 @@ jest.mock('@/src/services/StackService', () => ({
   StackService: {
     getStackFullPayload: jest.fn(), getStackComments: jest.fn(),
     addStackComment: (...a: unknown[]) => mockAddComment(...a),
+    deleteStackComment: (...a: unknown[]) => mockDeleteComment(...a),
   },
 }));
 const mockEnqueue = jest.fn();
@@ -835,5 +840,45 @@ describe('a pull that reached nothing', () => {
     mockQueryState = { stack: { status: 'success' }, stackComments: { status: 'success' } };
     await act(async () => { await mockRefresh!.props.onRefresh(); });
     expect(mockToastError).not.toHaveBeenCalled();
+  });
+});
+
+describe('taking back one’s own critique on a stack', () => {
+  const MINE = { id: 'c-mine', list_id: STACK_ID, user_id: 'u1', username: 'morpho', avatar_url: null, content: 'Mine.', created_at: '2026-01-01T10:00:00Z' };
+  const THEIRS = { id: 'c-theirs', list_id: STACK_ID, user_id: 'u9', username: 'vesper', avatar_url: null, content: 'Theirs.', created_at: '2026-01-02T10:00:00Z' };
+  const open = async () => {
+    const r = mount({ critiqueCount: 2 });
+    await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
+    await act(async () => { fireEvent.press(r.getByLabelText(/critiques?/i)); });
+    await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+    return r;
+  };
+  /** The critiques after every write the page made to them, in order, from what it held. */
+  const lastCommentsWrite = () => mockSetQueryData.mock.calls
+    .filter((c) => c[0][0] === 'stackComments')
+    .reduce((held, [, w]) => (typeof w === 'function' ? w(held) : w), mockComments as unknown) as { id: string }[];
+
+  beforeEach(() => { mockComments = [MINE, THEIRS]; mockDeleteComment.mockReset(); mockToastError.mockClear(); mockSetQueryData.mockClear(); });
+  afterEach(() => { mockComments = []; });
+
+  it('is offered on the member’s own critique alone — it was offered on none', async () => {
+    const r = await open();
+    expect(r.getAllByLabelText('Delete your critique')).toHaveLength(1);
+  });
+
+  it('takes it off the page and asks the house', async () => {
+    mockDeleteComment.mockResolvedValue(undefined);
+    const r = await open();
+    await act(async () => { fireEvent.press(r.getByLabelText('Delete your critique')); });
+    expect(mockDeleteComment).toHaveBeenCalledWith('c-mine', 'u1');
+    expect(lastCommentsWrite().map((c) => c.id)).toEqual(['c-theirs']);
+  });
+
+  it('a refused removal puts it back, and says so', async () => {
+    mockDeleteComment.mockRejectedValue({ code: '42501', message: 'refused' });
+    const r = await open();
+    await act(async () => { fireEvent.press(r.getByLabelText('Delete your critique')); });
+    expect(lastCommentsWrite().map((c) => c.id)).toEqual(['c-mine', 'c-theirs']);
+    expect(mockToastError).toHaveBeenCalledWith('Your critique could not be removed.');
   });
 });

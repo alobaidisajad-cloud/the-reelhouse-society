@@ -120,6 +120,8 @@ const CommentRow = React.memo(({
           hitSlop={HITSLOP_DELETE}
           haptic="heavy"
           pressedScale={0.92}
+          // "DELETE" alone, among many critiques, does not say whose or what.
+          accessibilityLabel="Delete your critique"
         >
           <Text style={s.commDelete} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
             DELETE
