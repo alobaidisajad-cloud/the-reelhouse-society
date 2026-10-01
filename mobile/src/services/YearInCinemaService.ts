@@ -2,8 +2,8 @@
  * YearInCinemaService — the data behind the annual retrospective.
  *
  * The screen must show REAL numbers, so it can't read the paginated
- * `useLogStore.logs` (capped at 50). This fetches the complete set of the
- * member's logs for the year directly, reusing the app's own tested query
+ * `useLogStore.logs`. This fetches the complete set of the member's logs for
+ * the year directly, reusing the app's own tested query
  * columns and row mapper, and computes the stats with a pure, unit-tested
  * function.
  */
@@ -114,23 +114,34 @@ export function computeYearStats(
   return { year, total, ratedCount, avgRating, perMonth, topMonths, topFilms };
 }
 
+/** Rows a page; a year past it is read a page at a time, to the last. */
+export const YEAR_PAGE = 1000;
+
 /**
- * Fetch the complete set of a member's logs for one year. `watched_date` is a
- * DATE column, so a plain date range is exact. Rows map through the app's
- * shared `mapLogRow`, so the shape can never drift from the rest of the app.
- * Throws on error so the screen can show an honest retry state (never wrong
- * numbers).
+ * Fetch the complete set of a member's logs for one year — every page, since an
+ * import can file thousands into one year. `watched_date` is a DATE column, so
+ * a plain date range is exact. Rows map through the app's shared `mapLogRow`,
+ * so the shape can never drift from the rest of the app. Throws on error so the
+ * screen can show an honest retry state (never wrong numbers).
  */
 export async function fetchYearLogs(userId: string, year: number): Promise<YearLogInput[]> {
-  const { data, error } = await supabase
-    .from('logs')
-    .select(LOG_SELECT_COLUMNS)
-    .eq('user_id', userId)
-    .gte('watched_date', `${year}-01-01`)
-    .lte('watched_date', `${year}-12-31`)
-    .order('watched_date', { ascending: false })
-    .limit(1000);
-
-  if (error) throw error;
-  return (data ?? []).map(mapLogRow) as unknown as YearLogInput[];
+  const rows: Record<string, unknown>[] = [];
+  const seen = new Set<unknown>();
+  for (let from = 0; ; from += YEAR_PAGE) {
+    const { data, error } = await supabase
+      .from('logs')
+      .select(LOG_SELECT_COLUMNS)
+      .eq('user_id', userId)
+      .gte('watched_date', `${year}-01-01`)
+      .lte('watched_date', `${year}-12-31`)
+      .order('watched_date', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, from + YEAR_PAGE - 1);
+    if (error) throw error;
+    for (const r of (data ?? []) as Record<string, unknown>[]) {
+      if (!seen.has(r.id)) { seen.add(r.id); rows.push(r); }
+    }
+    if (!data || data.length < YEAR_PAGE) break;
+  }
+  return rows.map(mapLogRow as (r: unknown) => unknown) as unknown as YearLogInput[];
 }

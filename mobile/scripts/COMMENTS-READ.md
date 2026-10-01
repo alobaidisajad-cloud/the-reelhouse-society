@@ -79,7 +79,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(admin)/tribunal.tsx | — |  |
 | app/(modals)/__tests__/list-modal.curate.test.tsx | — |  |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
-| app/(modals)/cover-picker.tsx | — |  |
+| app/(modals)/cover-picker.tsx | 2026-10-01 |  |
 | app/(modals)/list-modal.tsx | 2026-09-29 | histories -> rules; orphan style comments removed; header named the web port and wrong labels |
 | app/(modals)/log-modal.tsx | 2026-10-01 | Arrive; the scroll needs no Animated |
 | app/(modals)/login.tsx | 2026-10-01 | the terms open; every comment short and true |
@@ -124,7 +124,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | 2026-09-29 | 24 fixed; FOUND: critique count dropped by the screen's hand-copied mapping (never shown on a phone); now the payload whole, tested, mutation-killed; a FALSE 'length threshold' fold note |
 | app/user/[username].tsx | 2026-09-29 | 33 fixed + ~15 unflagged history notes; commented-out CinematicMap import removed; '72 seconds' was 36 |
-| app/year-in-cinema.tsx | — |  |
+| app/year-in-cinema.tsx | 2026-10-01 | nav; a single reel says so far, not the year is young |
 | ARCHITECTURE.md | — |  |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | — |  |
@@ -736,6 +736,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/aMissingLogIsAnAnswer.test.tsx | 2026-10-01 | written: a missing log is null; a nameless author is never unknown |
 | src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts | 2026-10-01 | written with 20261001_03 |
 | src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | — |  |
+| src/services/__tests__/aYearIsReadToTheLast.test.ts | 2026-10-01 | written: a year is read to the last row |
 | src/services/__tests__/certifyCountAuthority.test.ts | — |  |
 | src/services/__tests__/everyNameAClientCallsExists.test.ts | — |  |
 | src/services/__tests__/FeedService.test.ts | 2026-10-01 | cursor note made true |
@@ -769,7 +770,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/ProfileWriteService.ts | — |  |
 | src/services/StackService.ts | 2026-09-30 | the delete's comment said a refusal "is seen" and never read it; made true |
 | src/services/VaultService.ts | — |  |
-| src/services/YearInCinemaService.ts | — |  |
+| src/services/YearInCinemaService.ts | 2026-10-01 | every page of a year, not the first 1,000 |
 | src/services/__tests__/aCountNotReadIsNotZero.test.ts | 2026-10-01 | written with the counts fix |
 | src/stores/__tests__/aFailedLoadKeepsWhoYouFollow.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/__tests__/aFailedReadIsSaid.test.ts | 2026-10-01 | written: a failed read is answered as failed |

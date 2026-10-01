@@ -2,7 +2,6 @@ import { FlashList } from '@shopify/flash-list';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
 import { Film, X } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -123,7 +122,7 @@ export default function YearInCinemaScreen() {
               <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit>Films Logged</Text>
               <Text style={s.sub}>
                 {stats.total === 1
-                  ? 'A single reel — the year is young.'
+                  ? 'A single reel so far this year.'
                   : `That is roughly ${stats.perMonth.toFixed(1)} entries a month.`}
               </Text>
             </Animated.View>
@@ -234,7 +233,7 @@ export default function YearInCinemaScreen() {
           <Text style={s.blankGlyph}>▦</Text>
           <Text style={s.stateTitle}>A Blank Reel</Text>
           <Text style={s.stateSub}>You haven&apos;t logged a film in {currentYear} yet. Every reel starts with a single frame.</Text>
-          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/log-modal')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" accessibilityRole="button" accessibilityLabel="Log your first film">
+          <PressableScale style={s.ctaBtn} onPress={() => nav.push('/log-modal')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" accessibilityRole="button" accessibilityLabel="Log your first film">
             <Text style={s.ctaText}>LOG YOUR FIRST FILM</Text>
           </PressableScale>
         </View>
