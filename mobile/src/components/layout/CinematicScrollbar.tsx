@@ -15,6 +15,21 @@ interface CinematicScrollbarProps {
   bottomInset?: number;
 }
 
+/**
+ * The thumb's height, in one place for the layer that sizes it and the one that moves it:
+ * at least 36pt to grab, and never taller than its track, or it would travel backwards.
+ */
+export function thumbHeight(track: number, content: number): number {
+  'worklet';
+  return Math.min(Math.max((track / content) * track, 36), track);
+}
+
+/** How far the thumb travels down its track: never negative, so never backwards. */
+export function thumbTravel(track: number, content: number): number {
+  'worklet';
+  return Math.max(track - thumbHeight(track, content), 0);
+}
+
 export const CinematicScrollbar: React.FC<CinematicScrollbarProps> = ({
   scrollY,
   scrollHeight,
@@ -57,15 +72,7 @@ export const CinematicScrollbar: React.FC<CinematicScrollbarProps> = ({
 
     if (trackHeight <= 0) return { opacity: 0 };
 
-    const heightRatio = trackHeight / scrollHeight.value;
-    // ── THE THUMB CANNOT BE TALLER THAN ITS TRACK ─────────────────────────
-    // The 36pt floor keeps a thumb grabbable on a very long list. Without a
-    // ceiling to match it, a SHORT track — a small scrolling area with large
-    // insets, where `trackHeight` lands between 1 and 35 — produced a thumb
-    // taller than the track it runs in, and `trackHeight - baseHeight` went
-    // negative in the motion layer below, so the thumb drifted UPWARD out of
-    // its own track as the member scrolled down.
-    const baseHeight = Math.min(Math.max(heightRatio * trackHeight, 36), trackHeight);
+    const baseHeight = thumbHeight(trackHeight, scrollHeight.value);
 
     return {
       top: viewY?.value ?? 0,
@@ -88,16 +95,10 @@ export const CinematicScrollbar: React.FC<CinematicScrollbarProps> = ({
     if (trackHeight <= 0) return { opacity: 0 };
 
     const heightRatio = trackHeight / scrollHeight.value;
-    // The SAME clamp as the geometry layer above, and it has to stay the same:
-    // one layer sets the thumb's height and the other positions it, so a
-    // difference between these two expressions is a thumb drawn at one size and
-    // moved as though it were another.
-    const baseHeight = Math.min(Math.max(heightRatio * trackHeight, 36), trackHeight);
+    const baseHeight = thumbHeight(trackHeight, scrollHeight.value);
 
     const maxScroll = scrollHeight.value - viewHeight.value;
-    // Never negative. A negative travel sends the thumb backwards up the track
-    // as the member scrolls forwards.
-    const maxThumbScroll = Math.max(trackHeight - baseHeight, 0);
+    const maxThumbScroll = thumbTravel(trackHeight, scrollHeight.value);
 
     let progress = maxScroll > 0 ? scrollY.value / maxScroll : 0;
     let translateY = trackTop + (progress * maxThumbScroll);
