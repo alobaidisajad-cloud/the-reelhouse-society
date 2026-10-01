@@ -1,0 +1,493 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=bla",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "id": 5678814,
+    "name": "Agung Bla",
+    "original_name": "Agung Bla",
+    "media_type": "person",
+    "popularity": 0.5385,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/ix6cbu5pHhba97mzYlQHjf81ofy.jpg",
+      "id": 1497348,
+      "title": "Alas Roban",
+      "original_title": "Alas Roban",
+      "overview": "After a terrifying night forces them on a perilous journey through the eerie forests of Alas Roban, a mother and her young daughter must face relentless, otherworldly horrors to uncover the ancient secret haunting the land.",
+      "poster_path": "/84Az3SHKRJDg971KQ0j9nZWYTcf.jpg",
+      "media_type": "movie",
+      "original_language": "id",
+      "genre_ids": [
+       18,
+       27,
+       9648
+      ],
+      "popularity": 3.4858,
+      "release_date": "2026-01-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 4.7,
+      "vote_count": 12
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/AvYsEYnj8h0495UhBYEXqK7hkFo.jpg",
+      "id": 1287571,
+      "title": "Agak Laen: Menyala Pantiku!",
+      "original_title": "Agak Laen: Menyala Pantiku!",
+      "overview": "After repeatedly failing their missions, Detectives Bene, Boris, Jegel, and Oki are given one last chance: to go undercover in a nursing home in search of a fugitive wanted for the murder of the mayor’s child.",
+      "poster_path": "/fPJ9OjLgAQoLZrPeL6ZfQwNkfPK.jpg",
+      "media_type": "movie",
+      "original_language": "id",
+      "genre_ids": [
+       35,
+       80,
+       18,
+       9648
+      ],
+      "popularity": 3.6036,
+      "release_date": "2025-11-27",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8.3,
+      "vote_count": 16
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/5ssOFw6oBeFsPzgoHCQQBhQi0fY.jpg",
+      "id": 1450345,
+      "title": "Andai Ibu Tidak Menikah Dengan Ayah",
+      "original_title": "Andai Ibu Tidak Menikah Dengan Ayah",
+      "overview": "When her medical school scholarship was at risk of being revoked, Alin, who had been living away from home, was forced to return. After coming back, Alin’s perspective began to shift. She realized for the first time that her mother had been living in hardship, while her father was rarely around. Her younger sibling and older sibling also had to bear heavy burdens for the family, even sacrificing themselves and their dreams. While at home, Alin accidentally discovered her mother’s diary. Its pages were filled with memories from her mother’s youth, including her first love. This made Alin wonder: if her mother hadn’t married her father, would she have lived a happier life?",
+      "poster_path": "/4xK5I0SlVS1z7U4fdCbkcEjxDFA.jpg",
+      "media_type": "movie",
+      "original_language": "id",
+      "genre_ids": [
+       18,
+       10751
+      ],
+      "popularity": 1.2587,
+      "release_date": "2025-09-04",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.8,
+      "vote_count": 5
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/d7d5CyGZhjWLRQcHI3XFAQBHFTP.jpg",
+    "id": 63813,
+    "name": "Blue Eyes",
+    "original_name": "Blå Ögon",
+    "overview": "High adrenaline Swedish political thriller from the creative talent behind Humans – An extreme right-wing party is heading towards its best election result when the chief of staff at the Justice Department disappears without a trace. Racism, immigration and nationalism are explored in this series praised by New York Times.",
+    "poster_path": "/xEAmFHk761J0XeUE1EX9YiWaQOo.jpg",
+    "media_type": "tv",
+    "original_language": "sv",
+    "genre_ids": [
+     18,
+     9648,
+     10768
+    ],
+    "popularity": 4.9896,
+    "first_air_date": "2014-11-30",
+    "softcore": false,
+    "vote_average": 7.6,
+    "vote_count": 15,
+    "origin_country": [
+     "SE"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4248114,
+    "name": "bla bla",
+    "original_name": "Miguel Oyens",
+    "media_type": "person",
+    "popularity": 0.2947,
+    "gender": 0,
+    "known_for_department": null,
+    "profile_path": null,
+    "known_for": []
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/7cTu8VcG0bqQdLU2UKPXzOiGqXd.jpg",
+    "id": 763105,
+    "title": "Bla Bla Baby",
+    "original_title": "Bla Bla Baby",
+    "overview": "After a freak accident, a nursery school janitor finds out he can now understand babyspeak.",
+    "poster_path": "/erAD4CyLpDGOjfFAjaSLCupfvBf.jpg",
+    "media_type": "movie",
+    "original_language": "it",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.8826,
+    "release_date": "2022-04-07",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.5,
+    "vote_count": 48
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mKKJ1TdNJeGp46zWepnJSVNOovr.jpg",
+    "id": 116944,
+    "name": "Thin Blue Line",
+    "original_name": "Tunna blå linjen",
+    "overview": "Swedish drama series about police officers in Malmö, their tiring work and the difficulties of keeping their personal and professional life separate.",
+    "poster_path": "/quDsL13MvDoGI9aX2xddQ3wwFTW.jpg",
+    "media_type": "tv",
+    "original_language": "sv",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "popularity": 4.0077,
+    "first_air_date": "2021-01-17",
+    "softcore": false,
+    "vote_average": 7.2,
+    "vote_count": 39,
+    "origin_country": [
+     "SE"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/svJeKxRgXWi8SlO5dIK5xebOwEf.jpg",
+    "id": 412968,
+    "title": "Bla Bla Bla",
+    "original_title": "Bla Bla Bla",
+    "overview": "Sharing car is like a box of chocolates, you never know what you're gonna get.",
+    "poster_path": "/2RxP9DUFi9mvIEaxGp7M8WxcYlH.jpg",
+    "media_type": "movie",
+    "original_language": "es",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.0073,
+    "release_date": "2015-03-26",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.7,
+    "vote_count": 8
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1590950,
+    "title": "Bla Bla",
+    "original_title": "Бла бла",
+    "overview": "A girl spaces out during a conversation with her coworker, leading to an overblown misunderstanding.",
+    "poster_path": "/zF8MXO4Jl0Q3itCVjMHRNwC2qgT.jpg",
+    "media_type": "movie",
+    "original_language": "mk",
+    "genre_ids": [
+     16
+    ],
+    "popularity": 0.5829,
+    "release_date": "2025-01-21",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "id": 2812340,
+    "name": "Bla G.",
+    "original_name": "Bla G.",
+    "media_type": "person",
+    "popularity": 0.25,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/tQPRBFBCHF8AuwLZtymVYRXrk5E.jpg",
+      "id": 752504,
+      "title": "Liberty City The Movie",
+      "original_title": "Liberty City The Movie",
+      "overview": "The story of a cunning crime boss with a low key approach to business along with his quick tempered partner. As children, the two became lifelong friends and together they build a lucrative criminal empire. A tragic childhood event causes one to lose his older half brother to mental illness in the form of dissociative identity disorder.",
+      "poster_path": "/pvPJ7g5rUdjQvPxJThCILwd0X1l.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       28,
+       18
+      ],
+      "popularity": 0.4,
+      "release_date": "2019-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1641681,
+    "title": "Bla Bla",
+    "original_title": "Bla Bla",
+    "overview": "An interactive film for computers.",
+    "poster_path": "/z4iBSwBrbOvNTyUmvqeodqE2ff.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     16
+    ],
+    "popularity": 1.1091,
+    "release_date": "2011-06-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/iuzcaRFwSO4BYSDvEwkJ3CzYVyg.jpg",
+    "id": 1195991,
+    "title": "Love, Bla Bla Bla",
+    "original_title": "Aşk Falan Filan",
+    "overview": "Adam and Eve are a couple in their early thirties. With the relationship fatigue that started in the third year of their union, the absence of old feelings and excitement especially bothers Eve. Eve's feisty and aggressive attitude pushes Adam away from her. In every argument they have, Eve accuses Adam of no longer loving himself, thinking about his former lover Eden, and even still being attracted to her. Adam and Eve, poisoned by a toxic relationship, break up after a night of arguing. The film focuses on the life of the separated but inseparable duo with a fantastic approach. Adam Decries God and heads to the world to find his Eve with a surreal journey that no one will believe, a downright fairy tale or even a lie, if he tells it, Eve cannot find her way out between the dark streets of her neighborhood and her house, where she feels the pain of separation in the deepest way, every inch of which is filled with the memory of love, falters, gets trapped.",
+    "poster_path": null,
+    "media_type": "movie",
+    "original_language": "tr",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 0.9638,
+    "release_date": "2023-09-23",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/q80aAryTpvlPzK1N5l8ITdRJAn2.jpg",
+    "id": 283035,
+    "name": "Bla, bla, bla",
+    "original_name": "Bla, bla, bla",
+    "overview": "",
+    "poster_path": "/mkx988blc1TvGEyVDk8xMSv3JOj.jpg",
+    "media_type": "tv",
+    "original_language": "no",
+    "genre_ids": [
+     10767
+    ],
+    "popularity": 1.0565,
+    "first_air_date": "2000-01-20",
+    "softcore": false,
+    "vote_average": 9,
+    "vote_count": 1,
+    "origin_country": [
+     "NO"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1478719,
+    "title": "bla bla",
+    "original_title": "bla bla",
+    "overview": "",
+    "poster_path": null,
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 0.4181,
+    "release_date": "",
+    "softcore": false,
+    "video": true,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "id": 5943667,
+    "name": "Maria Bla Bla",
+    "original_name": "Maria Bla Bla",
+    "media_type": "person",
+    "popularity": 0.5234,
+    "gender": 0,
+    "known_for_department": "Production",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/4g26EC4M6a4dWjRpSBghnjyZjb6.jpg",
+      "id": 1617996,
+      "title": "Define Verano",
+      "original_title": "Define Verano",
+      "overview": "",
+      "poster_path": "/qgMnHavIxZIBPlGxX1cVxnwy4m3.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.9338,
+      "release_date": "2026-07-02",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/cMNEjmVld0BOAYC932St4AhR0xR.jpg",
+    "id": 1746285,
+    "title": "Bla bla cry cry",
+    "original_title": "Ploramiques",
+    "overview": "A couple expecting their first child follows an endless stream of virtual advice, rituals and recommendations, until all that noise reaches further than they ever imagined.",
+    "poster_path": "/hanbsozSiVSi0LDQ7CNQvCfeo8t.jpg",
+    "media_type": "movie",
+    "original_language": "ca",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.9858,
+    "release_date": "",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/btcsS7kuF8z4F9KrNxKKLYFjWll.jpg",
+    "id": 221584,
+    "name": "Bla Bla Bla",
+    "original_name": "Bla Bla Bla",
+    "overview": "",
+    "poster_path": "/loGXekHJnGVndG58xdCEdC7jUZ5.jpg",
+    "media_type": "tv",
+    "original_language": "it",
+    "genre_ids": [],
+    "popularity": 0.4129,
+    "first_air_date": "2005-04-12",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "IT"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 57220,
+    "name": "Bla, bla, bla",
+    "original_name": "Bla, bla, bla",
+    "overview": "",
+    "poster_path": null,
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 0.4077,
+    "first_air_date": "",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": []
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/kVyN6OW1Ka7hLDcC6Yc0SqCwVCo.jpg",
+    "id": 15149,
+    "title": "Take the Trash",
+    "original_title": "Blå mænd",
+    "overview": "Jesper Jensen is a successful IT salesman who stops at nothing, even if it means backstabbing his best friend. Being number one in the company and having a beautiful wife and a lovely home, Jesper seems to lead a perfect life, but one day his arrogance and self confidence hits him in the face like a boomerang and he loses everything overnight. Jesper is sentenced to do community service at a recycling center with the odd and funny characters Dion, Theodor, and Lotte. At first he looks down on these people and doesn't want to be associated with them. When he begins to loosen up, however, he discovers that he can learn a lot from their straight forward and honest approach to life.",
+    "poster_path": "/fWStUAZoG3g4gAJIgxJCgUJgm9j.jpg",
+    "media_type": "movie",
+    "original_language": "da",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.6824,
+    "release_date": "2008-08-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.6,
+    "vote_count": 46
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 533353,
+    "title": "The King of the Bla Bla Bla",
+    "original_title": "Le Roi du bla bla bla",
+    "overview": "Prosper Bourrache, who has the gift of the gab, is natural born street vendor. Due to a mistake he gets involved in the burglary of a shady banker's house. In fact, the whole operation is a setup. But Prosper will finally get away with it, have the crooked financier arrested and pinch his girlfriend away from him.",
+    "poster_path": "/1OOHjfK0Ity5bCDGGfpIyJz95Nd.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.5292,
+    "release_date": "1950-11-08",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.3,
+    "vote_count": 3
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/11OCgYisAijap0I9Vur5Ik80F5N.jpg",
+    "id": 1203748,
+    "title": "Blue",
+    "original_title": "Blå",
+    "overview": "Two young women in a dysfunctional relationship feel how they are slowly drifting apart, all while they’re individually wrestling with questions regarding love; what does it take to love somebody, and how does one become loved?",
+    "poster_path": "/qeoOGJyBuCYtYoOcVNjJgerdQt6.jpg",
+    "media_type": "movie",
+    "original_language": "sv",
+    "genre_ids": [
+     10749,
+     18
+    ],
+    "popularity": 1.3028,
+    "release_date": "2023-11-18",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 978688,
+    "title": "Not Blue",
+    "original_title": "Inte blå",
+    "overview": "Where do you draw the line in terms of how much you can look after someone else? Our characters are mutually interdependent, living in a close relationship that is hard to define on the basis of stereotypical assumptions.",
+    "poster_path": "/4CCBy7YtbR9jrTOnii7ow9wU4Xu.jpg",
+    "media_type": "movie",
+    "original_language": "sv",
+    "genre_ids": [],
+    "popularity": 1.4327,
+    "release_date": "2011-01-28",
+    "softcore": false,
+    "video": false,
+    "vote_average": 2.7,
+    "vote_count": 3
+   }
+  ],
+  "total_pages": 500,
+  "total_results": 10000
+ }
+}

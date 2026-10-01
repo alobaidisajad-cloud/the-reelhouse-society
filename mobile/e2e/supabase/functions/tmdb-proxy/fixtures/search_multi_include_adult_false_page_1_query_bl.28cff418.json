@@ -1,0 +1,540 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=bl",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/oPG8tTNgkam27WpOfkp7AhTCaaw.jpg",
+    "id": 39555,
+    "name": "B.L. Stryker",
+    "original_name": "B.L. Stryker",
+    "overview": "B.L. Stryker is an American detective drama that aired on ABC from February 13, 1989 to May 5, 1990 as part of the ABC Mystery Movie along with Gideon Oliver, Columbo and Kojak. The series was executive produced by Tom Selleck.",
+    "poster_path": "/vvnhccWAJ86l7zOtErWXaXEUBT1.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     9648
+    ],
+    "popularity": 9.274,
+    "first_air_date": "1989-02-13",
+    "softcore": false,
+    "vote_average": 6.1,
+    "vote_count": 9,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/embstDsJJAsbXjPHBBGXyp1IFsE.jpg",
+    "id": 121926,
+    "name": "A Man Who Defies the World of BL",
+    "original_name": "絶対BLになる世界vs絶対BLになりたくない男",
+    "overview": "Mob tries to avoid being the main character in a BL world, but as love finds him, he must choose between staying in the background or embracing romance.",
+    "poster_path": "/c2QZJtMhZJSJ9URjM9FlSw8myRn.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     35,
+     18
+    ],
+    "popularity": 12.0657,
+    "first_air_date": "2021-03-27",
+    "softcore": false,
+    "vote_average": 6.7,
+    "vote_count": 45,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/dmHkvlpfoqbmwsNbtZlVNlJA6Ds.jpg",
+    "id": 963131,
+    "title": "BL Metamorphosis",
+    "original_title": "メタモルフォーゼの縁側",
+    "overview": "An introverted bookstore employee and a widow living in isolation develop a cross-generational friendship through their shared love of BL manga.",
+    "poster_path": "/1ER8jxx4CBzbXzEfobZpoOH8kcU.jpg",
+    "media_type": "movie",
+    "original_language": "ja",
+    "genre_ids": [
+     18,
+     35
+    ],
+    "popularity": 1.7492,
+    "release_date": "2022-06-17",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.8,
+    "vote_count": 14
+   },
+   {
+    "adult": false,
+    "id": 3266159,
+    "name": "BL Prasad",
+    "original_name": "BL Prasad",
+    "media_type": "person",
+    "popularity": 0.2893,
+    "gender": 2,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 883394,
+      "title": "Idhi Naadhi",
+      "original_title": "Idhi Naadhi",
+      "overview": "Horror, Thriller Directed by BL Prasad",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "te",
+      "genre_ids": [
+       27,
+       53
+      ],
+      "popularity": 0.5936,
+      "release_date": "",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/7T4DuYy089ifGghfHHv3455te1A.jpg",
+    "id": 736857,
+    "title": "BL: Broken Fantasy",
+    "original_title": "BL: Broken Fantasy",
+    "overview": "A documentary about the behind the scenes of BL or commonly known as \"Yaoi series.\" Where does BL series come from? Why Yaoi fangirls are physically and financially dedicating themselves to BL?",
+    "poster_path": "/rozfpLThZvl7BzTswBim5kDO8f1.jpg",
+    "media_type": "movie",
+    "original_language": "th",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.2264,
+    "release_date": "2020-08-28",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.8,
+    "vote_count": 3
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/A8WFdzXJTEUShlLKYqtytIUvidm.jpg",
+    "id": 333457,
+    "name": "Help! Trapped in a CRAZY BL Novel",
+    "original_name": "미친 BL소설에서 살아남기",
+    "overview": "Lee Dae-won, a poor guy surviving day to day on convenience store rice balls and instant ramen. One day, he transmigrates into a BL novel as a sickly second-generation chaebol. Determined to protect his new life of ultimate luxury, he tries his best, but ends up falling in genuine love with the original male leads—leaving him torn between escaping the novel and staying!",
+    "poster_path": "/8lPZLc5tW94bHAaBv1Sovq7C97S.jpg",
+    "media_type": "tv",
+    "original_language": "ko",
+    "genre_ids": [
+     18,
+     10765
+    ],
+    "popularity": 6.3886,
+    "first_air_date": "2026-09-10",
+    "softcore": false,
+    "vote_average": 7,
+    "vote_count": 2,
+    "origin_country": [
+     "KR"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3542594,
+    "name": "BL Khemka",
+    "original_name": "BL Khemka",
+    "media_type": "person",
+    "popularity": 0.2563,
+    "gender": 0,
+    "known_for_department": "Production",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 660107,
+      "title": "Nirdharita Shilpir Anupasthitite",
+      "original_title": "নির্ধারিত শিল্পীর অনুপস্থিতি",
+      "overview": "Nirdharita Shilpir Anupasthitite revolves around a father and daughter, who get separated and unite after a long time. However, things take a drastic turn when the daughter has problem adjusting with her father's rich background.",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "bn",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.5961,
+      "release_date": "1982-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2078064,
+    "name": "BL Panganiban",
+    "original_name": "BL Panganiban",
+    "media_type": "person",
+    "popularity": 0.2663,
+    "gender": 0,
+    "known_for_department": "Production",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/f8Lkklt1fWCEM7wOgdE8QAg5KdK.jpg",
+      "id": 533736,
+      "title": "The Maid In London",
+      "original_title": "The Maid In London",
+      "overview": "Inspired by true events, Margo who is a young mother and her best friend Faye are forced to cling to the edge of a knife so they could travel to the United Kingdom. They plan to work there even without a work permit and with only six months visa, time is running out and they may face the risk of deportation.",
+      "poster_path": "/ntm5N1b1crGWSEPF2aZBVieCFSY.jpg",
+      "media_type": "movie",
+      "original_language": "tl",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.1559,
+      "release_date": "2018-07-04",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/qq7hFnhbwcaB2htU5oLOKxsZz3D.jpg",
+    "id": 622478,
+    "title": "Tenali Ramakrishna BA.BL",
+    "original_title": "తెనాలి రామకృష్ణ BA.BL",
+    "overview": "Tenali Ramakrishna is a small-time lawyer who makes his living via compromises between warring parties. He is looking for a big case that could turn his life.",
+    "poster_path": "/jaVmC7Hb0cv8sNNTb8hKfbQ0JsV.jpg",
+    "media_type": "movie",
+    "original_language": "te",
+    "genre_ids": [
+     35,
+     18
+    ],
+    "popularity": 2.0376,
+    "release_date": "2019-11-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 4.2,
+    "vote_count": 4
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/z6hTU00LWb4aRE6DO9eKbRNNoVA.jpg",
+    "id": 241166,
+    "name": "I Became the Main Role of a BL Drama",
+    "original_name": "BLドラマの主演になりました",
+    "overview": "Yuichiro Akafuji and Hajime Aoyagi are cast as co-leads in a BL manga adaptation and move in together for publicity, but Akafuji remains distant.",
+    "poster_path": "/A3wjfqJBH4REt4MfNxIMZ5DZ1Qj.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 4.2709,
+    "first_air_date": "2023-12-24",
+    "softcore": false,
+    "vote_average": 7.7,
+    "vote_count": 19,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/sfYHxq3SRjT9cZwHqhDKuqELqtD.jpg",
+    "id": 322039,
+    "name": "うぬぼれBL",
+    "original_name": "うぬぼれBL",
+    "overview": "",
+    "poster_path": "/41XyKdcGk4XL34JllL5BxukUzxs.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 1.6818,
+    "first_air_date": "2025-05-18",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/oElesVXqtilwcHR45fpxdM6zzbD.jpg",
+    "id": 105814,
+    "name": "Someone Else's BL Cartoon",
+    "original_name": "남의 BL만화’ 애니메이션",
+    "overview": "Class president Seung-taek is the only person who ignores the troublemaker Gyu-bin. They belong to whole different world and they seem like they can’t get along at all. However, once they enter Gyu-bin’s house after school, their relationship changes strangely…",
+    "poster_path": "/1bohkbfUO7dyQY9XepsfHDWYgYw.jpg",
+    "media_type": "tv",
+    "original_language": "ko",
+    "genre_ids": [
+     35,
+     16,
+     18
+    ],
+    "popularity": 2.5991,
+    "first_air_date": "2018-01-11",
+    "softcore": false,
+    "vote_average": 4.5,
+    "vote_count": 2,
+    "origin_country": [
+     "KR"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/3Zu1deDJlA7TIJ5zsHsXpmxSUWs.jpg",
+    "id": 322817,
+    "name": "My Grandpa Is a BL Writer",
+    "original_name": "คุณปู่วุ่น Y หลานชาย Y วุ่น",
+    "overview": "To save his family's orphanage from foreclosure, a macho 75-year-old novelist must team up with his Gen Z grandson to write a hit BL novel.",
+    "poster_path": "/qnzCb7oWdzJiZAwxnHHwGrXICla.jpg",
+    "media_type": "tv",
+    "original_language": "th",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 3.0104,
+    "first_air_date": "2026-05-16",
+    "softcore": false,
+    "vote_average": 8,
+    "vote_count": 2,
+    "origin_country": [
+     "TH"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1257125,
+    "title": "Bl nd Sp t",
+    "original_title": "Bl nd Sp t",
+    "overview": "Bloody Bites, S1E15",
+    "poster_path": null,
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 0.4755,
+    "release_date": "2020-10-23",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "id": 6394010,
+    "name": "Bl;)nk",
+    "original_name": "Bl;)nk",
+    "media_type": "person",
+    "popularity": 0.3366,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1744421,
+      "title": "Somos Rōnin",
+      "original_title": "Somos Rōnin",
+      "overview": "Ibai and the Ronin FC team share the challenges and intensity they experienced during their inaugural year in Catalan football. The documentary shows the club's formation process, the management of the demanding preseason, and their ambition to professionalize every aspect of the team as they compete in the regional leagues.",
+      "poster_path": "/oMj1utD3vggmhQ2P2Kg0AMw5Yo.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       99
+      ],
+      "popularity": 1.0192,
+      "release_date": "2026-08-05",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1633423,
+    "title": "With You - Rugby BL",
+    "original_title": "With You - Rugby BL",
+    "overview": "They play rugby and they are gay",
+    "poster_path": "/cqemxiG25UWdypO9TAEJFd1kYRo.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 0.5509,
+    "release_date": "2025-05-08",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7,
+    "vote_count": 1
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/iEV4DaBrsj9tnV9U0dzo2RHQrQ6.jpg",
+    "id": 952886,
+    "title": "A Man Who Defies the World of BL 2",
+    "original_title": "絶対BLになる世界VS絶対BLになりたくない男2",
+    "overview": "Having fully embraced his life in this “world of BL” Mob even went so far as to admit his feelings for his classmate, Kikuchi. Believing that was the end of his story, Mob was happy to settle into his newfound “happily ever after” but in reality, that “end” was really only the beginning. With the sudden appearance of the handsome Igarashi, Mob finds himself dealing with a whole new set of problems. With Igarashi vying for Kikuchi’s affection, Mob finds himself forced to prove that he’s not only the best man for Kikuchi but still the best man to play this world’s main character.",
+    "poster_path": "/ysukth3YLuSwJ9SHvuohWTTmBfl.jpg",
+    "media_type": "movie",
+    "original_language": "ja",
+    "genre_ids": [
+     10770
+    ],
+    "popularity": 2.144,
+    "release_date": "2022-03-20",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.5,
+    "vote_count": 4
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 287087,
+    "name": "Bommi BA BL",
+    "original_name": "Bommi BA BL",
+    "overview": "Child bride Bommi's unlikely savior? Anirudh. Their marriage becomes a fight for equality.",
+    "poster_path": null,
+    "media_type": "tv",
+    "original_language": "ta",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 0.4083,
+    "first_air_date": "2021-05-02",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "IN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/qoP3tymBKhh300SqNQibbEba6Cs.jpg",
+    "id": 280405,
+    "name": "Summoning a BL Fan to Another World: Mini Anime",
+    "original_name": "腐男子召喚〜異世界で神獣にハメられました〜 ミニアニメ",
+    "overview": "Kotone is a fudanshi. One day while he was buying BL manga outside of a manga stand, a truck loses control and kills him with BL manga all over him. To his surprise, he wakes up in an Asian ancient-looking palace. A man named Nagi, that is half serpent, tells him that he is now his Miko. They need to have sex in order for Nagi to become a higher being and become a Dragon. Kotone knows everything about BL and he realizes that he will be the bottom. Kotone will use his knowledge of BL to not fall in love and not a bottom in this Isekai world.",
+    "poster_path": "/2TN8i7YRlzCiNlcZjKD0V2kPvno.jpg",
+    "media_type": "tv",
+    "original_language": "ja",
+    "genre_ids": [
+     16
+    ],
+    "popularity": 4.7705,
+    "first_air_date": "2020-09-10",
+    "softcore": false,
+    "vote_average": 6,
+    "vote_count": 1,
+    "origin_country": [
+     "JP"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3157101,
+    "name": "B.L. Chopra",
+    "original_name": "B.L. Chopra",
+    "media_type": "person",
+    "popularity": 0.4814,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/3WW7cFNyQPXTAtNtoMo6xQibmyN.jpg",
+      "id": 259042,
+      "title": "Bazaar",
+      "original_title": "बाजार",
+      "overview": "Najma cannot marry Akhtar until he is financially stable. An elderly Shakir promises to help Akhtar set up his business in exchange for Najma finding a suitable bride for him",
+      "poster_path": "/2OT6ILOvQVtMFvrqdGGDT7RdpLr.jpg",
+      "media_type": "movie",
+      "original_language": "hi",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.3057,
+      "release_date": "1982-03-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.4,
+      "vote_count": 7
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/smV7qWQw4GeiQrAIgebG6zMqVrs.jpg",
+      "id": 442293,
+      "title": "New Delhi Times",
+      "original_title": "न्यू देहली टाइम्स",
+      "overview": "When a politician is killed, a journalist discovers that a member of parliament had the man assassinated. As his editor digs deeper, the complicity of higher-placed politicians comes to the surface, which leads to riots in one town and an attempt to suppress his story.",
+      "poster_path": "/niitgGCeWI56Q191kxkYqsS4bHn.jpg",
+      "media_type": "movie",
+      "original_language": "hi",
+      "genre_ids": [
+       18,
+       9648,
+       53
+      ],
+      "popularity": 1.0664,
+      "release_date": "1986-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.3,
+      "vote_count": 3
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 850473,
+      "title": "Bahu Ki Awaaz",
+      "original_title": "Bahu Ki Awaaz",
+      "overview": "Kavita lives a poor lifestyle with her widower dad, Rai Bahadur, and her brother. They had once been wealthy but now live in a heavily mortgaged mansion. She is in love with Advocate Sunil much to her family's displeasure as he is unsuccessful and an alcoholic. They discuss her situation with Murli, who arranges a matrimonial alliance with the Srivastav family. The Srivastavs consist of Mr. Srivastav, his wife, Shobha; a widower Advocate son, Jaswant and his daughter, Binny; and second son, Vimal, who is studying Medicine and is in love with wealthy Madhu. The Srivastav's mistakenly believe that Rai Bahadur is wealthy and force Vimal to marry Kavita. Shortly thereafter Madhu's marriage is arranged elsewhere...",
+      "poster_path": "/uewpVY1NUhj0zc2U1rtcSXcPHH8.jpg",
+      "media_type": "movie",
+      "original_language": "hi",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.7542,
+      "release_date": "1985-03-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   }
+  ],
+  "total_pages": 500,
+  "total_results": 10000
+ }
+}

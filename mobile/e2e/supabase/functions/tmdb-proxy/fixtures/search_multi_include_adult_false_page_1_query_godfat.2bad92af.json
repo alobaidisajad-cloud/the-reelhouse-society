@@ -1,0 +1,467 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=godfat",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/ejdD20cdHNFAYAN2DlqPToXKyzx.jpg",
+    "id": 238,
+    "title": "The Godfather",
+    "original_title": "The Godfather",
+    "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+    "poster_path": "/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "popularity": 62.3289,
+    "release_date": "1972-03-14",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.688,
+    "vote_count": 23664
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/zNnjHLDtV8Ti3aworltaeaLMov4.jpg",
+    "id": 242,
+    "title": "The Godfather Part III",
+    "original_title": "The Godfather Part III",
+    "overview": "In the midst of trying to legitimize his business dealings in 1979 New York and Italy, aging mafia don, Michael Corleone seeks forgiveness for his sins while taking a young protege under his wing.",
+    "poster_path": "/lm3pQ2QoQ16pextRsmnUbG2onES.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     80,
+     18,
+     53
+    ],
+    "popularity": 41.5993,
+    "release_date": "1990-12-25",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.415,
+    "vote_count": 7086
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/pGzqRKrYeK4LogoysNro0vG8d8N.jpg",
+    "id": 240,
+    "title": "The Godfather Part II",
+    "original_title": "The Godfather Part II",
+    "overview": "In the continuing saga of the Corleone crime family, a young Vito Corleone grows up in Sicily and in 1910s New York. In the 1950s, Michael Corleone attempts to expand the family business into Las Vegas, Hollywood and Cuba.",
+    "poster_path": "/8a1lJs7mFyGhGhZZDT1azJUoQiZ.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "popularity": 35.2468,
+    "release_date": "1974-12-20",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.573,
+    "vote_count": 14394
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/tgH5BaWIrPGbDNnFyA4aHtamjWF.jpg",
+    "id": 79086,
+    "name": "Godfather of Harlem",
+    "original_name": "Godfather of Harlem",
+    "overview": "Loosely based on infamous crime boss Bumpy Johnson, who in the early 1960s returned from ten years in prison to find the neighborhood he once ruled in shambles. With the streets controlled by the Italian mob, Bumpy attempts to regain his piece of Harlem.",
+    "poster_path": "/avhyzJycLNi3nXov2lREhDkP3ik.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "popularity": 39.189,
+    "first_air_date": "2019-09-29",
+    "softcore": false,
+    "vote_average": 8.1,
+    "vote_count": 789,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/jdbN2hW8NOaJfDVuMIfF3c1dsQ4.jpg",
+    "id": 1154878,
+    "title": "Jazz Godfather",
+    "original_title": "JAZZ GODFATHER",
+    "overview": "​Isao Suzuki is a legendary Japanese jazz bassist known worldwide. Once elected as one of the top 20 jazz musicians in the world, he is better known outside of Japan than inside, thanks to his sessions with many renowned musicians. What kind of life has he led as a musician, what kind of influence has he had on his younger students, and what has he been like in his later years as the Godfather of Jazz? We take a look back at his life through interviews and his personal life.",
+    "poster_path": "/9F5jUHquZKqftk5TiToz0H9eJyQ.jpg",
+    "media_type": "movie",
+    "original_language": "ja",
+    "genre_ids": [
+     99,
+     10402
+    ],
+    "popularity": 1.3504,
+    "release_date": "2023-11-11",
+    "softcore": false,
+    "video": false,
+    "vote_average": 4.8,
+    "vote_count": 3
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mnppPdfdtKPNoRemzIZDwOKpgfv.jpg",
+    "id": 13398,
+    "title": "Tokyo Godfathers",
+    "original_title": "東京ゴッドファーザーズ",
+    "overview": "On Christmas Eve, three homeless people living on the streets of Tokyo discover a newborn baby among the trash and set out to find its parents.",
+    "poster_path": "/sPC66btzQlzuRdPKiSDYZ5Hvxgc.jpg",
+    "media_type": "movie",
+    "original_language": "ja",
+    "genre_ids": [
+     16,
+     18,
+     35
+    ],
+    "popularity": 6.4634,
+    "release_date": "2003-12-05",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.928,
+    "vote_count": 1575
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/ev3DavWp8CEuNBTicb6UAS7Lwvv.jpg",
+    "id": 39651,
+    "name": "Mario Puzo's The Godfather: The Complete Novel for Television",
+    "original_name": "Mario Puzo's The Godfather: The Complete Novel for Television",
+    "overview": "A seven-hour chronological edit of The Godfather and The Godfather Part II, expanded with over an hour of restored scenes to trace the Corleone family’s rise from Vito’s youth in Sicily to Michael’s reign in 1950s America.",
+    "poster_path": "/zqIfrXlz3xT31uem2jA2acXinr7.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     80,
+     18
+    ],
+    "popularity": 10.735,
+    "first_air_date": "1977-11-12",
+    "softcore": false,
+    "vote_average": 8.6,
+    "vote_count": 94,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/tYjyk4Ij7CwVOn2ovcXdRYffR9k.jpg",
+    "id": 364150,
+    "title": "The Godfather Trilogy: 1901-1980",
+    "original_title": "The Godfather Trilogy: 1901-1980",
+    "overview": "Following the release of Part III in 1990, Coppola, Barry Malkin, and Walter Murch edited the three films into chronological order to create this nearly ten-hour epic, incorporating scenes not part of the theatrical releases.",
+    "poster_path": "/w9KSuRoUPyWOIoybwW7zyYoHhsF.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     80,
+     18
+    ],
+    "popularity": 4.7905,
+    "release_date": "1992-10-21",
+    "softcore": false,
+    "video": true,
+    "vote_average": 8.9,
+    "vote_count": 179
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/onJcliYmFoGM8NrAWs6sZl8mpCB.jpg",
+    "id": 25074,
+    "title": "Miracles: The Canton Godfather",
+    "original_title": "奇蹟",
+    "overview": "A country boy becomes the head of a gang through the purchase of some lucky roses from an old lady. He and a singer at the gang's nightclub try to do a good deed for the old lady when her daughter comes to visit.",
+    "poster_path": "/70OnveJQzlYji1TOoODNGrU9Mjj.jpg",
+    "media_type": "movie",
+    "original_language": "cn",
+    "genre_ids": [
+     80,
+     28,
+     35,
+     18
+    ],
+    "popularity": 4.8164,
+    "release_date": "1989-06-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.1,
+    "vote_count": 187
+   },
+   {
+    "adult": false,
+    "id": 4949909,
+    "name": "Sir Godfather",
+    "original_name": "Sir Godfather",
+    "media_type": "person",
+    "popularity": 0.316,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/98rruW1VaZn6lPI20eOv5zwRgN4.jpg",
+      "id": 1358423,
+      "title": "Wilting of the Blood Orchid",
+      "original_title": "Wilting of the Blood Orchid",
+      "overview": "Akil, a wealthy butchery mogul, has a very close relationship with his younger brother, Sharm. When Sharm is tragically murdered all signs point to Akil's wife, Madison. With no actual proof Akil turns to alcohol and unleashes his rage on his wife. Madison plots revenge on Akil by creating a poison from her repertoire of poisonous botany, the most lethal: The Blood Orchid. Domestic rivalry ensues in this gripping psychological drama.",
+      "poster_path": "/fpCTLPsYqmhEW9qH4AxyHvqtYpG.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       80,
+       53
+      ],
+      "popularity": 0.7496,
+      "release_date": "2023-12-02",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2JGmuUpAgzQKQxwxzJzmaLuWFIZ.jpg",
+    "id": 101375,
+    "name": "Shanghai Godfather",
+    "original_name": "再見黃埔灘",
+    "overview": "",
+    "poster_path": "/e5vkD033gtCtX8BLNaZ2c5fuTUf.jpg",
+    "media_type": "tv",
+    "original_language": "cn",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 3.409,
+    "first_air_date": "1993-01-01",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "HK"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4831244,
+    "name": "Godfather Don",
+    "original_name": "Godfather Don",
+    "media_type": "person",
+    "popularity": 0.4211,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1317297,
+      "title": "Beat Diggin'",
+      "original_title": "Beat Diggin'",
+      "overview": "Filmed in New York during Hip Hop's \"golden age\", the film features some of the music's most respected producers – Diamond D, Showbiz, Buckwild, Da Beatminerz and Godfather Don – at work and talking shop. We see them find obscure records in record shops and create tracks in the studio. And even record bangers by D.I.T.C., CRU and Shadez Of Brooklyn, as well as play some crazy unreleased heat.",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [],
+      "popularity": 0.9763,
+      "release_date": "1998-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/xWdsrSxyitffCad4z54gAnEkTqN.jpg",
+    "id": 260871,
+    "name": "American Godfathers: The Five Families",
+    "original_name": "American Godfathers: The Five Families",
+    "overview": "Explore five powerful New York Mafia families, who ran organized crime in America.",
+    "poster_path": "/kzcU4HIl9wjAhxemXw9HTRaBDCn.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     80,
+     99
+    ],
+    "popularity": 3.4698,
+    "first_air_date": "2024-08-11",
+    "softcore": false,
+    "vote_average": 8.4,
+    "vote_count": 5,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/vkDqTAQdBvtABEA43Kt8hAdD5K3.jpg",
+    "id": 29244,
+    "title": "3 Godfathers",
+    "original_title": "3 Godfathers",
+    "overview": "Three outlaws on the run discover a dying woman and her baby. They swear to bring the infant to safety across the desert, even at the risk of their own lives.",
+    "poster_path": "/dsVrYIpK2Rcgsr5QrfjBQWee5JE.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     37
+    ],
+    "popularity": 4.9663,
+    "release_date": "1948-12-31",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.8,
+    "vote_count": 217
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/c1vrJxyuKhswMm9IbRJJhsFXm0I.jpg",
+    "id": 56205,
+    "title": "The Godfather Family: A Look Inside",
+    "original_title": "The Godfather Family: A Look Inside",
+    "overview": "A documentary on the making of the three Godfather films, with interviews and recollections from the film makers and cast. This feature also includes the original screen tests of some of the actors for \"The Godfather\" film, and some candid moments on the set of \"The Godfather: Part III.\"",
+    "poster_path": "/jDdybr7reoVABPthX9OSlazvncD.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99,
+     10770
+    ],
+    "popularity": 3.1716,
+    "release_date": "1990-07-12",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.8,
+    "vote_count": 43
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/yDCQTJzU8LOgRMj5H67hEg0B0Mo.jpg",
+    "id": 537395,
+    "title": "Japanese Godfather: Conclusion",
+    "original_title": "日本の首領 完結篇",
+    "overview": "The three-film saga comes to a conclusion as three leaders of the underworld battle it out to determine who will become Don of Japan.",
+    "poster_path": "/ukUDtxmfRn2rqHtw66CtohB2rnV.jpg",
+    "media_type": "movie",
+    "original_language": "ja",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "popularity": 1.9313,
+    "release_date": "1978-09-09",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.2,
+    "vote_count": 4
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/nIiSCZvxDeCeXrOJnpbmRB8FcKH.jpg",
+    "id": 79026,
+    "title": "El padrino: The Latin Godfather",
+    "original_title": "El padrino",
+    "overview": "In the streets of East Los Angeles, Manny is a formidable drug dealer. Impressed by his extravagant lifestyle and prowess, his young son, Kilo, yearns to follow in his footsteps. Kilo resolves to learn how to prosper in the drug world, and his new life as a dealer begins. In a world where a man wants everything, he may end up with nothing.",
+    "poster_path": "/10J7EQ8WvMYku8lcZrLewV2Ko4I.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     80,
+     18
+    ],
+    "popularity": 2.7456,
+    "release_date": "2004-09-27",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.1,
+    "vote_count": 75
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/7p0uo17fk1iXREkoRK6gQuCWxKy.jpg",
+    "id": 261181,
+    "title": "Hong Kong Godfather",
+    "original_title": "衝擊天子門生",
+    "overview": "When the boss of a highly profitable Triad family is forced to flee from Hong Kong, rival gangs swoop in to steal any piece of the action they can. York Koo becomes the family's acting boss, and must do what he can to handle the difficult situation, with mounting pressure from both the Hong Kong police, and rival families.",
+    "poster_path": "/vk5qm3l8mV2xckuPV4mSplYhkcj.jpg",
+    "media_type": "movie",
+    "original_language": "cn",
+    "genre_ids": [
+     53,
+     28,
+     80
+    ],
+    "popularity": 1.7787,
+    "release_date": "1991-09-12",
+    "softcore": false,
+    "video": false,
+    "vote_average": 9.7,
+    "vote_count": 3
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/h9GiZd8EbYDOWNFEQHyglsMXRsT.jpg",
+    "id": 107641,
+    "title": "Onimasa: A Japanese Godfather",
+    "original_title": "鬼龍院花子の生涯",
+    "overview": "Onimasa is the egocentric boss of a small yakuza clan on Shikoku Island, whose criminal duties conflict with his self-image as a chivalrous samurai. His struggles with his boss, the Shikoku Godfather, and the tumultuous life of his adopted daughter, Matsue, form the backdrop of this epic tale of justice, obedience, and bloody vengeance.",
+    "poster_path": "/q8uQkC1Amn3SnceL2oiPagSa9kW.jpg",
+    "media_type": "movie",
+    "original_language": "ja",
+    "genre_ids": [
+     28,
+     80,
+     18
+    ],
+    "popularity": 2.0078,
+    "release_date": "1982-06-05",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.2,
+    "vote_count": 26
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/Ef4eMfyQcUNeeX1Viw55nbCIWo.jpg",
+    "id": 187738,
+    "title": "Godfather from Canton",
+    "original_title": "黃埔灘頭",
+    "overview": "A coolie is ofter a job a policeman after saving a government official, and through treachery and corruption rises through the ranks of the police, then becomes a gangster.",
+    "poster_path": "/mSLUyzoINIQLJ5uaRg4nR3B9ezm.jpg",
+    "media_type": "movie",
+    "original_language": "zh",
+    "genre_ids": [
+     28
+    ],
+    "popularity": 1.3944,
+    "release_date": "1982-06-11",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6,
+    "vote_count": 3
+   }
+  ],
+  "total_pages": 9,
+  "total_results": 169
+ }
+}
