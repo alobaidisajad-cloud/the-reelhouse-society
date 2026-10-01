@@ -4485,29 +4485,19 @@ CREATE FUNCTION public.sync_denormalized_username() RETURNS trigger
     AS $$
 BEGIN
   IF NEW.username IS DISTINCT FROM OLD.username THEN
-
-    UPDATE public.dispatch_posts
-       SET author_username = NEW.username
-     WHERE user_id = NEW.id
-       AND author_username IS DISTINCT FROM NEW.username;
-
-    UPDATE public.dispatch_comments
-       SET author_username = NEW.username
-     WHERE user_id = NEW.id
-       AND author_username IS DISTINCT FROM NEW.username;
-
-    UPDATE public.log_comments
-       SET username = NEW.username
-     WHERE user_id = NEW.id
-       AND username IS DISTINCT FROM NEW.username;
-
-    UPDATE public.video_reviews
-       SET username = NEW.username
-     WHERE user_id = NEW.id
-       AND username IS DISTINCT FROM NEW.username;
-
+    UPDATE public.dispatch_posts SET author_username = NEW.username
+     WHERE user_id = NEW.id AND author_username IS DISTINCT FROM NEW.username;
+    UPDATE public.dispatch_comments SET author_username = NEW.username
+     WHERE user_id = NEW.id AND author_username IS DISTINCT FROM NEW.username;
+    UPDATE public.log_comments SET username = NEW.username
+     WHERE user_id = NEW.id AND username IS DISTINCT FROM NEW.username;
+    UPDATE public.notifications SET from_username = NEW.username
+     WHERE from_user_id = NEW.id AND from_username IS DISTINCT FROM NEW.username;
+    UPDATE public.lounge_messages r SET reply_to_username = NEW.username
+      FROM public.lounge_messages m
+     WHERE r.reply_to_id = m.id AND m.user_id = NEW.id
+       AND r.reply_to_username IS DISTINCT FROM NEW.username;
   END IF;
-
   RETURN NULL;  -- AFTER trigger: the return value is ignored
 END $$;
 
